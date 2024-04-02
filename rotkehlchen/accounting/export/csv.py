@@ -14,8 +14,8 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
-    EVM_LOCATIONS,
-    ChainID,
+    EVM_EVMLIKE_LOCATIONS,
+    SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     CostBasisMethod,
     SupportedBlockchain,
     Timestamp,
@@ -89,7 +89,7 @@ class CSVExporter(CustomizableDateMixin):
     def reset(self, start_ts: Timestamp, end_ts: Timestamp) -> None:
         self.start_ts = start_ts
         self.end_ts = end_ts
-        self.transaction_explorers: dict[SupportedBlockchain, str] = {
+        self.transaction_explorers: dict[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, str] = {
             SupportedBlockchain.ETHEREUM: ETHERSCAN_EXPLORER_TX_URL.format(base_url='etherscan.io'),  # noqa: E501
             SupportedBlockchain.OPTIMISM: ETHERSCAN_EXPLORER_TX_URL.format(base_url='optimistic.etherscan.io'),  # noqa: E501
             SupportedBlockchain.POLYGON_POS: ETHERSCAN_EXPLORER_TX_URL.format(base_url='polygonscan.com'),  # noqa: E501
@@ -97,6 +97,7 @@ class CSVExporter(CustomizableDateMixin):
             SupportedBlockchain.BASE: ETHERSCAN_EXPLORER_TX_URL.format(base_url='basescan.org'),
             SupportedBlockchain.GNOSIS: ETHERSCAN_EXPLORER_TX_URL.format(base_url='gnosisscan.io'),
             SupportedBlockchain.SCROLL: ETHERSCAN_EXPLORER_TX_URL.format(base_url='scrollscan.com'),  # noqa: E501
+            SupportedBlockchain.ZKSYNC_LITE: 'https://zkscan.io/explorer/transactions/',
         }
         with self.database.conn.read_ctx() as cursor:
             self.reload_settings(cursor)
@@ -301,9 +302,9 @@ class CSVExporter(CustomizableDateMixin):
         CSV exported file.
         """
         evm_explorer = None
-        if event.location in EVM_LOCATIONS:
+        if event.location in EVM_EVMLIKE_LOCATIONS:
             # provide the explorer url to be used in the notes
-            evm_explorer = self.transaction_explorers[ChainID(event.location.to_chain_id()).to_blockchain()]  # noqa: E501
+            evm_explorer = self.transaction_explorers[SupportedBlockchain.from_location(event.location)]  # type: ignore # type checked via if above # noqa: E501
 
         dict_event = event.to_exported_dict(
             ts_converter=self.timestamp_to_date,

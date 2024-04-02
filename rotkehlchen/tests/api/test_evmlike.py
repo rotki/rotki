@@ -393,7 +393,7 @@ def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite
             'tx_hashes': [tx_hash1.hex(), tx_hash2.hex()],  # pylint: disable=no-member
         }],
     })
-    assert_proper_response(response)  # see all is fine
+    assert_simple_ok_response(response)  # see all is fine
 
     # now let's check the DB contains the entries we will check against when deleting
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen

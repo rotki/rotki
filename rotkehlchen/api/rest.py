@@ -2818,7 +2818,7 @@ class RestAPI:
         result = None
         message = ''
         status_code = HTTPStatus.OK
-
+        tracked_addresses = self.rotkehlchen.chains_aggregator.accounts.zksync_lite
         for entry in data:  # we cheat. Can only be zksync lite for now
             if entry['tx_hashes'] is None:
                 transactions = self.rotkehlchen.chains_aggregator.zksync_lite.get_db_transactions()
@@ -2832,7 +2832,6 @@ class RestAPI:
                         ),
                     )
 
-            tracked_addresses = self.rotkehlchen.chains_aggregator.accounts.zksync_lite
             for transaction in transactions:
                 self.rotkehlchen.chains_aggregator.zksync_lite.decode_transaction(
                     transaction=transaction,
@@ -2856,6 +2855,9 @@ class RestAPI:
                     status_code = HTTPStatus.BAD_GATEWAY
                     message = f'Failed to request evm transaction decoding due to {e!s}'
                     break
+
+        else:  # no break from the loop, so success
+            result = True
 
         return {'result': result, 'message': message, 'status_code': status_code}
 
