@@ -61,6 +61,10 @@ const {
     extraParams: computed(() => ({
       blockchain: get(selectedChain),
     })),
+    defaultSortBy: {
+      key: 'name',
+      ascending: [true],
+    },
   },
 );
 

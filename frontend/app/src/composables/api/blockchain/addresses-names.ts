@@ -55,11 +55,7 @@ export function useAddressesNamesApi() {
     payload: AddressBookRequestPayload,
   ): Promise<Collection<AddressBookEntry>> => {
     const payloadVal = get(payload);
-    const filteredPayload = omit(payloadVal, [
-      'orderByAttributes',
-      'ascending',
-      'address',
-    ]);
+    const filteredPayload = omit(payloadVal, ['address']);
     const response = await api.instance.post<
       ActionResult<CollectionResponse<AddressBookEntry>>
     >(
