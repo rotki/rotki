@@ -39,6 +39,9 @@ def _add_zksynclite(write_cursor: 'DBCursor') -> None:
     /* ForcedExit Type */
     INSERT OR IGNORE INTO zksynclite_tx_type(type, seq) VALUES ('E', 5);""")
     write_cursor.execute("""
+    /* FullExit Type */
+    INSERT OR IGNORE INTO zksynclite_tx_type(type, seq) VALUES ('F', 6);""")
+    write_cursor.execute("""
     CREATE TABLE IF NOT EXISTS zksynclite_transactions (
     tx_hash BLOB NOT NULL PRIMARY KEY,
     type CHAR(1) NOT NULL DEFAULT('A') REFERENCES zksynclite_tx_type(type),

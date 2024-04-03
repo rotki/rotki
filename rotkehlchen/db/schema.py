@@ -491,6 +491,8 @@ INSERT OR IGNORE INTO zksynclite_tx_type(type, seq) VALUES ('C', 3);
 INSERT OR IGNORE INTO zksynclite_tx_type(type, seq) VALUES ('D', 4);
 /* ForcedExit Type */
 INSERT OR IGNORE INTO zksynclite_tx_type(type, seq) VALUES ('E', 5);
+/* FullExit Type */
+INSERT OR IGNORE INTO zksynclite_tx_type(type, seq) VALUES ('F', 6);
 """
 
 # Instead of using an attribute mapping like evm chains adding the is_decoded directly to the table

@@ -17,10 +17,14 @@ from rotkehlchen.constants.assets import (
     A_WBTC,
 )
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.filtering import EvmEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.constants import A_PAN, CURRENT_PRICE_MOCK
-from rotkehlchen.types import Fee, Timestamp
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.types import Fee, Location, Timestamp, deserialize_evm_tx_hash
+from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -158,3 +162,56 @@ def test_balances(zksync_lite_manager, inquirer):  # pylint: disable=unused-argu
             A_USDT: Balance(usdt, usdt * CURRENT_PRICE_MOCK),
         },
     }
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('should_mock_current_price_queries', [True])
+@pytest.mark.freeze_time('2024-04-02 00:00:00 GMT')
+def test_decode_fullexit(zksync_lite_manager, inquirer):  # pylint: disable=unused-argument
+    tx_hash = deserialize_evm_tx_hash('0xd61d5f242022a43b5a11c84b350cdf8b2923221bf4a89ef091d51a1494d36007')  # noqa: E501
+    address = string_to_evm_address('0xd6dfD811E06267b25472753c4e57C0B28652bFB8')
+    timestamp = Timestamp(1592248320)
+    zksync_lite_manager.fetch_transactions(  # timerange is not really respected
+        address=address,
+        start_ts=Timestamp(1592248200),  # 15/06/2020 - 19:10
+        end_ts=Timestamp(1592248800),  # 15/06/2020 - 19:20
+    )
+    transactions = zksync_lite_manager.get_db_transactions(
+        queryfilter=' WHERE tx_hash=?',
+        bindings=(deserialize_evm_tx_hash('0xd61d5f242022a43b5a11c84b350cdf8b2923221bf4a89ef091d51a1494d36007'),),
+    )
+    assert transactions == [ZKSyncLiteTransaction(
+        tx_hash=tx_hash,
+        tx_type=ZKSyncLiteTXType.FULLEXIT,
+        timestamp=timestamp,
+        block_number=2,
+        from_address=address,
+        to_address=address,
+        asset=A_ETH,
+        amount=ZERO,
+        fee=None,
+    )]
+    assert zksync_lite_manager.decode_transaction(transactions[0], [address]) == 1
+    dbevents = DBHistoryEvents(zksync_lite_manager.database)
+    with zksync_lite_manager.database.conn.read_ctx() as cursor:
+        events = dbevents.get_history_events(
+            cursor=cursor,
+            filter_query=EvmEventFilterQuery.make(),
+            has_premium=True,
+            group_by_event_ids=False,
+        )
+    assert events == [EvmEvent(
+        identifier=1,
+        event_identifier=f'zkl{tx_hash.hex()}',  # pylint: disable=no-member
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=ts_sec_to_ms(timestamp),
+        location=Location.ZKSYNC_LITE,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        balance=Balance(),
+        location_label=address,
+        notes='Full exit to Ethereum',
+        address=address,
+    )]

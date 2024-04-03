@@ -257,7 +257,7 @@ def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite
     result = assert_proper_response_with_result(response)
     assert len(result['entries']) == 17
     compare_events_without_id(result['entries'][0]['entry'], EvmEvent(
-        event_identifier='zklbd723b5a5f87e485a478bc7d1f365db79440b6e9305bff3b16a0e0ab83e51970',
+        event_identifier='zkl0xbd723b5a5f87e485a478bc7d1f365db79440b6e9305bff3b16a0e0ab83e51970',
         tx_hash=tx_hash1,
         sequence_index=0,
         timestamp=TimestampMS(1708431030000),
@@ -271,7 +271,7 @@ def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite
         notes='Bridge 6.626770825 ETH from ZKSync Lite to Ethereum',
     ).serialize())
     compare_events_without_id(result['entries'][1]['entry'], EvmEvent(
-        event_identifier='zklbd723b5a5f87e485a478bc7d1f365db79440b6e9305bff3b16a0e0ab83e51970',
+        event_identifier='zkl0xbd723b5a5f87e485a478bc7d1f365db79440b6e9305bff3b16a0e0ab83e51970',
         tx_hash=tx_hash1,
         sequence_index=1,
         timestamp=TimestampMS(1708431030000),
@@ -285,7 +285,7 @@ def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite
         notes='Bridging fee of 0.00367 ETH',
     ).serialize())
     compare_events_without_id(result['entries'][2]['entry'], EvmEvent(
-        event_identifier='zkl331fcc49dc3c0a772e0b5e4518350f3d9a5c5576b4e8dbc7c56b2c59caa239bb',
+        event_identifier='zkl0x331fcc49dc3c0a772e0b5e4518350f3d9a5c5576b4e8dbc7c56b2c59caa239bb',
         tx_hash=tx_hash2,
         sequence_index=0,
         timestamp=TimestampMS(1659010582000),
@@ -305,7 +305,7 @@ def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite
     for x in result['entries'][4:10]:  # normal transfer part of the batch
         if x['entry']['tx_hash'] == '0x43e7f5d480b8b7af4c154065fe7112b908940be39dd02f4fb42f6594d12465b7':  # noqa: E501
             compare_events_without_id(x['entry'], EvmEvent(
-                event_identifier='zkl43e7f5d480b8b7af4c154065fe7112b908940be39dd02f4fb42f6594d12465b7',
+                event_identifier='zkl0x43e7f5d480b8b7af4c154065fe7112b908940be39dd02f4fb42f6594d12465b7',
                 tx_hash=deserialize_evm_tx_hash('0x43e7f5d480b8b7af4c154065fe7112b908940be39dd02f4fb42f6594d12465b7'),
                 sequence_index=0,
                 timestamp=TimestampMS(1656022105000),
@@ -325,7 +325,7 @@ def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite
     for x in result['entries'][4:10]:  # changepubkey
         if x['entry']['tx_hash'] == '0x83001f1c5580d90d345779cd10762fc71c4c9020202551bc480331d70d547cc7':  # noqa: E501
             compare_events_without_id(x['entry'], EvmEvent(
-                event_identifier='zkl83001f1c5580d90d345779cd10762fc71c4c9020202551bc480331d70d547cc7',
+                event_identifier='zkl0x83001f1c5580d90d345779cd10762fc71c4c9020202551bc480331d70d547cc7',
                 tx_hash=deserialize_evm_tx_hash('0x83001f1c5580d90d345779cd10762fc71c4c9020202551bc480331d70d547cc7'),
                 sequence_index=0,
                 timestamp=TimestampMS(1656022105000),
@@ -345,7 +345,7 @@ def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite
         entry = x['entry']
         if entry['tx_hash'] == '0x89d943919cfa09636802e626c48cff7734da1ac8c98288c65fe5ea0dd60a0162' and entry['event_subtype'] == 'none':  # noqa: E501
             compare_events_without_id(entry, EvmEvent(
-                event_identifier='zkl89d943919cfa09636802e626c48cff7734da1ac8c98288c65fe5ea0dd60a0162',
+                event_identifier='zkl0x89d943919cfa09636802e626c48cff7734da1ac8c98288c65fe5ea0dd60a0162',
                 tx_hash=deserialize_evm_tx_hash('0x89d943919cfa09636802e626c48cff7734da1ac8c98288c65fe5ea0dd60a0162'),
                 sequence_index=0,
                 timestamp=TimestampMS(1656022105000),
@@ -366,7 +366,7 @@ def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite
         entry = x['entry']
         if entry['tx_hash'] == '0x89d943919cfa09636802e626c48cff7734da1ac8c98288c65fe5ea0dd60a0162' and entry['event_subtype'] == 'fee':  # noqa: E501
             compare_events_without_id(entry, EvmEvent(
-                event_identifier='zkl89d943919cfa09636802e626c48cff7734da1ac8c98288c65fe5ea0dd60a0162',
+                event_identifier='zkl0x89d943919cfa09636802e626c48cff7734da1ac8c98288c65fe5ea0dd60a0162',
                 tx_hash=deserialize_evm_tx_hash('0x89d943919cfa09636802e626c48cff7734da1ac8c98288c65fe5ea0dd60a0162'),
                 sequence_index=1,
                 timestamp=TimestampMS(1656022105000),

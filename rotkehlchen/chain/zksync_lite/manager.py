@@ -145,6 +145,8 @@ class ZksyncLiteManager:
             from_hash: str,
             direction: Literal['older', 'newer'],
     ) -> None:
+        """Save transactions in a timerange. Timerange is not really respected.
+        Just saved in the DB range."""
         ranges = DBQueryRanges(self.database)
         location = f'{ZKSYNCLITE_TX_SAVEPREFIX}{address}'
         current_start_ts = start_ts
@@ -244,8 +246,13 @@ class ZksyncLiteManager:
 
         return self.symbol_to_token.get(token_symbol, None)
 
-    def _deserialize_zksync_transaction(self, entry: dict[str, Any]) -> ZKSyncLiteTransaction | None:  # noqa: E501
+    def _deserialize_zksync_transaction(
+            self,
+            entry: dict[str, Any],
+            concerning_address: ChecksumEvmAddress,
+    ) -> ZKSyncLiteTransaction | None:
         from_address = None
+        to_address = None
         try:
             if (status := entry.get('status', 'finalized')) != 'finalized':
                 log.debug(f'Skipping zksynce lite transaction {entry} due to {status=}')
@@ -271,19 +278,26 @@ class ZksyncLiteManager:
             elif tx_type == ZKSyncLiteTXType.FORCEDEXIT:
                 asset_key = 'token'
                 from_address = deserialize_evm_address(entry['op']['target'])
+            elif tx_type == ZKSyncLiteTXType.FULLEXIT:
+                asset_key = 'tokenId'
+                from_address = concerning_address
+                to_address = concerning_address
+                # for some reason the transaction hash for full exit is in op and their
+                # one under entry is not corresponding to anything in zkscan.
+                # also amount is missing
+                tx_hash = deserialize_evm_tx_hash(entry['op']['ethHash'])
             else:  # transfer/withdraw
                 asset_key = 'token'
 
             asset = self._get_token_by_id(entry['op'][asset_key])
             if asset is None:
-                log.error(
+                log.error(  # also happens for all NFT transfers -- since we ignore nfts in lite
                     f'Skipping zksync lite transaction {entry} with unknown token id {entry["op"][asset_key]}',  # noqa: E501
                 )
                 return None
 
-            to_address = None
             amount = ZERO
-            if tx_type not in (ZKSyncLiteTXType.CHANGEPUBKEY, ZKSyncLiteTXType.FORCEDEXIT):
+            if tx_type not in (ZKSyncLiteTXType.CHANGEPUBKEY, ZKSyncLiteTXType.FORCEDEXIT, ZKSyncLiteTXType.FULLEXIT):  # noqa: E501
                 from_address = deserialize_evm_address(entry['op']['from'])
                 to_address = deserialize_evm_address(entry['op']['to'])
                 amount_raw = deserialize_int_from_str(
@@ -339,7 +353,7 @@ class ZksyncLiteManager:
                 if idx == 0 and entry['txHash'] == last_tx_hash:
                     continue  # at pagination first tx is last query's last
 
-                tx = self._deserialize_zksync_transaction(entry)
+                tx = self._deserialize_zksync_transaction(entry, concerning_address=address)
                 if tx:
                     transactions.append(tx)
                     last_tx_hash = entry['txHash']
@@ -563,8 +577,16 @@ class ZksyncLiteManager:
                 # simply adds a "to" field. As this will definitely be needed somewhere.
                 notes = f'{verb} {transaction.amount} {transaction.asset.resolve_to_asset_with_symbol().symbol} {preposition} {target}'  # noqa: E501
 
+            case ZKSyncLiteTXType.FULLEXIT:
+                event_type = HistoryEventType.INFORMATIONAL
+                event_subtype = HistoryEventSubType.NONE
+                location_label = transaction.from_address
+                target = transaction.to_address
+                notes = f'Full exit to Ethereum{"" if location_label == target else f" address {target}"}'  # noqa: E501
+
             case ZKSyncLiteTXType.FORCEDEXIT:
                 return 0  # TODO
+
             case ZKSyncLiteTXType.CHANGEPUBKEY:
                 event_type = HistoryEventType.SPEND
                 event_subtype = HistoryEventSubType.FEE
