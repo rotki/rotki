@@ -80,7 +80,7 @@ export class AssetsManagerPage {
     cy.get('[data-cy=status-filter]').click();
     cy.get('[data-cy=asset-filter-menu]').should('exist');
     cy.get('[data-cy=asset-filter-none]').scrollIntoView();
-    cy.get('[data-cy=asset-filter-none]').trigger('click');
+    cy.get('[data-cy=asset-filter-none]').click();
     cy.get('[data-cy=status-filter]').trigger('click');
     cy.get('[data-cy=asset-filter-menu]').should('not.exist');
   }
@@ -221,12 +221,12 @@ export class AssetsManagerPage {
 
     const symbol = 'SYMBOL 1';
     // enter symbol
-    cy.get('@symbolInput').clear({ force: true });
-    cy.get('@symbolInput').type(symbol, { force: true });
+    cy.get('@symbolInput').clear();
+    cy.get('@symbolInput').type(symbol);
 
     // enter decimals
-    cy.get('@decimalInput').clear({ force: true });
-    cy.get('@decimalInput').type('2', { force: true });
+    cy.get('@decimalInput').clear();
+    cy.get('@decimalInput').type('2');
 
     // at this point, no validation message, button should be enabled
     cy.get('@submitButton').should('be.enabled');
@@ -255,7 +255,7 @@ export class AssetsManagerPage {
       .contains('Own chain')
       .click();
 
-    cy.get('@nameInput').clear({ force: true });
+    cy.get('@nameInput').clear();
     cy.get('@nameInput').type('NAME 2');
 
     const symbol = 'SYMBOL 2';
