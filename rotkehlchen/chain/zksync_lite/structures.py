@@ -4,7 +4,13 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.fval import FVal
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount, deserialize_fee
-from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, Fee, Timestamp
+from rotkehlchen.types import (
+    ChecksumEvmAddress,
+    EVMTxHash,
+    Fee,
+    Timestamp,
+    deserialize_evm_tx_hash,
+)
 from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn
 
 
@@ -14,6 +20,7 @@ class ZKSyncLiteTXType(DBCharEnumMixIn):
     WITHDRAW = 3
     CHANGEPUBKEY = 4  # we only use it for fee of changing public key
     FORCEDEXIT = 5  # we only use it for fee of exit.
+    FULLEXIT = 6  # we only use it for fee of exit.
 
 
 ZKSyncLiteTransactionDBTuple = tuple[
@@ -64,7 +71,7 @@ class ZKSyncLiteTransaction:
         - UnknownAsset
         """
         return cls(
-            tx_hash=data[0],
+            tx_hash=deserialize_evm_tx_hash(data[0]),
             tx_type=ZKSyncLiteTXType.deserialize_from_db(data[1]),
             timestamp=Timestamp(data[2]),
             block_number=data[3],

@@ -2272,7 +2272,7 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
         assert table_exists(cursor, 'zksynclite_tx_type') is True
         assert table_exists(cursor, 'zksynclite_transactions') is True
         assert cursor.execute('SELECT * FROM zksynclite_tx_type').fetchall() == [
-            ('A', 1), ('B', 2), ('C', 3), ('D', 4), ('E', 5),
+            ('A', 1), ('B', 2), ('C', 3), ('D', 4), ('E', 5), ('F', 6),
         ]
         for new_loc in (Location.SCROLL, Location.ZKSYNC_LITE):
             assert cursor.execute(  # Check that new locations were added
