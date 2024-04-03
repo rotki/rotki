@@ -117,6 +117,16 @@ INFURA_ETH_NODE = WeightedNode(
     weight=ONE,
 )
 
+
+ETHEREUM_WEB3_AND_ETHERSCAN_TEST_PARAMETERS = (
+    'ethereum_manager_connect_at_start',
+    [
+        (INFURA_ETH_NODE,),
+        (ETHEREUM_ETHERSCAN_NODE,),
+    ],
+)
+
+
 ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED = (
     'ethereum_manager_connect_at_start',
     [
