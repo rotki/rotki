@@ -7,6 +7,7 @@ import {
 import type {
   DataTableColumn,
   DataTableOptions,
+  DataTableSortData,
 } from '@rotki/ui-library-compat';
 import type {
   AddressBookEntry,
@@ -96,21 +97,25 @@ function edit(item: AddressBookEntry) {
   emit('edit', item);
 }
 
+const sort: Ref<DataTableSortData> = ref({
+  column: 'name',
+  direction: 'asc' as const,
+});
+
 const tableHeaders = computed<DataTableColumn[]>(() => [
   {
     label: t('common.address').toString(),
     key: 'address',
-    sortable: false,
+    sortable: true,
   },
   {
     label: t('common.name').toString(),
     key: 'name',
-    sortable: false,
+    sortable: true,
   },
   {
     label: '',
     key: 'actions',
-    sortable: false,
   },
 ]);
 
@@ -125,7 +130,6 @@ const { showDeleteConfirmation } = addressBookDeletion(location);
     >
       <template #default="{ data, itemLength }">
         <RuiDataTable
-          dense
           :rows="data"
           :cols="tableHeaders"
           :loading="loading"
@@ -136,6 +140,8 @@ const { showDeleteConfirmation } = addressBookDeletion(location);
             total: itemLength,
           }"
           :pagination-modifiers="{ external: true }"
+          :sort.sync="sort"
+          :sort-modifiers="{ external: true }"
           row-attr=""
           outlined
           :server-items-length="itemLength"
