@@ -4,16 +4,43 @@ import {
   mount,
 } from '@vue/test-utils';
 import BigNumber from 'bignumber.js';
-import { createPinia, setActivePinia } from 'pinia';
+import { type Pinia, createPinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import ExternalTradeForm from '@/components/history/trades/ExternalTradeForm.vue';
 import VAutocompleteStub from '../../../stubs/VAutocomplete';
 import VComboboxStub from '../../../stubs/VCombobox';
+import type { AssetMap } from '@/types/asset';
 import type { Trade } from '@/types/history/trade';
+
+vi.mock('@/store/balances/prices', () => ({
+  useBalancePricesStore: vi.fn().mockReturnValue({
+    getHistoricPrice: vi.fn(),
+  }),
+}));
 
 describe('externalTradeForm.vue', () => {
   setupDayjs();
   let wrapper: Wrapper<ExternalTradeForm>;
+  let pinia: Pinia;
+
+  const baseAsset = {
+    name: 'USDT Stablecoin',
+    symbol: 'eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7',
+    assetType: 'own chain',
+    isCustomAsset: false,
+  };
+
+  const quoteAsset = {
+    name: 'United States Dollar',
+    symbol: 'USD',
+    assetType: 'fiat',
+    isCustomAsset: false,
+  };
+
+  const mapping: AssetMap = {
+    assetCollections: {},
+    assets: { [baseAsset.symbol]: baseAsset, [quoteAsset.symbol]: quoteAsset },
+  };
 
   const editableItem: Trade = {
     timestamp: 1701252793,
@@ -30,10 +57,16 @@ describe('externalTradeForm.vue', () => {
     tradeId: '3f6ef0005e6ebf1605a611a02997311595e542c6118726f05f076b89732f0282',
   };
 
+  beforeEach(() => {
+    vi.useFakeTimers();
+    pinia = createPinia();
+    setActivePinia(pinia);
+    vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
+    vi.mocked(useBalancePricesStore().getHistoricPrice).mockResolvedValue(One);
+  });
+
   const createWrapper = (options: ThisTypedMountOptions<any> = {}) => {
     const vuetify = new Vuetify();
-    const pinia = createPinia();
-    setActivePinia(pinia);
     return mount(ExternalTradeForm, {
       pinia,
       vuetify,
@@ -105,8 +138,9 @@ describe('externalTradeForm.vue', () => {
     });
 
     it('`editableItem` passed', async () => {
-      wrapper = createWrapper({ propsData: { editableItem } });
+      wrapper = createWrapper();
       await wrapper.vm.$nextTick();
+      await wrapper.setProps({ editableItem });
 
       const buyRadio = wrapper.find(
         '[data-cy=type] [data-cy=trade-input-buy] input',

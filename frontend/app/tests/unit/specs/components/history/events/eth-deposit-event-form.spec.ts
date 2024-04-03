@@ -3,21 +3,41 @@ import {
   type Wrapper,
   mount,
 } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
+import { type Pinia, createPinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import EthDepositEventForm from '@/components/history/events/forms/EthDepositEventForm.vue';
 import VAutocompleteStub from '../../../stubs/VAutocomplete';
 import VComboboxStub from '../../../stubs/VCombobox';
+import type { AssetMap } from '@/types/asset';
 import type { EthDepositEvent } from '@/types/history/events';
 
 vi.mock('json-editor-vue', () => ({
   template: '<input />',
 }));
 
+vi.mock('@/store/balances/prices', () => ({
+  useBalancePricesStore: vi.fn().mockReturnValue({
+    getHistoricPrice: vi.fn(),
+  }),
+}));
+
 describe('ethDepositEventForm.vue', () => {
   setupDayjs();
   let wrapper: Wrapper<EthDepositEventForm>;
+  let pinia: Pinia;
+
+  const asset = {
+    name: 'Ethereum',
+    symbol: 'ETH',
+    assetType: 'own chain',
+    isCustomAsset: false,
+  };
+
+  const mapping: AssetMap = {
+    assetCollections: {},
+    assets: { [asset.symbol]: asset },
+  };
 
   const groupHeader: EthDepositEvent = {
     identifier: 11344,
@@ -27,7 +47,7 @@ describe('ethDepositEventForm.vue', () => {
     sequenceIndex: 12,
     timestamp: 1697522243000,
     location: 'ethereum',
-    asset: 'ETH',
+    asset: asset.symbol,
     balance: {
       amount: bigNumberify('3.2'),
       usdValue: bigNumberify('5082.048'),
@@ -44,10 +64,16 @@ describe('ethDepositEventForm.vue', () => {
     validatorIndex: 223,
   };
 
+  beforeEach(() => {
+    vi.useFakeTimers();
+    pinia = createPinia();
+    setActivePinia(pinia);
+    vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
+    vi.mocked(useBalancePricesStore().getHistoricPrice).mockResolvedValue(One);
+  });
+
   const createWrapper = (options: ThisTypedMountOptions<any> = {}) => {
     const vuetify = new Vuetify();
-    const pinia = createPinia();
-    setActivePinia(pinia);
     return mount(EthDepositEventForm, {
       pinia,
       vuetify,
@@ -100,17 +126,13 @@ describe('ethDepositEventForm.vue', () => {
           wrapper.find('[data-cy=sequenceIndex] input')
             .element as HTMLInputElement
         ).value,
-      ).toBe('0');
+      ).toBe('');
     });
 
     it('`groupHeader` and `nextSequence` are passed', async () => {
-      wrapper = createWrapper({
-        propsData: {
-          groupHeader,
-          nextSequence: '10',
-        },
-      });
+      wrapper = createWrapper();
       await wrapper.vm.$nextTick();
+      await wrapper.setProps({ groupHeader, nextSequence: '10' });
 
       await wrapper
         .find('[data-cy=eth-deposit-event-form__advance] .accordion__header')
@@ -157,13 +179,9 @@ describe('ethDepositEventForm.vue', () => {
     });
 
     it('`groupHeader`, `editableItem`, and `nextSequence` are passed', async () => {
-      wrapper = createWrapper({
-        propsData: {
-          groupHeader,
-          editableItem: groupHeader,
-        },
-      });
+      wrapper = createWrapper();
       await wrapper.vm.$nextTick();
+      await wrapper.setProps({ groupHeader, editableItem: groupHeader });
 
       await wrapper
         .find('[data-cy=eth-deposit-event-form__advance] .accordion__header')

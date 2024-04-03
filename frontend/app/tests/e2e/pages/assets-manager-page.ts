@@ -81,7 +81,7 @@ export class AssetsManagerPage {
     cy.get('[data-cy=asset-filter-menu]').should('exist');
     cy.get('[data-cy=asset-filter-none]').scrollIntoView();
     cy.get('[data-cy=asset-filter-none]').click();
-    cy.get('[data-cy=status-filter]').click();
+    cy.get('[data-cy=status-filter]').trigger('click');
     cy.get('[data-cy=asset-filter-menu]').should('not.exist');
   }
 
@@ -158,20 +158,20 @@ export class AssetsManagerPage {
 
   addAnEvmAsset(address = '0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8'): void {
     // get the fields
-    cy.get('[data-cy=chain-select] [role=button]').as('chainInput');
+    cy.get('[data-cy=chain-select] [data-id="activator"]').as('chainInput');
 
-    cy.get('[data-cy=token-select] [role=button]').as('tokenInput');
+    cy.get('[data-cy=token-select] [data-id="activator"]').as('tokenInput');
 
     cy.get('[data-cy=address-input] input').as('addressInput');
 
-    cy.get('[data-cy=symbol-input]').as('symbolInput');
+    cy.get('[data-cy=symbol-input] input').as('symbolInput');
 
     cy.get('[data-cy=decimal-input] input[type=number]').as('decimalInput');
 
     cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').as('submitButton');
 
     // Frontend validation for address
-    cy.get('@submitButton').click();
+    cy.get('@submitButton').trigger('click');
 
     cy.get('[data-cy=address-input] .details').as('addressMessage');
     cy.get('@addressMessage')
@@ -182,8 +182,8 @@ export class AssetsManagerPage {
     cy.get('@addressInput').type(address);
     cy.get('@submitButton').click();
 
-    cy.get('[data-cy=chain-select] .v-messages__message').as('chainMessage');
-    cy.get('[data-cy=token-select] .v-messages__message').as('tokenMessage');
+    cy.get('[data-cy=chain-select] .details').as('chainMessage');
+    cy.get('[data-cy=token-select] .details').as('tokenMessage');
     cy.get('[data-cy=decimal-input] .details').as('decimalMessage');
 
     // expect to see backend validation messages
@@ -198,23 +198,23 @@ export class AssetsManagerPage {
       .contains('Field may not be null.')
       .should('be.visible');
 
-    cy.get('@chainMessage').should('be.visible');
+    cy.get('@chainMessage').should('not.be.empty');
     // select a chain
     cy.get('@chainInput').click();
-    cy.get('.v-menu__content.menuable__content__active .v-list-item__title')
+    cy.get('[role="menu-content"] button[type="button"]')
       .first()
       .click();
     // selecting a chain should clear the validation message
-    cy.get('@chainMessage').should('not.be.visible');
+    cy.get('@chainMessage').should('be.empty');
 
-    cy.get('@tokenMessage').should('be.visible');
+    cy.get('@tokenMessage').should('not.be.empty');
     // select a token
     cy.get('@tokenInput').click();
-    cy.get('.v-menu__content.menuable__content__active .v-list-item__title')
+    cy.get('[role="menu-content"] button[type="button"]')
       .first()
       .click();
     // selecting a chain should clear the validation message
-    cy.get('@tokenMessage').should('not.be.visible');
+    cy.get('@tokenMessage').should('be.empty');
 
     // after loading, input should be enabled
     cy.get('@addressInput').should('be.enabled');
@@ -246,12 +246,12 @@ export class AssetsManagerPage {
 
   addOtherAsset() {
     // get the fields
-    cy.get('[data-cy=type-select] [role=button]').as('typeInput');
-    cy.get('[data-cy=name-input]').as('nameInput');
-    cy.get('[data-cy=symbol-input]').as('symbolInput');
+    cy.get('[data-cy=type-select] [data-id="activator"]').as('typeInput');
+    cy.get('[data-cy=name-input] input').as('nameInput');
+    cy.get('[data-cy=symbol-input] input').as('symbolInput');
 
     cy.get('@typeInput').click();
-    cy.get('.v-menu__content.menuable__content__active .v-list-item')
+    cy.get('[role="menu-content"] button[type="button"]')
       .contains('Own chain')
       .click();
 
@@ -292,7 +292,7 @@ export class AssetsManagerPage {
       .contains('Edit an asset')
       .should('be.visible');
 
-    cy.get('[data-cy=symbol-input]').as('symbolInput');
+    cy.get('[data-cy=symbol-input] input').as('symbolInput');
 
     cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').as('submitButton');
 

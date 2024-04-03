@@ -30,7 +30,12 @@ export function isBlockchain(chain: string): chain is Blockchain {
   return Object.values(Blockchain).includes(chain as any);
 }
 
-export const evmTokenKindsData = [
+export interface EvmTokenData {
+  identifier: EvmTokenKind;
+  label: string;
+}
+
+export const evmTokenKindsData: EvmTokenData[] = [
   {
     identifier: EvmTokenKind.ERC20,
     label: 'ERC20',

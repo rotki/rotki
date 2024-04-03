@@ -3,18 +3,38 @@ import {
   type Wrapper,
   mount,
 } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
+import { type Pinia, createPinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import flushPromises from 'flush-promises';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import OnlineHistoryEventForm from '@/components/history/events/forms/OnlineHistoryEventForm.vue';
 import VAutocompleteStub from '../../../stubs/VAutocomplete';
 import VComboboxStub from '../../../stubs/VCombobox';
+import type { AssetMap } from '@/types/asset';
 import type { OnlineHistoryEvent } from '@/types/history/events';
+
+vi.mock('@/store/balances/prices', () => ({
+  useBalancePricesStore: vi.fn().mockReturnValue({
+    getHistoricPrice: vi.fn(),
+  }),
+}));
 
 describe('onlineHistoryEventForm.vue', () => {
   setupDayjs();
   let wrapper: Wrapper<OnlineHistoryEventForm>;
+  let pinia: Pinia;
+
+  const asset = {
+    name: 'Ethereum',
+    symbol: 'ETH',
+    assetType: 'own chain',
+    isCustomAsset: false,
+  };
+
+  const mapping: AssetMap = {
+    assetCollections: {},
+    assets: { [asset.symbol]: asset },
+  };
 
   const groupHeader: OnlineHistoryEvent = {
     identifier: 449,
@@ -23,7 +43,7 @@ describe('onlineHistoryEventForm.vue', () => {
     sequenceIndex: 20,
     timestamp: 1696741486185,
     location: 'kraken',
-    asset: 'ETH',
+    asset: asset.symbol,
     balance: {
       amount: bigNumberify(10),
       usdValue: bigNumberify(40),
@@ -34,10 +54,16 @@ describe('onlineHistoryEventForm.vue', () => {
     notes: 'History event notes',
   };
 
+  beforeEach(() => {
+    vi.useFakeTimers();
+    pinia = createPinia();
+    setActivePinia(pinia);
+    vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
+    vi.mocked(useBalancePricesStore().getHistoricPrice).mockResolvedValue(One);
+  });
+
   const createWrapper = (options: ThisTypedMountOptions<any> = {}) => {
     const vuetify = new Vuetify();
-    const pinia = createPinia();
-    setActivePinia(pinia);
     return mount(OnlineHistoryEventForm, {
       pinia,
       vuetify,
@@ -73,17 +99,13 @@ describe('onlineHistoryEventForm.vue', () => {
           wrapper.find('[data-cy=sequenceIndex] input')
             .element as HTMLInputElement
         ).value,
-      ).toBe('0');
+      ).toBe('');
     });
 
     it('`groupHeader` and `nextSequence` are passed', async () => {
-      wrapper = createWrapper({
-        propsData: {
-          groupHeader,
-          nextSequence: '10',
-        },
-      });
+      wrapper = createWrapper();
       await wrapper.vm.$nextTick();
+      await wrapper.setProps({ groupHeader, nextSequence: '10' });
 
       expect(
         (
@@ -120,14 +142,9 @@ describe('onlineHistoryEventForm.vue', () => {
     });
 
     it('`groupHeader`, `editableItem`, and `nextSequence` are passed', async () => {
-      wrapper = createWrapper({
-        propsData: {
-          groupHeader,
-          editableItem: groupHeader,
-          nextSequence: '10',
-        },
-      });
+      wrapper = createWrapper();
       await wrapper.vm.$nextTick();
+      await wrapper.setProps({ groupHeader, editableItem: groupHeader, nextSequence: '10' });
 
       expect(
         (
