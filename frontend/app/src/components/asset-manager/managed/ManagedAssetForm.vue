@@ -4,13 +4,12 @@ import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { omit } from 'lodash-es';
 import Fragment from '@/components/helper/Fragment';
 import { toSentenceCase } from '@/utils/text';
-import { type EvmTokenData, evmTokenKindsData } from '@/types/blockchain/chains';
+import { evmTokenKindsData } from '@/types/blockchain/chains';
 import { CUSTOM_ASSET, EVM_TOKEN } from '@/types/asset';
 import { ApiValidationError } from '@/types/api/errors';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 import { toMessages } from '@/utils/validation';
 import { externalLinks } from '@/data/external-links';
-import type { EvmChainEntry } from '@/types/api/chains';
 import type { SelectOption, SelectOptions } from '@/types/common';
 import type {
   EvmTokenKind,
@@ -64,21 +63,6 @@ const errors = ref<Record<string, string[]>>({});
 const isEvmToken = computed<boolean>(() => get(assetType) === EVM_TOKEN);
 
 const { allEvmChains } = useSupportedChains();
-
-const selectedAsetType = computed<SelectOption | undefined>({
-  get: () => !get(assetType) ? undefined : ({ key: get(assetType), label: toSentenceCase(get(assetType)) }),
-  set: value => set(assetType, value?.key),
-});
-
-const selectedEvmChain = computed<EvmChainEntry | undefined>({
-  get: () => get(allEvmChains).find(({ name }: EvmChainEntry) => name === get(evmChain)),
-  set: value => set(evmChain, value?.name),
-});
-
-const selectedTokenKind = computed<EvmTokenData | undefined>({
-  get: () => get(evmTokenKindsData).find(({ identifier }) => identifier === get(tokenKind)),
-  set: value => set(tokenKind, value?.identifier),
-});
 
 const { setMessage } = useMessageStore();
 
@@ -375,7 +359,7 @@ setSubmitFunc(save);
     <div class="flex flex-col gap-2">
       <div data-cy="type-select">
         <RuiMenuSelect
-          v-model="selectedAsetType"
+          v-model="assetType"
           :label="t('asset_form.labels.asset_type')"
           :options="types"
           :disabled="types.length === 1 || !!editableItem"
@@ -387,6 +371,7 @@ setSubmitFunc(save);
           full-width
           float-label
           show-details
+          return-primitive
         />
       </div>
 
@@ -396,7 +381,7 @@ setSubmitFunc(save);
       >
         <div data-cy="chain-select">
           <RuiMenuSelect
-            v-model="selectedEvmChain"
+            v-model="evmChain"
             :label="t('asset_form.labels.chain')"
             :options="allEvmChains"
             :disabled="!!editableItem"
@@ -407,12 +392,13 @@ setSubmitFunc(save);
             full-width
             float-label
             show-details
+            return-primitive
           />
         </div>
 
         <div data-cy="token-select">
           <RuiMenuSelect
-            v-model="selectedTokenKind"
+            v-model="tokenKind"
             :label="t('asset_form.labels.token_kind')"
             :options="evmTokenKindsData"
             :disabled="!!editableItem"
@@ -423,6 +409,7 @@ setSubmitFunc(save);
             full-width
             float-label
             show-details
+            return-primitive
           />
         </div>
       </div>

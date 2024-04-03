@@ -3,7 +3,7 @@ import { each } from 'lodash-es';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
-import type { SelectOption, SelectOptions } from '@/types/common';
+import type { SelectOptions } from '@/types/common';
 import type {
   AddressBookPayload,
 } from '@/types/eth-names';
@@ -44,11 +44,6 @@ const locations = computed<SelectOptions>(() => [
   { label: t('address_book.hint.global'), key: 'global' },
   { label: t('address_book.hint.private'), key: 'private' },
 ]);
-
-const selectedLocation = computed<SelectOption | undefined>({
-  get: () => get(locations).find(({ key }) => key === get(location)),
-  set: (value?: SelectOption) => set(location, value?.key),
-});
 
 const rules = {
   blockchain: {
@@ -109,7 +104,7 @@ onMounted(fetchNames);
 <template>
   <form>
     <RuiMenuSelect
-      v-model="selectedLocation"
+      v-model="location"
       :label="t('common.location')"
       class="mb-6"
       :options="locations"
@@ -118,6 +113,7 @@ onMounted(fetchNames);
       text-attr="label"
       full-width
       float-label
+      return-primitive
       variant="outlined"
     />
     <RuiSwitch
