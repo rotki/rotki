@@ -113,7 +113,6 @@ onMounted(fetchNames);
       text-attr="label"
       full-width
       float-label
-      return-primitive
       variant="outlined"
     />
     <RuiSwitch

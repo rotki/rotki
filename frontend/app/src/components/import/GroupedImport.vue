@@ -5,112 +5,112 @@ const { t } = useI18n();
 
 const sources = computed<ImportSource[]>(() => [
   {
-    identifier: 'cointracking.info',
-    name: t('import_data.cointracking.name'),
+    key: 'cointracking.info',
+    label: t('import_data.cointracking.name'),
     logo: './assets/images/protocols/cointracking.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/CointrackingImport.vue'),
     ),
   },
   {
-    identifier: 'cryptocom',
-    name: t('import_data.cryptocom.name'),
+    key: 'cryptocom',
+    label: t('import_data.cryptocom.name'),
     logo: './assets/images/protocols/crypto_com.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/CryptoComImport.vue'),
     ),
   },
   {
-    identifier: 'blockfi',
-    name: t('import_data.blockfi.name'),
+    key: 'blockfi',
+    label: t('import_data.blockfi.name'),
     logo: './assets/images/protocols/blockfi.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/BlockFiImport.vue'),
     ),
   },
   {
-    identifier: 'nexo',
-    name: t('import_data.nexo.name'),
+    key: 'nexo',
+    label: t('import_data.nexo.name'),
     logo: './assets/images/protocols/nexo.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/NexoImport.vue'),
     ),
   },
   {
-    identifier: 'shapeshift-trades',
-    name: t('import_data.shapeshift.name'),
+    key: 'shapeshift-trades',
+    label: t('import_data.shapeshift.name'),
     logo: './assets/images/protocols/shapeshift.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/ShapeshiftImport.vue'),
     ),
   },
   {
-    identifier: 'uphold',
-    name: t('import_data.uphold.name'),
+    key: 'uphold',
+    label: t('import_data.uphold.name'),
     logo: './assets/images/protocols/uphold.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/UpholdImport.vue'),
     ),
   },
   {
-    identifier: 'bitmex',
-    name: t('import_data.bitmex.name'),
+    key: 'bitmex',
+    label: t('import_data.bitmex.name'),
     logo: './assets/images/protocols/bitmex.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/BitMexImport.vue'),
     ),
   },
   {
-    identifier: 'bittrex',
-    name: t('import_data.bittrex.name'),
+    key: 'bittrex',
+    label: t('import_data.bittrex.name'),
     logo: './assets/images/protocols/bittrex.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/BittrexImport.vue'),
     ),
   },
   {
-    identifier: 'bisq',
-    name: t('import_data.bisq.name'),
+    key: 'bisq',
+    label: t('import_data.bisq.name'),
     logo: './assets/images/protocols/bisq.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/BisqImport.vue'),
     ),
   },
   {
-    identifier: 'binance',
-    name: t('import_data.binance.name'),
+    key: 'binance',
+    label: t('import_data.binance.name'),
     logo: './assets/images/protocols/binance.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/BinanceImport.vue'),
     ),
   },
   {
-    identifier: 'bitcoin_tax',
-    name: t('import_data.bitcoin_tax.name'),
+    key: 'bitcoin_tax',
+    label: t('import_data.bitcoin_tax.name'),
     logo: './assets/images/protocols/bitcointax.png',
     form: defineAsyncComponent(
       () => import('@/components/import/BitcoinImport.vue'),
     ),
   },
   {
-    identifier: 'bitstamp',
-    name: t('import_data.bitstamp.name'),
+    key: 'bitstamp',
+    label: t('import_data.bitstamp.name'),
     logo: './assets/images/protocols/bitstamp.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/BitstampImport.vue'),
     ),
   },
   {
-    identifier: 'kucoin',
-    name: t('import_data.kucoin.name'),
+    key: 'kucoin',
+    label: t('import_data.kucoin.name'),
     logo: './assets/images/protocols/kucoin.svg',
     form: defineAsyncComponent(
       () => import('@/components/import/KucoinImport.vue'),
     ),
   },
   {
-    identifier: 'custom',
-    name: t('import_data.custom.name'),
+    key: 'custom',
+    label: t('import_data.custom.name'),
     icon: 'file-text-line',
     form: defineAsyncComponent(
       () => import('@/components/import/CustomImport.vue'),
@@ -147,8 +147,6 @@ const [DefineIcon, ReuseIcon] = createReusableTemplate();
         :label="t('import_data.select_source.title')"
         :append-width="1.75"
         :options="sources"
-        key-attr="identifier"
-        text-attr="name"
         full-width
         float-label
         variant="outlined"

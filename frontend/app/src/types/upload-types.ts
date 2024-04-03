@@ -26,8 +26,8 @@ export const SOURCES = [
 export type ImportSourceType = (typeof SOURCES)[number];
 
 export interface ImportSource {
-  identifier: string;
-  name: string;
+  key: string;
+  label: string;
   logo?: string;
   icon?: string;
   form: AsyncComponent;

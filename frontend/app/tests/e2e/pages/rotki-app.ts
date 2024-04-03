@@ -113,11 +113,11 @@ export class RotkiApp {
   togglePrivacyMenu(show?: boolean) {
     cy.get('[data-cy=privacy-menu]').as('menu');
     if (show) {
-      cy.get('@menu').click();
+      cy.get('@menu').trigger('click');
       cy.get('.privacy-menu-content').should('exist');
     }
     else {
-      cy.get('@menu').click({ force: true });
+      cy.get('@menu').trigger('click');
       cy.get('.privacy-menu-content').should('not.exist');
     }
   }

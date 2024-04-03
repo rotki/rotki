@@ -80,8 +80,8 @@ export class AssetsManagerPage {
     cy.get('[data-cy=status-filter]').click();
     cy.get('[data-cy=asset-filter-menu]').should('exist');
     cy.get('[data-cy=asset-filter-none]').scrollIntoView();
-    cy.get('[data-cy=asset-filter-none]').click();
-    cy.get('[data-cy=status-filter]').click({ force: true });
+    cy.get('[data-cy=asset-filter-none]').trigger('click');
+    cy.get('[data-cy=status-filter]').trigger('click');
     cy.get('[data-cy=asset-filter-menu]').should('not.exist');
   }
 
@@ -171,7 +171,7 @@ export class AssetsManagerPage {
     cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').as('submitButton');
 
     // Frontend validation for address
-    cy.get('@submitButton').click({ force: true });
+    cy.get('@submitButton').trigger('click');
 
     cy.get('[data-cy=address-input] .details').as('addressMessage');
     cy.get('@addressMessage')
