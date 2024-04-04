@@ -108,7 +108,7 @@ export const useSupportedChains = createSharedComposable(() => {
     return (
       [...get(evmChainsData), ...get(substrateChainsData), ...get(evmLikeChainsData)].find(
         ({ id }) => id === blockchain,
-      )?.nativeToken || blockchain
+      )?.nativeToken || blockchain.toUpperCase()
     );
   };
 
@@ -136,14 +136,12 @@ export const useSupportedChains = createSharedComposable(() => {
     return `./assets/images/protocols/${image}`;
   });
 
-  const txChainsToLocation = computed(() =>
-    get(txChains).map((item) => {
-      if ('evmChainName' in item)
-        return toHumanReadable(item.evmChainName);
+  const txChainsToLocation = useArrayMap(txChains, (item) => {
+    if ('evmChainName' in item)
+      return toHumanReadable(item.evmChainName);
 
-      return toHumanReadable(item.id);
-    }),
-  );
+    return toHumanReadable(item.id);
+  });
 
   return {
     allEvmChains,

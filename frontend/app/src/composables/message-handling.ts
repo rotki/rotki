@@ -48,7 +48,7 @@ export function useMessageHandling() {
     setTxQueryStatus(data);
   };
 
-  const handleEvmUnDecodedTransaction = (
+  const handleUnDecodedTransaction = (
     data: EvmUnDecodedTransactionsData,
   ): void => {
     setUnDecodedTransactionsStatus(data);
@@ -237,7 +237,7 @@ export function useMessageHandling() {
       handleEvmTransactionsStatus(message.data);
     }
     else if (type === SocketMessageType.EVM_UNDECODED_TRANSACTIONS) {
-      handleEvmUnDecodedTransaction(message.data);
+      handleUnDecodedTransaction(message.data);
     }
     else if (type === SocketMessageType.HISTORY_EVENTS_STATUS) {
       handleHistoryEventsStatus(message.data);
@@ -299,7 +299,7 @@ export function useMessageHandling() {
       else if (object.type === SocketMessageType.EVM_TRANSACTION_STATUS)
         handleEvmTransactionsStatus(object);
       else if (object.type === SocketMessageType.EVM_UNDECODED_TRANSACTIONS)
-        handleEvmUnDecodedTransaction(object);
+        handleUnDecodedTransaction(object);
       else if (object.type === SocketMessageType.DB_UPGRADE_STATUS)
         updateDbUpgradeStatus(object);
       else if (object.type === SocketMessageType.DATA_MIGRATION_STATUS)

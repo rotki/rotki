@@ -17,12 +17,12 @@ const emit = defineEmits<{
 }>();
 
 const { isTaskRunning } = useTaskStore();
-const fetching = isTaskRunning(TaskType.EVM_UNDECODED_EVENTS);
-const eventTaskLoading = isTaskRunning(TaskType.EVM_EVENTS_DECODING);
-const partialEventTaskLoading = isTaskRunning(TaskType.EVM_EVENTS_DECODING, {
+const fetching = isTaskRunning(TaskType.FETCH_UNDECODED_EVENTS);
+const eventTaskLoading = isTaskRunning(TaskType.EVENTS_ENCODING);
+const partialEventTaskLoading = isTaskRunning(TaskType.EVENTS_ENCODING, {
   all: false,
 });
-const allEventTaskLoading = isTaskRunning(TaskType.EVM_EVENTS_DECODING, {
+const allEventTaskLoading = isTaskRunning(TaskType.EVENTS_ENCODING, {
   all: true,
 });
 

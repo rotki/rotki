@@ -541,9 +541,9 @@ watch(
 const premium = usePremium();
 const { isLoading: isSectionLoading } = useStatusStore();
 const sectionLoading = isSectionLoading(Section.HISTORY_EVENT);
-const eventTaskLoading = isTaskRunning(TaskType.EVM_EVENTS_DECODING);
+const eventTaskLoading = isTaskRunning(TaskType.EVENTS_ENCODING);
 const onlineHistoryEventsLoading = isTaskRunning(TaskType.QUERY_ONLINE_EVENTS);
-const isTransactionsLoading = isTaskRunning(TaskType.EVM_TX);
+const isTransactionsLoading = isTaskRunning(TaskType.TX);
 
 const { isAllFinished: isQueryingTxsFinished } = toRefs(
   useTxQueryStatusStore(),
@@ -577,12 +577,11 @@ const processing = logicOr(
 );
 
 async function intervalFetch() {
-  await fetchDataAndLocations();
-  startPromise(Promise.allSettled([fetchUnDecodedEventsBreakdown(TransactionChainType.EVM), fetchUnDecodedEventsBreakdown(TransactionChainType.EVMLIKE)]));
+  await Promise.allSettled([fetchDataAndLocations, fetchUnDecodedEventsBreakdown(TransactionChainType.EVM), fetchUnDecodedEventsBreakdown(TransactionChainType.EVMLIKE)]);
 }
 
 const { pause, resume, isActive } = useIntervalFn(() => {
-  intervalFetch();
+  startPromise(intervalFetch());
 }, 20000);
 
 watch(shouldFetchEventsRegularly, (shouldFetchEventsRegularly) => {
@@ -649,7 +648,7 @@ async function refresh(userInitiated = false) {
     = entryTypesVal.length > 0
     && !entryTypesVal.includes(HistoryEventEntryType.EVM_EVENT);
   await refreshTransactions(get(onlyChains), disableEvmEvents, userInitiated);
-  await intervalFetch();
+  startPromise(intervalFetch());
 }
 
 onUnmounted(() => {
