@@ -560,7 +560,7 @@ class EvmChainLikeNameField(fields.Field):
             **_kwargs: Any,
     ) -> SupportedBlockchain:
         try:
-            chain = SupportedBlockchain.deserialize_from_name(value)
+            chain = SupportedBlockchain.deserialize(value)
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
 

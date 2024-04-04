@@ -431,14 +431,6 @@ class SupportedBlockchain(SerializableEnumValueMixin):
     SCROLL = 'SCROLL'
     ZKSYNC_LITE = 'ZKSYNC_LITE'
 
-    @classmethod
-    def deserialize_from_name(cls: type['SupportedBlockchain'], value: str) -> 'SupportedBlockchain':  # noqa: E501
-        """Deserialize a string to a suppported blockchain"""
-        try:
-            return getattr(cls, value.upper())
-        except AttributeError as e:
-            raise DeserializationError(f'Failed to deserialize {cls.__name__} value {value}') from e  # noqa: E501
-
     def __str__(self) -> str:
         return SUPPORTED_BLOCKCHAIN_NAMES_MAPPING.get(self, super().__str__())
 
