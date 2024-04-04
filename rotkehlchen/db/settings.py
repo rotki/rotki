@@ -330,7 +330,7 @@ def db_settings_from_dict(
             specified_args[key] = [ExchangeLocationID.deserialize(x) for x in values]
         elif key == 'evmchains_to_skip_detection':
             values = json.loads(value)
-            specified_args[key] = [SupportedBlockchain.deserialize_from_name(x) for x in values]
+            specified_args[key] = [SupportedBlockchain.deserialize(x) for x in values]
         elif key == 'cost_basis_method':
             specified_args[key] = CostBasisMethod.deserialize(value)
         elif key == 'address_name_priority':
