@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type {
   EvmTransactionQueryData,
-  EvmUndecodedTransactionsData,
+  EvmUnDecodedTransactionsData,
   HistoryEventsQueryData,
 } from '@/types/websocket-messages';
 import type { Blockchain } from '@rotki/common/lib/blockchain';
@@ -14,7 +14,7 @@ const props = withDefaults(
     includeOnlineEvents: boolean;
     onlyChains?: Blockchain[];
     locations?: string[];
-    unDecoded: EvmUndecodedTransactionsData[];
+    unDecoded: EvmUnDecodedTransactionsData[];
     decoding: boolean;
     currentAction: 'decode' | 'query';
   }>(),

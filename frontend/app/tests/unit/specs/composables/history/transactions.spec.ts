@@ -11,10 +11,10 @@ vi.mock('@/store/tasks', () => ({
 vi.mock('@/composables/api/history/events', () => ({
   useHistoryEventsApi: vi.fn().mockReturnValue({
     addTransactionHash: vi.fn(),
-    fetchEvmTransactionsTask: vi.fn().mockResolvedValue({}),
+    fetchTransactionsTask: vi.fn().mockResolvedValue({}),
     deleteHistoryEvent: vi.fn(),
     decodeHistoryEvents: vi.fn().mockResolvedValue({}),
-    reDecodeMissingTransactionEvents: vi.fn(),
+    reDecodeMissingEvents: vi.fn(),
     addHistoryEvent: vi.fn(),
     editHistoryEvent: vi.fn(),
     queryOnlineHistoryEvents: vi.fn().mockResolvedValue({}),

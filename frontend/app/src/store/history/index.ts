@@ -1,4 +1,4 @@
-import type { EvmUndecodedTransactionsData } from '@/types/websocket-messages';
+import type { EvmUnDecodedTransactionsData } from '@/types/websocket-messages';
 
 export const useHistoryStore = defineStore('history', () => {
   const { notify } = useNotificationsStore();
@@ -7,19 +7,19 @@ export const useHistoryStore = defineStore('history', () => {
   const { fetchAssociatedLocations: fetchAssociatedLocationsApi }
     = useHistoryApi();
 
-  const evmUndecodedTransactionsStatus: Ref<
-    Record<string, EvmUndecodedTransactionsData>
+  const unDecodedTransactionsStatus: Ref<
+    Record<string, EvmUnDecodedTransactionsData>
   > = ref({});
 
-  const setEvmUndecodedTransactions = (data: EvmUndecodedTransactionsData) => {
-    set(evmUndecodedTransactionsStatus, {
-      ...get(evmUndecodedTransactionsStatus),
+  const setUnDecodedTransactionsStatus = (data: EvmUnDecodedTransactionsData) => {
+    set(unDecodedTransactionsStatus, {
+      ...get(unDecodedTransactionsStatus),
       [data.evmChain]: data,
     });
   };
 
-  const resetEvmUndecodedTransactionsStatus = () => {
-    set(evmUndecodedTransactionsStatus, {});
+  const resetUnDecodedTransactionsStatus = () => {
+    set(unDecodedTransactionsStatus, {});
   };
 
   const fetchAssociatedLocations = async () => {
@@ -44,8 +44,8 @@ export const useHistoryStore = defineStore('history', () => {
   return {
     associatedLocations,
     fetchAssociatedLocations,
-    evmUndecodedTransactionsStatus,
-    setEvmUndecodedTransactions,
-    resetEvmUndecodedTransactionsStatus,
+    unDecodedTransactionsStatus,
+    setUnDecodedTransactionsStatus,
+    resetUnDecodedTransactionsStatus,
   };
 });

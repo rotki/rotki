@@ -170,8 +170,8 @@ export function useBlockchainBalances() {
       );
 
       const assets: AssetBalances = {};
-      for (const assets of Object.values(loopringBalances)) {
-        for (const [asset, value] of Object.entries(assets)) {
+      for (const loopringAssets of Object.values(loopringBalances)) {
+        for (const [asset, value] of Object.entries(loopringAssets)) {
           const identifier = getAssociatedAssetIdentifier(asset);
           const associatedAsset: string = get(identifier);
           const ownedAsset = assets[associatedAsset];

@@ -823,11 +823,11 @@
     },
     "transactions_redecode_missing": {
       "error": {
-        "description": "Failed to retrieve missing events from transactions for address {address} ({evmChain}): {error}",
+        "description": "Failed to retrieve missing events from transactions for {chain} chain: {error}",
         "title": "Retrieving missing events from transactions"
       },
       "task": {
-        "description": "Retrieving transactions events for address: {address} ({evmChain})",
+        "description": "Retrieving transactions events for {chain} chain",
         "title": "Evm Transaction Missing Events Retrieval"
       }
     },
@@ -1264,20 +1264,8 @@
   "blockchain_balances": {
     "add_account": "Add Account",
     "balances": {
-      "arbitrum_one": "Arbitrum One balances",
-      "avax": "Avalanche balances",
-      "base": "Base balances",
-      "bch": "Bitcoin Cash balances",
-      "btc": "Bitcoin balances",
-      "dot": "Polkadot balances",
-      "eth": "Ethereum balances",
-      "eth2": "ETH balances",
-      "ksm": "Kusama balances",
-      "loopring": "Loopring balances",
-      "optimism": "Optimism balances",
-      "polygon_pos": "Polygon PoS balances",
-      "gnosis": "Gnosis balances",
-      "scroll": "Scroll balances"
+      "common": "{chain} balances",
+      "eth2": "ETH staking"
     },
     "form_dialog": {
       "add_title": "Add blockchain account",

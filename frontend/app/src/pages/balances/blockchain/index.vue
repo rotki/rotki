@@ -19,20 +19,8 @@ const busy = computed<Busy>(() => Object.fromEntries(
   get(supportedChains).map(chain => ([chain.id, isAccountOperationRunning(chain.id)])),
 ));
 
-const titles = computed<Record<string, string>>(() => ({
-  [Blockchain.ETH]: t('blockchain_balances.balances.eth'),
+const customTitles = computed<Record<string, string>>(() => ({
   [Blockchain.ETH2]: t('blockchain_balances.balances.eth2'),
-  [Blockchain.BTC]: t('blockchain_balances.balances.btc'),
-  [Blockchain.BCH]: t('blockchain_balances.balances.bch'),
-  [Blockchain.KSM]: t('blockchain_balances.balances.ksm'),
-  [Blockchain.DOT]: t('blockchain_balances.balances.dot'),
-  [Blockchain.AVAX]: t('blockchain_balances.balances.avax'),
-  [Blockchain.OPTIMISM]: t('blockchain_balances.balances.optimism'),
-  [Blockchain.POLYGON_POS]: t('blockchain_balances.balances.polygon_pos'),
-  [Blockchain.ARBITRUM_ONE]: t('blockchain_balances.balances.arbitrum_one'),
-  [Blockchain.BASE]: t('blockchain_balances.balances.base'),
-  [Blockchain.GNOSIS]: t('blockchain_balances.balances.gnosis'),
-  [Blockchain.SCROLL]: t('blockchain_balances.balances.scroll'),
 }));
 
 const accounts = computed<Record<string, BlockchainAccountWithBalance[]>>(() => Object.fromEntries(
@@ -48,8 +36,13 @@ const showDetectEvmAccountsButton: Readonly<Ref<boolean>> = computedEager(
 
 const loopringAccounts = computed<BlockchainAccountWithBalance[]>(() => getBlockchainAccounts('loopring'));
 
+const { getChainName } = useSupportedChains();
+
 function getTitle(chain: string) {
-  return get(titles)[chain] ?? '';
+  const name = getChainName(chain);
+  const title = get(customTitles)[chain] ?? toSentenceCase(get(name));
+
+  return t('blockchain_balances.balances.common', { chain: title });
 }
 
 onMounted(async () => {
@@ -118,7 +111,7 @@ onMounted(async () => {
       <AccountBalances
         v-if="loopringAccounts.length > 0"
         loopring
-        :title="t('blockchain_balances.balances.loopring')"
+        :title="t('blockchain_balances.balances.common', { chain: 'Loopring' })"
         :blockchain="Blockchain.ETH"
         :balances="loopringAccounts"
       />

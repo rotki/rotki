@@ -9,7 +9,7 @@ import {
   type AccountingRuleConflictData,
   type BalanceSnapshotError,
   type EvmTransactionQueryData,
-  type EvmUndecodedTransactionsData,
+  type EvmUnDecodedTransactionsData,
   type HistoryEventsQueryData,
   MESSAGE_WARNING,
   type MissingApiKey,
@@ -26,7 +26,7 @@ import type { Blockchain } from '@rotki/common/lib/blockchain';
 export function useMessageHandling() {
   const { setQueryStatus: setTxQueryStatus } = useTxQueryStatusStore();
   const { setQueryStatus: setEventsQueryStatus } = useEventsQueryStatusStore();
-  const { setEvmUndecodedTransactions } = useHistoryStore();
+  const { setUnDecodedTransactionsStatus } = useHistoryStore();
   const { updateDataMigrationStatus, updateDbUpgradeStatus } = useSessionAuthStore();
   const { fetchBlockchainBalances } = useBlockchainBalances();
   const notificationsStore = useNotificationsStore();
@@ -48,10 +48,10 @@ export function useMessageHandling() {
     setTxQueryStatus(data);
   };
 
-  const handleEvmUndecodedTransaction = (
-    data: EvmUndecodedTransactionsData,
+  const handleUnDecodedTransaction = (
+    data: EvmUnDecodedTransactionsData,
   ): void => {
-    setEvmUndecodedTransactions(data);
+    setUnDecodedTransactionsStatus(data);
   };
 
   const handleHistoryEventsStatus = (data: HistoryEventsQueryData): void => {
@@ -237,7 +237,7 @@ export function useMessageHandling() {
       handleEvmTransactionsStatus(message.data);
     }
     else if (type === SocketMessageType.EVM_UNDECODED_TRANSACTIONS) {
-      handleEvmUndecodedTransaction(message.data);
+      handleUnDecodedTransaction(message.data);
     }
     else if (type === SocketMessageType.HISTORY_EVENTS_STATUS) {
       handleHistoryEventsStatus(message.data);
@@ -299,7 +299,7 @@ export function useMessageHandling() {
       else if (object.type === SocketMessageType.EVM_TRANSACTION_STATUS)
         handleEvmTransactionsStatus(object);
       else if (object.type === SocketMessageType.EVM_UNDECODED_TRANSACTIONS)
-        handleEvmUndecodedTransaction(object);
+        handleUnDecodedTransaction(object);
       else if (object.type === SocketMessageType.DB_UPGRADE_STATUS)
         updateDbUpgradeStatus(object);
       else if (object.type === SocketMessageType.DATA_MIGRATION_STATUS)

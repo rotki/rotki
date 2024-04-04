@@ -64,6 +64,8 @@ export const useAddressesNamesStore = defineStore(
       if (filteredAddresses.length === 0)
         return;
 
+      let newResult: Record<string, string | null> = {};
+
       if (forceUpdate) {
         const taskType = TaskType.FETCH_ENS_NAMES;
         const { taskId } = await getEnsNamesTask(filteredAddresses);
@@ -75,10 +77,7 @@ export const useAddressesNamesStore = defineStore(
               title: t('ens_names.task.title'),
             },
           );
-          set(ensNames, {
-            ...get(ensNames),
-            ...result,
-          });
+          newResult = result;
         }
         catch (error: any) {
           if (!isTaskCancelled(error)) {
@@ -91,14 +90,16 @@ export const useAddressesNamesStore = defineStore(
         }
       }
       else {
-        const result = await getEnsNames(filteredAddresses);
-
-        set(ensNames, {
-          ...get(ensNames),
-          ...result,
-        });
+        newResult = await getEnsNames(filteredAddresses);
       }
-      resetAddressNamesData(payload);
+
+      const payloadToReset = payload.filter(({ address }) => get(ensNames)[address] !== newResult[address]);
+
+      set(ensNames, {
+        ...get(ensNames),
+        ...newResult,
+      });
+      resetAddressNamesData(payloadToReset);
     };
 
     const ensNameSelector = (address: MaybeRef<string>) =>

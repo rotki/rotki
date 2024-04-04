@@ -102,15 +102,10 @@ const base = computed<string>(() => {
     const defaultExplorer: ExplorerUrls = explorerUrls[selectedChain];
     const linkType = get(type);
 
-    if (selectedChain === 'zksync') {
-      base = defaultExplorer[linkType];
-    }
-    else {
-      const explorerSetting = get(explorers)[selectedChain];
+    const explorerSetting = get(explorers)[selectedChain];
 
-      if (explorerSetting || defaultExplorer)
-        base = explorerSetting?.[linkType] ?? defaultExplorer[linkType];
-    }
+    if (explorerSetting || defaultExplorer)
+      base = explorerSetting?.[linkType] ?? defaultExplorer[linkType];
   }
 
   if (!base)
