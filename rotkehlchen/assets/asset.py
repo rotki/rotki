@@ -5,6 +5,8 @@ from functools import total_ordering
 from typing import Any, NamedTuple, Optional, Union
 
 from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
+from rotkehlchen.chain.evm.decoding.aave.v3.constants import DEBT_TOKEN_SYMBOL_REGEX
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.constants.resolver import ChainID, evm_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
@@ -565,6 +567,13 @@ class EvmToken(CryptoAsset):
 
     def get_decimals(self) -> int:
         return 18 if self.decimals is None else self.decimals
+
+    def is_liability(self) -> bool:
+        """Returns True if the token is a liability token, False if it's an asset token"""
+        return (
+            self.protocol == CPT_AAVE_V3 and
+            DEBT_TOKEN_SYMBOL_REGEX.match(self.symbol) is not None
+        )
 
 
 class Nft(EvmToken):

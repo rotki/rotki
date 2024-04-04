@@ -881,6 +881,8 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 )
                 if dsr_proxy_append is True:
                     balances[account].assets[token] += balance
+                elif token.is_liability():
+                    balances[account].liabilities[token] = balance
                 else:
                     balances[account].assets[token] = balance
 

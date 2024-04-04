@@ -1,16 +1,20 @@
+from collections import defaultdict
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
 
-from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.arbitrum_one.modules.gmx.balances import GmxBalances
 from rotkehlchen.chain.ethereum.modules.convex.balances import ConvexBalances
 from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
 from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBalances
 from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
+from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
+from rotkehlchen.chain.evm.tokens import TokenBalancesType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
 from rotkehlchen.constants.assets import A_CVX, A_GLM, A_GRT, A_STETH
@@ -19,9 +23,17 @@ from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.arbitrum_one import get_arbitrum_allthatnode
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    ChainID,
+    ChecksumEvmAddress,
+    EvmTokenKind,
+    Price,
+    deserialize_evm_tx_hash,
+)
 
 if TYPE_CHECKING:
+    from collections.abc import Sequence
+    from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -340,5 +352,85 @@ def test_gmx_balances(
         Asset('eip155:42161/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'): Balance(
             amount=FVal('42.896760410410693074'),
             usd_value=FVal('42.939657170821103766867050208907'),
+        ),
+    }
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0xecdED8b1c603cF21299835f1DFBE37f10F2a29Af', '0x8Cbac427B6967d5d84Ec4230081e2763AB3A8C92',
+]])
+def test_aave_v3_balances(blockchain: 'ChainsAggregator') -> None:
+    """Check that Aave v3 positions/liabilities are properly returned in the balances query"""
+    ethereum_manager = blockchain.get_evm_manager(chain_id=ChainID.ETHEREUM)
+    a_eth_usdc = get_or_create_evm_token(
+        userdb=blockchain.database,
+        evm_address=string_to_evm_address('0x98C23E9d8f34FEFb1B7BD6a91B7FF122F4e16F5c'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+        symbol='aEthUSDC',
+        protocol=CPT_AAVE_V3,
+    )
+    stable_debt_eth_usdc = get_or_create_evm_token(
+        userdb=blockchain.database,
+        evm_address=string_to_evm_address('0xB0fe3D292f4bd50De902Ba5bDF120Ad66E9d7a39'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+        symbol='stableDebtEthUSDC',
+        protocol=CPT_AAVE_V3,
+    )
+    variable_debt_eth_usdc = get_or_create_evm_token(
+        userdb=blockchain.database,
+        evm_address=string_to_evm_address('0x72E95b8931767C79bA4EeE721354d6E99a61D004'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+        symbol='variableDebtEthUSDC',
+        protocol=CPT_AAVE_V3,
+    )
+
+    def mock_new_balances(addresses: 'Sequence[ChecksumEvmAddress]') -> TokenBalancesType:
+        return {
+            addresses[0]: {a_eth_usdc: FVal(123), stable_debt_eth_usdc: FVal(456)},
+            addresses[1]: {stable_debt_eth_usdc: FVal(456), variable_debt_eth_usdc: FVal(789)},
+        }, {
+            a_eth_usdc: Price(FVal(0.1)),
+            stable_debt_eth_usdc: Price(FVal(10)),
+            variable_debt_eth_usdc: Price(FVal(100)),
+        }
+
+    balances: defaultdict['ChecksumEvmAddress', 'BalanceSheet'] = defaultdict(BalanceSheet)
+    with patch.object(
+        target=ethereum_manager.tokens,
+        attribute='query_tokens_for_addresses',
+        new=mock_new_balances,
+    ):
+        blockchain.query_evm_tokens(manager=ethereum_manager, balances=balances)
+
+    assert balances == {  # Debt Tokens are moved in liabilities
+        blockchain.accounts.eth[0]: BalanceSheet(
+            assets=defaultdict(Balance, {
+                a_eth_usdc: Balance(
+                    amount=FVal(123),
+                    usd_value=FVal(12.3),
+                ),
+            }),
+            liabilities=defaultdict(Balance, {
+                stable_debt_eth_usdc: Balance(
+                    amount=FVal(456),
+                    usd_value=FVal(4560),
+                ),
+            }),
+        ),
+        blockchain.accounts.eth[1]: BalanceSheet(
+            liabilities=defaultdict(Balance, {
+                stable_debt_eth_usdc: Balance(
+                    amount=FVal(456),
+                    usd_value=FVal(4560),
+                ),
+                variable_debt_eth_usdc: Balance(
+                    amount=FVal(789),
+                    usd_value=FVal(78900),
+                ),
+            }),
         ),
     }
