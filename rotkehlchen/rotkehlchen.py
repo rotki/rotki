@@ -898,6 +898,7 @@ class Rotkehlchen:
         balances: dict[str, dict[Asset, Balance]] = {}
         problem_free = True
         for exchange in self.exchange_manager.iterate_exchanges():
+            log.debug(f'Querying balances for exchange {exchange.name} - {exchange.location}')
             exchange_balances, error_msg = exchange.query_balances(ignore_cache=ignore_cache)
             # If we got an error, disregard that exchange but make sure we don't save data
             if not isinstance(exchange_balances, dict):

@@ -425,6 +425,7 @@ class Inquirer:
         except RecursionError:
             # We have to catch recursion error only at the top level since otherwise we get to
             # recursion level MAX - 1, and after calling some other function may run into it again.  # noqa: E501
+            log.warning(f'Reached recursion error in price inquirer for {from_asset} - {to_asset} with {coming_from_latest_price=}')  # noqa: E501
             if coming_from_latest_price is True:
                 raise
 

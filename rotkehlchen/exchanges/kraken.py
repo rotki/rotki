@@ -400,6 +400,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 return None, msg
 
         assets_balance: defaultdict[AssetWithOracles, Balance] = defaultdict(Balance)
+        log.debug(f'Found {len(kraken_balances)} entries in kraken balances for {self.name}')
         for kraken_name, amount_ in kraken_balances.items():
             try:
                 amount = deserialize_asset_amount(amount_)
@@ -428,10 +429,11 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 continue
 
             balance = Balance(amount=amount)
+            log.debug(f'Querying price for {our_asset} found in kraken balances at {self.name}')
             if our_asset.identifier != 'KFEE':
                 # There is no price value for KFEE
                 try:
-                    usd_price = Inquirer().find_usd_price(our_asset)
+                    usd_price = Inquirer.find_usd_price(our_asset)
                 except RemoteError as e:
                     self.msg_aggregator.add_error(
                         f'Error processing kraken balance entry due to inability to '
@@ -449,6 +451,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                 usd_value=balance.usd_value,
             )
 
+        log.debug(f'Finished querying kraken balances for {self.name}')
         return dict(assets_balance), ''
 
     def query_until_finished(
