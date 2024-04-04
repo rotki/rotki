@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`-` rotki will now properly decode the transactions for bridging to and from Scroll.
+* :feature:`7708` rotki now properly decode WETH transactions on all supported EVM chains with native ETH
 * :feature:`6636` Aave v3 positions and liabilities will now be properly shown in the dashboard.
 * :feature:`7423` Users will be able to sort address book entries by displayed name and address.
 * :feature:`7086` Added support for GMX v1 in Arbitrum.

@@ -21,6 +21,8 @@ from rotkehlchen.chain.evm.decoding.oneinch.v5.decoder import Oneinchv5Decoder
 from rotkehlchen.chain.evm.decoding.safe.decoder import SafemultisigDecoder
 from rotkehlchen.chain.evm.decoding.socket_bridge.decoder import SocketBridgeDecoder
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.decoding.weth.constants import CHAINS_WITHOUT_NATIVE_ETH
+from rotkehlchen.chain.evm.decoding.weth.decoder import WethDecoder
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.constants import HISTORY_MAPPING_STATE_DECODED
@@ -183,6 +185,14 @@ class EVMTransactionDecoder(ABC):
         self._add_single_decoder(class_name='Safemultisig', decoder_class=SafemultisigDecoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='Oneinchv5', decoder_class=Oneinchv5Decoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='SocketBridgeDecoder', decoder_class=SocketBridgeDecoder, rules=rules)  # noqa: E501
+
+        # Excluding Gnosis and Polygon PoS because they dont have ETH as native token
+        if self.evm_inquirer.chain_id not in CHAINS_WITHOUT_NATIVE_ETH:
+            self._add_single_decoder(
+                class_name='Weth',
+                decoder_class=WethDecoder,
+                rules=rules,
+            )
 
     def _add_single_decoder(
             self,

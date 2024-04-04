@@ -2,14 +2,24 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.utils import get_or_create_evm_token
-from rotkehlchen.chain.ethereum.modules.weth.constants import CPT_WETH
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V3
+from rotkehlchen.chain.evm.decoding.weth.constants import CPT_WETH
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.gnosis.modules.wxdai.constants import CPT_WXDAI
 from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.assets import A_ETH, A_USDC, A_WETH, A_WXDAI, A_XDAI
+from rotkehlchen.constants.assets import (
+    A_ETH,
+    A_USDC,
+    A_WETH,
+    A_WETH_ARB,
+    A_WETH_BASE,
+    A_WETH_OPT,
+    A_WETH_SCROLL,
+    A_WXDAI,
+    A_XDAI,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -464,4 +474,460 @@ def test_wxdai_wrap(database, gnosis_inquirer, gnosis_accounts):
         ),
     ]
 
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0xBE6660FBE96B61B72Bf35FFaB40eB2CA886A7f85']])
+def test_weth_withdraw_arbitrum_one(database, arbitrum_one_inquirer):
+    evmhash = deserialize_evm_tx_hash('0xc19c7e1e0af7819b1922a287d034540e8f8dba4e065317d6483d48ac27e727e9')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        database=database,
+        tx_hash=evmhash,
+    )
+    timestamp = TimestampMS(1712238368000)
+    amount, gas_fees = '0.00052', '0.00000108547'
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label='0xBE6660FBE96B61B72Bf35FFaB40eB2CA886A7f85',
+            notes=f'Burned {gas_fees} ETH for gas',
+            counterparty=CPT_GAS,
+        ),
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=A_WETH_ARB,
+            balance=Balance(amount=FVal(amount)),
+            location_label='0xBE6660FBE96B61B72Bf35FFaB40eB2CA886A7f85',
+            notes=f'Unwrap {amount} WETH',
+            counterparty=CPT_WETH,
+            address=string_to_evm_address('0x82aF49447D8a07e3bd95BD0d56f35241523fBab1'),
+        ),
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(amount)),
+            location_label='0xBE6660FBE96B61B72Bf35FFaB40eB2CA886A7f85',
+            notes=f'Receive {amount} ETH',
+            counterparty=CPT_WETH,
+            address=string_to_evm_address('0x82aF49447D8a07e3bd95BD0d56f35241523fBab1'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x7aBAee8F04EFd689961115f7A28bAA2E73Be6703']])
+def test_weth_deposit_arbitrum_one(database, arbitrum_one_inquirer):
+    evmhash = deserialize_evm_tx_hash('0x57cc837c6f3d84c8fa3db8a7405f7244f11d32152159edf5ba79f5a7c34919b8')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        database=database,
+        tx_hash=evmhash,
+    )
+    timestamp = TimestampMS(1712328694000)
+    amount, gas_fees = '0.007767825959188763', '0.000001382891214'
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label='0x7aBAee8F04EFd689961115f7A28bAA2E73Be6703',
+            notes=f'Burned {gas_fees} ETH for gas',
+            counterparty=CPT_GAS,
+        ),
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(amount)),
+            location_label='0x7aBAee8F04EFd689961115f7A28bAA2E73Be6703',
+            notes=f'Wrap {amount} ETH in WETH',
+            counterparty=CPT_WETH,
+            address=string_to_evm_address('0x82aF49447D8a07e3bd95BD0d56f35241523fBab1'),
+        ),
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=A_WETH_ARB,
+            balance=Balance(amount=FVal(amount)),
+            location_label='0x0000000000000000000000000000000000000000',
+            notes=f'Receive {amount} WETH',
+            counterparty=CPT_WETH,
+            address=string_to_evm_address('0x82aF49447D8a07e3bd95BD0d56f35241523fBab1'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('optimism_accounts', [['0x81aa5101D4c376cd6DC031EA62D7b64A9BAE10a0']])
+def test_weth_withdraw_optimism(database, optimism_inquirer):
+    evmhash = deserialize_evm_tx_hash('0x4a6b47e1f622a8ad059bd0723c53f2c71f12e7b105d2ef2ff4dff07ac1f185c0')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        database=database,
+        tx_hash=evmhash,
+    )
+    timestamp = TimestampMS(1712240095000)
+    amount, gas_fees = '0.000518962654328944', '0.000001897927938075'
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label='0x81aa5101D4c376cd6DC031EA62D7b64A9BAE10a0',
+            notes=f'Burned {gas_fees} ETH for gas',
+            counterparty=CPT_GAS,
+        ),
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=A_WETH_OPT,
+            balance=Balance(amount=FVal(amount)),
+            location_label='0x81aa5101D4c376cd6DC031EA62D7b64A9BAE10a0',
+            notes=f'Unwrap {amount} WETH',
+            counterparty=CPT_WETH,
+            address=string_to_evm_address('0x4200000000000000000000000000000000000006'),
+        ),
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(amount)),
+            location_label='0x81aa5101D4c376cd6DC031EA62D7b64A9BAE10a0',
+            notes=f'Receive {amount} ETH',
+            counterparty=CPT_WETH,
+            address=string_to_evm_address('0x4200000000000000000000000000000000000006'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('optimism_accounts', [['0xD6f30247e6a8B8656a8B02Ea37247f5eb939c626']])
+def test_weth_deposit_optimism(database, optimism_inquirer):
+    evmhash = deserialize_evm_tx_hash('0x42074e2228be1716f84888f1993fa62443f591945b21dfbf159a64ae467990c4')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        database=database,
+        tx_hash=evmhash,
+    )
+    timestamp = TimestampMS(1712241853000)
+    amount, gas_fees = '0.0345', '0.000002820767318933'
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label='0xD6f30247e6a8B8656a8B02Ea37247f5eb939c626',
+            notes=f'Burned {gas_fees} ETH for gas',
+            counterparty=CPT_GAS,
+        ),
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(amount)),
+            location_label='0xD6f30247e6a8B8656a8B02Ea37247f5eb939c626',
+            notes=f'Wrap {amount} ETH in WETH',
+            counterparty=CPT_WETH,
+            address=string_to_evm_address('0x4200000000000000000000000000000000000006'),
+        ),
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=A_WETH_OPT,
+            balance=Balance(amount=FVal(amount)),
+            location_label='0xD6f30247e6a8B8656a8B02Ea37247f5eb939c626',
+            notes=f'Receive {amount} WETH',
+            counterparty=CPT_WETH,
+            address=string_to_evm_address('0x4200000000000000000000000000000000000006'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('scroll_accounts', [['0x6247666Ea4C80083035214780978E9EBa4AA6Cf4']])
+def test_weth_withdraw_scroll(database, scroll_inquirer):
+    evmhash = deserialize_evm_tx_hash('0x88f49633073a7667f93eb888ec2151c26f449cc10afca565a15f8df68ee20f82')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=scroll_inquirer,
+        database=database,
+        tx_hash=evmhash,
+    )
+    timestamp = TimestampMS(1712239879000)
+    amount, gas_fees = '0.00211824', '0.0000204875'
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.SCROLL,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label='0x6247666Ea4C80083035214780978E9EBa4AA6Cf4',
+            notes=f'Burned {gas_fees} ETH for gas',
+            counterparty=CPT_GAS,
+        ),
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.SCROLL,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=A_WETH_SCROLL,
+            balance=Balance(amount=FVal(amount)),
+            location_label='0x6247666Ea4C80083035214780978E9EBa4AA6Cf4',
+            notes=f'Unwrap {amount} WETH',
+            counterparty=CPT_WETH,
+            address=string_to_evm_address('0x5300000000000000000000000000000000000004'),
+        ),
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.SCROLL,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(amount)),
+            location_label='0x6247666Ea4C80083035214780978E9EBa4AA6Cf4',
+            notes=f'Receive {amount} ETH',
+            counterparty=CPT_WETH,
+            address=string_to_evm_address('0x5300000000000000000000000000000000000004'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('scroll_accounts', [['0xdFd21F8aA81c5787160F9a4B39357F5FE1c743DC']])
+def test_weth_deposit_scroll(database, scroll_inquirer):
+    evmhash = deserialize_evm_tx_hash('0x1fa6d87801891fcea66a9be2d4fce1c52569c5ce30579fbe7de37eb05bd247f8')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=scroll_inquirer,
+        database=database,
+        tx_hash=evmhash,
+    )
+    timestamp = TimestampMS(1712239897000)
+    amount, gas_fees = '0.135', '0.0000285406'
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.SCROLL,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label='0xdFd21F8aA81c5787160F9a4B39357F5FE1c743DC',
+            notes=f'Burned {gas_fees} ETH for gas',
+            counterparty=CPT_GAS,
+        ),
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.SCROLL,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(0.135)),
+            location_label='0xdFd21F8aA81c5787160F9a4B39357F5FE1c743DC',
+            notes=f'Wrap {amount} ETH in WETH',
+            counterparty=CPT_WETH,
+            address=string_to_evm_address('0x5300000000000000000000000000000000000004'),
+        ),
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.SCROLL,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=A_WETH_SCROLL,
+            balance=Balance(amount=FVal(0.135)),
+            location_label='0x0000000000000000000000000000000000000000',
+            notes=f'Receive {amount} WETH',
+            counterparty=CPT_WETH,
+            address=string_to_evm_address('0x5300000000000000000000000000000000000004'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('base_accounts', [['0x44f29ebE386c409376C66ad268F9Ae595c8C3e76']])
+def test_weth_withdraw_base(database, base_inquirer):
+    evmhash = deserialize_evm_tx_hash('0x8d54608c2f684d880ad40a16cf9b82525c51520798ae8875d543d3338327ddad')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_inquirer,
+        database=database,
+        tx_hash=evmhash,
+    )
+    timestamp = TimestampMS(1712239837000)
+    amount, gas_fees = '0.00022448658511341', '0.000000533995613184'
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label='0x44f29ebE386c409376C66ad268F9Ae595c8C3e76',
+            notes=f'Burned {gas_fees} ETH for gas',
+            counterparty=CPT_GAS,
+        ),
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=A_WETH_BASE,
+            balance=Balance(amount=FVal(amount)),
+            location_label='0x44f29ebE386c409376C66ad268F9Ae595c8C3e76',
+            notes=f'Unwrap {amount} WETH',
+            counterparty=CPT_WETH,
+            address=string_to_evm_address('0x4200000000000000000000000000000000000006'),
+        ),
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(amount)),
+            location_label='0x44f29ebE386c409376C66ad268F9Ae595c8C3e76',
+            notes=f'Receive {amount} ETH',
+            counterparty=CPT_WETH,
+            address=string_to_evm_address('0x4200000000000000000000000000000000000006'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('base_accounts', [['0xf396e7dbb20489D47F2daBfDA013163223B892a0']])
+def test_weth_deposit_base(database, base_inquirer):
+    evmhash = deserialize_evm_tx_hash('0x0d418e4a858ca5faf00c36b685561ca0fdac52ebd10364bf2cb6d7b5969e84e5')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_inquirer,
+        database=database,
+        tx_hash=evmhash,
+    )
+    timestamp = TimestampMS(1712239899000)
+    amount, gas_fees = '1.2', '0.000000775794575663'
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label='0xf396e7dbb20489D47F2daBfDA013163223B892a0',
+            notes=f'Burned {gas_fees} ETH for gas',
+            counterparty=CPT_GAS,
+        ),
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(amount)),
+            location_label='0xf396e7dbb20489D47F2daBfDA013163223B892a0',
+            notes=f'Wrap {amount} ETH in WETH',
+            counterparty=CPT_WETH,
+            address=string_to_evm_address('0x4200000000000000000000000000000000000006'),
+        ),
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=A_WETH_BASE,
+            balance=Balance(amount=FVal(amount)),
+            location_label='0xf396e7dbb20489D47F2daBfDA013163223B892a0',
+            notes=f'Receive {amount} WETH',
+            counterparty=CPT_WETH,
+            address=string_to_evm_address('0x4200000000000000000000000000000000000006'),
+        ),
+    ]
     assert events == expected_events
