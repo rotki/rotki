@@ -348,3 +348,10 @@ def update_aave_v3_underlying_assets(chains_aggregator: 'ChainsAggregator') -> N
                         f'Failed to add underlying token {underlying_token_address} for '
                         f'{decoded_reserve_token.identifier} due to {e!s}',
                     )
+
+    with chains_aggregator.database.conn.write_ctx() as write_cursor:
+        chains_aggregator.database.set_static_cache(  # remember last task ran
+            write_cursor=write_cursor,
+            name=DBCacheStatic.LAST_AAVE_V3_ASSETS_UPDATE,
+            value=ts_now(),
+        )

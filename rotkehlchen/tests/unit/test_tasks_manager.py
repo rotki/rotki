@@ -661,3 +661,8 @@ def test_maybe_update_aave_v3_underlying_assets(
             token_kind=EvmTokenKind.ERC20,
             weight=ONE,
         ) in db_token.underlying_tokens
+
+    with task_manager.database.conn.read_ctx() as cursor:
+        assert task_manager.database.get_static_cache(
+            cursor=cursor, name=DBCacheStatic.LAST_AAVE_V3_ASSETS_UPDATE,
+        ) is not None
