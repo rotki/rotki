@@ -1,18 +1,12 @@
 const { platform } = require('node:os');
 const process = require('node:process');
 
-const MACOS_ARCHS = ['x64', 'arm64'];
 const LINUX_TARGETS = ['AppImage', 'tar.xz'];
 
 const isCI = !!process.env.CI;
-const macOsArch = process.env.MACOS_ELECTRON_ARCH;
 const includeDebPackage = isCI || !!process.env.LINUX_BUILD_DEB;
 
-const targetMacArch = MACOS_ARCHS.includes(macOsArch) ? macOsArch : null;
-
-const isMac = platform() === 'darwin';
-
-console.log(`\nBuilding on ${platform}: targeting ${targetMacArch}\n`);
+console.log(`\nBuilding on ${platform}: targeting ${process.arch}\n`);
 
 if (includeDebPackage)
   LINUX_TARGETS.push('deb');
@@ -47,8 +41,7 @@ const config = {
       filter: ['**/*'],
     },
     {
-      // eslint-disable-next-line no-template-curly-in-string
-      from: isMac && !targetMacArch ? '../../build/colibri/bin/${arch}' : '../../build/colibri/bin',
+      from: '../../build/colibri/bin',
       to: 'colibri',
       filter: ['**/*'],
     },
@@ -64,7 +57,6 @@ const config = {
     target: [
       {
         target: 'default',
-        arch: targetMacArch ? [targetMacArch] : MACOS_ARCHS,
       },
     ],
     category: 'public.app-category.finance',
