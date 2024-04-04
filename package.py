@@ -12,7 +12,7 @@ import urllib.request
 from collections.abc import Callable, Generator
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Any, Literal
+from typing import Any
 
 from setuptools_scm import get_version
 
@@ -20,7 +20,7 @@ from packaging import version
 
 rotki_version = get_version()
 
-pyinstaller_version = os.environ.get('PYINSTALLER_VERSION', '6.3.0')
+pyinstaller_version = os.environ.get('PYINSTALLER_VERSION', '6.7.0')
 BACKEND_PREFIX = 'rotki-core'
 SUPPORTED_ARCHS = [
     'AMD64',  # Windows
@@ -200,9 +200,6 @@ class Environment:
 
     def is_mac_runner(self) -> bool:
         return self.is_mac() and self.is_ci()
-
-    def is_universal2(self) -> bool:
-        return self.is_mac_runner() or os.environ.get('MACOS_BUILD_ARCH') == 'universal2'
 
     def is_x86_64(self) -> bool:
         return self.arch in {'x86_64', 'AMD64'}
@@ -409,312 +406,6 @@ class MacPackaging:
         self.__keychain = 'rotki-build.keychain'
         self.__p12 = Path('/tmp/certificate.p12')  # noqa: S108
 
-    @staticmethod
-    def unpack_wheels(
-            package_version: str,
-            plt: Literal['macosx_10_9_x86_64', 'macosx_11_0_arm64'],
-            directory: Path,
-    ) -> None:
-        logger.info(f'preparing to download {package_version} wheel for {plt}')
-        directory.mkdir(exist_ok=True)
-        os.chdir(directory)
-        subprocess.call(
-            f'pip download {package_version} --platform {plt} --only-binary=:all:',
-            shell=True,
-        )
-        pkg_arch = 'x86_64' if plt.find('x86_64') >= 0 else 'arm64'
-        for file in directory.iterdir():
-            logger.info(f'checking if {file} package is {pkg_arch}')
-            if file.name.find(pkg_arch) >= 0:
-                logger.info(f'unpacking wheel {file}')
-                subprocess.call(f'wheel unpack {file}', shell=True)
-
-            file.unlink()
-
-    @staticmethod
-    def macos_link_archs(source: Path, destination: Path) -> None:
-        """
-        Uses lipo to create a dual architecture library for macOS by merging a x86_64
-        and an arm64 library.
-        The order can be any but keep in mind that destination will become the dual
-        architecture one.
-
-        :param source: One of the two libraries that will be merged with lipo.
-        :param destination: The library that will become the dual architecture one.
-        """
-        logger.info(f'creating fat binary {source} <-> {destination}')
-        ret_code = subprocess.call(
-            f'lipo -create -output {destination} {source} {destination}',
-            shell=True,
-        )
-
-        if ret_code != 0:
-            logger.error(f'failed to create a fat binary {source} {destination}')
-            sys.exit(1)
-
-        archs = subprocess.check_output(f'lipo -archs {destination}', encoding='utf-8', shell=True)
-
-        if archs.strip() != 'x86_64 arm64':
-            logger.error(f'{destination} was not a fat binary, only has {archs}')
-            sys.exit(1)
-
-    @staticmethod
-    def modify_wheel_metadata(wheel_metadata: Path) -> None:
-        """
-        Modifies the tag in the wheel metadata file from x86_64 to universal2 so
-        that the repackaged wheel has the proper tag.
-
-        :param wheel_metadata: Path to the wheel metadata file
-        """
-        with open(wheel_metadata, encoding='utf8') as file:
-            data = file.readlines()
-            for (index, line) in enumerate(data):
-                if not line.startswith('Tag'):
-                    continue
-                data[index] = line.replace('x86_64', 'universal2')
-
-        with open(wheel_metadata, 'w', encoding='utf8') as file:
-            file.writelines(data)
-
-    def __download_patched_pip(self) -> Path:
-        """
-        Downloads the patched pip version needed to create a universal2 virtual environment.
-        :return:
-        """
-        pip_wheel = 'pip-22.1.2-py3-none-any.whl'
-        temporary_directory = self.__storage.temporary_directory
-        temporary_directory.mkdir(exist_ok=True)
-        wheel_file = temporary_directory / pip_wheel
-        urllib.request.urlretrieve(  # noqa: S310
-            url=f'https://github.com/rotki/rotki-build/raw/main/{pip_wheel}',
-            filename=wheel_file,
-        )
-        return Path(wheel_file)
-
-    def __get_versions(self, packages: list[str]) -> dict[str, str]:
-        """
-        Gets the versions of specified packages from requirements.txt
-        and requirements_crossbuild.txt.
-
-        :param packages: A list of package names for which we need versions from
-        the requirements.txt
-        :returns: A Dict where the key is the package and the value is the package version
-        """
-        package_versions: dict[str, str] = {}
-        for requirement_file_name in ('requirements.txt', 'requirements_crossbuild.txt'):
-            requirements = self.__storage.working_directory / requirement_file_name
-            with open(requirements, encoding='utf8') as fp:
-                while True:
-                    line = fp.readline()
-                    if not line:
-                        break
-                    if len(line.strip()) == 0 or line.startswith('#'):
-                        continue
-                    requirement = line.split('#')[0]
-                    req = requirement.split(';')
-                    requirement = req[0]
-                    if len(req) > 1 and req[1].strip() == "sys_platform == 'win32'":
-                        continue
-
-                    split_requirement = requirement.split('==')
-                    package_name = split_requirement[0]
-                    if package_name in packages:
-                        package_version = split_requirement[1]
-                        if (processed_package_name := package_name.strip()) in package_versions:
-                            logger.error(
-                                f'{processed_package_name} dependency appeared more than once '
-                                f'while reading the file {requirements}',
-                            )
-                            sys.exit(1)
-                        package_versions[processed_package_name] = package_version.strip()
-
-        return package_versions
-
-    @log_group('universal2 wheel')
-    def __universal_repackage(self, package_name: str) -> None:
-        """
-        Creates universal2 wheels for packages.
-
-        coincurve and cffi only provide architecture specific wheels (x86_64, arm64)
-        for macOS. To create a universal2 wheel we download the architecture
-        specific wheels, unpack them, then merge any native extension (*.so) using lipo.
-        Next we modify the tag so that re-packed wheel is properly tagged as universal
-        and we finally pack the wheel again.
-        """
-        storage = self.__storage
-        logger.info(f'Preparing to merge {package_name} wheels')
-        versions = self.__get_versions(packages=[package_name])
-        build_directory = storage.build_directory
-        if not build_directory.exists():
-            build_directory.mkdir(parents=True)
-
-        temp = build_directory / 'temp'
-        temp.mkdir(parents=True, exist_ok=True)
-
-        wheels_directory = build_directory / 'wheels'
-        wheels_directory.mkdir(parents=True, exist_ok=True)
-
-        x86_64 = temp / 'x86_64'
-        arm64 = temp / 'arm64'
-
-        package = f'{package_name}=={versions.get(package_name)}'
-        self.unpack_wheels(package, 'macosx_10_9_x86_64', x86_64)
-        self.unpack_wheels(package, 'macosx_11_0_arm64', arm64)
-
-        for unpacked_wheel in x86_64.iterdir():
-            so_libs = unpacked_wheel.glob('**/*.so')
-            for so_lib in so_libs:
-                arm64_solib = next(arm64.glob(f'**/{so_lib.name}'))
-                self.macos_link_archs(destination=so_lib, source=arm64_solib)
-            metadata = next(unpacked_wheel.glob('**/WHEEL'))
-            logger.info(f'preparing to modify metadata: {metadata}')
-            self.modify_wheel_metadata(metadata)
-            ret_code = subprocess.call(
-                f'wheel pack {unpacked_wheel} -d {wheels_directory}',
-                shell=True,
-            )
-            if ret_code != 0:
-                logger.error(f'repack of {unpacked_wheel} failed')
-                sys.exit(1)
-
-        shutil.rmtree(x86_64)
-        shutil.rmtree(arm64)
-
-    @log_group('miniupnpc universal2 wheel')
-    def __build_miniupnpc_universal(self) -> None:
-        """
-        Builds a universal2 wheel for miniupnpc.
-
-        Miniupnpc builds the native library libminiupnpc.a and then statically links
-        the native extension against that.
-
-        Unfortunately it is not possible to pass dual architecture flags to the compiler
-        and build a universal wheel in one step. Instead, we download the package source
-        and build the static library once for each architecture.
-
-        Then we use lipo to merge the two static libraries to one dual arch library
-        which is then used when we create the universal2 wheel.
-        """
-        logger.info('Preparing to create universal2 wheels for miniupnpc')
-
-        self.__storage.prepare_temp()
-        temp = self.__storage.temporary_directory
-        build_directory = self.__storage.build_directory
-        package_name = 'miniupnpc'
-        versions = self.__get_versions([package_name])
-
-        libminiupnpc_dylib = 'libminiupnpc.dylib'
-        libminiupnpc_a = 'libminiupnpc.a'
-        miniupnpc_version = versions.get(package_name)
-        miniupnpc = f'{package_name}-{miniupnpc_version}'
-        miniupnpc_archive = f'{miniupnpc}.tar.gz'
-        miniupnpc_directory = build_directory / miniupnpc
-
-        os.chdir(build_directory)
-        download_result = subprocess.call(
-            f'pip download {package_name}=={miniupnpc_version}',
-            shell=True,
-        )
-
-        if download_result != 0:
-            logger.error(f'failed to download {package_name}')
-            sys.exit(1)
-
-        extract_result = subprocess.call(f'tar -xvf {miniupnpc_archive}', shell=True)
-
-        if extract_result != 0:
-            logger.error(f'failed to extract {package_name}')
-            sys.exit(1)
-
-        os.chdir(miniupnpc_directory)
-
-        env = os.environ.copy()
-        env.setdefault('CC', 'gcc -arch x86_64')
-        env.setdefault('MACOSX_DEPLOYMENT_TARGET', '10.9')
-        make_x86_result = subprocess.call('make', env=env, shell=True)
-
-        if make_x86_result != 0:
-            logger.error('make failed for x86_64')
-            sys.exit(1)
-
-        shutil.move('build' / Path(libminiupnpc_dylib), temp)
-        shutil.move('build' / Path(libminiupnpc_a), temp)
-
-        make_clean_result = subprocess.call('make clean', shell=True)
-
-        if make_clean_result != 0:
-            logger.error(f'failed to clean {package_name}')
-            sys.exit(1)
-
-        env = os.environ.copy()
-        env.setdefault('CC', 'gcc -arch arm64')
-        env.setdefault('MACOSX_DEPLOYMENT_TARGET', '11.0')
-        make_arm64_result = subprocess.call('make', env=env, shell=True)
-
-        if make_arm64_result != 0:
-            logger.error('make failed for arm64')
-            sys.exit(1)
-
-        self.macos_link_archs(
-            destination='build' / Path(libminiupnpc_a),
-            source=temp / libminiupnpc_a,
-        )
-        self.macos_link_archs(
-            destination='build' / Path(libminiupnpc_dylib),
-            source=temp / libminiupnpc_dylib,
-        )
-
-        wheel_build_result = subprocess.call('python setup.py bdist_wheel', shell=True)
-        if wheel_build_result != 0:
-            logger.error(f'failed to build {package_name} wheel')
-            sys.exit(1)
-
-        miniupnpc_dist = miniupnpc_directory / 'dist'
-        wheel_file = miniupnpc_dist / f'{miniupnpc}-cp311-cp311-macosx_10_9_universal2.whl'
-        wheel_directory = self.__storage.wheel_directory
-        wheel_directory.mkdir(exist_ok=True)
-        shutil.move(wheel_file, wheel_directory)
-
-        shutil.rmtree(temp)
-
-        archive_path = build_directory / miniupnpc_archive
-
-        if archive_path.exists():
-            archive_path.unlink()
-
-        if miniupnpc_directory.exists():
-            shutil.rmtree(miniupnpc_directory)
-
-    def prepare_wheels(self) -> None:
-        """
-        Prepares the wheels with native extensions that require
-        special treatment.
-        """
-        self.__build_miniupnpc_universal()
-        self.__universal_repackage('coincurve')
-        self.__universal_repackage('ckzg')
-
-    def install_wheels(self, install: Callable[[str], None]) -> None:
-        """
-        Installs the wheels that are patched or modified.
-
-        Note that the order of installation is important for cffi/coincurve.
-        If cffi is not installed first then a version will be pulled from PyPI instead.
-
-        :param install: The install callable that is passed externally
-        """
-        if self.__environment.target_arch == 'universal2':
-            patched_pip = self.__download_patched_pip()
-            install(f'{patched_pip} --force-reinstall')
-        wheel_directory = self.__storage.wheel_directory
-        os.chdir(wheel_directory)
-        for wheel in sorted(wheel_directory.iterdir()):
-            install(str(wheel))
-
-        # To avoid cytoolz RuntimeError on macOS
-        # "Cython required to build dev version of cytoolz."
-        install('cython')
-
     @log_group('certificates')
     def import_signing_certificates(self) -> bool:
         """
@@ -911,11 +602,13 @@ class BackendBuilder:
 
         bootloader_directory = pyinstaller_directory / 'bootloader'
         os.chdir(bootloader_directory)
-        flag = '--no-universal2' if self.__env.target_arch != 'universal2' else '--universal2'
 
-        build_ret_code = subprocess.call(f'./waf all {flag}', shell=True)
+        build_ret_code = subprocess.call(
+            f'CC="clang -arch {self.__env.target_arch}" ./waf --no-universal2 all',
+            shell=True,
+        )
         if build_ret_code != 0:
-            logger.error(f'failed to build pyinstaller bootloader for {flag}')
+            logger.error('failed to build pyinstaller bootloader')
             sys.exit(1)
 
         os.chdir(pyinstaller_directory)
@@ -931,11 +624,7 @@ class BackendBuilder:
             shell=True,
         )
 
-        # Due to https://github.com/rotki/pysqlcipher3/issues/1 verification might
-        # fail in macOS machines where OpenSSL is not properly setup in the path.
-        # In this case we can set the SKIP_SQLCIPHER_VERIFICATION to unblock the script
-        # since the error does not affect runtime.
-        if ret_code != 0 and os.environ.get('SKIP_SQLCIPHER_VERIFICATION') is None:
+        if ret_code != 0:
             logger.error('could not verify sqlcipher v4')
             sys.exit(1)
 
@@ -972,21 +661,12 @@ class BackendBuilder:
         self.__env.sanity_check()
 
         mac = self.__mac
-        if mac is not None and self.__env.is_universal2():
-            logger.info('Doing preparation for universal2 wheels')
-            mac.prepare_wheels()
-            mac.install_wheels(self.pip_install)
-
         win = self.__win
         if win is not None:
             win.setup_miniupnpc()
 
         os.chdir(self.__storage.working_directory)
-        # This flag only works with the patched version of pip.
-        # https://github.com/kelsos/pip/tree/patched
-        os.environ.setdefault('PIP_FORCE_MACOS_UNIVERSAL2', '1')
         self.pip_install('.', use_pep_517=True)
-        os.environ.pop('PIP_FORCE_MACOS_UNIVERSAL2', None)
 
         if github_ref is not None:
             os.environ.setdefault('GITHUB_REF', github_ref)
@@ -1019,20 +699,8 @@ class BackendBuilder:
 
     @log_group('cargo build')
     def __create_rust_binary(self) -> None:
-        if not self.__env.is_universal2():
-            self.__cargo_build()
-        else:
-            for target in (X64_APPL_RUST_TARGET, ARM_APPL_RUST_TARGET):
-                self.__rust_add_target(target=target)
-                self.__cargo_build(target=target)
-
-    def __cargo_build(self, target: str | None = None) -> None:
         colibri_directory = self.__storage.colibri_directory
         target_arg = ''
-
-        if target is not None:
-            logger.info(f'building rust binary for {target}')
-            target_arg = f'--target {target}'
 
         build_ret_code = subprocess.call(
             f'cargo build --target-dir {colibri_directory} '
@@ -1047,28 +715,15 @@ class BackendBuilder:
         if self.__win is not None:
             binary_name = f'{binary_name}.exe'
 
-        if target is None:
-            backend_binary = colibri_directory / 'release' / binary_name
-        else:
-            backend_binary = colibri_directory / target / 'release' / binary_name
+        backend_binary = colibri_directory / 'release' / binary_name
 
-        if target is None:
-            ret_code = subprocess.call(f'{backend_binary}', shell=True)
+        ret_code = subprocess.call(f'{backend_binary}', shell=True)
 
-            if ret_code != 0:
-                logger.error('colibri binary check failed')
-                sys.exit(1)
-        else:
-            logger.info(f'skipping {backend_binary} verification because it was cross compiled')
+        if ret_code != 0:
+            logger.error('colibri binary check failed')
+            sys.exit(1)
 
         binary_directory = colibri_directory / 'bin'
-        if self.__mac is not None:
-            is_x64 = self.__env.is_x86_64()
-            no_target = target is None
-            if (no_target and not is_x64) or target == ARM_APPL_RUST_TARGET:
-                binary_directory /= 'arm64'
-            elif (no_target and is_x64) or target == X64_APPL_RUST_TARGET:
-                binary_directory /= 'x64'
 
         binary_directory.mkdir(exist_ok=True, parents=True)
         shutil.copy(backend_binary, binary_directory / binary_name)

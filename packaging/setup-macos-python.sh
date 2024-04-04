@@ -61,8 +61,6 @@ function install_mac_cpython {
     if [ -e "$inst_cmd" ]; then
         sh "$inst_cmd"
     fi
-    # If the signature is not removed from Python the PyInstaller will fail
-    codesign --remove-signature "$PYTHON_DIR/Python"
 }
 
 install_mac_cpython "$1" "$2"

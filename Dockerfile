@@ -15,7 +15,7 @@ FROM python:3.11-buster as backend-build-stage
 ARG TARGETARCH
 ARG ROTKI_VERSION
 ENV PACKAGE_FALLBACK_VERSION=$ROTKI_VERSION
-ARG PYINSTALLER_VERSION=v6.3.0
+ARG PYINSTALLER_VERSION=v6.7.0
 RUN pip install --upgrade --no-cache-dir uv && uv pip install --system setuptools wheel
 ENV PATH="/opt/venv/bin:$PATH"
 
