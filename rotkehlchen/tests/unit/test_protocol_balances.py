@@ -361,7 +361,7 @@ def test_gmx_balances(
     '0xecdED8b1c603cF21299835f1DFBE37f10F2a29Af', '0x8Cbac427B6967d5d84Ec4230081e2763AB3A8C92',
 ]])
 def test_aave_v3_balances(blockchain: 'ChainsAggregator') -> None:
-    """Check that Aave v3 positions/liabilities are properly returned in the balances query"""
+    """Check that ethereum mainnet Aave v3 positions/liabilities are properly returned in the balances query"""  # noqa: E501
     ethereum_manager = blockchain.get_evm_manager(chain_id=ChainID.ETHEREUM)
     a_eth_usdc = get_or_create_evm_token(
         userdb=blockchain.database,
@@ -388,15 +388,17 @@ def test_aave_v3_balances(blockchain: 'ChainsAggregator') -> None:
         protocol=CPT_AAVE_V3,
     )
 
+    aave_prices = {
+        a_eth_usdc: Price(FVal(0.1)),
+        stable_debt_eth_usdc: Price(FVal(10)),
+        variable_debt_eth_usdc: Price(FVal(100)),
+    }
+
     def mock_new_balances(addresses: 'Sequence[ChecksumEvmAddress]') -> TokenBalancesType:
         return {
             addresses[0]: {a_eth_usdc: FVal(123), stable_debt_eth_usdc: FVal(456)},
             addresses[1]: {stable_debt_eth_usdc: FVal(456), variable_debt_eth_usdc: FVal(789)},
-        }, {
-            a_eth_usdc: Price(FVal(0.1)),
-            stable_debt_eth_usdc: Price(FVal(10)),
-            variable_debt_eth_usdc: Price(FVal(100)),
-        }
+        }, aave_prices
 
     balances: defaultdict['ChecksumEvmAddress', 'BalanceSheet'] = defaultdict(BalanceSheet)
     with patch.object(
@@ -406,18 +408,18 @@ def test_aave_v3_balances(blockchain: 'ChainsAggregator') -> None:
     ):
         blockchain.query_evm_tokens(manager=ethereum_manager, balances=balances)
 
-    assert balances == {  # Debt Tokens are moved in liabilities
+    assert balances == {  # Debt Tokens are moved to liabilities section
         blockchain.accounts.eth[0]: BalanceSheet(
             assets=defaultdict(Balance, {
                 a_eth_usdc: Balance(
                     amount=FVal(123),
-                    usd_value=FVal(12.3),
+                    usd_value=FVal(123) * aave_prices[a_eth_usdc],
                 ),
             }),
             liabilities=defaultdict(Balance, {
                 stable_debt_eth_usdc: Balance(
                     amount=FVal(456),
-                    usd_value=FVal(4560),
+                    usd_value=FVal(456) * aave_prices[stable_debt_eth_usdc],
                 ),
             }),
         ),
@@ -425,11 +427,11 @@ def test_aave_v3_balances(blockchain: 'ChainsAggregator') -> None:
             liabilities=defaultdict(Balance, {
                 stable_debt_eth_usdc: Balance(
                     amount=FVal(456),
-                    usd_value=FVal(4560),
+                    usd_value=FVal(456) * aave_prices[stable_debt_eth_usdc],
                 ),
                 variable_debt_eth_usdc: Balance(
                     amount=FVal(789),
-                    usd_value=FVal(78900),
+                    usd_value=FVal(789) * aave_prices[variable_debt_eth_usdc],
                 ),
             }),
         ),

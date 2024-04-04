@@ -111,6 +111,7 @@ def edit_token_and_clean_cache(
         evm_inquirer: 'EvmNodeInquirer | None',
         coingecko: str | None = None,
         cryptocompare: str | None = None,
+        protocol: str | None = None,
 ) -> None:
     """
     Update information regarding name and decimals for an ethereum token.
@@ -158,6 +159,10 @@ def edit_token_and_clean_cache(
 
     if cryptocompare is not None and evm_token.cryptocompare != cryptocompare:
         object.__setattr__(evm_token, 'cryptocompare', cryptocompare)
+        updated_fields = True
+
+    if protocol is not None and evm_token.protocol != protocol:
+        object.__setattr__(evm_token, 'protocol', protocol)
         updated_fields = True
 
     # clean the cache if we need to update the token
@@ -254,6 +259,7 @@ def get_or_create_evm_token(
                 evm_inquirer=evm_inquirer,
                 coingecko=coingecko,
                 cryptocompare=cryptocompare,
+                protocol=protocol,
             )
 
         except (UnknownAsset, DeserializationError):
