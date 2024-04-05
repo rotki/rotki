@@ -1,33 +1,36 @@
 <script setup lang="ts">
 import { BalanceType } from '@/types/balances';
+import { useSimpleVModel } from '@/utils/model';
 
-defineProps<{ value: BalanceType }>();
+const props = defineProps<{ value: BalanceType }>();
 
 const emit = defineEmits<{ (e: 'input', value: BalanceType): void }>();
 
 const { t } = useI18n();
+
+const model = useSimpleVModel(props, emit);
+
 const balanceTypes = computed(() => [
   {
-    value: BalanceType.ASSET,
-    text: t('common.asset'),
+    key: BalanceType.ASSET,
+    label: t('common.asset'),
   },
   {
-    value: BalanceType.LIABILITY,
-    text: t('manual_balances_form.type.liability'),
+    key: BalanceType.LIABILITY,
+    label: t('manual_balances_form.type.liability'),
   },
 ]);
-
-function input(value: BalanceType) {
-  emit('input', value);
-}
 </script>
 
 <template>
-  <VSelect
-    :value="value"
-    :items="balanceTypes"
+  <RuiMenuSelect
+    v-model="model"
+    :options="balanceTypes"
     v-bind="$attrs"
-    outlined
-    @input="input($event)"
+    full-width
+    float-label
+    show-details
+    key-attr="key"
+    variant="outlined"
   />
 </template>

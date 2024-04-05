@@ -43,8 +43,8 @@ const { updateSetting } = useSettings();
 
 const loading = ref(false);
 
-function getMessage(ref: MaybeRef<string | TransformMessageCallback<string>>, value: any) {
-  const message = get(ref);
+function getMessage(messageRef: MaybeRef<string | TransformMessageCallback<string>>, value: any) {
+  const message = get(messageRef);
   if (typeof message === 'string')
     return message;
 

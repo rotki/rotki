@@ -67,6 +67,8 @@ const lastLocation = useLocalStorage(
   '',
 );
 
+const [DefineIcon, ReuseIcon] = createReusableTemplate();
+
 const page = computed(() => {
   const selectedLocation = get(location);
   return selectedLocation ? pages[selectedLocation] : null;
@@ -90,39 +92,40 @@ onBeforeMount(async () => {
 <template>
   <div class="container">
     <RuiCard>
-      <VSelect
-        :value="location"
-        outlined
-        hide-details
-        :items="liquidities"
-        :label="t('staking_page.dropdown_label')"
-        item-value="id"
-        @change="updateLocation($event)"
-      >
-        <template
-          v-for="slot in ['item', 'selection']"
-          #[slot]="data"
+      <DefineIcon #default="{ image }">
+        <AdaptiveWrapper
+          width="1.5rem"
+          height="1.5rem"
         >
-          <div
-            v-if="data.item"
-            :key="slot"
-            class="flex items-center gap-2"
-          >
-            <AdaptiveWrapper
-              width="24"
-              height="24"
-            >
-              <AppImage
-                width="1.5"
-                contain
-                max-height="1.5"
-                :src="data.item.image"
-              />
-            </AdaptiveWrapper>
-            {{ data.item.name }}
+          <AppImage
+            contain
+            width="1.5rem"
+            max-height="1.5rem"
+            :src="image"
+          />
+        </AdaptiveWrapper>
+      </DefineIcon>
+      <RuiMenuSelect
+        :value="location"
+        :options="liquidities"
+        :label="t('staking_page.dropdown_label')"
+        key-attr="id"
+        text-attr="name"
+        full-width
+        float-label
+        variant="outlined"
+        @input="updateLocation($event)"
+      >
+        <template #activator.text="{ value: { image, name } }">
+          <div class="flex items-center gap-3">
+            <ReuseIcon v-bind="{ image }" />
+            {{ name }}
           </div>
         </template>
-      </VSelect>
+        <template #item.prepend="{ option: { image } }">
+          <ReuseIcon v-bind="{ image }" />
+        </template>
+      </RuiMenuSelect>
     </RuiCard>
 
     <div

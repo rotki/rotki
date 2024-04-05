@@ -45,7 +45,7 @@ describe('settings::general', () => {
   it('change main currency and validate UI message', () => {
     pageGeneral.selectCurrency(settings.currency);
     pageGeneral.confirmInlineSuccess(
-      '.general-settings__fields__currency-selector .v-messages__message',
+      '.general-settings__fields__currency-selector .details',
       settings.currency,
     );
   });

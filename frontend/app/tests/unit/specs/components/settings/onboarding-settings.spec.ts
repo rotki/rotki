@@ -64,7 +64,7 @@ describe('onboardingSetting.vue', () => {
       pinia,
       vuetify,
       stubs: {
-        VSelect: {
+        RuiMenuSelect: {
           template: `
             <div>
               <input :value="value" class="input" type="text" @input="$emit('input', $event.value)">

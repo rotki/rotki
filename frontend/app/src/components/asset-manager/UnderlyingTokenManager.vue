@@ -110,13 +110,14 @@ function deleteToken(address: string) {
       </div>
 
       <div class="col-span-1">
-        <VSelect
+        <RuiMenuSelect
           v-model="tokenKind"
-          outlined
           :label="t('asset_form.labels.token_kind')"
-          :items="evmTokenKindsData"
-          item-text="label"
-          item-value="identifier"
+          :options="evmTokenKindsData"
+          key-attr="identifier"
+          text-attr="label"
+          full-width
+          variant="outlined"
         />
       </div>
 

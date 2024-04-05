@@ -210,16 +210,19 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
       />
     </div>
 
-    <VSelect
+    <RuiMenuSelect
       v-if="exchange.location === 'kraken'"
-      outlined
       :value="exchange.krakenAccountType"
       data-cy="account-type"
-      :items="krakenAccountTypes"
-      item-value="identifier"
-      item-text="label"
+      :options="krakenAccountTypes"
       :label="t('exchange_settings.inputs.kraken_account')"
-      @change="input({ ...exchange, krakenAccountType: $event })"
+      key-attr="identifier"
+      text-attr="label"
+      full-width
+      float-label
+      show-details
+      variant="outlined"
+      @input="input({ ...exchange, krakenAccountType: $event })"
     />
 
     <div

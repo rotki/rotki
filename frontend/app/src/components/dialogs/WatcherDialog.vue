@@ -262,13 +262,17 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ label: string }>();
         {{ message }}
       </template>
 
-      <VSelect
+      <RuiMenuSelect
         v-if="!preselectWatcherType"
         v-model="watcherType"
-        :items="watcherTypes"
+        :options="watcherTypes"
         :label="t('watcher_dialog.labels.type')"
-        dense
-        outlined
+        key-attr="value"
+        text-attr="text"
+        full-width
+        float-label
+        show-details
+        variant="outlined"
         required
       />
 
@@ -283,20 +287,21 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ label: string }>();
           class="flex items-center gap-4"
         >
           <div class="grid grid-cols-2 gap-4">
-            <VSelect
+            <RuiMenuSelect
+              v-model="loadedWatchers[key].args.op"
+              :options="operations"
               :class="{
                 'bg-rui-grey-100 dark:bg-rui-grey-800':
                   !existingWatchersEdit[watcher.identifier],
               }"
-              :items="operations"
               :label="t('watcher_dialog.labels.operation')"
-              :readonly="!existingWatchersEdit[watcher.identifier]"
-              :value="loadedWatchers[key].args.op"
-              dense
-              hide-details
-              outlined
+              :disabled="!existingWatchersEdit[watcher.identifier]"
+              key-attr="value"
+              text-attr="text"
+              full-width
+              float-label
+              variant="outlined"
               required
-              @input="loadedWatchers[key].args.op = $event"
             />
 
             <RuiTextField
@@ -348,14 +353,16 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ label: string }>();
         <ReuseLabel :label="t('watcher_dialog.add_watcher')" />
         <div class="flex items-center justify-between gap-4">
           <div class="grid grid-cols-2 gap-4">
-            <VSelect
+            <RuiMenuSelect
               v-model="watcherOperation"
               :disabled="!watcherType"
-              :items="operations"
+              :options="operations"
               :label="t('watcher_dialog.labels.operation')"
-              dense
-              hide-details
-              outlined
+              key-attr="value"
+              text-attr="text"
+              full-width
+              float-label
+              variant="outlined"
               required
             />
 

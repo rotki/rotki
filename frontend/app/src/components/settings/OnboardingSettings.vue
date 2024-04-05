@@ -366,39 +366,44 @@ function showResetConfirmation() {
         </template>
       </RuiTextField>
 
-      <VSelect
+      <RuiMenuSelect
         v-model="logLevel"
-        :items="levels"
+        :options="levels"
         class="loglevel-input"
         :disabled="!!fileConfig.loglevel"
         :label="t('backend_settings.settings.log_level.label')"
-        :persistent-hint="!!fileConfig.loglevel"
+        :show-details="!!fileConfig.loglevel"
         :hint="
           !!fileConfig.loglevel
             ? t('backend_settings.config_file_disabled')
-            : null
+            : undefined
         "
-        outlined
+        key-attr="identifier"
+        text-attr="label"
+        full-width
+        float-label
+        variant="outlined"
       >
-        <template #item="{ item }">
+        <template #item.prepend="{ option }">
+          <RuiIcon
+            class="text-rui-text-secondary"
+            :name="icon(option.identifier)"
+          />
+        </template>
+        <template #item.text="{ option }">
+          <span class="capitalize"> {{ option.identifier.toLocaleLowerCase() }} </span>
+        </template>
+
+        <template #activator.text="{ value }">
           <div class="flex items-center gap-4">
             <RuiIcon
               class="text-rui-text-secondary"
-              :name="icon(item)"
+              :name="icon(value.identifier)"
             />
-            {{ item.toLocaleLowerCase() }}
+            <span class="capitalize"> {{ value.identifier.toLocaleLowerCase() }} </span>
           </div>
         </template>
-        <template #selection="{ item }">
-          <div class="flex items-center gap-4">
-            <RuiIcon
-              class="text-rui-text-secondary"
-              :name="icon(item)"
-            />
-            {{ item.toLocaleLowerCase() }}
-          </div>
-        </template>
-      </VSelect>
+      </RuiMenuSelect>
     </div>
 
     <RuiAccordions>
