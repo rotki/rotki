@@ -276,8 +276,9 @@ class ZksyncLiteManager:
                 asset_key = 'feeToken'
                 from_address = deserialize_evm_address(entry['op']['account'])
             elif tx_type == ZKSyncLiteTXType.FORCEDEXIT:
-                asset_key = 'token'
-                from_address = deserialize_evm_address(entry['op']['target'])
+                asset_key = 'token'  # just like with FULLEXIT, the amount is missing in the API
+                from_address = concerning_address
+                to_address = deserialize_evm_address(entry['op']['target'])
             elif tx_type == ZKSyncLiteTXType.FULLEXIT:
                 asset_key = 'tokenId'
                 from_address = concerning_address
@@ -577,15 +578,12 @@ class ZksyncLiteManager:
                 # simply adds a "to" field. As this will definitely be needed somewhere.
                 notes = f'{verb} {transaction.amount} {transaction.asset.resolve_to_asset_with_symbol().symbol} {preposition} {target}'  # noqa: E501
 
-            case ZKSyncLiteTXType.FULLEXIT:
+            case ZKSyncLiteTXType.FULLEXIT | ZKSyncLiteTXType.FORCEDEXIT:
                 event_type = HistoryEventType.INFORMATIONAL
                 event_subtype = HistoryEventSubType.NONE
                 location_label = transaction.from_address
                 target = transaction.to_address
-                notes = f'Full exit to Ethereum{"" if location_label == target else f" address {target}"}'  # noqa: E501
-
-            case ZKSyncLiteTXType.FORCEDEXIT:
-                return 0  # TODO
+                notes = f'{"Full" if transaction.tx_type == ZKSyncLiteTXType.FULLEXIT else "Forced"} exit to Ethereum{"" if location_label == target else f" address {target}"}'  # noqa: E501
 
             case ZKSyncLiteTXType.CHANGEPUBKEY:
                 event_type = HistoryEventType.SPEND
