@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`6636` Aave v3 positions and liabilities will now be properly shown in the dashboard.
 * :feature:`7423` Users will be able to sort address book entries by displayed name and address.
 
 * :feature:`7281` rotki will now properly decode the transactions done on Aave v2 and v3 on all the supported chains.
