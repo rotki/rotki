@@ -2268,8 +2268,16 @@ class ModuleStatsResource(BaseMethodView):
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> Response:
-        if module in (ModuleWithStats.AAVE, ModuleWithStats.COMPOUND):
-            return self.rest_api.get_module_stats_using_balances(
+        if module == ModuleWithStats.AAVE:
+            return self.rest_api.get_aave_stats_using_balances(
+                async_query=async_query,
+                module=module.serialize(),
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+            )
+
+        if module == ModuleWithStats.COMPOUND:
+            return self.rest_api.get_compound_stats_using_balances(
                 async_query=async_query,
                 module=module.serialize(),
                 from_timestamp=from_timestamp,
