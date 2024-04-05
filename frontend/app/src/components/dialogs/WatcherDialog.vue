@@ -272,6 +272,7 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ label: string }>();
         full-width
         float-label
         show-details
+        dense
         variant="outlined"
         required
       />
@@ -298,6 +299,7 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ label: string }>();
               :disabled="!existingWatchersEdit[watcher.identifier]"
               key-attr="value"
               text-attr="text"
+              dense
               full-width
               float-label
               variant="outlined"
@@ -362,6 +364,7 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ label: string }>();
               text-attr="text"
               full-width
               float-label
+              dense
               variant="outlined"
               required
             />

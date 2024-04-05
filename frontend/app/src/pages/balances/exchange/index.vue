@@ -159,16 +159,14 @@ function isBinance(exchange: string | null): exchange is 'binance' | 'binanceus'
         v-if="usedExchanges.length > 0"
         class="flex flex-col md:flex-row"
       >
-        <div class="md:hidden mb-2">
+        <div class="md:hidden mb-4">
           <RuiMenuSelect
             v-model="selectedExchange"
             :options="usedExchanges"
             :label="t('exchange_balances.select_exchange')"
-            class="[&_div[data-id=activator]>span+span]:w-full"
             key-attr="key"
             full-width
             float-label
-            show-details
             variant="outlined"
             @input="openExchangeDetails()"
           >

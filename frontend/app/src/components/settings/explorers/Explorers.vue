@@ -99,6 +99,8 @@ const { t } = useI18n();
         v-model="selection"
         :options="supportedExplorers"
         :label="t('explorers.chain_selector')"
+        :item-height="64"
+        dense
         key-attr="key"
         full-width
         float-label
@@ -110,24 +112,22 @@ const { t } = useI18n();
           <ChainDisplay
             v-if="!additional.includes(option.key)"
             :chain="option.key"
-            class="!py-0"
-            dense
           />
           <AssetDetails
             v-else
             :asset="option.key"
+            dense
           />
         </template>
         <template #activator.text="{ value }">
           <ChainDisplay
             v-if="!additional.includes(value.key)"
             :chain="value.key"
-            class="!py-0"
-            dense
           />
           <AssetDetails
             v-else
             :asset="value.key"
+            dense
           />
         </template>
       </RuiMenuSelect>

@@ -30,6 +30,7 @@ const selections = [
       :options="selections"
       key-attr="value"
       text-attr="text"
+      :item-height="58"
       full-width
       float-label
       show-details

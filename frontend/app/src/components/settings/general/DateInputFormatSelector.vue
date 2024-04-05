@@ -27,6 +27,7 @@ const { t } = useI18n();
   <RuiMenuSelect
     v-bind="rootAttrs"
     :options="selections"
+    :item-height="68"
     key-attr="value"
     text-attr="value"
     full-width

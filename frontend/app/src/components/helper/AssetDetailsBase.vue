@@ -65,7 +65,6 @@ const loading: ComputedRef<boolean> = computed(() =>
     class="max-w-[20rem]"
     v-bind="rootAttrs"
     :class="opensDetails ? 'cursor-pointer' : null"
-    :dense="dense"
     :size="dense ? 'sm' : 'md'"
     :loading="loading"
     :title="asset.isCustomAsset ? name : symbol"

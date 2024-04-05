@@ -199,6 +199,7 @@ onMounted(async () => {
           multiple
           class="w-full flex-1 !shadow-none !border-none !p-0"
           no-padding
+          dense
           outlined
           :chains="[ETH]"
           :usable-addresses="airdropAddresses"
@@ -206,10 +207,10 @@ onMounted(async () => {
         <RuiMenuSelect
           v-model="status"
           :options="statusFilters"
-          label-class="!h-14"
           class="w-full flex-1"
           key-attr="value"
           text-attr="text"
+          dense
           full-width
           float-label
           variant="outlined"
