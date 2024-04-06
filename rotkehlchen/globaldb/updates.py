@@ -35,10 +35,9 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 ASSETS_VERSION_KEY = 'assets_version'
-# https://raw.githubusercontent.com/zinkkrysty/rotki-assets/scroll-usdc/updates/24/updates.sql
-ASSETS_UPDATES_URL = 'https://raw.githubusercontent.com/zinkkrysty/rotki-assets/scroll-usdc/updates/{version}/updates.sql'
-ASSET_COLLECTIONS_UPDATES_URL = 'https://raw.githubusercontent.com/zinkkrysty/rotki-assets/scroll-usdc/updates/{version}/asset_collections_updates.sql'
-ASSET_COLLECTIONS_MAPPINGS_UPDATES_URL = 'https://raw.githubusercontent.com/zinkkrysty/rotki-assets/scroll-usdc/updates/{version}/asset_collections_mappings_updates.sql'
+ASSETS_UPDATES_URL = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/updates.sql'
+ASSET_COLLECTIONS_UPDATES_URL = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/asset_collections_updates.sql'
+ASSET_COLLECTIONS_MAPPINGS_UPDATES_URL = 'https://raw.githubusercontent.com/rotki/assets/{branch}/updates/{version}/asset_collections_mappings_updates.sql'
 FIRST_VERSION_WITH_COLLECTIONS = 16
 
 
@@ -132,7 +131,7 @@ class AssetsUpdater:
             self.branch = 'master'
 
     def _get_remote_info_json(self) -> dict[str, Any]:
-        url = 'https://raw.githubusercontent.com/zinkkrysty/rotki-assets/scroll-usdc/updates/info.json'
+        url = f'https://raw.githubusercontent.com/rotki/assets/{self.branch}/updates/info.json'
         try:
             response = requests.get(url=url, timeout=CachedSettings().get_timeout_tuple())
         except requests.exceptions.RequestException as e:
@@ -303,8 +302,6 @@ class AssetsUpdater:
         - DeserializationError if the appropriate data is not found or if it can't
         be properly parsed.
         """
-        log.debug(f'Parsing full insert asset text: {insert_text}')
-
         asset_data = self._parse_asset_data(insert_text)
         address = decimals = protocol = chain_id = token_kind = None
         if asset_data.asset_type == AssetType.EVM_TOKEN:

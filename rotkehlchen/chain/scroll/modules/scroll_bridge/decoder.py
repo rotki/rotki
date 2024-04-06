@@ -65,24 +65,21 @@ class ScrollBridgeDecoder(DecoderInterface):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        self.eth = A_ETH.resolve_to_crypto_asset()
 
     def _decode_eth_deposit_withdraw_event(self, context: DecoderContext) -> DecodingOutput:
         """Decodes an ETH deposit or withdraw bridging event
         Ethereum -> Scroll: Withdraw from bridge
         Scroll -> Ethereum: Deposit to bridge
         """
+        raw_amount = decode_abi(['uint256'], context.tx_log.data[:32])[0]
+        amount = from_wei(FVal(raw_amount))
         if context.tx_log.topics[0] == FINALIZE_DEPOSIT_ETH:
             user_address = hex_or_bytes_to_address(context.tx_log.topics[2])  # To address
-            raw_amount = decode_abi(['uint256'], context.tx_log.data[:32])[0]
-            amount = from_wei(FVal(raw_amount))
             expected_event_type = HistoryEventType.RECEIVE
             new_event_type = HistoryEventType.WITHDRAWAL
             from_chain, to_chain = ChainID.ETHEREUM, ChainID.SCROLL
         elif context.tx_log.topics[0] == WITHDRAW_ETH:
             user_address = hex_or_bytes_to_address(context.tx_log.topics[1])  # From address
-            raw_amount = decode_abi(['uint256'], context.tx_log.data[:32])[0]
-            amount = from_wei(FVal(raw_amount))
             expected_event_type = HistoryEventType.SPEND
             new_event_type = HistoryEventType.DEPOSIT
             from_chain, to_chain = ChainID.SCROLL, ChainID.ETHEREUM
@@ -93,7 +90,7 @@ class ScrollBridgeDecoder(DecoderInterface):
             if (
                 event.event_type == expected_event_type and
                 event.location_label == user_address and
-                event.asset == self.eth and
+                event.asset == A_ETH and
                 event.balance.amount == amount
             ):
                 event.event_type = new_event_type
@@ -115,9 +112,7 @@ class ScrollBridgeDecoder(DecoderInterface):
         Ethereum -> Scroll: Withdraw from bridge
         Scroll -> Ethereum: Deposit to bridge
         """
-        tx_log = context.tx_log
-
-        if tx_log.topics[0] not in (FINALIZE_DEPOSIT_ERC20, WITHDRAW_ERC20):
+        if (tx_log := context.tx_log).topics[0] not in (FINALIZE_DEPOSIT_ERC20, WITHDRAW_ERC20):
             return DEFAULT_DECODING_OUTPUT
 
         from_address = hex_or_bytes_to_address(tx_log.topics[3])
@@ -131,7 +126,6 @@ class ScrollBridgeDecoder(DecoderInterface):
         asset = self.base.get_or_create_evm_token(l2_token_address)
         raw_amount = hex_or_bytes_to_int(tx_log.data[32:64])
         amount = asset_normalized_value(raw_amount, asset)
-
         expected_event_type, new_event_type, from_chain, to_chain, _ = bridge_prepare_data(
             tx_log=tx_log,
             # The withdraw topic (Scroll to Ethereum) is considered a deposit here
@@ -173,10 +167,8 @@ class ScrollBridgeDecoder(DecoderInterface):
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_messenger_event(self, context: DecoderContext) -> DecodingOutput:
-
-        method_id = context.transaction.input_data[:4]
-
-        if method_id != RELAY_MESSAGE:
+        """Decodes a relayed message event to a bridge withdrawal"""
+        if context.transaction.input_data[:4] != RELAY_MESSAGE:
             return DEFAULT_DECODING_OUTPUT
 
         method_input_data = context.transaction.input_data[4:]
@@ -197,7 +189,7 @@ class ScrollBridgeDecoder(DecoderInterface):
             if (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.location_label == to_address and
-                event.asset == self.eth and
+                event.asset == A_ETH and
                 event.balance.amount == amount
             ):
                 event.event_type = HistoryEventType.WITHDRAWAL
