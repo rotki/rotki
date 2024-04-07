@@ -111,16 +111,12 @@ def read_velodrome_like_pools_and_gauges_from_cache(
     - A set of all known addresses of (velo/aero)drome pools.
     - A set of all known addresses of (velo/aero)drome gauges.
     """
-    gauge_addresses = set()
-    pool_addresses = set()
     with GlobalDBHandler().conn.read_ctx() as cursor:
         str_pool_addresses = globaldb_get_general_cache_values(cursor=cursor, key_parts=(cache_type_pool,))  # noqa: E501
-        for pool_address in str_pool_addresses:
-            pool_addresses.add(string_to_evm_address(pool_address))
+        pool_addresses = {string_to_evm_address(pool_address) for pool_address in str_pool_addresses}  # noqa: E501
 
         str_gauge_addresses = globaldb_get_general_cache_values(cursor=cursor, key_parts=(cache_type_gauge,))  # noqa: E501
-        for gauge_address in str_gauge_addresses:
-            gauge_addresses.add(string_to_evm_address(gauge_address))
+        gauge_addresses = {string_to_evm_address(gauge_address) for gauge_address in str_gauge_addresses}  # noqa: E501
 
     return pool_addresses, gauge_addresses
 

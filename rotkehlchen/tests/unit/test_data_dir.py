@@ -74,8 +74,7 @@ def _create_old_directory_structure(data_dir):
 
 def _assert_dir_matches(directory, expected):
     contents = set()
-    for x in directory.iterdir():
-        contents.add(x.name)
+    contents.update(x.name for x in directory.iterdir())
 
     assert contents == set(expected)
 

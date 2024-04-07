@@ -91,8 +91,7 @@ class DefiEvent(AccountingEventMixin):
         if self.spent_asset is not None:
             assets.add(self.spent_asset)
         if self.pnl is not None:
-            for entry in self.pnl:
-                assets.add(entry.asset)
+            assets.update(entry.asset for entry in self.pnl)
 
         return list(assets)
 

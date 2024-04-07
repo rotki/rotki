@@ -28,10 +28,8 @@ def test_name():
 
 
 def test_assets_are_known(mock_okx: Okx, globaldb):
-    okx_assets = set()
     currencies = mock_okx._api_query('currencies')
-    for currency in currencies['data']:
-        okx_assets.add(currency['ccy'])
+    okx_assets = {currency['ccy'] for currency in currencies['data']}
 
     for okx_asset in okx_assets:
         try:

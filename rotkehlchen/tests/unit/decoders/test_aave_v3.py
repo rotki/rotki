@@ -10,7 +10,6 @@ from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import (
     A_ETH,
-    A_LDO,
     A_POLYGON_POS_MATIC,
     A_USDC,
     A_USDT,
@@ -194,7 +193,7 @@ def test_aave_v3_deposit(database, ethereum_inquirer, ethereum_accounts) -> None
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
-            asset=A_LDO,
+            asset=EvmToken('eip155:1/erc20:0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32'),  # LDO
             balance=Balance(amount=FVal(deposit_amount)),
             location_label=ethereum_accounts[0],
             notes=f'Deposit {deposit_amount} LDO into AAVE v3',
