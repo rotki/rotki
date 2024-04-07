@@ -267,9 +267,7 @@ def fixture_mock_other_web3(network_mocking, should_mock_web3):
     without yielding if web3 and related stuff should be mocked"""
     if network_mocking is False:
         return False
-    if should_mock_web3:
-        return True
-    return False
+    return should_mock_web3
 
 
 @pytest.fixture(name='ethereum_inquirer')

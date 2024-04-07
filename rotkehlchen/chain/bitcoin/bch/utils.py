@@ -60,9 +60,7 @@ def is_valid_bitcoin_cash_address(address: str) -> bool:
         return False
     prefix, base32string = address.split(':')
     decoded = _b32decode(base32string)
-    if _polymod(_prefix_expand(prefix) + decoded) != 0:
-        return False
-    return True
+    return _polymod(_prefix_expand(prefix) + decoded) == 0
 
 
 def _b32decode(inputs: str) -> list:
@@ -161,12 +159,8 @@ def force_address_to_legacy_address(address: str) -> BTCAddress:
 
 
 def force_addresses_to_legacy_addresses(data: set[ChecksumAddress]) -> set[BTCAddress]:
-    """Changes the format of a list of addresses to Legacy."""
-    return_data = set()
-    for entry in data:
-        return_data.add(force_address_to_legacy_address(entry))
-
-    return return_data
+    """Changes the format of a set of addresses to Legacy."""
+    return {force_address_to_legacy_address(entry) for entry in data}
 
 
 def validate_bch_address_input(address: str, given_addresses: set[ChecksumAddress]) -> None:

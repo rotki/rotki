@@ -157,11 +157,7 @@ class PremiumSyncManager:
                 return False
 
         # try an automatic upload only once per hour
-        diff = ts_now() - self.last_upload_attempt_ts
-        if diff < 3600 and not force_upload:
-            return False
-
-        return True
+        return ts_now() - self.last_upload_attempt_ts > 3600 or force_upload
 
     def maybe_upload_data_to_server(
             self,
