@@ -750,7 +750,7 @@ def test_aave_v3_repay_scroll(database, scroll_inquirer, scroll_accounts) -> Non
         tx_hash=tx_hash,
     )
     timestamp = TimestampMS(1711456958000)
-    return_amount, repay_amount, gas_fees = '14459.999417', '14460.008663', '0.00024572416'  # TODO: Fix gas fees in scroll, it should be 0.000386215421959661 (similar #6359)  # noqa: E501
+    return_amount, repay_amount, gas_fees = '14459.999417', '14460.008663', '0.000386215421959661'
     expected_events = [
         EvmEvent(
             tx_hash=tx_hash,
