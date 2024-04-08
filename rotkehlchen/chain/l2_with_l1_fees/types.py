@@ -21,9 +21,9 @@ SupportedL2WithL1FeesChain = Literal[
     SupportedBlockchain.SCROLL,
 ]
 
-L2_CHAIN_IDS_WITH_L1_FEES = [ChainID.OPTIMISM, ChainID.ETHEREUM, ChainID.SCROLL]
+L2_CHAIN_IDS_WITH_L1_FEES = [ChainID.OPTIMISM, ChainID.BASE, ChainID.SCROLL]
 
-SupportedL2WithL1FeesChainId = Literal[ChainID.OPTIMISM, ChainID.ETHEREUM, ChainID.SCROLL]
+SupportedL2WithL1FeesChainId = Literal[ChainID.OPTIMISM, ChainID.BASE, ChainID.SCROLL]
 
 
 class L2WithL1FeesTransaction(EvmTransaction):  # noqa: PLW1641  # hash implemented by superclass
