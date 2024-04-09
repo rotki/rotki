@@ -67,13 +67,13 @@ export function useItemCache<T>(fetch: CacheFetch<T>, options: CacheOptions = {
     updateCacheKey(key, item);
   };
 
-  const fetchBatch = useDebounceFn(async () => {
+  const fetchBatch = useDebounceFn(() => {
     const currentBatch = get(batch);
     if (currentBatch.length === 0)
       return;
 
     set(batch, []);
-    await processBatch(currentBatch);
+    startPromise(processBatch(currentBatch));
   }, 800);
 
   async function processBatch(keys: string[]): Promise<void> {

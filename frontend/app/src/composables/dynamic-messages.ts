@@ -41,6 +41,20 @@ export const useDynamicMessages = createSharedComposable(() => {
     };
   });
 
+  const getFirstValidMessage = <T extends { period: VisibilityPeriod }>(
+    messages: T[],
+  ): T | null => {
+    const now = Date.now() / 1000;
+
+    const validMessages = messages.filter(
+      x => x.period.start <= now && x.period.end > now,
+    );
+    if (validMessages.length === 0)
+      return null;
+
+    return validMessages[0];
+  };
+
   const welcomeMessage = computed(() => {
     if (!isDefined(welcomeMessages))
       return null;
@@ -55,20 +69,6 @@ export const useDynamicMessages = createSharedComposable(() => {
 
     return getFirstValidMessage(get(dashboardMessages));
   });
-
-  const getFirstValidMessage = <T extends { period: VisibilityPeriod }>(
-    messages: T[],
-  ): T | null => {
-    const now = Date.now() / 1000;
-
-    const validMessages = messages.filter(
-      x => x.period.start <= now && x.period.end > now,
-    );
-    if (validMessages.length === 0)
-      return null;
-
-    return validMessages[0];
-  };
 
   const getData = <T>(response: AxiosResponse<T>) => {
     if (typeof response.data === 'string')

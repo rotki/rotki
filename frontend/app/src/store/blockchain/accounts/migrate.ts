@@ -23,11 +23,6 @@ export const useAccountMigrationStore = defineStore(
     const { t } = useI18n();
     const { notify } = useNotificationsStore();
 
-    const upgradeMigratedAddresses = (data: MigratedAddresses): void => {
-      set(migratedAddresses, data);
-      runMigrationIfPossible(canRequestData);
-    };
-
     const handleMigratedAccounts = (): void => {
       const txEvmChainsVal = get(txEvmChains);
       assert(txEvmChainsVal.length > 0, 'Supported chains is empty');
@@ -88,6 +83,11 @@ export const useAccountMigrationStore = defineStore(
       const migrated = get(migratedAddresses);
       if (get(canRequestData) && migrated.length > 0)
         handleMigratedAccounts();
+    };
+
+    const upgradeMigratedAddresses = (data: MigratedAddresses): void => {
+      set(migratedAddresses, data);
+      runMigrationIfPossible(canRequestData);
     };
 
     const setupCache = (username: string): void => {

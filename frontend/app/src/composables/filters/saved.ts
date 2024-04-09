@@ -28,6 +28,17 @@ export function useSavedFilter(location: MaybeRef<SavedFilterLocation>, isAsset:
   });
 
   const { t } = useI18n();
+
+  const saveFilters = async (
+    filters: BaseSuggestion[][],
+  ): Promise<ActionStatus> => {
+    const allSaved = { ...get(allSavedFilters) };
+    allSaved[get(location)] = filters;
+    return await updateSetting({
+      savedFilters: allSaved,
+    });
+  };
+
   const addFilter = async (newFilter: Suggestion[]): Promise<ActionStatus> => {
     const currentFilters = get(allSavedFilters)[get(location)] || [];
 
@@ -59,16 +70,6 @@ export function useSavedFilter(location: MaybeRef<SavedFilterLocation>, isAsset:
     newFilters.splice(index, 1);
 
     await saveFilters(newFilters);
-  };
-
-  const saveFilters = async (
-    filters: BaseSuggestion[][],
-  ): Promise<ActionStatus> => {
-    const allSaved = { ...get(allSavedFilters) };
-    allSaved[get(location)] = filters;
-    return await updateSetting({
-      savedFilters: allSaved,
-    });
   };
 
   return {

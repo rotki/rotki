@@ -17,6 +17,8 @@ const props = withDefaults(
   { identifier: null, mainPage: false },
 );
 
+const { t } = useI18n();
+
 const { identifier, mainPage } = toRefs(props);
 
 const mergeTool = ref<boolean>(false);
@@ -40,15 +42,8 @@ const extraParams = computed(() => {
   };
 });
 
-const dialogTitle = computed<string>(() =>
-  get(editableItem)
-    ? t('asset_management.edit_title')
-    : t('asset_management.add_title'),
-);
-
 const router = useRouter();
 const route = useRoute();
-const { t } = useI18n();
 const { queryAllAssets, deleteAsset } = useAssetManagementApi();
 const { setMessage } = useMessageStore();
 const { show } = useConfirmStore();
@@ -56,49 +51,7 @@ const { ignoredAssets } = storeToRefs(useIgnoredAssetsStore());
 
 const { setOpenDialog, setPostSubmitFunc } = useManagedAssetForm();
 
-function add() {
-  set(editableItem, null);
-  setOpenDialog(true);
-}
-
-function edit(editAsset: SupportedAsset) {
-  set(editableItem, editAsset);
-  setOpenDialog(true);
-}
-
-async function editAsset(assetId: Nullable<string>) {
-  if (assetId) {
-    const all = await queryAllAssets({
-      identifiers: [assetId],
-      limit: 1,
-      offset: 0,
-    });
-
-    const foundAsset = all.data[0];
-    if (foundAsset)
-      edit(foundAsset);
-  }
-}
-
 const { deleteCacheKey } = useAssetCacheStore();
-
-async function deleteAssetHandler(identifier: string) {
-  try {
-    const success = await deleteAsset(identifier);
-    if (success) {
-      await fetchData();
-      deleteCacheKey(identifier);
-    }
-  }
-  catch (error: any) {
-    setMessage({
-      description: t('asset_management.delete_error', {
-        address: identifier,
-        message: error.message,
-      }),
-    });
-  }
-}
 
 async function confirmDelete(toDeleteAsset: SupportedAsset) {
   await deleteAssetHandler(toDeleteAsset.identifier);
@@ -138,6 +91,54 @@ const {
     ascending: [true],
   },
 });
+
+const dialogTitle = computed<string>(() =>
+  get(editableItem)
+    ? t('asset_management.edit_title')
+    : t('asset_management.add_title'),
+);
+
+function add() {
+  set(editableItem, null);
+  setOpenDialog(true);
+}
+
+function edit(editAsset: SupportedAsset) {
+  set(editableItem, editAsset);
+  setOpenDialog(true);
+}
+
+async function editAsset(assetId: Nullable<string>) {
+  if (assetId) {
+    const all = await queryAllAssets({
+      identifiers: [assetId],
+      limit: 1,
+      offset: 0,
+    });
+
+    const foundAsset = all.data[0];
+    if (foundAsset)
+      edit(foundAsset);
+  }
+}
+
+async function deleteAssetHandler(identifier: string) {
+  try {
+    const success = await deleteAsset(identifier);
+    if (success) {
+      await fetchData();
+      deleteCacheKey(identifier);
+    }
+  }
+  catch (error: any) {
+    setMessage({
+      description: t('asset_management.delete_error', {
+        address: identifier,
+        message: error.message,
+      }),
+    });
+  }
+}
 
 setPostSubmitFunc(fetchData);
 

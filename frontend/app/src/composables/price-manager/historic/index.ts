@@ -116,7 +116,9 @@ export function useHistoricPrices(filter: Ref<{ fromAsset?: string; toAsset?: st
     { deep: true },
   );
 
-  onBeforeMount(refresh);
+  onBeforeMount(() => {
+    startPromise(refresh());
+  });
 
   return {
     items,

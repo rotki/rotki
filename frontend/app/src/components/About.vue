@@ -19,7 +19,7 @@ const componentsVersion = computed(() => {
   if (!get(premium))
     return null;
 
-  // @ts-expect-error
+  // @ts-expect-error components are not typed
   const cmp = window.PremiumComponents;
   if (!cmp)
     return null;

@@ -26,11 +26,9 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { t } = useI18n();
   const { addresses, balances } = storeToRefs(useBlockchainStore());
-  const {
-    fetchDetectedTokensTask,
-    fetchDetectedTokens: fetchDetectedTokensCaller,
-  } = useBlockchainBalancesApi();
+  const { fetchDetectedTokensTask, fetchDetectedTokens: fetchDetectedTokensCaller } = useBlockchainBalancesApi();
   const { getChainName, supportsTransactions, txEvmChains } = useSupportedChains();
+  const { notify } = useNotificationsStore();
 
   const monitoredAddresses = computed<Record<string, string[]>>(() => {
     const addressesPerChain = get(addresses);
@@ -38,18 +36,6 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
       get(txEvmChains).map(chain => [chain.id, addressesPerChain[chain.id] ?? []]),
     );
   });
-
-  const fetchDetected = async (
-    chain: string,
-    addresses: string[],
-  ): Promise<void> => {
-    await awaitParallelExecution(
-      addresses,
-      address => address,
-      address => fetchDetectedTokens(chain, address),
-      2,
-    );
-  };
 
   const setState = (chain: string, data: EvmTokensRecord) => {
     const tokensVal = { ...get(tokensState) };
@@ -61,8 +47,6 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
       },
     });
   };
-
-  const { notify } = useNotificationsStore();
 
   const fetchDetectedTokens = async (
     chain: string,
@@ -114,6 +98,18 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
         });
       }
     }
+  };
+
+  const fetchDetected = async (
+    chain: string,
+    addresses: string[],
+  ): Promise<void> => {
+    await awaitParallelExecution(
+      addresses,
+      address => address,
+      address => fetchDetectedTokens(chain, address),
+      2,
+    );
   };
 
   const getTokens = (balances: BlockchainAssetBalances, address: string) => {

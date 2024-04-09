@@ -58,7 +58,7 @@ async function save() {
   emit('save', props.tag);
 }
 
-async function cancel() {
+function cancel() {
   emit('cancel');
 }
 

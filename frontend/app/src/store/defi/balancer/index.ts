@@ -25,64 +25,83 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
 
   const addresses = computed(() => Object.keys(get(balances)));
 
-  const balancerBalances = (addresses: string[]) =>
-    computed<BalancerBalance[]>(() => {
-      const perAddressBalances = get(balances);
+  const balancerBalances = (addresses: string[]) => computed<BalancerBalance[]>(() => {
+    const perAddressBalances = get(balances);
 
-      const aggregatedBalances: Record<string, Writeable<BalancerBalance>> = {};
+    const aggregatedBalances: Record<string, Writeable<BalancerBalance>> = {};
 
-      for (const account in perAddressBalances) {
-        if (addresses.length > 0 && !addresses.includes(account))
-          continue;
+    for (const account in perAddressBalances) {
+      if (addresses.length > 0 && !addresses.includes(account))
+        continue;
 
-        const accountBalances = cloneDeep(perAddressBalances)[account];
-        if (!accountBalances || accountBalances.length === 0)
-          continue;
+      const accountBalances = cloneDeep(perAddressBalances)[account];
+      if (!accountBalances || accountBalances.length === 0)
+        continue;
 
-        for (const {
-          address,
-          tokens,
-          totalAmount,
-          userBalance,
-        } of accountBalances) {
-          const balance = aggregatedBalances[address];
-          if (balance) {
-            const oldBalance = balance.userBalance;
-            balance.userBalance = balanceSum(oldBalance, userBalance);
+      for (const {
+        address,
+        tokens,
+        totalAmount,
+        userBalance,
+      } of accountBalances) {
+        const balance = aggregatedBalances[address];
+        if (balance) {
+          const oldBalance = balance.userBalance;
+          balance.userBalance = balanceSum(oldBalance, userBalance);
 
-            tokens.forEach((token) => {
-              const index = balance.tokens.findIndex(
-                item => item.token === token.token,
+          tokens.forEach((token) => {
+            const index = balance.tokens.findIndex(
+              item => item.token === token.token,
+            );
+            if (index > -1) {
+              const existingAssetData = balance.tokens[index];
+              const userBalance = balanceSum(
+                existingAssetData.userBalance,
+                token.userBalance,
               );
-              if (index > -1) {
-                const existingAssetData = balance.tokens[index];
-                const userBalance = balanceSum(
-                  existingAssetData.userBalance,
-                  token.userBalance,
-                );
-                balance.tokens[index] = {
-                  ...existingAssetData,
-                  userBalance,
-                };
-              }
-              else {
-                balance.tokens.push(token);
-              }
-            });
-          }
-          else {
-            aggregatedBalances[address] = {
-              address,
-              tokens,
-              totalAmount,
-              userBalance,
-            };
-          }
+              balance.tokens[index] = {
+                ...existingAssetData,
+                userBalance,
+              };
+            }
+            else {
+              balance.tokens.push(token);
+            }
+          });
+        }
+        else {
+          aggregatedBalances[address] = {
+            address,
+            tokens,
+            totalAmount,
+            userBalance,
+          };
         }
       }
+    }
 
-      return Object.values(aggregatedBalances);
+    return Object.values(aggregatedBalances);
+  });
+
+  const eventList = (addresses: string[] = []): ComputedRef<BalancerEvent[]> => computed(() => {
+    const result: BalancerEvent[] = [];
+    const perAddressEvents = get(events);
+    filterAddresses(perAddressEvents, addresses, (item) => {
+      for (const poolDetail of item) {
+        const assets = poolDetail.poolTokens.map(pool => pool.token);
+        result.push(
+          ...poolDetail.events.map(value => ({
+            ...value,
+            pool: {
+              assets,
+              address: poolDetail.poolAddress,
+            },
+          })),
+        );
+      }
     });
+    return result;
+  });
 
   const pools = computed(() => {
     const pools: Record<string, XswapPool> = {};
@@ -133,27 +152,6 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
         }
       });
       return Object.values(balancerProfitLoss);
-    });
-
-  const eventList = (addresses: string[] = []): ComputedRef<BalancerEvent[]> =>
-    computed(() => {
-      const result: BalancerEvent[] = [];
-      const perAddressEvents = get(events);
-      filterAddresses(perAddressEvents, addresses, (item) => {
-        for (const poolDetail of item) {
-          const assets = poolDetail.poolTokens.map(pool => pool.token);
-          result.push(
-            ...poolDetail.events.map(value => ({
-              ...value,
-              pool: {
-                assets,
-                address: poolDetail.poolAddress,
-              },
-            })),
-          );
-        }
-      });
-      return result;
     });
 
   const fetchBalances = async (refresh = false) => {

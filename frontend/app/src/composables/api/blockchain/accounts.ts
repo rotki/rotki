@@ -272,13 +272,12 @@ export function useBlockchainAccountsApi() {
     return handleResponse(response);
   };
 
-  const addEvmAccount = async (
+  const addEvmAccount = (
     payload: Omit<BlockchainAccountPayload, 'blockchain'>,
-  ): Promise<PendingTask> =>
-    performAsyncQuery(
-      '/blockchains/evm/accounts',
-      nonEmptyProperties(payloadToData(payload)),
-    );
+  ): Promise<PendingTask> => performAsyncQuery(
+    '/blockchains/evm/accounts',
+    nonEmptyProperties(payloadToData(payload)),
+  );
 
   const detectEvmAccounts = async (): Promise<PendingTask> => {
     const response = await api.instance.post<ActionResult<PendingTask>>(

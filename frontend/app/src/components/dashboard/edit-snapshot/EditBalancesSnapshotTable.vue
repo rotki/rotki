@@ -319,7 +319,7 @@ function updateData(balancesSnapshot: BalanceSnapshot[], location = '', calculat
   });
 }
 
-async function save() {
+function save() {
   const formVal = get(form);
 
   if (!formVal)

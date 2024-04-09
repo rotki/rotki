@@ -20,7 +20,7 @@ watch(route, ({ hash }) => {
   setActiveTab(hash);
 });
 
-onMounted(async () => {
+onMounted(() => {
   setActiveTab(route.hash);
 });
 </script>

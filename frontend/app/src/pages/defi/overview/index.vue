@@ -2,49 +2,15 @@
 import { type TablePaginationData, useBreakpoint } from '@rotki/ui-library-compat';
 import { Section } from '@/types/status';
 
+const page = ref(1);
+const itemsPerPage = ref(9);
+
 const store = useDefiStore();
 const overviewStore = useDefiOverviewStore();
 const { overview: currentOverview } = storeToRefs(overviewStore);
 const section = Section.DEFI_OVERVIEW;
 
 const { t } = useI18n();
-
-async function refresh() {
-  await store.fetchAllDefi(true);
-}
-
-onMounted(async () => {
-  await store.fetchAllDefi(false);
-});
-
-const { shouldShowLoadingScreen, isLoading } = useStatusStore();
-
-const loading = shouldShowLoadingScreen(section);
-const refreshing = isLoading(section);
-
-const refreshTooltip: ComputedRef<string> = computed(() =>
-  t('helpers.refresh_header.tooltip', {
-    title: t('decentralized_overview.title').toLocaleLowerCase(),
-  }),
-);
-
-const page = ref(1);
-const itemsPerPage = ref(9);
-
-const paginationData = computed({
-  get() {
-    return {
-      page: get(page),
-      total: get(currentOverview).length,
-      limit: get(itemsPerPage),
-      limits: get(limits),
-    };
-  },
-  set(value: TablePaginationData) {
-    set(page, value.page);
-    set(itemsPerPage, value.limit);
-  },
-});
 
 const { isMdAndDown, isMd, is2xl } = useBreakpoint();
 
@@ -61,19 +27,53 @@ const firstLimit = computed(() => {
   return 9;
 });
 
-const limits = computed(() => {
-  const first = get(firstLimit);
-  return [first, first * 2, first * 4];
-});
+const { shouldShowLoadingScreen, isLoading } = useStatusStore();
 
-watchImmediate(firstLimit, () => {
-  set(itemsPerPage, get(firstLimit));
-});
+const loading = shouldShowLoadingScreen(section);
+const refreshing = isLoading(section);
+
+const refreshTooltip: ComputedRef<string> = computed(() =>
+  t('helpers.refresh_header.tooltip', {
+    title: t('decentralized_overview.title').toLocaleLowerCase(),
+  }),
+);
 
 const visibleData = computed(() => {
   const perPage = get(itemsPerPage);
   const start = (get(page) - 1) * perPage;
   return get(currentOverview).slice(start, start + perPage);
+});
+
+const limits = computed(() => {
+  const first = get(firstLimit);
+  return [first, first * 2, first * 4];
+});
+
+const paginationData = computed({
+  get() {
+    return {
+      page: get(page),
+      total: get(currentOverview).length,
+      limit: get(itemsPerPage),
+      limits: get(limits),
+    };
+  },
+  set(value: TablePaginationData) {
+    set(page, value.page);
+    set(itemsPerPage, value.limit);
+  },
+});
+
+async function refresh() {
+  await store.fetchAllDefi(true);
+}
+
+watchImmediate(firstLimit, () => {
+  set(itemsPerPage, get(firstLimit));
+});
+
+onMounted(async () => {
+  await store.fetchAllDefi(false);
 });
 </script>
 

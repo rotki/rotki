@@ -217,6 +217,16 @@ export function usePaginationFilters<
   );
 
   /**
+   * Updates pagination options
+   * @template T
+   * @param {TablePagination<T>} newOptions
+   */
+  const setOptions = (newOptions: TablePagination<V>) => {
+    set(userAction, true);
+    set(paginationOptions, newOptions);
+  };
+
+  /**
    * Triggered on route change and on component mount
    * sets the pagination and filters values from route query
    */
@@ -302,16 +312,6 @@ export function usePaginationFilters<
   };
 
   /**
-   * Updates pagination options
-   * @template T
-   * @param {TablePagination<T>} newOptions
-   */
-  const setOptions = (newOptions: TablePagination<V>) => {
-    set(userAction, true);
-    set(paginationOptions, newOptions);
-  };
-
-  /**
    * This is for the new table from lib, when all is migrated, then we'll remove setOptions
    * @param {DataTableOptions} data
    */
@@ -355,18 +355,15 @@ export function usePaginationFilters<
     applyRouteFilter();
   });
 
-  watch(
-    [filters, extraParams],
-    async ([filters, extraParams], [oldFilters, oldExtraParams]) => {
-      const filterEquals = isEqual(filters, oldFilters);
-      const paramEquals = isEqual(extraParams, oldExtraParams);
+  watch([filters, extraParams], ([filters, extraParams], [oldFilters, oldExtraParams]) => {
+    const filterEquals = isEqual(filters, oldFilters);
+    const paramEquals = isEqual(extraParams, oldExtraParams);
 
-      if (filterEquals && paramEquals)
-        return;
+    if (filterEquals && paramEquals)
+      return;
 
-      setPage(1, !paramEquals);
-    },
-  );
+    setPage(1, !paramEquals);
+  });
 
   watch(pageParams, async (params, op) => {
     if (isEqual(params, op))

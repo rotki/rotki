@@ -76,33 +76,6 @@ export const useExchangeBalancesStore = defineStore('balances/exchanges', () => 
     return breakdown;
   });
 
-  const getLocationBreakdown = (id: string): ComputedRef<AssetBalances> =>
-    computed(() => {
-      const assets: AssetBalances = {};
-      const exchange = get(connectedExchanges).find(
-        ({ location }) => id === location,
-      );
-
-      if (exchange) {
-        const balances = get(getBalances(exchange.location));
-        for (const balance of balances)
-          appendAssetBalance(balance, assets, getAssociatedAssetIdentifier);
-      }
-      return assets;
-    });
-
-  const getByLocationBalances = (
-    convert: (bn: MaybeRef<BigNumber>) => MaybeRef<BigNumber>,
-  ) => computed<Record<string, BigNumber>>(() => {
-    const balances: Record<string, BigNumber> = {};
-    for (const { location, total } of get(exchanges)) {
-      const balance = balances[location];
-      const value = get(convert(total));
-      balances[location] = !balance ? value : value.plus(balance);
-    }
-    return balances;
-  });
-
   const getBalances = (
     exchange: string,
     hideIgnored = true,
@@ -123,6 +96,32 @@ export const useExchangeBalancesStore = defineStore('balances/exchanges', () => 
     }
 
     return [];
+  });
+
+  const getLocationBreakdown = (id: string): ComputedRef<AssetBalances> => computed(() => {
+    const assets: AssetBalances = {};
+    const exchange = get(connectedExchanges).find(
+      ({ location }) => id === location,
+    );
+
+    if (exchange) {
+      const balances = get(getBalances(exchange.location));
+      for (const balance of balances)
+        appendAssetBalance(balance, assets, getAssociatedAssetIdentifier);
+    }
+    return assets;
+  });
+
+  const getByLocationBalances = (
+    convert: (bn: MaybeRef<BigNumber>) => MaybeRef<BigNumber>,
+  ) => computed<Record<string, BigNumber>>(() => {
+    const balances: Record<string, BigNumber> = {};
+    for (const { location, total } of get(exchanges)) {
+      const balance = balances[location];
+      const value = get(convert(total));
+      balances[location] = !balance ? value : value.plus(balance);
+    }
+    return balances;
   });
 
   const fetchExchangeBalances = async (

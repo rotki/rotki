@@ -153,6 +153,23 @@ export const useExternalApiKeys = createSharedComposable(
       }
     };
 
+    const deleteService = async (name: string) => {
+      set(loading, true);
+      try {
+        set(keys, await deleteExternalServices(name));
+      }
+      catch (error: any) {
+        setStatus(name, {
+          message: t('external_services.delete_error.description', {
+            message: error.message,
+          }),
+        });
+      }
+      finally {
+        set(loading, false);
+      }
+    };
+
     const confirmDelete = (
       name: string,
       postConfirmAction?: () => Promise<void> | void,
@@ -169,23 +186,6 @@ export const useExternalApiKeys = createSharedComposable(
           await postConfirmAction?.();
         },
       );
-    };
-
-    const deleteService = async (name: string) => {
-      set(loading, true);
-      try {
-        set(keys, await deleteExternalServices(name));
-      }
-      catch (error: any) {
-        setStatus(name, {
-          message: t('external_services.delete_error.description', {
-            message: error.message,
-          }),
-        });
-      }
-      finally {
-        set(loading, false);
-      }
     };
 
     return {
