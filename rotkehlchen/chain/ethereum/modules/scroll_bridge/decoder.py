@@ -43,16 +43,10 @@ L1_ERC20_GATEWAY: Final = string_to_evm_address('0xD8A791fE2bE73eb6E6cF1eb0cb3F3
 L1_USDC_GATEWAY: Final = string_to_evm_address('0xf1AF3b23DE0A5Ca3CAb7261cb0061C0D779A5c7B')
 L1_MESSENGER_PROXY: Final = string_to_evm_address('0x6774Bcbd5ceCeF1336b5300fb5186a12DDD8b367')
 
-# DepositETH - 0x6670de856ec8bf5cb2b7e957c5dc24759716056f79d97ea5e7c939ca0ba5a675
 DEPOSIT_ETH: Final = b'fp\xde\x85n\xc8\xbf\\\xb2\xb7\xe9W\xc5\xdc$u\x97\x16\x05oy\xd9~\xa5\xe7\xc99\xca\x0b\xa5\xa6u'  # noqa: E501
-# FinalizeWithdrawETH - 0x96db5d1cee1dd2760826bb56fabd9c9f6e978083e0a8b88559c741a29e9746e7
 FINALIZE_WITHDRAW_ETH: Final = b'\x96\xdb]\x1c\xee\x1d\xd2v\x08&\xbbV\xfa\xbd\x9c\x9fn\x97\x80\x83\xe0\xa8\xb8\x85Y\xc7A\xa2\x9e\x97F\xe7'  # noqa: E501
-# SentMessage - 0x104371f3b442861a2a7b82a070afbbaab748bb13757bf47769e170e37809ec1e
 SENT_MESSAGE: Final = b'\x10Cq\xf3\xb4B\x86\x1a*{\x82\xa0p\xaf\xbb\xaa\xb7H\xbb\x13u{\xf4wi\xe1p\xe3x\t\xec\x1e'  # noqa: E501
-
-# DepositERC20 - 0x31cd3b976e4d654022bf95c68a2ce53f1d5d94afabe0454d2832208eeb40af25
 DEPOSIT_ERC20: Final = b'1\xcd;\x97nMe@"\xbf\x95\xc6\x8a,\xe5?\x1d]\x94\xaf\xab\xe0EM(2 \x8e\xeb@\xaf%'  # noqa: E501
-# FinalizeWithdrawERC20 - 0xc6f985873b37805705f6bce756dce3d1ff4b603e298d506288cce499926846a7
 FINALIZE_WITHDRAW_ERC20: Final = b'\xc6\xf9\x85\x87;7\x80W\x05\xf6\xbc\xe7V\xdc\xe3\xd1\xffK`>)\x8dPb\x88\xcc\xe4\x99\x92hF\xa7'  # noqa: E501
 
 
@@ -188,8 +182,7 @@ class ScrollBridgeDecoder(DecoderInterface):
                 event.event_type == HistoryEventType.SPEND and
                 event.asset == A_ETH and
                 event.address == L1_GATEWAY_ROUTER
-            ):
-                # Update the fee event by subtracting the refund amount
+            ):  # Update the fee event by subtracting the refund amount
                 l2_fees_amount = event.balance.amount - refund_amount
                 event.counterparty = CPT_SCROLL
                 event.balance.amount = l2_fees_amount
@@ -240,8 +233,7 @@ class ScrollBridgeDecoder(DecoderInterface):
                 fee_amount=fee_amount,
                 sender=user_address,
             )
-            # Replace the refund event if found
-            if refund_event_idx is not None:
+            if refund_event_idx is not None:  # Replace the refund event if found
                 context.decoded_events[refund_event_idx] = spend_l2_fees_event
             else:
                 context.decoded_events.append(spend_l2_fees_event)
@@ -279,7 +271,7 @@ class ScrollBridgeDecoder(DecoderInterface):
             sender: str,
     ) -> tuple[int | None, FVal]:
         """Finds the refund event and returns its index and amount
-        This event will be replaced by the L2 fees event
+        This event will be replaced by the L2 fees event.
         If the event isn't found, returns None and 0
         """
         refund_event_idx, refund_amount = None, ZERO
@@ -312,7 +304,7 @@ class ScrollBridgeDecoder(DecoderInterface):
             asset=A_ETH,
             balance=Balance(amount=fee_amount),
             location_label=sender,
-            notes=f'Spend {fee_amount} ETH on bridging to Scroll (fees on L2)',
+            notes=f'Spend {fee_amount} ETH as a fee for bridging to Scroll',
             counterparty=CPT_SCROLL,
             address=L1_MESSENGER_PROXY,
         )

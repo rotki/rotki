@@ -50,14 +50,15 @@ def maybe_reshuffle_events(
 def bridge_prepare_data(
         tx_log: 'EvmTxReceiptLog',
         deposit_topics: Sequence[bytes],
-        # The chain of the current transaction
         source_chain: ChainID,
-        # The chain on the other side
         target_chain: ChainID,
         from_address: ChecksumEvmAddress,
         to_address: ChecksumEvmAddress,
 ) -> tuple[HistoryEventType, HistoryEventType, ChainID, ChainID, ChecksumEvmAddress]:
     """Method to prepare the bridge variables
+
+    `source_chain` is the chain where the current transaction is happening
+    `target_chain` is the chain on the other side of the bridge
 
     When coming here the caller has to make sure that:
     - tx_log topics is either in deposit_topics or else is a withdrawal

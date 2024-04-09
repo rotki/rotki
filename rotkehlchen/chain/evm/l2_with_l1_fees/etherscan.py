@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Literal
 
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import (
     L2WithL1FeesTransaction,
-    SupportedL2WithL1FeesChain,
+    SupportedL2WithL1FeesType,
 )
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -28,7 +28,7 @@ class L2WithL1FeesEtherscan(Etherscan, ABC):
             self,
             database: 'DBHandler',
             msg_aggregator: 'MessagesAggregator',
-            chain: SupportedL2WithL1FeesChain,
+            chain: SupportedL2WithL1FeesType,
             base_url: str,
             service: Literal[
                 ExternalService.OPTIMISM_ETHERSCAN,
