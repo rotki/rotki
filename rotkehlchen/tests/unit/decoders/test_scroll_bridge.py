@@ -7,6 +7,7 @@ from rotkehlchen.chain.ethereum.modules.scroll_bridge.decoder import (
     L1_ETH_GATEWAY_PROXY,
     L1_GATEWAY_ROUTER,
     L1_MESSENGER_PROXY,
+    L1_USDC_GATEWAY,
 )
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -35,43 +36,45 @@ def test_deposit_eth_from_ethereum_to_scroll(database, ethereum_inquirer, ethere
         tx_hash=evmhash,
     )
     user_address = ethereum_accounts[0]
+    timestamp = TimestampMS(1711626707000)
+    gas, amount, bridging_fee = '0.006936488814808056', '0.1179', '0.0002604'
     assert events == [
         EvmEvent(
             tx_hash=evmhash,
             sequence_index=0,
-            timestamp=TimestampMS(1711626707000),
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.006936488814808056')),
+            balance=Balance(amount=FVal(gas)),
             location_label=user_address,
-            notes='Burned 0.006936488814808056 ETH for gas',
+            notes=f'Burned {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=1,
-            timestamp=TimestampMS(1711626707000),
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.0002604')),
+            balance=Balance(amount=FVal(bridging_fee)),
             location_label=user_address,
-            notes='Spend 0.0002604 ETH as a fee for bridging to Scroll',
+            notes=f'Spend {bridging_fee} ETH as a fee for bridging to Scroll',
             counterparty=CPT_SCROLL,
             address=L1_MESSENGER_PROXY,
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=2,
-            timestamp=TimestampMS(1711626707000),
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.1179')),
+            balance=Balance(amount=FVal(amount)),
             location_label=user_address,
-            notes='Bridge 0.1179 ETH from Ethereum to Scroll via Scroll bridge',
+            notes=f'Bridge {amount} ETH from Ethereum to Scroll via Scroll bridge',
             counterparty=CPT_SCROLL,
             address=L1_GATEWAY_ROUTER,
         ),
@@ -88,18 +91,20 @@ def test_receive_eth_on_scroll(database, scroll_inquirer, scroll_accounts):
         tx_hash=evmhash,
     )
     user_address = scroll_accounts[0]
+    timestamp = TimestampMS(1711627620000)
+    amount = '0.1179'
     assert events == [
         EvmEvent(
             tx_hash=evmhash,
             sequence_index=0,
-            timestamp=TimestampMS(1711627620000),
+            timestamp=timestamp,
             location=Location.SCROLL,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.1179')),
+            balance=Balance(amount=FVal(amount)),
             location_label=user_address,
-            notes='Bridge 0.1179 ETH from Ethereum to Scroll via Scroll bridge',
+            notes=f'Bridge {amount} ETH from Ethereum to Scroll via Scroll bridge',
             counterparty=CPT_SCROLL,
             address=L2_ETH_GATEWAY,
         ),
@@ -116,30 +121,32 @@ def test_withdraw_eth_from_scroll_to_ethereum(database, scroll_inquirer, scroll_
         tx_hash=evmhash,
     )
     user_address = scroll_accounts[0]
+    timestamp = TimestampMS(1708178454000)
+    gas, amount = '0.00021234172322581', '0.6'
     assert events == [
         EvmEvent(
             tx_hash=evmhash,
             sequence_index=0,
-            timestamp=TimestampMS(1708178454000),
+            timestamp=timestamp,
             location=Location.SCROLL,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.00021234172322581')),
+            balance=Balance(amount=FVal(gas)),
             location_label=user_address,
-            notes='Burned 0.00021234172322581 ETH for gas',
+            notes=f'Burned {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=1,
-            timestamp=TimestampMS(1708178454000),
+            timestamp=timestamp,
             location=Location.SCROLL,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.6')),
+            balance=Balance(amount=FVal(amount)),
             location_label=user_address,
-            notes='Bridge 0.6 ETH from Scroll to Ethereum via Scroll bridge',
+            notes=f'Bridge {amount} ETH from Scroll to Ethereum via Scroll bridge',
             counterparty=CPT_SCROLL,
             address=string_to_evm_address(L2_ETH_GATEWAY),
         ),
@@ -156,30 +163,32 @@ def test_receive_eth_on_ethereum(database, ethereum_inquirer, ethereum_accounts)
         tx_hash=evmhash,
     )
     user_address = ethereum_accounts[0]
+    timestamp = TimestampMS(1708187711000)
+    gas, amount = '0.003718494016624992', '0.6'
     assert events == [
         EvmEvent(
             tx_hash=evmhash,
             sequence_index=0,
-            timestamp=TimestampMS(1708187711000),
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.003718494016624992')),
+            balance=Balance(amount=FVal(gas)),
             location_label=user_address,
-            notes='Burned 0.003718494016624992 ETH for gas',
+            notes=f'Burned {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=1,
-            timestamp=TimestampMS(1708187711000),
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.6')),
+            balance=Balance(amount=FVal(amount)),
             location_label=user_address,
-            notes='Bridge 0.6 ETH from Scroll to Ethereum via Scroll bridge',
+            notes=f'Bridge {amount} ETH from Scroll to Ethereum via Scroll bridge',
             counterparty=CPT_SCROLL,
             address=string_to_evm_address(L1_ETH_GATEWAY_PROXY),
         ),
@@ -196,45 +205,47 @@ def test_deposit_erc20_from_ethereum_to_scroll(database, ethereum_inquirer, ethe
         tx_hash=evmhash,
     )
     user_address = ethereum_accounts[0]
+    timestamp = TimestampMS(1711698851000)
+    gas, fee, amount = '0.005582179923194343', '0.000122880', '100'
     assert events == [
         EvmEvent(
             tx_hash=evmhash,
             sequence_index=0,
-            timestamp=TimestampMS(1711698851000),
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=Asset('ETH'),
-            balance=Balance(amount=FVal('0.005582179923194343')),
+            balance=Balance(amount=FVal(gas)),
             location_label=user_address,
-            notes='Burned 0.005582179923194343 ETH for gas',
+            notes=f'Burned {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=2,
-            timestamp=TimestampMS(1711698851000),
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.NONE,
             asset=Asset('ETH'),
-            balance=Balance(amount=FVal('0.000122880')),
+            balance=Balance(amount=FVal(fee)),
             location_label=user_address,
-            notes='Spend 0.000122880 ETH in L2 fees to bridge ERC20 tokens to Scroll',
+            notes=f'Spend {fee} ETH in L2 fees to bridge ERC20 tokens to Scroll',
             counterparty=CPT_SCROLL,
             address=string_to_evm_address(L1_GATEWAY_ROUTER),
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=269,
-            timestamp=TimestampMS(1711698851000),
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
-            balance=Balance(amount=FVal('100')),
+            balance=Balance(amount=FVal(amount)),
             location_label=user_address,
-            notes='Bridge 100 USDC from Ethereum to Scroll via Scroll bridge',
+            notes=f'Bridge {amount} USDC from Ethereum to Scroll via Scroll bridge',
             counterparty=CPT_SCROLL,
-            address=string_to_evm_address('0xf1AF3b23DE0A5Ca3CAb7261cb0061C0D779A5c7B'),
+            address=L1_USDC_GATEWAY,
         ),
     ]
 
@@ -249,18 +260,20 @@ def test_receive_erc20_on_scroll(database, scroll_inquirer, scroll_accounts):
         tx_hash=evmhash,
     )
     user_address = scroll_accounts[0]
+    timestamp = TimestampMS(1711699803000)
+    amount = '100'
     assert events == [
         EvmEvent(
             tx_hash=evmhash,
             sequence_index=9,
-            timestamp=TimestampMS(1711699803000),
+            timestamp=timestamp,
             location=Location.SCROLL,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:534352/erc20:0x06eFdBFf2a14a7c8E15944D1F4A48F9F95F663A4'),
-            balance=Balance(amount=FVal('100')),
+            balance=Balance(amount=FVal(amount)),
             location_label=user_address,
-            notes='Bridge 100 USDC from Ethereum to Scroll via Scroll bridge',
+            notes=f'Bridge {amount} USDC from Ethereum to Scroll via Scroll bridge',
             counterparty=CPT_SCROLL,
             address=ZERO_ADDRESS,
         ),
@@ -278,30 +291,32 @@ def test_withdraw_erc20_from_scroll_to_ethereum(database, scroll_inquirer, scrol
         tx_hash=evmhash,
     )
     user_address = scroll_accounts[0]
+    timestamp = TimestampMS(1708535681000)
+    gas, amount = '0.000430578838556533', '1000.001993'
     assert events == [
         EvmEvent(
             tx_hash=evmhash,
             sequence_index=0,
-            timestamp=TimestampMS(1708535681000),
+            timestamp=timestamp,
             location=Location.SCROLL,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.000430578838556533')),
+            balance=Balance(amount=FVal(gas)),
             location_label=user_address,
-            notes='Burned 0.000430578838556533 ETH for gas',
+            notes=f'Burned {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=1,
-            timestamp=TimestampMS(1708535681000),
+            timestamp=timestamp,
             location=Location.SCROLL,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:534352/erc20:0xf55BEC9cafDbE8730f096Aa55dad6D22d44099Df'),
-            balance=Balance(amount=FVal('1000.001993')),
+            balance=Balance(amount=FVal(amount)),
             location_label=user_address,
-            notes='Bridge 1000.001993 USDT from Scroll to Ethereum via Scroll bridge',
+            notes=f'Bridge {amount} USDT from Scroll to Ethereum via Scroll bridge',
             counterparty=CPT_SCROLL,
             address=ZERO_ADDRESS,
         ),
@@ -325,30 +340,32 @@ def test_withdraw_usdc_from_scroll_to_ethereum(database, scroll_inquirer, scroll
     )
 
     user_address = scroll_accounts[0]
+    timestamp = TimestampMS(1708534727000)
+    gas, amount = '0.000383984852231895', '450'
     assert events == [
         EvmEvent(
             tx_hash=evmhash,
             sequence_index=0,
-            timestamp=TimestampMS(1708534727000),
+            timestamp=timestamp,
             location=Location.SCROLL,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.000383984852231895')),
+            balance=Balance(amount=FVal(gas)),
             location_label=user_address,
-            notes='Burned 0.000383984852231895 ETH for gas',
+            notes=f'Burned {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=25,
-            timestamp=TimestampMS(1708534727000),
+            timestamp=timestamp,
             location=Location.SCROLL,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:534352/erc20:0x06eFdBFf2a14a7c8E15944D1F4A48F9F95F663A4'),
-            balance=Balance(amount=FVal('450')),
+            balance=Balance(amount=FVal(amount)),
             location_label=user_address,
-            notes='Bridge 450 USDC from Scroll to Ethereum via Scroll bridge',
+            notes=f'Bridge {amount} USDC from Scroll to Ethereum via Scroll bridge',
             counterparty=CPT_SCROLL,
             address=L2_USDC_GATEWAY,
         ),
@@ -365,30 +382,32 @@ def test_receive_erc20_on_ethereum(database, ethereum_inquirer, ethereum_account
         tx_hash=evmhash,
     )
     user_address = ethereum_accounts[0]
+    timestamp = TimestampMS(1708223951000)
+    gas, amount = '0.002531473518821568', '1647'
     assert events == [
         EvmEvent(
             tx_hash=evmhash,
             sequence_index=0,
-            timestamp=TimestampMS(1708223951000),
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.002531473518821568')),
+            balance=Balance(amount=FVal(gas)),
             location_label=user_address,
-            notes='Burned 0.002531473518821568 ETH for gas',
+            notes=f'Burned {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=549,
-            timestamp=TimestampMS(1708223951000),
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=Asset('eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7'),
-            balance=Balance(amount=FVal('1647')),
+            balance=Balance(amount=FVal(amount)),
             location_label=user_address,
-            notes='Bridge 1647 USDT from Scroll to Ethereum via Scroll bridge',
+            notes=f'Bridge {amount} USDT from Scroll to Ethereum via Scroll bridge',
             counterparty=CPT_SCROLL,
             address=L1_ERC20_GATEWAY,
         ),
@@ -404,43 +423,45 @@ def test_deposit_send_message_ethereum(database, ethereum_inquirer, ethereum_acc
         tx_hash=evmhash,
     )
     user_address = ethereum_accounts[0]
+    timestamp = TimestampMS(1708771043000)
+    gas, fee, amount = '0.00353129959117221', '0.0000811440', '0.034'
     assert events == [
         EvmEvent(
             tx_hash=evmhash,
             sequence_index=0,
-            timestamp=TimestampMS(1708771043000),
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.00353129959117221')),
+            balance=Balance(amount=FVal(gas)),
             location_label=user_address,
-            notes='Burned 0.00353129959117221 ETH for gas',
+            notes=f'Burned {gas} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=1,
-            timestamp=TimestampMS(1708771043000),
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.0000811440')),
+            balance=Balance(amount=FVal(fee)),
             location_label=user_address,
-            notes='Spend 0.0000811440 ETH as a fee for bridging to Scroll',
+            notes=f'Spend {fee} ETH as a fee for bridging to Scroll',
             counterparty=CPT_SCROLL,
             address=L1_MESSENGER_PROXY,
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=2,
-            timestamp=TimestampMS(1708771043000),
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.034')),
+            balance=Balance(amount=FVal(amount)),
             location_label=user_address,
-            notes='Bridge 0.034 ETH from Ethereum to Scroll via Scroll bridge',
+            notes=f'Bridge {amount} ETH from Ethereum to Scroll via Scroll bridge',
             counterparty=CPT_SCROLL,
             address=L1_MESSENGER_PROXY,
         ),
@@ -456,18 +477,20 @@ def test_receive_deposit_message_scroll(database, scroll_inquirer, scroll_accoun
         tx_hash=evmhash,
     )
     user_address = scroll_accounts[0]
+    timestamp = TimestampMS(1708772190000)
+    amount = '0.034'
     assert events == [
         EvmEvent(
             tx_hash=evmhash,
             sequence_index=0,
-            timestamp=TimestampMS(1708772190000),
+            timestamp=timestamp,
             location=Location.SCROLL,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.BRIDGE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.034')),
+            balance=Balance(amount=FVal(amount)),
             location_label=user_address,
-            notes='Bridge 0.034 ETH from Ethereum to Scroll via Scroll bridge',
+            notes=f'Bridge {amount} ETH from Ethereum to Scroll via Scroll bridge',
             counterparty=CPT_SCROLL,
             address=L2_MESSENGER_PROXY,
         ),
