@@ -58,7 +58,7 @@ def test_deposit_eth_from_ethereum_to_scroll(database, ethereum_inquirer, ethere
             asset=A_ETH,
             balance=Balance(amount=FVal('0.0002604')),
             location_label=user_address,
-            notes='Spend 0.0002604 ETH on bridging to Scroll (fees on L2)',
+            notes='Spend 0.0002604 ETH as a fee for bridging to Scroll',
             counterparty=CPT_SCROLL,
             address=L1_MESSENGER_PROXY,
         ), EvmEvent(
@@ -427,7 +427,7 @@ def test_deposit_send_message_ethereum(database, ethereum_inquirer, ethereum_acc
             asset=A_ETH,
             balance=Balance(amount=FVal('0.0000811440')),
             location_label=user_address,
-            notes='Spend 0.0000811440 ETH on bridging to Scroll (fees on L2)',
+            notes='Spend 0.0000811440 ETH as a fee for bridging to Scroll',
             counterparty=CPT_SCROLL,
             address=L1_MESSENGER_PROXY,
         ), EvmEvent(

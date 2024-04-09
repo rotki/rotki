@@ -5,9 +5,9 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, overload
 from eth_utils import to_checksum_address
 
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import (
-    L2_CHAIN_IDS_WITH_L1_FEES,
+    L2_CHAINIDS_WITH_L1_FEES,
+    L2ChainIdsWithL1FeesType,
     L2WithL1FeesTransaction,
-    SupportedL2WithL1FeesChainId,
 )
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.asset import UnprocessableTradePair
@@ -527,7 +527,7 @@ def deserialize_evm_transaction(
 def deserialize_evm_transaction(  # type: ignore[misc]
         data: dict[str, Any],
         internal: Literal[False],
-        chain_id: SupportedL2WithL1FeesChainId,
+        chain_id: L2ChainIdsWithL1FeesType,
         evm_inquirer: 'L2WithL1FeesInquirer',
         parent_tx_hash: Optional['EVMTxHash'] = None,
 ) -> tuple[L2WithL1FeesTransaction, dict[str, Any]]:
@@ -603,7 +603,7 @@ def deserialize_evm_transaction(
             gas_used = read_integer(data, 'gasUsed', source)
         nonce = read_integer(data, 'nonce', source)
 
-        if chain_id in L2_CHAIN_IDS_WITH_L1_FEES and evm_inquirer is not None:
+        if chain_id in L2_CHAINIDS_WITH_L1_FEES and evm_inquirer is not None:
             if not raw_receipt_data:
                 raw_receipt_data = evm_inquirer.get_transaction_receipt(tx_hash)
             l1_fee = maybe_read_integer(raw_receipt_data, 'l1Fee', source)

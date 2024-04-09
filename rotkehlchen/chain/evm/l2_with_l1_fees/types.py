@@ -1,3 +1,4 @@
+import typing
 from typing import Literal
 
 from rotkehlchen.types import (
@@ -9,21 +10,15 @@ from rotkehlchen.types import (
     Timestamp,
 )
 
-L2_CHAINS_WITH_L1_FEES = [
+SupportedL2WithL1FeesType = Literal[
     SupportedBlockchain.OPTIMISM,
     SupportedBlockchain.BASE,
     SupportedBlockchain.SCROLL,
 ]
+L2_CHAINS_WITH_L1_FEES: tuple[SupportedL2WithL1FeesType, ...] = typing.get_args(SupportedL2WithL1FeesType)  # noqa: E501
 
-SupportedL2WithL1FeesChain = Literal[
-    SupportedBlockchain.OPTIMISM,
-    SupportedBlockchain.BASE,
-    SupportedBlockchain.SCROLL,
-]
-
-L2_CHAIN_IDS_WITH_L1_FEES = [ChainID.OPTIMISM, ChainID.BASE, ChainID.SCROLL]
-
-SupportedL2WithL1FeesChainId = Literal[ChainID.OPTIMISM, ChainID.BASE, ChainID.SCROLL]
+L2ChainIdsWithL1FeesType = Literal[ChainID.OPTIMISM, ChainID.BASE, ChainID.SCROLL]
+L2_CHAINIDS_WITH_L1_FEES: tuple[L2ChainIdsWithL1FeesType, ...] = typing.get_args(L2ChainIdsWithL1FeesType)  # noqa: E501
 
 
 class L2WithL1FeesTransaction(EvmTransaction):  # noqa: PLW1641  # hash implemented by superclass
