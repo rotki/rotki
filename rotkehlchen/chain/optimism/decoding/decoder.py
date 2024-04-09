@@ -6,7 +6,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     FAILED_ENRICHMENT_OUTPUT,
     TransferEnrichmentOutput,
 )
-from rotkehlchen.chain.l2_with_l1_fees.decoding.decoder import L2WithL1FeesTransactionDecoder
+from rotkehlchen.chain.evm.l2_with_l1_fees.decoding.decoder import L2WithL1FeesTransactionDecoder
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.optimismtx import DBOptimismTx
 from rotkehlchen.logging import RotkehlchenLogsAdapter

@@ -2,9 +2,9 @@ import logging
 from abc import ABC
 from typing import TYPE_CHECKING, Any, Optional, cast
 
+from rotkehlchen.chain.evm.l2_with_l1_fees.node_inquirer import L2WithL1FeesInquirer
+from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.chain.evm.transactions import EvmTransactions
-from rotkehlchen.chain.l2_with_l1_fees.node_inquirer import L2WithL1FeesInquirer
-from rotkehlchen.chain.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.db.optimismtx import DBOptimismTx
 from rotkehlchen.logging import RotkehlchenLogsAdapter

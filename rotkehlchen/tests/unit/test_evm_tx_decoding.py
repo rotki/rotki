@@ -6,8 +6,8 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.evm.constants import GENESIS_HASH
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.chain.evm.types import EvmAccount, string_to_evm_address
-from rotkehlchen.chain.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.constants.assets import A_ETH, A_SAI
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQuery

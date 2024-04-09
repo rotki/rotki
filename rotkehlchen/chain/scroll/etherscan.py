@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.l2_with_l1_fees.etherscan import L2WithL1FeesEtherscan
+from rotkehlchen.chain.evm.l2_with_l1_fees.etherscan import L2WithL1FeesEtherscan
 from rotkehlchen.types import ExternalService, SupportedBlockchain
 
 if TYPE_CHECKING:

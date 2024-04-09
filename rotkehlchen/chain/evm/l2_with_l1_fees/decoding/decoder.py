@@ -6,15 +6,15 @@ from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
 from rotkehlchen.chain.evm.decoding.decoder import EventDecoderFunction, EVMTransactionDecoder
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.l2_with_l1_fees.types import L2WithL1FeesTransaction
+from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.db.optimismtx import DBOptimismTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import from_wei
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.l2_with_l1_fees.node_inquirer import L2WithL1FeesInquirer
-    from rotkehlchen.chain.l2_with_l1_fees.transactions import L2WithL1FeesTransactions
+    from rotkehlchen.chain.evm.l2_with_l1_fees.node_inquirer import L2WithL1FeesInquirer
+    from rotkehlchen.chain.evm.l2_with_l1_fees.transactions import L2WithL1FeesTransactions
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
