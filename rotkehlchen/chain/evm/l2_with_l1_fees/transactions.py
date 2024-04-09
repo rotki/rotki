@@ -6,7 +6,7 @@ from rotkehlchen.chain.evm.l2_with_l1_fees.node_inquirer import L2WithL1FeesInqu
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
-from rotkehlchen.db.optimismtx import DBOptimismTx
+from rotkehlchen.db.l2withl1feestx import DBL2WithL1FeesTx
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
@@ -30,7 +30,7 @@ class L2WithL1FeesTransactions(EvmTransactions, ABC):
             database: 'DBHandler',
     ) -> None:
         super().__init__(evm_inquirer=node_inquirer, database=database)
-        self.dbevmtx = DBOptimismTx(database)
+        self.dbevmtx = DBL2WithL1FeesTx(database)
 
     def ensure_tx_data_exists(
             self,

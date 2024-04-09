@@ -7,7 +7,7 @@ from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
 from rotkehlchen.chain.evm.decoding.decoder import EventDecoderFunction, EVMTransactionDecoder
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
-from rotkehlchen.db.optimismtx import DBOptimismTx
+from rotkehlchen.db.l2withl1feestx import DBL2WithL1FeesTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import from_wei
@@ -35,7 +35,7 @@ class L2WithL1FeesTransactionDecoder(EVMTransactionDecoder, ABC):
             event_rules: list[EventDecoderFunction],
             misc_counterparties: list[CounterpartyDetails],
             base_tools: BaseDecoderTools,
-            dbevmtx_class: type[DBOptimismTx] = DBOptimismTx,
+            dbevmtx_class: type[DBL2WithL1FeesTx] = DBL2WithL1FeesTx,
     ):
         super().__init__(
             database=database,

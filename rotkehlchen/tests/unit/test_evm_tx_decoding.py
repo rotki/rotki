@@ -12,7 +12,7 @@ from rotkehlchen.constants.assets import A_ETH, A_SAI
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.db.optimismtx import DBOptimismTx
+from rotkehlchen.db.l2withl1feestx import DBL2WithL1FeesTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import (
     HistoryBaseEntry,
@@ -94,9 +94,9 @@ def _add_transactions_to_db(
     )
 
     dbevmtx = DBEvmTx(db)
-    dboptimismtx = DBOptimismTx(db)
+    dbl2withl1feestx = DBL2WithL1FeesTx(db)
     with db.user_write() as cursor:
-        dboptimismtx.add_evm_transactions(cursor, [transaction_opt], relevant_address=ethereum_accounts[0])  # noqa: E501
+        dbl2withl1feestx.add_evm_transactions(cursor, [transaction_opt], relevant_address=ethereum_accounts[0])  # noqa: E501
         dbevmtx.add_evm_transactions(cursor, [transaction_eth], relevant_address=ethereum_accounts[0])  # noqa: E501
         dbevmtx.add_evm_transactions(cursor, [transaction_eth_yabir], relevant_address=ethereum_accounts[1])  # noqa: E501
 
@@ -191,7 +191,7 @@ def test_query_and_decode_transactions_works_with_different_chains(
     """
     _, evmhash_eth_yabir, evmhash_opt = _add_transactions_to_db(database, ethereum_accounts)
     dbevmtx = DBEvmTx(database)
-    dboptimismtx = DBOptimismTx(database)
+    dbl2withl1feestx = DBL2WithL1FeesTx(database)
     assert len(dbevmtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=None)) == 3
     eth_transactions.get_receipts_for_transactions_missing_them(addresses=[ethereum_accounts[0]])
     assert dbevmtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=None) == [evmhash_opt, evmhash_eth_yabir]  # noqa: E501
@@ -199,7 +199,7 @@ def test_query_and_decode_transactions_works_with_different_chains(
     assert dbevmtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=None) == [evmhash_eth_yabir]  # noqa: E501
 
     # check that the transactions have not been decoded
-    hashes = dboptimismtx.get_transaction_hashes_not_decoded(chain_id=ChainID.OPTIMISM, limit=None)
+    hashes = dbl2withl1feestx.get_transaction_hashes_not_decoded(chain_id=ChainID.OPTIMISM, limit=None)  # noqa: E501
     assert len(hashes) == 1
     hashes = dbevmtx.get_transaction_hashes_not_decoded(chain_id=ChainID.ETHEREUM, limit=None)
     assert len(hashes) == 1
@@ -209,7 +209,7 @@ def test_query_and_decode_transactions_works_with_different_chains(
 
     # verify that the optimism transactions got decoded but not the
     # ethereum one (would raise an error if tried)
-    hashes = dboptimismtx.get_transaction_hashes_not_decoded(chain_id=ChainID.OPTIMISM, limit=None)
+    hashes = dbl2withl1feestx.get_transaction_hashes_not_decoded(chain_id=ChainID.OPTIMISM, limit=None)  # noqa: E501
     assert len(hashes) == 0
     hashes = dbevmtx.get_transaction_hashes_not_decoded(chain_id=ChainID.ETHEREUM, limit=None)
     assert len(hashes) == 1
