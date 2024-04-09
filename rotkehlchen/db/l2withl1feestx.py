@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class DBOptimismTx(DBEvmTx):
+class DBL2WithL1FeesTx(DBEvmTx):
 
     def add_evm_transactions(
             self,
@@ -24,7 +24,7 @@ class DBOptimismTx(DBEvmTx):
             evm_transactions: list[L2WithL1FeesTransaction],  # type: ignore[override]
             relevant_address: ChecksumEvmAddress | None,
     ) -> None:
-        """Adds optimism transactions to the database
+        """Adds L2WithL1Fees transactions to the database
 
         These transactions are used by all L2 chains with an extra L1 fee structure
         """

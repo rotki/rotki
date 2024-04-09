@@ -16,7 +16,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_USDT
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.optimismtx import DBOptimismTx
+from rotkehlchen.db.l2withl1feestx import DBL2WithL1FeesTx
 from rotkehlchen.errors.misc import InputError, NotERC20Conformant
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -291,7 +291,7 @@ def test_simple_erc20_transfer(
             ),
         ],
     )
-    dbevmtx = DBEvmTx(database) if chain == ChainID.ETHEREUM else DBOptimismTx(database)
+    dbevmtx = DBEvmTx(database) if chain == ChainID.ETHEREUM else DBL2WithL1FeesTx(database)
     tx_decoder = ethereum_transaction_decoder if chain is ChainID.ETHEREUM else optimism_transaction_decoder  # noqa: E501
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
@@ -375,7 +375,7 @@ def test_eth_transfer(
         tx_type=0,
         logs=[],
     )
-    dbevmtx = DBEvmTx(database) if chain == ChainID.ETHEREUM else DBOptimismTx(database)
+    dbevmtx = DBEvmTx(database) if chain == ChainID.ETHEREUM else DBL2WithL1FeesTx(database)
     tx_decoder = ethereum_transaction_decoder if chain is ChainID.ETHEREUM else optimism_transaction_decoder  # noqa: E501
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
@@ -459,7 +459,7 @@ def test_eth_spend(
         tx_type=0,
         logs=[],
     )
-    dbevmtx = DBEvmTx(database) if chain == ChainID.ETHEREUM else DBOptimismTx(database)
+    dbevmtx = DBEvmTx(database) if chain == ChainID.ETHEREUM else DBL2WithL1FeesTx(database)
     tx_decoder = ethereum_transaction_decoder if chain is ChainID.ETHEREUM else optimism_transaction_decoder  # noqa: E501
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
