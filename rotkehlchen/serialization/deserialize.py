@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, TypeVar, overload
 
 from eth_utils import to_checksum_address
 
-from rotkehlchen.chain.l2_with_l1_fees.types import (
+from rotkehlchen.chain.evm.l2_with_l1_fees.types import (
     L2_CHAIN_IDS_WITH_L1_FEES,
     L2WithL1FeesTransaction,
     SupportedL2WithL1FeesChainId,
@@ -33,8 +33,8 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import convert_to_int, create_timestamp, iso8601ts_to_timestamp
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.evm.l2_with_l1_fees.node_inquirer import L2WithL1FeesInquirer
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
-    from rotkehlchen.chain.l2_with_l1_fees.node_inquirer import L2WithL1FeesInquirer
 
 
 logger = logging.getLogger(__name__)

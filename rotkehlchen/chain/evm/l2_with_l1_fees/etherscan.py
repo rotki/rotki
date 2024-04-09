@@ -2,7 +2,7 @@ import logging
 from abc import ABC
 from typing import TYPE_CHECKING, Literal
 
-from rotkehlchen.chain.l2_with_l1_fees.types import (
+from rotkehlchen.chain.evm.l2_with_l1_fees.types import (
     L2WithL1FeesTransaction,
     SupportedL2WithL1FeesChain,
 )

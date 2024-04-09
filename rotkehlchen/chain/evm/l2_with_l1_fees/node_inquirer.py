@@ -4,11 +4,11 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.evm.contracts import EvmContract, EvmContracts
+from rotkehlchen.chain.evm.l2_with_l1_fees.etherscan import L2WithL1FeesEtherscan
+from rotkehlchen.chain.evm.l2_with_l1_fees.types import SupportedL2WithL1FeesType
 from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, UpdatableCacheDataMixin
 from rotkehlchen.chain.evm.proxies_inquirer import EvmProxiesInquirer
 from rotkehlchen.chain.evm.types import WeightedNode
-from rotkehlchen.chain.l2_with_l1_fees.etherscan import L2WithL1FeesEtherscan
-from rotkehlchen.chain.l2_with_l1_fees.types import SupportedL2WithL1FeesChain
 from rotkehlchen.externalapis.utils import maybe_read_integer
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter

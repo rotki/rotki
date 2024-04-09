@@ -15,7 +15,7 @@ from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, EvmNodeInquirerWithDSProxy
-    from rotkehlchen.chain.l2_with_l1_fees.node_inquirer import (
+    from rotkehlchen.chain.evm.l2_with_l1_fees.node_inquirer import (
         DSProxyL2WithL1FeesInquirerWithCacheData,
     )
     from rotkehlchen.db.dbhandler import DBHandler
