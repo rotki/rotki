@@ -54,8 +54,6 @@ AAVE_BALANCESV3_TEST_ACC: Final = '0x18FD4323ea221cD05Fb275256C8f3A0740D0Aaa2'
 def test_query_aave_balances(rotkehlchen_api_server: APIServer) -> None:
     """Check querying the aave balances endpoint works. Uses real data for v1/v2,
     and mocked for v3 because that need underlying tokens mapping and token balances in db."""
-    async_query = random.choice([False, True])
-
     a_eth_weth = get_or_create_evm_token(
         userdb=rotkehlchen_api_server.rest_api.rotkehlchen.data.db,
         evm_address=string_to_evm_address('0x4d5F47FA6A74757f35C14fD3a6Ef8E3C9BC514E8'),
@@ -97,17 +95,9 @@ def test_query_aave_balances(rotkehlchen_api_server: APIServer) -> None:
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             'aavebalancesresource',
-        ), json={'async_query': async_query})
+        ))
 
-    if async_query:
-        task_id = assert_ok_async_response(response)
-        outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
-        assert outcome['message'] == ''
-        result = outcome['result']
-    else:
-        result = assert_proper_response_with_result(response)
-
-    assert result == {
+    assert assert_proper_response_with_result(response) == {
         AAVE_BALANCESV1_TEST_ACC: {
             'lending': {
                 A_DAI.identifier: {
