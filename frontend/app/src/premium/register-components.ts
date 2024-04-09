@@ -55,6 +55,8 @@ import UniswapPoolAssetBalance from '@/components/defi/uniswap/UniswapPoolAssetB
  * Vuetify components that are used in the premium components
  */
 function vuetifyRegister(): void {
+  // @ts-expect-error
+  VDialog.options.props.retainFocus.default = false;
   // version 17 - 1.24
   Vue.component('VDialog', VDialog);
   Vue.component('VColorPicker', VColorPicker);
