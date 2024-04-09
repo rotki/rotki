@@ -17,12 +17,15 @@ from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.tokens import TokenBalancesType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
-from rotkehlchen.constants.assets import A_CVX, A_GLM, A_GRT, A_STETH
+from rotkehlchen.constants.assets import A_CVX, A_GLM, A_GMX, A_GRT, A_STETH
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.arbitrum_one import get_arbitrum_allthatnode
-from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
+from rotkehlchen.tests.utils.ethereum import (
+    get_decoded_events_of_transaction,
+    wait_until_all_nodes_connected,
+)
 from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
@@ -352,6 +355,42 @@ def test_gmx_balances(
         Asset('eip155:42161/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'): Balance(
             amount=FVal('42.896760410410693074'),
             usd_value=FVal('42.939657170821103766867050208907'),
+        ),
+    }
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x3D3db31AdbCCB6a4e5aE94ec0701d361E147FA6A']])
+@pytest.mark.parametrize('arbitrum_one_manager_connect_at_start', [(get_arbitrum_allthatnode(weight=ONE, owned=True),)])  # noqa: E501
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_gmx_balances_staking(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_transaction_decoder: 'OptimismTransactionDecoder',
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+        arbitrum_one_manager_connect_at_start,
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Test the balance query for staked GMX. It adds a staking event and then queries the
+    balances for that address.
+    """
+    wait_until_all_nodes_connected(
+        connect_at_start=arbitrum_one_manager_connect_at_start,
+        evm_inquirer=arbitrum_one_inquirer,
+    )
+    get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        database=arbitrum_one_transaction_decoder.database,
+        tx_hash=deserialize_evm_tx_hash('0x25160bf17e5a77935c7661933c045739dba44606859a20f00f187ef291e56a8f'),
+    )
+    balances_inquirer = GmxBalances(
+        database=arbitrum_one_transaction_decoder.database,
+        evm_inquirer=arbitrum_one_inquirer,
+    )
+    balances = balances_inquirer.query_balances()
+    assert balances[arbitrum_one_accounts[0]] == {
+        A_GMX: Balance(
+            amount=FVal('4.201981641893733976'),
+            usd_value=FVal('164.46556146372074782064'),
         ),
     }
 
