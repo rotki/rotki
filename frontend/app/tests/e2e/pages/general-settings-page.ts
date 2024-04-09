@@ -87,19 +87,6 @@ export class GeneralSettingsPage {
       cy.get('@message').should('include.text', messageContains);
   }
 
-  confirmInlineFailure(target: string, messageContains?: string) {
-    cy.get(`${target} .v-messages__message`).should(
-      'include.text',
-      'Setting not saved',
-    );
-    if (messageContains) {
-      cy.get(`${target} .v-messages__message`).should(
-        'include.text',
-        messageContains,
-      );
-    }
-  }
-
   verify(settings: {
     anonymousUsageStatistics: boolean;
     floatingPrecision: string;
@@ -118,8 +105,8 @@ export class GeneralSettingsPage {
     cy.get('.general-settings__fields__anonymous-usage-statistics input')
       .should(settings.anonymousUsageStatistics ? 'be.checked' : 'not.be.checked');
     cy.get(
-      '.general-settings__fields__currency-selector .v-select__selection',
-    ).should('have.text', settings.currency);
+      '.general-settings__fields__currency-selector [data-id="activator"] span[class*=_value_]',
+    ).should('contain.text', settings.currency);
     cy.get('.general-settings__fields__balance-save-frequency input').should(
       'have.value',
       settings.balanceSaveFrequency,

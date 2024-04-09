@@ -159,29 +159,31 @@ function isBinance(exchange: string | null): exchange is 'binance' | 'binanceus'
         v-if="usedExchanges.length > 0"
         class="flex flex-col md:flex-row"
       >
-        <div class="md:hidden mb-2">
-          <VSelect
+        <div class="md:hidden mb-4">
+          <RuiMenuSelect
             v-model="selectedExchange"
-            outlined
-            :items="usedExchanges"
-            hide-details
+            :options="usedExchanges"
             :label="t('exchange_balances.select_exchange')"
-            class="exchange-balances__content__select"
-            @change="openExchangeDetails()"
+            key-attr="key"
+            full-width
+            float-label
+            variant="outlined"
+            @input="openExchangeDetails()"
           >
-            <template #selection="{ item }">
+            <template #activator.text="{ value }">
               <ExchangeAmountRow
-                :balance="exchangeBalance(item)"
-                :exchange="item"
+                class="pr-3"
+                :balance="exchangeBalance(value.key)"
+                :exchange="value.key"
               />
             </template>
-            <template #item="{ item }">
+            <template #item.text="{ option }">
               <ExchangeAmountRow
-                :balance="exchangeBalance(item)"
-                :exchange="item"
+                :balance="exchangeBalance(option.key)"
+                :exchange="option.key"
               />
             </template>
-          </VSelect>
+          </RuiMenuSelect>
         </div>
         <div class="hidden md:block w-1/6 border-r border-default">
           <RuiTabs

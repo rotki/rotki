@@ -27,7 +27,7 @@ const { t } = useI18n();
         {{ t('general_settings.amount.title') }}
       </template>
 
-      <MainCurrencySetting />
+      <MainCurrencySetting class="mb-4" />
       <div class="grid sm:grid-cols-3 gap-4">
         <FloatingPrecisionSetting />
         <NumericSeparatorsSettings />

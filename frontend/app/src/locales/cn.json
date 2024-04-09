@@ -1383,6 +1383,7 @@
     "cancel_task_info": "此操作将使正在运行的进程 ({title}) 处于未完成状态，您确定要取消吗？"
   },
   "common": {
+    "entry_type": "输入类型",
     "account": "账户",
     "actions": {
       "accept": "接受",

@@ -127,7 +127,11 @@ const [DefineIcon, ReuseIcon] = createReusableTemplate();
   <RuiCard>
     <div class="p-1 pt-2">
       <DefineIcon #default="{ logo, icon }">
-        <AdaptiveWrapper>
+        <AdaptiveWrapper
+          padding="0"
+          width="1.5rem"
+          height="1.5rem"
+        >
           <AppImage
             v-if="logo"
             :src="logo"
@@ -151,10 +155,10 @@ const [DefineIcon, ReuseIcon] = createReusableTemplate();
         float-label
         variant="outlined"
       >
-        <template #activator.text="{ value: { logo, icon, name } }">
+        <template #activator.text="{ value: { logo, icon, label } }">
           <div class="flex items-center gap-3">
             <ReuseIcon v-bind="{ logo, icon }" />
-            {{ name }}
+            {{ label }}
           </div>
         </template>
         <template #item.prepend="{ option: { logo, icon } }">

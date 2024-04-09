@@ -48,11 +48,12 @@ onMounted(() => {
 
 <template>
   <SettingsOption
-    #default="{ error, success, update }"
+    #default="{ error, success, updateImmediate }"
     setting="dateInputFormat"
     frontend-setting
     :error-message="t('general_settings.validation.date_input_format.error')"
     :success-message="successMessage"
+    class="mb-3"
     @finished="resetDateInputFormat()"
   >
     <DateInputFormatSelector
@@ -61,7 +62,7 @@ onMounted(() => {
       class="pt-4 general-settings__fields__date-input-format"
       :success-messages="success"
       :error-messages="error || toMessages(v$.dateInputFormat)"
-      @change="callIfValid($event, update)"
+      @input="callIfValid($event, updateImmediate)"
     />
   </SettingsOption>
 </template>

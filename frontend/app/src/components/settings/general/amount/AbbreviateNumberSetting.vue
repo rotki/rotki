@@ -59,25 +59,28 @@ const items = computed(() => {
       />
     </SettingsOption>
     <SettingsOption
-      #default="{ error, success, update }"
+      #default="{ error, success, updateImmediate }"
       :transform="transform"
       class="md:min-w-[18rem]"
       setting="minimumDigitToBeAbbreviated"
       frontend-setting
       @finished="resetMinimumDigitToBeAbbreviated()"
     >
-      <VSelect
+      <RuiMenuSelect
         v-model="minimumDigit"
-        outlined
         :disabled="!abbreviate"
+        :options="items"
         data-cy="frontend-settings__fields__minimum_digit_to_be_abbreviated"
         :label="t('frontend_settings.label.minimum_digit_to_be_abbreviated')"
-        item-key="value"
-        item-text="label"
-        :items="items"
+        key-attr="value"
+        text-attr="label"
+        full-width
+        float-label
+        show-details
+        variant="outlined"
         :success-messages="success"
         :error-messages="error"
-        @change="update($event)"
+        @input="updateImmediate($event)"
       />
     </SettingsOption>
   </div>

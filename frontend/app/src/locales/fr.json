@@ -1536,6 +1536,7 @@
     "cancel_task_info": "Cette action va laisser le processus en cours d'exécution ({title}) dans un état non fini, êtes-vous sûr de vouloir l'annuler?"
   },
   "common": {
+    "entry_type": "Type d'entrée",
     "account": "Compte",
     "actions": {
       "accept": "Accepter",

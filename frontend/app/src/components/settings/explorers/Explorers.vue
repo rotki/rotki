@@ -95,36 +95,42 @@ const { t } = useI18n();
     </RuiCardHeader>
 
     <div class="flex flex-col gap-4 mt-6">
-      <VSelect
+      <RuiMenuSelect
         v-model="selection"
-        hide-details
-        outlined
-        :items="supportedExplorers"
+        :options="supportedExplorers"
         :label="t('explorers.chain_selector')"
+        :item-height="64"
         dense
-        @change="onChange()"
+        key-attr="key"
+        full-width
+        float-label
+        show-details
+        variant="outlined"
+        @input="onChange()"
       >
-        <template #item="{ item }">
+        <template #item.text="{ option }">
           <ChainDisplay
-            v-if="!additional.includes(item)"
-            :chain="item"
+            v-if="!additional.includes(option.key)"
+            :chain="option.key"
           />
           <AssetDetails
             v-else
-            :asset="item"
+            :asset="option.key"
+            dense
           />
         </template>
-        <template #selection="{ item }">
+        <template #activator.text="{ value }">
           <ChainDisplay
-            v-if="!additional.includes(item)"
-            :chain="item"
+            v-if="!additional.includes(value.key)"
+            :chain="value.key"
           />
           <AssetDetails
             v-else
-            :asset="item"
+            :asset="value.key"
+            dense
           />
         </template>
-      </VSelect>
+      </RuiMenuSelect>
 
       <ExplorerInput
         v-model="address"

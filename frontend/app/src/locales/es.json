@@ -1354,6 +1354,7 @@
     "cancel_task_info": "Esta acción dejará el proceso en ejecución ({title}) en un estado inacabado, ¿está seguro de que desea cancelarlo?"
   },
   "common": {
+    "entry_type": "Tipo de entrada",
     "account": "Account",
     "actions": {
       "back": "Atras",

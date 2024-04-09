@@ -48,39 +48,40 @@ const rootAttrs = useAttrs();
   <div>
     <div class="flex items-center gap-2">
       <SettingsOption
-        #default="{ error, success, update }"
+        #default="{ error, success, updateImmediate }"
         class="w-full"
         setting="language"
         frontend-setting
         :error-message="t('general_settings.validation.language.error')"
       >
-        <VSelect
+        <RuiMenuSelect
           v-model="language"
-          :items="supportedLanguages"
-          item-text="label"
-          item-value="identifier"
-          outlined
-          hide-details
+          :options="supportedLanguages"
           :label="t('general_settings.labels.language')"
-          persistent-hint
           :success-messages="success"
           :error-messages="error"
+          :show-details="!!success || !!error"
+          key-attr="identifier"
+          text-attr="label"
+          full-width
+          float-label
+          variant="outlined"
           v-bind="rootAttrs"
-          @change="updateSetting($event, update)"
+          @input="updateSetting($event, updateImmediate)"
         >
-          <template #item="{ item }">
+          <template #activator.text="{ value }">
             <LanguageSelectorItem
-              :countries="item.countries ?? [item.identifier]"
-              :label="item.label"
+              :countries="value.countries ?? [value.identifier]"
+              :label="value.label"
             />
           </template>
-          <template #selection="{ item }">
+          <template #item.text="{ option }">
             <LanguageSelectorItem
-              :countries="item.countries ?? [item.identifier]"
-              :label="item.label"
+              :countries="option.countries ?? [option.identifier]"
+              :label="option.label"
             />
           </template>
-        </VSelect>
+        </RuiMenuSelect>
       </SettingsOption>
       <RuiTooltip
         :popper="{ placement: 'bottom', offsetDistance: 0 }"

@@ -18,20 +18,20 @@ const name = computed<string>(() => {
 </script>
 
 <template>
-  <div class="flex items-center gap-4">
+  <div class="flex items-center gap-3 w-full">
     <LocationDisplay
       v-if="exchange"
       :open-details="false"
       :identifier="exchange"
-      size="32px"
+      size="1.5rem"
       icon
     />
-    <div class="flex flex-col my-3">
-      <span class="text-h6">
+    <div class="flex gap-3 items-center justify-between w-full">
+      <span class="text-sm">
         {{ name }}
       </span>
       <AmountDisplay
-        class="text-rui-text-secondary"
+        class="text-rui-text-secondary text-xs"
         show-currency="symbol"
         fiat-currency="USD"
         :value="balance"

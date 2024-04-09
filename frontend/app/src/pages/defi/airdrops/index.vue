@@ -193,7 +193,7 @@ onMounted(async () => {
     </template>
 
     <RuiCard>
-      <div class="flex flex-row flex-wrap items-start gap-2 mb-4">
+      <div class="flex flex-col md:flex-row flex-wrap items-start gap-4 mb-4">
         <BlockchainAccountSelector
           v-model="selectedAccounts"
           multiple
@@ -204,15 +204,16 @@ onMounted(async () => {
           :chains="[ETH]"
           :usable-addresses="airdropAddresses"
         />
-        <VSelect
+        <RuiMenuSelect
           v-model="status"
-          :items="statusFilters"
+          :options="statusFilters"
           class="w-full flex-1"
-          item-value="value"
-          item-text="text"
-          hide-details
+          key-attr="value"
+          text-attr="text"
           dense
-          outlined
+          full-width
+          float-label
+          variant="outlined"
         />
       </div>
 
