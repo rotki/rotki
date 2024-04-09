@@ -39,6 +39,7 @@ def test_basic_calendar_operations(
             'counterparty': CPT_ENS,
             'address': ethereum_accounts[0],
             'blockchain': SupportedBlockchain.ETHEREUM.serialize(),
+            'color': 'ffffff',
         },
     )
 
@@ -61,11 +62,12 @@ def test_basic_calendar_operations(
 
     with database.conn.read_ctx() as cursor:
         db_rows = cursor.execute(
-            'SELECT identifier, name, description, counterparty, address, timestamp FROM calendar',
+            'SELECT identifier, name, description, counterparty, address, timestamp, '
+            'color FROM calendar',
         ).fetchall()
         assert db_rows == [
-            (1, 'ENS renewal', 'Renew yabir.eth', CPT_ENS, ethereum_accounts[0], 1869737344),
-            crv_event,
+            (1, 'ENS renewal', 'Renew yabir.eth', CPT_ENS, ethereum_accounts[0], 1869737344, 'ffffff'),  # noqa: E501
+            crv_event + (None,),
         ]
 
     # update the ens entry
@@ -79,6 +81,7 @@ def test_basic_calendar_operations(
             'counterparty': CPT_ENS,
             'address': ethereum_accounts[0],
             'blockchain': SupportedBlockchain.ETHEREUM.serialize(),
+            'color': '3a70a6',
         },
     )
     with database.conn.read_ctx() as cursor:
@@ -100,6 +103,7 @@ def test_basic_calendar_operations(
         'timestamp': 1977652411,
         'address': ethereum_accounts[0],
         'blockchain': 'eth',
+        'color': '3a70a6',
     }
     curve_json_event = {
         'identifier': 2,
@@ -109,6 +113,7 @@ def test_basic_calendar_operations(
         'timestamp': 1851422011,
         'address': ethereum_accounts[1],
         'blockchain': 'eth',
+        'color': None,
     }
     future_ts = {'to_timestamp': 3479391239}  # timestamp enough in the future to return all the events  # noqa: E501
     response = requests.post(
@@ -287,4 +292,29 @@ def test_validation_calendar(
         response=response,
         status_code=HTTPStatus.BAD_REQUEST,
         contained_in_msg='is not a bitcoin address',
+    )
+
+    # create duplicate entry
+    duplicated_entry_body = {
+        'timestamp': 1869737344,
+        'name': 'ENS renewal',
+        'description': 'Renew yabir.eth',
+        'counterparty': CPT_ENS,
+        'address': ethereum_accounts[0],
+        'blockchain': SupportedBlockchain.ETHEREUM.serialize(),
+    }
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'calendarresource'),
+        json=duplicated_entry_body,
+    )
+    assert_proper_response(response)
+
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'calendarresource'),
+        json=duplicated_entry_body,
+    )
+    assert_error_response(
+        response=response,
+        status_code=HTTPStatus.BAD_REQUEST,
+        contained_in_msg='Could not add the calendar entry because an event with the same name',
     )
