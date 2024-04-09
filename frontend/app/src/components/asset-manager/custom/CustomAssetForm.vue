@@ -15,6 +15,8 @@ const props = withDefaults(
 
 const { editableItem } = toRefs(props);
 
+const search = ref<string | null>('');
+
 const emptyCustomAsset: () => CustomAsset = () => ({
   identifier: '',
   name: '',
@@ -46,8 +48,6 @@ const assetIconFormRef: Ref<InstanceType<typeof AssetIconForm> | null>
   = ref(null);
 
 const { t } = useI18n();
-
-const search = ref<string | null>('');
 
 const name = useRefPropVModel(formData, 'name');
 const customAssetType = useRefPropVModel(formData, 'customAssetType');

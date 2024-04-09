@@ -371,7 +371,6 @@ setSubmitFunc(save);
           full-width
           float-label
           show-details
-          return-primitive
         />
       </div>
 
@@ -392,7 +391,6 @@ setSubmitFunc(save);
             full-width
             float-label
             show-details
-            return-primitive
           />
         </div>
 
@@ -409,7 +407,6 @@ setSubmitFunc(save);
             full-width
             float-label
             show-details
-            return-primitive
           />
         </div>
       </div>
