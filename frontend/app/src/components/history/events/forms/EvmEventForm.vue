@@ -70,11 +70,11 @@ const rules = {
   notes: { externalServerValidation },
   txHash: {
     required: helpers.withMessage(
-      t('transactions.events.form.tx_hash.validation.non_empty').toString(),
+      t('transactions.events.form.tx_hash.validation.non_empty'),
       required,
     ),
     isValid: helpers.withMessage(
-      t('transactions.events.form.tx_hash.validation.valid').toString(),
+      t('transactions.events.form.tx_hash.validation.valid'),
       (value: string) => isValidTxHash(value),
     ),
   },
@@ -82,25 +82,25 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.event_identifier.validation.non_empty',
-      ).toString(),
+      ),
       requiredIf(() => !!get(editableItem)),
     ),
   },
   location: {
     required: helpers.withMessage(
-      t('transactions.events.form.location.validation.non_empty').toString(),
+      t('transactions.events.form.location.validation.non_empty'),
       required,
     ),
   },
   asset: {
     required: helpers.withMessage(
-      t('transactions.events.form.asset.validation.non_empty').toString(),
+      t('transactions.events.form.asset.validation.non_empty'),
       required,
     ),
   },
   amount: {
     required: helpers.withMessage(
-      t('transactions.events.form.amount.validation.non_empty').toString(),
+      t('transactions.events.form.amount.validation.non_empty'),
       required,
     ),
   },
@@ -108,13 +108,13 @@ const rules = {
     required: helpers.withMessage(
       t('transactions.events.form.fiat_value.validation.non_empty', {
         currency: get(currencySymbol),
-      }).toString(),
+      }),
       required,
     ),
   },
   address: {
     isValid: helpers.withMessage(
-      t('transactions.events.form.address.validation.valid').toString(),
+      t('transactions.events.form.address.validation.valid'),
       (value: string) => !value || isValidEthAddress(value),
     ),
   },
@@ -122,13 +122,13 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.sequence_index.validation.non_empty',
-      ).toString(),
+      ),
       required,
     ),
   },
   eventType: {
     required: helpers.withMessage(
-      t('transactions.events.form.event_type.validation.non_empty').toString(),
+      t('transactions.events.form.event_type.validation.non_empty'),
       required,
     ),
   },
@@ -136,13 +136,13 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.event_subtype.validation.non_empty',
-      ).toString(),
+      ),
       required,
     ),
   },
   counterparty: {
     isValid: helpers.withMessage(
-      t('transactions.events.form.counterparty.validation.valid').toString(),
+      t('transactions.events.form.counterparty.validation.valid'),
       (value: string) =>
         !value
         || get(counterparties).includes(value)
@@ -151,7 +151,7 @@ const rules = {
   },
   product: {
     isValid: helpers.withMessage(
-      t('transactions.events.form.product.validation.valid').toString(),
+      t('transactions.events.form.product.validation.valid'),
       (value: string) =>
         !value || get(historyEventLimitedProducts).includes(value),
     ),
@@ -359,7 +359,7 @@ const addressSuggestions = computed(() => getAddresses(Blockchain.ETH));
     <div class="grid md:grid-cols-2 gap-4">
       <DateTimePicker
         v-model="datetime"
-        :label="t('transactions.events.form.datetime.label')"
+        :label="t('common.datetime')"
         persistent-hint
         limit-now
         milliseconds
@@ -449,14 +449,9 @@ const addressSuggestions = computed(() => getAddresses(Blockchain.ETH));
         :error-messages="toMessages(v$.sequenceIndex)"
         @blur="v$.sequenceIndex.$touch()"
       />
-      <ComboboxWithCustomInput
+      <CounterpartyInput
         v-model="counterparty"
-        outlined
-        required
-        clearable
-        auto-select-first
-        :label="t('transactions.events.form.counterparty.label')"
-        :items="counterparties"
+        :label="t('common.counterparty')"
         data-cy="counterparty"
         :error-messages="toMessages(v$.counterparty)"
         @blur="v$.counterparty.$touch()"

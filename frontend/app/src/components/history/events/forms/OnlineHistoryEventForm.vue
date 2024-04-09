@@ -64,25 +64,25 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.event_identifier.validation.non_empty',
-      ).toString(),
+      ),
       required,
     ),
   },
   location: {
     required: helpers.withMessage(
-      t('transactions.events.form.location.validation.non_empty').toString(),
+      t('transactions.events.form.location.validation.non_empty'),
       required,
     ),
   },
   asset: {
     required: helpers.withMessage(
-      t('transactions.events.form.asset.validation.non_empty').toString(),
+      t('transactions.events.form.asset.validation.non_empty'),
       required,
     ),
   },
   amount: {
     required: helpers.withMessage(
-      t('transactions.events.form.amount.validation.non_empty').toString(),
+      t('transactions.events.form.amount.validation.non_empty'),
       required,
     ),
   },
@@ -90,7 +90,7 @@ const rules = {
     required: helpers.withMessage(
       t('transactions.events.form.fiat_value.validation.non_empty', {
         currency: get(currencySymbol),
-      }).toString(),
+      }),
       required,
     ),
   },
@@ -98,13 +98,13 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.sequence_index.validation.non_empty',
-      ).toString(),
+      ),
       required,
     ),
   },
   eventType: {
     required: helpers.withMessage(
-      t('transactions.events.form.event_type.validation.non_empty').toString(),
+      t('transactions.events.form.event_type.validation.non_empty'),
       required,
     ),
   },
@@ -112,7 +112,7 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.event_subtype.validation.non_empty',
-      ).toString(),
+      ),
       required,
     ),
   },
@@ -283,7 +283,7 @@ const locationLabelSuggestions = computed(() =>
     <div class="grid md:grid-cols-2 gap-4">
       <DateTimePicker
         v-model="datetime"
-        :label="t('transactions.events.form.datetime.label')"
+        :label="t('common.datetime')"
         persistent-hint
         limit-now
         milliseconds

@@ -1402,6 +1402,7 @@
     "balance": "Balance",
     "category": "Category",
     "claimed": "Διεκδικήθηκε",
+    "counterparty": "Counterparty",
     "datetime": "Date/Time",
     "deposits": "Deposits",
     "description": "Description",
@@ -3758,12 +3759,8 @@
             "non_empty": "The asset field cannot be empty"
           }
         },
-        "counterparty": {
-          "label": "Counterparty"
-        },
         "datetime": {
-          "hint": "The date & time of when the event happened",
-          "label": "Date & time"
+          "hint": "The date & time of when the event happened"
         },
         "event_subtype": {
           "label": "Event Subtype",

@@ -394,6 +394,15 @@ const routes = setupLayouts([
     },
     props: true,
   },
+  {
+    path: Routes.CALENDAR,
+    component: async () => await import('../pages/calendar/index.vue'),
+    meta: {
+      canNavigateBack: true,
+      noteLocation: NoteLocation.CALENDAR,
+    },
+    props: true,
+  },
   ...(checkIfDevelopment()
     ? [
         {

@@ -1427,6 +1427,7 @@
     "balance": "余额",
     "category": "类别",
     "claimed": "声称",
+    "counterparty": "交易对手",
     "datetime": "日期/时间",
     "deposits": "存款",
     "description": "描述",
@@ -3869,12 +3870,8 @@
             "non_empty": "资产字段不能为空"
           }
         },
-        "counterparty": {
-          "label": "交易对手"
-        },
         "datetime": {
-          "hint": "事件发生的日期和时间",
-          "label": "日期和时间"
+          "hint": "事件发生的日期和时间"
         },
         "event_subtype": {
           "label": "事件子类型",

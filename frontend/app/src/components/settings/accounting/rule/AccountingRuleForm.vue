@@ -134,7 +134,7 @@ const accountingTreatments = Object.values(AccountingTreatment).map(
       required
       clearable
       auto-select-first
-      :label="t('accounting_settings.rule.labels.counterparty')"
+      :label="t('common.counterparty')"
       :items="counterparties"
       :error-messages="toMessages(v$.counterparty)"
       @blur="v$.counterparty.$touch()"

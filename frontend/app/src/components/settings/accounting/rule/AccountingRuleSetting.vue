@@ -72,7 +72,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
     key: 'resultingCombination',
   },
   {
-    label: t('accounting_settings.rule.labels.counterparty'),
+    label: t('common.counterparty'),
     key: 'counterparty',
     class: 'border-r border-default',
     cellClass: 'border-r border-default',

@@ -48,14 +48,14 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.event_identifier.validation.non_empty',
-      ).toString(),
+      ),
       requiredIf(() => !!get(editableItem)),
     ),
   },
   timestamp: { externalServerValidation: () => true },
   amount: {
     required: helpers.withMessage(
-      t('transactions.events.form.amount.validation.non_empty').toString(),
+      t('transactions.events.form.amount.validation.non_empty'),
       required,
     ),
   },
@@ -63,7 +63,7 @@ const rules = {
     required: helpers.withMessage(
       t('transactions.events.form.fiat_value.validation.non_empty', {
         currency: get(currencySymbol),
-      }).toString(),
+      }),
       required,
     ),
   },
@@ -71,7 +71,7 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.block_number.validation.non_empty',
-      ).toString(),
+      ),
       required,
     ),
   },
@@ -79,7 +79,7 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.validator_index.validation.non_empty',
-      ).toString(),
+      ),
       required,
     ),
   },
@@ -87,11 +87,11 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.fee_recipient.validation.non_empty',
-      ).toString(),
+      ),
       required,
     ),
     isValid: helpers.withMessage(
-      t('transactions.events.form.fee_recipient.validation.valid').toString(),
+      t('transactions.events.form.fee_recipient.validation.valid'),
       (value: string) => isValidEthAddress(value),
     ),
   },
@@ -242,7 +242,7 @@ const feeRecipientSuggestions = computed(() => getAddresses(Blockchain.ETH));
       <DateTimePicker
         v-model="datetime"
         class="md:col-span-2"
-        :label="t('transactions.events.form.datetime.label')"
+        :label="t('common.datetime')"
         persistent-hint
         limit-now
         milliseconds

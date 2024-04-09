@@ -2,6 +2,7 @@
 defineProps<{
   copied: boolean;
   tooltip?: string | null;
+  disabled?: boolean;
 }>();
 const { t } = useI18n();
 </script>
@@ -10,7 +11,9 @@ const { t } = useI18n();
   <RuiTooltip
     :popper="{ placement: 'top' }"
     :open-delay="200"
-    class="text-no-wrap cursor-pointer"
+    class="text-no-wrap "
+    :class="{ 'cursor-pointer': !disabled }"
+    :disabled="disabled"
     v-on="
       // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
       $listeners

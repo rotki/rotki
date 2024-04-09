@@ -14,7 +14,7 @@ const props = withDefaults(
     usableAddresses?: string[];
     multiple?: boolean;
     value: AccountWithAddressData[];
-    chains: string[];
+    chains?: string[];
     outlined?: boolean;
     dense?: boolean;
     noPadding?: boolean;
@@ -22,6 +22,8 @@ const props = withDefaults(
     multichain?: boolean;
     unique?: boolean;
     hideChainIcon?: boolean;
+    errorMessages?: string[];
+    showDetails?: boolean;
   }>(),
   {
     label: '',
@@ -37,6 +39,8 @@ const props = withDefaults(
     multichain: false,
     unique: false,
     hideChainIcon: false,
+    errorMessages: () => [],
+    showDetails: false,
   },
 );
 
@@ -57,10 +61,10 @@ const {
 const search = ref('');
 const { t } = useI18n();
 
-const { accounts: accounsPerChain } = storeToRefs(useBlockchainStore());
+const { accounts: accountsPerChain } = storeToRefs(useBlockchainStore());
 
 const accounts = computed<AccountWithAddressData[]>(
-  () => Object.values(get(accounsPerChain)).flatMap(x => x).filter(hasAccountAddress),
+  () => Object.values(get(accountsPerChain)).flatMap(x => x).filter(hasAccountAddress),
 );
 
 const internalValue = computed(() => {
@@ -204,7 +208,7 @@ const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
         :multiple="multiple"
         :loading="loading"
         :disabled="loading"
-        hide-details
+        :hide-details="!showDetails"
         hide-selected
         :hide-no-data="!hideOnEmptyUsable"
         return-object
@@ -218,6 +222,7 @@ const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
         :label="label ? label : t('blockchain_account_selector.default_label')"
         :class="outlined ? 'blockchain-account-selector--outlined' : null"
         class="blockchain-account-selector"
+        :error-messages="errorMessages"
         @input="input($event)"
       >
         <template #no-data>

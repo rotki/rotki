@@ -189,7 +189,6 @@
         "count_cost_basis_pnl_subtitle": "Que ce soit pour compter tout gain ou perte que l'actif a pu avoir par rapport à quand il a été acquis.",
         "count_entire_amount_spend": "Compter le montant total dépensé",
         "count_entire_amount_spend_subtitle": "Que le montant total soit compté comme une dépense, ce qui signifie un résultat net négatif",
-        "counterparty": "Contrepartie",
         "event_subtype": "Sous-type d'événement",
         "event_type": "Type d'événement",
         "taxable": "Imposable",
@@ -1581,6 +1580,7 @@
     "balance": "Solde",
     "category": "Catégorie",
     "claimed": "Réclamé",
+    "counterparty": "Contrepartie",
     "datetime": "Date/Heure",
     "deposits": "Dépôts",
     "description": "Description",
@@ -4179,14 +4179,12 @@
           }
         },
         "counterparty": {
-          "label": "Contrepartie",
           "validation": {
             "valid": "Le champ de contrepartie est invalide, remplissez-le avec des contreparties disponibles, ou une adresse valide"
           }
         },
         "datetime": {
-          "hint": "La date et l'heure où l'événement s'est produit",
-          "label": "Date & heure"
+          "hint": "La date et l'heure où l'événement s'est produit"
         },
         "depositor": {
           "label": "Adresse du dépositaire",
