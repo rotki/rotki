@@ -9,6 +9,7 @@ GMX_ROUTER_ADDRESS: Final = string_to_evm_address('0xaBBc5F99639c9B6bCb58544ddf0
 GMX_POSITION_ROUTER: Final = string_to_evm_address('0xb87a436B93fFE9D75c5cFA7bAcFff96430b09868')
 GMX_REWARD_ROUTER: Final = string_to_evm_address('0x159854e14A862Df9E39E1D128b8e5F70B4A3cE9B')
 GMX_READER: Final = string_to_evm_address('0x22199a49A999c351eF7927602CFB187ec3cae489')
+GMX_STAKING_REWARD: Final = string_to_evm_address('0x908C4D94D34924765f1eDc22A1DD098397c59dD4')
 SWAP_TOPIC: Final = b'\xcd8)\xa3\x81=\xc3\xcd\xd1\x88\xfd=\x01\xdc\xf3&\x8c\x16\xbe/\xdd-\xd2\x1d\x06eA\x88\x16\xe4`b'  # noqa: E501
 CREATE_INCREASE_TOPIC: Final = b'Re\xbcIR\xda@&3\xb3\xfc5\xf6z\xb4$T\x93\xa0\xab\x94\xdd\x8a\xb1#f|\x8dE\xa4H\\'  # noqa: E501
 EXECUTE_DECREASE_TOPIC: Final = b'!C\\[a\x8dw\xff6W\x14\x0c\xd31\x8e,\xff\xae\xbc^\x0e\x1bs\x18\xf5j\x9b\xa4\x04L>\xd2'  # noqa: E501

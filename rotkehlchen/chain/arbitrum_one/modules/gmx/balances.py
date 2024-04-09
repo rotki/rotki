@@ -9,6 +9,7 @@ from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
+from rotkehlchen.constants.assets import A_GMX
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
@@ -18,7 +19,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
 from rotkehlchen.utils.misc import get_chunks
 
-from .constants import CPT_GMX, GMX_READER, GMX_USD_DECIMALS, GMX_VAULT_ADDRESS
+from .constants import CPT_GMX, GMX_READER, GMX_STAKING_REWARD, GMX_USD_DECIMALS, GMX_VAULT_ADDRESS
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
@@ -37,6 +38,7 @@ class GmxBalances(ProtocolWithBalance):
             counterparty=CPT_GMX,
             deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},
         )
+        self.gmx = A_GMX.resolve_to_evm_token()
 
     def _extract_unique_deposits(self) -> dict['ChecksumEvmAddress', set[tuple[str, str, bool]]]:
         """
@@ -68,9 +70,9 @@ class GmxBalances(ProtocolWithBalance):
             unique_deposits[address] = positions
         return unique_deposits
 
-    def query_balances(self) -> 'BalancesType':
+    def query_position_balances(self) -> 'BalancesType':
         """
-        Query balances for GMX open positions.
+        Query balances for GMX open positions and returns it.
 
         The position query uses as argument the address of the user and 3 arrays of collaterals
         used, index tokens used and if the positions are shorts or longs. The arrays must have
@@ -83,7 +85,7 @@ class GmxBalances(ProtocolWithBalance):
         deposit (only its USD value) and a delta value that is how much the position has earned
         (also in USD). We sum collateral value + delta to get the current value of the position.
         """
-        balances: BalancesType = defaultdict(lambda: defaultdict(Balance))
+        balances: 'BalancesType' = defaultdict(lambda: defaultdict(Balance))
         unique_deposits = self._extract_unique_deposits()
         if len(unique_deposits) == 0:
             return balances
@@ -160,3 +162,44 @@ class GmxBalances(ProtocolWithBalance):
                 )
 
         return balances
+
+    def query_staking_balances(self, balances: 'BalancesType') -> 'BalancesType':
+        """
+        Query staked balances for GMX. It modifies the `balances` argument to include
+        the staking balances and returns it.
+        - This method queries for staked GMX
+        - staked GLP (fsGLP) is detected as a token already by the app and price is
+        queried correctly
+        - sbGMX is also tracked as a token
+        - esGMX (vested GMX) is tracked as a token as is not transferable. No price for this asset
+        """
+        addresses_events = self.addresses_with_activity(
+            products=None,
+            event_types={(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET)},
+        )
+        if len(addresses_events) == 0:
+            return balances
+
+        reward_contract = self.evm_inquirer.contracts.contract(GMX_STAKING_REWARD)
+        gmx_price = Inquirer.find_usd_price(asset=A_GMX)
+        for user_address in addresses_events:
+            staked_amount_raw = reward_contract.call(
+                node_inquirer=self.evm_inquirer,
+                method_name='stakedAmounts',
+                arguments=[user_address],
+            )
+            amount = token_normalized_value_decimals(
+                token_amount=staked_amount_raw,
+                token_decimals=18,  # GMX has 18 decimals
+            )
+            balances[user_address][self.gmx] += Balance(
+                amount=amount,
+                usd_value=amount * gmx_price,
+            )
+
+        return balances
+
+    def query_balances(self) -> 'BalancesType':
+        """Query balances for GMX open positions"""
+        balances = self.query_position_balances()
+        return self.query_staking_balances(balances)
