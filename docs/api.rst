@@ -13589,7 +13589,8 @@ Managing calendar entries
         "name":"ENS renewal",
         "description":"Renew yabir.eth",
         "counterparty":"ENS",
-        "address":"0xc37b40ABdB939635068d3c5f13E7faF686F03B65"
+        "address":"0xc37b40ABdB939635068d3c5f13E7faF686F03B65",
+        "color": "ffffff"
       }
 
   .. _calendar_fields:
@@ -13599,6 +13600,7 @@ Managing calendar entries
   :reqjsonarr optional[string] description: Longer description given to the event.
   :reqjsonarr optional[string] counterparty: A protocol counterparty given to the calendar event.
   :reqjsonarr optional[string] address: Address linked to the calendar event.
+  :resjson optional[string] color: The color to render the event in the frontend with.
 
   **Example Response**:
 

@@ -14,6 +14,7 @@ from rotkehlchen.db.filtering import (
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.types import (
     BlockchainAddress,
+    HexColorCode,
     OptionalBlockchainAddress,
     SupportedBlockchain,
     Timestamp,
@@ -31,6 +32,7 @@ class CalendarEntry(NamedTuple):
     counterparty: str | None
     address: BlockchainAddress | None
     blockchain: SupportedBlockchain | None
+    color: HexColorCode | None
     identifier: int = 0
 
     def serialize(self) -> dict[str, Any]:
@@ -42,6 +44,7 @@ class CalendarEntry(NamedTuple):
             'timestamp': self.timestamp,
             'address': self.address,
             'blockchain': self.blockchain.serialize() if self.blockchain is not None else None,
+            'color': self.color,
         }
 
     def serialize_for_db(self) -> tuple[
@@ -51,6 +54,7 @@ class CalendarEntry(NamedTuple):
         str | None,  # counterparty
         str | None,  # address
         str | None,  # blockchain
+        str | None,  # color
         int,  # identifier
     ]:
         return (
@@ -60,13 +64,14 @@ class CalendarEntry(NamedTuple):
             self.counterparty,
             self.address,
             self.blockchain.value if self.blockchain else None,
+            self.color,
             self.identifier,
         )
 
     @classmethod
     def deserialize_from_db(
             cls,
-            row: tuple[int, str, str | None, str | None, int, str | None, str | None],
+            row: tuple[int, str, str | None, str | None, int, str | None, str | None, str | None],
     ) -> 'CalendarEntry':
         return cls(
             identifier=row[0],
@@ -76,6 +81,7 @@ class CalendarEntry(NamedTuple):
             timestamp=Timestamp(row[4]),
             address=row[5],  # type: ignore  # it is a str here
             blockchain=SupportedBlockchain.deserialize(row[6]) if row[6] else None,
+            color=HexColorCode(row[7]) if row[7] else None,
         )
 
 
@@ -161,13 +167,20 @@ class DBCalendar:
             try:
                 write_cursor.execute(
                     'INSERT OR IGNORE INTO calendar(name, timestamp, description, counterparty, '
-                    'address, blockchain) VALUES (?, ?, ?, ?, ?, ?) RETURNING identifier',
+                    'address, blockchain, color) VALUES (?, ?, ?, ?, ?, ?, ?) '
+                    'RETURNING identifier',
                     calendar.serialize_for_db()[:-1],  # exclude the default identifier since we need to create it  # noqa: E501
                 )
             except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
                 raise InputError(f'Could not add calendar entry due to {e}') from e
 
-            return write_cursor.fetchone()[0]
+            if (identifier_row := write_cursor.fetchone()) is None:
+                raise InputError(
+                    'Could not add the calendar entry because an event with the same name, '
+                    'address and blockchain already exist',
+                )
+
+            return identifier_row[0]
 
     def query_calendar_entry(self, filter_query: CalendarFilterQuery) -> dict[str, Any]:
         """Query events using the provided filter and return the result along with the
@@ -177,7 +190,7 @@ class DBCalendar:
         with self.db.conn.read_ctx() as cursor:
             cursor.execute(
                 'SELECT identifier, name, description, counterparty, timestamp, address, '
-                'blockchain FROM calendar ' + query,
+                'blockchain, color FROM calendar ' + query,
                 bindings,
             )
             result = [CalendarEntry.deserialize_from_db(entry) for entry in cursor]
@@ -208,7 +221,7 @@ class DBCalendar:
         with self.db.user_write() as write_cursor:
             try:
                 write_cursor.execute(
-                    'UPDATE calendar SET name=?, timestamp=?, description=?, counterparty=?, address=?, blockchain=? WHERE identifier=?',  # noqa: E501
+                    'UPDATE calendar SET name=?, timestamp=?, description=?, counterparty=?, address=?, blockchain=?, color=? WHERE identifier=?',  # noqa: E501
                     calendar.serialize_for_db(),
                 )
             except sqlcipher.IntegrityError as e:  # pylint: disable=no-member

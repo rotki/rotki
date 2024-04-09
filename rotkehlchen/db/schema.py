@@ -761,6 +761,7 @@ CREATE TABLE IF NOT EXISTS calendar (
     counterparty TEXT,
     address TEXT,
     blockchain TEXT,
+    color TEXT,
     FOREIGN KEY(blockchain, address) REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE,
     UNIQUE(name, address, blockchain)
 );
