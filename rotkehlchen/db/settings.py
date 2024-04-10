@@ -367,11 +367,6 @@ def serialize_db_setting(
         value = value.serialize()  # pylint: disable=no-member
     elif setting == 'address_name_priority' and is_modifiable is True:
         value = json.dumps(value)
-    elif setting == 'evmchains_to_skip_detection':
-        if is_modifiable is True:
-            value = json.dumps([x.name.lower() for x in value])
-        else:
-            value = [x.name.lower() for x in value]
     elif setting in JSON_KEYS:
         if is_modifiable is True:
             value = json.dumps([x.serialize() for x in value])
