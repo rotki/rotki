@@ -35,6 +35,11 @@ export class GeneralSettingsPage {
     cy.get(`#currency__${value.toLocaleLowerCase()}`).click();
   }
 
+  selectChainToIgnore(value: string) {
+    cy.get('.general-settings__fields__account-chains-to-skip-detection').click();
+    cy.get('[data-cy=account-chain-skip-detection-field]').type(`{selectall}${value}{enter}{esc}`);
+  }
+
   setBalanceSaveFrequency(value: string) {
     this.setInputFieldValue(
       '.general-settings__fields__balance-save-frequency input',
@@ -90,6 +95,7 @@ export class GeneralSettingsPage {
     dateDisplayFormat: string;
     thousandSeparator: string;
     decimalSeparator: string;
+    evmchainsToSkipDetection: string[];
     currencyLocation: 'after' | 'before';
     currency: string;
     balanceSaveFrequency: string;
@@ -107,6 +113,10 @@ export class GeneralSettingsPage {
     cy.get('.general-settings__fields__balance-save-frequency input').should(
       'have.value',
       settings.balanceSaveFrequency,
+    );
+    cy.get('.general-settings__fields__account-chains-to-skip-detection .v-select__slot input[type=hidden]').should(
+      'have.value',
+      settings.evmchainsToSkipDetection.join(','),
     );
     cy.get('.general-settings__fields__date-display-format input').should(
       'have.value',
