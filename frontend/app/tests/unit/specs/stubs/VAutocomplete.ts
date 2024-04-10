@@ -1,6 +1,6 @@
 const VAutocompleteStub = {
   template: `
-    <div>
+    <div :data-cy="dataCy" :disabled="disabled">
       <div>
         <input :value="value?.toString()" class="input-value" type="text" @input="$emit('input', $event.value)">
       </div>
@@ -16,10 +16,12 @@ const VAutocompleteStub = {
   `,
   props: {
     value: { type: [String, Array<string>] },
-    successMessages: { type: [String, Array<string>], default: [] },
-    errorMessages: { type: [String, Array<string>], default: [] },
+    successMessages: { type: [String, Array<string>], default: () => [] },
+    errorMessages: { type: [String, Array<string>], default: () => [] },
     items: { type: Array<any> },
     itemValue: { type: String },
+    dataCy: { type: String, default: '' },
+    disabled: { type: Boolean, default: false },
   },
   inheritAttrs: false,
   computed: {
