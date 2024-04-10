@@ -48,15 +48,21 @@ export function useForm<T = void>() {
 
   const trySubmit = async (): Promise<T | void> => {
     set(submitting, true);
-    const result = await checkBeforeSubmission<T>(get(submitFunc), v$, valid);
+    try {
+      const result = await checkBeforeSubmission<T>(get(submitFunc), v$, valid);
 
-    if (result) {
-      closeDialog();
-      get(postSubmitFunc)(result);
+      if (result) {
+        closeDialog();
+        get(postSubmitFunc)(result);
+      }
+      return result;
     }
-
-    set(submitting, false);
-    return result;
+    catch (error: any) {
+      logger.log(error);
+    }
+    finally {
+      set(submitting, false);
+    }
   };
 
   return {
