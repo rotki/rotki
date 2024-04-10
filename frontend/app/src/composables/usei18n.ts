@@ -19,7 +19,7 @@ export function useI18n(): ModifiedI18n {
   const instance = getCurrentInstance();
   const vm = instance?.proxy || new Vue();
 
-  // @ts-expect-error
+  // @ts-expect-error type is not exposed
   return vm._i18nBridgeRoot.global as VueI18n & {
     locale: WritableComputedRef<string>;
   };

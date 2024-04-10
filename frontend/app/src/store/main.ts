@@ -107,7 +107,7 @@ export const useMainStore = defineStore('main', () => {
         }
       }
     };
-    intervalId = setInterval(attemptConnect, 2000);
+    intervalId = setInterval(() => startPromise(attemptConnect()), 2000);
     set(connectionFailure, false);
   };
 

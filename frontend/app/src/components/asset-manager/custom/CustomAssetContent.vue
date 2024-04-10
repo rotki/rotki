@@ -18,36 +18,21 @@ const props = withDefaults(
   { identifier: null, mainPage: false },
 );
 
+const { t } = useI18n();
+
 const { identifier, mainPage } = toRefs(props);
 
 const types = ref<string[]>([]);
 
-const dialogTitle = computed<string>(() =>
-  get(editableItem)
-    ? t('asset_management.edit_title')
-    : t('asset_management.add_title'),
-);
-
 const router = useRouter();
 const route = useRoute();
-const { t } = useI18n();
-const { deleteCustomAsset, queryAllCustomAssets, getCustomAssetTypes }
-  = useAssetManagementApi();
+
+const { deleteCustomAsset, queryAllCustomAssets, getCustomAssetTypes } = useAssetManagementApi();
 const { setMessage } = useMessageStore();
 
 const { show } = useConfirmStore();
 
 const { setOpenDialog, setPostSubmitFunc } = useCustomAssetForm();
-
-function add() {
-  set(editableItem, null);
-  setOpenDialog(true);
-}
-
-function edit(editAsset: CustomAsset) {
-  set(editableItem, editAsset);
-  setOpenDialog(true);
-}
 
 async function deleteAsset(assetId: string) {
   try {
@@ -62,14 +47,6 @@ async function deleteAsset(assetId: string) {
         message: error.message,
       }),
     });
-  }
-}
-
-function editAsset(assetId: Nullable<string>) {
-  if (assetId) {
-    const asset = get(state).data.find(({ identifier: id }) => id === assetId);
-    if (asset)
-      edit(asset);
   }
 }
 
@@ -97,6 +74,30 @@ const {
     ascending: [false],
   },
 });
+
+const dialogTitle = computed<string>(() =>
+  get(editableItem)
+    ? t('asset_management.edit_title')
+    : t('asset_management.add_title'),
+);
+
+function add() {
+  set(editableItem, null);
+  setOpenDialog(true);
+}
+
+function edit(editAsset: CustomAsset) {
+  set(editableItem, editAsset);
+  setOpenDialog(true);
+}
+
+function editAsset(assetId: Nullable<string>) {
+  if (assetId) {
+    const asset = get(state).data.find(({ identifier: id }) => id === assetId);
+    if (asset)
+      edit(asset);
+  }
+}
 
 async function refreshTypes() {
   set(types, await getCustomAssetTypes());

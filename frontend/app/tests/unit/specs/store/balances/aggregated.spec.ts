@@ -157,7 +157,7 @@ describe('store::balances/aggregated', () => {
     expect(actualResult).toMatchObject(expectedResult);
   });
 
-  it('btcAccounts', async () => {
+  it('btcAccounts', () => {
     const accounts: BitcoinAccounts = {
       standalone: [
         {

@@ -153,7 +153,7 @@ function clearDeleteDialog() {
   set(animateDelete, false);
 }
 
-async function confirmDelete() {
+function confirmDelete() {
   const id = get(idToDelete);
   if (id === null)
     return;

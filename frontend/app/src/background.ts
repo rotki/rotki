@@ -7,6 +7,7 @@ import { getUserMenu } from '@/electron-main/menu';
 import { TrayManager } from '@/electron-main/tray-manager';
 import { checkIfDevelopment } from '@/utils/env-utils';
 import { assert } from '@/utils/assertions';
+import { startPromise } from '@/utils';
 import createProtocol from './create-protocol';
 import { SubprocessHandler } from './subprocess-handler';
 import type { Nullable } from '@/types';
@@ -86,7 +87,7 @@ async function onReady(): Promise<void> {
   await createWindow();
   trayManager.listen();
 
-  getWindow().webContents.on('context-menu', (event, props): void => {
+  getWindow().webContents.on('context-menu', (_event, props): void => {
     const menu = new Menu();
     if (props.editFlags.canCut)
       menu.append(new MenuItem({ label: 'Cut', role: 'cut' }));
@@ -128,11 +129,11 @@ else {
     if (process.platform !== 'darwin')
       app.quit();
   });
-  app.on('activate', onActivate);
-  app.on('ready', onReady);
-  app.on('will-quit', async (e) => {
+  app.on('activate', () => startPromise(onActivate()));
+  app.on('ready', () => startPromise(onReady()));
+  app.on('will-quit', (e) => {
     e.preventDefault();
-    await closeApp();
+    startPromise(closeApp());
   });
   app.on('before-quit', (): void => {
     pyHandler.quitting();
@@ -217,7 +218,7 @@ async function createWindow(): Promise<BrowserWindow> {
   // Register and deregister listeners to window events (resize, move, close) so that window state is saved
   mainWindowState.manage(win);
 
-  win.on('close', async (e) => {
+  async function close(e: Electron.Event) {
     try {
       if (process.platform === 'darwin' && !forceQuit) {
         e.preventDefault();
@@ -231,7 +232,9 @@ async function createWindow(): Promise<BrowserWindow> {
       console.error(error);
       await closeApp();
     }
-  });
+  }
+
+  win.on('close', e => startPromise(close(e)));
 
   win.on('closed', () => {
     try {

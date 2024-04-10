@@ -52,6 +52,7 @@ else {
 }
 
 function manipulateResponse(res: Response, callback: (original: any) => any) {
+  // eslint-disable-next-line @typescript-eslint/unbound-method
   const originalWrite = res.write;
 
   res.write = (chunk: any) => {
@@ -255,6 +256,7 @@ function onProxyReq(
 }
 
 function mockPreflight(res: Response) {
+  // eslint-disable-next-line @typescript-eslint/unbound-method
   const originalWrite = res.write;
 
   res.write = (chunk: any) => {

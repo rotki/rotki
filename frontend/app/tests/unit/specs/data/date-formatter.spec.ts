@@ -11,6 +11,7 @@ describe('dateFormatter', () => {
   }
 
   beforeEach(() => {
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     originalOffset = Date.prototype.getTimezoneOffset;
     overrideTimezoneOffset(0);
     date = new Date(Date.parse('03 Feb 2019 13:09:09 UTC'));

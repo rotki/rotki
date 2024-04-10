@@ -42,7 +42,7 @@ class AppSettingManager {
         const loadedSettings = JSON.parse(file) as Partial<AppSettings>;
         for (const [key, value] of Object.entries(loadedSettings)) {
           if (typeof settings[key as keyof AppSettings] === typeof value) {
-            // @ts-expect-error
+            // @ts-expect-error any type
             settings[key] = loadedSettings[key];
           }
         }

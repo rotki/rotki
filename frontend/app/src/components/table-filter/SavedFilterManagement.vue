@@ -16,6 +16,9 @@ const emit = defineEmits<{
   (e: 'update:matches', matches: Suggestion[]): void;
 }>();
 
+const { t } = useI18n();
+const css = useCssModule();
+
 const { selection, location, matchers } = toRefs(props);
 
 const open: Ref<boolean> = ref(false);
@@ -72,9 +75,6 @@ async function addToSavedFilter() {
     });
   }
 }
-
-const { t } = useI18n();
-const css = useCssModule();
 </script>
 
 <template>

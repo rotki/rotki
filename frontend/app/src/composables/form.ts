@@ -29,7 +29,7 @@ export function useForm<T = void>() {
     return v$;
   };
 
-  const setSubmitFunc = (func: () => Promise<T>) => {
+  const setSubmitFunc = (func: () => Promise<T> | void) => {
     set(submitFunc, func);
   };
 

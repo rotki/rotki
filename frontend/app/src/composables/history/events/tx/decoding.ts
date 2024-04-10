@@ -73,6 +73,12 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     }
   };
 
+  const clearDependedSection = () => {
+    resetStatus({ section: Section.DEFI_LIQUITY_STAKING });
+    resetStatus({ section: Section.DEFI_LIQUITY_STAKING_POOLS });
+    resetStatus({ section: Section.DEFI_LIQUITY_STATISTICS });
+  };
+
   const reDecodeMissingEventsTask = async (chain: string, type: TransactionChainType = TransactionChainType.EVM) => {
     await fetchUnDecodedEventsBreakdown(type);
     const isEvm = type === TransactionChainType.EVM;
@@ -142,12 +148,6 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       checkMissingEventsAndReDecodeHandler(TransactionChainType.EVM),
       checkMissingEventsAndReDecodeHandler(TransactionChainType.EVMLIKE),
     ]));
-  };
-
-  const clearDependedSection = () => {
-    resetStatus({ section: Section.DEFI_LIQUITY_STAKING });
-    resetStatus({ section: Section.DEFI_LIQUITY_STAKING_POOLS });
-    resetStatus({ section: Section.DEFI_LIQUITY_STATISTICS });
   };
 
   const fetchTransactionEvents = async (

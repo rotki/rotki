@@ -23,7 +23,7 @@ function unfreeze(object: any, property: any, value = null) {
 
 // TODO: remove after upgrading to Vue 3.x
 export default Vue.extend({
-  // @ts-expect-error
+  // @ts-expect-error it's gonna be removed in vue3
   abstract: true,
   name: 'Fragment',
 
@@ -75,12 +75,14 @@ export default Vue.extend({
     freeze(container, 'parentNode', parent);
     freeze(container, 'nextSibling', tail.nextSibling);
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     const insertBefore = parent.insertBefore;
     parent.insertBefore = (node, ref) => {
       insertBefore.call(parent, node, ref !== container ? ref : head);
       return node;
     };
 
+    // eslint-disable-next-line @typescript-eslint/unbound-method
     const removeChild = parent.removeChild;
     parent.removeChild = (node) => {
       if ((node as Node) === container) {

@@ -44,18 +44,12 @@ export function useBackendManagement(loaded: () => void = () => {}) {
     ...get(fileConfig),
   }));
 
-  onMounted(async () => {
-    await load();
-    loaded();
-    setLevel(get(options).loglevel);
-  });
-
   const restartBackendWithOptions = async (
     options: Partial<BackendOptions>,
   ) => {
-    await setConnected(false);
+    setConnected(false);
     await interop.restartBackend(options);
-    await connect();
+    connect();
   };
 
   const load = async () => {
@@ -69,6 +63,12 @@ export function useBackendManagement(loaded: () => void = () => {}) {
       set(defaultLogDirectory, logDirectory);
   };
 
+  const applyUserOptions = async (config: Partial<BackendOptions>) => {
+    saveUserOptions(config);
+    set(userOptions, config);
+    await restartBackendWithOptions(get(options));
+  };
+
   const saveOptions = async (opts: Partial<BackendOptions>) => {
     const { logDirectory, dataDirectory, loglevel } = get(userOptions);
     const updatedOptions = {
@@ -78,12 +78,6 @@ export function useBackendManagement(loaded: () => void = () => {}) {
       ...opts,
     };
     await applyUserOptions(updatedOptions);
-  };
-
-  const applyUserOptions = async (config: Partial<BackendOptions>) => {
-    saveUserOptions(config);
-    set(userOptions, config);
-    await restartBackendWithOptions(get(options));
   };
 
   const resetOptions = async () => {
@@ -106,6 +100,14 @@ export function useBackendManagement(loaded: () => void = () => {}) {
     }
   };
 
+  const backendChanged = async (url: string | null) => {
+    setConnected(false);
+    if (!url)
+      await restartBackend();
+
+    connect(url);
+  };
+
   const setupBackend = async () => {
     if (get(connected))
       return;
@@ -117,13 +119,12 @@ export function useBackendManagement(loaded: () => void = () => {}) {
       await restartBackend();
   };
 
-  const backendChanged = async (url: string | null) => {
-    setConnected(false);
-    if (!url)
-      await restartBackend();
-
-    await connect(url);
-  };
+  onMounted(() => {
+    load().then(() => {
+      loaded();
+      setLevel(get(options).loglevel);
+    }).catch(error => logger.error(error));
+  });
 
   return {
     logLevel,

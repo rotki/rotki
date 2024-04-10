@@ -86,7 +86,7 @@ async function copy() {
   await copyToClipboard(messageText);
 }
 
-async function doAction(id: number, action: NotificationAction) {
+function doAction(id: number, action: NotificationAction) {
   action.action?.();
   if (!action.persist)
     dismiss(id);

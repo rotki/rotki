@@ -15,9 +15,10 @@ const props = defineProps<{
 
 const { identifier } = toRefs(props);
 const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
-const { isAssetWhitelisted, whitelistAsset, unWhitelistAsset }
-  = useWhitelistedAssetsStore();
+const { isAssetWhitelisted, whitelistAsset, unWhitelistAsset } = useWhitelistedAssetsStore();
 const { markAssetAsSpam, removeAssetFromSpamList } = useSpamAsset();
+const { assetName, assetSymbol, assetInfo, tokenAddress, refetchAssetInfo } = useAssetInfoRetrieval();
+const { getChain } = useSupportedChains();
 
 const isIgnored = isAssetIgnored(identifier);
 const isWhitelisted = isAssetWhitelisted(identifier);
@@ -41,9 +42,6 @@ async function toggleWhitelistAsset() {
 }
 const premium = usePremium();
 
-const { assetName, assetSymbol, assetInfo, tokenAddress, refetchAssetInfo }
-  = useAssetInfoRetrieval();
-const { getChain } = useSupportedChains();
 const name = assetName(identifier);
 const symbol = assetSymbol(identifier);
 const asset = assetInfo(identifier);
