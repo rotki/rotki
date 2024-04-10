@@ -90,6 +90,21 @@
       "native_token": "XDAI",
       "image": "gnosis.svg",
       "evm_chain_name": "gnosis"
+    },
+    {
+      "id": "scroll",
+      "name": "scroll",
+      "type": "evm",
+      "native_token": "ETH",
+      "image": "scroll.svg",
+      "evm_chain_name": "scroll"
+    },
+    {
+      "id": "zksync_lite",
+      "name": "ZKSync Lite",
+      "type": "evmlike",
+      "native_token": "ETH",
+      "image": "zksync_lite.svg"
     }
   ],
   "message": ""

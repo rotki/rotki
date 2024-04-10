@@ -81,10 +81,7 @@ export class GeneralSettingsPage {
   }
 
   confirmInlineSuccess(target: string, messageContains?: string) {
-    cy.get(target).as('message');
-    cy.get('@message').should('include.text', 'Setting saved');
-    if (messageContains)
-      cy.get('@message').should('include.text', messageContains);
+    cy.confirmFieldMessage({ target, messageContains, mustInclude: 'Setting saved' });
   }
 
   verify(settings: {
