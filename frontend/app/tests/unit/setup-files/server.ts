@@ -11,6 +11,7 @@ import historyEventCounterpartiesHandlers from './handlers/history-event-counter
 import historyEventProductsHandlers from './handlers/history-event-products';
 import infoHandlers from './handlers/info';
 import stakingHandlers from './handlers/staking';
+import settingHandlers from './handlers/settings';
 
 const server = setupServer(
   ...tradeHandlers,
@@ -25,6 +26,7 @@ const server = setupServer(
   ...historyEventCounterpartiesHandlers,
   ...historyEventProductsHandlers,
   ...stakingHandlers,
+  ...settingHandlers,
 );
 
 export { server };
