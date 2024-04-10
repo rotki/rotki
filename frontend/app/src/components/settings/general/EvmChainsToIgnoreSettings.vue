@@ -8,15 +8,15 @@ const css = useCssModule();
 const { isModuleEnabled } = useModules();
 const { evmchainsToSkipDetection } = storeToRefs(useGeneralSettingsStore());
 
-const { getChainName, getEvmChainName, isEvm, evmChainsData, supportedChains }
+const { getChainName, isEvm, evmChainsData, supportedChains }
   = useSupportedChains();
 
-const skippedChains = computed(() => {
-  const savedNames = get(evmchainsToSkipDetection) ?? [];
+const skippedChains = computed<Blockchain[]>(() => {
+  const savedChains = get(evmchainsToSkipDetection) ?? [];
   const chainsData = get(evmChainsData) ?? [];
-  const chainsMap = keyBy(chainsData, 'evmChainName');
+  const chainsMap = keyBy(chainsData, 'id');
 
-  return savedNames.map(name => chainsMap[name]?.id as Blockchain);
+  return savedChains.map(chain => chainsMap[chain]?.id as Blockchain);
 });
 
 const items = computed(() => {
@@ -31,10 +31,6 @@ const items = computed(() => {
 
   return data;
 });
-
-function getChainNames(chains: Blockchain[]) {
-  return (chains ?? []).map(getEvmChainName);
-}
 
 function filter(chain: Blockchain, queryText: string) {
   const item = get(supportedChains).find(blockchain => blockchain.id === chain);
@@ -51,7 +47,7 @@ function filter(chain: Blockchain, queryText: string) {
 }
 
 function removeChain(chain: Blockchain) {
-  return getChainNames(get(skippedChains).filter(c => c !== chain));
+  return get(skippedChains).filter(c => c !== chain);
 }
 </script>
 
@@ -79,6 +75,7 @@ function removeChain(chain: Blockchain) {
         :success-messages="success"
         :error-messages="error"
         :class="css['chain-select']"
+        class="general-settings__fields__account-chains-to-skip-detection"
         chips
         small-chips
         deletable-chips
@@ -87,7 +84,7 @@ function removeChain(chain: Blockchain) {
         data-cy="account-chain-skip-detection-field"
         outlined
         auto-select-first
-        @input="update(getChainNames($event))"
+        @input="update($event)"
       >
         <template #selection="{ item }">
           <RuiChip
