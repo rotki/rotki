@@ -174,8 +174,9 @@ def test_use_open_nodes(ethereum_inquirer, database):
     assert result['blockHash'] == block_hash
 
 
-@pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
-def test_call_contract(ethereum_inquirer, call_order, ethereum_manager_connect_at_start):
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize(*ETHEREUM_WEB3_AND_ETHERSCAN_TEST_PARAMETERS)
+def test_call_contract(ethereum_inquirer, ethereum_manager_connect_at_start):
     wait_until_all_nodes_connected(
         connect_at_start=ethereum_manager_connect_at_start,
         evm_inquirer=ethereum_inquirer,
@@ -185,18 +186,16 @@ def test_call_contract(ethereum_inquirer, call_order, ethereum_manager_connect_a
         contract_address=yearn_ycrv_vault.address,
         abi=yearn_ycrv_vault.abi,
         method_name='symbol',
-        call_order=call_order,
     )
     assert result == 'yyDAI+yUSDC+yUSDT+yTUSD'
     # also test that doing contract.call() has the same result
-    result2 = yearn_ycrv_vault.call(ethereum_inquirer, 'symbol', call_order=call_order)
+    result2 = yearn_ycrv_vault.call(ethereum_inquirer, 'symbol')
     assert result == result2
     result = ethereum_inquirer.call_contract(
         contract_address=yearn_ycrv_vault.address,
         abi=yearn_ycrv_vault.abi,
         method_name='balanceOf',
         arguments=['0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c'],
-        call_order=call_order,
     )
     assert result >= 0
 
