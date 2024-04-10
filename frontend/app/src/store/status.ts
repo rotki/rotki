@@ -6,7 +6,7 @@ type SectionStatus = Record<string, Status>;
 
 type StatusState = Partial<Record<Section, SectionStatus>>;
 
-const defaultSection = 'default' as const;
+const defaultSection = 'default';
 
 function isInitialLoadingStatus(status: Status) {
   return status !== Status.LOADED
