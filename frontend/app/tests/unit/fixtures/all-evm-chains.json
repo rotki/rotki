@@ -1,0 +1,95 @@
+{
+  "result": [
+    {
+      "id": 1,
+      "name": "ethereum",
+      "label": "Ethereum"
+    },
+    {
+      "id": 10,
+      "name": "optimism",
+      "label": "Optimism"
+    },
+    {
+      "id": 56,
+      "name": "binance",
+      "label": "Binance Smart Chain"
+    },
+    {
+      "id": 100,
+      "name": "gnosis",
+      "label": "Gnosis"
+    },
+    {
+      "id": 137,
+      "name": "polygon_pos",
+      "label": "Polygon POS"
+    },
+    {
+      "id": 250,
+      "name": "fantom",
+      "label": "Fantom"
+    },
+    {
+      "id": 8453,
+      "name": "base",
+      "label": "Base"
+    },
+    {
+      "id": 42161,
+      "name": "arbitrum_one",
+      "label": "Arbitrum One"
+    },
+    {
+      "id": 43114,
+      "name": "avalanche",
+      "label": "Avalanche"
+    },
+    {
+      "id": 42220,
+      "name": "celo",
+      "label": "Celo"
+    },
+    {
+      "id": 42170,
+      "name": "arbitrum_nova",
+      "label": "Arbitrum Nova"
+    },
+    {
+      "id": 25,
+      "name": "cronos",
+      "label": "Cronos"
+    },
+    {
+      "id": 288,
+      "name": "boba",
+      "label": "Boba"
+    },
+    {
+      "id": 9001,
+      "name": "evmos",
+      "label": "Evmos"
+    },
+    {
+      "id": 1101,
+      "name": "polygon_zkevm",
+      "label": "Polygon zkEVM"
+    },
+    {
+      "id": 324,
+      "name": "zksync_era",
+      "label": "zkSync Era"
+    },
+    {
+      "id": 369,
+      "name": "pulsechain",
+      "label": "PulseChain"
+    },
+    {
+      "id": 534352,
+      "name": "scroll",
+      "label": "Scroll"
+    }
+  ],
+  "message": ""
+}
