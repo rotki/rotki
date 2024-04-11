@@ -17,9 +17,8 @@ const { t } = useI18n();
   >
     <RuiSwitch
       v-model="treatEth2asEth"
-      class="general-settings__fields__treat-eth2-as-eth mt-2 mb-8"
+      class="general-settings__fields__treat-eth2-as-eth my-2"
       color="primary"
-      hide-details
       :label="t('general_settings.labels.treat_eth2_as_eth')"
       :success-messages="success"
       :error-messages="error"

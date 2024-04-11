@@ -37,6 +37,7 @@ function calculateFontSize(symbol: string) {
       :label="t('general_settings.amount.labels.main_currency')"
       :options="currenciesWithKeys"
       text-attr="tickerSymbol"
+      :item-height="68"
       full-width
       float-label
       show-details
@@ -50,6 +51,7 @@ function calculateFontSize(symbol: string) {
           :id="`currency__${option.tickerSymbol.toLocaleLowerCase()}`"
           no-hover
           no-padding
+          class="!py-0"
           :title="option.name"
           :subtitle="t('general_settings.amount.labels.main_currency_subtitle')"
         >
