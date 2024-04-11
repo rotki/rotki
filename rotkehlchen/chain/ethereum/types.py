@@ -22,4 +22,5 @@ if TYPE_CHECKING:
         'ILK_REGISTRY',  # added in 1.27.1 data migration
         'CVX_REWARD_POOL',  # added in 1.28.0 packaged globaldb
         'CVX_LOCKER_V2',
+        'COMPOUND_V3_TOKEN',
     ]

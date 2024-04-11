@@ -2,8 +2,8 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING
 
-from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
+from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
+from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.tokens import get_chunk_size_call_order
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -18,7 +18,6 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from .constants import CONTRACT_STAKING, CPT_THEGRAPH
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.interfaces.balances import BalancesType
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
 logger = logging.getLogger(__name__)
@@ -39,14 +38,14 @@ class ThegraphBalances(ProtocolWithBalance):
         )
         self.grt = A_GRT.resolve_to_evm_token()
 
-    def query_balances(self) -> 'BalancesType':
+    def query_balances(self) -> 'BalancesSheetType':
         """
         Query balances of GRT tokens delegated to indexers if deposit events are found.
         First, the current shares amounts are fetched from the contract,
         then shares are converted into GRT balances according to the current pool ratio.
         The results include delegation rewards earned over time.
         """
-        balances: BalancesType = defaultdict(lambda: defaultdict(Balance))
+        balances: BalancesSheetType = defaultdict(BalanceSheet)
 
         # fetch deposit events
         addresses_with_deposits = self.addresses_with_deposits(products=[EvmProduct.STAKING])
@@ -124,7 +123,7 @@ class ThegraphBalances(ProtocolWithBalance):
                 continue
             balance = FVal(shares_amount * pool_total_tokens / pool_total_shares)
             balance_norm = asset_normalized_value(balance.to_int(exact=False), self.grt)
-            balances[delegator][self.grt] += Balance(
+            balances[delegator].assets[self.grt] += Balance(
                 amount=balance_norm,
                 usd_value=grt_price * balance_norm,
             )

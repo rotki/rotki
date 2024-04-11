@@ -41,6 +41,7 @@ from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
 from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBalances
 from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
+from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
@@ -182,6 +183,7 @@ DEFI_PROTOCOLS_TO_SKIP_LIABILITIES = {
 }
 CHAIN_TO_BALANCE_PROTOCOLS = {
     ChainID.ETHEREUM: (
+        Compoundv3Balances,
         CurveBalances,
         ConvexBalances,
         ThegraphBalances,
@@ -189,8 +191,10 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         EigenlayerBalances,
     ),
     ChainID.OPTIMISM: (VelodromeBalances,),
-    ChainID.BASE: (AerodromeBalances,),
-    ChainID.ARBITRUM_ONE: (GmxBalances,),
+    ChainID.BASE: (Compoundv3Balances, AerodromeBalances),
+    ChainID.ARBITRUM_ONE: (Compoundv3Balances, GmxBalances),
+    ChainID.POLYGON_POS: (Compoundv3Balances,),
+    ChainID.SCROLL: (Compoundv3Balances,),
 }
 
 
@@ -1077,9 +1081,9 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         needs to be added to the total balance of the account. Examples of such protocols are
         Curve, Convex and Velodrome.
         """
-        chain = ChainID.to_blockchain(chain_id)
-        inquirer = self.get_chain_manager(chain).node_inquirer  # type: ignore  # chain's type here is a subset of the type expected by get_chain_manager
-        existing_balances = self.balances.get(chain)
+        chain: SUPPORTED_EVM_CHAINS_TYPE = ChainID.to_blockchain(chain_id)  # type: ignore[assignment]  # CHAIN_IDS_WITH_BALANCE_PROTOCOLS only contains SUPPORTED_EVM_CHAINS_TYPE
+        inquirer = self.get_chain_manager(chain).node_inquirer
+        existing_balances: defaultdict[ChecksumEvmAddress, BalanceSheet] = self.balances.get(chain)
         for protocol in CHAIN_TO_BALANCE_PROTOCOLS[chain_id]:
             protocol_with_balance: ProtocolWithBalance = protocol(
                 database=self.database,
@@ -1092,9 +1096,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 continue
 
             for address, asset_balances in protocol_balances.items():
-                address_balances = existing_balances[address]  # type: ignore  # chain's type is a subset of the type expected by balances.get so existing_balances is of the correct type here
-                for asset, balance in asset_balances.items():
-                    address_balances.assets[asset] += balance  # type: ignore  # chain's type is a subset of the type expected by balances.get so address_balances is of the correct type here
+                existing_balances[address] += asset_balances
 
     def _add_eth_protocol_balances(self, eth_balances: defaultdict[ChecksumEvmAddress, BalanceSheet]) -> None:  # noqa: E501
         """Also count token balances that may come from various eth protocols"""
