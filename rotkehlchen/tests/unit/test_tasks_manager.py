@@ -548,19 +548,20 @@ def test_maybe_augmented_detect_new_spam_tokens(
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_tasks_dont_schedule_if_no_eth_address(task_manager: TaskManager) -> None:
     """Test that we don't execute extra logic in tasks if no ethereum address is tracked"""
-    task_manager.should_schedule = True
-    for func in (
-        task_manager._maybe_update_yearn_vaults,
-        task_manager._maybe_update_ilk_cache,
-    ):
-        with (
-            patch('rotkehlchen.tasks.utils.should_run_periodic_task') as mocked_func,
+    with gevent.Timeout(5):  # this should not take long. Otherwise a long running task ran
+        task_manager.should_schedule = True
+        for func in (
+            task_manager._maybe_update_yearn_vaults,
+            task_manager._maybe_update_ilk_cache,
         ):
-            task_manager.potential_tasks = [func]
-            task_manager.schedule()
-            if len(task_manager.running_greenlets) != 0:
-                gevent.joinall(task_manager.running_greenlets[func])
-            assert mocked_func.call_count == 0
+            with (  # if we get to should_update_protocol_cache it means check did not work
+                patch('rotkehlchen.chain.ethereum.utils.should_update_protocol_cache') as mocked_func,  # noqa: E501
+            ):
+                task_manager.potential_tasks = [func]
+                task_manager.schedule()
+                if len(task_manager.running_greenlets) != 0:
+                    gevent.joinall(task_manager.running_greenlets[func])
+                assert mocked_func.call_count == 0
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
