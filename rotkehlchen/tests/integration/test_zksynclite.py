@@ -3,7 +3,11 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.chain.zksync_lite.structures import ZKSyncLiteTransaction, ZKSyncLiteTXType
+from rotkehlchen.chain.zksync_lite.structures import (
+    ZKSyncLiteSwapData,
+    ZKSyncLiteTransaction,
+    ZKSyncLiteTXType,
+)
 from rotkehlchen.constants.assets import (
     A_DAI,
     A_ETH,
@@ -39,7 +43,7 @@ def test_fetch_transactions(zksync_lite_manager):
     with zksync_lite_manager.database.conn.read_ctx() as cursor:
         cursor.execute(
             'SELECT tx_hash, type, timestamp, block_number, from_address, to_address, '
-            'token_identifier, amount, fee FROM zksynclite_transactions ORDER BY timestamp ASC',
+            'asset, amount, fee FROM zksynclite_transactions ORDER BY timestamp ASC',
         )
         transactions = [ZKSyncLiteTransaction.deserialize_from_db(x) for x in cursor]
 
@@ -264,5 +268,91 @@ def test_decode_forcedexit(zksync_lite_manager, inquirer):  # pylint: disable=un
         balance=Balance(),
         location_label=address,
         notes='Forced exit to Ethereum',
+        address=address,
+    )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('should_mock_current_price_queries', [True])
+@pytest.mark.freeze_time('2024-04-11 10:00:00 GMT')
+def test_decode_swap(zksync_lite_manager, inquirer):  # pylint: disable=unused-argument
+    tx_hash = deserialize_evm_tx_hash('0x62819dad5d0d99dc5de633ecb95629c1073bcb80a8af15464ca4b0bc95b394b9')  # noqa: E501
+    address = string_to_evm_address('0x721AF5c931BAA2415428064e5F71A251F30152B1')
+    timestamp = Timestamp(1710752106)
+    zksync_lite_manager.fetch_transactions(  # timerange is not really respected
+        address=address,
+        start_ts=0,
+        end_ts=ts_now(),
+    )
+    transactions = zksync_lite_manager.get_db_transactions(
+        queryfilter=' WHERE tx_hash=?', bindings=(tx_hash,),
+    )
+    assert transactions == [ZKSyncLiteTransaction(
+        tx_hash=tx_hash,
+        tx_type=ZKSyncLiteTXType.SWAP,
+        timestamp=timestamp,
+        block_number=433594,
+        from_address=address,
+        to_address=address,
+        asset=A_DAI,
+        amount=FVal('0.1659'),
+        fee=Fee(FVal('0.1659')),
+        swap_data=ZKSyncLiteSwapData(
+            from_asset=A_ETH,
+            from_amount=FVal('0.01042855223'),
+            to_asset=A_USDT,
+            to_amount=FVal('37.082973'),
+        ),
+    )]
+    assert zksync_lite_manager.decode_transaction(transactions[0], [address]) == 3
+    dbevents = DBHistoryEvents(zksync_lite_manager.database)
+    with zksync_lite_manager.database.conn.read_ctx() as cursor:
+        events = dbevents.get_history_events(
+            cursor=cursor,
+            filter_query=EvmEventFilterQuery.make(),
+            has_premium=True,
+            group_by_event_ids=False,
+        )
+    assert events == [EvmEvent(
+        identifier=1,
+        event_identifier=f'zkl{tx_hash.hex()}',  # pylint: disable=no-member
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=ts_sec_to_ms(timestamp),
+        location=Location.ZKSYNC_LITE,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=A_ETH,
+        balance=Balance(FVal('0.01042855223')),
+        location_label=address,
+        notes='Swap 0.01042855223 ETH via ZKSync Lite',
+        address=address,
+    ), EvmEvent(
+        identifier=2,
+        event_identifier=f'zkl{tx_hash.hex()}',  # pylint: disable=no-member
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=ts_sec_to_ms(timestamp),
+        location=Location.ZKSYNC_LITE,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=A_USDT,
+        balance=Balance(FVal('37.082973')),
+        location_label=address,
+        notes='Receive 37.082973 USDT as the result of a swap via ZKSync Lite',
+        address=address,
+    ), EvmEvent(
+        identifier=3,
+        event_identifier=f'zkl{tx_hash.hex()}',  # pylint: disable=no-member
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=ts_sec_to_ms(timestamp),
+        location=Location.ZKSYNC_LITE,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_DAI,
+        balance=Balance(FVal('0.1659')),
+        location_label=address,
+        notes='Swap fee of 0.1659 DAI',
         address=address,
     )]

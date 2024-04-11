@@ -8,6 +8,7 @@ from urllib.parse import urlencode
 
 import gevent
 import requests
+from pysqlcipher3.dbapi2 import IntegrityError
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, CryptoAsset
@@ -22,6 +23,7 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
@@ -44,7 +46,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBCursor
 
 from .constants import ZKSYNCLITE_MAX_LIMIT, ZKSYNCLITE_TX_SAVEPREFIX
-from .structures import ZKSyncLiteTransaction, ZKSyncLiteTXType
+from .structures import ZKSyncLiteSwapData, ZKSyncLiteTransaction, ZKSyncLiteTXType
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -64,6 +66,29 @@ class ZksyncLiteManager:
         self.symbol_to_token: dict[str, CryptoAsset] = {}
         self.eth = A_ETH.resolve_to_crypto_asset()
         self.ethereum_inquirer = ethereum_inquirer
+
+    def _get_token_and_amount_by_id_or_log(
+            self,
+            entry: dict,
+            asset_key: str,
+            amount_key: str | None = 'amount',
+    ) -> tuple[CryptoAsset, FVal] | None:
+        """Helper function. May raise KeyError"""
+        if (asset := self._get_token_by_id(entry['op'][asset_key])) is None:
+            log.error(  # also happens for all NFT transfers -- since we ignore nfts in lite
+                f'Skipping zksync lite transaction {entry} with unknown token id {entry["op"][asset_key]}',  # noqa: E501
+            )
+            return None
+
+        amount = ZERO
+        if amount_key:
+            amount_raw = deserialize_int_from_str(
+                symbol=entry['op'][amount_key],
+                location='zksync transaction',
+            )
+            amount = asset_normalized_value(amount_raw, asset)
+
+        return asset, amount
 
     def _query_api(
             self,
@@ -253,6 +278,7 @@ class ZksyncLiteManager:
     ) -> ZKSyncLiteTransaction | None:
         from_address = None
         to_address = None
+        swap_data = None
         try:
             if (status := entry.get('status', 'finalized')) != 'finalized':
                 log.debug(f'Skipping zksynce lite transaction {entry} due to {status=}')
@@ -264,6 +290,7 @@ class ZksyncLiteManager:
             timestamp = iso8601ts_to_timestamp(entry['createdAt'])
             fee_str = entry['op'].get('fee')
             fee_raw = None
+            amount = ZERO
             if fee_str is not None:
                 fee_raw = deserialize_int_from_str(
                     symbol=fee_str,
@@ -271,41 +298,85 @@ class ZksyncLiteManager:
                 )
 
             if tx_type == ZKSyncLiteTXType.DEPOSIT:
-                asset_key = 'tokenId'
+                from_address = deserialize_evm_address(entry['op']['from'])
+                to_address = deserialize_evm_address(entry['op']['to'])
+                if (asset_amount := self._get_token_and_amount_by_id_or_log(entry, 'tokenId')) is None:  # noqa: E501
+                    return None
+                asset, amount = asset_amount
+
             elif tx_type == ZKSyncLiteTXType.CHANGEPUBKEY:
-                asset_key = 'feeToken'
                 from_address = deserialize_evm_address(entry['op']['account'])
+                if (asset_amount := self._get_token_and_amount_by_id_or_log(
+                        entry=entry,
+                        asset_key='feeToken',
+                        amount_key='fee',
+                )) is None:
+                    return None
+                asset = asset_amount[0]  # there is no amount. Just fee
+
             elif tx_type == ZKSyncLiteTXType.FORCEDEXIT:
-                asset_key = 'token'  # just like with FULLEXIT, the amount is missing in the API
-                from_address = concerning_address
+                from_address = concerning_address  # like FULLEXIT the amount is missing in the API
                 to_address = deserialize_evm_address(entry['op']['target'])
+                if (asset_amount := self._get_token_and_amount_by_id_or_log(
+                        entry=entry,
+                        asset_key='token',
+                        amount_key=None,
+                )) is None:
+                    return None
+                asset, amount = asset_amount
+
             elif tx_type == ZKSyncLiteTXType.FULLEXIT:
-                asset_key = 'tokenId'
                 from_address = concerning_address
                 to_address = concerning_address
                 # for some reason the transaction hash for full exit is in op and their
                 # one under entry is not corresponding to anything in zkscan.
                 # also amount is missing
                 tx_hash = deserialize_evm_tx_hash(entry['op']['ethHash'])
-            else:  # transfer/withdraw
-                asset_key = 'token'
+                if (asset_amount := self._get_token_and_amount_by_id_or_log(
+                        entry=entry,
+                        asset_key='tokenId',
+                        amount_key=None,
+                )) is None:
+                    return None
+                asset, amount = asset_amount
 
-            asset = self._get_token_by_id(entry['op'][asset_key])
-            if asset is None:
-                log.error(  # also happens for all NFT transfers -- since we ignore nfts in lite
-                    f'Skipping zksync lite transaction {entry} with unknown token id {entry["op"][asset_key]}',  # noqa: E501
+            elif tx_type == ZKSyncLiteTXType.SWAP:
+                from_address = concerning_address
+                to_address = concerning_address
+                if (asset_amount := self._get_token_and_amount_by_id_or_log(
+                        entry=entry,
+                        asset_key='feeToken',
+                        amount_key='fee',
+                )) is None:
+                    return None
+                asset, amount = asset_amount  # for swaps this is the fee/fee token
+
+                swap_asset_data = []
+                for idx in (0, 1):
+                    if (swap_asset := self._get_token_by_id(entry['op']['orders'][idx]['tokenSell'])) is None:  # noqa: E501
+                        log.error(f'Could not deserialize zksync lite swap entry sell token at idx {idx} of {entry}')  # noqa: E501
+                        return None
+
+                    amount_raw = deserialize_int_from_str(
+                        symbol=entry['op']['orders'][idx]['amount'],
+                        location='zksync swap transaction',
+                    )
+                    swap_amount = asset_normalized_value(amount_raw, swap_asset)
+                    swap_asset_data.append((swap_asset, swap_amount))
+
+                swap_data = ZKSyncLiteSwapData(
+                    from_asset=swap_asset_data[0][0],
+                    from_amount=swap_asset_data[0][1],
+                    to_asset=swap_asset_data[1][0],
+                    to_amount=swap_asset_data[1][1],
                 )
-                return None
 
-            amount = ZERO
-            if tx_type not in (ZKSyncLiteTXType.CHANGEPUBKEY, ZKSyncLiteTXType.FORCEDEXIT, ZKSyncLiteTXType.FULLEXIT):  # noqa: E501
+            else:  # transfer/withdraw
                 from_address = deserialize_evm_address(entry['op']['from'])
                 to_address = deserialize_evm_address(entry['op']['to'])
-                amount_raw = deserialize_int_from_str(
-                    symbol=entry['op']['amount'],
-                    location='zksync transaction',
-                )
-                amount = asset_normalized_value(amount_raw, asset)
+                if (asset_amount := self._get_token_and_amount_by_id_or_log(entry, 'token')) is None:  # noqa: E501
+                    return None
+                asset, amount = asset_amount
 
         except (DeserializationError, KeyError) as e:
             error = str(e)
@@ -326,6 +397,7 @@ class ZksyncLiteManager:
                 asset=asset,
                 amount=amount,
                 fee=Fee(asset_normalized_value(fee_raw, asset)) if fee_raw else None,
+                swap_data=swap_data,
             )
 
         return None
@@ -371,16 +443,24 @@ class ZksyncLiteManager:
             write_cursor: 'DBCursor',
             transactions: Iterable[ZKSyncLiteTransaction],
     ) -> None:
-        tuples = [x.serialize_for_db() for x in transactions]
-        query = """INSERT INTO zksynclite_transactions(tx_hash, type, timestamp, block_number,
-        from_address, to_address, token_identifier, amount, fee)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"""
-        self.database.write_tuples(
-            write_cursor=write_cursor,
-            tuple_type='zksynclite_transaction',
-            query=query,
-            tuples=tuples,
-        )
+        for transaction in transactions:
+            try:
+                write_cursor.execute(
+                    'INSERT INTO zksynclite_transactions(tx_hash, type, timestamp, block_number, '
+                    'from_address, to_address, asset, amount, fee) '
+                    'VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING identifier',
+                    transaction.serialize_for_db(),
+                )
+                if transaction.tx_type == ZKSyncLiteTXType.SWAP:
+                    identifier = write_cursor.fetchone()[0]
+                    write_cursor.execute(
+                        'INSERT INTO zksynclite_swaps(tx_id, from_asset, from_amount, '
+                        'to_asset, to_amount) VALUES(?, ?, ?, ?, ?)',
+                        transaction.swap_data.serialize_for_db(identifier),  # type: ignore  # swap_data exists for swap
+                    )
+            except IntegrityError as e:
+                log.error(f'Did not add zksync transaction {transaction} to the DB due to {e!s}')
+                continue
 
     def get_db_transactions(
             self,
@@ -391,16 +471,31 @@ class ZksyncLiteManager:
         transactions = []
         with self.database.conn.read_ctx() as cursor:
             cursor.execute(
-                f'SELECT tx_hash, type, timestamp, block_number, from_address, to_address, '
-                f'token_identifier, amount, fee FROM zksynclite_transactions{queryfilter}',
+                f'SELECT identifier, tx_hash, type, timestamp, block_number, from_address, '
+                f'to_address, asset, amount, fee FROM zksynclite_transactions{queryfilter}',
                 bindings,
             )
             for entry in cursor:
+                swap_result = None
                 try:
-                    transactions.append(ZKSyncLiteTransaction.deserialize_from_db(entry))
+                    tx = ZKSyncLiteTransaction.deserialize_from_db(entry[1:])
+                    if tx.tx_type == ZKSyncLiteTXType.SWAP:
+                        cursor.execute(
+                            'SELECT from_asset, from_amount, to_asset, to_amount '
+                            'FROM zksynclite_swaps WHERE tx_id=?', (entry[0],),
+                        )
+                        if (swap_result := cursor.fetchone()) is None:
+                            log.error(
+                                f'Could not deserialize zksync lite transaction from the DB due to not finding swap data for tx_id: {entry[0]}',  # noqa: E501
+                            )
+                            continue
+
+                        tx.swap_data = ZKSyncLiteSwapData.deserialize_from_db(swap_result)
+
+                    transactions.append(tx)
                 except (DeserializationError, UnknownAsset) as e:
                     log.error(
-                        f'Could not deserialize zksync lite transaction {entry} from the DB due to {e!s}',  # noqa: E501
+                        f'Could not deserialize zksync lite transaction {entry} with {swap_result=} from the DB due to {e!s}',  # noqa: E501
                     )
                 continue
 
@@ -518,31 +613,49 @@ class ZksyncLiteManager:
         decoded_num = 0
         tracked_from = transaction.from_address in tracked_addresses
         tracked_to = transaction.to_address in tracked_addresses
+        event_identifier = f'zkl{transaction.tx_hash.hex()}'
+        events = []
+        event_data: list[tuple[int, HistoryEventType, HistoryEventSubType, Asset, FVal, ChecksumEvmAddress, ChecksumEvmAddress | None, str]] = []  # noqa: E501
         match transaction.tx_type:
             case ZKSyncLiteTXType.DEPOSIT:
 
                 # This is a deposit from L1 to ZKSync Lite. from is in L1. to is in L2
                 if not tracked_to:
                     return 0  # no need to track. Receiver in zksync lite is not ours
-                event_type = HistoryEventType.WITHDRAWAL
-                event_subtype = HistoryEventSubType.BRIDGE
+
                 suffix = ''
                 if transaction.from_address != transaction.to_address:
                     suffix = f' address {transaction.to_address}'
                 notes = f'Bridge {transaction.amount} {transaction.asset.resolve_to_asset_with_symbol().symbol} from Ethereum to ZKSync Lite{suffix}'  # noqa: E501
-                location_label = transaction.to_address
+                event_data.append((
+                    0,
+                    HistoryEventType.WITHDRAWAL,
+                    HistoryEventSubType.BRIDGE,
+                    transaction.asset,
+                    transaction.amount,
+                    transaction.to_address,  # type:ignore [arg-type]  # to_address should exist here
+                    None,
+                    notes,
+                ))
             case ZKSyncLiteTXType.WITHDRAW:
                 # This is a withdrawal from ZKSync lite to L1. from is in L2 to is in L1
                 if not tracked_from:
                     return 0  # no need to track. Sender in zksync lite is not ours
-                event_type = HistoryEventType.DEPOSIT
-                event_subtype = HistoryEventSubType.BRIDGE
+
                 suffix = ''
-                target = transaction.to_address
                 if transaction.from_address != transaction.to_address:
                     suffix = f' address {transaction.to_address}'
                 notes = f'Bridge {transaction.amount} {transaction.asset.resolve_to_asset_with_symbol().symbol} from ZKSync Lite to Ethereum{suffix}'  # noqa: E501
-                location_label = transaction.from_address
+                event_data.append((
+                    0,
+                    HistoryEventType.DEPOSIT,
+                    HistoryEventSubType.BRIDGE,
+                    transaction.asset,
+                    transaction.amount,
+                    transaction.from_address,
+                    transaction.to_address,
+                    notes,
+                ))
 
             case ZKSyncLiteTXType.TRANSFER:
                 if not tracked_from and not tracked_to:
@@ -565,7 +678,7 @@ class ZksyncLiteManager:
                 else:  # can only be tracked_to
                     event_type = HistoryEventType.RECEIVE
                     event_subtype = HistoryEventSubType.NONE
-                    location_label = transaction.to_address
+                    location_label = transaction.to_address  # type: ignore # to_address should exist for transfer
                     target = transaction.from_address
                     verb = 'Receive'
                     preposition = 'from'
@@ -576,14 +689,29 @@ class ZksyncLiteManager:
                 # we could not analyze where did a transfer go. So we use EvmEvent here.
                 # Perhaps we should create a new extension to HistoryEvent that
                 # simply adds a "to" field. As this will definitely be needed somewhere.
-                notes = f'{verb} {transaction.amount} {transaction.asset.resolve_to_asset_with_symbol().symbol} {preposition} {target}'  # noqa: E501
+
+                event_data.append((
+                    0,
+                    event_type,
+                    event_subtype,
+                    transaction.asset,
+                    transaction.amount,
+                    location_label,
+                    target,
+                    f'{verb} {transaction.amount} {transaction.asset.resolve_to_asset_with_symbol().symbol} {preposition} {target}',  # noqa: E501
+                ))
 
             case ZKSyncLiteTXType.FULLEXIT | ZKSyncLiteTXType.FORCEDEXIT:
-                event_type = HistoryEventType.INFORMATIONAL
-                event_subtype = HistoryEventSubType.NONE
-                location_label = transaction.from_address
-                target = transaction.to_address
-                notes = f'{"Full" if transaction.tx_type == ZKSyncLiteTXType.FULLEXIT else "Forced"} exit to Ethereum{"" if location_label == target else f" address {target}"}'  # noqa: E501
+                event_data.append((
+                    0,
+                    HistoryEventType.INFORMATIONAL,
+                    HistoryEventSubType.NONE,
+                    transaction.asset,
+                    transaction.amount,
+                    transaction.from_address,
+                    transaction.to_address,
+                    f'{"Full" if transaction.tx_type == ZKSyncLiteTXType.FULLEXIT else "Forced"} exit to Ethereum{"" if transaction.from_address == transaction.to_address else f" address {transaction.to_address}"}',  # noqa: E501
+                ))
 
             case ZKSyncLiteTXType.CHANGEPUBKEY:
                 event_type = HistoryEventType.SPEND
@@ -598,29 +726,70 @@ class ZksyncLiteManager:
                 location_label = transaction.from_address
                 transaction.fee = None  # to not double count fee with 2 events
 
-        events = []
-        events.append(EvmEvent(
-            event_identifier=f'zkl{transaction.tx_hash.hex()}',
-            tx_hash=transaction.tx_hash,
-            sequence_index=0,
-            timestamp=ts_sec_to_ms(transaction.timestamp),
-            location=Location.ZKSYNC_LITE,
-            event_type=event_type,
-            event_subtype=event_subtype,
-            asset=transaction.asset,
-            balance=Balance(amount=transaction.amount),
-            location_label=location_label,
-            address=target,
-            notes=notes,
-        ))
-        if transaction.fee is not None and event_type != HistoryEventType.RECEIVE:  # sender pays  # noqa: E501
-            notes = f'Bridging fee of {transaction.fee} {transaction.asset.resolve_to_asset_with_symbol().symbol}'  # noqa: E501
-            if event_type in (HistoryEventType.SPEND, HistoryEventType.TRANSFER):
-                notes = f'Transfer fee of {transaction.fee} {transaction.asset.resolve_to_asset_with_symbol().symbol}'  # noqa: E501
+                event_data.append((
+                    0,
+                    HistoryEventType.SPEND,
+                    HistoryEventSubType.FEE,
+                    transaction.asset,
+                    transaction.amount,
+                    transaction.from_address,
+                    transaction.to_address,
+                    f'Spend {transaction.amount} ETH to ChangePubKey',
+                ))
+
+            case ZKSyncLiteTXType.SWAP:
+                assert transaction.swap_data, 'Swap data exist for SWAP type'
+                from_asset = transaction.swap_data.from_asset.resolve_to_asset_with_symbol()
+                to_asset = transaction.swap_data.to_asset.resolve_to_asset_with_symbol()
+                event_data.extend([(
+                    0,
+                    HistoryEventType.TRADE,
+                    HistoryEventSubType.SPEND,
+                    from_asset,
+                    transaction.swap_data.from_amount,
+                    transaction.from_address,
+                    transaction.to_address,
+                    f'Swap {transaction.swap_data.from_amount} {from_asset.symbol} via ZKSync Lite',  # noqa: E501
+                ), (
+                    1,
+                    HistoryEventType.TRADE,
+                    HistoryEventSubType.RECEIVE,
+                    to_asset,
+                    transaction.swap_data.to_amount,
+                    transaction.from_address,
+                    transaction.to_address,
+                    f'Receive {transaction.swap_data.to_amount} {to_asset.symbol} as the result of a swap via ZKSync Lite',  # noqa: E501
+                )])
+
+        for sequence_index, event_type, event_subtype, asset, amount, location_label, target, notes in event_data:  # noqa: E501
             events.append(EvmEvent(
-                event_identifier=f'zkl{transaction.tx_hash.hex()}',
+                event_identifier=event_identifier,
                 tx_hash=transaction.tx_hash,
-                sequence_index=1,
+                sequence_index=sequence_index,
+                timestamp=ts_sec_to_ms(transaction.timestamp),
+                location=Location.ZKSYNC_LITE,
+                event_type=event_type,
+                event_subtype=event_subtype,
+                asset=asset,
+                balance=Balance(amount=amount),
+                location_label=location_label,
+                address=target,
+                notes=notes,
+            ))
+
+        event_type = events[0].event_type
+        if transaction.fee is not None and event_type != HistoryEventType.RECEIVE:  # sender pays  # noqa: E501
+            if event_type in (HistoryEventType.SPEND, HistoryEventType.TRANSFER):
+                fee_type = 'Transfer'
+            elif event_type == HistoryEventType.TRADE:
+                fee_type = 'Swap'
+            else:
+                fee_type = 'Bridging'
+
+            events.append(EvmEvent(
+                event_identifier=event_identifier,
+                tx_hash=transaction.tx_hash,
+                sequence_index=events[-1].sequence_index + 1,
                 timestamp=ts_sec_to_ms(transaction.timestamp),
                 location=Location.ZKSYNC_LITE,
                 event_type=event_type,
@@ -629,9 +798,9 @@ class ZksyncLiteManager:
                 event_subtype=HistoryEventSubType.FEE,
                 asset=transaction.asset,
                 balance=Balance(amount=transaction.fee),
-                location_label=location_label,
+                location_label=events[0].location_label,
                 address=target,
-                notes=notes,
+                notes=f'{fee_type} fee of {transaction.fee} {transaction.asset.resolve_to_asset_with_symbol().symbol}',  # noqa: E501,
             ))
 
         # save it in the DB and mark the zksync lite transaction as decoded

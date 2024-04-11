@@ -495,6 +495,8 @@ INSERT OR IGNORE INTO zksynclite_tx_type(type, seq) VALUES ('D', 4);
 INSERT OR IGNORE INTO zksynclite_tx_type(type, seq) VALUES ('E', 5);
 /* FullExit Type */
 INSERT OR IGNORE INTO zksynclite_tx_type(type, seq) VALUES ('F', 6);
+/* Swap Type */
+INSERT OR IGNORE INTO zksynclite_tx_type(type, seq) VALUES ('G', 7);
 """
 
 # Instead of using an attribute mapping like evm chains adding the is_decoded directly to the table
@@ -502,19 +504,33 @@ INSERT OR IGNORE INTO zksynclite_tx_type(type, seq) VALUES ('F', 6);
 # mappings table for zksync lite transactions
 DB_CREATE_ZKSYNCLITE_TRANSACTIONS = """
 CREATE TABLE IF NOT EXISTS zksynclite_transactions (
-    tx_hash BLOB NOT NULL PRIMARY KEY,
+    identifier INTEGER NOT NULL PRIMARY KEY,
+    tx_hash BLOB NOT NULL UNIQUE,
     type CHAR(1) NOT NULL DEFAULT('A') REFERENCES zksynclite_tx_type(type),
     is_decoded INTEGER NOT NULL DEFAULT 0 CHECK (is_decoded IN (0, 1)),
     timestamp INTEGER NOT NULL,
     block_number INTEGER NOT NULL,
-    from_address TEXT NULL,
+    from_address TEXT NOT NULL,
     to_address TEXT,
-    token_identifier TEXT NOT NULL,
+    asset TEXT NOT NULL,
     amount TEXT NOT NULL,
     fee TEXT,
-    FOREIGN KEY(token_identifier) REFERENCES assets(identifier) ON UPDATE CASCADE
+    FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE
 );
 """
+
+DB_CREATE_ZKSYNCLITE_SWAPS = """
+CREATE TABLE IF NOT EXISTS zksynclite_swaps (
+    tx_id INTEGER NOT NULL,
+    from_asset TEXT NOT NULL,
+    from_amount TEXT NOT NULL,
+    to_asset TEXT NOT NULL,
+    to_amount TEXT_NOT NULL,
+    FOREIGN KEY(tx_id) REFERENCES zksynclite_transactions(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY(from_asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
+    FOREIGN KEY(to_asset) REFERENCES assets(identifier) ON UPDATE CASCADE
+);
+"""  # noqa: E501
 
 DB_CREATE_USED_QUERY_RANGES = """
 CREATE TABLE IF NOT EXISTS used_query_ranges (
@@ -797,6 +813,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_EVMTX_ADDRESS_MAPPINGS}
 {DB_CREATE_ZKSYNCLITE_TX_TYPE}
 {DB_CREATE_ZKSYNCLITE_TRANSACTIONS}
+{DB_CREATE_ZKSYNCLITE_SWAPS}
 {DB_CREATE_MARGIN}
 {DB_CREATE_ASSET_MOVEMENTS}
 {DB_CREATE_USED_QUERY_RANGES}
