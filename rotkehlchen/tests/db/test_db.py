@@ -159,6 +159,7 @@ TABLES_AT_INIT = [
     'key_value_cache',
     'zksynclite_tx_type',
     'zksynclite_transactions',
+    'zksynclite_swaps',
 ]
 
 

@@ -2274,7 +2274,7 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
         assert table_exists(cursor, 'zksynclite_transactions') is True
         assert table_exists(cursor, 'calendar') is True
         assert cursor.execute('SELECT * FROM zksynclite_tx_type').fetchall() == [
-            ('A', 1), ('B', 2), ('C', 3), ('D', 4), ('E', 5), ('F', 6),
+            ('A', 1), ('B', 2), ('C', 3), ('D', 4), ('E', 5), ('F', 6), ('G', 7),
         ]
         for new_loc in (Location.SCROLL, Location.ZKSYNC_LITE):
             assert cursor.execute(  # Check that new locations were added
@@ -2349,7 +2349,12 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert tables_after_creation - tables_after_upgrade == set()
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {'zksynclite_tx_type', 'zksynclite_transactions', 'calendar'}
+    assert new_tables == {
+        'zksynclite_tx_type',
+        'zksynclite_transactions',
+        'zksynclite_swaps',
+        'calendar',
+    }
     new_views = views_after_upgrade - views_before
     assert new_views == set()
 
