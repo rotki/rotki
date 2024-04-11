@@ -52,6 +52,7 @@ const passphrase = computed({
 });
 
 const { getExchangeNonce } = useExchangesStore();
+const { exchangesWithPassphrase, exchangesWithoutApiSecret } = storeToRefs(useLocationStore());
 const { t, te } = useI18n();
 
 const requiresApiSecret = computed(() => {
@@ -90,23 +91,6 @@ function toggleEdit() {
   }
 }
 
-function onExchangeChange(exchange: string) {
-  input({
-    name: suggestedName(exchange),
-    newName: null,
-    location: exchange,
-    apiKey: null,
-    apiSecret: get(exchangesWithoutApiSecret).includes(exchange) ? '' : null,
-    passphrase: null,
-    krakenAccountType: exchange === 'kraken' ? 'starter' : null,
-    binanceMarkets: null,
-  });
-
-  nextTick(() => {
-    get(v$).$reset();
-  });
-}
-
 function input(payload: ExchangePayload) {
   emit('input', payload);
 }
@@ -130,9 +114,6 @@ const krakenAccountTypes = KrakenAccountType.options.map((item) => {
     label,
   };
 });
-
-const { exchangesWithPassphrase, exchangesWithoutApiSecret }
-  = storeToRefs(useLocationStore());
 
 const sensitiveFieldEditable = computed(() => !get(editMode) || get(editKeys));
 
@@ -172,6 +153,23 @@ const rules = {
 const { setValidation } = useExchangeApiKeysForm();
 
 const v$ = setValidation(rules, exchange, { $autoDirty: true });
+
+function onExchangeChange(exchange: string) {
+  input({
+    name: suggestedName(exchange),
+    newName: null,
+    location: exchange,
+    apiKey: null,
+    apiSecret: get(exchangesWithoutApiSecret).includes(exchange) ? '' : null,
+    passphrase: null,
+    krakenAccountType: exchange === 'kraken' ? 'starter' : null,
+    binanceMarkets: null,
+  });
+
+  nextTick(() => {
+    get(v$).$reset();
+  });
+}
 </script>
 
 <template>

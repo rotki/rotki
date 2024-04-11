@@ -20,7 +20,7 @@ import {
 } from '@/types/websocket-messages';
 import { camelCaseTransformer } from '@/services/axios-tranformers';
 import { Routes } from '@/router/routes';
-import router from '@/router';
+import { router } from '@/router';
 import type { Blockchain } from '@rotki/common/lib/blockchain';
 
 export function useMessageHandling() {

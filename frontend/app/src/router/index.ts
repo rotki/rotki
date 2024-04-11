@@ -405,7 +405,7 @@ const routes = setupLayouts([
     : []),
 ]);
 
-const router = new Router({
+export const router = new Router({
   mode: 'hash',
   base,
   scrollBehavior: (to, from, savedPosition) => {
@@ -450,5 +450,3 @@ router.beforeEach((to, from, next) => {
     next(Routes.USER_LOGIN);
   }
 });
-
-export default router;

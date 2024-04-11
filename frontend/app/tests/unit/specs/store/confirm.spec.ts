@@ -1,10 +1,10 @@
-import createPinia from '../../utils/create-pinia';
+import { createCustomPinia } from '../../utils/create-pinia';
 
 describe('store:confirm', () => {
   let store: ReturnType<typeof useConfirmStore>;
 
   beforeEach(() => {
-    const pinia = createPinia();
+    const pinia = createCustomPinia();
     setActivePinia(pinia);
     store = useConfirmStore();
     vi.useFakeTimers();

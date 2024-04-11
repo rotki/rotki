@@ -8,8 +8,8 @@ import Vuetify from 'vuetify';
 import flushPromises from 'flush-promises';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import OnlineHistoryEventForm from '@/components/history/events/forms/OnlineHistoryEventForm.vue';
-import VAutocompleteStub from '../../../stubs/VAutocomplete';
-import VComboboxStub from '../../../stubs/VCombobox';
+import { VAutocompleteStub } from '../../../stubs/VAutocomplete';
+import { VComboboxStub } from '../../../stubs/VCombobox';
 import type { AssetMap } from '@/types/asset';
 import type { OnlineHistoryEvent } from '@/types/history/events';
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useBreakpoint } from '@rotki/ui-library-compat';
-import IndexedDb from '@/utils/indexed-db';
+import { IndexedDb } from '@/utils/indexed-db';
 import { TWITTER_URL, externalLinks } from '@/data/external-links';
 
 const props = defineProps<{

@@ -5,8 +5,8 @@ import Vuetify from 'vuetify';
 import { ApiValidationError } from '@/types/api/errors';
 import EvmChainsToIgnoreSettings from '@/components/settings/general/EvmChainsToIgnoreSettings.vue';
 import { libraryDefaults } from '../../../utils/provide-defaults';
-import VAutocompleteStub from '../../stubs/VAutocomplete';
-import VComboboxStub from '../../stubs/VCombobox';
+import { VAutocompleteStub } from '../../stubs/VAutocomplete';
+import { VComboboxStub } from '../../stubs/VCombobox';
 import type { SettingsUpdate } from '@/types/user';
 
 vi.mock('@/store/main', () => ({

@@ -13,6 +13,7 @@ const { assets } = toRefs(props);
 const { assetPrice } = useBalancePricesStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { assetInfo } = useAssetInfoRetrieval();
+const getPrice = (asset: string) => get(assetPrice(asset)) ?? Zero;
 
 const sort: Ref<DataTableSortData> = ref({
   column: 'usdValue',
@@ -40,7 +41,7 @@ const sorted = computed(() => {
 
 const headers = computed<DataTableColumn[]>(() => [
   {
-    label: t('common.asset').toString(),
+    label: t('common.asset'),
     class: 'text-no-wrap w-full',
     cellClass: 'py-1',
     key: 'asset',
@@ -49,7 +50,7 @@ const headers = computed<DataTableColumn[]>(() => [
   {
     label: t('common.price_in_symbol', {
       symbol: get(currencySymbol),
-    }).toString(),
+    }),
     class: 'text-no-wrap',
     cellClass: 'py-1',
     align: 'end',
@@ -57,7 +58,7 @@ const headers = computed<DataTableColumn[]>(() => [
     sortable: true,
   },
   {
-    label: t('common.amount').toString(),
+    label: t('common.amount'),
     key: 'amount',
     class: 'text-no-wrap',
     cellClass: 'py-1',
@@ -67,7 +68,7 @@ const headers = computed<DataTableColumn[]>(() => [
   {
     label: t('common.value_in_symbol', {
       symbol: get(currencySymbol),
-    }).toString(),
+    }),
     key: 'usdValue',
     align: 'end',
     class: 'text-no-wrap',
@@ -75,8 +76,6 @@ const headers = computed<DataTableColumn[]>(() => [
     sortable: true,
   },
 ]);
-
-const getPrice = (asset: string) => get(assetPrice(asset)) ?? Zero;
 </script>
 
 <template>

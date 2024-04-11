@@ -42,8 +42,7 @@ describe('composables::history/filter-paginate', () => {
 
   beforeAll(() => {
     setActivePinia(createPinia());
-    fetchNonFungibleBalances
-      = useNonFungibleBalancesStore().fetchNonFungibleBalances;
+    fetchNonFungibleBalances = useNonFungibleBalancesStore().fetchNonFungibleBalances;
   });
 
   afterEach(() => {

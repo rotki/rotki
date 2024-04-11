@@ -3,7 +3,7 @@ import * as path from 'node:path';
 import { URL } from 'node:url';
 import { type Protocol, protocol } from 'electron';
 
-export default (scheme: string, customProtocol?: Protocol) => {
+export function createProtocol(scheme: string, customProtocol?: Protocol) {
   (customProtocol || protocol).registerBufferProtocol(
     scheme,
     (request, respond) => {
@@ -37,4 +37,4 @@ export default (scheme: string, customProtocol?: Protocol) => {
       });
     },
   );
-};
+}

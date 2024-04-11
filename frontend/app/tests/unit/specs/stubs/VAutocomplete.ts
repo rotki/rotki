@@ -1,4 +1,4 @@
-const VAutocompleteStub = {
+export const VAutocompleteStub = {
   template: `
     <div :data-cy="dataCy" :disabled="disabled">
       <div>
@@ -35,5 +35,3 @@ const VAutocompleteStub = {
     },
   },
 };
-
-export default VAutocompleteStub;

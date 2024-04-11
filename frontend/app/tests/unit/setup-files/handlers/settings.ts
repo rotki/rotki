@@ -4,7 +4,7 @@ import settings from '../../fixtures/settings.json';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
 
-export default [
+export const settingsHandlers = [
   http.get(`${backendUrl}/api/1/settings`, () =>
     HttpResponse.json(settings, { status: 200 })),
   http.put<any, { settings: typeof settings['result'] }>(`${backendUrl}/api/1/settings`, async ({ request }) => {

@@ -4,7 +4,7 @@ import chains from '../../fixtures/all-evm-chains.json';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
 
-export default [
+export const allEvmChainsHandlers = [
   http.get(`${backendUrl}/api/1/blockchains/evm/all`, () =>
     HttpResponse.json(chains, { status: 200 })),
 ];

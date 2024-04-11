@@ -190,8 +190,8 @@ import {
 } from '@rotki/ui-library-compat';
 import '@rotki/ui-library-compat/style.css';
 
-export default (defaults: Partial<RuiOptions['defaults']>) =>
-  createRui({
+export function createRuiPlugin(defaults: Partial<RuiOptions['defaults']>) {
+  return createRui({
     theme: {
       mode: ThemeMode.light,
       icons: [
@@ -390,3 +390,4 @@ export default (defaults: Partial<RuiOptions['defaults']>) =>
     },
     defaults,
   });
+}

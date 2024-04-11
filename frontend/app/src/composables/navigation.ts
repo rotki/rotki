@@ -1,5 +1,5 @@
 import { Routes } from '@/router/routes';
-import router from '@/router';
+import { router } from '@/router';
 
 export function useAppNavigation() {
   const navigateToUserLogin = async (
