@@ -72,7 +72,7 @@ describe('evmChainsToIgnoreSettings.vue', () => {
   });
 
   it('displays success if correct chain values are passed', async () => {
-    const chains = ['eth', 'avax', 'base'];
+    const chains = ['eth', 'avax', 'base', 'zksync_lite'];
     const input = wrapper.find('.input-value');
     const inputEl = input.element as HTMLInputElement;
     await input.trigger('input', { value: chains });

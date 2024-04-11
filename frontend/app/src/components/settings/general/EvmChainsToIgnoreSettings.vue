@@ -1,39 +1,18 @@
 <script setup lang="ts">
-import { keyBy } from 'lodash-es';
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import { Module } from '@/types/modules';
+import type { Blockchain } from '@rotki/common/lib/blockchain';
 
 const { t } = useI18n();
 const css = useCssModule();
-const { isModuleEnabled } = useModules();
 const { evmchainsToSkipDetection } = storeToRefs(useGeneralSettingsStore());
 
-const { getChainName, isEvm, evmChainsData, supportedChains }
-  = useSupportedChains();
+const { getChainName, evmChainsData, evmLikeChainsData } = useSupportedChains();
 
-const skippedChains = computed<Blockchain[]>(() => {
-  const savedChains = get(evmchainsToSkipDetection) ?? [];
-  const chainsData = get(evmChainsData) ?? [];
-  const chainsMap = keyBy(chainsData, 'id');
+const chains = computed(() => [...get(evmChainsData), ...get(evmLikeChainsData)]);
 
-  return savedChains.map(chain => chainsMap[chain]?.id as Blockchain);
-});
-
-const items = computed(() => {
-  const isEth2Enabled = get(isModuleEnabled(Module.ETH2));
-
-  let data: string[] = get(supportedChains).map(({ id }) => id);
-
-  data = data.filter(symbol => get(isEvm(symbol as Blockchain)));
-
-  if (!isEth2Enabled)
-    data = data.filter(symbol => symbol !== Blockchain.ETH2);
-
-  return data;
-});
+const items = computed(() => get(chains).map(({ id }) => id));
 
 function filter(chain: Blockchain, queryText: string) {
-  const item = get(supportedChains).find(blockchain => blockchain.id === chain);
+  const item = get(chains).find(blockchain => blockchain.id === chain);
   if (!item)
     return false;
 
@@ -47,7 +26,7 @@ function filter(chain: Blockchain, queryText: string) {
 }
 
 function removeChain(chain: Blockchain) {
-  return get(skippedChains).filter(c => c !== chain);
+  return get(evmchainsToSkipDetection).filter(c => c !== chain);
 }
 </script>
 
@@ -71,7 +50,7 @@ function removeChain(chain: Blockchain) {
         :items="items"
         :filter="filter"
         :label="t('account_form.labels.blockchain', 2)"
-        :value="skippedChains"
+        :value="evmchainsToSkipDetection"
         :success-messages="success"
         :error-messages="error"
         :class="css['chain-select']"
