@@ -69,6 +69,7 @@ def test_uniswap_oracles_special_cases(inquirer_defi, socket_enabled):  # pylint
         assert inquirer_defi._uniswapv2.query_current_price(A_ETH, A_WETH, False)[0] == Price(ONE)
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_uniswap_no_decimals(inquirer_defi: 'Inquirer'):
