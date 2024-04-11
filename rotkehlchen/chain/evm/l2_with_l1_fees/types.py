@@ -15,7 +15,6 @@ SupportedL2WithL1FeesType = Literal[
     SupportedBlockchain.BASE,
     SupportedBlockchain.SCROLL,
 ]
-L2_CHAINS_WITH_L1_FEES: tuple[SupportedL2WithL1FeesType, ...] = typing.get_args(SupportedL2WithL1FeesType)  # noqa: E501
 
 L2ChainIdsWithL1FeesType = Literal[ChainID.OPTIMISM, ChainID.BASE, ChainID.SCROLL]
 L2_CHAINIDS_WITH_L1_FEES: tuple[L2ChainIdsWithL1FeesType, ...] = typing.get_args(L2ChainIdsWithL1FeesType)  # noqa: E501
