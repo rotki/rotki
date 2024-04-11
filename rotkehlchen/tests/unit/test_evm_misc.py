@@ -1,6 +1,11 @@
+import typing
 from rotkehlchen.chain.evm.constants import EVM_ADDRESS_REGEX
+from rotkehlchen.chain.evm.decoding.weth.constants import (
+    CHAIN_ID_TO_WETH_MAPPING,
+    CHAINS_WITHOUT_NATIVE_ETH,
+)
 from rotkehlchen.chain.evm.types import asset_id_is_evm_token, string_to_evm_address
-from rotkehlchen.types import ChainID
+from rotkehlchen.types import SUPPORTED_CHAIN_IDS, ChainID
 
 
 def test_asset_id_is_evm_token():
@@ -40,3 +45,11 @@ def test_address_regex() -> None:
 
     for case, expected_result in cases.items():
         assert (EVM_ADDRESS_REGEX.search(case) is not None) == expected_result
+
+
+def test_weth_is_supported():
+    """Check that weth is supported for all the evm chains with ETH"""
+    assert (
+        set(CHAIN_ID_TO_WETH_MAPPING.keys()) ==
+        set(typing.get_args(SUPPORTED_CHAIN_IDS)) - CHAINS_WITHOUT_NATIVE_ETH
+    )

@@ -21,7 +21,10 @@ from rotkehlchen.chain.evm.decoding.oneinch.v5.decoder import Oneinchv5Decoder
 from rotkehlchen.chain.evm.decoding.safe.decoder import SafemultisigDecoder
 from rotkehlchen.chain.evm.decoding.socket_bridge.decoder import SocketBridgeDecoder
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.evm.decoding.weth.constants import CHAINS_WITHOUT_NATIVE_ETH
+from rotkehlchen.chain.evm.decoding.weth.constants import (
+    CHAINS_WITH_SPECIAL_WETH,
+    CHAINS_WITHOUT_NATIVE_ETH,
+)
 from rotkehlchen.chain.evm.decoding.weth.decoder import WethDecoder
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants import ZERO
@@ -187,7 +190,8 @@ class EVMTransactionDecoder(ABC):
         self._add_single_decoder(class_name='SocketBridgeDecoder', decoder_class=SocketBridgeDecoder, rules=rules)  # noqa: E501
 
         # Excluding Gnosis and Polygon PoS because they dont have ETH as native token
-        if self.evm_inquirer.chain_id not in CHAINS_WITHOUT_NATIVE_ETH:
+        # Also arb and scroll because they don't follow the weth9 design
+        if self.evm_inquirer.chain_id not in CHAINS_WITHOUT_NATIVE_ETH | CHAINS_WITH_SPECIAL_WETH:
             self._add_single_decoder(
                 class_name='Weth',
                 decoder_class=WethDecoder,

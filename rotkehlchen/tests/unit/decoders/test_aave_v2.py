@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V1, CPT_AAVE_V2
@@ -311,7 +311,7 @@ def test_aave_v2_enable_collateral(database, ethereum_inquirer, eth_transactions
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=ZERO, usd_value=ZERO),
+            balance=Balance(amount=ZERO),
             location_label=user_address,
             notes='Burned 0 ETH for gas',
             counterparty=CPT_GAS,
@@ -398,7 +398,7 @@ def test_aave_v2_disable_collateral(database, ethereum_inquirer, eth_transaction
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=ZERO, usd_value=ZERO),
+            balance=Balance(amount=ZERO),
             location_label=user_address,
             notes='Burned 0 ETH for gas',
             counterparty=CPT_GAS,
@@ -506,7 +506,7 @@ def test_aave_v2_deposit(database, ethereum_inquirer, eth_transactions):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=ZERO, usd_value=ZERO),
+            balance=Balance(amount=ZERO),
             location_label=user_address,
             notes='Burned 0 ETH for gas',
             counterparty=CPT_GAS,
@@ -547,101 +547,51 @@ def test_aave_v2_deposit(database, ethereum_inquirer, eth_transactions):
     assert events == expected_events
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[
-    string_to_evm_address('0x2715273613632226985186221669179813245119'),
-    string_to_evm_address('0x6B44ba0a126a2A1a8aa6cD1AdeeD002e141Bcd44'),
+    '0x2715273613632226985186221669179813245119',
+    '0x6B44ba0a126a2A1a8aa6cD1AdeeD002e141Bcd44',
 ]])
-def test_aave_v2_withdraw(database, ethereum_inquirer, eth_transactions):
-    """
-    Data taken from
-    https://etherscan.io/tx/0x8fe440f37fd0fa1467067a195ea862db1f96c40634ea7bb3782cc3c3431e9b5c
-    """
-    tx_hex = '0x8fe440f37fd0fa1467067a195ea862db1f96c40634ea7bb3782cc3c3431e9b5c'
-    evmhash = deserialize_evm_tx_hash(tx_hex)
-    user_address = string_to_evm_address('0x2715273613632226985186221669179813245119')
-    transaction = EvmTransaction(
-        tx_hash=evmhash,
-        chain_id=ChainID.ETHEREUM,
-        timestamp=0,
-        block_number=0,
-        from_address=user_address,
-        to_address=string_to_evm_address('0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9'),
-        value=0,
-        gas=0,
-        gas_price=0,
-        gas_used=0,
-        input_data=b'',
-        nonce=0,
-    )
-    receipt = EvmTxReceipt(
-        tx_hash=evmhash,
-        chain_id=ChainID.ETHEREUM,
-        contract_address=None,
-        status=True,
-        tx_type=0,
-        logs=[
-            EvmTxReceiptLog(
-                log_index=25,
-                data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000012a66d9c49e79440554'),
-                address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
-                removed=False,
-                topics=[
-                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
-                    hexstring_to_bytes('0x000000000000000000000000030ba81f1c18d280636f32af80b9aad02cf0854e'),
-                    hexstring_to_bytes('0x0000000000000000000000006b44ba0a126a2a1a8aa6cd1adeed002e141bcd44'),
-                ],
-            ), EvmTxReceiptLog(
-                log_index=26,
-                data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000012a66d9c49e79440554'),
-                address=string_to_evm_address('0x030bA81f1c18d280636F32af80b9AAd02Cf0854e'),
-                removed=False,
-                topics=[
-                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
-                    hexstring_to_bytes('0x0000000000000000000000002715273613632226985186221669179813245119'),
-                    hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),
-                ],
-            ), EvmTxReceiptLog(
-                log_index=28,
-                data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000012a66d9c49e79440554'),
-                address=string_to_evm_address('0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9'),
-                removed=False,
-                topics=[
-                    hexstring_to_bytes('0x3115d1449a7b732c986cba18244e897a450f61e1bb8d589cd2e69e6c8924f9f7'),
-                    hexstring_to_bytes('0x000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'),
-                    hexstring_to_bytes('0x0000000000000000000000002715273613632226985186221669179813245119'),
-                    hexstring_to_bytes('0x0000000000000000000000006b44ba0a126a2a1a8aa6cd1adeed002e141bcd44'),
-                ],
-            ),
-        ],
-    )
-    dbevmtx = DBEvmTx(database)
-    with dbevmtx.db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-    decoder = EthereumTransactionDecoder(
+def test_aave_v2_withdraw(database, ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x8fe440f37fd0fa1467067a195ea862db1f96c40634ea7bb3782cc3c3431e9b5c')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
         database=database,
-        ethereum_inquirer=ethereum_inquirer,
-        transactions=eth_transactions,
+        tx_hash=tx_hash,
     )
-    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
+    timestamp, gas_amount, user_address = TimestampMS(1660809759000), '0.0217873', ethereum_accounts[0]  # noqa: E501
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
-            timestamp=0,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=ZERO, usd_value=ZERO),
+            balance=Balance(amount=FVal(gas_amount)),
             location_label=user_address,
-            notes='Burned 0 ETH for gas',
+            notes=f'Burned {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
         ), EvmEvent(
-            tx_hash=evmhash,
-            sequence_index=1,
-            timestamp=0,
+            tx_hash=tx_hash,
+            sequence_index=25,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=Asset('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+            balance=Balance(amount=ZERO),
+            location_label=user_address,
+            notes='Disable WETH as collateral on AAVE v2',
+            counterparty=CPT_AAVE_V2,
+            address=string_to_evm_address('0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=26,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
@@ -654,9 +604,9 @@ def test_aave_v2_withdraw(database, ethereum_inquirer, eth_transactions):
             extra_data=None,
             address=ZERO_ADDRESS,
         ), EvmEvent(
-            tx_hash=evmhash,
-            sequence_index=2,
-            timestamp=0,
+            tx_hash=tx_hash,
+            sequence_index=27,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
@@ -673,98 +623,37 @@ def test_aave_v2_withdraw(database, ethereum_inquirer, eth_transactions):
     assert events == expected_events
 
 
-@pytest.mark.parametrize('ethereum_accounts', [[string_to_evm_address('0x00000000000Cd56832cE5dfBcBFf02e7eC639BC9')]])  # noqa: E501
-def test_aave_v2_borrow(database, ethereum_inquirer, eth_transactions):
-    """
-    Data taken from
-    https://etherscan.io/tx/0x6c8af2a4157632e33fac9d94a03619f54d318ce1254998aabc5384053eb98ffb
-    """
-    tx_hex = '0x6c8af2a4157632e33fac9d94a03619f54d318ce1254998aabc5384053eb98ffb'
-    evmhash = deserialize_evm_tx_hash(tx_hex)
-    user_address = string_to_evm_address('0x00000000000Cd56832cE5dfBcBFf02e7eC639BC9')
-    transaction = EvmTransaction(
-        tx_hash=evmhash,
-        chain_id=ChainID.ETHEREUM,
-        timestamp=0,
-        block_number=0,
-        from_address=user_address,
-        to_address=string_to_evm_address('0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9'),
-        value=0,
-        gas=0,
-        gas_price=0,
-        gas_used=0,
-        input_data=b'',
-        nonce=0,
-    )
-    receipt = EvmTxReceipt(
-        tx_hash=evmhash,
-        chain_id=ChainID.ETHEREUM,
-        contract_address=None,
-        status=True,
-        tx_type=0,
-        logs=[
-            EvmTxReceiptLog(
-                log_index=306,
-                data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000152d02c7e14af6800000'),
-                address=string_to_evm_address('0xcd9D82d33bd737De215cDac57FE2F7f04DF77FE0'),
-                removed=False,
-                topics=[
-                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
-                    hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),
-                    hexstring_to_bytes('0x00000000000000000000000000000000000cd56832ce5dfbcbff02e7ec639bc9'),
-                ],
-            ), EvmTxReceiptLog(
-                log_index=309,
-                data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000152d02c7e14af6800000'),
-                address=string_to_evm_address('0x408e41876cCCDC0F92210600ef50372656052a38'),
-                removed=False,
-                topics=[
-                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
-                    hexstring_to_bytes('0x000000000000000000000000cc12abe4ff81c9378d670de1b57f8e0dd228d77a'),
-                    hexstring_to_bytes('0x00000000000000000000000000000000000cd56832ce5dfbcbff02e7ec639bc9'),
-                ],
-            ), EvmTxReceiptLog(
-                log_index=310,
-                data=hexstring_to_bytes('0x00000000000000000000000000000000000cd56832ce5dfbcbff02e7ec639bc900000000000000000000000000000000000000000000152d02c7e14af6800000000000000000000000000000000000000000000000000000000000000000000200000000000000000000000000000000000000000006a3261aa7fbb91a3ce43e'),
-                address=string_to_evm_address('0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9'),
-                removed=False,
-                topics=[
-                    hexstring_to_bytes('0xc6a898309e823ee50bac64e45ca8adba6690e99e7841c45d754e2a38e9019d9b'),
-                    hexstring_to_bytes('0x000000000000000000000000408e41876cccdc0f92210600ef50372656052a38'),
-                    hexstring_to_bytes('0x00000000000000000000000000000000000cd56832ce5dfbcbff02e7ec639bc9'),
-                    hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),
-                ],
-            ),
-        ],
-    )
-    dbevmtx = DBEvmTx(database)
-    with dbevmtx.db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-    decoder = EthereumTransactionDecoder(
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x00000000000Cd56832cE5dfBcBFf02e7eC639BC9']])
+def test_aave_v2_borrow(database, ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x6c8af2a4157632e33fac9d94a03619f54d318ce1254998aabc5384053eb98ffb')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
         database=database,
-        ethereum_inquirer=ethereum_inquirer,
-        transactions=eth_transactions,
+        tx_hash=tx_hash,
     )
-    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
+    timestamp = TimestampMS(1622302530000)
+    gas_amount = '0.014311845'
+    user_address = ethereum_accounts[0]
     expected_events = [
         EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=0,
-            timestamp=0,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=ZERO, usd_value=ZERO),
+            balance=Balance(amount=FVal(gas_amount)),
             location_label=user_address,
-            notes='Burned 0 ETH for gas',
+            notes=f'Burned {gas_amount} ETH for gas',
             counterparty=CPT_GAS,
             identifier=None,
             extra_data=None,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=307,
-            timestamp=0,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
@@ -776,9 +665,9 @@ def test_aave_v2_borrow(database, ethereum_inquirer, eth_transactions):
             extra_data=None,
             address=ZERO_ADDRESS,
         ), EvmEvent(
-            tx_hash=evmhash,
+            tx_hash=tx_hash,
             sequence_index=310,
-            timestamp=0,
+            timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.GENERATE_DEBT,
@@ -877,7 +766,7 @@ def test_aave_v2_repay(database, ethereum_inquirer, eth_transactions):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=ZERO, usd_value=ZERO),
+            balance=Balance(amount=ZERO),
             location_label=user_address,
             notes='Burned 0 ETH for gas',
             counterparty=CPT_GAS,
@@ -1043,7 +932,7 @@ def test_aave_v2_supply_ether(database, ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal('0.0104361555519052'), usd_value=ZERO),
+            balance=Balance(amount=FVal('0.0104361555519052')),
             location_label=ethereum_accounts[0],
             notes='Burned 0.0104361555519052 ETH for gas',
             counterparty=CPT_GAS,
