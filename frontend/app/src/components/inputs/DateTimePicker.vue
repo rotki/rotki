@@ -40,8 +40,9 @@ const props = withDefaults(
 
 const emit = defineEmits<{ (e: 'input', value: string): void }>();
 
-const { value, allowEmpty, limitNow, errorMessages, milliseconds, dateOnly }
-  = toRefs(props);
+const { value, allowEmpty, limitNow, errorMessages, milliseconds, dateOnly } = toRefs(props);
+
+const imask: Ref<InputMask<any> | null> = ref(null);
 
 const { t } = useI18n();
 
@@ -181,8 +182,6 @@ function onValueChange(value: string) {
 
 watch(value, onValueChange);
 watch(selectedTimezone, () => onValueChange(get(value)));
-
-const imask: Ref<InputMask<any> | null> = ref(null);
 
 function input(dateTime: string) {
   emit('input', dateTime);

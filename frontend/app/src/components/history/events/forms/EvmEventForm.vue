@@ -64,6 +64,16 @@ const errorMessages = ref<Record<string, string[]>>({});
 
 const externalServerValidation = () => true;
 
+const historyEventLimitedProducts: ComputedRef<string[]> = computed(() => {
+  const counterpartyVal = get(counterparty);
+  const mapping = get(historyEventProductsMapping);
+
+  if (!counterpartyVal)
+    return [];
+
+  return mapping[counterpartyVal] ?? [];
+});
+
 const rules = {
   timestamp: { externalServerValidation },
   locationLabel: { externalServerValidation },
@@ -327,18 +337,9 @@ function checkPropsData() {
 }
 
 watch([groupHeader, editableItem], checkPropsData);
+
 onMounted(() => {
   checkPropsData();
-});
-
-const historyEventLimitedProducts: ComputedRef<string[]> = computed(() => {
-  const counterpartyVal = get(counterparty);
-  const mapping = get(historyEventProductsMapping);
-
-  if (!counterpartyVal)
-    return [];
-
-  return mapping[counterpartyVal] ?? [];
 });
 
 watch(historyEventLimitedProducts, (products) => {

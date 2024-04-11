@@ -71,9 +71,9 @@ async function fetchNotes(loadingIndicator = false) {
   });
 }
 
-const { limit, found, total } = getCollectionData<UserNote>(notes);
+const { limit: itemsPerPage, found, total } = getCollectionData<UserNote>(notes);
 
-const { showUpgradeRow } = setupEntryLimit(limit, found, total);
+const { showUpgradeRow } = setupEntryLimit(itemsPerPage, found, total);
 
 const paginationData = computed({
   get() {

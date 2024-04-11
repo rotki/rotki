@@ -23,9 +23,8 @@ const nonFungibleRoute = Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE;
 
 const statistics = useStatisticsStore();
 const { totalNetWorthUsd } = storeToRefs(statistics);
-const { fetchNonFungibleBalances, refreshNonFungibleBalances }
-  = useNonFungibleBalancesStore();
-
+const { fetchNonFungibleBalances, refreshNonFungibleBalances } = useNonFungibleBalancesStore();
+const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { t } = useI18n();
 
@@ -57,6 +56,7 @@ const {
 
 const { isLoading: isSectionLoading } = useStatusStore();
 const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
+const { totalUsdValue } = getCollectionData<NonFungibleBalance>(balances);
 
 const tableHeaders = computed<DataTableColumn[]>(() => {
   const visibleColumns = get(dashboardTablesVisibleColumns)[group];
@@ -123,12 +123,6 @@ function percentageOfTotalNetValue(value: BigNumber) {
 function percentageOfCurrentGroup(value: BigNumber) {
   return calculatePercentage(value, get(totalUsdValue) as BigNumber);
 }
-
-const { dashboardTablesVisibleColumns } = storeToRefs(
-  useFrontendSettingsStore(),
-);
-
-const { totalUsdValue } = getCollectionData<NonFungibleBalance>(balances);
 
 onMounted(async () => {
   await fetchData();

@@ -27,20 +27,6 @@ const { isLoading: isSectionLoading } = useStatusStore();
 
 const isLoading = isSectionLoading(Section.BLOCKCHAIN);
 
-const startingValue = computed(() => {
-  const data = get(timeframeData).data;
-  let start = data[0];
-  if (start.isZero()) {
-    for (let i = 1; i < data.length; i++) {
-      if (data[i].gt(0)) {
-        start = data[i];
-        break;
-      }
-    }
-  }
-  return start;
-});
-
 const adjustedTotalNetWorthFontSize = computed(() => {
   const digits = get(totalNetWorth)
     .toFormat(get(floatingPrecision))
@@ -58,10 +44,6 @@ const allTimeframes = computed(() =>
   ),
 );
 
-const balanceDelta = computed(() =>
-  get(totalNetWorth).minus(get(startingValue)),
-);
-
 const timeframeData = computed(() => {
   const all = get(allTimeframes);
   const selection = get(timeframe);
@@ -69,9 +51,26 @@ const timeframeData = computed(() => {
   return get(getNetValue(startingDate));
 });
 
+const startingValue = computed(() => {
+  const data = get(timeframeData).data;
+  let start = data[0];
+  if (start.isZero()) {
+    for (let i = 1; i < data.length; i++) {
+      if (data[i].gt(0)) {
+        start = data[i];
+        break;
+      }
+    }
+  }
+  return start;
+});
+
+const balanceDelta = computed(() =>
+  get(totalNetWorth).minus(get(startingValue)),
+);
+
 const percentage = computed(() => {
   const bigNumber = get(balanceDelta).div(get(startingValue)).multipliedBy(100);
-
   return bigNumber.isFinite() ? bigNumber.toFormat(2) : '-';
 });
 
