@@ -3608,7 +3608,7 @@ class AnyBlockchainAddress(Schema):
 class CalendarCommonEntrySchema(AnyBlockchainAddress):
     name = fields.String(required=True)
     description = fields.String(load_default=None)
-    counterparty = EvmCounterpartyField()
+    counterparty = EvmCounterpartyField(load_default=None)
     color = ColorField(load_default=None)
 
     def __init__(self, chain_aggregator: 'ChainsAggregator') -> None:
