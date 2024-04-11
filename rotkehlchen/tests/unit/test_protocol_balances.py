@@ -1,6 +1,6 @@
 from collections import defaultdict
 from typing import TYPE_CHECKING
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -14,14 +14,16 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBal
 from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
+from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
 from rotkehlchen.chain.evm.tokens import TokenBalancesType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
-from rotkehlchen.constants.assets import A_CVX, A_GLM, A_GMX, A_GRT, A_STETH
+from rotkehlchen.constants.assets import A_CVX, A_GLM, A_GMX, A_GRT, A_STETH, A_USDC, A_WETH
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.arbitrum_one import get_arbitrum_allthatnode
+from rotkehlchen.tests.utils.constants import CURRENT_PRICE_MOCK
 from rotkehlchen.tests.utils.ethereum import (
     get_decoded_events_of_transaction,
     wait_until_all_nodes_connected,
@@ -67,7 +69,7 @@ def test_curve_balances(
     curve_balances = curve_balances_inquirer.query_balances()
     user_balance = curve_balances[ethereum_accounts[0]]
     asset = EvmToken('eip155:1/erc20:0xC25a3A3b969415c80451098fa907EC722572917F')
-    assert user_balance[asset] == Balance(
+    assert user_balance.assets[asset] == Balance(
         amount=FVal('7985.261401730774426743'),
         usd_value=FVal('11977.8921025961616401145'),
     )
@@ -95,7 +97,7 @@ def test_convex_gauges_balances(
     convex_balances = convex_balances_inquirer.query_balances()
     user_balance = convex_balances[ethereum_accounts[0]]
     asset = EvmToken('eip155:1/erc20:0x06325440D014e39736583c165C2963BA99fAf14E')
-    assert user_balance[asset] == Balance(
+    assert user_balance.assets[asset] == Balance(
         amount=FVal('2.096616951181033047'),
         usd_value=FVal('3.1449254267715495705'),
     )
@@ -130,7 +132,7 @@ def test_convex_staking_balances(
     convex_balances = convex_balances_inquirer.query_balances()
     user_balance = convex_balances[ethereum_accounts[0]]
     # the amount here is the sum of the locked ~44 and the staked tokens ~333
-    assert user_balance[A_CVX.resolve_to_evm_token()] == Balance(
+    assert user_balance.assets[A_CVX.resolve_to_evm_token()] == Balance(
         amount=FVal('378.311754894794233025'),
         usd_value=FVal('567.4676323421913495375'),
     )
@@ -163,7 +165,7 @@ def test_convex_staking_balances_without_gauges(
     )
     convex_balances = convex_balances_inquirer.query_balances()
     user_balance = convex_balances[ethereum_accounts[0]]
-    assert user_balance[A_CVX.resolve_to_evm_token()] == Balance(
+    assert user_balance.assets[A_CVX.resolve_to_evm_token()] == Balance(
         amount=FVal('44.126532249621479557'),
         usd_value=FVal('66.1897983744322193355'),
     )
@@ -196,7 +198,7 @@ def test_velodrome_v2_staking_balances(
         chain_id=ChainID.OPTIMISM,
         token_type=EvmTokenKind.ERC20,
     )
-    assert user_balance[Asset(weth_op_lp_token).resolve_to_evm_token()] == Balance(
+    assert user_balance.assets[Asset(weth_op_lp_token).resolve_to_evm_token()] == Balance(
         amount=FVal('0.043087772070655563'),  # staked in gauge
         usd_value=FVal('0.0646316581059833445'),
     )
@@ -223,7 +225,7 @@ def test_thegraph_balances(
     )
     thegraph_balances = thegraph_balances_inquirer.query_balances()
     user_balance = thegraph_balances[ethereum_accounts[0]]
-    assert user_balance[A_GRT.resolve_to_evm_token()] == Balance(
+    assert user_balance.assets[A_GRT.resolve_to_evm_token()] == Balance(
         amount=FVal('1293.499999999999900000'),
         usd_value=FVal('1940.24999999999985'),
     )
@@ -250,7 +252,7 @@ def test_octant_balances(
     )
     octant_balances = octant_balances_inquirer.query_balances()
     user_balance = octant_balances[ethereum_accounts[0]]
-    assert user_balance[A_GLM.resolve_to_evm_token()] == Balance(amount=FVal('1000'), usd_value=FVal('1500'))  # noqa: E501
+    assert user_balance.assets[A_GLM.resolve_to_evm_token()] == Balance(amount=FVal('1000'), usd_value=FVal('1500'))  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -274,7 +276,7 @@ def test_eigenlayer_balances(
         evm_inquirer=ethereum_inquirer,
     )
     balances = balances_inquirer.query_balances()
-    assert balances[ethereum_accounts[0]][A_STETH.resolve_to_evm_token()] == Balance(
+    assert balances[ethereum_accounts[0]].assets[A_STETH.resolve_to_evm_token()] == Balance(
         amount=FVal('0.114063122816914142'),
         usd_value=FVal('0.1710946842253712130'),
     )
@@ -341,7 +343,7 @@ def test_gmx_balances(
     ):
         balances = balances_inquirer.query_balances()
 
-    assert balances[arbitrum_one_accounts[0]] == {
+    assert balances[arbitrum_one_accounts[0]].assets == {
         Asset('eip155:42161/erc20:0x82aF49447D8a07e3bd95BD0d56f35241523fBab1'): Balance(
             amount=FVal('0.020625523771241888'),
             usd_value=FVal('73.904758011400794198629853957124'),
@@ -351,7 +353,7 @@ def test_gmx_balances(
             usd_value=FVal('64.495126014300507906764604009528'),
         ),
     }
-    assert balances[arbitrum_one_accounts[1]] == {
+    assert balances[arbitrum_one_accounts[1]].assets == {
         Asset('eip155:42161/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'): Balance(
             amount=FVal('42.896760410410693074'),
             usd_value=FVal('42.939657170821103766867050208907'),
@@ -387,7 +389,7 @@ def test_gmx_balances_staking(
         evm_inquirer=arbitrum_one_inquirer,
     )
     balances = balances_inquirer.query_balances()
-    assert balances[arbitrum_one_accounts[0]] == {
+    assert balances[arbitrum_one_accounts[0]].assets == {
         A_GMX: Balance(
             amount=FVal('4.201981641893733976'),
             usd_value=FVal('164.46556146372074782064'),
@@ -475,3 +477,54 @@ def test_aave_v3_balances(blockchain: 'ChainsAggregator') -> None:
             }),
         ),
     }
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0x1107F797c1af4982b038Eb91260b3f9A90eecee9', '0x887380Bb5F5fF5C87BEcc46F0867Fec460F7c5a6',
+    '0x1c39c7a6FaA2C8e62C3423381897E4723c752AAe', '0x8fFb5a2e5d9b5dB800354Dc4fa73c15a5d047328',
+]])
+@pytest.mark.parametrize('ethereum_modules', [['compound']])
+def test_compound_v3_token_balances_liabilities(
+        blockchain: 'ChainsAggregator', ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
+    """Test that the balances of compound v3 supplied/borrowed tokens are correct."""
+    tokens = blockchain.ethereum.tokens
+    tokens.evm_inquirer.multicall = MagicMock(side_effect=tokens.evm_inquirer.multicall)  # type: ignore[method-assign]
+    tokens.detect_tokens(only_cache=False, addresses=[ethereum_accounts[1]])
+    blockchain.ethereum.transactions_decoder.decode_transaction_hashes(
+        ignore_cache=True,
+        tx_hashes=[
+            deserialize_evm_tx_hash('0xe2229f1bdac86237e81ce96fcd694cf58b412dd1617746528735a319e0bb7595'),  # Borrow 0.1 WBTC from cUSDCv3  # noqa: E501
+            deserialize_evm_tx_hash('0x1460b9480445c1307ac027e00151297f64631a19d6a6f77300bcbf537c6e7661'),  # Borrow 1.25 WBTC from cUSDCv3  # noqa: E501
+            deserialize_evm_tx_hash('0x0b52a63d1f9b3518d0d4525354c601e83e4814c0165f496223753b29ce4f2a29'),  # Borrow 0.957368573046591548 wstETH from cWETHv3  # noqa: E501
+        ],
+    )
+    compound_v3_balances = Compoundv3Balances(
+        database=blockchain.database,
+        evm_inquirer=blockchain.ethereum.node_inquirer,
+    )
+    unique_borrows, underlying_tokens = compound_v3_balances._extract_unique_borrowed_tokens()
+
+    def mock_extract_unique_borrowed_tokens(
+            self: 'Compoundv3Balances',  # pylint: disable=unused-argument
+    ) -> tuple[dict[EvmToken, list['ChecksumEvmAddress']], dict['ChecksumEvmAddress', EvmToken]]:
+        return {
+            token: sorted(addresses)  # cast set to list to avoid randomness in VCR
+            for token, addresses in unique_borrows.items()
+        }, underlying_tokens
+
+    with patch(
+        target='rotkehlchen.chain.evm.decoding.compound.v3.balances.Compoundv3Balances._extract_unique_borrowed_tokens',
+        new=mock_extract_unique_borrowed_tokens,
+    ):
+        blockchain.query_eth_balances()
+
+    def get_balance(amount: str):
+        return Balance(
+            amount=FVal(amount), usd_value=FVal(amount) * CURRENT_PRICE_MOCK,
+        )
+    assert blockchain.balances.eth[ethereum_accounts[0]].liabilities[A_USDC] == get_balance('337492.045216')  # noqa: E501
+    assert blockchain.balances.eth[ethereum_accounts[1]].assets[Asset('eip155:1/erc20:0xc3d688B66703497DAA19211EEdff47f25384cdc3')] == get_balance('202.760599')  # cUSDCv3  # noqa: E501
+    assert blockchain.balances.eth[ethereum_accounts[2]].liabilities[A_USDC] == get_balance('65688.090973')  # noqa: E501
+    assert blockchain.balances.eth[ethereum_accounts[3]].liabilities[A_WETH] == get_balance('0.260522736335918996')  # noqa: E501
