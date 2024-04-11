@@ -113,7 +113,6 @@ def test_basic_calendar_operations(
         'timestamp': 1851422011,
         'address': ethereum_accounts[1],
         'blockchain': 'eth',
-        'color': None,
     }
     future_ts = {'to_timestamp': 3479391239}  # timestamp enough in the future to return all the events  # noqa: E501
     response = requests.post(
@@ -318,3 +317,14 @@ def test_validation_calendar(
         status_code=HTTPStatus.BAD_REQUEST,
         contained_in_msg='Could not add the calendar entry because an event with the same name',
     )
+
+    # test missing counterparty
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'calendarresource'),
+        json={
+            'timestamp': 1969737344,
+            'name': 'ENS renewal',
+            'description': 'Renew yabir.eth',
+        },
+    )
+    assert_proper_response(response)

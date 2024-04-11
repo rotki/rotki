@@ -13595,12 +13595,12 @@ Managing calendar entries
 
   .. _calendar_fields:
 
-  :reqjsonarr integer timestamp: Timestamp of the event in the calendar.
-  :reqjsonarr string name: Name of the event.
-  :reqjsonarr optional[string] description: Longer description given to the event.
-  :reqjsonarr optional[string] counterparty: A protocol counterparty given to the calendar event.
-  :reqjsonarr optional[string] address: Address linked to the calendar event.
-  :resjson optional[string] color: The color to render the event in the frontend with.
+  :resjson integer timestamp: Timestamp of the event in the calendar.
+  :resjson string name: Name of the event.
+  :resjson optional[string] description: Longer description given to the event.
+  :resjson string counterparty: A protocol counterparty given to the calendar event. Missing if it doesn't have a value.
+  :resjson string address: Address linked to the calendar event. Missing if it doesn't have a value.
+  :resjson string color: The color to render the event in the frontend with. Missing if it doesn't have a value.
 
   **Example Response**:
 

@@ -36,16 +36,22 @@ class CalendarEntry(NamedTuple):
     identifier: int = 0
 
     def serialize(self) -> dict[str, Any]:
-        return {
+        data = {
             'identifier': self.identifier,
             'name': self.name,
             'description': self.description,
-            'counterparty': self.counterparty,
             'timestamp': self.timestamp,
-            'address': self.address,
-            'blockchain': self.blockchain.serialize() if self.blockchain is not None else None,
-            'color': self.color,
         }
+        if self.color is not None:
+            data['color'] = self.color
+        if self.counterparty is not None:
+            data['counterparty'] = self.counterparty
+        if self.address is not None:
+            data['address'] = self.address
+        if self.blockchain is not None:
+            data['blockchain'] = self.blockchain.serialize()
+
+        return data
 
     def serialize_for_db(self) -> tuple[
         str,  # name
