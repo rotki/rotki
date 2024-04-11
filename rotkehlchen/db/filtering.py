@@ -1383,9 +1383,6 @@ class DBSubtableSelectFilter(DBFilter):
         querystr += ')'
         return [querystr], []
 
-    def is_ignored_asset_filter(self) -> bool:
-        return self.select_condition is not None and self.select_condition == 'name="ignored_asset"'  # noqa: E501
-
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBIgnoredAssetsFilter(DBSubtableSelectFilter):

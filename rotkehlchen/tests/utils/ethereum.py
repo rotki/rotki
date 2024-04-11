@@ -161,20 +161,6 @@ else:
     ETHEREUM_TEST_PARAMETERS = ETHERSCAN_AND_INFURA_PARAMS
 
 
-# Test with multiple node types and etherscan
-ETHEREUM_FULL_TEST_PARAMETERS: tuple[str, list[tuple]]
-if 'GITHUB_WORKFLOW' in os.environ:
-    # For Github actions don't use infura. It seems that connecting to it
-    # from Github actions hangs and times out
-    ETHEREUM_FULL_TEST_PARAMETERS = ('ethereum_manager_connect_at_start, call_order', [
-        # Query etherscan only
-        ((), (ETHEREUM_ETHERSCAN_NODE,)),
-    ])
-else:
-    # For Travis and local tests also use Infura, works fine
-    ETHEREUM_FULL_TEST_PARAMETERS = ETHERSCAN_AND_INFURA_AND_ALCHEMY
-
-
 def wait_until_all_nodes_connected(
         connect_at_start,
         evm_inquirer,
