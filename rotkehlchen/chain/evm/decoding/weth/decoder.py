@@ -1,3 +1,4 @@
+import logging
 from abc import ABC
 from typing import TYPE_CHECKING, Any
 
@@ -15,7 +16,8 @@ from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.decoding.weth.constants import CHAIN_ID_TO_WETH_MAPPING, CPT_WETH
 from rotkehlchen.constants.assets import A_ETH, A_WETH_SCROLL
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import ChainID, ChecksumEvmAddress
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, Location
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
@@ -28,6 +30,8 @@ WETH_DEPOSIT_TOPIC = b'\xe1\xff\xfc\xc4\x92=\x04\xb5Y\xf4\xd2\x9a\x8b\xfcl\xda\x
 WETH_WITHDRAW_TOPIC = b'\x7f\xcfS,\x15\xf0\xa6\xdb\x0b\xd6\xd0\xe08\xbe\xa7\x1d0\xd8\x08\xc7\xd9\x8c\xb3\xbfrh\xa9[\xf5\x08\x1be'  # noqa: E501
 WETH_DEPOSIT_METHOD = b'\xd0\xe3\r\xb0'
 WETH_WITHDRAW_METHOD = b'.\x1a}M'
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class WethDecoderBase(DecoderInterface, ABC):
@@ -53,15 +57,14 @@ class WethDecoderBase(DecoderInterface, ABC):
         input_data = context.transaction.input_data
 
         # WETH on Arbitrum is deployed as proxy, we need to check the method
-        # On the scroll, the contract is different, So we need to check the method.
         if context.tx_log.topics[0] == WETH_DEPOSIT_TOPIC or (
-            self.evm_inquirer.chain_id in {ChainID.ARBITRUM_ONE, ChainID.SCROLL} and
+            self.evm_inquirer.chain_id == ChainID.ARBITRUM_ONE and
             input_data.startswith(WETH_DEPOSIT_METHOD)
         ):
             return self._decode_deposit_event(context)
 
         if context.tx_log.topics[0] == WETH_WITHDRAW_TOPIC or (
-            self.evm_inquirer.chain_id in {ChainID.ARBITRUM_ONE, ChainID.SCROLL} and
+            self.evm_inquirer.chain_id == ChainID.ARBITRUM_ONE and
             input_data.startswith(WETH_WITHDRAW_METHOD)
         ):
             return self._decode_withdrawal_event(context)
@@ -92,8 +95,20 @@ class WethDecoderBase(DecoderInterface, ABC):
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.notes = f'Wrap {deposited_amount} {self.base_asset.symbol} in {self.wrapped_token.symbol}'  # noqa: E501
                 out_event = event
+            elif (
+                event.location == Location.SCROLL and
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.balance.amount == deposited_amount and
+                event.asset == self.wrapped_token
+            ):  # scroll WETH does emit an event on transfer so we can edit the event instead of creating a new one  # noqa: E501
+                event.notes = f'Receive {deposited_amount} {self.wrapped_token.symbol}'
+                event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
+                event.counterparty = self.counterparty
+                event.location_label = depositor
+                event.address = context.transaction.to_address
 
-        if out_event is None:
+        if out_event is None or self.evm_inquirer.chain_id == ChainID.SCROLL:
             return DEFAULT_DECODING_OUTPUT
 
         in_event = self.base.make_event_next_index(
@@ -134,7 +149,7 @@ class WethDecoderBase(DecoderInterface, ABC):
                 ):
                     return DEFAULT_DECODING_OUTPUT  # we have already decoded this event
 
-        in_event = None
+        in_event = out_event = None
         for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.RECEIVE and
@@ -148,27 +163,53 @@ class WethDecoderBase(DecoderInterface, ABC):
                 in_event = event
                 event.notes = f'Receive {withdrawn_amount} {self.base_asset.symbol}'
                 event.counterparty = self.counterparty
+            elif (
+                event.location == Location.SCROLL and
+                event.event_type == HistoryEventType.SPEND and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.balance.amount == withdrawn_amount and
+                event.asset == self.wrapped_token
+            ):  # scroll WETH does emit an event on transfer so we can edit the event instead of creating a new one  # noqa: E501
+                event.notes = f'Unwrap {withdrawn_amount} {self.wrapped_token.symbol}'
+                event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
+                event.counterparty = self.counterparty
+                event.location_label = withdrawer
+                event.address = context.transaction.to_address
+                out_event = event
 
         if in_event is None:
             return DEFAULT_DECODING_OUTPUT
+        elif self.evm_inquirer.chain_id == ChainID.SCROLL:
+            if out_event is None:
+                log.error(
+                    'Failed to find scroll weth unwrapping events in '
+                    f'{context.transaction.tx_hash.hex()}',
+                )
+                return DEFAULT_DECODING_OUTPUT
 
-        out_event = self.base.make_event_next_index(
-            tx_hash=context.transaction.tx_hash,
-            timestamp=context.transaction.timestamp,
-            event_type=HistoryEventType.SPEND,
-            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
-            asset=self.wrapped_token,
-            balance=Balance(amount=withdrawn_amount),
-            location_label=withdrawer,
-            counterparty=self.counterparty,
-            notes=f'Unwrap {withdrawn_amount} {self.wrapped_token.symbol}',
-            address=context.transaction.to_address,
-        )
-        maybe_reshuffle_events(
-            ordered_events=[out_event, in_event],
-            events_list=context.decoded_events + [out_event],
-        )
-        return DecodingOutput(event=out_event)
+            maybe_reshuffle_events(
+                ordered_events=[out_event, in_event],
+                events_list=context.decoded_events,
+            )
+            return DEFAULT_DECODING_OUTPUT
+        else:
+            out_event = self.base.make_event_next_index(
+                tx_hash=context.transaction.tx_hash,
+                timestamp=context.transaction.timestamp,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+                asset=self.wrapped_token,
+                balance=Balance(amount=withdrawn_amount),
+                location_label=withdrawer,
+                counterparty=self.counterparty,
+                notes=f'Unwrap {withdrawn_amount} {self.wrapped_token.symbol}',
+                address=context.transaction.to_address,
+            )
+            maybe_reshuffle_events(
+                ordered_events=[out_event, in_event],
+                events_list=context.decoded_events + [out_event],
+            )
+            return DecodingOutput(event=out_event)
 
     # -- DecoderInterface methods
 
