@@ -211,9 +211,9 @@ setSubmitFunc(save);
         :label="t('common.counterparty')"
         data-cy="counterparty"
         :error-messages="toMessages(v$.counterparty)"
-        @blur="v$.counterparty.$touch()"
         :hint="t('common.optional')"
         persistent-hint
+        @blur="v$.counterparty.$touch()"
       />
     </div>
   </div>

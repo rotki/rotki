@@ -20,11 +20,16 @@ const emit = defineEmits<{
   (e: 'input', visible: boolean): void;
 }>();
 
+const { t } = useI18n();
+
 const { timestamp, balance } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const editMode = ref<boolean>(false);
 const display = useSimpleVModel(props, emit);
+const { setMessage } = useMessageStore();
+const snapshotApi = useSnapshotApi();
+const { appSession, openDirectory } = useInterop();
 
 const formattedSelectedBalance = computed<BigNumber | null>(() => {
   if (get(balance))
@@ -43,13 +48,6 @@ async function downloadSnapshot() {
 
   set(display, false);
 }
-
-const { setMessage } = useMessageStore();
-
-const { t } = useI18n();
-
-const snapshotApi = useSnapshotApi();
-const { appSession, openDirectory } = useInterop();
 
 async function exportSnapshotCSV() {
   let message: Message | null = null;

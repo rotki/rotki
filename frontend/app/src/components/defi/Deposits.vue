@@ -39,13 +39,6 @@ const aaveStore = useAaveStore();
 
 const { t } = useI18n();
 
-function isProtocol(protocol: DefiProtocol) {
-  return computed(() => {
-    const protocols = get(selectedProtocols);
-    return protocols.length > 0 && protocols.includes(protocol);
-  });
-}
-
 const selectedAddresses = useArrayMap(selectedAccounts, account => getAccountAddress(account));
 const accountFilter = useArrayMap(selectedAccounts, account => ({
   address: getAccountAddress(account),
@@ -91,6 +84,13 @@ const totalUsdEarned = computed<BigNumber>(() => {
   const addresses = get(selectedAddresses);
   return get(defiLending.totalUsdEarned(protocols, addresses));
 });
+
+function isProtocol(protocol: DefiProtocol) {
+  return computed(() => {
+    const protocols = get(selectedProtocols);
+    return protocols.length > 0 && protocols.includes(protocol);
+  });
+}
 
 const isCompound = isProtocol(DefiProtocol.COMPOUND);
 const isAave = isProtocol(DefiProtocol.AAVE);

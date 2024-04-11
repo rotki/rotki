@@ -30,7 +30,7 @@ const { t } = useI18n();
     rounded="sm"
   >
     <div class="text-subtitle-2 mb-3">
-      {{ t('dashboard.snapshot.edit.dialog.balances.optional') }}
+      {{ t('common.optional') }}
     </div>
     <LocationSelector
       v-model="model"

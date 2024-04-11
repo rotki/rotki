@@ -13,6 +13,15 @@ const { isXs, isXlAndDown } = useBreakpoint();
 const page = ref(1);
 const itemsPerPage = ref(8);
 
+const firstLimit = computed(() => {
+  if (get(isXs))
+    return 1;
+  else if (get(isXlAndDown))
+    return 4;
+
+  return 6;
+});
+
 const limits = computed(() => {
   const first = get(firstLimit);
   return [first, first * 2, first * 4];
@@ -33,22 +42,13 @@ const paginationData = computed({
   },
 });
 
-const firstLimit = computed(() => {
-  if (get(isXs))
-    return 1;
-  else if (get(isXlAndDown))
-    return 4;
-
-  return 6;
+const visible = computed(() => {
+  const start = (get(page) - 1) * get(itemsPerPage);
+  return get(items).slice(start, start + get(itemsPerPage));
 });
 
 watchImmediate(firstLimit, () => {
   set(itemsPerPage, get(firstLimit));
-});
-
-const visible = computed(() => {
-  const start = (get(page) - 1) * get(itemsPerPage);
-  return get(items).slice(start, start + get(itemsPerPage));
 });
 
 watch([items, firstLimit], () => set(page, 1));
