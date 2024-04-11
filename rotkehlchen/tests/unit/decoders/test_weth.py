@@ -715,7 +715,7 @@ def test_weth_withdraw_scroll(database, scroll_inquirer):
         tx_hash=evmhash,
     )
     timestamp = TimestampMS(1712239879000)
-    amount, gas_fees = '0.00211824', '0.0000204875'
+    amount, gas_fees = '0.00211824', '0.000194659253936861'
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
@@ -772,7 +772,7 @@ def test_weth_deposit_scroll(database, scroll_inquirer):
         tx_hash=evmhash,
     )
     timestamp = TimestampMS(1712239897000)
-    amount, gas_fees = '0.135', '0.0000285406'
+    amount, gas_fees = '0.135', '0.000199290832110225'
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
@@ -803,14 +803,14 @@ def test_weth_deposit_scroll(database, scroll_inquirer):
         ),
         EvmEvent(
             tx_hash=evmhash,
-            sequence_index=2,
+            sequence_index=17,
             timestamp=timestamp,
             location=Location.SCROLL,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=A_WETH_SCROLL,
             balance=Balance(amount=FVal(0.135)),
-            location_label='0x0000000000000000000000000000000000000000',
+            location_label='0xdFd21F8aA81c5787160F9a4B39357F5FE1c743DC',
             notes=f'Receive {amount} WETH',
             counterparty=CPT_WETH,
             address=string_to_evm_address('0x5300000000000000000000000000000000000004'),
