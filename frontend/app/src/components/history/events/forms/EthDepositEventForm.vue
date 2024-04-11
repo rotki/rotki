@@ -51,11 +51,11 @@ const rules = {
   timestamp: { externalServerValidation: () => true },
   txHash: {
     required: helpers.withMessage(
-      t('transactions.events.form.tx_hash.validation.non_empty').toString(),
+      t('transactions.events.form.tx_hash.validation.non_empty'),
       required,
     ),
     isValid: helpers.withMessage(
-      t('transactions.events.form.tx_hash.validation.valid').toString(),
+      t('transactions.events.form.tx_hash.validation.valid'),
       (value: string) => isValidTxHash(value),
     ),
   },
@@ -63,13 +63,13 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.event_identifier.validation.non_empty',
-      ).toString(),
+      ),
       requiredIf(() => !!get(editableItem)),
     ),
   },
   amount: {
     required: helpers.withMessage(
-      t('transactions.events.form.amount.validation.non_empty').toString(),
+      t('transactions.events.form.amount.validation.non_empty'),
       required,
     ),
   },
@@ -77,7 +77,7 @@ const rules = {
     required: helpers.withMessage(
       t('transactions.events.form.fiat_value.validation.non_empty', {
         currency: get(currencySymbol),
-      }).toString(),
+      }),
       required,
     ),
   },
@@ -85,7 +85,7 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.sequence_index.validation.non_empty',
-      ).toString(),
+      ),
       required,
     ),
   },
@@ -94,17 +94,17 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.validator_index.validation.non_empty',
-      ).toString(),
+      ),
       required,
     ),
   },
   depositor: {
     required: helpers.withMessage(
-      t('transactions.events.form.depositor.validation.non_empty').toString(),
+      t('transactions.events.form.depositor.validation.non_empty'),
       required,
     ),
     isValid: helpers.withMessage(
-      t('transactions.events.form.depositor.validation.valid').toString(),
+      t('transactions.events.form.depositor.validation.valid'),
       (value: string) => isValidEthAddress(value),
     ),
   },
@@ -259,7 +259,7 @@ const depositorSuggestions = computed(() => getAddresses(Blockchain.ETH));
     <div class="grid md:grid-cols-2 gap-4">
       <DateTimePicker
         v-model="datetime"
-        :label="t('transactions.events.form.datetime.label')"
+        :label="t('common.datetime')"
         persistent-hint
         limit-now
         milliseconds

@@ -210,7 +210,7 @@ onMounted(() => {
       :error-messages="toMessages(v$.derivationPath)"
       autocomplete="off"
       :disabled="disabled"
-      :hint="t('account_form.labels.btc.derivation_path_hint')"
+      :hint="t('common.optional')"
       @blur="v$.derivationPath.$touch()"
     />
   </div>

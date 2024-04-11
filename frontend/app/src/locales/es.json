@@ -62,7 +62,6 @@
       "blockchain": "Elija cadena de bloques | Elija cadenas de bloques",
       "btc": {
         "derivation_path": "Derivation Path",
-        "derivation_path_hint": "Opcional",
         "xpub": "XPUB"
       },
       "multiple": "Añadir múltiples direcciones"
@@ -1397,6 +1396,7 @@
     "balance": "Balance",
     "category": "Categoría",
     "claimed": "Reclamada",
+    "counterparty": "Counterparty",
     "datetime": "Date/Time",
     "deposits": "Depositos",
     "description": "Descripción",
@@ -1410,6 +1410,7 @@
     "no_premium": "No premium subscription detected. ",
     "notes": "Notas",
     "of": "de",
+    "optional": "Opcional",
     "price": "Precio",
     "price_in_symbol": "Precio en {symbol}",
     "protocol": "Protocol",
@@ -1608,7 +1609,6 @@
             },
             "nft": "NFT",
             "nft_hint": "Accepted format: \"_nft_{'ETH address'}_{'collection number'}\"",
-            "optional": "Opcional",
             "preview": {
               "from": "De",
               "title": "This location value will be updated",
@@ -3735,12 +3735,8 @@
             "non_empty": "The asset field cannot be empty"
           }
         },
-        "counterparty": {
-          "label": "Counterparty"
-        },
         "datetime": {
-          "hint": "The date & time of when the event happened",
-          "label": "Date & time"
+          "hint": "The date & time of when the event happened"
         },
         "event_subtype": {
           "label": "Event Subtype",

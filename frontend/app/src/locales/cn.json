@@ -63,7 +63,6 @@
       "blockchain": "选择区块链 | 选择区块链",
       "btc": {
         "derivation_path": "推导路径",
-        "derivation_path_hint": "可选",
         "xpub": "XPUB"
       },
       "multiple": "添加多个地址"
@@ -1427,6 +1426,7 @@
     "balance": "余额",
     "category": "类别",
     "claimed": "声称",
+    "counterparty": "交易对手",
     "datetime": "日期/时间",
     "deposits": "存款",
     "description": "描述",
@@ -1441,6 +1441,7 @@
     "no_premium": "未检测到高级订阅。",
     "notes": "备注",
     "of": "of",
+    "optional": "可选",
     "price": "价格",
     "price_in_symbol": "{symbol} 价格",
     "priority": "优先级",
@@ -1645,7 +1646,6 @@
             },
             "nft": "NFT",
             "nft_hint": "接受格式： \"_nft_{'ETH address'}_{'collection number'}\"",
-            "optional": "可选",
             "preview": {
               "from": "从",
               "title": "此位置值将被更新",
@@ -3869,12 +3869,8 @@
             "non_empty": "资产字段不能为空"
           }
         },
-        "counterparty": {
-          "label": "交易对手"
-        },
         "datetime": {
-          "hint": "事件发生的日期和时间",
-          "label": "日期和时间"
+          "hint": "事件发生的日期和时间"
         },
         "event_subtype": {
           "label": "事件子类型",

@@ -215,6 +215,13 @@ const navItems: MenuItem[] = [
     type: 'item',
     ...Routes.IMPORT,
   },
+  {
+    type: 'divider',
+  },
+  {
+    type: 'item',
+    ...Routes.CALENDAR,
+  },
 ];
 </script>
 

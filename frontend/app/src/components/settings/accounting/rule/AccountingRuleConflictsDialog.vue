@@ -58,7 +58,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
     class: '!text-sm',
   },
   {
-    label: t('accounting_settings.rule.labels.counterparty'),
+    label: t('common.counterparty'),
     key: 'counterparty',
     class: 'border-r border-default !text-sm',
     cellClass: 'border-r border-default',

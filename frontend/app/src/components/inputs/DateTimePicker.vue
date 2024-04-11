@@ -19,6 +19,8 @@ const props = withDefaults(
     disabled?: boolean;
     errorMessages?: string[];
     hideDetails?: boolean;
+    dateOnly?: boolean;
+    inputOnly?: boolean;
   }>(),
   {
     label: '',
@@ -31,12 +33,14 @@ const props = withDefaults(
     disabled: false,
     errorMessages: () => [],
     hideDetails: false,
+    dateOnly: false,
+    inputOnly: false,
   },
 );
 
 const emit = defineEmits<{ (e: 'input', value: string): void }>();
 
-const { value, allowEmpty, limitNow, errorMessages, milliseconds }
+const { value, allowEmpty, limitNow, errorMessages, milliseconds, dateOnly }
   = toRefs(props);
 
 const { t } = useI18n();
@@ -99,9 +103,15 @@ const dateFormatErrorMessage: ComputedRef<string> = computed(() => {
     ? t('date_time_picker.milliseconds_format', {
       dateFormat,
     })
-    : t('date_time_picker.default_format', {
-      dateFormat,
-    });
+    : (
+        get(dateOnly)
+          ? t('date_time_picker.date_only_format', {
+            dateFormat,
+          })
+          : t('date_time_picker.default_format', {
+            dateFormat,
+          })
+      );
 });
 
 const rules = {
@@ -252,7 +262,10 @@ function initImask() {
       lazy: false,
       overwrite: true,
     },
-    {
+  ];
+
+  if (!get(dateOnly)) {
+    mask.push({
       mask: convertPattern(get(dateTimeFormat)),
       blocks: {
         ...dateBlocks,
@@ -260,8 +273,7 @@ function initImask() {
       },
       lazy: false,
       overwrite: true,
-    },
-    {
+    }, {
       mask: convertPattern(get(dateTimeFormatWithSecond)),
       blocks: {
         ...dateBlocks,
@@ -270,23 +282,22 @@ function initImask() {
       },
       lazy: false,
       overwrite: true,
-    },
-    ...(get(milliseconds)
-      ? [
-          {
-            mask: convertPattern(get(dateTimeFormatWithMilliseconds)),
-            blocks: {
-              ...dateBlocks,
-              ...hourAndMinuteBlocks,
-              ...secondBlocks,
-              ...millisecondsBlocks,
-            },
-            lazy: false,
-            overwrite: true,
-          },
-        ]
-      : []),
-  ];
+    });
+
+    if (get(milliseconds)) {
+      mask.push({
+        mask: convertPattern(get(dateTimeFormatWithMilliseconds)),
+        blocks: {
+          ...dateBlocks,
+          ...hourAndMinuteBlocks,
+          ...secondBlocks,
+          ...millisecondsBlocks,
+        },
+        lazy: false,
+        overwrite: true,
+      });
+    }
+  }
 
   const newImask = IMask(input, {
     mask,
@@ -352,7 +363,10 @@ function filteredListeners(listeners: any) {
       filteredListeners($listeners)
     "
   >
-    <template #append>
+    <template
+      v-if="!inputOnly"
+      #append
+    >
       <RuiMenu
         :popper="{ placement: 'bottom-end' }"
         menu-class="date-time-picker max-w-[32rem] z-[500]"

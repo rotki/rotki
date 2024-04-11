@@ -258,6 +258,7 @@ declare global {
   const resolveComponent: typeof import('vue')['resolveComponent']
   const resolveRef: typeof import('@vueuse/core')['resolveRef']
   const resolveUnref: typeof import('@vueuse/core')['resolveUnref']
+  const rgbPointsToHex: typeof import('./utils/color')['rgbPointsToHex']
   const sanitizeAddress: typeof import('./utils/text')['sanitizeAddress']
   const saveBackendUrl: typeof import('./utils/account-management')['saveBackendUrl']
   const saveUserOptions: typeof import('./composables/backend')['saveUserOptions']
@@ -414,6 +415,8 @@ declare global {
   const useBtcAccountBalances: typeof import('./composables/blockchain/account-balances/btc')['useBtcAccountBalances']
   const useCacheClear: typeof import('./composables/session/cache-clear')['useCacheClear']
   const useCached: typeof import('@vueuse/core')['useCached']
+  const useCalendarApi: typeof import('./composables/history/calendar/index')['useCalendarApi']
+  const useCalendarEventForm: typeof import('./composables/calendar/form')['useCalendarEventForm']
   const useCeil: typeof import('@vueuse/math')['useCeil']
   const useCexMappingForm: typeof import('./composables/assets/forms/cex-mapping-form')['useCexMappingForm']
   const useChainAccountBalances: typeof import('./composables/blockchain/account-balances/chain')['useChainAccountBalances']
@@ -1013,6 +1016,7 @@ declare module 'vue' {
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
     readonly resolveRef: UnwrapRef<typeof import('@vueuse/core')['resolveRef']>
     readonly resolveUnref: UnwrapRef<typeof import('@vueuse/core')['resolveUnref']>
+    readonly rgbPointsToHex: UnwrapRef<typeof import('./utils/color')['rgbPointsToHex']>
     readonly sanitizeAddress: UnwrapRef<typeof import('./utils/text')['sanitizeAddress']>
     readonly saveBackendUrl: UnwrapRef<typeof import('./utils/account-management')['saveBackendUrl']>
     readonly saveUserOptions: UnwrapRef<typeof import('./composables/backend')['saveUserOptions']>
@@ -1166,6 +1170,8 @@ declare module 'vue' {
     readonly useBrowserLocation: UnwrapRef<typeof import('@vueuse/core')['useBrowserLocation']>
     readonly useCacheClear: UnwrapRef<typeof import('./composables/session/cache-clear')['useCacheClear']>
     readonly useCached: UnwrapRef<typeof import('@vueuse/core')['useCached']>
+    readonly useCalendarApi: UnwrapRef<typeof import('./composables/history/calendar/index')['useCalendarApi']>
+    readonly useCalendarEventForm: UnwrapRef<typeof import('./composables/calendar/form')['useCalendarEventForm']>
     readonly useCeil: UnwrapRef<typeof import('@vueuse/math')['useCeil']>
     readonly useCexMappingForm: UnwrapRef<typeof import('./composables/assets/forms/cex-mapping-form')['useCexMappingForm']>
     readonly useClamp: UnwrapRef<typeof import('@vueuse/math')['useClamp']>
@@ -1755,6 +1761,7 @@ declare module '@vue/runtime-core' {
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
     readonly resolveRef: UnwrapRef<typeof import('@vueuse/core')['resolveRef']>
     readonly resolveUnref: UnwrapRef<typeof import('@vueuse/core')['resolveUnref']>
+    readonly rgbPointsToHex: UnwrapRef<typeof import('./utils/color')['rgbPointsToHex']>
     readonly sanitizeAddress: UnwrapRef<typeof import('./utils/text')['sanitizeAddress']>
     readonly saveBackendUrl: UnwrapRef<typeof import('./utils/account-management')['saveBackendUrl']>
     readonly saveUserOptions: UnwrapRef<typeof import('./composables/backend')['saveUserOptions']>
@@ -1908,6 +1915,8 @@ declare module '@vue/runtime-core' {
     readonly useBrowserLocation: UnwrapRef<typeof import('@vueuse/core')['useBrowserLocation']>
     readonly useCacheClear: UnwrapRef<typeof import('./composables/session/cache-clear')['useCacheClear']>
     readonly useCached: UnwrapRef<typeof import('@vueuse/core')['useCached']>
+    readonly useCalendarApi: UnwrapRef<typeof import('./composables/history/calendar/index')['useCalendarApi']>
+    readonly useCalendarEventForm: UnwrapRef<typeof import('./composables/calendar/form')['useCalendarEventForm']>
     readonly useCeil: UnwrapRef<typeof import('@vueuse/math')['useCeil']>
     readonly useCexMappingForm: UnwrapRef<typeof import('./composables/assets/forms/cex-mapping-form')['useCexMappingForm']>
     readonly useClamp: UnwrapRef<typeof import('@vueuse/math')['useClamp']>

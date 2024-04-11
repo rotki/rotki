@@ -1,5 +1,7 @@
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
+import weekday from 'dayjs/plugin/weekday';
+import weekOfYear from 'dayjs/plugin/weekOfYear';
 import isToday from 'dayjs/plugin/isToday';
 import localizedFormat from 'dayjs/plugin/localizedFormat';
 import timezone from 'dayjs/plugin/timezone';
@@ -34,6 +36,9 @@ export function changeDateFormat(
 ): string {
   if (!date)
     return '';
+
+  if (fromFormat === toFormat)
+    return date;
 
   const timestamp = convertToTimestamp(date, fromFormat, milliseconds);
 
@@ -71,14 +76,25 @@ export function convertToTimestamp(
 export function convertFromTimestamp(
   timestamp: number,
   dateFormat: DateFormat = DateFormat.DateMonthYearHourMinuteSecond,
-  milliseconds: boolean = false,
+  enableMillisecond: boolean = false,
 ): string {
-  const time = dayjs(milliseconds ? timestamp : timestamp * 1000);
+  const time = dayjs(enableMillisecond ? timestamp : timestamp * 1000);
   let format: string = getDateInputISOFormat(dateFormat);
-  format += ' HH:mm:ss';
+  const seconds = time.second();
+  const hours = time.hour();
+  const minutes = time.minute();
+  const milliseconds = time.millisecond();
 
-  if (milliseconds && time.millisecond() > 0)
-    format += '.SSS';
+  if (hours > 0 || minutes > 0 || seconds > 0 || milliseconds > 0) {
+    format += ' HH:mm';
+
+    if (seconds > 0 || milliseconds > 0) {
+      format += ':ss';
+
+      if (enableMillisecond && milliseconds > 0)
+        format += '.SSS';
+    }
+  }
 
   return time.format(format);
 }
@@ -132,4 +148,6 @@ export function setupDayjs(): void {
   dayjs.extend(timezone);
   dayjs.extend(localizedFormat);
   dayjs.extend(isToday);
+  dayjs.extend(weekday);
+  dayjs.extend(weekOfYear);
 }
