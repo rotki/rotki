@@ -22,23 +22,22 @@ function nextMonth() {
   set(vModel, nextMonth);
 }
 
-const readableMonthAndYear = computed(() => get(vModel).format('MMMM YYYY'));
+const datetime = computed({
+  get() {
+    return convertFromTimestamp(get(vModel).unix());
+  },
+  set(value: string) {
+    const timestamp = convertToTimestamp(
+      value,
+      DateFormat.DateMonthYearHourMinuteSecond,
+      true,
+    );
 
-const datetime = ref<string>('');
-
-watchImmediate(vModel, (value) => {
-  set(datetime, convertFromTimestamp(value.unix()));
+    set(vModel, dayjs(timestamp));
+  },
 });
 
-function input(value: string) {
-  const timestamp = convertToTimestamp(
-    value,
-    DateFormat.DateMonthYearHourMinuteSecond,
-    true,
-  );
-
-  set(vModel, dayjs(timestamp));
-}
+const readableMonthAndYear = computed(() => get(vModel).format('MMMM YYYY'));
 
 const { t } = useI18n();
 </script>
@@ -78,11 +77,10 @@ const { t } = useI18n();
         </template>
         <div class="p-4">
           <DateTimePicker
+            v-model="datetime"
             :label="t('calendar.go_to_date')"
             date-only
             input-only
-            :value="datetime"
-            @input="input($event)"
           />
         </div>
       </RuiMenu>

@@ -25,6 +25,13 @@ function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+/**
+ *
+ * @param {number} value - Value of r/g/b point, 0-255 scale
+ * @return {string} - The value converted to hex
+ * @example
+ * toHex(255); // FF
+ */
 function toHex(value: number): string {
   return Math.round(value)
     .toString(16)

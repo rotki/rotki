@@ -57,7 +57,6 @@
       "blockchain": "Wähle Blockchain",
       "btc": {
         "derivation_path": "Derivation Path",
-        "derivation_path_hint": "Optional",
         "xpub": "XPUB"
       },
       "multiple": "Mehrere Adressen hinzufügen"

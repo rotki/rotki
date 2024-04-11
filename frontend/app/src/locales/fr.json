@@ -63,7 +63,6 @@
       "blockchain": "Choisir blockchain | Choisir blockchains",
       "btc": {
         "derivation_path": "Chemin de dérivation",
-        "derivation_path_hint": "Facultatif",
         "xpub": "XPUB"
       },
       "multiple": "Ajouter plusieurs adresses"
@@ -1595,6 +1594,7 @@
     "no_premium": "Aucun abonnement premium détecté. ",
     "notes": "Notes",
     "of": "de",
+    "optional": "Facultatif",
     "price": "Prix",
     "price_in_symbol": "Prix en {symbol}",
     "priority": "Priorité",
@@ -1810,7 +1810,6 @@
             },
             "nft": "NFT",
             "nft_hint": "Format accepté: \"_nft_{'ETH address'}_{'collection number'}\"",
-            "optional": "Facultatif",
             "preview": {
               "from": "De",
               "title": "Cette valeur de localisation sera mise à jour",

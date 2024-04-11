@@ -54,7 +54,7 @@ watchImmediate(value, (value) => {
       <VApp>
         <VColorPicker
           hide-mode-switch
-          mode="hex"
+          mode="hexa"
           :value="`#${value}`"
           @update:color="
             emit('input', $event.hex.replace('#', ''))

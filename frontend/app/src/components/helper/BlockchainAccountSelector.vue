@@ -24,6 +24,7 @@ const props = withDefaults(
     hideChainIcon?: boolean;
     errorMessages?: string[];
     showDetails?: boolean;
+    customHint?: string;
   }>(),
   {
     label: '',
@@ -41,6 +42,7 @@ const props = withDefaults(
     hideChainIcon: false,
     errorMessages: () => [],
     showDetails: false,
+    customHint: '',
   },
 );
 
@@ -194,6 +196,8 @@ function input(nextValue: null | AccountWithAddressData | AccountWithAddressData
 const getItemKey = (item: AccountWithAddressData) => getAccountId(item);
 
 const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
+
+const rootAttrs = useAttrs();
 </script>
 
 <template>
@@ -218,11 +222,13 @@ const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
         :dense="dense"
         :outlined="outlined"
         :item-text="getItemKey"
+        :hint="customHint"
         :open-on-clear="false"
         :label="label ? label : t('blockchain_account_selector.default_label')"
         :class="outlined ? 'blockchain-account-selector--outlined' : null"
         class="blockchain-account-selector"
         :error-messages="errorMessages"
+        v-bind="rootAttrs"
         @input="input($event)"
       >
         <template #no-data>

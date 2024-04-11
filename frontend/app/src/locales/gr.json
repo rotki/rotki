@@ -57,7 +57,6 @@
       "blockchain": "Επιλέξτε blockchain | Επιλέξτε blockchains",
       "btc": {
         "derivation_path": "Derivation Path",
-        "derivation_path_hint": "Optional",
         "xpub": "XPUB"
       },
       "multiple": "Add multiple addresses"
@@ -1416,6 +1415,7 @@
     "no_premium": "No premium subscription detected. ",
     "notes": "σημειώσεις",
     "of": "από",
+    "optional": "Optional",
     "price": "Price",
     "price_in_symbol": "Price in {symbol}",
     "protocol": "Protocol",
@@ -1614,7 +1614,6 @@
             },
             "nft": "NFT",
             "nft_hint": "Accepted format: \"_nft_{'ETH address'}_{'collection number'}\"",
-            "optional": "Optional",
             "preview": {
               "from": "From",
               "title": "This location value will be updated",

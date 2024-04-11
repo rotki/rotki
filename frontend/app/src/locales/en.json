@@ -66,7 +66,6 @@
       "blockchain": "Choose blockchain | Choose blockchains",
       "btc": {
         "derivation_path": "Derivation Path",
-        "derivation_path_hint": "Optional",
         "xpub": "XPUB"
       },
       "multiple": "Add multiple addresses"
@@ -1525,21 +1524,6 @@
     "delete_event": "Delete event",
     "edit_error": "Could not edit event: {message}",
     "form": {
-      "account": {
-        "validation": {
-          "non_empty": "The account field cannot be empty."
-        }
-      },
-      "counterparty": {
-        "validation": {
-          "non_empty": "The counterparty field cannot be empty."
-        }
-      },
-      "description": {
-        "validation": {
-          "non_empty": "The description field cannot be empty."
-        }
-      },
       "name": {
         "validation": {
           "non_empty": "The name field cannot be empty."
@@ -1683,6 +1667,7 @@
     "no_premium": "No premium subscription detected. ",
     "notes": "Notes",
     "of": "of",
+    "optional": "Optional",
     "or": "or",
     "price": "Price",
     "price_in_symbol": "Price in {symbol}",
@@ -1901,7 +1886,6 @@
             },
             "nft": "NFT",
             "nft_hint": "Accepted format: \"_nft_{'ETH address'}_{'collection number'}\"",
-            "optional": "Optional",
             "preview": {
               "from": "From",
               "title": "This location value will be updated",

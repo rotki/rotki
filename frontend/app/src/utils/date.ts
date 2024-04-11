@@ -37,6 +37,9 @@ export function changeDateFormat(
   if (!date)
     return '';
 
+  if (fromFormat === toFormat)
+    return date;
+
   const timestamp = convertToTimestamp(date, fromFormat, milliseconds);
 
   return convertFromTimestamp(timestamp, toFormat, milliseconds);

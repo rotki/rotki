@@ -190,7 +190,7 @@ export class RotkiApp {
 
   static navigateTo(menu: string, submenu?: string) {
     const click = (selector: string) => {
-      cy.get(selector).scrollIntoView();
+      cy.get(selector).scrollIntoView({ offset: { top: -200, left: 0 } });
       cy.get(selector).should('be.visible');
       cy.get(selector).trigger('mouseover');
       cy.get(selector).click();

@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script lang="ts" setup>
 import dayjs, { type Dayjs } from 'dayjs';
 import type { CalendarEvent } from '@/types/history/calendar';
 
@@ -27,12 +27,12 @@ const { today, selectedDate, eventsWithDate } = toRefs(props);
 const month = computed(() => Number(get(selectedDate).format('M')));
 const year = computed(() => Number(get(selectedDate).format('YYYY')));
 
-const numberOfDaysInMonth: ComputedRef<number> = computed(() => dayjs(get(selectedDate)).daysInMonth());
-
 function getWeekday(date: string | Dayjs) {
   const dayjsValue = typeof date === 'string' ? dayjs(date) : date;
   return dayjsValue.weekday();
 }
+
+const numberOfDaysInMonth: ComputedRef<number> = computed(() => dayjs(get(selectedDate)).daysInMonth());
 
 const currentMonthDays = computed(() => [...new Array(get(numberOfDaysInMonth))].map((_, index) => ({
   date: dayjs(`${get(year)}-${get(month)}-${index + 1}`),
@@ -40,34 +40,24 @@ const currentMonthDays = computed(() => [...new Array(get(numberOfDaysInMonth))]
 })));
 
 const previousMonthDays = computed(() => {
-  const firstDayOfTheMonthWeekday = getWeekday(
-    get(currentMonthDays)[0].date,
-  );
-  const previousMonth = dayjs(`${get(year)}-${get(month)}-01`).subtract(
-    1,
-    'month',
-  );
+  const firstDayOfTheMonthWeekday = getWeekday(get(currentMonthDays)[0].date);
+  const previousMonth = dayjs(`${get(year)}-${get(month)}-01`).subtract(1, 'month');
 
   // Cover first day of the month being sunday (firstDayOfTheMonthWeekday === 0)
   const visibleNumberOfDaysFromPreviousMonth = firstDayOfTheMonthWeekday
     ? firstDayOfTheMonthWeekday - 1
     : 6;
 
-  const previousMonthLastMondayDayOfMonth = dayjs(
-    get(currentMonthDays)[0].date,
-  )
+  const previousMonthLastMondayDayOfMonth = dayjs(get(currentMonthDays)[0].date)
     .subtract(visibleNumberOfDaysFromPreviousMonth, 'day')
     .date();
 
-  return [...new Array(visibleNumberOfDaysFromPreviousMonth)].map(
-    (_, index) => ({
-      date: dayjs(
-        `${previousMonth.year()}-${previousMonth.month()
-        + 1}-${previousMonthLastMondayDayOfMonth + index}`,
-      ),
-      isCurrentMonth: false,
-    }),
-  );
+  return [...new Array(visibleNumberOfDaysFromPreviousMonth)].map((_, index) => ({
+    date: dayjs(
+      `${previousMonth.year()}-${previousMonth.month() + 1}-${previousMonthLastMondayDayOfMonth + index}`,
+    ),
+    isCurrentMonth: false,
+  }));
 });
 
 const nextMonthDays = computed(() => {
@@ -82,9 +72,7 @@ const nextMonthDays = computed(() => {
     : lastDayOfTheMonthWeekday;
 
   return [...new Array(visibleNumberOfDaysFromNextMonth)].map((_, index) => ({
-    date: dayjs(
-      `${nextMonth.year()}-${nextMonth.month() + 1}-${index + 1}`,
-    ),
+    date: dayjs(`${nextMonth.year()}-${nextMonth.month() + 1}-${index + 1}`),
     isCurrentMonth: false,
   }));
 });
@@ -112,20 +100,22 @@ function getEvents(day: Dayjs) {
 
 <template>
   <div class="overflow-x-auto">
-    <div class="rounded-xl border border-default overflow-hidden grid grid-cols-7 [&>div:not(:nth-child(7n))]:border-r min-w-[56rem]">
+    <div
+      class="rounded-xl border border-default overflow-hidden grid grid-cols-7 [&>div:not(:nth-child(7n))]:border-r min-w-[56rem]"
+    >
       <CalendarWeekdays />
       <CalendarMonthDayItem
         v-for="(day, index) in days"
         :key="day.date.toString()"
-        class="border-default"
         :class="{ 'border-t': index > 6 }"
         :day="day"
-        :is-past="day.date.isBefore(today, 'day')"
-        :is-today="day.date.isSame(today, 'day')"
-        :is-selected="day.date.isSame(selectedDate, 'day')"
         :events="getEvents(day.date)"
-        @select-date="setSelectedDate(day.date)"
+        :is-past="day.date.isBefore(today, 'day')"
+        :is-selected="day.date.isSame(selectedDate, 'day')"
+        :is-today="day.date.isSame(today, 'day')"
+        class="border-default"
         @edit="edit($event)"
+        @select-date="setSelectedDate(day.date)"
       />
     </div>
   </div>

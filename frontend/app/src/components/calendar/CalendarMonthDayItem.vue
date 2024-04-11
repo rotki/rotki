@@ -42,8 +42,8 @@ const hidden = computed(() => get(events).length - get(visibleEvents).length);
 
 const { t } = useI18n();
 
-function getColor(color: string | null, isBg: boolean = false) {
-  if (color === null)
+function getColor(color: string | undefined, isBg: boolean = false) {
+  if (!color)
     return undefined;
   return `#${color}${isBg ? '1a' : ''}`;
 }

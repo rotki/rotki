@@ -47,18 +47,8 @@ const rules = {
       required,
     ),
   },
-  counterparty: {
-    required: helpers.withMessage(
-      t('calendar.form.counterparty.validation.non_empty'),
-      required,
-    ),
-  },
-  accounts: {
-    required: helpers.withMessage(
-      t('calendar.form.account.validation.non_empty'),
-      required,
-    ),
-  },
+  counterparty: { externalServerValidation },
+  accounts: { externalServerValidation },
 };
 
 const { setValidation, setSubmitFunc } = useCalendarEventForm();
@@ -93,23 +83,17 @@ watchImmediate(editableItem, (editableItem) => {
     set(datetime, convertFromTimestamp(editableItem.timestamp));
     set(color, editableItem.color);
 
-    const accountFound = Object.values(get(accountsPerChain))
-      .flatMap(x => x)
-      .filter(hasAccountAddress)
-      .find(item => getAccountAddress(item) === editableItem.address && (!editableItem.blockchain || editableItem.blockchain === item.chain));
+    if (editableItem.address && editableItem.blockchain) {
+      const accountFound = Object.values(get(accountsPerChain))
+        .flatMap(x => x)
+        .filter(hasAccountAddress)
+        .find(item => getAccountAddress(item) === editableItem.address && (!editableItem.blockchain || editableItem.blockchain === item.chain));
 
-    if (accountFound)
-      set(accounts, [accountFound]);
+      if (accountFound)
+        set(accounts, [accountFound]);
+    }
   }
 });
-
-function reset() {
-  set(name, '');
-  set(description, '');
-  set(counterparty, '');
-  set(accounts, []);
-  set(datetime, '');
-}
 
 const { addCalendarEvent, editCalendarEvent } = useCalendarApi();
 const { setMessage } = useMessageStore();
@@ -119,12 +103,18 @@ async function save() {
   const payload: Writeable<CalendarEventPayload> = {
     name: get(name),
     description: get(description),
-    address: getAccountAddress(accountVal),
-    blockchain: isBlockchain(accountVal.chain) ? accountVal.chain : undefined,
-    counterparty: get(counterparty),
     timestamp: convertToTimestamp(get(datetime)),
     color: get(color),
   };
+
+  if (accountVal) {
+    payload.address = getAccountAddress(accountVal);
+    payload.blockchain = isBlockchain(accountVal.chain) ? accountVal.chain : undefined;
+  }
+
+  const counterpartyVal = get(counterparty);
+  if (counterpartyVal)
+    payload.counterparty = counterpartyVal;
 
   const editableItemVal = get(editableItem);
   const editing = !!editableItemVal;
@@ -135,7 +125,7 @@ async function save() {
       : await editCalendarEvent({ ...payload, identifier: editableItemVal.identifier });
 
     if (isDefined(result.entryId))
-      reset();
+      get(v$).$reset();
 
     return true;
   }
@@ -212,6 +202,8 @@ setSubmitFunc(save);
         :label="t('common.account')"
         :error-messages="toMessages(v$.accounts)"
         show-details
+        :custom-hint="t('common.optional')"
+        persistent-hint
       />
 
       <CounterpartyInput
@@ -220,6 +212,8 @@ setSubmitFunc(save);
         data-cy="counterparty"
         :error-messages="toMessages(v$.counterparty)"
         @blur="v$.counterparty.$touch()"
+        :hint="t('common.optional')"
+        persistent-hint
       />
     </div>
   </div>
