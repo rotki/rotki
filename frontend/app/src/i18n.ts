@@ -21,7 +21,7 @@ function loadLocaleMessages(): LocaleMessages {
   return messages;
 }
 
-export default castToVueI18n(
+export const i18n = castToVueI18n(
   createI18n(
     {
       legacy: false,

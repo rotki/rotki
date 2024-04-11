@@ -6,7 +6,7 @@ import { computed, reactive } from 'vue';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import ExternalServices from '@/pages/settings/api-keys/external/index.vue';
 import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
-import createCustomPinia from '../../../../utils/create-pinia';
+import { createCustomPinia } from '../../../../utils/create-pinia';
 import type { ExternalServiceKeys } from '@/types/user';
 import type { EvmChainInfo } from '@/types/api/chains';
 

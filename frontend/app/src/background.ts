@@ -8,7 +8,7 @@ import { TrayManager } from '@/electron-main/tray-manager';
 import { checkIfDevelopment } from '@/utils/env-utils';
 import { assert } from '@/utils/assertions';
 import { startPromise } from '@/utils';
-import createProtocol from './create-protocol';
+import { createProtocol } from './create-protocol';
 import { SubprocessHandler } from './subprocess-handler';
 import type { Nullable } from '@/types';
 

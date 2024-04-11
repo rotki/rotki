@@ -120,7 +120,7 @@ function add() {
   setOpenDialog(true);
 }
 
-async function save() {
+function save() {
   const formVal = get(form);
 
   if (!formVal)

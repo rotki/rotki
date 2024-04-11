@@ -39,30 +39,6 @@ const configuration: Ref<BackendConfiguration> = asyncComputed(() =>
   backendSettings(),
 );
 
-const initialOptions: ComputedRef<Partial<BackendOptions>> = computed(() => {
-  const config = get(configuration);
-  const opts = get(options);
-  const defaults = get(defaultBackendArguments);
-  return {
-    loglevel: opts.loglevel ?? get(defaultLogLevel),
-    dataDirectory: opts.dataDirectory ?? get(dataDirectory),
-    logDirectory: opts.logDirectory ?? get(defaultLogDirectory),
-    logFromOtherModules: opts.logFromOtherModules ?? false,
-    maxLogfilesNum:
-      opts.maxLogfilesNum
-      ?? config?.maxLogfilesNum?.value
-      ?? defaults.maxLogfilesNum,
-    maxSizeInMbAllLogs:
-      opts.maxSizeInMbAllLogs
-      ?? config?.maxSizeInMbAllLogs?.value
-      ?? defaults.maxSizeInMbAllLogs,
-    sqliteInstructions:
-      opts.sqliteInstructions
-      ?? config?.sqliteInstructions?.value
-      ?? defaults.sqliteInstructions,
-  };
-});
-
 function parseValue(value?: string) {
   if (!value)
     return 0;
@@ -78,7 +54,41 @@ function stringifyValue(value?: number) {
   return value.toString();
 }
 
-async function loaded() {
+const {
+  resetOptions,
+  saveOptions,
+  fileConfig,
+  logLevel,
+  defaultLogLevel,
+  defaultLogDirectory,
+  options,
+} = useBackendManagement(loaded);
+
+const initialOptions: ComputedRef<Partial<BackendOptions>> = computed(() => {
+  const config = get(configuration);
+  const opts = get(options);
+  const defaults = get(defaultBackendArguments);
+  return {
+    loglevel: opts.loglevel ?? get(defaultLogLevel),
+    dataDirectory: opts.dataDirectory ?? get(dataDirectory),
+    logDirectory: opts.logDirectory ?? get(defaultLogDirectory),
+    logFromOtherModules: opts.logFromOtherModules ?? false,
+    maxLogfilesNum:
+        opts.maxLogfilesNum
+        ?? config?.maxLogfilesNum?.value
+        ?? defaults.maxLogfilesNum,
+    maxSizeInMbAllLogs:
+        opts.maxSizeInMbAllLogs
+        ?? config?.maxSizeInMbAllLogs?.value
+        ?? defaults.maxSizeInMbAllLogs,
+    sqliteInstructions:
+        opts.sqliteInstructions
+        ?? config?.sqliteInstructions?.value
+        ?? defaults.sqliteInstructions,
+  };
+});
+
+function loaded() {
   const initial = get(initialOptions);
 
   set(logLevel, initial.loglevel);
@@ -89,16 +99,6 @@ async function loaded() {
   set(maxLogSize, stringifyValue(initial.maxSizeInMbAllLogs));
   set(sqliteInstructions, stringifyValue(initial.sqliteInstructions));
 }
-
-const {
-  resetOptions,
-  saveOptions,
-  fileConfig,
-  logLevel,
-  defaultLogLevel,
-  defaultLogDirectory,
-  options,
-} = useBackendManagement(loaded);
 
 const isMaxLogFilesDefault = computed(() => {
   const defaults = get(defaultBackendArguments);

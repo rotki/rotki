@@ -6,7 +6,7 @@ import {
 import Vuetify from 'vuetify';
 import { setActivePinia } from 'pinia';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
-import createCustomPinia from '../../../utils/create-pinia';
+import { createCustomPinia } from '../../../utils/create-pinia';
 import type { StringSuggestionMatcher } from '@/types/filtering';
 
 vi.mocked(useCssModule).mockReturnValue({

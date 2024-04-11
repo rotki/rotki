@@ -9,7 +9,7 @@ import {
 } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { server } from '../../../setup-files/server';
-import createPinia from '../../../utils/create-pinia';
+import { createCustomPinia } from '../../../utils/create-pinia';
 import type { ActionResult } from '@rotki/common/lib/data';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
@@ -67,7 +67,7 @@ describe('store:tasks', () => {
   let store: ReturnType<typeof useTaskStore>;
 
   beforeEach(() => {
-    const pinia = createPinia();
+    const pinia = createCustomPinia();
     setActivePinia(pinia);
     store = useTaskStore();
     server.resetHandlers();

@@ -1,4 +1,4 @@
-const VComboboxStub = {
+export const VComboboxStub = {
   template: `
     <div>
       <div>
@@ -16,5 +16,3 @@ const VComboboxStub = {
     items: { type: Array<any> },
   },
 };
-
-export default VComboboxStub;

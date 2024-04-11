@@ -5,7 +5,7 @@ import Vuetify from 'vuetify';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
-import createCustomPinia from '../../../utils/create-pinia';
+import { createCustomPinia } from '../../../utils/create-pinia';
 import { libraryDefaults } from '../../../utils/provide-defaults';
 
 vi.mock('vue-router/composables', () => ({

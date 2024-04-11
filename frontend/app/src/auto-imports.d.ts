@@ -14,6 +14,7 @@ declare global {
   const $toRef: typeof import('vue/macros')['$toRef']
   const AccountExternalFilterSchema: typeof import('./composables/filters/blockchain-account')['AccountExternalFilterSchema']
   const EffectScope: typeof import('vue')['EffectScope']
+  const IndexedDb: typeof import('./utils/indexed-db')['IndexedDb']
   const KEY_BACKEND_URL: typeof import('./utils/account-management')['KEY_BACKEND_URL']
   const KEY_BACKEND_URL_SESSION_ONLY: typeof import('./utils/account-management')['KEY_BACKEND_URL_SESSION_ONLY']
   const LimitedParallelizationQueue: typeof import('./utils/limited-parallelization-queue')['LimitedParallelizationQueue']
@@ -277,7 +278,6 @@ declare global {
   const sortDesc: typeof import('./utils/bignumbers')['sortDesc']
   const splitSearch: typeof import('./utils/search')['splitSearch']
   const startPromise: typeof import('./utils/index')['startPromise']
-  const stickyTableHeader: typeof import('./utils/sticky-table-header')['default']
   const storePiniaPlugins: typeof import('./store/debug')['storePiniaPlugins']
   const storeToRefs: typeof import('pinia')['storeToRefs']
   const sum: typeof import('./utils/balances')['sum']
@@ -773,6 +773,7 @@ declare module 'vue' {
     readonly $toRef: UnwrapRef<typeof import('vue/macros')['$toRef']>
     readonly AccountExternalFilterSchema: UnwrapRef<typeof import('./composables/filters/blockchain-account')['AccountExternalFilterSchema']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
+    readonly IndexedDb: UnwrapRef<typeof import('./utils/indexed-db')['IndexedDb']>
     readonly KEY_BACKEND_URL: UnwrapRef<typeof import('./utils/account-management')['KEY_BACKEND_URL']>
     readonly KEY_BACKEND_URL_SESSION_ONLY: UnwrapRef<typeof import('./utils/account-management')['KEY_BACKEND_URL_SESSION_ONLY']>
     readonly LimitedParallelizationQueue: UnwrapRef<typeof import('./utils/limited-parallelization-queue')['LimitedParallelizationQueue']>
@@ -899,7 +900,6 @@ declare module 'vue' {
     readonly hasAccountWithBalanceAddress: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['hasAccountWithBalanceAddress']>
     readonly hexToRgbPoints: UnwrapRef<typeof import('./utils/color')['hexToRgbPoints']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
-    readonly indexedDb: UnwrapRef<typeof import('./utils/indexed-db')['default']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>
     readonly invertColor: UnwrapRef<typeof import('./utils/color')['invertColor']>
@@ -1032,7 +1032,6 @@ declare module 'vue' {
     readonly sortDesc: UnwrapRef<typeof import('./utils/bignumbers')['sortDesc']>
     readonly splitSearch: UnwrapRef<typeof import('./utils/search')['splitSearch']>
     readonly startPromise: UnwrapRef<typeof import('./utils/index')['startPromise']>
-    readonly stickyTableHeader: UnwrapRef<typeof import('./utils/sticky-table-header')['default']>
     readonly storePiniaPlugins: UnwrapRef<typeof import('./store/debug')['storePiniaPlugins']>
     readonly storeToRefs: UnwrapRef<typeof import('pinia')['storeToRefs']>
     readonly sum: UnwrapRef<typeof import('./utils/balances')['sum']>
@@ -1516,6 +1515,7 @@ declare module '@vue/runtime-core' {
     readonly $toRef: UnwrapRef<typeof import('vue/macros')['$toRef']>
     readonly AccountExternalFilterSchema: UnwrapRef<typeof import('./composables/filters/blockchain-account')['AccountExternalFilterSchema']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
+    readonly IndexedDb: UnwrapRef<typeof import('./utils/indexed-db')['IndexedDb']>
     readonly KEY_BACKEND_URL: UnwrapRef<typeof import('./utils/account-management')['KEY_BACKEND_URL']>
     readonly KEY_BACKEND_URL_SESSION_ONLY: UnwrapRef<typeof import('./utils/account-management')['KEY_BACKEND_URL_SESSION_ONLY']>
     readonly LimitedParallelizationQueue: UnwrapRef<typeof import('./utils/limited-parallelization-queue')['LimitedParallelizationQueue']>
@@ -1642,7 +1642,6 @@ declare module '@vue/runtime-core' {
     readonly hasAccountWithBalanceAddress: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['hasAccountWithBalanceAddress']>
     readonly hexToRgbPoints: UnwrapRef<typeof import('./utils/color')['hexToRgbPoints']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
-    readonly indexedDb: UnwrapRef<typeof import('./utils/indexed-db')['default']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>
     readonly invertColor: UnwrapRef<typeof import('./utils/color')['invertColor']>
@@ -1775,7 +1774,6 @@ declare module '@vue/runtime-core' {
     readonly sortDesc: UnwrapRef<typeof import('./utils/bignumbers')['sortDesc']>
     readonly splitSearch: UnwrapRef<typeof import('./utils/search')['splitSearch']>
     readonly startPromise: UnwrapRef<typeof import('./utils/index')['startPromise']>
-    readonly stickyTableHeader: UnwrapRef<typeof import('./utils/sticky-table-header')['default']>
     readonly storePiniaPlugins: UnwrapRef<typeof import('./store/debug')['storePiniaPlugins']>
     readonly storeToRefs: UnwrapRef<typeof import('pinia')['storeToRefs']>
     readonly sum: UnwrapRef<typeof import('./utils/balances')['sum']>

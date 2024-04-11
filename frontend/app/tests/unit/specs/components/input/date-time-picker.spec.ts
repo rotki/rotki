@@ -7,8 +7,8 @@ import Vuetify from 'vuetify';
 import { type Pinia, setActivePinia } from 'pinia';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { DateFormat } from '@/types/date-format';
-import createCustomPinia from '../../../utils/create-pinia';
-import VAutocompleteStub from '../../stubs/VAutocomplete';
+import { createCustomPinia } from '../../../utils/create-pinia';
+import { VAutocompleteStub } from '../../stubs/VAutocomplete';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({

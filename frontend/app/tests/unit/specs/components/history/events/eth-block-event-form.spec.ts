@@ -7,8 +7,8 @@ import { type Pinia, createPinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import EthBlockEventForm from '@/components/history/events/forms/EthBlockEventForm.vue';
-import VAutocompleteStub from '../../../stubs/VAutocomplete';
-import VComboboxStub from '../../../stubs/VCombobox';
+import { VAutocompleteStub } from '../../../stubs/VAutocomplete';
+import { VComboboxStub } from '../../../stubs/VCombobox';
 import type { AssetMap } from '@/types/asset';
 import type { EthBlockEvent } from '@/types/history/events';
 

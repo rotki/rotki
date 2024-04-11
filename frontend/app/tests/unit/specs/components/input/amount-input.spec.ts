@@ -6,7 +6,7 @@ import {
 import Vuetify from 'vuetify';
 import { type Pinia, setActivePinia } from 'pinia';
 import AmountInput from '@/components/inputs/AmountInput.vue';
-import createCustomPinia from '../../../utils/create-pinia';
+import { createCustomPinia } from '../../../utils/create-pinia';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({
