@@ -208,7 +208,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <form
+  <RuiForm
     data-cy="manual-balance-form"
     class="flex flex-col gap-2"
   >
@@ -309,5 +309,5 @@ onMounted(() => {
       :title="t('asset_management.add_title')"
       :types="customAssetTypes"
     />
-  </form>
+  </RuiForm>
 </template>
