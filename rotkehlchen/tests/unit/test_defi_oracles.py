@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_uniswap_oracles_asset_to_asset(inquirer_defi, socket_enabled):  # pylint: disable=unused-argument
     """
     Test that the uniswap oracles return a price close to the one reported by
