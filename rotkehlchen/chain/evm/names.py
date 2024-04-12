@@ -33,6 +33,9 @@ def find_ens_mappings(
     """
     Find and return ens names for the given addresses.
     First check the db, and if can't find, call the blockchain.
+
+    IMPORTANT: If this implementation changes also change the one in tests/api/test_ens.py
+
     May raise:
     - RemoteError if was not able to query blockchain
     """
