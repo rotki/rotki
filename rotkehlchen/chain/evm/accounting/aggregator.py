@@ -1,12 +1,10 @@
 import importlib
 import logging
 import pkgutil
-from collections.abc import Sequence
 from contextlib import suppress
 from types import ModuleType
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.errors.misc import ModuleLoadingError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.user_messages import MessagesAggregator
@@ -36,12 +34,10 @@ class EVMAccountingAggregator:
             node_inquirer: 'EvmNodeInquirer',
             msg_aggregator: MessagesAggregator,
             modules_path: str,
-            airdrops_list: Sequence[CounterpartyDetails] | None = None,
     ) -> None:
         self.node_inquirer = node_inquirer
         self.msg_aggregator = msg_aggregator
         self.accountants: dict[str, ModuleAccountantInterface] = {}
-        self.airdrops_list = airdrops_list
         self.modules_path = modules_path
         self.initialize_all_accountants()
 
@@ -69,15 +65,9 @@ class EVMAccountingAggregator:
                         if class_name in self.accountants:
                             raise ModuleLoadingError(f'Accountant with name {class_name} already loaded')  # noqa: E501
 
-                        kwargs = {}
-                        if class_name == 'airdrops':
-                            assert self.airdrops_list, 'If accountant exists, list should exist'
-                            kwargs['airdrops_list'] = self.airdrops_list
-
                         self.accountants[class_name] = submodule_accountant(
                             node_inquirer=self.node_inquirer,
                             msg_aggregator=self.msg_aggregator,
-                            **kwargs,
                         )
 
                 self._recursively_initialize_accountants(full_name)
