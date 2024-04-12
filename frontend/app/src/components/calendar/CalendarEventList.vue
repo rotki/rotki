@@ -46,6 +46,7 @@ const { t } = useI18n();
         {{ event.name }}
       </div>
       <RuiTooltip
+        v-if="event.description"
         :popper="{ placement: 'left' }"
         :disabled="!showTooltip"
         tooltip-class="max-w-[20rem] whitespace-break-spaces"
