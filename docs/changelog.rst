@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :feature:`3617` ZKSync lite is now supported as a chain. Balances are detected and history of the activity of all your tracked addresses for zksync lite will now be visible in the history events section.
+* :feature:`-` fluence dev rewards airdrop claim events will now be properly decoded in the history events.
 * :feature:`-` rotki will now properly decode the transactions for bridging to and from Scroll.
 * :feature:`6636` Aave v3 positions and liabilities will now be properly shown in the dashboard.
 * :feature:`7423` Users will be able to sort address book entries by displayed name and address.
