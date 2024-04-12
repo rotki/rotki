@@ -73,7 +73,6 @@ export interface BalancerApi {
   balancerPools: Ref<XswapPool[]>;
   balancerAddresses: Ref<string[]>;
   fetchBalancerBalances: (refresh: boolean) => Promise<void>;
-  fetchBalancerEvents: (refresh: boolean) => Promise<void>;
 }
 
 export interface SushiApi {

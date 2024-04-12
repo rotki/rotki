@@ -3,40 +3,29 @@ import { BalancerBalances } from '@/premium/premium';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 
+const { t } = useI18n();
 const modules: Module[] = [Module.BALANCER];
 
-const { fetchBalances, fetchEvents } = useBalancerStore();
+const { fetchBalances } = useBalancerStore();
 const { isModuleEnabled } = useModules();
 const { shouldShowLoadingScreen, isLoading } = useStatusStore();
 
 const premium = usePremium();
 const isEnabled = computed(() => isModuleEnabled(modules[0]));
-const balancesLoading = shouldShowLoadingScreen(Section.DEFI_BALANCER_BALANCES);
-const eventsLoading = shouldShowLoadingScreen(Section.DEFI_BALANCER_EVENTS);
-const loading = computed(() => get(balancesLoading) && get(eventsLoading));
-const balancesRefreshing = isLoading(Section.DEFI_BALANCER_BALANCES);
-const eventsRefreshing = isLoading(Section.DEFI_BALANCER_EVENTS);
-const refreshing = computed(
-  () => get(balancesRefreshing) || get(eventsRefreshing),
-);
+const loading = shouldShowLoadingScreen(Section.DEFI_BALANCER_BALANCES);
+const refreshing = isLoading(Section.DEFI_BALANCER_BALANCES);
 
-const { t } = useI18n();
+const refreshTooltip = computed<string>(() => t('helpers.refresh_header.tooltip', {
+  title: t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.balancer').toLocaleLowerCase(),
+}));
 
 async function refresh(ignoreCache: boolean = false) {
-  await Promise.all([fetchBalances(ignoreCache), fetchEvents(ignoreCache)]);
+  await fetchBalances(ignoreCache);
 }
 
 onMounted(async () => {
   await refresh();
 });
-
-const refreshTooltip: ComputedRef<string> = computed(() =>
-  t('helpers.refresh_header.tooltip', {
-    title: t(
-      'navigation_menu.defi_sub.deposits_sub.liquidity_sub.balancer',
-    ).toLocaleLowerCase(),
-  }),
-);
 </script>
 
 <template>

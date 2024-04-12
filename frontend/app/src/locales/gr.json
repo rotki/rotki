@@ -355,15 +355,6 @@
           "title": "Querying Balancer balances"
         }
       },
-      "balancer_events": {
-        "error": {
-          "description": "Failed to query Balancer events: {message}",
-          "title": "Querying Balancer events"
-        },
-        "task": {
-          "title": "Querying Balancer events"
-        }
-      },
       "balances": {
         "error": {
           "description": "Failed to retrieve DeFi balances: {error}",

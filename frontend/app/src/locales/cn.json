@@ -361,15 +361,6 @@
           "title": "查询Balancer余额"
         }
       },
-      "balancer_events": {
-        "error": {
-          "description": "无法查询 Balancer 事件： {message}",
-          "title": "查询Balancer事件"
-        },
-        "task": {
-          "title": "查询Balancer事件"
-        }
-      },
       "balances": {
         "error": {
           "description": "获取 DeFi 余额失败：{error}",

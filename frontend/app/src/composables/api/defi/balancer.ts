@@ -8,13 +8,7 @@ export function useBalancerApi() {
     return fetchExternalAsync(api.instance, url);
   };
 
-  const fetchBalancerEvents = (): Promise<PendingTask> => {
-    const url = '/blockchains/eth/modules/balancer/history/events';
-    return fetchExternalAsync(api.instance, url);
-  };
-
   return {
     fetchBalancerBalances,
-    fetchBalancerEvents,
   };
 }
