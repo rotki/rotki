@@ -41,12 +41,7 @@ const rules = {
       required,
     ),
   },
-  description: {
-    required: helpers.withMessage(
-      t('calendar.form.description.validation.non_empty'),
-      required,
-    ),
-  },
+  description: { externalServerValidation },
   counterparty: { externalServerValidation },
   accounts: { externalServerValidation },
 };
@@ -191,6 +186,7 @@ setSubmitFunc(save);
         color="primary"
         min-rows="5"
         :error-messages="toMessages(v$.description)"
+        :hint="t('common.optional')"
         @blur="v$.description.$touch()"
       />
 

@@ -189,9 +189,11 @@ export class RotkiApp {
   }
 
   static navigateTo(menu: string, submenu?: string) {
-    const click = (selector: string) => {
-      cy.get(selector).scrollIntoView({ offset: { top: -200, left: 0 } });
-      cy.get(selector).should('be.visible');
+    const click = (selector: string, scroll = false) => {
+      if (scroll) {
+        cy.get(selector).scrollIntoView();
+        cy.get(selector).should('be.visible');
+      }
       cy.get(selector).trigger('mouseover');
       cy.get(selector).click();
     };
@@ -200,10 +202,11 @@ export class RotkiApp {
     cy.get(menuClass).then((menu) => {
       const parent = menu.parent().parent();
       if (!parent.hasClass('submenu-wrapper__expanded'))
-        click(menuClass);
+        click(menuClass, true);
 
       if (submenu) {
         cy.get(menuClass).find('.submenu-wrapper').scrollIntoView();
+        cy.get(menuClass).find('.submenu-wrapper').should('be.visible');
 
         const subMenuClass = `.navigation__${submenu}`;
         click(subMenuClass);
