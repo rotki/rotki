@@ -19,5 +19,4 @@ class ScrollAccountingAggregator(EVMAccountingAggregator):
             node_inquirer=node_inquirer,
             msg_aggregator=msg_aggregator,
             modules_path='rotkehlchen.chain.scroll.modules',
-            airdrops_list=[],
         )
