@@ -450,15 +450,6 @@
           "title": "Interrogation des soldes Balancer"
         }
       },
-      "balancer_events": {
-        "error": {
-          "description": "Échec de la requête des événements Balancer : {message}",
-          "title": "Requête des événements Balancer"
-        },
-        "task": {
-          "title": "Interrogation des événements Balancer"
-        }
-      },
       "balances": {
         "error": {
           "description": "Échec de la récupération des soldes DeFi : {error}",

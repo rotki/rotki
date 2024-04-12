@@ -128,8 +128,6 @@ export function balancerApi(): BalancerApi {
     balancerAddresses: addresses,
     fetchBalancerBalances: async (refresh: boolean) =>
       await store.fetchBalances(refresh),
-    fetchBalancerEvents: async (refresh: boolean) =>
-      await store.fetchEvents(refresh),
   };
 }
 
