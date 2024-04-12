@@ -307,7 +307,7 @@ Event type/subtype and counterparty
 
 Each combination of event type and subtype and counterparty creates a new unique event type. This is important as they are all treated differently in many parts of rotki, including the accounting. But most importantly this is what determines how they appear in the UI!
 
-The place where the UI mappings happen is `frontend/app/src/store/history/consts.ts <https://github.com/rotki/rotki/blob/1039e04304cc034a57060757a1a8ae88b3c51806/frontend/app/src/store/history/consts.ts>`__.
+The mapping of these HistoryEvents types, subtypes and categories is done in `rotkehlchen/accounting/constants.py <https://github.com/rotki/rotki/blob/17b4368bc15043307fa6acf536b5237b3840c40e/rotkehlchen/accounting/constants.py>`__.
 
 The Accountant
 -----------------
