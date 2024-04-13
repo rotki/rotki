@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Users will now be able to navigate the page (go back or forward) using the keyboard shortcuts "Cmd + Left Arrow" or "Cmd + Right Arrow".
 * :feature:`3617` ZKSync lite is now supported as a chain. Balances are detected and history of the activity of all your tracked addresses for zksync lite will now be visible in the history events section.
 * :feature:`-` fluence dev rewards airdrop claim events will now be properly decoded in the history events.
 * :feature:`-` rotki will now properly decode the transactions for bridging to and from Scroll.

@@ -21,6 +21,8 @@ let win: BrowserWindow | null;
 // be closed automatically when the JavaScript object is garbage collected.
 const pyHandler = new SubprocessHandler(app);
 
+const isMac = process.platform === 'darwin';
+
 const menuActions = {
   displayTray: (display: boolean): void => {
     const applicationMenu = Menu.getApplicationMenu();
@@ -100,6 +102,21 @@ async function onReady(): Promise<void> {
 
     menu.popup({ window: getWindow() });
   });
+
+  getWindow().webContents.on('before-input-event', (event, input) => {
+    const win = getWindow();
+    if ((isMac ? input.meta : input.control)) {
+      if ((['ArrowLeft', '['].includes(input.key)) && win.webContents.canGoBack()) {
+        win.webContents.goBack();
+        event.preventDefault();
+      }
+
+      if ((['ArrowRight', ']'].includes(input.key)) && win.webContents.canGoForward()) {
+        win.webContents.goForward();
+        event.preventDefault();
+      }
+    }
+  });
 }
 
 const lock = app.requestSingleInstanceLock();
@@ -126,7 +143,7 @@ else {
 
   // Quit when all windows are closed.
   app.on('window-all-closed', (): void => {
-    if (process.platform !== 'darwin')
+    if (!isMac)
       app.quit();
   });
   app.on('activate', () => startPromise(onActivate()));
@@ -220,7 +237,7 @@ async function createWindow(): Promise<BrowserWindow> {
 
   async function close(e: Electron.Event) {
     try {
-      if (process.platform === 'darwin' && !forceQuit) {
+      if (isMac && !forceQuit) {
         e.preventDefault();
         win?.hide();
       }
@@ -238,7 +255,7 @@ async function createWindow(): Promise<BrowserWindow> {
 
   win.on('closed', () => {
     try {
-      if (process.platform === 'darwin' && !forceQuit)
+      if (isMac && !forceQuit)
         win?.hide();
       else
         win = null;
