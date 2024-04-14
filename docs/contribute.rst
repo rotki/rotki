@@ -842,8 +842,8 @@ Code profiling
 Python
 ===========
 
-Flamegraph profiling
-------------------------
+Flamegraph profiling for tests
+---------------------------------
 
 In order to use the flamegraph profiler you need to:
 
@@ -863,6 +863,46 @@ Finally open the svg with any compatible viewer and explore the flamegraph. It w
 .. image:: images/flamegraph_example.svg
    :alt: A flamegraph profiling example
    :align: center
+
+
+Viztracer
+---------------------
+
+A good tool to use for profiling of the actual code as it runs is `Viztracer <https://github.com/gaogaotiantian/viztracer>`_. You can install it with ``pip install viztracer``
+
+Then you need to modify ``subprocess-handler.ts`` in order to run the backend via viztracer.
+
+.. code-block:: diff
+
+       private startProcess(port: number, args: string[]) {
+	 const defaultArgs: string[] = [
+    +      '-m',
+    +      'viztracer',
+    +      '--min_duration',
+    +      '0.2ms',
+	   '-m',
+	   'rotkehlchen',
+	   '--rest-api-port',
+
+This will produce  a ``result.json`` in the main directory. You need the `--min_duration`` argument in order to not take data every nanosecond and end up with a GB json file. Generally will need to play with the arguments.
+
+To later open and study the file, you can use vizviewer. i.e. ``vizviewer --flamegraph result.json`` to get a flamegraph or simply ``vizviewer result.json`` to get the normal view.
+
+For more information check the docs.
+
+
+pyspy
+----------
+
+pyspy is a similar tool that will generate a flamegraph but of a running python process and can attach to it.
+
+Get it from `here <https://github.com/benfred/py-spy>`_.
+
+Then you can run the developer version or even a normal binary and find is pid with something like ``ps aux | grep rotki``.
+
+And then you can attach to it with something like ``sudo py-spy record -o py-spy.profile.svg --pid 60243``, assuming the pid is ``60243``.
+
+Once done there will be an svg output at ``py-spy.profile.svg`` which you can see with any svg viewer including the browser and study the flamegraph.
 
 
 rotki Database
