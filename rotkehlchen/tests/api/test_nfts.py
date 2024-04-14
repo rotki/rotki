@@ -395,7 +395,7 @@ def test_edit_delete_nft(rotkehlchen_api_server):
     }
 
     def mock_get_all_nft_data(addresses, **kwargs):  # pylint: disable=unused-argument
-        return nft_map, sum([len(x) for x in nft_map.values()])
+        return nft_map, sum(len(x) for x in nft_map.values())
 
     get_all_nft_data_patch = patch(
         'rotkehlchen.chain.ethereum.modules.nft.nfts.Nfts._get_all_nft_data',

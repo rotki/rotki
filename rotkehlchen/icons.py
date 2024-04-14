@@ -187,9 +187,7 @@ class IconManager:
         if response.status_code != HTTPStatus.OK:
             return False
 
-        with open(self.iconfile_path(asset), 'wb') as f:
-            f.write(response.content)
-
+        self.iconfile_path(asset).write_bytes(response.content)
         return True
 
     def get_icon(

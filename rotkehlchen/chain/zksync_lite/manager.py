@@ -113,7 +113,7 @@ class ZksyncLiteManager:
 
         backoff = 1
         backoff_limit = 33
-        timeout = timeout if timeout else CachedSettings().get_timeout_tuple()
+        timeout = timeout or CachedSettings().get_timeout_tuple()
         while backoff < backoff_limit:
             log.debug(f'Querying zksync lite: {query_str}')
             try:
@@ -133,7 +133,7 @@ class ZksyncLiteManager:
                     f'backoff for {backoff} seconds.',
                 )
                 gevent.sleep(backoff)
-                backoff = backoff * 2
+                backoff *= 2
                 continue
 
             if response.status_code != HTTPStatus.OK:

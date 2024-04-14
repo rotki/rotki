@@ -68,7 +68,7 @@ class Graph:
             prefix += json.dumps(param_types).replace('"', '').replace('{', '(').replace('}', ')')
             prefix += '{'
 
-        querystr = prefix + querystr
+        querystr = prefix + querystr  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
         log.debug(f'Querying The Graph for {querystr}')
 
         retries_left = CachedSettings().get_query_retry_limit()

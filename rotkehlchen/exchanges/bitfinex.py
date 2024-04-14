@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import json
 import logging
+import operator
 from collections import defaultdict
 from collections.abc import Callable, Iterable
 from http import HTTPStatus
@@ -382,7 +383,7 @@ class Bitfinex(ExchangeInterface):
         # NB: sort movements in ascending mode (via its identifier) due to
         # the lack of 'sort' query parameter.
         if case == 'asset_movements':
-            raw_results.sort(key=lambda raw_result: raw_result[id_index])
+            raw_results.sort(key=operator.itemgetter(id_index))
 
         results: list[Trade] | (list[AssetMovement] | list) = []
         for raw_result in raw_results:

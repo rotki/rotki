@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import json
 import logging
+import operator
 from collections import defaultdict
 from contextlib import suppress
 from json.decoder import JSONDecodeError
@@ -1184,7 +1185,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                     r['symbol'] = symbol
                 raw_data.extend(result)
 
-            raw_data.sort(key=lambda x: x['time'])
+            raw_data.sort(key=operator.itemgetter('time'))
 
         trades = []
         for raw_trade in raw_data:

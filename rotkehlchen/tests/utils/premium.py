@@ -124,7 +124,7 @@ def get_different_hash(given_hash: str) -> str:
     """Given the string hash get one that's different but has same length"""
     new_hash = ''
     for x in given_hash:
-        new_hash = new_hash + chr(ord(x) + 1)
+        new_hash += chr(ord(x) + 1)
 
     return new_hash
 

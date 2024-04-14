@@ -1,4 +1,5 @@
 import logging
+import operator
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Final, Literal, cast, get_args
 
@@ -1986,7 +1987,7 @@ class EvmAccountsPutSchema(AsyncQueryArgumentSchema):
             **_kwargs: Any,
     ) -> None:
         data['blockchain'] = SupportedBlockchain.ETHEREUM  # any evm chain
-        _validate_blockchain_account_schemas(data, lambda x: x['address'])
+        _validate_blockchain_account_schemas(data, operator.itemgetter('address'))
         data.pop('blockchain')
 
     @post_load
@@ -2013,7 +2014,7 @@ class BlockchainAccountsPatchSchema(AsyncQueryArgumentSchema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> None:
-        _validate_blockchain_account_schemas(data, lambda x: x['address'])
+        _validate_blockchain_account_schemas(data, operator.itemgetter('address'))
 
     @post_load
     def transform_data(

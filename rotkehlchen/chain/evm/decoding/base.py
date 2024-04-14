@@ -86,7 +86,7 @@ class BaseDecoderTools:
     def get_address_or_proxy_owner(self, address: ChecksumEvmAddress) -> ChecksumEvmAddress | None:  # pylint: disable=unused-argument
         """If the address is a DS proxy return its owner, if not return address itself"""
         owner = self.maybe_get_proxy_owner(address)
-        return owner if owner else address
+        return owner or address
 
     def decode_direction(
             self,

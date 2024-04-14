@@ -1,5 +1,6 @@
 import json
 import logging
+import operator
 from abc import ABC
 from collections.abc import Iterator
 from enum import Enum, auto
@@ -71,7 +72,7 @@ def _hashes_tuple_to_list(hashes: set[tuple[EVMTxHash, Timestamp]]) -> list[EVMT
 
     This function needs to exist since Set has no guranteed order of iteration.
     """
-    return [x[0] for x in sorted(hashes, key=lambda x: x[1])]
+    return [x[0] for x in sorted(hashes, key=operator.itemgetter(1))]
 
 
 class Etherscan(ExternalServiceWithApiKey, ABC):
@@ -243,7 +244,7 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
 
         backoff = 1
         backoff_limit = 33
-        timeout = timeout if timeout else CachedSettings().get_timeout_tuple()
+        timeout = timeout or CachedSettings().get_timeout_tuple()
         while backoff < backoff_limit:
             response = None
             log.debug(f'Querying {self.chain} etherscan: {query_str}')
@@ -264,7 +265,7 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
                     f'backoff for {backoff} seconds.',
                 )
                 gevent.sleep(backoff)
-                backoff = backoff * 2
+                backoff *= 2
                 continue
 
             if response.status_code != 200:
@@ -309,7 +310,7 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
                             # If limit is reached then keep sleeping with the limit.
                             # Etherscan will let the query go through eventually
                             if backoff * 2 < backoff_limit:
-                                backoff = backoff * 2
+                                backoff *= 2
                             continue
 
                     transaction_endpoint_and_none_found = (

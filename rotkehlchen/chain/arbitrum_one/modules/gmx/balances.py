@@ -154,7 +154,7 @@ class GmxBalances(ProtocolWithBalance):
                 )
                 asset_amount = round(
                     number=position_collateral_value / asset_price,
-                    ndigits=collateral_asset.decimals if collateral_asset.decimals else 18,
+                    ndigits=collateral_asset.decimals or 18,
                 )
                 balances[user_address][collateral_asset] += Balance(
                     amount=asset_amount,

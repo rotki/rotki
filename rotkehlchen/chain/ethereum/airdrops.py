@@ -245,8 +245,9 @@ def get_airdrop_data(airdrop_data: Airdrop, name: str, data_dir: Path) -> Iterat
                 len(response.content) < SMALLEST_AIRDROP_SIZE
             ):
                 raise csv.Error
-            with open(filename, 'w', encoding='utf8') as f:
-                f.write(response.text)
+
+            filename.write_text(response.text, encoding='utf8')
+
         except csv.Error as e:
             log.debug(f'airdrop file {filename} contains invalid data {response.text}')
             raise RemoteError(
@@ -281,8 +282,7 @@ def get_poap_airdrop_data(airdrop_data: list[str], name: str, data_dir: Path) ->
             log.error(f"POAP airdrop {name}'s JSON is invalid {e!s}")
             json_data = {}
 
-        with open(filename, 'w', encoding='utf8') as outfile:
-            outfile.write(rlk_jsondumps(json_data))
+        filename.write_text(rlk_jsondumps(json_data), encoding='utf8')
 
     filename = _maybe_get_updated_file(
         data_dir=airdrops_dir,

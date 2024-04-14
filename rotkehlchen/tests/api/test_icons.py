@@ -144,8 +144,7 @@ def test_case_insensitive_icon(rotkehlchen_api_server):
     Test that providing asset identifier in a case insensitive way still maps to the correct asset
     """
     icon_manager = rotkehlchen_api_server.rest_api.rotkehlchen.icon_manager
-    with open(icon_manager.icons_dir / 'ETH_small.png', 'wb') as f:
-        f.write(b'123')
+    Path(icon_manager.icons_dir / 'ETH_small.png').write_bytes(b'123')
 
     for identifier in ('ETH', 'eth', 'eTh'):
         response = requests.get(

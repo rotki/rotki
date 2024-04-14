@@ -150,7 +150,7 @@ def _query_web3_get_logs(
 
             # errors from: https://infura.io/docs/ethereum/json-rpc/eth-getLogs
             if msg in {'query returned more than 10000 results', 'query timeout exceeded'}:
-                block_range = block_range // 2
+                block_range //= 2
                 if block_range < 50:
                     raise  # stop retrying if block range gets too small
                 # repeat the query with smaller block range
@@ -298,7 +298,7 @@ class EvmNodeInquirer(ABC):
             # Assigning one is just a default since we always use it.
             # The weight is only important for the other nodes since they
             # are selected using this parameter
-            ordered_list = [WeightedNode(node_info=node, weight=ONE, active=True) for node in owned_nodes] + ordered_list  # noqa: E501
+            ordered_list = [WeightedNode(node_info=node, weight=ONE, active=True) for node in owned_nodes] + ordered_list  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
         return ordered_list
 
     def get_multi_balance(
@@ -629,7 +629,7 @@ class EvmNodeInquirer(ABC):
         """
         web3 = Web3()
         contract = web3.eth.contract(address=contract_address, abi=abi)
-        input_data = contract.encodeABI(method_name, args=arguments if arguments else [])
+        input_data = contract.encodeABI(method_name, args=arguments or [])
         result = self.etherscan.eth_call(
             to_address=contract_address,
             input_data=input_data,
@@ -699,7 +699,7 @@ class EvmNodeInquirer(ABC):
         contract = web3.eth.contract(address=contract_address, abi=abi)
         try:
             method = getattr(contract.caller(block_identifier=block_identifier), method_name)
-            result = method(*arguments if arguments else [])
+            result = method(*arguments or [])
         except (Web3Exception, ValueError) as e:
             raise BlockchainQueryError(
                 f'Error doing call on contract {contract_address}: {e!s}',
@@ -963,7 +963,7 @@ class EvmNodeInquirer(ABC):
                     except RemoteError as e:
                         if 'Please select a smaller result dataset' in str(e):
 
-                            blocks_step = blocks_step // 2
+                            blocks_step //= 2
                             if blocks_step < 100:
                                 raise  # stop trying
                             # else try with the smaller step

@@ -237,7 +237,7 @@ class Woo(ExchangeInterface):
         May Raise:
         - RemoteError
         """
-        call_options = options if options else {}
+        call_options = options or {}
         request_url = f'{self.base_uri}/{endpoint}'
         timestamp = str(ts_now_in_ms())
         parameters = urllib.parse.urlencode(call_options)

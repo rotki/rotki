@@ -92,7 +92,7 @@ class AvalancheManager:
         contract = self.w3.eth.contract(address=contract_address, abi=abi)
         try:
             method = getattr(contract.caller, method_name)
-            result = method(*arguments if arguments else [])
+            result = method(*arguments or [])
         except (ValueError, Web3Exception) as e:
             raise BlockchainQueryError(
                 f'Error doing call on contract {contract_address}: {e!s}',

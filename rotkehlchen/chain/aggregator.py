@@ -1310,7 +1310,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             # Take into account the validator ownership proportion if is not 100%
             validator_ownership = index_to_ownership.get(stats_entry.validator_index, ONE)
             if validator_ownership != ONE:
-                stats_entry.pnl = stats_entry.pnl * validator_ownership
+                stats_entry.pnl *= validator_ownership
                 stats_entry.ownership_percentage = validator_ownership
 
         return stats

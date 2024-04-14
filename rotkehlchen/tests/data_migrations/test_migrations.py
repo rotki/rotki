@@ -36,10 +36,8 @@ if TYPE_CHECKING:
 
 
 def _create_invalid_icon(icon_identifier: str, icons_dir: Path) -> Path:
-    icon_filepath = icons_dir / f'{icon_identifier}_small.png'
-    with open(icon_filepath, 'wb') as f:
-        f.write(b'abcd')
-
+    icon_filepath = Path(icons_dir / f'{icon_identifier}_small.png')
+    icon_filepath.write_bytes(b'abcd')
     return icon_filepath
 
 

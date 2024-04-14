@@ -220,5 +220,4 @@ def try_download_ens_avatar(
             return
 
     avatars_dir.mkdir(exist_ok=True)  # Ensure that the avatars directory exists
-    with open(avatars_dir / f'{ens_name}.png', 'wb') as f:
-        f.write(avatar)
+    Path(avatars_dir / f'{ens_name}.png').write_bytes(avatar)
