@@ -137,9 +137,7 @@ def fixture_download_rules(last_accounting_rules_version) -> Path:
 
     response = requests.get(f'https://raw.githubusercontent.com/rotki/data/develop/updates/accounting_rules/v{last_accounting_rules_version}.json')
     rules_file.parent.mkdir(exist_ok=True, parents=True)
-    with open(rules_file, 'w', encoding='utf-8') as f:
-        f.write(response.text)
-
+    rules_file.write_text(response.text, encoding='utf-8')
     return rules_file
 
 

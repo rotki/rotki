@@ -1,4 +1,5 @@
 from contextlib import ExitStack
+from pathlib import Path
 from typing import TYPE_CHECKING
 from unittest.mock import MagicMock, patch
 
@@ -39,18 +40,11 @@ def test_icons_and_avatars_cache_deletion(rotkehlchen_api_server):
         )
 
     # populate icons dir
-    with open(f'{icons_dir}/ETH_small.png', 'wb') as f:
-        f.write(b'')
-
-    with open(f'{icons_dir}/BTC_small.png', 'wb') as f:
-        f.write(b'')
-
-    with open(f'{icons_dir}/AVAX_small.png', 'wb') as f:
-        f.write(b'')
-
+    Path(f'{icons_dir}/ETH_small.png').write_bytes(b'')
+    Path(f'{icons_dir}/BTC_small.png').write_bytes(b'')
+    Path(f'{icons_dir}/AVAX_small.png').write_bytes(b'')
     # also add an avatar, to make sure it's not deleted when icons are
-    with open(f'{avatars_dir}/me.eth.png', 'wb') as f:
-        f.write(b'')
+    Path(f'{avatars_dir}/me.eth.png').write_bytes(b'')
 
     assert len([i for i in icons_dir.iterdir() if i.is_file()]) == 3
     response = requests.post(
@@ -79,14 +73,9 @@ def test_icons_and_avatars_cache_deletion(rotkehlchen_api_server):
     assert len([i for i in avatars_dir.iterdir() if i.is_file()]) == 1
 
     # populate avatars dir to test the cache deletion
-    with open(f'{avatars_dir}/ava.eth.png', 'wb') as f:
-        f.write(b'')
-
-    with open(f'{avatars_dir}/prettyirrelevant.eth.png', 'wb') as f:
-        f.write(b'')
-
-    with open(f'{avatars_dir}/nebolax.eth.png', 'wb') as f:
-        f.write(b'')
+    Path(f'{avatars_dir}/ava.eth.png').write_bytes(b'')
+    Path(f'{avatars_dir}/prettyirrelevant.eth.png').write_bytes(b'')
+    Path(f'{avatars_dir}/nebolax.eth.png').write_bytes(b'')
 
     assert len([i for i in avatars_dir.iterdir() if i.is_file()]) == 4
     response = requests.post(

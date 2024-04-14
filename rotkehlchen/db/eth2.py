@@ -126,7 +126,7 @@ class DBEth2:
     ) -> list[ValidatorDailyStats]:
         """Gets all DB entries for validator daily stats according to the given filter"""
         query, bindings = filter_query.prepare()
-        query = 'SELECT * from eth2_daily_staking_details ' + query
+        query = 'SELECT * from eth2_daily_staking_details ' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
         cursor.execute(query, bindings)
         daily_stats = [ValidatorDailyStats.deserialize_from_db(x) for x in cursor]
         # Take into account the proportion of the validator owned
@@ -134,7 +134,7 @@ class DBEth2:
         for daily_stat in daily_stats:
             owned_proportion = validators_ownership.get(daily_stat.validator_index, ONE)
             if owned_proportion != ONE:
-                daily_stat.pnl = daily_stat.pnl * owned_proportion
+                daily_stat.pnl *= owned_proportion
         return daily_stats
 
     def validator_exists(

@@ -3,6 +3,7 @@ import hashlib
 import hmac
 import json
 import logging
+import operator
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal
 from urllib.parse import urlencode
@@ -186,7 +187,7 @@ class Poloniex(ExchangeInterface):
         """
         if method == 'GET':
             params.update({'signTimestamp': timestamp})
-            sorted_params = sorted(params.items(), key=lambda d: d[0], reverse=False)
+            sorted_params = sorted(params.items(), key=operator.itemgetter(0), reverse=False)
             encode_params = urlencode(sorted_params)
             del params['signTimestamp']
         else:

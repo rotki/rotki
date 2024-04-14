@@ -50,7 +50,7 @@ class XpubData(NamedTuple):
 
     def __hash__(self) -> int:
         """For uniqueness of an xpub we consider xpub + derivation path + blockchain"""
-        return hash(self.xpub.xpub + (self.derivation_path if self.derivation_path else '') + self.blockchain.value)  # type: ignore  # noqa: E501
+        return hash(self.xpub.xpub + (self.derivation_path or '') + self.blockchain.value)  # type: ignore
 
     def __eq__(self, other: object) -> bool:
         """For uniqueness of an xpub we consider xpub + derivation path"""

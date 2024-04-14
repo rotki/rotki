@@ -1,5 +1,6 @@
 import importlib
 import logging
+import operator
 import pkgutil
 from abc import ABC, abstractmethod
 from collections.abc import Callable
@@ -395,7 +396,7 @@ class EVMTransactionDecoder(ABC):
                 rules.extend(new_rules)
 
         # Sort post decoding rules by priority (which is the first element of the tuple)
-        rules.sort(key=lambda x: x[0])
+        rules.sort(key=operator.itemgetter(0))
         for _, rule in rules:
             try:
                 decoded_events = rule(transaction=transaction, decoded_events=decoded_events, all_logs=all_logs)  # noqa: E501

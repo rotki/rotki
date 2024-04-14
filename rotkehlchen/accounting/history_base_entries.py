@@ -119,7 +119,7 @@ class EventsAccountant:
         self.pot.add_asset_change_event(
             direction=event_direction,
             event_type=AccountingEventType.TRANSACTION_EVENT,
-            notes=event.notes if event.notes else '',
+            notes=event.notes or '',
             location=event.location,
             timestamp=timestamp,
             asset=event.asset,
@@ -170,7 +170,7 @@ class EventsAccountant:
         extra_data = general_extra_data | {'group_id': group_id}
         _, trade_taxable_amount = self.pot.add_out_event(
             event_type=AccountingEventType.TRANSACTION_EVENT,
-            notes=out_event.notes if out_event.notes else '',
+            notes=out_event.notes or '',
             location=out_event.location,
             timestamp=timestamp,
             asset=out_event.asset,
@@ -183,7 +183,7 @@ class EventsAccountant:
 
         add_in_event_kwargs = {
             'event_type': AccountingEventType.TRANSACTION_EVENT,
-            'notes': in_event.notes if in_event.notes else '',
+            'notes': in_event.notes or '',
             'location': in_event.location,
             'timestamp': timestamp,
             'asset': in_event.asset,

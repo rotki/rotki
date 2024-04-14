@@ -33,6 +33,7 @@ import argparse
 #   zooming
 import collections
 import datetime
+import operator
 import pickle  # noqa: S403
 from contextlib import suppress
 from itertools import chain
@@ -236,7 +237,7 @@ def memory_subplot(output, data_list):
 def latency_scatter(output, data_list):
     fig, axes = plt.subplots()
 
-    data_list = sorted(data_list, key=lambda list_: list_[0])
+    data_list = sorted(data_list, key=operator.itemgetter(0))
 
     timestamp, latency = [], []
     for timestamps in data_list:

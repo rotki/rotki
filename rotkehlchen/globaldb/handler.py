@@ -495,7 +495,7 @@ class GlobalDBHandler:
         search_result = []
         globaldb = GlobalDBHandler()
         query, bindings = filter_query.prepare()
-        query = ALL_ASSETS_TABLES_QUERY.format(dbprefix='globaldb.') + query
+        query = ALL_ASSETS_TABLES_QUERY.format(dbprefix='globaldb.') + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
         resolved_eth = A_ETH.resolve_to_crypto_asset()
         globaldb._wal_checkpoint()
         with db.conn.read_ctx() as cursor:

@@ -297,8 +297,7 @@ class DBHandler:
             log.error(f'At DB teardown could not open the DB: {e!s}')
             return
 
-        with open(self.user_data_dir / DBINFO_FILENAME, 'w', encoding='utf8') as f:
-            f.write(rlk_jsondumps(dbinfo))
+        Path(self.user_data_dir / DBINFO_FILENAME).write_text(rlk_jsondumps(dbinfo), encoding='utf8')  # noqa: E501
 
     def _check_settings(self) -> None:
         """Check that the non_syncing_exchanges setting only has active locations"""
@@ -589,9 +588,8 @@ class DBHandler:
 
         # dump the unencrypted data into a temporary file
         with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmpdirname:  # needed on windows, see https://tinyurl.com/tmp-win-err  # noqa: E501
-            tempdbpath = os.path.join(tmpdirname, 'temp.db')
-            with open(tempdbpath, 'wb') as f:
-                f.write(unencrypted_db_data)
+            tempdbpath = Path(tmpdirname) / 'temp.db'
+            tempdbpath.write_bytes(unencrypted_db_data)
 
             # Now attach to the unencrypted DB and copy it to our DB and encrypt it
             self.conn = DBConnection(
@@ -2051,7 +2049,7 @@ class DBHandler:
         with self.conn.read_ctx() as cursor:
             movements = self.get_asset_movements(cursor, filter_query=filter_query, has_premium=has_premium)  # noqa: E501
             query, bindings = filter_query.prepare(with_pagination=False)
-            query = 'SELECT COUNT(*) from asset_movements ' + query
+            query = 'SELECT COUNT(*) from asset_movements ' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
             total_found_result = cursor.execute(query, bindings)
             return movements, total_found_result.fetchone()[0]
 
@@ -2067,10 +2065,10 @@ class DBHandler:
         """
         query, bindings = filter_query.prepare()
         if has_premium:
-            query = 'SELECT * from asset_movements ' + query
+            query = 'SELECT * from asset_movements ' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
             results = cursor.execute(query, bindings)
         else:
-            query = 'SELECT * FROM (SELECT * from asset_movements ORDER BY timestamp DESC LIMIT ?) ' + query  # noqa: E501
+            query = 'SELECT * FROM (SELECT * from asset_movements ORDER BY timestamp DESC LIMIT ?) ' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
             results = cursor.execute(query, [FREE_ASSET_MOVEMENTS_LIMIT] + bindings)
 
         asset_movements = []
@@ -2292,7 +2290,7 @@ class DBHandler:
         """
         trades = self.get_trades(cursor, filter_query=filter_query, has_premium=has_premium)
         query, bindings = filter_query.prepare(with_pagination=False)
-        query = 'SELECT COUNT(*) from trades ' + query
+        query = 'SELECT COUNT(*) from trades ' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
         total_found_result = cursor.execute(query, bindings)
         return trades, total_found_result.fetchone()[0]
 
@@ -2302,10 +2300,10 @@ class DBHandler:
         The returned list is ordered according to the passed filter query"""
         query, bindings = filter_query.prepare()
         if has_premium:
-            query = 'SELECT * from trades ' + query
+            query = 'SELECT * from trades ' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
             results = cursor.execute(query, bindings)
         else:
-            query = 'SELECT * FROM (SELECT * from trades ORDER BY timestamp DESC LIMIT ?) ' + query
+            query = 'SELECT * FROM (SELECT * from trades ORDER BY timestamp DESC LIMIT ?) ' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
             results = cursor.execute(query, [FREE_TRADES_LIMIT] + bindings)
 
         trades = []
@@ -2566,7 +2564,7 @@ class DBHandler:
             next_result_time = results[idx + 1][0]
             max_diff = settings.balance_save_frequency * HOUR_IN_SECONDS * settings.ssf_graph_multiplier  # noqa: E501
             while next_result_time - entry_time > max_diff:
-                entry_time = entry_time + settings.balance_save_frequency * HOUR_IN_SECONDS
+                entry_time += settings.balance_save_frequency * HOUR_IN_SECONDS
                 if entry_time >= next_result_time:
                     break
 
@@ -2825,8 +2823,8 @@ class DBHandler:
                 # show eth & eth2 as eth in value distribution by asset
                 if treat_eth2_as_eth is True and asset in (A_ETH, A_ETH2):
                     eth_balance.time = time
-                    eth_balance.amount = eth_balance.amount + amount
-                    eth_balance.usd_value = eth_balance.usd_value + usd_value
+                    eth_balance.amount += amount
+                    eth_balance.usd_value += usd_value
                 else:
                     asset_balances.append(
                         DBAssetBalance(
@@ -3532,10 +3530,10 @@ class DBHandler:
         """Returns all the notes created by a user filtered by the given filter"""
         query, bindings = filter_query.prepare()
         if has_premium:
-            query = 'SELECT identifier, title, content, location, last_update_timestamp, is_pinned FROM user_notes ' + query  # noqa: E501
+            query = 'SELECT identifier, title, content, location, last_update_timestamp, is_pinned FROM user_notes ' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
             cursor.execute(query, bindings)
         else:
-            query = 'SELECT identifier, title, content, location, last_update_timestamp, is_pinned FROM (SELECT identifier, title, content, location, last_update_timestamp, is_pinned from user_notes ORDER BY last_update_timestamp DESC LIMIT ?) ' + query  # noqa: E501
+            query = 'SELECT identifier, title, content, location, last_update_timestamp, is_pinned FROM (SELECT identifier, title, content, location, last_update_timestamp, is_pinned from user_notes ORDER BY last_update_timestamp DESC LIMIT ?) ' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
             cursor.execute(query, [FREE_USER_NOTES_LIMIT] + bindings)
 
         return [UserNote.deserialize_from_db(entry) for entry in cursor]
@@ -3552,7 +3550,7 @@ class DBHandler:
         """
         user_notes = self.get_user_notes(filter_query=filter_query, cursor=cursor, has_premium=has_premium)  # noqa: E501
         query, bindings = filter_query.prepare(with_pagination=False)
-        query = 'SELECT COUNT(*) from user_notes ' + query
+        query = 'SELECT COUNT(*) from user_notes ' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
         total_found_result = cursor.execute(query, bindings)
         return user_notes, total_found_result.fetchone()[0]
 

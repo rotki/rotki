@@ -1,4 +1,5 @@
 """Functions dealing with the general_cache table of the Global DB"""
+import operator
 from collections.abc import Iterable
 
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -230,5 +231,5 @@ def read_curve_pool_tokens(
         index = int(key[BASE_POOL_TOKENS_KEY_LENGTH:])  # len(key) > BASE_POOL_TOKENS_KEY_LENGTH
         found_tokens.append((index, string_to_evm_address(address)))
 
-    found_tokens.sort(key=lambda x: x[0])
+    found_tokens.sort(key=operator.itemgetter(0))
     return [address for _, address in found_tokens]

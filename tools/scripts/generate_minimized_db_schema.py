@@ -8,6 +8,7 @@ The mode is selected by passing either --db-name user or --db-name global.
 import argparse
 import datetime
 import re
+from pathlib import Path
 from typing import Literal
 
 from rotkehlchen.db.checks import db_script_normalizer
@@ -59,5 +60,4 @@ lines.append('}')
 
 # Save to the file
 db_module = 'db' if db_name == 'user' else 'globaldb'
-with open(f'rotkehlchen/{db_module}/minimized_schema.py', 'w', encoding='utf8') as f:
-    f.write('\n'.join(lines) + '\n')
+Path(f'rotkehlchen/{db_module}/minimized_schema.py').write_text('\n'.join(lines) + '\n', encoding='utf8')  # noqa: E501

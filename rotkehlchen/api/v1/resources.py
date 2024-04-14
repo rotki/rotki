@@ -2393,7 +2393,7 @@ class AssetIconsResource(BaseMethodView):
         to send multiform data and a json body in the same request.
         """
         with TemporaryDirectory() as temp_directory:
-            filename = file.filename if file.filename else f'{asset.identifier}.png'
+            filename = file.filename or f'{asset.identifier}.png'
             filepath = Path(temp_directory) / filename
             file.save(str(filepath))
             response = self.rest_api.upload_asset_icon(asset=asset, filepath=filepath)
@@ -2747,7 +2747,7 @@ class UserAssetsResource(BaseMethodView):
     def post(self, async_query: bool, file: FileStorage) -> Response:
         with NamedTemporaryFile(
             delete=False,  # don't delete it on close
-            suffix=file.filename if file.filename else 'assets.zip',
+            suffix=file.filename or 'assets.zip',
         ) as temp_file:
             file.save(temp_file.name)
             response = self.rest_api.import_user_assets(
@@ -2806,8 +2806,8 @@ class DBSnapshotsResource(BaseMethodView):
             location_data_snapshot_file: FileStorage,
     ) -> Response:
         with TemporaryDirectory() as temp_directory:
-            balance_snapshot_filename = balances_snapshot_file.filename if balances_snapshot_file.filename else 'balances_snapshot_import.csv'  # noqa: E501
-            location_data_snapshot_filename = location_data_snapshot_file.filename if location_data_snapshot_file.filename else 'location_data_snapshot.csv'  # noqa: E501
+            balance_snapshot_filename = balances_snapshot_file.filename or 'balances_snapshot_import.csv'  # noqa: E501
+            location_data_snapshot_filename = location_data_snapshot_file.filename or 'location_data_snapshot.csv'  # noqa: E501
             balance_snapshot_filepath = Path(temp_directory) / balance_snapshot_filename
             location_data_snapshot_filepath = Path(temp_directory) / location_data_snapshot_filename  # noqa: E501
             balances_snapshot_file.save(balance_snapshot_filepath)

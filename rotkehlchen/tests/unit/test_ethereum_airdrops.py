@@ -2,6 +2,7 @@ import datetime
 import json
 from copy import deepcopy
 from http import HTTPStatus
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
@@ -283,8 +284,7 @@ def test_check_airdrops(
     # one CSV is already present with invalid content, but no cached hash in DB
     csv_dir = data_dir / APPDIR_NAME / AIRDROPSDIR_NAME
     csv_dir.mkdir(parents=True, exist_ok=True)
-    with open(csv_dir / 'shapeshift.csv', 'w', encoding='utf8') as f:
-        f.write('invalid,csv\n')
+    Path(csv_dir / 'shapeshift.csv').write_text('invalid,csv\n', encoding='utf8')
 
     # testing just on the cutoff time of shutter
     freezer.move_to(datetime.datetime.fromtimestamp(1721000000, tz=datetime.UTC))

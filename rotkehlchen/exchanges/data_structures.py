@@ -270,7 +270,7 @@ class Trade(AccountingEventMixin):
             self.quote_asset.identifier +
             str(self.amount) +
             str(self.rate) +
-            (self.link if self.link else '')
+            (self.link or '')
         )
         return TradeID(hash_id(string))
 

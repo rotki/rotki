@@ -110,7 +110,7 @@ class DepositableAccountantInterface(ModuleAccountantInterface):
             pot.add_asset_change_event(
                 direction=direction,
                 event_type=AccountingEventType.TRANSACTION_EVENT,
-                notes=next_event.notes if next_event.notes else '',
+                notes=next_event.notes or '',
                 location=next_event.location,
                 timestamp=next_event.get_timestamp_in_sec(),
                 asset=next_event.asset,

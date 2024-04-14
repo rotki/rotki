@@ -400,8 +400,7 @@ class Bybit(ExchangeInterface):
             if upper_ts <= start_ts:
                 break
 
-            if lower_ts < start_ts:  # don't query more than what we need in last iteration
-                lower_ts = start_ts
+            lower_ts = max(lower_ts, start_ts)  # don't query more than we need in last iteration
 
         return new_trades, (start_ts, end_ts)
 

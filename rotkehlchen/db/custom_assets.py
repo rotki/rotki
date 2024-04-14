@@ -22,7 +22,7 @@ class DBCustomAssets:
         - DeserializationError
         """
         query, bindings = filter_query.prepare()
-        query = 'SELECT B.identifier, B.name, A.type as custom_asset_type, A.notes from custom_assets `A` JOIN assets `B` ON A.identifier = B.identifier ' + query  # noqa: E501
+        query = 'SELECT B.identifier, B.name, A.type as custom_asset_type, A.notes from custom_assets `A` JOIN assets `B` ON A.identifier = B.identifier ' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
         with GlobalDBHandler().conn.read_ctx() as cursor:
             cursor.execute(query, bindings)
             # never raises an error as identifier is always a string in DB.
@@ -39,7 +39,7 @@ class DBCustomAssets:
         entries = self._get_custom_assets(filter_query=filter_query)
         with GlobalDBHandler().conn.read_ctx() as cursor:
             query, bindings = filter_query.prepare(with_pagination=False)
-            query = 'SELECT COUNT(A.type) AS custom_asset_type from custom_assets AS A JOIN assets AS B ON A.identifier = B.identifier ' + query  # noqa: E501
+            query = 'SELECT COUNT(A.type) AS custom_asset_type from custom_assets AS A JOIN assets AS B ON A.identifier = B.identifier ' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
             entries_found = cursor.execute(query, bindings).fetchone()[0]
             entries_total = cursor.execute('SELECT COUNT(*) FROM custom_assets;').fetchone()[0]
             return entries, entries_found, entries_total
