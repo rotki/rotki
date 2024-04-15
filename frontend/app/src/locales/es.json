@@ -3035,7 +3035,6 @@
   },
   "notification_sidebar": {
     "clear_tooltip": "Limpiar todas las notificaciones",
-    "close_tooltip": "Close the notification area",
     "confirmation": {
       "message": "This action will clear all the active notifications. Do you want to proceed?",
       "title": "Clear active notifications"

@@ -40,4 +40,4 @@ export const CalendarEventCollectionResponse = CollectionCommonFields.extend({
 
 export interface AddCalendarEventResponse {
   entryId: number;
-}
+};

@@ -110,7 +110,7 @@ const shouldShowScrollToTopButton: ComputedRef<boolean> = computed(
         <RuiButton
           v-if="shouldShowScrollToTopButton"
           color="primary"
-          class="fixed bottom-4 right-4 z-[9999]"
+          class="fixed bottom-4 right-4 z-[6]"
           variant="fab"
           icon
           @click="scrollToTop()"

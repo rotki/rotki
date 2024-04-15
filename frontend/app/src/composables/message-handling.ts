@@ -5,6 +5,7 @@ import {
   Priority,
   Severity,
 } from '@rotki/common/lib/messages';
+import dayjs from 'dayjs';
 import {
   type AccountingRuleConflictData,
   type BalanceSnapshotError,
@@ -22,6 +23,7 @@ import { camelCaseTransformer } from '@/services/axios-tranformers';
 import { Routes } from '@/router/routes';
 import { router } from '@/router';
 import type { Blockchain } from '@rotki/common/lib/blockchain';
+import type { CalendarEventPayload } from '@/types/history/calendar';
 
 export function useMessageHandling() {
   const { setQueryStatus: setTxQueryStatus } = useTxQueryStatusStore();
@@ -209,6 +211,47 @@ export function useMessageHandling() {
     };
   };
 
+  const handleCalendarReminder = (data: CalendarEventPayload): Notification => {
+    const { name, timestamp } = data;
+    const now = dayjs();
+    const eventTime = dayjs(timestamp * 1000);
+    const isEventTime = now.isSameOrAfter(eventTime);
+
+    let title = name;
+    if (!isEventTime) {
+      const relativeTime = eventTime.from(now);
+      title = `"${name}" ${relativeTime}`;
+    }
+
+    let message = '';
+
+    if (data.address && data.blockchain)
+      message += `Account: ${data.address} (${data.blockchain}) \n`;
+
+    if (data.counterparty)
+      message += `Counterparty: ${data.counterparty} \n`;
+
+    if (data.description)
+      message += `Description: ${data.description}`;
+
+    return {
+      title,
+      message,
+      display: true,
+      severity: Severity.REMINDER,
+      action: {
+        label: t('notification_messages.reminder.open_calendar'),
+        persist: true,
+        action: () => {
+          router.push({
+            path: Routes.CALENDAR,
+            query: { timestamp: timestamp.toString() },
+          });
+        },
+      },
+    };
+  };
+
   const handleMessage = async (data: string): Promise<void> => {
     const message: WebsocketMessage = WebsocketMessage.parse(
       camelCaseTransformer(JSON.parse(data)),
@@ -279,6 +322,9 @@ export function useMessageHandling() {
     }
     else if (type === SocketMessageType.ACCOUNTING_RULE_CONFLICT) {
       notifications.push(handleAccountingRuleConflictMessage(message.data));
+    }
+    else if (type === SocketMessageType.CALENDAR_REMINDER) {
+      notifications.push(handleCalendarReminder(message.data));
     }
     else {
       logger.warn(`Unsupported socket message received: '${type}'`);

@@ -3530,6 +3530,9 @@
         "title": "Premium features deactivated"
       }
     },
+    "reminder": {
+      "open_calendar": "Open Calendar"
+    },
     "snapshot_failed": {
       "message": "Could not save the balance snapshot at {location}. {error}",
       "title": "Balance Snapshot failed"
@@ -3541,13 +3544,19 @@
   },
   "notification_sidebar": {
     "clear_tooltip": "Clear all notifications",
-    "close_tooltip": "Close the notification area",
     "confirmation": {
       "message": "This action will clear all the active notifications. Do you want to proceed?",
       "title": "Clear active notifications"
     },
     "no_messages": "No messages!",
-    "title": "Notifications"
+    "tabs": {
+      "error": "Error",
+      "needs_action": "Needs Action",
+      "reminder": "Reminder",
+      "view_all": "View All"
+    },
+    "title": "Notifications",
+    "view_calendar": "View Calendar"
   },
   "oracle_cache_management": {
     "clear_error": "Clearing the cache for {fromAsset} to {toAsset} failed: {error}",

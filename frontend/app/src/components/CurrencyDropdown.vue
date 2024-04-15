@@ -83,10 +83,11 @@ function calculateFontSize(symbol: string) {
         dense
         autofocus
         hide-details
+        clearable
         color="primary"
-        label="Filter"
+        :label="t('common.actions.filter')"
         prepend-inner-icon="mdi-magnify"
-        @keypress.enter="selectFirst()"
+        @keyup.enter="selectFirst()"
       />
     </div>
     <div class="max-h-[25rem] overflow-auto">

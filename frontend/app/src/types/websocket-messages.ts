@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { EvmChainAddress } from '@/types/history/events';
+import { CalendarEventPayload } from '@/types/history/calendar';
 
 export const MESSAGE_WARNING = 'warning';
 const MESSAGE_ERROR = 'error';
@@ -161,6 +162,7 @@ export const SocketMessageType = {
   REFRESH_BALANCES: 'refresh_balances',
   DB_UPLOAD_RESULT: 'database_upload_result',
   ACCOUNTING_RULE_CONFLICT: 'accounting_rule_conflict',
+  CALENDAR_REMINDER: 'calendar_reminder',
 } as const;
 
 export type SocketMessageType =
@@ -236,6 +238,11 @@ const AccountingRuleConflictMessage = z.object({
   data: AccountingRuleConflictData,
 });
 
+const CalendarReminderMessage = z.object({
+  type: z.literal(SocketMessageType.CALENDAR_REMINDER),
+  data: CalendarEventPayload,
+});
+
 export const WebsocketMessage = z.union([
   UnknownWebsocketMessage,
   LegacyWebsocketMessage,
@@ -251,6 +258,7 @@ export const WebsocketMessage = z.union([
   RefreshBalancesMessage,
   DbUploadResultMessage,
   AccountingRuleConflictMessage,
+  CalendarReminderMessage,
 ]);
 
 export type WebsocketMessage = z.infer<typeof WebsocketMessage>;

@@ -3,7 +3,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <RuiCard>
+  <RuiCard dense>
     <div class="flex items-center gap-4">
       <SuccessDisplay success />
       <div class="font-medium">

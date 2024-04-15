@@ -96,7 +96,7 @@ const { isMdAndDown } = useBreakpoint();
     temporary
     hide-overlay
   >
-    <div class="flex justify-between items-center p-4">
+    <div class="flex justify-between items-center p-2 pl-4">
       <div class="text-h6">
         {{ t('help_sidebar.title') }}
       </div>

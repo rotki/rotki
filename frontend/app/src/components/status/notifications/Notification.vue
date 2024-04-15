@@ -40,6 +40,8 @@ const icon = computed(() => {
       return 'error-warning-line';
     case Severity.WARNING:
       return 'alarm-warning-line';
+    case Severity.REMINDER:
+      return 'alarm-line';
   }
   return '';
 });
@@ -52,6 +54,8 @@ const color = computed(() => {
       return 'info';
     case Severity.WARNING:
       return 'warning';
+    case Severity.REMINDER:
+      return 'reminder';
     default:
       return '';
   }
@@ -65,6 +69,8 @@ const circleBgClass = computed(() => {
       return 'bg-rui-info';
     case Severity.WARNING:
       return 'bg-rui-warning';
+    case Severity.REMINDER:
+      return 'bg-rui-secondary';
     default:
       return 'bg-rui-success';
   }
@@ -104,7 +110,7 @@ function doAction(id: number, action: NotificationAction) {
         ['!rounded-none']: popup,
       },
     ]"
-    class="!p-2"
+    class="!p-2 !pb-1.5"
     no-padding
     :variant="popup ? 'flat' : 'outlined'"
   >
@@ -118,7 +124,7 @@ function doAction(id: number, action: NotificationAction) {
           :class="circleBgClass"
         >
           <RuiIcon
-            size="24"
+            size="20"
             class="text-white"
             :name="icon"
           />
@@ -130,7 +136,7 @@ function doAction(id: number, action: NotificationAction) {
           >
             {{ notification.title }}
           </div>
-          <div class="text-caption text-rui-text-secondary">
+          <div class="text-caption text-rui-text-secondary -mt-0.5">
             {{ date }}
           </div>
         </div>
@@ -143,6 +149,7 @@ function doAction(id: number, action: NotificationAction) {
             <RuiButton
               variant="text"
               icon
+              class="!p-2"
               @click="dismiss(notification.id)"
             >
               <RuiIcon name="close-line" />
@@ -152,7 +159,7 @@ function doAction(id: number, action: NotificationAction) {
         </RuiTooltip>
       </div>
       <div
-        class="mt-1 px-2 text-rui-text break-words text-sm leading-2"
+        class="mt-1 px-2 break-words text-rui-text-secondary text-xs leading-2"
         :class="[css.message, { [css.inline]: !popup }]"
       >
         <MissingKeyNotification
@@ -162,13 +169,12 @@ function doAction(id: number, action: NotificationAction) {
         <div
           v-else
           :title="notification.message"
-          class="h-full"
         >
           {{ notification.message }}
         </div>
       </div>
       <slot />
-      <div class="flex mt-auto gap-2 mx-0.5">
+      <div class="flex mt-1 gap-2 mx-0.5">
         <RuiButton
           v-for="(action, index) in actions"
           :key="index"
@@ -227,7 +233,7 @@ function doAction(id: number, action: NotificationAction) {
 
   @each $color in (warning, error, info) {
     &.bg_#{$color} {
-      @apply bg-rui-#{$color}/[.12] #{!important};
+      @apply bg-rui-#{$color}/[.1] #{!important};
     }
   }
 }
@@ -242,12 +248,12 @@ function doAction(id: number, action: NotificationAction) {
 }
 
 .message {
-  height: 60px;
+  height: 64px;
   overflow-y: auto;
   white-space: pre-line;
 
   .inline {
-    min-height: 60px;
+    min-height: 64px;
   }
 }
 
