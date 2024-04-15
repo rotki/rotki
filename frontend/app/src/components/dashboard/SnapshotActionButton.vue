@@ -91,6 +91,7 @@ async function importSnapshot() {
     id="snapshot-action-menu"
     v-model="visible"
     :popper="{ placement: 'bottom-end' }"
+    :persistent="importSnapshotDialog"
   >
     <template #activator="{ on }">
       <MenuTooltipButton

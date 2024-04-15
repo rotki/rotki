@@ -1878,6 +1878,7 @@
             },
             "nft": "NFT",
             "nft_hint": "Accepted format: \"_nft_{'ETH address'}_{'collection number'}\"",
+            "only_show_existing": "Only show existing locations",
             "preview": {
               "from": "From",
               "title": "This location value will be updated",
@@ -1887,6 +1888,7 @@
               "amount": "The amount field cannot be empty",
               "asset": "The asset field cannot be empty",
               "category": "The category field cannot be empty",
+              "price": "The price field cannot be empty",
               "value": "The value field cannot be empty"
             },
             "title": "Balances Snapshot",

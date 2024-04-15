@@ -40,6 +40,11 @@ const locations = computed<TradeLocationData[]>(() => {
     return included && !excluded;
   });
 });
+
+watch([locations, model], ([locations, value]) => {
+  if (!locations.some(item => item.identifier === value))
+    set(model, '');
+});
 </script>
 
 <template>
