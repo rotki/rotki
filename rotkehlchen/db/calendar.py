@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any, NamedTuple
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -88,6 +88,42 @@ class CalendarEntry(NamedTuple):
             address=row[5],  # type: ignore  # it is a str here
             blockchain=SupportedBlockchain.deserialize(row[6]) if row[6] else None,
             color=HexColorCode(row[7]) if row[7] else None,
+        )
+
+
+class ReminderEntry(NamedTuple):
+    """Store basic information to warn the user based on the event timestamp"""
+    event_id: int
+    secs_before: int
+    identifier: int = 0
+
+    def serialize(self) -> dict[str, Any]:
+        return {
+            'identifier': self.identifier,
+            'event_id': self.event_id,
+            'secs_before': self.secs_before,
+        }
+
+    def serialize_for_db(self) -> tuple[
+        int,  # event_id
+        int,  # secs_before
+        int,  # identifier
+    ]:
+        return (
+            self.event_id,
+            self.secs_before,
+            self.identifier,
+        )
+
+    @classmethod
+    def deserialize_from_db(
+            cls,
+            row: tuple[int, int, int],
+    ) -> 'ReminderEntry':
+        return cls(
+            identifier=row[0],
+            event_id=row[1],
+            secs_before=row[2],
         )
 
 
@@ -210,14 +246,20 @@ class DBCalendar:
                 'entries_limit': -1,
             }
 
-    def delete_calendar_entry(self, identifier: int) -> None:
-        """May raise:
+    def delete_entry(
+            self,
+            identifier: int,
+            entry_type: Literal['calendar', 'calendar_reminders'],
+    ) -> None:
+        """
+        Delete by identifier either calendar entries or reminders based on the entry_type
+        May raise:
         - InputError: if no event got deleted
         """
         with self.db.user_write() as write_cursor:
-            write_cursor.execute('DELETE FROM calendar WHERE identifier=?', (identifier,))
+            write_cursor.execute(f'DELETE FROM {entry_type} WHERE identifier=?', (identifier,))
             if write_cursor.rowcount != 1:
-                raise InputError('Tried to delete a non existent calendar entry')
+                raise InputError(f'Tried to delete a non existent {entry_type} entry')
 
     def update_calendar_entry(self, calendar: CalendarEntry) -> int:
         """Update the event with the given identifier using the data provided.
@@ -234,3 +276,51 @@ class DBCalendar:
                 raise InputError(f'Could not update calendar entry due to {e}') from e
 
         return calendar.identifier
+
+    def create_reminder_entry(self, entry: ReminderEntry) -> int:
+        """Insert the provided event reminder in the database.
+        May raise:
+        - InputError if any db constraint is not satisfied
+        """
+        with self.db.user_write() as write_cursor:
+            try:
+                write_cursor.execute(
+                    'INSERT OR IGNORE INTO calendar_reminders(event_id, secs_before) '
+                    'VALUES (?, ?) RETURNING identifier',
+                    entry.serialize_for_db()[:-1],  # exclude the default identifier since we need to create it  # noqa: E501
+                )
+            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                raise InputError(f'Could not add reminder entry due to {e}') from e
+
+            if (identifier_row := write_cursor.fetchone()) is None:
+                raise InputError(
+                    'Could not add the reminder entry because an event with the same name, '
+                    'address and blockchain already exist',
+                )
+
+            return identifier_row[0]
+
+    def update_reminder_entry(self, reminder: ReminderEntry) -> int:
+        """Update reminder in the database
+        - InputError if no event reminder got updated
+        """
+        with self.db.user_write() as write_cursor:
+            try:
+                write_cursor.execute(
+                    'UPDATE calendar_reminders SET event_id=?, secs_before=? WHERE identifier=?',
+                    reminder.serialize_for_db(),
+                )
+            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                raise InputError(f'Could not update reminder due to {e}') from e
+
+        return reminder.identifier
+
+    def query_reminder_entry(self, event_id: int) -> dict[str, list[ReminderEntry]]:
+        """Query reminder using the id of the event linked"""
+        with self.db.conn.read_ctx() as cursor:
+            cursor.execute(
+                'SELECT identifier, event_id, secs_before FROM calendar_reminders '
+                'WHERE event_id=? ORDER BY secs_before ASC',
+                (event_id,),
+            )
+            return {'entries': [ReminderEntry.deserialize_from_db(row) for row in cursor]}

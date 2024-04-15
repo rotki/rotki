@@ -112,7 +112,7 @@ from rotkehlchen.constants.timing import ENS_AVATARS_REFRESH
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.accounting_rules import DBAccountingRules, query_missing_accounting_rules
 from rotkehlchen.db.addressbook import DBAddressbook
-from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar
+from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar, ReminderEntry
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
     HISTORY_MAPPING_STATE_CUSTOMIZED,
@@ -4910,7 +4910,10 @@ class RestAPI:
     def delete_calendar_entry(self, identifier: int) -> Response:
         """Delete a calendar entry by its id"""
         try:
-            DBCalendar(self.rotkehlchen.data.db).delete_calendar_entry(identifier=identifier)
+            DBCalendar(self.rotkehlchen.data.db).delete_entry(
+                identifier=identifier,
+                entry_type='calendar',
+            )
         except InputError as e:
             return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
@@ -4938,3 +4941,48 @@ class RestAPI:
             {'entry_id': calendar_event_id}),
             status_code=HTTPStatus.OK,
         )
+
+    def create_calendar_reminder(self, entry: ReminderEntry) -> Response:
+        """Store in the database the reminder for an event and return the id of the new entry"""
+        try:
+            reminder_id = DBCalendar(self.rotkehlchen.data.db).create_reminder_entry(entry=entry)
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+        return api_response(_wrap_in_ok_result(
+            {'entry_id': reminder_id}),
+            status_code=HTTPStatus.OK,
+        )
+
+    def delete_reminder_entry(self, identifier: int) -> Response:
+        """Delete a reminder entry by its id"""
+        try:
+            DBCalendar(self.rotkehlchen.data.db).delete_entry(
+                identifier=identifier,
+                entry_type='calendar_reminders',
+            )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    def update_reminder_entry(self, reminder: ReminderEntry) -> Response:
+        """Update the calendar reminder entry with the given identifier using the
+        information provided"""
+        try:
+            calendar_event_id = DBCalendar(self.rotkehlchen.data.db).update_reminder_entry(
+                reminder=reminder,
+            )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+
+        return api_response(_wrap_in_ok_result(
+            {'entry_id': calendar_event_id}),
+            status_code=HTTPStatus.OK,
+        )
+
+    def query_reminders(self, event_id: int) -> Response:
+        """Query the calendar table using the provided filter"""
+        result = DBCalendar(self.rotkehlchen.data.db).query_reminder_entry(event_id=event_id)
+        return api_response(_wrap_in_ok_result(
+            result=process_result(result),
+            status_code=HTTPStatus.OK,
+        ))
