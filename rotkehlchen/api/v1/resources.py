@@ -127,6 +127,7 @@ from rotkehlchen.api.v1.schemas import (
     NamedOracleCacheGetSchema,
     NamedOracleCacheSchema,
     NewCalendarEntrySchema,
+    NewCalendarReminderSchema,
     NewUserSchema,
     NFTFilterQuerySchema,
     NFTLpFilterSchema,
@@ -159,6 +160,7 @@ from rotkehlchen.api.v1.schemas import (
     TradePatchSchema,
     TradeSchema,
     TradesQuerySchema,
+    UpdateCalendarReminderSchema,
     UpdateCalendarSchema,
     UserActionLoginSchema,
     UserActionSchema,
@@ -189,7 +191,7 @@ from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.constants.location_details import LOCATION_DETAILS
 from rotkehlchen.data_import.manager import DataImportSource
-from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery
+from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, ReminderEntry
 from rotkehlchen.db.constants import (
     LINKABLE_ACCOUNTING_PROPERTIES,
     LINKABLE_ACCOUNTING_SETTINGS_NAME,
@@ -3295,3 +3297,31 @@ class CalendarResource(BaseMethodView):
     @resource_parser.use_kwargs(make_query_schema, location='json_and_query')
     def post(self, filter_query: CalendarFilterQuery) -> Response:
         return self.rest_api.query_calendar(filter_query=filter_query)
+
+
+class CalendarRemindersResource(BaseMethodView):
+
+    create_schema = NewCalendarReminderSchema()
+    update_schema = UpdateCalendarReminderSchema()
+    delete_schema = IntegerIdentifierSchema()
+    query_schema = IntegerIdentifierSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(create_schema, location='json_and_query')
+    def put(self, reminder: ReminderEntry) -> Response:
+        return self.rest_api.create_calendar_reminder(entry=reminder)
+
+    @require_loggedin_user()
+    @use_kwargs(delete_schema, location='json_and_query')
+    def delete(self, identifier: int) -> Response:
+        return self.rest_api.delete_reminder_entry(identifier=identifier)
+
+    @require_loggedin_user()
+    @use_kwargs(update_schema, location='json_and_query')
+    def patch(self, reminder: ReminderEntry) -> Response:
+        return self.rest_api.update_reminder_entry(reminder)
+
+    @require_loggedin_user()
+    @use_kwargs(query_schema, location='json_and_query')
+    def post(self, identifier: int) -> Response:
+        return self.rest_api.query_reminders(event_id=identifier)

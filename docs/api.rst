@@ -13700,3 +13700,172 @@ Managing calendar entries
   :statuscode 401: No user is currently logged in.
   :statuscode 409: Failed to validate the data. Entry doesn't exist.
   :statuscode 500: Internal rotki error.
+
+
+Managing calendar reminders
+============================
+
+.. http:post:: /api/(version)/calendar/reminders
+
+   Doing a POST on this endpoint will allow querying the calendar reminders using the identifier of the calendar entry associated.
+
+
+  **Example Request**
+
+  .. http:example:: curl wget httpie python-requests
+
+      POST /api/(version)/calendar/reminders HTTP/1.1
+      Host: localhost:5042
+
+      {"identifier": 1}
+
+  :resjson int identifier: Identifier of the calendar entry linked to the reminder.
+
+  **Example Response**
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result":{
+          "entries":[
+            {
+              "identifier":1,
+              "event_id": 1,
+              "secs_before": 213234124
+            },
+            {
+              "identifier":2,
+              "event_id": 1,
+              "secs_before": 2132341253
+            },
+          ]
+        }
+      }
+
+  :resjson array entries: List of all the calendar reminders linked to the provided calendar event.
+
+  :statuscode 200: All okay
+  :statuscode 401: No user is currently logged in.
+  :statuscode 500: Internal rotki error
+
+
+.. http:put:: /api/(version)/calendar/reminders
+
+  Doing a PUT request on this endpoint will allow to create a new calendar reminder
+
+  **Example Request**
+
+  .. http:example:: curl wget httpie python-requests
+
+      PUT /api/(version)/calendar/reminders HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+        "secs_before": 1869737344,
+        "event_id": 1
+      }
+
+  .. _calendar_reminder_fields:
+
+  :resjson integer secs_before: Seconds before the event timestamp to trigger a notification.
+  :resjson integer event_id: Identifier of a valid calendar entry.
+
+  **Example Response**:
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+         "result": {"entry_id": 1},
+         "message": ""
+      }
+
+  :resjson object result: object with the identifier of the calendar reminder created. 
+  :statuscode 200: Entry correctly stored.
+  :statuscode 401: No user is currently logged in.
+  :statuscode 409: Failed to validate the data.
+  :statuscode 500: Internal rotki error.
+
+
+.. http:patch:: /api/(version)/calendar/reminders
+
+  Doing a PATCH on this endpoint allows to edit a calendar reminder. Takes the same parameters as the PUT verb plus the identifier of the entry being updated.
+
+  **Example Request**:
+
+  .. http:example:: curl wget httpie python-requests
+
+    PATCH /api/(version)/calendar HTTP/1.1
+    Host: localhost:5042
+    Content-Type: application/json;charset=UTF-8
+
+      {
+        "identifier": 1,
+        "secs_before": 1869737344,
+        "event_id": 1
+      }
+
+  :ref:`calendar_reminder_fields`
+
+  :reqjsonarr integer identifier: The id of the event being updated.
+
+  **Example Response**:
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+         "result": {"entry_id": 1},
+         "message": ""
+      }
+
+  :resjson object result: object with the identifier of the calendar reminder updated. 
+  :statuscode 200: Entry correctly updated.
+  :statuscode 401: No user is currently logged in.
+  :statuscode 409: Failed to validate the data. Event not found.
+  :statuscode 500: Internal rotki error.
+
+
+.. http:delete:: /api/(version)/calendar/reminders
+
+  Doing a DELETE on this endpoint allows deleting a calendar reminder by their identifier.
+
+  **Example Request**:
+
+  .. http:example:: curl wget httpie python-requests
+
+    PATCH /api/(version)/calendar/reminders HTTP/1.1
+    Host: localhost:5042
+    Content-Type: application/json;charset=UTF-8
+
+    {
+      "identifier": 2
+    }
+
+  :reqjsonarr integer identifier: The identifier of the reminder that will be deleted
+
+  **Example Response**:
+
+  .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+        "result": true,
+        "message": ""
+      }
+
+  :resjson bool result: Boolean denoting success or failure.
+  :statuscode 200: Entry correctly deleted.
+  :statuscode 401: No user is currently logged in.
+  :statuscode 409: Failed to validate the data. Entry doesn't exist.
+  :statuscode 500: Internal rotki error.

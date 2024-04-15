@@ -45,7 +45,7 @@ from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.constants.resolver import EVM_CHAIN_DIRECTIVE
 from rotkehlchen.data_import.manager import DataImportSource
-from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery
+from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, ReminderEntry
 from rotkehlchen.db.constants import (
     LINKABLE_ACCOUNTING_PROPERTIES,
     LINKABLE_ACCOUNTING_SETTINGS_NAME,
@@ -3694,3 +3694,27 @@ class QueryCalendarSchema(
             identifiers=data['identifiers'],
         )
         return {'filter_query': filter_query}
+
+
+class CalendarReminderCommonEntrySchema(Schema):
+    event_id = fields.Integer(required=True)
+    secs_before = fields.Integer(
+        required=True,
+        validate=webargs.validate.Range(min=1, error='secs_before has to be bigger than 0'),
+    )
+
+
+class NewCalendarReminderSchema(CalendarReminderCommonEntrySchema):
+    @post_load
+    def make_calendar_entry(self, data: dict[str, Any], **_kwargs: dict[str, Any]) -> dict[str, Any]:  # noqa: E501
+        return {
+            'reminder': ReminderEntry(
+                identifier=data.get('identifier', 0),
+                event_id=data['event_id'],
+                secs_before=data['secs_before'],
+            ),
+        }
+
+
+class UpdateCalendarReminderSchema(NewCalendarReminderSchema, IntegerIdentifierSchema):
+    ...

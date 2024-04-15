@@ -5,6 +5,7 @@ import requests
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.ethereum.modules.curve.constants import CPT_CURVE
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
+from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -328,3 +329,79 @@ def test_validation_calendar(
         },
     )
     assert_proper_response(response)
+
+
+@pytest.mark.parametrize('have_decoders', [True])
+def test_reminder_operations(rotkehlchen_api_server: APIServer):
+    # save 2 entries in the db
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'calendarresource'),
+        json={
+            'timestamp': 1869737344,
+            'name': 'ENS renewal',
+            'description': 'Renew yabir.eth',
+            'counterparty': CPT_ENS,
+            'color': 'ffffff',
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    calendar_id = result['entry_id']
+    assert calendar_id == 1
+
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'calendarremindersresource'),
+        json={
+            'event_id': calendar_id,
+            'secs_before': DAY_IN_SECONDS * 3,
+        },
+    )
+    result = assert_proper_response_with_result(response)
+    assert result['entry_id'] == 1
+
+    # query by event id
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'calendarremindersresource'),
+        json={'identifier': calendar_id},
+    )
+    result = assert_proper_response_with_result(response)
+    assert result == {
+        'entries': [{
+            'identifier': 1,
+            'event_id': 1,
+            'secs_before': DAY_IN_SECONDS * 3,
+        }],
+    }
+
+    # update by reminder id
+    response = requests.patch(
+        api_url_for(rotkehlchen_api_server, 'calendarremindersresource'),
+        json={
+            'identifier': 1,
+            'event_id': 1,
+            'secs_before': DAY_IN_SECONDS,
+        },
+    )
+    assert_proper_response(response)
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'calendarremindersresource'),
+        json={'identifier': calendar_id},
+    )
+    result = assert_proper_response_with_result(response)
+    assert result == {
+        'entries': [{
+            'identifier': 1,
+            'event_id': 1,
+            'secs_before': DAY_IN_SECONDS,
+        }],
+    }
+
+    response = requests.delete(
+        api_url_for(rotkehlchen_api_server, 'calendarremindersresource'),
+        json={'identifier': 1},
+    )
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'calendarremindersresource'),
+        json={'identifier': calendar_id},
+    )
+    result = assert_proper_response_with_result(response)
+    assert result == {'entries': []}

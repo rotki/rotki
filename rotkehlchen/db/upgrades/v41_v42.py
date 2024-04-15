@@ -103,7 +103,7 @@ def _upgrade_evmchains_to_skip_detection(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _add_calendar_table(write_cursor: 'DBCursor') -> None:
+def _add_calendar_tables(write_cursor: 'DBCursor') -> None:
     write_cursor.execute("""CREATE TABLE IF NOT EXISTS calendar (
     identifier INTEGER PRIMARY KEY NOT NULL,
     name TEXT NOT NULL,
@@ -116,6 +116,13 @@ def _add_calendar_table(write_cursor: 'DBCursor') -> None:
     FOREIGN KEY(blockchain, address) REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE,
     UNIQUE(name, address, blockchain)
     );""")  # noqa: E501
+    write_cursor.execute("""
+    CREATE TABLE IF NOT EXISTS calendar_reminders (
+        identifier INTEGER PRIMARY KEY NOT NULL,
+        event_id INTEGER NOT NULL,
+        secs_before INTEGER NOT NULL,
+        FOREIGN KEY(event_id) REFERENCES calendar(identifier) ON DELETE CASCADE
+    );""")
 
 
 @enter_exit_debug_log(name='UserDB v41->v42 upgrade')
@@ -134,5 +141,5 @@ def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         progress_handler.new_step()
         _upgrade_evmchains_to_skip_detection(write_cursor)
         progress_handler.new_step()
-        _add_calendar_table(write_cursor)
+        _add_calendar_tables(write_cursor)
         progress_handler.new_step()
