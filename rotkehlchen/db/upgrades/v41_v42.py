@@ -118,6 +118,28 @@ def _add_calendar_table(write_cursor: 'DBCursor') -> None:
     );""")  # noqa: E501
 
 
+@enter_exit_debug_log()
+def _remove_manualcurrent_oracle(write_cursor: 'DBCursor') -> None:
+    """Removes the manualcurrent oracle from the current_price_oracles setting"""
+    write_cursor.execute('SELECT value FROM settings WHERE name="current_price_oracles"')
+    if (data := write_cursor.fetchone()) is None:
+        return  # oracles not configured
+
+    try:
+        oracles: list[str] = json.loads(data[0])
+    except json.JSONDecodeError as e:
+        log.error(f'Failed to read oracles from user db. {e!s}')
+        return
+
+    write_cursor.execute(
+        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+        (
+            'current_price_oracles',
+            json.dumps([oracle for oracle in oracles if oracle != 'manualcurrent']),
+        ),
+    )
+
+
 @enter_exit_debug_log(name='UserDB v41->v42 upgrade')
 def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v41 to v42. This was in v1.33 release.
@@ -125,8 +147,9 @@ def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Create new tables for zksync lite
         - Add new supported locations
         - Add a new table to handle the calendar
+        - Remove the manualcurrent oracle from settings
     """
-    progress_handler.set_total_steps(4)
+    progress_handler.set_total_steps(5)
     with db.user_write() as write_cursor:
         _add_zksynclite(write_cursor)
         progress_handler.new_step()
@@ -135,4 +158,6 @@ def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _upgrade_evmchains_to_skip_detection(write_cursor)
         progress_handler.new_step()
         _add_calendar_table(write_cursor)
+        progress_handler.new_step()
+        _remove_manualcurrent_oracle(write_cursor)
         progress_handler.new_step()

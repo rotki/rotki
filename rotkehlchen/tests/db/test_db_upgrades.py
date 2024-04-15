@@ -2259,6 +2259,11 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
             ChainID.deserialize_from_name(x) for x in json.loads(raw_list)
         ] == [ChainID.POLYGON_POS, ChainID.GNOSIS]
 
+        # get settings and confirm manualcurrent is present before the upgrade
+        cursor.execute('SELECT value FROM settings WHERE name="current_price_oracles"')
+        oracles = json.loads(cursor.fetchone()[0])
+        assert 'manualcurrent' in oracles
+
     # Execute upgrade
     db = _init_db_with_target_version(
         target_version=42,
@@ -2287,6 +2292,10 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
         assert [
             SupportedBlockchain.deserialize(x) for x in json.loads(raw_list)
         ] == [SupportedBlockchain.POLYGON_POS, SupportedBlockchain.GNOSIS]
+
+        # get current oracles and check that manualcurrent was removed and all others remain.
+        settings = db.get_settings(cursor=cursor)
+        assert CurrentPriceOracle.MANUALCURRENT not in settings.current_price_oracles
 
 
 def test_latest_upgrade_correctness(user_data_dir):

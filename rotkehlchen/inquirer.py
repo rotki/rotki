@@ -378,7 +378,7 @@ class Inquirer:
             "Oracles can't be empty or have repeated items"
         )
         instance = Inquirer()
-        instance._oracles = [oracle for oracle in oracles if oracle is not CurrentPriceOracle.MANUALCURRENT]  # noqa: E501  # TODO: remove MANUALCURRENT from the settings
+        instance._oracles = oracles
         instance._oracle_instances = [getattr(instance, f'_{oracle!s}') for oracle in instance._oracles]  # noqa: E501
         instance._oracles_not_onchain = []
         instance._oracle_instances_not_onchain = []
