@@ -13,6 +13,20 @@ const BACKEND = 'backend';
 const scriptArgs = process.argv;
 const noElectron = scriptArgs.includes('--web');
 
+function getArg(flag) {
+  if (scriptArgs.includes(flag) && scriptArgs.length > scriptArgs.indexOf(flag) + 1)
+    return scriptArgs[scriptArgs.indexOf(flag) + 1];
+}
+
+const profilingArgs = getArg('--profiling-args');
+const profilingCmd = getArg('--profiling-cmd');
+
+if (profilingCmd)
+  process.env.ROTKI_BACKEND_PROFILING_CMD = profilingCmd;
+
+if (profilingArgs)
+  process.env.ROTKI_BACKEND_PROFILING_ARGS = profilingArgs;
+
 const colors = {
   magenta: msg => `\u001B[35m${msg}\u001B[0m`,
   green: msg => `\u001B[32m${msg}\u001B[0m`,
@@ -119,6 +133,8 @@ if (noElectron) {
     fs.mkdirSync(logDir);
 
   const args = [
+    ...(profilingArgs ? profilingArgs.split(' ') : []),
+    ...(profilingCmd ? ['python'] : []),
     '-m',
     'rotkehlchen',
     '--rest-api-port',
@@ -129,7 +145,7 @@ if (noElectron) {
     `${path.join(logDir, 'backend.log')}`,
   ];
 
-  startProcess('python', colors.yellow(BACKEND), BACKEND, args, {
+  startProcess(profilingCmd || 'python', colors.yellow(BACKEND), BACKEND, args, {
     cwd: path.join('..'),
   });
 }
