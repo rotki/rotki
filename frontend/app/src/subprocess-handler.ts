@@ -429,7 +429,12 @@ export class SubprocessHandler {
   }
 
   private startProcess(port: number, args: string[]) {
+    const profilingCmd = process.env.ROTKI_BACKEND_PROFILING_CMD;
+    const profilingArgs = process.env.ROTKI_BACKEND_PROFILING_ARGS;
+
     const defaultArgs: string[] = [
+      ...(profilingArgs ? profilingArgs.split(' ') : []),
+      ...(profilingCmd ? ['python'] : []),
       '-m',
       'rotkehlchen',
       '--rest-api-port',
@@ -449,11 +454,10 @@ export class SubprocessHandler {
     }
 
     const allArgs = defaultArgs.concat(args);
-    this.logToFile(
-      `Starting non-packaged rotki-core: python ${allArgs.join(' ')}`,
-    );
+    const cmd = profilingCmd || 'python';
+    this.logToFile(`Starting non-packaged rotki-core: ${cmd} ${allArgs.join(' ')}`);
 
-    this.childProcess = spawn('python', allArgs, { cwd: '../../' });
+    this.childProcess = spawn(cmd, allArgs, { cwd: '../../' });
 
     if (!isDevelopment) {
       this.colibriProcess = spawn('colibri');
