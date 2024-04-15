@@ -870,21 +870,9 @@ Viztracer
 
 A good tool to use for profiling of the actual code as it runs is `Viztracer <https://github.com/gaogaotiantian/viztracer>`_. You can install it with ``pip install viztracer``
 
-Then you need to modify ``subprocess-handler.ts`` in order to run the backend via viztracer.
+Then you can run rotki's dev mode and add profiling arguments for viztracer: ``pnpm run dev --profiling-args "-m viztracer --min_duration 0.2ms"``.
 
-.. code-block:: diff
-
-       private startProcess(port: number, args: string[]) {
-	 const defaultArgs: string[] = [
-    +      '-m',
-    +      'viztracer',
-    +      '--min_duration',
-    +      '0.2ms',
-	   '-m',
-	   'rotkehlchen',
-	   '--rest-api-port',
-
-This will produce  a ``result.json`` in the main directory. You need the `--min_duration`` argument in order to not take data every nanosecond and end up with a GB json file. Generally will need to play with the arguments.
+This will produce  a ``result.json`` in the main directory. You need the ``--min_duration`` argument in order to not take data every nanosecond and end up with a GB json file. Generally will need to play with the arguments.
 
 To later open and study the file, you can use vizviewer. i.e. ``vizviewer --flamegraph result.json`` to get a flamegraph or simply ``vizviewer result.json`` to get the normal view.
 
@@ -902,7 +890,9 @@ Then you can run the developer version or even a normal binary and find is pid w
 
 And then you can attach to it with something like ``sudo py-spy record -o py-spy.profile.svg --pid 60243``, assuming the pid is ``60243``.
 
-Once done there will be an svg output at ``py-spy.profile.svg`` which you can see with any svg viewer including the browser and study the flamegraph.
+You can also run rotki's dev mode directly by specifying the profile cmd and its args like this: ``pnpm run dev --profiling-cmd py-spy --profiling-args "record -o py-spy-profile.svg --"``
+
+Once done in both cases there will be an svg output at ``py-spy.profile.svg`` which you can see with any svg viewer including the browser and study the flamegraph.
 
 
 rotki Database
