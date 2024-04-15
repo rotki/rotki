@@ -86,7 +86,7 @@ class EvmContract(NamedTuple):
 
     def encode(self, method_name: str, arguments: list[Any] | None = None) -> str:
         contract = WEB3.eth.contract(address=self.address, abi=self.abi)
-        return contract.encodeABI(method_name, args=arguments or [])
+        return contract.encode_abi(method_name, args=arguments or [])
 
     def decode(
             self,
