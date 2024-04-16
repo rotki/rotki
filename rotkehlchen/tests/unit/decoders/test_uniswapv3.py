@@ -16,6 +16,7 @@ from rotkehlchen.constants.assets import (
     A_DAI,
     A_ETH,
     A_LUSD,
+    A_OP,
     A_POLYGON_POS_MATIC,
     A_USDC,
     A_USDT,
@@ -1335,6 +1336,86 @@ def test_swap_on_polygon_pos(database, polygon_pos_inquirer, polygon_pos_account
             notes=f'Receive {receive_amount} WBTC as the result of a swap via {CPT_UNISWAP_V3} auto router',  # noqa: E501
             counterparty=CPT_UNISWAP_V3,
             address=UNISWAP_UNIVERSAL_ROUTER,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('optimism_accounts', [['0x9A539f692cDE873D6B882fc326c8d62D4cEA8048']])
+def test_add_liquidity_on_optimism(database, optimism_inquirer, optimism_accounts):
+    evmhash = deserialize_evm_tx_hash('0x96bd0e37e1734b5e73f9abdf30b39c4e4a6879667c2d01a7be2d95a85cc0b0cc')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        database=database,
+        tx_hash=evmhash,
+    )
+    timestamp, approval, op_deposit, usdc_deposit, gas_fees = TimestampMS(1713269405000), '0.000129292741769402', '10975.908530657738737186', '32.212735', '0.000027353637451875'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label=optimism_accounts[0],
+            notes=f'Burned {gas_fees} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=45,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=Asset('eip155:10/erc20:0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85'),  # USDC
+            balance=Balance(amount=FVal(usdc_deposit)),
+            location_label=optimism_accounts[0],
+            notes=f'Deposit {usdc_deposit} USDC to uniswap-v3 LP 550709',
+            counterparty=CPT_UNISWAP_V3,
+            address=string_to_evm_address('0xB533c12fB4e7b53b5524EAb9b47d93fF6C7A456F'),
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=46,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=A_OP,
+            balance=Balance(amount=FVal(approval)),
+            location_label=optimism_accounts[0],
+            notes=f'Set OP spending approval of 0x9A539f692cDE873D6B882fc326c8d62D4cEA8048 by 0xC36442b4a4522E871399CD717aBDD847Ab11FE88 to {approval}',  # noqa: E501
+            address=string_to_evm_address('0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=47,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_OP,
+            balance=Balance(amount=FVal(op_deposit)),
+            location_label=optimism_accounts[0],
+            notes=f'Deposit {op_deposit} OP to uniswap-v3 LP 550709',
+            counterparty=CPT_UNISWAP_V3,
+            address=string_to_evm_address('0xB533c12fB4e7b53b5524EAb9b47d93fF6C7A456F'),
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=49,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.DEPLOY,
+            event_subtype=HistoryEventSubType.NFT,
+            asset=Asset('eip155:10/erc721:0xC36442b4a4522E871399CD717aBDD847Ab11FE88'),
+            balance=Balance(amount=FVal(1)),
+            location_label=optimism_accounts[0],
+            notes='Create uniswap-v3 LP with id 550709',
+            counterparty=CPT_UNISWAP_V3,
+            address=ZERO_ADDRESS,
+            extra_data={'token_id': 550709, 'token_name': 'Uniswap V3 Positions NFT-V1'},
         ),
     ]
     assert events == expected_events

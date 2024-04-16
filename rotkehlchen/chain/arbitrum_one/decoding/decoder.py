@@ -5,10 +5,6 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
 from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
-from rotkehlchen.chain.evm.decoding.structures import (
-    FAILED_ENRICHMENT_OUTPUT,
-    TransferEnrichmentOutput,
-)
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.arbitrum_one_tx import DBArbitrumOneTx
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -21,7 +17,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.transactions import ArbitrumOneTransactions
     from rotkehlchen.chain.arbitrum_one.types import ArbitrumOneTransaction
     from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
-    from rotkehlchen.chain.evm.decoding.structures import EnricherContext
     from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
@@ -72,9 +67,6 @@ class ArbitrumOneTransactionDecoder(EVMTransactionDecoder):
             self.transaction_type_mappings[txtype].extend(rules)
 
     # -- methods that need to be implemented by child classes --
-
-    def _enrich_protocol_tranfers(self, context: 'EnricherContext') -> TransferEnrichmentOutput:  # pylint: disable=unused-argument
-        return FAILED_ENRICHMENT_OUTPUT
 
     @staticmethod
     def _is_non_conformant_erc721(address: ChecksumEvmAddress) -> bool:  # pylint: disable=unused-argument

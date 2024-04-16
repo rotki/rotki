@@ -12,7 +12,7 @@ Changelog
 * :feature:`7086` Added support for GMX v1 in Arbitrum.
 * :feature:`7281` rotki will now properly decode the transactions done on Aave v2 and v3 on all the supported chains.
 * :feature:`2698` Users can now manually link assets on their exchanges to assets recognized by Rotki, without having to wait for a new release.
-* :feature:`-` rotki will now properly decode the swaps done via Uniswap V3 on other supported chains.
+* :feature:`-` rotki will now properly decode the Uniswap V3 events on other supported chains.
 * :feature:`5978` rotki will now properly decode the swaps done via the 0x protocol.
 * :feature:`-` The claim event of the Degen airdrop 2 will be correctly decoded.
 * :bug:`-` Binance balances will now include funding wallet's balances.
