@@ -3700,21 +3700,30 @@ class CalendarReminderCommonEntrySchema(Schema):
     event_id = fields.Integer(required=True)
     secs_before = fields.Integer(
         required=True,
-        validate=webargs.validate.Range(min=1, error='secs_before has to be bigger than 0'),
+        validate=webargs.validate.Range(min=0, error='secs_before has to be >= 0'),
     )
 
 
 class NewCalendarReminderSchema(CalendarReminderCommonEntrySchema):
+
+    @staticmethod
+    def _process_reminder(data: dict[str, Any]) -> ReminderEntry:
+        return ReminderEntry(
+            identifier=data.get('identifier', 0),  # not present when creating a new reminder but used in UpdateCalendarReminderSchema. Using default 0 since it is ignored when doing the creation  # noqa: E501
+            secs_before=data['secs_before'],
+            event_id=data['event_id'],
+        )
+
     @post_load
-    def make_calendar_entry(self, data: dict[str, Any], **_kwargs: dict[str, Any]) -> dict[str, Any]:  # noqa: E501
-        return {
-            'reminder': ReminderEntry(
-                identifier=data.get('identifier', 0),
-                event_id=data['event_id'],
-                secs_before=data['secs_before'],
-            ),
-        }
+    def make_calendar_entry(self, data: dict[str, Any], **_kwargs: dict[str, Any]) -> ReminderEntry:  # noqa: E501
+        return self._process_reminder(data)
+
+
+class NewCalendarReminderListSchema(Schema):
+    reminders = fields.List(fields.Nested(NewCalendarReminderSchema))
 
 
 class UpdateCalendarReminderSchema(NewCalendarReminderSchema, IntegerIdentifierSchema):
-    ...
+    @post_load
+    def make_calendar_entry(self, data: dict[str, Any], **_kwargs: dict[str, Any]) -> dict[str, Any]:  # noqa: E501
+        return {'reminder': self._process_reminder(data)}

@@ -25,6 +25,7 @@ from rotkehlchen.constants.timing import (
     SPAM_ASSETS_DETECTION_REFRESH,
 )
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
+from rotkehlchen.db.calendar import CalendarEntry
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -42,6 +43,7 @@ from rotkehlchen.tasks.assets import (
     update_aave_v3_underlying_assets,
     update_owned_assets,
 )
+from rotkehlchen.tasks.calendar import CalendarNotification, notify_reminders
 from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries, should_run_periodic_task
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
@@ -52,6 +54,7 @@ from rotkehlchen.types import (
     Location,
     Optional,
     SupportedBlockchain,
+    Timestamp,
     get_args,
 )
 from rotkehlchen.utils.misc import ts_now
@@ -133,6 +136,7 @@ class TaskManager:
         self.query_balances = query_balances
         self.query_yearn_vaults = query_yearn_vaults
         self.last_premium_status_check = ts_now()
+        self.last_calendar_reminder_check = Timestamp(0)
         self.msg_aggregator = msg_aggregator
         self.premium_check_retries = 0
         self.premium_sync_manager: Optional[PremiumSyncManager] = premium_sync_manager
@@ -162,6 +166,7 @@ class TaskManager:
             self._maybe_query_monerium,
             self._maybe_update_owned_assets,
             self._maybe_update_aave_v3_underlying_assets,
+            self._maybe_trigger_calendar_reminder,
         ]
         if self.premium_sync_manager is not None:
             self.potential_tasks.append(self._maybe_schedule_db_upload)
@@ -805,6 +810,41 @@ class TaskManager:
             task_name='Query monerium',
             exception_is_error=False,  # don't spam user messages if errors happen
             method=monerium.get_and_process_orders,
+        )]
+
+    def _maybe_trigger_calendar_reminder(self) -> Optional[list[gevent.Greenlet]]:
+        """Get upcoming reminders and maybe process them"""
+        if (now := ts_now()) - self.last_calendar_reminder_check < 60 * 5:
+            return None
+
+        with self.database.conn.read_ctx() as cursor:
+            cursor.execute(
+                'SELECT event.identifier, event.name, event.description, event.counterparty, '
+                'event.timestamp, event.address, event.blockchain, event.color, '
+                'reminder.identifier, reminder.secs_before FROM calendar_reminders AS reminder '
+                'LEFT JOIN calendar AS event '
+                'ON reminder.event_id = event.identifier WHERE '
+                '? > event.timestamp - reminder.secs_before',
+                (now,),
+            )
+            reminders = [CalendarNotification(
+                event=CalendarEntry.deserialize_from_db(row[:8]),
+                identifier=row[8],
+                secs_before=row[9],
+            ) for row in cursor]
+
+        if len(reminders) == 0:
+            return None
+
+        self.last_calendar_reminder_check = now
+        return [self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name='Notify calendar reminders',
+            exception_is_error=True,
+            method=notify_reminders,
+            reminders=reminders,
+            database=self.database,
+            msg_aggregator=self.msg_aggregator,
         )]
 
     def _schedule(self) -> None:

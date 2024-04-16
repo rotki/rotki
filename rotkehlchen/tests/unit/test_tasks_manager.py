@@ -1,3 +1,4 @@
+import datetime
 from typing import TYPE_CHECKING, cast
 from unittest.mock import MagicMock, patch
 
@@ -13,8 +14,9 @@ from rotkehlchen.constants.assets import A_YFI
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import evm_address_to_identifier
-from rotkehlchen.constants.timing import DATA_UPDATES_REFRESH
+from rotkehlchen.constants.timing import DATA_UPDATES_REFRESH, DAY_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
+from rotkehlchen.db.calendar import CalendarEntry, DBCalendar
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.errors.misc import RemoteError
@@ -23,6 +25,7 @@ from rotkehlchen.premium.premium import Premium, PremiumCredentials, Subscriptio
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.tasks.manager import PREMIUM_STATUS_CHECK, TaskManager
 from rotkehlchen.tasks.utils import should_run_periodic_task
+from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 from rotkehlchen.tests.utils.ethereum import (
     TEST_ADDR1,
     TEST_ADDR2,
@@ -38,12 +41,14 @@ from rotkehlchen.types import (
     EvmTokenKind,
     Location,
     SupportedBlockchain,
+    Timestamp,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.exchanges.exchange import ExchangeInterface
@@ -667,3 +672,99 @@ def test_maybe_update_aave_v3_underlying_assets(
         assert task_manager.database.get_static_cache(
             cursor=cursor, name=DBCacheStatic.LAST_AAVE_V3_ASSETS_UPDATE,
         ) is not None
+
+
+@pytest.mark.parametrize('max_tasks_num', [5])
+@pytest.mark.freeze_time('2023-04-16 22:31:11 GMT')
+@pytest.mark.parametrize('legacy_messages_via_websockets', [True])
+def test_send_ws_calendar_reminder(
+        rotkehlchen_api_server: 'APIServer',
+        websocket_connection: WebsocketReader,
+        legacy_messages_via_websockets: bool,  # pylint: disable=unused-argument
+        freezer,
+) -> None:
+    """
+    Test that reminders work correctly by:
+    - Checking we get the notifications
+    - Checking we remove the reminders once fired
+    - Checking that starting the app after an event with a reminder passes, triggers the reminder
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    database = rotki.data.db
+    task_manager = rotki.task_manager
+    assert task_manager is not None
+
+    calendar_db = DBCalendar(database)
+    for row in (
+        ('Event without reminder', 'event with no reminder', 1713103499),  # 14/04/2024
+        ('CRV unlock', 'Unlock date for CRV', 1713621899),  # 20/04/2024
+        ('ENS renewal', 'renew yabir.eth', 1714399499),  # 29/04/2024
+    ):
+        calendar_db.create_calendar_entry(
+            calendar=CalendarEntry(
+                name=row[0],
+                description=row[1],
+                timestamp=Timestamp(row[2]),
+                counterparty=None,
+                address=None,
+                blockchain=None,
+                color=None,
+            ),
+        )
+    with database.conn.write_ctx() as write_cursor:
+        write_cursor.executemany(
+            'INSERT INTO calendar_reminders(event_id, secs_before) VALUES (?, ?)',
+            [
+                (2, WEEK_IN_SECONDS),  # 13/04/2024
+                (3, DAY_IN_SECONDS * 5),  # 24/04/2024
+            ],
+        )
+
+    task_manager.potential_tasks = [task_manager._maybe_trigger_calendar_reminder]
+    task_manager.schedule()
+    if len(task_manager.running_greenlets):
+        gevent.joinall(task_manager.running_greenlets[task_manager._maybe_trigger_calendar_reminder])  # wait for the task to finish since it might context switch while running  # noqa: E501
+    assert websocket_connection.messages_num() == 0
+
+    # move the timestamp to trigger the first event and the event without reminder
+    freezer.move_to(datetime.datetime(2024, 4, 19, 20, 0, 1, tzinfo=datetime.UTC))
+    task_manager.schedule()
+    gevent.joinall(task_manager.running_greenlets[task_manager._maybe_trigger_calendar_reminder])  # wait for the task to finish since it might context switch while running  # noqa: E501
+    websocket_connection.wait_until_messages_num(num=1, timeout=2)
+    msg = websocket_connection.pop_message()
+    assert msg == {
+        'data': {
+            'identifier': 2,
+            'name': 'CRV unlock',
+            'description': 'Unlock date for CRV',
+            'timestamp': 1713621899,
+        },
+        'type': 'calendar_reminder',
+    }
+
+    # check that the reminder got deleted
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM calendar_reminders WHERE event_id=1',
+        ).fetchone()[0] == 0
+
+    # move to the timestamp to trigger the second reminder. Even though we are after
+    # the event, we should still get the notification
+    freezer.move_to(datetime.datetime(2024, 5, 20, 20, 0, 1, tzinfo=datetime.UTC))
+    task_manager.schedule()
+    gevent.joinall(task_manager.running_greenlets[task_manager._maybe_trigger_calendar_reminder])  # wait for the task to finish since it might context switch while running  # noqa: E501
+    websocket_connection.wait_until_messages_num(num=1, timeout=2)
+    msg = websocket_connection.pop_message()
+    assert msg == {
+        'data': {
+            'identifier': 3,
+            'name': 'ENS renewal',
+            'description': 'renew yabir.eth',
+            'timestamp': 1714399499,
+        },
+        'type': 'calendar_reminder',
+    }
+
+    # check that the reminder got deleted
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM calendar_reminders').fetchone()[0] == 0

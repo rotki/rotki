@@ -127,7 +127,7 @@ from rotkehlchen.api.v1.schemas import (
     NamedOracleCacheGetSchema,
     NamedOracleCacheSchema,
     NewCalendarEntrySchema,
-    NewCalendarReminderSchema,
+    NewCalendarReminderListSchema,
     NewUserSchema,
     NFTFilterQuerySchema,
     NFTLpFilterSchema,
@@ -3301,15 +3301,15 @@ class CalendarResource(BaseMethodView):
 
 class CalendarRemindersResource(BaseMethodView):
 
-    create_schema = NewCalendarReminderSchema()
+    create_schema = NewCalendarReminderListSchema()
     update_schema = UpdateCalendarReminderSchema()
     delete_schema = IntegerIdentifierSchema()
     query_schema = IntegerIdentifierSchema()
 
     @require_loggedin_user()
     @use_kwargs(create_schema, location='json_and_query')
-    def put(self, reminder: ReminderEntry) -> Response:
-        return self.rest_api.create_calendar_reminder(entry=reminder)
+    def put(self, reminders: list[ReminderEntry]) -> Response:
+        return self.rest_api.create_calendar_reminder(reminders=reminders)
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json_and_query')

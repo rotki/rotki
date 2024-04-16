@@ -326,3 +326,24 @@ When the endpoint to start the task for decoding undecoded transactions is queri
 - ``processed``: The total number of transactions that have already been decoded.
 
 The backend will send a ws message at the beginning before decoding any transaction and another at the end of the task. Every 10 decoded transactions it will also update the status.
+
+
+Calendar reminders
+============================
+
+When a reminder for a calendar event is processed we emit a message with the following format. The reminder is then deleted.
+
+::
+
+    {
+        "data":{
+            "identifier":2,
+            "name":"CRV unlock",
+            "description":"Unlock date for CRV",
+            "timestamp":1713621899,
+        },
+        "type":"calendar_reminder"
+    }
+
+
+- ``data``: Contains the information of the calendar event, that is: identifier, name, description, timestamp, address, blockchain, counterparty and color.

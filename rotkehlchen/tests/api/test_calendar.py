@@ -350,13 +350,17 @@ def test_reminder_operations(rotkehlchen_api_server: APIServer):
 
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'calendarremindersresource'),
-        json={
+        json={'reminders': [{
             'event_id': calendar_id,
             'secs_before': DAY_IN_SECONDS * 3,
-        },
+        }, {
+            'event_id': 100,  # must fail
+            'secs_before': DAY_IN_SECONDS * 3,
+        }]},
     )
     result = assert_proper_response_with_result(response)
-    assert result['entry_id'] == 1
+    assert result['success'] == [calendar_id]
+    assert result['failed'] == [100]
 
     # query by event id
     response = requests.post(

@@ -13707,7 +13707,7 @@ Managing calendar reminders
 
 .. http:post:: /api/(version)/calendar/reminders
 
-   Doing a POST on this endpoint will allow querying the calendar reminders using the identifier of the calendar entry associated.
+   Doing a POST on this endpoint will allow querying the calendar reminders using the identifier of the associated calendar entry.
 
 
   **Example Request**
@@ -13735,8 +13735,7 @@ Managing calendar reminders
               "identifier":1,
               "event_id": 1,
               "secs_before": 213234124
-            },
-            {
+            }, {
               "identifier":2,
               "event_id": 1,
               "secs_before": 2132341253
@@ -13754,7 +13753,7 @@ Managing calendar reminders
 
 .. http:put:: /api/(version)/calendar/reminders
 
-  Doing a PUT request on this endpoint will allow to create a new calendar reminder
+  Doing a PUT request on this endpoint will allow to create new calendar reminder entries. If any of the entries fails to get added the key ``failed`` will be populated in the response.
 
   **Example Request**
 
@@ -13765,8 +13764,10 @@ Managing calendar reminders
       Content-Type: application/json;charset=UTF-8
 
       {
-        "secs_before": 1869737344,
-        "event_id": 1
+        "reminders": [
+         {"secs_before": 1869737344, "event_id": 1},
+         {"secs_before": 1869737344, "event_id": 100}
+        ]
       }
 
   .. _calendar_reminder_fields:
@@ -13782,11 +13783,11 @@ Managing calendar reminders
       Content-Type: application/json
 
       {
-         "result": {"entry_id": 1},
+         "result": {"success": [1], "failed": [100]},
          "message": ""
       }
 
-  :resjson object result: object with the identifier of the calendar reminder created. 
+  :resjson object result: object with the ids of the events for which the reminders were created succesfully and for which it failed. If none failed the failed key is not returned.
   :statuscode 200: Entry correctly stored.
   :statuscode 401: No user is currently logged in.
   :statuscode 409: Failed to validate the data.
