@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { externalAssets } from '@/data/external-links';
 import type { SystemVersion } from '@/electron-main/ipc';
 import type { WebVersion } from '@/types';
 
@@ -92,7 +91,10 @@ const { copy } = useClipboard({ source: versionText });
   <RuiCard variant="flat">
     <template #custom-header>
       <div class="p-6 bg-rui-primary text-white">
-        <RuiLogo :custom-src="externalAssets.logo.about" />
+        <RotkiLogo
+          logo="about"
+          unique-key="00"
+        />
         <h4 class="text-h4">
           {{ t('app.name') }}
         </h4>

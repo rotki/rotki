@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { externalAssets } from '@/data/external-links';
-
 const { isMini, showDrawer } = storeToRefs(useAreaVisibilityStore());
 const { appVersion } = storeToRefs(useMainStore());
 const { appBarColor } = useTheme();
@@ -22,9 +20,9 @@ const { appBarColor } = useTheme();
       class="app__logo"
       :class="{ 'app__logo--mini': isMini }"
     >
-      <RuiLogo
+      <RotkiLogo
         :text="!isMini"
-        :custom-src="externalAssets.logo.drawer"
+        :size="isMini ? 1.625 : 3"
       />
     </div>
     <NavigationMenu :is-mini="isMini" />

@@ -3,13 +3,11 @@ const DOCS_BASE_URL = 'https://rotki.readthedocs.io/en/stable/';
 const USAGE_GUIDE_URL = `${DOCS_BASE_URL}usage_guide.html`;
 const CONTRIBUTE_URL = `${DOCS_BASE_URL}contribute.html`;
 const GITHUB_BASE_URL = 'https://github.com/rotki/rotki/';
-const ICONS_BASE_URL
-  = 'https://raw.githubusercontent.com/rotki/data/main/assets/icons/';
 
-// Cannot be checked with fetch because it always return 400
+// Cannot be checked with fetch because it always returns 400
 export const TWITTER_URL = 'https://twitter.com/rotkiapp';
 
-// Cannot be checked with fetch because it always return 403, because it needs authentication,
+// Cannot be checked with fetch because it always returns 403, because it needs authentication,
 // and will be redirected to the register page instead
 export const etherscanLinks = {
   ethereum: 'https://etherscan.io/myapikey',
@@ -49,12 +47,4 @@ export const externalLinks = {
     'https://medium.com/@alxlpsc/critical-privacy-vulnerability-getting-exposed-by-metamask-693c63c2ce94',
   binanceCsvExport:
     'https://www.binance.com/en/my/wallet/history',
-};
-
-export const externalAssets = {
-  logo: {
-    about: `${ICONS_BASE_URL}about_logo.png`,
-    drawer: `${ICONS_BASE_URL}drawer_logo.png`,
-    noData: `${ICONS_BASE_URL}empty_screen_logo.png`,
-  },
 };
