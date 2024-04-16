@@ -55,6 +55,7 @@ from .base import BaseDecoderTools, BaseDecoderToolsWithDSProxy
 from .constants import CPT_GAS, ERC20_APPROVE, ERC20_OR_ERC721_TRANSFER, OUTGOING_EVENT_TYPES
 from .structures import (
     DEFAULT_DECODING_OUTPUT,
+    FAILED_ENRICHMENT_OUTPUT,
     ActionItem,
     DecoderContext,
     DecodingOutput,
@@ -998,16 +999,27 @@ class EVMTransactionDecoder(ABC):
             if len(intersection) != 0:
                 raise AssertionError(f'{type_name} duplicates found in decoding rules of {self.evm_inquirer.chain_name} {class_name}: {intersection}')  # noqa: E501
 
-    # -- methods to be implemented by child classes --
-
-    @abstractmethod
     def _enrich_protocol_tranfers(self, context: EnricherContext) -> TransferEnrichmentOutput:
-        """
-        Decode special transfers made by contract execution for example at the moment
+        """Decode special transfers made by contract execution for example at the moment
         of depositing assets or withdrawing.
-        It assumes that the event being decoded has been already filtered and is a
-        transfer.
-        """
+        It assumes that the event being decoded has been already filtered and is a transfer.
+        Can be overridden by child classes for chain-specific logic."""
+        for enrich_call in self.rules.token_enricher_rules:
+            try:
+                transfer_enrich: TransferEnrichmentOutput = enrich_call(context)
+            except (UnknownAsset, WrongAssetType) as e:
+                log.error(
+                    f'Failed to enrich {self.evm_inquirer.chain_name} transfer due to '
+                    f'unknown asset {context.event.asset}. {e!s}',
+                )  # Don't try other rules since all of them will fail to resolve the asset
+                return FAILED_ENRICHMENT_OUTPUT
+
+            if transfer_enrich != FAILED_ENRICHMENT_OUTPUT:
+                return transfer_enrich
+
+        return FAILED_ENRICHMENT_OUTPUT
+
+    # -- methods to be implemented by child classes --
 
     @staticmethod
     @abstractmethod

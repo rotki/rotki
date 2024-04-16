@@ -10,11 +10,8 @@ from rotkehlchen.chain.evm.decoding.base import BaseDecoderToolsWithDSProxy
 from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoderWithDSProxy
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
-    FAILED_ENRICHMENT_OUTPUT,
     ActionItem,
     DecodingOutput,
-    EnricherContext,
-    TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
@@ -165,23 +162,6 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
         return DEFAULT_DECODING_OUTPUT
 
     # -- methods that need to be implemented by child classes --
-
-    def _enrich_protocol_tranfers(self, context: EnricherContext) -> TransferEnrichmentOutput:
-        for enrich_call in self.rules.token_enricher_rules:
-            try:
-                transfer_enrich: TransferEnrichmentOutput = enrich_call(context)
-            except (UnknownAsset, WrongAssetType) as e:
-                log.error(
-                    f'Failed to enrich transfer due to unknown asset '
-                    f'{context.event.asset}. {e!s}',
-                )
-                # Don't try other rules since all of them will fail to resolve the asset
-                return FAILED_ENRICHMENT_OUTPUT
-
-            if transfer_enrich != FAILED_ENRICHMENT_OUTPUT:
-                return transfer_enrich
-
-        return FAILED_ENRICHMENT_OUTPUT
 
     @staticmethod
     def _is_non_conformant_erc721(address: ChecksumEvmAddress) -> bool:

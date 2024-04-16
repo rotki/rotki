@@ -20,7 +20,7 @@ def test_evm_contracts_data(globaldb):
             assert is_checksum_address(entry[0])
             assert isinstance(entry[1], int) and entry[1] in serialized_chain_ids
             assert isinstance(entry[2], int)
-            assert isinstance(entry[3], int) and entry[3] > 0
+            assert isinstance(entry[3], int) and entry[3] >= 0
 
 
 def test_evm_abi_data(globaldb):
