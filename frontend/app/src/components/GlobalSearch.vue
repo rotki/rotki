@@ -202,6 +202,9 @@ function getRoutes(keyword: string): SearchItemWithoutValue[] {
       ...Routes.SETTINGS_MODULES,
       texts: [Routes.SETTINGS.text, Routes.SETTINGS_MODULES.text],
     },
+    {
+      ...Routes.CALENDAR,
+    },
   ];
 
   return filterItems(routeItems, keyword);

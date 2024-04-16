@@ -16,6 +16,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'select-date'): void;
   (e: 'edit', event: CalendarEvent): void;
+  (e: 'add'): void;
 }>();
 
 const { day, events, isPast } = toRefs(props);
@@ -28,6 +29,10 @@ function selectDate() {
 
 function edit(event: CalendarEvent) {
   emit('edit', event);
+}
+
+function add() {
+  emit('add');
 }
 
 const visibleEvents = computed(() => {
@@ -51,7 +56,7 @@ function getColor(color: string | undefined, isBg: boolean = false) {
 
 <template>
   <div
-    class="flex flex-col items-center h-[7.5rem] p-1"
+    class="flex flex-col items-center h-[7.5rem] p-1 relative group"
     :class="{
       '[&>*]:opacity-30': !day.isCurrentMonth,
     }"
@@ -94,6 +99,17 @@ function getColor(color: string | undefined, isBg: boolean = false) {
     >
       {{ t('calendar.more_events', { hidden }) }}
     </div>
-    <slot />
+    <RuiButton
+      size="sm"
+      variant="outlined"
+      color="secondary"
+      class="!p-1 absolute top-1 right-1 transition opacity-0 invisible group-hover:opacity-100 group-hover:visible"
+      @click="add()"
+    >
+      <RuiIcon
+        size="14"
+        name="add-line"
+      />
+    </RuiButton>
   </div>
 </template>

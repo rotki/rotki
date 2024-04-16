@@ -10,7 +10,6 @@ import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { handleResponse } from '@/services/utils';
 import type { Collection } from '@/types/collection';
 import type { MaybeRef } from '@vueuse/core';
-import type { UserNote } from '@/types/notes';
 import type { ActionResult } from '@rotki/common/lib/data';
 
 export function useCalendarApi() {
@@ -18,7 +17,7 @@ export function useCalendarApi() {
     filter: MaybeRef<CalendarEventRequestPayload>,
   ): Promise<Collection<CalendarEvent>> => {
     const response = await api.instance.post<
-        ActionResult<Collection<UserNote>>
+        ActionResult<Collection<CalendarEvent>>
     >('/calendar', snakeCaseTransformer(get(filter)));
 
     return mapCollectionResponse(

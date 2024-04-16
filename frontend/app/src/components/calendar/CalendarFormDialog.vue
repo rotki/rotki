@@ -48,6 +48,7 @@ const title: ComputedRef<string> = computed(() =>
 
     <template #left-buttons>
       <RuiButton
+        v-if="editableItem"
         color="error"
         @click="emit('delete')"
       >

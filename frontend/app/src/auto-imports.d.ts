@@ -417,6 +417,7 @@ declare global {
   const useCached: typeof import('@vueuse/core')['useCached']
   const useCalendarApi: typeof import('./composables/history/calendar/index')['useCalendarApi']
   const useCalendarEventForm: typeof import('./composables/calendar/form')['useCalendarEventForm']
+  const useCalendarReminderApi: typeof import('./composables/history/calendar/reminder')['useCalendarReminderApi']
   const useCeil: typeof import('@vueuse/math')['useCeil']
   const useCexMappingForm: typeof import('./composables/assets/forms/cex-mapping-form')['useCexMappingForm']
   const useChainAccountBalances: typeof import('./composables/blockchain/account-balances/chain')['useChainAccountBalances']
@@ -1172,6 +1173,7 @@ declare module 'vue' {
     readonly useCached: UnwrapRef<typeof import('@vueuse/core')['useCached']>
     readonly useCalendarApi: UnwrapRef<typeof import('./composables/history/calendar/index')['useCalendarApi']>
     readonly useCalendarEventForm: UnwrapRef<typeof import('./composables/calendar/form')['useCalendarEventForm']>
+    readonly useCalendarReminderApi: UnwrapRef<typeof import('./composables/history/calendar/reminder')['useCalendarReminderApi']>
     readonly useCeil: UnwrapRef<typeof import('@vueuse/math')['useCeil']>
     readonly useCexMappingForm: UnwrapRef<typeof import('./composables/assets/forms/cex-mapping-form')['useCexMappingForm']>
     readonly useClamp: UnwrapRef<typeof import('@vueuse/math')['useClamp']>
@@ -1917,6 +1919,7 @@ declare module '@vue/runtime-core' {
     readonly useCached: UnwrapRef<typeof import('@vueuse/core')['useCached']>
     readonly useCalendarApi: UnwrapRef<typeof import('./composables/history/calendar/index')['useCalendarApi']>
     readonly useCalendarEventForm: UnwrapRef<typeof import('./composables/calendar/form')['useCalendarEventForm']>
+    readonly useCalendarReminderApi: UnwrapRef<typeof import('./composables/history/calendar/reminder')['useCalendarReminderApi']>
     readonly useCeil: UnwrapRef<typeof import('@vueuse/math')['useCeil']>
     readonly useCexMappingForm: UnwrapRef<typeof import('./composables/assets/forms/cex-mapping-form')['useCexMappingForm']>
     readonly useClamp: UnwrapRef<typeof import('@vueuse/math')['useClamp']>
