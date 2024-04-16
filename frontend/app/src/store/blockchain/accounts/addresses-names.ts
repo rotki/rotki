@@ -49,59 +49,6 @@ export const useAddressesNamesStore = defineStore(
       setLastRefreshedAvatar();
     });
 
-    const fetchEnsNames = async (
-      payload: AddressBookSimplePayload[],
-      forceUpdate = false,
-    ): Promise<void> => {
-      if (payload.length === 0)
-        return;
-
-      const filteredAddresses = payload
-        .map(({ address }) => address)
-        .filter(uniqueStrings)
-        .filter(isValidEthAddress);
-
-      if (filteredAddresses.length === 0)
-        return;
-
-      let newResult: Record<string, string | null> = {};
-
-      if (forceUpdate) {
-        const taskType = TaskType.FETCH_ENS_NAMES;
-        const { taskId } = await getEnsNamesTask(filteredAddresses);
-        try {
-          const { result } = await awaitTask<EthNames, TaskMeta>(
-            taskId,
-            taskType,
-            {
-              title: t('ens_names.task.title'),
-            },
-          );
-          newResult = result;
-        }
-        catch (error: any) {
-          if (!isTaskCancelled(error)) {
-            notify({
-              title: t('ens_names.task.title'),
-              message: t('ens_names.error.message', { message: error.message }),
-              display: true,
-            });
-          }
-        }
-      }
-      else {
-        newResult = await getEnsNames(filteredAddresses);
-      }
-
-      const payloadToReset = payload.filter(({ address }) => get(ensNames)[address] !== newResult[address]);
-
-      set(ensNames, {
-        ...get(ensNames),
-        ...newResult,
-      });
-      resetAddressNamesData(payloadToReset);
-    };
-
     const ensNameSelector = (address: MaybeRef<string>) =>
       computed<string | null>(() => {
         if (!get(enableAliasNames))
@@ -267,6 +214,59 @@ export const useAddressesNamesStore = defineStore(
         resetAddressNamesData(addresses);
 
       return result;
+    };
+
+    const fetchEnsNames = async (
+      payload: AddressBookSimplePayload[],
+      forceUpdate = false,
+    ): Promise<void> => {
+      if (payload.length === 0)
+        return;
+
+      const filteredAddresses = payload
+        .map(({ address }) => address)
+        .filter(uniqueStrings)
+        .filter(isValidEthAddress);
+
+      if (filteredAddresses.length === 0)
+        return;
+
+      let newResult: Record<string, string | null> = {};
+
+      if (forceUpdate) {
+        const taskType = TaskType.FETCH_ENS_NAMES;
+        const { taskId } = await getEnsNamesTask(filteredAddresses);
+        try {
+          const { result } = await awaitTask<EthNames, TaskMeta>(
+            taskId,
+            taskType,
+            {
+              title: t('ens_names.task.title'),
+            },
+          );
+          newResult = result;
+        }
+        catch (error: any) {
+          if (!isTaskCancelled(error)) {
+            notify({
+              title: t('ens_names.task.title'),
+              message: t('ens_names.error.message', { message: error.message }),
+              display: true,
+            });
+          }
+        }
+      }
+      else {
+        newResult = await getEnsNames(filteredAddresses);
+      }
+
+      const payloadToReset = payload.filter(({ address }) => get(ensNames)[address] !== newResult[address]);
+
+      set(ensNames, {
+        ...get(ensNames),
+        ...newResult,
+      });
+      resetAddressNamesData(payloadToReset);
     };
 
     return {
