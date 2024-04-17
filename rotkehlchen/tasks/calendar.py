@@ -3,7 +3,9 @@ from dataclasses import dataclass
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.db.calendar import BaseReminderData, CalendarEntry
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.misc import ts_now
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
@@ -36,4 +38,17 @@ def notify_reminders(
         write_cursor.executemany(
             'DELETE FROM calendar_reminders WHERE identifier=?',
             [(event.identifier,) for event in reminders],
+        )
+
+
+def maybe_delete_past_events(database: DBHandler) -> None:
+    auto_delete_calendar_entries = CachedSettings().get_entry('auto_delete_calendar_entries')
+    if auto_delete_calendar_entries is False:
+        return
+
+    # delete everything except what the user said to not delete
+    with database.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'DELETE FROM calendar WHERE timestamp < ? AND auto_delete=1',
+            (ts_now(),),
         )

@@ -58,6 +58,7 @@ DEFAULT_CONNECT_TIMEOUT = 30
 DEFAULT_READ_TIMEOUT = 30
 DEFAULT_ORACLE_PENALTY_THRESHOLD_COUNT = 5
 DEFAULT_ORACLE_PENALTY_DURATION = 1800
+DEFAULT_AUTO_DELETE_CALENDAR_ENTRIES = True
 
 JSON_KEYS = (
     'current_price_oracles',
@@ -80,6 +81,7 @@ BOOLEAN_KEYS = (
     'eth_staking_taxable_after_withdrawal_enabled',
     'include_fees_in_cost_basis',
     'infer_zero_timed_balances',
+    'auto_delete_calendar_entries',
 )
 INTEGER_KEYS = (
     'version',
@@ -144,6 +146,7 @@ CachedDBSettingsFieldNames = Literal[
     'read_timeout',
     'oracle_penalty_threshold_count',
     'oracle_penalty_duration',
+    'auto_delete_calendar_entries',
 ]
 
 DBSettingsFieldTypes = (
@@ -202,6 +205,7 @@ class DBSettings:
     read_timeout: int = DEFAULT_READ_TIMEOUT
     oracle_penalty_threshold_count: int = DEFAULT_ORACLE_PENALTY_THRESHOLD_COUNT
     oracle_penalty_duration: int = DEFAULT_ORACLE_PENALTY_DURATION
+    auto_delete_calendar_entries: bool = DEFAULT_AUTO_DELETE_CALENDAR_ENTRIES
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}
@@ -258,6 +262,7 @@ class ModifiableDBSettings(NamedTuple):
     read_timeout: int | None = None
     oracle_penalty_threshold_count: int | None = None
     oracle_penalty_duration: int | None = None
+    auto_delete_calendar_entries: bool | None = None
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}

@@ -113,6 +113,7 @@ def _add_calendar_tables(write_cursor: 'DBCursor') -> None:
     address TEXT,
     blockchain TEXT,
     color TEXT,
+    auto_delete INTEGER NOT NULL CHECK (auto_delete IN (0, 1)),
     FOREIGN KEY(blockchain, address) REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE,
     UNIQUE(name, address, blockchain)
     );""")  # noqa: E501

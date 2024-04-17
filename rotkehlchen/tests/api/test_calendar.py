@@ -41,6 +41,7 @@ def test_basic_calendar_operations(
             'address': ethereum_accounts[0],
             'blockchain': SupportedBlockchain.ETHEREUM.serialize(),
             'color': 'ffffff',
+            'auto_delete': False,
         },
     )
 
@@ -56,6 +57,7 @@ def test_basic_calendar_operations(
             'address': crv_event[4],
             'blockchain': SupportedBlockchain.ETHEREUM.serialize(),
             'timestamp': crv_event[5],
+            'auto_delete': False,
         },
     )
     data = assert_proper_response_with_result(response)
@@ -83,6 +85,7 @@ def test_basic_calendar_operations(
             'address': ethereum_accounts[0],
             'blockchain': SupportedBlockchain.ETHEREUM.serialize(),
             'color': '3a70a6',
+            'auto_delete': True,
         },
     )
     with database.conn.read_ctx() as cursor:
@@ -105,6 +108,7 @@ def test_basic_calendar_operations(
         'address': ethereum_accounts[0],
         'blockchain': 'eth',
         'color': '3a70a6',
+        'auto_delete': True,
     }
     curve_json_event = {
         'identifier': 2,
@@ -114,6 +118,7 @@ def test_basic_calendar_operations(
         'timestamp': 1851422011,
         'address': ethereum_accounts[1],
         'blockchain': 'eth',
+        'auto_delete': False,
     }
     future_ts = {'to_timestamp': 3479391239}  # timestamp enough in the future to return all the events  # noqa: E501
     response = requests.post(
@@ -212,6 +217,7 @@ def test_basic_calendar_operations(
             'address': crv_event[4],
             'blockchain': SupportedBlockchain.GNOSIS.serialize(),
             'timestamp': crv_event[5],
+            'auto_delete': False,
         },
     )
     response = requests.post(
@@ -225,6 +231,7 @@ def test_basic_calendar_operations(
 
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+@pytest.mark.parametrize('zksync_lite_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_validation_calendar(
         rotkehlchen_api_server: APIServer,
         ethereum_accounts: list[ChecksumEvmAddress],
@@ -239,6 +246,7 @@ def test_validation_calendar(
             'name': 'ENS renewal',
             'description': 'Renew yabir.eth',
             'counterparty': CPT_ENS,
+            'auto_delete': False,
         },
     )
     assert_proper_response(response)
@@ -253,6 +261,7 @@ def test_validation_calendar(
             'name': 'ENS renewal',
             'description': 'Renew yabir.eth',
             'counterparty': 'BAD COUNTERPARTY',
+            'auto_delete': False,
         },
     )
     assert_error_response(
@@ -269,6 +278,7 @@ def test_validation_calendar(
             'name': 'ENS renewal',
             'description': 'Renew yabir.eth',
             'address': ethereum_accounts[0],
+            'auto_delete': False,
         },
     )
     assert_error_response(
@@ -286,6 +296,7 @@ def test_validation_calendar(
             'description': 'Renew yabir.eth',
             'address': ethereum_accounts[0],
             'blockchain': SupportedBlockchain.BITCOIN.serialize(),
+            'auto_delete': False,
         },
     )
     assert_error_response(
@@ -302,6 +313,7 @@ def test_validation_calendar(
         'counterparty': CPT_ENS,
         'address': ethereum_accounts[0],
         'blockchain': SupportedBlockchain.ETHEREUM.serialize(),
+        'auto_delete': False,
     }
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'calendarresource'),
@@ -326,6 +338,22 @@ def test_validation_calendar(
             'timestamp': 1969737344,
             'name': 'ENS renewal',
             'description': 'Renew yabir.eth',
+            'auto_delete': False,
+        },
+    )
+    assert_proper_response(response)
+
+    # test creating a valid zksync event
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'calendarresource'),
+        json={
+            'timestamp': 1869737344,
+            'name': 'Withdraw funds',
+            'description': 'Withdraw stolen funds. Prescribed',
+            'address': ethereum_accounts[0],
+            'blockchain': SupportedBlockchain.ZKSYNC_LITE.serialize(),
+            'color': 'ffffff',
+            'auto_delete': True,
         },
     )
     assert_proper_response(response)
@@ -342,6 +370,7 @@ def test_reminder_operations(rotkehlchen_api_server: APIServer):
             'description': 'Renew yabir.eth',
             'counterparty': CPT_ENS,
             'color': 'ffffff',
+            'auto_delete': False,
         },
     )
     result = assert_proper_response_with_result(response)
