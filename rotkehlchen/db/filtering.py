@@ -1601,6 +1601,7 @@ class LocationAssetMappingsFilterQuery(DBFilterQuery):
             limit: int,
             offset: int,
             location: Location | None | Literal['common'] = None,
+            location_symbol: str | None = None,
             and_op: bool = True,
     ) -> 'LocationAssetMappingsFilterQuery':
         """Make and return the LocationAssetMappingsFilterQuery instance according to the passed
@@ -1613,12 +1614,18 @@ class LocationAssetMappingsFilterQuery(DBFilterQuery):
             limit=limit,
             offset=offset,
         )
+        if location_symbol is not None:
+            filter_query.filters.append(DBSubStringFilter(
+                and_op=True,
+                field='exchange_symbol',
+                search_string=location_symbol,
+            ))
         if location is not None:
             filter_query.location_filter = DBNullableLocationFilter(
                 and_op=True,
                 location=None if location == 'common' else location,
             )
-            filter_query.filters = [filter_query.location_filter]
+            filter_query.filters.append(filter_query.location_filter)
         return filter_query
 
 

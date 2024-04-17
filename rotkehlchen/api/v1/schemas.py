@@ -2284,6 +2284,8 @@ class LocationAssetMappingsBaseSchema(Schema):
 
 
 class LocationAssetMappingsPostSchema(DBPaginationSchema, LocationAssetMappingsBaseSchema):
+    location_symbol = fields.String(load_default=None)
+
     @post_load
     def make_location_asset_mappings_post_query(
             self,
@@ -2297,6 +2299,7 @@ class LocationAssetMappingsPostSchema(DBPaginationSchema, LocationAssetMappingsB
         filter_query = LocationAssetMappingsFilterQuery.make(
             location='common' if 'location' in data and data['location'] is None else data.get('location'),  # noqa: E501
             limit=data['limit'],
+            location_symbol=data['location_symbol'],
             offset=data['offset'],
         )
         return {'filter_query': filter_query}
