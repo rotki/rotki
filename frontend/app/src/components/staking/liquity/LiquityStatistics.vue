@@ -383,32 +383,3 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
     </div>
   </RuiCard>
 </template>
-
-<style lang="scss" module>
-:global {
-  .v-expansion-panel {
-    background: transparent !important;
-
-    &::before {
-      box-shadow: none;
-    }
-
-    &-header {
-      padding: 1rem 0 0.25rem;
-      min-height: auto !important;
-      display: flex;
-      justify-content: center;
-
-      &__icon {
-        margin-left: 0 !important;
-      }
-    }
-
-    &-content {
-      &__wrap {
-        padding: 0;
-      }
-    }
-  }
-}
-</style>
