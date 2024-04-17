@@ -23,4 +23,5 @@ if TYPE_CHECKING:
         'CVX_REWARD_POOL',  # added in 1.28.0 packaged globaldb
         'CVX_LOCKER_V2',
         'COMPOUND_V3_TOKEN',
+        'COMPOUND_V3_REWARDS',
     ]

@@ -2,13 +2,16 @@ import random
 import warnings as test_warnings
 from contextlib import ExitStack
 from http import HTTPStatus
+from unittest.mock import MagicMock
 
 import pytest
 import requests
 
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_COMP
+from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -78,6 +81,91 @@ def test_query_compound_balances(
     if len(rewards) != 0:
         assert len(rewards) == 1
         assert A_COMP.identifier in rewards
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0x478768685e023B8AF2815369b353b786713fDEa4', '0x01019cd3E62B46029E787D1b5485Ca164365cA77',
+    '0x3c9Ea5C4Fec2A77E23Dd82539f4414266Fe8f757', '0x8fFb5a2e5d9b5dB800354Dc4fa73c15a5d047328',
+]])
+@pytest.mark.parametrize('have_decoders', [[True]])
+@pytest.mark.parametrize('ethereum_modules', [['compound']])
+def test_query_compound_v3_balances(
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Check querying the compound v3 balances endpoint works. Uses real data."""
+    chain_aggregator = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator
+    tokens = chain_aggregator.ethereum.tokens
+    tokens.evm_inquirer.multicall = MagicMock(side_effect=tokens.evm_inquirer.multicall)  # type: ignore[method-assign]
+    tokens.detect_tokens(only_cache=False, addresses=ethereum_accounts)
+    chain_aggregator.ethereum.transactions_decoder.decode_transaction_hashes(
+        ignore_cache=True,
+        tx_hashes=[
+            deserialize_evm_tx_hash('0x392d73a45fe52e8dc1480db9bc7a7397526c1532087cf0de25d039f6d20b0acf'),  # Borrow 159.7556774 WBTC from cUSDCv3  # noqa: E501
+            deserialize_evm_tx_hash('0x0b52a63d1f9b3518d0d4525354c601e83e4814c0165f496223753b29ce4f2a29'),  # Borrow 0.957368573046591548 wstETH from cWETHv3  # noqa: E501
+        ],
+    )
+
+    result = assert_proper_response_with_result(requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'compoundbalancesresource',
+    )))
+
+    def get_balance(amount: str) -> dict[str, str]:
+        return Balance(amount=FVal(amount), usd_value=FVal(amount) * FVal(1.5)).serialize()
+
+    assert result == {
+        ethereum_accounts[0]: {
+            'lending': {
+                'eip155:1/erc20:0xc3d688B66703497DAA19211EEdff47f25384cdc3': {  # cUSDCv3
+                    'apy': '6.23%',
+                    'balance': get_balance('332616.655316'),
+                },
+            }, 'rewards': {
+                A_COMP.identifier: {
+                    'apy': None,
+                    'balance': get_balance('1.000582'),
+                },
+            },
+        }, ethereum_accounts[1]: {
+            'lending': {
+                'eip155:1/erc20:0xc3d688B66703497DAA19211EEdff47f25384cdc3': {  # cUSDCv3
+                    'apy': '6.23%',
+                    'balance': get_balance('2429583.305871'),
+                },
+            }, 'rewards': {
+                A_COMP.identifier: {
+                    'apy': None,
+                    'balance': get_balance('3.479851'),
+                },
+            },
+        }, ethereum_accounts[2]: {
+            'borrowing': {
+                'eip155:1/erc20:0xc3d688B66703497DAA19211EEdff47f25384cdc3': {  # cUSDCv3
+                    'apy': '8.42%',
+                    'balance': get_balance('19559.865373'),
+                },
+            }, 'rewards': {
+                A_COMP.identifier: {
+                    'apy': None,
+                    'balance': get_balance('111.88407'),
+                },
+            },
+        }, ethereum_accounts[3]: {
+            'borrowing': {
+                'eip155:1/erc20:0xA17581A9E3356d9A858b789D68B4d866e593aE94': {  # cWETHv3
+                    'apy': '1.75%',
+                    'balance': get_balance('0.260603613997972411'),
+                },
+            }, 'rewards': {
+                A_COMP.identifier: {
+                    'apy': None,
+                    'balance': get_balance('0.106294'),
+                },
+            },
+        },
+    }
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
