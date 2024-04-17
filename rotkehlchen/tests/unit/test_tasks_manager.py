@@ -609,6 +609,7 @@ def test_augmented_detection_pendle_transactions(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('max_tasks_num', [5])
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 def test_maybe_update_aave_v3_underlying_assets(
         task_manager: TaskManager,
         globaldb: GlobalDBHandler,
@@ -672,6 +673,8 @@ def test_maybe_update_aave_v3_underlying_assets(
         assert task_manager.database.get_static_cache(
             cursor=cursor, name=DBCacheStatic.LAST_AAVE_V3_ASSETS_UPDATE,
         ) is not None
+
+    assert len(task_manager.database.msg_aggregator.rotki_notifier.messages) == 0  # type: ignore[union-attr]  # rotki_notifier is MockRotkiNotifier
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])

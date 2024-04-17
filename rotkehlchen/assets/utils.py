@@ -231,6 +231,7 @@ def get_or_create_evm_token(
     existing token will still be silently returned
     Note2: This entire function is designed so that it does not context switch away from
     its calling greenlet so it should be safe to call from multiple greenlets.
+    Note3: If encounter is None, it will broadcast the `NEW_EVM_TOKEN_DETECTED` message by default.
 
     May raise:
     - NotERC20Conformant exception if an ethereum manager is given to query

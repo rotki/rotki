@@ -6,7 +6,11 @@ from typing import TYPE_CHECKING
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, UnderlyingToken
 from rotkehlchen.assets.types import AssetType
-from rotkehlchen.assets.utils import check_if_spam_token, get_or_create_evm_token
+from rotkehlchen.assets.utils import (
+    TokenEncounterInfo,
+    check_if_spam_token,
+    get_or_create_evm_token,
+)
 from rotkehlchen.chain.base.modules.aave.v3.constants import (
     AAVE_V3_DATA_PROVIDER as AAVE_V3_DATA_PROVIDER_BASE,
 )
@@ -337,6 +341,7 @@ def update_aave_v3_underlying_assets(chains_aggregator: 'ChainsAggregator') -> N
                             token_kind=EvmTokenKind.ERC20,
                             weight=ONE,
                         )],
+                        encounter=TokenEncounterInfo(should_notify=False),
                     )
                 except DeserializationError as e:
                     log.error(
