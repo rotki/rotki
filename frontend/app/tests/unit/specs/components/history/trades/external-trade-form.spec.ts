@@ -81,7 +81,7 @@ describe('externalTradeForm.vue', () => {
   describe('should prefill the fields based on the props', () => {
     it('no `editableItem` passed', async () => {
       wrapper = createWrapper();
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       expect(
         (wrapper.find('[data-cy=date] input').element as HTMLInputElement).value,
@@ -139,7 +139,7 @@ describe('externalTradeForm.vue', () => {
 
     it('`editableItem` passed', async () => {
       wrapper = createWrapper();
-      await wrapper.vm.$nextTick();
+      await nextTick();
       await wrapper.setProps({ editableItem });
 
       const buyRadio = wrapper.find(
@@ -161,7 +161,7 @@ describe('externalTradeForm.vue', () => {
         .find('[data-cy=type] [data-cy=trade-input-sell] input')
         .trigger('click');
 
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       expect(
         (wrapper.find('[data-cy=amount] input').element as HTMLInputElement)

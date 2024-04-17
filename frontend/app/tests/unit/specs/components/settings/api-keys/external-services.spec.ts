@@ -95,7 +95,7 @@ describe('/settings/api-keys/external-services', () => {
       const query = api.queryExternalServices as any;
       query.mockResolvedValueOnce({});
       wrapper = createWrapper();
-      await wrapper.vm.$nextTick();
+      await nextTick();
       await flushPromises();
     });
 
@@ -107,7 +107,7 @@ describe('/settings/api-keys/external-services', () => {
           '[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__api-key] input',
         )
         .setValue('123');
-      await wrapper.vm.$nextTick();
+      await nextTick();
       await wrapper
         .find(
           '[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__save]',
@@ -126,7 +126,7 @@ describe('/settings/api-keys/external-services', () => {
           '[data-cy=external-keys] [data-cy=cryptocompare] [data-cy=service-key__api-key] input',
         )
         .setValue('123');
-      await wrapper.vm.$nextTick();
+      await nextTick();
       await wrapper
         .find(
           '[data-cy=external-keys] [data-cy=cryptocompare] [data-cy=service-key__save]',
@@ -153,7 +153,7 @@ describe('/settings/api-keys/external-services', () => {
           '[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__api-key] input',
         )
         .setValue('123');
-      await wrapper.vm.$nextTick();
+      await nextTick();
       await wrapper
         .find(
           '[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__save]',
@@ -201,7 +201,7 @@ describe('/settings/api-keys/external-services', () => {
     beforeEach(async () => {
       vi.mocked(api.queryExternalServices).mockResolvedValueOnce(mockResponse);
       wrapper = createWrapper();
-      await wrapper.vm.$nextTick();
+      await nextTick();
       await flushPromises();
     });
 
@@ -225,11 +225,11 @@ describe('/settings/api-keys/external-services', () => {
           '[data-cy=external-keys] [data-cy=etherscan] [data-cy=service-key__delete]',
         )
         .trigger('click');
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       const confirmStore = useConfirmStore();
       await confirmStore.confirm();
-      await wrapper.vm.$nextTick();
+      await nextTick();
       await flushPromises();
 
       expect(mock).toHaveBeenCalledWith('etherscan');
@@ -244,11 +244,11 @@ describe('/settings/api-keys/external-services', () => {
           '[data-cy=external-keys] [data-cy=cryptocompare] [data-cy=service-key__delete]',
         )
         .trigger('click');
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       const confirmStore = useConfirmStore();
       await confirmStore.confirm();
-      await wrapper.vm.$nextTick();
+      await nextTick();
       await flushPromises();
 
       expect(mock).toHaveBeenCalledWith('cryptocompare');

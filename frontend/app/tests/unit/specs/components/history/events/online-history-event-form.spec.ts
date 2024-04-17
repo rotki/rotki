@@ -78,7 +78,7 @@ describe('onlineHistoryEventForm.vue', () => {
   describe('should prefill the fields based on the props', () => {
     it('no `groupHeader`, `editableItem`, nor `nextSequence` are passed', async () => {
       wrapper = createWrapper();
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       expect(
         (
@@ -104,7 +104,7 @@ describe('onlineHistoryEventForm.vue', () => {
 
     it('`groupHeader` and `nextSequence` are passed', async () => {
       wrapper = createWrapper();
-      await wrapper.vm.$nextTick();
+      await nextTick();
       await wrapper.setProps({ groupHeader, nextSequence: '10' });
 
       expect(
@@ -143,7 +143,7 @@ describe('onlineHistoryEventForm.vue', () => {
 
     it('`groupHeader`, `editableItem`, and `nextSequence` are passed', async () => {
       wrapper = createWrapper();
-      await wrapper.vm.$nextTick();
+      await nextTick();
       await wrapper.setProps({ groupHeader, editableItem: groupHeader, nextSequence: '10' });
 
       expect(
@@ -183,7 +183,7 @@ describe('onlineHistoryEventForm.vue', () => {
 
   it('should show all eventTypes options correctly', async () => {
     wrapper = createWrapper({ propsData: { groupHeader } });
-    await wrapper.vm.$nextTick();
+    await nextTick();
     await flushPromises();
 
     const { historyEventTypesData } = useHistoryEventMappings();
@@ -195,7 +195,7 @@ describe('onlineHistoryEventForm.vue', () => {
 
   it('should show all eventSubTypes options correctly', async () => {
     wrapper = createWrapper({ propsData: { groupHeader } });
-    await wrapper.vm.$nextTick();
+    await nextTick();
     await flushPromises();
 
     const { historyEventSubTypesData } = useHistoryEventMappings();
@@ -207,7 +207,7 @@ describe('onlineHistoryEventForm.vue', () => {
 
   it('should show correct eventSubtypes options, based on selected eventType', async () => {
     wrapper = createWrapper({ propsData: { groupHeader } });
-    await wrapper.vm.$nextTick();
+    await nextTick();
     await flushPromises();
 
     const { historyEventTypeGlobalMapping } = useHistoryEventMappings();
@@ -218,7 +218,7 @@ describe('onlineHistoryEventForm.vue', () => {
       value: selectedEventType,
     });
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     const keysFromGlobalMappings = Object.keys(
       get(historyEventTypeGlobalMapping)?.[selectedEventType] ?? {},

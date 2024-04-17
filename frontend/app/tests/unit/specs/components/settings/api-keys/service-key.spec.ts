@@ -26,14 +26,14 @@ describe('serviceKey.vue', () => {
 
   it('component leaves edit mode when updated with non-empty value', async () => {
     expect.assertions(2);
-    await wrapper.vm.$nextTick();
+    await nextTick();
     expect(
       wrapper.find('[data-cy=service-key__api-key]').attributes('disabled'),
     ).toBeUndefined();
     await wrapper.setProps({
       apiKey: '1234',
     });
-    await wrapper.vm.$nextTick();
+    await nextTick();
     expect(
       wrapper
         .find('[data-cy=service-key__api-key] input')

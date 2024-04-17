@@ -40,17 +40,16 @@ describe('composables::backend', () => {
 
   it('should use default config', async () => {
     const loaded = vi.fn();
-    let backendManagement: ReturnType<typeof useBackendManagement> | null
-      = null;
+    let backendManagement: ReturnType<typeof useBackendManagement> | null = null;
 
-    const wrapper = mount({
+    mount({
       setup() {
         backendManagement = useBackendManagement(loaded);
       },
     });
 
-    await wrapper.vm.$nextTick();
-    await wrapper.vm.$nextTick();
+    await nextTick();
+    await nextTick();
 
     expect(backendManagement).not.toBeNull();
     const { options, defaultLogDirectory, fileConfig } = backendManagement!;
@@ -80,14 +79,14 @@ describe('composables::backend', () => {
     let backendManagement: ReturnType<typeof useBackendManagement> | null
       = null;
 
-    const wrapper = mount({
+    mount({
       setup() {
         backendManagement = useBackendManagement(loaded);
       },
     });
 
-    await wrapper.vm.$nextTick();
-    await wrapper.vm.$nextTick();
+    await nextTick();
+    await nextTick();
 
     expect(backendManagement).not.toBeNull();
     const { options } = backendManagement!;

@@ -57,7 +57,7 @@ describe('moduleSelector.vue', () => {
       (wrapper.find('[data-cy=aave-module-switch] input').element as HTMLInputElement).checked,
     ).toBeTruthy();
     await wrapper.find('[data-cy=aave-module-switch] input').trigger('input', { target: false });
-    await wrapper.vm.$nextTick();
+    await nextTick();
     await flushPromises();
     expect(
       (wrapper.find('[data-cy=aave-module-switch] input').element as HTMLInputElement).checked,

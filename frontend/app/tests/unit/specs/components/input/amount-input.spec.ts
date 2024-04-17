@@ -39,10 +39,10 @@ describe('amountInput.vue', () => {
 
   it('should format the numbers', async () => {
     wrapper = createWrapper({});
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     await wrapper.find('input').setValue('100000');
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
       '100,000',
@@ -55,14 +55,14 @@ describe('amountInput.vue', () => {
     wrapper = createWrapper({
       propsData: { value: '500000' },
     });
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
       '500,000',
     );
 
     await wrapper.setProps({ value: '100000.123' });
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
       '100,000.123',
@@ -80,26 +80,26 @@ describe('amountInput.vue', () => {
     wrapper = createWrapper({
       propsData: { value: '500000' },
     });
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
       '500.000',
     );
 
     await wrapper.setProps({ value: '100000.123' });
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
       '100.000,123',
     );
 
     await wrapper.find('input').setValue('');
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe('');
 
     await wrapper.find('input').setValue('500000.123');
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
       '500.000,123',
@@ -110,10 +110,10 @@ describe('amountInput.vue', () => {
 
   it('should emit correct value', async () => {
     wrapper = createWrapper({});
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     await wrapper.find('input').setValue('100000');
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
       '100,000',
@@ -122,14 +122,14 @@ describe('amountInput.vue', () => {
     expect(wrapper.emitted().input?.[1]).toEqual(['100000']);
 
     await wrapper.find('input').setValue('');
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe('');
 
     expect(wrapper.emitted().input?.[2]).toEqual(['']);
 
     await wrapper.find('input').setValue('5555abcde');
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
       '5,555',

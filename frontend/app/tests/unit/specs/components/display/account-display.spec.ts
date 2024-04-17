@@ -50,7 +50,7 @@ describe('accountDisplay.vue', () => {
 
   it('blurs address on privacy mode', async () => {
     useSessionSettingsStore().update({ privacyMode: PrivacyMode.SEMI_PRIVATE });
-    await wrapper.vm.$nextTick();
+    await nextTick();
     expect(wrapper.find('.blur').exists()).toBe(true);
   });
 });

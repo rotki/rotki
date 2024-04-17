@@ -77,7 +77,7 @@ describe('evmChainsToIgnoreSettings.vue', () => {
     const inputEl = input.element as HTMLInputElement;
     await input.trigger('input', { value: chains });
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
     await promiseTimeout(2000);
     await flushPromises();
 
@@ -91,7 +91,7 @@ describe('evmChainsToIgnoreSettings.vue', () => {
     const input = wrapper.find('.input-value');
 
     await input.trigger('input', { value: ['ethereum'] });
-    await wrapper.vm.$nextTick();
+    await nextTick();
     await promiseTimeout(2000);
     await flushPromises();
 

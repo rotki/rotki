@@ -37,7 +37,7 @@ describe('defiWizard.vue', () => {
   it('wizard completes when use default is pressed', async () => {
     expect.assertions(1);
     await wrapper.find('.defi-wizard__use-default').trigger('click');
-    await wrapper.vm.$nextTick();
+    await nextTick();
     expect(api.setSettings).toBeCalledWith({
       frontendSettings: JSON.stringify(
         snakeCaseTransformer({ ...settings, defiSetupDone: true }),
@@ -48,9 +48,9 @@ describe('defiWizard.vue', () => {
   it('wizard completes when complete is pressed', async () => {
     expect.assertions(1);
     await wrapper.find('.defi-wizard__select-modules').trigger('click');
-    await wrapper.vm.$nextTick();
+    await nextTick();
     await wrapper.find('[data-cy=defi-wizard-done]').trigger('click');
-    await wrapper.vm.$nextTick();
+    await nextTick();
     expect(api.setSettings).toBeCalledWith({
       frontendSettings: JSON.stringify(
         snakeCaseTransformer({ ...settings, defiSetupDone: true }),
