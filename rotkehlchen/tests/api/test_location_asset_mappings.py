@@ -65,6 +65,20 @@ def test_location_asset_mappings_query(rotkehlchen_api_server: 'APIServer') -> N
     result = assert_proper_response_with_result(response)
     assert len(result['entries']) == result['entries_found'] == 228
 
+    # query by symbol all the kraken mappings
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'locationassetmappingsresource',
+        ),
+        json={'location_symbol': 'eth', 'location': 'kraken'},
+    )
+    result = assert_proper_response_with_result(response)
+    assert all(entry['location'] == 'kraken' for entry in result['entries'])
+    assert {'XETH', 'ETHW', 'WETH', 'ETH2'}.issubset(
+        {entry['location_symbol'] for entry in result['entries']},
+    )
+
 
 def test_location_asset_mappings_add(rotkehlchen_api_server: 'APIServer') -> None:
     """Test the location asset mappings API for adding the mappings."""
