@@ -170,14 +170,20 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
             <th />
           </tr>
         </thead>
-        <tbody>
-          <tr v-if="noResults">
+        <tbody v-if="noResults">
+          <tr>
             <td colspan="4">
               <div class="flex justify-center p-3 text-h6">
                 {{ t('prioritized_list.item.empty', itemNameTr) }}
               </div>
             </td>
           </tr>
+        </tbody>
+        <TransitionGroup
+          v-else
+          move-class="transition-all"
+          tag="tbody"
+        >
           <tr
             v-for="(identifier, index) in value"
             :key="identifier"
@@ -240,7 +246,7 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
               </RuiTooltip>
             </td>
           </tr>
-        </tbody>
+        </TransitionGroup>
       </SimpleTable>
     </RuiCard>
     <ActionStatusIndicator
