@@ -88,12 +88,12 @@ describe('ethDepositEventForm.vue', () => {
   describe('should prefill the fields based on the props', () => {
     it('no `groupHeader`, `editableItem`, nor `nextSequence` are passed', async () => {
       wrapper = createWrapper();
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       await wrapper
         .find('[data-cy=eth-deposit-event-form__advance] .accordion__header')
         .trigger('click');
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       expect(
         (
@@ -131,13 +131,13 @@ describe('ethDepositEventForm.vue', () => {
 
     it('`groupHeader` and `nextSequence` are passed', async () => {
       wrapper = createWrapper();
-      await wrapper.vm.$nextTick();
+      await nextTick();
       await wrapper.setProps({ groupHeader, nextSequence: '10' });
 
       await wrapper
         .find('[data-cy=eth-deposit-event-form__advance] .accordion__header')
         .trigger('click');
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       expect(
         (
@@ -180,13 +180,13 @@ describe('ethDepositEventForm.vue', () => {
 
     it('`groupHeader`, `editableItem`, and `nextSequence` are passed', async () => {
       wrapper = createWrapper();
-      await wrapper.vm.$nextTick();
+      await nextTick();
       await wrapper.setProps({ groupHeader, editableItem: groupHeader });
 
       await wrapper
         .find('[data-cy=eth-deposit-event-form__advance] .accordion__header')
         .trigger('click');
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       expect(
         (

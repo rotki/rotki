@@ -76,17 +76,17 @@ describe('tagInput.vue', () => {
     store = useTagStore();
     await store.fetchTags();
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     await wrapper.find('input[type=text]').trigger('input', { value: 'tag1' });
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     const emitted: string[] = ['tag1'];
     expect(wrapper.emitted().input?.[0]?.[0]).toEqual(emitted);
     set(value, emitted);
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(wrapper.find('.selections div[role=button] span').text()).toBe(
       'tag1',
@@ -102,15 +102,15 @@ describe('tagInput.vue', () => {
     store = useTagStore();
     await store.fetchTags();
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     await wrapper.find('input[type=text]').trigger('input', { value: 'tag2' });
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     set(value, ['tag2']);
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(wrapper.find('.selections div[role=button] span').text()).toBe(
       'tag2',
@@ -118,14 +118,14 @@ describe('tagInput.vue', () => {
 
     await store.deleteTag('tag2');
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     const emitted: string[] = [];
     expect(wrapper.emitted().input?.[1]?.[0]).toEqual(emitted);
 
     set(value, emitted);
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(
       wrapper.find('.selections div[role=button] span').exists(),

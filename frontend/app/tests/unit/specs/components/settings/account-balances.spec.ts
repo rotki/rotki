@@ -58,7 +58,7 @@ describe('accountBalances.vue', () => {
       status: Status.LOADING,
     });
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(
       wrapper
@@ -75,7 +75,7 @@ describe('accountBalances.vue', () => {
       subsection: Blockchain.ETH,
       status: Status.LOADED,
     });
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(
       wrapper

@@ -41,7 +41,7 @@ describe('userSecuritySettings.vue', () => {
   it('displays warning if premium sync enabled', async () => {
     const { premiumSync } = storeToRefs(usePremiumStore());
     set(premiumSync, true);
-    await wrapper.vm.$nextTick();
+    await nextTick();
     expect(wrapper.find('[data-cy=premium-warning]').exists()).toBe(true);
   });
 });

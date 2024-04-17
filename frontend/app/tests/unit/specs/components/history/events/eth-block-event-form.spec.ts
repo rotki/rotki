@@ -80,7 +80,7 @@ describe('ethBlockEventForm.vue', () => {
   describe('should prefill the fields based on the props', () => {
     it('no `groupHeader`, nor `editableItem` are passed', async () => {
       wrapper = createWrapper();
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       expect(
         (
@@ -113,7 +113,7 @@ describe('ethBlockEventForm.vue', () => {
 
     it('`groupHeader` passed', async () => {
       wrapper = createWrapper();
-      await wrapper.vm.$nextTick();
+      await nextTick();
       await wrapper.setProps({ groupHeader });
 
       expect(
@@ -152,7 +152,7 @@ describe('ethBlockEventForm.vue', () => {
 
     it('`groupHeader` and `editableItem` are passed', async () => {
       wrapper = createWrapper();
-      await wrapper.vm.$nextTick();
+      await nextTick();
       await wrapper.setProps({ groupHeader, editableItem: groupHeader });
 
       expect(

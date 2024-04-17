@@ -27,12 +27,12 @@ describe('assetBalances.vue', () => {
 
   it('table enters into loading state when balances load', async () => {
     await wrapper.setProps({ loading: true });
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(wrapper.find('tbody td div[role=progressbar]').exists()).toBeTruthy();
 
     await wrapper.setProps({ loading: false });
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(wrapper.find('tbody td div[role=progressbar]').exists()).toBeFalsy();
     expect(wrapper.find('tbody tr td p').text()).toMatch('data_table.no_data');

@@ -95,7 +95,7 @@ describe('table-filter/FilterDropdown.vue', () => {
       keyword: 'type=',
     });
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     const suggestions = matchers[1].suggestions();
     expect(wrapper.findAll('.suggestions > button')).toHaveLength(
@@ -113,7 +113,7 @@ describe('table-filter/FilterDropdown.vue', () => {
       keyword: 'type !=',
     });
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(wrapper.find('.suggestions > button:nth-child(1)').text()).toBe(
       'type != type 1',
@@ -126,7 +126,7 @@ describe('table-filter/FilterDropdown.vue', () => {
       keyword: 'type=type 2',
     });
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(wrapper.find('.suggestions > button:nth-child(1)').text()).toBe(
       'type = type 2',
@@ -149,7 +149,7 @@ describe('table-filter/FilterDropdown.vue', () => {
       keyword: 'start=',
     });
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(wrapper.find('I18n-stub').attributes().path).toBe(
       'table_filter.no_suggestions',
