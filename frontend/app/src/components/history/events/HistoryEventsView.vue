@@ -577,7 +577,11 @@ const processing = logicOr(
 );
 
 async function intervalFetch() {
-  await Promise.allSettled([fetchDataAndLocations, fetchUnDecodedEventsBreakdown(TransactionChainType.EVM), fetchUnDecodedEventsBreakdown(TransactionChainType.EVMLIKE)]);
+  await Promise.allSettled([
+    fetchDataAndLocations(),
+    fetchUnDecodedEventsBreakdown(TransactionChainType.EVM),
+    fetchUnDecodedEventsBreakdown(TransactionChainType.EVMLIKE),
+  ]);
 }
 
 const { pause, resume, isActive } = useIntervalFn(() => {
@@ -644,9 +648,7 @@ onMounted(async () => {
 async function refresh(userInitiated = false) {
   set(currentAction, 'query');
   const entryTypesVal = get(entryTypes) || [];
-  const disableEvmEvents
-    = entryTypesVal.length > 0
-    && !entryTypesVal.includes(HistoryEventEntryType.EVM_EVENT);
+  const disableEvmEvents = entryTypesVal.length > 0 && !entryTypesVal.includes(HistoryEventEntryType.EVM_EVENT);
   await refreshTransactions(get(onlyChains), disableEvmEvents, userInitiated);
   startPromise(intervalFetch());
 }
