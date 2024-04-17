@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple
 
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -91,18 +92,26 @@ class CalendarEntry(NamedTuple):
         )
 
 
-class ReminderEntry(NamedTuple):
-    """Store basic information to warn the user based on the event timestamp"""
-    event_id: int
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+class BaseReminderData:
+    """Base fields queried for reminders"""
     secs_before: int
-    identifier: int = 0
+    identifier: int
 
     def serialize(self) -> dict[str, Any]:
         return {
             'identifier': self.identifier,
-            'event_id': self.event_id,
             'secs_before': self.secs_before,
         }
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+class ReminderEntry(BaseReminderData):
+    """Store basic information to warn the user based on the event timestamp"""
+    event_id: int
+
+    def serialize(self) -> dict[str, Any]:
+        return super().serialize() | {'event_id': self.event_id}
 
     def serialize_for_db(self) -> tuple[
         int,  # event_id
@@ -222,7 +231,7 @@ class DBCalendar:
                     'address and blockchain already exist',
                 )
 
-            return identifier_row[0]
+        return identifier_row[0]
 
     def query_calendar_entry(self, filter_query: CalendarFilterQuery) -> dict[str, Any]:
         """Query events using the provided filter and return the result along with the
@@ -252,7 +261,7 @@ class DBCalendar:
             entry_type: Literal['calendar', 'calendar_reminders'],
     ) -> None:
         """
-        Delete by identifier either calendar entries or reminders based on the entry_type
+        Delete calendar entries or reminders by identifier based on the entry_type
         May raise:
         - InputError: if no event got deleted
         """
@@ -277,28 +286,29 @@ class DBCalendar:
 
         return calendar.identifier
 
-    def create_reminder_entry(self, entry: ReminderEntry) -> int:
-        """Insert the provided event reminder in the database.
+    def create_reminder_enties(
+            self,
+            reminders: list[ReminderEntry],
+    ) -> tuple[list[int], list[int]]:
+        """Insert the provided list of event reminder in the database.
         May raise:
         - InputError if any db constraint is not satisfied
         """
+        success_added, failed_to_add = [], []
         with self.db.user_write() as write_cursor:
-            try:
-                write_cursor.execute(
-                    'INSERT OR IGNORE INTO calendar_reminders(event_id, secs_before) '
-                    'VALUES (?, ?) RETURNING identifier',
-                    entry.serialize_for_db()[:-1],  # exclude the default identifier since we need to create it  # noqa: E501
-                )
-            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
-                raise InputError(f'Could not add reminder entry due to {e}') from e
+            for entry in reminders:
+                try:
+                    write_cursor.execute(
+                        'INSERT OR IGNORE INTO calendar_reminders(event_id, secs_before) '
+                        'VALUES (?, ?) RETURNING identifier',
+                        entry.serialize_for_db()[:-1],  # exclude the default identifier since we need to create it  # noqa: E501
+                    )
+                except (sqlcipher.IntegrityError, sqlcipher.OperationalError):  # pylint: disable=no-member
+                    failed_to_add.append(entry.event_id)
+                else:
+                    success_added.append(entry.event_id)
 
-            if (identifier_row := write_cursor.fetchone()) is None:
-                raise InputError(
-                    'Could not add the reminder entry because an event with the same name, '
-                    'address and blockchain already exist',
-                )
-
-            return identifier_row[0]
+        return success_added, failed_to_add
 
     def update_reminder_entry(self, reminder: ReminderEntry) -> int:
         """Update reminder in the database
@@ -316,7 +326,7 @@ class DBCalendar:
         return reminder.identifier
 
     def query_reminder_entry(self, event_id: int) -> dict[str, list[ReminderEntry]]:
-        """Query reminder using the id of the event linked"""
+        """Query reminder using the id of the linked event"""
         with self.db.conn.read_ctx() as cursor:
             cursor.execute(
                 'SELECT identifier, event_id, secs_before FROM calendar_reminders '

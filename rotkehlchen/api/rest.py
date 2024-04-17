@@ -4942,16 +4942,16 @@ class RestAPI:
             status_code=HTTPStatus.OK,
         )
 
-    def create_calendar_reminder(self, entry: ReminderEntry) -> Response:
+    def create_calendar_reminder(self, reminders: list[ReminderEntry]) -> Response:
         """Store in the database the reminder for an event and return the id of the new entry"""
-        try:
-            reminder_id = DBCalendar(self.rotkehlchen.data.db).create_reminder_entry(entry=entry)
-        except InputError as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
-        return api_response(_wrap_in_ok_result(
-            {'entry_id': reminder_id}),
-            status_code=HTTPStatus.OK,
+        success, failed = DBCalendar(self.rotkehlchen.data.db).create_reminder_enties(
+            reminders=reminders,
         )
+        result = {'success': success}
+        if len(failed):
+            result['failed'] = failed
+
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
     def delete_reminder_entry(self, identifier: int) -> Response:
         """Delete a reminder entry by its id"""
