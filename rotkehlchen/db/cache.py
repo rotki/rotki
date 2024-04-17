@@ -22,6 +22,7 @@ class DBCacheStatic(Enum):
     LAST_WITHDRAWALS_EXIT_QUERY_TS: Final = 'last_withdrawals_exit_query_ts'
     LAST_MONERIUM_QUERY_TS: Final = 'last_monerium_query_ts'
     LAST_AAVE_V3_ASSETS_UPDATE: Final = 'last_aave_v3_assets_update'
+    LAST_DELETE_PAST_CALENDAR_EVENTS: Final = 'last_delete_past_calendar_events'
 
 
 class LabeledLocationArgsType(TypedDict):

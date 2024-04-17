@@ -34,6 +34,7 @@ class CalendarEntry(NamedTuple):
     address: BlockchainAddress | None
     blockchain: SupportedBlockchain | None
     color: HexColorCode | None
+    auto_delete: bool
     identifier: int = 0
 
     def serialize(self) -> dict[str, Any]:
@@ -42,6 +43,7 @@ class CalendarEntry(NamedTuple):
             'name': self.name,
             'description': self.description,
             'timestamp': self.timestamp,
+            'auto_delete': self.auto_delete,
         }
         if self.color is not None:
             data['color'] = self.color
@@ -62,6 +64,7 @@ class CalendarEntry(NamedTuple):
         str | None,  # address
         str | None,  # blockchain
         str | None,  # color
+        int,  # auto_delete
         int,  # identifier
     ]:
         return (
@@ -72,13 +75,24 @@ class CalendarEntry(NamedTuple):
             self.address,
             self.blockchain.value if self.blockchain else None,
             self.color,
+            int(self.auto_delete),
             self.identifier,
         )
 
     @classmethod
     def deserialize_from_db(
             cls,
-            row: tuple[int, str, str | None, str | None, int, str | None, str | None, str | None],
+            row: tuple[
+                int,
+                str,
+                str | None,
+                str | None,
+                int,
+                str | None,
+                str | None,
+                str | None,
+                int,
+            ],
     ) -> 'CalendarEntry':
         return cls(
             identifier=row[0],
@@ -89,6 +103,7 @@ class CalendarEntry(NamedTuple):
             address=row[5],  # type: ignore  # it is a str here
             blockchain=SupportedBlockchain.deserialize(row[6]) if row[6] else None,
             color=HexColorCode(row[7]) if row[7] else None,
+            auto_delete=bool(row[8]),
         )
 
 
@@ -218,7 +233,7 @@ class DBCalendar:
             try:
                 write_cursor.execute(
                     'INSERT OR IGNORE INTO calendar(name, timestamp, description, counterparty, '
-                    'address, blockchain, color) VALUES (?, ?, ?, ?, ?, ?, ?) '
+                    'address, blockchain, color, auto_delete) VALUES (?, ?, ?, ?, ?, ?, ?, ?) '
                     'RETURNING identifier',
                     calendar.serialize_for_db()[:-1],  # exclude the default identifier since we need to create it  # noqa: E501
                 )
@@ -241,7 +256,7 @@ class DBCalendar:
         with self.db.conn.read_ctx() as cursor:
             cursor.execute(
                 'SELECT identifier, name, description, counterparty, timestamp, address, '
-                'blockchain, color FROM calendar ' + query,
+                'blockchain, color, auto_delete FROM calendar ' + query,
                 bindings,
             )
             result = [CalendarEntry.deserialize_from_db(entry) for entry in cursor]
@@ -278,7 +293,7 @@ class DBCalendar:
         with self.db.user_write() as write_cursor:
             try:
                 write_cursor.execute(
-                    'UPDATE calendar SET name=?, timestamp=?, description=?, counterparty=?, address=?, blockchain=?, color=? WHERE identifier=?',  # noqa: E501
+                    'UPDATE calendar SET name=?, timestamp=?, description=?, counterparty=?, address=?, blockchain=?, color=?, auto_delete=? WHERE identifier=?',  # noqa: E501
                     calendar.serialize_for_db(),
                 )
             except sqlcipher.IntegrityError as e:  # pylint: disable=no-member

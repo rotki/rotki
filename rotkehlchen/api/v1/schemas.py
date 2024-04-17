@@ -1340,6 +1340,7 @@ class ModifiableSettingsSchema(Schema):
             error='The penalty should be >= 1 seconds',
         ),
     )
+    auto_delete_calendar_entries = fields.Boolean(load_default=None)
 
     @validates_schema
     def validate_settings_schema(
@@ -1398,6 +1399,7 @@ class ModifiableSettingsSchema(Schema):
             read_timeout=data['read_timeout'],
             oracle_penalty_threshold_count=data['oracle_penalty_threshold_count'],
             oracle_penalty_duration=data['oracle_penalty_duration'],
+            auto_delete_calendar_entries=data['auto_delete_calendar_entries'],
         )
 
 
@@ -3556,8 +3558,8 @@ def _validate_address_with_blockchain(
         blockchain.get_chain_type() == 'substrate' and
         not is_valid_substrate_address(chain=blockchain, value=address)  # type: ignore  # expects polkadot or kusama
     ) or (
-        blockchain.is_evmlike() and
-        to_checksum_address(address) == address
+        blockchain.is_evm_or_evmlike() and
+        not to_checksum_address(address) == address
     )):
         raise ValidationError(
             f'Given value {address} is not a {blockchain} address',
@@ -3614,6 +3616,7 @@ class CalendarCommonEntrySchema(AnyBlockchainAddress):
     description = fields.String(load_default=None)
     counterparty = EvmCounterpartyField(load_default=None)
     color = ColorField(load_default=None)
+    auto_delete = fields.Boolean(required=True)
 
     def __init__(self, chain_aggregator: 'ChainsAggregator') -> None:
         super().__init__()
@@ -3637,6 +3640,7 @@ class NewCalendarEntrySchema(CalendarCommonEntrySchema):
                 address=data['address'],
                 blockchain=data['blockchain'],
                 color=data['color'],
+                auto_delete=data['auto_delete'],
             ),
         }
 

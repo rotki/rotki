@@ -36,6 +36,7 @@ from rotkehlchen.db.schema import DB_CREATE_ETH2_DAILY_STAKING_DETAILS
 from rotkehlchen.db.settings import (
     DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS,
     DEFAULT_ACTIVE_MODULES,
+    DEFAULT_AUTO_DELETE_CALENDAR_ENTRIES,
     DEFAULT_BALANCE_SAVE_FREQUENCY,
     DEFAULT_BTC_DERIVATION_GAP_LIMIT,
     DEFAULT_CALCULATE_PAST_COST_BASIS,
@@ -516,6 +517,7 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         'read_timeout': DEFAULT_READ_TIMEOUT,
         'oracle_penalty_threshold_count': DEFAULT_ORACLE_PENALTY_THRESHOLD_COUNT,
         'oracle_penalty_duration': DEFAULT_ORACLE_PENALTY_DURATION,
+        'auto_delete_calendar_entries': DEFAULT_AUTO_DELETE_CALENDAR_ENTRIES,
     }
     assert len(expected_dict) == len(dataclasses.fields(DBSettings)), 'One or more settings are missing'  # noqa: E501
 

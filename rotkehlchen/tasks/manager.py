@@ -43,7 +43,11 @@ from rotkehlchen.tasks.assets import (
     update_aave_v3_underlying_assets,
     update_owned_assets,
 )
-from rotkehlchen.tasks.calendar import CalendarNotification, notify_reminders
+from rotkehlchen.tasks.calendar import (
+    CalendarNotification,
+    maybe_delete_past_events,
+    notify_reminders,
+)
 from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries, should_run_periodic_task
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
@@ -167,6 +171,7 @@ class TaskManager:
             self._maybe_update_owned_assets,
             self._maybe_update_aave_v3_underlying_assets,
             self._maybe_trigger_calendar_reminder,
+            self._maybe_delete_past_calendar_events,
         ]
         if self.premium_sync_manager is not None:
             self.potential_tasks.append(self._maybe_schedule_db_upload)
@@ -821,16 +826,16 @@ class TaskManager:
             cursor.execute(
                 'SELECT event.identifier, event.name, event.description, event.counterparty, '
                 'event.timestamp, event.address, event.blockchain, event.color, '
-                'reminder.identifier, reminder.secs_before FROM calendar_reminders AS reminder '
-                'LEFT JOIN calendar AS event '
+                'event.auto_delete, reminder.identifier, reminder.secs_before FROM '
+                'calendar_reminders AS reminder LEFT JOIN calendar AS event '
                 'ON reminder.event_id = event.identifier WHERE '
                 '? > event.timestamp - reminder.secs_before',
                 (now,),
             )
             reminders = [CalendarNotification(
-                event=CalendarEntry.deserialize_from_db(row[:8]),
-                identifier=row[8],
-                secs_before=row[9],
+                event=CalendarEntry.deserialize_from_db(row[:9]),
+                identifier=row[9],
+                secs_before=row[10],
             ) for row in cursor]
 
         if len(reminders) == 0:
@@ -845,6 +850,22 @@ class TaskManager:
             reminders=reminders,
             database=self.database,
             msg_aggregator=self.msg_aggregator,
+        )]
+
+    def _maybe_delete_past_calendar_events(self) -> Optional[list[gevent.Greenlet]]:
+        """
+        Delete old calendar events if the setting for deleting them allows it and if they haven't
+        been marked to not be deleted.
+        """
+        if should_run_periodic_task(self.database, DBCacheStatic.LAST_DELETE_PAST_CALENDAR_EVENTS, DAY_IN_SECONDS) is False:  # noqa: E501
+            return None
+
+        return [self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name='Delete old calendar entries',
+            exception_is_error=True,
+            method=maybe_delete_past_events,
+            database=self.database,
         )]
 
     def _schedule(self) -> None:

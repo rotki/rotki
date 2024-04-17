@@ -18,7 +18,7 @@ from rotkehlchen.constants.timing import DATA_UPDATES_REFRESH, DAY_IN_SECONDS, W
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.calendar import CalendarEntry, DBCalendar
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.settings import ModifiableDBSettings
+from rotkehlchen.db.settings import CachedSettings, ModifiableDBSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, SubscriptionStatus
@@ -273,7 +273,7 @@ def test_check_premium_status(rotkehlchen_api_server, username):
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])
-def test_update_snapshot_balances(task_manager):
+def test_update_snapshot_balances(task_manager: TaskManager):
     task_manager.potential_tasks = [task_manager._maybe_update_snapshot_balances]
     query_balances_patch = patch.object(
         task_manager,
@@ -712,6 +712,7 @@ def test_send_ws_calendar_reminder(
                 address=None,
                 blockchain=None,
                 color=None,
+                auto_delete=False,
             ),
         )
     with database.conn.write_ctx() as write_cursor:
@@ -741,6 +742,7 @@ def test_send_ws_calendar_reminder(
             'name': 'CRV unlock',
             'description': 'Unlock date for CRV',
             'timestamp': 1713621899,
+            'auto_delete': False,
         },
         'type': 'calendar_reminder',
     }
@@ -764,6 +766,7 @@ def test_send_ws_calendar_reminder(
             'name': 'ENS renewal',
             'description': 'renew yabir.eth',
             'timestamp': 1714399499,
+            'auto_delete': False,
         },
         'type': 'calendar_reminder',
     }
@@ -771,3 +774,72 @@ def test_send_ws_calendar_reminder(
     # check that the reminder got deleted
     with database.conn.read_ctx() as cursor:
         assert cursor.execute('SELECT COUNT(*) FROM calendar_reminders').fetchone()[0] == 0
+
+
+@pytest.mark.parametrize('max_tasks_num', [5])
+@pytest.mark.freeze_time('2023-06-01 22:31:11 GMT')
+@pytest.mark.parametrize('db_settings', [
+    {'auto_delete_calendar_entries': False},
+])
+def test_calendar_entries_get_deleted(
+        task_manager: TaskManager,
+        freezer,
+) -> None:
+    """
+    Test that reminders work correctly by:
+    - Checking we get the notifications
+    - Checking we remove the reminders once fired
+    - Checking that starting the app after an event with a reminder passes, triggers the reminder
+    """
+    database = task_manager.database
+    calendar_db = DBCalendar(database)
+    calendar_db.create_calendar_entry(
+        calendar=CalendarEntry(
+            name='ENS renewal',
+            description='renew yabir.eth',
+            timestamp=Timestamp(1714399499),
+            counterparty=None,
+            address=None,
+            blockchain=None,
+            color=None,
+            auto_delete=True,
+        ),
+    )
+    calendar_db.create_calendar_entry(
+        calendar=CalendarEntry(
+            name='ENS renewal',
+            description='renew hania.eth',
+            timestamp=Timestamp(1714399499),
+            counterparty=None,
+            address=None,
+            blockchain=None,
+            color=None,
+            auto_delete=False,
+        ),
+    )
+    with database.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) FROM calendar').fetchone()[0] == 2
+
+    task_manager.potential_tasks = [task_manager._maybe_delete_past_calendar_events]
+    task_manager.schedule()
+    if len(task_manager.running_greenlets):
+        gevent.joinall(task_manager.running_greenlets[task_manager._maybe_delete_past_calendar_events])
+
+    with database.conn.read_ctx() as cursor:  # event should be there because we don't delete due to the setting  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) FROM calendar').fetchone()[0] == 2
+
+    # change the setting and trigger the task again. Move the time to skip the task check
+    with database.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+            ('auto_delete_calendar_entries', str(True)),
+        )
+        CachedSettings().update_entry('auto_delete_calendar_entries', True)
+    freezer.move_to(datetime.datetime(2024, 6, 4, 20, 0, 1, tzinfo=datetime.UTC))
+    task_manager.schedule()
+    gevent.joinall(task_manager.running_greenlets[task_manager._maybe_delete_past_calendar_events])
+
+    with database.conn.read_ctx() as cursor:  # events that are allowed to be deleted shouldn't be there anymore  # noqa: E501
+        assert cursor.execute(
+            'SELECT description FROM calendar',
+        ).fetchall() == [('renew hania.eth',)]
