@@ -53,7 +53,7 @@ const staking: ComputedRef<StakingInfo[]> = computed(() => [
 ]);
 
 const router = useRouter();
-const [DefineIcon, ReuseIcon] = createReusableTemplate();
+const [DefineIcon, ReuseIcon] = createReusableTemplate<{ image: string }>();
 
 const lastLocation = useLocalStorage('rotki.staking.last_location', '');
 

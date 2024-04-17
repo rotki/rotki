@@ -120,7 +120,10 @@ const sources = computed<ImportSource[]>(() => [
 
 const selectedSource = ref<ImportSource | null>(null);
 
-const [DefineIcon, ReuseIcon] = createReusableTemplate();
+const [DefineIcon, ReuseIcon] = createReusableTemplate<{
+  logo: string;
+  icon: string;
+}>();
 </script>
 
 <template>

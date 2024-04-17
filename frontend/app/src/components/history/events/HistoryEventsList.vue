@@ -74,7 +74,7 @@ watch(
 );
 
 const blockEvent = isEthBlockEventRef(eventGroup);
-const [DefineTable, ReuseTable] = createReusableTemplate();
+const [DefineTable, ReuseTable] = createReusableTemplate<{ data: HistoryEventEntry[] }>();
 
 const limitedEvents: ComputedRef<HistoryEventEntry[]> = computed(() => {
   const limit = get(currentLimit);
