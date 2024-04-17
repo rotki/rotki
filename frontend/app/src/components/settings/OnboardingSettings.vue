@@ -539,19 +539,3 @@ function showResetConfirmation() {
     </template>
   </BigDialog>
 </template>
-
-<style scoped lang="scss">
-:deep(.v-expansion-panel) {
-  .v-expansion-panel {
-    &-content {
-      &__wrap {
-        padding: 0 0 16px;
-      }
-    }
-
-    &-header {
-      padding: 16px 0;
-    }
-  }
-}
-</style>
