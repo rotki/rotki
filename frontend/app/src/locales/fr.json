@@ -595,15 +595,6 @@
         "task": {
           "title": "Interrogation des soldes des coffres yearn.finance {version}"
         }
-      },
-      "yearn_vaults_history": {
-        "error": {
-          "description": "Échec de la récupération de l'historique des coffres yearn.finance {version} : {error}",
-          "title": "Historique des coffres yearn.finance {version}"
-        },
-        "task": {
-          "title": "Interrogation de l'historique des coffres yearn.finance {version}"
-        }
       }
     },
     "delete_eth2_validator": {

@@ -497,15 +497,6 @@
         "task": {
           "title": "查询 yearn.finance 金库 {version} 余额"
         }
-      },
-      "yearn_vaults_history": {
-        "error": {
-          "description": "无法检索 yearn.finance Vaults {version} 历史：{error}",
-          "title": "yearn.finance 金库 {version} 历史"
-        },
-        "task": {
-          "title": "查询 yearn.finance Vaults {version} 历史"
-        }
       }
     },
     "delete_eth2_validator": {

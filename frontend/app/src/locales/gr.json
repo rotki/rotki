@@ -500,15 +500,6 @@
         "task": {
           "title": "Querying yearn.finance Vaults {version} balances"
         }
-      },
-      "yearn_vaults_history": {
-        "error": {
-          "description": "Failed to retrieve yearn.finance Vaults {version} history: {error}",
-          "title": "yearn.finance Vaults {version} history"
-        },
-        "task": {
-          "title": "Querying yearn.finance Vaults {version} history"
-        }
       }
     },
     "delete_eth2_validator": {
