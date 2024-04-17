@@ -94,20 +94,12 @@ function createFactory(component: Promise<any>, options?: { loading?: any; error
 
 export const PremiumStatistics = () => createFactory(load('PremiumStatistics'));
 
-export const VaultEventsList = () => createFactory(load('VaultEventsList'));
-
-export const LendingHistory = () => createFactory(load('LendingHistory'));
-
 export function CompoundLendingDetails() {
   return createFactory(load('CompoundLendingDetails'));
 }
 
 export function CompoundBorrowingDetails() {
   return createFactory(load('CompoundBorrowingDetails'));
-}
-
-export function YearnVaultsProfitDetails() {
-  return createFactory(load('YearnVaultsProfitDetails'));
 }
 
 export function AaveBorrowingDetails() {

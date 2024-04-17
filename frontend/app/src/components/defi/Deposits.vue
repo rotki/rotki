@@ -7,10 +7,8 @@ import { ProtocolVersion } from '@/types/defi';
 import {
   AaveEarnedDetails,
   CompoundLendingDetails,
-  YearnVaultsProfitDetails,
 } from '@/premium/premium';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { YearnVaultProfitLoss } from '@/types/defi/yearn';
 import type { BigNumber } from '@rotki/common';
 
 const section = Section.DEFI_LENDING;
@@ -34,7 +32,6 @@ const { shouldShowLoadingScreen, isLoading } = useStatusStore();
 
 const defiStore = useDefiStore();
 const defiLending = useDefiLending();
-const yearnStore = useYearnStore();
 const aaveStore = useAaveStore();
 
 const { t } = useI18n();
@@ -106,21 +103,6 @@ const yearnVersion = computed(() => {
     return ProtocolVersion.V2;
 
   return null;
-});
-
-const yearnProfit = computed(() => {
-  const protocols = get(selectedProtocols);
-  const allSelected = protocols.length === 0;
-  const addresses = get(selectedAddresses);
-  let v1Profit: YearnVaultProfitLoss[] = [];
-  if (get(isYearnVaults) || allSelected)
-    v1Profit = get(yearnStore.yearnVaultsProfit(addresses, ProtocolVersion.V1));
-
-  let v2Profit: YearnVaultProfitLoss[] = [];
-  if (get(isYearnVaultsV2) || allSelected)
-    v2Profit = get(yearnStore.yearnVaultsProfit(addresses, ProtocolVersion.V2));
-
-  return [...v1Profit, ...v2Profit];
 });
 
 const loading = shouldShowLoadingScreen(section);
@@ -250,11 +232,6 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
         <CompoundLendingDetails
           v-if="isCompound"
           :addresses="selectedAddresses"
-        />
-
-        <YearnVaultsProfitDetails
-          v-if="(isYearn || noProtocolSelection) && yearnProfit.length > 0"
-          :profit="yearnProfit"
         />
 
         <AaveEarnedDetails
