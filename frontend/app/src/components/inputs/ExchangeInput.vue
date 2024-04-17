@@ -35,6 +35,7 @@ const rootAttrs = useAttrs();
       <ExchangeDisplay
         :exchange="item"
         :class="`exchange__${item}`"
+        size="1.125rem"
         v-bind="attrs"
         v-on="on"
       />
