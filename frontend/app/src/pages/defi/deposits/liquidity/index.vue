@@ -67,7 +67,7 @@ const lastLocation = useLocalStorage(
   '',
 );
 
-const [DefineIcon, ReuseIcon] = createReusableTemplate();
+const [DefineIcon, ReuseIcon] = createReusableTemplate<{ image: string }>();
 
 const page = computed(() => {
   const selectedLocation = get(location);
