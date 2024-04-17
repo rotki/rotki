@@ -33,7 +33,7 @@ from rotkehlchen.chain.ethereum.modules.balancer import (
     BalancerPoolEventsBalance,
     BalancerPoolTokenBalance,
 )
-from rotkehlchen.chain.ethereum.modules.compound.v2.compound import CompoundBalance
+from rotkehlchen.chain.ethereum.modules.compound.utils import CompoundBalance
 from rotkehlchen.chain.ethereum.modules.liquity.trove import Trove
 from rotkehlchen.chain.ethereum.modules.makerdao.dsr import DSRAccountReport, DSRCurrentBalances
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (

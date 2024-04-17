@@ -15,7 +15,7 @@ MODULE_NAME_TO_PATH = {
     'nfts': '.nft.nfts',
     'eth2': '.eth2.eth2',
     'aave': '.aave.aave',
-    'compound': '.compound.v2.compound',
+    'compound': '.compound.compound',
     'sushiswap': '.sushiswap.sushiswap',
     'uniswap': '.uniswap.uniswap',
 }

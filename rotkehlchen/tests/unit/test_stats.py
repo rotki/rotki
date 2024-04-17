@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
-from rotkehlchen.chain.ethereum.modules.compound.v2.compound import Compound
+from rotkehlchen.chain.ethereum.modules.compound.compound import Compound
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_COMP, A_CUSDC, A_DAI, A_USDC, A_WBTC
 from rotkehlchen.fval import FVal
@@ -83,6 +83,7 @@ def test_compound_events_stats(
         from_timestamp=Timestamp(0),
         to_timestamp=ts_now(),
         given_defi_balances={},
+        given_eth_balances={},
     )
 
     # Check interest profit mappings

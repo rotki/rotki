@@ -2436,13 +2436,13 @@ class RestAPI:
         )
 
     @async_api_call()
-    def get_aave_stats_using_balances(
+    def get_module_stats_using_balances(
             self,
-            module: Literal['aave'],
+            module: Literal['aave', 'compound'],
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> dict[str, Any]:
-        """Query Aave module for statistics using the tracked addresses for aave.
+        """Query the provided module for statistics using the tracked addresses for such module.
         This function uses the eth/defi balances to enrich statistics."""
         return self._eth_module_query(
             module_name=module,
@@ -2457,29 +2457,6 @@ class RestAPI:
             # queried.
             given_defi_balances=lambda: self.rotkehlchen.chains_aggregator.defi_balances,
             given_eth_balances=lambda: self.rotkehlchen.chains_aggregator.balances.eth,
-        )
-
-    @async_api_call()
-    def get_compound_stats_using_balances(
-            self,
-            module: Literal['compound'],
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> dict[str, Any]:
-        """Query Compound module for statistics using the tracked addresses for compound.
-        This function uses the defi balances to enrich statistics."""
-        return self._eth_module_query(
-            module_name=module,
-            method='get_stats_for_addresses',
-            # We need to query defi balances before since defi_balances must be populated
-            query_specific_balances_before=['defi'],
-            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module(module),
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-            # Giving the defi balances as a lambda function here so that they
-            # are retrieved only after we are sure the defi balances have been
-            # queried.
-            given_defi_balances=lambda: self.rotkehlchen.chains_aggregator.defi_balances,
         )
 
     @async_api_call()
@@ -2510,6 +2487,7 @@ class RestAPI:
             # are retrieved only after we are sure the defi balances have been
             # queried.
             given_defi_balances=lambda: self.rotkehlchen.chains_aggregator.defi_balances,
+            given_eth_balances=lambda: self.rotkehlchen.chains_aggregator.balances.eth,
         )
 
     @async_api_call()
