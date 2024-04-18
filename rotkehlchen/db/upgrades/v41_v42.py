@@ -188,7 +188,7 @@ def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Add a new table to handle the calendar
         - Remove the manualcurrent oracle from settings
     """
-    progress_handler.set_total_steps(5)
+    progress_handler.set_total_steps(6)
     with db.user_write() as write_cursor:
         _add_zksynclite(write_cursor)
         progress_handler.new_step()
@@ -200,5 +200,5 @@ def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         progress_handler.new_step()
         _remove_manualcurrent_oracle(write_cursor)
         progress_handler.new_step()
-        progress_handler.new_step()
         _reset_decoded_events(write_cursor)
+        progress_handler.new_step()
