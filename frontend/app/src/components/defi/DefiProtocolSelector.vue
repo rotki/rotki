@@ -78,6 +78,7 @@ const protocolsData = computed(() =>
         <DefiIcon
           v-bind="attrs"
           :item="item"
+          size="1.125rem"
         />
       </template>
       <template #item="{ attrs, item }">
