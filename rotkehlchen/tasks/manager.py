@@ -19,7 +19,7 @@ from rotkehlchen.constants.timing import (
     AUGMENTED_SPAM_ASSETS_DETECTION_REFRESH,
     DATA_UPDATES_REFRESH,
     DAY_IN_SECONDS,
-    EVM_ACCOUNTS_DETECTION_REFRESH,
+    EVMLIKE_ACCOUNTS_DETECTION_REFRESH,
     HOUR_IN_SECONDS,
     OWNED_ASSETS_UPDATE,
     SPAM_ASSETS_DETECTION_REFRESH,
@@ -695,7 +695,7 @@ class TaskManager:
         Function that schedules the EVM accounts detection task if there has been more than
         EVM_ACCOUNTS_DETECTION_REFRESH seconds since the last time it ran.
         """
-        if should_run_periodic_task(self.database, DBCacheStatic.LAST_EVM_ACCOUNTS_DETECT_TS, EVM_ACCOUNTS_DETECTION_REFRESH) is False:  # noqa: E501
+        if should_run_periodic_task(self.database, DBCacheStatic.LAST_EVM_ACCOUNTS_DETECT_TS, EVMLIKE_ACCOUNTS_DETECTION_REFRESH) is False:  # noqa: E501
             return None
 
         return [self.greenlet_manager.spawn_and_track(

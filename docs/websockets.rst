@@ -125,30 +125,30 @@ The messages sent by rotki when a user is logging in and a db upgrade is happeni
 - ``target_version``: The target migration version. When this will have been reached and finished, the migrations will end.
 
 
-EVM Accounts Detection
-=======================
+EVM/EVMLke Accounts Detection
+==========================================
 
-If there are new evm accounts detected (due to a data migration, user-initiated detection, periodic detection, etc.) then the frontend will be notified of any new EVM accounts that were detected. This is done via the following message.
+If there are new evm / evmlike accounts detected (due to a data migration, user-initiated detection, periodic detection, etc.) then the frontend will be notified of any new EVM accounts that were detected. This is done via the following message.
 
 ::
 
     {
-        "type": "evm_accounts_detection",
+        "type": "evmlike_accounts_detection",
         "data": [
             {
                 "address": "0x4bBa290826C253BD854121346c370a9886d1bC26",
-                "evm_chain": "optimism"
+                "chain": "optimism"
             },
             {
                 "address": "0x4bBa290826C253BD854121346c370a9886d1bC26",
-                "evm_chain": "avalanche"
+                "chain": "zksync_lite"
             }
         ]
     }
 
 
 - ``address``: Address of an account.
-- ``evm_chain``: Chain of an account.
+- ``chain``: Chain of an account.
 
 
 EVM Token Detection

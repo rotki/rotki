@@ -120,6 +120,7 @@ def patch_and_enter_before_unlock(
         optimism_manager_connect_at_start,
         polygon_pos_manager_connect_at_start,
         arbitrum_one_manager_connect_at_start,
+        scroll_manager_connect_at_start,
         kusama_manager_connect_at_start,
         have_decoders,
         use_custom_database,
@@ -141,6 +142,8 @@ def patch_and_enter_before_unlock(
             return polygon_pos_manager_connect_at_start
         elif blockchain == SupportedBlockchain.ARBITRUM_ONE:
             return arbitrum_one_manager_connect_at_start
+        elif blockchain == SupportedBlockchain.SCROLL:
+            return scroll_manager_connect_at_start
 
         raise AssertionError(f'Got to get_rpc_nodes during test with unknown {blockchain=}')
     evm_rpcconnect_patch = patch(
@@ -220,6 +223,7 @@ def patch_no_op_unlock(rotki, stack, should_mock_settings=True):
         optimism_manager_connect_at_start=[],
         polygon_pos_manager_connect_at_start=[],
         arbitrum_one_manager_connect_at_start=[],
+        scroll_manager_connect_at_start=[],
         kusama_manager_connect_at_start=[],
         have_decoders=False,
         use_custom_database=False,
@@ -251,6 +255,7 @@ def initialize_mock_rotkehlchen_instance(
         optimism_manager_connect_at_start,
         polygon_pos_manager_connect_at_start,
         arbitrum_one_manager_connect_at_start,
+        scroll_manager_connect_at_start,
         kusama_manager_connect_at_start,
         ksm_rpc_endpoint,
         max_tasks_num,
@@ -318,6 +323,7 @@ def initialize_mock_rotkehlchen_instance(
             optimism_manager_connect_at_start=optimism_manager_connect_at_start,
             polygon_pos_manager_connect_at_start=polygon_pos_manager_connect_at_start,
             arbitrum_one_manager_connect_at_start=arbitrum_one_manager_connect_at_start,
+            scroll_manager_connect_at_start=scroll_manager_connect_at_start,
             kusama_manager_connect_at_start=kusama_manager_connect_at_start,
             have_decoders=have_decoders,
             use_custom_database=use_custom_database,
@@ -352,6 +358,7 @@ def initialize_mock_rotkehlchen_instance(
             (SupportedBlockchain.OPTIMISM, optimism_manager_connect_at_start, rotki.chains_aggregator.optimism),  # noqa: E501
             (SupportedBlockchain.POLYGON_POS, polygon_pos_manager_connect_at_start, rotki.chains_aggregator.polygon_pos),  # noqa: E501
             (SupportedBlockchain.ARBITRUM_ONE, arbitrum_one_manager_connect_at_start, rotki.chains_aggregator.arbitrum_one),  # noqa: E501
+            (SupportedBlockchain.SCROLL, scroll_manager_connect_at_start, rotki.chains_aggregator.scroll),  # noqa: E501
     ):
         maybe_modify_rpc_nodes(rotki.data.db, blockchain, connect_at_start)
         # since we are past evm inquirer initialization and we just wrote rpc nodes up we need to start the connection  # noqa: E501
@@ -462,6 +469,7 @@ def fixture_rotkehlchen_api_server(
         optimism_manager_connect_at_start,
         polygon_pos_manager_connect_at_start,
         arbitrum_one_manager_connect_at_start,
+        scroll_manager_connect_at_start,
         kusama_manager_connect_at_start,
         ksm_rpc_endpoint,
         max_tasks_num,
@@ -511,6 +519,7 @@ def fixture_rotkehlchen_api_server(
         optimism_manager_connect_at_start=optimism_manager_connect_at_start,
         polygon_pos_manager_connect_at_start=polygon_pos_manager_connect_at_start,
         arbitrum_one_manager_connect_at_start=arbitrum_one_manager_connect_at_start,
+        scroll_manager_connect_at_start=scroll_manager_connect_at_start,
         kusama_manager_connect_at_start=kusama_manager_connect_at_start,
         ksm_rpc_endpoint=ksm_rpc_endpoint,
         max_tasks_num=max_tasks_num,
@@ -536,6 +545,7 @@ def fixture_rotkehlchen_api_server(
                         ('optimism', optimism_manager_connect_at_start, optimism_mock_data),
                         ('polygon_pos', [], {}),
                         ('arbitrum_one', [], {}),
+                        ('scroll', [], {}),
                 ):
                     maybe_mock_evm_inquirer(
                         should_mock=mock_other_web3,
@@ -578,6 +588,7 @@ def rotkehlchen_instance(
         optimism_manager_connect_at_start,
         polygon_pos_manager_connect_at_start,
         arbitrum_one_manager_connect_at_start,
+        scroll_manager_connect_at_start,
         kusama_manager_connect_at_start,
         ksm_rpc_endpoint,
         max_tasks_num,
@@ -618,6 +629,7 @@ def rotkehlchen_instance(
         optimism_manager_connect_at_start=optimism_manager_connect_at_start,
         polygon_pos_manager_connect_at_start=polygon_pos_manager_connect_at_start,
         arbitrum_one_manager_connect_at_start=arbitrum_one_manager_connect_at_start,
+        scroll_manager_connect_at_start=scroll_manager_connect_at_start,
         kusama_manager_connect_at_start=kusama_manager_connect_at_start,
         ksm_rpc_endpoint=ksm_rpc_endpoint,
         max_tasks_num=max_tasks_num,
