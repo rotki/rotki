@@ -76,7 +76,7 @@ const css = useCssModule();
             />
           </div>
           <div
-            class="text-body-1 pt-1"
+            class="text-body-1 pt-1 w-full"
             :class="css.message"
           >
             {{ message }}

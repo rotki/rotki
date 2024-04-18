@@ -80,25 +80,25 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
   {
     label: t('accounting_settings.rule.labels.taxable'),
     key: 'taxable',
-    class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-bottom',
+    class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-center',
     align: 'center',
   },
   {
     label: t('accounting_settings.rule.labels.count_entire_amount_spend'),
     key: 'countEntireAmountSpend',
-    class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-bottom',
+    class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-center',
     align: 'center',
   },
   {
     label: t('accounting_settings.rule.labels.count_cost_basis_pnl'),
     key: 'countCostBasisPnl',
-    class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-bottom',
+    class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-center',
     align: 'center',
   },
   {
     label: t('accounting_settings.rule.labels.accounting_treatment'),
     key: 'accountingTreatment',
-    class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-bottom',
+    class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-center',
   },
   {
     label: t('common.actions_text'),
@@ -320,7 +320,7 @@ onMounted(async () => {
               <RuiTooltip
                 :popper="{ placement: 'top' }"
                 :open-delay="400"
-                class="flex items-center"
+                class="flex items-center h-full"
                 tooltip-class="max-w-[10rem]"
               >
                 <template #activator>
