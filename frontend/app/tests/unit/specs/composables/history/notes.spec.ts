@@ -150,10 +150,6 @@ describe('composables::history/notes', () => {
           showHashLink: true,
         },
         {
-          type: NoteType.WORD,
-          word: '',
-        },
-        {
           type: NoteType.TX,
           address: txHash,
           showHashLink: true,
@@ -291,6 +287,46 @@ describe('composables::history/notes', () => {
       {
         type: NoteType.WORD,
         word: 'USDC',
+      },
+    ];
+
+    expect(formatted).toMatchObject(expected);
+  });
+
+  it('works with punctuation', () => {
+    const address = '0xCb2286d9471cc185281c4f763d34A962ED212962';
+    const notes = `Address ${address}, ${address}. Some sentence.`;
+
+    const formatted = get(formatNotes({ notes }));
+
+    const expected: NoteFormat[] = [
+      {
+        type: NoteType.WORD,
+        word: 'Address',
+      },
+      {
+        type: NoteType.ADDRESS,
+        address,
+        showIcon: true,
+        showHashLink: true,
+      },
+      {
+        type: NoteType.ADDRESS,
+        address,
+        showIcon: true,
+        showHashLink: true,
+      },
+      {
+        type: NoteType.WORD,
+        word: '.',
+      },
+      {
+        type: NoteType.WORD,
+        word: 'Some',
+      },
+      {
+        type: NoteType.WORD,
+        word: 'sentence.',
       },
     ];
 
