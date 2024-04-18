@@ -4,15 +4,17 @@ import type { Collection } from '@/types/collection';
 import type { DataTableColumn, DataTableOptions } from '@rotki/ui-library-compat';
 import type { TablePagination } from '@/types/pagination';
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   collection: Collection<CexMapping>;
   location: string;
+  symbol?: string;
   loading: boolean;
   options: TablePagination<CexMapping>;
-}>();
+}>(), { symbol: undefined });
 
 const emit = defineEmits<{
   (e: 'update:location', location: string): void;
+  (e: 'update:symbol', symbol?: string): void;
   (e: 'update:page', page: number): void;
   (e: 'update:options', options: DataTableOptions): void;
   (e: 'edit', mapping: CexMapping): void;
@@ -57,6 +59,7 @@ function updatePagination(options: DataTableOptions) {
 
 const edit = (mapping: CexMapping) => emit('edit', mapping);
 const deleteMapping = (mapping: CexMapping) => emit('delete', mapping);
+const onSymbolChange = useDebounceFn((value?: string) => emit('update:symbol', value), 500);
 </script>
 
 <template>
@@ -65,12 +68,24 @@ const deleteMapping = (mapping: CexMapping) => emit('delete', mapping);
       <HintMenuIcon>
         {{ t('asset_management.cex_mapping.subtitle') }}
       </HintMenuIcon>
-      <div class="w-full md:w-[25rem]">
+      <div class="w-full md:w-[50rem] flex flex-col sm:flex-row gap-4 mb-4">
         <ExchangeInput
           v-model="locationModel"
           :label="t('asset_management.cex_mapping.filter_by_exchange')"
+          class="w-full"
           dense
+          hide-details
           clearable
+        />
+        <RuiTextField
+          :value="symbol"
+          class="w-full sm:max-w-96"
+          variant="outlined"
+          :label="t('asset_management.cex_mapping.filter_by_location_symbol')"
+          clearable
+          hide-details
+          dense
+          @input="onSymbolChange($event)"
         />
       </div>
     </div>
