@@ -1476,7 +1476,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                         continue
                     else:
                         result = response.get('list', None)
-                        if not result:  # falsy -> None or no transctions:
+                        if not result:  # falsy -> None or no transactions:
                             continue  # do not add the address for the chain
 
                 else:
@@ -1671,9 +1671,9 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             )
 
         self.msg_aggregator.add_message(
-            message_type=WSMessageType.EVM_ACCOUNTS_DETECTION,
+            message_type=WSMessageType.EVMLIKE_ACCOUNTS_DETECTION,
             data=[
-                {'evm_chain': chain.name.lower(), 'address': address}
+                {'chain': chain.serialize(), 'address': address}
                 for chain, address in added_accounts
             ],
         )

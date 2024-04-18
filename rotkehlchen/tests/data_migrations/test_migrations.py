@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.chain.scroll.constants import SCROLL_ETHERSCAN_NODE
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.data_migrations.constants import LAST_DATA_MIGRATION
@@ -23,7 +24,7 @@ from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
 from rotkehlchen.tests.utils.exchanges import check_saved_events_for_exchange
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
-    SUPPORTED_EVM_CHAINS_TYPE,
+    SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     ChecksumEvmAddress,
     Location,
     SupportedBlockchain,
@@ -81,9 +82,9 @@ def assert_add_addresses_migration_ws_messages(
     for i in range(num_messages):
         msg = websocket_connection.pop_message()
         if i == migration_steps:  # message for added address. The message is only one and not one per chain. The added addresses per chain are checked from the message data  # noqa: E501
-            assert msg['type'] == 'evm_accounts_detection'
-            assert sorted(msg['data'], key=operator.itemgetter('evm_chain', 'address')) == sorted(
-                chain_to_added_address, key=operator.itemgetter('evm_chain', 'address'),
+            assert msg['type'] == 'evmlike_accounts_detection'
+            assert sorted(msg['data'], key=operator.itemgetter('chain', 'address')) == sorted(
+                chain_to_added_address, key=operator.itemgetter('chain', 'address'),
             )  # checks that the addresses have been added
         elif i == 0:  # new migration round message
             assert_progress_message(msg, i, None, migration_version, migration_steps)
@@ -108,7 +109,7 @@ def assert_add_addresses_migration_ws_messages(
 
 
 def detect_accounts_migration_check(
-        expected_detected_addresses_per_chain: dict[SUPPORTED_EVM_CHAINS_TYPE, list[ChecksumEvmAddress]],  # noqa: E501
+        expected_detected_addresses_per_chain: dict[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, list[ChecksumEvmAddress]],  # noqa: E501
         migration_version: int,
         migration_steps: int,
         migration_list: list[MigrationRecord],
@@ -151,7 +152,7 @@ def detect_accounts_migration_check(
         assert set(getattr(accounts, chain.get_key())) == set(chain_addresses)
         assert set(getattr(rotki.chains_aggregator.accounts, chain.get_key())) == set(chain_addresses)  # noqa: E501
         chain_to_added_address.extend(
-            [{'evm_chain': chain.to_chain_id().to_name(), 'address': address} for address in chain_addresses],  # noqa: E501
+            [{'chain': chain.serialize(), 'address': address} for address in chain_addresses],
         )
 
     assert_add_addresses_migration_ws_messages(websocket_connection, migration_version, migration_steps, chain_to_added_address)  # noqa: E501
@@ -450,6 +451,41 @@ def test_migration_13(
         migration_version=13,
         migration_steps=5,  # 2 (current eth accounts) + 3 (potentially write to db + updating spam assets and rpc nodes + new round msg)  # noqa: E501
         migration_list=[MIGRATION_LIST[6]],
+        current_evm_accounts=ethereum_accounts,
+        rotkehlchen_api_server=rotkehlchen_api_server,
+        websocket_connection=websocket_connection,
+    )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('data_migration_version', [13])
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [True])
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',  # should have zksynclite
+    '0xfa8666aE51F5b136596248d9411b03AC9040fff0',  # should have scroll
+    '0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25',  # should have neither
+]])
+@pytest.mark.parametrize('legacy_messages_via_websockets', [True])
+@pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.parametrize('scroll_manager_connect_at_start', [(SCROLL_ETHERSCAN_NODE,)])
+def test_migration_14(
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        websocket_connection: 'WebsocketReader',
+) -> None:
+    """
+    Test migration 14
+
+    - Test that detecting scroll and zksynclite accounts works properly
+    """
+    detect_accounts_migration_check(
+        expected_detected_addresses_per_chain={
+            SupportedBlockchain.SCROLL: [ethereum_accounts[1]],
+            SupportedBlockchain.ZKSYNC_LITE: [ethereum_accounts[0]],
+        },
+        migration_version=14,
+        migration_steps=6,  # 3 (current eth accounts) + 3 (potentially write to db + updating spam assets and rpc nodes + new round msg)  # noqa: E501
+        migration_list=[MIGRATION_LIST[7]],
         current_evm_accounts=ethereum_accounts,
         rotkehlchen_api_server=rotkehlchen_api_server,
         websocket_connection=websocket_connection,
