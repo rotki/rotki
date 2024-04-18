@@ -2254,7 +2254,25 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
         assert table_exists(cursor, 'calendar_reminders') is False
         assert cursor.execute('SELECT MAX(seq) FROM location').fetchone()[0] == 45
         assert cursor.execute('SELECT COUNT(tx_hash) FROM balancer_events').fetchone()[0] == 2
-        assert cursor.execute('SELECT COUNT(*) from used_query_ranges').fetchone()[0] == 2
+        assert cursor.execute('SELECT name from used_query_ranges').fetchall() == [
+            ('ETHinternaltxs_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('ETHtokentxs_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('ETHtxs_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('GNOSISinternaltxs_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('GNOSIStokentxs_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('GNOSIStxs_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('balancer_events_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('gnosisbridge_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('kraken_asset_movements_kraken',),
+            ('kraken_history_events_kraken',),
+            ('kraken_margins_kraken',),
+            ('kraken_trades_kraken',),
+            ('yearn_vaults_events_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('yearn_vaults_v2_events_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+        ]
+        assert cursor.execute(
+            'SELECT COUNT(*), version FROM yearn_vaults_events GROUP BY version',
+        ).fetchall() == [(2, 1), (3, 2)]
         raw_list = cursor.execute(
             'SELECT value FROM settings WHERE name=?', ('evmchains_to_skip_detection',),
         ).fetchone()[0]
@@ -2283,7 +2301,20 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
         assert table_exists(cursor, 'calendar') is True
         assert table_exists(cursor, 'calendar_reminders') is True
         assert table_exists(cursor, 'balancer_events') is False
-        assert cursor.execute('SELECT COUNT(*) from used_query_ranges').fetchone()[0] == 1
+        assert table_exists(cursor, 'yearn_vaults_events') is False
+        assert cursor.execute('SELECT name from used_query_ranges').fetchall() == [
+            ('ETHinternaltxs_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('ETHtokentxs_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('ETHtxs_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('GNOSISinternaltxs_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('GNOSIStokentxs_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('GNOSIStxs_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('gnosisbridge_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('kraken_asset_movements_kraken',),
+            ('kraken_history_events_kraken',),
+            ('kraken_margins_kraken',),
+            ('kraken_trades_kraken',),
+        ]
         assert cursor.execute('SELECT * FROM zksynclite_tx_type').fetchall() == [
             ('A', 1), ('B', 2), ('C', 3), ('D', 4), ('E', 5), ('F', 6), ('G', 7),
         ]
@@ -2355,7 +2386,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     views_after_creation = {x[0] for x in result}
 
     assert cursor.execute('SELECT value FROM settings WHERE name="version"').fetchone()[0] == '42'
-    removed_tables = {'balancer_events'}
+    removed_tables = {'balancer_events', 'yearn_vaults_events'}
     removed_views = set()
     missing_tables = tables_before - tables_after_upgrade
     missing_views = views_before - views_after_upgrade

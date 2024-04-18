@@ -211,30 +211,6 @@ CREATE TABLE IF NOT EXISTS user_credentials_mappings (
 );
 """  # noqa: E501
 
-
-DB_CREATE_YEARN_VAULT_EVENTS = """
-CREATE TABLE IF NOT EXISTS yearn_vaults_events (
-    address VARCHAR[42] NOT NULL,
-    event_type VARCHAR[10] NOT NULL,
-    from_asset TEXT NOT NULL,
-    from_amount TEXT NOT NULL,
-    from_usd_value TEXT NOT NULL,
-    to_asset TEXT NOT NULL,
-    to_amount TEXT NOT NULL,
-    to_usd_value TEXT NOT NULL,
-    pnl_amount TEXT,
-    pnl_usd_value TEXT,
-    block_number INTEGER NOT NULL,
-    timestamp INTEGER NOT NULL,
-    tx_hash BLOB NOT NULL,
-    log_index INTEGER NOT NULL,
-    version INTEGER NOT NULL DEFAULT 1,
-    FOREIGN KEY(from_asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
-    FOREIGN KEY(to_asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
-    PRIMARY KEY (event_type, tx_hash, log_index)
-);
-"""
-
 DB_CREATE_EXTERNAL_SERVICE_CREDENTIALS = """
 CREATE TABLE IF NOT EXISTS external_service_credentials (
     name VARCHAR[30] NOT NULL PRIMARY KEY,
@@ -810,7 +786,6 @@ BEGIN TRANSACTION;
 {DB_CREATE_SETTINGS}
 {DB_CREATE_TAGS_TABLE}
 {DB_CREATE_TAG_MAPPINGS}
-{DB_CREATE_YEARN_VAULT_EVENTS}
 {DB_CREATE_XPUBS}
 {DB_CREATE_XPUB_MAPPINGS}
 {DB_CREATE_ETH2_VALIDATORS}

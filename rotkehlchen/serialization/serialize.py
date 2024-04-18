@@ -41,11 +41,7 @@ from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (
 )
 from rotkehlchen.chain.ethereum.modules.nft.structures import NFTResult
 from rotkehlchen.chain.ethereum.modules.pickle_finance.main import DillBalance
-from rotkehlchen.chain.ethereum.modules.yearn.vaults import (
-    YearnVaultBalance,
-    YearnVaultEvent,
-    YearnVaultHistory,
-)
+from rotkehlchen.chain.ethereum.modules.yearn.vaults import YearnVaultBalance
 from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
@@ -147,7 +143,6 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
             AaveLendingBalance |
             AaveBorrowingBalance |
             CompoundBalance |
-            YearnVaultEvent |
             YearnVaultBalance |
             LiquidityPool |
             LiquidityPoolAsset |
@@ -170,7 +165,6 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
             AaveBalances |
             DefiBalance |
             DefiProtocolBalances |
-            YearnVaultHistory |
             BlockchainAccountData |
             CounterpartyDetails |
             AaveStats

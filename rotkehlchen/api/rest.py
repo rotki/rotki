@@ -2518,51 +2518,6 @@ class RestAPI:
         )
 
     @async_api_call()
-    def get_yearn_vaults_history(
-            self,
-            reset_db_data: bool,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> dict[str, Any]:
-        return self._eth_module_query(
-            module_name='yearn_vaults',
-            method='get_history',
-            # We need to query defi balances before since defi_balances must be populated
-            query_specific_balances_before=['defi'],
-            # Giving the defi balances as a lambda function here so that they
-            # are retrieved only after we are sure the defi balances have been
-            # queried.
-            given_defi_balances=lambda: self.rotkehlchen.chains_aggregator.defi_balances,
-            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('yearn_vaults'),
-            reset_db_data=reset_db_data,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
-
-    @async_api_call()
-    def get_yearn_vaults_v2_history(
-            self,
-            reset_db_data: bool,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> dict[str, Any]:
-        return self._eth_module_query(
-            module_name='yearn_vaults_v2',
-            method='get_history',
-            query_specific_balances_before=['defi'],
-            # Giving the eth balances as a lambda function here so that they
-            # are retrieved only after we are sure the eth balances have been
-            # queried.
-            given_eth_balances=lambda: self.rotkehlchen.chains_aggregator.balances.eth,
-            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module(
-                'yearn_vaults_v2',
-            ),
-            reset_db_data=reset_db_data,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
-
-    @async_api_call()
     def get_amm_platform_balances(
             self,
             module: Literal['uniswap', 'sushiswap', 'balancer'],

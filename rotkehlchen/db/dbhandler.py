@@ -29,10 +29,6 @@ from rotkehlchen.chain.bitcoin.xpub import (
     XpubDerivedAddressData,
     deserialize_derivation_path_for_db,
 )
-from rotkehlchen.chain.ethereum.modules.yearn.constants import (
-    YEARN_VAULTS_PREFIX,
-    YEARN_VAULTS_V2_PREFIX,
-)
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.chain.zksync_lite.constants import ZKSYNCLITE_TX_SAVEPREFIX
@@ -165,7 +161,6 @@ TRANSIENT_DB_NAME = 'rotkehlchen_transient.db'
 # Tuples that contain first the name of a table and then the columns that
 # reference assets ids. This is used to query all assets that a user has ever owned.
 TABLES_WITH_ASSETS = (
-    ('yearn_vaults_events', 'from_asset', 'to_asset'),
     ('manually_tracked_balances', 'asset'),
     ('trades', 'base_asset', 'quote_asset', 'fee_currency'),
     ('margin_positions', 'pl_currency', 'fee_currency'),
@@ -1009,16 +1004,10 @@ class DBHandler:
     def purge_module_data(self, module_name: ModuleName | None) -> None:
         with self.user_write() as cursor:
             if module_name is None:
-                self.delete_yearn_vaults_data(write_cursor=cursor, version=1)
-                self.delete_yearn_vaults_data(write_cursor=cursor, version=2)
                 self.delete_loopring_data(cursor)
                 self.delete_eth2_daily_stats(cursor)
                 log.debug('Purged all module data from the DB')
                 return
-            elif module_name == 'yearn_vaults':
-                self.delete_yearn_vaults_data(write_cursor=cursor, version=1)
-            elif module_name == 'yearn_vaults_v2':
-                self.delete_yearn_vaults_data(write_cursor=cursor, version=2)
             elif module_name == 'loopring':
                 self.delete_loopring_data(cursor)
             elif module_name == 'eth2':
@@ -1028,18 +1017,6 @@ class DBHandler:
                 return
 
             log.debug(f'Purged {module_name} data from the DB')
-
-    def delete_yearn_vaults_data(self, write_cursor: 'DBCursor', version: int) -> None:
-        """Delete all historical yearn vault events data"""
-        if version not in {1, 2}:
-            log.error(f'Called delete yearn vault data with non valid version {version}')
-            return None
-        prefix = YEARN_VAULTS_PREFIX
-        if version == 2:
-            prefix = YEARN_VAULTS_V2_PREFIX
-        write_cursor.execute('DELETE FROM yearn_vaults_events WHERE version=?', (version,))
-        write_cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE ?', (f'{prefix}%',))
-        return None
 
     def delete_loopring_data(self, write_cursor: 'DBCursor') -> None:
         """Delete all loopring related data"""
@@ -1054,8 +1031,6 @@ class DBHandler:
         - {exchange_location_name}_asset_movements_{exchange_name}
         - {location}_history_events_{optional_label}
         - {exchange_location_name}_lending_history_{exchange_name}
-        - yearn_vaults_events_{address}
-        - yearn_vaults_v2_events_{address}
         - gnosisbridge_{address}
         """
         cursor.execute('SELECT start_ts, end_ts FROM used_query_ranges WHERE name=?', (name,))
