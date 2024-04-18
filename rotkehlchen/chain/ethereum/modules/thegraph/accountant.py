@@ -3,9 +3,9 @@ from collections.abc import Iterator
 from typing import TYPE_CHECKING, cast
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
-from rotkehlchen.chain.ethereum.modules.thegraph.constants import CPT_THEGRAPH
 from rotkehlchen.chain.evm.accounting.interfaces import ModuleAccountantInterface
 from rotkehlchen.chain.evm.accounting.structures import EventsAccountantCallback
+from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
 from rotkehlchen.constants import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import get_event_type_identifier
