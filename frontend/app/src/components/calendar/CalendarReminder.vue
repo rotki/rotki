@@ -56,34 +56,37 @@ async function addCalendarReminderHandler(reminders: CalenderReminderPayload[]) 
 
 async function refreshTemporaryData() {
   const item = get(editableItem);
-  if (item) {
-    try {
-      const identifier = item.identifier;
-      const reminders = await fetchCalendarReminders({ identifier });
-      const sortedReminders = reminders.sort((a, b) => a.identifier - b.identifier);
-      const oldData = [...get(temporaryData)].filter(item => item.isTemporary);
-      const newData = [
-        ...sortedReminders.map(item => ({ ...item, isTemporary: false })),
-        ...oldData,
-      ];
-      set(temporaryData, newData);
-    }
-    catch (error: any) {
-      logger.error(error);
-      notify({
-        display: true,
-        title: t('calendar.reminder.fetch_error.title'),
-        message: t('calendar.reminder.fetch_error.message', {
-          message: error.message,
-        }),
-      });
-    }
+  if (!item)
+    return;
+
+  try {
+    const identifier = item.identifier;
+    const reminders = await fetchCalendarReminders({ identifier });
+    const sortedReminders = reminders.sort((a, b) => a.identifier - b.identifier);
+    const oldData = [...get(temporaryData)].filter(item => item.isTemporary);
+    const newData = [
+      ...sortedReminders.map(item => ({ ...item, isTemporary: false })),
+      ...oldData,
+    ];
+    set(temporaryData, newData);
+  }
+  catch (error: any) {
+    logger.error(error);
+    notify({
+      display: true,
+      title: t('calendar.reminder.fetch_error.title'),
+      message: t('calendar.reminder.fetch_error.message', {
+        message: error.message,
+      }),
+    });
   }
 }
 
 function isSameSecsBeforeExist(seconds: number) {
   return get(temporaryData).filter(item => !item.isTemporary).some(item => item.secsBefore === seconds);
 }
+
+const newIdCreated: Ref<number> = ref(-1);
 
 // 15 minutes as default value
 async function addReminder(secsBefore: number = 900, inTimeReminder = false) {
@@ -105,15 +108,7 @@ async function addReminder(secsBefore: number = 900, inTimeReminder = false) {
       newData,
     ]);
 
-    nextTick(() => {
-      const divWrapper = document
-        .querySelector(`#calendar-reminder-amount-input-${newId}`);
-      if (divWrapper) {
-        const input = divWrapper.getElementsByTagName('input');
-        if (input[0])
-          input[0].select();
-      }
-    });
+    set(newIdCreated, newId);
   }
   else {
     await addCalendarReminderHandler([
@@ -158,7 +153,7 @@ async function deleteData(index: number) {
   }
 }
 
-async function updateData(index: number, value: number) {
+async function updateData(index: number, { secsBefore }: CalendarReminderTemporaryPayload) {
   const item = get(editableItem);
   const temp = [...get(temporaryData)];
   const data = temp[index];
@@ -168,7 +163,7 @@ async function updateData(index: number, value: number) {
       try {
         await editCalendarReminder({
           identifier: data.identifier,
-          secsBefore: value,
+          secsBefore,
           eventId: item.identifier,
         });
       }
@@ -185,11 +180,11 @@ async function updateData(index: number, value: number) {
 
       await refreshTemporaryData();
     }
-    else if (!isSameSecsBeforeExist(value)) {
+    else if (!isSameSecsBeforeExist(secsBefore)) {
       await addCalendarReminderHandler([
         {
           eventId: item.identifier,
-          secsBefore: value,
+          secsBefore,
         },
       ]);
       await deleteData(index);
@@ -197,7 +192,7 @@ async function updateData(index: number, value: number) {
     }
   }
   else {
-    temp[index].secsBefore = value;
+    temp[index].secsBefore = secsBefore;
     set(temporaryData, temp);
   }
 }
@@ -220,10 +215,6 @@ async function saveTemporaryReminder(eventId: number) {
   }
 }
 
-defineExpose({
-  saveTemporaryReminder,
-});
-
 const remindInTime = computed({
   get() {
     return get(temporaryData).some(item => item.secsBefore === 0);
@@ -236,6 +227,10 @@ const remindInTime = computed({
     }
     else { await addReminder(0, true); }
   },
+});
+
+defineExpose({
+  saveTemporaryReminder,
 });
 </script>
 
@@ -289,6 +284,7 @@ const remindInTime = computed({
                   v-if="data.secsBefore > 0"
                   :key="data.identifier"
                   :value="data"
+                  :latest="data.identifier === newIdCreated"
                   @delete="deleteData(index)"
                   @input="updateData(index, $event)"
                 />

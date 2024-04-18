@@ -6,14 +6,17 @@ import type { CalendarReminderTemporaryPayload } from '@/types/history/calendar/
 
 const props = defineProps<{
   value: CalendarReminderTemporaryPayload;
+  latest: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: 'input', value: number): void;
+  (e: 'input', value: CalendarReminderTemporaryPayload): void;
   (e: 'delete'): void;
 }>();
 
-const { value } = toRefs(props);
+const { latest } = toRefs(props);
+
+const vModel = useSimpleVModel(props, emit);
 
 const { t } = useI18n();
 
@@ -140,7 +143,7 @@ function calculateAmountAndUnit(seconds: number) {
   };
 }
 
-watchImmediate(value, (value) => {
+watchImmediate(vModel, (value) => {
   const currentSeconds = calculateCurrentSeconds();
   const seconds = value.secsBefore;
 
@@ -158,16 +161,26 @@ function triggerUpdate() {
 
   if (amountVal && unitVal && !get(v$).$invalid) {
     const currentSeconds = calculateCurrentSeconds();
-
-    emit('input', currentSeconds);
+    set(vModel, {
+      ...get(vModel),
+      secsBefore: currentSeconds,
+    });
   }
 }
+
+const amountInputWrapper = ref();
+onMounted(() => {
+  if (get(latest)) {
+    const input = get(amountInputWrapper)?.$el.querySelector('input');
+    input?.select();
+  }
+});
 </script>
 
 <template>
   <div class="flex gap-4">
     <AmountInput
-      :id="`calendar-reminder-amount-input-${value.identifier}`"
+      ref="amountInputWrapper"
       v-model="amount"
       label="Amount"
       integer
