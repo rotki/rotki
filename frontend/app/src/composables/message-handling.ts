@@ -226,13 +226,13 @@ export function useMessageHandling() {
     let message = '';
 
     if (data.address && data.blockchain)
-      message += `Account: ${data.address} (${data.blockchain}) \n`;
+      message += `${t('common.account')}: ${data.address} (${data.blockchain}) \n`;
 
     if (data.counterparty)
-      message += `Counterparty: ${data.counterparty} \n`;
+      message += `${t('common.counterparty')}: ${data.counterparty} \n`;
 
     if (data.description)
-      message += `Description: ${data.description}`;
+      message += `${t('common.description')}: ${data.description}`;
 
     return {
       title,
