@@ -107,7 +107,6 @@ from rotkehlchen.utils.misc import ts_now
 
 TABLES_AT_INIT = [
     'assets',
-    'yearn_vaults_events',
     'timed_balances',
     'timed_location_data',
     'asset_movement_category',

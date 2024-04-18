@@ -150,9 +150,7 @@ from rotkehlchen.api.v1.resources import (
     UsersResource,
     WatchersResource,
     YearnVaultsBalancesResource,
-    YearnVaultsHistoryResource,
     YearnVaultsV2BalancesResource,
-    YearnVaultsV2HistoryResource,
     create_blueprint,
 )
 from rotkehlchen.api.websockets.notifier import RotkiNotifier, RotkiWSApp
@@ -262,9 +260,7 @@ URLS_V1: URLS = [
     ('/blockchains/eth/modules/aave/balances', AaveBalancesResource),
     ('/blockchains/eth/modules/compound/balances', CompoundBalancesResource),
     ('/blockchains/eth/modules/yearn/vaults/balances', YearnVaultsBalancesResource),
-    ('/blockchains/eth/modules/yearn/vaults/history', YearnVaultsHistoryResource),
     ('/blockchains/eth/modules/yearn/vaultsv2/balances', YearnVaultsV2BalancesResource),
-    ('/blockchains/eth/modules/yearn/vaultsv2/history', YearnVaultsV2HistoryResource),
     ('/blockchains/eth/modules/liquity/balances', LiquityTrovesResource),
     ('/blockchains/eth/modules/liquity/staking', LiquityStakingResource),
     ('/blockchains/eth/modules/liquity/pool', LiquityStabilityPoolResource),

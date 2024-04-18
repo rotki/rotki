@@ -1,30 +1,22 @@
 import logging
-from collections import defaultdict
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from gevent.lock import Semaphore
 
-from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.chain.ethereum.graph import SUBGRAPH_REMOTE_ERROR_MSG
-from rotkehlchen.chain.evm.constants import MAX_BLOCKTIME_CACHE
-from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.misc import EXP18
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
-from rotkehlchen.errors.misc import ModuleInitializationFailure, RemoteError
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import YEARN_VAULTS_V2_PROTOCOL, ChecksumEvmAddress, EvmAddress, Timestamp
+from rotkehlchen.types import YEARN_VAULTS_V2_PROTOCOL, ChecksumEvmAddress
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
-from rotkehlchen.utils.misc import ts_now
 
-from .constants import BLOCKS_PER_YEAR, YEARN_VAULTS_V2_PREFIX
-from .db import add_yearn_vaults_events, get_yearn_vaults_v2_events
-from .graph import YearnVaultsV2Graph
-from .structures import YearnVaultEvent
-from .vaults import YearnVaultBalance, YearnVaultHistory, get_usd_price_zero_if_error
+from .constants import BLOCKS_PER_YEAR
+from .vaults import YearnVaultBalance
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.defi.structures import GIVEN_ETH_BALANCES
@@ -42,23 +34,13 @@ class YearnVaultsV2(EthereumModule):
             self,
             ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
-            premium: Optional['Premium'],  # pylint: disable=unused-argument
+            premium: 'Premium | None',  # pylint: disable=unused-argument
             msg_aggregator: MessagesAggregator,
     ) -> None:
         self.ethereum = ethereum_inquirer
         self.database = database
         self.msg_aggregator = msg_aggregator
         self.history_lock = Semaphore()
-
-        try:
-            self.graph_inquirer: YearnVaultsV2Graph = YearnVaultsV2Graph(
-                msg_aggregator=msg_aggregator,
-            )
-        except RemoteError as e:
-            self.msg_aggregator.add_error(
-                SUBGRAPH_REMOTE_ERROR_MSG.format(protocol='Yearn V2', error_msg=str(e)),
-            )
-            raise ModuleInitializationFailure('Yearn Vaults v2 Subgraph remote error') from e
 
     def _calculate_vault_roi_and_pps(self, vault: EvmToken) -> tuple[FVal | None, int]:
         """
@@ -104,15 +86,14 @@ class YearnVaultsV2(EthereumModule):
             pps_cache: dict[str, int],  # price per share
     ) -> dict[ChecksumEvmAddress, YearnVaultBalance]:
         result = {}
-        globaldb = GlobalDBHandler()
-        with globaldb.conn.read_ctx() as cursor:
+        with GlobalDBHandler().conn.read_ctx() as cursor:
             for asset, balance in defi_balances.items():
                 if asset.is_evm_token() is False:
                     continue
 
                 token = asset.resolve_to_evm_token()
                 if token.protocol == YEARN_VAULTS_V2_PROTOCOL:
-                    underlying = globaldb.fetch_underlying_tokens(cursor, ethaddress_to_identifier(token.evm_address))  # noqa: E501
+                    underlying = GlobalDBHandler.fetch_underlying_tokens(cursor, ethaddress_to_identifier(token.evm_address))  # noqa: E501
                     if underlying is None:
                         log.error(f'Found yearn asset {token} without underlying asset')
                         continue
@@ -161,210 +142,12 @@ class YearnVaultsV2(EthereumModule):
                 result[address] = vault_balances
         return result
 
-    def _process_vault_events(self, events: list[YearnVaultEvent]) -> Balance:
-        """Process the events for a single vault and returns total profit/loss after all events"""
-        total = Balance()
-        profit_so_far = Balance()
-
-        if len(events) < 2:
-            return total
-
-        for event in events:
-            if event.event_type == 'deposit':
-                total -= event.from_value
-            else:  # withdraws
-                profit_amount = total.amount + event.to_value.amount - profit_so_far.amount
-                profit: Balance | None
-                if profit_amount >= 0:
-                    usd_price = get_usd_price_zero_if_error(
-                        asset=event.to_asset,
-                        time=event.timestamp,
-                        location=f'yearn vault v2 event {event.tx_hash.hex()} processing',
-                        msg_aggregator=self.msg_aggregator,
-                    )
-                    profit = Balance(profit_amount, profit_amount * usd_price)
-                    profit_so_far += profit
-                else:
-                    profit = None
-
-                event.realized_pnl = profit
-                total += event.to_value
-
-        return total
-
-    def get_vaults_history(
-            self,
-            eth_balances: dict[ChecksumEvmAddress, BalanceSheet],
-            addresses: list[ChecksumEvmAddress],
-            from_block: int,
-            to_block: int,
-    ) -> dict[ChecksumEvmAddress, dict[str, YearnVaultHistory]]:
-        """Query for yearv2 vault history and save it in the DB"""
-        query_addresses: list[EvmAddress] = []
-        query_checksumed_addresses: list[ChecksumEvmAddress] = []
-
-        # Skip addresses recently fetched
-        for address in addresses:
-            with self.database.conn.read_ctx() as cursor:
-                last_query = self.database.get_used_query_range(
-                    cursor=cursor,
-                    name=f'{YEARN_VAULTS_V2_PREFIX}_{address}',
-                )
-            skip_query = last_query and to_block - last_query[1] < MAX_BLOCKTIME_CACHE
-            if not skip_query:
-                query_addresses.append(EvmAddress(address.lower()))
-                query_checksumed_addresses.append(address)
-
-        # if None of the addresses has yearn v2 positions this
-        # will return a map of addresses to empty lists
-        new_events_addresses = self.graph_inquirer.get_all_events(
-            addresses=query_addresses,
-            from_block=from_block,
-            to_block=to_block,
-        )
-        current_time = ts_now()
-        vaults_histories_per_address: dict[ChecksumEvmAddress, dict[str, YearnVaultHistory]] = {}
-
-        for address, new_events in new_events_addresses.items():
-            with self.database.conn.read_ctx() as cursor:
-                # Query events from db for address
-                db_events = get_yearn_vaults_v2_events(
-                    cursor=cursor,
-                    address=address,
-                    from_block=from_block,
-                    to_block=to_block,
-                    msg_aggregator=self.msg_aggregator,
-                )
-            # Flatten the data into a unique list
-            events = list(new_events['deposits'])
-            events.extend(new_events['withdrawals'])
-
-            if len(db_events) == 0 and len(events) == 0:
-                # After all events have been queried then also update the query range.
-                # Even if no events are found for an address we need to remember the range
-                with self.database.user_write() as write_cursor:
-                    self.database.update_used_block_query_range(
-                        write_cursor=write_cursor,
-                        name=f'{YEARN_VAULTS_V2_PREFIX}_{address}',
-                        from_block=from_block,
-                        to_block=to_block,
-                    )
-                continue
-
-            with self.database.user_write() as write_cursor:
-                add_yearn_vaults_events(write_cursor, address, events)
-
-        for address in addresses:
-            with self.database.conn.read_ctx() as cursor:
-                all_events = get_yearn_vaults_v2_events(
-                    cursor=cursor,
-                    address=address,
-                    from_block=from_block,
-                    to_block=to_block,
-                    msg_aggregator=self.msg_aggregator,
-                )
-            vaults_histories: dict[str, YearnVaultHistory] = {}
-            # Dict that stores vault token symbol and their events + total pnl
-            vaults: dict[str, dict[str, list[YearnVaultEvent]]] = defaultdict(
-                lambda: defaultdict(list),
-            )
-            for event in all_events:
-                if event.event_type == 'deposit':
-                    vault_token_symbol = event.to_asset.identifier
-                    underlying_token = event.from_asset
-                else:
-                    vault_token_symbol = event.from_asset.identifier
-                    underlying_token = event.to_asset
-                vaults[vault_token_symbol]['events'].append(event)
-
-            # Sort events in each vault
-            for key in vaults:
-                vaults[key]['events'].sort(key=lambda x: x.timestamp)
-                total_pnl = self._process_vault_events(vaults[key]['events'])
-                balances = eth_balances.get(address)
-
-                if balances:
-                    for asset, balance in balances.assets.items():
-                        found_balance = (
-                            isinstance(asset, EvmToken) and
-                            asset.protocol == YEARN_VAULTS_V2_PROTOCOL and
-                            asset.symbol == vault_token_symbol
-                        )
-                        if found_balance:
-                            total_pnl += balance.amount
-                            break
-
-                # Due to the way we calculate usd prices for vaults we
-                # need to get the current usd price of the actual pnl
-                # amount at this point
-                if total_pnl.amount != ZERO:
-                    usd_price = get_usd_price_zero_if_error(
-                        asset=underlying_token,
-                        time=current_time,
-                        location='yearn vault v2 history',
-                        msg_aggregator=self.msg_aggregator,
-                    )
-                    total_pnl.usd_value = usd_price * total_pnl.amount
-
-                vaults_histories[key] = YearnVaultHistory(
-                    events=vaults[key]['events'],
-                    profit_loss=total_pnl,
-                )
-            vaults_histories_per_address[address] = vaults_histories
-
-            with self.database.user_write() as write_cursor:
-                self.database.update_used_block_query_range(
-                    write_cursor=write_cursor,
-                    name=f'{YEARN_VAULTS_V2_PREFIX}_{address}',
-                    from_block=from_block,
-                    to_block=to_block,
-                )
-
-        for address in query_checksumed_addresses:
-            if (  # the address has no history, omit the key from the final results
-                address in vaults_histories_per_address and
-                len(vaults_histories_per_address[address]) == 0
-            ):
-                del vaults_histories_per_address[address]
-
-        return vaults_histories_per_address
-
-    def get_history(
-            self,
-            given_eth_balances: 'GIVEN_ETH_BALANCES',
-            addresses: list[ChecksumEvmAddress],
-            reset_db_data: bool,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> dict[ChecksumEvmAddress, dict[str, YearnVaultHistory]]:
-        with self.history_lock:
-
-            if isinstance(given_eth_balances, dict):
-                eth_balances = given_eth_balances
-            else:
-                eth_balances = given_eth_balances()
-
-            if reset_db_data is True:
-                with self.database.user_write() as write_cursor:
-                    self.database.delete_yearn_vaults_data(write_cursor=write_cursor, version=2)
-
-            from_block = self.ethereum.get_blocknumber_by_time(from_timestamp, closest='before')
-            to_block = self.ethereum.get_blocknumber_by_time(to_timestamp, closest='before')
-
-            return self.get_vaults_history(
-                eth_balances=eth_balances,
-                addresses=addresses,
-                from_block=from_block,
-                to_block=to_block,
-            )
-
     # -- Methods following the EthereumModule interface -- #
     def on_account_addition(self, address: ChecksumEvmAddress) -> None:
-        pass
+        ...
 
     def on_account_removal(self, address: ChecksumEvmAddress) -> None:
-        pass
+        ...
 
     def deactivate(self) -> None:
-        with self.database.user_write() as write_cursor:
-            self.database.delete_yearn_vaults_data(write_cursor=write_cursor, version=2)
+        ...

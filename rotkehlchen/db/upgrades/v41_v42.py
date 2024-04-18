@@ -108,6 +108,15 @@ def _upgrade_evmchains_to_skip_detection(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
+def _remove_yearn_events_table(write_cursor: 'DBCursor') -> None:
+    """Delete the table with balancer events"""
+    write_cursor.execute('DROP TABLE yearn_vaults_events')
+    write_cursor.execute(
+        'DELETE FROM used_query_ranges WHERE name LIKE "yearn_vaults%"',
+    )
+
+
+@enter_exit_debug_log()
 def _add_calendar_tables(write_cursor: 'DBCursor') -> None:
     write_cursor.execute("""CREATE TABLE IF NOT EXISTS calendar (
     identifier INTEGER PRIMARY KEY NOT NULL,
@@ -197,8 +206,10 @@ def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Add new supported locations
         - Add a new table to handle the calendar
         - Remove the manualcurrent oracle from settings
+        - Remove balancer old events
+        - Remove yearn v1 and v2 old events
     """
-    progress_handler.set_total_steps(7)
+    progress_handler.set_total_steps(8)
     with db.user_write() as write_cursor:
         _add_zksynclite(write_cursor)
         progress_handler.new_step()
@@ -213,4 +224,6 @@ def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _reset_decoded_events(write_cursor)
         progress_handler.new_step()
         _remove_balancer_events_table(write_cursor)
+        progress_handler.new_step()
+        _remove_yearn_events_table(write_cursor)
         progress_handler.new_step()
