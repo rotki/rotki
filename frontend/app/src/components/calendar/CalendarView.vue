@@ -143,6 +143,22 @@ function deleteEvent() {
 setPostSubmitFunc(fetchData);
 
 const selectedDateEvents = computed(() => get(eventsWithDate).filter(item => item.date === get(selectedDate).format('YYYY-MM-DD')));
+
+const route = useRoute();
+const router = useRouter();
+
+onMounted(async () => {
+  const query = get(route).query;
+
+  if (query.timestamp) {
+    const timestamp = Number(query.timestamp);
+    const date = dayjs(timestamp * 1000);
+    if (date.isValid())
+      set(selectedDate, date);
+
+    await router.replace({ query: {} });
+  }
+});
 </script>
 
 <template>

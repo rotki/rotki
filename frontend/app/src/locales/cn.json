@@ -3148,7 +3148,6 @@
   },
   "notification_sidebar": {
     "clear_tooltip": "清除所有通知",
-    "close_tooltip": "关闭通知区域",
     "confirmation": {
       "message": "此操作将清除所有活动通知。你想继续吗？",
       "title": "清除活动通知"

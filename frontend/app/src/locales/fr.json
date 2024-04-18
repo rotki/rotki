@@ -3427,7 +3427,6 @@
   },
   "notification_sidebar": {
     "clear_tooltip": "Supprimer toutes les notifications",
-    "close_tooltip": "Fermer la zone de notification",
     "confirmation": {
       "message": "Cette action va supprimer toutes les notifications actives. Souhaitez-vous continuer ?",
       "title": "Supprimer les notifications actives"

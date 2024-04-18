@@ -144,6 +144,7 @@ const { showDeleteConfirmation } = addressBookDeletion(location);
           :sort-modifiers="{ external: true }"
           row-attr=""
           outlined
+          dense
           :server-items-length="itemLength"
           @update:options="updatePagination($event)"
         >

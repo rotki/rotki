@@ -22,7 +22,7 @@ const { t } = useI18n();
         color="primary"
         variant="indeterminate"
         circular
-        size="24"
+        size="20"
         thickness="2"
       />
       <div class="font-medium">
@@ -30,22 +30,21 @@ const { t } = useI18n();
       </div>
     </div>
 
-    <div>
-      <RuiButton
-        variant="text"
-        icon
-        size="sm"
-        @click="input()"
-      >
-        <RuiIcon
-          v-if="value"
-          name="arrow-up-s-line"
-        />
-        <RuiIcon
-          v-else
-          name="arrow-down-s-line"
-        />
-      </RuiButton>
-    </div>
+    <RuiButton
+      class="-m-1"
+      variant="text"
+      icon
+      size="sm"
+      @click="input()"
+    >
+      <RuiIcon
+        v-if="value"
+        name="arrow-up-s-line"
+      />
+      <RuiIcon
+        v-else
+        name="arrow-down-s-line"
+      />
+    </RuiButton>
   </div>
 </template>
