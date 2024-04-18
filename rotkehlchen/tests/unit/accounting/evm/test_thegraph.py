@@ -12,7 +12,7 @@ from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.pnl import PNL
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
-from rotkehlchen.chain.ethereum.modules.thegraph.constants import CPT_THEGRAPH
+from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
 from rotkehlchen.constants.assets import A_GRT
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
