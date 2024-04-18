@@ -2,6 +2,7 @@
 const props = withDefaults(
   defineProps<{
     value?: string | null;
+    dense?: boolean;
   }>(),
   {
     value: null,
@@ -25,6 +26,7 @@ const rootAttrs = useAttrs();
     outlined
     v-bind="rootAttrs"
     :items="exchangesWithKey"
+    :dense="dense"
     auto-select-first
     v-on="
       // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
@@ -35,7 +37,7 @@ const rootAttrs = useAttrs();
       <ExchangeDisplay
         :exchange="item"
         :class="`exchange__${item}`"
-        size="1.125rem"
+        :size="dense ? '1.125rem' : undefined"
         v-bind="attrs"
         v-on="on"
       />
