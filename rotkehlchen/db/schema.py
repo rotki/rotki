@@ -648,28 +648,6 @@ CREATE TABLE IF NOT EXISTS history_events_mappings (
 );
 """  # noqa: E501
 
-DB_CREATE_BALANCER_EVENTS = """
-CREATE TABLE IF NOT EXISTS balancer_events (
-    tx_hash BLOB NOT NULL,
-    log_index INTEGER NOT NULL,
-    address VARCHAR[42] NOT NULL,
-    timestamp INTEGER NOT NULL,
-    type TEXT NOT NULL,
-    pool_address_token TEXT NOT NULL,
-    lp_amount TEXT NOT NULL,
-    usd_value TEXT NOT NULL,
-    amount0 TEXT NOT NULL,
-    amount1 TEXT NOT NULL,
-    amount2 TEXT,
-    amount3 TEXT,
-    amount4 TEXT,
-    amount5 TEXT,
-    amount6 TEXT,
-    amount7 TEXT,
-    FOREIGN KEY (pool_address_token) REFERENCES assets(identifier) ON UPDATE CASCADE,
-    PRIMARY KEY (tx_hash, log_index)
-);
-"""
 
 DB_CREATE_NFTS = """
 CREATE TABLE IF NOT EXISTS nfts (
@@ -843,7 +821,6 @@ BEGIN TRANSACTION;
 {DB_CREATE_HISTORY_EVENTS_MAPPINGS}
 {DB_CREATE_ACTION_TYPE}
 {DB_CREATE_IGNORED_ACTIONS}
-{DB_CREATE_BALANCER_EVENTS}
 {DB_CREATE_NFTS}
 {DB_CREATE_ENS_MAPPINGS}
 {DB_CREATE_ADDRESS_BOOK}

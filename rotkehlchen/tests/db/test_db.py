@@ -143,7 +143,6 @@ TABLES_AT_INIT = [
     'eth2_validators',
     'ignored_actions',
     'action_type',
-    'balancer_events',
     'nfts',
     'history_events',
     'history_events_mappings',
