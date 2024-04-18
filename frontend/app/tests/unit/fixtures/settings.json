@@ -60,7 +60,9 @@
     "oracle_penalty_threshold_count": 5,
     "oracle_penalty_duration": 1800,
     "last_balance_save": 0,
-    "last_data_upload_ts": 0
+    "last_data_upload_ts": 0,
+    "autoDeleteCalendarEntries": true,
+    "autoCreateCalendarReminders": true
   },
   "message": ""
 }

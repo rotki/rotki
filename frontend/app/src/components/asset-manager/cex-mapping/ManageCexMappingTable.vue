@@ -64,11 +64,11 @@ const onSymbolChange = useDebounceFn((value?: string) => emit('update:symbol', v
 
 <template>
   <div>
-    <div class="flex justify-between">
+    <div class="flex sm:items-center justify-between mb-4">
       <HintMenuIcon>
         {{ t('asset_management.cex_mapping.subtitle') }}
       </HintMenuIcon>
-      <div class="w-full md:w-[40rem] flex flex-col sm:flex-row gap-4 mb-4">
+      <div class="w-full md:w-[40rem] flex flex-col sm:flex-row gap-4">
         <ExchangeInput
           v-model="locationModel"
           :label="t('asset_management.cex_mapping.filter_by_exchange')"
@@ -81,6 +81,7 @@ const onSymbolChange = useDebounceFn((value?: string) => emit('update:symbol', v
           :value="symbol"
           class="w-full sm:max-w-72"
           variant="outlined"
+          color="primary"
           :label="t('asset_management.cex_mapping.filter_by_location_symbol')"
           clearable
           hide-details
