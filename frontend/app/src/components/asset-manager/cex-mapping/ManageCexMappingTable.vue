@@ -68,7 +68,7 @@ const onSymbolChange = useDebounceFn((value?: string) => emit('update:symbol', v
       <HintMenuIcon>
         {{ t('asset_management.cex_mapping.subtitle') }}
       </HintMenuIcon>
-      <div class="w-full md:w-[50rem] flex flex-col sm:flex-row gap-4 mb-4">
+      <div class="w-full md:w-[40rem] flex flex-col sm:flex-row gap-4 mb-4">
         <ExchangeInput
           v-model="locationModel"
           :label="t('asset_management.cex_mapping.filter_by_exchange')"
@@ -79,7 +79,7 @@ const onSymbolChange = useDebounceFn((value?: string) => emit('update:symbol', v
         />
         <RuiTextField
           :value="symbol"
-          class="w-full sm:max-w-96"
+          class="w-full sm:max-w-72"
           variant="outlined"
           :label="t('asset_management.cex_mapping.filter_by_location_symbol')"
           clearable

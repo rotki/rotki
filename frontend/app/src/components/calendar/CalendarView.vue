@@ -168,6 +168,7 @@ onMounted(async () => {
     ]"
   >
     <template #buttons>
+      <CalendarSettingsMenu />
       <RuiButton
         color="primary"
         @click="add()"
