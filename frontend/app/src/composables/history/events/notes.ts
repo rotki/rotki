@@ -28,6 +28,26 @@ export interface NoteFormat {
 export function useHistoryEventNote() {
   const { assetSymbol } = useAssetInfoRetrieval();
 
+  function separateByPunctuation(word: string) {
+    // Use a regular expression to find trailing characters
+    const trailingMatch = word.match(/\.+$/);
+
+    // Extract the trailing characters if they exist, otherwise set to an empty string
+    const trailingChars = trailingMatch ? trailingMatch[0] : '';
+
+    // Remove the trailing characters from the original word
+    const mainPart = word.substring(0, word.length - trailingChars.length);
+
+    // Construct the result array
+    const result = [];
+    if (mainPart)
+      result.push(mainPart);
+    if (trailingChars)
+      result.push(trailingChars);
+
+    return result;
+  }
+
   const formatNotes = ({
     notes,
     amount,
@@ -54,13 +74,30 @@ export function useHistoryEventNote() {
       let skip = false;
 
       // label each word from notes whether it is an address or not
-      const words = notesVal.split(/\s|,/);
+      const words = notesVal.split(/[\s,]+/);
 
-      words.forEach((word, index) => {
+      words.forEach((wordItem, index) => {
         if (skip) {
           skip = false;
           return;
         }
+
+        const splitted = separateByPunctuation(wordItem);
+
+        if (splitted.length === 0)
+          return;
+
+        const word = splitted[0];
+
+        const putBackPunctuation = () => {
+          if (!splitted[1])
+            return;
+
+          formats.push({
+            type: NoteType.WORD,
+            word: splitted[1],
+          });
+        };
 
         // Check if the word is ETH address
         if (isValidEthAddress(word)) {
@@ -70,7 +107,7 @@ export function useHistoryEventNote() {
             showIcon: true,
             showHashLink: true,
           });
-          return;
+          return putBackPunctuation();
         }
 
         // Check if the word is Tx Hash
@@ -80,7 +117,7 @@ export function useHistoryEventNote() {
             address: word,
             showHashLink: true,
           });
-          return;
+          return putBackPunctuation();
         }
 
         // Check if the word is ETH2 Validator Index
@@ -91,7 +128,7 @@ export function useHistoryEventNote() {
             chain: Blockchain.ETH2,
             showHashLink: true,
           });
-          return;
+          return putBackPunctuation();
         }
 
         // Check if the word is Block Number
@@ -101,7 +138,7 @@ export function useHistoryEventNote() {
             address: word,
             showHashLink: true,
           });
-          return;
+          return putBackPunctuation();
         }
 
         const amountVal = get(amount);
@@ -121,7 +158,7 @@ export function useHistoryEventNote() {
             asset: get(assetId),
           });
           skip = true;
-          return;
+          return putBackPunctuation();
         }
 
         // Check if the word is Markdown link format
@@ -141,7 +178,7 @@ export function useHistoryEventNote() {
               url,
             });
 
-            return;
+            return putBackPunctuation();
           }
         }
 
@@ -155,7 +192,7 @@ export function useHistoryEventNote() {
             url: word,
           });
 
-          return;
+          return putBackPunctuation();
         }
 
         if (isEvmIdentifier(word)) {
@@ -165,11 +202,11 @@ export function useHistoryEventNote() {
               type: NoteType.WORD,
               word: symbol,
             });
-            return;
+            return putBackPunctuation();
           }
         }
 
-        formats.push({ type: NoteType.WORD, word });
+        formats.push({ type: NoteType.WORD, word: splitted.join('') });
       });
 
       return formats;
