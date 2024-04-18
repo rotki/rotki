@@ -179,6 +179,16 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
         )
 
 
+@enter_exit_debug_log()
+def _remove_balancer_events_table(write_cursor: 'DBCursor') -> None:
+    """Delete the table with balancer events"""
+    write_cursor.execute('DROP TABLE balancer_events')
+    write_cursor.execute(
+        'DELETE FROM used_query_ranges WHERE name LIKE ?',
+        ('balancer_events%',),
+    )
+
+
 @enter_exit_debug_log(name='UserDB v41->v42 upgrade')
 def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v41 to v42. This was in v1.33 release.
@@ -188,7 +198,7 @@ def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Add a new table to handle the calendar
         - Remove the manualcurrent oracle from settings
     """
-    progress_handler.set_total_steps(6)
+    progress_handler.set_total_steps(7)
     with db.user_write() as write_cursor:
         _add_zksynclite(write_cursor)
         progress_handler.new_step()
@@ -201,4 +211,6 @@ def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _remove_manualcurrent_oracle(write_cursor)
         progress_handler.new_step()
         _reset_decoded_events(write_cursor)
+        progress_handler.new_step()
+        _remove_balancer_events_table(write_cursor)
         progress_handler.new_step()

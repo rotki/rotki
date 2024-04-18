@@ -29,7 +29,6 @@ from rotkehlchen.chain.bitcoin.xpub import (
     XpubDerivedAddressData,
     deserialize_derivation_path_for_db,
 )
-from rotkehlchen.chain.ethereum.modules.balancer import BALANCER_EVENTS_PREFIX
 from rotkehlchen.chain.ethereum.modules.yearn.constants import (
     YEARN_VAULTS_PREFIX,
     YEARN_VAULTS_V2_PREFIX,
@@ -171,7 +170,6 @@ TABLES_WITH_ASSETS = (
     ('trades', 'base_asset', 'quote_asset', 'fee_currency'),
     ('margin_positions', 'pl_currency', 'fee_currency'),
     ('asset_movements', 'asset', 'fee_asset'),
-    ('balancer_events', 'pool_address_token'),
     ('timed_balances', 'currency'),
     ('history_events', 'asset'),
 )
@@ -1004,14 +1002,6 @@ class DBHandler:
                 'or an entry for the given timestamp already exists',
             ) from e
 
-    def delete_balancer_events_data(self, write_cursor: 'DBCursor') -> None:
-        """Delete all historical Balancer events data"""
-        write_cursor.execute('DELETE FROM balancer_events;')
-        write_cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name LIKE ?',
-            (f'{BALANCER_EVENTS_PREFIX}%',),
-        )
-
     def delete_eth2_daily_stats(self, write_cursor: 'DBCursor') -> None:
         """Delete all historical ETH2 eth2_daily_staking_details data"""
         write_cursor.execute('DELETE FROM eth2_daily_staking_details;')
@@ -1019,15 +1009,12 @@ class DBHandler:
     def purge_module_data(self, module_name: ModuleName | None) -> None:
         with self.user_write() as cursor:
             if module_name is None:
-                self.delete_balancer_events_data(cursor)
                 self.delete_yearn_vaults_data(write_cursor=cursor, version=1)
                 self.delete_yearn_vaults_data(write_cursor=cursor, version=2)
                 self.delete_loopring_data(cursor)
                 self.delete_eth2_daily_stats(cursor)
                 log.debug('Purged all module data from the DB')
                 return
-            elif module_name == 'balancer':
-                self.delete_balancer_events_data(cursor)
             elif module_name == 'yearn_vaults':
                 self.delete_yearn_vaults_data(write_cursor=cursor, version=1)
             elif module_name == 'yearn_vaults_v2':
@@ -2137,11 +2124,6 @@ class DBHandler:
         """Deletes all evm related data from the DB for a single evm address"""
         if blockchain == SupportedBlockchain.ETHEREUM:  # mainnet only behaviour
             write_cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'aave_events_{address}',))  # noqa: E501
-            write_cursor.execute(
-                'DELETE FROM used_query_ranges WHERE name = ?',
-                (f'{BALANCER_EVENTS_PREFIX}_{address}',),
-            )
-            write_cursor.execute('DELETE FROM balancer_events WHERE address=?;', (address,))
             write_cursor.execute(  # queried addresses per module
                 'DELETE FROM multisettings WHERE name LIKE "queried_address_%" AND value = ?',
                 (address,),
@@ -3352,11 +3334,7 @@ class DBHandler:
                 'SELECT location FROM user_credentials UNION '
                 'SELECT location FROM history_events',
             )
-            locations = {Location.deserialize_from_db(loc[0]) for loc in cursor}
-            cursor.execute('SELECT COUNT(*) FROM balancer_events')
-            if cursor.fetchone()[0] >= 1:  # should always return number
-                locations.add(Location.BALANCER)
-        return locations
+            return {Location.deserialize_from_db(loc[0]) for loc in cursor}
 
     def should_save_balances(self, cursor: 'DBCursor') -> bool:
         """

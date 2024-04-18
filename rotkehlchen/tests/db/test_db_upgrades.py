@@ -2253,6 +2253,8 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
         assert table_exists(cursor, 'calendar') is False
         assert table_exists(cursor, 'calendar_reminders') is False
         assert cursor.execute('SELECT MAX(seq) FROM location').fetchone()[0] == 45
+        assert cursor.execute('SELECT COUNT(tx_hash) FROM balancer_events').fetchone()[0] == 2
+        assert cursor.execute('SELECT COUNT(*) from used_query_ranges').fetchone()[0] == 2
         raw_list = cursor.execute(
             'SELECT value FROM settings WHERE name=?', ('evmchains_to_skip_detection',),
         ).fetchone()[0]
@@ -2280,6 +2282,8 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
         assert table_exists(cursor, 'zksynclite_transactions') is True
         assert table_exists(cursor, 'calendar') is True
         assert table_exists(cursor, 'calendar_reminders') is True
+        assert table_exists(cursor, 'balancer_events') is False
+        assert cursor.execute('SELECT COUNT(*) from used_query_ranges').fetchone()[0] == 1
         assert cursor.execute('SELECT * FROM zksynclite_tx_type').fetchall() == [
             ('A', 1), ('B', 2), ('C', 3), ('D', 4), ('E', 5), ('F', 6), ('G', 7),
         ]
@@ -2351,7 +2355,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     views_after_creation = {x[0] for x in result}
 
     assert cursor.execute('SELECT value FROM settings WHERE name="version"').fetchone()[0] == '42'
-    removed_tables = set()
+    removed_tables = {'balancer_events'}
     removed_views = set()
     missing_tables = tables_before - tables_after_upgrade
     missing_views = views_before - views_after_upgrade

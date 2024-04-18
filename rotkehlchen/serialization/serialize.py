@@ -27,10 +27,7 @@ from rotkehlchen.chain.ethereum.modules.aave.aave import (
 )
 from rotkehlchen.chain.ethereum.modules.aave.common import AaveStats
 from rotkehlchen.chain.ethereum.modules.balancer import (
-    BalancerBPTEventPoolToken,
-    BalancerEvent,
     BalancerPoolBalance,
-    BalancerPoolEventsBalance,
     BalancerPoolTokenBalance,
 )
 from rotkehlchen.chain.ethereum.modules.compound.utils import CompoundBalance
@@ -155,9 +152,6 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
             LiquidityPool |
             LiquidityPoolAsset |
             LiquidityPoolEventsBalance |
-            BalancerBPTEventPoolToken |
-            BalancerEvent |
-            BalancerPoolEventsBalance |
             BalancerPoolBalance |
             BalancerPoolTokenBalance |
             ManuallyTrackedBalanceWithValue |

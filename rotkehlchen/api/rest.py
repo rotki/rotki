@@ -2586,23 +2586,6 @@ class RestAPI:
         )
 
     @async_api_call()
-    def get_balancer_events_history(
-            self,
-            reset_db_data: bool,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> dict[str, Any]:
-        return self._eth_module_query(
-            module_name='balancer',
-            method='get_events_history',
-            query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('balancer'),
-            reset_db_data=reset_db_data,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
-
-    @async_api_call()
     def get_dill_balance(self) -> dict[str, Any]:
         addresses = self.rotkehlchen.chains_aggregator.queried_addresses_for_module('pickle_finance')  # noqa: E501
         return self._eth_module_query(
