@@ -975,6 +975,31 @@
   "asset_management": {
     "add_error": "Could not add asset: {message}",
     "add_title": "Add a new asset",
+    "cex_mapping": {
+      "add_error": "No se ha podido añadir la asignación: {message}",
+      "add_mapping": "Añadir cartografía",
+      "add_title": "Añadir una nueva asignación",
+      "all_exchanges": "Todos los intercambios",
+      "confirm_delete": {
+        "message": "¿Está seguro de que desea eliminar la asignación de activos para el símbolo {asset} en {location}?",
+        "title": "Eliminar asignación de activos de bolsa"
+      },
+      "delete_error": "No se ha podido eliminar la asignación: {message}",
+      "edit_error": "No se ha podido editar la asignación: {message}",
+      "edit_title": "Editar la asignación",
+      "exchange": "Intercambio",
+      "filter_by_exchange": "Filtrar por bolsa",
+      "form": {
+        "asset_non_empty": "El campo activo reconocido no puede estar vacío",
+        "location_non_empty": "El campo ubicación no puede estar vacío",
+        "location_symbol_non_empty": "El campo de símbolo de activo no puede estar vacío"
+      },
+      "location_symbol": "Símbolo del activo",
+      "filter_by_location_symbol": "Filtrar por símbolo de activo",
+      "recognized_as": "Reconocido como",
+      "save_for_all": "Guardar esta asignación para todas las bolsas",
+      "subtitle": "Puede vincular símbolos de activos en una bolsa centralizada con activos reconocidos por rotki. Esto es necesario para que rotki pueda procesar activos en las bolsas."
+    },
     "confirm_delete": {
       "message": "Are you sure you want to delete {asset} from the asset database?",
       "title": "Delete asset"

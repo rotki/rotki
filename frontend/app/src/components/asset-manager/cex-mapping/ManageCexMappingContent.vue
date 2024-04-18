@@ -8,12 +8,17 @@ const { t } = useI18n();
 const { fetchAllCexMapping, deleteCexMapping } = useAssetCexMappingApi();
 
 const selectedLocation: Ref<string> = ref('');
+const selectedSymbol: Ref<string> = ref('');
 
 const extraParams = computed(() => {
   const location = get(selectedLocation);
-  if (!location)
-    return {};
-  return { location };
+  const symbol = get(selectedSymbol);
+  const data: { location?: string; locationSymbol?: string } = {};
+  if (location)
+    data.location = location;
+  if (symbol)
+    data.locationSymbol = symbol;
+  return data;
 });
 
 const {
@@ -32,6 +37,7 @@ const {
 >(null, true, useEmptyFilter, fetchAllCexMapping, {
   onUpdateFilters(query) {
     set(selectedLocation, query.location || '');
+    set(selectedSymbol, query.locationSymbol || '');
   },
   extraParams,
 });
@@ -124,6 +130,7 @@ const dialogTitle = computed<string>(() =>
       <ManageCexMappingTable
         :collection="state"
         :location.sync="selectedLocation"
+        :symbol.sync="selectedSymbol"
         :loading="loading"
         :options="options"
         @refresh="fetchData()"

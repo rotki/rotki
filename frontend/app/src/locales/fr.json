@@ -1104,6 +1104,31 @@
   "asset_management": {
     "add_error": "Impossible d'ajouter l'actif : {message}",
     "add_title": "Ajouter un nouvel actif",
+    "cex_mapping": {
+      "add_error": "Impossible d'ajouter le mappage : {message}",
+      "add_mapping": "Ajouter une cartographie",
+      "add_title": "Ajouter une nouvelle cartographie",
+      "all_exchanges": "Tous les échanges",
+      "confirm_delete": {
+        "message": "Êtes-vous sûr de vouloir supprimer la cartographie des actifs pour le symbole {asset} dans {location} ?",
+        "title": "Supprimer la cartographie des actifs de la bourse"
+      },
+      "delete_error": "Impossible de supprimer la cartographie : {message}",
+      "edit_error": "Impossible de modifier la correspondance : {message}",
+      "edit_title": "Modifier le mappage",
+      "exchange": "Échanger",
+      "filter_by_exchange": "Filtrer par échange",
+      "form": {
+        "asset_non_empty": "Le champ de l'actif reconnu ne peut pas être vide",
+        "location_non_empty": "Le champ emplacement ne peut pas être vide",
+        "location_symbol_non_empty": "Le champ symbole du bien ne peut pas être vide"
+      },
+      "location_symbol": "Symbole du bien",
+      "filter_by_location_symbol": "Filtrer par symbole d'actif",
+      "recognized_as": "Reconnu comme",
+      "save_for_all": "Sauvegarder cette correspondance pour tous les échanges",
+      "subtitle": "Vous pouvez lier des symboles d'actifs sur une bourse centralisée avec des actifs reconnus par rotki. Ceci est nécessaire pour que rotki puisse traiter les actifs sur les bourses."
+    },
     "confirm_delete": {
       "message": "Voulez-vous vraiment supprimer {asset} de la base de données d'actifs ?",
       "title": "Supprimer l'actif"

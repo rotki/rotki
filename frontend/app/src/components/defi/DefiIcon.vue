@@ -4,7 +4,7 @@ interface Item {
   name: string;
 }
 
-defineProps<{ item: Item }>();
+withDefaults(defineProps<{ item: Item; size?: string }>(), { size: '1.5rem' });
 </script>
 
 <template>
@@ -15,8 +15,8 @@ defineProps<{ item: Item }>();
     <AppImage
       class="icon-bg"
       :src="item.icon"
+      :size="size"
       contain
-      size="24px"
     />
     <div class="capitalize text-rui-text-secondary">
       {{ item.name }}
