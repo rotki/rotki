@@ -1515,6 +1515,45 @@
     "go_to_date": "Go to date",
     "more_events": "{hidden} more",
     "no_events": "No events",
+    "reminder": {
+      "add_reminder": "Add Reminder",
+      "add_error": {
+        "title": "Adding calendar reminder",
+        "message": "There was a problem adding the reminder: {message}",
+        "some_failed": "There was some problem when adding the reminder for calendar event with id: {ids}"
+      },
+      "before_event": "before event",
+      "delete_error": {
+        "title": "Deleting calendar reminder",
+        "message": "There was a problem deleting the reminder: {message}"
+      },
+      "edit_error": {
+        "title": "Editing calendar reminder",
+        "message": "There was a problem editing the reminder: {message}"
+      },
+      "fetch_error": {
+        "title": "Fetching calendar reminder",
+        "message": "There was a problem fetching the reminder: {message}"
+      },
+      "notify": "Notify me at event time",
+      "title": "Reminder",
+      "units": {
+        "days": "Days",
+        "hours": "Hours",
+        "minutes": "Minutes",
+        "weeks": "Weeks"
+      },
+      "validation": {
+        "amount": {
+          "min_value": "Cannot set reminder less than 1 minute",
+          "max_value": "Cannot set reminder more than {amount} {unit}",
+          "non_empty": "The amount field should not be empty"
+        },
+        "unit": {
+          "non_empty": "The unit field should not be empty"
+        }
+      }
+    },
     "today": "Today",
     "today_events": "Today Events",
     "view_details": "View Details"

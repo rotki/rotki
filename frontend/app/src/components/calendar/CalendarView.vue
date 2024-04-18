@@ -197,6 +197,7 @@ const selectedDateEvents = computed(() => get(eventsWithDate).filter(item => ite
           @update:selected-date="setSelectedDate($event)"
           @update:range="range = $event"
           @edit="edit($event)"
+          @add="add()"
         />
 
         <CalendarFormDialog
