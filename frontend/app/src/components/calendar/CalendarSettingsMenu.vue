@@ -71,9 +71,10 @@ onMounted(() => {
           setting="autoCreateCalendarReminders"
           @finished="setAutoCreate()"
         >
+          <!-- todo: removed `|| true` when backend is merged -->
           <RuiSwitch
             v-model="autoCreateReminders"
-            :disabled="loading"
+            :disabled="loading || true"
             :label="t('calendar.dialog.settings.auto_create_reminders')"
             color="primary"
             hide-details
