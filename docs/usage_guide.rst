@@ -994,6 +994,8 @@ For now, the following chains are supported in Rotki (and the list will be growi
 - Arbitrum One
 - Base
 - Gnosis
+- Scroll
+- zkSync Lite
 
 To add or modify an account navigate to the :menuselection:`Blockchain Balances` sub-page and click the "Add Account" button on the top right. Now choose the blockchain on which you want to add an account. Then type or paste the address in the "Account" textbox and press the "Save" Button. Note that you can add multiple accounts if you click the "Add multiple addresses" checkbox and provide a comma separated list of addresses.
 
@@ -1421,7 +1423,7 @@ It is possible that you need to redecode events for an evm transaction. To do th
    :alt: Menu to redecode events for an EVM transaction
    :align: center
 
-The second option is to redecode all EVM transactions that have been queried. To do so you need to click on the three dots at the top of the page, and choose ``Redecode EVM Events``
+The second option is to redecode all EVM transactions that have been queried. To do so you need to click on  ``Redecode EVM Events`` at the top of the page.
 
 .. image:: images/redecode_all_events.png
    :alt: Menu to redecode all queried EVM transactions events
@@ -1523,7 +1525,7 @@ Inspecting list of assets
 =========================
 
 You can now manage the list of supported assets by your local rotki instance.
-You can inspect the list of all supported assets, edit them, delete them or add new ones. They're divided into 3 sections; assets, custom assets, and newly detected assets.
+You can inspect the list of all supported assets, edit them, delete them or add new ones. They're divided into 3 sections; assets, custom assets, and more sections (consist of "Manage CEX (Centralized Exchange) Mapping" and "Newly Detected Tokens" section).
 
 .. image:: images/rotki_manage_assets.png
    :alt: Manage the list of assets
@@ -1607,6 +1609,15 @@ You can fill in the following fields:
 1. The name to be given to the custom asset. This is required.
 2. The type of custom asset being represented. It's just a string. The type field remembers all previously used types. This is required.
 3. The note to be added to the custom asset. This is optional.
+
+Manage CEX (Centralized Exchange) Mapping
+=========================================
+
+Users can link assets on exchanges to assets recognized by Rotki. When you see an error such as "Asset XXX is not supported," you may need to specify what the XXX asset represents in Rotki.
+
+.. image:: images/rotki_manage_cex_mapping.png
+   :alt: Manage centralized exchange asset mapping
+   :align: center
 
 Newly detected tokens
 =====================
@@ -2077,28 +2088,7 @@ You can now take notes in various sections of the application. Note taking is ca
    :alt: Location specific notes
    :align: center
 
-Adding/Editing a note
-=======================
-
-To create a new note, click on the **note icon** at the top right and proceed to click on the ``"+"`` button which will pop up a note creation form.
-
-Editing a note follows similar process with the only exception of clicking the **pen icon** of the note to edit instead of ``"+"`` button.
-
-.. image:: images/rotki_add_edit_notes.png
-   :alt: Create or edit notes
-   :align: center
-
-Pinning/Deleting a note
-========================
-
-To delete a note, click on the button labelled as **1** in the screenshot below.
-
-To pin a note to the top, click on the button labelled as **2** in the screenshot below.
-
-.. image:: images/rotki_pin_delete_notes.png
-   :alt: Delete or pin notes
-   :align: center
-
+You can also pin notes, the pinned notes will appear at the top.
 
 Evm Address Book
 ******************************
@@ -2283,4 +2273,4 @@ Please, make sure all your accounts have the "Allow data sync with rotki Server"
 ENS data not updating for newly registered name/address combination
 =====================================================================
 
-If you just registered your ENS name and you don't see the name and/or avatar being properly displayed in rotki then that means that the value is cached and you need to force a refresh. You can do that by going to "Blockchain&Accounts" view and pressing refresh button next to Ethereum balances.
+If you just registered your ENS name and you don't see the name and/or avatar being properly displayed in rotki then that means that the value is cached and you need to force a refresh. You can do that by going to :menuselection:`Accounts & Balances > Blockchain Balances` view and pressing refresh button next to Ethereum balances table.
