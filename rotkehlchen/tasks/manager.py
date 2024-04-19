@@ -45,7 +45,7 @@ from rotkehlchen.tasks.assets import (
 )
 from rotkehlchen.tasks.calendar import (
     CalendarNotification,
-    maybe_delete_past_events,
+    delete_past_calendar_entries,
     notify_reminders,
 )
 from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries, should_run_periodic_task
@@ -864,7 +864,7 @@ class TaskManager:
             after_seconds=None,
             task_name='Delete old calendar entries',
             exception_is_error=True,
-            method=maybe_delete_past_events,
+            method=delete_past_calendar_entries,
             database=self.database,
         )]
 
