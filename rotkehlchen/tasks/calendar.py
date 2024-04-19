@@ -1,10 +1,33 @@
+import logging
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.db.calendar import BaseReminderData, CalendarEntry
+from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
+from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants.timing import DAY_IN_SECONDS, WEEK_IN_SECONDS
+from rotkehlchen.db.calendar import (
+    BaseReminderData,
+    CalendarEntry,
+    CalendarFilterQuery,
+    DBCalendar,
+    ReminderEntry,
+)
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.filtering import EvmEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import ChainID, OptionalBlockchainAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
+
+if TYPE_CHECKING:
+    from rotkehlchen.history.events.structures.evm_event import EvmEvent
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
@@ -47,3 +70,102 @@ def delete_past_calendar_entries(database: DBHandler) -> None:
             'DELETE FROM calendar WHERE timestamp < ? AND auto_delete=1',
             (ts_now(),),
         )
+
+
+def maybe_create_ens_reminders(database: DBHandler) -> None:
+    """Check ENS registration and renewal history events and create reminders if needed."""
+    db_history_events = DBHistoryEvents(database=database)
+    ens_events: list['EvmEvent'] = []
+    with database.conn.read_ctx() as cursor:
+        for event_type, event_subtype in (
+            (HistoryEventType.TRADE, HistoryEventSubType.SPEND),
+            (HistoryEventType.RENEW, HistoryEventSubType.NONE),
+        ):
+            ens_events.extend(db_history_events.get_history_events(
+                cursor=cursor,
+                has_premium=True,  # not limiting here
+                group_by_event_ids=False,
+                filter_query=EvmEventFilterQuery.make(
+                    and_op=True,
+                    counterparties=[CPT_ENS],
+                    event_types=[event_type],
+                    event_subtypes=[event_subtype],
+                ),
+            ))
+
+    if len(ens_events) == 0:
+        return
+
+    db_calendar = DBCalendar(database=database)
+    customizable_date = CustomizableDateMixin(database=database)
+    with database.conn.read_ctx() as cursor:
+        blockchain_accounts = database.get_blockchain_accounts(cursor=cursor)
+
+    current_ts = ts_now()
+    ens_to_event: dict[str, tuple[int, EvmEvent]] = {}
+    for ens_event in ens_events:
+        if not (
+            ens_event.location_label is not None and
+            ens_event.extra_data is not None and
+            (ens_name := ens_event.extra_data.get('name')) is not None and
+            (ens_expires := ens_event.extra_data.get('expires')) is not None and (
+                user_address := string_to_evm_address(ens_event.location_label)
+            ) in blockchain_accounts.get(
+                blockchain := ChainID.deserialize(ens_event.location.to_chain_id()).to_blockchain(),  # noqa: E501
+            ) and (ens_expires := Timestamp(ens_expires)) > current_ts  # those with expiry in the future  # noqa: E501
+        ):
+            continue
+
+        if (calendar_entries := db_calendar.query_calendar_entry(
+            filter_query=CalendarFilterQuery.make(
+                and_op=True,
+                name=f'{ens_name} expiry',
+                addresses=[OptionalBlockchainAddress(
+                    blockchain=blockchain,
+                    address=user_address,
+                )],
+                blockchain=blockchain,
+                counterparty=CPT_ENS,
+            ),
+        ))['entries_found'] == 0:  # if calendar entry doesn't exist, add it
+            calendar_entry_id = db_calendar.create_calendar_entry(CalendarEntry(
+                name=f'{ens_name} expiry',
+                timestamp=ens_expires,
+                description=f'{ens_name} expires on {customizable_date.timestamp_to_date(ens_expires)}',  # noqa: E501
+                counterparty=CPT_ENS,
+                address=user_address,
+                blockchain=blockchain,
+                color=None,
+                auto_delete=True,
+            ))
+        elif db_calendar.count_reminder_entries(  # else calendar entry already exists
+            event_id=(calendar_entry_id := calendar_entries['entries'][0].identifier),
+        ) > 0:  # and already has a reminder entry
+            continue  # we don't add any automatic reminders
+
+        if (
+            ens_name not in ens_to_event or
+            ens_expires > ens_to_event[ens_name][1].extra_data['expires']  # type: ignore[index]  # extra_data is not None, checked above
+        ):  # insert mapping for the latest expiry timestamp
+            ens_to_event[ens_name] = (calendar_entry_id, ens_event)
+
+    _, failed_to_add = db_calendar.create_reminder_entries(reminders=[
+        ReminderEntry(
+            identifier=calendar_identifier,  # this is only used for logging below, it's auto generated in db  # noqa: E501
+            event_id=calendar_identifier,
+            secs_before=secs_before,
+        )
+        for calendar_identifier, _ in ens_to_event.values()
+        for secs_before in (WEEK_IN_SECONDS, DAY_IN_SECONDS)
+    ])
+
+    if len(failed_to_add) == 0:
+        return
+
+    log.error(  # failed_to_add is a list of calendar_identifier that were passed as identifiers of reminder entry above  # noqa: E501
+        f"""Failed to add the ENS expiry reminders for {', '.join([
+            entry.name for entry in db_calendar.query_calendar_entry(CalendarFilterQuery.make(
+                identifiers=failed_to_add,
+            ))['entries']
+        ])}""",
+    )

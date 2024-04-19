@@ -4856,7 +4856,7 @@ class RestAPI:
 
     def create_calendar_reminder(self, reminders: list[ReminderEntry]) -> Response:
         """Store in the database the reminder for an event and return the id of the new entry"""
-        success, failed = DBCalendar(self.rotkehlchen.data.db).create_reminder_enties(
+        success, failed = DBCalendar(self.rotkehlchen.data.db).create_reminder_entries(
             reminders=reminders,
         )
         result = {'success': success}

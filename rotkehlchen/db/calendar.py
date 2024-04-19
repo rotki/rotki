@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, Any, Literal, NamedTuple
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.db.filtering import (
+    DBEqualsFilter,
     DBFilter,
     DBFilterQuery,
     DBMultiIntegerFilter,
@@ -168,6 +169,7 @@ class CalendarFilterQuery(DBFilterQuery, FilterWithTimestamp):
             description: str | None = None,
             counterparty: str | None = None,
             identifiers: list[int] | None = None,
+            blockchain: SupportedBlockchain | None = None,
     ) -> 'CalendarFilterQuery':
         if order_by_rules is None:
             order_by_rules = [('timestamp', True)]
@@ -213,6 +215,12 @@ class CalendarFilterQuery(DBFilterQuery, FilterWithTimestamp):
                 and_op=True,
                 column='identifier',
                 values=identifiers,
+            ))
+        if blockchain is not None:
+            filters.append(DBEqualsFilter(
+                and_op=True,
+                column='blockchain',
+                value=blockchain.value,
             ))
 
         filter_query.filters = filters
@@ -301,7 +309,7 @@ class DBCalendar:
 
         return calendar.identifier
 
-    def create_reminder_enties(
+    def create_reminder_entries(
             self,
             reminders: list[ReminderEntry],
     ) -> tuple[list[int], list[int]]:
@@ -349,3 +357,11 @@ class DBCalendar:
                 (event_id,),
             )
             return {'entries': [ReminderEntry.deserialize_from_db(row) for row in cursor]}
+
+    def count_reminder_entries(self, event_id: int) -> int:
+        """Count the existing reminders using the id of the linked event"""
+        with self.db.conn.read_ctx() as cursor:
+            return cursor.execute(
+                'SELECT COUNT(*) FROM calendar_reminders WHERE event_id=?',
+                (event_id,),
+            ).fetchone()[0]

@@ -29,6 +29,7 @@ from rotkehlchen.db.calendar import CalendarEntry
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
@@ -46,6 +47,7 @@ from rotkehlchen.tasks.assets import (
 from rotkehlchen.tasks.calendar import (
     CalendarNotification,
     delete_past_calendar_entries,
+    maybe_create_ens_reminders,
     notify_reminders,
 )
 from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries, should_run_periodic_task
@@ -815,6 +817,26 @@ class TaskManager:
             task_name='Query monerium',
             exception_is_error=False,  # don't spam user messages if errors happen
             method=monerium.get_and_process_orders,
+        )]
+
+    def _maybe_create_calendar_reminder(self) -> Optional[list[gevent.Greenlet]]:
+        """Create upcoming reminders for specific history events, if not already created."""
+        if (
+            CachedSettings().get_entry('auto_create_calendar_reminders') is False or
+            should_run_periodic_task(
+                database=self.database,
+                key_name=DBCacheStatic.LAST_CREATE_REMINDER_CHECK_TS,
+                refresh_period=DAY_IN_SECONDS,
+            ) is False
+        ):
+            return None
+
+        return [self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name='Maybe create ENS reminders',
+            exception_is_error=True,
+            method=maybe_create_ens_reminders,
+            database=self.database,
         )]
 
     def _maybe_trigger_calendar_reminder(self) -> Optional[list[gevent.Greenlet]]:

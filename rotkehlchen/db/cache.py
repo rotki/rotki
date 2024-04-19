@@ -23,6 +23,7 @@ class DBCacheStatic(Enum):
     LAST_MONERIUM_QUERY_TS: Final = 'last_monerium_query_ts'
     LAST_AAVE_V3_ASSETS_UPDATE: Final = 'last_aave_v3_assets_update'
     LAST_DELETE_PAST_CALENDAR_EVENTS: Final = 'last_delete_past_calendar_events'
+    LAST_CREATE_REMINDER_CHECK_TS: Final = 'last_create_reminder_check_ts'
 
 
 class LabeledLocationArgsType(TypedDict):
