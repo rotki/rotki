@@ -128,7 +128,7 @@ function handleMoreClick() {
       v-if="showDropdown"
       color="primary"
       variant="text"
-      class="text-rui-primary font-bold"
+      class="text-rui-primary font-bold my-2"
       @click="handleMoreClick()"
     >
       <template v-if="currentLimit === 0">

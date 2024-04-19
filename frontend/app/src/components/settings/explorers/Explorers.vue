@@ -111,6 +111,7 @@ const { t } = useI18n();
         <template #item.text="{ option }">
           <ChainDisplay
             v-if="!additional.includes(option.key)"
+            dense
             :chain="option.key"
           />
           <AssetDetails
@@ -122,6 +123,7 @@ const { t } = useI18n();
         <template #activator.text="{ value }">
           <ChainDisplay
             v-if="!additional.includes(value.key)"
+            dense
             :chain="value.key"
           />
           <AssetDetails

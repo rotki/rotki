@@ -83,7 +83,7 @@ const css = useCssModule();
 </script>
 
 <template>
-  <div class="p-4">
+  <div>
     <RuiCardHeader class="p-0">
       <template #header>
         {{

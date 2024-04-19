@@ -137,7 +137,7 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
           />
           <div
             v-else
-            class="w-9 h-9"
+            class="w-10 h-10"
           />
         </RowActions>
       </LazyLoader>

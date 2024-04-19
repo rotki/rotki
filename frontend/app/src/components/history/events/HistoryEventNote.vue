@@ -78,7 +78,7 @@ function isLinkType(t: any): t is keyof ExplorerUrls {
         v-else-if="note.type === NoteType.URL && note.url"
         :key="`${index}-link`"
         :url="note.url"
-        class="text-wrap"
+        class="text-wrap hover:underline"
         :text="note.word"
         color="primary"
         custom

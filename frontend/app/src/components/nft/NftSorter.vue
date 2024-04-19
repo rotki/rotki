@@ -66,6 +66,7 @@ const sortProperties = [
         text-attr="text"
         full-width
         variant="outlined"
+        dense
       />
     </div>
   </div>

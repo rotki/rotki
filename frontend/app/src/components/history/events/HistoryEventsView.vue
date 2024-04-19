@@ -946,7 +946,10 @@ watchImmediate(route, async (route) => {
                 v-if="row.ignoredInAccounting"
                 class="ml-4"
               />
-              <span v-else />
+              <div
+                v-else
+                class="min-h-[3.25rem]"
+              />
             </template>
             <template #item.txHash="{ row }">
               <LazyLoader class="flex items-center gap-2">
