@@ -48,7 +48,7 @@ describe('composables::message-handling', () => {
         type: SocketMessageType.EVM_ACCOUNTS_DETECTION,
         data: [
           {
-            evm_chain: 'optimism',
+            chain: 'optimism',
             address: '0xdead',
           },
         ],

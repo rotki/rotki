@@ -4,7 +4,6 @@ import {
   Severity,
 } from '@rotki/common/lib/messages';
 import { type MaybeRef, useSessionStorage } from '@vueuse/core';
-import type { Blockchain } from '@rotki/common/lib/blockchain';
 import type { MigratedAddresses } from '@/types/websocket-messages';
 
 function setupMigrationSessionCache(username: string): Ref<MigratedAddresses> {
@@ -17,7 +16,7 @@ export const useAccountMigrationStore = defineStore(
     let migratedAddresses: Ref<MigratedAddresses> = ref([]);
 
     const { canRequestData } = storeToRefs(useSessionAuthStore());
-    const { txEvmChains, getChain, getChainName } = useSupportedChains();
+    const { txEvmChains, getChainName } = useSupportedChains();
     const { fetchAccounts } = useBlockchains();
 
     const { t } = useI18n();
@@ -26,19 +25,19 @@ export const useAccountMigrationStore = defineStore(
     const handleMigratedAccounts = (): void => {
       const txEvmChainsVal = get(txEvmChains);
       assert(txEvmChainsVal.length > 0, 'Supported chains is empty');
-      const tokenChains: string[] = txEvmChainsVal.map(x => x.evmChainName);
+      const tokenChains: string[] = txEvmChainsVal.map(x => x.id);
       const addresses: Record<string, string[]> = {};
       const migrated: MigratedAddresses | null = get(migratedAddresses);
 
       if (migrated === null || migrated.length === 0)
         return;
 
-      migrated.forEach(({ address, evmChain }) => {
-        if (tokenChains.includes(evmChain)) {
-          if (!addresses[evmChain])
-            addresses[evmChain] = [address];
-          else
-            addresses[evmChain].push(address);
+      migrated.forEach(({ address, chain }) => {
+        if (tokenChains.includes(chain)) {
+          if (!addresses[chain])
+            addresses[chain] = [];
+
+          addresses[chain].push(address);
         }
       });
 
@@ -46,11 +45,10 @@ export const useAccountMigrationStore = defineStore(
       const notifications: Notification[] = [];
       for (const chain in addresses) {
         const chainAddresses = addresses[chain];
-        const blockchain = getChain(chain);
-        const chainName = get(getChainName(chain as Blockchain));
+        const chainName = get(getChainName(chain));
         promises.push(
-          fetchAccounts(blockchain),
-          useTokenDetection(blockchain).detectTokens(chainAddresses),
+          fetchAccounts(chain),
+          useTokenDetection(chain).detectTokens(chainAddresses),
         );
         notifications.push({
           title: t(

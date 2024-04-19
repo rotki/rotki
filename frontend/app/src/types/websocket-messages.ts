@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { EvmChainAddress } from '@/types/history/events';
+import { EvmChainAddress, EvmChainLikeAddress } from '@/types/history/events';
 import { CalendarEventPayload } from '@/types/history/calendar';
 
 export const MESSAGE_WARNING = 'warning';
@@ -110,7 +110,7 @@ export const DataMigrationStatusData = z.object({
 
 export type DataMigrationStatusData = z.infer<typeof DataMigrationStatusData>;
 
-export const MigratedAddresses = z.array(EvmChainAddress);
+export const MigratedAddresses = z.array(EvmChainLikeAddress);
 
 export type MigratedAddresses = z.infer<typeof MigratedAddresses>;
 
@@ -156,7 +156,7 @@ export const SocketMessageType = {
   PREMIUM_STATUS_UPDATE: 'premium_status_update',
   DB_UPGRADE_STATUS: 'db_upgrade_status',
   DATA_MIGRATION_STATUS: 'data_migration_status',
-  EVM_ACCOUNTS_DETECTION: 'evm_accounts_detection',
+  EVM_ACCOUNTS_DETECTION: 'evmlike_accounts_detection',
   NEW_EVM_TOKEN_DETECTED: 'new_evm_token_detected',
   MISSING_API_KEY: 'missing_api_key',
   REFRESH_BALANCES: 'refresh_balances',

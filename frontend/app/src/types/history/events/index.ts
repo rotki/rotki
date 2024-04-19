@@ -46,6 +46,13 @@ export const EvmChainAddress = z.object({
 
 export type EvmChainAddress = z.infer<typeof EvmChainAddress>;
 
+export const EvmChainLikeAddress = z.object({
+  address: z.string(),
+  chain: z.string(),
+});
+
+export type EvmChainLikeAddress = z.infer<typeof EvmChainLikeAddress>;
+
 export interface TransactionEventRequestPayload {
   readonly data: TransactionHashAndEvmChainPayload[];
   readonly ignoreCache: boolean;
