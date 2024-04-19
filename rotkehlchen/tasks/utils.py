@@ -31,6 +31,7 @@ def should_run_periodic_task(
             DBCacheStatic.LAST_MONERIUM_QUERY_TS,
             DBCacheStatic.LAST_AAVE_V3_ASSETS_UPDATE,
             DBCacheStatic.LAST_DELETE_PAST_CALENDAR_EVENTS,
+            DBCacheStatic.LAST_CREATE_REMINDER_CHECK_TS,
         ],
         refresh_period: int,
 ) -> bool:

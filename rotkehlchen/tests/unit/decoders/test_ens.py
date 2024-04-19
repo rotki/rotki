@@ -78,6 +78,7 @@ def test_mint_ens_name(database, ethereum_inquirer):
             notes=f'Register ENS name hania.eth for {register_fee_str} ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # noqa: E501
             counterparty=CPT_ENS,
             address=ENS_REGISTRAR_CONTROLLER_1,
+            extra_data={'name': 'hania.eth', 'expires': expires_timestamp},
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=43,
@@ -300,6 +301,7 @@ def test_register_v2(database, ethereum_inquirer, ethereum_accounts):
             notes=f'Register ENS name ens2qr.eth for 0.002609751671170445 ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # noqa: E501
             counterparty=CPT_ENS,
             address=ENS_REGISTRAR_CONTROLLER_2,
+            extra_data={'name': 'ens2qr.eth', 'expires': expires_timestamp},
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=289,
@@ -362,6 +364,7 @@ def test_renewal_with_refund_old_controller(database, ethereum_inquirer, ethereu
             notes=f'Renew ENS name dfern.eth for 0.054034186623924151 ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # noqa: E501
             counterparty=CPT_ENS,
             address=ENS_REGISTRAR_CONTROLLER_1,
+            extra_data={'name': 'dfern.eth', 'expires': expires_timestamp},
         ),
     ]
     assert events == expected_events
@@ -411,6 +414,7 @@ def test_renewal_with_refund_new_controller(database, ethereum_inquirer, ethereu
             notes=f'Renew ENS name karapetsas.eth for 0.013465329469696502 ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # noqa: E501
             counterparty=CPT_ENS,
             address=ENS_REGISTRAR_CONTROLLER_2,
+            extra_data={'name': 'karapetsas.eth', 'expires': expires_timestamp},
         ),
     ]
     assert events == expected_events
@@ -592,6 +596,7 @@ def test_for_truncated_labelhash(database, ethereum_inquirer, ethereum_accounts)
             notes=f'Register ENS name cantillon.eth for {register_fee_str} ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # noqa: E501
             counterparty=CPT_ENS,
             address=ENS_REGISTRAR_CONTROLLER_1,
+            extra_data={'name': 'cantillon.eth', 'expires': expires_timestamp},
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=203,

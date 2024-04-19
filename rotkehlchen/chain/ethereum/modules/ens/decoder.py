@@ -168,6 +168,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
                 event.event_subtype = HistoryEventSubType.SPEND
                 event.counterparty = CPT_ENS
                 event.notes = f'Register ENS name {fullname} for {amount} ETH until {self.timestamp_to_date(expires)}'  # noqa: E501
+                event.extra_data = {'name': fullname, 'expires': expires}
 
             # Find the ENS ERC721 receive event which should be before the registered event
             if event.event_type == HistoryEventType.RECEIVE and event.asset.identifier == 'eip155:1/erc721:0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85':  # noqa: E501
@@ -208,6 +209,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
                 event.event_subtype = HistoryEventSubType.NONE
                 event.counterparty = CPT_ENS
                 event.notes = f'Renew ENS name {fullname} for {event.balance.amount} ETH until {self.timestamp_to_date(expires)}'  # noqa: E501
+                event.extra_data = {'name': fullname, 'expires': expires}
 
         if refund_event_idx is not None:
             del context.decoded_events[refund_event_idx]

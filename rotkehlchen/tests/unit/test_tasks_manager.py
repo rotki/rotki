@@ -1,5 +1,5 @@
 import datetime
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, patch
 
 import gevent
@@ -8,6 +8,7 @@ import pytest
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
+from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_YFI
@@ -16,7 +17,7 @@ from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.constants.timing import DATA_UPDATES_REFRESH, DAY_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
-from rotkehlchen.db.calendar import CalendarEntry, DBCalendar
+from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.settings import CachedSettings, ModifiableDBSettings
 from rotkehlchen.errors.misc import RemoteError
@@ -39,6 +40,7 @@ from rotkehlchen.types import (
     SPAM_PROTOCOL,
     ChainID,
     EvmTokenKind,
+    EVMTxHash,
     Location,
     SupportedBlockchain,
     Timestamp,
@@ -46,6 +48,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -843,3 +846,80 @@ def test_calendar_entries_get_deleted(
         assert cursor.execute(
             'SELECT description FROM calendar',
         ).fetchall() == [('renew hania.eth',)]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('max_tasks_num', [5])
+@pytest.mark.freeze_time('2023-06-01 22:31:11 GMT')
+@pytest.mark.parametrize('db_settings', [
+    {'auto_create_calendar_reminders': False}, {'auto_create_calendar_reminders': True},
+])
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
+    '0xA3B9E4b2C18eFB1C767542e8eb9419B840881467',
+    '0xA01f6D0985389a8E106D3158A9441aC21EAC8D8c',
+]])
+@pytest.mark.parametrize('ens_tx_hashes', [[
+    deserialize_evm_tx_hash('0x74e72600c6cd5a1f0170a3ca38ecbf7d59edeb8ceb48adab2ed9b85d12cc2b99'),  # Register  # noqa: E501
+    deserialize_evm_tx_hash('0xd4fd01f50c3c86e7e119311d6830d975cf7d78d6906004d30370ffcbaabdff95'),  # Renew old  # noqa: E501
+], [
+    deserialize_evm_tx_hash('0x5150f6e1c76b74fa914e06df9e56577cdeec0faea11f9949ff529daeb16b1c76'),  # Register v2  # noqa: E501
+    deserialize_evm_tx_hash('0x0faef1a1a714d5f2f2e5fb344bd186a745180849bae2c92f9d595d8552ef5c96'),  # Renew new  # noqa: E501
+]])
+def test_maybe_create_calendar_reminder(
+        task_manager: TaskManager,
+        ethereum_inquirer: 'EthereumInquirer',
+        db_settings: dict[str, Any],
+        ens_tx_hashes: list['EVMTxHash'],
+) -> None:
+    """Test that ENS reminders are created at the expiry time of ENS registrations and renewals."""
+    database = task_manager.database
+    calendar_db = DBCalendar(database)
+    customizable_date = CustomizableDateMixin(database=database)
+    all_calendar_entries = calendar_db.query_calendar_entry(CalendarFilterQuery.make())
+    assert all_calendar_entries['entries_total'] == 0
+
+    ens_events = [
+        get_decoded_events_of_transaction(  # decode ENS registration/renewal event
+            evm_inquirer=ethereum_inquirer,
+            database=database,
+            tx_hash=ens_tx_hash,
+        )[0][1] for ens_tx_hash in ens_tx_hashes
+    ]
+
+    task_manager.potential_tasks = [task_manager._maybe_create_calendar_reminder]
+    task_manager.schedule()
+    if len(task_manager.running_greenlets):
+        gevent.joinall(task_manager.running_greenlets[task_manager._maybe_create_calendar_reminder])
+
+    if db_settings['auto_create_calendar_reminders'] is False:
+        assert calendar_db.query_calendar_entry(CalendarFilterQuery.make())['entries_total'] == 0
+        return  # finish this test case because this setting will prevent creation of reminders
+
+    new_calendar_entries = calendar_db.query_calendar_entry(CalendarFilterQuery.make())
+    assert new_calendar_entries['entries_found'] == 2
+
+    for idx, calendar_entry in enumerate(new_calendar_entries['entries']):
+        assert ens_events[idx].extra_data is not None
+        assert ens_events[idx].location_label is not None
+        ens_name: str = ens_events[idx].extra_data['name']  # type: ignore[index]  # extra_data is not None, checked above
+        ens_expires: Timestamp = ens_events[idx].extra_data['expires']  # type: ignore[index]  # extra_data is not None, checked above
+
+        assert calendar_entry == CalendarEntry(  # calendar entry is created for expiry
+            identifier=idx + 1,
+            name=f'{ens_name} expiry',
+            timestamp=ens_expires,
+            description=f'{ens_name} expires on {customizable_date.timestamp_to_date(ens_expires)}',  # noqa: E501
+            counterparty=CPT_ENS,
+            address=ens_events[idx].location_label,  # type: ignore[arg-type]  # location_label is not None, checked above
+            blockchain=ChainID.deserialize(ens_events[idx].location.to_chain_id()).to_blockchain(),
+            color=None,
+            auto_delete=True,
+        )
+
+        # reminders are created 1 week and 1 day before the expiry calendar entry
+        reminders = calendar_db.query_reminder_entry(event_id=calendar_entry.identifier)['entries']
+        assert len(reminders) == 2
+        assert reminders[0].event_id == reminders[1].event_id == calendar_entry.identifier
+        assert reminders[0].secs_before == DAY_IN_SECONDS
+        assert reminders[1].secs_before == WEEK_IN_SECONDS

@@ -616,6 +616,7 @@ Getting or modifying settings
               "cost_basis_method": "fifo",
               "oracle_penalty_threshold_count": 5,
               "oracle_penalty_duration": 1800,
+              "auto_create_calendar_reminders": true,
               "address_name_priority": ["private_addressbook", "blockchain_account",
                                         "global_addressbook", "ethereum_tokens",
                                         "hardcoded_mappings", "ens_names"],
@@ -652,6 +653,7 @@ Getting or modifying settings
    :resjson int read_timeout: The number of seconds to wait for the first byte after a connection to an external service has been established. Default is 30.
    :resjson int oracle_penalty_threshold_count: The number of failures after which an oracle is penalized. Default is 5.
    :resjson int oracle_penalty_duration: The duration in seconds for which an oracle is penalized. Default is 1800.
+   :resjson bool auto_create_calendar_reminders: A boolean denoting whether reminders are created automatically for calendar entries based on the decoded history events. Default is ``true``.
 
    :statuscode 200: Querying of settings was successful
    :statuscode 409: There is no logged in user
@@ -699,6 +701,7 @@ Getting or modifying settings
    :resjson int read_timeout: The number of seconds to wait for the first byte after a connection to an external service has been established. Default is 30.
    :resjson int oracle_penalty_threshold_count: The number of failures after which an oracle is penalized. Default is 5.
    :resjson int oracle_penalty_duration: The duration in seconds for which an oracle is penalized. Default is 1800.
+   :resjson bool[optional] auto_create_calendar_reminders: A boolean denoting whether reminders are created automatically for calendar entries based on the decoded history events.
 
    **Example Response**:
 
@@ -729,6 +732,7 @@ Getting or modifying settings
               "historical_price_oracles": ["coingecko", "cryptocompare"],
               "ssf_graph_multiplier": 2,
               "non_sync_exchanges": [{"location": "binance", "name": "binance1"}]
+              "auto_create_calendar_reminders": true,
           },
           "message": ""
       }
