@@ -21,11 +21,15 @@ export const MatchedAcquisitionsEvent = z.object({
   timestamp: z.number(),
 });
 
+export type MatchedAcquisitionsEvent = z.infer<typeof MatchedAcquisitionsEvent>;
+
 export const MatchedAcquisitions = z.object({
   amount: NumericString,
   taxable: z.boolean(),
   event: MatchedAcquisitionsEvent,
 });
+
+export type MatchedAcquisitions = z.infer<typeof MatchedAcquisitions>;
 
 export const CostBasis = z.object({
   isComplete: z.boolean().nullish(),

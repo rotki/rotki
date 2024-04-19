@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import type { CostBasis } from '@/types/reports';
+import type { CostBasis, MatchedAcquisitions, MatchedAcquisitionsEvent } from '@/types/reports';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library-compat';
+
+type Acquisition = Omit<MatchedAcquisitions, 'event'> & MatchedAcquisitionsEvent;
 
 const props = withDefaults(
   defineProps<{
@@ -18,14 +20,14 @@ const { t } = useI18n();
 
 const { costBasis, currency } = toRefs(props);
 
-const sort: Ref<DataTableSortData> = ref({
+const sort = ref<DataTableSortData>({
   column: 'time',
   direction: 'asc' as const,
 });
 
 const css = useCssModule();
 
-const tableHeaders = computed<DataTableColumn[]>(() => [
+const cols = computed<DataTableColumn[]>(() => [
   {
     label: t('cost_basis_table.headers.amount'),
     key: 'amount',
@@ -54,7 +56,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
   },
   {
     label: t('common.datetime'),
-    key: 'time',
+    key: 'timestamp',
     align: 'end',
     sortable: true,
   },
@@ -65,8 +67,20 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
   },
 ]);
 
-const matchedAcquisitions = computed(
-  () => get(costBasis).matchedAcquisitions ?? [],
+const matchedAcquisitions = computed<Acquisition[]>(() => {
+  const acquisitions = get(costBasis).matchedAcquisitions;
+  if (!acquisitions)
+    return [];
+
+  return acquisitions.map((acquisition) => {
+    const { event, ...rest } = acquisition;
+
+    return {
+      ...rest,
+      ...event,
+    };
+  });
+},
 );
 </script>
 
@@ -111,7 +125,7 @@ const matchedAcquisitions = computed(
         <RuiDataTable
           :class="css.table"
           :rows="matchedAcquisitions"
-          :cols="tableHeaders"
+          :cols="cols"
           :sort.sync="sort"
           row-attr="id"
           outlined
@@ -125,25 +139,25 @@ const matchedAcquisitions = computed(
           <template #item.fullAmount="{ row }">
             <AmountDisplay
               force-currency
-              :value="row.event.fullAmount"
+              :value="row.fullAmount"
             />
           </template>
           <template #item.remainingAmount="{ row }">
             <AmountDisplay
               force-currency
-              :value="row.event.fullAmount.minus(row.amount)"
+              :value="row.fullAmount.minus(row.amount)"
             />
           </template>
           <template #item.rate="{ row }">
             <AmountDisplay
               force-currency
-              :value="row.event.rate"
+              :value="row.rate"
               show-currency="symbol"
               :fiat-currency="currency"
             />
           </template>
-          <template #item.time="{ row }">
-            <DateDisplay :timestamp="row.event.timestamp" />
+          <template #item.timestamp="{ row }">
+            <DateDisplay :timestamp="row.timestamp" />
           </template>
           <template #item.taxable="{ row }">
             <SuccessDisplay :success="row.taxable" />
