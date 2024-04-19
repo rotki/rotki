@@ -72,6 +72,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Monerium',
         'Polygon',
         'Octant',
+        'Omni',
         'Oneinchv1',
         'Oneinchv2',
         'Oneinchv3',
@@ -173,6 +174,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'juicebox',
         'shutter',
         'eigenlayer',
+        'omni'
     }
 
 

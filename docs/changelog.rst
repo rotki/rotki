@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Omni airdrop claims are properly decoded and omni airdrop eligibility is shown in rotki's airdrop list.
 * :feature:`7084` Compound v3 events will now get decoded and its assets and liabilities will be shown on the dashboard properly.
 * :feature:`-` Users will now be able to navigate the page (go back or forward) using the keyboard shortcuts "Cmd + Left Arrow" or "Cmd + Right Arrow".
 * :feature:`3617` ZKSync lite is now supported as a chain. Balances are detected and history of the activity of all your tracked addresses for zksync lite will now be visible in the history events section.
