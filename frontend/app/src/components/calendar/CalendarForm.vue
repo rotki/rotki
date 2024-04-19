@@ -168,8 +168,8 @@ setSubmitFunc(save);
       />
 
       <CalendarReminder
-        class="pt-2"
         ref="reminderRef"
+        class="pt-2"
         :editable-item="editableItem"
       />
     </div>
