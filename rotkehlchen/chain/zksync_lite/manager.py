@@ -234,7 +234,7 @@ class ZksyncLiteManager:
                                 evm_address=address,
                                 chain_id=ChainID.ETHEREUM,
                                 evm_inquirer=self.ethereum_inquirer,
-                                encounter=TokenEncounterInfo(description='Querying zksync tokens mapping'),  # noqa: E501
+                                encounter=TokenEncounterInfo(description='Querying zksync lite tokens mapping'),  # noqa: E501
                             )
                         except NotERC20Conformant:
                             log.warning(
