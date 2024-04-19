@@ -198,7 +198,10 @@ export const useTaskStore = defineStore('tasks', () => {
 
       return deleted;
     }
-    catch {
+    catch (error_: any) {
+      if (error_ instanceof TaskNotFoundError)
+        remove(task.id);
+
       return false;
     }
   };
