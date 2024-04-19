@@ -86,8 +86,8 @@ importers:
         specifier: 10.7.2
         version: 10.7.2(vue@2.7.16)
       axios:
-        specifier: 1.6.8
-        version: 1.6.8(debug@4.3.4)
+        specifier: 1.6.7
+        version: 1.6.7(debug@4.3.4)
       bignumber.js:
         specifier: 9.1.2
         version: 9.1.2(patch_hash=t2oa7onzhul3uhtcmdvmfifarq)
@@ -4391,8 +4391,8 @@ packages:
   /aws4@1.12.0:
     resolution: {integrity: sha512-NmWvPnx0F1SfrQbYwOi7OeaNGokp9XhzNioJ/CSBs8Qa4vxug81mhJEAVZwxXuBmYB5KDRfMq/F3RR0BIU7sWg==}
 
-  /axios@1.6.8(debug@4.3.4):
-    resolution: {integrity: sha512-v/ZHtJDU39mDpyBoFVkETcd/uNdxrWRrg3bKpOKzXFA6Bvqopts6ALSMU3y6ijYxbw2B+wPrIv46egTzJXCLGQ==}
+  /axios@1.6.7(debug@4.3.4):
+    resolution: {integrity: sha512-/hDJGff6/c7u0hDkvkGxR/oy6CbCs8ziCsC7SqmhjfozqiJGc8Z11wrv9z9lYfY4K8l+H9TpjcMDX0xOZmx+RA==}
     dependencies:
       follow-redirects: 1.15.6(debug@4.3.4)
       form-data: 4.0.0
@@ -12044,7 +12044,7 @@ packages:
     engines: {node: '>=12.0.0'}
     hasBin: true
     dependencies:
-      axios: 1.6.8(debug@4.3.4)
+      axios: 1.6.7(debug@4.3.4)
       joi: 17.11.0
       lodash: 4.17.21
       minimist: 1.2.8
