@@ -14,7 +14,7 @@ function setAutoDelete() {
 }
 
 function setAutoCreate() {
-  set(autoCreateReminders, get(autoCreateCalendarReminders) ?? true); // todo: remove `?? false` when backend is merged
+  set(autoCreateReminders, get(autoCreateCalendarReminders) ?? true); // todo: remove `?? true` when backend is merged
 }
 
 onMounted(() => {

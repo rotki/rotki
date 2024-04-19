@@ -10,6 +10,7 @@ export const CalendarEventPayload = z.object({
   address: z.string().optional(),
   blockchain: z.string().optional(),
   color: z.string().optional(),
+  autoDelete: z.boolean(),
 });
 
 export type CalendarEventPayload = z.infer<typeof CalendarEventPayload>;
