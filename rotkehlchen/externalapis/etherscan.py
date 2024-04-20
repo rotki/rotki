@@ -35,6 +35,7 @@ from rotkehlchen.types import (
     EvmTransaction,
     EVMTxHash,
     ExternalService,
+    Location,
     SupportedBlockchain,
     Timestamp,
     deserialize_evm_tx_hash,
@@ -466,7 +467,7 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
                             dbevents.delete_events_by_tx_hash(
                                 write_cursor=write_cursor,
                                 tx_hashes=[GENESIS_HASH],
-                                chain_id=self.chain.to_chain_id(),  # type: ignore[arg-type]
+                                location=Location.from_chain(self.chain),
                             )
                             write_cursor.execute(
                                 'DELETE from evm_tx_mappings WHERE tx_id=(SELECT identifier FROM '

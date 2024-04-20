@@ -11,6 +11,7 @@ from typing import (
     NamedTuple,
     NewType,
     Optional,
+    TypeAlias,
     TypeVar,
     get_args,
 )
@@ -745,7 +746,7 @@ class Location(DBCharEnumMixIn):
     ZKSYNC_LITE = 47
 
     @staticmethod
-    def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> 'Location':
+    def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> 'EVM_LOCATIONS_TYPE':
         if chain_id == ChainID.ETHEREUM:
             return Location.ETHEREUM
 
@@ -788,13 +789,40 @@ class Location(DBCharEnumMixIn):
         assert self == Location.POLYGON_POS, 'should have only been polygon pos here'
         return ChainID.POLYGON_POS.value
 
+    @staticmethod
+    def from_chain(chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE) -> 'BLOCKCHAIN_LOCATIONS_TYPE':
+        assert chain in SUPPORTED_EVM_EVMLIKE_CHAINS
+        match chain:
+            case SupportedBlockchain.ETHEREUM:
+                return Location.ETHEREUM
+            case SupportedBlockchain.OPTIMISM:
+                return Location.OPTIMISM
+            case SupportedBlockchain.POLYGON_POS:
+                return Location.POLYGON_POS
+            case SupportedBlockchain.ARBITRUM_ONE:
+                return Location.ARBITRUM_ONE
+            case SupportedBlockchain.BASE:
+                return Location.BASE
+            case SupportedBlockchain.GNOSIS:
+                return Location.GNOSIS
+            case SupportedBlockchain.SCROLL:
+                return Location.SCROLL
+            case SupportedBlockchain.ZKSYNC_LITE:
+                return Location.ZKSYNC_LITE
+            case _:  # should never happen
+                raise AssertionError(f'Got in Location.from_chain for {chain}')
 
-EVM_LOCATIONS_TYPE = Literal[Location.ETHEREUM, Location.OPTIMISM, Location.POLYGON_POS, Location.ARBITRUM_ONE, Location.BASE, Location.GNOSIS, Location.SCROLL, Location.ZKSYNC_LITE]  # noqa: E501
+
+EVM_LOCATIONS_TYPE = Literal[Location.ETHEREUM, Location.OPTIMISM, Location.POLYGON_POS, Location.ARBITRUM_ONE, Location.BASE, Location.GNOSIS, Location.SCROLL]  # noqa: E501
 EVM_LOCATIONS: tuple[EVM_LOCATIONS_TYPE, ...] = typing.get_args(EVM_LOCATIONS_TYPE)
 EVMLIKE_LOCATIONS_TYPE = Literal[Location.ZKSYNC_LITE]
 EVMLIKE_LOCATIONS: tuple[EVMLIKE_LOCATIONS_TYPE, ...] = typing.get_args(EVMLIKE_LOCATIONS_TYPE)
 EVM_EVMLIKE_LOCATIONS_TYPE = EVM_LOCATIONS_TYPE | EVMLIKE_LOCATIONS_TYPE
 EVM_EVMLIKE_LOCATIONS: tuple[EVM_EVMLIKE_LOCATIONS_TYPE, ...] = EVM_LOCATIONS + EVMLIKE_LOCATIONS
+
+# For now Location enum has only evmlike chains. This will change so keep separate variable
+BLOCKCHAIN_LOCATIONS_TYPE: TypeAlias = EVM_EVMLIKE_LOCATIONS_TYPE
+BLOCKCHAIN_LOCATIONS: Final = EVM_EVMLIKE_LOCATIONS
 
 
 class AssetMovementCategory(DBCharEnumMixIn):

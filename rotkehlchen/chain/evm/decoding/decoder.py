@@ -47,7 +47,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction, EVMTxHash
+from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction, EVMTxHash, Location
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address, hex_or_bytes_to_int
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
@@ -625,7 +625,7 @@ class EVMTransactionDecoder(ABC):
                 self.dbevents.delete_events_by_tx_hash(
                     write_cursor=write_cursor,
                     tx_hashes=[transaction.tx_hash],
-                    chain_id=self.evm_inquirer.chain_id,
+                    location=Location.from_chain_id(self.evm_inquirer.chain_id),
                 )
                 write_cursor.execute(
                     'DELETE from evm_tx_mappings WHERE tx_id=? AND value=?',

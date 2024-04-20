@@ -47,7 +47,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
-    EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
+    EVM_EVMLIKE_LOCATIONS_TYPE,
     EVMTxHash,
     Location,
     Timestamp,
@@ -213,7 +213,7 @@ class DBHistoryEvents:
             self,
             write_cursor: 'DBCursor',
             tx_hashes: list[EVMTxHash],
-            chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
+            location: EVM_EVMLIKE_LOCATIONS_TYPE,
     ) -> None:
         """Delete all relevant (by transaction hash) history events except those that
         are customized. Only use with limited number of transactions!!!
@@ -222,7 +222,7 @@ class DBHistoryEvents:
         code in v37 -> v38 upgrade as that is not limited to the number of transactions
         and won't potentially raise a too many sql variables error
         """
-        customized_event_ids = self.get_customized_event_identifiers(cursor=write_cursor, chain_id=chain_id)  # noqa: E501
+        customized_event_ids = self.get_customized_event_identifiers(cursor=write_cursor, location=location)  # noqa: E501
         length = len(customized_event_ids)
         querystr = f'DELETE FROM history_events WHERE identifier IN (SELECT H.identifier from history_events H INNER JOIN evm_events_info E ON H.identifier=E.identifier AND E.tx_hash IN ({", ".join(["?"] * len(tx_hashes))}))'  # noqa: E501
         if length != 0:
@@ -235,13 +235,13 @@ class DBHistoryEvents:
     def get_customized_event_identifiers(
             self,
             cursor: 'DBCursor',
-            chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE | None,
+            location: Location | None,
     ) -> list[int]:
         """Returns the identifiers of all the events in the database that have been customized
 
-        Optionally filter by chain_id
+        Optionally filter by Location
         """
-        if chain_id is None:
+        if location is None:
             cursor.execute(
                 'SELECT parent_identifier FROM history_events_mappings WHERE name=? AND value=?',
                 (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
@@ -254,7 +254,7 @@ class DBHistoryEvents:
                 'JOIN history_events C ON C.identifier=A.parent_identifier AND C.location=?',
                 (
                     HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED,
-                    Location.from_chain_id(chain_id).serialize_for_db(),
+                    location.serialize_for_db(),
                 ),
             )
 
