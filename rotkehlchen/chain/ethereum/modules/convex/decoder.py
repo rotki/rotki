@@ -24,7 +24,7 @@ from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
 )
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
+from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER, STAKED
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableCacheDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -52,7 +52,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-DEPOSIT_EVENT = b'\x9eq\xbc\x8e\xea\x02\xa69i\xf5\t\x81\x8f-\xaf\xb9%E2\x90C\x19\xf9\xdb\xday\xb6{\xd3J_='  # noqa: E501
 REWARD_ADDED = b'\xde\x88\xa9"\xe0\xd3\xb8\x8b$\xe9b>\xfe\xb4d\x91\x9ck\xf9\xf6hW\xa6^+\xfc\xf2\xce\x87\xa9C='  # noqa: E501
 
 
@@ -166,7 +165,7 @@ class ConvexDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
                     # in this case store information about the gauge in the extra details to use
                     # it during balances queries
                     for log_event in context.all_logs:
-                        if log_event.topics[0] == DEPOSIT_EVENT:
+                        if log_event.topics[0] == STAKED:
                             deposit_amount_raw = hex_or_bytes_to_int(context.tx_log.data[0:32])
                             staking_address = hex_or_bytes_to_address(log_event.topics[1])
                             if deposit_amount_raw == amount_raw and staking_address == event.location_label:  # noqa: E501

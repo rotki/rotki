@@ -5,6 +5,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.omni.constants import (
     CPT_OMNI,
     OMNI_AIDROP_CONTRACT,
+    OMNI_STAKING_CONTRACT,
     OMNI_TOKEN_ID,
 )
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -16,7 +17,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
-# @pytest.mark.vcr()
+@pytest.mark.vcr()
 @pytest.mark.parametrize('ethereum_accounts', [['0x9211043D7012457a51caB901e5b184dA2Ef8b245']])
 def test_claim(database, ethereum_inquirer, ethereum_accounts):
     tx_hex = deserialize_evm_tx_hash('0xc626898273896eb771e9725137849dd104e388aad49687068a7681b5c54893fe')  # noqa: E501
@@ -66,6 +67,60 @@ def test_claim(database, ethereum_inquirer, ethereum_accounts):
             notes='Claim 14.411451809999998976 OMNI from the Omni genesis airdrop',
             counterparty=CPT_OMNI,
             address=OMNI_AIDROP_CONTRACT,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0x361D6a0A6ce25c833081DAa7C31c416D4295eC5A']])
+def test_stake(database, ethereum_inquirer, ethereum_accounts):
+    tx_hex = deserialize_evm_tx_hash('0x66f47dc448d7371eeccaa500af1aea76a1620de56c621187be83b1cc19bf861c')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    timestamp, gas_str, omni_str = TimestampMS(1713604307000), '0.00061736344563685', '5.06213676'
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_str)),
+            location_label=ethereum_accounts[0],
+            notes=f'Burned {gas_str} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=102,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset(OMNI_TOKEN_ID),
+            balance=Balance(),
+            location_label=ethereum_accounts[0],
+            notes=f'Revoke OMNI spending approval of {ethereum_accounts[0]} by {OMNI_STAKING_CONTRACT}',  # noqa: E501
+            address=OMNI_STAKING_CONTRACT,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=103,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=Asset(OMNI_TOKEN_ID),
+            balance=Balance(amount=FVal(omni_str)),
+            location_label=ethereum_accounts[0],
+            notes=f'Stake {omni_str} OMNI',
+            counterparty=CPT_OMNI,
+            address=OMNI_STAKING_CONTRACT,
         ),
     ]
     assert events == expected_events

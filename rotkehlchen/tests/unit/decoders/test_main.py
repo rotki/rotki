@@ -174,7 +174,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'juicebox',
         'shutter',
         'eigenlayer',
-        'omni'
+        'omni',
     }
 
 
