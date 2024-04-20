@@ -255,6 +255,11 @@ def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
     )
     result = assert_proper_response_with_result(response)
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'historyeventresource'),
+        json={'location': Location.ZKSYNC_LITE.serialize()},
+    )
+    assert assert_proper_response_with_result(response) == result, 'filtering by location should be same'  # noqa: E501
     assert len(result['entries']) == 17
     compare_events_without_id(result['entries'][0]['entry'], EvmEvent(
         event_identifier='zkl0xbd723b5a5f87e485a478bc7d1f365db79440b6e9305bff3b16a0e0ab83e51970',

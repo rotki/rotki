@@ -216,7 +216,6 @@ from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
-    EVM_LOCATIONS,
     SPAM_PROTOCOL,
     SUPPORTED_BITCOIN_CHAINS,
     SUPPORTED_CHAIN_IDS,
@@ -3629,12 +3628,9 @@ class RestAPI:
                 entries_table='history_events',
                 group_by='event_identifier' if group_by_event_ids else None,
             )
-            location = filter_query.location
-            chain_id = ChainID(Location.to_chain_id(location)) if location in EVM_LOCATIONS else None  # noqa: E501
-
             customized_event_ids = dbevents.get_customized_event_identifiers(
                 cursor=cursor,
-                chain_id=chain_id,  # type: ignore
+                location=filter_query.location,
             )
             hidden_event_ids = dbevents.get_hidden_event_ids(cursor)
             ignored_ids_mapping = self.rotkehlchen.data.db.get_ignored_action_ids(
