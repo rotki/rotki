@@ -2,7 +2,11 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.modules.pickle_finance.constants import CPT_PICKLE
+from rotkehlchen.chain.ethereum.modules.pickle_finance.constants import (
+    CORN_TOKEN_ID,
+    CORNICHON_CLAIM,
+    CPT_PICKLE,
+)
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
@@ -81,6 +85,7 @@ def test_pickle_deposit(database, ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xC7Dc4Cd171812a441A30472219d390f4F15f6070']])
 def test_pickle_withdraw(database, ethereum_inquirer, ethereum_accounts):
     tx_hex = deserialize_evm_tx_hash('0x91bc102e1cbb0e4542a10a7a13370b5e591d8d284989bdb0ca4ece4e54e61bab')  # noqa: E501
@@ -130,5 +135,46 @@ def test_pickle_withdraw(database, ethereum_inquirer, ethereum_accounts):
             notes=f'Unstake {withdraw_str} LOOKS from the pickle contract',
             counterparty=CPT_PICKLE,
             address=PICKLE_JAR,
+        )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xd7aC4581eF4E2BB6cC3734Da183B981bfd0Ee2A2']])
+def test_claim_cornichon(database, ethereum_inquirer, ethereum_accounts):
+    tx_hex = deserialize_evm_tx_hash('0x23a52632e47eeaf9588972cc3f65a2101745952880be17828d810da3735f333f')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    timestamp, gas_str, amount_str = TimestampMS(1606695800000), '0.002380306', '125.214613076726835921'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(FVal(gas_str)),
+            location_label=ethereum_accounts[0],
+            notes=f'Burned {gas_str} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=196,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.AIRDROP,
+            asset=EvmToken(CORN_TOKEN_ID),
+            balance=Balance(FVal(amount_str)),
+            location_label=ethereum_accounts[0],
+            notes=f'Claim {amount_str} CORN from the pickle finance hack compensation airdrop',
+            counterparty=CPT_PICKLE,
+            address=CORNICHON_CLAIM,
         )]
     assert events == expected_events
