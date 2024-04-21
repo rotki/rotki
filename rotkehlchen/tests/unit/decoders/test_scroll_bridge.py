@@ -414,6 +414,7 @@ def test_receive_erc20_on_ethereum(database, ethereum_inquirer, ethereum_account
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xd32dEe97C7D7Fdfb826CC3bB210dD009D2750ae2']])
 def test_deposit_send_message_ethereum(database, ethereum_inquirer, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash('0x7ae1e3ef6e4d87e2e44446a683b9ca624241a24d294b60ddec39af1309aeb37a')  # noqa: E501
@@ -468,6 +469,7 @@ def test_deposit_send_message_ethereum(database, ethereum_inquirer, ethereum_acc
     ]
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('scroll_accounts', [['0xd32dEe97C7D7Fdfb826CC3bB210dD009D2750ae2']])
 def test_receive_deposit_message_scroll(database, scroll_inquirer, scroll_accounts):
     evmhash = deserialize_evm_tx_hash('0x2844533993f614da06a4a81ee692f10562b4b2d077265a33605ca9415d0dcacb')  # noqa: E501
