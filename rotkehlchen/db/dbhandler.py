@@ -2036,7 +2036,7 @@ class DBHandler:
         with self.conn.read_ctx() as cursor:
             movements = self.get_asset_movements(cursor, filter_query=filter_query, has_premium=has_premium)  # noqa: E501
             query, bindings = filter_query.prepare(with_pagination=False)
-            query = 'SELECT COUNT(*) from asset_movements ' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
+            query = 'SELECT COUNT(*) from asset_movements ' + query
             total_found_result = cursor.execute(query, bindings)
             return movements, total_found_result.fetchone()[0]
 
@@ -2052,10 +2052,10 @@ class DBHandler:
         """
         query, bindings = filter_query.prepare()
         if has_premium:
-            query = 'SELECT * from asset_movements ' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
+            query = 'SELECT * from asset_movements ' + query
             results = cursor.execute(query, bindings)
         else:
-            query = 'SELECT * FROM (SELECT * from asset_movements ORDER BY timestamp DESC LIMIT ?) ' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
+            query = 'SELECT * FROM (SELECT * from asset_movements ORDER BY timestamp DESC LIMIT ?) ' + query  # noqa: E501
             results = cursor.execute(query, [FREE_ASSET_MOVEMENTS_LIMIT] + bindings)
 
         asset_movements = []
@@ -2272,7 +2272,7 @@ class DBHandler:
         """
         trades = self.get_trades(cursor, filter_query=filter_query, has_premium=has_premium)
         query, bindings = filter_query.prepare(with_pagination=False)
-        query = 'SELECT COUNT(*) from trades ' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
+        query = 'SELECT COUNT(*) from trades ' + query
         total_found_result = cursor.execute(query, bindings)
         return trades, total_found_result.fetchone()[0]
 
@@ -2282,10 +2282,10 @@ class DBHandler:
         The returned list is ordered according to the passed filter query"""
         query, bindings = filter_query.prepare()
         if has_premium:
-            query = 'SELECT * from trades ' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
+            query = 'SELECT * from trades ' + query
             results = cursor.execute(query, bindings)
         else:
-            query = 'SELECT * FROM (SELECT * from trades ORDER BY timestamp DESC LIMIT ?) ' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
+            query = 'SELECT * FROM (SELECT * from trades ORDER BY timestamp DESC LIMIT ?) ' + query
             results = cursor.execute(query, [FREE_TRADES_LIMIT] + bindings)
 
         trades = []
@@ -3508,10 +3508,10 @@ class DBHandler:
         """Returns all the notes created by a user filtered by the given filter"""
         query, bindings = filter_query.prepare()
         if has_premium:
-            query = 'SELECT identifier, title, content, location, last_update_timestamp, is_pinned FROM user_notes ' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
+            query = 'SELECT identifier, title, content, location, last_update_timestamp, is_pinned FROM user_notes ' + query  # noqa: E501
             cursor.execute(query, bindings)
         else:
-            query = 'SELECT identifier, title, content, location, last_update_timestamp, is_pinned FROM (SELECT identifier, title, content, location, last_update_timestamp, is_pinned from user_notes ORDER BY last_update_timestamp DESC LIMIT ?) ' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
+            query = 'SELECT identifier, title, content, location, last_update_timestamp, is_pinned FROM (SELECT identifier, title, content, location, last_update_timestamp, is_pinned from user_notes ORDER BY last_update_timestamp DESC LIMIT ?) ' + query  # noqa: E501
             cursor.execute(query, [FREE_USER_NOTES_LIMIT] + bindings)
 
         return [UserNote.deserialize_from_db(entry) for entry in cursor]
@@ -3528,7 +3528,7 @@ class DBHandler:
         """
         user_notes = self.get_user_notes(filter_query=filter_query, cursor=cursor, has_premium=has_premium)  # noqa: E501
         query, bindings = filter_query.prepare(with_pagination=False)
-        query = 'SELECT COUNT(*) from user_notes ' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
+        query = 'SELECT COUNT(*) from user_notes ' + query
         total_found_result = cursor.execute(query, bindings)
         return user_notes, total_found_result.fetchone()[0]
 

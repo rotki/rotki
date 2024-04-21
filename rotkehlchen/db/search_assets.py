@@ -60,7 +60,7 @@ def _search_only_assets_levenstein(
         )
         try:
             query, bindings = filter_query.prepare('assets')
-            query = ALL_ASSETS_TABLES_QUERY.format(dbprefix='globaldb.') + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
+            query = ALL_ASSETS_TABLES_QUERY.format(dbprefix='globaldb.') + query
             cursor.execute(query, bindings)
             found_eth = False
             for entry in cursor:

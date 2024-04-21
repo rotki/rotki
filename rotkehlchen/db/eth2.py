@@ -126,7 +126,7 @@ class DBEth2:
     ) -> list[ValidatorDailyStats]:
         """Gets all DB entries for validator daily stats according to the given filter"""
         query, bindings = filter_query.prepare()
-        query = 'SELECT * from eth2_daily_staking_details ' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
+        query = 'SELECT * from eth2_daily_staking_details ' + query
         cursor.execute(query, bindings)
         daily_stats = [ValidatorDailyStats.deserialize_from_db(x) for x in cursor]
         # Take into account the proportion of the validator owned

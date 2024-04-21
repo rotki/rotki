@@ -218,7 +218,7 @@ class DBEvmTx:
         """
         txs = self.get_evm_transactions(cursor, filter_=filter_, has_premium=has_premium)
         query, bindings = filter_.prepare(with_pagination=False)
-        query = 'SELECT COUNT(DISTINCT evm_transactions.tx_hash) FROM evm_transactions ' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
+        query = 'SELECT COUNT(DISTINCT evm_transactions.tx_hash) FROM evm_transactions ' + query
         total_found_result = cursor.execute(query, bindings)
         return txs, total_found_result.fetchone()[0]  # always returns result
 

@@ -265,7 +265,7 @@ class DBAccountingRules:
                 for entry in cursor
             }
             query, bindings = filter_query.prepare(with_pagination=False)
-            query = 'SELECT COUNT(*) from accounting_rules ' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
+            query = 'SELECT COUNT(*) from accounting_rules ' + query
             total_found_result = cursor.execute(query, bindings).fetchone()[0]
 
             # check the settings linked to the rule using the defined filter

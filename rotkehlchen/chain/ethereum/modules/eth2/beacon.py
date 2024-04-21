@@ -73,7 +73,7 @@ class BeaconNode:
         May raise:
         - RemoteError due to problems querying the node
         """
-        querystr = self.rpc_endpoint + '/' + querystr  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
+        querystr = self.rpc_endpoint + '/' + querystr
         log.debug(f'Querying beacon node {querystr}')
         try:
             response = self.session.get(querystr, timeout=CachedSettings().get_timeout_tuple())

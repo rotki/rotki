@@ -56,11 +56,11 @@ class DBAddressbook:
         If blockchain is None for a given pair, returns all entries for the pair's address.
         """
         query, bindings = filter_query.prepare(with_pagination=False) if filter_query is not None else ('', [])  # noqa: E501
-        query = 'SELECT COUNT(*) FROM address_book ' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
+        query = 'SELECT COUNT(*) FROM address_book ' + query
         total_found_result: int = cursor.execute(query, bindings).fetchone()[0]
 
         query, bindings = filter_query.prepare() if filter_query is not None else ('', [])
-        query = 'SELECT address, name, blockchain FROM address_book ' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
+        query = 'SELECT address, name, blockchain FROM address_book ' + query
         cursor.execute(query, bindings)
         entries = [
             AddressbookEntry(
