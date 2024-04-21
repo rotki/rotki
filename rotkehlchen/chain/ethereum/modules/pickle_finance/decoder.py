@@ -96,6 +96,7 @@ class PickleFinanceDecoder(DecoderInterface):
                 context.event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                 context.event.counterparty = CPT_PICKLE
                 context.event.notes = f'Receive {context.event.balance.amount} {crypto_asset.symbol} after depositing in pickle contract'  # noqa: E501
+                context.event.address = context.tx_log.address
                 return TransferEnrichmentOutput(matched_counterparty=CPT_PICKLE)
         elif (  # Withdraw send wrapped
             context.event.event_type == HistoryEventType.SPEND and
@@ -116,6 +117,7 @@ class PickleFinanceDecoder(DecoderInterface):
                 context.event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                 context.event.counterparty = CPT_PICKLE
                 context.event.notes = f'Return {context.event.balance.amount} {crypto_asset.symbol} to the pickle contract'  # noqa: E501
+                context.event.address = context.tx_log.address
                 return TransferEnrichmentOutput(matched_counterparty=CPT_PICKLE)
         elif (  # Withdraw receive asset
             context.event.event_type == HistoryEventType.RECEIVE and

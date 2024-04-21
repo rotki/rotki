@@ -2,91 +2,30 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.pickle_finance.constants import CPT_PICKLE
-from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
-from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import (
-    ChainID,
-    EvmTransaction,
-    Location,
-    TimestampMS,
-    deserialize_evm_tx_hash,
-)
-from rotkehlchen.utils.hexbytes import hexstring_to_bytes
+from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
+from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+
+PICKLE_JAR = string_to_evm_address('0xb4EBc2C371182DeEa04B2264B9ff5AC4F0159C69')
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0f1a748cDF53Bbad378CE2C4429463d01CcE0C3f']])
-def test_pickle_deposit(database, ethereum_inquirer, eth_transactions):
-    """Data for deposit taken from
-    https://etherscan.io/tx/0xba9a52a144d4e79580a557160e9f8269d3e5373ce44bce00ebd609754034b7bd
-    """
-    tx_hex = '0xba9a52a144d4e79580a557160e9f8269d3e5373ce44bce00ebd609754034b7bd'
+def test_pickle_deposit(database, ethereum_inquirer, ethereum_accounts):
+    tx_hex = deserialize_evm_tx_hash('0xba9a52a144d4e79580a557160e9f8269d3e5373ce44bce00ebd609754034b7bd')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    transaction = EvmTransaction(
-        tx_hash=evmhash,
-        chain_id=ChainID.ETHEREUM,
-        timestamp=1646375440,
-        block_number=14318825,
-        from_address=string_to_evm_address('0x0f1a748cDF53Bbad378CE2C4429463d01CcE0C3f'),
-        to_address=string_to_evm_address('0xb4EBc2C371182DeEa04B2264B9ff5AC4F0159C69'),
-        value=0,
-        gas=171249,
-        gas_price=22990000000,
-        gas_used=171249,
-        input_data=hexstring_to_bytes('0xb6b55f250000000000000000000000000000000000000000000000312ebe013bcd5d6fed'),
-        nonce=507,
-    )
-    receipt = EvmTxReceipt(
-        tx_hash=evmhash,
-        chain_id=ChainID.ETHEREUM,
-        contract_address=None,
-        status=True,
-        tx_type=0,
-        logs=[
-            EvmTxReceiptLog(
-                log_index=259,
-                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000312ebe013bcd5d6fed'),
-                address=string_to_evm_address('0xf4d2888d29D722226FafA5d9B24F9164c092421E'),
-                removed=False,
-                topics=[
-                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
-                    hexstring_to_bytes('0x0000000000000000000000000f1a748cdf53bbad378ce2c4429463d01cce0c3f'),
-                    hexstring_to_bytes('0x000000000000000000000000b4ebc2c371182deea04b2264b9ff5ac4f0159c69'),
-                ],
-            ), EvmTxReceiptLog(
-                log_index=261,
-                data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000001e67da0f130b2d9371'),
-                address=string_to_evm_address('0xb4EBc2C371182DeEa04B2264B9ff5AC4F0159C69'),
-                removed=False,
-                topics=[
-                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
-                    hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),
-                    hexstring_to_bytes('0x0000000000000000000000000f1a748cdf53bbad378ce2c4429463d01cce0c3f'),
-                ],
-            ),
-        ],
-    )
-
-    dbevmtx = DBEvmTx(database)
-    with database.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-    decoder = EthereumTransactionDecoder(
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
         database=database,
-        ethereum_inquirer=ethereum_inquirer,
-        transactions=eth_transactions,
+        tx_hash=tx_hex,
     )
-    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
-
-    timestamp = TimestampMS(1646375440000)
+    timestamp, gas_str, deposit_str, withdraw_str, approve_str = TimestampMS(1646619202000), '0.00355751579933013', '907.258590539447889901', '560.885632516582380401', '115792089237316195423570985008687907853269984665640564027654.491316674464992473'  # noqa: E501
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
@@ -96,12 +35,9 @@ def test_pickle_deposit(database, ethereum_inquirer, eth_transactions):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(
-                amount=FVal(0.00393701451),
-                usd_value=ZERO,
-            ),
-            location_label='0x0f1a748cDF53Bbad378CE2C4429463d01CcE0C3f',
-            notes='Burned 0.00393701451 ETH for gas',
+            balance=Balance(FVal(gas_str)),
+            location_label=ethereum_accounts[0],
+            notes=f'Burned {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -111,11 +47,23 @@ def test_pickle_deposit(database, ethereum_inquirer, eth_transactions):
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=EvmToken('eip155:1/erc20:0xf4d2888d29D722226FafA5d9B24F9164c092421E'),
-            balance=Balance(amount=FVal('907.258590539447889901'), usd_value=ZERO),
-            location_label='0x0f1a748cDF53Bbad378CE2C4429463d01CcE0C3f',
-            notes='Deposit 907.258590539447889901 LOOKS in pickle contract',
+            balance=Balance(FVal(deposit_str)),
+            location_label=ethereum_accounts[0],
+            notes=f'Deposit {deposit_str} LOOKS in pickle contract',
             counterparty=CPT_PICKLE,
-            address=string_to_evm_address('0xb4EBc2C371182DeEa04B2264B9ff5AC4F0159C69'),
+            address=PICKLE_JAR,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=261,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=EvmToken('eip155:1/erc20:0xf4d2888d29D722226FafA5d9B24F9164c092421E'),
+            balance=Balance(FVal(approve_str)),
+            location_label=ethereum_accounts[0],
+            notes=f'Set LOOKS spending approval of {ethereum_accounts[0]} by {PICKLE_JAR} to {approve_str}',  # noqa: E501
+            address=PICKLE_JAR,
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=262,
@@ -124,78 +72,25 @@ def test_pickle_deposit(database, ethereum_inquirer, eth_transactions):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=EvmToken('eip155:1/erc20:0xb4EBc2C371182DeEa04B2264B9ff5AC4F0159C69'),
-            balance=Balance(amount=FVal('560.885632516582380401'), usd_value=ZERO),
-            location_label='0x0f1a748cDF53Bbad378CE2C4429463d01CcE0C3f',
-            notes='Receive 560.885632516582380401 pLOOKS after depositing in pickle contract',
+            balance=Balance(FVal(withdraw_str)),
+            location_label=ethereum_accounts[0],
+            notes=f'Receive {withdraw_str} pLOOKS after depositing in pickle contract',
             counterparty=CPT_PICKLE,
-            address=ZERO_ADDRESS,
+            address=PICKLE_JAR,
         )]
     assert events == expected_events
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0xC7Dc4Cd171812a441A30472219d390f4F15f6070']])
-def test_pickle_withdraw(database, ethereum_inquirer, eth_transactions):
-    """Data for withdraw taken from
-    https://etherscan.io/tx/0x91bc102e1cbb0e4542a10a7a13370b5e591d8d284989bdb0ca4ece4e54e61bab
-    """
-    tx_hex = '0x91bc102e1cbb0e4542a10a7a13370b5e591d8d284989bdb0ca4ece4e54e61bab'
+def test_pickle_withdraw(database, ethereum_inquirer, ethereum_accounts):
+    tx_hex = deserialize_evm_tx_hash('0x91bc102e1cbb0e4542a10a7a13370b5e591d8d284989bdb0ca4ece4e54e61bab')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    transaction = EvmTransaction(
-        tx_hash=evmhash,
-        chain_id=ChainID.ETHEREUM,
-        timestamp=1646375440,
-        block_number=14355951,
-        from_address=string_to_evm_address('0xC7Dc4Cd171812a441A30472219d390f4F15f6070'),
-        to_address=string_to_evm_address('0xb4EBc2C371182DeEa04B2264B9ff5AC4F0159C69'),
-        value=0,
-        gas=171249,
-        gas_price=22990000000,
-        gas_used=171249,
-        input_data=hexstring_to_bytes('0x853828b6'),
-        nonce=23,
-    )
-    receipt = EvmTxReceipt(
-        tx_hash=evmhash,
-        chain_id=ChainID.ETHEREUM,
-        contract_address=None,
-        status=True,
-        tx_type=0,
-        logs=[
-            EvmTxReceiptLog(
-                log_index=105,
-                data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000d4f4e1608c485628b'),
-                address=string_to_evm_address('0xb4EBc2C371182DeEa04B2264B9ff5AC4F0159C69'),
-                removed=False,
-                topics=[
-                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
-                    hexstring_to_bytes('0x000000000000000000000000c7dc4cd171812a441a30472219d390f4f15f6070'),
-                    hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),
-                ],
-            ), EvmTxReceiptLog(
-                log_index=106,
-                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000015da18947013228f17'),
-                address=string_to_evm_address('0xf4d2888d29D722226FafA5d9B24F9164c092421E'),
-                removed=False,
-                topics=[
-                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
-                    hexstring_to_bytes('0x000000000000000000000000b4ebc2c371182deea04b2264b9ff5ac4f0159c69'),
-                    hexstring_to_bytes('0x000000000000000000000000c7dc4cd171812a441a30472219d390f4f15f6070'),
-                ],
-            ),
-        ],
-    )
-
-    dbevmtx = DBEvmTx(database)
-    with database.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-    decoder = EthereumTransactionDecoder(
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
         database=database,
-        ethereum_inquirer=ethereum_inquirer,
-        transactions=eth_transactions,
+        tx_hash=tx_hex,
     )
-    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
-
-    timestamp = TimestampMS(1646375440000)
+    timestamp, gas_str, deposit_str, withdraw_str = TimestampMS(1646873135000), '0.00389232626065528', '245.522202162316534411', '403.097099656688209687'  # noqa: E501
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
@@ -205,12 +100,9 @@ def test_pickle_withdraw(database, ethereum_inquirer, eth_transactions):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(
-                amount=FVal(0.00393701451),
-                usd_value=ZERO,
-            ),
-            location_label='0xC7Dc4Cd171812a441A30472219d390f4F15f6070',
-            notes='Burned 0.00393701451 ETH for gas',
+            balance=Balance(FVal(gas_str)),
+            location_label=ethereum_accounts[0],
+            notes=f'Burned {gas_str} ETH for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -220,11 +112,11 @@ def test_pickle_withdraw(database, ethereum_inquirer, eth_transactions):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=EvmToken('eip155:1/erc20:0xb4EBc2C371182DeEa04B2264B9ff5AC4F0159C69'),
-            balance=Balance(amount=FVal('245.522202162316534411'), usd_value=ZERO),
-            location_label='0xC7Dc4Cd171812a441A30472219d390f4F15f6070',
-            notes='Return 245.522202162316534411 pLOOKS to the pickle contract',
+            balance=Balance(amount=FVal(deposit_str)),
+            location_label=ethereum_accounts[0],
+            notes=f'Return {deposit_str} pLOOKS to the pickle contract',
             counterparty=CPT_PICKLE,
-            address=ZERO_ADDRESS,
+            address=PICKLE_JAR,
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=107,
@@ -233,10 +125,10 @@ def test_pickle_withdraw(database, ethereum_inquirer, eth_transactions):
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=EvmToken('eip155:1/erc20:0xf4d2888d29D722226FafA5d9B24F9164c092421E'),
-            balance=Balance(amount=FVal('403.097099656688209687'), usd_value=ZERO),
-            location_label='0xC7Dc4Cd171812a441A30472219d390f4F15f6070',
-            notes='Unstake 403.097099656688209687 LOOKS from the pickle contract',
+            balance=Balance(FVal(withdraw_str)),
+            location_label=ethereum_accounts[0],
+            notes=f'Unstake {withdraw_str} LOOKS from the pickle contract',
             counterparty=CPT_PICKLE,
-            address=string_to_evm_address('0xb4EBc2C371182DeEa04B2264B9ff5AC4F0159C69'),
+            address=PICKLE_JAR,
         )]
     assert events == expected_events
