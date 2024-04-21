@@ -5,11 +5,11 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.convex.constants import CONVEX_CPT_DETAILS, CPT_CONVEX
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS, ENS_CPT_DETAILS
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS, MERKLE_CLAIM
+from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.airdrops import match_airdrop_claim
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.cowswap.constants import COWSWAP_CPT_DETAILS
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import MerkleClaimDecoderInterface
 from rotkehlchen.chain.evm.decoding.oneinch.constants import ONEINCH_ICON, ONEINCH_LABEL
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -92,7 +92,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class AirdropsDecoder(DecoderInterface):
+class AirdropsDecoder(MerkleClaimDecoderInterface):
 
     def __init__(
             self,
@@ -105,28 +105,6 @@ class AirdropsDecoder(DecoderInterface):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-
-    def _decode_uniswap_claim(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] != MERKLE_CLAIM:
-            return DEFAULT_DECODING_OUTPUT
-
-        user_address = hex_or_bytes_to_address(context.tx_log.data[32:64])
-        raw_amount = hex_or_bytes_to_int(context.tx_log.data[64:96])
-        amount = token_normalized_value_decimals(
-            token_amount=raw_amount,
-            token_decimals=DEFAULT_TOKEN_DECIMALS,  # uni 18 decimals
-        )
-        for event in context.decoded_events:
-            if match_airdrop_claim(
-                event=event,
-                user_address=user_address,
-                amount=amount,
-                asset=A_UNI,
-                counterparty=CPT_UNISWAP,
-            ):
-                break
-
-        return DEFAULT_DECODING_OUTPUT
 
     def _decode_fox_claim(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] != FOX_CLAIMED:
@@ -167,28 +145,6 @@ class AirdropsDecoder(DecoderInterface):
                 amount=amount,
                 asset=A_BADGER,
                 counterparty=CPT_BADGER,
-            ):
-                break
-
-        return DEFAULT_DECODING_OUTPUT
-
-    def _decode_oneinch_claim(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] != MERKLE_CLAIM:
-            return DEFAULT_DECODING_OUTPUT
-
-        raw_amount = hex_or_bytes_to_int(context.tx_log.data[64:96])
-        amount = token_normalized_value_decimals(
-            token_amount=raw_amount,
-            token_decimals=DEFAULT_TOKEN_DECIMALS,  # 1inch 18 decimals
-        )
-        user_address = hex_or_bytes_to_address(context.tx_log.data[32:64])
-        for event in context.decoded_events:
-            if match_airdrop_claim(
-                event=event,
-                user_address=user_address,
-                amount=amount,
-                asset=A_1INCH,
-                counterparty=CPT_ONEINCH,
             ):
                 break
 
@@ -317,9 +273,21 @@ class AirdropsDecoder(DecoderInterface):
 
     def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
         return {
-            UNISWAP_DISTRIBUTOR: (self._decode_uniswap_claim,),
+            UNISWAP_DISTRIBUTOR: (
+                self._decode_merkle_claim,
+                CPT_UNISWAP,  # counterparty
+                A_UNI.identifier,  # token id
+                18,  # token decimals
+                'UNI from the uniswap airdrop',  # notes suffix
+            ),
             BADGERHUNT: (self._decode_badger_claim,),
-            ONEINCH: (self._decode_oneinch_claim,),
+            ONEINCH: (
+                self._decode_merkle_claim,
+                CPT_ONEINCH,  # counterparty
+                A_1INCH.identifier,  # token id
+                18,  # token decimals
+                '1inch from the 1inch airdrop',  # notes suffix
+            ),
             FPIS: (self._decode_fpis_claim, 'fpis'),
             CONVEX: (self._decode_fpis_claim, 'convex'),
             ELFI_LOCKING: (self._decode_elfi_claim,),

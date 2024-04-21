@@ -55,7 +55,7 @@ def test_claim_airdrop_1(
             location_label=user_address,
             counterparty=CPT_DEGEN,
             address=string_to_evm_address('0x88d42b6DBc10D2494A0c6c189CeFC7573a6dCE62'),
-            notes=f'Claimed {claimed_amount} DEGEN from Degen airdrop 2',
+            notes=f'Claim {claimed_amount} DEGEN from Degen airdrop 2',
         ),
     ]
     assert events == expected_events
