@@ -1089,7 +1089,7 @@ def test_claim_airdrop(database, ethereum_inquirer, ethereum_accounts):
             asset=A_UNI,
             balance=Balance(amount=FVal(claimed_amount)),
             location_label=user_address,
-            notes=f'Claim {claimed_amount} UNI from uniswap airdrop',
+            notes=f'Claim {claimed_amount} UNI from the uniswap airdrop',
             counterparty=CPT_UNISWAP,
             address=UNISWAP_DISTRIBUTOR,
         ),

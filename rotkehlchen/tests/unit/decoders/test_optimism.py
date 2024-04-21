@@ -50,7 +50,7 @@ def test_optimism_airdrop_claim(database, optimism_inquirer):
             asset=A_OP,
             balance=Balance(amount=FVal('827.759804739626467328')),
             location_label=ADDY,
-            notes='Claimed 827.759804739626467328 OP from optimism airdrop',
+            notes='Claim 827.759804739626467328 OP from the optimism airdrop',
             counterparty=CPT_OPTIMISM,
             address=string_to_evm_address('0xFeDFAF1A10335448b7FA0268F56D2B44DBD357de'),
         )]
