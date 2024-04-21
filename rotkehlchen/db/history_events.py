@@ -547,7 +547,7 @@ class DBHistoryEvents:
         Get missing prices for history base entries based on filter query
         """
         query, bindings = filter_query.prepare()
-        query = f'SELECT history_events.identifier, amount, asset, timestamp {ALL_EVENTS_DATA_JOIN}' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
+        query = f'SELECT history_events.identifier, amount, asset, timestamp {ALL_EVENTS_DATA_JOIN}' + query  # noqa: E501
         result = []
         cursor = self.db.conn.cursor()
         cursor.execute(query, bindings)
@@ -585,7 +585,7 @@ class DBHistoryEvents:
     ) -> list[Asset]:
         """Returns asset from base entry events using the desired filter"""
         query, bindings = query_filter.prepare(with_pagination=False)
-        query = 'SELECT DISTINCT asset from history_events ' + query  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
+        query = 'SELECT DISTINCT asset from history_events ' + query
         assets = []
         cursor.execute(query, bindings)
         for asset_id in cursor:

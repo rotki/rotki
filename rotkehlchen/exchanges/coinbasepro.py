@@ -454,7 +454,7 @@ class Coinbasepro(ExchangeInterface):
                         fee = deserialize_fee(entry['details']['fee'])
 
                 if transaction_id and (asset == A_ETH or asset.asset_type == AssetType.EVM_TOKEN):
-                    transaction_id = '0x' + transaction_id  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
+                    transaction_id = '0x' + transaction_id
 
                 movements.append(AssetMovement(
                     location=Location.COINBASEPRO,

@@ -298,7 +298,7 @@ class EvmNodeInquirer(ABC):
             # Assigning one is just a default since we always use it.
             # The weight is only important for the other nodes since they
             # are selected using this parameter
-            ordered_list = [WeightedNode(node_info=node, weight=ONE, active=True) for node in owned_nodes] + ordered_list  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
+            ordered_list = [WeightedNode(node_info=node, weight=ONE, active=True) for node in owned_nodes] + ordered_list  # noqa: E501
         return ordered_list
 
     def get_multi_balance(

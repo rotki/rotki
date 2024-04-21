@@ -55,7 +55,7 @@ def is_valid_bitcoin_cash_address(address: str) -> bool:
     address = address.lower()
     colon_count = address.count(':')
     if colon_count == 0:
-        address = _PREFIX + ':' + address  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
+        address = _PREFIX + ':' + address
     elif colon_count > 1:
         return False
     prefix, base32string = address.split(':')
@@ -129,7 +129,7 @@ def cash_to_legacy_address(address: str) -> BTCAddress | None:
         if not is_valid:
             return None
         if address.startswith(_PREFIX) is False:
-            address = _PREFIX + ':' + address  # https://github.com/astral-sh/ruff/issues/10925 # noqa: E501 PLR6104
+            address = _PREFIX + ':' + address
 
         _, base32string = address.split(':')
         decoded_string = _b32decode(base32string)
