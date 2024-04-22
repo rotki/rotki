@@ -33,7 +33,7 @@ def test_thegraph_delegate(database, ethereum_inquirer):
     timestamp = TimestampMS(1690731467000)
     delegate_amount, delegate_tax, gas_fees = '998.98', '5.02', '0.002150596408306665'
     approval_amount = '115792089237316195423570985008687907853269984665640563952473.318503163402575923'  # noqa: E501
-    indexer_address = '0x6125eA331851367716beE301ECDe7F38A7E429e7'
+    indexer_address = string_to_evm_address('0x6125eA331851367716beE301ECDe7F38A7E429e7')
     expected_events = [
         EvmEvent(
             tx_hash=tx_hash,
@@ -103,8 +103,8 @@ def test_thegraph_undelegate(database, ethereum_inquirer):
         tx_hash=tx_hash,
     )
     timestamp = TimestampMS(1691771855000)
-    gas_fee, undelegate_amount = '0.00307607001551556', '1003.70342593701668535'
-    indexer_address, lock_time = '0x6125eA331851367716beE301ECDe7F38A7E429e7', '983'
+    gas_fee, undelegate_amount, lock_time = '0.00307607001551556', '1003.70342593701668535', '983'
+    indexer_address = string_to_evm_address('0x6125eA331851367716beE301ECDe7F38A7E429e7')
     expected_events = [
         EvmEvent(
             tx_hash=tx_hash,
@@ -147,7 +147,7 @@ def test_thegraph_delegated_withdrawn(database, ethereum_inquirer):
     )
     timestamp = TimestampMS(1694577371000)
     gas_fees, withdrawn_amount = '0.000651667321615926', '1003.70342593701668535'
-    indexer_address = '0x6125eA331851367716beE301ECDe7F38A7E429e7'
+    indexer_address = string_to_evm_address('0x6125eA331851367716beE301ECDe7F38A7E429e7')
     expected_events = [
         EvmEvent(
             tx_hash=tx_hash,
@@ -191,7 +191,7 @@ def test_thegraph_delegate_arbitrum_one(database, arbitrum_one_inquirer):
     )
     timestamp = TimestampMS(1713366299000)
     gas_fees, approve_amount, delegate_amount, delegate_tax = '0.000003483187128', '1.009574848602990389', '24.9745', '0.1255'  # noqa: E501
-    indexer_address = '0xE13840A2E92e0Cb17A246609b432D0fA2e418774'
+    indexer_address = string_to_evm_address('0xE13840A2E92e0Cb17A246609b432D0fA2e418774')
     expected_events = [
         EvmEvent(
             tx_hash=tx_hash,
@@ -262,7 +262,7 @@ def test_thegraph_undelegate_arbitrum_one(database, arbitrum_one_inquirer):
     )
     timestamp = TimestampMS(1700727276000)
     gas_fees, withdraw_amount, undelegate_amount = '0.0000568994', '49.766469576778571786', '50.576247644221196145'  # noqa: E501
-    indexer_address = '0xf92f430Dd8567B0d466358c79594ab58d919A6D4'
+    indexer_address = string_to_evm_address('0xf92f430Dd8567B0d466358c79594ab58d919A6D4')
     lock_time = '390'
 
     expected_events = [
@@ -322,7 +322,7 @@ def test_thegraph_delegated_withdrawn_arbitrum_one(database, arbitrum_one_inquir
     )
     timestamp = TimestampMS(1713445792000)
     gas_fees, withdrawn_amount = '0.00000134642', '9.949999999999999998'
-    indexer_address = '0xf92f430Dd8567B0d466358c79594ab58d919A6D4'
+    indexer_address = string_to_evm_address('0xf92f430Dd8567B0d466358c79594ab58d919A6D4')
     expected_events = [
         EvmEvent(
             tx_hash=tx_hash,

@@ -17,6 +17,9 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.accounts import BlockchainAccountData, BlockchainAccounts
 from rotkehlchen.chain.arbitrum_one.modules.gmx.balances import GmxBalances
+from rotkehlchen.chain.arbitrum_one.modules.thegraph.balances import (
+    ThegraphBalances as ThegraphBalancesArbitrumOne,
+)
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.base.modules.aerodrome.balances import AerodromeBalances
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
@@ -192,7 +195,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
     ),
     ChainID.OPTIMISM: (VelodromeBalances,),
     ChainID.BASE: (Compoundv3Balances, AerodromeBalances),
-    ChainID.ARBITRUM_ONE: (Compoundv3Balances, GmxBalances),
+    ChainID.ARBITRUM_ONE: (Compoundv3Balances, GmxBalances, ThegraphBalancesArbitrumOne),
     ChainID.POLYGON_POS: (Compoundv3Balances,),
     ChainID.SCROLL: (Compoundv3Balances,),
 }

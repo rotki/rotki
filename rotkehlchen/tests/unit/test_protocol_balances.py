@@ -8,6 +8,9 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.arbitrum_one.modules.gmx.balances import GmxBalances
+from rotkehlchen.chain.arbitrum_one.modules.thegraph.balances import (
+    ThegraphBalances as ThegraphBalancesArbitrumOne,
+)
 from rotkehlchen.chain.ethereum.modules.convex.balances import ConvexBalances
 from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
 from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBalances
@@ -18,7 +21,16 @@ from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balanc
 from rotkehlchen.chain.evm.tokens import TokenBalancesType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
-from rotkehlchen.constants.assets import A_CVX, A_GLM, A_GMX, A_GRT, A_STETH, A_USDC, A_WETH
+from rotkehlchen.constants.assets import (
+    A_CVX,
+    A_GLM,
+    A_GMX,
+    A_GRT,
+    A_GRT_ARB,
+    A_STETH,
+    A_USDC,
+    A_WETH,
+)
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
@@ -38,7 +50,9 @@ from rotkehlchen.types import (
 
 if TYPE_CHECKING:
     from collections.abc import Sequence
+
     from rotkehlchen.chain.aggregator import ChainsAggregator
+    from rotkehlchen.chain.arbitrum_one.decoding.decoder import ArbitrumOneTransactionDecoder
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -228,6 +242,40 @@ def test_thegraph_balances(
     assert user_balance.assets[A_GRT.resolve_to_evm_token()] == Balance(
         amount=FVal('1293.499999999999900000'),
         usd_value=FVal('1940.24999999999985'),
+    )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0xA9728D95567410555557a54EcA320e5E8bEa36a5']])
+@pytest.mark.parametrize('arbitrum_one_manager_connect_at_start', [(get_arbitrum_allthatnode(weight=ONE, owned=True),)])  # noqa: E501
+def test_thegraph_balances_arbitrum_one(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_transaction_decoder: 'ArbitrumOneTransactionDecoder',
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+        arbitrum_one_manager_connect_at_start,
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Check that balances of GRT currently delegated to indexers are properly detected."""
+    wait_until_all_nodes_connected(
+        connect_at_start=arbitrum_one_manager_connect_at_start,
+        evm_inquirer=arbitrum_one_inquirer,
+    )
+    amount = FVal('25.607552758075613')
+    tx_hex = deserialize_evm_tx_hash('0x3c846f305330969fb0ddb87c5ae411b4e9692f451a7ff3237b6f71020030c7d1')  # noqa: E501
+    get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        database=arbitrum_one_transaction_decoder.database,
+        tx_hash=tx_hex,
+    )
+    thegraph_balances_inquirer = ThegraphBalancesArbitrumOne(
+        database=arbitrum_one_transaction_decoder.database,
+        evm_inquirer=arbitrum_one_inquirer,
+    )
+    thegraph_balances = thegraph_balances_inquirer.query_balances()
+    user_balance = thegraph_balances[arbitrum_one_accounts[0]]
+    assert user_balance.assets[A_GRT_ARB.resolve_to_evm_token()] == Balance(
+        amount=amount,
+        usd_value=amount * FVal(1.5),
     )
 
 
