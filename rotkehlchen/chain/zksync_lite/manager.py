@@ -608,9 +608,9 @@ class ZksyncLiteManager:
             self,
             transaction: ZKSyncLiteTransaction,
             tracked_addresses: Sequence[ChecksumEvmAddress],
-    ) -> int:
+    ) -> None:
+        """Decodes a zksync lite transaction, creating any events that may be needed for it"""
         target = None
-        decoded_num = 0
         tracked_from = transaction.from_address in tracked_addresses
         tracked_to = transaction.to_address in tracked_addresses
         event_identifier = f'zkl{transaction.tx_hash.hex()}'
@@ -620,86 +620,75 @@ class ZksyncLiteManager:
             case ZKSyncLiteTXType.DEPOSIT:
 
                 # This is a deposit from L1 to ZKSync Lite. from is in L1. to is in L2
-                if not tracked_to:
-                    return 0  # no need to track. Receiver in zksync lite is not ours
+                if tracked_to:  # decode only if receiver in zksync lite is ours
+                    suffix = ''
+                    if transaction.from_address != transaction.to_address:
+                        suffix = f' address {transaction.to_address}'
+                    notes = f'Bridge {transaction.amount} {transaction.asset.resolve_to_asset_with_symbol().symbol} from Ethereum to ZKSync Lite{suffix}'  # noqa: E501
+                    event_data.append((
+                        0,
+                        HistoryEventType.WITHDRAWAL,
+                        HistoryEventSubType.BRIDGE,
+                        transaction.asset,
+                        transaction.amount,
+                        transaction.to_address,  # type:ignore [arg-type]  # to_address should exist here
+                        None,
+                        notes,
+                    ))
 
-                suffix = ''
-                if transaction.from_address != transaction.to_address:
-                    suffix = f' address {transaction.to_address}'
-                notes = f'Bridge {transaction.amount} {transaction.asset.resolve_to_asset_with_symbol().symbol} from Ethereum to ZKSync Lite{suffix}'  # noqa: E501
-                event_data.append((
-                    0,
-                    HistoryEventType.WITHDRAWAL,
-                    HistoryEventSubType.BRIDGE,
-                    transaction.asset,
-                    transaction.amount,
-                    transaction.to_address,  # type:ignore [arg-type]  # to_address should exist here
-                    None,
-                    notes,
-                ))
             case ZKSyncLiteTXType.WITHDRAW:
                 # This is a withdrawal from ZKSync lite to L1. from is in L2 to is in L1
-                if not tracked_from:
-                    return 0  # no need to track. Sender in zksync lite is not ours
-
-                suffix = ''
-                if transaction.from_address != transaction.to_address:
-                    suffix = f' address {transaction.to_address}'
-                notes = f'Bridge {transaction.amount} {transaction.asset.resolve_to_asset_with_symbol().symbol} from ZKSync Lite to Ethereum{suffix}'  # noqa: E501
-                event_data.append((
-                    0,
-                    HistoryEventType.DEPOSIT,
-                    HistoryEventSubType.BRIDGE,
-                    transaction.asset,
-                    transaction.amount,
-                    transaction.from_address,
-                    transaction.to_address,
-                    notes,
-                ))
+                if tracked_from:  # decode only if sender in zksync lite is ours
+                    suffix = ''
+                    if transaction.from_address != transaction.to_address:
+                        suffix = f' address {transaction.to_address}'
+                    notes = f'Bridge {transaction.amount} {transaction.asset.resolve_to_asset_with_symbol().symbol} from ZKSync Lite to Ethereum{suffix}'  # noqa: E501
+                    event_data.append((
+                        0,
+                        HistoryEventType.DEPOSIT,
+                        HistoryEventSubType.BRIDGE,
+                        transaction.asset,
+                        transaction.amount,
+                        transaction.from_address,
+                        transaction.to_address,
+                        notes,
+                    ))
 
             case ZKSyncLiteTXType.TRANSFER:
-                if not tracked_from and not tracked_to:
-                    return 0
                 # Similar to chain/evm/decoding/base.py. Can abstract somehow?
                 if tracked_from and tracked_to:
-                    event_type = HistoryEventType.TRANSFER
-                    event_subtype = HistoryEventSubType.NONE
-                    location_label = transaction.from_address
-                    target = transaction.to_address
-                    verb = 'Transfer'
-                    preposition = 'to'
+                    event_data.append((
+                        0,
+                        HistoryEventType.TRANSFER,
+                        HistoryEventSubType.NONE,
+                        transaction.asset,
+                        transaction.amount,
+                        transaction.from_address,
+                        transaction.to_address,
+                        f'Transfer {transaction.amount} {transaction.asset.resolve_to_asset_with_symbol().symbol} to {transaction.to_address}',  # noqa: E501
+                    ))
                 elif tracked_from:
-                    event_type = HistoryEventType.SPEND
-                    event_subtype = HistoryEventSubType.NONE
-                    location_label = transaction.from_address
-                    target = transaction.to_address
-                    verb = 'Send'
-                    preposition = 'to'
-                else:  # can only be tracked_to
-                    event_type = HistoryEventType.RECEIVE
-                    event_subtype = HistoryEventSubType.NONE
-                    location_label = transaction.to_address  # type: ignore # to_address should exist for transfer
-                    target = transaction.from_address
-                    verb = 'Receive'
-                    preposition = 'from'
-
-                # TODO: I wanted to use HistoryEvent here since this is not a full
-                # EVM event and does not have a chain ID or product or counterparties.
-                # But HistoryEvents do not have "to" field for send/transfers. Without this
-                # we could not analyze where did a transfer go. So we use EvmEvent here.
-                # Perhaps we should create a new extension to HistoryEvent that
-                # simply adds a "to" field. As this will definitely be needed somewhere.
-
-                event_data.append((
-                    0,
-                    event_type,
-                    event_subtype,
-                    transaction.asset,
-                    transaction.amount,
-                    location_label,
-                    target,
-                    f'{verb} {transaction.amount} {transaction.asset.resolve_to_asset_with_symbol().symbol} {preposition} {target}',  # noqa: E501
-                ))
+                    event_data.append((
+                        0,
+                        HistoryEventType.SPEND,
+                        HistoryEventSubType.NONE,
+                        transaction.asset,
+                        transaction.amount,
+                        transaction.from_address,
+                        transaction.to_address,
+                        f'Send {transaction.amount} {transaction.asset.resolve_to_asset_with_symbol().symbol} to {transaction.to_address}',  # noqa: E501
+                    ))
+                elif tracked_to:
+                    event_data.append((  # type: ignore[arg-type] # to_address exists here
+                        0,
+                        HistoryEventType.RECEIVE,
+                        HistoryEventSubType.NONE,
+                        transaction.asset,
+                        transaction.amount,
+                        transaction.to_address,
+                        transaction.from_address,
+                        f'Receive {transaction.amount} {transaction.asset.resolve_to_asset_with_symbol().symbol} from {transaction.from_address}',  # noqa: E501
+                    ))
 
             case ZKSyncLiteTXType.FULLEXIT | ZKSyncLiteTXType.FORCEDEXIT:
                 event_data.append((
@@ -714,28 +703,27 @@ class ZksyncLiteManager:
                 ))
 
             case ZKSyncLiteTXType.CHANGEPUBKEY:
-                event_type = HistoryEventType.SPEND
-                event_subtype = HistoryEventSubType.FEE
-                if transaction.fee is None:
+                if transaction.fee:
+                    event_type = HistoryEventType.SPEND
+                    event_subtype = HistoryEventSubType.FEE
+                    transaction.amount = transaction.fee
+                    transaction.fee = None  # to not double count fee with 2 events
+                    notes = f'Spend {transaction.amount} ETH to ChangePubKey'
+                    location_label = transaction.from_address
+                    transaction.fee = None  # to not double count fee with 2 events
+                    event_data.append((
+                        0,
+                        HistoryEventType.SPEND,
+                        HistoryEventSubType.FEE,
+                        transaction.asset,
+                        transaction.amount,
+                        transaction.from_address,
+                        transaction.to_address,
+                        f'Spend {transaction.amount} ETH to ChangePubKey',
+                    ))
+
+                else:
                     log.error(f'Found zksync lite ChangePubKey transaction {transaction} with no fee field. Skipping')  # noqa: E501
-                    return 0
-
-                transaction.amount = transaction.fee
-                transaction.fee = None  # to not double count fee with 2 events
-                notes = f'Spend {transaction.amount} ETH to ChangePubKey'
-                location_label = transaction.from_address
-                transaction.fee = None  # to not double count fee with 2 events
-
-                event_data.append((
-                    0,
-                    HistoryEventType.SPEND,
-                    HistoryEventSubType.FEE,
-                    transaction.asset,
-                    transaction.amount,
-                    transaction.from_address,
-                    transaction.to_address,
-                    f'Spend {transaction.amount} ETH to ChangePubKey',
-                ))
 
             case ZKSyncLiteTXType.SWAP:
                 assert transaction.swap_data, 'Swap data exist for SWAP type'
@@ -777,11 +765,10 @@ class ZksyncLiteManager:
                 notes=notes,
             ))
 
-        event_type = events[0].event_type
-        if transaction.fee is not None and event_type != HistoryEventType.RECEIVE:  # sender pays  # noqa: E501
-            if event_type in (HistoryEventType.SPEND, HistoryEventType.TRANSFER):
+        if transaction.fee is not None and len(events) != 0 and events[0].event_type != HistoryEventType.RECEIVE:  # sender pays  # noqa: E501
+            if events[0].event_type in (HistoryEventType.SPEND, HistoryEventType.TRANSFER):
                 fee_type = 'Transfer'
-            elif event_type == HistoryEventType.TRADE:
+            elif events[0].event_type == HistoryEventType.TRADE:
                 fee_type = 'Swap'
             else:
                 fee_type = 'Bridging'
@@ -792,7 +779,7 @@ class ZksyncLiteManager:
                 sequence_index=events[-1].sequence_index + 1,
                 timestamp=ts_sec_to_ms(transaction.timestamp),
                 location=Location.ZKSYNC_LITE,
-                event_type=event_type,
+                event_type=events[0].event_type,
                 # Combinations that can come up are:
                 # DEPOSIT/FEE, WITHDRAWAl/FEE, SPEND/FEE, TRANSFER/FEE
                 event_subtype=HistoryEventSubType.FEE,
@@ -807,7 +794,6 @@ class ZksyncLiteManager:
         dbevents = DBHistoryEvents(self.database)
         with self.database.user_write() as write_cursor:
             for event in events:
-                decoded_num += 1
                 dbevents.add_history_event(write_cursor, event)
 
             write_cursor.execute(
@@ -815,18 +801,18 @@ class ZksyncLiteManager:
                 (1, transaction.tx_hash),
             )
 
-        return decoded_num
-
     def decode_undecoded_transactions(self) -> int:
+        """Decoded undecoded transactions.
+        Returns the number of decoded transactions (not events in transactions)
+        """
         transactions = self.get_db_transactions(
             queryfilter=' WHERE is_decoded=?',
             bindings=(0,),
         )
-        decoded_num = 0
         with self.database.conn.read_ctx() as cursor:
             tracked_addresses = self.database.get_blockchain_accounts(cursor).zksync_lite
 
         for transaction in transactions:
-            decoded_num += self.decode_transaction(transaction, tracked_addresses)
+            self.decode_transaction(transaction, tracked_addresses)
 
-        return decoded_num
+        return len(transactions)

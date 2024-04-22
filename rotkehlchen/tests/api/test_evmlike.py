@@ -260,7 +260,7 @@ def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite
         ),
     )
     result = assert_proper_response_with_result(response)
-    assert result == {'zksync_lite': {'undecoded': 1, 'total': 16}}
+    assert result == {'zksync_lite': {'undecoded': 0, 'total': 16}}
 
     response = requests.post(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
