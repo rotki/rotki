@@ -15,6 +15,7 @@ const details = computed(() => getAccountDetails(props.chain, props.address));
     <AccountAssetBalances
       :title="t('common.assets')"
       :assets="details.assets"
+      :flat="details.liabilities.length === 0"
     />
     <AccountAssetBalances
       v-if="details.liabilities.length > 0"

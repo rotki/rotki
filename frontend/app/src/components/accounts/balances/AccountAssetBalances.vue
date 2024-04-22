@@ -5,7 +5,16 @@ import type {
   DataTableSortData,
 } from '@rotki/ui-library-compat';
 
-const props = defineProps<{ assets: AssetBalance[]; title: string }>();
+const props = withDefaults(
+  defineProps<{
+    assets: AssetBalance[];
+    title: string;
+    flat: boolean;
+  }>(),
+  {
+    flat: false,
+  },
+);
 
 const { t } = useI18n();
 const { assets } = toRefs(props);
@@ -79,8 +88,14 @@ const headers = computed<DataTableColumn[]>(() => [
 </script>
 
 <template>
-  <RuiCard>
-    <template #header>
+  <RuiCard
+    :no-padding="flat"
+    :variant="flat ? 'flat' : 'outlined'"
+  >
+    <template
+      v-if="!flat && title"
+      #header
+    >
       {{ title }}
     </template>
     <RuiDataTable
