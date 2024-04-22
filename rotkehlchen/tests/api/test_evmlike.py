@@ -251,9 +251,21 @@ def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite
             'evmlikependingtransactionsdecodingresource',
         ), json={'async_query': False},
     )
+    assert_proper_response(response)
+
+    response = requests.get(  # get the number of decoded & undecoded transactions
+        api_url_for(
+            rotkehlchen_api_server,
+            'evmlikependingtransactionsdecodingresource',
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    assert result == {'zksync_lite': {'undecoded': 1, 'total': 16}}
+
     response = requests.post(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
     )
+    assert_proper_response(response)
     result = assert_proper_response_with_result(response)
     response = requests.post(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),

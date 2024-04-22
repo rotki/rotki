@@ -42,6 +42,7 @@ from rotkehlchen.tests.utils.constants import TXHASH_HEX_TO_BYTES
 from rotkehlchen.tests.utils.ethereum import (
     TEST_ADDR1,
     TEST_ADDR2,
+    get_decoded_events_of_transaction,
     setup_ethereum_transactions_test,
     txreceipt_to_data,
 )
@@ -1458,7 +1459,7 @@ def test_count_transactions_missing_decoding(rotkehlchen_api_server: 'APIServer'
     async_query = random.choice([False, True])
     # setup 2 ethereum transactions, 1 OP transaction and 1 Base transaction not decoded
     dbevmtx = DBEvmTx(rotki.data.db)
-    setup_ethereum_transactions_test(
+    eth_transactions, _ = setup_ethereum_transactions_test(
         database=rotki.data.db,
         transaction_already_queried=True,
         one_receipt_in_db=True,
@@ -1512,6 +1513,12 @@ def test_count_transactions_missing_decoding(rotkehlchen_api_server: 'APIServer'
         with rotki.data.db.user_write() as cursor:
             dbevmtx.add_or_ignore_receipt_data(cursor, chain, txreceipt_to_data(expected_receipt))
 
+    get_decoded_events_of_transaction(
+        evm_inquirer=rotki.chains_aggregator.ethereum.node_inquirer,
+        database=rotki.data.db,
+        tx_hash=eth_transactions[0].tx_hash,
+    )  # decode 1 transaction in ethereum
+
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
@@ -1526,4 +1533,8 @@ def test_count_transactions_missing_decoding(rotkehlchen_api_server: 'APIServer'
     else:
         result = assert_proper_response_with_result(response)
 
-    assert result == {'base': 1, 'ethereum': 2, 'optimism': 1}
+    assert result == {
+        'base': {'undecoded': 1, 'total': 1},
+        'ethereum': {'undecoded': 1, 'total': 2},
+        'optimism': {'undecoded': 1, 'total': 1},
+    }
