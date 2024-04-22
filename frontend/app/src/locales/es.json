@@ -902,8 +902,8 @@
       "source": "Source"
     },
     "title": "Airdrops",
-    "available_info": "Hay airdrops disponibles para estas direcciones, pero aún no podemos analizar si han sido reclamadas o no.",
-    "available_tooltip": "La dirección es elegible para este lanzamiento aéreo, pero aún no podemos analizar si ha sido reclamada o no."
+    "unknown_info": "Hay airdrops disponibles para estas direcciones, pero aún no podemos analizar si han sido reclamadas o no.",
+    "unknown_tooltip": "La dirección es elegible para este lanzamiento aéreo, pero aún no podemos analizar si ha sido reclamada o no."
   },
   "alias_names": {
     "error": {
@@ -1432,7 +1432,9 @@
     "unclaimed": "No reclamado",
     "validator_index": "Índice de validador",
     "value_in_symbol": "{symbol} Value",
-    "visit_website": "To get a premium subscription please visit our {0}."
+    "visit_website": "To get a premium subscription please visit our {0}.",
+    "unknown": "Desconocido",
+    "all": "Todos"
   },
   "compound_lending": {
     "header": "Compound Loan ({asset})",
