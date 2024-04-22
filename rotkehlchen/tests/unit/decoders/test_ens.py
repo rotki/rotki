@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -21,6 +22,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
+from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import (
     CacheType,
     ChainID,
@@ -767,7 +769,7 @@ def test_invalid_ens_name(globaldb: 'GlobalDBHandler'):
     nothing gets stored in the database cache for invalid names.
     """
     name = 'ʀ'
-    full_name = _save_hash_mappings_get_fullname(name=name)
+    full_name = _save_hash_mappings_get_fullname(name=name, tx_hash=make_evm_tx_hash())
     assert full_name == f'{name}.eth'
     with globaldb.conn.read_ctx() as cursor:
         for cache_key in (CacheType.ENS_NAMEHASH, CacheType.ENS_LABELHASH):

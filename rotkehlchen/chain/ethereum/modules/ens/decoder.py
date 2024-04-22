@@ -28,7 +28,7 @@ from rotkehlchen.globaldb.cache import (
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTokenKind
+from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTokenKind, EVMTxHash
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
@@ -67,7 +67,7 @@ CONTENT_HASH_CHANGED = b'\xe3y\xc1bN\xd7\xe7\x14\xcc\t7R\x8a25\x9di\xd5(\x137vS\
 ENS_GOVERNOR = string_to_evm_address('0x323A76393544d5ecca80cd6ef2A560C6a395b7E3')
 
 
-def _save_hash_mappings_get_fullname(name: str) -> str:
+def _save_hash_mappings_get_fullname(name: str, tx_hash: EVMTxHash) -> str:
     """
     Saves the namehash -> name and labelhash -> name mappings to the global DB
     cache and gets name with.eth suffix.
@@ -90,8 +90,8 @@ def _save_hash_mappings_get_fullname(name: str) -> str:
             )
         except ens.exceptions.InvalidName as e:
             log.error(
-                f'Got an invalid ENS name {name}. namehash and labelhash not stored '
-                f'in the globaldb cache. {e=}',
+                f'Got an invalid ENS name {name} during decoding {tx_hash.hex()}.'
+                f'namehash and labelhash not stored in the globaldb cache. {e=}',
             )
     return full_name
 
@@ -138,7 +138,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
             log.debug(f'Failed to decode ENS name registered event due to {e!s}')
             return DEFAULT_DECODING_OUTPUT
 
-        fullname = _save_hash_mappings_get_fullname(name=decoded_data[0])
+        fullname = _save_hash_mappings_get_fullname(name=decoded_data[0], tx_hash=context.transaction.tx_hash)  # noqa: E501
         if context.tx_log.topics[0] == NAME_REGISTERED_SINGLE_COST:
             amount = from_wei(decoded_data[1])
             expires = decoded_data[2]
@@ -183,10 +183,10 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
         try:
             _, decoded_data = decode_event_data_abi_str(context.tx_log, NAME_RENEWED_ABI)
         except DeserializationError as e:
-            log.error(f'Failed to decode ENS name renewed event due to {e!s}')
+            log.error(f'Failed to decode ENS name renewed event in {context.transaction.tx_hash.hex()} due to {e!s}')  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
-        fullname = _save_hash_mappings_get_fullname(name=decoded_data[0])
+        fullname = _save_hash_mappings_get_fullname(name=decoded_data[0], tx_hash=context.transaction.tx_hash)  # noqa: E501
         logged_cost = from_wei(decoded_data[1])  # logs msg.value for new controller and actual cost for old  # noqa: E501
         expires = decoded_data[2]
 
@@ -231,8 +231,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
             tx_log=context.tx_log,
             transaction=context.transaction,
         )
-        if transfer_event is None:
-            log.error(f'Could not decode an ERC721 transfer for an ENS name transfer: {context.transaction.tx_hash.hex()}')  # noqa: E501
+        if transfer_event is None:  # Can happen if neither from/to is tracked
             return DEFAULT_DECODING_OUTPUT
 
         label_hash = '0x{:064x}'.format(transfer_event.extra_data['token_id'])  # type: ignore[index]  # ERC721 transfer always has extra data. This code is to transform the int token id to a 32 bytes hex label hash
@@ -249,7 +248,8 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
                 if isinstance(e, KeyError):
                     msg = f'Missing key {msg}'
                 log.error(
-                    f'Failed to query graph for token ID to ENS name due to {msg} '
+                    f'Failed to query graph for token ID to ENS name '
+                    f'in {context.transaction.tx_hash.hex()} due to {msg} '
                     f'during decoding events. Not adding name to event',
                 )
                 name_to_show = ''
@@ -283,7 +283,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
         if context.tx_log.topics[0] != NEW_RESOLVER:
             return DEFAULT_DECODING_OUTPUT
 
-        ens_name = self._get_name_to_show(node=context.tx_log.topics[1])
+        ens_name = self._get_name_to_show(node=context.tx_log.topics[1], tx_hash=context.transaction.tx_hash)  # noqa: E501
         suffix = ens_name if ens_name is not None else 'an ENS name'
 
         # Not able to give more info to the user such as address that was set since
@@ -303,7 +303,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
         ))
         return DEFAULT_DECODING_OUTPUT
 
-    def _get_name_to_show(self, node: bytes) -> str | None:
+    def _get_name_to_show(self, node: bytes, tx_hash: EVMTxHash) -> str | None:
         """Try to find the name associated with the ENS namehash/node that is being modified
 
         Returns the fullname
@@ -324,7 +324,8 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
                 if isinstance(e, KeyError):
                     msg = f'Missing key {msg}'
                 log.error(
-                    f'Failed to query graph for namehash to ENS name due to {msg} '
+                    f'Failed to query graph for namehash to ENS name in '
+                    f'{tx_hash.hex()} due to {msg} '
                     f'during decoding events. Not adding name to event',
                 )
             else:
@@ -340,7 +341,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
                         return None
 
         elif queried_graph:  # if we successfully asked the graph, save the mapping
-            _save_hash_mappings_get_fullname(name=name_to_show[:-4])
+            _save_hash_mappings_get_fullname(name=name_to_show[:-4], tx_hash=tx_hash)
 
         return name_to_show
 
@@ -351,14 +352,15 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
         if contract is None:
             self.msg_aggregator.add_error(
                 f'Failed to find ENS public resolver contract with address '
-                f'{context.tx_log.address}. This should never happen. Please, '
+                f'{context.tx_log.address} for {context.transaction.tx_hash.hex()}. '
+                f'This should never happen. Please, '
                 f"open an issue in rotki's github repository.",
             )
             return DEFAULT_DECODING_OUTPUT
 
         result = contract.decode_event(context.tx_log, 'ContenthashChanged', argument_names=None)
         new_hash = result[1][0].hex()
-        name_to_show = self._get_name_to_show(node=node)
+        name_to_show = self._get_name_to_show(node=node, tx_hash=context.transaction.tx_hash)
 
         try:
             codec = content_hash.get_codec(new_hash)
@@ -368,7 +370,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
             msg = str(e)
             if isinstance(e, KeyError):
                 msg = f'Inability to find key {msg}'
-            log.error(f'Failed to decode content hash {new_hash} due to {msg}')
+            log.error(f'Failed to decode content hash {new_hash} in {context.transaction.tx_hash.hex()} due to {msg}')  # noqa: E501
             value = f'unknown type hash {new_hash}'
 
         notes = f'Change ENS content hash to {value}'
@@ -407,14 +409,14 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
                 TEXT_CHANGED_KEY_ONLY_ABI if context.tx_log.topics[0] == TEXT_CHANGED_KEY_ONLY else TEXT_CHANGED_KEY_AND_VALUE_ABI,  # noqa: E501
             )
         except DeserializationError as e:
-            log.error(f'Failed to decode ENS set-text event due to {e!s}')
+            log.error(f'Failed to decode ENS set-text event in {context.transaction.tx_hash.hex()} due to {e!s}')  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
         changed_key = decoded_data[0]
         new_value = decoded_data[1] if context.tx_log.topics[0] == TEXT_CHANGED_KEY_AND_VALUE else None  # noqa: E501
         node = context.tx_log.topics[1]  # node is a hash of the name used by ens internals
 
-        name_to_show = self._get_name_to_show(node=node)
+        name_to_show = self._get_name_to_show(node=node, tx_hash=context.transaction.tx_hash)
         notes = f'Set ENS {changed_key} {f"to {new_value} " if new_value else ""}attribute'
         if name_to_show is not None:
             notes += f' for {name_to_show}'
