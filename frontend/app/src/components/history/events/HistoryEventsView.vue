@@ -879,6 +879,7 @@ watchImmediate(route, async (route) => {
 
         <RuiButton
           color="primary"
+          class="!py-2"
           :disabled="processing"
           @click="reDecodeAllEvents()"
         >
