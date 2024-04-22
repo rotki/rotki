@@ -194,7 +194,7 @@ def test_decode_fullexit(zksync_lite_manager, inquirer):  # pylint: disable=unus
         amount=ZERO,
         fee=None,
     )]
-    assert zksync_lite_manager.decode_transaction(transactions[0], [address]) == 1
+    zksync_lite_manager.decode_transaction(transactions[0], [address])
     dbevents = DBHistoryEvents(zksync_lite_manager.database)
     with zksync_lite_manager.database.conn.read_ctx() as cursor:
         events = dbevents.get_history_events(
@@ -246,7 +246,7 @@ def test_decode_forcedexit(zksync_lite_manager, inquirer):  # pylint: disable=un
         amount=ZERO,
         fee=None,
     )]
-    assert zksync_lite_manager.decode_transaction(transactions[0], [address]) == 1
+    zksync_lite_manager.decode_transaction(transactions[0], [address])
     dbevents = DBHistoryEvents(zksync_lite_manager.database)
     with zksync_lite_manager.database.conn.read_ctx() as cursor:
         events = dbevents.get_history_events(
@@ -304,7 +304,7 @@ def test_decode_swap(zksync_lite_manager, inquirer):  # pylint: disable=unused-a
             to_amount=FVal('37.082973'),
         ),
     )]
-    assert zksync_lite_manager.decode_transaction(transactions[0], [address]) == 3
+    zksync_lite_manager.decode_transaction(transactions[0], [address])
     dbevents = DBHistoryEvents(zksync_lite_manager.database)
     with zksync_lite_manager.database.conn.read_ctx() as cursor:
         events = dbevents.get_history_events(

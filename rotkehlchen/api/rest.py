@@ -2814,6 +2814,8 @@ class RestAPI:
 
         This logic is executed by the frontend in pages where the set of transactions needs to be
         up to date, for example, the liquity module.
+
+        Returns the number of decoded transactions (not events in transactions)
         """
         dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
         result = {}
@@ -2839,7 +2841,10 @@ class RestAPI:
             self,
             evmlike_chains: list[SUPPORTED_EVMLIKE_CHAINS_TYPE],  # pylint: disable=unused-argument
     ) -> dict[str, Any]:
-        """This method should be called after querying evmlike transactions"""
+        """This method should be called after querying evmlike transactions
+
+        Returns the number of decoded transactions (not events in transactions)
+        """
         decoded_num = 0
         # For now it's only zksync lite
         decoded_num = self.rotkehlchen.chains_aggregator.zksync_lite.decode_undecoded_transactions()   # noqa: E501
