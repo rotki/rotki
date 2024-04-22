@@ -9,7 +9,7 @@ from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.errors.misc import EventNotInABI
+from rotkehlchen.errors.misc import EventNotInABI, RemoteError
 from rotkehlchen.tests.utils.checks import assert_serialized_dicts_equal
 from rotkehlchen.tests.utils.ethereum import (
     ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED,
@@ -308,19 +308,23 @@ def test_get_log_and_receipt_etherscan_bad_tx_index(
         )
 
 
-def _test_get_blocknumber_by_time(ethereum_inquirer, etherscan):
-    result = ethereum_inquirer.get_blocknumber_by_time(1577836800, etherscan=etherscan)
+def _test_get_blocknumber_by_time(ethereum_inquirer):
+    result = ethereum_inquirer.get_blocknumber_by_time(1577836800)
     assert result == 9193265
 
 
-def test_get_blocknumber_by_time_subgraph(ethereum_inquirer):
-    """Queries the blocks subgraph for known block times"""
-    _test_get_blocknumber_by_time(ethereum_inquirer, False)
+def test_get_blocknumber_by_time_blockscout(ethereum_inquirer):
+    """Queries blockscout api for known block times"""
+    with patch(
+        'rotkehlchen.externalapis.etherscan.Etherscan.get_blocknumber_by_time',
+        side_effect=RemoteError('Mocked failed etherscan api query'),
+    ):
+        _test_get_blocknumber_by_time(ethereum_inquirer)
 
 
 def test_get_blocknumber_by_time_etherscan(ethereum_inquirer):
     """Queries etherscan for known block times"""
-    _test_get_blocknumber_by_time(ethereum_inquirer, True)
+    _test_get_blocknumber_by_time(ethereum_inquirer)
 
 
 @pytest.mark.vcr()

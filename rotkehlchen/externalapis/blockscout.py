@@ -2,7 +2,6 @@ import logging
 import sys
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any, Literal
-from urllib.parse import urlencode
 
 import gevent
 import requests
@@ -16,7 +15,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_fval
+from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
 from rotkehlchen.types import ChecksumEvmAddress, ExternalService, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, iso8601ts_to_timestamp, set_user_agent, ts_sec_to_ms
@@ -38,30 +37,15 @@ class Blockscout(ExternalServiceWithApiKey):
         self.msg_aggregator = msg_aggregator
         self.session = requests.session()
         set_user_agent(self.session)
-        self.url = 'https://eth.blockscout.com/api/v2/'
+        self.url = 'https://eth.blockscout.com/api'
 
-    def _query(
+    def _query_and_process(
             self,
-            module: Literal['addresses'],
-            endpoint: Literal['withdrawals'],
-            encoded_args: str,
-            extra_args: dict[str, Any] | None = None,
+            query_str: str,
+            params: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
-        """Query blockscout
-
-        May raise:
-        - RemoteError due to problems querying blockscout
-        """
-        extra_args = {} if extra_args is None else extra_args
-        query_str = f'{self.url}{module}/{encoded_args}/{endpoint}'
-        api_key = self._get_api_key()
-        if api_key is not None:
-            extra_args['apikey'] = api_key
-
-        if extra_args:
-            query_str += f'?{urlencode(extra_args)}'
-
-        log.debug(f'Querying blockscout API for {query_str}')
+        """Shared logic between v1 and v2 for querying blockscout api"""
+        log.debug(f'Querying blockscout API for {query_str} with {params}')
         times = CachedSettings().get_query_retry_limit()
         retries_num = times
         timeout = CachedSettings().get_timeout_tuple()
@@ -69,7 +53,7 @@ class Blockscout(ExternalServiceWithApiKey):
 
         while True:
             try:
-                response = self.session.get(query_str, timeout=timeout)
+                response = self.session.get(query_str, timeout=timeout, params=params)
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Querying {query_str} failed due to {e!s}') from e
 
@@ -111,6 +95,48 @@ class Blockscout(ExternalServiceWithApiKey):
 
         return json_ret
 
+    def _query_v1(
+            self,
+            module: Literal['block'],
+            action: Literal['getblocknobytime'],
+            query_args: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        query_args = {} if query_args is None else query_args
+        query_args |= {'module': module, 'action': action}
+        if (api_key := self._get_api_key()) is not None:
+            query_args['apikey'] = api_key
+
+        response = self._query_and_process(
+            query_str=self.url,
+            params=query_args,
+        )
+        if response.get('message') != 'OK':
+            raise RemoteError(f'Non ok response from blockscout v1 with {query_args}: {response}')
+
+        return response['result']
+
+    def _query_v2(
+            self,
+            module: Literal['addresses'],
+            endpoint: Literal['withdrawals'],
+            encoded_args: str,
+            extra_args: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        """Query blockscout v2 endpoints
+
+        May raise:
+        - RemoteError due to problems querying blockscout
+        """
+        extra_args = {} if extra_args is None else extra_args
+        query_str = f'{self.url}/v2/{module}/{encoded_args}/{endpoint}'
+        if (api_key := self._get_api_key()) is not None:
+            extra_args['apikey'] = api_key
+
+        return self._query_and_process(
+            query_str=query_str,
+            params=extra_args,
+        )
+
     def query_withdrawals(self, address: ChecksumEvmAddress) -> set[int]:
         """Query withdrawals for an ethereum address and save them in the DB.
         Returns newly detected validators that were not tracked in the DB.
@@ -134,7 +160,7 @@ class Blockscout(ExternalServiceWithApiKey):
                 last_known_withdrawal_idx = idx_result
 
         while True:
-            result = self._query(module='addresses', endpoint='withdrawals', encoded_args=address, extra_args=extra_args)  # noqa: E501
+            result = self._query_v2(module='addresses', endpoint='withdrawals', encoded_args=address, extra_args=extra_args)  # noqa: E501
             if len(result['items']) == 0:
                 log.debug(f'Could not find withdrawals for address {address}')
                 break
@@ -206,3 +232,31 @@ class Blockscout(ExternalServiceWithApiKey):
                 )
 
         return touched_indices - tracked_indices
+
+    def get_blocknumber_by_time(
+            self,
+            ts: Timestamp,
+            closest: Literal['before', 'after'] = 'before',
+    ) -> int:
+        """
+        Query blockscout for the block at the given timestamp. Interface is compatible
+        with the etherscan call.
+        May raise:
+        - RemoteError: If it fails to call the remote server or response doesn't have the correct
+        format
+        """
+        response = self._query_v1(
+            module='block',
+            action='getblocknobytime',
+            query_args={'timestamp': ts, 'closest': closest},
+        )
+        if (blocknumber := response.get('blockNumber')) is None:
+            raise RemoteError(
+                f'Invalid block number response from blockscout for {ts}: {response}',
+            )
+        try:
+            return deserialize_timestamp(blocknumber)
+        except DeserializationError as e:
+            raise RemoteError(
+                f'Failed to deserialize timestamp from blockscout response {response}',
+            ) from e

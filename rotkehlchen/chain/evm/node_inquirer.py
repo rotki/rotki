@@ -1339,7 +1339,6 @@ class EvmNodeInquirer(ABC):
     def get_blocknumber_by_time(
             self,
             ts: Timestamp,
-            etherscan: bool = True,  # pylint: disable=unused-argument  # it is used in the ethereum inquirer method
             closest: Literal['before', 'after'] = 'before',
     ) -> int:
         """Searches for the blocknumber of a specific timestamp

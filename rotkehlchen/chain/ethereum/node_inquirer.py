@@ -19,7 +19,6 @@ from rotkehlchen.chain.ethereum.constants import (
     ETHEREUM_ETHERSCAN_NODE,
     PRUNED_NODE_CHECK_TX_HASH,
 )
-from rotkehlchen.chain.ethereum.graph import Graph
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.node_inquirer import (
     WEB3_LOGQUERY_BLOCK_RANGE,
@@ -85,7 +84,6 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             native_token=A_ETH.resolve_to_crypto_asset(),
         )
         self.etherscan: EthereumEtherscan
-        self.blocks_subgraph = Graph('https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks')
         self.ens_reverse_records = self.contracts.contract(string_to_evm_address('0x3671aE578E63FdF66ad4F3E12CC0c0d71Ac7510C'))  # noqa: E501
         self.blockscout = Blockscout(database=database, msg_aggregator=database.msg_aggregator)
 
@@ -279,35 +277,9 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             ARCHIVE_NODE_CHECK_EXPECTED_BALANCE,
         )
 
-    def _get_blocknumber_by_time_from_subgraph(self, ts: Timestamp) -> int:
-        """Queries Ethereum Blocks Subgraph for closest block at or before given timestamp"""
-        response = self.blocks_subgraph.query(
-            f"""
-            {{
-                blocks(
-                    first: 1, orderBy: timestamp, orderDirection: desc,
-                    where: {{timestamp_lte: "{ts}"}}
-                ) {{
-                    id
-                    number
-                    timestamp
-                }}
-            }}
-            """,
-        )
-        try:
-            result = int(response['blocks'][0]['number'])
-        except (IndexError, KeyError) as e:
-            raise RemoteError(
-                f'Got unexpected ethereum blocks subgraph response: {response}',
-            ) from e
-        else:
-            return result
-
     def get_blocknumber_by_time(
             self,
             ts: Timestamp,
-            etherscan: bool = True,
             closest: Literal['before', 'after'] = 'before',
     ) -> int:
         """Searches for the blocknumber of a specific timestamp
@@ -315,11 +287,10 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
         - If RemoteError raised or etherscan flag set to false
             -> queries blocks subgraph
         """
-        if etherscan:
-            with suppress(RemoteError):
-                return self.etherscan.get_blocknumber_by_time(ts, closest)
+        with suppress(RemoteError):
+            return self.etherscan.get_blocknumber_by_time(ts, closest)
 
-        return self._get_blocknumber_by_time_from_subgraph(ts)
+        return self.blockscout.get_blocknumber_by_time(ts, closest)
 
     # -- Implementation of EvmNodeInquirer optional methods --
 
