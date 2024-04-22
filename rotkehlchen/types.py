@@ -146,6 +146,8 @@ class ExternalService(SerializableEnumNameMixin):
             return ChainID.BASE
         elif self == ExternalService.GNOSIS_ETHERSCAN:
             return ChainID.GNOSIS
+        elif self == ExternalService.SCROLL_ETHERSCAN:
+            return ChainID.SCROLL
 
         return None
 
