@@ -3,6 +3,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.balancer.constants import CPT_BALANCER_V1, CPT_BALANCER_V2
+from rotkehlchen.chain.ethereum.modules.balancer.v2.constants import VAULT_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BAL, A_BPT, A_DAI, A_ETH, A_USDC, A_WETH
@@ -48,7 +49,7 @@ def test_balancer_v2_swap(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes='Swap 0.001 ETH in Balancer v2',
             counterparty=CPT_BALANCER_V2,
-            address=string_to_evm_address('0xBA12222222228d8Ba445958a75a0704d566BF2C8'),
+            address=VAULT_ADDRESS,
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=204,
@@ -59,9 +60,9 @@ def test_balancer_v2_swap(database, ethereum_inquirer, ethereum_accounts):
             asset=A_DAI,
             balance=Balance(amount=FVal('1.207092929058998715')),
             location_label=user_address,
-            notes='Receive 1.207092929058998715 DAI from Balancer v2',
+            notes='Receive 1.207092929058998715 DAI as the result of a swap via Balancer v2',
             counterparty=CPT_BALANCER_V2,
-            address=string_to_evm_address('0xBA12222222228d8Ba445958a75a0704d566BF2C8'),
+            address=VAULT_ADDRESS,
         ),
     ]
 
@@ -294,3 +295,57 @@ def test_deposit_with_excess_tokens(database, ethereum_inquirer, ethereum_accoun
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xAB12253171A0d73df64B115cD43Fe0A32Feb9dAA']])
+def test_balancer_trade(database, ethereum_inquirer, ethereum_accounts):
+    """Test a balancer trade of token to token"""
+    tx_hash = deserialize_evm_tx_hash('0xc9e8094d4435c3786bbb28b64546ecdf8a1f384057319e715eab7f28cfb01e4f')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    user_address, timestamp, gas_str = ethereum_accounts[0], TimestampMS(1643362575000), '0.01196446449981698'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_str)),
+            location_label=user_address,
+            notes=f'Burned {gas_str} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=56,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_USDC,
+            balance=Balance(amount=FVal(1000)),
+            location_label=user_address,
+            notes='Swap 1000 USDC via Balancer v2',
+            counterparty=CPT_BALANCER_V2,
+            address=VAULT_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=57,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=Asset('eip155:1/erc20:0x3E828ac5C480069D4765654Fb4b8733b910b13b2'),
+            balance=Balance(amount=FVal('1881.157063057509114271')),
+            location_label=user_address,
+            notes='Receive 1881.157063057509114271 CLNY as the result of a swap via Balancer v2',
+            counterparty=CPT_BALANCER_V2,
+            address=VAULT_ADDRESS,
+        ),
+    ]
