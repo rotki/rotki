@@ -28,7 +28,6 @@ import type { CalendarEventPayload } from '@/types/history/calendar';
 export function useMessageHandling() {
   const { setQueryStatus: setTxQueryStatus } = useTxQueryStatusStore();
   const { setQueryStatus: setEventsQueryStatus } = useEventsQueryStatusStore();
-  const { setUnDecodedTransactionsStatus } = useHistoryStore();
   const { updateDataMigrationStatus, updateDbUpgradeStatus } = useSessionAuthStore();
   const { fetchBlockchainBalances } = useBlockchainBalances();
   const notificationsStore = useNotificationsStore();
@@ -38,6 +37,7 @@ export function useMessageHandling() {
   const { t } = useI18n();
   const { consumeMessages } = useSessionApi();
   const { uploadStatus, uploadStatusAlreadyHandled } = useSync();
+  const { setUndecodedTransactionsStatus } = useHistoryStore();
   let isRunning = false;
 
   const handleSnapshotError = (data: BalanceSnapshotError): Notification => ({
@@ -53,7 +53,7 @@ export function useMessageHandling() {
   const handleUnDecodedTransaction = (
     data: EvmUnDecodedTransactionsData,
   ): void => {
-    setUnDecodedTransactionsStatus(data);
+    setUndecodedTransactionsStatus(data);
   };
 
   const handleHistoryEventsStatus = (data: HistoryEventsQueryData): void => {

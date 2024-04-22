@@ -648,12 +648,12 @@
           "title": "Fetch associated locations"
         }
       },
-      "fetch_undecoded_events": {
+      "fetch_undecoded_transactions": {
         "error": {
-          "message": "Failed to query breakdown for EVM undecoded events: {message}"
+          "message": "Failed to query breakdown for EVM undecoded transactions: {message}"
         },
         "task": {
-          "title": "Retrieving breakdown for EVM undecoded events."
+          "title": "Retrieving breakdown for EVM undecoded transactions."
         }
       }
     },
@@ -4497,22 +4497,23 @@
       "actions": {
         "redecode_missing_events": "Redecode missing events"
       },
-      "confirmation": "This action will redecode all events except the customized ones, and may take a long time depending on the amount of events to process. Are you sure you want to continue?",
+      "confirmation": "This action will redecode all the events except the customized ones, and may take a long time depending on the amount of transactions to process. Are you sure you want to continue?",
       "decoded": {
-        "true": "All events have been decoded.",
-        "false": "Some events need to be decoded."
+        "true": "All transactions have been processed.",
+        "false": "Some transactions need to be processed."
       },
-      "events_processed": "{processed} / {total} events processed",
+      "fetching": "Checking transaction decoding status",
+      "transactions_processed": "{processed} / {total} transactions processed",
       "progress": "Progress",
-      "redecode_all": "Redecode All Events",
-      "title": "Events decoding status",
-      "undecoded_events": "Undecoded events",
+      "redecode_all": "Redecode All Transactions",
+      "title": "Transaction decoding status",
+      "undecoded_transactions": "Undecoded transactions",
       "decoding": {
-        "processing": "Decoding {count} event | Decoding {count} of {total} events",
-        "pending": "{count} Undecoded event | {count} Undecoded events",
-        "done": "Decoded {count} event | Decoded {count} events",
-        "all": "Redecoding EVM events",
-        "all_done": "Done redecoding EVM events"
+        "processing": "Decoding {count} transaction | Decoding {count} of {total} transactions",
+        "pending": "{count} Undecoded transaction | {count} Undecoded transaction",
+        "done": "Decoded {count} transactions | Decoded {count} transaction",
+        "all": "Redecoding EVM transactions",
+        "all_done": "Done redecoding EVM transactions"
       }
     },
     "filter": {

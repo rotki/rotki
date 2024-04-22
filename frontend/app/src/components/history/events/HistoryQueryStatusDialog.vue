@@ -11,8 +11,7 @@ withDefaults(
     onlyChains?: Blockchain[];
     locations?: string[];
     transactions?: EvmTransactionQueryData[];
-    unDecoded: EvmUnDecodedTransactionsData[];
-    decoding: boolean;
+    decodingStatus: EvmUnDecodedTransactionsData[];
     events?: HistoryEventsQueryData[];
     getKey: (item: EvmTransactionQueryData | HistoryEventsQueryData) => string;
   }>(),
@@ -111,11 +110,10 @@ const css = useCssModule();
             <h6 class="text-body-1 font-medium mb-2">
               {{ t('transactions.events_decoding.title') }}
             </h6>
-            <template v-if="unDecoded.length > 0">
+            <template v-if="decodingStatus.length > 0">
               <EventDecodingStatusDetails
-                v-for="item in unDecoded"
+                v-for="item in decodingStatus"
                 :key="item.evmChain"
-                :decoding="decoding"
                 class="py-1"
                 :item="item"
               />

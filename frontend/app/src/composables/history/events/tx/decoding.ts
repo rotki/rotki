@@ -7,6 +7,7 @@ import {
   TransactionChainType,
   type TransactionHashAndEvmChainPayload,
 } from '@/types/history/events';
+import { EvmUndecodedTransactionResponse } from '@/types/websocket-messages';
 import type { TaskMeta } from '@/types/task';
 import type { Writeable } from '@/types';
 
@@ -15,28 +16,31 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
   const { notify } = useNotificationsStore();
 
   const {
-    reDecodeMissingEvents,
-    getUnDecodedEventsBreakdown,
+    decodeTransactions,
+    getUndecodedTransactionsBreakdown,
     decodeHistoryEvents,
   } = useHistoryEventsApi();
 
   const { awaitTask, isTaskRunning } = useTaskStore();
+  const {
+    updateUndecodedTransactionsStatus,
+    getUndecodedTransactionStatus,
+    resetUndecodedTransactionsStatus,
+  } = useHistoryStore();
 
   const { txEvmChains, evmLikeChainsData } = useSupportedChains();
 
-  const { resetUnDecodedTransactionsStatus } = useHistoryStore();
-
   const { resetStatus } = useStatusUpdater(Section.HISTORY_EVENT);
 
-  const unDecodedEventsBreakdown: Ref<Record<string, number>> = ref({});
-
-  const fetchUnDecodedEventsBreakdown = async (type: TransactionChainType) => {
+  const fetchUndecodedTransactionsBreakdown = async (type: TransactionChainType): Promise<void> => {
     const isEvm = type === TransactionChainType.EVM;
-    const taskType = TaskType.FETCH_UNDECODED_EVENTS;
-    if (get(isTaskRunning(taskType, { isEvm })))
+    const taskType = TaskType.FETCH_UNDECODED_TXS;
+    if (get(isTaskRunning(taskType, { isEvm }))) {
+      logger.debug(`was already fetching undecoded transactions for ${type}`);
       return;
+    }
 
-    const title = t('actions.history.fetch_undecoded_events.task.title');
+    const title = t('actions.history.fetch_undecoded_transactions.task.title');
 
     const taskMeta = {
       title,
@@ -44,33 +48,44 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     };
 
     try {
-      const { taskId } = await getUnDecodedEventsBreakdown(type);
-      const { result } = await awaitTask<Record<string, number>, TaskMeta>(
+      const { taskId } = await getUndecodedTransactionsBreakdown(type);
+      const { result } = await awaitTask<EvmUndecodedTransactionResponse, TaskMeta>(
         taskId,
         taskType,
         taskMeta,
       );
-      set(unDecodedEventsBreakdown, {
-        ...get(unDecodedEventsBreakdown),
-        ...snakeCaseTransformer(result),
-      });
+
+      const breakdown = EvmUndecodedTransactionResponse.parse(snakeCaseTransformer(result));
+
+      updateUndecodedTransactionsStatus(
+        Object.fromEntries(Object.entries(breakdown).map(([chain, entry]) => [chain, {
+          evmChain: chain,
+          total: entry.total,
+          processed: entry.total - entry.undecoded,
+        }])),
+      );
     }
     catch (error: any) {
-      if (!isTaskCancelled(error)) {
-        const description = t(
-          'actions.history.fetch_undecoded_events.error.message',
-          {
-            message: error.message,
-          },
-        );
+      if (isTaskCancelled(error))
+        return;
 
-        notify({
-          title,
-          message: description,
-          display: true,
-        });
-      }
+      const description = t(
+        'actions.history.fetch_undecoded_transactions.error.message',
+        {
+          message: error.message,
+        },
+      );
+      notify({
+        title,
+        message: description,
+        display: true,
+      });
     }
+  };
+
+  const fetchUndecodedTransactionsStatus = async (): Promise<void> => {
+    await fetchUndecodedTransactionsBreakdown(TransactionChainType.EVM);
+    await fetchUndecodedTransactionsBreakdown(TransactionChainType.EVMLIKE);
   };
 
   const clearDependedSection = () => {
@@ -79,18 +94,14 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     resetStatus({ section: Section.DEFI_LIQUITY_STATISTICS });
   };
 
-  const reDecodeMissingEventsTask = async (chain: string, type: TransactionChainType = TransactionChainType.EVM) => {
-    await fetchUnDecodedEventsBreakdown(type);
-    const isEvm = type === TransactionChainType.EVM;
-    const taskType = TaskType.EVENTS_ENCODING;
+  const decodeTransactionsTask = async (chain: string, type: TransactionChainType = TransactionChainType.EVM) => {
+    const taskType = TaskType.TRANSACTIONS_DECODING;
 
-    if (get(isTaskRunning(taskType, { chain, isEvm })))
+    if (get(isTaskRunning(taskType, { chain })))
       return;
 
     try {
-      const { taskId } = await reDecodeMissingEvents([
-        chain,
-      ], type);
+      const { taskId } = await decodeTransactions([chain], type);
 
       const taskMeta = {
         title: t('actions.transactions_redecode_missing.task.title'),
@@ -100,7 +111,6 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
         ),
         chain,
         all: false,
-        isEvm,
       };
 
       await awaitTask(taskId, taskType, taskMeta, true);
@@ -126,36 +136,38 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
 
   const { getChain, isEvmLikeChains } = useSupportedChains();
 
-  const checkMissingEventsAndReDecodeHandler = async (type: TransactionChainType) => {
+  const checkMissingEventsAndRedecodeHandler = async (type: TransactionChainType) => {
     const isEvmType = type === TransactionChainType.EVM;
-    const chains = Object.entries(get(unDecodedEventsBreakdown))
-      .filter(([evmChain, number]) => {
+    const chains = getUndecodedTransactionStatus()
+      .filter(({ total, processed, evmChain }) => {
         const chain = getChain(evmChain);
         const isEvmLike = isEvmLikeChains(chain);
-        return number > 0 && (isEvmType === !isEvmLike);
+        return processed < total && (isEvmType === !isEvmLike);
       })
-      .map(([chain]) => chain);
+      .map(({ evmChain }) => evmChain);
     await awaitParallelExecution(
       chains,
       item => item,
-      item => reDecodeMissingEventsTask(item, type),
+      item => decodeTransactionsTask(item, type),
+      2,
     );
   };
 
-  const checkMissingEventsAndReDecode = () => {
-    resetUnDecodedTransactionsStatus();
-    startPromise(Promise.allSettled([
-      checkMissingEventsAndReDecodeHandler(TransactionChainType.EVM),
-      checkMissingEventsAndReDecodeHandler(TransactionChainType.EVMLIKE),
-    ]));
+  const checkMissingEventsAndRedecode = async () => {
+    resetUndecodedTransactionsStatus();
+    await fetchUndecodedTransactionsStatus();
+    await Promise.allSettled([
+      checkMissingEventsAndRedecodeHandler(TransactionChainType.EVM),
+      checkMissingEventsAndRedecodeHandler(TransactionChainType.EVMLIKE),
+    ]);
   };
 
   const fetchTransactionEvents = async (
-    transactions: EvmChainAndTxHash[] | { evmChain: string }[] | null,
     ignoreCache: boolean,
     type: TransactionChainType = TransactionChainType.EVM,
+    transactions?: EvmChainAndTxHash[] | { evmChain: string }[],
   ): Promise<void> => {
-    const isFetchAll = transactions === null;
+    const isFetchAll = !transactions;
     let payloads: TransactionHashAndEvmChainPayload[] = [];
     const isEvm = type === TransactionChainType.EVM;
 
@@ -196,9 +208,9 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       );
     }
 
-    resetUnDecodedTransactionsStatus();
+    resetUndecodedTransactionsStatus();
     try {
-      const taskType = TaskType.EVENTS_ENCODING;
+      const taskType = TaskType.TRANSACTIONS_DECODING;
       const { taskId } = await decodeHistoryEvents({
         data: payloads,
         ignoreCache,
@@ -208,7 +220,6 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
         title: t('actions.transactions_redecode.task.title'),
         description: t('actions.transactions_redecode.task.description'),
         all: true,
-        isEvm,
       };
 
       const { result } = await awaitTask<boolean, TaskMeta>(
@@ -236,10 +247,10 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
   };
 
   return {
-    reDecodeMissingEventsTask,
-    checkMissingEventsAndReDecode,
-    unDecodedEventsBreakdown,
-    fetchUnDecodedEventsBreakdown,
+    decodeTransactionsTask,
+    checkMissingEventsAndRedecode,
+    fetchUndecodedTransactionsBreakdown,
+    fetchUndecodedTransactionsStatus,
     fetchTransactionEvents,
   };
 });

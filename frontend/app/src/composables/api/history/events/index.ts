@@ -87,7 +87,7 @@ export function useHistoryEventsApi() {
     return handleResponse(response);
   };
 
-  const getUnDecodedEventsBreakdown = async (type: TransactionChainType = TransactionChainType.EVM): Promise<PendingTask> => {
+  const getUndecodedTransactionsBreakdown = async (type: TransactionChainType = TransactionChainType.EVM): Promise<PendingTask> => {
     const response = await api.instance.get<ActionResult<PendingTask>>(
       `/blockchains/${type}/transactions/decode`,
       {
@@ -101,7 +101,7 @@ export function useHistoryEventsApi() {
     return handleResponse(response);
   };
 
-  const reDecodeMissingEvents = async (
+  const decodeTransactions = async (
     chains: string[],
     type: TransactionChainType = TransactionChainType.EVM,
   ): Promise<PendingTask> => {
@@ -184,16 +184,15 @@ export function useHistoryEventsApi() {
     return handleResponse(response);
   };
 
-  const getTransactionTypeMappings
-    = async (): Promise<HistoryEventTypeData> => {
-      const response = await api.instance.get<
+  const getTransactionTypeMappings = async (): Promise<HistoryEventTypeData> => {
+    const response = await api.instance.get<
         ActionResult<HistoryEventTypeData>
       >('/history/events/type_mappings', {
         validateStatus: validStatus,
       });
 
-      return HistoryEventTypeData.parse(handleResponse(response));
-    };
+    return HistoryEventTypeData.parse(handleResponse(response));
+  };
 
   const getHistoryEventCounterpartiesData = async (): Promise<
     ActionDataEntry[]
@@ -208,16 +207,15 @@ export function useHistoryEventsApi() {
     return handleResponse(response);
   };
 
-  const getHistoryEventProductsData
-    = async (): Promise<HistoryEventProductData> => {
-      const response = await api.instance.get<
+  const getHistoryEventProductsData = async (): Promise<HistoryEventProductData> => {
+    const response = await api.instance.get<
         ActionResult<HistoryEventProductData>
       >('/history/events/products', {
         validateStatus: validStatus,
       });
 
-      return handleResponse(response);
-    };
+    return handleResponse(response);
+  };
 
   const fetchHistoryEvents = async (
     payload: HistoryEventRequestPayload,
@@ -295,8 +293,8 @@ export function useHistoryEventsApi() {
     fetchTransactionsTask,
     deleteEvmTransactions,
     decodeHistoryEvents,
-    getUnDecodedEventsBreakdown,
-    reDecodeMissingEvents,
+    getUndecodedTransactionsBreakdown,
+    decodeTransactions,
     addHistoryEvent,
     editHistoryEvent,
     deleteHistoryEvent,
