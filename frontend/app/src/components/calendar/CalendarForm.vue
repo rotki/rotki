@@ -21,6 +21,7 @@ const props = withDefaults(
 const { editableItem, selectedDate } = toRefs(props);
 
 const { t } = useI18n();
+const { autoDeleteCalendarEntries } = storeToRefs(useGeneralSettingsStore());
 
 const name: Ref<string> = ref('');
 const description: Ref<string> = ref('');
@@ -28,6 +29,7 @@ const counterparty: Ref<string> = ref('');
 const datetime: Ref<string> = ref('');
 const accounts = ref<BlockchainAccount<AddressData>[]>([]);
 const color: Ref<string> = ref('');
+const autoDelete = ref(get(autoDeleteCalendarEntries));
 
 const errorMessages = ref<Record<string, string[]>>({});
 const reminderRef = ref();
@@ -45,6 +47,7 @@ const rules = {
   description: { externalServerValidation },
   counterparty: { externalServerValidation },
   accounts: { externalServerValidation },
+  autoDelete: { externalServerValidation },
 };
 
 const { setValidation, setSubmitFunc } = useCalendarEventForm();
@@ -57,6 +60,7 @@ const v$ = setValidation(
     description,
     counterparty,
     accounts,
+    autoDelete,
   },
   {
     $autoDirty: true,
@@ -78,6 +82,7 @@ watchImmediate(editableItem, (editableItem) => {
     set(counterparty, editableItem.counterparty);
     set(datetime, convertFromTimestamp(editableItem.timestamp));
     set(color, editableItem.color);
+    set(autoDelete, editableItem.autoDelete);
 
     if (editableItem.address && editableItem.blockchain) {
       const accountFound = Object.values(get(accountsPerChain))
@@ -101,6 +106,7 @@ async function save() {
     description: get(description),
     timestamp: convertToTimestamp(get(datetime)),
     color: get(color),
+    autoDelete: get(autoDelete),
   };
 
   if (accountVal) {
@@ -221,6 +227,13 @@ setSubmitFunc(save);
       :hint="t('common.optional')"
       persistent-hint
       @blur="v$.counterparty.$touch()"
+    />
+
+    <RuiCheckbox
+      v-model="autoDelete"
+      :label="t('calendar.dialog.settings.auto_delete_entry')"
+      color="primary"
+      hide-details
     />
   </div>
 </template>

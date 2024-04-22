@@ -1497,6 +1497,13 @@
       "edit": {
         "title": "Edit the event"
       },
+      "settings": {
+        "title": "Calendar Settings",
+        "tooltip": "Open Calendar Settings",
+        "auto_delete": "Auto delete past events",
+        "auto_delete_entry": "Delete event once it has passed",
+        "auto_create_reminders": "Create reminders for automatic events"
+      },
       "delete": {
         "message": "Are you sure you want to delete the event?"
       }

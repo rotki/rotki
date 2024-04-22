@@ -83,6 +83,10 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
 
   const oraclePenaltyDuration: ComputedRef<number> = computed(() => settings.oraclePenaltyDuration);
 
+  const autoDeleteCalendarEntries: ComputedRef<boolean> = computed(() => settings.autoDeleteCalendarEntries);
+
+  const autoCreateCalendarReminders: ComputedRef<boolean> = computed(() => settings.autoCreateCalendarReminders);
+
   const currencySymbol: ComputedRef<SupportedCurrency> = computed(() => {
     const currency = get(mainCurrency);
     return currency.tickerSymbol;
@@ -121,6 +125,8 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     readTimeout,
     oraclePenaltyThresholdCount,
     oraclePenaltyDuration,
+    autoDeleteCalendarEntries,
+    autoCreateCalendarReminders,
     // return settings on development for state persistence
     ...(checkIfDevelopment() ? { settings } : {}),
     update,

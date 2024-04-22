@@ -57,6 +57,8 @@ const GeneralSettings = z.object({
   readTimeout: z.number().min(1),
   oraclePenaltyThresholdCount: z.number().min(1),
   oraclePenaltyDuration: z.number().min(1),
+  autoDeleteCalendarEntries: z.boolean(),
+  autoCreateCalendarReminders: z.boolean(),
 });
 
 export type GeneralSettings = z.infer<typeof GeneralSettings>;
@@ -160,6 +162,8 @@ function getGeneralSettings(settings: UserSettings): GeneralSettings {
     readTimeout: settings.readTimeout,
     oraclePenaltyThresholdCount: settings.oraclePenaltyThresholdCount,
     oraclePenaltyDuration: settings.oraclePenaltyDuration,
+    autoDeleteCalendarEntries: settings.autoDeleteCalendarEntries,
+    autoCreateCalendarReminders: settings.autoCreateCalendarReminders,
   };
 }
 
