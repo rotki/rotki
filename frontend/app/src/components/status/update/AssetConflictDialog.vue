@@ -117,6 +117,10 @@ function resolve(resolution: ConflictResolution) {
 function cancel() {
   emit('cancel');
 }
+
+onMounted(() => {
+  setResolution('remote');
+});
 </script>
 
 <template>
@@ -132,9 +136,11 @@ function cancel() {
   >
     <template #default="{ wrapper }">
       <div
-        class="flex justify-end items-center gap-8 border border-default rounded p-4"
+        class="flex justify-between items-center gap-8 border border-default rounded p-4"
       >
-        {{ t('conflict_dialog.all_buttons_description') }}
+        <span class="text-body-1">
+          {{ t('conflict_dialog.all_buttons_description') }}
+        </span>
         <RuiButtonGroup
           color="primary"
           variant="outlined"
@@ -157,7 +163,7 @@ function cancel() {
         </RuiButtonGroup>
       </div>
 
-      <div class="text-caption pt-4 pb-1">
+      <div class="text-subtitle-1 my-6">
         <i18n
           path="conflict_dialog.hint"
           tag="span"
