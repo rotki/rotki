@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useBreakpoint } from '@rotki/ui-library-compat';
 import { Priority, Severity } from '@rotki/common/lib/messages';
 import { Routes } from '@/router/routes';
 
@@ -46,7 +45,6 @@ function showConfirmation() {
   );
 }
 
-const { isMdAndDown } = useBreakpoint();
 const { hasRunningTasks } = storeToRefs(useTaskStore());
 
 enum TabCategory {
@@ -81,24 +79,33 @@ const selectedNotifications = computed(() => {
   return all;
 });
 
-const itemHeight = 170;
-const margin = 6;
-
-const { list, containerProps, wrapperProps } = useVirtualList(selectedNotifications, {
-  itemHeight,
-});
-
-const notificationStyle = {
-  height: `${itemHeight - margin}px`,
-  marginTop: `${margin}px`,
-};
-
 const [DefineNoMessages, ReuseNoMessages] = createReusableTemplate();
+
+const contentWrapper = ref();
+const { y } = useScroll(contentWrapper);
+
+const initialAppear: Ref<boolean> = ref(false);
+
+watch([y, selectedTab, selectedNotifications], ([currentY, currSelectedTab, currNotifications], [_, prevSelectedTab, prevNotifications]) => {
+  if (currSelectedTab !== prevSelectedTab || (prevNotifications.length === 0 && currNotifications.length > 0)) {
+    set(initialAppear, false);
+    nextTick(() => {
+      set(initialAppear, true);
+    });
+  }
+  else {
+    if (currentY > 0)
+      set(initialAppear, false);
+    else
+      set(initialAppear, true);
+  }
+});
 </script>
 
 <template>
   <VNavigationDrawer
-    :class="{ [css.mobile]: isMdAndDown, [css.sidebar]: true }"
+    :class="css.sidebar"
+    class="border-default"
     width="400px"
     absolute
     clipped
@@ -163,20 +170,20 @@ const [DefineNoMessages, ReuseNoMessages] = createReusableTemplate();
         </div>
         <div
           v-if="selectedNotifications.length > 0"
+          ref="contentWrapper"
           :class="css.content"
-          class="!overflow-y-scroll pt-1"
-          v-bind="containerProps"
-          @scroll="containerProps.onScroll"
         >
-          <div v-bind="wrapperProps">
+          <LazyLoader
+            v-for="item in selectedNotifications"
+            :key="item.id"
+            :initial-appear="initialAppear"
+            min-height="120px"
+          >
             <Notification
-              v-for="item in list"
-              :key="item.data.id"
-              :notification="item.data"
-              :style="notificationStyle"
+              :notification="item"
               @dismiss="remove($event)"
             />
-          </div>
+          </LazyLoader>
         </div>
         <ReuseNoMessages v-else />
       </div>
@@ -210,13 +217,7 @@ const [DefineNoMessages, ReuseNoMessages] = createReusableTemplate();
 
 <style module lang="scss">
 .sidebar {
-  @apply pt-0 top-[4rem] #{!important};
-  box-shadow: 0 2px 12px rgba(74, 91, 120, 0.1);
-  border-top: var(--v-rotki-light-grey-darken1) solid thin;
-}
-
-.mobile {
-  @apply pt-0 top-[3.5rem] #{!important};
+  @apply border-t pt-0 top-[3.5rem] md:top-[4rem] #{!important};
 }
 
 .no-messages {
@@ -229,6 +230,7 @@ const [DefineNoMessages, ReuseNoMessages] = createReusableTemplate();
 }
 
 .content {
-  @apply ps-3.5 flex-1;
+  @apply ps-3.5 pe-2 mt-2 grid grid-cols-1 gap-2;
+  @apply overflow-y-auto #{!important};
 }
 </style>

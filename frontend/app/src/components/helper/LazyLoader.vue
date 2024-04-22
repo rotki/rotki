@@ -1,22 +1,25 @@
 <script setup lang="ts">
-withDefaults(defineProps<{
+const props = withDefaults(defineProps<{
   minHeight?: string;
+  initialAppear?: boolean;
 }>(), {
   minHeight: '16px',
+  initialAppear: false,
 });
 
+const { minHeight, initialAppear } = toRefs(props);
+
 const wrapper = ref();
-const appear: Ref<boolean> = ref(false);
-const height: Ref<string> = ref('auto');
+const appear: Ref<boolean> = ref(get(initialAppear));
+const height: Ref<string> = ref('max-content');
 
 useIntersectionObserver(
   wrapper,
-  ([{ rootBounds, boundingClientRect }]) => {
-    const isInVerticalViewport
-      = rootBounds && ((boundingClientRect.top < rootBounds.bottom && boundingClientRect.bottom > rootBounds.top)
-      || (boundingClientRect.bottom > rootBounds.top && boundingClientRect.top < rootBounds.bottom));
-
-    set(appear, isInVerticalViewport);
+  ([{ intersectionRect, isIntersecting }]) => {
+    set(appear, intersectionRect.height > 0 || isIntersecting);
+  },
+  {
+    threshold: 0,
   },
 );
 
@@ -24,7 +27,7 @@ const { height: originalHeight } = useElementBounding(wrapper);
 
 watch(appear, (appear) => {
   if (appear)
-    set(height, 'auto');
+    set(height, 'max-content');
   else
     // To retain then height when the element disappear, so it doesn't break the scrolling position
     set(height, `${get(originalHeight)}px`);
@@ -35,6 +38,13 @@ function show() {
 }
 
 const css = useCssModule();
+
+const minHeightUsed = computed(() => {
+  const heightVal = get(height);
+  if (heightVal !== 'max-content')
+    return 'auto';
+  return get(minHeight);
+});
 </script>
 
 <template>
@@ -51,7 +61,7 @@ const css = useCssModule();
 .wrapper {
   @apply opacity-0 transition-all;
   height: v-bind(height);
-  min-height: v-bind(minHeight);
+  min-height: v-bind(minHeightUsed);
 
   &.appear {
     @apply opacity-100;

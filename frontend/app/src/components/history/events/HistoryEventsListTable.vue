@@ -80,7 +80,7 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
       <LazyLoader
         v-for="(item, index) in events"
         :key="index"
-        min-height="3.5rem"
+        min-height="5rem"
         class="grid md:grid-cols-4 gap-x-2 gap-y-4 lg:grid-cols-[repeat(20,minmax(0,1fr))] py-3 items-center"
         :class="{
           'border-b border-default': index < events.length - 1,

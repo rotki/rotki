@@ -97,6 +97,35 @@ function doAction(id: number, action: NotificationAction) {
   if (!action.persist)
     dismiss(id);
 }
+
+const message = ref();
+const MAX_HEIGHT = 64;
+
+const { height } = useElementSize(message);
+
+const showExpandArrow = computed(() => get(height) > MAX_HEIGHT);
+const expanded: Ref<boolean> = ref(false);
+
+const messageWrapperStyle = computed(() => {
+  if (!get(showExpandArrow))
+    return {};
+
+  const usedHeight = get(expanded) ? get(height) + 24 : MAX_HEIGHT;
+  return {
+    height: `${usedHeight}px`,
+  };
+});
+
+function messageClicked() {
+  if (!get(showExpandArrow) && get(expanded))
+    return;
+
+  set(expanded, true);
+}
+
+function buttonClicked() {
+  set(expanded, !get(expanded));
+}
 </script>
 
 <template>
@@ -105,7 +134,6 @@ function doAction(id: number, action: NotificationAction) {
       css.notification,
       {
         [css.action]: !!notification.action,
-        [css['fixed-height']]: !popup,
         [css[`bg_${color}`]]: !!color,
         ['!rounded-none']: popup,
       },
@@ -159,18 +187,47 @@ function doAction(id: number, action: NotificationAction) {
         </RuiTooltip>
       </div>
       <div
-        class="mt-1 px-2 break-words text-rui-text-secondary text-xs leading-2"
-        :class="[css.message, { [css.inline]: !popup }]"
+        class="mt-1 px-2 break-words text-rui-text-secondary text-body-2 leading-2 group"
+        :class="[
+          css.message,
+          {
+            [css.inline]: !popup,
+            'cursor-pointer': showExpandArrow && !expanded,
+            'pb-6': showExpandArrow && expanded,
+          },
+        ]"
+        :style="messageWrapperStyle"
+        @click="messageClicked()"
       >
-        <MissingKeyNotification
-          v-if="notification.i18nParam"
-          :params="notification.i18nParam"
-        />
+        <div ref="message">
+          <MissingKeyNotification
+            v-if="notification.i18nParam"
+            :params="notification.i18nParam"
+          />
+          <div
+            v-else
+            :title="notification.message"
+          >
+            {{ notification.message }}
+          </div>
+        </div>
         <div
-          v-else
-          :title="notification.message"
+          v-if="showExpandArrow"
+          class="bg-gradient-to-b from-transparent to-white dark:to-[#363636] absolute bottom-0 w-full"
+          :class="{ 'dark:to-[#333]': popup }"
         >
-          {{ notification.message }}
+          <RuiButton
+            class="w-full bg-gradient-to-b from-transparent !p-0.5"
+            :class="css.gradient"
+            @click.stop="buttonClicked()"
+          >
+            <RuiIcon
+              :name="expanded ? 'arrow-up-s-line' : 'arrow-down-s-line'"
+              :class="{ 'invisible opacity-0 group-hover:translate-y-1': !expanded }"
+              class="transition-all group-hover:visible group-hover:opacity-100 group-hover:-translate-y-1 text-rui-text-secondary"
+              size="20"
+            />
+          </RuiButton>
         </div>
       </div>
       <slot />
@@ -223,42 +280,28 @@ function doAction(id: number, action: NotificationAction) {
 .notification {
   max-width: 400px;
 
-  &.fixed-height {
-    height: 164px;
-  }
-
   &.action {
     background-color: rgba(237, 108, 2, 0.12);
   }
 
-  @each $color in (warning, error, info) {
+  @each $color in (warning, error, info, secondary) {
     &.bg_#{$color} {
       @apply bg-rui-#{$color}/[.1] #{!important};
+
+      .gradient {
+        @apply to-rui-#{$color}/[.1] #{!important};
+        background-color: transparent !important;
+      }
     }
   }
 }
 
 .body {
+  @apply h-full #{!important};
   max-width: 400px;
-  height: 100% !important;
-
-  &::after {
-    display: none;
-  }
 }
 
 .message {
-  height: 64px;
-  overflow-y: auto;
-  white-space: pre-line;
-
-  .inline {
-    min-height: 64px;
-  }
-}
-
-.copy-area {
-  position: absolute;
-  left: -999em;
+  @apply overflow-hidden whitespace-pre-line relative transition-all;
 }
 </style>

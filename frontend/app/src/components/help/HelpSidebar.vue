@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useBreakpoint } from '@rotki/ui-library-compat';
 import { IndexedDb } from '@/utils/indexed-db';
 import { TWITTER_URL, externalLinks } from '@/data/external-links';
 
@@ -81,15 +80,15 @@ async function downloadBrowserLog() {
   });
 }
 
-const { isMdAndDown } = useBreakpoint();
+const css = useCssModule();
 </script>
 
 <template>
   <VNavigationDrawer
     v-model="display"
+    :class="css.sidebar"
+    class="border-default"
     width="400px"
-    class="help-sidebar"
-    :class="isMdAndDown ? 'help-sidebar--mobile' : null"
     absolute
     clipped
     right
@@ -173,21 +172,8 @@ const { isMdAndDown } = useBreakpoint();
   </VNavigationDrawer>
 </template>
 
-<style scoped lang="scss">
-.help-sidebar {
-  top: 64px !important;
-  box-shadow: 0 2px 12px rgba(74, 91, 120, 0.1);
-  padding-top: 0 !important;
-  border-top: var(--v-rotki-light-grey-darken1) solid thin;
-
-  &--mobile {
-    top: 56px !important;
-  }
-
-  &.v-navigation-drawer {
-    &--is-mobile {
-      padding-top: 0 !important;
-    }
-  }
+<style module lang="scss">
+.sidebar {
+  @apply border-t pt-0 top-[3.5rem] md:top-[4rem] #{!important};
 }
 </style>
