@@ -902,8 +902,8 @@
       "source": "来源"
     },
     "title": "空投",
-    "available_info": "这些地址可以进行空投，但我们还无法分析其是否已被认领。",
-    "available_tooltip": "地址符合空投条件，但我们还无法分析它是否已被认领。"
+    "unknown_info": "这些地址可以进行空投，但我们还无法分析其是否已被认领。",
+    "unknown_tooltip": "地址符合空投条件，但我们还无法分析它是否已被认领。"
   },
   "alias_names": {
     "error": {
@@ -1464,7 +1464,9 @@
     "unclaimed": "无人认领",
     "validator_index": "验证器索引",
     "value_in_symbol": "{symbol} 值",
-    "visit_website": "要获得高级订阅，请访问我们的 {0}."
+    "visit_website": "要获得高级订阅，请访问我们的 {0}.",
+    "unknown": "未知",
+    "all": "全部"
   },
   "compound_lending": {
     "header": "复合贷款 ({asset})",

@@ -898,8 +898,8 @@
       "source": "Source"
     },
     "title": "Airdrops",
-    "available_info": "Για αυτές τις διευθύνσεις είναι διαθέσιμες εναέριες ρίψεις, αλλά δεν μπορούμε ακόμη να αναλύσουμε αν έχουν διεκδικηθεί ή όχι.",
-    "available_tooltip": "Η διεύθυνση είναι επιλέξιμη για αυτό το airdrop, αλλά δεν μπορούμε ακόμα να αναλύσουμε αν έχει διεκδικηθεί ή όχι."
+    "unknown_info": "Για αυτές τις διευθύνσεις είναι διαθέσιμες εναέριες ρίψεις, αλλά δεν μπορούμε ακόμη να αναλύσουμε αν έχουν διεκδικηθεί ή όχι.",
+    "unknown_tooltip": "Η διεύθυνση είναι επιλέξιμη για αυτό το airdrop, αλλά δεν μπορούμε ακόμα να αναλύσουμε αν έχει διεκδικηθεί ή όχι."
   },
   "alias_names": {
     "error": {
@@ -1437,7 +1437,9 @@
     "unclaimed": "αδιεκδίκητος",
     "validator_index": "Validator Index",
     "value_in_symbol": "{symbol} Value",
-    "visit_website": "To get a premium subscription please visit our {0}."
+    "visit_website": "To get a premium subscription please visit our {0}.",
+    "unknown": "Άγνωστος",
+    "all": "Όλα"
   },
   "compound_lending": {
     "header": "Compound Loan ({asset})",

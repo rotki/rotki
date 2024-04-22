@@ -1026,8 +1026,8 @@
       "source": "Source"
     },
     "title": "Airdrops",
-    "available_info": "Ces adresses font l'objet d'un relevé aérien, mais nous ne pouvons pas encore déterminer si elles ont été revendiquées ou non.",
-    "available_tooltip": "L'adresse est éligible pour ce largage, mais nous ne pouvons pas encore analyser si elle a été réclamée ou non."
+    "unknown_info": "Ces adresses font l'objet d'un relevé aérien, mais nous ne pouvons pas encore déterminer si elles ont été revendiquées ou non.",
+    "unknown_tooltip": "L'adresse est éligible pour ce largage, mais nous ne pouvons pas encore analyser si elle a été réclamée ou non."
   },
   "alias_names": {
     "error": {
@@ -1618,7 +1618,9 @@
     "validator_index": "Index de validateur",
     "value_in_symbol": "{symbol} Valeur",
     "visit_website": "Pour obtenir un abonnement premium, veuillez visiter notre {0}.",
-    "website": "site web"
+    "website": "site web",
+    "unknown": "Inconnu",
+    "all": "Tous"
   },
   "compound_lending": {
     "header": "Prêt Compound ({asset})",

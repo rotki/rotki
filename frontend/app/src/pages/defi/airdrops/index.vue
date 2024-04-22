@@ -13,19 +13,19 @@ import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts
 import type { DataTableColumn } from '@rotki/ui-library-compat';
 import type { TaskMeta } from '@/types/task';
 
-type Statuses = '' | 'available' | 'unclaimed' | 'claimed';
+type Statuses = '' | 'unknown' | 'unclaimed' | 'claimed';
 const ETH = Blockchain.ETH;
 const { t } = useI18n();
 const { awaitTask } = useTaskStore();
 const { notify } = useNotificationsStore();
 const { fetchAirdrops: fetchAirdropsCaller } = useDefiApi();
-const hideAvailableAlert = useLocalStorage('rotki.airdrops.hide_available_alert', false);
+const hideUnknownAlert = useLocalStorage('rotki.airdrops.hide_unknown_alert', false);
 
 const expanded: Ref<Airdrop[]> = ref([]);
 const selectedAccounts: Ref<BlockchainAccount<AddressData>[]> = ref([]);
 const statusFilters: Ref<{ text: string; value: Statuses }[]> = ref([
   { text: t('common.all'), value: '' },
-  { text: t('common.available'), value: 'available' },
+  { text: t('common.unknown'), value: 'unknown' },
   { text: t('common.unclaimed'), value: 'unclaimed' },
   { text: t('common.claimed'), value: 'claimed' },
 ]);
@@ -48,7 +48,7 @@ const entries = computed(() => {
     .filter((airdrop) => {
       const currentStatus = get(status);
       switch (currentStatus) {
-        case 'available':
+        case 'unknown':
           return airdrop.missingDecoder;
         case 'unclaimed':
           return !airdrop.claimed && !airdrop.missingDecoder;
@@ -218,13 +218,13 @@ onMounted(async () => {
       </div>
 
       <RuiAlert
-        v-if="!hideAvailableAlert && status === 'available'"
+        v-if="!hideUnknownAlert && status === 'unknown'"
         type="info"
         class="mb-4"
         closeable
-        @close="hideAvailableAlert = true"
+        @close="hideUnknownAlert = true"
       >
-        {{ t('airdrops.available_info') }}
+        {{ t('airdrops.unknown_info') }}
       </RuiAlert>
 
       <RuiDataTable
@@ -259,11 +259,11 @@ onMounted(async () => {
                 color="info"
                 size="sm"
               >
-                {{ t('common.available') }}
+                {{ t('common.unknown') }}
               </RuiChip>
             </template>
 
-            {{ t('airdrops.available_tooltip') }}
+            {{ t('airdrops.unknown_tooltip') }}
           </RuiTooltip>
           <RuiChip
             v-else

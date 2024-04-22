@@ -1034,8 +1034,8 @@
       "source": "Source"
     },
     "title": "Airdrops",
-    "available_info": "Airdrops are available for these addresses, but we can't yet analyze if it has been claimed or not.",
-    "available_tooltip": "Address is eligible for this airdrop, but we can't yet analyze if it has been claimed or not."
+    "unknown_info": "Airdrops are available for these addresses, but we can't yet analyze if it has been claimed or not.",
+    "unknown_tooltip": "Address is eligible for this airdrop, but we can't yet analyze if it has been claimed or not."
   },
   "alias_names": {
     "error": {
@@ -1716,7 +1716,7 @@
     "visit_website": "To get a premium subscription please visit our {0}.",
     "website": "website",
     "xpub": "XPUB",
-    "available": "Available",
+    "unknown": "Unknown",
     "all": "All"
   },
   "compound_lending": {
