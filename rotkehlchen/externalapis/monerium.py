@@ -170,7 +170,7 @@ class Monerium:
                 )
 
             if len(events) != 1:
-                log.error(f'Could not find monerium event corresponding to {tx_hash.hex()} in the DB. Skipping.')  # pylint: disable=no-member # noqa: E501
+                log.error(f'Could not find monerium event corresponding to {location!s} {tx_hash.hex()} in the DB. Skipping.')  # pylint: disable=no-member # noqa: E501
                 continue
 
             if not events[0].notes.startswith(('Burn', 'Mint')):  # type: ignore  # should have notes

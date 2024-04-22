@@ -361,7 +361,7 @@ class CurveDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin):
             if user_or_contract_address in CURVE_DEPOSIT_CONTRACTS and len(deposit_events) > 0:
                 return DecodingOutput(matched_counterparty=CPT_CURVE)
 
-            log.error(
+            log.warning(  # can happen as part of complicated swaps
                 f'Expected to see a receive pool token event and deposit '
                 f'events for a curve pool, but have not found them. '
                 f'Tx_hash: {transaction.tx_hash.hex()} '
@@ -656,7 +656,7 @@ class CurveDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin):
             )
             return
 
-        log.error(
+        log.warning(  # can happen as part of a complicated swap
             f'Expected to see a receive pool token event and deposit events for a curve pool, '
             f'but have not found them. Tx_hash: {transaction.tx_hash.hex()}',
         )
@@ -706,7 +706,7 @@ class CurveDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin):
             )
             return
 
-        log.error(
+        log.warning(  # can happen if it's part of a complicated swap
             f'Expected to see a return pool token event and withdrawal events '
             f'for a curve pool, but have not found them. '
             f'Tx_hash: {transaction.tx_hash.hex()}',
