@@ -651,3 +651,13 @@ class DBEvmTx:
             nonce=result[11],
             db_id=result[12],
         )
+
+    def count_evm_transactions(self, chain_id: SUPPORTED_CHAIN_IDS) -> int:
+        """Counts the number of unique evm transactions in the requested chain"""
+        query, bindings = EvmTransactionsFilterQuery.make(
+            chain_id=chain_id,
+        ).prepare(with_pagination=False)
+        query = 'SELECT COUNT(DISTINCT evm_transactions.tx_hash) FROM evm_transactions ' + query
+        with self.db.conn.read_ctx() as cursor:
+            cursor.execute(query, bindings)
+            return cursor.fetchone()[0]

@@ -2851,20 +2851,28 @@ class RestAPI:
 
     @async_api_call()
     def get_count_transactions_not_decoded(self) -> dict[str, Any]:
-        pending_transactions_to_decode = {}
+        transactions_information: dict[str, dict[str, int]] = defaultdict(dict)
         dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
         for chain in EVM_CHAIN_IDS_WITH_TRANSACTIONS:
             if (tx_count := dbevmtx.count_hashes_not_decoded(chain_id=chain)) != 0:
-                pending_transactions_to_decode[chain.to_name()] = tx_count
+                chain_information = transactions_information[chain.to_name()]
+                chain_information['undecoded'] = tx_count
+                chain_information['total'] = dbevmtx.count_evm_transactions(chain_id=chain)
 
-        return _wrap_in_ok_result(pending_transactions_to_decode)
+        return _wrap_in_ok_result(transactions_information)
 
     @async_api_call()
     def get_count_evmlike_transactions_not_decoded(self) -> dict[str, Any]:
         result = {}
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            cursor.execute('SELECT COUNT(*) FROM zksynclite_transactions WHERE is_decoded=0')
-            result['zksync_lite'] = cursor.fetchone()[0]
+            undecoded = cursor.execute(
+                'SELECT COUNT(*) FROM zksynclite_transactions WHERE is_decoded=0',
+            ).fetchone()[0]
+            total = cursor.execute('SELECT COUNT(*) FROM zksynclite_transactions').fetchone()[0]
+            result['zksync_lite'] = {
+                'undecoded': undecoded,
+                'total': total,
+            }
 
         return _wrap_in_ok_result(result)
 

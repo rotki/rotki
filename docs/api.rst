@@ -2045,9 +2045,9 @@ Decode transactions that haven't been decoded yet
       HTTP/1.1 200 OK
       Content-Type: application/json
 
-      { "result": {"ethereum": 2, "optimism": 1, "base": 1}, "message": "" }
+      {"result": {"ethereum": {"undecoded": 1, "total": 2}, "optimism": {"undecoded": 1, "total": 1}, "base": {"undecoded": 1, "total": 1}}, "message": "" }
 
-   :resjson object result: A mapping of the chain name to the number of transactions missing the decoding.
+   :resjson object result: A mapping of the chain name to the number of transactions missing the decoding and the total number of transactions. If a chain doesn't have undecoded transactions it doesn't appear on the mapping.
 
    :statuscode 200: Transactions successfully counted.
    :statuscode 401: User is not logged in.
