@@ -58,7 +58,7 @@ const GeneralSettings = z.object({
   oraclePenaltyThresholdCount: z.number().min(1),
   oraclePenaltyDuration: z.number().min(1),
   autoDeleteCalendarEntries: z.boolean(),
-  autoCreateCalendarReminders: z.boolean().optional(), // todo: remove `optional()` when backend is merged
+  autoCreateCalendarReminders: z.boolean(),
 });
 
 export type GeneralSettings = z.infer<typeof GeneralSettings>;

@@ -14,7 +14,7 @@ function setAutoDelete() {
 }
 
 function setAutoCreate() {
-  set(autoCreateReminders, get(autoCreateCalendarReminders) ?? true); // todo: remove `?? true` when backend is merged
+  set(autoCreateReminders, get(autoCreateCalendarReminders));
 }
 
 onMounted(() => {
@@ -51,9 +51,9 @@ onMounted(() => {
       <template #header>
         {{ t('calendar.dialog.settings.title') }}
       </template>
-      <div class="flex flex-col gap-4">
+      <div class="flex flex-col gap-1">
         <SettingsOption
-          #default="{ updateImmediate, loading }"
+          #default="{ updateImmediate, loading, error, success }"
           setting="autoDeleteCalendarEntries"
           @finished="setAutoDelete()"
         >
@@ -62,22 +62,23 @@ onMounted(() => {
             :disabled="loading"
             :label="t('calendar.dialog.settings.auto_delete')"
             color="primary"
-            hide-details
+            :error-messages="error"
+            :success-messages="success"
             @input="updateImmediate($event)"
           />
         </SettingsOption>
         <SettingsOption
-          #default="{ updateImmediate, loading }"
+          #default="{ updateImmediate, loading, error, success }"
           setting="autoCreateCalendarReminders"
           @finished="setAutoCreate()"
         >
-          <!-- todo: removed `|| true` when backend is merged -->
           <RuiSwitch
             v-model="autoCreateReminders"
-            :disabled="loading || true"
+            :disabled="loading"
             :label="t('calendar.dialog.settings.auto_create_reminders')"
             color="primary"
-            hide-details
+            :error-messages="error"
+            :success-messages="success"
             @input="updateImmediate($event)"
           />
         </SettingsOption>

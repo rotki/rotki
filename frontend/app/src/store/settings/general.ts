@@ -85,7 +85,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
 
   const autoDeleteCalendarEntries: ComputedRef<boolean> = computed(() => settings.autoDeleteCalendarEntries);
 
-  const autoCreateCalendarReminders: ComputedRef<boolean | undefined> = computed(() => settings.autoCreateCalendarReminders); // todo: remove `| undefined` when backend is merged
+  const autoCreateCalendarReminders: ComputedRef<boolean> = computed(() => settings.autoCreateCalendarReminders);
 
   const currencySymbol: ComputedRef<SupportedCurrency> = computed(() => {
     const currency = get(mainCurrency);
