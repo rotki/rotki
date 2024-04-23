@@ -2878,11 +2878,12 @@ class RestAPI:
             undecoded = cursor.execute(
                 'SELECT COUNT(*) FROM zksynclite_transactions WHERE is_decoded=0',
             ).fetchone()[0]
-            total = cursor.execute('SELECT COUNT(*) FROM zksynclite_transactions').fetchone()[0]
-            result['zksync_lite'] = {
-                'undecoded': undecoded,
-                'total': total,
-            }
+            if undecoded != 0:
+                cursor.execute('SELECT COUNT(*) FROM zksynclite_transactions')
+                result['zksync_lite'] = {
+                    'undecoded': undecoded,
+                    'total': cursor.fetchone()[0],
+                }
 
         return _wrap_in_ok_result(result)
 
