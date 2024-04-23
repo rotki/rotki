@@ -18,7 +18,6 @@ import {
   TransactionChainType,
 } from '@/types/history/events';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library-compat';
-import type { EvmUnDecodedTransactionsData } from '@/types/websocket-messages';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { Writeable } from '@/types';
 import type { Collection } from '@/types/collection';
@@ -146,8 +145,8 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
 const { isTaskRunning } = useTaskStore();
 const { show } = useConfirmStore();
 const historyStore = useHistoryStore();
-const { fetchAssociatedLocations, resetUnDecodedTransactionsStatus } = historyStore;
-const { unDecodedTransactionsStatus } = storeToRefs(historyStore);
+const { fetchAssociatedLocations, resetUndecodedTransactionsStatus } = historyStore;
+const { decodingStatus } = storeToRefs(historyStore);
 const { txChains, getEvmChainName, getChain, isEvmLikeChains } = useSupportedChains();
 const txChainIds = useArrayMap(txChains, x => x.id);
 
@@ -156,9 +155,8 @@ const { fetchHistoryEvents, deleteHistoryEvent } = useHistoryEvents();
 const { refreshTransactions } = useHistoryTransactions();
 
 const {
-  unDecodedEventsBreakdown,
   fetchTransactionEvents,
-  fetchUnDecodedEventsBreakdown,
+  fetchUndecodedTransactionsStatus,
 } = useHistoryTransactionDecoding();
 const { getAccountByAddress } = useBlockchainStore();
 
@@ -313,48 +311,35 @@ const locations = computed<string[]>(() => {
   return [];
 });
 
-const unDecodedLocations = computed<EvmUnDecodedTransactionsData[]>(() =>
-  Object.entries(get(unDecodedEventsBreakdown)).map(([evmChain, total]) => {
-    const progress = get(unDecodedTransactionsStatus)[evmChain];
-
-    return {
-      evmChain,
-      total: progress?.total || total,
-      processed: progress?.processed || 0,
-    };
-  }).filter(item => item.total > 0),
-);
-
 function onFilterAccountsChanged(acc: BlockchainAccount<AddressData>[]) {
   set(userAction, true);
   set(accounts, acc.length > 0 ? [acc[0]] : []);
 }
 
-function reDecodeAllEvents() {
+function redecodeAllEvents() {
   set(decodingStatusDialogPersistent, true);
   show(
     {
       title: t('transactions.events_decoding.redecode_all'),
       message: t('transactions.events_decoding.confirmation'),
     },
-    () => reDecodeAllEventsHandler(),
+    () => redecodeAllEventsHandler(),
     () => {
       set(decodingStatusDialogPersistent, false);
     },
   );
 }
 
-async function reDecodeAllEventsHandler() {
+async function redecodeAllEventsHandler() {
   set(decodingStatusDialogPersistent, false);
   set(currentAction, 'decode');
-  startPromise(fetchUnDecodedEventsBreakdown(TransactionChainType.EVM));
-  startPromise(fetchUnDecodedEventsBreakdown(TransactionChainType.EVMLIKE));
+  await fetchUndecodedTransactionsStatus();
 
   const chains = get(onlyChains);
 
   if (chains.length === 0) {
-    await fetchTransactionEvents(null, true, TransactionChainType.EVM);
-    await fetchTransactionEvents(null, true, TransactionChainType.EVMLIKE);
+    await fetchTransactionEvents(true, TransactionChainType.EVM);
+    await fetchTransactionEvents(true, TransactionChainType.EVMLIKE);
   }
   else {
     const evmChains = chains
@@ -363,20 +348,20 @@ async function reDecodeAllEventsHandler() {
       .map(item => ({ evmChain: item }));
 
     if (evmChains.length > 0)
-      await fetchTransactionEvents(evmChains, true, TransactionChainType.EVM);
+      await fetchTransactionEvents(true, TransactionChainType.EVM, evmChains);
 
     const evmLikeChains = chains
       .filter(item => isEvmLikeChains(item))
       .map(item => ({ evmChain: item }));
 
     if (evmLikeChains.length > 0)
-      await fetchTransactionEvents(evmLikeChains, true, TransactionChainType.EVMLIKE);
+      await fetchTransactionEvents(true, TransactionChainType.EVMLIKE, evmLikeChains);
   }
 
   await fetchData();
 }
 
-async function forceReDecodeEvmEvents(data: EvmChainAndTxHash) {
+async function forceRedecodeEvmEvents(data: EvmChainAndTxHash) {
   set(currentAction, 'decode');
 
   const chain = getChain(data.evmChain);
@@ -386,7 +371,7 @@ async function forceReDecodeEvmEvents(data: EvmChainAndTxHash) {
     txHash: data.txHash,
     evmChain: isEvmLike ? chain : data.evmChain,
   };
-  await fetchTransactionEvents([payload], true, isEvmLike ? TransactionChainType.EVMLIKE : TransactionChainType.EVM);
+  await fetchTransactionEvents(true, isEvmLike ? TransactionChainType.EVMLIKE : TransactionChainType.EVM, [payload]);
   await fetchData();
 }
 
@@ -401,7 +386,7 @@ async function resetEventsHandler(data: EvmHistoryEvent) {
   if (eventIds.length > 0)
     await deleteHistoryEvent(eventIds, true);
 
-  await forceReDecodeEvmEvents(toEvmChainAndTxHash(data));
+  await forceRedecodeEvmEvents(toEvmChainAndTxHash(data));
   await fetchDataAndLocations();
 }
 
@@ -541,7 +526,7 @@ watch(
 const premium = usePremium();
 const { isLoading: isSectionLoading } = useStatusStore();
 const sectionLoading = isSectionLoading(Section.HISTORY_EVENT);
-const eventTaskLoading = isTaskRunning(TaskType.EVENTS_ENCODING);
+const eventTaskLoading = isTaskRunning(TaskType.TRANSACTIONS_DECODING);
 const onlineHistoryEventsLoading = isTaskRunning(TaskType.QUERY_ONLINE_EVENTS);
 const isTransactionsLoading = isTaskRunning(TaskType.TX);
 
@@ -576,16 +561,8 @@ const processing = logicOr(
   refreshing,
 );
 
-async function intervalFetch() {
-  await Promise.allSettled([
-    fetchDataAndLocations(),
-    fetchUnDecodedEventsBreakdown(TransactionChainType.EVM),
-    fetchUnDecodedEventsBreakdown(TransactionChainType.EVMLIKE),
-  ]);
-}
-
 const { pause, resume, isActive } = useIntervalFn(() => {
-  startPromise(intervalFetch());
+  startPromise(fetchDataAndLocations());
 }, 20000);
 
 watch(shouldFetchEventsRegularly, (shouldFetchEventsRegularly) => {
@@ -650,7 +627,7 @@ async function refresh(userInitiated = false) {
   const entryTypesVal = get(entryTypes) || [];
   const disableEvmEvents = entryTypesVal.length > 0 && !entryTypesVal.includes(HistoryEventEntryType.EVM_EVENT);
   await refreshTransactions(get(onlyChains), disableEvmEvents, userInitiated);
-  startPromise(intervalFetch());
+  startPromise(fetchDataAndLocations());
 }
 
 onUnmounted(() => {
@@ -679,7 +656,7 @@ function addTransactionHash() {
 async function fetchDataAndRefreshEvents(data: EvmChainAndTxHash, reDecodeEvents = false) {
   await fetchDataAndLocations();
   if (reDecodeEvents)
-    await forceReDecodeEvmEvents(data);
+    await forceRedecodeEvmEvents(data);
 }
 
 const includeEvmEvents: ComputedRef<boolean> = useEmptyOrSome(
@@ -742,10 +719,9 @@ watchImmediate(route, async (route) => {
         <HistoryEventsDecodingStatus
           v-if="decodingStatusDialogOpen"
           :refreshing="refreshing"
-          :locations-data="unDecodedLocations"
-          :un-decoded-transactions-status="unDecodedTransactionsStatus"
-          @redecode-all-events="reDecodeAllEvents()"
-          @reset-undecoded-transactions="resetUnDecodedTransactionsStatus()"
+          :decoding-status="decodingStatus"
+          @redecode-all-events="redecodeAllEvents()"
+          @reset-undecoded-transactions="resetUndecodedTransactionsStatus()"
         >
           <RuiButton
             variant="text"
@@ -881,7 +857,7 @@ watchImmediate(route, async (route) => {
           color="primary"
           class="!py-2"
           :disabled="processing"
-          @click="reDecodeAllEvents()"
+          @click="redecodeAllEvents()"
         >
           {{ t('transactions.events_decoding.redecode_all') }}
         </RuiButton>
@@ -977,7 +953,7 @@ watchImmediate(route, async (route) => {
                   :loading="eventTaskLoading"
                   @add-event="addEvent($event)"
                   @toggle-ignore="toggleIgnore($event)"
-                  @redecode="forceReDecodeEvmEvents($event)"
+                  @redecode="forceRedecodeEvmEvents($event)"
                   @reset="resetEvents($event)"
                 />
               </LazyLoader>
@@ -1001,7 +977,7 @@ watchImmediate(route, async (route) => {
                 :include-online-events="includeOnlineEvents"
                 :only-chains="onlyChains"
                 :locations="locations"
-                :un-decoded="unDecodedLocations"
+                :decoding-status="decodingStatus"
                 :decoding="eventTaskLoading"
                 :colspan="colspan"
                 :loading="processing"
@@ -1035,7 +1011,7 @@ watchImmediate(route, async (route) => {
         v-model="missingRulesDialog"
         :event="eventWithMissingRules"
         @edit="editMissingRulesEntry($event)"
-        @re-decode="forceReDecodeEvmEvents($event)"
+        @re-decode="forceRedecodeEvmEvents($event)"
         @add-rule="onAddMissingRule($event)"
       />
     </RuiCard>

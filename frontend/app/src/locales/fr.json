@@ -641,12 +641,12 @@
           "title": "Récupération des emplacements associés"
         }
       },
-      "fetch_undecoded_events": {
+      "fetch_undecoded_transactions": {
         "error": {
-          "message": "Échec de la requête de détail pour les événements EVM non décodés : {message}"
+          "message": "Échec de la requête de détail pour les transactions EVM non décodés : {message}"
         },
         "task": {
-          "title": "Récupération du détail pour les événements EVM non décodés."
+          "title": "Récupération du détail pour les transactions EVM non décodés."
         }
       }
     },
@@ -4324,22 +4324,22 @@
       "actions": {
         "redecode_missing_events": "Recoder les événements manquants"
       },
-      "confirmation": "Cette action recodera tous les événements sauf les personnalisés, et peut prendre beaucoup de temps en fonction du nombre d'événements à traiter. Êtes-vous sûr de vouloir continuer?",
+      "confirmation": "Cette action recodera tous les événements sauf les personnalisés, et peut prendre beaucoup de temps en fonction du nombre d'transactions à traiter. Êtes-vous sûr de vouloir continuer?",
       "decoded": {
-        "true": "Tous les événements ont été recodés.",
-        "false": "Certains événements nécessitent d'être recodés."
+        "true": "Tous les transactions ont été recodés.",
+        "false": "Certains transactions nécessitent d'être recodés."
       },
-      "events_processed": "{processed} / {total} événements traités",
+      "transactions_processed": "{processed} / {total} transactions traités",
       "progress": "Progression",
-      "redecode_all": "Recoder tous les événements EVM",
-      "title": "État du recodage des événements EVM",
-      "undecoded_events": "Événements non recodés",
+      "redecode_all": "Recoder tous les transactions EVM",
+      "title": "État du recodage des transactions EVM",
+      "undecoded_transactions": "Transactions non recodés",
       "decoding": {
-        "processing": "Décodage de {count} événement | Décodage de {count} de {total} événements",
-        "pending": "{count} Événement non décodé | {count} Événements non décodés",
-        "done": "Événement décodé {count} | Événements décodés {count}",
-        "all": "Redécodage des événements EVM",
-        "all_done": "Redécodage des événements EVM terminé"
+        "processing": "Décodage de {count} transaction | Décodage de {count} de {total} transactions",
+        "pending": "{count} Transactions non décodé | {count} Transactions non décodés",
+        "done": "Transaction décodé {count} | Transactions décodés {count}",
+        "all": "Redécodage des transactions EVM",
+        "all_done": "Redécodage des transactions EVM terminé"
       }
     },
     "filter": {

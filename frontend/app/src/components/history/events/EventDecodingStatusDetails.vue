@@ -1,11 +1,16 @@
 <script setup lang="ts">
+import { TaskType } from '@/types/task-type';
 import type { EvmUnDecodedTransactionsData } from '@/types/websocket-messages';
 
-const props = defineProps<{ item: EvmUnDecodedTransactionsData; decoding: boolean }>();
+const props = defineProps<{ item: EvmUnDecodedTransactionsData }>();
 
 const { t } = useI18n();
 
-const isComplete = computed(() => props.item.total === props.item.processed);
+const { isTaskRunning } = useTaskStore();
+
+const isComplete = computed<boolean>(() => props.item.total === props.item.processed);
+
+const decoding = computed<boolean>(() => get(isTaskRunning(TaskType.TRANSACTIONS_DECODING, { chain: props.item.evmChain })));
 </script>
 
 <template>

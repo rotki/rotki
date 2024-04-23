@@ -14,7 +14,7 @@ const props = withDefaults(
     includeOnlineEvents: boolean;
     onlyChains?: Blockchain[];
     locations?: string[];
-    unDecoded: EvmUnDecodedTransactionsData[];
+    decodingStatus: EvmUnDecodedTransactionsData[];
     decoding: boolean;
     currentAction: 'decode' | 'query';
   }>(),
@@ -48,6 +48,8 @@ const {
   resetQueryStatus: resetEventsQueryStatus,
 } = useEventsQueryStatus(locations);
 
+const { resetUndecodedTransactionsStatus } = useHistoryStore();
+
 const items = computed(() => [...get(transactions), ...get(events)]);
 const isQuery = computed(() => get(currentAction) === 'query');
 
@@ -68,6 +70,7 @@ function isItemQueryFinished(item: EvmTransactionQueryData | HistoryEventsQueryD
 function resetQueryStatus() {
   resetTransactionsQueryStatus();
   resetEventsQueryStatus();
+  resetUndecodedTransactionsStatus();
   emit('update:current-action', 'query');
 }
 </script>
@@ -98,8 +101,7 @@ function resetQueryStatus() {
         :locations="locations"
         :events="events"
         :transactions="transactions"
-        :un-decoded="unDecoded"
-        :decoding="decoding"
+        :decoding-status="decodingStatus"
         :get-key="getItemKey"
         :is-item-finished="isItemQueryFinished"
       />

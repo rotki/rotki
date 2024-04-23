@@ -61,11 +61,9 @@ describe('composables::history/events/tx', () => {
 
     const editEvent = { ...event, identifier: 1 };
 
-    const { addTransactionHash, refreshTransactions }
-      = useHistoryTransactions();
+    const { addTransactionHash, refreshTransactions } = useHistoryTransactions();
     const { fetchTransactionEvents } = useHistoryTransactionDecoding();
-    const { addHistoryEvent, editHistoryEvent, deleteHistoryEvent }
-      = useHistoryEvents();
+    const { addHistoryEvent, editHistoryEvent, deleteHistoryEvent } = useHistoryEvents();
 
     // add a hash and check the spy function is called
     await addTransactionHash({
@@ -88,7 +86,7 @@ describe('composables::history/events/tx', () => {
     expect(editHistoryEventSpy).toHaveBeenCalledWith(editEvent);
 
     // fetch transactions and check the spy function is called
-    await fetchTransactionEvents(null, true);
+    await fetchTransactionEvents(true);
 
     expect(decodeTxSpy).toHaveBeenCalledOnce();
 
@@ -107,8 +105,8 @@ describe('composables::history/events/tx', () => {
     });
 
     // fetch all transaction and check the spy function is called
-    await fetchTransactionEvents([], true);
+    await fetchTransactionEvents(true);
 
-    expect(decodeTxSpy).toHaveBeenCalledOnce();
+    expect(decodeTxSpy).toHaveBeenCalledTimes(2);
   });
 });

@@ -27,15 +27,12 @@ export const EvmTransactionsQueryStatus = {
   QUERYING_TRANSACTIONS_FINISHED: 'querying_transactions_finished',
 } as const;
 
-export type EvmTransactionsQueryStatus =
-  (typeof EvmTransactionsQueryStatus)[keyof typeof EvmTransactionsQueryStatus];
+export type EvmTransactionsQueryStatus = (typeof EvmTransactionsQueryStatus)[keyof typeof EvmTransactionsQueryStatus];
 
-export const EvmTransactionQueryData = z
-  .object({
-    status: z.nativeEnum(EvmTransactionsQueryStatus),
-    period: z.tuple([z.number(), z.number()]),
-  })
-  .merge(EvmChainAddress);
+export const EvmTransactionQueryData = z.object({
+  status: z.nativeEnum(EvmTransactionsQueryStatus),
+  period: z.tuple([z.number(), z.number()]),
+}).merge(EvmChainAddress);
 
 export const EvmUnDecodedTransactionsData = z.object({
   evmChain: z.string(),
@@ -46,6 +43,15 @@ export const EvmUnDecodedTransactionsData = z.object({
 export type EvmUnDecodedTransactionsData = z.infer<
   typeof EvmUnDecodedTransactionsData
 >;
+
+export const EvmUndecodedTransactionBreakdown = z.object({
+  total: z.number(),
+  undecoded: z.number(),
+});
+
+export const EvmUndecodedTransactionResponse = z.record(EvmUndecodedTransactionBreakdown);
+
+export type EvmUndecodedTransactionResponse = z.infer<typeof EvmUndecodedTransactionResponse>;
 
 export const HistoryEventsQueryStatus = {
   QUERYING_EVENTS_STARTED: 'querying_events_started',
