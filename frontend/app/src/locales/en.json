@@ -4213,6 +4213,7 @@
     }
   },
   "table_filter": {
+    "asset_suggestion": "Type the asset symbol to search.",
     "exclusion": {
       "description": "Use operator `!=` to filter out option, e.g.",
       "example": "type != evm event"
