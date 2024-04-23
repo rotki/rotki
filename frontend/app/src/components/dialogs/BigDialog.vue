@@ -13,6 +13,8 @@ const props = withDefaults(
     confirmType?: DialogType;
     maxWidth?: string;
     persistent?: boolean;
+    divide?: boolean;
+    autoHeight?: boolean;
   }>(),
   {
     subtitle: '',
@@ -23,6 +25,8 @@ const props = withDefaults(
     confirmType: DialogType.INFO,
     maxWidth: '900px',
     persistent: false,
+    divide: false,
+    autoHeight: false,
   },
 );
 const emit = defineEmits<{
@@ -62,23 +66,28 @@ const css = useCssModule();
     @input="!persistent && cancel()"
   >
     <RuiCard
+      :divide="divide"
       data-cy="bottom-dialog"
       class="!rounded-b-none"
     >
       <template #header>
-        {{ title }}
+        <slot name="header">
+          {{ title }}
+        </slot>
       </template>
       <template
-        v-if="subtitle"
+        v-if="subtitle || $slots.subtitle"
         #subheader
       >
-        {{ subtitle }}
+        <slot name="subtitle">
+          {{ subtitle }}
+        </slot>
       </template>
       <div
         v-if="display"
         ref="wrapper"
-        class="overflow-y-auto -mx-4 px-4 -mt-2 pt-2 pb-4"
-        :class="css.card"
+        class="overflow-y-auto -mx-4 px-4 -mt-4 pt-2 pb-4"
+        :class="[css.card, { [css['auto-height']]: autoHeight }]"
       >
         <slot :wrapper="wrapper" />
       </div>
@@ -115,6 +124,9 @@ const css = useCssModule();
 <style module lang="scss">
 .card {
   max-height: calc(90vh - 190px);
-  min-height: 50vh;
+
+  &:not(.auto-height) {
+    min-height: 50vh;
+  }
 }
 </style>

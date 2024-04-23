@@ -1728,12 +1728,17 @@
       "local": "Local",
       "remote": "Remote"
     },
-    "all_buttons_description": "Resolve for all conflicts",
+    "action_hint": {
+      "top": "Local changes have been detected. You have two options:",
+      "bottom": "You also have another extra option, you can manage the conflicts individually."
+    },
     "hint": "{conflicts} asset entries cannot be automatically updated. {remaining} remaining entry/ies require user input.",
     "resolve_all_hint": "All conflicts will be resolved by using {source} data.",
-    "keep_local": "Keep Local",
-    "keep_remote": "Keep Remote",
-    "subtitle": "Local changes have been detected to the following assets. Select if you would like to keep the local version or overwrite it with the remote one.",
+    "keep_local": "Keep All Local",
+    "keep_remote": "Keep All Remote",
+    "keep_local_tooltip": "No affected assets will be updated. Manual updates may be necessary.",
+    "keep_remote_tooltip": "Update all assets. No further action necessary.",
+    "subtitle": "{conflicts} asset entries cannot be automatically updated. {remaining} remaining entry/ies require user input.",
     "table": {
       "headers": {
         "keep": "Keep",
@@ -1741,7 +1746,8 @@
         "remote": "Remote"
       }
     },
-    "title": "Conflicts detected"
+    "title": "Conflicts detected",
+    "manage": "Manage Conflicts"
   },
   "connection_failure": {
     "default": "Connect to default",

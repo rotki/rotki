@@ -1477,11 +1477,17 @@
       "local": "本地",
       "remote": "远程"
     },
-    "all_buttons_description": "对于所有冲突",
+    "action_hint": {
+      "top": "已检测到本地更改。您有两个选项：",
+      "bottom": "您还可以选择单独管理冲突。"
+    },
     "hint": "{conflicts} 个资产条目无法自动更新。{remaining} 个剩余条目需要用户输入。",
-    "keep_local": "保持本地化",
-    "keep_remote": "保持远程",
-    "subtitle": "已检测到以下资产的本地更改。选择是要保留本地版本还是用远程版本覆盖它。",
+    "resolve_all_hint": "所有冲突都将通过使用 {source} 数据来解决。",
+    "keep_local": "保留所有本地内容",
+    "keep_remote": "保留所有远程",
+    "keep_local_tooltip": "不会更新任何受影响的资产。可能需要手动更新。",
+    "keep_remote_tooltip": "更新所有资产。无需采取进一步行动。",
+    "subtitle": "{conflicts} 个资产条目无法自动更新。{remaining} 个剩余条目需要用户输入。",
     "table": {
       "headers": {
         "keep": "保持",
@@ -1489,7 +1495,8 @@
         "remote": "远程"
       }
     },
-    "title": "检测到冲突"
+    "title": "检测到冲突",
+    "manage": "管理冲突"
   },
   "connection_failure": {
     "default": "连接到默认",

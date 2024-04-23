@@ -1631,12 +1631,17 @@
       "local": "Local",
       "remote": "Distant"
     },
-    "all_buttons_description": "Résoudre pour tous les conflits",
+    "action_hint": {
+      "top": "Des changements locaux ont été détectés. Deux options s'offrent à vous :",
+      "bottom": "Vous avez également une autre option supplémentaire, vous pouvez gérer les conflits individuellement."
+    },
     "hint": "{conflicts} les entrées d'actifs ne peuvent pas être mises à jour automatiquement. {remaining} les entrées restantes nécessitent une entrée utilisateur.",
     "resolve_all_hint": "Tous les conflits seront résolus en utilisant les données {source}.",
-    "keep_local": "Garder local",
-    "keep_remote": "Garder distant",
-    "subtitle": "Des modifications ont été détectées dans les actifs locaux. Sélectionnez si vous souhaitez conserver la version locale ou l'écraser avec la version distante.",
+    "keep_local": "Tout garder au niveau local",
+    "keep_remote": "Conserver toutes les données à distance",
+    "keep_local_tooltip": "Aucun actif affecté ne sera mis à jour. Des mises à jour manuelles peuvent être nécessaires.",
+    "keep_remote_tooltip": "Mettre à jour tous les actifs. Aucune autre action n'est nécessaire.",
+    "subtitle": "{conflicts} les entrées d'actifs ne peuvent pas être mises à jour automatiquement. {remaining} les entrées restantes nécessitent une entrée utilisateur.",
     "table": {
       "headers": {
         "keep": "Garder",
@@ -1644,7 +1649,8 @@
         "remote": "Distant"
       }
     },
-    "title": "Conflits détectés"
+    "title": "Conflits détectés",
+    "manage": "Gérer les conflits"
   },
   "connection_failure": {
     "default": "Connecter à défaut",

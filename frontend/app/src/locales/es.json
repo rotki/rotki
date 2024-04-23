@@ -1445,11 +1445,17 @@
       "local": "Local",
       "remote": "Remote"
     },
-    "all_buttons_description": "For all conflicts",
+    "action_hint": {
+      "top": "Se han detectado cambios locales. Tiene dos opciones:",
+      "bottom": "También tiene otra opción extra, puede gestionar los conflictos individualmente.\n"
+    },
     "hint": "{conflicts} asset entries cannot be automatically updated. {remaining} remaining entry/ies require user input.",
-    "keep_local": "Keep Local",
-    "keep_remote": "Keep Remote",
-    "subtitle": "Local changes have been detected to the following assets. Select if you would like to keep the local version or overwrite it with the remote one.",
+    "resolve_all_hint": "Todos los conflictos se resolverán utilizando datos de {source}.",
+    "keep_local": "Mantener todo local",
+    "keep_remote": "Mantener todo lo remoto",
+    "keep_local_tooltip": "No se actualizará ningún activo afectado. Pueden ser necesarias actualizaciones manuales.",
+    "keep_remote_tooltip": "Actualice todos los activos. No es necesaria ninguna otra acción.",
+    "subtitle": "{conflicts} las entradas de activos no pueden actualizarse automáticamente. {remaining} entradas restantes requieren la intervención del usuario.",
     "table": {
       "headers": {
         "keep": "Keep",
@@ -1457,7 +1463,8 @@
         "remote": "Remote"
       }
     },
-    "title": "Conflicts detected"
+    "title": "Conflictos detectados",
+    "manage": "Gestionar conflictos"
   },
   "connection_failure": {
     "default": "Connect to default",
