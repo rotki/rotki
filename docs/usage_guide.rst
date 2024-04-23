@@ -1613,7 +1613,7 @@ You can fill in the following fields:
 Manage CEX (Centralized Exchange) Mapping
 =========================================
 
-Users can link assets on exchanges to assets recognized by Rotki. When you see an error such as "Asset XXX is not supported," you may need to specify what the XXX asset represents in Rotki.
+Users can link assets on exchanges to those recognized by rotki. If you encounter an error such as ``Asset XXX is not supported`` or ``Found exchange balance result with unknown asset XXX. Ignoring it``, you may need to specify how the XXX asset should be recognized in rotki.
 
 .. image:: images/rotki_manage_cex_mapping.png
    :alt: Manage centralized exchange asset mapping
@@ -2116,6 +2116,47 @@ Rotki provides an addressbook for EVM blockchains. This replaces addresses with 
    5. Hardcoded Mappings
    6. ENS names.
 
+
+Calendar
+******************************
+
+Rotki provides a calendar view where you can add and track events for your activities. You can also set reminders to perform some actions related to these events.
+
+
+.. image:: images/rotki_calendar.png
+   :alt: Calendar view
+   :align: center
+
+.. image:: images/rotki_add_calendar_event.png
+   :alt: Add calendar event
+   :align: center
+
+Here the non obvious fields are:
+
+- ``Notify me at event time``: Whether to also notify the user at the event time. If this setting is turned off, Rotki will not notify you at the event time, other than the reminder you set beforehand.
+- ``Delete event once it has passed``: Whether to remove events after the time has passed. We recommend turning this feature on to save space, unless you want to keep the event.
+
+Automatic events
+================
+
+Rotki can also create automatic events based on your on-chain activity. The events that Rotki currently can check include:
+
+- ENS Expiration & Renewal
+
+You can customize how Rotki handles automatic events by clicking the `setting` icon at the top.
+
+.. image:: images/rotki_calendar_automatic_events_setting.png
+   :alt: Automatic events setting
+   :align: center
+
+Event reminder
+==============
+
+The notification for the reminder of your event looks like this.
+
+.. image:: images/rotki_calendar_reminder.png
+   :alt: Notification for the reminder
+   :align: center
 
 .. _set-the-backend-s-arguments:
 

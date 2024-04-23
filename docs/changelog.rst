@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`7074` rotki provides a calendar view where users can add and track events related to their activities. Users can also set reminders to perform actions associated with these events.
 * :feature:`-` Claiming the harvest finance hack compensation grain airdrop will be properly shown as airdrop claim in the history events.
 * :feature:`-` Claiming the pickle finance hack compensation cornichon airdrop will be properly shown as airdrop claim in the history events.
 * :feature:`-` Omni airdrop claims are properly decoded and omni airdrop eligibility is shown in rotki's airdrop list.
