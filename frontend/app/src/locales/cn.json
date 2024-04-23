@@ -1719,13 +1719,13 @@
         "message_all": "您确定要清除所有 {source} 的缓存数据吗？",
         "title": "确认缓存数据清除"
       },
-      "evm_transaction_purge_confirm": {
-        "message": "您确定要从 EVM 交易中清除缓存数据吗？此操作将删除交易和收据，并且重新查询所有内容将需要很长时间。"
-      },
       "error": "清除 {source} 的缓存数据失败：{message}",
       "subtitle": "允许您清除 rotki 缓存的数据",
       "success": "数据删除成功",
-      "title": "清除數据"
+      "title": "清除數据",
+      "transaction_purge_confirm": {
+        "message": "您确定要清除这些交易数据吗？此操作会删除交易和收据，而且重新查询所有内容需要很长时间。"
+      }
     },
     "purge_images_cache": {
       "confirm": {
@@ -3608,6 +3608,10 @@
       "label": "集中交易所清零",
       "hint": "清空该字段以删除所有中心化交易所的数据"
     },
+    "chain_to_clear": {
+      "label": "链要清除",
+      "hint": "清空该字段以删除所有链的交易数据"
+    },
     "decentralized_exchanges": "去中心化交易所",
     "decentralized_exchange_to_clear": {
       "label": "去中心化交易所去清算",
@@ -3618,13 +3622,9 @@
       "label": "待清除的 DeFi 模块",
       "hint": "清空此字段以删除所有 defi 模块的数据"
     },
-    "evm_transactions": "EVM 交易",
-    "evm_chain_to_clear": {
-      "label": "EVM 链要清除",
-      "hint": "清空该字段以删除所有链的交易数据"
-    },
     "label": "选择数据源",
-    "tooltip": "清除所选源的缓存数据"
+    "tooltip": "清除所选源的缓存数据",
+    "transactions": "交易"
   },
   "queried_address_dialog": {
     "add": "添加地址",

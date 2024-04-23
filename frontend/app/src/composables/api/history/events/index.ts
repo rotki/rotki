@@ -57,12 +57,12 @@ export function useHistoryEventsApi() {
   ): Promise<PendingTask> =>
     internalTransactions<PendingTask>(payload, true, type);
 
-  const deleteEvmTransactions = async (evmChain: string): Promise<boolean> => {
+  const deleteTransactions = async (chain: string): Promise<boolean> => {
     const response = await api.instance.delete<ActionResult<boolean>>(
-      '/blockchains/evm/transactions',
+      '/blockchains/transactions',
       {
         validateStatus: validStatus,
-        data: evmChain ? snakeCaseTransformer({ evmChain }) : null,
+        data: chain ? snakeCaseTransformer({ chain }) : null,
       },
     );
 
@@ -293,7 +293,7 @@ export function useHistoryEventsApi() {
 
   return {
     fetchTransactionsTask,
-    deleteEvmTransactions,
+    deleteTransactions,
     decodeHistoryEvents,
     getUnDecodedEventsBreakdown,
     reDecodeMissingEvents,
