@@ -1450,11 +1450,17 @@
       "local": "Local",
       "remote": "Remote"
     },
-    "all_buttons_description": "For all conflicts",
-    "hint": "{conflicts} asset entries cannot be automatically updated. {remaining} remaining entry/ies require user input.",
-    "keep_local": "Keep Local",
-    "keep_remote": "Keep Remote",
-    "subtitle": "Local changes have been detected to the following assets. Select if you would like to keep the local version or overwrite it with the remote one.",
+    "action_hint": {
+      "top": "Εντοπίστηκαν τοπικές αλλαγές. Έχετε δύο επιλογές:",
+      "bottom": "Μπορείτε επίσης να διαχειριστείτε τις συγκρούσεις μεμονωμένα."
+    },
+    "hint": "Οι καταχωρήσεις περιουσιακών στοιχείων {conflicts} δεν μπορούν να ενημερωθούν αυτόματα. {remaining} Οι υπόλοιπες καταχωρήσεις απαιτούν την εισαγωγή δεδομένων από τον χρήστη.",
+    "resolve_all_hint": "Όλες οι συγκρούσεις θα επιλυθούν με τη χρήση δεδομένων {source}.",
+    "keep_local": "Κρατήστε τα όλα τοπικά",
+    "keep_remote": "Διατηρήστε όλα τα απομακρυσμένα",
+    "keep_local_tooltip": "Δεν θα ενημερωθεί κανένα επηρεαζόμενο περιουσιακό στοιχείο. Ενδέχεται να χρειαστούν χειροκίνητες ενημερώσεις.",
+    "keep_remote_tooltip": "Ενημερώστε όλα τα περιουσιακά στοιχεία. Δεν απαιτούνται περαιτέρω ενέργειες.",
+    "subtitle": "Οι καταχωρήσεις περιουσιακών στοιχείων {conflicts} δεν μπορούν να ενημερωθούν αυτόματα. {remaining} Οι υπόλοιπες καταχωρήσεις απαιτούν την εισαγωγή δεδομένων από τον χρήστη.",
     "table": {
       "headers": {
         "keep": "Keep",
@@ -1462,7 +1468,8 @@
         "remote": "Remote"
       }
     },
-    "title": "Conflicts detected"
+    "title": "Ανιχνεύονται συγκρούσεις",
+    "manage": "Διαχείριση συγκρούσεων"
   },
   "connection_failure": {
     "default": "Connect to default",
