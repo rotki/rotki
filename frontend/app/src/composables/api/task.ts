@@ -58,6 +58,9 @@ export function useTaskApi() {
       else if (statusCode === 400) {
         throw new ApiValidationError(message);
       }
+      else if (statusCode === 502) {
+        throw new Error(message);
+      }
       return outcome;
     }
 

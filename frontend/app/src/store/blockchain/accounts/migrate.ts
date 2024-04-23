@@ -16,14 +16,14 @@ export const useAccountMigrationStore = defineStore(
     let migratedAddresses: Ref<MigratedAddresses> = ref([]);
 
     const { canRequestData } = storeToRefs(useSessionAuthStore());
-    const { txEvmChains, getChainName } = useSupportedChains();
+    const { txChains, getChainName } = useSupportedChains();
     const { fetchAccounts } = useBlockchains();
 
     const { t } = useI18n();
     const { notify } = useNotificationsStore();
 
     const handleMigratedAccounts = (): void => {
-      const txEvmChainsVal = get(txEvmChains);
+      const txEvmChainsVal = get(txChains);
       assert(txEvmChainsVal.length > 0, 'Supported chains is empty');
       const tokenChains: string[] = txEvmChainsVal.map(x => x.id);
       const addresses: Record<string, string[]> = {};
