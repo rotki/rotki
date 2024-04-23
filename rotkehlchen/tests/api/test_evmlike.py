@@ -420,6 +420,7 @@ def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite
             (f'{ZKSYNCLITE_TX_SAVEPREFIX}{user_address}',),
         ).fetchone()[0] == 1
         assert cursor.execute('SELECT COUNT(*) FROM zksynclite_transactions').fetchone()[0] == 16
+        assert cursor.execute('SELECT COUNT(*) FROM zksynclite_swaps').fetchone()[0] == 0
         assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 17
 
     # now remove the address
@@ -438,4 +439,5 @@ def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite
             (f'{ZKSYNCLITE_TX_SAVEPREFIX}{user_address}',),
         ).fetchone()[0] == 0
         assert cursor.execute('SELECT COUNT(*) FROM zksynclite_transactions').fetchone()[0] == 0
+        assert cursor.execute('SELECT COUNT(*) FROM zksynclite_swaps').fetchone()[0] == 0
         assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 0

@@ -55,6 +55,7 @@ from rotkehlchen.api.v1.schemas import (
     BlockchainAccountsPatchSchema,
     BlockchainAccountsPutSchema,
     BlockchainBalanceQuerySchema,
+    BlockchainTransactionPurgingSchema,
     ClearAvatarsCacheSchema,
     ClearCacheSchema,
     ClearIconsCacheSchema,
@@ -84,7 +85,6 @@ from rotkehlchen.api.v1.schemas import (
     EvmPendingTransactionDecodingSchema,
     EvmTransactionDecodingSchema,
     EvmTransactionHashAdditionSchema,
-    EvmTransactionPurgingSchema,
     EvmTransactionQuerySchema,
     ExchangeBalanceQuerySchema,
     ExchangeRatesSchema,
@@ -227,6 +227,7 @@ from rotkehlchen.types import (
     EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS_TYPE,
+    SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     AddressbookEntry,
     AddressbookType,
     ApiKey,
@@ -603,10 +604,18 @@ class AssociatedLocations(BaseMethodView):
         return self.rest_api.get_associated_locations()
 
 
+class BlockchainTransactionsResource(BaseMethodView):
+    delete_schema = BlockchainTransactionPurgingSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(delete_schema, location='json')
+    def delete(self, chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE | None) -> Response:
+        return self.rest_api.purge_blockchain_transaction_data(chain=chain)
+
+
 class EvmTransactionsResource(BaseMethodView):
     post_schema = EvmTransactionQuerySchema()
     put_schema = EvmTransactionDecodingSchema()
-    delete_schema = EvmTransactionPurgingSchema()
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json_and_query')
@@ -633,11 +642,6 @@ class EvmTransactionsResource(BaseMethodView):
             ignore_cache=ignore_cache,
             data=data,
         )
-
-    @require_loggedin_user()
-    @use_kwargs(delete_schema, location='json')
-    def delete(self, evm_chain: SUPPORTED_CHAIN_IDS | None) -> Response:
-        return self.rest_api.purge_evm_transaction_data(chain_id=evm_chain)
 
 
 class EvmlikeTransactionsResource(BaseMethodView):

@@ -221,6 +221,7 @@ from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_CHAINS_TYPE,
     SUPPORTED_EVM_EVMLIKE_CHAINS,
+    SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     SUPPORTED_EVMLIKE_CHAINS_TYPE,
     SUPPORTED_SUBSTRATE_CHAINS,
     AddressbookEntry,
@@ -2659,11 +2660,15 @@ class RestAPI:
 
         return {'result': True, 'message': message, 'status_code': status_code}
 
-    def purge_evm_transaction_data(self, chain_id: SUPPORTED_CHAIN_IDS | None) -> Response:
-        chain = None if chain_id is None else chain_id.to_blockchain()
-        DBEvmTx(self.rotkehlchen.data.db).purge_evm_transaction_data(
-            chain=chain,  # type: ignore  # chain_id.to_blockchain() will only give supported chain
-        )
+    def purge_blockchain_transaction_data(self, chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE | None) -> Response:  # noqa: E501
+        if not chain or chain != SupportedBlockchain.ZKSYNC_LITE:
+            DBEvmTx(self.rotkehlchen.data.db).purge_evm_transaction_data(
+                chain=chain,
+            )
+        if not chain or chain == SupportedBlockchain.ZKSYNC_LITE:
+            with self.rotkehlchen.data.db.user_write() as write_cursor:
+                write_cursor.execute('DELETE FROM zksynclite_transactions')
+
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @async_api_call()

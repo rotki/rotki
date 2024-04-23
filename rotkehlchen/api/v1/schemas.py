@@ -1,5 +1,6 @@
 import logging
 import operator
+import typing
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Final, Literal, cast, get_args
 
@@ -94,6 +95,7 @@ from rotkehlchen.types import (
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_EVMLIKE_LOCATIONS,
     NON_EVM_CHAINS,
+    SUPPORTED_BITCOIN_CHAINS,
     SUPPORTED_CHAIN_IDS,
     SUPPORTED_EVM_EVMLIKE_CHAINS,
     SUPPORTED_SUBSTRATE_CHAINS,
@@ -290,8 +292,17 @@ class RequiredEvmlikeAddressOptionalChainSchema(Schema):
         return EvmlikeAccount(data['address'], chain=data['chain'])
 
 
-class EvmTransactionPurgingSchema(Schema):
-    evm_chain = EvmChainNameField(required=False, load_default=None)
+class BlockchainTransactionPurgingSchema(Schema):
+    chain = BlockchainField(
+        exclude_types=(
+            SupportedBlockchain.ETHEREUM_BEACONCHAIN,
+            SupportedBlockchain.AVALANCHE,
+            *typing.get_args(SUPPORTED_BITCOIN_CHAINS),
+            *typing.get_args(SUPPORTED_SUBSTRATE_CHAINS),
+        ),
+        required=False,
+        load_default=None,
+    )
 
 
 class EvmTransactionQuerySchema(
