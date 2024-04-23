@@ -1946,24 +1946,24 @@ Purging locally saved data for exchanges
    :statuscode 409: Exchange is not registered or some other error. Check error message for details.
    :statuscode 500: Internal rotki error
 
-Purging locally saved evm transactions
+Purging locally saved blockchain transactions
 ===========================================
 
-.. http:delete:: /api/(version)/blockchains/evm/transactions
+.. http:delete:: /api/(version)/blockchains/transactions
 
-   Doing a DELETE on the evm transactions endpoint will purge all locally saved transaction data. Optionally can specify the evm chain to only purge transactions of that chain. Next time transactions are queried all of them will be queried again for all addresses and may take some time.
+   Doing a DELETE on the blockchain transactions endpoint will purge all locally saved transaction data. Optionally can specify the chain to only purge transactions of that chain. Next time transactions are queried all of them will be queried again for all addresses and may take some time.
 
    **Example Request**:
 
    .. http:example:: curl wget httpie python-requests
 
-      DELETE /api/1/blockchains/evm/transactions HTTP/1.1
+      DELETE /api/1/blockchains/transactions HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"evm_chain": "optimism"}
+      {"chain": "eth"}
 
-   :reqjson string evm_chain: Optional. The name of the evm chain for which to purge transaction. ``"ethereum"``, ``"optimism"`` etc. If not given all transactions for all chains are purged.
+   :reqjson string chain: Optional. The name of the chain for which to purge transaction. ``"eth"``, ``"optimism"``, ``"zksync_lite"`` etc. If not given all transactions for all chains are purged. This is using the backend's SupportedBlockchain with the limitation being only chains for which we save transactions.
 
    **Example Response**:
 
