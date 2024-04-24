@@ -32,7 +32,7 @@ export function useSessionPurge() {
     else if (purgeable === Purgeable.DEFI_MODULES) {
       resetState((value as Module) || Purgeable.DEFI_MODULES);
     }
-    else if (purgeable === Purgeable.EVM_TRANSACTIONS) {
+    else if (purgeable === Purgeable.TRANSACTIONS) {
       purgeTransactions();
     }
   };

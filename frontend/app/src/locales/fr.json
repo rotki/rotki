@@ -1884,13 +1884,13 @@
         "message_all": "Es-tu sûr de vouloir purger les données en cache pour tous les {source} ?",
         "title": "Confirmer la purge des données en cache"
       },
-      "evm_transaction_purge_confirm": {
-        "message": "Es-tu sûr de vouloir purger les données en cache des transactions EVM ? Cette action supprimera les transactions et les reçus, et prendra beaucoup de temps pour tout re requêter."
-      },
       "error": "Échec de la purge des données en cache pour {source} : {message}",
       "subtitle": "Vous permet de purger les données en cache par rotki",
       "success": "Les données ont été supprimées avec succès",
-      "title": "Purger les données"
+      "title": "Purger les données",
+      "transaction_purge_confirm": {
+        "message": "Êtes-vous sûr de vouloir purger ces données de transactions ? Cette action supprimera les transactions et les reçus, et il faudra beaucoup de temps pour tout réinterroger."
+      }
     },
     "purge_images_cache": {
       "confirm": {
@@ -3894,6 +3894,10 @@
       "label": "Échange centralisé à effacer",
       "hint": "Laissez ce champ vide pour supprimer les données de tous les échanges centralisés"
     },
+    "chain_to_clear": {
+      "label": "Chaîne à effacer",
+      "hint": "Laissez ce champ vide pour supprimer les données de toutes les chaînes"
+    },
     "decentralized_exchanges": "Échanges décentralisés",
     "decentralized_exchange_to_clear": {
       "label": "Échange décentralisé à effacer",
@@ -3904,13 +3908,9 @@
       "label": "Module DeFi à effacer",
       "hint": "Laissez ce champ vide pour supprimer les données de tous les modules DeFi"
     },
-    "evm_transactions": "Transactions EVM",
-    "evm_chain_to_clear": {
-      "label": "Chaîne EVM à effacer",
-      "hint": "Laissez ce champ vide pour supprimer les données de toutes les chaînes"
-    },
     "label": "Sélectionner une source de données",
-    "tooltip": "Supprimer les données en cache de la source sélectionnée"
+    "tooltip": "Supprimer les données en cache de la source sélectionnée",
+    "transactions": "Transactions"
   },
   "queried_address_dialog": {
     "add": "Ajouter une adresse",

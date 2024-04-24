@@ -1985,13 +1985,14 @@
         "message_all": "Are you sure you want to purge the cached data for all {source}?",
         "title": "Confirm cached data purge"
       },
-      "evm_transaction_purge_confirm": {
-        "message": "Are you sure you want to purge cached data from EVM transactions? This action will remove the transactions and the receipts, and it will take a long time to requery everything."
-      },
+
       "error": "Purging the cached data for {source} failed: {message}",
       "subtitle": "Allows you to purge data cached by rotki",
       "success": "Data was successfully deleted",
-      "title": "Purge Data"
+      "title": "Purge Data",
+      "transaction_purge_confirm": {
+        "message": "Are you sure you want to purge this transactions data? This action will remove the transactions and the receipts, and it will take a long time to re-query everything."
+      }
     },
     "purge_images_cache": {
       "confirm": {
@@ -4066,6 +4067,10 @@
       "label": "Centralized exchange to clear",
       "hint": "Empty this field to remove the data for all centralized exchanges"
     },
+    "chain_to_clear": {
+      "label": "Chain to clear",
+      "hint": "Empty this field to remove the transaction data for all chains"
+    },
     "decentralized_exchanges": "Decentralized Exchanges",
     "decentralized_exchange_to_clear": {
       "label": "Decentralized exchange to clear",
@@ -4076,13 +4081,9 @@
       "label": "DeFi module to clear",
       "hint": "Empty this field to remove the data for all defi modules"
     },
-    "evm_transactions": "EVM Transactions",
-    "evm_chain_to_clear": {
-      "label": "EVM chain to clear",
-      "hint": "Empty this field to remove the transaction data for all chains"
-    },
     "label": "Select a data source",
-    "tooltip": "Purge the cached data for the selected source"
+    "tooltip": "Purge the cached data for the selected source",
+    "transactions": "Transactions"
   },
   "queried_address_dialog": {
     "add": "Add address",

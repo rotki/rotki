@@ -1682,13 +1682,13 @@
         "message_all": "¿Está seguro de que desea purgar los datos almacenados en caché para todos los {source}?",
         "title": "Confirmar purga de datos en caché"
       },
-      "evm_transaction_purge_confirm": {
-        "message": "¿Está seguro de que desea eliminar los datos almacenados en caché de las transacciones EVM? Esta acción eliminará las transacciones y los recibos, y llevará mucho tiempo volver a consultar todo."
-      },
       "error": "Purging the cached data for {source} failed: {message}",
       "subtitle": "Allows you to purge data cached by rotki",
       "success": "Data was successfully deleted",
-      "title": "Purge Data"
+      "title": "Purge Data",
+      "transaction_purge_confirm": {
+        "message": "¿Está seguro de que desea purgar estos datos de transacciones? Esta acción eliminará las transacciones y los recibos, y llevará mucho tiempo volver a consultar todo."
+      }
     },
     "purge_images_cache": {
       "confirm": {
@@ -3478,6 +3478,10 @@
       "label": "Intercambio centralizado para compensar",
       "hint": "Vacíe este campo para eliminar los datos de todos los intercambios centralizados"
     },
+    "chain_to_clear": {
+      "label": "Cadena para borrar",
+      "hint": "Vacíe este campo para eliminar los datos de transacción de todas las cadenas"
+    },
     "decentralized_exchanges": "Intercambios descentralizados",
     "decentralized_exchange_to_clear": {
       "label": "Intercambio descentralizado para compensar",
@@ -3488,13 +3492,9 @@
       "label": "Módulo DeFi a borrar",
       "hint": "Vacía este campo para eliminar los datos de todos los módulos defi"
     },
-    "evm_transactions": "Transacciones EVM",
-    "evm_chain_to_clear": {
-      "label": "Cadena EVM para borrar",
-      "hint": "Vacíe este campo para eliminar los datos de transacción de todas las cadenas"
-    },
     "label": "Seleccione una fuente de datos",
-    "tooltip": "Purga los datos en caché de la fuente seleccionada"
+    "tooltip": "Purga los datos en caché de la fuente seleccionada",
+    "transactions": "Transacciones"
   },
   "queried_address_dialog": {
     "add": "Add address",
