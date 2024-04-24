@@ -102,7 +102,10 @@ const css = useCssModule();
               class="py-1"
             >
               <TransactionQueryStatusDetails :item="item" />
-              <TransactionQueryStatusSteps :item="item" />
+              <TransactionQueryStatusSteps
+                :item="item"
+                :class="css.stepper"
+              />
             </div>
           </div>
 
@@ -148,5 +151,9 @@ const css = useCssModule();
   @apply overflow-y-auto -mx-4 px-4 -mt-2 pt-2 pb-4;
   max-height: calc(90vh - 11.875rem);
   min-height: 50vh;
+
+  .stepper {
+    @apply overflow-hidden #{!important};
+  }
 }
 </style>
