@@ -109,7 +109,7 @@ const css = useCssModule();
       </template>
     </RuiCardHeader>
     <SettingsOption
-      #default="{ error, success, update }"
+      #default="{ error, success, updateImmediate }"
       setting="renderAllNftImages"
       frontend-setting
     >
@@ -119,7 +119,7 @@ const css = useCssModule();
         color="primary"
         :success-messages="success"
         :error-messages="error"
-        @input="updateRenderingSetting($event, update)"
+        @input="updateRenderingSetting($event, updateImmediate)"
       >
         <template #default>
           <RuiRadio internal-value="all">

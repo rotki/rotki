@@ -28,7 +28,13 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     resetUndecodedTransactionsStatus,
   } = useHistoryStore();
 
-  const { txEvmChains, evmLikeChainsData } = useSupportedChains();
+  const {
+    txEvmChains,
+    evmLikeChainsData,
+    getChain,
+    isEvmLikeChains,
+    getChainName,
+  } = useSupportedChains();
 
   const { resetStatus } = useStatusUpdater(Section.HISTORY_EVENT);
 
@@ -107,7 +113,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
         title: t('actions.transactions_redecode_missing.task.title'),
         description: t(
           'actions.transactions_redecode_missing.task.description',
-          { chain },
+          { chain: get(getChainName(chain)) },
         ),
         chain,
         all: false,
@@ -125,7 +131,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
             'actions.transactions_redecode_missing.error.description',
             {
               error,
-              chain,
+              chain: get(getChainName(chain)),
             },
           ),
           display: true,
@@ -133,8 +139,6 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       }
     }
   };
-
-  const { getChain, isEvmLikeChains } = useSupportedChains();
 
   const checkMissingEventsAndRedecodeHandler = async (type: TransactionChainType) => {
     const isEvmType = type === TransactionChainType.EVM;

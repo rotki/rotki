@@ -49,6 +49,7 @@ const { t } = useI18n();
         v-if="event.description"
         :popper="{ placement: 'left' }"
         :disabled="!showTooltip"
+        :open-delay="400"
         tooltip-class="max-w-[20rem] whitespace-break-spaces"
       >
         <template #activator>
@@ -56,7 +57,7 @@ const { t } = useI18n();
             {{ description }}
           </div>
         </template>
-        {{ event.description }}
+        <span>{{ event.description }}</span>
       </RuiTooltip>
       <div class="text-caption">
         {{ time }}
