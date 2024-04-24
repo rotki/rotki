@@ -42,16 +42,17 @@ async function refreshIcon() {
 }
 
 async function saveIcon(identifier: string) {
-  if (!get(icon))
+  const iconVal = get(icon);
+  if (!iconVal)
     return;
 
   let success = false;
   let message = '';
   try {
     if (appSession)
-      await setIcon(identifier, get(icon)!.path);
+      await setIcon(identifier, iconVal.path);
     else
-      await uploadIcon(identifier, get(icon)!);
+      await uploadIcon(identifier, iconVal);
 
     success = true;
   }
@@ -68,6 +69,20 @@ async function saveIcon(identifier: string) {
     });
   }
 }
+
+const previewImageSource: Ref<string> = ref('');
+watch(icon, (icon) => {
+  if (icon && icon.type.startsWith('image')) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      set(previewImageSource, e.target?.result || '');
+    };
+    reader.readAsDataURL(icon);
+  }
+  else {
+    set(previewImageSource, '');
+  }
+});
 
 defineExpose({
   saveIcon,
@@ -104,11 +119,18 @@ defineExpose({
           {{ t('asset_form.fetch_latest_icon.title') }}
         </RuiTooltip>
 
+        <AppImage
+          v-if="icon && previewImageSource"
+          :src="previewImageSource"
+          size="4.5rem"
+          contain
+        />
         <AssetIcon
-          v-if="preview"
+          v-else-if="preview"
           :identifier="preview"
           size="72px"
           changeable
+          :show-chain="false"
           :timestamp="timestamp"
         />
       </RuiCard>
@@ -120,10 +142,10 @@ defineExpose({
       />
     </div>
     <div
-      v-if="icon"
+      v-if="icon && identifier"
       class="text-caption text-rui-success mt-2"
     >
-      {{ t('asset_form.replaced', { name: icon.name }) }}
+      {{ t('asset_form.replaced') }}
     </div>
   </div>
 </template>

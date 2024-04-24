@@ -44,7 +44,7 @@ const emit = defineEmits<{ (e: 'reset'): void }>();
         <slot name="dialog" />
         <RuiButton
           v-if="finished"
-          class="mt-0.5"
+          class="mt-1"
           size="sm"
           icon
           variant="text"

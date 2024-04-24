@@ -39,7 +39,7 @@ const css = useCssModule();
           <RuiButton
             variant="text"
             icon
-            class="mt-0.5"
+            class="mt-1"
             size="sm"
             v-on="on"
           >

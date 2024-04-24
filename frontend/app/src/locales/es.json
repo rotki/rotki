@@ -952,7 +952,7 @@
     },
     "optional": "Campos opcionales",
     "oracle_disable": "Disable/Enable the price fetching from the price oracle. If the oracle is not disabled, and there is no value specified, rotki will attempt to fetch a price using the asset symbol.",
-    "replaced": "This icon will be replaced with {name} on save.",
+    "replaced": "Este icono se aplicará después de hacer clic en \"(Guardar)\".",
     "types": {
       "error": "We could not load the asset types: {message}"
     },
