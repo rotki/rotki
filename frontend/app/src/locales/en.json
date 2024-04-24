@@ -4519,8 +4519,8 @@
       "undecoded_transactions": "Undecoded transactions",
       "decoding": {
         "processing": "Decoding {count} transaction | Decoding {count} of {total} transactions",
-        "pending": "{count} Undecoded transaction | {count} Undecoded transaction",
-        "done": "Decoded {count} transactions | Decoded {count} transaction",
+        "pending": "{count} Undecoded transaction | {count} Undecoded transactions",
+        "done": "Decoded {count} transaction | Decoded {count} transactions",
         "all": "Redecoding EVM transactions",
         "all_done": "Done redecoding EVM transactions"
       }
