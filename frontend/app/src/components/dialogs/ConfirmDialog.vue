@@ -44,8 +44,6 @@ const primaryText = computed(
 const secondaryText = computed(
   () => get(secondaryAction) || t('common.actions.cancel'),
 );
-
-const css = useCssModule();
 </script>
 
 <template>
@@ -75,10 +73,7 @@ const css = useCssModule();
               :name="icon"
             />
           </div>
-          <div
-            class="text-body-1 pt-1 w-full"
-            :class="css.message"
-          >
+          <div class="text-body-1 pt-1 w-full break-words">
             {{ message }}
             <slot />
           </div>
@@ -109,9 +104,3 @@ const css = useCssModule();
     </VDialog>
   </VDialogTransition>
 </template>
-
-<style lang="scss" module>
-.message {
-  word-break: break-word;
-}
-</style>
