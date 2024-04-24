@@ -583,7 +583,9 @@ declare global {
   const useNavigatorLanguage: typeof import('@vueuse/core')['useNavigatorLanguage']
   const useNetwork: typeof import('@vueuse/core')['useNetwork']
   const useNewlyDetectedTokens: typeof import('./composables/assets/newly-detected-tokens')['useNewlyDetectedTokens']
+  const useNft: typeof import('./composables/nft')['useNft']
   const useNftBalancesApi: typeof import('./composables/api/balances/nft')['useNftBalancesApi']
+  const useNftImage: typeof import('./composables/nft-image')['useNftImage']
   const useNfts: typeof import('./composables/assets/nft')['useNfts']
   const useNonFungibleBalancesStore: typeof import('./store/balances/non-fungible')['useNonFungibleBalancesStore']
   const useNotificationsStore: typeof import('./store/notifications/index')['useNotificationsStore']
@@ -947,7 +949,6 @@ declare module 'vue' {
     readonly isValidEthAddress: UnwrapRef<typeof import('./utils/text')['isValidEthAddress']>
     readonly isValidTxHash: UnwrapRef<typeof import('./utils/text')['isValidTxHash']>
     readonly isValidUrl: UnwrapRef<typeof import('./utils/text')['isValidUrl']>
-    readonly isVideo: UnwrapRef<typeof import('./utils/nft')['isVideo']>
     readonly isWithdrawalEvent: UnwrapRef<typeof import('./utils/history/events')['isWithdrawalEvent']>
     readonly isWithdrawalEventRef: UnwrapRef<typeof import('./utils/history/events')['isWithdrawalEventRef']>
     readonly isWithdrawalEventType: UnwrapRef<typeof import('./utils/history/events')['isWithdrawalEventType']>
@@ -1338,6 +1339,7 @@ declare module 'vue' {
     readonly useNetwork: UnwrapRef<typeof import('@vueuse/core')['useNetwork']>
     readonly useNewlyDetectedTokens: UnwrapRef<typeof import('./composables/assets/newly-detected-tokens')['useNewlyDetectedTokens']>
     readonly useNftBalancesApi: UnwrapRef<typeof import('./composables/api/balances/nft')['useNftBalancesApi']>
+    readonly useNftImage: UnwrapRef<typeof import('./composables/nft-image')['useNftImage']>
     readonly useNfts: UnwrapRef<typeof import('./composables/assets/nft')['useNfts']>
     readonly useNonFungibleBalancesStore: UnwrapRef<typeof import('./store/balances/non-fungible')['useNonFungibleBalancesStore']>
     readonly useNotificationsStore: UnwrapRef<typeof import('./store/notifications/index')['useNotificationsStore']>
@@ -1693,7 +1695,6 @@ declare module '@vue/runtime-core' {
     readonly isValidEthAddress: UnwrapRef<typeof import('./utils/text')['isValidEthAddress']>
     readonly isValidTxHash: UnwrapRef<typeof import('./utils/text')['isValidTxHash']>
     readonly isValidUrl: UnwrapRef<typeof import('./utils/text')['isValidUrl']>
-    readonly isVideo: UnwrapRef<typeof import('./utils/nft')['isVideo']>
     readonly isWithdrawalEvent: UnwrapRef<typeof import('./utils/history/events')['isWithdrawalEvent']>
     readonly isWithdrawalEventRef: UnwrapRef<typeof import('./utils/history/events')['isWithdrawalEventRef']>
     readonly isWithdrawalEventType: UnwrapRef<typeof import('./utils/history/events')['isWithdrawalEventType']>
@@ -2084,6 +2085,7 @@ declare module '@vue/runtime-core' {
     readonly useNetwork: UnwrapRef<typeof import('@vueuse/core')['useNetwork']>
     readonly useNewlyDetectedTokens: UnwrapRef<typeof import('./composables/assets/newly-detected-tokens')['useNewlyDetectedTokens']>
     readonly useNftBalancesApi: UnwrapRef<typeof import('./composables/api/balances/nft')['useNftBalancesApi']>
+    readonly useNftImage: UnwrapRef<typeof import('./composables/nft-image')['useNftImage']>
     readonly useNfts: UnwrapRef<typeof import('./composables/assets/nft')['useNfts']>
     readonly useNonFungibleBalancesStore: UnwrapRef<typeof import('./store/balances/non-fungible')['useNonFungibleBalancesStore']>
     readonly useNotificationsStore: UnwrapRef<typeof import('./store/notifications/index')['useNotificationsStore']>
