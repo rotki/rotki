@@ -42,7 +42,7 @@ const totalUsdValue = computed<BigNumber>(
 const assetLocations = computed<AssetLocations>(() => {
   const breakdowns = get(assetBreakdown(get(identifier)));
   return breakdowns.map((item: AssetBreakdown) => {
-    const account = getAccountByAddress(item.address, item.location);
+    const account = item.address ? getAccountByAddress(item.address, item.location) : undefined;
     return {
       ...item,
       account,
