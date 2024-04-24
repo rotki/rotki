@@ -117,7 +117,7 @@ class AssetsUpdater:
 
     def __init__(self, msg_aggregator: 'MessagesAggregator') -> None:
         self.msg_aggregator = msg_aggregator
-        self.local_assets_version = GlobalDBHandler().get_setting_value(ASSETS_VERSION_KEY, 0)
+        self.local_assets_version = GlobalDBHandler.get_setting_value(ASSETS_VERSION_KEY, 0)
         self.last_remote_checked_version = -1  # integer value that represents no update
         self.conflicts: list[tuple[AssetData, AssetData]] = []
         self.assets_re = re.compile(r'.*INSERT +INTO +assets\( *identifier *, *name *, *type *\) *VALUES\(([^,]*?),([^,]*?),([^,]*?)\).*?')  # noqa: E501

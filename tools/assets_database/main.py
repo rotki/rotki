@@ -7,7 +7,6 @@ import argparse
 import shutil
 import sys
 from pathlib import Path
-from tempfile import TemporaryDirectory
 
 import requests
 
@@ -82,10 +81,14 @@ def get_remote_global_db(directory: Path, version: int, branch: str) -> Path:
     return dbpath
 
 
-def main() -> None:
+def populate_db_with_assets() -> tuple[GlobalDBHandler, Path]:
+    """Populate the globaldb created in target_directory with the updates
+    in the remote assets repo
+    """
     args = parse_args()
     target_directory = Path.cwd() if args.target_directory is None else args.target_directory
     target_directory = Path(target_directory)
+
     if not target_directory.is_dir():
         print(f'Given directory {target_directory} not a valid directory')
         sys.exit(1)
@@ -101,23 +104,31 @@ def main() -> None:
     msg_aggregator = MessagesAggregator()
     # We need a user db since the spam assets get synced during user unlock and
     # they touch both the global and the user DB at the same time
-    with TemporaryDirectory():
-        globaldb = GlobalDBHandler(data_dir=target_directory, sql_vm_instructions_cb=0)
-        assets_updater = AssetsUpdater(msg_aggregator=msg_aggregator)
-        conflicts = assets_updater.perform_update(
-            up_to_version=args.target_version,
-            conflicts=None,
-        )
+    globaldb = GlobalDBHandler(data_dir=target_directory, sql_vm_instructions_cb=0)
+    assets_updater = AssetsUpdater(msg_aggregator=msg_aggregator)
+    conflicts = assets_updater.perform_update(
+        up_to_version=args.target_version,
+        conflicts=None,
+    )
     if conflicts is not None:
         print('There were conflicts during the update. Bailing.')
         sys.exit(1)
 
+    return globaldb, target_directory
+
+
+def clean_folder(globaldb: GlobalDBHandler, target_directory: Path):
+    """Due to the way globaldb initializes we have two of them. Clean up the extra one"""
     globaldb.conn.execute('PRAGMA journal_mode=DELETE')
-    # Due to the way globaldb initializes we have two of them. Clean up the extra one
     print('Cleaning up...')
     (target_directory / GLOBALDIR_NAME / GLOBALDB_NAME).rename(target_directory / GLOBALDB_NAME)
     shutil.rmtree(target_directory / GLOBALDIR_NAME)
     print('Done!')
+
+
+def main() -> None:
+    globaldb, target_directory = populate_db_with_assets()
+    clean_folder(globaldb, target_directory)
 
 
 if __name__ == '__main__':

@@ -2055,16 +2055,16 @@ class GlobalDBHandler:
             for entry in entries:
                 try:
                     cursor.execute(
-                        'INSERT INTO location_asset_mappings(local_id, location, exchange_symbol) VALUES(?, ?, ?)', (  # noqa: E501
+                        'INSERT OR IGNORE INTO location_asset_mappings(local_id, location, exchange_symbol) VALUES(?, ?, ?)', (  # noqa: E501
                             entry.asset.serialize(),
                             None if entry.location is None else entry.location.serialize_for_db(),
                             entry.location_symbol,
                         ),
                     )
-                except sqlite3.IntegrityError as e:
+                except sqlite3.OperationalError as e:
                     raise InputError(
                         f'Failed to add the location asset mapping of {entry.location_symbol} in '
-                        f'{entry.location} because it already exists in the DB.',
+                        f'{entry.location} due to {e}',
                     ) from e
 
     @staticmethod
