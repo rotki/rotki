@@ -6,7 +6,6 @@ import {
 import { omit } from 'lodash-es';
 import { Section } from '@/types/status';
 import { CURRENCY_USD } from '@/types/currencies';
-import { isNft } from '@/utils/nft';
 import type { ManualPrice, ManualPriceFormPayload } from '@/types/prices';
 
 export function useLatestPrices(t: ReturnType<typeof useI18n>['t'], filter?: Ref<string | undefined>) {

@@ -116,3 +116,7 @@ input {
 .blur {
   filter: blur(0.75em);
 }
+
+.break-words {
+  word-break: break-word;
+}

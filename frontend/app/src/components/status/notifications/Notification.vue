@@ -47,6 +47,9 @@ const icon = computed(() => {
 });
 
 const color = computed(() => {
+  if (get(notification).action)
+    return 'warning';
+
   switch (get(notification).severity) {
     case Severity.ERROR:
       return 'error';
@@ -133,145 +136,137 @@ function buttonClicked() {
     :class="[
       css.notification,
       {
-        [css.bg_warning]: !!notification.action,
-        [css[`bg_${color}`]]: !!color && !notification.action,
-        ['!rounded-none']: popup,
+        [css[`bg_${color}`]]: color,
+        [css.flat]: !color,
+        [css.popup]: popup,
       },
     ]"
     class="!p-2 !pb-1.5"
     no-padding
     :variant="popup ? 'flat' : 'outlined'"
   >
-    <div
-      :class="css.body"
-      class="flex-col items-stretch p-0"
-    >
-      <div class="flex pb-1 items-center overflow-hidden">
+    <div class="flex pb-1 items-center overflow-hidden">
+      <div
+        class="mr-3 ml-1 my-0 rounded-full p-2"
+        :class="circleBgClass"
+      >
+        <RuiIcon
+          size="20"
+          class="text-white"
+          :name="icon"
+        />
+      </div>
+      <div class="flex-1 text-truncate">
         <div
-          class="mr-3 ml-1 my-0 rounded-full p-2"
-          :class="circleBgClass"
+          class="font-medium text-truncate"
+          :title="notification.title"
         >
-          <RuiIcon
-            size="20"
-            class="text-white"
-            :name="icon"
-          />
+          {{ notification.title }}
         </div>
-        <div class="flex-1 text-truncate">
-          <div
-            class="font-medium text-truncate"
-            :title="notification.title"
+        <div class="text-caption text-rui-text-secondary -mt-0.5">
+          {{ date }}
+        </div>
+      </div>
+      <RuiTooltip
+        :popper="{ placement: 'bottom', offsetDistance: 0 }"
+        :open-delay="400"
+        class="z-[9999]"
+      >
+        <template #activator>
+          <RuiButton
+            variant="text"
+            icon
+            class="!p-2"
+            @click="dismiss(notification.id)"
           >
-            {{ notification.title }}
-          </div>
-          <div class="text-caption text-rui-text-secondary -mt-0.5">
-            {{ date }}
-          </div>
-        </div>
-        <RuiTooltip
-          :popper="{ placement: 'bottom', offsetDistance: 0 }"
-          :open-delay="400"
-          class="z-[9999]"
+            <RuiIcon name="close-line" />
+          </RuiButton>
+        </template>
+        <span>{{ t('notification.dismiss_tooltip') }}</span>
+      </RuiTooltip>
+    </div>
+    <div
+      class="mt-1 px-2 break-words text-rui-text-secondary text-body-2 leading-2 group"
+      :class="[
+        css.message,
+        {
+          'cursor-pointer': showExpandArrow && !expanded,
+          'pb-6': showExpandArrow && expanded,
+        },
+      ]"
+      :style="messageWrapperStyle"
+      @click="messageClicked()"
+    >
+      <div ref="message">
+        <MissingKeyNotification
+          v-if="notification.i18nParam"
+          :params="notification.i18nParam"
+        />
+        <div
+          v-else
+          :title="notification.message"
         >
-          <template #activator>
-            <RuiButton
-              variant="text"
-              icon
-              class="!p-2"
-              @click="dismiss(notification.id)"
-            >
-              <RuiIcon name="close-line" />
-            </RuiButton>
-          </template>
-          <span>{{ t('notification.dismiss_tooltip') }}</span>
-        </RuiTooltip>
+          {{ notification.message }}
+        </div>
       </div>
       <div
-        class="mt-1 px-2 break-words text-rui-text-secondary text-body-2 leading-2 group"
-        :class="[
-          css.message,
-          {
-            [css.inline]: !popup,
-            'cursor-pointer': showExpandArrow && !expanded,
-            'pb-6': showExpandArrow && expanded,
-          },
-        ]"
-        :style="messageWrapperStyle"
-        @click="messageClicked()"
+        v-if="showExpandArrow"
+        :class="css.expand"
       >
-        <div ref="message">
-          <MissingKeyNotification
-            v-if="notification.i18nParam"
-            :params="notification.i18nParam"
-          />
-          <div
-            v-else
-            :title="notification.message"
-          >
-            {{ notification.message }}
-          </div>
-        </div>
-        <div
-          v-if="showExpandArrow"
-          class="bg-gradient-to-b from-transparent to-white dark:to-[#363636] absolute bottom-0 w-full"
-          :class="{ 'dark:to-[#333]': popup }"
-        >
-          <RuiButton
-            class="w-full bg-gradient-to-b from-transparent !p-0.5"
-            :class="css.gradient"
-            @click.stop="buttonClicked()"
-          >
-            <RuiIcon
-              :name="expanded ? 'arrow-up-s-line' : 'arrow-down-s-line'"
-              :class="{ 'invisible opacity-0 group-hover:translate-y-1': !expanded }"
-              class="transition-all group-hover:visible group-hover:opacity-100 group-hover:-translate-y-1 text-rui-text-secondary"
-              size="20"
-            />
-          </RuiButton>
-        </div>
-      </div>
-      <slot />
-      <div class="flex mt-1 gap-2 mx-0.5">
         <RuiButton
-          v-for="(action, index) in actions"
-          :key="index"
-          color="primary"
-          variant="text"
-          size="sm"
-          @click="doAction(notification.id, action)"
+          class="!p-0.5"
+          :class="css['expand-button']"
+          @click.stop="buttonClicked()"
         >
-          {{ action.label }}
-          <template #append>
-            <RuiIcon
-              :name="action.icon ?? 'arrow-right-line'"
-              size="16"
-            />
-          </template>
+          <RuiIcon
+            :name="expanded ? 'arrow-up-s-line' : 'arrow-down-s-line'"
+            :class="{ 'invisible opacity-0 group-hover:translate-y-1': !expanded }"
+            class="transition-all group-hover:visible group-hover:opacity-100 group-hover:-translate-y-1 text-rui-text-secondary"
+            size="20"
+          />
         </RuiButton>
-        <RuiTooltip
-          :popper="{ placement: 'bottom', offsetDistance: 0 }"
-          :open-delay="400"
-          class="z-[9999]"
-        >
-          <template #activator>
-            <RuiButton
-              color="primary"
-              variant="text"
-              size="sm"
-              @click="copy()"
-            >
-              {{ t('notification.copy') }}
-              <template #append>
-                <RuiIcon
-                  name="file-copy-line"
-                  size="16"
-                />
-              </template>
-            </RuiButton>
-          </template>
-          <span> {{ t('notification.copy_tooltip') }}</span>
-        </RuiTooltip>
       </div>
+    </div>
+    <div class="flex mt-1 gap-2 mx-0.5">
+      <RuiButton
+        v-for="(action, index) in actions"
+        :key="index"
+        color="primary"
+        variant="text"
+        size="sm"
+        @click="doAction(notification.id, action)"
+      >
+        {{ action.label }}
+        <template #append>
+          <RuiIcon
+            :name="action.icon ?? 'arrow-right-line'"
+            size="16"
+          />
+        </template>
+      </RuiButton>
+      <RuiTooltip
+        :popper="{ placement: 'bottom', offsetDistance: 0 }"
+        :open-delay="400"
+        class="z-[9999]"
+      >
+        <template #activator>
+          <RuiButton
+            color="primary"
+            variant="text"
+            size="sm"
+            @click="copy()"
+          >
+            {{ t('notification.copy') }}
+            <template #append>
+              <RuiIcon
+                name="file-copy-line"
+                size="16"
+              />
+            </template>
+          </RuiButton>
+        </template>
+        <span> {{ t('notification.copy_tooltip') }}</span>
+      </RuiTooltip>
     </div>
   </RuiCard>
 </template>
@@ -280,24 +275,61 @@ function buttonClicked() {
 .notification {
   max-width: 400px;
 
+  &.popup {
+    @apply rounded-none #{!important};
+  }
+
+  .expand {
+    @apply bg-gradient-to-b from-transparent to-white absolute bottom-0 w-full;
+
+    &-button {
+      @apply w-full bg-gradient-to-b from-transparent to-white;
+      background-color: transparent !important;
+    }
+  }
+
   @each $color in (warning, error, info, secondary) {
     &.bg_#{$color} {
       @apply bg-rui-#{$color}/[.1] #{!important};
 
-      .gradient {
-        @apply to-rui-#{$color}/[.1] #{!important};
-        background-color: transparent !important;
+      .expand {
+        &-button {
+          @apply to-rui-#{$color}/[.1] #{!important};
+        }
       }
     }
   }
 }
 
-.body {
-  @apply h-full #{!important};
-  max-width: 400px;
-}
-
 .message {
   @apply overflow-hidden whitespace-pre-line relative transition-all;
+}
+
+:global(.dark) {
+  .notification {
+    &.flat {
+      .expand {
+        @apply to-[#1E1E1E];
+
+        &-button {
+          @apply to-[#1E1E1E]
+        }
+      }
+    }
+
+    &:not(.flat) {
+      .expand {
+        @apply to-[#363636];
+      }
+    }
+
+    &.popup {
+      &:not(.flat) {
+        .expand {
+          @apply to-[#333];
+        }
+      }
+    }
+  }
 }
 </style>

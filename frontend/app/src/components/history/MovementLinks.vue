@@ -36,8 +36,8 @@ const transactionId = computed<string>(() => {
 </script>
 
 <template>
-  <span class="flex flex-col pt-1">
-    <span
+  <div class="flex flex-col gap-2">
+    <div
       v-if="item.address"
       class="flex flex-row"
     >
@@ -48,10 +48,10 @@ const transactionId = computed<string>(() => {
         full-address
         no-link
       />
-    </span>
-    <span
+    </div>
+    <div
       v-if="item.transactionId"
-      class="flex flex-row mt-1"
+      class="flex flex-row"
     >
       <span class="mr-1 font-medium"> {{ t('common.tx_hash') }}: </span>
       <HashLink
@@ -62,7 +62,7 @@ const transactionId = computed<string>(() => {
         full-address
         no-link
       />
-      <span v-else>{{ item.transactionId ?? '' }}</span>
-    </span>
-  </span>
+      <span v-else>{{ item.transactionId }}</span>
+    </div>
+  </div>
 </template>
