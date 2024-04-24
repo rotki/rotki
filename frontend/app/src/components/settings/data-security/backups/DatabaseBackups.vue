@@ -104,7 +104,7 @@ function showDeleteConfirmation(item: UserDbBackupWithId) {
   show(
     {
       title: t('database_backups.confirm.title'),
-      message: t('database_backups.confirm.message', { ...messageInfo }),
+      message: t('database_backups.confirm.message', { ...messageInfo() }),
     },
     () => emit('remove', item),
   );

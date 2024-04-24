@@ -186,7 +186,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
 
   const getAccountByAddress = (address: string, chain?: string): BlockchainAccount | undefined => {
     const knownAccounts = get(accounts);
-    if (chain)
+    if (chain && knownAccounts[chain])
       return knownAccounts[chain].find(account => getAccountAddress(account) === address);
 
     return Object.values(knownAccounts)
