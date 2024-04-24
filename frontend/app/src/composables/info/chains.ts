@@ -97,12 +97,6 @@ export const useSupportedChains = createSharedComposable(() => {
   ): ComputedRef<ChainInfo | null> =>
     computed(() => get(supportedChains).find(x => x.id === get(chain)) || null);
 
-  const getChainName = (chain: MaybeRef<string>): ComputedRef<string> =>
-    computed(() => {
-      const chainVal = get(chain);
-      return get(getChainInfoById(chainVal))?.name || chainVal;
-    });
-
   const getNativeAsset = (chain: MaybeRef<string>) => {
     const blockchain = get(chain);
     return (
@@ -112,13 +106,22 @@ export const useSupportedChains = createSharedComposable(() => {
     );
   };
 
+  /**
+   *
+   * @param {string} location - String to find the chain (can be the chain id, or the evmChainName)
+   * @param {any} defaultValue - Default value to be returned, when the location is not found.
+   * @return {Blockchain} - Blockchain id found
+   * @example
+   * toSnakeCase('zksync_lite'); // Blockchain.ZKSYNC_LITE
+   * toSnakeCase('ethereum'); // Blockchain.ETH
+   */
   const getChain = (location: string, defaultValue: any = Blockchain.ETH): Blockchain => {
     // note: we're using toSnakeCase here to always ensure that chains
     // with combined names gets parsed to match their chain name
     const chainData = get(supportedChains).find((item) => {
       const transformed = toSnakeCase(location);
-      if ('evmChainName' in item)
-        return item.evmChainName === transformed;
+      if ('evmChainName' in item && item.evmChainName === transformed)
+        return true;
 
       return item.id === transformed;
     });
@@ -128,6 +131,24 @@ export const useSupportedChains = createSharedComposable(() => {
 
     return defaultValue;
   };
+
+  /**
+   *
+   * @param {string} location - String to find the chain (can be the chain id, or the evmChainName)
+   * @return {string} - Readable chain name
+   * @example
+   * toSnakeCase('zksync_lite'); // ZKSync Lite
+   * toSnakeCase('ethereum'); // Ethereum
+   */
+  const getChainName = (location: MaybeRef<string>): ComputedRef<string> =>
+    computed(() => {
+      const locationVal = get(location);
+      const chain = getChain(locationVal, null);
+      if (!chain)
+        return locationVal;
+
+      return get(getChainInfoById(chain))?.name || locationVal;
+    });
 
   const getChainImageUrl = (chain: MaybeRef<string>) => computed<string>(() => {
     const chainVal = get(chain);

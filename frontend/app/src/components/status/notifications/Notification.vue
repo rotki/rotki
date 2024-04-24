@@ -133,8 +133,8 @@ function buttonClicked() {
     :class="[
       css.notification,
       {
-        [css.action]: !!notification.action,
-        [css[`bg_${color}`]]: !!color,
+        [css.bg_warning]: !!notification.action,
+        [css[`bg_${color}`]]: !!color && !notification.action,
         ['!rounded-none']: popup,
       },
     ]"
@@ -279,10 +279,6 @@ function buttonClicked() {
 <style module lang="scss">
 .notification {
   max-width: 400px;
-
-  &.action {
-    background-color: rgba(237, 108, 2, 0.12);
-  }
 
   @each $color in (warning, error, info, secondary) {
     &.bg_#{$color} {

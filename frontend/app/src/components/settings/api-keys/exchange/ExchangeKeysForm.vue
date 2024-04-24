@@ -260,6 +260,7 @@ function onExchangeChange(exchange: string) {
       :disabled="editMode && !editKeys"
       :error-messages="toMessages(v$.apiKey)"
       data-cy="api-key"
+      prepend-icon="key-line"
       :label="t('exchange_settings.inputs.api_key')"
     />
 

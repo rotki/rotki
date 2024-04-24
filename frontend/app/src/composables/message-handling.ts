@@ -22,6 +22,7 @@ import {
 import { camelCaseTransformer } from '@/services/axios-tranformers';
 import { Routes } from '@/router/routes';
 import { router } from '@/router';
+import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import type { Blockchain } from '@rotki/common/lib/blockchain';
 import type { CalendarEventPayload } from '@/types/history/calendar';
 
@@ -211,6 +212,8 @@ export function useMessageHandling() {
     };
   };
 
+  const { addressNameSelector } = useAddressesNamesStore();
+
   const handleCalendarReminder = (data: CalendarEventPayload): Notification => {
     const { name, timestamp } = data;
     const now = dayjs();
@@ -224,15 +227,16 @@ export function useMessageHandling() {
     }
 
     let message = '';
-
-    if (data.address && data.blockchain)
-      message += `${t('common.account')}: ${data.address} (${data.blockchain}) \n`;
+    if (data.address && data.blockchain) {
+      const address = get(addressNameSelector(data.address)) || data.address;
+      message += `${t('common.account')}: ${address} (${get(getChainName(data.blockchain))}) \n`;
+    }
 
     if (data.counterparty)
       message += `${t('common.counterparty')}: ${data.counterparty} \n`;
 
     if (data.description)
-      message += `${t('common.description')}: ${data.description}`;
+      message += data.description;
 
     return {
       title,
@@ -370,12 +374,10 @@ export function useMessageHandling() {
       const messages = await backoff(3, () => consumeMessages(), 10000);
       const existing = get(notifications).map(({ message }) => message);
       messages.errors
-        .filter(uniqueStrings)
-        .filter(error => !existing.includes(error))
+        .filter((error, ...args) => uniqueStrings(error, ...args) && !existing.includes(error))
         .forEach(message => handlePollingMessage(message, false));
       messages.warnings
-        .filter(uniqueStrings)
-        .filter(warning => !existing.includes(warning))
+        .filter((warning, ...args) => uniqueStrings(warning, ...args) && !existing.includes(warning))
         .forEach(message => handlePollingMessage(message, true));
     }
     catch (error: any) {

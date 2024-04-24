@@ -37,7 +37,6 @@ onMounted(() => {
         <template #activator>
           <RuiButton
             variant="text"
-            size="sm"
             icon
             v-on="on"
           >
@@ -54,13 +53,13 @@ onMounted(() => {
       <div class="flex flex-col gap-1">
         <SettingsOption
           #default="{ updateImmediate, loading, error, success }"
-          setting="autoDeleteCalendarEntries"
-          @finished="setAutoDelete()"
+          setting="autoCreateCalendarReminders"
+          @finished="setAutoCreate()"
         >
           <RuiSwitch
-            v-model="autoDelete"
+            v-model="autoCreateReminders"
             :disabled="loading"
-            :label="t('calendar.dialog.settings.auto_delete')"
+            :label="t('calendar.dialog.settings.auto_create_reminders')"
             color="primary"
             :error-messages="error"
             :success-messages="success"
@@ -69,13 +68,13 @@ onMounted(() => {
         </SettingsOption>
         <SettingsOption
           #default="{ updateImmediate, loading, error, success }"
-          setting="autoCreateCalendarReminders"
-          @finished="setAutoCreate()"
+          setting="autoDeleteCalendarEntries"
+          @finished="setAutoDelete()"
         >
           <RuiSwitch
-            v-model="autoCreateReminders"
+            v-model="autoDelete"
             :disabled="loading"
-            :label="t('calendar.dialog.settings.auto_create_reminders')"
+            :label="t('calendar.dialog.settings.auto_delete')"
             color="primary"
             :error-messages="error"
             :success-messages="success"

@@ -257,7 +257,7 @@ defineExpose({
             <RuiIcon
               v-if="length > 0"
               class="ml-2 transition"
-              :class="{ 'transform -rotate-180': showReminders }"
+              :class="{ 'transform -rotate-180': !showReminders }"
               name="arrow-up-s-line"
             />
           </div>
@@ -298,7 +298,7 @@ defineExpose({
         v-model="remindInTime"
         color="primary"
         size="sm"
-        class="ml-1"
+        class="ml-1 flex flex-col items-start"
       >
         <div class="text-rui-text-secondary text-sm mt-0.5">
           {{ t('calendar.reminder.notify') }}
