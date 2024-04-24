@@ -16,7 +16,7 @@ export const useAccountMigrationStore = defineStore(
     let migratedAddresses: Ref<MigratedAddresses> = ref([]);
 
     const { canRequestData } = storeToRefs(useSessionAuthStore());
-    const { txChains, getChainName } = useSupportedChains();
+    const { txChains, getChainName, isEvm } = useSupportedChains();
     const { fetchAccounts } = useBlockchains();
 
     const { t } = useI18n();
@@ -46,10 +46,10 @@ export const useAccountMigrationStore = defineStore(
       for (const chain in addresses) {
         const chainAddresses = addresses[chain];
         const chainName = get(getChainName(chain));
-        promises.push(
-          fetchAccounts(chain),
-          useTokenDetection(chain).detectTokens(chainAddresses),
-        );
+        promises.push(fetchAccounts(chain));
+        if (get(isEvm(chain)))
+          promises.push(useTokenDetection(chain).detectTokens(chainAddresses));
+
         notifications.push({
           title: t(
             'notification_messages.address_migration.title',
