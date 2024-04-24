@@ -4512,6 +4512,7 @@
       },
       "fetching": "Checking transaction decoding status",
       "transactions_processed": "{processed} / {total} transactions processed",
+      "preparing": "Decoding transactions, please wait...",
       "progress": "Progress",
       "redecode_all": "Redecode All Transactions",
       "title": "Transaction decoding status",

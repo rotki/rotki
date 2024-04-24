@@ -171,6 +171,9 @@ onMounted(() => refresh());
       <template v-if="fetching">
         {{ t('transactions.events_decoding.fetching') }}
       </template>
+      <template v-else-if="eventTaskLoading">
+        {{ t('transactions.events_decoding.preparing') }}
+      </template>
       <template v-else>
         {{ t('transactions.events_decoding.decoded.true') }}
       </template>

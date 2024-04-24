@@ -7,7 +7,7 @@ import {
   TransactionChainType,
   type TransactionHashAndEvmChainPayload,
 } from '@/types/history/events';
-import { EvmUndecodedTransactionResponse } from '@/types/websocket-messages';
+import { type EvmUnDecodedTransactionsData, EvmUndecodedTransactionResponse } from '@/types/websocket-messages';
 import type { TaskMeta } from '@/types/task';
 import type { Writeable } from '@/types';
 
@@ -166,6 +166,35 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     ]);
   };
 
+  function setUndecodedStatusForTransactions(transactions: EvmChainAndTxHash[] | { evmChain: string }[] | undefined) {
+    if (!transactions)
+      return;
+
+    const undecoded = transactions.reduce<Record<string, EvmUnDecodedTransactionsData>>((acc, item) => {
+      if (!('txHash' in item))
+        return acc;
+
+      const evmChain = item.evmChain;
+      if (acc[evmChain]) {
+        acc[evmChain] = {
+          evmChain,
+          processed: 0,
+          total: acc[evmChain].total + 1,
+        };
+      }
+      else {
+        acc[evmChain] = {
+          evmChain,
+          processed: 0,
+          total: 1,
+        };
+      }
+
+      return acc;
+    }, {});
+    updateUndecodedTransactionsStatus(undecoded);
+  }
+
   const fetchTransactionEvents = async (
     ignoreCache: boolean,
     type: TransactionChainType = TransactionChainType.EVM,
@@ -213,6 +242,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     }
 
     resetUndecodedTransactionsStatus();
+    setUndecodedStatusForTransactions(transactions);
     try {
       const taskType = TaskType.TRANSACTIONS_DECODING;
       const { taskId } = await decodeHistoryEvents({
