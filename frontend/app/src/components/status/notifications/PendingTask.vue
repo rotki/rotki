@@ -18,13 +18,13 @@ const progress = useToNumber(taskProgress);
 
 <template>
   <div class="flex items-center justify-between flex-nowrap gap-4">
-    <div class="flex flex-col flex-1">
+    <div class="flex flex-col flex-1 break-words">
       <div class="overflow-hidden text-ellipsis text-sm font-medium mb-1 leading-4">
         {{ task.meta.title }}
       </div>
       <div
         v-if="task.meta.description"
-        class="text-xs text-rui-text-secondary mb-2 break-words"
+        class="text-xs text-rui-text-secondary mb-2"
       >
         {{ task.meta.description }}
       </div>
