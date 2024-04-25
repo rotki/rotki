@@ -20,7 +20,9 @@ const module = Module.ETH2;
 const performanceSection = Section.STAKING_ETH2;
 const statsSection = Section.STAKING_ETH2_STATS;
 
-const filter = ref<EthStakingCombinedFilter>();
+const filter = ref<EthStakingCombinedFilter>({
+  status: 'active',
+});
 const selection = ref<EthStakingFilter>({
   validators: [],
 });
@@ -124,22 +126,29 @@ function setTotal(validators?: Eth2Validators['entries']) {
   set(total, totalStakedAmount);
 }
 
-watch([selection, filter] as const, async ([selection, filter]) => {
-  const statusFilter = filter ? objectOmit(filter, ['fromTimestamp', 'toTimestamp']) : {};
-  const accounts = 'accounts' in selection
-    ? { addresses: selection.accounts.map(account => account.address) }
-    : { validatorIndices: selection.validators.map((validator: Eth2ValidatorEntry) => validator.index) };
+watch([selection, filter], async () => {
+  await fetchValidatorsWithFilter();
+});
+
+async function fetchValidatorsWithFilter() {
+  const filterVal = get(filter);
+  const selectionVal = get(selection);
+  const statusFilter = filterVal ? objectOmit(filterVal, ['fromTimestamp', 'toTimestamp']) : {};
+  const accounts = 'accounts' in selectionVal
+    ? { addresses: selectionVal.accounts.map(account => account.address) }
+    : { validatorIndices: selectionVal.validators.map((validator: Eth2ValidatorEntry) => validator.index) };
 
   const combinedFilter = nonEmptyProperties({ ...statusFilter, ...accounts });
 
   const validators = isEmpty(combinedFilter) ? undefined : (await getEth2Validators(combinedFilter)).entries;
   setTotal(validators);
-});
+};
 
-onMounted(async () => {
+onBeforeMount(async () => {
   if (get(enabled))
     await refresh(false);
-  setTotal();
+
+  await fetchValidatorsWithFilter();
 });
 </script>
 

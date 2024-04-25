@@ -101,7 +101,7 @@ function updateFilters(updatedFilters: Filters) {
   });
 }
 
-watch(() => props.filter, (period) => {
+watchImmediate(() => props.filter, (period) => {
   const updatedFilters = { ...get(filters) };
 
   if (period?.fromTimestamp)
