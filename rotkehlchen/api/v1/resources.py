@@ -255,7 +255,7 @@ from rotkehlchen.types import (
     UserNote,
 )
 
-from .types import EvmlikeTransactionDecodingApiData, ModuleWithBalances, ModuleWithStats
+from .types import ModuleWithBalances, ModuleWithStats
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.hdkey import HDKey
@@ -666,11 +666,13 @@ class EvmlikeTransactionsResource(BaseMethodView):
     def put(
             self,
             async_query: bool,
-            data: list[EvmlikeTransactionDecodingApiData],
+            tx_hash: EVMTxHash,
+            chain: EvmlikeChain,
     ) -> Response:
         return self.rest_api.decode_evmlike_transactions(
             async_query=async_query,
-            data=data,
+            tx_hash=tx_hash,
+            chain=chain,
         )
 
 

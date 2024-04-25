@@ -32,6 +32,7 @@ from rotkehlchen.serialization.deserialize import deserialize_evm_address, deser
 from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
+    EVMTxHash,
     Fee,
     Location,
     Timestamp,
@@ -437,6 +438,32 @@ class ZksyncLiteManager:
 
             from_hash = result[-1]['txHash']
             transactions = []
+
+    def query_single_transaction(
+            self,
+            tx_hash: EVMTxHash,
+            concerning_address: ChecksumEvmAddress,
+    ) -> ZKSyncLiteTransaction | None:
+        """Queries zksync lite api for a single transaction, saves it
+        in the DB and returns it if existing
+
+        In case of error returns None and logs the error.
+        """
+        response = self._query_api(url=f'accounts/{tx_hash.hex()}/data')
+        if (tx_entry := response.get('result', {}).get('tx', None)) is None:
+            log.error(f'Could not find {tx_hash.hex()} transaction from zksync lite api. Response: {response}')  # noqa: E501
+            return None
+
+        if (tx := self._deserialize_zksync_transaction(entry=tx_entry, concerning_address=concerning_address)) is None:  # noqa: E501
+            return None
+
+        with self.database.user_write() as write_cursor:
+            self._add_zksynctxs_db(
+                write_cursor=write_cursor,
+                transactions=[tx],
+            )
+
+        return tx
 
     def _add_zksynctxs_db(
             self,
