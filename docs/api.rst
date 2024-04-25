@@ -1986,7 +1986,7 @@ Decode transactions that haven't been decoded yet
 
 .. http:post:: /api/(version)/blockchains/(chaintype)/transactions/decode
 
-   Doing a POST on the transactions decoding endpoint will start the decoding process for all the transactions that haven't been decoded yet for the given chain and addresses combination. Transactions already decoded won't be re-decoded. ``chaintype`` can be either ``evm`` or ``evmlike``
+   Doing a POST on the transactions decoding endpoint will start the decoding process for all the transactions that haven't been decoded yet for the given chain and addresses combination. Transactions already decoded won't be re-decoded unless ignore_cache is set to true . ``chaintype`` can be either ``evm`` or ``evmlike``
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -2001,9 +2001,11 @@ Decode transactions that haven't been decoded yet
 
       {
           "async_query": false,
+	  "ignore_cache": false,
           "chains": ["ethereum", "optimism"]
       }
 
+   :reqjson bool ignore_cache: Defaults to false. If set to true then all events will be redecoded, not only those that have not yet been decoded.
    :reqjson list chains: A list specifying the evm/evmlike chains for which to decode tx_hashes. The possible values are limited to the chains with evm transactions for evm and to zksynclite for evmlike. If the list is not provided all transactions from all the chains will be decoded.
 
    **Example Response**:

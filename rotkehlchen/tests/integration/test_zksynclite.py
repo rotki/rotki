@@ -3,6 +3,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
 from rotkehlchen.chain.zksync_lite.structures import (
     ZKSyncLiteSwapData,
     ZKSyncLiteTransaction,
@@ -205,7 +206,7 @@ def test_decode_fullexit(zksync_lite_manager, inquirer):  # pylint: disable=unus
         )
     assert events == [EvmEvent(
         identifier=1,
-        event_identifier=f'zkl{tx_hash.hex()}',  # pylint: disable=no-member
+        event_identifier=ZKL_IDENTIFIER.format(tx_hash=tx_hash.hex()),  # pylint: disable=no-member
         tx_hash=tx_hash,
         sequence_index=0,
         timestamp=ts_sec_to_ms(timestamp),
@@ -257,7 +258,7 @@ def test_decode_forcedexit(zksync_lite_manager, inquirer):  # pylint: disable=un
         )
     assert events == [EvmEvent(
         identifier=1,
-        event_identifier=f'zkl{tx_hash.hex()}',  # pylint: disable=no-member
+        event_identifier=ZKL_IDENTIFIER.format(tx_hash=tx_hash.hex()),  # pylint: disable=no-member
         tx_hash=tx_hash,
         sequence_index=0,
         timestamp=ts_sec_to_ms(timestamp),
@@ -315,7 +316,7 @@ def test_decode_swap(zksync_lite_manager, inquirer):  # pylint: disable=unused-a
         )
     assert events == [EvmEvent(
         identifier=1,
-        event_identifier=f'zkl{tx_hash.hex()}',  # pylint: disable=no-member
+        event_identifier=ZKL_IDENTIFIER.format(tx_hash=tx_hash.hex()),  # pylint: disable=no-member
         tx_hash=tx_hash,
         sequence_index=0,
         timestamp=ts_sec_to_ms(timestamp),
@@ -329,7 +330,7 @@ def test_decode_swap(zksync_lite_manager, inquirer):  # pylint: disable=unused-a
         address=address,
     ), EvmEvent(
         identifier=2,
-        event_identifier=f'zkl{tx_hash.hex()}',  # pylint: disable=no-member
+        event_identifier=ZKL_IDENTIFIER.format(tx_hash=tx_hash.hex()),  # pylint: disable=no-member
         tx_hash=tx_hash,
         sequence_index=1,
         timestamp=ts_sec_to_ms(timestamp),
@@ -343,7 +344,7 @@ def test_decode_swap(zksync_lite_manager, inquirer):  # pylint: disable=unused-a
         address=address,
     ), EvmEvent(
         identifier=3,
-        event_identifier=f'zkl{tx_hash.hex()}',  # pylint: disable=no-member
+        event_identifier=ZKL_IDENTIFIER.format(tx_hash=tx_hash.hex()),  # pylint: disable=no-member
         tx_hash=tx_hash,
         sequence_index=2,
         timestamp=ts_sec_to_ms(timestamp),

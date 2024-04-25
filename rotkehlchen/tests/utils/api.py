@@ -103,7 +103,7 @@ def _check_error_response_properties(
         if result_exists:
             assert response_data['result'] is not None
         else:
-            assert response_data['result'] is None
+            assert response_data['result'] in (None, False)
     if contained_in_msg:
         if isinstance(contained_in_msg, str):
             assert contained_in_msg in response_data['message']

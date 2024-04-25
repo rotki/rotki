@@ -209,6 +209,22 @@ class DBHistoryEvents:
 
         return None
 
+    def delete_events_by_location(
+            self,
+            write_cursor: 'DBCursor',
+            location: EVM_EVMLIKE_LOCATIONS_TYPE,
+    ) -> None:
+        """Delete all relevant non-customized events for a given location"""
+        customized_event_ids = self.get_customized_event_identifiers(cursor=write_cursor, location=location)  # noqa: E501
+        querystr = 'DELETE FROM history_events WHERE location=?'
+        if (length := len(customized_event_ids)) != 0:
+            querystr += f' AND identifier NOT IN ({", ".join(["?"] * length)})'
+            bindings = [location.serialize_for_db(), *customized_event_ids]
+        else:
+            bindings = (location.serialize_for_db(),)  # type: ignore  # different type of elements in the list
+
+        write_cursor.execute(querystr, bindings)
+
     def delete_events_by_tx_hash(
             self,
             write_cursor: 'DBCursor',
@@ -233,6 +249,7 @@ class DBHistoryEvents:
             bindings = [*tx_hashes, *customized_event_ids]
         else:
             bindings = tx_hashes  # type: ignore  # different type of elements in the list
+
         write_cursor.execute(querystr, bindings)
 
     def get_customized_event_identifiers(

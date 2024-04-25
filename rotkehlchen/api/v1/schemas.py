@@ -376,7 +376,7 @@ class EvmlikeTransactionDecodingSchema(AsyncQueryArgumentSchema):
     tx_hash = EVMTransactionHashField(required=True)
 
 
-class EvmPendingTransactionDecodingSchema(AsyncQueryArgumentSchema):
+class EvmPendingTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
     evm_chains = fields.List(
         EvmChainNameField(limit_to=list(EVM_CHAIN_IDS_WITH_TRANSACTIONS)),
         load_default=EVM_CHAIN_IDS_WITH_TRANSACTIONS,
@@ -396,7 +396,7 @@ class EvmPendingTransactionDecodingSchema(AsyncQueryArgumentSchema):
             )
 
 
-class EvmlikePendingTransactionDecodingSchema(AsyncQueryArgumentSchema):
+class EvmlikePendingTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
     evmlike_chains = fields.List(
         StrEnumField(enum_class=EvmlikeChain),
         load_default=[EvmlikeChain.ZKSYNC_LITE],
