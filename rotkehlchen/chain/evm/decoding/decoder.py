@@ -541,8 +541,10 @@ class EVMTransactionDecoder(ABC):
             ignore_cache: bool,
             tx_hashes: list[EVMTxHash] | None,
             send_ws_notifications: bool = False,
+            delete_customized: bool = False,
     ) -> list['EvmEvent']:
         """Make sure that receipts are pulled + events decoded for the given transaction hashes.
+        If delete_customized is True then also customized events are deleted before redecoding.
 
         The transaction hashes must exist in the DB at the time of the call
 
@@ -590,6 +592,7 @@ class EVMTransactionDecoder(ABC):
                 transaction=tx,
                 tx_receipt=receipt,
                 ignore_cache=ignore_cache,
+                delete_customized=delete_customized,
             )
             events.extend(new_events)
             if new_refresh_balances is True:
@@ -613,6 +616,7 @@ class EVMTransactionDecoder(ABC):
             transaction: EvmTransaction,
             tx_receipt: EvmTxReceipt,
             ignore_cache: bool,
+            delete_customized: bool = False,
     ) -> tuple[list['EvmEvent'], bool]:
         """
         Get a transaction's events if existing in the DB or decode them.
@@ -620,12 +624,14 @@ class EVMTransactionDecoder(ABC):
         """
         with self.database.conn.read_ctx() as cursor:
             tx_id = transaction.get_or_query_db_id(cursor)
+
         if ignore_cache is True:  # delete all decoded events
             with self.database.user_write() as write_cursor:
                 self.dbevents.delete_events_by_tx_hash(
                     write_cursor=write_cursor,
                     tx_hashes=[transaction.tx_hash],
                     location=Location.from_chain_id(self.evm_inquirer.chain_id),
+                    delete_customized=delete_customized,
                 )
                 write_cursor.execute(
                     'DELETE from evm_tx_mappings WHERE tx_id=? AND value=?',

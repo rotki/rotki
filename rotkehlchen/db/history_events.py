@@ -209,27 +209,47 @@ class DBHistoryEvents:
 
         return None
 
+    def delete_events_by_location(
+            self,
+            write_cursor: 'DBCursor',
+            location: EVM_EVMLIKE_LOCATIONS_TYPE,
+    ) -> None:
+        """Delete all relevant non-customized events for a given location"""
+        customized_event_ids = self.get_customized_event_identifiers(cursor=write_cursor, location=location)  # noqa: E501
+        querystr = 'DELETE FROM history_events WHERE location=?'
+        if (length := len(customized_event_ids)) != 0:
+            querystr += f' AND identifier NOT IN ({", ".join(["?"] * length)})'
+            bindings = [location.serialize_for_db(), *customized_event_ids]
+        else:
+            bindings = (location.serialize_for_db(),)  # type: ignore  # different type of elements in the list
+
+        write_cursor.execute(querystr, bindings)
+
     def delete_events_by_tx_hash(
             self,
             write_cursor: 'DBCursor',
             tx_hashes: list[EVMTxHash],
             location: EVM_EVMLIKE_LOCATIONS_TYPE,
+            delete_customized: bool = False,
     ) -> None:
         """Delete all relevant (by transaction hash) history events except those that
-        are customized. Only use with limited number of transactions!!!
+        are customized. If delete_customized is True then delete those too.
+        Only use with limited number of transactions!!!
 
         If you want to reset all decoded events better use the _reset_decoded_events
         code in v37 -> v38 upgrade as that is not limited to the number of transactions
         and won't potentially raise a too many sql variables error
         """
-        customized_event_ids = self.get_customized_event_identifiers(cursor=write_cursor, location=location)  # noqa: E501
-        length = len(customized_event_ids)
+        customized_event_ids = []
+        if not delete_customized:
+            customized_event_ids = self.get_customized_event_identifiers(cursor=write_cursor, location=location)  # noqa: E501
         querystr = f'DELETE FROM history_events WHERE identifier IN (SELECT H.identifier from history_events H INNER JOIN evm_events_info E ON H.identifier=E.identifier AND E.tx_hash IN ({", ".join(["?"] * len(tx_hashes))}))'  # noqa: E501
-        if length != 0:
+        if (length := len(customized_event_ids)) != 0:
             querystr += f' AND identifier NOT IN ({", ".join(["?"] * length)})'
             bindings = [*tx_hashes, *customized_event_ids]
         else:
             bindings = tx_hashes  # type: ignore  # different type of elements in the list
+
         write_cursor.execute(querystr, bindings)
 
     def get_customized_event_identifiers(

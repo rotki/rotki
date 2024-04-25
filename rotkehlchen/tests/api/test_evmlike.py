@@ -410,15 +410,13 @@ def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite
     else:
         raise AssertionError('Did not find the event')
 
-    # now let's try to redecode two transactions
-    response = requests.put(api_url_for(  # delete non-checksummed address
+    # now let's try to redecode one transactions
+    response = requests.put(api_url_for(
         rotkehlchen_api_server,
         'evmliketransactionsresource',
     ), json={
-        'data': [{
-            'chain': 'zksync_lite',
-            'tx_hashes': [tx_hash1.hex(), tx_hash2.hex()],  # pylint: disable=no-member
-        }],
+        'chain': 'zksync_lite',
+        'tx_hash': tx_hash1.hex(),  # pylint: disable=no-member
     })
     assert_simple_ok_response(response)  # see all is fine
 

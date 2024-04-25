@@ -43,7 +43,7 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.accounting.structures.processed_event import AccountingEventExportType
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.v1.schemas import TradeSchema
-from rotkehlchen.api.v1.types import EvmTransactionDecodingApiData, IncludeExcludeFilterData
+from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.assets.asset import (
     Asset,
     AssetWithNameAndType,
@@ -90,6 +90,7 @@ from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
 )
 from rotkehlchen.chain.evm.names import find_ens_mappings, search_for_addresses_names
 from rotkehlchen.chain.evm.types import EvmlikeAccount, WeightedNode
+from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
@@ -2697,117 +2698,116 @@ class RestAPI:
         return {'result': result, 'message': message, 'status_code': status_code}
 
     @async_api_call()
-    def decode_evm_transactions(
+    def decode_evm_transaction(
             self,
-            ignore_cache: bool,
-            data: list[EvmTransactionDecodingApiData],
+            evm_chain: SUPPORTED_CHAIN_IDS,
+            tx_hash: EVMTxHash,
     ) -> dict[str, Any]:
         """
-        Decode a set of transactions selected by their transaction hash. If the tx_hashes
-        value is None all the transactions for that chain  in the database will be
-        attempted to be decoded. If the tx_hashes argument is provided then the USD
-        price for their events will be queried.
+        Repull data for a transaction and redecode all events. Also prices for
+        the assets involed in these events are requeried.
         """
         task_manager = self.rotkehlchen.task_manager
-        result = None
-        message = ''
-        status_code = HTTPStatus.OK
+        assert task_manager, 'task manager should have been initialized at this point'
+        success, message, status_code = True, '', HTTPStatus.OK
+        chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(evm_chain)
+        with self.rotkehlchen.data.db.user_write() as write_cursor:
+            write_cursor.execute(
+                'DELETE FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+                (tx_hash, evm_chain.serialize_for_db()))
+        try:
+            chain_manager.transactions_decoder.decode_transaction_hashes(
+                tx_hashes=[tx_hash],
+                send_ws_notifications=True,
+                ignore_cache=True,  # always redecode from here
+                delete_customized=True,  # also delete customized events from here
+            )
+            # Trigger the task to query the missing prices for the decoded events
+            events_filter = EvmEventFilterQuery.make(
+                tx_hashes=[tx_hash],  # always same hash
+            )
+            history_events_db = DBHistoryEvents(task_manager.database)
+            entries = history_events_db.get_base_entries_missing_prices(events_filter)
+            query_missing_prices_of_base_entries(
+                database=task_manager.database,
+                entries_missing_prices=entries,
+                base_entries_ignore_set=task_manager.base_entries_ignore_set,
+            )
+        except (RemoteError, DeserializationError) as e:
+            status_code = HTTPStatus.BAD_GATEWAY
+            message = f'Failed to request evm transaction decoding due to {e!s}'
+            success = False
+        except InputError as e:
+            status_code = HTTPStatus.CONFLICT
+            message = f'Failed to request evm transaction decoding due to {e!s}'
+            success = False
 
-        for entry in data:
-            chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(entry['evm_chain'])
-            try:
-                decoded_events = chain_manager.transactions_decoder.decode_transaction_hashes(
-                    ignore_cache=ignore_cache,
-                    tx_hashes=entry['tx_hashes'],
-                    send_ws_notifications=True,
-                )
-                if entry['tx_hashes'] is not None and task_manager is not None:
-                    # Trigger the task to query the missing prices for the decoded events
-                    events_filter = EvmEventFilterQuery.make(
-                        tx_hashes=[event.tx_hash for event in decoded_events],
-                    )
-                    history_events_db = DBHistoryEvents(task_manager.database)
-                    entries = history_events_db.get_base_entries_missing_prices(events_filter)
-                    query_missing_prices_of_base_entries(
-                        database=task_manager.database,
-                        entries_missing_prices=entries,
-                        base_entries_ignore_set=task_manager.base_entries_ignore_set,
-                    )
-            except (RemoteError, DeserializationError) as e:
-                status_code = HTTPStatus.BAD_GATEWAY
-                message = f'Failed to request evm transaction decoding due to {e!s}'
-                break
-            except InputError as e:
-                status_code = HTTPStatus.CONFLICT
-                message = f'Failed to request evm transaction decoding due to {e!s}'
-                break
-        else:  # no break in the for loop, success
-            result = True
-
-        return {'result': result, 'message': message, 'status_code': status_code}
+        return {'result': success, 'message': message, 'status_code': status_code}
 
     @async_api_call()
     def decode_evmlike_transactions(
             self,
-            data: list[EvmTransactionDecodingApiData],
+            tx_hash: EVMTxHash,
+            chain: EvmlikeChain,  # pylint: disable=unused-argument
     ) -> dict[str, Any]:
         """
-        Decode a set of transactions selected by their transaction hash. If the tx_hashes
-        value is None all the transactions for that chain in the database will be
-        attempted to be decoded. If the tx_hashes argument is provided then the USD
-        price for their events will be queried.
+        Repull all data and redecode events for a single emvlike transaction hash.
+        Chain can only be zksync lite for now.
         """
         task_manager = self.rotkehlchen.task_manager
-        result = None
-        message = ''
-        status_code = HTTPStatus.OK
+        assert task_manager, 'task manager should have been initialized at this point'
+        success, message, status_code = True, '', HTTPStatus.OK
         tracked_addresses = self.rotkehlchen.chains_aggregator.accounts.zksync_lite
-        for entry in data:  # we cheat. Can only be zksync lite for now
-            if entry['tx_hashes'] is None:
-                transactions = self.rotkehlchen.chains_aggregator.zksync_lite.get_db_transactions()
-            else:
-                transactions = []
-                for tx_hash in entry['tx_hashes']:
-                    transactions.extend(  # yeah I know not performant but this getsalways called with 1 tx_hash  # noqa: E501
-                        self.rotkehlchen.chains_aggregator.zksync_lite.get_db_transactions(
-                            queryfilter=' WHERE tx_hash=?',
-                            bindings=(tx_hash,),
-                        ),
-                    )
 
-            for transaction in transactions:
-                self.rotkehlchen.chains_aggregator.zksync_lite.decode_transaction(
-                    transaction=transaction,
-                    tracked_addresses=tracked_addresses,
+        # first delete tranasaction data and all decoded events and related data
+        with self.rotkehlchen.data.db.user_write() as write_cursor:
+            concerning_address = write_cursor.execute('DELETE FROM zksynclite_transactions WHERE tx_hash=? RETURNING from_address', (tx_hash,)).fetchone()  # noqa: E501
+            deleted_event_data = write_cursor.execute(
+                'DELETE FROM history_events WHERE event_identifier=? RETURNING location_label',
+                (ZKL_IDENTIFIER.format(tx_hash=tx_hash.hex()),),
+            ).fetchone()
+            if deleted_event_data is not None:
+                concerning_address = deleted_event_data[0]
+
+        transaction = self.rotkehlchen.chains_aggregator.zksync_lite.query_single_transaction(
+            tx_hash=tx_hash,
+            concerning_address=concerning_address,
+        )
+        if transaction:
+            self.rotkehlchen.chains_aggregator.zksync_lite.decode_transaction(
+                transaction=transaction,
+                tracked_addresses=tracked_addresses,
+            )
+            events_filter = EvmEventFilterQuery.make(
+                tx_hashes=[tx_hash],
+                location=Location.ZKSYNC_LITE,
+            )
+            try:
+                # Trigger the task to query the missing prices for the decoded events
+                history_events_db = DBHistoryEvents(task_manager.database)
+                entries = history_events_db.get_base_entries_missing_prices(events_filter)
+                query_missing_prices_of_base_entries(
+                    database=task_manager.database,
+                    entries_missing_prices=entries,
+                    base_entries_ignore_set=task_manager.base_entries_ignore_set,
                 )
+            except (RemoteError, DeserializationError) as e:
+                status_code = HTTPStatus.BAD_GATEWAY
+                message = f'Failed to request evm transaction decoding due to {e!s}'
+                success = False
 
-            if entry['tx_hashes'] is not None and task_manager is not None:
-                try:
-                    # Trigger the task to query the missing prices for the decoded events
-                    events_filter = EvmEventFilterQuery.make(
-                        tx_hashes=entry['tx_hashes'],
-                    )
-                    history_events_db = DBHistoryEvents(task_manager.database)
-                    entries = history_events_db.get_base_entries_missing_prices(events_filter)
-                    query_missing_prices_of_base_entries(
-                        database=task_manager.database,
-                        entries_missing_prices=entries,
-                        base_entries_ignore_set=task_manager.base_entries_ignore_set,
-                    )
-                except (RemoteError, DeserializationError) as e:
-                    status_code = HTTPStatus.BAD_GATEWAY
-                    message = f'Failed to request evm transaction decoding due to {e!s}'
-                    break
+        else:
+            status_code = HTTPStatus.BAD_GATEWAY
+            message = f'Failed to fetch transaction {tx_hash.hex()} from zksync lite API'
+            success = False
 
-        else:  # no break from the loop, so success
-            result = True
-
-        return {'result': result, 'message': message, 'status_code': status_code}
+        return {'result': success, 'message': message, 'status_code': status_code}
 
     @async_api_call()
-    def decode_pending_evm_transactions(
+    def decode_evm_transactions(
             self,
             evm_chains: list[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE],
+            force_redecode: bool,
     ) -> dict[str, Any]:
         """
         This method should be called after querying evm transactions and does the following:
@@ -2820,11 +2820,23 @@ class RestAPI:
         This logic is executed by the frontend in pages where the set of transactions needs to be
         up to date, for example, the liquity module.
 
+        If force redecode is True then all related events, except the
+        customized ones are deleted and rececoded.
+
         Returns the number of decoded transactions (not events in transactions)
         """
+
         dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
+        dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
         result = {}
         for evm_chain in evm_chains:
+            if force_redecode:
+                with self.rotkehlchen.data.db.user_write() as write_cursor:
+                    dbevents.delete_events_by_location(
+                        write_cursor=write_cursor,
+                        location=Location.from_chain_id(evm_chain),
+                    )
+
             chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(evm_chain)
             # make sure that all the receipts are already queried
             chain_manager.transactions.get_receipts_for_transactions_missing_them()
@@ -2844,15 +2856,17 @@ class RestAPI:
     @async_api_call()
     def decode_pending_evmlike_transactions(
             self,
+            ignore_cache: bool,
             evmlike_chains: list[SUPPORTED_EVMLIKE_CHAINS_TYPE],  # pylint: disable=unused-argument
     ) -> dict[str, Any]:
-        """This method should be called after querying evmlike transactions
+        """This method should be called after querying evmlike transactions. Decodes
+        all undecoded evmlike transactions or all transaction if ignore_cache is true.
 
         Returns the number of decoded transactions (not events in transactions)
         """
         decoded_num = 0
         # For now it's only zksync lite
-        decoded_num = self.rotkehlchen.chains_aggregator.zksync_lite.decode_undecoded_transactions()   # noqa: E501
+        decoded_num = self.rotkehlchen.chains_aggregator.zksync_lite.decode_undecoded_transactions(force_redecode=ignore_cache)   # noqa: E501
         return {
             'result': {'decoded_tx_number': decoded_num},
             'message': '',

@@ -362,55 +362,21 @@ class EvmlikeTransactionQuerySchema(
     chain = StrEnumField(enum_class=EvmlikeChain, load_default=None)
 
 
-class SingleEVMTransactionDecodingSchema(Schema):
-    evm_chain = EvmChainNameField(required=True)
-    tx_hashes = fields.List(EVMTransactionHashField(), load_default=None)
-
-    @validates_schema
-    def validate_schema(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> None:
-        tx_hashes = data.get('tx_hashes')
-        if tx_hashes is not None and len(tx_hashes) == 0:
-            raise ValidationError(
-                message='Empty list of hashes is a noop. Did you mean to omit the list?',
-                field_name='tx_hashes',
-            )
-
-
-class SingleEVMLikeTransactionDecodingSchema(Schema):
-    chain = StrEnumField(enum_class=EvmlikeChain, required=True)
-    tx_hashes = fields.List(EVMTransactionHashField(), load_default=None)
-
-    @validates_schema
-    def validate_schema(
-            self,
-            data: dict[str, Any],
-            **_kwargs: Any,
-    ) -> None:
-        tx_hashes = data.get('tx_hashes')
-        if tx_hashes is not None and len(tx_hashes) == 0:
-            raise ValidationError(
-                message='Empty list of hashes is a noop. Did you mean to omit the list?',
-                field_name='tx_hashes',
-            )
-
-
 class EventsOnlineQuerySchema(AsyncQueryArgumentSchema):
     query_type = SerializableEnumField(enum_class=HistoryEventQueryType, required=True)
 
 
-class EvmTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
-    data = NonEmptyList(fields.Nested(SingleEVMTransactionDecodingSchema), required=True)
+class EvmTransactionDecodingSchema(AsyncQueryArgumentSchema):
+    evm_chain = EvmChainNameField(required=True)
+    tx_hash = EVMTransactionHashField(required=True)
 
 
 class EvmlikeTransactionDecodingSchema(AsyncQueryArgumentSchema):
-    data = NonEmptyList(fields.Nested(SingleEVMLikeTransactionDecodingSchema), required=True)
+    chain = StrEnumField(enum_class=EvmlikeChain, required=True)
+    tx_hash = EVMTransactionHashField(required=True)
 
 
-class EvmPendingTransactionDecodingSchema(AsyncQueryArgumentSchema):
+class EvmPendingTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
     evm_chains = fields.List(
         EvmChainNameField(limit_to=list(EVM_CHAIN_IDS_WITH_TRANSACTIONS)),
         load_default=EVM_CHAIN_IDS_WITH_TRANSACTIONS,
@@ -430,7 +396,7 @@ class EvmPendingTransactionDecodingSchema(AsyncQueryArgumentSchema):
             )
 
 
-class EvmlikePendingTransactionDecodingSchema(AsyncQueryArgumentSchema):
+class EvmlikePendingTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
     evmlike_chains = fields.List(
         StrEnumField(enum_class=EvmlikeChain),
         load_default=[EvmlikeChain.ZKSYNC_LITE],

@@ -32,6 +32,7 @@ from rotkehlchen.serialization.deserialize import deserialize_evm_address, deser
 from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
+    EVMTxHash,
     Fee,
     Location,
     Timestamp,
@@ -45,7 +46,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
 
-from .constants import ZKSYNCLITE_MAX_LIMIT, ZKSYNCLITE_TX_SAVEPREFIX
+from .constants import ZKL_IDENTIFIER, ZKSYNCLITE_MAX_LIMIT, ZKSYNCLITE_TX_SAVEPREFIX
 from .structures import ZKSyncLiteSwapData, ZKSyncLiteTransaction, ZKSyncLiteTXType
 
 logger = logging.getLogger(__name__)
@@ -438,6 +439,35 @@ class ZksyncLiteManager:
             from_hash = result[-1]['txHash']
             transactions = []
 
+    def query_single_transaction(
+            self,
+            tx_hash: EVMTxHash,
+            concerning_address: ChecksumEvmAddress,
+    ) -> ZKSyncLiteTransaction | None:
+        """Queries zksync lite api for a single transaction, saves it
+        in the DB and returns it if existing
+
+        In case of error returns None and logs the error.
+        """
+        try:
+            response = self._query_api(url=f'transactions/{tx_hash.hex()}/data')
+        except RemoteError as e:
+            log.error(f'Could not find {tx_hash.hex()} transaction from zksync lite api due to {e!s}')  # noqa: E501
+            return None
+
+        if (tx_entry := response.get('tx', None)) is None:
+            log.error(f'Could not find {tx_hash.hex()} transaction from zksync lite api. Response: {response}')  # noqa: E501
+            return None
+
+        if (tx := self._deserialize_zksync_transaction(entry=tx_entry, concerning_address=concerning_address)) is None:  # noqa: E501
+            log.error(f'Could not deserialize {tx_hash.hex()} transaction. Got None')
+            return None
+
+        with self.database.user_write() as write_cursor:
+            self._add_zksynctxs_db(write_cursor=write_cursor, transactions=[tx])
+
+        return tx
+
     def _add_zksynctxs_db(
             self,
             write_cursor: 'DBCursor',
@@ -613,7 +643,7 @@ class ZksyncLiteManager:
         target = None
         tracked_from = transaction.from_address in tracked_addresses
         tracked_to = transaction.to_address in tracked_addresses
-        event_identifier = f'zkl{transaction.tx_hash.hex()}'
+        event_identifier = ZKL_IDENTIFIER.format(tx_hash=transaction.tx_hash.hex())
         events = []
         event_data: list[tuple[int, HistoryEventType, HistoryEventSubType, Asset, FVal, ChecksumEvmAddress, ChecksumEvmAddress | None, str]] = []  # noqa: E501
         match transaction.tx_type:
@@ -801,18 +831,26 @@ class ZksyncLiteManager:
                 (1, transaction.tx_hash),
             )
 
-    def decode_undecoded_transactions(self) -> int:
-        """Decoded undecoded transactions.
+    def decode_undecoded_transactions(self, force_redecode: bool) -> int:
+        """Decodes undecoded zksync lite transactions. If force redecode is True
+        then all transactions are redecoded.
         Returns the number of decoded transactions (not events in transactions)
         """
-        transactions = self.get_db_transactions(
-            queryfilter=' WHERE is_decoded=?',
-            bindings=(0,),
-        )
+        queryfilter, bindings = '', ()
+        if not force_redecode:
+            queryfilter, bindings = ' WHERE is_decoded=?', (0,)  # type: ignore
+
+        transactions = self.get_db_transactions(queryfilter, bindings)
         with self.database.conn.read_ctx() as cursor:
             tracked_addresses = self.database.get_blockchain_accounts(cursor).zksync_lite
 
         for transaction in transactions:
+            with self.database.user_write() as write_cursor:  # delete old tx events
+                write_cursor.execute(
+                    'DELETE FROM history_events WHERE event_identifier=?',
+                    (ZKL_IDENTIFIER.format(tx_hash=transaction.tx_hash.hex()),),
+                )
+
             self.decode_transaction(transaction, tracked_addresses)
 
         return len(transactions)
