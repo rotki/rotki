@@ -1,15 +1,12 @@
-import { groupBy } from 'lodash-es';
 import { TaskType } from '@/types/task-type';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { Section } from '@/types/status';
 import {
   type EvmChainAndTxHash,
   TransactionChainType,
-  type TransactionHashAndEvmChainPayload,
 } from '@/types/history/events';
-import { type EvmUnDecodedTransactionsData, EvmUndecodedTransactionResponse } from '@/types/websocket-messages';
+import { EvmUndecodedTransactionResponse } from '@/types/websocket-messages';
 import type { TaskMeta } from '@/types/task';
-import type { Writeable } from '@/types';
 
 export const useHistoryTransactionDecoding = createSharedComposable(() => {
   const { t } = useI18n();
@@ -18,7 +15,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
   const {
     decodeTransactions,
     getUndecodedTransactionsBreakdown,
-    decodeHistoryEvents,
+    pullAndRecodeTransactionRequest,
   } = useHistoryEventsApi();
 
   const { awaitTask, isTaskRunning } = useTaskStore();
@@ -29,11 +26,11 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
   } = useHistoryStore();
 
   const {
-    txEvmChains,
-    evmLikeChainsData,
+    txChains,
     getChain,
     isEvmLikeChains,
     getChainName,
+    getEvmChainName,
   } = useSupportedChains();
 
   const { resetStatus } = useStatusUpdater(Section.HISTORY_EVENT);
@@ -100,14 +97,18 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     resetStatus({ section: Section.DEFI_LIQUITY_STATISTICS });
   };
 
-  const decodeTransactionsTask = async (chain: string, type: TransactionChainType = TransactionChainType.EVM) => {
+  const decodeTransactionsTask = async (
+    chain: string,
+    type: TransactionChainType = TransactionChainType.EVM,
+    ignoreCache = false,
+  ): Promise<void> => {
     const taskType = TaskType.TRANSACTIONS_DECODING;
 
     if (get(isTaskRunning(taskType, { chain })))
       return;
 
     try {
-      const { taskId } = await decodeTransactions([chain], type);
+      const { taskId } = await decodeTransactions([chain], type, ignoreCache);
 
       const taskMeta = {
         title: t('actions.transactions_redecode_missing.task.title'),
@@ -166,94 +167,55 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     ]);
   };
 
-  function setUndecodedStatusForTransactions(transactions: EvmChainAndTxHash[] | { evmChain: string }[] | undefined) {
-    if (!transactions)
-      return;
+  const redecodeTransactions = async (chains: string[] = []): Promise<void> => {
+    const decodeChains = chains.length > 0 ? chains : get(txChains).map(chain => chain.id);
 
-    const undecoded = transactions.reduce<Record<string, EvmUnDecodedTransactionsData>>((acc, item) => {
-      if (!('txHash' in item))
-        return acc;
-
-      const evmChain = item.evmChain;
-      if (acc[evmChain]) {
-        acc[evmChain] = {
-          evmChain,
-          processed: 0,
-          total: acc[evmChain].total + 1,
-        };
-      }
-      else {
-        acc[evmChain] = {
-          evmChain,
-          processed: 0,
-          total: 1,
+    const chainInfo = decodeChains.map((chain) => {
+      if (isEvmLikeChains(chain)) {
+        return {
+          type: TransactionChainType.EVMLIKE,
+          chain,
         };
       }
 
-      return acc;
-    }, {});
-    updateUndecodedTransactionsStatus(undecoded);
-  }
+      return {
+        type: TransactionChainType.EVM,
+        chain: getEvmChainName(chain) || '',
+      };
+    }).filter(item => item.chain);
 
-  const fetchTransactionEvents = async (
-    ignoreCache: boolean,
-    type: TransactionChainType = TransactionChainType.EVM,
-    transactions?: EvmChainAndTxHash[] | { evmChain: string }[],
-  ): Promise<void> => {
-    const isFetchAll = !transactions;
-    let payloads: TransactionHashAndEvmChainPayload[] = [];
-    const isEvm = type === TransactionChainType.EVM;
+    await awaitParallelExecution(
+      chainInfo,
+      item => item.chain,
+      item => decodeTransactionsTask(item.chain, item.type, true),
+      2,
+    );
+  };
 
-    if (isFetchAll) {
-      if (isEvm) {
-        payloads = get(txEvmChains).map(chain => ({
-          evmChain: chain.evmChainName,
-        }));
-      }
-      else {
-        payloads = get(evmLikeChainsData).map(chain => ({
-          evmChain: chain.id,
-        }));
-      }
-    }
-    else {
-      if (transactions.length === 0)
-        return;
-
-      payloads = Object.entries(groupBy(transactions, 'evmChain')).map(
-        ([evmChain, item]: [
-          evmChain: string,
-          item: EvmChainAndTxHash[] | { evmChain: string }[],
-        ]) => {
-          const payload: Writeable<TransactionHashAndEvmChainPayload> = {
-            evmChain,
-          };
-
-          const txHashes = item
-            .map(data => ('txHash' in data ? data.txHash : ''))
-            .filter(item => !!item);
-
-          if (txHashes.length > 0)
-            payload.txHashes = txHashes;
-
-          return payload;
-        },
-      );
-    }
-
+  const pullAndRedecodeTransaction = async (transaction: EvmChainAndTxHash): Promise<void> => {
     resetUndecodedTransactionsStatus();
-    setUndecodedStatusForTransactions(transactions);
+    updateUndecodedTransactionsStatus({
+      [transaction.evmChain]: {
+        evmChain: transaction.evmChain,
+        total: 1,
+        processed: 0,
+      },
+    });
+
+    const chain = getChain(transaction.evmChain);
+    const type = isEvmLikeChains(chain) ? TransactionChainType.EVMLIKE : TransactionChainType.EVM;
+
     try {
       const taskType = TaskType.TRANSACTIONS_DECODING;
-      const { taskId } = await decodeHistoryEvents({
-        data: payloads,
-        ignoreCache,
+      const { taskId } = await pullAndRecodeTransactionRequest({
+        ...transaction,
+        ...(type === TransactionChainType.EVMLIKE ? { evmChain: chain } : {}),
       }, type);
 
       const taskMeta = {
         title: t('actions.transactions_redecode.task.title'),
         description: t('actions.transactions_redecode.task.description'),
-        all: true,
+        tx: transaction,
       };
 
       const { result } = await awaitTask<boolean, TaskMeta>(
@@ -285,6 +247,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     checkMissingEventsAndRedecode,
     fetchUndecodedTransactionsBreakdown,
     fetchUndecodedTransactionsStatus,
-    fetchTransactionEvents,
+    pullAndRedecodeTransaction,
+    redecodeTransactions,
   };
 });

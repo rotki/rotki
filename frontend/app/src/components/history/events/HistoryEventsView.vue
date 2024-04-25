@@ -9,13 +9,12 @@ import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import HistoryEventsAction from '@/components/history/events/HistoryEventsAction.vue';
 import { Routes } from '@/router/routes';
-import {
-  type EvmChainAndTxHash,
-  type EvmHistoryEvent,
-  type HistoryEvent,
-  type HistoryEventEntry,
-  type HistoryEventRequestPayload,
-  TransactionChainType,
+import type {
+  EvmChainAndTxHash,
+  EvmHistoryEvent,
+  HistoryEvent,
+  HistoryEventEntry,
+  HistoryEventRequestPayload,
 } from '@/types/history/events';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library-compat';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
@@ -147,7 +146,7 @@ const { show } = useConfirmStore();
 const historyStore = useHistoryStore();
 const { fetchAssociatedLocations, resetUndecodedTransactionsStatus } = historyStore;
 const { decodingStatus } = storeToRefs(historyStore);
-const { txChains, getEvmChainName, getChain, isEvmLikeChains } = useSupportedChains();
+const { txChains } = useSupportedChains();
 const txChainIds = useArrayMap(txChains, x => x.id);
 
 const { fetchHistoryEvents, deleteHistoryEvent } = useHistoryEvents();
@@ -155,8 +154,9 @@ const { fetchHistoryEvents, deleteHistoryEvent } = useHistoryEvents();
 const { refreshTransactions } = useHistoryTransactions();
 
 const {
-  fetchTransactionEvents,
+  pullAndRedecodeTransaction,
   fetchUndecodedTransactionsStatus,
+  redecodeTransactions,
 } = useHistoryTransactionDecoding();
 const { getAccountByAddress } = useBlockchainStore();
 
@@ -334,44 +334,13 @@ async function redecodeAllEventsHandler() {
   set(decodingStatusDialogPersistent, false);
   set(currentAction, 'decode');
   await fetchUndecodedTransactionsStatus();
-
-  const chains = get(onlyChains);
-
-  if (chains.length === 0) {
-    await fetchTransactionEvents(true, TransactionChainType.EVM);
-    await fetchTransactionEvents(true, TransactionChainType.EVMLIKE);
-  }
-  else {
-    const evmChains = chains
-      .map(item => getEvmChainName(item) || '')
-      .filter(item => !!item)
-      .map(item => ({ evmChain: item }));
-
-    if (evmChains.length > 0)
-      await fetchTransactionEvents(true, TransactionChainType.EVM, evmChains);
-
-    const evmLikeChains = chains
-      .filter(item => isEvmLikeChains(item))
-      .map(item => ({ evmChain: item }));
-
-    if (evmLikeChains.length > 0)
-      await fetchTransactionEvents(true, TransactionChainType.EVMLIKE, evmLikeChains);
-  }
-
+  await redecodeTransactions(get(onlyChains));
   await fetchData();
 }
 
 async function forceRedecodeEvmEvents(data: EvmChainAndTxHash) {
   set(currentAction, 'decode');
-
-  const chain = getChain(data.evmChain);
-  const isEvmLike = isEvmLikeChains(chain);
-
-  const payload = {
-    txHash: data.txHash,
-    evmChain: isEvmLike ? chain : data.evmChain,
-  };
-  await fetchTransactionEvents(true, isEvmLike ? TransactionChainType.EVMLIKE : TransactionChainType.EVM, [payload]);
+  await pullAndRedecodeTransaction(data);
   await fetchData();
 }
 

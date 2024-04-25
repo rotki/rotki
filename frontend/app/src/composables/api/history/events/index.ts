@@ -11,6 +11,7 @@ import {
 import {
   type AddTransactionHashPayload,
   type EditHistoryEventPayload,
+  type EvmChainAndTxHash,
   HistoryEventDetail,
   type HistoryEventEntryWithMeta,
   type HistoryEventRequestPayload,
@@ -18,7 +19,6 @@ import {
   type NewHistoryEventPayload,
   type OnlineHistoryEventsRequestPayload,
   TransactionChainType,
-  type TransactionEventRequestPayload,
   type TransactionRequestPayload,
 } from '@/types/history/events';
 import { type HistoryEventProductData, HistoryEventTypeData } from '@/types/history/events/event-type';
@@ -54,8 +54,7 @@ export function useHistoryEventsApi() {
   const fetchTransactionsTask = (
     payload: TransactionRequestPayload,
     type: TransactionChainType = TransactionChainType.EVM,
-  ): Promise<PendingTask> =>
-    internalTransactions<PendingTask>(payload, true, type);
+  ): Promise<PendingTask> => internalTransactions<PendingTask>(payload, true, type);
 
   const deleteTransactions = async (chain: string): Promise<boolean> => {
     const response = await api.instance.delete<ActionResult<boolean>>(
@@ -69,18 +68,15 @@ export function useHistoryEventsApi() {
     return handleResponse(response);
   };
 
-  const decodeHistoryEvents = async (
-    payload: TransactionEventRequestPayload,
+  const pullAndRecodeTransactionRequest = async (
+    payload: EvmChainAndTxHash,
     type: TransactionChainType = TransactionChainType.EVM,
   ): Promise<PendingTask> => {
-    const isEvm = type === TransactionChainType.EVM;
-    const data = isEvm ? payload.data : payload.data.map(({ evmChain, txHashes }) => ({ chain: evmChain, txHashes }));
     const response = await api.instance.put<ActionResult<PendingTask>>(
       `blockchains/${type}/transactions`,
       snakeCaseTransformer({
         asyncQuery: true,
-        data,
-        ...(isEvm ? { ignoreCache: payload.ignoreCache } : {}),
+        ...payload,
       }),
     );
 
@@ -104,12 +100,14 @@ export function useHistoryEventsApi() {
   const decodeTransactions = async (
     chains: string[],
     type: TransactionChainType = TransactionChainType.EVM,
+    ignoreCache = false,
   ): Promise<PendingTask> => {
     const response = await api.instance.post<ActionResult<PendingTask>>(
       `/blockchains/${type}/transactions/decode`,
       snakeCaseTransformer({
         asyncQuery: true,
         ...(type === TransactionChainType.EVM ? { evmChains: chains } : { evmlikeChains: chains }),
+        ...(ignoreCache ? { ignoreCache } : {}),
       }),
       { validateStatus: validStatus },
     );
@@ -292,7 +290,7 @@ export function useHistoryEventsApi() {
   return {
     fetchTransactionsTask,
     deleteTransactions,
-    decodeHistoryEvents,
+    pullAndRecodeTransactionRequest,
     getUndecodedTransactionsBreakdown,
     decodeTransactions,
     addHistoryEvent,

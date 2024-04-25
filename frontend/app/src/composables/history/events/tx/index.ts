@@ -180,7 +180,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
   };
 
   const refreshTransactions = async (
-    chains: Blockchain[],
+    chains: Blockchain[] = [],
     disableEvmEvents = false,
     userInitiated = false,
   ): Promise<void> => {
