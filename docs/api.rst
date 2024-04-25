@@ -2511,15 +2511,15 @@ Querying evm transactions
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
 
-Request EVM transactions event decoding
-=======================================
+Request specific EVM transaction repulling and event decoding
+===================================================================
 
 .. http:put:: /api/(version)/blockchains/evm/transactions
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a PUT on the evm transactions endpoint will request a decoding of the given transactions and generation of decoded events. That basically entails querying the transaction receipts for each transaction hash and then decoding all events. If events are already queried and ignore_cache is true they will be deleted and re-queried.
+   Doing a PUT on the evm transactions endpoint will request a decoding of the given transaction and generation of decoded events. That basically entails deleteing and re-querying all the transaction data. Transaction, internal transactions, receipts and all log for each hash and then decoding all events. Also requeries prices for assets involved in these events.
 
    **Example Request**:
 
@@ -2531,19 +2531,14 @@ Request EVM transactions event decoding
 
       {
           "async_query": true,
-          "data": [{
-              "evm_chain": "ethereum",
-              "tx_hashes": ["0xe33041d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9742", "0xed6e64021f960bb40f11f1c00ec1d5ca910471e75a080e42b347ba5af7e73516"]
-          }, {
-              "evm_chain": "optimism",
-              "tx_hashes": ["0x13344150ae236c54c588c313b7f8600d007b79c5107424352b9e52a6ea712741"]
-          }],
-          "ignore_cache": false
+          "evm_chain": "ethereum",
+          "tx_hash": "0xe33041d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9742"
       }
 
    :reqjson list data[optional]: A list of data to decode. Each data entry consists of an ``"evm_chain"`` key specifying the evm chain for which to decode tx_hashes and a ``"tx_hashes"`` key which is an optional list of transaction hashes to request decoding for in that chain. If the list of transaction hashes is not passed then all transactions for that chain are decoded. Passing an empty list is not allowed.
+   :reqjson str evm_chain: A string specifying the evm chain for which the transaction is.
+   :reqjson str tx_hash: The transaction hash whose data to repull and redecode events
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
-   :reqjson bool ignore_cache: Boolean denoting whether to ignore the cache for this query or not. This is always false by default. If true is given then the decoded events will be deleted and re-queried.
 
 
    **Example Response**:
@@ -2558,9 +2553,9 @@ Request EVM transactions event decoding
       }
 
 
-   :statuscode 200: Transactions successfully decoded.
+   :statuscode 200: Transaction successfully repulled and decoded.
    :statuscode 400: Provided JSON is in some way malformed
-   :statuscode 409: One of the given hashes does not correspond to a transaction according to the nodes we contacted.
+   :statuscode 409: The given hashe does not correspond to a transaction according to the nodes we contacted.
    :statuscode 500: Internal rotki error
    :statuscode 502: Problem contacting a remote service
 

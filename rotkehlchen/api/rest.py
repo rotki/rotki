@@ -2699,52 +2699,49 @@ class RestAPI:
     @async_api_call()
     def decode_evm_transactions(
             self,
-            ignore_cache: bool,
-            data: list[EvmTransactionDecodingApiData],
+            evm_chain: SUPPORTED_CHAIN_IDS,
+            tx_hash: EVMTxHash,
     ) -> dict[str, Any]:
         """
-        Decode a set of transactions selected by their transaction hash. If the tx_hashes
-        value is None all the transactions for that chain  in the database will be
-        attempted to be decoded. If the tx_hashes argument is provided then the USD
-        price for their events will be queried.
+        Repull data for a transaction and redecode all events. Also prices for
+        the assets involed in these events are requeried.
         """
         task_manager = self.rotkehlchen.task_manager
-        result = None
-        message = ''
-        status_code = HTTPStatus.OK
+        assert task_manager, 'task manager should have been initialized at this point'
+        success, message, status_code = True, '', HTTPStatus.OK
+        chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(evm_chain)
+        with self.rotkehlchen.data.db.user_write() as write_cursor:
+            write_cursor.execute(
+                'DELETE FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+                (tx_hash, evm_chain.serialize_for_db()))
+        try:
+            decoded_events = chain_manager.transactions_decoder.decode_transaction_hashes(
+                tx_hashes=[tx_hash],
+                send_ws_notifications=True,
+                ignore_cache=True,  # always redecode from here
+                delete_customized=True,  # also delete customized events from here
+            )
+            # Trigger the task to query the missing prices for the decoded events
+            events_filter = EvmEventFilterQuery.make(
+                tx_hashes=[event.tx_hash for event in decoded_events],
+            )
+            history_events_db = DBHistoryEvents(task_manager.database)
+            entries = history_events_db.get_base_entries_missing_prices(events_filter)
+            query_missing_prices_of_base_entries(
+                database=task_manager.database,
+                entries_missing_prices=entries,
+                base_entries_ignore_set=task_manager.base_entries_ignore_set,
+            )
+        except (RemoteError, DeserializationError) as e:
+            status_code = HTTPStatus.BAD_GATEWAY
+            message = f'Failed to request evm transaction decoding due to {e!s}'
+            success = False
+        except InputError as e:
+            status_code = HTTPStatus.CONFLICT
+            message = f'Failed to request evm transaction decoding due to {e!s}'
+            success = False
 
-        for entry in data:
-            chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(entry['evm_chain'])
-            try:
-                decoded_events = chain_manager.transactions_decoder.decode_transaction_hashes(
-                    ignore_cache=ignore_cache,
-                    tx_hashes=entry['tx_hashes'],
-                    send_ws_notifications=True,
-                )
-                if entry['tx_hashes'] is not None and task_manager is not None:
-                    # Trigger the task to query the missing prices for the decoded events
-                    events_filter = EvmEventFilterQuery.make(
-                        tx_hashes=[event.tx_hash for event in decoded_events],
-                    )
-                    history_events_db = DBHistoryEvents(task_manager.database)
-                    entries = history_events_db.get_base_entries_missing_prices(events_filter)
-                    query_missing_prices_of_base_entries(
-                        database=task_manager.database,
-                        entries_missing_prices=entries,
-                        base_entries_ignore_set=task_manager.base_entries_ignore_set,
-                    )
-            except (RemoteError, DeserializationError) as e:
-                status_code = HTTPStatus.BAD_GATEWAY
-                message = f'Failed to request evm transaction decoding due to {e!s}'
-                break
-            except InputError as e:
-                status_code = HTTPStatus.CONFLICT
-                message = f'Failed to request evm transaction decoding due to {e!s}'
-                break
-        else:  # no break in the for loop, success
-            result = True
-
-        return {'result': result, 'message': message, 'status_code': status_code}
+        return {'result': success, 'message': message, 'status_code': status_code}
 
     @async_api_call()
     def decode_evmlike_transactions(
