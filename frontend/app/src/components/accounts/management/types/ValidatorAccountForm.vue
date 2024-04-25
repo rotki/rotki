@@ -63,7 +63,7 @@ async function save() {
       const newVar = get(accountToEdit);
       assert(payload.publicKey);
       assert(payload.ownershipPercentage);
-      const validator = getValidator(newVar);
+      const validator = getValidatorData(newVar);
 
       updateEthStakingOwnership(
         payload.publicKey,

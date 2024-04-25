@@ -290,7 +290,7 @@ function expand(row: Account) {
       v-if="isEth2"
       #item.ownershipPercentage="{ row }"
     >
-      <PercentageDisplay :value="row.ownershipPercentage ?? '100'" />
+      <PercentageDisplay :value="row.data.ownershipPercentage ?? '100'" />
     </template>
     <template
       v-if="hasTokenDetection && !loopring"
