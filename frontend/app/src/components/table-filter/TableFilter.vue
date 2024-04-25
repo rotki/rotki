@@ -159,13 +159,21 @@ function applyFilter(filter: Suggestion) {
   set(search, '');
 }
 
-const filteredMatchers: ComputedRef<SearchMatcher<any>[]> = computed(() =>
-  get(matchers).filter(
+const filteredMatchers: ComputedRef<SearchMatcher<any>[]> = computed(() => {
+  const filteredByUsedKeys = get(matchers).filter(
     ({ key, multiple }) =>
-      (!get(usedKeys).includes(key) || multiple)
-      && getTextToken(key).includes(getTextToken(get(search)) || ''),
-  ),
-);
+      (!get(usedKeys).includes(key) || multiple),
+  );
+
+  const searchVal = get(search);
+  if (!searchVal)
+    return filteredByUsedKeys;
+
+  const searchToken = getTextToken(searchVal);
+  return filteredByUsedKeys
+    .filter(({ key }) => getTextToken(key).includes(searchVal))
+    .sort((a, b) => compareTextByKeyword(getTextToken(a.key), getTextToken(b.key), searchToken));
+});
 
 async function applySuggestion() {
   const selectedIndex = get(selectedSuggestion);
