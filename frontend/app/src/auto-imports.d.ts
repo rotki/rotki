@@ -135,7 +135,6 @@ declare global {
   const getTags: typeof import('./utils/tags')['getTags']
   const getTextToken: typeof import('./utils/text')['getTextToken']
   const getValidSelectorFromEvmAddress: typeof import('./utils/assets')['getValidSelectorFromEvmAddress']
-  const getValidator: typeof import('./utils/blockchain/accounts/index')['getValidator']
   const getValidatorData: typeof import('./utils/blockchain/accounts/index')['getValidatorData']
   const groupAssetBreakdown: typeof import('./utils/balances')['groupAssetBreakdown']
   const guessTimezone: typeof import('./utils/date')['guessTimezone']
