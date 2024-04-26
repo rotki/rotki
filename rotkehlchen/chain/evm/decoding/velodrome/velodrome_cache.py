@@ -33,8 +33,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-VELODROME_SUGAR_V2_CONTRACT = string_to_evm_address('0x7F45F1eA57E9231f846B2b4f5F8138F94295A726')  # Velodrome Finance LP Sugar v2  # noqa: E501
-AERODROME_SUGAR_V2_CONTRACT = string_to_evm_address('0x74f18F46d20750Cab0d3fE75Ca0395bdB8016fD1')
+VELODROME_SUGAR_V2_CONTRACT = string_to_evm_address('0xc734656F0112CA18cdcaD424ddd8949F3D4c1DdD')  # Velodrome Finance LP Sugar v3  # noqa: E501
+AERODROME_SUGAR_V2_CONTRACT = string_to_evm_address('0xC301856B4262E49E9239ec8a2d0c754d5ae317c0')  # Aerodrome Finance LP Sugar v3  # noqa: E501
 
 
 class VelodromePoolData(NamedTuple):
@@ -176,7 +176,7 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
         pool_data_chunk = data_contract.call(
             node_inquirer=inquirer,
             method_name='all',
-            arguments=[limit, offset, ZERO_ADDRESS],  # the address argument here is needed by the design of this contract interface to cover other user cases its developers had in mind, but it isn't needed for this particular call in which we only want to get the pools. So we can just use any address.  # noqa: E501
+            arguments=[limit, offset],
         )
         pool_data.extend(pool_data_chunk)
         offset += limit
@@ -198,8 +198,8 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
             continue
 
         try:
-            token0_address, token1_address = deserialize_evm_address(pool[5]), deserialize_evm_address(pool[8])  # noqa: E501
-            gauge_address = deserialize_evm_address(pool[11])
+            token0_address, token1_address = deserialize_evm_address(pool[7]), deserialize_evm_address(pool[10])  # noqa: E501
+            gauge_address = deserialize_evm_address(pool[13])
         except DeserializationError as e:
             log.error(
                 f'Skipping velodrome pool {pool[0]}. Could not deserialize an evm address while '
