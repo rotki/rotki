@@ -16,7 +16,7 @@ const { t } = useI18n();
     </div>
 
     <div class="mt-8">
-      <NftImageRenderingSetting />
+      <NftImageRenderingSetting no-padding />
     </div>
   </SettingCategory>
 </template>
