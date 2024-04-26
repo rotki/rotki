@@ -377,7 +377,7 @@ class EvmlikeTransactionDecodingSchema(AsyncQueryArgumentSchema):
 
 
 class EvmPendingTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
-    evm_chains = fields.List(
+    chains = fields.List(
         EvmChainNameField(limit_to=list(EVM_CHAIN_IDS_WITH_TRANSACTIONS)),
         load_default=EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     )
@@ -385,19 +385,19 @@ class EvmPendingTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
     @validates_schema
     def validate_schema(
             self,
-            evm_chains: list[ChainID],
+            chains: list[ChainID],
             **_kwargs: Any,
     ) -> None:
 
-        if len(evm_chains) == 0:
+        if len(chains) == 0:
             raise ValidationError(
-                message='The list of evm chains should not be empty',
-                field_name='evm_chains',
+                message='The list of chains should not be empty',
+                field_name='chains',
             )
 
 
 class EvmlikePendingTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
-    evmlike_chains = fields.List(
+    chains = fields.List(
         StrEnumField(enum_class=EvmlikeChain),
         load_default=[EvmlikeChain.ZKSYNC_LITE],
     )
@@ -405,14 +405,14 @@ class EvmlikePendingTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchem
     @validates_schema
     def validate_schema(
             self,
-            evmlike_chains: list[ChainID],
+            chains: list[ChainID],
             **_kwargs: Any,
     ) -> None:
 
-        if len(evmlike_chains) == 0:
+        if len(chains) == 0:
             raise ValidationError(
-                message='The list of evmlike_chains should not be empty',
-                field_name='evmlike_chains',
+                message='The list of chains should not be empty',
+                field_name='chains',
             )
 
 

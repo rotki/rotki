@@ -252,12 +252,12 @@ def assert_force_redecode_txns_works(api_server: 'APIServer'):
             ), json={
                 'async_query': False,
                 'ignore_cache': True,
-                'evm_chains': ['ethereum'],
+                'chains': ['ethereum'],
             },
         )
         assert_proper_response(response)
         for fn in function_call_counters:
-            assert fn.call_count == 12
+            assert fn.call_count == 14
 
 
 def _write_transactions_to_db(
@@ -1344,7 +1344,7 @@ def test_decoding_missing_transactions(
         api_url_for(
             rotkehlchen_api_server,
             'evmpendingtransactionsdecodingresource',
-        ), json={'async_query': False, 'evm_chains': ['ethereum']},
+        ), json={'async_query': False, 'chains': ['ethereum']},
     )
     result = assert_proper_response_with_result(response)
     assert result['decoded_tx_number']['ethereum'] == len(transactions)
