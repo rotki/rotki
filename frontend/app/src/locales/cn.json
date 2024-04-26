@@ -2359,6 +2359,7 @@
           "allow_all": "允许所有图像",
           "only_allow_whitelisted": "只允许来自白名单域名的图片"
         },
+        "whitelist_domains": "白名单域名",
         "whitelisted_domains": "白名单域",
         "whitelisted_domains_hint": "输入单个或多个逗号分隔的域。按右侧的保存按钮保存更改",
         "whitelisted_domain_entries": "无条目 | {count} 唯一条目 | {count} 唯一条目"

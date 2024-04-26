@@ -132,14 +132,14 @@ onMounted(() => {
       :error-message="t('general_settings.nft_setting.messages.error')"
       :success-message="t('general_settings.nft_setting.messages.success')"
       setting="whitelistedDomainsForNftImages"
-      class="mt-4 flex flex-col gap-4"
+      class="mt-2 flex flex-col gap-4"
       frontend-setting
       @updated="whitelistedDomains = ''"
     >
       <div class="flex flex-row gap-3.5 items-start">
         <RuiTextField
           v-model.trim="whitelistedDomains"
-          :label="t('general_settings.nft_setting.label.whitelisted_domains')"
+          :label="t('general_settings.nft_setting.label.whitelist_domains')"
           :hint="
             t('general_settings.nft_setting.label.whitelisted_domains_hint')
           "
@@ -160,21 +160,29 @@ onMounted(() => {
           <RuiIcon name="save-line" />
         </RuiButton>
       </div>
-      <p class="text-caption -mt-2 mb-0 px-3">
+
+      <p class="text-caption -mt-3 mb-0 px-3">
         {{ t('general_settings.nft_setting.label.whitelisted_domain_entries', { count: decodedDomains.length }) }}
       </p>
-      <div class="flex flex-wrap gap-2">
-        <RuiChip
-          v-for="(item, i) in whitelist"
-          :key="i"
-          :disabled="renderAllNftImages !== 'whitelisted'"
-          :closeable="renderAllNftImages === 'whitelisted'"
-          size="sm"
-          @click:close="updateImmediate(whitelist.filter(domain => domain !== item))"
-        >
-          {{ item }}
-        </RuiChip>
-      </div>
+
+      <template v-if="whitelist.length > 0">
+        <h5 class="mb-0 font-medium">
+          {{ t('general_settings.nft_setting.label.whitelisted_domains') }}
+        </h5>
+
+        <div class="flex flex-wrap gap-2">
+          <RuiChip
+            v-for="(item, i) in whitelist"
+            :key="i"
+            :disabled="renderAllNftImages !== 'whitelisted'"
+            :closeable="renderAllNftImages === 'whitelisted'"
+            size="sm"
+            @click:close="updateImmediate(whitelist.filter(domain => domain !== item))"
+          >
+            {{ item }}
+          </RuiChip>
+        </div>
+      </template>
 
       <ConfirmDialog
         :display="showUpdateWhitelistConfirmation"

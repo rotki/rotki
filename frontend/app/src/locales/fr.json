@@ -2559,6 +2559,7 @@
           "allow_all": "Autoriser toutes les images",
           "only_allow_whitelisted": "N'autoriser que les images des domaines figurant sur la liste blanche"
         },
+        "whitelist_domains": "Domaines sur liste blanche",
         "whitelisted_domains": "Domaines en liste blanche",
         "whitelisted_domains_hint": "Saisissez un ou plusieurs domaines séparés par des virgules. Cliquez sur le bouton Enregistrer à droite pour enregistrer les modifications.",
         "whitelisted_domain_entries": "aucune entrée | {count} entrée unique | {count} entrées uniques"

@@ -2306,6 +2306,7 @@
           "allow_all": "Permitir todas las imágenes",
           "only_allow_whitelisted": "Permitir sólo imágenes de dominios de la lista blanca"
         },
+        "whitelist_domains": "Lista blanca de dominios",
         "whitelisted_domains": "Dominios de la lista blanca",
         "whitelisted_domains_hint": "Introduzca uno o varios dominios separados por comas. Pulse el botón de la derecha para guardar los cambios.",
         "whitelisted_domain_entries": "ninguna entrada | {count} entrada única | {count} entradas únicas"
