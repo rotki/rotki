@@ -1,6 +1,12 @@
+<script setup lang="ts">
+const dialogOpen = ref(false);
+</script>
+
 <template>
   <RuiMenu
-    menu-class="max-w-[32rem]"
+    menu-class="max-w-[32rem] !z-1"
+    :popper="{ placement: 'bottom-end' }"
+    :persistent="dialogOpen"
   >
     <template #activator="{ on }">
       <RuiButton
@@ -12,10 +18,6 @@
         <RuiIcon name="file-settings-line" />
       </RuiButton>
     </template>
-    <div class="p-4">
-      <VApp>
-        <NftImageRenderingSetting />
-      </VApp>
-    </div>
+    <NftImageRenderingSetting @dialog-open="dialogOpen = $event" />
   </RuiMenu>
 </template>
