@@ -1946,12 +1946,12 @@ Purging locally saved data for exchanges
    :statuscode 409: Exchange is not registered or some other error. Check error message for details.
    :statuscode 500: Internal rotki error
 
-Purging locally saved blockchain transactions
-===========================================
+Deleting locally saved blockchain transactions
+=================================================
 
 .. http:delete:: /api/(version)/blockchains/transactions
 
-   Doing a DELETE on the blockchain transactions endpoint will purge all locally saved transaction data. Optionally can specify the chain to only purge transactions of that chain. Next time transactions are queried all of them will be queried again for all addresses and may take some time.
+   Doing a DELETE on the blockchain transactions endpoint will either delete locally saved transaction data. If nothing is given all transaction data will be deleted. Can specify the chain to only delete all transactions of that chain. Or even further chain and tx_hash to delete only a specific transaction's data.
 
    **Example Request**:
 
@@ -1961,9 +1961,10 @@ Purging locally saved blockchain transactions
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
-      {"chain": "eth"}
+      {"chain": "eth", "tx_hash": "0x6826b8646578ff457ba01bfe6a2cc77e3d6e40a849e45a97ca12dfd9150cd901"}
 
-   :reqjson string chain: Optional. The name of the chain for which to purge transaction. ``"eth"``, ``"optimism"``, ``"zksync_lite"`` etc. If not given all transactions for all chains are purged. This is using the backend's SupportedBlockchain with the limitation being only chains for which we save transactions.
+   :reqjson string chain: Optional. The name of the chain for which to delete transaction. ``"eth"``, ``"optimism"``, ``"zksync_lite"`` etc. If not given all transactions for all chains are purged. This is using the backend's SupportedBlockchain with the limitation being only chains for which we save transactions.
+   :reqjson string tx_hash: Optional. The transaction to delete. If given only the specific transaction is deleted. This should always be given in combination with the chain argument.
 
    **Example Response**:
 

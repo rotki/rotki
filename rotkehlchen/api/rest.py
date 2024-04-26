@@ -2661,10 +2661,15 @@ class RestAPI:
 
         return {'result': True, 'message': message, 'status_code': status_code}
 
-    def purge_blockchain_transaction_data(self, chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE | None) -> Response:  # noqa: E501
+    def delete_blockchain_transaction_data(
+            self,
+            chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE | None,
+            tx_hash: EVMTxHash | None,
+    ) -> Response:
         if not chain or chain != SupportedBlockchain.ZKSYNC_LITE:
-            DBEvmTx(self.rotkehlchen.data.db).purge_evm_transaction_data(
+            DBEvmTx(self.rotkehlchen.data.db).delete_evm_transaction_data(
                 chain=chain,
+                tx_hash=tx_hash,
             )
         if not chain or chain == SupportedBlockchain.ZKSYNC_LITE:
             with self.rotkehlchen.data.db.user_write() as write_cursor:

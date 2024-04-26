@@ -292,7 +292,7 @@ class RequiredEvmlikeAddressOptionalChainSchema(Schema):
         return EvmlikeAccount(data['address'], chain=data['chain'])
 
 
-class BlockchainTransactionPurgingSchema(Schema):
+class BlockchainTransactionDeletionSchema(Schema):
     chain = BlockchainField(
         exclude_types=(
             SupportedBlockchain.ETHEREUM_BEACONCHAIN,
@@ -303,6 +303,19 @@ class BlockchainTransactionPurgingSchema(Schema):
         required=False,
         load_default=None,
     )
+    tx_hash = EVMTransactionHashField(required=False, load_default=None)
+
+    @validates_schema
+    def validate_tx_deletion_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if data['tx_hash'] is not None and data['chain'] is None:
+            raise ValidationError(
+                message='Deleting a specific transaction needs both tx_hash and chain',
+                field_name='tx_hash',
+            )
 
 
 class EvmTransactionQuerySchema(
