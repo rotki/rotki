@@ -24,9 +24,9 @@ from rotkehlchen.types import (
     EVM_EVMLIKE_LOCATIONS,
     AddressbookType,
     ChainAddress,
-    ChainID,
     Location,
     Price,
+    SupportedBlockchain,
     Timestamp,
 )
 from rotkehlchen.utils.serialization import rlk_jsondumps
@@ -82,7 +82,7 @@ class ProcessedAccountingEvent:
         """Aux method to enrich addresses in the event notes using the addressbook"""
         chain_address = ChainAddress(
             address=string_to_evm_address(matched_address.group()),
-            blockchain=ChainID(self.location.to_chain_id()).to_blockchain(),
+            blockchain=SupportedBlockchain.from_location(self.location),  # type: ignore  # where this is caled from we check self.location in EVM_EVMLIKE_LOCATIONS
         )
         name = DBAddressbook(database).get_addressbook_entry_name(AddressbookType.PRIVATE, chain_address)  # noqa: E501
         return f'{chain_address.address} [{name}]' if name else chain_address.address
@@ -145,6 +145,7 @@ class ProcessedAccountingEvent:
                 exported_dict['asset'] = ''
             if tx_hash is not None:
                 exported_dict['notes'] = f'{evm_explorer}{tx_hash}  ->  {self.notes}'
+
             if self.location in EVM_EVMLIKE_LOCATIONS and database is not None:
                 # call _maybe_add_label_with_address on each address in the note
                 exported_dict['notes'] = EVM_ADDRESS_REGEX.sub(
