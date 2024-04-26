@@ -8,6 +8,11 @@ const transform = (value: boolean) => !value;
 onMounted(() => {
   set(animationsEnabled, get(enabled));
 });
+
+function updateSetting(value: boolean, update: (newValue: any) => void) {
+  set(animationsEnabled, !value);
+  update(value);
+}
 </script>
 
 <template>
@@ -25,7 +30,7 @@ onMounted(() => {
       :label="t('frontend_settings.label.animations')"
       :success-messages="success"
       :error-messages="error"
-      @input="update($event)"
+      @input="updateSetting($event, update)"
     />
   </SettingsOption>
 </template>

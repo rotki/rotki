@@ -57,13 +57,13 @@ onMounted(() => {
   <div>
     <DateFormatHelp v-model="formatHelp" />
     <SettingsOption
-      #default="{ error, success, update }"
+      #default="{ error, success, update, updateImmediate }"
       setting="dateDisplayFormat"
       :error-message="
         t('general_settings.validation.date_display_format.error')
       "
       :success-message="successMessage"
-      class="flex items-start gap-4 mt-2"
+      class="flex items-start gap-4"
       @finished="resetDateDisplayFormat()"
     >
       <RuiTextField
@@ -104,7 +104,7 @@ onMounted(() => {
             class="general-settings__date-restore mt-1"
             variant="text"
             icon
-            @click="update(defaultDateDisplayFormat)"
+            @click="updateImmediate(defaultDateDisplayFormat)"
           >
             <RuiIcon name="history-line" />
           </RuiButton>

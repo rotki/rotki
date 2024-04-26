@@ -22,7 +22,6 @@ import {
 import { camelCaseTransformer } from '@/services/axios-tranformers';
 import { Routes } from '@/router/routes';
 import { router } from '@/router';
-import { useAddressesNamesStore } from '@/store/blockchain/accounts/addresses-names';
 import type { Blockchain } from '@rotki/common/lib/blockchain';
 import type { CalendarEventPayload } from '@/types/history/calendar';
 
