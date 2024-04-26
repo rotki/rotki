@@ -53,13 +53,12 @@ onMounted(() => {
     frontend-setting
     :error-message="t('general_settings.validation.date_input_format.error')"
     :success-message="successMessage"
-    class="mb-3"
     @finished="resetDateInputFormat()"
   >
     <DateInputFormatSelector
       v-model="dateInputFormat"
       :label="t('general_settings.labels.date_input_format')"
-      class="pt-4 general-settings__fields__date-input-format"
+      class="general-settings__fields__date-input-format"
       :success-messages="success"
       :error-messages="error || toMessages(v$.dateInputFormat)"
       @input="callIfValid($event, updateImmediate)"

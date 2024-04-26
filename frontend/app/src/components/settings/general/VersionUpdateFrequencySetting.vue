@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
-import { between, helpers, required } from '@vuelidate/validators';
+import { between, helpers, requiredIf } from '@vuelidate/validators';
 import { Constraints } from '@/data/constraints';
 import { toMessages } from '@/utils/validation';
 
@@ -18,7 +18,7 @@ const rules = {
   versionUpdateCheckFrequency: {
     required: helpers.withMessage(
       t('general_settings.validation.version_update_check_frequency.non_empty'),
-      required,
+      requiredIf(versionUpdateCheckEnabled),
     ),
     between: helpers.withMessage(
       t(

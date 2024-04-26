@@ -21,7 +21,7 @@ const { t } = useI18n();
   >
     <RuiSwitch
       v-model="displayDateInLocaltime"
-      class="general-settings__fields__display-date-in-localtime mb-4"
+      class="general-settings__fields__display-date-in-localtime"
       color="primary"
       :label="t('general_settings.labels.display_date_in_localtime')"
       :success-messages="success"

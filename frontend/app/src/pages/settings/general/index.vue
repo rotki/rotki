@@ -10,16 +10,18 @@ const { t } = useI18n();
         {{ t('general_settings.title') }}
       </template>
 
-      <UsageAnalyticsSetting />
-      <LanguageSetting class="mb-6" />
-      <VersionUpdateFrequencySetting />
-      <BalanceSaveFrequencySetting />
-      <DateDisplayFormatSetting />
-      <DateInputFormatSetting />
-      <DisplayDateInLocaltimeSetting />
-      <BtcDerivationGapLimitSetting />
-      <TreatEthAsEth2Setting />
-      <EvmChainsToIgnoreSettings />
+      <div class="flex flex-col gap-4">
+        <UsageAnalyticsSetting />
+        <LanguageSetting />
+        <VersionUpdateFrequencySetting />
+        <BalanceSaveFrequencySetting />
+        <DateDisplayFormatSetting />
+        <DateInputFormatSetting />
+        <DisplayDateInLocaltimeSetting />
+        <BtcDerivationGapLimitSetting />
+        <TreatEthAsEth2Setting />
+        <EvmChainsToIgnoreSettings />
+      </div>
     </SettingCategory>
 
     <SettingCategory>

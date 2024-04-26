@@ -99,7 +99,7 @@ const { t } = useI18n();
         v-model="selection"
         :options="supportedExplorers"
         :label="t('explorers.chain_selector')"
-        :item-height="64"
+        :item-height="56"
         dense
         key-attr="key"
         full-width

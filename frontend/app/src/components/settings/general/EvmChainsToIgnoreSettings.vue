@@ -32,7 +32,7 @@ function removeChain(chain: Blockchain) {
 
 <template>
   <div>
-    <div class="text-base mb-3 mt-4">
+    <div class="text-rui-text-secondary text-body-1 mb-3">
       {{ t('general_settings.labels.chains_to_skip_detection') }}
     </div>
     <SettingsOption
