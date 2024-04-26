@@ -98,6 +98,7 @@ def test_thegraph_delegate(database, ethereum_inquirer):
     assert expected_events == events
 
 
+@pytest.mark.vcr()
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_ROTKI]])
 def test_thegraph_contract_deposit_gas(database, ethereum_inquirer):
     tx_hash = deserialize_evm_tx_hash('0xf254ac1bbfbf07ca21042edd3ff78dad7c3158c8218598b5359b6e415e0977b7')  # noqa: E501
@@ -129,7 +130,7 @@ def test_thegraph_contract_deposit_gas(database, ethereum_inquirer):
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(amount=FVal(deposit_amount), usd_value=FVal(0)),
+            balance=Balance(amount=FVal(deposit_amount)),
             location_label=ADDY_ROTKI,
             notes=f'Deposit {deposit_amount} ETH to {GRAPH_L1_LOCK_TRANSFER_TOOL} contract to pay for the gas in L2.',  # noqa: E501
             tx_hash=tx_hash,
@@ -141,6 +142,7 @@ def test_thegraph_contract_deposit_gas(database, ethereum_inquirer):
     assert expected_events == events
 
 
+@pytest.mark.vcr()
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_ROTKI]])
 def test_thegraph_contract_delegation_transferred_to_l2_vested(database, ethereum_inquirer):
     tx_hash = deserialize_evm_tx_hash('0x48321bb00e5c5b67f080991864606dbc493051d20712735a579d7ae31eca3d78')  # noqa: E501
@@ -189,6 +191,7 @@ def test_thegraph_contract_delegation_transferred_to_l2_vested(database, ethereu
     assert expected_events == events
 
 
+@pytest.mark.vcr()
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_USER_2]])
 def test_thegraph_contract_delegation_transferred_to_l2(database, ethereum_inquirer):
     tx_hash = deserialize_evm_tx_hash('0xed80711e4cb9c428790f0d9b51f79473bf5253d5d03c04d958d411e7fa34a92e')  # noqa: E501
