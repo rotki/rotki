@@ -55,7 +55,7 @@ from rotkehlchen.api.v1.schemas import (
     BlockchainAccountsPatchSchema,
     BlockchainAccountsPutSchema,
     BlockchainBalanceQuerySchema,
-    BlockchainTransactionPurgingSchema,
+    BlockchainTransactionDeletionSchema,
     ClearAvatarsCacheSchema,
     ClearCacheSchema,
     ClearIconsCacheSchema,
@@ -600,12 +600,16 @@ class AssociatedLocations(BaseMethodView):
 
 
 class BlockchainTransactionsResource(BaseMethodView):
-    delete_schema = BlockchainTransactionPurgingSchema()
+    delete_schema = BlockchainTransactionDeletionSchema()
 
     @require_loggedin_user()
     @use_kwargs(delete_schema, location='json')
-    def delete(self, chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE | None) -> Response:
-        return self.rest_api.purge_blockchain_transaction_data(chain=chain)
+    def delete(
+            self,
+            chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE | None,
+            tx_hash: EVMTxHash | None,
+    ) -> Response:
+        return self.rest_api.delete_blockchain_transaction_data(chain=chain, tx_hash=tx_hash)
 
 
 class EvmTransactionsResource(BaseMethodView):

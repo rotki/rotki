@@ -222,8 +222,13 @@ class DBEvmTx:
         total_found_result = cursor.execute(query, bindings)
         return txs, total_found_result.fetchone()[0]  # always returns result
 
-    def purge_evm_transaction_data(self, chain: SUPPORTED_EVM_CHAINS_TYPE | None) -> None:
-        """Deletes all evm transaction related data from the DB"""
+    def delete_evm_transaction_data(
+            self,
+            chain: SUPPORTED_EVM_CHAINS_TYPE | None,
+            tx_hash: EVMTxHash | None,
+    ) -> None:
+        """Deletes evm transaction related data from the DB.
+        Either all data, data related to a single chain or a single chain/tx_hash only"""
         query_ranges_tuples = []
         delete_query = 'DELETE FROM evm_transactions'
         delete_bindings = ()
@@ -233,19 +238,25 @@ class DBEvmTx:
             delete_bindings = (chain.to_chain_id().serialize_for_db(),)    # type: ignore[assignment]
         else:
             chains = get_args(SUPPORTED_EVM_CHAINS_TYPE)  # type: ignore[assignment]
+        if tx_hash is not None:
+            delete_query += f' {"WHERE" if len(delete_bindings) == 0 else "AND"} tx_hash=?'
+            delete_bindings += (tx_hash,)  # type: ignore
 
-        for entry in chains:
-            query_ranges_tuples.extend([
-                (f'{entry.to_range_prefix("txs")}\\_%', '\\'),
-                (f'{entry.to_range_prefix("internaltxs")}\\_%', '\\'),
-                (f'{entry.to_range_prefix("tokentxs")}\\_%', '\\'),
-            ])
-        with self.db.user_write() as cursor:
-            cursor.executemany(
-                'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
-                query_ranges_tuples,
-            )
-            cursor.execute(delete_query, delete_bindings)
+        else:  # for entire chains, clear ranges
+            for entry in chains:
+                query_ranges_tuples.extend([
+                    (f'{entry.to_range_prefix("txs")}\\_%', '\\'),
+                    (f'{entry.to_range_prefix("internaltxs")}\\_%', '\\'),
+                    (f'{entry.to_range_prefix("tokentxs")}\\_%', '\\'),
+                ])
+                with self.db.user_write() as write_cursor:
+                    write_cursor.executemany(
+                        'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
+                        query_ranges_tuples,
+                    )
+
+        with self.db.user_write() as write_cursor:  # finally delete transactions
+            write_cursor.execute(delete_query, delete_bindings)
 
     def get_transaction_hashes_no_receipt(
             self,
