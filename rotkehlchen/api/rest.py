@@ -541,6 +541,8 @@ class RestAPI:
                 ):
                     log.debug(f'Killing api task greenlet with {task_id=}')
                     greenlet.kill(exception=GreenletKilledError('Killed due to api request'))
+                    # if a task has disabled the task manager ensure that it gets reactivated
+                    self.rotkehlchen.task_manager.should_schedule = True  # type: ignore[union-attr]  # here task manager is not None
                     break
             else:  # greenlet not found
                 return api_response(wrap_in_fail_result(f'Did not cancel task with id {task_id} because it could not be found'), status_code=HTTPStatus.NOT_FOUND)  # noqa: E501
@@ -1572,6 +1574,16 @@ class RestAPI:
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> dict[str, Any]:
+        """
+        Process the history to create a PnL report.
+        During the processing of the history we disallow new background tasks from spawning.
+        The reason is that gevent switches often the greenlets and the background tasks can
+        slow the history processing that we want to be as fast as possible. Once finished
+        we allow again executing background tasks. We ensure that if the history processing
+        gets cancelled by the user the task manager schedules again new tasks, this happens
+        at `delete_async_task`.
+        """
+        self.rotkehlchen.task_manager.should_schedule = False  # type: ignore[union-attr]  # here task manager is not None
         try:
             report_id, error_or_empty = self.rotkehlchen.process_history(
                 start_ts=from_timestamp,
@@ -1583,6 +1595,8 @@ class RestAPI:
                 'message': str(e),
                 'status_code': HTTPStatus.CONFLICT,
             }
+        finally:
+            self.rotkehlchen.task_manager.should_schedule = True  # type: ignore[union-attr]  # here task manager is not None
 
         return {'result': report_id, 'message': error_or_empty}
 
