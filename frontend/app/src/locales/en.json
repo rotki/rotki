@@ -2673,7 +2673,8 @@
           "only_allow_whitelisted": "Only allow images from whitelisted domains"
         },
         "whitelisted_domains": "Whitelisted domains",
-        "whitelisted_domains_hint": "Press the save button on the right to save the changes"
+        "whitelisted_domains_hint": "Enter single or multiple comma separated domains. Press the save button on the right to save the changes",
+        "whitelisted_domain_entries": "no entries | {count} unique entry | {count} unique entries"
       },
       "subtitle": {
         "include_nfts": "Include NFTs in graphs and total amounts",
@@ -2684,6 +2685,10 @@
       "update_whitelist_confirmation": {
         "message": "Are you sure you want to allow images for NFT from these domains? | Are you sure you want to allow images for NFT from domain: {domain} ?",
         "title": "Update whitelisted domains"
+      },
+      "messages": {
+        "error": "Error setting allowed domains for image rendering of NFTs",
+        "success": "Allowed domains for image rendering of NFTs saved successfully"
       }
     },
     "rpc_node_setting": {

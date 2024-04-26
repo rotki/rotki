@@ -2300,13 +2300,24 @@
     },
     "nft_setting": {
       "label": {
-        "include_nfts": "Include NFTs in the graphs and total networth",
-        "include_nfts_hint": "By default graphs and dashboard include the value of all the NFTs"
+        "include_nfts": "Incluir los NFT en los gráficos y el patrimonio neto total",
+        "include_nfts_hint": "Por defecto, los gráficos y el cuadro de mandos incluyen el valor de todas las NFT.",
+        "render_setting": {
+          "allow_all": "Permitir todas las imágenes",
+          "only_allow_whitelisted": "Permitir sólo imágenes de dominios de la lista blanca"
+        },
+        "whitelisted_domains": "Dominios de la lista blanca",
+        "whitelisted_domains_hint": "Introduzca uno o varios dominios separados por comas. Pulse el botón de la derecha para guardar los cambios.",
+        "whitelisted_domain_entries": "ninguna entrada | {count} entrada única | {count} entradas únicas"
       },
       "subtitle": {
         "include_nfts": "Include NFTs in graphs and total amounts"
       },
-      "title": "NFT setting"
+      "title": "NFT setting",
+      "messages": {
+        "error": "Error al configurar los dominios permitidos para el renderizado de imágenes de NFTs",
+        "success": "Dominios permitidos para la representación de imágenes de NFT guardados correctamente"
+      }
     },
     "rpc_node_setting": {
       "title": "RPC node setting"

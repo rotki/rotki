@@ -2354,12 +2354,23 @@
     "nft_setting": {
       "label": {
         "include_nfts": "在图表和总净值中包含 NFT",
-        "include_nfts_hint": "默认情况下图表和仪表板包含所有 NFT 的值"
+        "include_nfts_hint": "默认情况下，图表和仪表盘包括所有 NFT 的值",
+        "render_setting": {
+          "allow_all": "允许所有图像",
+          "only_allow_whitelisted": "只允许来自白名单域名的图片"
+        },
+        "whitelisted_domains": "白名单域",
+        "whitelisted_domains_hint": "输入单个或多个逗号分隔的域。按右侧的保存按钮保存更改",
+        "whitelisted_domain_entries": "无条目 | {count} 唯一条目 | {count} 唯一条目"
       },
       "subtitle": {
         "include_nfts": "在图表和总量中包含 NFT"
       },
-      "title": "NFT setting"
+      "title": "NFT setting",
+      "messages": {
+        "error": "设置 NFT 图像渲染允许域时出错",
+        "success": "成功保存 NFT 图像渲染的允许域"
+      }
     },
     "rpc_node_setting": {
       "title": "RPC节点设置"

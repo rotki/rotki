@@ -2307,13 +2307,24 @@
     "language_contribution_tooltip": "This feature is experimental and may not work as expected for some languages. This is because all static sentences in the app have to be manually translated and that is a long and ongoing process. Therefore, we need your contribution to speed it up. Click here for more information.",
     "nft_setting": {
       "label": {
-        "include_nfts": "Include NFTs in the graphs and total networth",
-        "include_nfts_hint": "By default graphs and dashboard include the value of all the NFTs"
+        "include_nfts": "Συμπεριλάβετε τα NFTs στα γραφήματα και τη συνολική καθαρή αξία",
+        "include_nfts_hint": "Από προεπιλογή τα γραφήματα και ο πίνακας οργάνων περιλαμβάνουν την αξία όλων των NFTs",
+        "render_setting": {
+          "allow_all": "Επιτρέψτε όλες τις εικόνες",
+          "only_allow_whitelisted": "Να επιτρέπονται μόνο εικόνες από λευκά πεδία"
+        },
+        "whitelisted_domains": "Επιλεγμένοι τομείς",
+        "whitelisted_domains_hint": "Εισάγετε έναν ή περισσότερους τομείς που χωρίζονται με κόμμα. Πατήστε το κουμπί αποθήκευσης στα δεξιά για να αποθηκεύσετε τις αλλαγές",
+        "whitelisted_domain_entries": "Δεν υπάρχουν καταχωρήσεις | {count} μοναδική καταχώρηση | {count} μοναδικές καταχωρήσεις"
       },
       "subtitle": {
         "include_nfts": "Include NFTs in graphs and total amounts"
       },
-      "title": "NFT setting"
+      "title": "NFT setting",
+      "messages": {
+        "error": "Ρύθμιση σφαλμάτων που επιτρέπονται για την απόδοση εικόνας των NFTs",
+        "success": "Επιτρεπόμενοι τομείς για την απόδοση εικόνας των NFTs αποθηκεύτηκαν με επιτυχία"
+      }
     },
     "rpc_node_setting": {
       "title": "RPC node setting"
