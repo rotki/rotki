@@ -6,6 +6,7 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, WEEK_IN_SECONDS
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.calendar import (
     BaseReminderData,
     CalendarEntry,
@@ -116,6 +117,7 @@ def maybe_create_ens_reminders(database: DBHandler) -> None:
         ):
             continue
 
+        calendar_entry_description = f'{ens_name} expires on {customizable_date.timestamp_to_date(ens_expires)}'  # noqa: E501
         if (calendar_entries := db_calendar.query_calendar_entry(
             filter_query=CalendarFilterQuery.make(
                 and_op=True,
@@ -131,17 +133,32 @@ def maybe_create_ens_reminders(database: DBHandler) -> None:
             calendar_entry_id = db_calendar.create_calendar_entry(CalendarEntry(
                 name=f'{ens_name} expiry',
                 timestamp=ens_expires,
-                description=f'{ens_name} expires on {customizable_date.timestamp_to_date(ens_expires)}',  # noqa: E501
+                description=calendar_entry_description,
                 counterparty=CPT_ENS,
                 address=user_address,
                 blockchain=blockchain,
                 color=None,
                 auto_delete=True,
             ))
-        elif db_calendar.count_reminder_entries(  # else calendar entry already exists
-            event_id=(calendar_entry_id := calendar_entries['entries'][0].identifier),
-        ) > 0:  # and already has a reminder entry
-            continue  # we don't add any automatic reminders
+        else:  # else calendar entry already exists
+            calendar_entry = calendar_entries['entries'][0]
+            if ens_expires > calendar_entry.timestamp:  # if a later expiry is found
+                db_calendar.update_calendar_entry(CalendarEntry(
+                    identifier=calendar_entry.identifier,
+                    name=f'{ens_name} expiry',
+                    timestamp=ens_expires,  # update the calendar entry
+                    description=calendar_entry_description,
+                    counterparty=CPT_ENS,
+                    address=user_address,
+                    blockchain=blockchain,
+                    color=None,
+                    auto_delete=True,
+                ))
+
+            if db_calendar.count_reminder_entries(
+                event_id=(calendar_entry_id := calendar_entry.identifier),
+            ) > 0:  # already has a reminder entry
+                continue  # we don't add any new automatic reminders
 
         if (
             ens_name not in ens_to_event or
@@ -158,6 +175,13 @@ def maybe_create_ens_reminders(database: DBHandler) -> None:
         for calendar_identifier, _ in ens_to_event.values()
         for secs_before in (WEEK_IN_SECONDS, DAY_IN_SECONDS)
     ])
+
+    with database.conn.write_ctx() as write_cursor:
+        database.set_static_cache(
+            write_cursor=write_cursor,
+            name=DBCacheStatic.LAST_CREATE_REMINDER_CHECK_TS,
+            value=current_ts,
+        )
 
     if len(failed_to_add) == 0:
         return
