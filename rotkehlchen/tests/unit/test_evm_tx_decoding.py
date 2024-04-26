@@ -174,6 +174,18 @@ def test_tx_decode(ethereum_transaction_decoder, database):
                 events, _ = decoder._get_or_decode_transaction_events(tx, receipt, ignore_cache=False)  # noqa: E501
         assert decode_mock.call_count == len(transactions)
 
+    with database.user_write() as write_cursor:
+        assert write_cursor.execute('SELECT COUNT(*) from history_events').fetchone()[0] == 2
+        assert write_cursor.execute('SELECT COUNT(*) from evm_events_info').fetchone()[0] == 2
+        assert write_cursor.execute('SELECT COUNT(*) from evm_tx_mappings').fetchone()[0] == 1
+
+        dbevents = DBHistoryEvents(database)
+        dbevents.delete_events_by_location(write_cursor, Location.ETHEREUM)
+
+        assert write_cursor.execute('SELECT COUNT(*) from history_events').fetchone()[0] == 0
+        assert write_cursor.execute('SELECT COUNT(*) from evm_events_info').fetchone()[0] == 0
+        assert write_cursor.execute('SELECT COUNT(*) from evm_tx_mappings').fetchone()[0] == 0
+
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])  # noqa: E501
 @pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])

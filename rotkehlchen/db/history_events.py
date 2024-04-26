@@ -17,6 +17,7 @@ from rotkehlchen.db.constants import (
     HISTORY_BASE_ENTRY_LENGTH,
     HISTORY_MAPPING_KEY_STATE,
     HISTORY_MAPPING_STATE_CUSTOMIZED,
+    HISTORY_MAPPING_STATE_DECODED,
 )
 from rotkehlchen.db.filtering import (
     ALL_EVENTS_DATA_JOIN,
@@ -214,16 +215,26 @@ class DBHistoryEvents:
             write_cursor: 'DBCursor',
             location: EVM_EVMLIKE_LOCATIONS_TYPE,
     ) -> None:
-        """Delete all relevant non-customized events for a given location"""
+        """Delete all relevant non-customized events for a given location
+
+        Also set evm_tx_mapping as non decoded so they can be redecoded later
+        """
         customized_event_ids = self.get_customized_event_identifiers(cursor=write_cursor, location=location)  # noqa: E501
-        querystr = 'DELETE FROM history_events WHERE location=?'
+        whereclause = 'WHERE location=?'
         if (length := len(customized_event_ids)) != 0:
-            querystr += f' AND identifier NOT IN ({", ".join(["?"] * length)})'
+            whereclause += f' AND identifier NOT IN ({", ".join(["?"] * length)})'
             bindings = [location.serialize_for_db(), *customized_event_ids]
         else:
             bindings = (location.serialize_for_db(),)  # type: ignore  # different type of elements in the list
 
-        write_cursor.execute(querystr, bindings)
+        transaction_hashes = write_cursor.execute(f'SELECT evm_events_info.tx_hash FROM history_events INNER JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier {whereclause}', bindings).fetchall()  # noqa: E501
+        write_cursor.execute(f'DELETE FROM history_events {whereclause}', bindings)
+
+        if location != Location.ZKSYNC_LITE and len(transaction_hashes) != 0:
+            write_cursor.executemany(
+                'DELETE from evm_tx_mappings WHERE tx_id IN (SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?) AND value=?',  # noqa: E501
+                [(x[0], location.to_chain_id(), HISTORY_MAPPING_STATE_DECODED) for x in transaction_hashes],  # noqa: E501
+            )
 
     def delete_events_by_tx_hash(
             self,

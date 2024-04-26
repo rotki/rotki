@@ -686,11 +686,11 @@ class EvmPendingTransactionsDecodingResource(BaseMethodView):
             self,
             async_query: bool,
             ignore_cache: bool,
-            evm_chains: list[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE],
+            chains: list[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE],
     ) -> Response:
         return self.rest_api.decode_evm_transactions(
             async_query=async_query,
-            evm_chains=evm_chains,
+            evm_chains=chains,
             force_redecode=ignore_cache,
         )
 
@@ -710,12 +710,12 @@ class EvmlikePendingTransactionsDecodingResource(BaseMethodView):
             self,
             async_query: bool,
             ignore_cache: bool,
-            evmlike_chains: list[EvmlikeChain],
+            chains: list[EvmlikeChain],
     ) -> Response:
         return self.rest_api.decode_pending_evmlike_transactions(
             async_query=async_query,
             ignore_cache=ignore_cache,
-            evmlike_chains=evmlike_chains,
+            evmlike_chains=chains,
         )
 
     @require_loggedin_user()
