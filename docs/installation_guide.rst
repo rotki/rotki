@@ -469,9 +469,9 @@ rotki uses pnpm v7. To check if you have version 7 of pnpm you can run::
 
 If you are on an older version of pnpm, you can install it by::
 
-    pnpm install -g pnpm@8
+    pnpm install -g pnpm@9
     # or if you don't have it installed you can
-    npm install -g pnpm@8
+    npm install -g pnpm@9
 
 Install electron and any other dependencies by::
 
@@ -658,9 +658,9 @@ rotki uses pnpm v8. To check if you have version * of pnpm you can run::
 
 If you are on an older version of pnpm, you can install it by::
 
-    pnpm install -g pnpm@8
+    pnpm install -g pnpm@9
     # or if you never installed it before you can
-    npm install -g pnpm@8
+    npm install -g pnpm@9
 
 
 Almost there, we can now install all the Node.js dependencies of the frontend app:
@@ -699,7 +699,7 @@ Node & pnpm
 Install `node <https://nodejs.org/en/download/>`_.
 Install ``pnpm``::
 
-    $ npm install -g pnpm@8
+    $ npm install -g pnpm@9
 
 
 Python
