@@ -106,7 +106,7 @@ export function useHistoryEventsApi() {
       `/blockchains/${type}/transactions/decode`,
       snakeCaseTransformer({
         asyncQuery: true,
-        ...(type === TransactionChainType.EVM ? { evmChains: chains } : { evmlikeChains: chains }),
+        chains,
         ...(ignoreCache ? { ignoreCache } : {}),
       }),
       { validateStatus: validStatus },
