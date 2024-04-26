@@ -280,6 +280,49 @@ def test_thegraph_balances_arbitrum_one(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306', '0x7AB1D08C6236119f2EDcfE4a33B0Acd462aBE0e6']])  # noqa: E501
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306', '0x7AB1D08C6236119f2EDcfE4a33B0Acd462aBE0e6']])  # noqa: E501
+@pytest.mark.parametrize('arbitrum_one_manager_connect_at_start', [(get_arbitrum_allthatnode(weight=ONE, owned=True),)])  # noqa: E501
+def test_thegraph_balances_vested_arbitrum_one(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_transaction_decoder: 'ArbitrumOneTransactionDecoder',
+        ethereum_inquirer: 'EthereumInquirer',
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+        arbitrum_one_manager_connect_at_start,
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Check that balances of GRT currently vested are properly detected."""
+    expected_grt_balances = [FVal('166666.67'), FVal('300000')]
+    # decode the delegation transfer event which has the vested contract address as delegator_l2
+    for tx_hash in (
+        '0x48321bb00e5c5b67f080991864606dbc493051d20712735a579d7ae31eca3d78',
+        '0x52274895860353e9664e20a63c182cd562ad179049d027703840692d55cb57c8',
+    ):
+        get_decoded_events_of_transaction(
+            evm_inquirer=ethereum_inquirer,
+            database=arbitrum_one_transaction_decoder.database,
+            tx_hash=deserialize_evm_tx_hash(
+                tx_hash,
+            ),
+        )
+    wait_until_all_nodes_connected(
+        connect_at_start=arbitrum_one_manager_connect_at_start,
+        evm_inquirer=arbitrum_one_inquirer,
+    )
+    thegraph_balances_inquirer = ThegraphBalancesArbitrumOne(
+        database=arbitrum_one_transaction_decoder.database,
+        evm_inquirer=arbitrum_one_inquirer,
+    )
+    thegraph_balances = thegraph_balances_inquirer.query_balances()
+    asset = A_GRT_ARB.resolve_to_evm_token()
+    for balance, address in zip(expected_grt_balances, arbitrum_one_accounts, strict=True):
+        assert thegraph_balances[address].assets[asset] == Balance(
+            amount=balance,
+            usd_value=balance * FVal(1.5),
+        )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 def test_octant_balances(
         ethereum_inquirer: 'EthereumInquirer',

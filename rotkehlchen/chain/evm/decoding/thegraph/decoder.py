@@ -40,17 +40,18 @@ TOPIC_STAKE_DELEGATED_WITHDRAWN: Final = b'\x1b.w7\xe0C\xc5\xcf\x1bX|\xebM\xae\x
 ETH_DEPOSITED: Final = b'lp7\x91\xf3\x99U\x88\x07BOH\x9c\xcd\x81\x1cr\xb4\xff\x0bt\xafTrd\xfa\xd7\xc6Fwm\xf0'  # noqa: E501
 DELEGATION_TRANSFERRED_TO_L2: Final = b'#\x1e\\\xfe\xffwY\xa4h$\x1d\x93\x9a\xb0J`\xd6\x03\xb1~5\x90W\xab\xbb\x8fR\xaf\xc3\xe4\x98k'  # noqa: E501
 
-GRAPH_TOKEN_LOCK_WALLET_BENEFICIARY_ABI = [
+GRAPH_TOKEN_LOCK_WALLET_ABI: Final = [
     {
         'inputs': [],
         'name': 'beneficiary',
-        'outputs': [
-            {
-                'internalType': 'address',
-                'name': '',
-                'type': 'address',
-            },
-        ],
+        'outputs': [{'internalType': 'address', 'name': '', 'type': 'address'}],
+        'stateMutability': 'view',
+        'type': 'function',
+    },
+    {
+        'inputs': [],
+        'name': 'totalOutstandingAmount',
+        'outputs': [{'internalType': 'uint256', 'name': '', 'type': 'uint256'}],
         'stateMutability': 'view',
         'type': 'function',
     },
@@ -92,7 +93,7 @@ class ThegraphCommonDecoder(DecoderInterface):
             try:
                 raw_beneficiary_address = self.base.evm_inquirer.call_contract(
                     contract_address=address,  # the vesting contract
-                    abi=GRAPH_TOKEN_LOCK_WALLET_BENEFICIARY_ABI,
+                    abi=GRAPH_TOKEN_LOCK_WALLET_ABI,
                     method_name='beneficiary',
                 )
                 return deserialize_evm_address(raw_beneficiary_address)
@@ -106,6 +107,7 @@ class ThegraphCommonDecoder(DecoderInterface):
         user_address = self._get_user_address(hex_or_bytes_to_address(context.tx_log.topics[1]))
         if not user_address or not self.base.is_tracked(user_address):
             return DEFAULT_DECODING_OUTPUT
+
         delegator_l2 = hex_or_bytes_to_address(context.tx_log.topics[2])
         indexer = hex_or_bytes_to_address(context.tx_log.topics[3])
         l2_indexer = hex_or_bytes_to_address(context.tx_log.data[:32])
@@ -133,6 +135,7 @@ class ThegraphCommonDecoder(DecoderInterface):
         user_address = self._get_user_address(hex_or_bytes_to_address(context.tx_log.topics[1]))
         if not user_address or not self.base.is_tracked(user_address):
             return DEFAULT_DECODING_OUTPUT
+
         indexer = hex_or_bytes_to_address(context.tx_log.topics[1])
         raw_amount = hex_or_bytes_to_int(context.tx_log.data)
         amount = asset_normalized_value(amount=raw_amount, asset=A_ETH.resolve_to_crypto_asset())
@@ -155,6 +158,7 @@ class ThegraphCommonDecoder(DecoderInterface):
         delegator = hex_or_bytes_to_address(context.tx_log.topics[2])
         if delegator is None or self.base.is_tracked(delegator) is False:
             return DEFAULT_DECODING_OUTPUT
+
         indexer = hex_or_bytes_to_address(context.tx_log.topics[1])
         stake_amount = hex_or_bytes_to_int(context.tx_log.data[:32])
         stake_amount_norm = token_normalized_value(
@@ -207,6 +211,7 @@ class ThegraphCommonDecoder(DecoderInterface):
         delegator = hex_or_bytes_to_address(context.tx_log.topics[2])
         if delegator is None or self.base.is_tracked(delegator) is False:
             return DEFAULT_DECODING_OUTPUT
+
         indexer = hex_or_bytes_to_address(context.tx_log.topics[1])
         tokens_amount = hex_or_bytes_to_int(context.tx_log.data[:32])
         lock_timeout_secs = hex_or_bytes_to_int(context.tx_log.data[64:128])
@@ -236,6 +241,7 @@ class ThegraphCommonDecoder(DecoderInterface):
         delegator = hex_or_bytes_to_address(context.tx_log.topics[2])
         if delegator is None or self.base.is_tracked(delegator) is False:
             return DEFAULT_DECODING_OUTPUT
+
         indexer = hex_or_bytes_to_address(context.tx_log.topics[1])
         tokens_amount_norm = token_normalized_value(
             token_amount=hex_or_bytes_to_int(context.tx_log.data[:32]),
