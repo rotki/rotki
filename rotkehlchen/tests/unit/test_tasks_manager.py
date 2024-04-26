@@ -859,20 +859,27 @@ def test_calendar_entries_get_deleted(
     '0xA3B9E4b2C18eFB1C767542e8eb9419B840881467',
     '0xA01f6D0985389a8E106D3158A9441aC21EAC8D8c',
 ]])
-@pytest.mark.parametrize('ens_tx_hashes', [[
-    deserialize_evm_tx_hash('0x74e72600c6cd5a1f0170a3ca38ecbf7d59edeb8ceb48adab2ed9b85d12cc2b99'),  # Register  # noqa: E501
-    deserialize_evm_tx_hash('0xd4fd01f50c3c86e7e119311d6830d975cf7d78d6906004d30370ffcbaabdff95'),  # Renew old  # noqa: E501
-], [
-    deserialize_evm_tx_hash('0x5150f6e1c76b74fa914e06df9e56577cdeec0faea11f9949ff529daeb16b1c76'),  # Register v2  # noqa: E501
-    deserialize_evm_tx_hash('0x0faef1a1a714d5f2f2e5fb344bd186a745180849bae2c92f9d595d8552ef5c96'),  # Renew new  # noqa: E501
-]])
+@pytest.mark.parametrize('ens_data', [(
+    [
+        deserialize_evm_tx_hash('0x4fdcd2632c6aa5549f884c9322943690e4f3c08e20a4dffe59e198ee737b54e8'),  # Register  # noqa: E501
+        deserialize_evm_tx_hash('0xd4fd01f50c3c86e7e119311d6830d975cf7d78d6906004d30370ffcbaabdff95'),  # Renew old (same ENS)  # noqa: E501
+    ],
+    {'dfern.eth': 2310615949},
+), (
+    [
+        deserialize_evm_tx_hash('0x5150f6e1c76b74fa914e06df9e56577cdeec0faea11f9949ff529daeb16b1c76'),  # Register v2  # noqa: E501
+        deserialize_evm_tx_hash('0x0faef1a1a714d5f2f2e5fb344bd186a745180849bae2c92f9d595d8552ef5c96'),  # Renew new  # noqa: E501
+    ],
+    {'ens2qr.eth': 1712756435, 'karapetsas.eth': 1849443293},
+)])
 def test_maybe_create_calendar_reminder(
         task_manager: TaskManager,
         ethereum_inquirer: 'EthereumInquirer',
         db_settings: dict[str, Any],
-        ens_tx_hashes: list['EVMTxHash'],
+        ens_data: tuple[list['EVMTxHash'], dict[str, Timestamp]],
 ) -> None:
     """Test that ENS reminders are created at the expiry time of ENS registrations and renewals."""
+    ens_tx_hashes, latest_expiry_of_ens = ens_data
     database = task_manager.database
     calendar_db = DBCalendar(database)
     customizable_date = CustomizableDateMixin(database=database)
@@ -897,13 +904,13 @@ def test_maybe_create_calendar_reminder(
         return  # finish this test case because this setting will prevent creation of reminders
 
     new_calendar_entries = calendar_db.query_calendar_entry(CalendarFilterQuery.make())
-    assert new_calendar_entries['entries_found'] == 2
+    assert new_calendar_entries['entries_found'] == len(latest_expiry_of_ens)  # only one calendar entry per ENS  # noqa: E501
 
     for idx, calendar_entry in enumerate(new_calendar_entries['entries']):
         assert ens_events[idx].extra_data is not None
         assert ens_events[idx].location_label is not None
         ens_name: str = ens_events[idx].extra_data['name']  # type: ignore[index]  # extra_data is not None, checked above
-        ens_expires: Timestamp = ens_events[idx].extra_data['expires']  # type: ignore[index]  # extra_data is not None, checked above
+        ens_expires = latest_expiry_of_ens[ens_name]
 
         assert calendar_entry == CalendarEntry(  # calendar entry is created for expiry
             identifier=idx + 1,
@@ -923,3 +930,8 @@ def test_maybe_create_calendar_reminder(
         assert reminders[0].event_id == reminders[1].event_id == calendar_entry.identifier
         assert reminders[0].secs_before == DAY_IN_SECONDS
         assert reminders[1].secs_before == WEEK_IN_SECONDS
+
+    with task_manager.database.conn.read_ctx() as cursor:
+        assert (last_ran_ts := task_manager.database.get_static_cache(
+            cursor=cursor, name=DBCacheStatic.LAST_CREATE_REMINDER_CHECK_TS,
+        )) is not None and last_ran_ts - ts_now() < 5  # executed recently

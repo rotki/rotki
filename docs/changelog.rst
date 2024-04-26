@@ -22,6 +22,7 @@ Changelog
 * :feature:`-` The claim event of the Degen airdrop 2 will be correctly decoded.
 * :bug:`-` Binance balances will now include funding wallet's balances.
 * :feature:`-` rotki now supports Coinbase transactions using Advanced Trading.
+* :bug:`-` Velodrome and Aerodrome LP pools will now refresh properly.
 * :bug:`-` Fix a bug where the custom price is not applied in the balance view under the account table.
 * :bug:`-` Deleting an EVM RPC node will no longer fail sometimes with a "Can't delete etherscan node" error. Additionally non-mainnet etherscan nodes are no longer deletable.
 * :bug:`-` Nigerian Naira should be correctly detected in binance.
