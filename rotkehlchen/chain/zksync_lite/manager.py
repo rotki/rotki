@@ -600,12 +600,19 @@ class ZksyncLiteManager:
             self,
             addresses: Sequence[ChecksumEvmAddress],
     ) -> dict[ChecksumEvmAddress, dict[Asset, Balance]]:
-        """Get ZKSync Lite balances"""
+        """Get ZKSync Lite balances
+
+        May raise:
+        - RemoteError
+        """
         balances: defaultdict[ChecksumEvmAddress, dict[Asset, Balance]] = defaultdict(dict)
         for address in addresses:
             result = self._query_api(url=f'accounts/{address}')
+            if (finalized_result := result.get('finalized', None)) is None:
+                raise RemoteError(f'Unexpected zksync lite balances response. Missing finalized value {result}')  # noqa: E501
+
             try:
-                for symbol, raw_amount_str in result['finalized']['balances'].items():
+                for symbol, raw_amount_str in finalized_result.get('balances', {}).items():
                     if (asset := self._get_token_by_symbol(symbol)) is None:
                         log.error(f'Could not find asset for symbol {symbol} in zksync mapping')
                         continue
