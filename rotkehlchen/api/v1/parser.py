@@ -69,7 +69,7 @@ class ResourceReadingParser(FlaskParser):
                 )
                 return func(*args, **kwargs)
 
-            wrapper.__wrapped__ = func  # type: ignore
+            wrapper.__wrapped__ = func
             return wrapper
 
         return decorator
