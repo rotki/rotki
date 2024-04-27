@@ -22,7 +22,7 @@ miniupnpc==2.0.2; sys_platform != 'win32'
 miniupnpc @ https://github.com/rotki/rotki-build/raw/main/miniupnpc/miniupnpc-2.2.6-cp311-cp311-win_amd64.whl ; sys_platform == 'win32'
 cryptography==42.0.5
 py-machineid==0.5.1
-more-itertools==10.1.0  # for peekable iterators
+more-itertools==10.2.0  # for peekable iterators
 regex==2024.4.16  # used for unicode information in detection of spam tokens
 eth-abi==5.0.1
 
