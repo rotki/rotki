@@ -266,7 +266,7 @@ class DBHandler:
                 'found. Please open an issue on our github or contact us in our discord server.',
             )
 
-        backup_to_use = sorted(found_backups)[-1]  # Use latest backup
+        backup_to_use = max(found_backups)  # Use latest backup
         shutil.copyfile(
             self.user_data_dir / backup_to_use,
             self.user_data_dir / USERDB_NAME,
