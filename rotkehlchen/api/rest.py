@@ -217,6 +217,7 @@ from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
+    EVM_EVMLIKE_LOCATIONS,
     SPAM_PROTOCOL,
     SUPPORTED_BITCOIN_CHAINS,
     SUPPORTED_CHAIN_IDS,
@@ -2666,14 +2667,39 @@ class RestAPI:
             chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE | None,
             tx_hash: EVMTxHash | None,
     ) -> Response:
+        # First delete transaction data
         if not chain or chain != SupportedBlockchain.ZKSYNC_LITE:
             DBEvmTx(self.rotkehlchen.data.db).delete_evm_transaction_data(
                 chain=chain,
                 tx_hash=tx_hash,
             )
+
         if not chain or chain == SupportedBlockchain.ZKSYNC_LITE:
+            querystr, bindings = 'DELETE FROM zksynclite_transactions', ()
+            if tx_hash is not None:
+                querystr += ' WHERE tx_hash=?'
+                bindings = (tx_hash,)  # type: ignore
+
             with self.rotkehlchen.data.db.user_write() as write_cursor:
-                write_cursor.execute('DELETE FROM zksynclite_transactions')
+                write_cursor.execute(querystr, bindings)
+
+        # Then delete events related to the deleted transaction data
+        dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
+        with self.rotkehlchen.data.db.user_write() as write_cursor:
+            if tx_hash is not None:
+                assert chain is not None, 'api should not let this be none if tx_hash is not'
+                dbevents.delete_events_by_tx_hash(
+                    write_cursor=write_cursor,
+                    tx_hashes=[tx_hash],
+                    location=Location.from_chain(chain),
+                )
+            else:
+                chain_locations = [Location.from_chain(chain)] if chain else EVM_EVMLIKE_LOCATIONS
+                for chain_location in chain_locations:
+                    dbevents.delete_events_by_location(
+                        write_cursor=write_cursor,
+                        location=chain_location,
+                    )
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
