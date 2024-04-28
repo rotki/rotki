@@ -109,13 +109,10 @@ class Compoundv3CommonDecoder(DecoderInterface):
             compound_token: EvmToken,
     ) -> DecodingOutput:
         """Decode a compound v3 supply or withdraw event. Takes decoder context and
-        the compound v3 wrapped token of the supplied/withdrawn underlying token"""
-        if (underlying_token := self._get_compound_underlying_token(compound_token)) is None:
-            log.error(
-                f'At compound v3 supply/withdraw decoding of tx '
-                f'{context.transaction.tx_hash.hex()} the underlying token was not found.',
-            )
-            return DEFAULT_DECODING_OUTPUT
+        the compound v3 token contract"""
+        underlying_token = self.base.get_or_create_evm_asset(
+            hex_or_bytes_to_address(context.tx_log.topics[3]),
+        )
 
         amount = asset_normalized_value(
             amount=hex_or_bytes_to_int(context.tx_log.data),
@@ -124,6 +121,7 @@ class Compoundv3CommonDecoder(DecoderInterface):
         paired_event, action_from_event_type, action_to_event_subtype, action_to_notes = None, None, None, None  # noqa: E501
         for event in context.decoded_events:
             if (
+                event.address == compound_token.evm_address and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.asset == underlying_token and amount == event.balance.amount
             ):
@@ -184,16 +182,24 @@ class Compoundv3CommonDecoder(DecoderInterface):
                 break
         return decoded_events
 
-    def _decode_repay_or_borrow_event(self, context: DecoderContext) -> DecodingOutput:
-        """Decode a compound v3 repay or borrow event. Takes only the decoder context."""
+    def _decode_repay_or_borrow_event(
+            self, context: DecoderContext,
+            compound_token: EvmToken,
+    ) -> DecodingOutput:
+        """Decode a compound v3 repay or borrow event. Takes decoder context and
+        the compound v3 token contract"""
+
+        if (underlying_token := self._get_compound_underlying_token(compound_token)) is None:
+            log.error(
+                f'At compound v3 supply/withdraw decoding of tx '
+                f'{context.transaction.tx_hash.hex()} the underlying token was not found.',
+            )
+            return DEFAULT_DECODING_OUTPUT
         for event in context.decoded_events:
             if (
+                event.address == compound_token.evm_address and
                 event.event_subtype == HistoryEventSubType.NONE and
-                event.asset.identifier == evm_address_to_identifier(
-                    address=hex_or_bytes_to_address(context.tx_log.topics[3]),
-                    chain_id=self.evm_inquirer.chain_id,
-                    token_type=EvmTokenKind.ERC20,
-                )
+                event.asset == underlying_token
             ):
                 if event.event_type == HistoryEventType.SPEND:
                     event.event_subtype = HistoryEventSubType.PAYBACK_DEBT
@@ -229,13 +235,20 @@ class Compoundv3CommonDecoder(DecoderInterface):
         ):
             return DEFAULT_DECODING_OUTPUT
 
-        if context.tx_log.topics[0] in {COMPOUND_V3_SUPPLY, COMPOUND_V3_WITHDRAW}:
+        if (
+            context.tx_log.topics[0] in {
+                COMPOUND_V3_SUPPLY_COLLATERAL, COMPOUND_V3_WITHDRAW_COLLATERAL,
+            }
+        ):
             return self._decode_supply_or_withdraw_event(
                 context=context,
                 compound_token=compound_token,
             )
         else:
-            return self._decode_repay_or_borrow_event(context=context)
+            return self._decode_repay_or_borrow_event(
+                context=context,
+                compound_token=compound_token,
+            )
 
     # -- DecoderInterface methods
 
