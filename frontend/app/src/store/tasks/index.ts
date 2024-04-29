@@ -53,10 +53,8 @@ interface TaskActionResult<T> extends ActionResult<T> {
 export const useTaskStore = defineStore('tasks', () => {
   const locked = ref<number[]>([]);
   const tasks = ref<TaskMap<TaskMeta>>({});
-  const handlers: Record<
-    string,
-    (result: ActionResult<any>, meta: any) => void
-  > = {};
+  const unknownTasks = ref<Record<number, number>>({});
+  const handlers: Record<string, (result: ActionResult<any>, meta: any) => void> = {};
   let isRunning = false;
 
   const { error } = useError();
@@ -101,25 +99,23 @@ export const useTaskStore = defineStore('tasks', () => {
   const isTaskRunning = (
     type: TaskType,
     meta: Record<string, any> = {},
-  ): ComputedRef<boolean> =>
-    computed(
-      () =>
-        !!find(get(tasks), (item) => {
-          const sameType = item.type === type;
-          const keys = Object.keys(meta);
-          if (keys.length === 0)
-            return sameType;
+  ) => computed<boolean>(() =>
+    !!find(get(tasks), (item) => {
+      const sameType = item.type === type;
+      const keys = Object.keys(meta);
+      if (keys.length === 0)
+        return sameType;
 
-          return (
-            sameType
-            && keys.every(
-              key =>
-                // @ts-expect-error meta key has any type
-                key in item.meta && item.meta[key] === meta[key],
-            )
-          );
-        }),
-    );
+      return (
+        sameType
+        && keys.every(
+          key =>
+          // @ts-expect-error meta key has any type
+            key in item.meta && item.meta[key] === meta[key],
+        )
+      );
+    }),
+  );
 
   const metadata = <T extends TaskMeta>(type: TaskType): T | undefined => {
     const task = find(get(tasks), item => item.type === type);
@@ -129,7 +125,8 @@ export const useTaskStore = defineStore('tasks', () => {
     return undefined;
   };
 
-  const hasRunningTasks = computed(() => Object.keys(get(tasks)).length > 0);
+  const hasRunningTasks = computed<boolean>(() => Object.keys(get(tasks)).length > 0);
+  const hasUnknownTasks = computed<boolean>(() => Object.keys(get(unknownTasks)).length > 0);
 
   const taskList = computed(() => toArray(get(tasks)));
 
@@ -262,29 +259,29 @@ export const useTaskStore = defineStore('tasks', () => {
     });
   };
 
-  const filterTasks = (
-    taskIds: number[],
-  ): {
-    ready: number[];
-    unknown: number[];
-  } => {
+  const filterTasks = (taskIds: number[]): { ready: number[]; unknown: number[] } => {
     const lockedTasks = get(locked);
     const pendingTasks = get(tasks);
     return {
       ready: taskIds.filter(
-        id =>
-          !lockedTasks.includes(id)
-          && pendingTasks[id]
-          && pendingTasks[id].id !== null,
+        id => !lockedTasks.includes(id) && pendingTasks[id] && pendingTasks[id].id !== null,
       ),
-      unknown: taskIds.filter(
-        id => !lockedTasks.includes(id) && !pendingTasks[id],
-      ),
+      unknown: taskIds.filter(id => !lockedTasks.includes(id) && !pendingTasks[id]),
     };
   };
 
+  function removeFromUnknownTasks(taskId: number) {
+    const unknown = { ...get(unknownTasks) };
+    if (!unknown[taskId])
+      return;
+
+    delete unknown[taskId];
+    set(unknownTasks, unknown);
+  }
+
   const processTask = async (task: Task<TaskMeta>): Promise<void> => {
     lock(task.id);
+    removeFromUnknownTasks(task.id);
 
     try {
       const result = await api.queryTaskResult(task.id);
@@ -325,8 +322,36 @@ export const useTaskStore = defineStore('tasks', () => {
     }
   };
 
+  /**
+   * To avoid certain race conditions where the backend manages to answer before the frontend
+   * registers the task, we are keeping a map of unknown tasks along with the time first seen.
+   *
+   * @param ids The array of the unknown task ids
+   * @returns The array of the unknown ids that are past the threshold.
+   */
+  const checkUnknownTasksPastThreshold = (ids: number[]): number[] => {
+    const tasks = { ...get(unknownTasks) };
+
+    const pastThreshold: number[] = [];
+    const epoch = dayjs().unix();
+    ids.forEach((id) => {
+      if (!tasks[id]) {
+        tasks[id] = epoch;
+      }
+      else {
+        if (tasks[id] < epoch - 30) {
+          delete tasks[id];
+          pastThreshold.push(id);
+        }
+      }
+    });
+
+    set(unknownTasks, tasks);
+    return pastThreshold;
+  };
+
   const monitor = async (): Promise<void> => {
-    if (!get(hasRunningTasks) || isRunning)
+    if ((!get(hasRunningTasks) && !get(hasUnknownTasks)) || isRunning)
       return;
 
     isRunning = true;
@@ -334,7 +359,7 @@ export const useTaskStore = defineStore('tasks', () => {
       const { completed } = await api.queryTasks();
       const { ready, unknown } = filterTasks(completed);
       await handleTasks(ready);
-      await consumeUnknownTasks(unknown);
+      await consumeUnknownTasks(checkUnknownTasksPastThreshold(unknown));
     }
     catch (error_: any) {
       logger.error(error_);
