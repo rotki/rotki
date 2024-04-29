@@ -44,14 +44,13 @@ const headers = computed<DataTableColumn[]>(() => [
 
 const close = () => emit('close');
 
-async function save(newTag: Tag) {
-  set(tag, defaultTag());
-  if (get(editMode)) {
+async function save({ tag: newTag, close: closeModal }: { tag: Tag; close?: boolean }) {
+  const status = await (get(editMode) ? editTag(newTag) : addTag(newTag));
+
+  if (status.success) {
+    set(tag, defaultTag());
     set(editMode, false);
-    await editTag(newTag);
-  }
-  else {
-    await addTag(newTag);
+    closeModal && close();
   }
 }
 
@@ -61,8 +60,11 @@ function cancel() {
 }
 
 function editItem(newTag: Tag) {
+  set(editMode, false);
   set(tag, newTag);
-  set(editMode, true);
+  nextTick(() => {
+    set(editMode, true);
+  });
 }
 
 const { show } = useConfirmStore();
