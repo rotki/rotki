@@ -2118,3 +2118,12 @@ class GlobalDBHandler:
                 'SELECT COUNT(*) FROM location_unsupported_assets WHERE location=? AND exchange_symbol=?',  # noqa: E501
                 (location.serialize_for_db(), asset_symbol),
             ).fetchone()[0] > 0
+
+    @staticmethod
+    def get_protocol_for_asset(asset_identifier: str) -> str | None:
+        """Get the protocol of the asset with the given identifier."""
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            return protocol[0] if (protocol := cursor.execute(
+                'SELECT protocol FROM evm_tokens WHERE identifier=?;',
+                (asset_identifier,),
+            ).fetchone()) is not None else None

@@ -572,7 +572,7 @@ def test_compound_v3_token_balances_liabilities(
         return Balance(
             amount=FVal(amount), usd_value=FVal(amount) * CURRENT_PRICE_MOCK,
         )
-    assert blockchain.balances.eth[ethereum_accounts[0]].liabilities[A_USDC] == get_balance('337492.045216')  # noqa: E501
-    assert blockchain.balances.eth[ethereum_accounts[1]].assets[Asset('eip155:1/erc20:0xc3d688B66703497DAA19211EEdff47f25384cdc3')] == get_balance('202.760599')  # cUSDCv3  # noqa: E501
-    assert blockchain.balances.eth[ethereum_accounts[2]].liabilities[A_USDC] == get_balance('65688.090973')  # noqa: E501
-    assert blockchain.balances.eth[ethereum_accounts[3]].liabilities[A_WETH] == get_balance('0.260522736335918996')  # noqa: E501
+    assert blockchain.balances.eth[ethereum_accounts[0]].liabilities[A_USDC] == get_balance('252997.853807')  # noqa: E501
+    assert blockchain.balances.eth[ethereum_accounts[1]].assets[Asset('eip155:1/erc20:0xc3d688B66703497DAA19211EEdff47f25384cdc3')] == get_balance('203.40222')  # cUSDCv3  # noqa: E501
+    assert blockchain.balances.eth[ethereum_accounts[2]].liabilities[A_USDC] == get_balance('65968.79353')  # noqa: E501
+    assert blockchain.balances.eth[ethereum_accounts[3]].liabilities[A_WETH] == get_balance('0.260766330459257371')  # noqa: E501

@@ -7,6 +7,7 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.aave.v3.constants import POOL_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import (
     A_ETH,
@@ -790,6 +791,49 @@ def test_aave_v3_repay_scroll(database, scroll_inquirer, scroll_accounts) -> Non
             notes=f'Repay {repay_amount} USDC on AAVE v3',
             counterparty=CPT_AAVE_V3,
             address=string_to_evm_address('0x1D738a3436A8C49CefFbaB7fbF04B660fb528CbD'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0x35E0091D67B5e213db857F605c2047cA29A8800d']])
+def test_non_aave_tx(database, ethereum_inquirer, ethereum_accounts) -> None:
+    """Test that the non-aave transactions happened through flash loans are not decoded
+    as aave events."""
+    tx_hash = deserialize_evm_tx_hash('0xf5b4c6f3b4e5bce1f91f7e7eab6185b6d1518e63dea637c79d7f1bbb97edda67')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, multisig, gas_fees = TimestampMS(1713496487000), '0x35542F2c7D18716401A38cc7f08Bf5Bf61f371cc', '0.018530645755598298'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label=ethereum_accounts[0],
+            notes=f'Burned {gas_fees} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=ethereum_accounts[0],
+            notes=f'Successfully executed safe transaction 0x69e95bb0e8452641e165a7cf2f2fa83afb5dc6a6a576bd6e0bc36094df5cc27c for multisig {multisig}',  # noqa: E501
+            counterparty=CPT_SAFE_MULTISIG,
+            address=string_to_evm_address(multisig),
         ),
     ]
     assert events == expected_events

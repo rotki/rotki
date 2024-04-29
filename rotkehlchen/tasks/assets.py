@@ -312,7 +312,7 @@ def update_aave_v3_underlying_assets(chains_aggregator: 'ChainsAggregator') -> N
                         arguments=[underlying_token],
                     ),
                 ) for underlying_token in underlying_tokens],
-                calls_chunk_size=4 if chain_id == ChainID.ARBITRUM_ONE else MULTICALL_CHUNKS,  # arbiscan API breaks with chunk_size > 4  # noqa: E501
+                calls_chunk_size=4 if chain_id in {ChainID.ARBITRUM_ONE, ChainID.BASE} else MULTICALL_CHUNKS,  # arbiscan and basescan API breaks with chunk_size > 4  # noqa: E501
             )
         except RemoteError as e:
             log.error(f'Failed to query Aave v3 reserve tokens addresses due to {e!s}')

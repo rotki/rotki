@@ -1,9 +1,8 @@
-import logging
 from abc import abstractmethod
 from typing import TYPE_CHECKING, Any, Literal, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.constants import RAY
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -26,7 +25,6 @@ from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction
 from rotkehlchen.utils.misc import (
     hex_or_bytes_to_address,
@@ -39,9 +37,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
-
-logger = logging.getLogger(__name__)
-log = RotkehlchenLogsAdapter(logger)
 
 
 class Commonv2v3Decoder(DecoderInterface):
@@ -65,10 +60,6 @@ class Commonv2v3Decoder(DecoderInterface):
         self.repay_signature = repay_signature
         self.eth_gateways = eth_gateways
         self.label = label
-        self.aave_tokens = GlobalDBHandler().get_evm_tokens(
-            chain_id=evm_inquirer.chain_id,
-            protocol=counterparty,
-        )
         DecoderInterface.__init__(
             self,
             evm_inquirer=evm_inquirer,
@@ -82,17 +73,23 @@ class Commonv2v3Decoder(DecoderInterface):
         token and part of the collateral deposited is lost too. Those two events happen as
         transfers in a transaction started by the liquidator."""
 
-    def _is_aave_token_contract(self, queried_address: 'ChecksumEvmAddress | None') -> bool:
-        """Utility function for checking if a ChecksumEvmAddress is an aave token of the aave
-        instantied type (v2 or v3). Returns True if it is an aave token, or False if it is not.
-        False is also returned in case None is passed"""
-        res = False
-        if (queried_address):
-            for token in self.aave_tokens:
-                if token.evm_address == queried_address:
-                    res = True
-                    break
-        return res
+    def _address_is_aave_contract(self, queried_address: 'ChecksumEvmAddress') -> bool:
+        """Utility function for checking if a queried_address is an address of an
+        aave token. Returns True if it is an aave token, or False if it is not."""
+        return GlobalDBHandler.get_protocol_for_asset(
+            asset_identifier=evm_address_to_identifier(
+                address=queried_address,
+                chain_id=self.evm_inquirer.chain_id,
+                token_type=EvmTokenKind.ERC20,
+            ),
+        ) == self.counterparty
+
+    def _token_is_aave_contract(self, asset: 'Asset') -> bool:
+        """Utility function for checking if a asset is an aave token.
+        Returns True if it is an aave token, or False if it is not."""
+        return GlobalDBHandler.get_protocol_for_asset(
+            asset_identifier=asset.identifier,
+        ) == self.counterparty
 
     def _decode_collateral_events(
             self,
@@ -143,10 +140,14 @@ class Commonv2v3Decoder(DecoderInterface):
 
         for event in decoded_events:
             if (
+                event.address is not None and
                 (event.location_label == user or (event.location_label == on_behalf_of and user in self.eth_gateways)) and  # noqa: E501
                 event.balance.amount == amount and
-                event.event_subtype == HistoryEventSubType.NONE and
-                (self._is_aave_token_contract(queried_address=event.address) or (event.address == ZERO_ADDRESS))  # noqa: E501
+                event.event_subtype == HistoryEventSubType.NONE and (
+                    self._address_is_aave_contract(queried_address=event.address) or
+                    event.address == ZERO_ADDRESS or
+                    event.address in self.eth_gateways
+                )
             ):
                 if (
                     event.event_type == HistoryEventType.SPEND and
@@ -158,7 +159,7 @@ class Commonv2v3Decoder(DecoderInterface):
                     event.counterparty = self.counterparty
                 elif (
                     event.address == ZERO_ADDRESS and
-                    self._is_aave_token_contract(event.asset.resolve_to_evm_token().evm_address)
+                    self._token_is_aave_contract(event.asset)
                 ):
                     event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                     resolved_asset = event.asset.resolve_to_asset_with_symbol()
@@ -186,9 +187,13 @@ class Commonv2v3Decoder(DecoderInterface):
             notes += f' to {to}'
         for event in decoded_events:
             if (
+                event.address is not None and
                 event.event_type in {HistoryEventType.SPEND, HistoryEventType.RECEIVE} and
-                event.event_subtype == HistoryEventSubType.NONE and
-                (self._is_aave_token_contract(queried_address=event.address) or (event.address == ZERO_ADDRESS))  # noqa: E501
+                event.event_subtype == HistoryEventSubType.NONE and (
+                    self._address_is_aave_contract(queried_address=event.address) or
+                    event.address == ZERO_ADDRESS or
+                    event.address in self.eth_gateways
+                )
             ):
                 if (
                     event.location_label == to and
@@ -203,7 +208,7 @@ class Commonv2v3Decoder(DecoderInterface):
                     event.counterparty = self.counterparty
                 elif (
                     event.address == ZERO_ADDRESS and
-                    self._is_aave_token_contract(event.asset.resolve_to_evm_token().evm_address)
+                    self._token_is_aave_contract(event.asset)
                 ):
                     event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                     resolved_asset = event.asset.resolve_to_asset_with_symbol()
@@ -241,11 +246,15 @@ class Commonv2v3Decoder(DecoderInterface):
             notes += f' on behalf of {on_behalf_of}'
         for event in decoded_events:
             if (
+                event.address is not None and
                 event.balance.amount == amount and
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.location_label == user and
-                event.event_type == HistoryEventType.RECEIVE and
-                (self._is_aave_token_contract(queried_address=event.address) or (event.address == ZERO_ADDRESS))  # noqa: E501
+                event.event_type == HistoryEventType.RECEIVE and (
+                    self._address_is_aave_contract(queried_address=event.address) or
+                    event.address == ZERO_ADDRESS or
+                    event.address in self.eth_gateways
+                )
             ):
                 if (
                     event.asset == token and
@@ -256,7 +265,7 @@ class Commonv2v3Decoder(DecoderInterface):
                     event.counterparty = self.counterparty
                 elif (
                     event.address == ZERO_ADDRESS and
-                    self._is_aave_token_contract(event.asset.resolve_to_evm_token().evm_address)
+                    self._token_is_aave_contract(event.asset)
                 ):
                     event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                     resolved_asset = event.asset.resolve_to_asset_with_symbol()
@@ -277,19 +286,25 @@ class Commonv2v3Decoder(DecoderInterface):
 
         for event in decoded_events:
             if (
+                event.address is not None and
                 event.location_label == repayer and
                 event.event_type == HistoryEventType.SPEND and
-                event.event_subtype == HistoryEventSubType.NONE and
-                (self._is_aave_token_contract(queried_address=event.address) or (event.address == ZERO_ADDRESS))  # noqa: E501
+                event.event_subtype == HistoryEventSubType.NONE and (
+                    self._address_is_aave_contract(queried_address=event.address) or
+                    event.address == ZERO_ADDRESS or
+                    event.address in self.eth_gateways
+                )
             ):
                 if (
                     event.address == ZERO_ADDRESS and
-                    self._is_aave_token_contract(event.asset.resolve_to_evm_token().evm_address)
+                    self._token_is_aave_contract(event.asset)
                 ):
                     event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                     resolved_asset = event.asset.resolve_to_asset_with_symbol()
                     event.counterparty = self.counterparty
                     event.notes = f'Return {event.balance.amount} {resolved_asset.symbol} to {self.label}'  # noqa: E501
+                    if repayer != user:
+                        event.notes += f' for {user}'
                 elif event.address != ZERO_ADDRESS:
                     event.event_subtype = HistoryEventSubType.PAYBACK_DEBT
                     event.counterparty = self.counterparty
