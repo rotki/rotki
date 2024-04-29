@@ -7,7 +7,7 @@ from rotkehlchen.chain.ethereum.modules.zerox.constants import ZEROX_ROUTER
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.zerox.constants import CPT_ZEROX
 from rotkehlchen.chain.optimism.modules.zerox.constants import ZEROX_ROUTER as OP_ZEROX_ROUTER
-from rotkehlchen.constants.assets import A_ETH, A_POLYGON_POS_MATIC, A_SNX, A_USDC, A_USDT
+from rotkehlchen.constants.assets import A_ETH, A_GMX, A_POLYGON_POS_MATIC, A_SNX, A_USDC, A_USDT
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -897,6 +897,62 @@ def test_swap_arbitrum_one(database, arbitrum_one_inquirer, arbitrum_one_account
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
     )]
+    assert expected_events == events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0xB5E10681aA81cd65D74912015220999044b9520C']])
+def test_otc_arbitrum_one(database, arbitrum_one_inquirer, arbitrum_one_accounts):
+    """Test OTC swaps done through 0x protocol router contract."""
+    tx_hash = deserialize_evm_tx_hash('0x272bc2508020b56fae874b30f37ed2cde6dc980fe63fa978e7b71e98e3fe2e47')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp = TimestampMS(1707278951000)
+    swap_amount, received_amount, gas_fees = '435', '10.05710799491015', '0.000219118'
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Burned {gas_fees} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ARBITRUM_USDC,
+            balance=Balance(amount=FVal(swap_amount)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Swap {swap_amount} USDC via the 0x protocol',
+            counterparty=CPT_ZEROX,
+            address=ZEROX_ROUTER,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_GMX,
+            balance=Balance(amount=FVal(received_amount)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Receive {received_amount} GMX as the result of a swap via the 0x protocol',
+            counterparty=CPT_ZEROX,
+            address=ZEROX_ROUTER,
+        ),
+    ]
     assert expected_events == events
 
 

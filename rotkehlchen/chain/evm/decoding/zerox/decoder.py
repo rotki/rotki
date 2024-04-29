@@ -1,6 +1,8 @@
 import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -13,10 +15,11 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.uniswap.constants import UNISWAP_SIGNATURES
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.transactions import EvmTransactions
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
-from rotkehlchen.utils.misc import hex_or_bytes_to_address
+from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_ZEROX, METATX_ZEROX
 
@@ -199,8 +202,51 @@ class ZeroxCommonDecoder(DecoderInterface):
 
         return decoded_events
 
+    def _decode_otc_order_filled(self, context: 'DecoderContext') -> DecodingOutput:
+        """Decodes the swap event from the 0x router contract via OtcOrderFilled."""
+
+        # taker_token is the token that the user is selling
+        taker_token_address = hex_or_bytes_to_address(context.tx_log.data[128:160])
+        taker_token = self.base.get_or_create_evm_asset(taker_token_address)
+        taker_token_raw_amount = hex_or_bytes_to_int(context.tx_log.data[192:224])
+        taker_amount = asset_normalized_value(amount=taker_token_raw_amount, asset=taker_token)
+
+        # maker_token is the token that the user is buying
+        maker_token_address = hex_or_bytes_to_address(context.tx_log.data[96:128])
+        maker_token = self.base.get_or_create_evm_asset(maker_token_address)
+        maker_token_raw_amount = hex_or_bytes_to_int(context.tx_log.data[160:192])
+        maker_amount = asset_normalized_value(amount=maker_token_raw_amount, asset=maker_token)
+
+        self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=taker_token,
+            balance=Balance(amount=FVal(data=taker_amount)),
+            location_label=context.transaction.from_address,
+            counterparty=CPT_ZEROX,
+            address=context.tx_log.address,
+        )
+        self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=maker_token,
+            balance=Balance(amount=FVal(maker_amount)),
+            location_label=context.transaction.from_address,
+            counterparty=CPT_ZEROX,
+            address=context.tx_log.address,
+        )
+
+        return DEFAULT_DECODING_OUTPUT
+
     def _decode_meta_tx_swap(self, context: 'DecoderContext') -> DecodingOutput:
         """Decodes the swap event from the 0x router contract via executeMetaTransactionV2."""
+        # if context.tx_log.topics[0] == OTC_ORDER_FILLED and context.tx_log.address == self.router_address:  # noqa: E501
+        #     return self._decode_otc_order_filled(context=context)  # noqa: ERA001
+
         if context.tx_log.topics[0] != METATX_ZEROX or context.tx_log.address != self.router_address:  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
