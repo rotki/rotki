@@ -463,7 +463,7 @@ Linux
 
 Make sure you have `node.js <https://nodejs.org/en/>`_ and `pnpm <https://pnpm.io/>`_. If you don't, use your linux distro's package manager to get them.
 
-rotki uses pnpm v7. To check if you have version 7 of pnpm you can run::
+rotki uses pnpm v9. To check if you have version 9 of pnpm you can run::
 
     pnpm --version
 
@@ -472,6 +472,10 @@ If you are on an older version of pnpm, you can install it by::
     pnpm install -g pnpm@9
     # or if you don't have it installed you can
     npm install -g pnpm@9
+
+The first time you run pnpm you would need to run::
+
+    pnpm setup
 
 Install electron and any other dependencies by::
 
