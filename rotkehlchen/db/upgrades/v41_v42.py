@@ -200,10 +200,11 @@ def _remove_balancer_events_table(write_cursor: 'DBCursor') -> None:
 
 def _delete_orphan_events(write_cursor: 'DBCursor') -> None:
     """
-    Delete all the evm events that have a tx_hash that is not present in the db. This can happen
-    for customized events of addresses that got deleted from the database for example.
+    Delete all the evm events that have a tx_hash that is not present in the db.
+    This can for example happen for customized events of addresses that got deleted
+    from the database or when all transactions are purged.
 
-    This query assumes that an evm event always has a evm_events_info but this is not the case
+    This query assumes that an evm event always has a evm_transactions but this is not the case
     for zksync lite. Since prior to 1.33 that assumption holds this query is safe.
     """
     write_cursor.execute(
