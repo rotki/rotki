@@ -16,6 +16,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
@@ -148,7 +149,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
 
         refund_from_registrar = None
         to_remove_indices = []
-        new_event = None
+        spend_event = receive_event = None
         for event_idx, event in enumerate(context.decoded_events):
             if event.event_type == HistoryEventType.RECEIVE and event.asset == A_ETH and event.address == ENS_REGISTRAR_CONTROLLER_1:  # noqa: E501
                 # remove ETH refund event
@@ -169,16 +170,24 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
                 event.counterparty = CPT_ENS
                 event.notes = f'Register ENS name {fullname} for {amount} ETH until {self.timestamp_to_date(expires)}'  # noqa: E501
                 event.extra_data = {'name': fullname, 'expires': expires}
+                spend_event = event
 
             # Find the ENS ERC721 receive event which should be before the registered event
             if event.event_type == HistoryEventType.RECEIVE and event.asset.identifier == 'eip155:1/erc721:0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85':  # noqa: E501
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE
+                receive_event = event
 
         for index in to_remove_indices:
             del context.decoded_events[index]
 
-        return DecodingOutput(event=new_event)
+        if spend_event is not None and receive_event is not None:
+            maybe_reshuffle_events(
+                ordered_events=[spend_event, receive_event],
+                events_list=context.decoded_events,
+            )
+
+        return DEFAULT_DECODING_OUTPUT
 
     def _decode_name_renewed(self, context: DecoderContext) -> DecodingOutput:
         try:
