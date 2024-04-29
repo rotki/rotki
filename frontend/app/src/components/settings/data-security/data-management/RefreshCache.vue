@@ -40,7 +40,7 @@ const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
 </script>
 
 <template>
-  <div class="mb-2">
+  <div>
     <RuiCardHeader class="p-0 mb-4">
       <template #header>
         {{ t('data_management.refresh_cache.title') }}
@@ -59,13 +59,13 @@ const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
         :items="refreshable"
         item-text="text"
         item-value="id"
-        hide-details
         :disabled="pending"
       />
 
       <RuiTooltip
         :popper="{ placement: 'top' }"
         :open-delay="400"
+        class="-mt-8"
       >
         <template #activator>
           <RuiButton

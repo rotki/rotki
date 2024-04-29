@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { isEqual } from 'lodash-es';
 import type { TradeLocationData } from '@/types/history/trade/location';
 
 const props = withDefaults(
@@ -41,7 +42,10 @@ const locations = computed<TradeLocationData[]>(() => {
   });
 });
 
-watch([locations, model], ([locations, value]) => {
+watch([locations, model], ([locations, value], [prevLocations, prevValue]) => {
+  if (isEqual(locations, prevLocations) && value === prevValue)
+    return;
+
   if (!locations.some(item => item.identifier === value))
     set(model, '');
 });

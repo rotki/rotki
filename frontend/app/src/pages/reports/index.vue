@@ -195,6 +195,7 @@ async function importData() {
   }
 
   set(importDataLoading, false);
+  set(importDataDialog, false);
   get(reportDebugDataUploader)?.removeFile();
   set(reportDebugData, null);
 }

@@ -89,6 +89,7 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
         </div>
         <div class="">
           <RuiMenu
+            close-on-content-click
             :popper="{ placement: 'bottom-end' }"
           >
             <template #activator="{ on }">

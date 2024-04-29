@@ -248,7 +248,7 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
 .table {
   &--pinned {
     max-height: 100%;
-    height: calc(100vh - 230px);
+    height: calc(100vh - 226px);
   }
 }
 </style>
