@@ -1388,6 +1388,7 @@
       "pull": "Descargar",
       "push": "Subir",
       "save": "Guardar",
+      "save_continue": "Guardar y continuar",
       "search": "Buscar",
       "skip": "Saltar",
       "terminate": "Terminate",

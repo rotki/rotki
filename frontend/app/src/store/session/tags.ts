@@ -34,15 +34,20 @@ export const useTagStore = defineStore('session/tags', () => {
     }
   };
 
-  const editTag = async (tag: Tag): Promise<void> => {
+  const editTag = async (tag: Tag): Promise<ActionStatus> => {
     try {
       set(allTags, await queryEditTag(tag));
+      return { success: true };
     }
     catch (error: any) {
       setMessage({
         title: t('actions.session.tag_edit.error.title'),
         description: error.message,
       });
+      return {
+        success: false,
+        message: error.message,
+      };
     }
   };
 

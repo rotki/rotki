@@ -1664,6 +1664,7 @@
       "pull": "Pull",
       "push": "Push",
       "save": "Save",
+      "save_continue": "Save & continue",
       "search": "Search",
       "skip": "Skip",
       "terminate": "Terminate",
