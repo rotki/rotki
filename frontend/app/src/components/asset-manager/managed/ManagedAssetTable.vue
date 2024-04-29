@@ -283,6 +283,7 @@ function setPage(page: number) {
     >
       <template #default="{ data, found }">
         <RuiDataTable
+          dense
           :value="selected"
           :rows="data"
           :loading="loading"

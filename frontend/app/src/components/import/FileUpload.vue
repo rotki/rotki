@@ -133,6 +133,10 @@ watch(uploaded, (uploaded) => {
 });
 
 watch(errorMessage, message => onError(message));
+
+defineExpose({
+  removeFile,
+});
 </script>
 
 <template>

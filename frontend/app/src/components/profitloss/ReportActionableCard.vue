@@ -210,6 +210,7 @@ function close() {
 <template>
   <RuiCard
     no-padding
+    :class="{ '!rounded-none': isPinned }"
     variant="flat"
   >
     <div class="flex bg-rui-primary text-white p-2">
