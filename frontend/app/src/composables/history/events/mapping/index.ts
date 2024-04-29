@@ -4,7 +4,6 @@ import type { MaybeRef } from '@vueuse/core';
 import type {
   HistoryEventCategoryDetailWithId,
   HistoryEventCategoryMapping,
-  HistoryEventProductData,
   HistoryEventTypeData,
 } from '@/types/history/events/event-type';
 import type { ActionDataEntry } from '@/types/action';
@@ -22,8 +21,6 @@ export const useHistoryEventMappings = createSharedComposable(() => {
 
   const {
     getTransactionTypeMappings,
-    getHistoryEventCounterpartiesData,
-    getHistoryEventProductsData,
   } = useHistoryEventsApi();
 
   const defaultHistoryEventTypeData = () => ({
@@ -36,16 +33,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
   const historyEventTypeData: Ref<HistoryEventTypeData> = asyncComputed<HistoryEventTypeData>(
     () => getTransactionTypeMappings(),
     defaultHistoryEventTypeData(),
-    {
-      lazy: true,
-    },
   );
-
-  const historyEventCounterpartiesData: Ref<ActionDataEntry[]> = asyncComputed<
-    ActionDataEntry[]
-  >(() => getHistoryEventCounterpartiesData(), [], {
-    lazy: true,
-  });
 
   const historyEventTypeGlobalMapping = useRefMap(
     historyEventTypeData,
@@ -173,62 +161,6 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     return getFallbackData(showFallbackLabel, eventSubtype, eventType);
   });
 
-  const { scrambleData, scrambleHex } = useScramble();
-
-  const getEventCounterpartyData = (
-    event: MaybeRef<{ counterparty: string | null; address?: string | null }>,
-  ): ComputedRef<ActionDataEntry | null> => computed(() => {
-    const { counterparty, address } = get(event);
-    const excludedCounterparty = ['gas'];
-
-    if (counterparty && excludedCounterparty.includes(counterparty))
-      return null;
-
-    if (counterparty && !isValidEthAddress(counterparty)) {
-      const data = get(historyEventCounterpartiesData).find(
-        ({ matcher, identifier }: ActionDataEntry) => {
-          if (matcher)
-            return matcher(counterparty);
-
-          return identifier.toLowerCase() === counterparty.toLowerCase();
-        },
-      );
-
-      if (data) {
-        return {
-          ...data,
-          label: counterparty.toUpperCase(),
-        };
-      }
-
-      return {
-        identifier: '',
-        label: counterparty,
-        icon: 'question-line',
-        color: 'error',
-      };
-    }
-
-    const usedLabel = counterparty || address;
-
-    if (!usedLabel)
-      return null;
-
-    const counterpartyAddress = get(scrambleData)
-      ? scrambleHex(usedLabel)
-      : usedLabel;
-
-    return {
-      identifier: '',
-      label: counterpartyAddress || '',
-    };
-  });
-
-  const counterparties = useArrayMap(
-    historyEventCounterpartiesData,
-    ({ identifier }) => identifier,
-  );
-
   const accountingEventsTypeData: Ref<ActionDataEntry[]> = useRefMap(
     historyEventTypeData,
     ({ accountingEventsIcons }) =>
@@ -261,29 +193,6 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     );
   });
 
-  const defaultHistoryEventProductsData = () => ({
-    mappings: {},
-    products: [],
-  });
-
-  const historyEventProductsData: Ref<HistoryEventProductData> = asyncComputed<HistoryEventProductData>(
-    () => getHistoryEventProductsData(),
-    defaultHistoryEventProductsData(),
-    {
-      lazy: true,
-    },
-  );
-
-  const historyEventProductsMapping = useRefMap(
-    historyEventProductsData,
-    ({ mappings }) => mappings,
-  );
-
-  const historyEventProducts = useRefMap(
-    historyEventProductsData,
-    ({ products }) => products,
-  );
-
   return {
     historyEventTypeData,
     historyEventTypes,
@@ -293,14 +202,8 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     transactionEventTypesData,
     getEventType,
     getEventTypeData,
-    getEventCounterpartyData,
     historyEventTypeGlobalMapping,
-    historyEventCounterpartiesData,
-    historyEventProductsData,
-    counterparties,
     accountingEventsTypeData,
     getAccountingEventTypeData,
-    historyEventProductsMapping,
-    historyEventProducts,
   };
 });

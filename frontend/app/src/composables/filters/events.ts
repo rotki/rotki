@@ -60,12 +60,9 @@ export function useHistoryEventFilter(disabled: {
   const filters: Ref<Filters> = ref({});
 
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
-  const {
-    counterparties,
-    historyEventTypes,
-    historyEventTypeGlobalMapping,
-    historyEventProducts,
-  } = useHistoryEventMappings();
+  const { historyEventTypes, historyEventTypeGlobalMapping } = useHistoryEventMappings();
+  const { historyEventProducts } = useHistoryEventProductMappings();
+  const { counterparties } = useHistoryEventCounterpartyMappings();
   const { assetSearch } = useAssetInfoApi();
   const { assetInfo } = useAssetInfoRetrieval();
   const { associatedLocations } = storeToRefs(useHistoryStore());

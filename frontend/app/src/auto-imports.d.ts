@@ -511,9 +511,11 @@ declare global {
   const useHistoricPrices: typeof import('./composables/price-manager/historic/index')['useHistoricPrices']
   const useHistoryApi: typeof import('./composables/api/history/index')['useHistoryApi']
   const useHistoryAutoRefresh: typeof import('./composables/history/auto-refresh')['useHistoryAutoRefresh']
+  const useHistoryEventCounterpartyMappings: typeof import('./composables/history/events/mapping/counterparty')['useHistoryEventCounterpartyMappings']
   const useHistoryEventFilter: typeof import('./composables/filters/events')['useHistoryEventFilter']
-  const useHistoryEventMappings: typeof import('./composables/history/events/mapping')['useHistoryEventMappings']
+  const useHistoryEventMappings: typeof import('./composables/history/events/mapping/index')['useHistoryEventMappings']
   const useHistoryEventNote: typeof import('./composables/history/events/notes')['useHistoryEventNote']
+  const useHistoryEventProductMappings: typeof import('./composables/history/events/mapping/product')['useHistoryEventProductMappings']
   const useHistoryEvents: typeof import('./composables/history/events/index')['useHistoryEvents']
   const useHistoryEventsApi: typeof import('./composables/api/history/events/index')['useHistoryEventsApi']
   const useHistoryEventsForm: typeof import('./composables/history/events/form')['useHistoryEventsForm']
@@ -1266,9 +1268,11 @@ declare module 'vue' {
     readonly useHistoricPrices: UnwrapRef<typeof import('./composables/price-manager/historic/index')['useHistoricPrices']>
     readonly useHistoryApi: UnwrapRef<typeof import('./composables/api/history/index')['useHistoryApi']>
     readonly useHistoryAutoRefresh: UnwrapRef<typeof import('./composables/history/auto-refresh')['useHistoryAutoRefresh']>
+    readonly useHistoryEventCounterpartyMappings: UnwrapRef<typeof import('./composables/history/events/mapping/counterparty')['useHistoryEventCounterpartyMappings']>
     readonly useHistoryEventFilter: UnwrapRef<typeof import('./composables/filters/events')['useHistoryEventFilter']>
-    readonly useHistoryEventMappings: UnwrapRef<typeof import('./composables/history/events/mapping')['useHistoryEventMappings']>
+    readonly useHistoryEventMappings: UnwrapRef<typeof import('./composables/history/events/mapping/index')['useHistoryEventMappings']>
     readonly useHistoryEventNote: UnwrapRef<typeof import('./composables/history/events/notes')['useHistoryEventNote']>
+    readonly useHistoryEventProductMappings: UnwrapRef<typeof import('./composables/history/events/mapping/product')['useHistoryEventProductMappings']>
     readonly useHistoryEvents: UnwrapRef<typeof import('./composables/history/events/index')['useHistoryEvents']>
     readonly useHistoryEventsApi: UnwrapRef<typeof import('./composables/api/history/events/index')['useHistoryEventsApi']>
     readonly useHistoryEventsForm: UnwrapRef<typeof import('./composables/history/events/form')['useHistoryEventsForm']>
@@ -2012,9 +2016,11 @@ declare module '@vue/runtime-core' {
     readonly useHistoricPrices: UnwrapRef<typeof import('./composables/price-manager/historic/index')['useHistoricPrices']>
     readonly useHistoryApi: UnwrapRef<typeof import('./composables/api/history/index')['useHistoryApi']>
     readonly useHistoryAutoRefresh: UnwrapRef<typeof import('./composables/history/auto-refresh')['useHistoryAutoRefresh']>
+    readonly useHistoryEventCounterpartyMappings: UnwrapRef<typeof import('./composables/history/events/mapping/counterparty')['useHistoryEventCounterpartyMappings']>
     readonly useHistoryEventFilter: UnwrapRef<typeof import('./composables/filters/events')['useHistoryEventFilter']>
-    readonly useHistoryEventMappings: UnwrapRef<typeof import('./composables/history/events/mapping')['useHistoryEventMappings']>
+    readonly useHistoryEventMappings: UnwrapRef<typeof import('./composables/history/events/mapping/index')['useHistoryEventMappings']>
     readonly useHistoryEventNote: UnwrapRef<typeof import('./composables/history/events/notes')['useHistoryEventNote']>
+    readonly useHistoryEventProductMappings: UnwrapRef<typeof import('./composables/history/events/mapping/product')['useHistoryEventProductMappings']>
     readonly useHistoryEvents: UnwrapRef<typeof import('./composables/history/events/index')['useHistoryEvents']>
     readonly useHistoryEventsApi: UnwrapRef<typeof import('./composables/api/history/events/index')['useHistoryEventsApi']>
     readonly useHistoryEventsForm: UnwrapRef<typeof import('./composables/history/events/form')['useHistoryEventsForm']>

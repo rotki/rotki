@@ -235,7 +235,7 @@ describe('evmEventForm.vue', () => {
     await nextTick();
     await flushPromises();
 
-    const { counterparties } = useHistoryEventMappings();
+    const { counterparties } = useHistoryEventCounterpartyMappings();
 
     expect(
       wrapper.findAll('[data-cy=counterparty] .selections span'),
@@ -296,7 +296,7 @@ describe('evmEventForm.vue', () => {
     });
     await nextTick();
 
-    const { historyEventProductsMapping } = useHistoryEventMappings();
+    const { historyEventProductsMapping } = useHistoryEventProductMappings();
 
     const products = get(historyEventProductsMapping)[selectedCounterparty];
 

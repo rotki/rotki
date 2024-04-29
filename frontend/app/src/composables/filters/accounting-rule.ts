@@ -27,8 +27,8 @@ export type Filters =
 export function useAccountingRuleFilter() {
   const filters: Ref<Filters> = ref({});
 
-  const { counterparties, historyEventTypes, historyEventSubTypes }
-    = useHistoryEventMappings();
+  const { historyEventTypes, historyEventSubTypes } = useHistoryEventMappings();
+  const { counterparties } = useHistoryEventCounterpartyMappings();
   const { t } = useI18n();
 
   const matchers: ComputedRef<Matcher[]> = computed(() => [

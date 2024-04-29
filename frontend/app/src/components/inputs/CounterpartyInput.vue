@@ -16,7 +16,7 @@ const vModel = useSimpleVModel(props, emit);
 
 const rootAttrs = useAttrs();
 
-const { counterparties } = useHistoryEventMappings();
+const { counterparties } = useHistoryEventCounterpartyMappings();
 </script>
 
 <template>

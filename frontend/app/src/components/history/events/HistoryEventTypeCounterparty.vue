@@ -11,7 +11,7 @@ const props = withDefaults(
 
 const { event } = toRefs(props);
 
-const { getEventCounterpartyData } = useHistoryEventMappings();
+const { getEventCounterpartyData } = useHistoryEventCounterpartyMappings();
 
 const counterparty = getEventCounterpartyData(event);
 const imagePath = '/assets/images/protocols/';
