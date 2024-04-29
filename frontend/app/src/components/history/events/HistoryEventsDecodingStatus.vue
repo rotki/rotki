@@ -13,6 +13,7 @@ const emit = defineEmits<{
   (e: 'reset-undecoded-transactions'): void;
 }>();
 
+const css = useCssModule();
 const { isTaskRunning } = useTaskStore();
 const fetching = isTaskRunning(TaskType.FETCH_UNDECODED_TXS);
 const eventTaskLoading = isTaskRunning(TaskType.TRANSACTIONS_DECODING);
@@ -90,7 +91,10 @@ onMounted(() => refresh());
       </div>
     </template>
 
-    <div v-if="decodingStatus.length > 0">
+    <div
+      v-if="decodingStatus.length > 0"
+      :class="css.content"
+    >
       <div class="mb-4">
         {{ t('transactions.events_decoding.decoded.false') }}
       </div>
@@ -225,3 +229,11 @@ onMounted(() => refresh());
     </template>
   </RuiCard>
 </template>
+
+<style module lang="scss">
+.content {
+  @apply overflow-y-auto -mx-4 px-4 -mt-2 pb-px;
+  max-height: calc(90vh - 11.875rem);
+  min-height: 50vh;
+}
+</style>
