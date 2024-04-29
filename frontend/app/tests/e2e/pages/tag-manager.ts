@@ -24,6 +24,5 @@ export class TagManager {
       ).type(foreground);
     }
     cy.get('[data-cy=tag-creator__buttons__save]').click();
-    cy.get('[data-cy=tag-manager__close]').click();
   }
 }

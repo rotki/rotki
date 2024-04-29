@@ -173,7 +173,6 @@ watchImmediate(editMode, (edit) => {
         {{ t('common.actions.save_continue') }}
       </RuiButton>
       <RuiButton
-        v-if="!editMode"
         data-cy="tag-creator__buttons__save"
         color="primary"
         :disabled="v$.$invalid"
