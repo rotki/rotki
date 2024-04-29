@@ -2252,6 +2252,19 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
         assert table_exists(cursor, 'zksynclite_transactions') is False
         assert table_exists(cursor, 'calendar') is False
         assert table_exists(cursor, 'calendar_reminders') is False
+
+        # history events that need to be deleted because their transaction are not in the database
+        expected_events_ids = [(17987,), (17988,), (17989,)]
+        assert cursor.execute(
+            'SELECT identifier FROM history_events ORDER BY identifier',
+        ).fetchall() == expected_events_ids
+        assert cursor.execute(
+            'SELECT identifier FROM evm_events_info',
+        ).fetchall() == expected_events_ids
+        assert cursor.execute(
+            'SELECT parent_identifier FROM history_events_mappings',
+        ).fetchall() == expected_events_ids
+
         assert cursor.execute('SELECT MAX(seq) FROM location').fetchone()[0] == 45
         assert cursor.execute('SELECT COUNT(tx_hash) FROM balancer_events').fetchone()[0] == 2
         assert cursor.execute('SELECT name from used_query_ranges').fetchall() == [
@@ -2333,6 +2346,13 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
         # get current oracles and check that manualcurrent was removed and all others remain.
         settings = db.get_settings(cursor=cursor)
         assert CurrentPriceOracle.MANUALCURRENT not in settings.current_price_oracles
+
+        # the evm events with the exception of 17987 don't have a transaction in the db
+        assert cursor.execute('SELECT identifier FROM history_events').fetchall() == [(17987,)]
+        assert cursor.execute('SELECT identifier FROM evm_events_info').fetchall() == [(17987,)]
+        assert cursor.execute(
+            'SELECT parent_identifier FROM history_events_mappings',
+        ).fetchall() == [(17987,)]
 
 
 def test_latest_upgrade_correctness(user_data_dir):

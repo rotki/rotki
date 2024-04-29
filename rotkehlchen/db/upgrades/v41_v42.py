@@ -198,6 +198,21 @@ def _remove_balancer_events_table(write_cursor: 'DBCursor') -> None:
     )
 
 
+def _delete_orphan_events(write_cursor: 'DBCursor') -> None:
+    """
+    Delete all the evm events that have a tx_hash that is not present in the db. This can happen
+    for customized events of addresses that got deleted from the database for example.
+
+    This query assumes that an evm event always has a evm_events_info but this is not the case
+    for zksync lite. Since prior to 1.33 that assumption holds this query is safe.
+    """
+    write_cursor.execute(
+        'DELETE FROM history_events WHERE identifier IN (SELECT identifier FROM evm_events_info '
+        'WHERE identifier NOT IN (SELECT eei.identifier FROM evm_events_info eei JOIN '
+        'evm_transactions et ON eei.tx_hash = et.tx_hash))',
+    )
+
+
 @enter_exit_debug_log(name='UserDB v41->v42 upgrade')
 def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v41 to v42. This was in v1.33 release.
@@ -208,8 +223,9 @@ def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Remove the manualcurrent oracle from settings
         - Remove balancer old events
         - Remove yearn v1 and v2 old events
+        - remove evm events that link to a transaction not in the database
     """
-    progress_handler.set_total_steps(8)
+    progress_handler.set_total_steps(9)
     with db.user_write() as write_cursor:
         _add_zksynclite(write_cursor)
         progress_handler.new_step()
@@ -226,4 +242,6 @@ def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _remove_balancer_events_table(write_cursor)
         progress_handler.new_step()
         _remove_yearn_events_table(write_cursor)
+        progress_handler.new_step()
+        _delete_orphan_events(write_cursor)
         progress_handler.new_step()
