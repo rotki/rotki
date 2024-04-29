@@ -2347,7 +2347,8 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
         settings = db.get_settings(cursor=cursor)
         assert CurrentPriceOracle.MANUALCURRENT not in settings.current_price_oracles
 
-        # the evm events with the exception of 17987 don't have a transaction in the db
+        # the evm events with the exception of 17987 don't have a transaction
+        # in the db, and should have been deleted
         assert cursor.execute('SELECT identifier FROM history_events').fetchall() == [(17987,)]
         assert cursor.execute('SELECT identifier FROM evm_events_info').fetchall() == [(17987,)]
         assert cursor.execute(
