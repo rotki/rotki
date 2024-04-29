@@ -107,7 +107,7 @@ async function save() {
 
 setSubmitFunc(save);
 
-const { counterparties } = useHistoryEventMappings();
+const { counterparties } = useHistoryEventCounterpartyMappings();
 
 const accountingTreatments = Object.values(AccountingTreatment).map(
   identifier => ({

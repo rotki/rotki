@@ -31,8 +31,8 @@ const { t } = useI18n();
 const { editableItem, groupHeader, nextSequence } = toRefs(props);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { counterparties, historyEventProductsMapping }
-  = useHistoryEventMappings();
+const { historyEventProductsMapping } = useHistoryEventProductMappings();
+const { counterparties } = useHistoryEventCounterpartyMappings();
 
 const lastLocation = useLocalStorage(
   'rotki.history_event.location',
