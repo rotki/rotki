@@ -887,11 +887,11 @@ def test_maybe_create_calendar_reminder(
     assert all_calendar_entries['entries_total'] == 0
 
     ens_events = [
-        get_decoded_events_of_transaction(  # decode ENS registration/renewal event
+        next(x for x in get_decoded_events_of_transaction(  # decode ENS registration/renewal event and get the event with the metadata  # noqa: E501
             evm_inquirer=ethereum_inquirer,
             database=database,
             tx_hash=ens_tx_hash,
-        )[0][1] for ens_tx_hash in ens_tx_hashes
+        )[0] if x.extra_data is not None) for ens_tx_hash in ens_tx_hashes
     ]
 
     task_manager.potential_tasks = [task_manager._maybe_create_calendar_reminder]
