@@ -85,8 +85,8 @@ def test_query_compound_balances(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[
-    '0x478768685e023B8AF2815369b353b786713fDEa4', '0x01019cd3E62B46029E787D1b5485Ca164365cA77',
-    '0x3c9Ea5C4Fec2A77E23Dd82539f4414266Fe8f757', '0x8fFb5a2e5d9b5dB800354Dc4fa73c15a5d047328',
+    '0x478768685e023B8AF2815369b353b786713fDEa4', '0x3eab2E72fA768C3cB8ab071929AC3C8aed6CbFA6',
+    '0x1107F797c1af4982b038Eb91260b3f9A90eecee9', '0x8fFb5a2e5d9b5dB800354Dc4fa73c15a5d047328',
 ]])
 @pytest.mark.parametrize('have_decoders', [[True]])
 @pytest.mark.parametrize('ethereum_modules', [['compound']])
@@ -102,7 +102,7 @@ def test_query_compound_v3_balances(
     chain_aggregator.ethereum.transactions_decoder.decode_transaction_hashes(
         ignore_cache=True,
         tx_hashes=[
-            deserialize_evm_tx_hash('0x392d73a45fe52e8dc1480db9bc7a7397526c1532087cf0de25d039f6d20b0acf'),  # Borrow 159.7556774 WBTC from cUSDCv3  # noqa: E501
+            deserialize_evm_tx_hash('0x4221dacc70b5505f40046d8c8de084a5d606a7b864d2dc37738b532d6d33a608'),  # Borrow 0.1 WBTC from cUSDCv3  # noqa: E501
             deserialize_evm_tx_hash('0x0b52a63d1f9b3518d0d4525354c601e83e4814c0165f496223753b29ce4f2a29'),  # Borrow 0.957368573046591548 wstETH from cWETHv3  # noqa: E501
         ],
     )
@@ -119,44 +119,44 @@ def test_query_compound_v3_balances(
         ethereum_accounts[0]: {
             'lending': {
                 'eip155:1/erc20:0xc3d688B66703497DAA19211EEdff47f25384cdc3': {  # cUSDCv3
-                    'apy': '6.23%',
-                    'balance': get_balance('332616.655316'),
+                    'apy': '6.12%',
+                    'balance': get_balance('333349.851793'),
                 },
             }, 'rewards': {
                 A_COMP.identifier: {
                     'apy': None,
-                    'balance': get_balance('1.000582'),
+                    'balance': get_balance('2.207376'),
                 },
             },
         }, ethereum_accounts[1]: {
             'lending': {
                 'eip155:1/erc20:0xc3d688B66703497DAA19211EEdff47f25384cdc3': {  # cUSDCv3
-                    'apy': '6.23%',
-                    'balance': get_balance('2429583.305871'),
+                    'apy': '6.12%',
+                    'balance': get_balance('0.32795'),
                 },
             }, 'rewards': {
                 A_COMP.identifier: {
                     'apy': None,
-                    'balance': get_balance('3.479851'),
+                    'balance': get_balance('0'),
                 },
             },
         }, ethereum_accounts[2]: {
             'borrowing': {
                 'eip155:1/erc20:0xc3d688B66703497DAA19211EEdff47f25384cdc3': {  # cUSDCv3
-                    'apy': '8.42%',
-                    'balance': get_balance('19559.865373'),
+                    'apy': '8.30%',
+                    'balance': get_balance('253005.684547'),
                 },
-            }, 'rewards': {
+            }, 'lending': {}, 'rewards': {
                 A_COMP.identifier: {
                     'apy': None,
-                    'balance': get_balance('111.88407'),
+                    'balance': get_balance('0.172652'),
                 },
             },
         }, ethereum_accounts[3]: {
             'borrowing': {
                 'eip155:1/erc20:0xA17581A9E3356d9A858b789D68B4d866e593aE94': {  # cWETHv3
-                    'apy': '1.75%',
-                    'balance': get_balance('0.260603613997972411'),
+                    'apy': '1.83%',
+                    'balance': get_balance('0.260768110605080777'),
                 },
             }, 'rewards': {
                 A_COMP.identifier: {
