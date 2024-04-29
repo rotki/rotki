@@ -3850,7 +3850,15 @@
     "actions": {
       "add_event": "添加新事件",
       "redecode_events": "重新解码事件",
-      "reset_customized_events": "重置自定义事件"
+      "reset_customized_events": "重置自定义事件",
+      "delete_transaction": "删除交易和事件"
+    },
+    "dialog": {
+      "add_tx": "按 tx 哈希值添加交易",
+      "delete": {
+        "message": "您确定要删除该事务及其事件吗？您必须清除所有事务或按事务哈希值添加才能恢复它们。",
+        "title": "删除事务和事件"
+      }
     },
     "events": {
       "actions": {

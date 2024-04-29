@@ -4303,10 +4303,15 @@
       "add_event": "Add new event",
       "add_event_here": "Add new event here",
       "redecode_events": "Redecode events",
-      "reset_customized_events": "Reset customized events"
+      "reset_customized_events": "Reset customized events",
+      "delete_transaction": "Delete transaction & events"
     },
     "dialog": {
-      "add_tx": "Add transaction by tx hash"
+      "add_tx": "Add transaction by tx hash",
+      "delete": {
+        "message": "Are you sure you want to delete this transaction and its events? You will have to purge all transactions or add by the transaction hash to restore them.",
+        "title": "Delete transaction and events"
+      }
     },
     "events": {
       "actions": {

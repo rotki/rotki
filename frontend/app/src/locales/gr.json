@@ -3739,7 +3739,15 @@
     "actions": {
       "add_event": "Add a new event",
       "redecode_events": "Redecode events",
-      "reset_customized_events": "Reset customized events"
+      "reset_customized_events": "Reset customized events",
+      "delete_transaction": "Διαγραφή συναλλαγών και συμβάντων"
+    },
+    "dialog": {
+      "add_tx": "Προσθήκη συναλλαγής με hash tx",
+      "delete": {
+        "message": "Είστε σίγουροι ότι θέλετε να διαγράψετε αυτή τη συναλλαγή και τα συμβάντα της; Θα πρέπει να καθαρίσετε όλες τις συναλλαγές ή να προσθέσετε από τη συναλλαγή έχει να τα αποκαταστήσετε.",
+        "title": "Διαγραφή συναλλαγής και συμβάντων"
+      }
     },
     "events": {
       "actions": {

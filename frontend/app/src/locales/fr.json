@@ -4131,10 +4131,15 @@
       "add_event": "Ajouter un nouvel événement",
       "add_event_here": "Ajouter un nouvel événement ici",
       "redecode_events": "Recoder les événements",
-      "reset_customized_events": "Réinitialiser les événements personnalisés"
+      "reset_customized_events": "Réinitialiser les événements personnalisés",
+      "delete_transaction": "Supprimer une transaction et des événements"
     },
     "dialog": {
-      "add_tx": "Ajouter une transaction par hash de transaction"
+      "add_tx": "Ajouter une transaction par hash de transaction",
+      "delete": {
+        "message": "Êtes-vous sûr de vouloir supprimer cette transaction et ses événements? Vous devrez purger toutes les transactions ou ajouter par le hachage de la transaction pour les restaurer.",
+        "title": "Supprimer la transaction et les événements"
+      }
     },
     "events": {
       "actions": {

@@ -150,6 +150,7 @@ const { txChains } = useSupportedChains();
 const txChainIds = useArrayMap(txChains, x => x.id);
 
 const { fetchHistoryEvents, deleteHistoryEvent } = useHistoryEvents();
+const { deleteTransactions } = useHistoryEventsApi();
 
 const { refreshTransactions } = useHistoryTransactions();
 
@@ -366,6 +367,19 @@ function resetEvents(data: EvmHistoryEvent) {
       message: t('transactions.events.confirmation.reset.message'),
     },
     () => resetEventsHandler(data),
+  );
+}
+
+function deleteTxAndEvents({ evmChain, txHash }: EvmChainAndTxHash) {
+  show(
+    {
+      title: t('transactions.dialog.delete.title'),
+      message: t('transactions.dialog.delete.message'),
+    },
+    async () => {
+      await deleteTransactions(evmChain, txHash);
+      await fetchData();
+    },
   );
 }
 
@@ -752,6 +766,7 @@ watchImmediate(route, async (route) => {
           <RuiButton
             variant="list"
             data-cy="history-events__add_by_tx_hash"
+            :disabled="eventTaskLoading"
             @click="addTransactionHash()"
           >
             <template #prepend>
@@ -924,6 +939,7 @@ watchImmediate(route, async (route) => {
                   @toggle-ignore="toggleIgnore($event)"
                   @redecode="forceRedecodeEvmEvents($event)"
                   @reset="resetEvents($event)"
+                  @delete-tx="deleteTxAndEvents($event)"
                 />
               </LazyLoader>
             </template>
