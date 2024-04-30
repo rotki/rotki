@@ -15,6 +15,7 @@ from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Loan, MarginPosition, Trade
 from rotkehlchen.history.events.structures.base import HistoryEvent
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 logger = logging.getLogger(__name__)
@@ -51,18 +52,23 @@ class DebugHistoryImporter:
         try:
             for event in debug_data['events']:
                 event_type = AccountingEventType.deserialize(event['accounting_event_type'])
-                if event_type == AccountingEventType.ASSET_MOVEMENT:
-                    events.append(AssetMovement.deserialize(event))
-                elif event_type == AccountingEventType.HISTORY_EVENT:
-                    events.append(HistoryEvent.deserialize(event))
-                elif event_type == AccountingEventType.LOAN:
-                    events.append(Loan.deserialize(event))
-                elif event_type == AccountingEventType.MARGIN_POSITION:
-                    events.append(MarginPosition.deserialize(event))
-                elif event_type == AccountingEventType.TRADE:
-                    events.append(Trade.deserialize(event))
-                elif event_type == AccountingEventType.STAKING:
-                    events.append(ValidatorDailyStats.deserialize(event))
+                match event_type:
+                    case AccountingEventType.TRADE:
+                        events.append(Trade.deserialize(event))
+                    case AccountingEventType.ASSET_MOVEMENT:
+                        events.append(AssetMovement.deserialize(event))
+                    case AccountingEventType.MARGIN_POSITION:
+                        events.append(MarginPosition.deserialize(event))
+                    case AccountingEventType.LOAN:
+                        events.append(Loan.deserialize(event))
+                    case AccountingEventType.STAKING:
+                        events.append(ValidatorDailyStats.deserialize(event))
+                    case AccountingEventType.HISTORY_EVENT:
+                        events.append(HistoryEvent.deserialize(event))
+                    case AccountingEventType.TRANSACTION_EVENT:
+                        events.append(EvmEvent.deserialize(event))
+                    case AccountingEventType.FEE | AccountingEventType.PREFORK_ACQUISITION:
+                        log.info(f'Skipping {event_type} from imported json report: {event}')
         except (DeserializationError, KeyError, UnknownAsset) as e:
             error_msg = f'Error while adding events due to: {e!s}'
             log.exception(error_msg)
@@ -92,7 +98,13 @@ class DebugHistoryImporter:
                             identifiers=action_ids,
                         )
                 except (DeserializationError, InputError) as e:
-                    error_msg = f'Error while adding ignored action identifiers due to: {e!s}'
+                    err_str = str(e)
+                    error_msg = f'Error while adding ignored action identifiers due to: {err_str}'
+                    if 'already exists in the database' in err_str:
+                        error_msg += 'Skipping it'
+                        log.error(error_msg)
+                        continue
+
                     log.error(error_msg)
                     return False, error_msg, {}
         except KeyError as e:
