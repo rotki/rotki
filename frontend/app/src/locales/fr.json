@@ -4138,7 +4138,11 @@
       "add_tx": "Ajouter une transaction par hash de transaction",
       "delete": {
         "message": "Êtes-vous sûr de vouloir supprimer cette transaction et ses événements? Vous devrez purger toutes les transactions ou ajouter par le hachage de la transaction pour les restaurer.",
-        "title": "Supprimer la transaction et les événements"
+        "title": "Supprimer la transaction et les événements",
+        "error": {
+          "message": "Échec : {message}",
+          "title": "Supprimer la transaction EVM"
+        }
       }
     },
     "events": {

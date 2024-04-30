@@ -161,6 +161,8 @@ const {
 } = useHistoryTransactionDecoding();
 const { getAccountByAddress } = useBlockchainStore();
 
+const { notify } = useNotificationsStore();
+
 const vueRouter = useRouter();
 
 const {
@@ -377,8 +379,23 @@ function deleteTxAndEvents({ evmChain, txHash }: EvmChainAndTxHash) {
       message: t('transactions.dialog.delete.message'),
     },
     async () => {
-      await deleteTransactions(evmChain, txHash);
-      await fetchData();
+      try {
+        await deleteTransactions(evmChain, txHash);
+        await fetchData();
+      }
+      catch (error: any) {
+        if (!isTaskCancelled(error)) {
+          const title = t('transactions.dialog.delete.error.title');
+          const message = t('transactions.dialog.delete.error.message', {
+            message: error.message,
+          });
+          notify({
+            title,
+            message,
+            display: true,
+          });
+        }
+      }
     },
   );
 }

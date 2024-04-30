@@ -3723,7 +3723,11 @@
       "add_tx": "Añadir transacción por hash tx",
       "delete": {
         "message": "¿Está seguro de que desea eliminar esta transacción y sus eventos? Tendrá que purgar todas las transacciones o añadir por el hash de la transacción para restaurarlas.",
-        "title": "Borrar transacción y eventos"
+        "title": "Borrar transacción y eventos",
+        "error": {
+          "message": "Falló: {message}",
+          "title": "Borrar transacción EVM"
+        }
       }
     },
     "events": {
