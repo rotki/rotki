@@ -58,6 +58,12 @@ if TYPE_CHECKING:
     from rotkehlchen.exchanges.manager import ExchangeManager
 
 
+def test_potential_maybe_schedule_task(task_manager: TaskManager):
+    """Check that all the _maybe_... tasks are included in the potential tasks."""
+    tasks = {function.__name__ for function in task_manager.potential_tasks}
+    assert all(func in tasks for func in dir(task_manager) if func.startswith('_maybe_'))
+
+
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('max_tasks_num', [5])
 def test_maybe_query_ethereum_transactions(task_manager, ethereum_accounts):
