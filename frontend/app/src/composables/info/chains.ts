@@ -112,8 +112,8 @@ export const useSupportedChains = createSharedComposable(() => {
    * @param {any} defaultValue - Default value to be returned, when the location is not found.
    * @return {Blockchain} - Blockchain id found
    * @example
-   * toSnakeCase('zksync_lite'); // Blockchain.ZKSYNC_LITE
-   * toSnakeCase('ethereum'); // Blockchain.ETH
+   * getChain('zksync_lite'); // Blockchain.ZKSYNC_LITE
+   * getChain('ethereum'); // Blockchain.ETH
    */
   const getChain = (location: string, defaultValue: any = Blockchain.ETH): Blockchain => {
     // note: we're using toSnakeCase here to always ensure that chains
@@ -137,8 +137,8 @@ export const useSupportedChains = createSharedComposable(() => {
    * @param {string} location - String to find the chain (can be the chain id, or the evmChainName)
    * @return {string} - Readable chain name
    * @example
-   * toSnakeCase('zksync_lite'); // ZKSync Lite
-   * toSnakeCase('ethereum'); // Ethereum
+   * getChainName('zksync_lite'); // ZKSync Lite
+   * getChainName('ethereum'); // Ethereum
    */
   const getChainName = (location: MaybeRef<string>): ComputedRef<string> =>
     computed(() => {

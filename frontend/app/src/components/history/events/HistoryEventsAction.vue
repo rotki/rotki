@@ -22,6 +22,7 @@ const emit = defineEmits<{
 const { event } = toRefs(props);
 
 const evmEvent = isEvmEventRef(event);
+const { getChain } = useSupportedChains();
 
 const { t } = useI18n();
 
@@ -29,7 +30,7 @@ const addEvent = (event: HistoryEventEntry) => emit('add-event', event);
 const toggleIgnore = (event: HistoryEventEntry) => emit('toggle-ignore', event);
 const redecode = (data: EvmChainAndTxHash) => emit('redecode', data);
 const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
-const deleteTxAndEvents = (data: EvmChainAndTxHash) => emit('delete-tx', data);
+const deleteTxAndEvents = ({ txHash, location }: EvmHistoryEvent) => emit('delete-tx', { txHash, evmChain: getChain(location) });
 </script>
 
 <template>
@@ -101,7 +102,7 @@ const deleteTxAndEvents = (data: EvmChainAndTxHash) => emit('delete-tx', data);
             variant="list"
             color="error"
             :disabled="loading"
-            @click="deleteTxAndEvents(toEvmChainAndTxHash(evmEvent))"
+            @click="deleteTxAndEvents(evmEvent)"
           >
             <template #prepend>
               <RuiIcon name="delete-bin-line" />
