@@ -1429,6 +1429,12 @@ The second option is to redecode all EVM transactions that have been queried. To
    :alt: Menu to redecode all queried EVM transactions events
    :align: center
 
+EVM Transactions and the events can be deleted, but to restore them you will have to either purge all transactions or add by the transaction hash.
+
+.. image:: images/delete_transaction_events.png
+   :alt: Menu to delete EVM transactions events
+   :align: center
+
 If you see this warning button, it means the event won't be processed correctly in accounting. It could be due to improper decoding or a missing accounting rule for that event. You can fix it by editing the event or adding the missing accounting rule. You can also edit the events if they have special meaning to you, such as OTC trades or transfers between accounts.
 
 .. image:: images/event_not_processed.png
