@@ -3,9 +3,11 @@ const props = withDefaults(
   defineProps<{
     value?: string | null;
     dense?: boolean;
+    showWithKeyOnly?: boolean;
   }>(),
   {
     value: null,
+    showWithKeyOnly: false,
   },
 );
 
@@ -15,7 +17,7 @@ const emit = defineEmits<{
 
 const vModel = useSimpleVModel(props, emit);
 
-const { exchangesWithKey } = storeToRefs(useLocationStore());
+const { allExchanges, exchangesWithKey } = storeToRefs(useLocationStore());
 
 const rootAttrs = useAttrs();
 </script>
@@ -25,7 +27,7 @@ const rootAttrs = useAttrs();
     v-model="vModel"
     outlined
     v-bind="rootAttrs"
-    :items="exchangesWithKey"
+    :items="showWithKeyOnly ? exchangesWithKey : allExchanges"
     :dense="dense"
     auto-select-first
     v-on="
