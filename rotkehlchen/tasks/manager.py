@@ -172,6 +172,7 @@ class TaskManager:
             self._maybe_query_monerium,
             self._maybe_update_owned_assets,
             self._maybe_update_aave_v3_underlying_assets,
+            self._maybe_create_calendar_reminder,
             self._maybe_trigger_calendar_reminder,
             self._maybe_delete_past_calendar_events,
         ]
