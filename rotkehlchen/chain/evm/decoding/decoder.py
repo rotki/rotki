@@ -150,7 +150,7 @@ class EVMTransactionDecoder(ABC):
         decoder that should be included for this decoder modules.
         """
         self.database = database
-        self.misc_counterparties = [CounterpartyDetails(identifier=CPT_GAS, label='gas', image='gas.svg')] + misc_counterparties  # noqa: E501
+        self.misc_counterparties = [CounterpartyDetails(identifier=CPT_GAS, label='gas', icon='fire-line')] + misc_counterparties  # noqa: E501
         self.evm_inquirer = evm_inquirer
         self.transactions = transactions
         self.msg_aggregator = database.msg_aggregator

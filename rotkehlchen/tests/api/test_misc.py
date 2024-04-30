@@ -496,3 +496,21 @@ def test_events_mappings(rotkehlchen_api_server_with_exchanges):
     assert result['mappings'][CPT_CONVEX] == [EvmProduct.GAUGE.serialize(), EvmProduct.STAKING.serialize()]  # noqa: E501
     assert result['mappings'][CPT_CURVE] == [EvmProduct.GAUGE.serialize()]
     assert result['products'] == [product.serialize() for product in EvmProduct]
+
+
+@pytest.mark.parametrize('have_decoders', [True])
+def test_counterparties(rotkehlchen_api_server_with_exchanges):
+    """Test serialization of the counterparties"""
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            'evmcounterpartiesresource',
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    for counterparty_details in result:
+        assert 'identifier' in counterparty_details
+        assert 'label' in counterparty_details
+        assert 'icon' in counterparty_details or 'image' in counterparty_details
+        if counterparty_details['identifier'] == 'gas':
+            assert counterparty_details['icon'] == 'fire-line'
