@@ -11,7 +11,9 @@ const { minHeight, initialAppear } = toRefs(props);
 
 const wrapper = ref();
 const appear: Ref<boolean> = ref(get(initialAppear));
+const appearDebounced = refDebounced(appear, 200);
 const height: Ref<string> = ref('max-content');
+const usedAppear = logicAnd(appear, appearDebounced);
 
 useIntersectionObserver(
   wrapper,
@@ -25,7 +27,7 @@ useIntersectionObserver(
 
 const { height: originalHeight } = useElementBounding(wrapper);
 
-watch(appear, (appear) => {
+watch(usedAppear, (appear) => {
   if (appear)
     set(height, 'max-content');
   else
@@ -50,10 +52,10 @@ const minHeightUsed = computed(() => {
 <template>
   <div
     ref="wrapper"
-    :class="[css.wrapper, { [css.appear]: appear }]"
-    @mouseenter="!appear && show()"
+    :class="[css.wrapper, { [css.appear]: usedAppear }]"
+    @mouseenter="!usedAppear && show()"
   >
-    <slot v-if="appear" />
+    <slot v-if="usedAppear" />
   </div>
 </template>
 
