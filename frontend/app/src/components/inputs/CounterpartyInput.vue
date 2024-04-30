@@ -20,7 +20,7 @@ const { counterparties } = useHistoryEventCounterpartyMappings();
 </script>
 
 <template>
-  <ComboboxWithCustomInput
+  <VAutocomplete
     v-model="vModel"
     outlined
     required
@@ -32,5 +32,12 @@ const { counterparties } = useHistoryEventCounterpartyMappings();
       // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
       $listeners
     "
-  />
+  >
+    <template #item="{ item }">
+      <CounterpartyDisplay :counterparty="item" />
+    </template>
+    <template #selection="{ item }">
+      <CounterpartyDisplay :counterparty="item" />
+    </template>
+  </VAutocomplete>
 </template>

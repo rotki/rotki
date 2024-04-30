@@ -26,7 +26,7 @@ onMounted(() => {
 <template>
   <RuiMenu
     v-model="showMenu"
-    menu-class="w-full max-w-96"
+    menu-class="w-full max-w-96 !bg-transparent"
     :popper="{ placement: 'bottom-end' }"
   >
     <template #activator="{ on }">
