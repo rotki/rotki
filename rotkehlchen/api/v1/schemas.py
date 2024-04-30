@@ -2274,7 +2274,7 @@ class AssetIconUploadSchema(Schema):
 
 
 class LocationAssetMappingsBaseSchema(Schema):
-    location = LocationField(limit_to=SUPPORTED_EXCHANGES, allow_none=True)
+    location = LocationField(limit_to=ALL_SUPPORTED_EXCHANGES, allow_none=True)
 
 
 class LocationAssetMappingsPostSchema(DBPaginationSchema, LocationAssetMappingsBaseSchema):

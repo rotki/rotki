@@ -179,6 +179,7 @@ function onExchangeChange(exchange: string) {
   >
     <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
       <ExchangeInput
+        show-with-key-only
         :value="exchange.location"
         :label="t('exchange_keys_form.exchange')"
         data-cy="exchange"
