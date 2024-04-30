@@ -1636,6 +1636,7 @@ class RestAPI:
                     message=msg,
                     status_code=HTTPStatus.CONFLICT,
                 )
+            log.debug(f'extracted {len(data["events"])} events from {filepath}')
             self.rotkehlchen.accountant.process_history(
                 start_ts=Timestamp(data['pnl_settings']['from_timestamp']),
                 end_ts=Timestamp(data['pnl_settings']['to_timestamp']),
