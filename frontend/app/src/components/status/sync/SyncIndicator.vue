@@ -163,7 +163,7 @@ watch(isSyncing, (current, prev) => {
             <div class="text-rui-text-secondary text-sm">
               <i18n path="sync_indicator.db_upload_result.message">
                 <template #reason>
-                  <b>
+                  <b class="break-all">
                     {{ uploadStatus.message }}
                   </b>
                 </template>

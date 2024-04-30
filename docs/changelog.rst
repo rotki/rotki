@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Users will now be able to delete transactions and the associated events in history events.
 * :feature:`7074` rotki provides a calendar view where users can add and track events related to their activities. Users can also set reminders to perform actions associated with these events.
 * :feature:`-` Claiming the harvest finance hack compensation grain airdrop will be properly shown as airdrop claim in the history events.
 * :feature:`-` Claiming the pickle finance hack compensation cornichon airdrop will be properly shown as airdrop claim in the history events.

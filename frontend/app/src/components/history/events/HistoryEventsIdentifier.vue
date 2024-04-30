@@ -23,7 +23,7 @@ const blockEvent = isEthBlockEventRef(event);
 const withdrawEvent = isWithdrawalEventRef(event);
 
 const css = useCssModule();
-const { isXl } = useBreakpoint();
+const { is2xlAndUp } = useBreakpoint();
 </script>
 
 <template>
@@ -72,7 +72,7 @@ const { isXl } = useBreakpoint();
         type="transaction"
         :chain="getChain(evmOrDepositEvent.location)"
         :truncate-length="8"
-        :full-address="isXl"
+        :full-address="is2xlAndUp"
       />
     </template>
   </i18n>
