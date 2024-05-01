@@ -24,6 +24,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, SubscriptionStatus
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
+from rotkehlchen.tasks.calendar import ENS_CALENDAR_COLOR
 from rotkehlchen.tasks.manager import PREMIUM_STATUS_CHECK, TaskManager
 from rotkehlchen.tasks.utils import should_run_periodic_task
 from rotkehlchen.tests.fixtures.websockets import WebsocketReader
@@ -926,7 +927,7 @@ def test_maybe_create_calendar_reminder(
             counterparty=CPT_ENS,
             address=ens_events[idx].location_label,  # type: ignore[arg-type]  # location_label is not None, checked above
             blockchain=ChainID.deserialize(ens_events[idx].location.to_chain_id()).to_blockchain(),
-            color=None,
+            color=ENS_CALENDAR_COLOR,
             auto_delete=True,
         )
 
