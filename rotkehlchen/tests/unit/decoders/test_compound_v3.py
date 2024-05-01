@@ -10,10 +10,11 @@ from rotkehlchen.chain.evm.decoding.compound.v3.constants import CPT_COMPOUND_V3
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_ARB, A_COMP, A_ETH, A_POLYGON_POS_MATIC, A_USDC, A_WBTC
+from rotkehlchen.constants.assets import A_COMP, A_ETH, A_POLYGON_POS_MATIC, A_USDC, A_WBTC
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.unit.decoders.test_paraswap import A_BRIDGED_USDC
 from rotkehlchen.tests.unit.decoders.test_zerox import A_BASE_USDC
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
@@ -106,7 +107,7 @@ def test_compound_v3_supply(database, ethereum_inquirer, ethereum_accounts):
             asset=A_USDC,
             balance=Balance(amount=FVal(supply_amount)),
             location_label=ethereum_accounts[0],
-            notes=f'Deposit {supply_amount} USDC to compound v3',
+            notes=f'Deposit {supply_amount} USDC into Compound v3',
             counterparty=CPT_COMPOUND_V3,
             address=string_to_evm_address('0xc3d688B66703497DAA19211EEdff47f25384cdc3'),
         ), EvmEvent(
@@ -119,7 +120,7 @@ def test_compound_v3_supply(database, ethereum_inquirer, ethereum_accounts):
             asset=Asset('eip155:1/erc20:0xc3d688B66703497DAA19211EEdff47f25384cdc3'),  # cUSDCv3
             balance=Balance(amount=FVal(position_amount)),
             location_label=ethereum_accounts[0],
-            notes=f'Receive {position_amount} cUSDCv3 from compound v3',
+            notes=f'Receive {position_amount} cUSDCv3 from Compound v3',
             counterparty=CPT_COMPOUND_V3,
             address=ZERO_ADDRESS,
         )]
@@ -160,7 +161,7 @@ def test_compound_v3_withdraw(database, ethereum_inquirer, ethereum_accounts):
             asset=Asset('eip155:1/erc20:0xc3d688B66703497DAA19211EEdff47f25384cdc3'),  # cUSDCv3
             balance=Balance(amount=FVal(withdraw_amount)),
             location_label=ethereum_accounts[0],
-            notes=f'Return {withdraw_amount} cUSDCv3 to compound v3',
+            notes=f'Return {withdraw_amount} cUSDCv3 to Compound v3',
             counterparty=CPT_COMPOUND_V3,
             address=ZERO_ADDRESS,
         ), EvmEvent(
@@ -173,7 +174,7 @@ def test_compound_v3_withdraw(database, ethereum_inquirer, ethereum_accounts):
             asset=A_USDC,
             balance=Balance(amount=FVal(withdraw_amount)),
             location_label=ethereum_accounts[0],
-            notes=f'Withdraw {withdraw_amount} USDC from compound v3',
+            notes=f'Withdraw {withdraw_amount} USDC from Compound v3',
             counterparty=CPT_COMPOUND_V3,
             address=string_to_evm_address('0xc3d688B66703497DAA19211EEdff47f25384cdc3'),
         )]
@@ -182,7 +183,7 @@ def test_compound_v3_withdraw(database, ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x274B56e812b7951B737e450a22e849860C8adA11']])
-def test_compound_v3_borrow(database, ethereum_inquirer, ethereum_accounts):
+def test_compound_v3_withdraw_collateral(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x70aca19e6ac5285a586ad9e6a6d38bb4e4a682386901e987c7f7a30ea8c2431c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -190,7 +191,7 @@ def test_compound_v3_borrow(database, ethereum_inquirer, ethereum_accounts):
         tx_hash=tx_hash,
     )
     timestamp = TimestampMS(1712235011000)
-    gas_fees, borrow_amount = '0.003503372063979697', '30'
+    gas_fees, collateral_amount = '0.003503372063979697', '30'
     expected_events = [
         EvmEvent(
             tx_hash=tx_hash,
@@ -206,15 +207,28 @@ def test_compound_v3_borrow(database, ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=472,
+            sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.GENERATE_DEBT,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=A_WBTC,
-            balance=Balance(amount=FVal(borrow_amount)),
+            balance=Balance(amount=FVal(collateral_amount)),
             location_label=ethereum_accounts[0],
-            notes=f'Borrow {borrow_amount} WBTC from compound v3',
+            notes=f'Withdraw {collateral_amount} WBTC from Compound v3',
+            counterparty=CPT_COMPOUND_V3,
+            address=string_to_evm_address('0xc3d688B66703497DAA19211EEdff47f25384cdc3'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_WBTC,
+            balance=Balance(),
+            location_label=ethereum_accounts[0],
+            notes=f'Disable {collateral_amount} WBTC as collateral on Compound v3',
             counterparty=CPT_COMPOUND_V3,
             address=string_to_evm_address('0xc3d688B66703497DAA19211EEdff47f25384cdc3'),
         )]
@@ -223,7 +237,7 @@ def test_compound_v3_borrow(database, ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x048C013be418178cBf35Fc7102d80298506e82E8']])
-def test_compound_v3_repay(database, ethereum_inquirer, ethereum_accounts):
+def test_compound_v3_deposit_collateral(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x2e362252c9c96669eb0801cd431d6b36bdea63968e5781d33ea58efc528ac205')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -231,7 +245,7 @@ def test_compound_v3_repay(database, ethereum_inquirer, ethereum_accounts):
         tx_hash=tx_hash,
     )
     timestamp = TimestampMS(1712238731000)
-    gas_fees, repay_amount = '0.00267689111806624', '15'
+    gas_fees, collateral_amount = '0.00267689111806624', '15'
     expected_events = [
         EvmEvent(
             tx_hash=tx_hash,
@@ -247,58 +261,30 @@ def test_compound_v3_repay(database, ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=312,
+            sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.SPEND,
-            event_subtype=HistoryEventSubType.PAYBACK_DEBT,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_WBTC,
-            balance=Balance(amount=FVal(repay_amount)),
+            balance=Balance(amount=FVal(collateral_amount)),
             location_label=ethereum_accounts[0],
-            notes=f'Repay {repay_amount} WBTC to compound v3',
+            notes=f'Deposit {collateral_amount} WBTC into Compound v3',
             counterparty=CPT_COMPOUND_V3,
             address=string_to_evm_address('0xc3d688B66703497DAA19211EEdff47f25384cdc3'),
-        )]
-    assert events == expected_events
-
-
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('ethereum_accounts', [['0xF468655Ed420b3Ed7Afb4F5d4283F847DC9234F3']])
-def test_ethereum_weth_repay(database, ethereum_inquirer, ethereum_accounts):
-    tx_hash = deserialize_evm_tx_hash('0xc4779bc4bb37676e6440459a5eedb14b92d20b1bcd9754b21c4f314b3c0c2b49')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
-    timestamp = TimestampMS(1712183879000)
-    gas_fees, repay_amount = '0.002215984001817839', '14.220926764078819328'
-    expected_events = [
-        EvmEvent(
-            tx_hash=tx_hash,
-            sequence_index=0,
-            timestamp=timestamp,
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.SPEND,
-            event_subtype=HistoryEventSubType.FEE,
-            asset=A_ETH,
-            balance=Balance(amount=FVal(gas_fees)),
-            location_label=ethereum_accounts[0],
-            notes=f'Burned {gas_fees} ETH for gas',
-            counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=245,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.SPEND,
-            event_subtype=HistoryEventSubType.PAYBACK_DEBT,
-            asset=Asset('eip155:1/erc20:0xBe9895146f7AF43049ca1c1AE358B0541Ea49704'),  # cbETH
-            balance=Balance(amount=FVal(repay_amount)),
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_WBTC,
+            balance=Balance(),
             location_label=ethereum_accounts[0],
-            notes=f'Repay {repay_amount} cbETH to compound v3',
+            notes=f'Enable {collateral_amount} WBTC as collateral on Compound v3',
             counterparty=CPT_COMPOUND_V3,
-            address=string_to_evm_address('0xA17581A9E3356d9A858b789D68B4d866e593aE94'),
+            address=string_to_evm_address('0xc3d688B66703497DAA19211EEdff47f25384cdc3'),
         )]
     assert events == expected_events
 
@@ -337,7 +323,7 @@ def test_polygon_pos_withdraw(database, polygon_pos_inquirer, polygon_pos_accoun
             asset=Asset('eip155:137/erc20:0xF25212E676D1F7F89Cd72fFEe66158f541246445'),  # cUSDCv3
             balance=Balance(amount=FVal(return_amount)),
             location_label=polygon_pos_accounts[0],
-            notes=f'Return {return_amount} cUSDCv3 to compound v3',
+            notes=f'Return {return_amount} cUSDCv3 to Compound v3',
             counterparty=CPT_COMPOUND_V3,
             address=ZERO_ADDRESS,
         ), EvmEvent(
@@ -350,7 +336,7 @@ def test_polygon_pos_withdraw(database, polygon_pos_inquirer, polygon_pos_accoun
             asset=Asset('eip155:137/erc20:0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174'),  # USDC.e,
             balance=Balance(amount=FVal(withdraw_amount)),
             location_label=polygon_pos_accounts[0],
-            notes=f'Withdraw {withdraw_amount} USDC from compound v3',
+            notes=f'Withdraw {withdraw_amount} USDC from Compound v3',
             counterparty=CPT_COMPOUND_V3,
             address=string_to_evm_address('0xF25212E676D1F7F89Cd72fFEe66158f541246445'),
         )]
@@ -358,16 +344,16 @@ def test_polygon_pos_withdraw(database, polygon_pos_inquirer, polygon_pos_accoun
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('arbitrum_one_accounts', [['0x6ac5d0D1f2D80f97De90C0b04cc904C257b258Ff']])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0xb453dE1360cEcf95bD9717CB9DEB6Fb961b7010D']])
 def test_arbitrum_one_borrow(database, arbitrum_one_inquirer, arbitrum_one_accounts):
-    tx_hash = deserialize_evm_tx_hash('0xf1f0e42be8a65d53c903e36a7fbf796108371a6df2f49b858517903fd42fa6df')  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0xaabe8666d515f5fa97cf31a5ac43c3f56af062ff3a077ef79dbc2480b33b7802')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         database=database,
         tx_hash=tx_hash,
     )
-    timestamp = TimestampMS(1712738344000)
-    gas_fees, borrow_amount = '0.00000136108', '0.367655432709867671'
+    timestamp = TimestampMS(1714561431000)
+    gas_fees, borrow_amount = '0.0000019956', '600'
     expected_events = [
         EvmEvent(
             tx_hash=tx_hash,
@@ -383,15 +369,15 @@ def test_arbitrum_one_borrow(database, arbitrum_one_inquirer, arbitrum_one_accou
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=9,
+            sequence_index=1,
             timestamp=timestamp,
             location=Location.ARBITRUM_ONE,
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.GENERATE_DEBT,
-            asset=A_ARB,
+            asset=A_BRIDGED_USDC,
             balance=Balance(amount=FVal(borrow_amount)),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Borrow {borrow_amount} ARB from compound v3',
+            notes=f'Borrow {borrow_amount} USDC.e from Compound v3',
             counterparty=CPT_COMPOUND_V3,
             address=string_to_evm_address('0xA5EDBDD9646f8dFF606d7448e414884C7d905dCA'),
         )]
@@ -399,16 +385,16 @@ def test_arbitrum_one_borrow(database, arbitrum_one_inquirer, arbitrum_one_accou
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('base_accounts', [['0x1397B89726Ada5460C9f995c5EB1a63B6Dc3380B']])
-def test_base_supply(database, base_inquirer, base_accounts):
-    tx_hash = deserialize_evm_tx_hash('0xb6d2ad96bab5ceac90ddee9598889a288c716ef015394542aa5c42c70fc6390e')  # noqa: E501
+@pytest.mark.parametrize('base_accounts', [['0xBD1eefb658C2B80c297493A0D4298B16941eff85']])
+def test_base_repay(database, base_inquirer, base_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x455761ce3e1076eb03a3af1a90b935b42a703336e08aacf218afe76102d8d171')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_inquirer,
         database=database,
         tx_hash=tx_hash,
     )
-    timestamp = TimestampMS(1712747817000)
-    gas_fees, supply_amount, position_amount = '0.000011015992753122', '0.1', '0.099999'
+    timestamp = TimestampMS(1714564377000)
+    gas_fees, repay_amount = '0.00000528542843901', '100.000919'
     expected_events = [
         EvmEvent(
             tx_hash=tx_hash,
@@ -424,31 +410,19 @@ def test_base_supply(database, base_inquirer, base_accounts):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=1,
+            sequence_index=230,
             timestamp=timestamp,
             location=Location.BASE,
-            event_type=HistoryEventType.DEPOSIT,
-            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.PAYBACK_DEBT,
             asset=A_BASE_USDC,
-            balance=Balance(amount=FVal(supply_amount)),
+            balance=Balance(amount=FVal(repay_amount)),
             location_label=base_accounts[0],
-            notes=f'Deposit {supply_amount} USDC to compound v3',
+            notes=f'Repay {repay_amount} USDC on Compound v3',
             counterparty=CPT_COMPOUND_V3,
             address=string_to_evm_address('0xb125E6687d4313864e53df431d5425969c15Eb2F'),
-        ), EvmEvent(
-            tx_hash=tx_hash,
-            sequence_index=2,
-            timestamp=timestamp,
-            location=Location.BASE,
-            event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-            asset=Asset('eip155:8453/erc20:0xb125E6687d4313864e53df431d5425969c15Eb2F'),  # cUSDCv3
-            balance=Balance(amount=FVal(position_amount)),
-            location_label=base_accounts[0],
-            notes=f'Receive {position_amount} cUSDCv3 from compound v3',
-            counterparty=CPT_COMPOUND_V3,
-            address=ZERO_ADDRESS,
-        )]
+        ),
+    ]
     assert events == expected_events
 
 
@@ -486,7 +460,7 @@ def test_scroll_withdraw(database, scroll_inquirer, scroll_accounts):
             asset=Asset('eip155:534352/erc20:0xB2f97c1Bd3bf02f5e74d13f02E3e26F93D77CE44'),  # cUSDCv3  # noqa: E501
             balance=Balance(amount=FVal(withdraw_amount)),
             location_label=scroll_accounts[0],
-            notes=f'Return {withdraw_amount} cUSDCv3 to compound v3',
+            notes=f'Return {withdraw_amount} cUSDCv3 to Compound v3',
             counterparty=CPT_COMPOUND_V3,
             address=ZERO_ADDRESS,
         ), EvmEvent(
@@ -499,7 +473,7 @@ def test_scroll_withdraw(database, scroll_inquirer, scroll_accounts):
             asset=Asset('eip155:534352/erc20:0x06eFdBFf2a14a7c8E15944D1F4A48F9F95F663A4'),  # USDC
             balance=Balance(amount=FVal(withdraw_amount)),
             location_label=scroll_accounts[0],
-            notes=f'Withdraw {withdraw_amount} USDC from compound v3',
+            notes=f'Withdraw {withdraw_amount} USDC from Compound v3',
             counterparty=CPT_COMPOUND_V3,
             address=string_to_evm_address('0xB2f97c1Bd3bf02f5e74d13f02E3e26F93D77CE44'),
         )]

@@ -1,6 +1,6 @@
 from collections import defaultdict
 from typing import TYPE_CHECKING
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -21,16 +21,7 @@ from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balanc
 from rotkehlchen.chain.evm.tokens import TokenBalancesType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
-from rotkehlchen.constants.assets import (
-    A_CVX,
-    A_GLM,
-    A_GMX,
-    A_GRT,
-    A_GRT_ARB,
-    A_STETH,
-    A_USDC,
-    A_WETH,
-)
+from rotkehlchen.constants.assets import A_CVX, A_GLM, A_GMX, A_GRT, A_GRT_ARB, A_STETH, A_USDC
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
@@ -573,22 +564,20 @@ def test_aave_v3_balances(blockchain: 'ChainsAggregator') -> None:
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[
     '0x1107F797c1af4982b038Eb91260b3f9A90eecee9', '0x887380Bb5F5fF5C87BEcc46F0867Fec460F7c5a6',
-    '0x1c39c7a6FaA2C8e62C3423381897E4723c752AAe', '0x8fFb5a2e5d9b5dB800354Dc4fa73c15a5d047328',
+    '0x577e1290fE9561A9654b7b42B1C10c7Ea90c8a07', '0x1b622CA9C74185A7e21351Ae9AC5ea74b9e8a75b',
 ]])
 @pytest.mark.parametrize('ethereum_modules', [['compound']])
 def test_compound_v3_token_balances_liabilities(
         blockchain: 'ChainsAggregator', ethereum_accounts: list['ChecksumEvmAddress'],
 ) -> None:
     """Test that the balances of compound v3 supplied/borrowed tokens are correct."""
-    tokens = blockchain.ethereum.tokens
-    tokens.evm_inquirer.multicall = MagicMock(side_effect=tokens.evm_inquirer.multicall)  # type: ignore[method-assign]
-    tokens.detect_tokens(only_cache=False, addresses=[ethereum_accounts[1]])
+    c_usdc_v3 = EvmToken('eip155:1/erc20:0xc3d688B66703497DAA19211EEdff47f25384cdc3')
     blockchain.ethereum.transactions_decoder.decode_transaction_hashes(
         ignore_cache=True,
         tx_hashes=[
-            deserialize_evm_tx_hash('0xe2229f1bdac86237e81ce96fcd694cf58b412dd1617746528735a319e0bb7595'),  # Borrow 0.1 WBTC from cUSDCv3  # noqa: E501
-            deserialize_evm_tx_hash('0x1460b9480445c1307ac027e00151297f64631a19d6a6f77300bcbf537c6e7661'),  # Borrow 1.25 WBTC from cUSDCv3  # noqa: E501
-            deserialize_evm_tx_hash('0x0b52a63d1f9b3518d0d4525354c601e83e4814c0165f496223753b29ce4f2a29'),  # Borrow 0.957368573046591548 wstETH from cWETHv3  # noqa: E501
+            deserialize_evm_tx_hash('0x0c9276ed2a202b039d5fa6e9749fd19f631c62e8e4beccc2f4dc0358a4882bb1'),  # Borrow 3,500 USDC from cUSDCv3  # noqa: E501
+            deserialize_evm_tx_hash('0x13965c2a1ba75dafa060d0bdadd332c9330b9c5819a8fee7d557a937728fa22f'),  # Borrow 42.5043 USDC from USDCv3  # noqa: E501
+            deserialize_evm_tx_hash('0xd53dbca004a5f4a178d881e0194c4464ac5fd52db017329be01413514cb4796e'),  # Borrow 594,629.451218 USDC from USDCv3  # noqa: E501
         ],
     )
     compound_v3_balances = Compoundv3Balances(
@@ -605,9 +594,17 @@ def test_compound_v3_token_balances_liabilities(
             for token, addresses in unique_borrows.items()
         }, underlying_tokens
 
+    def mock_query_tokens(addresses):
+        return ({
+            ethereum_accounts[1]: {c_usdc_v3: FVal('0.32795')},
+        }, {c_usdc_v3: Price(CURRENT_PRICE_MOCK)}) if len(addresses) != 0 else ({}, {})
+
     with patch(
         target='rotkehlchen.chain.evm.decoding.compound.v3.balances.Compoundv3Balances._extract_unique_borrowed_tokens',
         new=mock_extract_unique_borrowed_tokens,
+    ), patch(
+        target='rotkehlchen.chain.evm.tokens.EvmTokens.query_tokens_for_addresses',
+        side_effect=mock_query_tokens,
     ):
         blockchain.query_eth_balances()
 
@@ -615,7 +612,7 @@ def test_compound_v3_token_balances_liabilities(
         return Balance(
             amount=FVal(amount), usd_value=FVal(amount) * CURRENT_PRICE_MOCK,
         )
-    assert blockchain.balances.eth[ethereum_accounts[0]].liabilities[A_USDC] == get_balance('252997.853807')  # noqa: E501
-    assert blockchain.balances.eth[ethereum_accounts[1]].assets[Asset('eip155:1/erc20:0xc3d688B66703497DAA19211EEdff47f25384cdc3')] == get_balance('203.40222')  # cUSDCv3  # noqa: E501
-    assert blockchain.balances.eth[ethereum_accounts[2]].liabilities[A_USDC] == get_balance('65968.79353')  # noqa: E501
-    assert blockchain.balances.eth[ethereum_accounts[3]].liabilities[A_WETH] == get_balance('0.260766330459257371')  # noqa: E501
+    assert blockchain.balances.eth[ethereum_accounts[0]].liabilities[A_USDC] == get_balance('166903.779933')  # noqa: E501
+    assert blockchain.balances.eth[ethereum_accounts[1]].assets[c_usdc_v3] == get_balance('0.32795')  # noqa: E501
+    assert blockchain.balances.eth[ethereum_accounts[2]].liabilities[A_USDC] == get_balance('257.565053')  # noqa: E501
+    assert blockchain.balances.eth[ethereum_accounts[3]].liabilities[A_USDC] == get_balance('589398.492789')  # noqa: E501
