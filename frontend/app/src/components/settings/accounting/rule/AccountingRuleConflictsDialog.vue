@@ -370,10 +370,9 @@ async function save() {
               />
             </template>
             <template #item.counterparty="{ row }">
-              <HistoryEventTypeCounterparty
+              <CounterpartyDisplay
                 v-if="row.localData.counterparty"
-                :event="{ counterparty: row.localData.counterparty }"
-                text
+                :counterparty="row.localData.counterparty"
               />
               <span v-else>-</span>
             </template>

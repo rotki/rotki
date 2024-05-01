@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
-import { helpers, minValue, required } from '@vuelidate/validators';
+import { helpers, minValue, requiredIf } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
 
 const taxFreeAfterPeriod = ref<string>();
@@ -16,7 +16,7 @@ const rules = {
   taxFreeAfterPeriod: {
     required: helpers.withMessage(
       t('account_settings.validation.tax_free_days'),
-      required,
+      requiredIf(taxFreePeriod),
     ),
     minValue: helpers.withMessage(
       t('account_settings.validation.tax_free_days_gt_zero'),

@@ -66,8 +66,24 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
     ({ identifier }) => identifier,
   );
 
+  const getCounterpartyData = (counterparty: MaybeRef<string>): ComputedRef<ActionDataEntry> => computed(() => {
+    const counterpartyVal = get(counterparty);
+    const data = get(historyEventCounterpartiesData).find(item => item.identifier === counterpartyVal);
+
+    if (data)
+      return data;
+
+    return {
+      identifier: counterpartyVal,
+      label: counterpartyVal,
+      icon: 'question-line',
+      color: 'error',
+    };
+  });
+
   return {
     getEventCounterpartyData,
+    getCounterpartyData,
     historyEventCounterpartiesData,
     counterparties,
   };

@@ -406,10 +406,9 @@ onMounted(async () => {
               />
             </template>
             <template #item.counterparty="{ row }">
-              <HistoryEventTypeCounterparty
+              <CounterpartyDisplay
                 v-if="row.counterparty"
-                text
-                :event="{ counterparty: row.counterparty }"
+                :counterparty="row.counterparty"
               />
               <span v-else>-</span>
             </template>
