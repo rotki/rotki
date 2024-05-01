@@ -914,6 +914,7 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             exclude_subtypes: list[HistoryEventSubType] | None = None,
             location: Location | None = None,
             location_labels: list[str] | None = None,
+            excluded_locations: list[Location] | None = None,
             ignored_ids: list[str] | None = None,
             null_columns: list[str] | None = None,
             event_identifiers: list[str] | None = None,
@@ -983,6 +984,13 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
         if location is not None:
             filter_query.location_filter = DBLocationFilter(and_op=True, location=location)
             filters.append(filter_query.location_filter)
+        if excluded_locations is not None:
+            filters.append(DBMultiStringFilter(
+                and_op=True,
+                column='location',
+                values=[x.serialize_for_db() for x in excluded_locations],
+                operator='NOT IN',
+            ))
         if location_labels is not None:
             filters.append(DBMultiStringFilter(
                 and_op=True,
@@ -1070,6 +1078,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             exclude_subtypes: list[HistoryEventSubType] | None = None,
             location: Location | None = None,
             location_labels: list[str] | None = None,
+            excluded_locations: list[Location] | None = None,
             ignored_ids: list[str] | None = None,
             null_columns: list[str] | None = None,
             event_identifiers: list[str] | None = None,
@@ -1098,6 +1107,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             exclude_subtypes=exclude_subtypes,
             location=location,
             location_labels=location_labels,
+            excluded_locations=excluded_locations,
             ignored_ids=ignored_ids,
             null_columns=null_columns,
             event_identifiers=event_identifiers,
@@ -1165,6 +1175,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
             exclude_subtypes: list[HistoryEventSubType] | None = None,
             location: Location | None = None,
             location_labels: list[str] | None = None,
+            excluded_locations: list[Location] | None = None,
             ignored_ids: list[str] | None = None,
             null_columns: list[str] | None = None,
             event_identifiers: list[str] | None = None,
@@ -1190,6 +1201,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
             exclude_subtypes=exclude_subtypes,
             location=location,
             location_labels=location_labels,
+            excluded_locations=excluded_locations,
             ignored_ids=ignored_ids,
             null_columns=null_columns,
             event_identifiers=event_identifiers,
@@ -1239,6 +1251,7 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
             exclude_subtypes: list[HistoryEventSubType] | None = None,
             location: Location | None = None,
             location_labels: list[str] | None = None,
+            excluded_locations: list[Location] | None = None,
             ignored_ids: list[str] | None = None,
             null_columns: list[str] | None = None,
             event_identifiers: list[str] | None = None,
@@ -1265,6 +1278,7 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
             exclude_subtypes=exclude_subtypes,
             location=location,
             location_labels=location_labels,
+            excluded_locations=excluded_locations,
             ignored_ids=ignored_ids,
             null_columns=null_columns,
             event_identifiers=event_identifiers,
@@ -1311,6 +1325,7 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
             exclude_subtypes: list[HistoryEventSubType] | None = None,
             location: Location | None = None,
             location_labels: list[str] | None = None,
+            excluded_locations: list[Location] | None = None,
             ignored_ids: list[str] | None = None,
             null_columns: list[str] | None = None,
             event_identifiers: list[str] | None = None,
@@ -1337,6 +1352,7 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
             exclude_subtypes=exclude_subtypes,
             location=location,
             location_labels=location_labels,
+            excluded_locations=excluded_locations,
             ignored_ids=ignored_ids,
             null_columns=null_columns,
             event_identifiers=event_identifiers,
