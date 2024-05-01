@@ -45,6 +45,7 @@ from rotkehlchen.constants.assets import (
     A_USDC,
     A_USDT,
     A_WBTC,
+    A_WETH,
     A_YFI,
     A_ZRX,
 )
@@ -558,9 +559,9 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             string_to_evm_address('0x3D0B1912B66114d4096F48A8CEe3A56C231772cA'): (self.decode_makerdao_vault_action, A_BAT.resolve_to_crypto_asset(), 'BAT-A'),  # noqa: E501
-            string_to_evm_address('0x2F0b23f53734252Bda2277357e97e1517d6B042A'): (self.decode_makerdao_vault_action, A_ETH.resolve_to_crypto_asset(), 'ETH-A'),  # noqa: E501
-            string_to_evm_address('0x08638eF1A205bE6762A8b935F5da9b700Cf7322c'): (self.decode_makerdao_vault_action, A_ETH.resolve_to_crypto_asset(), 'ETH-B'),  # noqa: E501
-            string_to_evm_address('0xF04a5cC80B1E94C69B48f5ee68a08CD2F09A7c3E'): (self.decode_makerdao_vault_action, A_ETH.resolve_to_crypto_asset(), 'ETH-C'),  # noqa: E501
+            string_to_evm_address('0x2F0b23f53734252Bda2277357e97e1517d6B042A'): (self.decode_makerdao_vault_action, A_WETH.resolve_to_crypto_asset(), 'ETH-A'),  # noqa: E501
+            string_to_evm_address('0x08638eF1A205bE6762A8b935F5da9b700Cf7322c'): (self.decode_makerdao_vault_action, A_WETH.resolve_to_crypto_asset(), 'ETH-B'),  # noqa: E501
+            string_to_evm_address('0xF04a5cC80B1E94C69B48f5ee68a08CD2F09A7c3E'): (self.decode_makerdao_vault_action, A_WETH.resolve_to_crypto_asset(), 'ETH-C'),  # noqa: E501
             string_to_evm_address('0x475F1a89C1ED844A08E8f6C50A00228b5E59E4A9'): (self.decode_makerdao_vault_action, A_KNC.resolve_to_crypto_asset(), 'KNC-A'),  # noqa: E501
             string_to_evm_address('0x4454aF7C8bb9463203b66C816220D41ED7837f44'): (self.decode_makerdao_vault_action, A_TUSD.resolve_to_crypto_asset(), 'TUSD-A'),  # noqa: E501
             string_to_evm_address('0xA191e578a6736167326d05c119CE0c90849E84B7'): (self.decode_makerdao_vault_action, A_USDC.resolve_to_crypto_asset(), 'USDC-A'),  # noqa: E501
