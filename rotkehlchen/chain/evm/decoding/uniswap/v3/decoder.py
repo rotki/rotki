@@ -45,7 +45,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import hex_or_bytes_to_int, ts_ms_to_sec
 
-from ..constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3, UNISWAP_ICON, UNISWAP_LABEL_WITH_VERSION
+from ..constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3, UNISWAP_ICON
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -566,7 +566,7 @@ class Uniswapv3CommonDecoder(DecoderInterface):
     def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (CounterpartyDetails(
             identifier=CPT_UNISWAP_V3,
-            label=UNISWAP_LABEL_WITH_VERSION.format(version=3),
+            label=CPT_UNISWAP_V3.capitalize().replace('-v', ' V'),
             image=UNISWAP_ICON,
         ),)
 

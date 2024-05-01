@@ -15,11 +15,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.evm.decoding.uniswap.constants import (
-    CPT_UNISWAP_V2,
-    UNISWAP_ICON,
-    UNISWAP_LABEL_WITH_VERSION,
-)
+from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2, UNISWAP_ICON
 from rotkehlchen.chain.evm.decoding.uniswap.utils import decode_basic_uniswap_info
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -149,6 +145,6 @@ class Uniswapv2Decoder(DecoderInterface):
     def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (CounterpartyDetails(
             identifier=CPT_UNISWAP_V2,
-            label=UNISWAP_LABEL_WITH_VERSION.format(version=2),
+            label=CPT_UNISWAP_V2.capitalize().replace('-v', ' V'),
             image=UNISWAP_ICON,
         ),)

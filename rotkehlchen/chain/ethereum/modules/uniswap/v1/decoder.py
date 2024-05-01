@@ -7,11 +7,7 @@ from rotkehlchen.chain.ethereum.modules.aave.v1.decoder import DEFAULT_DECODING_
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import ActionItem, DecodingOutput
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.evm.decoding.uniswap.constants import (
-    CPT_UNISWAP_V1,
-    UNISWAP_ICON,
-    UNISWAP_LABEL_WITH_VERSION,
-)
+from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V1, UNISWAP_ICON
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
@@ -96,6 +92,6 @@ class Uniswapv1Decoder(DecoderInterface):
     def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (CounterpartyDetails(
             identifier=CPT_UNISWAP_V1,
-            label=UNISWAP_LABEL_WITH_VERSION.format(version=1),
+            label=CPT_UNISWAP_V1.capitalize().replace('-v', ' V'),
             image=UNISWAP_ICON,
         ),)
