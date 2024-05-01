@@ -132,7 +132,8 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
             TxAccountingTreatment |
             EventCategoryDetails |
             CalendarEntry |
-            ReminderEntry
+            ReminderEntry |
+            CounterpartyDetails
     )):
         return entry.serialize()
     if isinstance(entry, (
@@ -166,7 +167,6 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
             DefiBalance |
             DefiProtocolBalances |
             BlockchainAccountData |
-            CounterpartyDetails |
             AaveStats
     )):
         return process_result(entry._asdict())
