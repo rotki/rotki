@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
@@ -19,6 +19,7 @@ from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.deserialize import deserialize_hex_color_code
 from rotkehlchen.types import ChainID, OptionalBlockchainAddress, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
@@ -26,6 +27,7 @@ from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+ENS_CALENDAR_COLOR: Final = deserialize_hex_color_code('5298FF')
 
 if TYPE_CHECKING:
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -137,7 +139,7 @@ def maybe_create_ens_reminders(database: DBHandler) -> None:
                 counterparty=CPT_ENS,
                 address=user_address,
                 blockchain=blockchain,
-                color=None,
+                color=ENS_CALENDAR_COLOR,
                 auto_delete=True,
             ))
         else:  # else calendar entry already exists
@@ -151,7 +153,7 @@ def maybe_create_ens_reminders(database: DBHandler) -> None:
                     counterparty=CPT_ENS,
                     address=user_address,
                     blockchain=blockchain,
-                    color=None,
+                    color=ENS_CALENDAR_COLOR,
                     auto_delete=True,
                 ))
 
