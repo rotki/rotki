@@ -18,7 +18,7 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
 
-from .constants import CPT_ONEINCH, ONEINCH_ICON, ONEINCH_LABEL
+from .constants import CPT_ONEINCH, ONEINCH_ICON
 
 
 class OneinchCommonDecoder(DecoderInterface, ABC):
@@ -87,7 +87,7 @@ class OneinchCommonDecoder(DecoderInterface, ABC):
     def generate_counterparty_details(counterparty: str) -> tuple[CounterpartyDetails, ...]:
         return (CounterpartyDetails(
             identifier=counterparty,
-            label=ONEINCH_LABEL,
+            label=counterparty.replace('-v', ' V'),
             image=ONEINCH_ICON,
         ),)
 
