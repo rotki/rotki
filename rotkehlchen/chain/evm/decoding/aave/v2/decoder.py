@@ -6,7 +6,7 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-from ..constants import AAVE_LABEL, CPT_AAVE_V2
+from ..constants import AAVE_LABEL_V2, CPT_AAVE_V2
 from .constants import BORROW, DEPOSIT, REPAY
 
 if TYPE_CHECKING:
@@ -76,4 +76,6 @@ class Aavev2CommonDecoder(Commonv2v3Decoder):
 
     @staticmethod  # DecoderInterface method
     def counterparties() -> tuple[CounterpartyDetails, ...]:
-        return (CounterpartyDetails(identifier=CPT_AAVE_V2, label=AAVE_LABEL, image='aave.svg'),)
+        return (
+            CounterpartyDetails(identifier=CPT_AAVE_V2, label=AAVE_LABEL_V2, image='aave.svg'),
+        )

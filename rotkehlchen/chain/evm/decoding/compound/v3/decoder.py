@@ -264,6 +264,6 @@ class Compoundv3CommonDecoder(DecoderInterface):
     def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (CounterpartyDetails(
             identifier=CPT_COMPOUND_V3,
-            label='Compound',
+            label='Compound V3',
             image='compound.svg',
         ),)

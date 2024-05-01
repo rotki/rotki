@@ -12,7 +12,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-from ..constants import AAVE_LABEL, CPT_AAVE_V3
+from ..constants import AAVE_LABEL_V3, CPT_AAVE_V3
 from .constants import BORROW, BURN, DEPOSIT, REPAY
 
 if TYPE_CHECKING:
@@ -103,4 +103,6 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
 
     @staticmethod  # DecoderInterface method
     def counterparties() -> tuple[CounterpartyDetails, ...]:
-        return (CounterpartyDetails(identifier=CPT_AAVE_V3, label=AAVE_LABEL, image='aave.svg'),)
+        return (
+            CounterpartyDetails(identifier=CPT_AAVE_V3, label=AAVE_LABEL_V3, image='aave.svg'),
+        )

@@ -3,7 +3,7 @@ from typing import Any
 from rotkehlchen.chain.ethereum.modules.aave.common import asset_to_atoken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.aave.constants import AAVE_LABEL, CPT_AAVE_V1
+from rotkehlchen.chain.evm.decoding.aave.constants import AAVE_LABEL_V1, CPT_AAVE_V1
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -144,4 +144,6 @@ class Aavev1Decoder(DecoderInterface):
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
-        return (CounterpartyDetails(identifier=CPT_AAVE_V1, label=AAVE_LABEL, image='aave.svg'),)
+        return (
+            CounterpartyDetails(identifier=CPT_AAVE_V1, label=AAVE_LABEL_V1, image='aave.svg'),
+        )
