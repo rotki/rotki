@@ -115,17 +115,14 @@ def read_curve_pools_and_gauges() -> tuple[dict[ChecksumEvmAddress, list[Checksu
 def ensure_curve_tokens_existence(
         ethereum_inquirer: 'EthereumInquirer',
         all_pools: list[CurvePoolData],
-) -> None:
+) -> list[CurvePoolData]:
     """This function receives data about curve pools and ensures that lp tokens and pool coins
     exist in rotki's database.
 
     Since is possible that a pool has an invalid token we keep a mapping of the valid ones
     and return it.
-
-    May raise:
-    - NotERC20Conformant if failed to query info while calling get_or_create_evm_token
-
     """
+    verified_pools = []
     for pool in all_pools:
         # Ensure pool coins exist in the globaldb.
         # We have to create underlying tokens only if pool utilizes them.
@@ -226,14 +223,27 @@ def ensure_curve_tokens_existence(
 
         # finally ensure lp token exists in the globaldb. Since is a token created by curve
         # it should always be an ERC20
-        get_or_create_evm_token(
-            userdb=ethereum_inquirer.database,
-            evm_address=pool.lp_token_address,
-            chain_id=ChainID.ETHEREUM,
-            evm_inquirer=ethereum_inquirer,
-            protocol=CURVE_POOL_PROTOCOL,
-            encounter=TokenEncounterInfo(description='Querying curve pools', should_notify=False),
-        )
+        try:
+            get_or_create_evm_token(
+                userdb=ethereum_inquirer.database,
+                evm_address=pool.lp_token_address,
+                chain_id=ChainID.ETHEREUM,
+                evm_inquirer=ethereum_inquirer,
+                protocol=CURVE_POOL_PROTOCOL,
+                encounter=TokenEncounterInfo(
+                    description='Querying curve pools',
+                    should_notify=False,
+                ),
+            )
+        except NotERC20Conformant as e:
+            log.error(  # should only fail if the node is not up to date
+                f'Failed to check integrity of the curve pool {pool.lp_token_address} '
+                f'due to {e}. Skipping',
+            )
+            continue
+
+        verified_pools.append(pool)
+    return verified_pools
 
 
 def save_curve_data_to_cache(
@@ -447,9 +457,6 @@ def query_curve_data(
     There is a known issue that curve api and metaregistry return different pool names. For example
     curve api returns "Curve.fi DAI/USDC/USDT" while metaregistry returns "3pool".
     TODO: think of how to make pool names uniform.
-
-    May raise:
-    - RemoteError if failed to query etherscan or node
     """
     with GlobalDBHandler().conn.read_ctx() as cursor:
         existing_pools = [
@@ -472,5 +479,8 @@ def query_curve_data(
     if pools_data is None:
         return None
 
-    ensure_curve_tokens_existence(ethereum_inquirer=inquirer, all_pools=pools_data)
-    return pools_data
+    verified_pools = ensure_curve_tokens_existence(
+        ethereum_inquirer=inquirer,
+        all_pools=pools_data,
+    )
+    return verified_pools
