@@ -84,7 +84,11 @@ class Compoundv2Decoder(DecoderInterface):
         out_event = None
         for event in decoded_events:
             # Find the transfer event which should have come before the minting
-            if event.event_type == HistoryEventType.SPEND and event.asset == underlying_asset and event.balance.amount == mint_amount:  # noqa: E501
+            if (
+                event.event_type == HistoryEventType.SPEND and
+                event.asset == underlying_asset and
+                event.balance.amount == mint_amount
+            ):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_COMPOUND
@@ -176,16 +180,26 @@ class Compoundv2Decoder(DecoderInterface):
         amount = asset_normalized_value(amount_raw, underlying_asset)
         for event in decoded_events:
             # Find the transfer event which should have come before the redeeming
-            if event.event_type == HistoryEventType.RECEIVE and event.asset.identifier == underlying_asset and event.balance.amount == amount:  # noqa: E501
+            if (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.asset.identifier == underlying_asset and
+                event.balance.amount == amount
+            ):
                 event.event_subtype = HistoryEventSubType.GENERATE_DEBT
                 event.counterparty = CPT_COMPOUND
                 event.notes = f'Borrow {amount} {underlying_asset.symbol} from compound'
-            elif event.event_type == HistoryEventType.RECEIVE and event.location_label == payer and event.asset == A_COMP and event.address == COMPTROLLER_PROXY_ADDRESS:  # noqa: E501
+            elif (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.location_label == payer and
+                event.asset == A_COMP and
+                event.address == COMPTROLLER_PROXY_ADDRESS
+            ):
                 event.event_subtype = HistoryEventSubType.REWARD
                 event.counterparty = CPT_COMPOUND
                 event.notes = f'Collect {event.balance.amount} COMP from compound'
             elif (
-                event.event_type == HistoryEventType.SPEND and event.balance.amount == amount and
+                event.event_type == HistoryEventType.SPEND and
+                event.balance.amount == amount and
                 (
                     (underlying_asset == self.eth and event.address == MAXIMILLION_ADDR) or
                     (event.location_label == payer and event.address == compound_token.evm_address)
