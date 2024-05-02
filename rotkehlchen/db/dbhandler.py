@@ -71,6 +71,7 @@ from rotkehlchen.db.schema_transient import DB_SCRIPT_CREATE_TRANSIENT_TABLES
 from rotkehlchen.db.settings import (
     DEFAULT_LAST_DATA_MIGRATION,
     DEFAULT_PREMIUM_SHOULD_SYNC,
+    DEFAULT_SYNC_METHOD_UPON_SIZE_DISCREPANCY,
     ROTKEHLCHEN_DB_VERSION,
     ROTKEHLCHEN_TRANSIENT_DB_VERSION,
     CachedSettings,
@@ -142,6 +143,7 @@ from rotkehlchen.types import (
     Location,
     ModuleName,
     SupportedBlockchain,
+    SyncMethodUponSizeDiscrepancy,
     Timestamp,
     UserNote,
 )
@@ -210,6 +212,10 @@ class DBHandler:
             'last_data_migration': (int, DEFAULT_LAST_DATA_MIGRATION),
             'non_syncing_exchanges': (lambda data: [ExchangeLocationID.deserialize(x) for x in json.loads(data)], []),  # noqa: E501
             'beacon_rpc_endpoint': (str, None),
+            'sync_method_upon_size_discrepancy': (
+                SyncMethodUponSizeDiscrepancy.deserialize,
+                DEFAULT_SYNC_METHOD_UPON_SIZE_DISCREPANCY,
+            ),
         }
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore
@@ -410,6 +416,10 @@ class DBHandler:
     def get_setting(self, cursor: 'DBCursor', name: Literal['beacon_rpc_endpoint']) -> str:
         ...
 
+    @overload
+    def get_setting(self, cursor: 'DBCursor', name: Literal['sync_method_upon_size_discrepancy']) -> SyncMethodUponSizeDiscrepancy:  # noqa: E501
+        ...
+
     def get_setting(
             self,
             cursor: 'DBCursor',
@@ -422,8 +432,16 @@ class DBHandler:
                 'last_data_migration',
                 'non_syncing_exchanges',
                 'beacon_rpc_endpoint',
+                'sync_method_upon_size_discrepancy',
             ],
-    ) -> int | None | (Timestamp | (bool | AssetWithOracles)) | list['ExchangeLocationID'] | str:
+    ) -> (
+        int
+        | None
+        | (Timestamp | (bool | AssetWithOracles))
+        | list['ExchangeLocationID']
+        | str
+        | SyncMethodUponSizeDiscrepancy
+    ):
         deserializer, default_value = self.setting_to_default_type[name]
         cursor.execute(
             'SELECT value FROM settings WHERE name=?;', (name,),
@@ -444,8 +462,9 @@ class DBHandler:
                 'ongoing_upgrade_from_version',
                 'main_currency',
                 'non_syncing_exchanges',
+                'sync_method_upon_size_discrepancy',
             ],
-            value: int | (Timestamp | Asset) | str,
+            value: int | (Timestamp | Asset) | str | SyncMethodUponSizeDiscrepancy,
     ) -> None:
         write_cursor.execute(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
