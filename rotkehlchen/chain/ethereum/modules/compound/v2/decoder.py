@@ -87,7 +87,8 @@ class Compoundv2Decoder(DecoderInterface):
             if (
                 event.event_type == HistoryEventType.SPEND and
                 event.asset == underlying_asset and
-                event.balance.amount == mint_amount
+                event.balance.amount == mint_amount and
+                event.address == compound_token.evm_address
             ):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
@@ -183,7 +184,8 @@ class Compoundv2Decoder(DecoderInterface):
             if (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.asset.identifier == underlying_asset and
-                event.balance.amount == amount
+                event.balance.amount == amount and
+                event.address == compound_token.evm_address
             ):
                 event.event_subtype = HistoryEventSubType.GENERATE_DEBT
                 event.counterparty = CPT_COMPOUND
