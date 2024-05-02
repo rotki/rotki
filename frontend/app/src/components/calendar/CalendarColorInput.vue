@@ -1,9 +1,14 @@
 <script setup lang="ts">
 import { contextColors } from '@rotki/ui-library-compat';
 
-const props = defineProps<{
-  value: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    value?: string;
+  }>(),
+  {
+    value: '',
+  },
+);
 
 const emit = defineEmits<{
   (e: 'input', value: string): void;

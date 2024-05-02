@@ -47,28 +47,23 @@ export function useBlockchainAccounts() {
       tags,
     });
 
-    try {
-      const { result } = await awaitTask<string[], BlockchainMetadata>(
-        taskId,
-        taskType,
-        {
-          title: t('actions.balances.blockchain_accounts_add.task.title', {
-            blockchain,
-          }),
-          description: t(
-            'actions.balances.blockchain_accounts_add.task.description',
-            { address },
-          ),
+    const { result } = await awaitTask<string[], BlockchainMetadata>(
+      taskId,
+      taskType,
+      {
+        title: t('actions.balances.blockchain_accounts_add.task.title', {
           blockchain,
-        },
-        true,
-      );
+        }),
+        description: t(
+          'actions.balances.blockchain_accounts_add.task.description',
+          { address },
+        ),
+        blockchain,
+      },
+      true,
+    );
 
-      return result.length > 0 ? result[0] : '';
-    }
-    catch {
-      return '';
-    }
+    return result.length > 0 ? result[0] : '';
   };
 
   const addEvmAccount = async ({
