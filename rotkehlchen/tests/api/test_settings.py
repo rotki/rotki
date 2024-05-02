@@ -32,6 +32,7 @@ from rotkehlchen.types import (
     Location,
     ModuleName,
     SupportedBlockchain,
+    SyncMethodUponSizeDiscrepancy,
 )
 
 
@@ -205,6 +206,8 @@ def test_set_settings(rotkehlchen_api_server):
             value = CostBasisMethod.LIFO.serialize()
         elif setting == 'address_name_priority':
             value = ['hardcoded_mappings', 'ethereum_tokens']
+        elif setting == 'sync_method_upon_size_discrepancy':
+            value = SyncMethodUponSizeDiscrepancy.FORCE_PUSH.serialize()
         else:
             raise AssertionError(f'Unexpected settting {setting} encountered')
 
