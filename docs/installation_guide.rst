@@ -656,7 +656,7 @@ rotki uses `Electron <https://electronjs.org>`, we need to install it. To do so 
 
     $ brew install node
 
-rotki uses pnpm v8. To check if you have version * of pnpm you can run::
+rotki uses pnpm v9. To check if you have version * of pnpm you can run::
 
     pnpm --version
 

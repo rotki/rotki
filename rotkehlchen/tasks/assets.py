@@ -192,7 +192,7 @@ def augmented_spam_detection(user_db: DBHandler) -> None:
                 filter_query=EvmEventFilterQuery.make(
                     assets=(asset,),
                     order_by_rules=[('timestamp', True)],
-                    excluded_locations=list(EVMLIKE_LOCATIONS),  # exclude evm like events because the don't have EVM transactions  # noqa: E501
+                    excluded_locations=list(EVMLIKE_LOCATIONS),  # exclude evm like events because they don't have EVM transactions  # noqa: E501
                 ),
                 has_premium=True,
                 group_by_event_ids=False,
