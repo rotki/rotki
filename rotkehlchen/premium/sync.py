@@ -17,7 +17,7 @@ from rotkehlchen.premium.premium import (
     RemoteMetadata,
     premium_create_and_verify,
 )
-from rotkehlchen.types import Timestamp
+from rotkehlchen.types import SyncMethodUponSizeDiscrepancy, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 logger = logging.getLogger(__name__)
@@ -214,17 +214,22 @@ class PremiumSyncManager:
 
         data_bytes_size = len(data)
         if data_bytes_size < metadata.data_size and not force_upload:
-            message = 'Remote database bigger than the local one'
-            log.debug(
-                f'upload to server stopped -- remote db({metadata.data_size}) '
-                f'bigger than local({data_bytes_size})',
-            )
-            self.data.msg_aggregator.add_message(
-                message_type=WSMessageType.DATABASE_UPLOAD_RESULT,
-                data={'uploaded': False, 'actionable': True, 'message': message},
-            )
-            self.last_upload_attempt_ts = ts_now()
-            return False, message
+            with self.data.db.conn.read_ctx() as cursor:
+                sync_method_upon_size_discrepancy = self.data.db.get_setting(
+                    cursor=cursor, name='sync_method_upon_size_discrepancy',
+                )
+            if sync_method_upon_size_discrepancy == SyncMethodUponSizeDiscrepancy.ASK_EVERY_TIME:
+                message = 'Remote database bigger than the local one'
+                log.debug(
+                    f'upload to server stopped -- remote db({metadata.data_size}) '
+                    f'bigger than local({data_bytes_size})',
+                )
+                self.data.msg_aggregator.add_message(
+                    message_type=WSMessageType.DATABASE_UPLOAD_RESULT,
+                    data={'uploaded': False, 'actionable': True, 'message': message},
+                )
+                self.last_upload_attempt_ts = ts_now()
+                return False, message
 
         try:
             self.premium.upload_data(
