@@ -626,6 +626,7 @@ declare global {
   const useQueryStatus: typeof import('./composables/history/events/query-status/index')['useQueryStatus']
   const useQueryStatusStore: typeof import('./store/history/query-status/index')['useQueryStatusStore']
   const useRafFn: typeof import('@vueuse/core')['useRafFn']
+  const useRandomStepper: typeof import('./composables/random-stepper')['useRandomStepper']
   const useRefHistory: typeof import('@vueuse/core')['useRefHistory']
   const useRefMap: typeof import('./composables/utils/useRefMap/index')['useRefMap']
   const useRefPropVModel: typeof import('./utils/model/index')['useRefPropVModel']
@@ -1382,6 +1383,7 @@ declare module 'vue' {
     readonly useQueryStatus: UnwrapRef<typeof import('./composables/history/events/query-status/index')['useQueryStatus']>
     readonly useQueryStatusStore: UnwrapRef<typeof import('./store/history/query-status/index')['useQueryStatusStore']>
     readonly useRafFn: UnwrapRef<typeof import('@vueuse/core')['useRafFn']>
+    readonly useRandomStepper: UnwrapRef<typeof import('./composables/random-stepper')['useRandomStepper']>
     readonly useRefHistory: UnwrapRef<typeof import('@vueuse/core')['useRefHistory']>
     readonly useRefMap: UnwrapRef<typeof import('./composables/utils/useRefMap/index')['useRefMap']>
     readonly useRefPropVModel: UnwrapRef<typeof import('./utils/model/index')['useRefPropVModel']>
@@ -2130,6 +2132,7 @@ declare module '@vue/runtime-core' {
     readonly useQueryStatus: UnwrapRef<typeof import('./composables/history/events/query-status/index')['useQueryStatus']>
     readonly useQueryStatusStore: UnwrapRef<typeof import('./store/history/query-status/index')['useQueryStatusStore']>
     readonly useRafFn: UnwrapRef<typeof import('@vueuse/core')['useRafFn']>
+    readonly useRandomStepper: UnwrapRef<typeof import('./composables/random-stepper')['useRandomStepper']>
     readonly useRefHistory: UnwrapRef<typeof import('@vueuse/core')['useRefHistory']>
     readonly useRefMap: UnwrapRef<typeof import('./composables/utils/useRefMap/index')['useRefMap']>
     readonly useRefPropVModel: UnwrapRef<typeof import('./utils/model/index')['useRefPropVModel']>

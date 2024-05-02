@@ -23,9 +23,9 @@ const CompoundBorrowing = z.object({
 const CompoundBorrowingEntries = z.record(CompoundBorrowing);
 
 const CompoundBalance = z.object({
-  rewards: CompoundRewards,
-  lending: CompoundLendingEntries,
-  borrowing: CompoundBorrowingEntries,
+  rewards: CompoundRewards.optional().default({}),
+  lending: CompoundLendingEntries.optional().default({}),
+  borrowing: CompoundBorrowingEntries.optional().default({}),
 });
 
 export const CompoundBalances = z.record(CompoundBalance);

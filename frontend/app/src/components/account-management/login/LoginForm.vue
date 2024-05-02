@@ -57,7 +57,7 @@ const passwordRef: Ref = ref();
 const savedRememberUsername = useLocalStorage('rotki.remember_username', null);
 const savedRememberPassword = useLocalStorage('rotki.remember_password', null);
 const savedUsername = useLocalStorage('rotki.username', '');
-const { welcomeMessage } = useDynamicMessages();
+const { welcomeMessage, activeWelcomeMessages } = useDynamicMessages();
 
 const rules = {
   username: {
@@ -612,7 +612,7 @@ function abortLogin() {
                 <RuiCard>
                   <WelcomeMessageDisplay
                     class="!bg-transparent !p-0"
-                    :message="welcomeMessage"
+                    :messages="activeWelcomeMessages"
                   />
 
                   <template #footer>

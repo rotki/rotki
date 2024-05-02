@@ -15,7 +15,7 @@ const showUpgradeProgress: ComputedRef<boolean> = computed(
 
 const isDocker = import.meta.env.VITE_DOCKER;
 
-const { fetchMessages, welcomeHeader, welcomeMessage } = useDynamicMessages();
+const { fetchMessages, welcomeHeader, welcomeMessage, activeWelcomeMessages } = useDynamicMessages();
 const { showReleaseNotes } = useUpdateMessage();
 
 const header = computed(() => {
@@ -105,7 +105,7 @@ onMounted(() => fetchMessages());
         <WelcomeMessageDisplay
           v-else-if="welcomeMessage"
           class="mt-6"
-          :message="welcomeMessage"
+          :messages="activeWelcomeMessages"
         />
       </div>
     </AccountManagementAside>
