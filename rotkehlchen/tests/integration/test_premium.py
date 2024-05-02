@@ -87,7 +87,7 @@ def test_upload_data_to_server(
         return MockResponse(200, '{"success": true}')
 
     assert rotkehlchen_instance.premium is not None
-    patched_put = patch.object(
+    patched_post = patch.object(
         rotkehlchen_instance.premium.session,
         'post',
         side_effect=mock_succesfull_upload_data_to_server,
@@ -105,7 +105,7 @@ def test_upload_data_to_server(
         assert rotkehlchen_instance.data.db.get_static_cache(cursor=cursor, name=DBCacheStatic.LAST_DATA_UPLOAD_TS) is None  # noqa: E501
 
     now = ts_now()
-    with patched_get, patched_put:
+    with patched_get, patched_post:
         tasks = rotkehlchen_instance.task_manager._maybe_schedule_db_upload()  # type: ignore[union-attr]  # task_manager can't be none here
         if tasks is not None:
             gevent.wait(tasks)
@@ -155,10 +155,10 @@ def test_upload_data_to_server_same_hash(rotkehlchen_instance):
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db()
     remote_hash = our_hash
 
-    patched_put = patch.object(
+    patched_post = patch.object(
         rotkehlchen_instance.premium.session,
-        'put',
-        return_value=None,
+        'post',
+        return_value=MockResponse(200, '{"success": true}'),
     )
     patched_get = create_patched_requests_get_for_premium(
         session=rotkehlchen_instance.premium.session,
@@ -169,10 +169,10 @@ def test_upload_data_to_server_same_hash(rotkehlchen_instance):
         saved_data='foo',
     )
 
-    with patched_get, patched_put as put_mock:
+    with patched_get, patched_post as post_mock:
         rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server()
         # The upload mock should not have been called since the hash is the same
-        assert not put_mock.called
+        assert not post_mock.called
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -188,10 +188,10 @@ def test_upload_data_to_server_smaller_db(rotkehlchen_instance):
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db()
     remote_hash = get_different_hash(our_hash)
 
-    patched_put = patch.object(
+    patched_post = patch.object(
         rotkehlchen_instance.premium.session,
-        'put',
-        return_value=None,
+        'post',
+        return_value=MockResponse(200, '{"success": true}'),
     )
     patched_get = create_patched_requests_get_for_premium(
         session=rotkehlchen_instance.premium.session,
@@ -202,10 +202,10 @@ def test_upload_data_to_server_smaller_db(rotkehlchen_instance):
         saved_data='foo',
     )
 
-    with patched_get, patched_put as put_mock:
+    with patched_get, patched_post as post_mock:
         rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server()
-        # The upload mock should not have been called since the hash is the same
-        assert not put_mock.called
+        # The upload mock should not have been called since the server has bigger DB
+        assert not post_mock.called
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -507,10 +507,10 @@ def test_upload_data_to_server_db_already_in_use(rotkehlchen_instance):
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db()
     remote_hash = get_different_hash(our_hash)
 
-    patched_put = patch.object(
+    patched_post = patch.object(
         rotkehlchen_instance.premium.session,
-        'put',
-        return_value=None,
+        'post',
+        return_value=MockResponse(200, '{"success": true}'),
     )
     patched_get = create_patched_requests_get_for_premium(
         session=rotkehlchen_instance.premium.session,
@@ -521,7 +521,7 @@ def test_upload_data_to_server_db_already_in_use(rotkehlchen_instance):
         saved_data='foo',
     )
 
-    with patched_get, patched_put as put_mock:
+    with patched_get, patched_post as post_mock:
         a = gevent.spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server)
         b = gevent.spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server)
         greenlets = [a, b]
@@ -529,7 +529,7 @@ def test_upload_data_to_server_db_already_in_use(rotkehlchen_instance):
         for g in greenlets:
             assert g.exception is None, f'One of the greenlets had an exception: {g.exception}'
         # The upload mock should not have been called since the hash is the same
-        assert not put_mock.called
+        assert not post_mock.called
 
 
 @pytest.mark.parametrize('sql_vm_instructions_cb', [20])
@@ -571,10 +571,10 @@ def test_upload_data_to_server_db_locked(rotkehlchen_instance):
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db()
     remote_hash = get_different_hash(our_hash)
 
-    patched_put = patch.object(
+    patched_post = patch.object(
         rotkehlchen_instance.premium.session,
-        'put',
-        return_value=None,
+        'post',
+        return_value=MockResponse(200, '{"success": true}'),
     )
     patched_get = create_patched_requests_get_for_premium(
         session=rotkehlchen_instance.premium.session,
@@ -586,7 +586,7 @@ def test_upload_data_to_server_db_locked(rotkehlchen_instance):
     )
 
     greenlets = []
-    with patched_get, patched_put as put_mock:
+    with patched_get, patched_post as post_mock:
         greenlets.extend((
             gevent.spawn(rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server),
             gevent.spawn(function_to_context_switch_to)))
@@ -594,7 +594,7 @@ def test_upload_data_to_server_db_locked(rotkehlchen_instance):
         for g in greenlets:
             assert g.exception is None, f'One of the greenlets had an exception: {g.exception}'
         # The upload mock should not have been called since the hash is the same
-        assert not put_mock.called
+        assert not post_mock.called
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
@@ -612,7 +612,7 @@ def test_error_db_too_big(rotkehlchen_instance: 'Rotkehlchen') -> None:
     assert rotkehlchen_instance.premium is not None
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db()
     remote_hash = get_different_hash(our_hash)
-    patched_put = patch.object(
+    patched_post = patch.object(
         rotkehlchen_instance.premium.session,
         'post',
         side_effect=mock_error_upload_data_to_server,
@@ -625,7 +625,7 @@ def test_error_db_too_big(rotkehlchen_instance: 'Rotkehlchen') -> None:
         metadata_data_size=2,
         saved_data=b'foo',
     )
-    with patched_get, patched_put:
+    with patched_get, patched_post:
         status, error = rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server()
 
     assert status is False
