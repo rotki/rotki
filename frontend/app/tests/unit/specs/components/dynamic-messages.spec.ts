@@ -20,7 +20,7 @@ const action = {
 
 const testDash: DashboardMessage = {
   message: 'msg',
-  message_highlight: 'high',
+  messageHighlight: 'high',
   action,
   period,
 };
@@ -35,7 +35,7 @@ const testWelcome: WelcomeMessage = {
 
 describe('useDynamicMessages', () => {
   it('show valid period dashboard message', async () => {
-    const { dashboardMessage, fetchMessages } = useDynamicMessages();
+    const { activeDashboardMessages, fetchMessages } = useDynamicMessages();
 
     server.use(
       http.get(
@@ -50,11 +50,11 @@ describe('useDynamicMessages', () => {
     vi.setSystemTime(dayjs('2023/10/12').toDate());
     await fetchMessages();
 
-    expect(get(dashboardMessage)).toMatchObject(camelCaseTransformer(testDash));
+    expect(get(activeDashboardMessages)[0]).toMatchObject(camelCaseTransformer(testDash));
   });
 
   it('do not show invalid period dashboard message', async () => {
-    const { dashboardMessage, fetchMessages } = useDynamicMessages();
+    const { activeDashboardMessages, fetchMessages } = useDynamicMessages();
 
     server.use(
       http.get(
@@ -69,7 +69,7 @@ describe('useDynamicMessages', () => {
     vi.setSystemTime(dayjs('2023/10/15').toDate());
     await fetchMessages();
 
-    expect(get(dashboardMessage)).toBeNull();
+    expect(get(activeDashboardMessages)[0]).toBeUndefined();
   });
 
   it('show valid period welcome message', async () => {
