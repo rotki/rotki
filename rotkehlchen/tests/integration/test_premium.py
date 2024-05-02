@@ -27,6 +27,7 @@ from rotkehlchen.tests.utils.premium import (
     get_different_hash,
     setup_starting_environment,
 )
+from rotkehlchen.types import SyncMethodUponSizeDiscrepancy
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -176,7 +177,11 @@ def test_upload_data_to_server_same_hash(rotkehlchen_instance):
 
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
-def test_upload_data_to_server_smaller_db(rotkehlchen_instance):
+@pytest.mark.parametrize('db_settings', [
+    {'sync_method_upon_size_discrepancy': SyncMethodUponSizeDiscrepancy.ASK_EVERY_TIME},
+    {'sync_method_upon_size_discrepancy': SyncMethodUponSizeDiscrepancy.FORCE_PUSH},
+])
+def test_upload_data_to_server_smaller_db(rotkehlchen_instance, db_settings: dict[str, bool]):
     """Test that if the server has bigger DB size no upload happens"""
     with rotkehlchen_instance.data.db.user_write() as cursor:
         last_ts = rotkehlchen_instance.data.db.get_static_cache(
@@ -204,8 +209,12 @@ def test_upload_data_to_server_smaller_db(rotkehlchen_instance):
 
     with patched_get, patched_post as post_mock:
         rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server()
-        # The upload mock should not have been called since the server has bigger DB
-        assert not post_mock.called
+        if db_settings['sync_method_upon_size_discrepancy'] == SyncMethodUponSizeDiscrepancy.ASK_EVERY_TIME:  # noqa: E501
+            # Ensure upload mock is not called when sync method is 'ASK_EVERY_TIME'
+            assert not post_mock.called
+        elif db_settings['sync_method_upon_size_discrepancy'] == SyncMethodUponSizeDiscrepancy.FORCE_PUSH:  # noqa: E501
+            # Ensure upload mock is called when sync method is 'FORCE_PUSH'
+            assert post_mock.called
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
