@@ -135,6 +135,20 @@ MOCK_AIRDROP_INDEX = {'airdrops': {
             'decimals': 18,
         },
     },
+    'eigen': {
+        'asset_identifier': 'EIGEN_TOKEN_PRE_RELEASE',
+        'url': 'https://eigenfoundation.org',
+        'api_url': 'https://claims.eigenfoundation.org/clique-eigenlayer-api/campaign/eigenlayer/credentials?walletAddress={address}',
+        'amount_path': 'data/pipelines/tokenQualified',
+        'name': 'EIGEN',
+        'icon': 'eigen.svg',
+        'icon_path': 'airdrops/icons/eigen.svg',
+        'new_asset_data': {
+            'asset_type': 'OTHER',
+            'name': 'Eigen',
+            'symbol': 'EIGEN',
+        },
+    },
 }, 'poap_airdrops': {
     'aave_v2_pioneers': [
         'airdrops/poap/poap_aave_v2_pioneers.json',
@@ -258,6 +272,13 @@ def test_check_airdrops(
             mock_response.text = json.dumps(mock_airdrop_index)
             mock_response.json = lambda: mock_airdrop_index
             mock_response.headers = {'ETag': 'etag'}
+        elif url.startswith('https://claims.eigenfoundation.org'):
+            if url.endswith(TEST_ADDR2):
+                mock_response.text = """{"queryId":"1714640773899","status":"Complete","data":{"pipelines":{"tokenQualified":10}}}"""  # noqa: E501
+            else:
+                mock_response.text = """{"queryId":"1714651721784","status":"Complete","data":{"pipelines":{"tokenQualified":0}}}"""  # noqa: E501
+            mock_response.json = lambda: json.loads(mock_response.text)
+            mock_response.status_code = HTTPStatus.OK
         else:
             mock_response.text = url_to_data_map.get(url, 'address,tokens\n')  # Return the data from the dictionary or just a header if 'url' is not found  # noqa: E501
             assert isinstance(mock_response.text, str)
@@ -349,7 +370,7 @@ def test_check_airdrops(
     }
     assert messages_aggregator.warnings[0] == 'Skipping airdrop CSV for invalid because it contains an invalid row: []'  # noqa: E501
 
-    assert len(data[TEST_ADDR2]) == 4
+    assert len(data[TEST_ADDR2]) == 5
     assert data[TEST_ADDR2]['uniswap'] == {
         'amount': '400.050642',
         'asset': A_UNI,
@@ -377,6 +398,13 @@ def test_check_airdrops(
         'missing_decoder': True,
         'icon_url': 'https://raw.githubusercontent.com/rotki/data/develop/airdrops/icons/degen.svg',
     }
+    assert data[TEST_ADDR2]['eigen'] == {
+        'amount': '10',
+        'asset': Asset('EIGEN_TOKEN_PRE_RELEASE'),
+        'link': 'https://eigenfoundation.org',
+        'claimed': False,
+        'icon_url': 'https://raw.githubusercontent.com/rotki/data/develop/airdrops/icons/eigen.svg',
+    }
     assert len(data[TEST_POAP1]) == 1
     assert data[TEST_POAP1]['poap'] == [{
         'event': 'aave_v2_pioneers',
@@ -398,8 +426,8 @@ def test_check_airdrops(
             data_dir=data_dir,
             tolerance_for_amount_check=tolerance_for_amount_check,
         )
-        assert mock_get.call_count == 1
-    assert len(data[TEST_ADDR2]) == 3
+        assert mock_get.call_count == 2
+    assert len(data[TEST_ADDR2]) == 4
     assert 'shutter' not in data[TEST_ADDR2]
 
     def update_mock_requests_get(url: str, timeout: int = 0, headers: dict | None = None):  # pylint: disable=unused-argument
@@ -418,7 +446,7 @@ def test_check_airdrops(
             tolerance_for_amount_check=tolerance_for_amount_check,
         )
         # diva CSV and aave JSON were queried again because their hashes were updated
-        assert mock_get.call_count == 3
+        assert mock_get.call_count == 4
 
     # new CSV hashes are saved in the DB
     with globaldb.conn.read_ctx() as cursor:
@@ -427,8 +455,9 @@ def test_check_airdrops(
         ).fetchone()[0] == 'updated_hash'
 
     # Test cache file and row is created
-    for protocol_name in MOCK_AIRDROP_INDEX['airdrops']:
-        assert (data_dir / APPDIR_NAME / AIRDROPSDIR_NAME / f'{protocol_name}.csv').is_file()
+    for protocol_name, data in MOCK_AIRDROP_INDEX['airdrops'].items():
+        if 'csv_path' in data:
+            assert (data_dir / APPDIR_NAME / AIRDROPSDIR_NAME / f'{protocol_name}.csv').is_file()
     for protocol_name in MOCK_AIRDROP_INDEX['poap_airdrops']:
         assert (data_dir / APPDIR_NAME / AIRDROPSPOAPDIR_NAME / f'{protocol_name}.json').is_file()
     with GlobalDBHandler().conn.read_ctx() as cursor:
