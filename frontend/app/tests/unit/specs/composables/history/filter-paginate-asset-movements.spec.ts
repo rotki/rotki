@@ -5,7 +5,7 @@ import type {
   AssetMovement,
   AssetMovementEntry,
   AssetMovementRequestPayload,
-} from '@/types/history/asset-movements/index';
+} from '@/types/history/asset-movements';
 import type { MaybeRef } from '@vueuse/core';
 import type Vue from 'vue';
 
@@ -28,7 +28,7 @@ vi.mock('vue', async () => {
 
   return {
     ...mod,
-    onBeforeMount: vi.fn(),
+    onBeforeMount: vi.fn().mockImplementation((fn: Function) => fn()),
   };
 });
 

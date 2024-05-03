@@ -4,7 +4,7 @@ const dialogOpen = ref(false);
 
 <template>
   <RuiMenu
-    menu-class="max-w-[32rem] !z-1"
+    menu-class="max-w-[32rem] !z-[1]"
     :popper="{ placement: 'bottom-end' }"
     :persistent="dialogOpen"
   >

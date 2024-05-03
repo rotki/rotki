@@ -29,7 +29,7 @@ vi.mock('vue', async () => {
 
   return {
     ...mod,
-    onBeforeMount: vi.fn(),
+    onBeforeMount: vi.fn().mockImplementation((fn: Function) => fn()),
   };
 });
 
