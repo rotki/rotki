@@ -340,6 +340,19 @@ def test_get_asset_with_symbol(globaldb):
         cryptocompare='',
         coingecko='aave',
         protocol=None,
+    ), EvmToken.initialize(
+        name='Aave Token symbol',
+        symbol='AAVE',
+        started=Timestamp(1696951135),
+        forked=None,
+        swapped_for=None,
+        address='0x79379C0E09a41d7978f883a56246290eE9a8c4d3',
+        chain_id=ChainID.SCROLL,
+        token_kind=EvmTokenKind.ERC20,
+        decimals=18,
+        cryptocompare='aave',
+        coingecko='aave',
+        protocol=None,
     )]
     assert globaldb.get_assets_with_symbol('AAVE') == expected_assets
     # finally non existing asset
@@ -1299,6 +1312,8 @@ def test_assets_in_same_collection(globaldb: GlobalDBHandler):
         Asset('eip155:10/erc20:0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb'),
         Asset('eip155:100/erc20:0x6C76971f98945AE98dD7d4DFcA8711ebea946eA6'),
         Asset('eip155:42161/erc20:0x5979D7b546E38E414F7E9822514be443A4800529'),
+        Asset('eip155:534352/erc20:0xf610A9dfB7C89644979b4A0f27063E9e7d7Cda32'),
+        Asset('eip155:8453/erc20:0xc1CBa3fCea344f92D9239c08C0568f6F2F0ee452'),
     )
 
     # check an asset with no related assets

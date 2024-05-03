@@ -779,6 +779,7 @@ def test_search_assets(rotkehlchen_api_server):
         'arbitrum_one',
         'binance',
         'base',
+        'scroll',
     }
 
     # check that using evm_chain filter works.
