@@ -2748,6 +2748,21 @@ class RestAPI:
                 'DELETE FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
                 (tx_hash, evm_chain.serialize_for_db()))
         try:
+            chain_manager.transactions.get_or_query_transaction_receipt(tx_hash=tx_hash)
+        except RemoteError as e:
+            return {
+                'result': False,
+                'message': f'Failed to request evm transaction decoding due to hash {tx_hash.hex()} does not correspond to a transaction at {evm_chain.name}. {e!s}',  # noqa: E501
+                'status_code': HTTPStatus.CONFLICT,
+            }
+        except DeserializationError as e:
+            return {
+                'result': False,
+                'message': f'Failed to request evm transaction decoding due to {e!s}',
+                'status_code': HTTPStatus.CONFLICT,
+            }
+
+        try:
             chain_manager.transactions_decoder.decode_transaction_hashes(
                 tx_hashes=[tx_hash],
                 send_ws_notifications=True,
