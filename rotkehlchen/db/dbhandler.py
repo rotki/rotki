@@ -69,9 +69,9 @@ from rotkehlchen.db.misc import detect_sqlcipher_version
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.schema_transient import DB_SCRIPT_CREATE_TRANSIENT_TABLES
 from rotkehlchen.db.settings import (
+    DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY,
     DEFAULT_LAST_DATA_MIGRATION,
     DEFAULT_PREMIUM_SHOULD_SYNC,
-    DEFAULT_SYNC_METHOD_UPON_SIZE_DISCREPANCY,
     ROTKEHLCHEN_DB_VERSION,
     ROTKEHLCHEN_TRANSIENT_DB_VERSION,
     CachedSettings,
@@ -143,7 +143,6 @@ from rotkehlchen.types import (
     Location,
     ModuleName,
     SupportedBlockchain,
-    SyncMethodUponSizeDiscrepancy,
     Timestamp,
     UserNote,
 )
@@ -212,10 +211,7 @@ class DBHandler:
             'last_data_migration': (int, DEFAULT_LAST_DATA_MIGRATION),
             'non_syncing_exchanges': (lambda data: [ExchangeLocationID.deserialize(x) for x in json.loads(data)], []),  # noqa: E501
             'beacon_rpc_endpoint': (str, None),
-            'sync_method_upon_size_discrepancy': (
-                SyncMethodUponSizeDiscrepancy.deserialize,
-                DEFAULT_SYNC_METHOD_UPON_SIZE_DISCREPANCY,
-            ),
+            'ask_user_upon_size_discrepancy': (str_to_bool, DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY),  # noqa: E501
         }
         self.conn: DBConnection = None  # type: ignore
         self.conn_transient: DBConnection = None  # type: ignore
@@ -417,7 +413,7 @@ class DBHandler:
         ...
 
     @overload
-    def get_setting(self, cursor: 'DBCursor', name: Literal['sync_method_upon_size_discrepancy']) -> SyncMethodUponSizeDiscrepancy:  # noqa: E501
+    def get_setting(self, cursor: 'DBCursor', name: Literal['ask_user_upon_size_discrepancy']) -> bool:  # noqa: E501
         ...
 
     def get_setting(
@@ -432,16 +428,9 @@ class DBHandler:
                 'last_data_migration',
                 'non_syncing_exchanges',
                 'beacon_rpc_endpoint',
-                'sync_method_upon_size_discrepancy',
+                'ask_user_upon_size_discrepancy',
             ],
-    ) -> (
-        int
-        | None
-        | (Timestamp | (bool | AssetWithOracles))
-        | list['ExchangeLocationID']
-        | str
-        | SyncMethodUponSizeDiscrepancy
-    ):
+    ) -> int | None | Timestamp | bool | AssetWithOracles | list['ExchangeLocationID'] | str:
         deserializer, default_value = self.setting_to_default_type[name]
         cursor.execute(
             'SELECT value FROM settings WHERE name=?;', (name,),
@@ -462,9 +451,9 @@ class DBHandler:
                 'ongoing_upgrade_from_version',
                 'main_currency',
                 'non_syncing_exchanges',
-                'sync_method_upon_size_discrepancy',
+                'ask_user_upon_size_discrepancy',
             ],
-            value: int | (Timestamp | Asset) | str | SyncMethodUponSizeDiscrepancy,
+            value: int | (Timestamp | Asset) | str | bool,
     ) -> None:
         write_cursor.execute(
             'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',

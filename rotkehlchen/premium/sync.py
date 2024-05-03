@@ -17,7 +17,7 @@ from rotkehlchen.premium.premium import (
     RemoteMetadata,
     premium_create_and_verify,
 )
-from rotkehlchen.types import SyncMethodUponSizeDiscrepancy, Timestamp
+from rotkehlchen.types import Timestamp
 from rotkehlchen.utils.misc import ts_now
 
 logger = logging.getLogger(__name__)
@@ -215,10 +215,10 @@ class PremiumSyncManager:
         data_bytes_size = len(data)
         if data_bytes_size < metadata.data_size and not force_upload:
             with self.data.db.conn.read_ctx() as cursor:
-                sync_method_upon_size_discrepancy = self.data.db.get_setting(
-                    cursor=cursor, name='sync_method_upon_size_discrepancy',
+                ask_user_upon_size_discrepancy = self.data.db.get_setting(
+                    cursor=cursor, name='ask_user_upon_size_discrepancy',
                 )
-            if sync_method_upon_size_discrepancy == SyncMethodUponSizeDiscrepancy.ASK_EVERY_TIME:
+            if ask_user_upon_size_discrepancy is True:
                 message = 'Remote database bigger than the local one'
                 log.debug(
                     f'upload to server stopped -- remote db({metadata.data_size}) '

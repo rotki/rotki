@@ -902,11 +902,6 @@ class CostBasisMethod(SerializableEnumNameMixin):
     ACB = auto()
 
 
-class SyncMethodUponSizeDiscrepancy(SerializableEnumNameMixin):
-    ASK_EVERY_TIME = auto()
-    FORCE_PUSH = auto()
-
-
 class AddressbookEntry(NamedTuple):
     address: BlockchainAddress
     name: str
