@@ -29,7 +29,7 @@ vi.mock('vue', async () => {
 
   return {
     ...mod,
-    onBeforeMount: vi.fn(),
+    onBeforeMount: vi.fn().mockImplementation((fn: Function) => fn()),
   };
 });
 
@@ -87,7 +87,7 @@ describe('composables::history/filter-paginate', () => {
         extraParams,
       });
 
-      expect(get(userAction)).toBe(false);
+      expect(get(userAction)).toBe(true);
       expect(get(isLoading)).toBe(false);
       expect(get(filters)).to.toStrictEqual({});
       expect(get(options).sortBy).toHaveLength(1);

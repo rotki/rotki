@@ -11,7 +11,7 @@ describe('composables::random-stepper', () => {
 
       return {
         ...mod,
-        onMounted: vi.fn(),
+        onMounted: vi.fn().mockImplementation((fn: Function) => fn()),
       };
     });
   });

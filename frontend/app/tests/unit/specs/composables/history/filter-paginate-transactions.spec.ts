@@ -9,7 +9,7 @@ import type {
   HistoryEvent,
   HistoryEventRequestPayload,
 } from '@/types/history/events';
-import type { GeneralAccount } from '@rotki/common/src/account';
+import type { Account } from '@rotki/common/src/account';
 import type { MaybeRef } from '@vueuse/core';
 import type Vue from 'vue';
 
@@ -32,7 +32,7 @@ vi.mock('vue', async () => {
 
   return {
     ...mod,
-    onBeforeMount: vi.fn(),
+    onBeforeMount: vi.fn().mockImplementation((fn: Function) => fn()),
   };
 });
 
@@ -45,12 +45,10 @@ describe('composables::history/filter-paginate', () => {
   const protocols: Ref<string[]> = ref([]);
   const eventTypes: Ref<string[]> = ref([]);
   const eventSubTypes: Ref<string[]> = ref([]);
-  const accounts: Ref<GeneralAccount[]> = ref([
+  const accounts: Ref<Account[]> = ref([
     {
       address: '0x2F4c0f60f2116899FA6D4b9d8B979167CE963d25',
       chain: Blockchain.ETH,
-      label: '',
-      tags: [],
     },
   ]);
   const router = useRouter();
@@ -122,7 +120,7 @@ describe('composables::history/filter-paginate', () => {
         },
       );
 
-      expect(get(userAction)).toBe(false);
+      expect(get(userAction)).toBe(true);
       expect(get(isLoading)).toBe(false);
       expect(get(filters)).to.toStrictEqual({});
       expect(get(options).sortBy).toHaveLength(1);
