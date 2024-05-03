@@ -620,6 +620,7 @@ Getting or modifying settings
               "address_name_priority": ["private_addressbook", "blockchain_account",
                                         "global_addressbook", "ethereum_tokens",
                                         "hardcoded_mappings", "ens_names"],
+              "ask_user_upon_size_discrepancy": true,
           },
           "message": ""
       }
@@ -654,6 +655,7 @@ Getting or modifying settings
    :resjson int oracle_penalty_threshold_count: The number of failures after which an oracle is penalized. Default is 5.
    :resjson int oracle_penalty_duration: The duration in seconds for which an oracle is penalized. Default is 1800.
    :resjson bool auto_create_calendar_reminders: A boolean denoting whether reminders are created automatically for calendar entries based on the decoded history events. Default is ``true``.
+   :resjson bool ask_user_upon_size_discrepancy: A boolean denoting whether to prompt the user for confirmation each time the remote database is bigger than the local one or directly force push. Default is ``true``.
 
    :statuscode 200: Querying of settings was successful
    :statuscode 409: There is no logged in user
@@ -702,6 +704,7 @@ Getting or modifying settings
    :resjson int oracle_penalty_threshold_count: The number of failures after which an oracle is penalized. Default is 5.
    :resjson int oracle_penalty_duration: The duration in seconds for which an oracle is penalized. Default is 1800.
    :resjson bool[optional] auto_create_calendar_reminders: A boolean denoting whether reminders are created automatically for calendar entries based on the decoded history events.
+   :resjson bool[optional] ask_user_upon_size_discrepancy: A boolean denoting whether to prompt the user for confirmation each time the remote database is bigger than the local one or directly force push.
 
    **Example Response**:
 
@@ -733,6 +736,7 @@ Getting or modifying settings
               "ssf_graph_multiplier": 2,
               "non_sync_exchanges": [{"location": "binance", "name": "binance1"}]
               "auto_create_calendar_reminders": true,
+              "ask_user_upon_size_discrepancy": true,
           },
           "message": ""
       }
