@@ -363,7 +363,7 @@ Handling user creation, sign-in, log-out and querying
 
    .. http:example:: curl wget httpie python-requests
 
-      DELETE /api/1/premium/sync HTTP/1.1
+      PUT /api/1/premium/sync HTTP/1.1
       Host: localhost:5042
       Content-Type: application/json;charset=UTF-8
 
