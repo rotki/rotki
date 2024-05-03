@@ -88,7 +88,7 @@ describe('composables::history/filter-paginate', () => {
         },
       );
 
-      expect(get(userAction)).toBe(false);
+      expect(get(userAction)).toBe(true);
       expect(get(isLoading)).toBe(false);
       expect(get(filters)).to.toStrictEqual(undefined);
       expect(get(options).sortBy[0]).toEqual('name');

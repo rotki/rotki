@@ -80,7 +80,7 @@ describe('composables::history/filter-paginate', () => {
         fetchAssetMovements,
       );
 
-      expect(get(userAction)).toBe(false);
+      expect(get(userAction)).toBe(true);
       expect(get(isLoading)).toBe(false);
       expect(get(filters)).to.toStrictEqual({});
       expect(get(options).sortBy).toHaveLength(1);
