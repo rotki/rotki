@@ -128,8 +128,8 @@ const transactionEventProtocols: ComputedRef<string[]> = computed(() => {
   const selectedProtocol = get(protocol);
 
   const mapping: { [key in DefiProtocol]?: string[] } = {
-    [DefiProtocol.AAVE]: ['aave-v1', 'aave-v2'],
-    [DefiProtocol.COMPOUND]: ['compound'],
+    [DefiProtocol.AAVE]: ['aave-v1', 'aave-v2', 'aave-v3'],
+    [DefiProtocol.COMPOUND]: ['compound', 'compound-v3'],
     [DefiProtocol.MAKERDAO_DSR]: ['makerdao dsr'],
     [DefiProtocol.YEARN_VAULTS]: ['yearn-v1'],
     [DefiProtocol.YEARN_VAULTS_V2]: ['yearn-v2'],
