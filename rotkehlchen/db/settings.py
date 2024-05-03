@@ -22,7 +22,6 @@ from rotkehlchen.types import (
     ExchangeLocationID,
     ModuleName,
     SupportedBlockchain,
-    SyncMethodUponSizeDiscrepancy,
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
@@ -61,7 +60,7 @@ DEFAULT_ORACLE_PENALTY_THRESHOLD_COUNT = 5
 DEFAULT_ORACLE_PENALTY_DURATION = 1800
 DEFAULT_AUTO_DELETE_CALENDAR_ENTRIES = True
 DEFAULT_AUTO_CREATE_CALENDAR_REMINDERS = True
-DEFAULT_SYNC_METHOD_UPON_SIZE_DISCREPANCY = SyncMethodUponSizeDiscrepancy.ASK_EVERY_TIME
+DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY = True
 
 JSON_KEYS = (
     'current_price_oracles',
@@ -86,6 +85,7 @@ BOOLEAN_KEYS = (
     'infer_zero_timed_balances',
     'auto_delete_calendar_entries',
     'auto_create_calendar_reminders',
+    'ask_user_upon_force_push',
 )
 INTEGER_KEYS = (
     'version',
@@ -152,7 +152,7 @@ CachedDBSettingsFieldNames = Literal[
     'oracle_penalty_duration',
     'auto_delete_calendar_entries',
     'auto_create_calendar_reminders',
-    'sync_method_upon_size_discrepancy',
+    'ask_user_upon_size_discrepancy',
 ]
 
 DBSettingsFieldTypes = (
@@ -165,8 +165,7 @@ DBSettingsFieldTypes = (
     Sequence[HistoricalPriceOracle] |
     Sequence[ExchangeLocationID] |
     CostBasisMethod |
-    Sequence[AddressNameSource] |
-    SyncMethodUponSizeDiscrepancy
+    Sequence[AddressNameSource]
 )
 
 
@@ -214,7 +213,7 @@ class DBSettings:
     oracle_penalty_duration: int = DEFAULT_ORACLE_PENALTY_DURATION
     auto_delete_calendar_entries: bool = DEFAULT_AUTO_DELETE_CALENDAR_ENTRIES
     auto_create_calendar_reminders: bool = DEFAULT_AUTO_CREATE_CALENDAR_REMINDERS
-    sync_method_upon_size_discrepancy: SyncMethodUponSizeDiscrepancy = DEFAULT_SYNC_METHOD_UPON_SIZE_DISCREPANCY # noqa: E501
+    ask_user_upon_size_discrepancy: bool = DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}
@@ -273,7 +272,7 @@ class ModifiableDBSettings(NamedTuple):
     oracle_penalty_duration: int | None = None
     auto_delete_calendar_entries: bool | None = None
     auto_create_calendar_reminders: bool | None = None
-    sync_method_upon_size_discrepancy: SyncMethodUponSizeDiscrepancy | None = None
+    ask_user_upon_size_discrepancy: bool | None = None
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}
@@ -351,8 +350,6 @@ def db_settings_from_dict(
             specified_args[key] = CostBasisMethod.deserialize(value)
         elif key == 'address_name_priority':
             specified_args[key] = json.loads(value)
-        elif key == 'sync_method_upon_size_discrepancy':
-            specified_args[key] = SyncMethodUponSizeDiscrepancy.deserialize(value)
         else:
             if key == 'eth_rpc_endpoint':
                 continue  # temporary since setting is removed in migration and may still get here
@@ -381,7 +378,7 @@ def serialize_db_setting(
         value = None
     elif setting == 'active_modules' and is_modifiable is True:
         value = json.dumps(value)
-    elif setting in {'main_currency', 'cost_basis_method', 'sync_method_upon_size_discrepancy'}:
+    elif setting in {'main_currency', 'cost_basis_method'}:
         value = value.serialize()  # pylint: disable=no-member
     elif setting == 'address_name_priority' and is_modifiable is True:
         value = json.dumps(value)

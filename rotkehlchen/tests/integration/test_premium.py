@@ -27,7 +27,6 @@ from rotkehlchen.tests.utils.premium import (
     get_different_hash,
     setup_starting_environment,
 )
-from rotkehlchen.types import SyncMethodUponSizeDiscrepancy
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -178,8 +177,8 @@ def test_upload_data_to_server_same_hash(rotkehlchen_instance):
 
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('db_settings', [
-    {'sync_method_upon_size_discrepancy': SyncMethodUponSizeDiscrepancy.ASK_EVERY_TIME},
-    {'sync_method_upon_size_discrepancy': SyncMethodUponSizeDiscrepancy.FORCE_PUSH},
+    {'ask_user_upon_size_discrepancy': True},
+    {'ask_user_upon_size_discrepancy': False},
 ])
 def test_upload_data_to_server_smaller_db(rotkehlchen_instance, db_settings: dict[str, bool]):
     """Test that if the server has bigger DB size no upload happens"""
@@ -189,7 +188,7 @@ def test_upload_data_to_server_smaller_db(rotkehlchen_instance, db_settings: dic
         )
         assert last_ts is None
         # Write anything in the DB to set a non-zero last_write_ts
-        rotkehlchen_instance.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))  # noqa: E501
+        rotkehlchen_instance.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR.resolve_to_asset_with_oracles()))  # noqa: E501
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db()
     remote_hash = get_different_hash(our_hash)
 
@@ -204,16 +203,16 @@ def test_upload_data_to_server_smaller_db(rotkehlchen_instance, db_settings: dic
         metadata_data_hash=remote_hash,
         # larger DB than ours
         metadata_data_size=9999999999,
-        saved_data='foo',
+        saved_data=b'foo',
     )
 
     with patched_get, patched_post as post_mock:
         rotkehlchen_instance.premium_sync_manager.maybe_upload_data_to_server()
-        if db_settings['sync_method_upon_size_discrepancy'] == SyncMethodUponSizeDiscrepancy.ASK_EVERY_TIME:  # noqa: E501
-            # Ensure upload mock is not called when sync method is 'ASK_EVERY_TIME'
+        if db_settings['ask_user_upon_size_discrepancy'] is True:
+            # Ensure upload mock is not called when `ask_user_upon_size_discrepancy` is set
             assert not post_mock.called
-        elif db_settings['sync_method_upon_size_discrepancy'] == SyncMethodUponSizeDiscrepancy.FORCE_PUSH:  # noqa: E501
-            # Ensure upload mock is called when sync method is 'FORCE_PUSH'
+        else:
+            # Ensure upload mock is called when `ask_user_upon_size_discrepancy` is unset
             assert post_mock.called
 
 
