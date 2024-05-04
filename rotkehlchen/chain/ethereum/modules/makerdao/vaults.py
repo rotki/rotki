@@ -28,7 +28,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import address_to_bytes32, hexstr_to_int, shift_num_right_by, ts_now
 
 from .cache import collateral_type_to_join_contract, collateral_type_to_underlying_asset
-from .constants import MAKERDAO_REQUERY_PERIOD, WAD
+from .constants import MAKERDAO_MCD_DAIJOIN_ADDRESS, MAKERDAO_REQUERY_PERIOD, WAD
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -164,7 +164,7 @@ class MakerdaoVaults(HasDSProxy):
         self.makerdao_vat = self.ethereum.contracts.contract(string_to_evm_address('0x35D1b3F3D7966A1DFe207aa4514C12a259A0492B'))  # noqa: E501
         self.makerdao_cdp_manager = self.ethereum.contracts.contract(string_to_evm_address('0x5ef30b9986345249bc32d8928B7ee64DE9435E39'))  # noqa: E501
         self.makerdao_get_cdps = self.ethereum.contracts.contract(string_to_evm_address('0x36a724Bd100c39f0Ea4D3A20F7097eE01A8Ff573'))  # noqa: E501
-        self.makerdao_dai_join = self.ethereum.contracts.contract(string_to_evm_address('0x9759A6Ac90977b93B58547b4A71c78317f391A28'))  # noqa: E501
+        self.makerdao_dai_join = self.ethereum.contracts.contract(MAKERDAO_MCD_DAIJOIN_ADDRESS)
         self.makerdao_cat = self.ethereum.contracts.contract(string_to_evm_address('0x78F2c2AF65126834c51822F56Be0d7469D7A523E'))  # noqa: E501
         self.makerdao_spot = self.ethereum.contracts.contract(string_to_evm_address('0x65C79fcB50Ca1594B025960e539eD7A9a6D434A3'))  # noqa: E501
 

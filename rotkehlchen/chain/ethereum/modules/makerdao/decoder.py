@@ -62,6 +62,7 @@ from .constants import (
     CPT_VAULT,
     MAKERDAO_ICON,
     MAKERDAO_LABEL,
+    MAKERDAO_MCD_DAIJOIN_ADDRESS,
     MAKERDAO_MIGRATION_ADDRESS,
 )
 
@@ -107,7 +108,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
         self.sai = A_SAI.resolve_to_evm_token()
         self.sdai = A_SDAI.resolve_to_evm_token()
         self.makerdao_cdp_manager = self.ethereum.contracts.contract(string_to_evm_address('0x5ef30b9986345249bc32d8928B7ee64DE9435E39'))  # noqa: E501
-        self.makerdao_dai_join = self.ethereum.contracts.contract(string_to_evm_address('0x9759A6Ac90977b93B58547b4A71c78317f391A28'))  # noqa: E501
+        self.makerdao_dai_join = self.ethereum.contracts.contract(MAKERDAO_MCD_DAIJOIN_ADDRESS)
 
     def _get_address_or_proxy(self, address: ChecksumEvmAddress) -> ChecksumEvmAddress | None:
         if self.base.is_tracked(address):

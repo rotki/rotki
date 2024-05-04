@@ -28,7 +28,7 @@ from rotkehlchen.types import (
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import hexstr_to_int, ts_now
 
-from .constants import MAKERDAO_REQUERY_PERIOD, RAD
+from .constants import MAKERDAO_MCD_DAIJOIN_ADDRESS, MAKERDAO_REQUERY_PERIOD, RAD
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -122,7 +122,7 @@ class MakerdaoDsr(HasDSProxy):
         self.historical_dsr_reports: dict[ChecksumEvmAddress, DSRAccountReport] = {}
         self.lock = Semaphore()
         self.dai = A_DAI.resolve_to_evm_token()
-        self.makerdao_dai_join = self.ethereum.contracts.contract(string_to_evm_address('0x9759A6Ac90977b93B58547b4A71c78317f391A28'))  # noqa: E501
+        self.makerdao_dai_join = self.ethereum.contracts.contract(string_to_evm_address(MAKERDAO_MCD_DAIJOIN_ADDRESS))  # noqa: E501
         self.makerdao_pot = self.ethereum.contracts.contract(string_to_evm_address('0x197E90f9FAD81970bA7976f33CbD77088E5D7cf7'))  # noqa: E501
 
     def reset_last_query_ts(self) -> None:
