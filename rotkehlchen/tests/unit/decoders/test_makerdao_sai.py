@@ -8,6 +8,7 @@ from rotkehlchen.chain.ethereum.modules.makerdao.constants import (
     MAKERDAO_MIGRATION_ADDRESS,
 )
 from rotkehlchen.chain.ethereum.modules.makerdao.sai.constants import CPT_SAI
+from rotkehlchen.chain.ethereum.modules.weth.constants import CPT_WETH
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -2299,10 +2300,14 @@ def test_makerdao_sai_proxy_interaction(ethereum_transaction_decoder):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xca482bCd75A6E0697aD6A1732aa187310b8372Df']])
 def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accounts):
+    """Data taken from
+    https://etherscan.io/tx/0x03620c6bf5edb7a7935953337ffcfac70d631cf2012d6c80d36828d636063318
+    """
+
     """Check that a Sai CDP migration is decoded properly"""
     tx_hex = deserialize_evm_tx_hash('0x03620c6bf5edb7a7935953337ffcfac70d631cf2012d6c80d36828d636063318 ')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    user_address = ethereum_accounts[0]
+    dsproxy_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
         database=ethereum_transaction_decoder.database,
@@ -2311,20 +2316,6 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
-            sequence_index=0,
-            timestamp=1579044372000,
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.WITHDRAWAL,
-            event_subtype=HistoryEventSubType.REMOVE_ASSET,
-            asset=A_WETH,
-            balance=Balance(FVal('0.022255814')),
-            location_label='0xca482bCd75A6E0697aD6A1732aa187310b8372Df',
-            notes='Withdraw 0.022255814 WETH from ETH-A MakerDAO vault',
-            counterparty=CPT_VAULT,
-            address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
-            extra_data={'vault_type': 'ETH-A'},
-        ), EvmEvent(
-            tx_hash=evmhash,
             sequence_index=1,
             timestamp=1579044372000,
             location=Location.ETHEREUM,
@@ -2332,7 +2323,7 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
             balance=Balance(FVal('0.022255814')),
-            location_label='0xca482bCd75A6E0697aD6A1732aa187310b8372Df',
+            location_label=dsproxy_address,
             notes='Send 0.022255814 ETH to 0x22953B20aB21eF5b2A28c1bB55734fB2525Ebaf2',
             address=string_to_evm_address('0x22953B20aB21eF5b2A28c1bB55734fB2525Ebaf2'),
         ), EvmEvent(
@@ -2344,7 +2335,7 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
             event_subtype=HistoryEventSubType.GENERATE_DEBT,
             asset=A_SAI,
             balance=Balance(FVal('242.093537946269468696')),
-            location_label='0xca482bCd75A6E0697aD6A1732aa187310b8372Df',
+            location_label=dsproxy_address,
             notes='Borrow 242.093537946269468696 SAI from CDP 19125',
             counterparty=CPT_SAI,
             address=string_to_evm_address('0x22953B20aB21eF5b2A28c1bB55734fB2525Ebaf2'),
@@ -2357,8 +2348,8 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
             event_subtype=HistoryEventSubType.NONE,
             asset=A_SAI,
             balance=Balance(FVal('242.093537946269468696')),
-            location_label='0xca482bCd75A6E0697aD6A1732aa187310b8372Df',
-            notes='Send 242.093537946269468696 SAI from 0xca482bCd75A6E0697aD6A1732aa187310b8372Df to 0xcb0C7C757C64e1583bA5673dE486BDe1b8329879',  # noqa: E501
+            location_label=dsproxy_address,
+            notes=f'Send 242.093537946269468696 SAI from {dsproxy_address} to 0xcb0C7C757C64e1583bA5673dE486BDe1b8329879',  # noqa: E501
             address=string_to_evm_address('0xcb0C7C757C64e1583bA5673dE486BDe1b8329879'),
         ), EvmEvent(
             tx_hash=evmhash,
@@ -2369,8 +2360,8 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
             event_subtype=HistoryEventSubType.NONE,
             asset=Asset('eip155:1/erc20:0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2'),
             balance=Balance(FVal('0.459550053455645351')),
-            location_label='0xca482bCd75A6E0697aD6A1732aa187310b8372Df',
-            notes='Receive 0.459550053455645351 MKR from 0x39755357759cE0d7f32dC8dC45414CCa409AE24e to 0xca482bCd75A6E0697aD6A1732aa187310b8372Df',  # noqa: E501
+            location_label=dsproxy_address,
+            notes=f'Receive 0.459550053455645351 MKR from 0x39755357759cE0d7f32dC8dC45414CCa409AE24e to {dsproxy_address}',  # noqa: E501
             address=string_to_evm_address('0x39755357759cE0d7f32dC8dC45414CCa409AE24e'),
         ), EvmEvent(
             tx_hash=evmhash,
@@ -2381,8 +2372,8 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
             event_subtype=HistoryEventSubType.NONE,
             asset=Asset('eip155:1/erc20:0x9f8F72aA9304c8B593d555F12eF6589cC3A579A2'),
             balance=Balance(FVal('0.45955005345564535')),
-            location_label='0xca482bCd75A6E0697aD6A1732aa187310b8372Df',
-            notes=f'Send 0.45955005345564535 MKR from 0xca482bCd75A6E0697aD6A1732aa187310b8372Df to {MAKERDAO_MIGRATION_ADDRESS}',  # noqa: E501
+            location_label=dsproxy_address,
+            notes=f'Send 0.45955005345564535 MKR from {dsproxy_address} to {MAKERDAO_MIGRATION_ADDRESS}',  # noqa: E501
             address=MAKERDAO_MIGRATION_ADDRESS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -2402,23 +2393,51 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
             sequence_index=102,
             timestamp=1579044372000,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.NONE,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=A_WETH,
             balance=Balance(FVal('0.022255814')),
-            location_label='0xca482bCd75A6E0697aD6A1732aa187310b8372Df',
-            notes='Receive 0.022255814 WETH from 0x2F0b23f53734252Bda2277357e97e1517d6B042A to 0xca482bCd75A6E0697aD6A1732aa187310b8372Df',  # noqa: E501
+            location_label=dsproxy_address,
+            notes='Withdraw 0.022255814 WETH from ETH-A MakerDAO vault',
+            counterparty=CPT_VAULT,
             address=string_to_evm_address('0x2F0b23f53734252Bda2277357e97e1517d6B042A'),
+            extra_data={'vault_type': 'ETH-A'},
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=105,
+            sequence_index=103,
+            timestamp=1579044372000,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=A_WETH,
+            balance=Balance(FVal('0.022255814')),
+            location_label=dsproxy_address,
+            notes='Unwrap 0.022255814 WETH',
+            counterparty=CPT_WETH,
+            address=string_to_evm_address('0x22953B20aB21eF5b2A28c1bB55734fB2525Ebaf2'),
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=104,
+            timestamp=1579044372000,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(FVal('0.022255814')),
+            location_label=dsproxy_address,
+            notes='Receive 0.022255814 ETH',
+            counterparty=CPT_WETH,
+            address=A_WETH.resolve_to_evm_token().evm_address,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=106,
             timestamp=1579044372000,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
             balance=Balance(),
-            location_label=user_address,
+            location_label=dsproxy_address,
             notes='Migrate Sai CDP 19125 to Dai CDP 3768',
             counterparty=CPT_SAI,
             address=string_to_evm_address('0x22953B20aB21eF5b2A28c1bB55734fB2525Ebaf2'),
