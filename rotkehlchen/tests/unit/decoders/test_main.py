@@ -49,6 +49,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Balancerv1',
         'Balancerv2',
         'BaseBridge',
+        'Blur',
         'Compoundv2',
         'Compoundv3',
         'Cowswap',
@@ -180,6 +181,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'shutter',
         'eigenlayer',
         'omni',
+        'blur',
     }
 
 

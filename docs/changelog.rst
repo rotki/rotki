@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` rotki decodes transactions and detects balances related to Blur staking.
 * :feature:`1633` rotki now supports AAVE staking.
 * :feature:`7568` Eigenlayer native restaking events are now properly decoded and balances in native restaking eigenpods or the delayed withdrawal system are automatically detected.
 * :feature:`6115` Now free users can filter history events too.

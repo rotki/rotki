@@ -14,6 +14,8 @@ from rotkehlchen.chain.arbitrum_one.modules.thegraph.balances import (
     ThegraphBalances as ThegraphBalancesArbitrumOne,
 )
 from rotkehlchen.chain.ethereum.modules.aave.balances import AaveBalances
+from rotkehlchen.chain.ethereum.modules.blur.balances import BlurBalances
+from rotkehlchen.chain.ethereum.modules.blur.constants import BLUR_IDENTIFIER
 from rotkehlchen.chain.ethereum.modules.convex.balances import ConvexBalances
 from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
 from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBalances
@@ -702,3 +704,31 @@ def test_compound_v3_token_balances_liabilities(
     assert blockchain.balances.eth[ethereum_accounts[1]].assets[c_usdc_v3] == get_balance('0.32795')  # noqa: E501
     assert blockchain.balances.eth[ethereum_accounts[2]].liabilities[A_USDC] == get_balance('257.565053')  # noqa: E501
     assert blockchain.balances.eth[ethereum_accounts[3]].liabilities[A_USDC] == get_balance('589398.492789')  # noqa: E501
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D']])
+def test_blur_balances(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_transaction_decoder: 'EthereumTransactionDecoder',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Check that staked balances of Blur are properly detected."""
+    tx_hex = deserialize_evm_tx_hash('0x09b9d311c62dadc69a06f39daa5206760f38ef48d9e8473f27a9cf2d599133c9')  # noqa: E501
+    amount = FVal('6350.3577325406')
+    get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=ethereum_transaction_decoder.database,
+        tx_hash=tx_hex,
+    )
+    blur_balances_inquirer = BlurBalances(
+        database=ethereum_transaction_decoder.database,
+        evm_inquirer=ethereum_inquirer,
+    )
+    blur_balances = blur_balances_inquirer.query_balances()
+    user_balance = blur_balances[ethereum_accounts[0]]
+    assert user_balance.assets[Asset(BLUR_IDENTIFIER)] == Balance(
+        amount=amount,
+        usd_value=amount * FVal(1.5),
+    )

@@ -88,6 +88,7 @@ ELFI_VOTE_CHANGE: Final = b'3\x16\x1c\xf2\xda(\xd7G\xbe\x9d\xf16\xb6\xf3r\x93\x9
 ENS_CLAIM: Final = b'G\xce\xe9|\xb7\xac\xd7\x17\xb3\xc0\xaa\x145\xd0\x04\xcd[<\x8cW\xd7\r\xbc\xebNDX\xbb\xd6\x0e9\xd4'  # noqa: E501
 ENS_ADDRESS: Final = string_to_evm_address('0xC18360217D8F7Ab5e7c516566761Ea12Ce7F9D72')
 
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
