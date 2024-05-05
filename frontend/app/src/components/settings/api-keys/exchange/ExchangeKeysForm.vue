@@ -92,9 +92,18 @@ function toggleEdit() {
 }
 
 function input(payload: ExchangePayload) {
-  emit('input', payload);
-}
+  if (payload.location === 'coinbase') {
+    const { apiSecret, ...rest } = payload;
+    const sanitizedApiSecret = apiSecret ? apiSecret.toString().replace(/\\n/g, '\n') : null;
 
+    emit('input', {
+      ...rest,
+      apiSecret: sanitizedApiSecret,
+    });
+  } else {
+    emit('input', payload);
+  }
+}
 onMounted(() => {
   if (get(editMode))
     return;
@@ -262,7 +271,8 @@ function onExchangeChange(exchange: string) {
       :error-messages="toMessages(v$.apiKey)"
       data-cy="api-key"
       prepend-icon="key-line"
-      :label="t('exchange_settings.inputs.api_key')"
+      :label="exchange.location === 'coinbase' ? 'API Key Name' : t('exchange_settings.inputs.api_key')"
+      :hint="exchange.location === 'coinbase' ? 'Format: organizations/{org_id}/apiKeys/{key_id}' : ''"
     />
 
     <RuiRevealableTextField
@@ -274,9 +284,9 @@ function onExchangeChange(exchange: string) {
       :error-messages="toMessages(v$.apiSecret)"
       data-cy="api-secret"
       prepend-icon="lock-line"
-      :label="t('exchange_settings.inputs.api_secret')"
+      :label="exchange.location === 'coinbase' ? 'Private Key' : t('exchange_settings.inputs.api_secret')"
+      :hint="exchange.location === 'coinbase' ? 'Format: -----BEGIN EC PRIVATE KEY-----\\n...\\n-----END EC PRIVATE KEY-----' : ''"
     />
-
     <RuiRevealableTextField
       v-if="requiresPassphrase"
       v-model.trim="passphrase"
@@ -288,6 +298,19 @@ function onExchangeChange(exchange: string) {
       data-cy="passphrase"
       :label="t('exchange_settings.inputs.passphrase')"
     />
+
+  <div
+    v-if="exchange.location === 'coinbase'"
+    class="mt-2"
+  >
+    <a
+      href="https://portal.cdp.coinbase.com/access/api?keyType=trade"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      {{ t('Generate your keys here') }}
+    </a>
+  </div>
 
     <BinancePairsSelector
       v-if="isBinance"

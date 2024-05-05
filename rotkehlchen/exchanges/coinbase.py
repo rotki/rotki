@@ -1,14 +1,14 @@
-import hashlib
-import hmac
 import logging
 import time
 from collections import defaultdict
 from json.decoder import JSONDecodeError
 from typing import TYPE_CHECKING, Any
 from urllib.parse import urlencode
-
-import gevent
+import jwt
+from cryptography.hazmat.primitives import serialization
+import secrets
 import requests
+import re
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_coinbase
@@ -58,9 +58,6 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-
-CB_EVENTS_PREFIX = 'CBE_'
-CB_VERSION = '2019-08-25'  # the latest api version we know rotki works fine for: https://docs.cloud.coinbase.com/sign-in-with-coinbase/docs/versioning  # noqa: E501
 
 
 def trade_from_conversion(trade_a: dict[str, Any], trade_b: dict[str, Any]) -> Trade | None:
@@ -163,84 +160,82 @@ class Coinbase(ExchangeInterface):
         self.apiversion = 'v2'
         self.base_uri = 'https://api.coinbase.com'
         self.msg_aggregator = msg_aggregator
-        self.session.headers.update({'CB-ACCESS-KEY': self.api_key})
-        self.session.headers.update({'CB-VERSION': CB_VERSION})
+    
+        # CDP Instance values
+        self.api_key_name=self.api_key
+        self.PRIVATE_KEY=secret.decode('utf-8')
+        self.host='api.coinbase.com'
 
+
+    # CDP Method 
+    def build_jwt(self, uri: str) -> str:
+        """
+        Builds a JWT token for authentication with the Coinbase API.
+
+        The JWT token is built using the provided URI and the stored API key name and private key.
+        The token includes the following claims:
+        - 'sub': The API key name.
+        - 'iss': The issuer, which is set to "coinbase-cloud".
+        - 'nbf': The "not before" timestamp, set to the current time.
+        - 'exp': The expiration timestamp, set to 2 minutes from the current time.
+        - 'uri': The provided URI.
+
+        The token is signed using the ES256 algorithm and includes a unique 'nonce' in the headers.
+
+        Args:
+            uri (str): The URI for which the JWT token is being generated.
+
+        Returns:
+            str: The generated JWT token.
+
+        Raises:
+            CoinbasePermissionError: If there is an error during the JWT token generation process.
+        """
+        try:
+            private_key = serialization.load_pem_private_key(self.PRIVATE_KEY.encode('utf-8'), password=None)
+
+            current_time = int(time.time())
+            jwt_payload = {
+                'sub': self.api_key_name,
+                'iss': "coinbase-cloud",
+                'nbf': current_time,
+                'exp': current_time + 120,
+                'uri': uri,
+            }
+            jwt_token = jwt.encode(
+                jwt_payload,
+                private_key,
+                algorithm='ES256',
+                headers={'kid': self.api_key_name, 'nonce': secrets.token_hex()},
+            )
+            return jwt_token
+        except (jwt.PyJWTError, ValueError) as e:
+            raise CoinbasePermissionError(f'Error generating JWT token: {str(e)}') from e
+        
+    def validate_api_key(self) -> tuple[bool, str]:
+        # Validate the format of the API key name
+        api_key_name_pattern = r'^organizations/[\w-]+/apiKeys/[\w-]+$'
+        if not re.match(api_key_name_pattern, self.api_key_name):
+            return False, 'Invalid Coinbase API key name format'
+
+        # Validate the format of the private key
+        private_key_pattern = r'^-----BEGIN EC PRIVATE KEY-----\n[\w+/=\n]+-----END EC PRIVATE KEY-----\n?$'
+        if not re.match(private_key_pattern, self.PRIVATE_KEY, re.MULTILINE):
+            return False, 'Invalid Coinbase private key format'
+
+        return True, ''
+        
     def first_connection(self) -> None:
         self.first_connection_made = True
 
     def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
         changed = super().edit_exchange_credentials(credentials)
         if credentials.api_key is not None:
-            self.session.headers.update({'CB-ACCESS-KEY': self.api_key})
+            self.api_key_name = credentials.api_key
+        if credentials.api_secret is not None:
+            self.private_key = credentials.api_secret
         return changed
 
-    def _validate_single_api_key_action(
-            self,
-            method_str: str,
-            ignore_pagination: bool = False,
-    ) -> tuple[list[Any] | None, str]:
-        try:
-            result = self._api_query(method_str, ignore_pagination=ignore_pagination)
-
-        except CoinbasePermissionError as e:
-            error = str(e)
-            if 'transactions' in method_str:
-                permission = 'wallet:transactions:read'
-            elif 'deposits' in method_str:
-                permission = 'wallet:deposits:read'
-            elif 'withdrawals' in method_str:
-                permission = 'wallet:withdrawals:read'
-            elif 'trades' in method_str:
-                permission = 'wallet:trades:read'
-            # the accounts elif should be at the end since the word appears
-            # in other endpoints
-            elif 'accounts' in method_str:
-                permission = 'wallet:accounts:read'
-            else:
-                raise AssertionError(
-                    f'Unexpected coinbase method {method_str} at API key validation',
-                ) from e
-            msg = (
-                f'Provided Coinbase API key needs to have {permission} permission activated. '
-                f'Please log into your coinbase account and set all required permissions: '
-                f'wallet:accounts:read, wallet:transactions:read, '
-                f'wallet:withdrawals:read, wallet:deposits:read, wallet:trades:read'
-            )
-
-            return None, msg
-        except RemoteError as e:
-            error = str(e)
-            if 'invalid signature' in error:
-                return None, 'Failed to authenticate with the Provided API key/secret'
-            if 'invalid api key' in error:
-                return None, 'Provided API Key is invalid'
-            # else any other remote error
-            return None, error
-
-        return result, ''
-
-    def validate_api_key(self) -> tuple[bool, str]:
-        """Validates that the Coinbase API key is good for usage in rotki
-
-        Makes sure that the following permissions are given to the key:
-        wallet:accounts:read, wallet:transactions:read,
-        wallet:withdrawals:read, wallet:deposits:read
-        """
-        result, msg = self._validate_single_api_key_action('accounts')
-        if result is None:
-            return False, msg
-
-        # now get the account ids
-        account_info = self._get_active_account_info(result)
-        if len(account_info) != 0:
-            # and now try to get all transactions of an account to see if that's possible
-            method = f'accounts/{account_info[0][0]}/transactions'
-            result, msg = self._validate_single_api_key_action(method)
-            if result is None:
-                return False, msg
-
-        return True, ''
 
     def _get_active_account_info(self, accounts: list[dict[str, Any]]) -> list[tuple[str, Timestamp]]:  # noqa: E501
         """Gets the account ids and last_update timestamp out of the accounts response
@@ -291,42 +286,26 @@ class Coinbase(ExchangeInterface):
         If you want just the first results then set ignore_pagination to True.
         """
         all_items: list[Any] = []
-        had_4xx = False
         request_verb = 'GET'
-        # initialize next_uri before loop
         next_uri = f'/{self.apiversion}/{endpoint}'
         timeout = CachedSettings().get_timeout_tuple()
         if options:
             next_uri += f'?{urlencode(options)}'
         while True:
-            timestamp = str(int(time.time()))
-            message = timestamp + request_verb + next_uri
-
-            signature = hmac.new(
-                self.secret,
-                message.encode(),
-                hashlib.sha256,
-            ).hexdigest()
-            log.debug('Coinbase API query', request_url=next_uri)
-
-            self.session.headers.update({
-                'CB-ACCESS-SIGN': signature,
-                'CB-ACCESS-TIMESTAMP': timestamp,
-            })
-
             full_url = self.base_uri + next_uri
+            #CDP calls
+            request_path = f'{self.host}/{self.apiversion}/{endpoint}'
+            log.debug('CDP Request Path ', request_url=request_path)
+            uri = f'{request_verb} {request_path}'
+            log.debug('CDP URI Path ', request_url=uri)
+            token = self.build_jwt(uri)
+            self.session.headers.update({
+                'Authorization': f'Bearer {token}',
+            })
             try:
                 response = self.session.get(full_url, timeout=timeout)
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Coinbase API request failed due to {e!s}') from e
-
-            if response.status_code in (401, 429) and had_4xx is False:
-                had_4xx = True
-                gevent.sleep(.5)
-                continue  # do a single retry since they don't have info on retries
-
-            if response.status_code == 403:
-                raise CoinbasePermissionError(f'API key does not have permission for {endpoint}')
 
             if response.status_code != 200:
                 raise RemoteError(
@@ -344,22 +323,15 @@ class Coinbase(ExchangeInterface):
             if 'data' not in json_ret:
                 raise RemoteError(f'Coinbase json response does not contain data: {response.text}')
 
-            # `data` attr is a list in itself
             all_items.extend(json_ret['data'])
             if ignore_pagination or 'pagination' not in json_ret:
-                # break out of the loop, no need to handle pagination
                 break
 
             if 'next_uri' not in json_ret['pagination']:
                 raise RemoteError('Coinbase json response contained no "next_uri" key')
 
-            # otherwise, let the loop run to gather subsequent queries
-            # this next_uri will be used in next iteration
             next_uri = json_ret['pagination']['next_uri']
             if not next_uri:
-                # As per the docs: https://developers.coinbase.com/api/v2?python#pagination
-                # once we get an empty next_uri we are done
-
                 break
 
         return all_items
