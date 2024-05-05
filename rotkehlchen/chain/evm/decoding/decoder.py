@@ -443,6 +443,7 @@ class EVMTransactionDecoder(ABC):
                     result = DEFAULT_DECODING_OUTPUT
 
                 if result.event:
+                    result.event.tx_log_index = tx_log.log_index
                     events.append(result.event)
                     continue  # since the input data rule found an event for this log
 

@@ -214,6 +214,7 @@ class BaseDecoderTools:
             address=address,
             counterparty=counterparty,
             extra_data=extra_data,
+            tx_log_index=tx_log.log_index,
         )
 
     def make_event(
@@ -231,6 +232,7 @@ class BaseDecoderTools:
             product: EvmProduct | None = None,
             address: ChecksumEvmAddress | None = None,
             extra_data: dict[str, Any] | None = None,
+            tx_log_index: int | None = None,
     ) -> 'EvmEvent':
         """A convenience function to create an EvmEvent depending on the
         decoder's chain id"""
@@ -249,6 +251,7 @@ class BaseDecoderTools:
             product=product,
             address=address,
             extra_data=extra_data,
+            tx_log_index=tx_log_index,
         )
 
     def make_event_from_transaction(
@@ -281,6 +284,7 @@ class BaseDecoderTools:
             product=product,
             address=address,
             extra_data=extra_data,
+            tx_log_index=tx_log.log_index,
         )
 
     def make_event_next_index(

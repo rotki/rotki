@@ -101,6 +101,7 @@ class EvmEvent(HistoryBaseEntry):  # hash in superclass
             address: ChecksumEvmAddress | None = None,
             extra_data: dict[str, Any] | None = None,
             event_identifier: str | None = None,
+            tx_log_index: int | None = None,  # TODO: to be discussed in which class
     ) -> None:
         if event_identifier is None:
             calculated_event_identifier = f'{location.to_chain_id()}{tx_hash.hex()}'
@@ -125,6 +126,7 @@ class EvmEvent(HistoryBaseEntry):  # hash in superclass
         self.counterparty = counterparty
         self.product = product
         self.extra_data = extra_data
+        self.tx_log_index = tx_log_index  # if exists, mapping 1 to 1 with blockchain log index
 
     @property
     def entry_type(self) -> HistoryBaseEntryType:
