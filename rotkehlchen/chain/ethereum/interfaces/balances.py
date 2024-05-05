@@ -39,6 +39,7 @@ PROTOCOLS_WITH_BALANCES = Literal[
     'gmx',
     'compound-v3',
     'aave',
+    'blur',
 ]
 BalancesType = dict[ChecksumEvmAddress, dict[EvmToken, Balance]]
 BalancesSheetType = dict[ChecksumEvmAddress, BalanceSheet]
