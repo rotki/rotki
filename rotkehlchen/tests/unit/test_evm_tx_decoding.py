@@ -174,16 +174,20 @@ def test_tx_decode(ethereum_transaction_decoder, database):
                 events, _ = decoder._get_or_decode_transaction_events(tx, receipt, ignore_cache=False)  # noqa: E501
         assert decode_mock.call_count == len(transactions)
 
+    dbevents = DBHistoryEvents(database)
+    # customize one evm event to check that the logic for them works correctly
+    success, _ = dbevents.edit_history_event(events[1])
+    assert success is True
+
     with database.user_write() as write_cursor:
         assert write_cursor.execute('SELECT COUNT(*) from history_events').fetchone()[0] == 2
         assert write_cursor.execute('SELECT COUNT(*) from evm_events_info').fetchone()[0] == 2
         assert write_cursor.execute('SELECT COUNT(*) from evm_tx_mappings').fetchone()[0] == 1
 
-        dbevents = DBHistoryEvents(database)
         dbevents.delete_events_by_location(write_cursor, Location.ETHEREUM)
-
-        assert write_cursor.execute('SELECT COUNT(*) from history_events').fetchone()[0] == 0
-        assert write_cursor.execute('SELECT COUNT(*) from evm_events_info').fetchone()[0] == 0
+        # after deletion we only keep the customized event
+        assert write_cursor.execute('SELECT event_identifier from history_events').fetchall() == [(events[1].event_identifier,)]  # noqa: E501
+        assert write_cursor.execute('SELECT identifier from evm_events_info').fetchall() == [(events[1].identifier,)]  # noqa: E501
         assert write_cursor.execute('SELECT COUNT(*) from evm_tx_mappings').fetchone()[0] == 0
 
 
