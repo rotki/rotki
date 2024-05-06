@@ -158,7 +158,7 @@ const sort: Ref<DataTableSortData> = ref([{
 }]);
 
 function getItemClass(item: AssetMovementEntry) {
-  return item.ignoredInAccounting ? 'darken-row' : '';
+  return item.ignoredInAccounting ? 'opacity-50' : '';
 }
 
 const pageRoute = Routes.HISTORY_DEPOSITS_WITHDRAWALS;

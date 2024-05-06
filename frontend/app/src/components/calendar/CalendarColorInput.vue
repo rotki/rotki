@@ -56,8 +56,9 @@ watchImmediate(value, (value) => {
           @click="emit('input', color)"
         />
       </div>
-      <VApp>
+      <AppBridge>
         <VColorPicker
+          class="rounded-none"
           hide-mode-switch
           mode="hexa"
           :value="`#${value}`"
@@ -65,7 +66,7 @@ watchImmediate(value, (value) => {
             emit('input', $event.hex.replace('#', ''))
           "
         />
-      </VApp>
+      </AppBridge>
     </RuiMenu>
   </div>
 </template>

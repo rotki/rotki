@@ -186,18 +186,17 @@ watch(tags, () => {
         </RuiButton>
       </template>
     </VCombobox>
-    <VDialog
-      :value="manageTags"
+    <RuiDialog
+      v-model="manageTags"
       max-width="800"
       class="tag-input__tag-manager"
-      content-class="h-full"
-      @input="manageTags = false"
     >
-      <TagManager
-        v-if="manageTags"
-        dialog
-        @close="manageTags = false"
-      />
-    </VDialog>
+      <AppBridge>
+        <TagManager
+          dialog
+          @close="manageTags = false"
+        />
+      </AppBridge>
+    </RuiDialog>
   </div>
 </template>

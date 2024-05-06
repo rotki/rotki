@@ -7,8 +7,6 @@ import { type Pinia, createPinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import EthDepositEventForm from '@/components/history/events/forms/EthDepositEventForm.vue';
-import { VAutocompleteStub } from '../../../stubs/VAutocomplete';
-import { VComboboxStub } from '../../../stubs/VCombobox';
 import type { AssetMap } from '@/types/asset';
 import type { EthDepositEvent } from '@/types/history/events';
 
@@ -77,10 +75,6 @@ describe('ethDepositEventForm.vue', () => {
     return mount(EthDepositEventForm, {
       pinia,
       vuetify,
-      stubs: {
-        VAutocomplete: VAutocompleteStub,
-        VCombobox: VComboboxStub,
-      },
       ...options,
     });
   };

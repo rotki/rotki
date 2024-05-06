@@ -70,9 +70,9 @@ const errorText = computed(() => {
         <pre class="text-caption text-wrap error-screen__description__message">
           {{ message }}
           <RuiDivider
-v-if="error"
-class="mt-4 mb-2"
-/>
+            v-if="error"
+            class="mt-4 mb-2"
+          />
           {{ error }}
         </pre>
         <textarea

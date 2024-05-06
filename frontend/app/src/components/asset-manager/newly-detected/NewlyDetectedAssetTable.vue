@@ -195,8 +195,8 @@ async function ignoreTokens(identifiers?: string[]) {
       :cols="tableHeaders"
       :rows="mappedTokens"
       :sort="sort"
-      item-class="py-0"
       outlined
+      dense
       row-attr="tokenIdentifier"
       @update:sort="sort = $event"
     >

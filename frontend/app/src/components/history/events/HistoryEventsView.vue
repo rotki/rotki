@@ -499,7 +499,7 @@ async function deleteEventHandler() {
 }
 
 function getItemClass(item: HistoryEventEntry) {
-  return item.ignoredInAccounting ? 'darken-row' : '';
+  return item.ignoredInAccounting ? 'opacity-50' : '';
 }
 
 watch(
@@ -710,28 +710,6 @@ watchImmediate(route, async (route) => {
         </template>
         {{ t('transactions.actions.add_event') }}
       </RuiButton>
-
-      <VDialog
-        v-model="decodingStatusDialogOpen"
-        max-width="600"
-        :persistent="decodingStatusDialogPersistent"
-      >
-        <HistoryEventsDecodingStatus
-          v-if="decodingStatusDialogOpen"
-          :refreshing="refreshing"
-          :decoding-status="decodingStatus"
-          @redecode-all-events="redecodeAllEvents()"
-          @reset-undecoded-transactions="resetUndecodedTransactionsStatus()"
-        >
-          <RuiButton
-            variant="text"
-            icon
-            @click="decodingStatusDialogOpen = false"
-          >
-            <RuiIcon name="close-line" />
-          </RuiButton>
-        </HistoryEventsDecodingStatus>
-      </VDialog>
 
       <RuiMenu
         :popper="{ placement: 'bottom-end' }"
@@ -964,6 +942,7 @@ watchImmediate(route, async (route) => {
             <template #expanded-item="{ row }">
               <HistoryEventsList
                 class="-my-4"
+                :class="{ 'opacity-50': row.ignoredInAccounting }"
                 :all-events="allEvents"
                 :event-group="row"
                 :loading="sectionLoading || eventTaskLoading"
@@ -1017,5 +996,27 @@ watchImmediate(route, async (route) => {
         @add-rule="onAddMissingRule($event)"
       />
     </RuiCard>
+
+    <RuiDialog
+      v-model="decodingStatusDialogOpen"
+      max-width="600"
+      :persistent="decodingStatusDialogPersistent"
+    >
+      <HistoryEventsDecodingStatus
+        v-if="decodingStatusDialogOpen"
+        :refreshing="refreshing"
+        :decoding-status="decodingStatus"
+        @redecode-all-events="redecodeAllEvents()"
+        @reset-undecoded-transactions="resetUndecodedTransactionsStatus()"
+      >
+        <RuiButton
+          variant="text"
+          icon
+          @click="decodingStatusDialogOpen = false"
+        >
+          <RuiIcon name="close-line" />
+        </RuiButton>
+      </HistoryEventsDecodingStatus>
+    </RuiDialog>
   </TablePageLayout>
 </template>

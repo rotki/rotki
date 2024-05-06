@@ -64,7 +64,6 @@ const rootAttrs = useAttrs();
           key-attr="identifier"
           text-attr="label"
           full-width
-          float-label
           variant="outlined"
           v-bind="rootAttrs"
           @input="updateSetting($event, updateImmediate)"

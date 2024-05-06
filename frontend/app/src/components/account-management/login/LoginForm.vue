@@ -589,7 +589,7 @@ function abortLogin() {
                 {{ t('common.actions.continue') }}
               </RuiButton>
 
-              <VDialog
+              <RuiDialog
                 v-if="welcomeMessage && welcomeMessage.action"
                 v-model="dynamicMessageDialog"
                 max-width="400"
@@ -597,7 +597,7 @@ function abortLogin() {
                 <template #activator="{ on }">
                   <RuiButton
                     color="primary"
-                    class="lg:hidden"
+                    class="lg:hidden w-full"
                     size="lg"
                     :disabled="loading"
                     variant="outlined"
@@ -626,7 +626,7 @@ function abortLogin() {
                     </RuiButton>
                   </template>
                 </RuiCard>
-              </VDialog>
+              </RuiDialog>
 
               <div :class="css.login__actions__footer">
                 <span>{{ t('login.button_no_account') }}</span>

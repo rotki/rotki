@@ -249,7 +249,7 @@ const progress = computed(() => reportsStore.progress);
       </template>
       {{ t('profit_loss_report.loading_hint') }}
     </ProgressScreen>
-    <VDialog
+    <RuiDialog
       v-model="importDataDialog"
       max-width="600"
     >
@@ -282,6 +282,6 @@ const progress = computed(() => reportsStore.progress);
           </RuiButton>
         </template>
       </RuiCard>
-    </VDialog>
+    </RuiDialog>
   </div>
 </template>

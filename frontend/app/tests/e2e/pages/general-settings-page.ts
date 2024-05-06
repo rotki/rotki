@@ -150,7 +150,7 @@ export class GeneralSettingsPage {
     cy.get('[data-cy=node-name]').type(name);
     cy.get('[data-cy=node-endpoint]').type(endpoint);
     cy.get('[data-cy=confirm]').click();
-    cy.get('[data-cy=bottom-dialog]').should('not.be.visible');
+    cy.get('[data-cy=bottom-dialog]').should('not.exist');
   }
 
   confirmRPCAddition(name: string, endpoint: string) {

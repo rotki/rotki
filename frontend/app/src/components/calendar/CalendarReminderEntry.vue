@@ -197,7 +197,6 @@ onMounted(() => {
         label="Unit"
         :options="unitData"
         variant="outlined"
-        float-label
         full-width
         key-attr="key"
         dense

@@ -84,9 +84,9 @@ onMounted(() => refresh());
   <RuiCard>
     <template #custom-header>
       <div class="flex justify-between gap-4 p-4 pb-0">
-        <h5 class="text-h6">
+        <h6 class="text-h6 text-rui-text">
           {{ t('transactions.events_decoding.title') }}
-        </h5>
+        </h6>
         <slot />
       </div>
     </template>

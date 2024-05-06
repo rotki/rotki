@@ -10,7 +10,6 @@ const { costBasisMethodData } = useCostBasisMethod();
     key-attr="identifier"
     text-attr="label"
     full-width
-    float-label
     show-details
     variant="outlined"
     v-on="

@@ -28,7 +28,6 @@ const balanceTypes = computed(() => [
     :options="balanceTypes"
     v-bind="$attrs"
     full-width
-    float-label
     show-details
     key-attr="key"
     variant="outlined"

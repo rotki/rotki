@@ -71,7 +71,7 @@ export class TradeHistoryPage {
     cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').click();
     waitForTrades();
     cy.get('[data-cy=trade-form]').should('not.exist');
-    cy.get('[data-cy=bottom-dialog]').should('not.be.visible');
+    cy.get('[data-cy=bottom-dialog]').should('not.exist');
   }
 
   visibleEntries(visible: number) {
@@ -150,7 +150,7 @@ export class TradeHistoryPage {
     const waitForTrades = this.createWaitForTrades();
     cy.get('[data-cy=confirm-dialog]').find('[data-cy=button-confirm]').click();
     waitForTrades();
-    cy.get('[data-cy=confirm-dialog]').should('not.be.exist');
+    cy.get('[data-cy=confirm-dialog]').should('not.exist');
   }
 
   filterTrades(filter: string) {

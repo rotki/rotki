@@ -112,7 +112,6 @@ onMounted(fetchNames);
       key-attr="key"
       text-attr="label"
       full-width
-      float-label
       variant="outlined"
     />
     <RuiSwitch

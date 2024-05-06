@@ -58,8 +58,8 @@ const { t } = useI18n();
 
 <template>
   <div v-if="needRefresh">
-    <VDialog
-      :value="true"
+    <RuiDialog
+      value
       persistent
       max-width="500"
     >
@@ -77,6 +77,6 @@ const { t } = useI18n();
           </RuiButton>
         </div>
       </RuiCard>
-    </VDialog>
+    </RuiDialog>
   </div>
 </template>

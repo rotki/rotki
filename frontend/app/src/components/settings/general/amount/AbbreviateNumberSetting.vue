@@ -75,7 +75,6 @@ const items = computed(() => {
         key-attr="value"
         text-attr="label"
         full-width
-        float-label
         show-details
         variant="outlined"
         :success-messages="success"

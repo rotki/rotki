@@ -103,7 +103,6 @@ const { t } = useI18n();
         dense
         key-attr="key"
         full-width
-        float-label
         show-details
         variant="outlined"
         @input="onChange()"

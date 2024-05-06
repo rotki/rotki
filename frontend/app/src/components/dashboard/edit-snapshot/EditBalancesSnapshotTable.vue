@@ -406,6 +406,7 @@ function confirmDelete() {
       :scroller="tableRef?.$el"
       :sort.sync="sort"
       row-attr="assetIdentifier"
+      dense
     >
       <template #item.categoryLabel="{ row }">
         <span>{{ toSentenceCase(row.categoryLabel) }}</span>

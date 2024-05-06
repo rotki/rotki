@@ -28,7 +28,7 @@ const css = useCssModule();
 </script>
 
 <template>
-  <VDialog width="1200">
+  <RuiDialog width="1200">
     <template #activator="{ on }">
       <RuiTooltip
         :popper="{ placement: 'top' }"
@@ -43,27 +43,23 @@ const css = useCssModule();
             size="sm"
             v-on="on"
           >
-            <RuiIcon
-              name="information-line"
-            />
+            <RuiIcon name="information-line" />
           </RuiButton>
         </template>
         {{ t('common.details') }}
       </RuiTooltip>
     </template>
-    <template #default="dialog">
+    <template #default="{ close }">
       <RuiCard>
         <template #custom-header>
-          <div class="flex justify-between gap-4 p-4 items-center border-b border-default">
-            <div>
-              <h5 class="text-h5">
-                {{ t('transactions.query_all.modal_title') }}
-              </h5>
-            </div>
+          <div class="flex justify-between gap-4 px-4 py-2 items-center border-b border-default">
+            <h5 class="text-h6 text-rui-text">
+              {{ t('transactions.query_all.modal_title') }}
+            </h5>
             <RuiButton
               icon
               variant="text"
-              @click="dialog.value = false"
+              @click="close()"
             >
               <RuiIcon name="close-line" />
             </RuiButton>
@@ -88,7 +84,7 @@ const css = useCssModule();
             </div>
           </div>
 
-          <div class="mt-4">
+          <div>
             <h6 class="text-body-1 font-medium">
               {{ t('transactions.query_status.title') }}
             </h6>
@@ -109,7 +105,7 @@ const css = useCssModule();
             </div>
           </div>
 
-          <div class="mt-8">
+          <div>
             <h6 class="text-body-1 font-medium mb-2">
               {{ t('transactions.events_decoding.title') }}
             </h6>
@@ -136,19 +132,19 @@ const css = useCssModule();
           <div class="w-full" />
           <RuiButton
             color="primary"
-            @click="dialog.value = false"
+            @click="close()"
           >
             {{ t('common.actions.close') }}
           </RuiButton>
         </template>
       </RuiCard>
     </template>
-  </VDialog>
+  </RuiDialog>
 </template>
 
 <style module lang="scss">
 .content {
-  @apply overflow-y-auto -mx-4 px-4 -mt-2 pt-2 pb-4;
+  @apply overflow-y-auto -mx-4 px-4 pb-4 flex flex-col gap-8;
   max-height: calc(90vh - 11.875rem);
   min-height: 50vh;
 

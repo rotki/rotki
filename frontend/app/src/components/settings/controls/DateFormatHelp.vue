@@ -50,8 +50,7 @@ function description(directive: string): string {
 </script>
 
 <template>
-  <VDialog
-    v-if="value"
+  <RuiDialog
     v-model="display"
     max-width="500"
   >
@@ -95,7 +94,7 @@ function description(directive: string): string {
         </RuiButton>
       </template>
     </RuiCard>
-  </VDialog>
+  </RuiDialog>
 </template>
 
 <style scoped lang="scss">

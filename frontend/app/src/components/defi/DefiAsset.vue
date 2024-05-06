@@ -13,7 +13,7 @@ const evmIdentifier: ComputedRef<string> = computed(() =>
 </script>
 
 <template>
-  <div class="flex items-center py-4">
+  <div class="flex items-center">
     <AssetIcon
       size="32px"
       :identifier="evmIdentifier"

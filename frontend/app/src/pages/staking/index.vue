@@ -98,7 +98,6 @@ onBeforeMount(async () => {
         key-attr="id"
         text-attr="name"
         full-width
-        float-label
         variant="outlined"
         @input="updateLocation($event)"
       >

@@ -188,9 +188,9 @@ onMounted(async () => {
       />
     </div>
     <div v-if="showUpdateDialog">
-      <VDialog
+      <RuiDialog
         v-if="!headless"
-        :value="showUpdateDialog"
+        value
         max-width="500"
         persistent
       >
@@ -201,7 +201,7 @@ onMounted(async () => {
           @confirm="updateAssets()"
           @dismiss="skip($event)"
         />
-      </VDialog>
+      </RuiDialog>
       <AssetUpdateMessage
         v-else
         class="max-w-[32rem] mx-auto"
