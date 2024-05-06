@@ -355,10 +355,7 @@ class RotkiDataUpdater:
                 except DeserializationError as e:
                     log.error(f'Could not deserialize {entry_type.__name__} {raw_entry!s}: {e!s}')
 
-            try:
-                update_function(entries=entries)  # type: ignore[operator]  # update_function is known
-            except InputError as e:
-                log.error(f'Could not update {entry_type.__name__} due to {e!s}')
+            update_function(entries=entries, skip_errors=True)  # type: ignore[operator]  # update_function is known
 
     def update_location_unsupported_assets(self, data: dict[str, dict[str, list[str]]], version: int) -> None:  # noqa: E501
         """Applies location unsupported assets updates in the global DB"""

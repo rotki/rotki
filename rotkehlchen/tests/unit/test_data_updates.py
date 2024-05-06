@@ -165,6 +165,10 @@ LOCATION_ASSET_MAPPINGS_DATA: dict[str, dict[str, list[dict[str, Any]]]] = {
     'location_asset_mappings': {
         'additions': [
             {
+                'asset': 'eip155:1/erc20:0x15D4c048F83bd7e37d49eA4C83a07267Ec4203dA',  # already existing  # noqa: E501
+                'location': 'kucoin',
+                'location_symbol': 'GALAX',
+            }, {
                 'asset': 'eip155:1/erc20:0x16ECCfDbb4eE1A85A33f3A9B21175Cd7Ae753dB4',
                 'location': None,
                 'location_symbol': 'ROUTED',
@@ -630,7 +634,11 @@ def _check_location_asset_mappings(cursor: 'DBCursor', after_upgrade: bool) -> N
     """Auxiliary function to check the db values before and after the upgrade"""
     assert cursor.execute('SELECT COUNT(*) FROM location_asset_mappings').fetchone()[0] == NUM_ASSETS_MAPPINGS_V1_32  # noqa: E501
 
-    for addition in LOCATION_ASSET_MAPPINGS_DATA['location_asset_mappings']['additions']:
+    for addition, is_present_count in zip(
+        LOCATION_ASSET_MAPPINGS_DATA['location_asset_mappings']['additions'],
+        (1, 0, 0),
+        strict=True,
+    ):
         result = cursor.execute(  # additions are not present already
             f"SELECT {'COUNT(*)' if after_upgrade is False else 'local_id'} "
             'FROM location_asset_mappings WHERE location IS ? AND exchange_symbol IS ?', (
@@ -639,7 +647,7 @@ def _check_location_asset_mappings(cursor: 'DBCursor', after_upgrade: bool) -> N
                 addition['location_symbol'],
             ),
         ).fetchone()[0]
-        assert result == 0 if after_upgrade is False else result == addition['asset']
+        assert result == is_present_count if after_upgrade is False else result == addition['asset']  # noqa: E501
 
     for update in LOCATION_ASSET_MAPPINGS_DATA['location_asset_mappings']['updates']:
         asset_id = cursor.execute(  # mappings to be updated are not updated already
