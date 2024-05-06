@@ -241,7 +241,8 @@
     "oracle_penalty_threshold_count": 5,
     "oracle_penalty_duration": 1800,
     "auto_delete_calendar_entries": true,
-    "auto_create_calendar_reminders": true
+    "auto_create_calendar_reminders": true,
+    "ask_user_upon_size_discrepancy": true
   },
   "ignored_events_ids": {
     "history_event": ["100x0xca0a482213c17ccb0471b02ffab40b92279ae7f25da53e426fda5e73e915509f"],
