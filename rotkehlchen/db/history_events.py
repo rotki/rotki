@@ -222,7 +222,7 @@ class DBHistoryEvents:
         customized_event_ids = self.get_customized_event_identifiers(cursor=write_cursor, location=location)  # noqa: E501
         whereclause = 'WHERE location=?'
         if (length := len(customized_event_ids)) != 0:
-            whereclause += f' AND identifier NOT IN ({", ".join(["?"] * length)})'
+            whereclause += f' AND history_events.identifier NOT IN ({", ".join(["?"] * length)})'
             bindings = [location.serialize_for_db(), *customized_event_ids]
         else:
             bindings = (location.serialize_for_db(),)  # type: ignore  # different type of elements in the list
