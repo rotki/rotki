@@ -27,6 +27,7 @@ from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries
 from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -1474,3 +1475,63 @@ def test_count_transactions_missing_decoding(rotkehlchen_api_server: 'APIServer'
         'ethereum': {'undecoded': 1, 'total': 2},
         'optimism': {'undecoded': 1, 'total': 1},
     }
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+@pytest.mark.parametrize('should_mock_price_queries', [True])
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
+def test_repulling_transaction_with_internal_txs(rotkehlchen_api_server: 'APIServer'):
+    """Check that re-decoding a transaction that has internal ETH transfers correctly
+    repulls them"""
+    tx_hash = deserialize_evm_tx_hash('0x4ea72ae535e32d5edc543a9ace5f736c7037cc63e4088de38511297c764049b5')  # noqa: E501
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    database = rotki.data.db
+    dbevents = DBHistoryEvents(database)
+    ethereum_inquirer = rotki.chains_aggregator.ethereum
+    get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer.node_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+
+    # When querying the API endpoint, it returns historical events, which also include prices.
+    # However, when manually decoding the data, the prices are not retrieved.This means that
+    # if you want to compare the lists before and after you need to query prices for the events
+    # manually decoded
+    filter_query = EvmEventFilterQuery.make(tx_hashes=[tx_hash])
+    entries = dbevents.get_base_entries_missing_prices(filter_query)
+    query_missing_prices_of_base_entries(
+        database=database,
+        entries_missing_prices=entries,
+    )
+
+    with database.conn.read_ctx() as cursor:
+        events_before_redecoding = dbevents.get_history_events(
+            cursor=cursor,
+            filter_query=filter_query,
+            group_by_event_ids=False,
+            has_premium=True,
+        )
+
+    # trigger the deletion of the transaction's data by redecoding it
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'evmtransactionsresource'),
+        json={
+            'async_query': False,
+            'evm_chain': 'ethereum',
+            'tx_hash': tx_hash.hex(),  # pylint: disable=no-member  # pylint doesn't detect the .hex attribute here
+        },
+    )
+    assert_proper_response(response)
+
+    # query the redecoded eventss
+    with database.conn.read_ctx() as cursor:
+        events_after_redecoding = dbevents.get_history_events(
+            cursor=cursor,
+            filter_query=filter_query,
+            group_by_event_ids=False,
+            has_premium=True,
+        )
+    assert events_before_redecoding == events_after_redecoding
