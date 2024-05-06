@@ -85,7 +85,7 @@ BOOLEAN_KEYS = (
     'infer_zero_timed_balances',
     'auto_delete_calendar_entries',
     'auto_create_calendar_reminders',
-    'ask_user_upon_force_push',
+    'ask_user_upon_size_discrepancy',
 )
 INTEGER_KEYS = (
     'version',
