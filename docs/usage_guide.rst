@@ -252,7 +252,7 @@ If this setting is enabled, large numbers will be abbreviated. For example, "1,2
 Currency location
 ^^^^^^^^^^^^^^^^^^^^
 
-This setting chooses if the currency symbol will be shown before ($1,000) or after(1,000$) the number.
+This setting chooses if the currency symbol will be shown before ($1,000) or after (1,000$) the number.
 
 Amount Rounding
 ^^^^^^^^^^^^^^^^^^
@@ -267,13 +267,13 @@ When making queries we always give preference to your own nodes if you have any 
 of picking it and is represented by a percentage. From that list it is also possible to mark them as active or inactive by using the toggle button.
 
 .. image:: images/rotki_nodes_management.png
-   :alt: Customizing the app's connection to evm nodes
+   :alt: Customizing the app's connection to EVM nodes
    :align: center
 
 In this menu you can also edit, delete or add more nodes.
 
-.. image:: images/rotki_nodes_management_edition.png
-   :alt: Editing an evm node
+.. image:: images/rotki_nodes_management_addition.png
+   :alt: Add an EVM node
    :align: center
 
 The slider lets you modify the weight of the node and you can also manually input a value. The owned parameter gives priority to the selected node over the rest of not owned nodes. You can also mark the node as not active in this screen to completely ignore it in the selection process.
@@ -688,11 +688,10 @@ have to manually move them to the new location.
 
 In the advanced section of the backend settings you can also modify the following settings:
 
-- **Logging from other modules**: If enabled then logging will also include log entries from other dependent libraries and not only rotki. It is disabled by default.
-- **Main Loop sleep**: This is the amount of seconds that the main loop of rotki sleeps for. It is set to 20 seconds by default.
 - **Max log size**: This is the maximum size in megabytes all logs of a single run can have.
 - **Max num of log files**: This is the maximum number of backup (rotated) logs a single run can have.
 - **Instructions per SQLite context switch**: This is the setting to specify after how many sqlite VM instructions to context switch between cooperative threads. Set to 0 to disable async DB access.
+- **Log from other modules**: If enabled then logging will also include log entries from other dependent libraries and not only rotki. It is disabled by default.
 
 Disabling the tray icon
 ====================================
@@ -712,9 +711,27 @@ Adding an exchange
    :alt: Adding exchanges
    :align: center
 
-You can integrate many different exchanges with rotki. Currently supported exchanges are:
-Kraken, Poloniex, Bittrex, Bitmex, Bitfinex, Binance, Binance US, bitcoin.de, Coinbase,
-Coinbase Pro, Gemini, Iconomi, Bitstamp, KuCoin, Independent Reserve, OKX.
+You can integrate many different exchanges with rotki.
+Currently supported exchanges are:
+
+- Kraken
+- Poloniex
+- Binance
+- Bitmex
+- Coinbase
+- Coinbase Pro
+- Gemini
+- Bitstamp
+- Binance US
+- Bitfinex
+- Bitcoin.de
+- Iconomi
+- KuCoin
+- Independent Reserve
+- Bitpanda
+- OKX
+- Woo
+- Bybit
 
 To do so you have to go to your exchange and create an API key (see the section :ref:`api-key-permissions`).
 
@@ -1058,7 +1075,7 @@ For every evm address it is possible to trigger the process of detecting tokens 
 Checking Exchange Balances
 ===========================
 
-You can check all of the asset balances that you have in each connected exchange in the "Exchange Balances" sub-page. Clicking the large "+" icon takes you to the API Keys page where you can manage your exchange connections ( see `Adding an exchange`_).
+You can check all of the asset balances that you have in each connected exchange in the "Exchange Balances" sub-page. Clicking the "Add exchange" button takes you to the API Keys page where you can manage your exchange connections ( see `Adding an exchange`_).
 
 .. image:: images/sc_exchange_balances.png
    :alt: Exchange Balance
@@ -1248,22 +1265,26 @@ The list of currently supported airdrops is:
 - Furocombo
 - Lido
 - Curve
+- Convex
+- Shapeshift
 - ENS
 - ParaSwap
 - Saddle finance
-- Shapeshift
-- Paraswap
 - Cow
 - Diva
 - Shutter
+- Starknet
+- Optimism 4
+- Degen 2
+- Omni
+- Eigen token
 
 Snapshots
 =========
 
-The application will on login snapshot to disk the information about balances from all the tracked sources every 24 hours (by default. The number of hours is configurable). This information is saved directly to your local database.
-You can force a snapshot taking by clicking in the ``cloud icon`` at the top bar and then on `Force Save`
+The application will automatically snapshot the information about balances from all tracked sources to disk upon login every 24 hours by default (this interval is configurable). This information is saved directly to your local database. You can manually initiate a snapshot by clicking the ``arrow down`` near the graph and then selecting ``Force Save.``
 
-.. image:: images/rotki_snapshot_forcing.png
+  .. image:: images/rotki_snapshot_forcing.png
    :alt: Force snapshots saves
    :align: center
 
