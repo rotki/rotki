@@ -225,9 +225,9 @@ def test_location_asset_mappings_errors(rotkehlchen_api_server: 'APIServer') -> 
         ),
         json={
             'entries': [{
-                'asset': 'BCH',
-                'location': 'binance',
-                'location_symbol': 'BCHABC',
+                'asset': 'eip155:1/erc20:0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b',
+                'location': None,
+                'location_symbol': 'AXS',
             }],
         },
     )
@@ -235,7 +235,7 @@ def test_location_asset_mappings_errors(rotkehlchen_api_server: 'APIServer') -> 
         response=response,
         status_code=HTTPStatus.CONFLICT,
         contained_in_msg=(
-            'Failed to add the location asset mapping of BCHABC in binance because it already exists in the DB.'  # noqa: E501
+            'Failed to add the location asset mapping of AXS in None because it already exists in the DB.'  # noqa: E501
         ),
     )
 
