@@ -682,6 +682,7 @@ class MacPackaging:
         """
         self.__build_miniupnpc_universal()
         self.__universal_repackage('coincurve')
+        self.__universal_repackage('ckzg')
 
     def install_wheels(self, install: Callable[[str], None]) -> None:
         """
