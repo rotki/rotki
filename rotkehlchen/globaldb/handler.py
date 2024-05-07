@@ -2045,11 +2045,14 @@ class GlobalDBHandler:
             } for identifier, location, symbol in cursor], mappings_count, mappings_total
 
     @staticmethod
-    def add_location_asset_mappings(entries: list[LocationAssetMappingUpdateEntry]) -> None:
+    def add_location_asset_mappings(
+            entries: list[LocationAssetMappingUpdateEntry],
+            skip_errors: bool = False,
+    ) -> None:
         """Adds the given mapping entries of asset identifiers and their symbols in the given
         location to the location_asset_mappings table.
 
-        May Raise:
+        May Raise (if skip_errors is False):
         - InputError if any of the pairs of location and exchange_symbol already exist"""
         with GlobalDBHandler().conn.write_ctx() as cursor:
             for entry in entries:
@@ -2062,17 +2065,24 @@ class GlobalDBHandler:
                         ),
                     )
                 except sqlite3.IntegrityError as e:
-                    raise InputError(
-                        f'Failed to add the location asset mapping of {entry.location_symbol} in '
-                        f'{entry.location} because it already exists in the DB.',
-                    ) from e
+                    error_msg = (
+                        f'Failed to add the location asset mapping of {entry.location_symbol} '
+                        f'in {entry.location} because it already exists in the DB.'
+                    )
+                    if skip_errors:
+                        log.error(error_msg)
+                    else:
+                        raise InputError(error_msg) from e
 
     @staticmethod
-    def update_location_asset_mappings(entries: list[LocationAssetMappingUpdateEntry]) -> None:
+    def update_location_asset_mappings(
+            entries: list[LocationAssetMappingUpdateEntry],
+            skip_errors: bool = False,
+    ) -> None:
         """Updates the mapped asset identifiers in the location_asset_mappings table based on their
         location symbol.
 
-        May Raise:
+        May Raise (if skip_errors is False):
         - InputError if any of the pairs of location and exchange_symbol does not exist"""
         with GlobalDBHandler().conn.write_ctx() as cursor:
             for entry in entries:
@@ -2084,17 +2094,24 @@ class GlobalDBHandler:
                     ),
                 )
                 if cursor.rowcount != 1:
-                    raise InputError(
-                        f'Failed to update the location asset mapping of {entry.location_symbol} in '  # noqa: E501
-                        f'{entry.location} because it does not exist in the DB.',
+                    error_msg = (
+                        f'Failed to update the location asset mapping of {entry.location_symbol} '
+                        f'in {entry.location} because it does not exist in the DB.'
                     )
+                    if skip_errors:
+                        log.error(error_msg)
+                    else:
+                        raise InputError(error_msg)
 
     @staticmethod
-    def delete_location_asset_mappings(entries: list[LocationAssetMappingDeleteEntry]) -> None:
+    def delete_location_asset_mappings(
+            entries: list[LocationAssetMappingDeleteEntry],
+            skip_errors: bool = False,
+    ) -> None:
         """Deletes the mappings of given asset identifiers in the given location from the
         location_asset_mappings table.
 
-        May Raise:
+        May Raise (if skip_errors is False):
         - InputError if any of the pairs of location and exchange_symbol does not exist"""
         with GlobalDBHandler().conn.write_ctx() as cursor:
             for entry in entries:
@@ -2105,10 +2122,14 @@ class GlobalDBHandler:
                     ),
                 )
                 if cursor.rowcount != 1:
-                    raise InputError(
-                        f'Failed to delete the location asset mapping of {entry.location_symbol} in '  # noqa: E501
-                        f'{entry.location} because it does not exist in the DB.',
+                    error_msg = (
+                        f'Failed to delete the location asset mapping of {entry.location_symbol} '
+                        f'in {entry.location} because it does not exist in the DB.'
                     )
+                    if skip_errors:
+                        log.error(error_msg)
+                    else:
+                        raise InputError(error_msg)
 
     @staticmethod
     def is_asset_symbol_unsupported(location: 'Location', asset_symbol: str) -> bool:
