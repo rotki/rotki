@@ -9,7 +9,7 @@ from gevent.lock import Semaphore
 
 from rotkehlchen.api.websockets.typedefs import TransactionStatusStep, WSMessageType
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.evm.constants import GENESIS_HASH
+from rotkehlchen.chain.evm.constants import GENESIS_HASH, LAST_SPAM_TXS_CACHE
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.chain.structures import TimestampOrBlockRange
@@ -433,7 +433,18 @@ class EvmTransactions(ABC):  # noqa: B024
         as early as possible. If any transfer had an unknown asset mark the address as not spammed
         since we can't do more to classify it.
         """
-        start_ts, end_ts = Timestamp(0), ts_now()
+        with self.database.conn.read_ctx() as cursor:
+            start_ts = Timestamp(0)
+            if (result := self.database.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.LAST_QUERY_TS,
+                location=self.evm_inquirer.chain_name,
+                location_name=LAST_SPAM_TXS_CACHE,
+                account_id=address,
+            )) is not None:
+                start_ts = Timestamp(result)
+
+        end_ts = ts_now()
         checked_tokens = set()
         with self.database.conn.read_ctx() as cursor:
             ignored_assets = self.database.get_ignored_asset_ids(cursor)
@@ -494,6 +505,16 @@ class EvmTransactions(ABC):  # noqa: B024
                 f'token transactions from Etherscan. address: {address} spam detection failed',
             )
             return False
+
+        with self.database.user_write() as write_cursor:
+            self.database.set_dynamic_cache(
+                write_cursor=write_cursor,
+                name=DBCacheDynamic.LAST_QUERY_TS,
+                value=end_ts,
+                location=self.evm_inquirer.chain_name,
+                location_name=LAST_SPAM_TXS_CACHE,
+                account_id=address,
+            )
 
         return True
 
