@@ -2057,6 +2057,12 @@ class GlobalDBHandler:
         with GlobalDBHandler().conn.write_ctx() as cursor:
             for entry in entries:
                 try:
+                    if entry.location is None and cursor.execute(
+                        'SELECT COUNT(*) FROM location_asset_mappings WHERE location IS NULL AND exchange_symbol=? AND local_id=?',  # noqa: E501
+                        (entry.location_symbol, entry.asset.serialize()),
+                    ).fetchone()[0] > 0:
+                        raise sqlite3.IntegrityError('Entry already exists in the DB')
+
                     cursor.execute(
                         'INSERT INTO location_asset_mappings(local_id, location, exchange_symbol) VALUES(?, ?, ?)', (  # noqa: E501
                             entry.asset.serialize(),
