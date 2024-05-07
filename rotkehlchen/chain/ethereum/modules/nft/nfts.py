@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Optional
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import AddressToUniswapV3LPBalances
+from rotkehlchen.chain.evm.decoding.uniswap.v3.types import AddressToUniswapV3LPBalances
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.db.filtering import NFTFilterQuery
@@ -325,7 +325,7 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
                 # query the usd price and update it in entry_info
                 if target_asset != A_USD:
                     try:
-                        to_asset_usd_price = Inquirer().find_usd_price(target_asset)
+                        to_asset_usd_price = Inquirer.find_usd_price(target_asset)
                     except RemoteError as e:
                         log.error(
                             f'Error querying current usd price of {target_asset} in custom nft '

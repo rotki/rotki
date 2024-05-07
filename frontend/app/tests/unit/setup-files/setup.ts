@@ -3,8 +3,8 @@ import Vue from 'vue';
 import Vuetify from 'vuetify';
 import { config } from '@vue/test-utils';
 import { mockT } from '../i18n';
-import RuiIconStub from '../specs/stubs/RuiIcon';
-import RuiTooltipStub from '../specs/stubs/RuiTooltip';
+import { RuiIconStub } from '../specs/stubs/RuiIcon';
+import { RuiTooltipStub } from '../specs/stubs/RuiTooltip';
 import { server } from './server';
 
 beforeAll(() => {
@@ -66,7 +66,7 @@ beforeAll(() => {
     };
   });
 
-  vi.mock('@/composables/usei18n', async () => ({
+  vi.mock('@/composables/usei18n', () => ({
     useI18n: () => ({
       t: mockT,
       te: mockT,

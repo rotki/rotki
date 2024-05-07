@@ -9,24 +9,27 @@ import {
 } from '@/types/defi/airdrops';
 import { TaskType } from '@/types/task-type';
 import AirdropDisplay from '@/components/defi/airdrops/AirdropDisplay.vue';
-import type { GeneralAccount } from '@rotki/common/lib/account';
-import type { Ref } from 'vue';
+import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { DataTableColumn } from '@rotki/ui-library-compat';
 import type { TaskMeta } from '@/types/task';
 
+type Statuses = '' | 'unknown' | 'unclaimed' | 'claimed';
 const ETH = Blockchain.ETH;
 const { t } = useI18n();
 const { awaitTask } = useTaskStore();
 const { notify } = useNotificationsStore();
 const { fetchAirdrops: fetchAirdropsCaller } = useDefiApi();
+const hideUnknownAlert = useLocalStorage('rotki.airdrops.hide_unknown_alert', false);
 
 const expanded: Ref<Airdrop[]> = ref([]);
-const selectedAccounts: Ref<GeneralAccount[]> = ref([]);
-const statusFilters: Ref<{ text: string; value: boolean }[]> = ref([
-  { text: t('common.unclaimed'), value: false },
-  { text: t('common.claimed'), value: true },
+const selectedAccounts: Ref<BlockchainAccount<AddressData>[]> = ref([]);
+const statusFilters: Ref<{ text: string; value: Statuses }[]> = ref([
+  { text: t('common.all'), value: '' },
+  { text: t('common.unknown'), value: 'unknown' },
+  { text: t('common.unclaimed'), value: 'unclaimed' },
+  { text: t('common.claimed'), value: 'claimed' },
 ]);
-const status: Ref<boolean> = ref(false);
+const status: Ref<Statuses> = ref('unclaimed');
 const loading: Ref<boolean> = ref(false);
 
 const refreshTooltip: ComputedRef<string> = computed(() =>
@@ -39,10 +42,22 @@ const airdrops: Ref<Airdrops> = ref({});
 const airdropAddresses = computed(() => Object.keys(get(airdrops)));
 
 const entries = computed(() => {
-  const addresses = get(selectedAccounts).map(({ address }) => address);
+  const addresses = get(selectedAccounts).map(account => getAccountAddress(account));
   const airdrops = get(airdropList(addresses));
   return airdrops
-    .filter(airdrop => airdrop.claimed === get(status))
+    .filter((airdrop) => {
+      const currentStatus = get(status);
+      switch (currentStatus) {
+        case 'unknown':
+          return airdrop.missingDecoder;
+        case 'unclaimed':
+          return !airdrop.claimed && !airdrop.missingDecoder;
+        case 'claimed':
+          return airdrop.claimed;
+        default:
+          return true;
+      }
+    })
     .map((value, index) => ({
       ...value,
       index,
@@ -96,7 +111,7 @@ function airdropList(addresses: string[]): ComputedRef<Airdrop[]> {
           });
         }
         else {
-          const { amount, asset, link, claimed } = element as AirdropDetail;
+          const { amount, asset, link, claimed, missingDecoder } = element as AirdropDetail;
           result.push({
             address,
             amount,
@@ -104,6 +119,7 @@ function airdropList(addresses: string[]): ComputedRef<Airdrop[]> {
             source,
             asset,
             claimed,
+            missingDecoder,
           });
         }
       }
@@ -177,7 +193,7 @@ onMounted(async () => {
     </template>
 
     <RuiCard>
-      <div class="flex flex-row flex-wrap items-start gap-2 mb-4">
+      <div class="flex flex-col md:flex-row flex-wrap items-start gap-4 mb-4">
         <BlockchainAccountSelector
           v-model="selectedAccounts"
           multiple
@@ -188,17 +204,28 @@ onMounted(async () => {
           :chains="[ETH]"
           :usable-addresses="airdropAddresses"
         />
-        <VSelect
+        <RuiMenuSelect
           v-model="status"
-          :items="statusFilters"
+          :options="statusFilters"
           class="w-full flex-1"
-          item-value="value"
-          item-text="text"
-          hide-details
+          key-attr="value"
+          text-attr="text"
           dense
-          outlined
+          full-width
+          float-label
+          variant="outlined"
         />
       </div>
+
+      <RuiAlert
+        v-if="!hideUnknownAlert && status === 'unknown'"
+        type="info"
+        class="mb-4"
+        closeable
+        @close="hideUnknownAlert = true"
+      >
+        {{ t('airdrops.unknown_info') }}
+      </RuiAlert>
 
       <RuiDataTable
         outlined
@@ -220,8 +247,26 @@ onMounted(async () => {
           />
           <span v-else>{{ row.details.length }}</span>
         </template>
-        <template #item.claimed="{ row: { claimed } }">
+        <template #item.claimed="{ row: { claimed, missingDecoder } }">
+          <RuiTooltip
+            v-if="missingDecoder"
+            :popper="{ placement: 'top' }"
+            :open-delay="400"
+            tooltip-class="max-w-[12rem]"
+          >
+            <template #activator>
+              <RuiChip
+                color="info"
+                size="sm"
+              >
+                {{ t('common.unknown') }}
+              </RuiChip>
+            </template>
+
+            {{ t('airdrops.unknown_tooltip') }}
+          </RuiTooltip>
           <RuiChip
+            v-else
             :color="claimed ? 'success' : 'grey'"
             size="sm"
           >
@@ -251,7 +296,7 @@ onMounted(async () => {
               />
             </RuiButton>
           </ExternalLink>
-          <RowExpander
+          <RuiTableRowExpander
             v-else
             :expanded="expanded.includes(row)"
             @click="expand(row)"
@@ -261,8 +306,6 @@ onMounted(async () => {
           <PoapDeliveryAirdrops
             v-if="hasDetails(row.source)"
             :items="row.details"
-            :colspan="tableHeaders.length"
-            visible
           />
         </template>
       </RuiDataTable>

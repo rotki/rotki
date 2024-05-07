@@ -38,19 +38,19 @@ describe('accountDisplay.vue', () => {
     });
   }
 
-  beforeEach(async () => {
+  beforeEach(() => {
     pinia = createPinia();
     setActivePinia(pinia);
     wrapper = createWrapper();
   });
 
-  it('does not blur anything by default', async () => {
+  it('does not blur anything by default', () => {
     expect(wrapper.find('.blur').exists()).toBe(false);
   });
 
   it('blurs address on privacy mode', async () => {
     useSessionSettingsStore().update({ privacyMode: PrivacyMode.SEMI_PRIVATE });
-    await wrapper.vm.$nextTick();
+    await nextTick();
     expect(wrapper.find('.blur').exists()).toBe(true);
   });
 });

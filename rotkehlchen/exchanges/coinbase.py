@@ -399,7 +399,7 @@ class Coinbase(ExchangeInterface):
 
                 asset = asset_from_coinbase(account['balance']['currency'])
                 try:
-                    usd_price = Inquirer().find_usd_price(asset=asset)
+                    usd_price = Inquirer.find_usd_price(asset=asset)
                 except RemoteError as e:
                     self.msg_aggregator.add_error(
                         f'Error processing coinbase balance entry due to inability to '
@@ -535,8 +535,9 @@ class Coinbase(ExchangeInterface):
                         f'Transaction of type trade doesnt have the '
                         f'expected structure {transaction}',
                     )
-            elif tx_type in ('buy', 'sell'):
-                self._process_normal_trade(event=transaction, trades=trades)
+            elif tx_type in ('buy', 'sell', 'advanced_trade_fill'):
+                if (trade := self._process_coinbase_trade(event=transaction)):
+                    trades.append(trade)
             elif (
                     tx_type in ('interest', 'inflation_reward') or
                     (
@@ -610,13 +611,10 @@ class Coinbase(ExchangeInterface):
                 )
                 continue
 
-    def _process_normal_trade(self, event: dict[str, Any], trades: list[Trade]) -> None:
-        """Turns a coinbase transaction into a rotki trade and adds it to the list.
+    def _process_coinbase_trade(self, event: dict[str, Any]) -> Trade | None:
+        """Turns a coinbase transaction into a rotki trade and returns it.
 
-        Sometimes the amounts can be negative which breaks rotki's logic which is why we use abs().
-
-        https://docs.cloud.coinbase.com/sign-in-with-coinbase/docs/api-transactions#transaction-types
-        If the coinbase transaction is not a trade related transaction nothing happens.
+        Uses underlying trade processing functions based on the type of trade.
         """
         try:
             if event['status'] != 'completed':
@@ -632,32 +630,12 @@ class Coinbase(ExchangeInterface):
                 raw_time = event['payout_at']
 
             timestamp = deserialize_timestamp_from_date(raw_time, 'iso8601', 'coinbase')
-            trade_type = TradeType.deserialize(event['type'])
-            amount = AssetAmount(abs(deserialize_asset_amount(event['amount']['amount'])))
-            tx_asset = asset_from_coinbase(event['amount']['currency'], time=timestamp)
-            native_amount = abs(deserialize_asset_amount(event['native_amount']['amount']))
-            native_asset = asset_from_coinbase(event['native_amount']['currency'], time=timestamp)
-            # rate is how much you get/give in quotecurrency if you buy/sell 1 unit of basecurrency
-            rate = Price(native_amount / amount)
 
-            fee_amount = fee_asset = None
-            if 'fee' in event:
-                fee_amount = abs(deserialize_fee(event['fee']['amount']))
-                fee_asset = asset_from_coinbase(event['fee']['currency'], time=timestamp)
+            if event['type'] in ('buy', 'sell'):
+                return self._process_normal_trade(event, timestamp)
+            elif event['type'] == 'advanced_trade_fill':
+                return self._process_advanced_trade(event, timestamp)
 
-            trades.append(Trade(
-                timestamp=timestamp,
-                location=Location.COINBASE,
-                # in coinbase you are buying/selling tx_asset for native_asset
-                base_asset=tx_asset,
-                quote_asset=native_asset,
-                trade_type=trade_type,
-                amount=amount,
-                rate=rate,
-                fee=fee_amount,  # type: ignore  # abs() doesn't propagate Fee type
-                fee_currency=fee_asset,
-                link=str(event['id']),
-            ))
         except UnknownAsset as e:
             self.msg_aggregator.add_warning(
                 f'Found coinbase transaction with unknown asset '
@@ -668,7 +646,7 @@ class Coinbase(ExchangeInterface):
                 f'Found coinbase trade with unsupported asset '
                 f'{e.identifier}. Ignoring it.',
             )
-        except (DeserializationError, KeyError) as e:
+        except (DeserializationError, KeyError, IndexError, ZeroDivisionError) as e:
             msg = str(e)
             if isinstance(e, KeyError):
                 msg = f'Missing key entry for {msg}.'
@@ -683,6 +661,107 @@ class Coinbase(ExchangeInterface):
             )
 
         return None
+
+    def _process_normal_trade(self, event: dict[str, Any], timestamp: Timestamp) -> Trade | None:
+        """Turns a normal coinbase transaction into a rotki trade and returns it.
+
+        Sometimes the amounts can be negative which breaks rotki's logic which is why we use abs().
+
+        https://docs.cloud.coinbase.com/sign-in-with-coinbase/docs/api-transactions#transaction-types
+        If the coinbase transaction is not a trade related transaction nothing happens.
+
+        May raise:
+        - UnknownAsset due to Asset instantiation
+        - DeserializationError due to unexpected format of dict entries
+        - KeyError due to dict entries missing an expected entry
+        - ZeroDivisionError due to rate calculation
+        """
+        trade_type = TradeType.deserialize(event['type'])
+        amount = AssetAmount(abs(deserialize_asset_amount(event['amount']['amount'])))
+        tx_asset = asset_from_coinbase(event['amount']['currency'], time=timestamp)
+        native_amount = abs(deserialize_asset_amount(event['native_amount']['amount']))
+        native_asset = asset_from_coinbase(event['native_amount']['currency'], time=timestamp)
+        # rate is how much you get/give in quotecurrency if you buy/sell 1 unit of basecurrency
+        rate = Price(native_amount / amount)
+
+        fee_amount = fee_asset = None
+        if 'fee' in event:
+            fee_amount = abs(deserialize_fee(event['fee']['amount']))
+            fee_asset = asset_from_coinbase(event['fee']['currency'], time=timestamp)
+
+        return Trade(
+            timestamp=timestamp,
+            location=Location.COINBASE,
+            # in coinbase you are buying/selling tx_asset for native_asset
+            base_asset=tx_asset,
+            quote_asset=native_asset,
+            trade_type=trade_type,
+            amount=amount,
+            rate=rate,
+            fee=fee_amount,  # type: ignore  # abs() doesn't propagate Fee type
+            fee_currency=fee_asset,
+            link=str(event['id']),
+        )
+
+    def _process_advanced_trade(self, event: dict[str, Any], timestamp: Timestamp) -> Trade | None:
+        """Turns an advanced_trade_fill transaction into a rotki trade and returns it.
+
+        https://docs.cloud.coinbase.com/sign-in-with-coinbase/docs/api-transactions#transaction-types
+        If the coinbase transaction is not a trade related transaction nothing happens.
+
+        May raise:
+        - UnknownAsset due to Asset instantiation
+        - DeserializationError due to unexpected format of dict entries
+        - KeyError due to dict entries missing an expected entry
+        - IndexError due to indices being out of bounds when parsing asset ids
+        """
+        trade_type = TradeType.deserialize(event['advanced_trade_fill']['order_side'])
+
+        if trade_type not in (TradeType.BUY, TradeType.SELL):
+            return None
+
+        # Notice that we do not use abs() yet
+        amount = deserialize_asset_amount(event['amount']['amount'])
+        # Each trade has two sides, we ignore one of them
+        if (
+            (trade_type == TradeType.SELL and amount > 0) or
+            (trade_type == TradeType.BUY and amount < 0)
+        ):
+            return None
+
+        tx_asset_identifier = event['amount']['currency']
+        tx_asset = asset_from_coinbase(tx_asset_identifier, time=timestamp)
+        asset_identifiers = event['advanced_trade_fill']['product_id'].split('-')
+
+        if len(asset_identifiers) != 2:
+            log.error(
+                'Error processing asset identifiers for coinbase trade',
+                trade=event,
+            )
+            return None
+
+        other_side_identifier = (asset_identifiers[0]
+                                 if asset_identifiers[0] != tx_asset_identifier
+                                 else asset_identifiers[1])
+        other_side_asset = asset_from_coinbase(other_side_identifier, time=timestamp)
+
+        base_asset, quote_asset = tx_asset, other_side_asset
+        rate = Price(event['advanced_trade_fill']['fill_price'])
+        fee_amount = abs(deserialize_fee(event['advanced_trade_fill']['commission']))
+        fee_asset = quote_asset
+
+        return Trade(
+            timestamp=timestamp,
+            location=Location.COINBASE,
+            base_asset=base_asset,
+            quote_asset=quote_asset,
+            trade_type=trade_type,
+            amount=AssetAmount(abs(amount)),
+            rate=rate,
+            fee=fee_amount,  # type: ignore  # abs() doesn't propagate Fee type
+            fee_currency=fee_asset,
+            link=str(event['id']),
+        )
 
     def query_online_trade_history(
             self,

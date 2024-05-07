@@ -2,9 +2,9 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Final
 
-from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.utils import get_or_create_evm_token
-from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithBalance
+from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.db.dbhandler import DBHandler
@@ -19,7 +19,6 @@ from .constants import CPT_EIGENLAYER
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
-    from rotkehlchen.chain.ethereum.interfaces.balances import BalancesType
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.fval import FVal
 
@@ -80,13 +79,13 @@ class EigenlayerBalances(ProtocolWithBalance):
         )
         self.evm_inquirer: 'EthereumInquirer'
 
-    def query_balances(self) -> 'BalancesType':
+    def query_balances(self) -> 'BalancesSheetType':
         """
         Query underlying balances for deposits in eigenlayer
         May raise:
         - RemoteError: Querying price of the deposited token
         """
-        balances: BalancesType = defaultdict(lambda: defaultdict(Balance))
+        balances: BalancesSheetType = defaultdict(BalanceSheet)
         # fetch deposit events
         addresses_with_deposits = self.addresses_with_deposits(products=[EvmProduct.STAKING])
         # remap all events into a list that will contain all pairs (depositor, strategy)
@@ -115,7 +114,7 @@ class EigenlayerBalances(ProtocolWithBalance):
                 continue
 
             token_price = Inquirer.find_usd_price(token)
-            balances[depositor][token] += Balance(
+            balances[depositor].assets[token] += Balance(
                 amount=amount,
                 usd_value=token_price * amount,
             )

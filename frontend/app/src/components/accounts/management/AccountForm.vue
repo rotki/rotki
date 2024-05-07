@@ -3,11 +3,7 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { InputMode } from '@/types/input-mode';
 import { isBtcChain } from '@/types/blockchain/chains';
 
-const props = defineProps<{ context: Blockchain }>();
-
-const { context } = toRefs(props);
-
-const blockchain = ref<Blockchain>(Blockchain.ETH);
+const blockchain = ref<string>(Blockchain.ETH);
 const inputMode = ref<InputMode>(InputMode.MANUAL_ADD);
 const allEvmChains = ref(true);
 
@@ -17,27 +13,18 @@ onMounted(() => {
   const account = get(accountToEdit);
   if (account) {
     set(blockchain, account.chain);
-    if ('xpub' in account && !account.address)
+
+    if ('xpub' in account.data)
       set(inputMode, InputMode.XPUB_ADD);
   }
-  else {
-    set(blockchain, get(context));
-  }
-});
-
-watch(context, (ctx) => {
-  if (!get(accountToEdit))
-    set(blockchain, ctx);
 });
 </script>
 
 <template>
   <div>
     <AccountSelector
-      :input-mode="inputMode"
-      :blockchain="blockchain"
-      @update:blockchain="blockchain = $event"
-      @update:input-mode="inputMode = $event"
+      :input-mode.sync="inputMode"
+      :blockchain.sync="blockchain"
     />
     <MetamaskAccountForm
       v-if="inputMode === InputMode.METAMASK_IMPORT"

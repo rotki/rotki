@@ -1,0 +1,48 @@
+<script setup lang="ts">
+import type { HistoryEventsQueryData } from '@/types/websocket-messages';
+
+defineProps<{ item: HistoryEventsQueryData }>();
+</script>
+
+<template>
+  <div class="flex items-center">
+    <LocationIcon
+      icon
+      :item="item.location"
+      size="1.25rem"
+    />
+    <HistoryEventsQueryStatusLine
+      :item="item"
+      class="ms-2"
+    />
+
+    <RuiTooltip
+      v-if="item.period"
+      class="ml-2 cursor-pointer"
+      :open-delay="400"
+      tooltip-class="max-w-[12rem]"
+    >
+      <template #activator>
+        <RuiIcon
+          class="text-rui-text-secondary"
+          name="question-line"
+        />
+      </template>
+
+      <i18n
+        :path="
+          item.period[0] === 0
+            ? 'transactions.query_status_events.latest_period_end_date'
+            : 'transactions.query_status_events.latest_period_date_range'
+        "
+      >
+        <template #start>
+          <DateDisplay :timestamp="item.period[0]" />
+        </template>
+        <template #end>
+          <DateDisplay :timestamp="item.period[1]" />
+        </template>
+      </i18n>
+    </RuiTooltip>
+  </div>
+</template>

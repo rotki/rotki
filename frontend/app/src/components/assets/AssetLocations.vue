@@ -2,19 +2,17 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { CURRENCY_USD } from '@/types/currencies';
 import { isBlockchain } from '@/types/blockchain/chains';
+import type { AssetBreakdown, BlockchainAccount } from '@/types/blockchain/accounts';
 import type {
   DataTableColumn,
   DataTableSortData,
 } from '@rotki/ui-library-compat';
 import type { BigNumber } from '@rotki/common';
-import type { GeneralAccount } from '@rotki/common/lib/account';
-import type { ComputedRef } from 'vue';
-import type { AssetBreakdown } from '@/types/blockchain/accounts';
 
 type AssetLocations = AssetLocation[];
 
 interface AssetLocation extends AssetBreakdown {
-  readonly account?: GeneralAccount;
+  readonly account?: BlockchainAccount;
   readonly label: string;
 }
 
@@ -30,8 +28,7 @@ const sort = ref<DataTableSortData>({
 });
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { getAccountByAddress } = useAccountBalances();
-const { getEth2Account } = useEthAccountsStore();
+const { getAccountByAddress } = useBlockchainStore();
 const { detailsLoading } = storeToRefs(useStatusStore());
 const { assetPriceInfo } = useAggregatedBalances();
 const { assetBreakdown } = useBalancesBreakdown();
@@ -42,18 +39,10 @@ const totalUsdValue = computed<BigNumber>(
   () => get(assetPriceInfo(identifier)).usdValue,
 );
 
-function getAccount(item: AssetBreakdown): ComputedRef<GeneralAccount | undefined> {
-  return computed(() =>
-    item.location === Blockchain.ETH2
-      ? get(getEth2Account(item.address))
-      : get(getAccountByAddress(item.address, item.location)),
-  );
-}
-
 const assetLocations = computed<AssetLocations>(() => {
   const breakdowns = get(assetBreakdown(get(identifier)));
   return breakdowns.map((item: AssetBreakdown) => {
-    const account = get(getAccount(item));
+    const account = item.address ? getAccountByAddress(item.address, item.location) : undefined;
     return {
       ...item,
       account,
@@ -197,7 +186,7 @@ const headers = computed<DataTableColumn[]>(() => {
         />
       </template>
       <template #item.percentage="{ row }">
-        <PercentageDisplay :value="getPercentage(row.balance.usdValue)" />
+        <PercentageDisplay :value="getPercentage(row.usdValue)" />
       </template>
     </RuiDataTable>
   </RuiCard>

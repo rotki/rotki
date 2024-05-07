@@ -1,12 +1,14 @@
 import json
 import logging
 from collections.abc import Sequence
+from sqlite3 import OperationalError
 from typing import TYPE_CHECKING, Any
 
 import requests
 
 from packaging import version as pversion
 from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.spam_assets import update_spam_assets
 from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings, TxAccountingTreatment
 from rotkehlchen.db.accounting_rules import DBAccountingRules
@@ -25,6 +27,9 @@ from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     AddressbookEntry,
     AddressbookType,
+    Location,
+    LocationAssetMappingDeleteEntry,
+    LocationAssetMappingUpdateEntry,
     OptionalChainAddress,
     SupportedBlockchain,
 )
@@ -63,8 +68,10 @@ class RotkiDataUpdater:
             UpdateType.CONTRACTS: self.update_contracts,
             UpdateType.GLOBAL_ADDRESSBOOK: self.update_global_addressbook,
             UpdateType.ACCOUNTING_RULES: self.update_accounting_rules,
+            UpdateType.LOCATION_ASSET_MAPPINGS: self.update_location_asset_mappings,
+            UpdateType.LOCATION_UNSUPPORTED_ASSETS: self.update_location_unsupported_assets,
         }  # If we ever change this also change tests/unit/test_data_updates::reset_update_type_mappings  # noqa: E501
-        self.version = pversion.parse(get_current_version().our_version)
+        self.version = get_current_version().our_version
 
     def update_single(
             self,
@@ -245,7 +252,7 @@ class RotkiDataUpdater:
         remote_id_to_local_id = {}
         for single_abi_data in data['abis_data']:
             # store a mapping of the virtual id to the id in the user's globaldb
-            abi_id = GlobalDBHandler().get_or_write_abi(
+            abi_id = GlobalDBHandler.get_or_write_abi(
                 serialized_abi=single_abi_data['value'],
                 abi_name=single_abi_data.get('name'),
             )
@@ -326,6 +333,55 @@ class RotkiDataUpdater:
                 write_cursor=write_cursor,
                 entries=entries_to_add,
             )
+
+    def update_location_asset_mappings(self, data: dict[str, list[dict[str, Any]]], version: int) -> None:  # noqa: E501
+        """Applies location asset mappings updates in the global DB"""
+        log.info(f'Applying update for location asset mappings to v{version}')
+        for update_function, entry_type, raw_data_key in (
+            (GlobalDBHandler.add_location_asset_mappings, LocationAssetMappingUpdateEntry, 'additions'),  # noqa: E501
+            (GlobalDBHandler.update_location_asset_mappings, LocationAssetMappingUpdateEntry, 'updates'),  # noqa: E501
+            (GlobalDBHandler.delete_location_asset_mappings, LocationAssetMappingDeleteEntry, 'deletions'),  # noqa: E501
+        ):
+            entries, raw_data = [], data.get(raw_data_key)
+            if raw_data is None:
+                continue  # no data to update
+            for raw_entry in raw_data:
+                try:
+                    if (asset_id := raw_entry.get('asset')) is not None:
+                        raw_entry['asset'] = Asset(asset_id)
+                    if (raw_location := raw_entry.get('location')) is not None:
+                        raw_entry['location'] = Location.deserialize(raw_location)
+                    entries.append(entry_type.deserialize(raw_entry))  # type: ignore[attr-defined]  # deserialize is defined in both
+                except DeserializationError as e:
+                    log.error(f'Could not deserialize {entry_type.__name__} {raw_entry!s}: {e!s}')
+
+            update_function(entries=entries, skip_errors=True)  # type: ignore[operator]  # update_function is known
+
+    def update_location_unsupported_assets(self, data: dict[str, dict[str, list[str]]], version: int) -> None:  # noqa: E501
+        """Applies location unsupported assets updates in the global DB"""
+        log.info(f'Applying update for location unsupported assets to v{version}')
+        for raw_data_key, update_query in (
+            ('insert', 'INSERT OR IGNORE INTO location_unsupported_assets(location, exchange_symbol) VALUES(?, ?);'),  # noqa: E501
+            ('remove', 'DELETE FROM location_unsupported_assets WHERE location = ? AND exchange_symbol = ?;'),  # noqa: E501
+        ):
+            raw_data: dict[str, list[str]] | None = data.get(raw_data_key)
+            if raw_data is None:
+                continue  # no data to update
+
+            for raw_location, exchange_symbols in raw_data.items():
+                try:
+                    location = Location.deserialize(raw_location).serialize_for_db()
+                except DeserializationError as e:
+                    log.error(f'Could not deserialize a valid location from {raw_location}: {e!s}')
+                    continue
+
+                try:
+                    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+                        write_cursor.executemany(
+                            update_query, [(location, symbol) for symbol in exchange_symbols],
+                        )
+                except OperationalError as e:
+                    log.error(f'Could not {raw_data_key} location unsupported asset for {raw_location} due to: {e!s}')  # noqa: E501
 
     def check_for_updates(self, updates: Sequence[UpdateType] = tuple(UpdateType)) -> None:
         """Retrieve the information about the latest available update"""

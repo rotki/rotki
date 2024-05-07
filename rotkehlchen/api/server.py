@@ -43,13 +43,15 @@ from rotkehlchen.api.v1.resources import (
     AssetUpdatesResource,
     AssociatedLocations,
     AsyncTasksResource,
-    BalancerEventsHistoryResource,
     BinanceAvailableMarkets,
     BinanceSavingsResource,
     BinanceUserMarkets,
     BlockchainBalancesResource,
     BlockchainsAccountsResource,
+    BlockchainTransactionsResource,
     BTCXpubResource,
+    CalendarRemindersResource,
+    CalendarResource,
     ClearCacheResource,
     CompoundBalancesResource,
     ConfigurationsResource,
@@ -74,6 +76,8 @@ from rotkehlchen.api.v1.resources import (
     EventsOnlineQueryResource,
     EvmAccountsResource,
     EvmCounterpartiesResource,
+    EvmlikePendingTransactionsDecodingResource,
+    EvmlikeTransactionsResource,
     EvmModuleBalancesResource,
     EvmModuleBalancesWithVersionResource,
     EvmPendingTransactionsDecodingResource,
@@ -103,6 +107,7 @@ from rotkehlchen.api.v1.resources import (
     LiquityStabilityPoolResource,
     LiquityStakingResource,
     LiquityTrovesResource,
+    LocationAssetMappingsResource,
     LocationResource,
     LoopringBalancesResource,
     MakerdaoDSRBalanceResource,
@@ -146,13 +151,12 @@ from rotkehlchen.api.v1.resources import (
     UsersResource,
     WatchersResource,
     YearnVaultsBalancesResource,
-    YearnVaultsHistoryResource,
     YearnVaultsV2BalancesResource,
-    YearnVaultsV2HistoryResource,
     create_blueprint,
 )
 from rotkehlchen.api.websockets.notifier import RotkiNotifier, RotkiWSApp
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.utils.version_check import get_current_version
 
 URLS = list[
     tuple[str, type[MethodView]] | tuple[str, type[MethodView], str]
@@ -183,6 +187,7 @@ URLS_V1: URLS = [
     ),
     ('/assets/icon', AssetIconFileResource),
     ('/assets/icon/modify', AssetIconsResource),
+    ('/assets/locationmappings', LocationAssetMappingsResource),
     ('/trades', TradesResource),
     ('/asset_movements', AssetMovementsResource),
     ('/tags', TagsResource),
@@ -235,9 +240,12 @@ URLS_V1: URLS = [
     ('/accounting/rules/info', AccountingLinkablePropertiesResource),
     ('/queried_addresses', QueriedAddressesResource),
     ('/blockchains/supported', SupportedChainsResource),
+    ('/blockchains/transactions', BlockchainTransactionsResource),
     ('blockchains/evm/all', AllEvmChainsResource),
     ('/blockchains/evm/transactions', EvmTransactionsResource),
+    ('/blockchains/evmlike/transactions', EvmlikeTransactionsResource),
     ('/blockchains/evm/transactions/decode', EvmPendingTransactionsDecodingResource),
+    ('/blockchains/evmlike/transactions/decode', EvmlikePendingTransactionsDecodingResource),
     ('/blockchains/eth2/validators', Eth2ValidatorsResource),
     ('/blockchains/eth2/stake/performance', Eth2StakePerformanceResource),
     ('/blockchains/eth2/stake/dailystats', Eth2DailyStatsResource),
@@ -252,12 +260,9 @@ URLS_V1: URLS = [
     ('/blockchains/eth/modules/makerdao/vaults', MakerdaoVaultsResource),
     ('/blockchains/eth/modules/makerdao/vaultdetails', MakerdaoVaultDetailsResource),
     ('/blockchains/eth/modules/aave/balances', AaveBalancesResource),
-    ('/blockchains/eth/modules/balancer/history/events', BalancerEventsHistoryResource),
     ('/blockchains/eth/modules/compound/balances', CompoundBalancesResource),
     ('/blockchains/eth/modules/yearn/vaults/balances', YearnVaultsBalancesResource),
-    ('/blockchains/eth/modules/yearn/vaults/history', YearnVaultsHistoryResource),
     ('/blockchains/eth/modules/yearn/vaultsv2/balances', YearnVaultsV2BalancesResource),
-    ('/blockchains/eth/modules/yearn/vaultsv2/history', YearnVaultsV2HistoryResource),
     ('/blockchains/eth/modules/liquity/balances', LiquityTrovesResource),
     ('/blockchains/eth/modules/liquity/staking', LiquityStakingResource),
     ('/blockchains/eth/modules/liquity/pool', LiquityStabilityPoolResource),
@@ -316,6 +321,8 @@ URLS_V1: URLS = [
     ('/cache/general/refresh', RefreshGeneralCacheResource),
     ('/airdrops/metadata', AirdropsMetadataResource),
     ('/defi/metadata', DefiMetadataResource),
+    ('/calendar', CalendarResource),
+    ('/calendar/reminders', CalendarRemindersResource),
 ]
 
 logger = logging.getLogger(__name__)
@@ -480,6 +487,7 @@ class APIServer:
                 msg = 'rotki is running in __debug__ mode'
                 print(msg)
                 log.info(msg)
+            log.info(f'Starting rotki {get_current_version().our_version}')
             msg = f'rotki REST API server is running at: {host}:{rest_port} with loglevel {logging.getLevelName(logging.root.level)}'  # noqa: E501
             print(msg)
             log.info(msg)

@@ -1,21 +1,24 @@
 <script setup lang="ts">
-import { externalAssets } from '@/data/external-links';
+import { useBreakpoint } from '@rotki/ui-library-compat';
 
 defineProps<{ text: string }>();
 
 const { t } = useI18n();
+const { isMdAndUp } = useBreakpoint();
 </script>
 
 <template>
   <FullSizeContent class="gap-4">
     <div class="flex items-center justify-center">
       <div
-        class="w-[8rem] h-[8rem] md:w-[16rem] md:h-[16rem] bg-rui-grey-200 p-8 md:p-16 rounded-full mb-8"
+        class="bg-rui-grey-200 rounded-full mb-8"
+        :class="[isMdAndUp ? 'w-64 h-64 p-16' : 'w-32 h-32 p-8']"
       >
         <slot name="logo">
           <RotkiLogo
-            class="h-full w-full"
-            :url="externalAssets.logo.noData"
+            :size="isMdAndUp ? 8 : 4"
+            logo="emptyScreen"
+            unique-key="2"
           />
         </slot>
       </div>

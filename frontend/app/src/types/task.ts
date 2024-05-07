@@ -1,4 +1,3 @@
-import type { Blockchain } from '@rotki/common/lib/blockchain';
 import type { TaskType } from '@/types/task-type';
 
 export interface Task<T extends TaskMeta> {
@@ -19,7 +18,7 @@ export interface ExchangeMeta extends TaskMeta {
 }
 
 export interface BlockchainMetadata extends TaskMeta {
-  readonly blockchain?: Blockchain;
+  readonly blockchain?: string;
 }
 
 export interface TaskResultResponse<T> {

@@ -8,6 +8,7 @@ from rotkehlchen.globaldb.migrations.manager import (
     maybe_apply_globaldb_migrations,
 )
 from rotkehlchen.globaldb.migrations.migration1 import ilk_mapping
+from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
 from rotkehlchen.tests.utils.globaldb import patch_for_globaldb_migrations
 
 
@@ -18,7 +19,7 @@ def test_migration1(globaldb):
     """Test for the 1st globalDB data migration"""
     # Check state before migration
     with globaldb.conn.read_ctx() as cursor:
-        assert globaldb.get_setting_value('version', None) == 6
+        assert globaldb.get_setting_value('version', None) == GLOBAL_DB_VERSION
         assert globaldb.get_setting_value('last_data_migration', None) is None
         assert globaldb.get_setting_value('last_assets_json_version', None) == 72
         assert cursor.execute('SELECT COUNT(*) FROM unique_cache WHERE key LIKE "MAKERDAO_VAULT_ILK%"').fetchone()[0] == 0  # noqa: E501
@@ -29,7 +30,7 @@ def test_migration1(globaldb):
 
     # assert state is correct after migration
     with globaldb.conn.read_ctx() as cursor:
-        assert globaldb.get_setting_value('version', None) == 6
+        assert globaldb.get_setting_value('version', None) == GLOBAL_DB_VERSION
         assert globaldb.get_setting_value('last_assets_json_version', None) is None
         assert globaldb.get_setting_value('last_data_migration', None) == 1
         assert cursor.execute('SELECT COUNT(*) FROM unique_cache WHERE key LIKE "MAKERDAO_VAULT_ILK%"').fetchone()[0] == 25  # noqa: E501

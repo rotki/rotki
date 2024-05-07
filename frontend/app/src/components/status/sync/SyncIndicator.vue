@@ -89,18 +89,14 @@ watch(isSyncing, (current, prev) => {
 <template>
   <Fragment>
     <template v-if="premium">
-      <VMenu
+      <RuiMenu
         id="balances-saved-dropdown"
         v-model="visible"
-        transition="slide-y-transition"
-        offset-y
-        :close-on-content-click="false"
-        z-index="215"
+        menu-class="z-[215]"
       >
         <template #activator="{ on }">
           <MenuTooltipButton
             :tooltip="tooltip"
-            class-name="secondary--text text--lighten-4"
             v-on="on"
           >
             <RuiBadge
@@ -167,7 +163,7 @@ watch(isSyncing, (current, prev) => {
             <div class="text-rui-text-secondary text-sm">
               <i18n path="sync_indicator.db_upload_result.message">
                 <template #reason>
-                  <b>
+                  <b class="break-all">
                     {{ uploadStatus.message }}
                   </b>
                 </template>
@@ -179,7 +175,7 @@ watch(isSyncing, (current, prev) => {
             @action="showConfirmation($event)"
           />
         </div>
-      </VMenu>
+      </RuiMenu>
     </template>
     <template v-else>
       <RuiBadge
@@ -198,7 +194,6 @@ watch(isSyncing, (current, prev) => {
         </template>
         <MenuTooltipButton
           :tooltip="t('sync_indicator.menu_tooltip')"
-          class-name="secondary--text text--lighten-4"
           :href="href"
           @click="onLinkClick()"
         >

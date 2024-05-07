@@ -540,7 +540,7 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
     assert_token_entry_exists_in_result(result, expected_result)
     # and removes the mapping of all underlying tokens
     result = cursor.execute('SELECT COUNT(*) from underlying_tokens_list').fetchone()[0]
-    assert result == initial_underlying_num - 3
+    assert result == initial_underlying_num - 6
     # and that the equivalent asset entries were also deleted
     result = cursor.execute(
         'SELECT COUNT(*) from assets WHERE identifier IN (?, ?)',
@@ -684,7 +684,7 @@ def test_adding_evm_token_with_underlying_token(rotkehlchen_api_server, cache_co
             ),
         ],
     )
-    GlobalDBHandler().add_asset(bp_token_2)
+    GlobalDBHandler.add_asset(bp_token_2)
     response = requests.put(
         api_url_for(
             rotkehlchen_api_server,

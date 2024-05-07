@@ -14,7 +14,7 @@ export const useBackendMessagesStore = defineStore('backendMessages', () => {
   const { showAbout } = storeToRefs(useAreaVisibilityStore());
   const { logged } = storeToRefs(useSessionAuthStore());
 
-  onBeforeMount(async () => {
+  onBeforeMount(() => {
     setupListeners({
       onError: (backendOutput: string | Error, code: BackendCode) => {
         logger.error(backendOutput, code);
@@ -47,7 +47,7 @@ export const useBackendMessagesStore = defineStore('backendMessages', () => {
       },
     });
 
-    await connect();
+    connect();
     if (isDevelopment && get(logged))
       start();
 

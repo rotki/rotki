@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import type { ComputedRef, Ref } from 'vue';
 import type { NewDetectedToken } from '@/types/websocket-messages';
 import type {
   DataTableColumn,
@@ -184,7 +183,7 @@ async function ignoreTokens(identifiers?: string[]) {
             </RuiTooltip>
           </div>
 
-          <HintMenuIcon left>
+          <HintMenuIcon :popper="{ placement: 'left-start' }">
             {{ t('asset_table.newly_detected.subtitle') }}
           </HintMenuIcon>
         </div>

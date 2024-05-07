@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { Ref } from 'vue';
 import type {
   AssetPriceInfo,
   ManualPriceFormPayload,

@@ -51,11 +51,11 @@ def generate_expected_info(
 
 def test_query_info_version_when_up_to_date(rotkehlchen_api_server):
     """Test that endpoint to query the rotki version works if no new version is available"""
-    expected_version = 'v1.1.0'
+    expected_version = '1.1.0'
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
     def patched_get_system_spec() -> dict[str, Any]:
-        return {'rotkehlchen': expected_version}
+        return {'rotkehlchen': f'v{expected_version}'}
 
     def patched_get_latest_release(_klass):
         return expected_version, f'https://github.com/rotki/rotki/releases/tag/{expected_version}'
@@ -153,7 +153,7 @@ def test_query_version_when_update_required(rotkehlchen_api_server):
     assert result == generate_expected_info(
         expected_version=our_version,
         data_dir=rotki.data_dir,
-        latest_version='v99.99.99',
+        latest_version='99.99.99',
         download_url='https://github.com/rotki/rotki/releases/tag/v99.99.99',
     )
 
@@ -369,6 +369,7 @@ def test_manage_nodes(rotkehlchen_api_server):
         },
     )
     assert_proper_response_with_result(response)
+
     response = requests.patch(  # test that editing optimism etherscan weight works
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='OPTIMISM'),
         json={
@@ -381,6 +382,18 @@ def test_manage_nodes(rotkehlchen_api_server):
         },
     )
     assert_proper_response_with_result(response)
+
+    # try to delete normal etherscan and optimism etherscan and see it fails
+    for identifier in (1, 6):
+        response = requests.delete(
+            api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
+            json={'identifier': identifier},
+        )
+        assert_error_response(
+            response=response,
+            contained_in_msg="Can't delete an etherscan node",
+            status_code=HTTPStatus.BAD_REQUEST,
+        )
 
     # and now let's replicate https://github.com/rotki/rotki/issues/4769 by
     # editing all nodes to have 0% weight.
@@ -483,3 +496,21 @@ def test_events_mappings(rotkehlchen_api_server_with_exchanges):
     assert result['mappings'][CPT_CONVEX] == [EvmProduct.GAUGE.serialize(), EvmProduct.STAKING.serialize()]  # noqa: E501
     assert result['mappings'][CPT_CURVE] == [EvmProduct.GAUGE.serialize()]
     assert result['products'] == [product.serialize() for product in EvmProduct]
+
+
+@pytest.mark.parametrize('have_decoders', [True])
+def test_counterparties(rotkehlchen_api_server_with_exchanges):
+    """Test serialization of the counterparties"""
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server_with_exchanges,
+            'evmcounterpartiesresource',
+        ),
+    )
+    result = assert_proper_response_with_result(response)
+    for counterparty_details in result:
+        assert 'identifier' in counterparty_details
+        assert 'label' in counterparty_details
+        assert 'icon' in counterparty_details or 'image' in counterparty_details
+        if counterparty_details['identifier'] == 'gas':
+            assert counterparty_details['icon'] == 'fire-line'

@@ -172,7 +172,7 @@ class Opensea(ExternalServiceWithApiKey):
 
         backoff = 1
         backoff_limit = 33
-        timeout = timeout if timeout else CachedSettings().get_timeout_tuple()
+        timeout = timeout or CachedSettings().get_timeout_tuple()
         while backoff < backoff_limit:
             log.debug(f'Querying opensea: {query_str}')
             try:
@@ -195,7 +195,7 @@ class Opensea(ExternalServiceWithApiKey):
                     f'Got {response.status_code} response from opensea. Will backoff for {backoff} seconds',  # noqa: E501
                 )
                 gevent.sleep(backoff)
-                backoff = backoff * 2
+                backoff *= 2
                 if backoff >= backoff_limit:
                     raise RemoteError(
                         f'Reached opensea backoff limit after we incrementally backed off '

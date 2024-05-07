@@ -67,15 +67,15 @@ watch(locationName, (locationName) => {
     set(tab, 0);
 });
 
-const { smAndDown } = useDisplay();
+const css = useCssModule();
 </script>
 
 <template>
   <VNavigationDrawer
     v-model="display"
-    width="400px"
-    class="user-notes-sidebar"
-    :class="smAndDown ? 'user-notes-sidebar--mobile' : null"
+    width="460px"
+    :class="css.sidebar"
+    class="border-default"
     absolute
     clipped
     right
@@ -129,42 +129,8 @@ const { smAndDown } = useDisplay();
   </VNavigationDrawer>
 </template>
 
-<style lang="scss" scoped>
-.user-notes-sidebar {
-  top: 64px !important;
-  box-shadow: 0 2px 12px rgba(74, 91, 120, 0.1);
-  padding-top: 0 !important;
-  border-top: var(--v-rotki-light-grey-darken1) solid thin;
-
-  &--mobile {
-    top: 56px !important;
-  }
-
-  &.v-navigation-drawer {
-    &--is-mobile {
-      padding-top: 0 !important;
-    }
-  }
-}
-
-.tabs {
-  :deep(.v-slide-group) {
-    .v-slide-group {
-      &__prev,
-      &__next {
-        display: none;
-      }
-
-      &__wrapper {
-        .v-tab {
-          font-size: 0.75rem;
-          padding: 0 1rem;
-          margin-left: 0;
-          flex: none;
-          width: auto;
-        }
-      }
-    }
-  }
+<style module lang="scss">
+.sidebar {
+  @apply border-t pt-0 top-[3.5rem] md:top-[4rem] #{!important};
 }
 </style>

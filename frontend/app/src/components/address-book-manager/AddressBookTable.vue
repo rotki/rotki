@@ -4,11 +4,10 @@ import {
   type NotificationPayload,
   Severity,
 } from '@rotki/common/lib/messages';
-import type { Ref } from 'vue';
-import type { Blockchain } from '@rotki/common/lib/blockchain';
 import type {
   DataTableColumn,
   DataTableOptions,
+  DataTableSortData,
 } from '@rotki/ui-library-compat';
 import type {
   AddressBookEntry,
@@ -48,12 +47,11 @@ function refresh() {
 function addressBookDeletion(location: Ref<AddressBookLocation>) {
   const { show } = useConfirmStore();
   const { notify } = useNotificationsStore();
-  const { deleteAddressBook: deleteAddressBookCaller }
-    = useAddressesNamesStore();
+  const { deleteAddressBook: deleteAddressBookCaller } = useAddressesNamesStore();
 
   const deleteAddressBook = async (
     address: string,
-    blockchain: Blockchain | null,
+    blockchain: string | null,
   ) => {
     try {
       await deleteAddressBookCaller(get(location), [{ address, blockchain }]);
@@ -99,21 +97,25 @@ function edit(item: AddressBookEntry) {
   emit('edit', item);
 }
 
+const sort: Ref<DataTableSortData> = ref({
+  column: 'name',
+  direction: 'asc' as const,
+});
+
 const tableHeaders = computed<DataTableColumn[]>(() => [
   {
     label: t('common.address').toString(),
     key: 'address',
-    sortable: false,
+    sortable: true,
   },
   {
     label: t('common.name').toString(),
     key: 'name',
-    sortable: false,
+    sortable: true,
   },
   {
     label: '',
     key: 'actions',
-    sortable: false,
   },
 ]);
 
@@ -128,7 +130,6 @@ const { showDeleteConfirmation } = addressBookDeletion(location);
     >
       <template #default="{ data, itemLength }">
         <RuiDataTable
-          dense
           :rows="data"
           :cols="tableHeaders"
           :loading="loading"
@@ -139,8 +140,11 @@ const { showDeleteConfirmation } = addressBookDeletion(location);
             total: itemLength,
           }"
           :pagination-modifiers="{ external: true }"
+          :sort.sync="sort"
+          :sort-modifiers="{ external: true }"
           row-attr=""
           outlined
+          dense
           :server-items-length="itemLength"
           @update:options="updatePagination($event)"
         >

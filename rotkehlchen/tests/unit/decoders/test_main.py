@@ -10,13 +10,13 @@ from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
+from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.chain.optimism.types import OptimismTransaction
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_USDT
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.optimismtx import DBOptimismTx
+from rotkehlchen.db.l2withl1feestx import DBL2WithL1FeesTx
 from rotkehlchen.errors.misc import InputError, NotERC20Conformant
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -43,6 +43,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
     assert set(ethereum_transaction_decoder.decoders.keys()) == {
         'Aavev1',
         'Aavev2',
+        'Aavev3',
         'Airdrops',
         'Balancerv1',
         'Balancerv2',
@@ -57,9 +58,11 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Eigenlayer',
         'Ens',
         'Eth2',
+        'Fluence',
         'Gitcoin',
         'Gitcoinv2',
         'Golem',
+        'HarvestFinance',
         'Juicebox',
         'Kyber',
         'Liquity',
@@ -70,6 +73,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Monerium',
         'Polygon',
         'Octant',
+        'Omni',
         'Oneinchv1',
         'Oneinchv2',
         'Oneinchv3',
@@ -79,6 +83,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Paraswap',
         'PickleFinance',
         'Safemultisig',
+        'ScrollBridge',
         'Shutter',
         'SocketBridgeDecoder',
         'Stakedao',
@@ -96,10 +101,13 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Yearnygov',
         'ArbitrumOneBridge',
         'XdaiBridge',
+        'Zerox',
     }
 
     counterparty_ids = {counterparty.identifier for counterparty in ethereum_transaction_decoder.rules.all_counterparties}  # noqa: E501
     assert counterparty_ids == {
+        '0x',
+        'kyber',
         'kyber legacy',
         'element-finance',
         'badger',
@@ -111,6 +119,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'gas',
         'ens',
         'eas',
+        'fluence',
         'liquity',
         'Locked GNO',
         'shapeshift',
@@ -129,11 +138,13 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'makerdao dsr',
         'makerdao sai',
         'pickle finance',
+        'harvest finance',
         'stakedao',
         'convex',
         'votium',
         'aave-v1',
         'aave-v2',
+        'aave-v3',
         'compound',
         'compound-v3',
         'dxdaomesa',
@@ -151,6 +162,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         '1inch-v4',
         '1inch-v5',
         'safe-multisig',
+        'scroll',
         'diva',
         'arbitrum_one',
         'base',
@@ -165,6 +177,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'juicebox',
         'shutter',
         'eigenlayer',
+        'omni',
     }
 
 
@@ -250,7 +263,7 @@ def test_simple_erc20_transfer(
     accounts = ethereum_accounts if chain == ChainID.ETHEREUM else optimism_accounts
     from_address = accounts[0]
     to_address = accounts[1]
-    transaction = OptimismTransaction(
+    transaction = L2WithL1FeesTransaction(
         tx_hash=evmhash,
         chain_id=chain,
         timestamp=0,
@@ -285,7 +298,7 @@ def test_simple_erc20_transfer(
             ),
         ],
     )
-    dbevmtx = DBEvmTx(database) if chain == ChainID.ETHEREUM else DBOptimismTx(database)
+    dbevmtx = DBEvmTx(database) if chain == ChainID.ETHEREUM else DBL2WithL1FeesTx(database)
     tx_decoder = ethereum_transaction_decoder if chain is ChainID.ETHEREUM else optimism_transaction_decoder  # noqa: E501
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
@@ -346,7 +359,7 @@ def test_eth_transfer(
     accounts = ethereum_accounts if chain is ChainID.ETHEREUM else optimism_accounts
     from_address = accounts[0]
     to_address = accounts[1]
-    transaction = OptimismTransaction(
+    transaction = L2WithL1FeesTransaction(
         tx_hash=evmhash,
         chain_id=chain,
         timestamp=0,
@@ -369,7 +382,7 @@ def test_eth_transfer(
         tx_type=0,
         logs=[],
     )
-    dbevmtx = DBEvmTx(database) if chain == ChainID.ETHEREUM else DBOptimismTx(database)
+    dbevmtx = DBEvmTx(database) if chain == ChainID.ETHEREUM else DBL2WithL1FeesTx(database)
     tx_decoder = ethereum_transaction_decoder if chain is ChainID.ETHEREUM else optimism_transaction_decoder  # noqa: E501
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
@@ -430,7 +443,7 @@ def test_eth_spend(
     evmhash = deserialize_evm_tx_hash('0x8caa7df2ebebfceb98207605e64691202b9e7498c3cccdbccb41c1600cf16e65')  # noqa: E501
     from_address = ethereum_accounts[0] if chain is ChainID.ETHEREUM else optimism_accounts[0]
     to_address = string_to_evm_address('0x38C3f1Ab36BdCa29133d8AF7A19811D10B6CA3FC')
-    transaction = OptimismTransaction(
+    transaction = L2WithL1FeesTransaction(
         tx_hash=evmhash,
         chain_id=chain,
         timestamp=0,
@@ -453,7 +466,7 @@ def test_eth_spend(
         tx_type=0,
         logs=[],
     )
-    dbevmtx = DBEvmTx(database) if chain == ChainID.ETHEREUM else DBOptimismTx(database)
+    dbevmtx = DBEvmTx(database) if chain == ChainID.ETHEREUM else DBL2WithL1FeesTx(database)
     tx_decoder = ethereum_transaction_decoder if chain is ChainID.ETHEREUM else optimism_transaction_decoder  # noqa: E501
     with database.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)

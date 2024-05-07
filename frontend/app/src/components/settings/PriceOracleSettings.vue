@@ -81,7 +81,7 @@ const { t } = useI18n();
 
     <div class="grid md:grid-cols-2 gap-4">
       <SettingsOption
-        #default="{ error, success, update }"
+        #default="{ error, success, updateImmediate }"
         setting="currentPriceOracles"
         :success-message="t('price_oracle_settings.latest_prices_update')"
         @finished="resetCurrentPriceOracles()"
@@ -91,7 +91,7 @@ const { t } = useI18n();
           :all-items="availableCurrentOracles()"
           :status="{ error, success }"
           :item-data-name="t('price_oracle_settings.data_name')"
-          @input="update($event)"
+          @input="updateImmediate($event)"
         >
           <template #title>
             {{ t('price_oracle_settings.latest_prices') }}
@@ -100,7 +100,7 @@ const { t } = useI18n();
       </SettingsOption>
 
       <SettingsOption
-        #default="{ error, success, update }"
+        #default="{ error, success, updateImmediate }"
         setting="historicalPriceOracles"
         @finished="resetHistoricalPriceOracles(true)"
       >
@@ -109,7 +109,7 @@ const { t } = useI18n();
           :all-items="availableHistoricOracles()"
           :status="{ error, success }"
           :item-data-name="t('price_oracle_settings.data_name')"
-          @input="update($event)"
+          @input="updateImmediate($event)"
         >
           <template #title>
             {{ t('price_oracle_settings.historic_prices') }}

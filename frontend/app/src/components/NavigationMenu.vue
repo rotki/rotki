@@ -159,8 +159,8 @@ const navItems: MenuItem[] = [
       },
       {
         type: 'item',
-        class: 'asset-manager-newly-detected',
-        ...Routes.ASSET_MANAGER_NEWLY_DETECTED,
+        class: 'asset-manager-more',
+        ...Routes.ASSET_MANAGER_MORE,
       },
     ],
   },
@@ -214,6 +214,13 @@ const navItems: MenuItem[] = [
   {
     type: 'item',
     ...Routes.IMPORT,
+  },
+  {
+    type: 'divider',
+  },
+  {
+    type: 'item',
+    ...Routes.CALENDAR,
   },
 ];
 </script>

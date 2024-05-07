@@ -138,7 +138,9 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
             from_token_address: ChecksumEvmAddress,
             to_asset: EvmToken,
     ) -> DecodingOutput:
-        """Decodes a withdraw bridging event. (Sending assets from arbitrum one)"""
+        """Decodes an event for depositing ERC20 tokens into the bridge.
+        (Sending assets from arbitrum one)
+        """
         from_token = self.base.get_or_create_evm_token(from_token_address)
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[64:96])
         amount = asset_normalized_value(raw_amount, to_asset)
@@ -158,7 +160,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
             from_event_subtype=HistoryEventSubType.NONE,
             asset=from_token,
             amount=amount,
-            to_event_type=HistoryEventType.WITHDRAWAL,
+            to_event_type=HistoryEventType.DEPOSIT,
             to_event_subtype=HistoryEventSubType.BRIDGE,
             to_notes=notes,
             to_counterparty=CPT_ARBITRUM_ONE,
@@ -166,7 +168,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
         return DecodingOutput(action_items=[action_item])
 
     def _decode_eth_withdraw_event(self, context: DecoderContext) -> DecodingOutput:
-        """Decodes an eth withdrawal event (Removing ETH from arbitrum one)"""
+        """Decodes an event for depositing ETH into the bridge (Removing ETH from arbitrum one)"""
         if (
             context.transaction.input_data[:4] != WITHDRAW_ETH_METHOD or
             context.tx_log.topics[0] != L2_TO_L1_TX
@@ -197,7 +199,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
                     amount=amount,
                     asset=self.eth,
                     expected_event_type=HistoryEventType.SPEND,
-                    new_event_type=HistoryEventType.WITHDRAWAL,
+                    new_event_type=HistoryEventType.DEPOSIT,
                     counterparty=ARBITRUM_ONE_CPT_DETAILS,
                 )
                 break
@@ -213,7 +215,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
             decoded_events: list['EvmEvent'],
             all_logs: list['EvmTxReceiptLog'],  # pylint: disable=unused-argument
     ) -> list['EvmEvent']:
-        """Decodes an ETH deposit bridging event (Receiving ETH to arbitrum one)
+        """Decodes an event for withdrawing ETH from the bridge (Receiving ETH to arbitrum one)
 
         An example that Dimitris tried is this: https://arbiscan.io/tx/0x30505174f2f82a6513f21eb5177e59935a6da95d057e4c1972e65da90ea1c547
 
@@ -231,7 +233,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
                     event.asset == A_ETH and
                     event.balance.amount == from_wei(FVal(transaction.value))
             ):
-                event.event_type = HistoryEventType.DEPOSIT
+                event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.BRIDGE
                 event.counterparty = CPT_ARBITRUM_ONE
                 event.notes = (
@@ -248,7 +250,8 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
         return decoded_events
 
     def _decode_erc20_deposit_event(self, context: DecoderContext) -> DecodingOutput:
-        """Decodes an ERC20 deposit bridging event (Receiving ECR20 tokens to arbitrum one)
+        """Decodes an event for withdrawing ERC20 tokens from bridge
+        (Receiving ECR20 tokens to arbitrum one)
         """
         if context.tx_log.topics[0] != ERC20_DEPOSIT_FINALIZED:
             return DEFAULT_DECODING_OUTPUT
@@ -271,7 +274,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
                     event.address == ZERO_ADDRESS and
                     event.balance.amount == amount
             ):
-                event.event_type = HistoryEventType.DEPOSIT
+                event.event_type = HistoryEventType.WITHDRAWAL
                 event.event_subtype = HistoryEventSubType.BRIDGE
                 event.counterparty = CPT_ARBITRUM_ONE
                 event.notes = (

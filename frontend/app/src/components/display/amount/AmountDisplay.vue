@@ -3,7 +3,6 @@ import { BigNumber } from '@rotki/common';
 import { or } from '@vueuse/math';
 import { displayAmountFormatter } from '@/data/amount-formatter';
 import { CURRENCY_USD, type Currency, useCurrencies } from '@/types/currencies';
-import type { ComputedRef } from 'vue';
 import type { RoundingMode } from '@/types/settings/frontend-settings';
 
 const props = withDefaults(

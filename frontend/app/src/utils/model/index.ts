@@ -1,5 +1,4 @@
 import { kebabCase } from 'lodash-es';
-import type { Ref, WritableComputedRef } from 'vue';
 
 export function usePropVModel<
   P extends object,
@@ -52,7 +51,7 @@ export function useKebabVModel<
 }
 
 export function useRefPropVModel<P extends object, K extends keyof P>(obj: Ref<P>, key: K): WritableComputedRef<P[K]> {
-  return computed({
+  return computed<P[K]>({
     get() {
       return get(obj)[key];
     },

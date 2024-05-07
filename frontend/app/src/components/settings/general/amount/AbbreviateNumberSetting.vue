@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { MINIMUM_DIGIT_TO_BE_ABBREVIATED } from '@/data/constraints';
 import { abbreviationList } from '@/data/amount-formatter';
-import type { Ref } from 'vue';
 
 const { t } = useI18n();
 
@@ -48,39 +47,40 @@ const items = computed(() => {
       class="w-[26rem]"
       frontend-setting
     >
-      <VSwitch
+      <RuiSwitch
         v-model="abbreviate"
-        class="mt-0"
         data-cy="frontend-settings__fields__abbreviate_number"
         :label="t('frontend_settings.label.abbreviate_number')"
         :hint="t('frontend_settings.subtitle.abbreviate_number')"
         color="primary"
-        persistent-hint
         :success-messages="success"
         :error-messages="error"
-        @change="update($event)"
+        @input="update($event)"
       />
     </SettingsOption>
     <SettingsOption
-      #default="{ error, success, update }"
+      #default="{ error, success, updateImmediate }"
       :transform="transform"
       class="md:min-w-[18rem]"
       setting="minimumDigitToBeAbbreviated"
       frontend-setting
       @finished="resetMinimumDigitToBeAbbreviated()"
     >
-      <VSelect
+      <RuiMenuSelect
         v-model="minimumDigit"
-        outlined
         :disabled="!abbreviate"
+        :options="items"
         data-cy="frontend-settings__fields__minimum_digit_to_be_abbreviated"
         :label="t('frontend_settings.label.minimum_digit_to_be_abbreviated')"
-        item-key="value"
-        item-text="label"
-        :items="items"
+        key-attr="value"
+        text-attr="label"
+        full-width
+        float-label
+        show-details
+        variant="outlined"
         :success-messages="success"
         :error-messages="error"
-        @change="update($event)"
+        @input="updateImmediate($event)"
       />
     </SettingsOption>
   </div>

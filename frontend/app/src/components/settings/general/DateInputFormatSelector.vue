@@ -24,31 +24,33 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <VSelect
+  <RuiMenuSelect
     v-bind="rootAttrs"
-    item-text="value"
-    item-value="value"
-    outlined
-    persistent-hint
-    :items="selections"
+    :options="selections"
+    :item-height="68"
+    key-attr="value"
+    text-attr="value"
+    full-width
+    float-label
+    show-details
+    variant="outlined"
     v-on="
       // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
       $listeners
     "
   >
-    <template #item="{ item, attrs, on }">
+    <template #item.text="{ option }">
       <ListItem
         no-hover
         no-padding
-        v-bind="attrs"
-        :title="item.value"
+        class="!py-0"
+        :title="option.value"
         :subtitle="
           t('general_settings.date_input_format_hint', {
-            format: dateInputFormatExample(item.value),
+            format: dateInputFormatExample(option.value),
           })
         "
-        v-on="on"
       />
     </template>
-  </VSelect>
+  </RuiMenuSelect>
 </template>

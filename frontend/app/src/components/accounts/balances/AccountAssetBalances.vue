@@ -5,7 +5,16 @@ import type {
   DataTableSortData,
 } from '@rotki/ui-library-compat';
 
-const props = defineProps<{ assets: AssetBalance[]; title: string }>();
+const props = withDefaults(
+  defineProps<{
+    assets: AssetBalance[];
+    title: string;
+    flat: boolean;
+  }>(),
+  {
+    flat: false,
+  },
+);
 
 const { t } = useI18n();
 const { assets } = toRefs(props);
@@ -13,6 +22,7 @@ const { assets } = toRefs(props);
 const { assetPrice } = useBalancePricesStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { assetInfo } = useAssetInfoRetrieval();
+const getPrice = (asset: string) => get(assetPrice(asset)) ?? Zero;
 
 const sort: Ref<DataTableSortData> = ref({
   column: 'usdValue',
@@ -40,7 +50,7 @@ const sorted = computed(() => {
 
 const headers = computed<DataTableColumn[]>(() => [
   {
-    label: t('common.asset').toString(),
+    label: t('common.asset'),
     class: 'text-no-wrap w-full',
     cellClass: 'py-1',
     key: 'asset',
@@ -49,7 +59,7 @@ const headers = computed<DataTableColumn[]>(() => [
   {
     label: t('common.price_in_symbol', {
       symbol: get(currencySymbol),
-    }).toString(),
+    }),
     class: 'text-no-wrap',
     cellClass: 'py-1',
     align: 'end',
@@ -57,7 +67,7 @@ const headers = computed<DataTableColumn[]>(() => [
     sortable: true,
   },
   {
-    label: t('common.amount').toString(),
+    label: t('common.amount'),
     key: 'amount',
     class: 'text-no-wrap',
     cellClass: 'py-1',
@@ -67,7 +77,7 @@ const headers = computed<DataTableColumn[]>(() => [
   {
     label: t('common.value_in_symbol', {
       symbol: get(currencySymbol),
-    }).toString(),
+    }),
     key: 'usdValue',
     align: 'end',
     class: 'text-no-wrap',
@@ -75,13 +85,17 @@ const headers = computed<DataTableColumn[]>(() => [
     sortable: true,
   },
 ]);
-
-const getPrice = (asset: string) => get(assetPrice(asset)) ?? Zero;
 </script>
 
 <template>
-  <RuiCard>
-    <template #header>
+  <RuiCard
+    :no-padding="flat"
+    :variant="flat ? 'flat' : 'outlined'"
+  >
+    <template
+      v-if="!flat && title"
+      #header
+    >
       {{ title }}
     </template>
     <RuiDataTable
@@ -102,10 +116,11 @@ const getPrice = (asset: string) => get(assetPrice(asset)) ?? Zero;
       <template #item.price="{ row }">
         <AmountDisplay
           v-if="assetPrice(row.asset).value"
-          tooltip
+          no-scramble
           show-currency="symbol"
           fiat-currency="USD"
           :price-asset="row.asset"
+          :price-of-asset="row.price"
           :value="getPrice(row.asset)"
         />
         <div v-else>

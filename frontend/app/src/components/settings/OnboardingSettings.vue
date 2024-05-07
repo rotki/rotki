@@ -10,7 +10,6 @@ import {
 import { isEqual } from 'lodash-es';
 import { LogLevel } from '@/utils/log-level';
 import { toMessages } from '@/utils/validation';
-import type { Ref } from 'vue';
 import type { BackendOptions } from '@/electron-main/ipc';
 import type { Writeable } from '@/types';
 import type { BackendConfiguration } from '@/types/backend';
@@ -40,30 +39,6 @@ const configuration: Ref<BackendConfiguration> = asyncComputed(() =>
   backendSettings(),
 );
 
-const initialOptions: ComputedRef<Partial<BackendOptions>> = computed(() => {
-  const config = get(configuration);
-  const opts = get(options);
-  const defaults = get(defaultBackendArguments);
-  return {
-    loglevel: opts.loglevel ?? get(defaultLogLevel),
-    dataDirectory: opts.dataDirectory ?? get(dataDirectory),
-    logDirectory: opts.logDirectory ?? get(defaultLogDirectory),
-    logFromOtherModules: opts.logFromOtherModules ?? false,
-    maxLogfilesNum:
-      opts.maxLogfilesNum
-      ?? config?.maxLogfilesNum?.value
-      ?? defaults.maxLogfilesNum,
-    maxSizeInMbAllLogs:
-      opts.maxSizeInMbAllLogs
-      ?? config?.maxSizeInMbAllLogs?.value
-      ?? defaults.maxSizeInMbAllLogs,
-    sqliteInstructions:
-      opts.sqliteInstructions
-      ?? config?.sqliteInstructions?.value
-      ?? defaults.sqliteInstructions,
-  };
-});
-
 function parseValue(value?: string) {
   if (!value)
     return 0;
@@ -79,7 +54,41 @@ function stringifyValue(value?: number) {
   return value.toString();
 }
 
-async function loaded() {
+const {
+  resetOptions,
+  saveOptions,
+  fileConfig,
+  logLevel,
+  defaultLogLevel,
+  defaultLogDirectory,
+  options,
+} = useBackendManagement(loaded);
+
+const initialOptions: ComputedRef<Partial<BackendOptions>> = computed(() => {
+  const config = get(configuration);
+  const opts = get(options);
+  const defaults = get(defaultBackendArguments);
+  return {
+    loglevel: opts.loglevel ?? get(defaultLogLevel),
+    dataDirectory: opts.dataDirectory ?? get(dataDirectory),
+    logDirectory: opts.logDirectory ?? get(defaultLogDirectory),
+    logFromOtherModules: opts.logFromOtherModules ?? false,
+    maxLogfilesNum:
+        opts.maxLogfilesNum
+        ?? config?.maxLogfilesNum?.value
+        ?? defaults.maxLogfilesNum,
+    maxSizeInMbAllLogs:
+        opts.maxSizeInMbAllLogs
+        ?? config?.maxSizeInMbAllLogs?.value
+        ?? defaults.maxSizeInMbAllLogs,
+    sqliteInstructions:
+        opts.sqliteInstructions
+        ?? config?.sqliteInstructions?.value
+        ?? defaults.sqliteInstructions,
+  };
+});
+
+function loaded() {
   const initial = get(initialOptions);
 
   set(logLevel, initial.loglevel);
@@ -90,16 +99,6 @@ async function loaded() {
   set(maxLogSize, stringifyValue(initial.maxSizeInMbAllLogs));
   set(sqliteInstructions, stringifyValue(initial.sqliteInstructions));
 }
-
-const {
-  resetOptions,
-  saveOptions,
-  fileConfig,
-  logLevel,
-  defaultLogLevel,
-  defaultLogDirectory,
-  options,
-} = useBackendManagement(loaded);
 
 const isMaxLogFilesDefault = computed(() => {
   const defaults = get(defaultBackendArguments);
@@ -367,47 +366,56 @@ function showResetConfirmation() {
         </template>
       </RuiTextField>
 
-      <VSelect
+      <RuiMenuSelect
         v-model="logLevel"
-        :items="levels"
+        :options="levels"
         class="loglevel-input"
         :disabled="!!fileConfig.loglevel"
         :label="t('backend_settings.settings.log_level.label')"
-        :persistent-hint="!!fileConfig.loglevel"
+        :show-details="!!fileConfig.loglevel"
         :hint="
           !!fileConfig.loglevel
             ? t('backend_settings.config_file_disabled')
-            : null
+            : undefined
         "
-        outlined
+        key-attr="identifier"
+        text-attr="label"
+        full-width
+        float-label
+        variant="outlined"
       >
-        <template #item="{ item }">
+        <template #item.prepend="{ option }">
+          <RuiIcon
+            class="text-rui-text-secondary"
+            :name="icon(option.identifier)"
+          />
+        </template>
+        <template #item.text="{ option }">
+          <span class="capitalize"> {{ option.identifier.toLocaleLowerCase() }} </span>
+        </template>
+
+        <template #activator.text="{ value }">
           <div class="flex items-center gap-4">
             <RuiIcon
               class="text-rui-text-secondary"
-              :name="icon(item)"
+              :name="icon(value.identifier)"
             />
-            {{ item.toLocaleLowerCase() }}
+            <span class="capitalize"> {{ value.identifier.toLocaleLowerCase() }} </span>
           </div>
         </template>
-        <template #selection="{ item }">
-          <div class="flex items-center gap-4">
-            <RuiIcon
-              class="text-rui-text-secondary"
-              :name="icon(item)"
-            />
-            {{ item.toLocaleLowerCase() }}
-          </div>
-        </template>
-      </VSelect>
+      </RuiMenuSelect>
     </div>
 
-    <VExpansionPanels flat>
-      <VExpansionPanel>
-        <VExpansionPanelHeader data-cy="onboarding-setting__advance-toggle">
+    <RuiAccordions>
+      <RuiAccordion
+        data-cy="onboarding-setting__advance"
+        header-class="py-4"
+        eager
+      >
+        <template #header>
           {{ t('backend_settings.advanced') }}
-        </VExpansionPanelHeader>
-        <VExpansionPanelContent>
+        </template>
+        <div class="py-2">
           <RuiTextField
             v-model="maxLogSize"
             data-cy="max-log-size-input"
@@ -499,9 +507,9 @@ function showResetConfirmation() {
           >
             {{ t('backend_settings.log_from_other_modules.label') }}
           </RuiCheckbox>
-        </VExpansionPanelContent>
-      </VExpansionPanel>
-    </VExpansionPanels>
+        </div>
+      </RuiAccordion>
+    </RuiAccordions>
 
     <template #footer>
       <div class="flex justify-end w-full gap-2">
@@ -531,19 +539,3 @@ function showResetConfirmation() {
     </template>
   </BigDialog>
 </template>
-
-<style scoped lang="scss">
-:deep(.v-expansion-panel) {
-  .v-expansion-panel {
-    &-content {
-      &__wrap {
-        padding: 0 0 16px;
-      }
-    }
-
-    &-header {
-      padding: 16px 0;
-    }
-  }
-}
-</style>

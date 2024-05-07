@@ -39,11 +39,14 @@ from rotkehlchen.chain.optimism.manager import OptimismManager
 from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
 from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
 from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
+from rotkehlchen.chain.scroll.manager import ScrollManager
+from rotkehlchen.chain.scroll.node_inquirer import ScrollInquirer
 from rotkehlchen.chain.substrate.manager import SubstrateManager
 from rotkehlchen.chain.substrate.utils import (
     KUSAMA_NODES_TO_CONNECT_AT_START,
     POLKADOT_NODES_TO_CONNECT_AT_START,
 )
+from rotkehlchen.chain.zksync_lite.manager import ZksyncLiteManager
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.data_handler import DataHandler
@@ -85,7 +88,8 @@ from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
     EVM_CHAINS_WITH_TRANSACTIONS_TYPE,
     SUPPORTED_BITCOIN_CHAINS,
-    SUPPORTED_EVM_CHAINS,
+    SUPPORTED_EVM_CHAINS_TYPE,
+    SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     SUPPORTED_SUBSTRATE_CHAINS,
     ApiKey,
     ApiSecret,
@@ -209,11 +213,11 @@ class Rotkehlchen:
                     greenlet.dead is False and
                     len(greenlet.args) >= 1 and
                     isinstance(greenlet.args[0], FunctionType) and
-                    greenlet.args[0].__qualname__ == 'RestAPI.get_evm_transactions'
+                    greenlet.args[0].__qualname__ == 'RestAPI.refresh_evm_transactions'
                 )
                 if (
                         is_evm_tx_greenlet and
-                        greenlet.kwargs['only_cache'] is False and
+                        greenlet.kwargs.get('only_cache', False) is False and
                         account_tuple in greenlet.kwargs['filter_query'].accounts
                 ):
                     greenlet.kill(exception=GreenletKilledError('Killed due to request for evm address removal'))  # noqa: E501
@@ -389,6 +393,11 @@ class Rotkehlchen:
             database=self.data.db,
         )
         gnosis_manager = GnosisManager(gnosis_inquirer)
+        scroll_inquirer = ScrollInquirer(
+            greenlet_manager=self.greenlet_manager,
+            database=self.data.db,
+        )
+        scroll_manager = ScrollManager(scroll_inquirer)
         kusama_manager = SubstrateManager(
             chain=SupportedBlockchain.KUSAMA,
             msg_aggregator=self.msg_aggregator,
@@ -408,6 +417,10 @@ class Rotkehlchen:
         avalanche_manager = AvalancheManager(
             avaxrpc_endpoint='https://api.avax.network/ext/bc/C/rpc',
             msg_aggregator=self.msg_aggregator,
+        )
+        zksync_lite_manager = ZksyncLiteManager(
+            ethereum_inquirer=ethereum_inquirer,
+            database=self.data.db,
         )
 
         Inquirer().inject_evm_managers([
@@ -430,9 +443,11 @@ class Rotkehlchen:
             arbitrum_one_manager=arbitrum_one_manager,
             base_manager=base_manager,
             gnosis_manager=gnosis_manager,
+            scroll_manager=scroll_manager,
             kusama_manager=kusama_manager,
             polkadot_manager=polkadot_manager,
             avalanche_manager=avalanche_manager,
+            zksync_lite_manager=zksync_lite_manager,
             msg_aggregator=self.msg_aggregator,
             database=self.data.db,
             greenlet_manager=self.greenlet_manager,
@@ -639,10 +654,10 @@ class Rotkehlchen:
             self,
             account_data: list[SingleBlockchainAccountData[ChecksumEvmAddress]],
     ) -> tuple[
-        list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
-        list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
-        list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
-        list[tuple[SUPPORTED_EVM_CHAINS, ChecksumEvmAddress]],
+        list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
+        list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
+        list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
+        list[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ChecksumEvmAddress]],
         list[ChecksumEvmAddress],
     ]:
         """Adds each account for all evm addresses
@@ -700,7 +715,7 @@ class Rotkehlchen:
     @overload
     def add_single_blockchain_accounts(
             self,
-            chain: SUPPORTED_EVM_CHAINS,
+            chain: SUPPORTED_EVM_CHAINS_TYPE,
             account_data: list[SingleBlockchainAccountData[ChecksumEvmAddress]],
     ) -> None:
         ...

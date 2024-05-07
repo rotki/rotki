@@ -9,7 +9,6 @@ import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import HistoryEventsAction from '@/components/history/events/HistoryEventsAction.vue';
 import { Routes } from '@/router/routes';
-import type { Writeable } from '@/types';
 import type {
   EvmChainAndTxHash,
   EvmHistoryEvent,
@@ -17,15 +16,13 @@ import type {
   HistoryEventEntry,
   HistoryEventRequestPayload,
 } from '@/types/history/events';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library-compat';
+import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
+import type { Writeable } from '@/types';
 import type { Collection } from '@/types/collection';
-import type { DataTableHeader } from '@/types/vuetify';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
-import type { ComputedRef, Ref } from 'vue';
-import type {
-  Blockchain,
-  BlockchainSelection,
-} from '@rotki/common/lib/blockchain';
-import type { Account, GeneralAccount } from '@rotki/common/lib/account';
+import type { Blockchain } from '@rotki/common/lib/blockchain';
+import type { Account } from '@rotki/common/lib/account';
 import type { Filters, Matcher } from '@/composables/filters/events';
 
 const props = withDefaults(
@@ -52,7 +49,7 @@ const props = withDefaults(
     period: undefined,
     validators: undefined,
     externalAccountFilter: () => [],
-    useExternalAccountFilter: false,
+    useExternalAccountFilter: undefined,
     sectionTitle: '',
     mainPage: false,
     onlyChains: () => [],
@@ -85,62 +82,86 @@ const eventToDelete = ref<HistoryEventEntry>();
 const eventWithMissingRules = ref<HistoryEventEntry>();
 const missingRulesDialog: Ref<boolean> = ref(false);
 const transactionToIgnore = ref<HistoryEventEntry>();
-const accounts: Ref<GeneralAccount[]> = ref([]);
+const accounts = ref<BlockchainAccount<AddressData>[]>([]);
 const locationOverview = ref(get(location));
 
 const usedTitle: ComputedRef<string> = computed(
   () => get(sectionTitle) || t('transactions.title'),
 );
 
-const usedAccounts: ComputedRef<Account<BlockchainSelection>[]> = computed(
-  () => {
-    if (get(useExternalAccountFilter))
-      return get(externalAccountFilter);
+const usedAccounts = computed<Account[]>(() => {
+  if (isDefined(useExternalAccountFilter))
+    return get(externalAccountFilter);
 
-    const accountsVal = get(accounts);
-    return accountsVal.length > 0 ? [accountsVal[0]] : accountsVal;
-  },
-);
+  const accountData = get(accounts).map(account => ({
+    address: getAccountAddress(account),
+    chain: account.chain,
+  }));
+  return accountData.length > 0 ? [accountData[0]] : accountData;
+});
 
-const tableHeaders = computed<DataTableHeader[]>(() => [
+const sort: Ref<DataTableSortData> = ref({
+  column: 'timestamp',
+  direction: 'desc' as const,
+});
+
+const tableHeaders = computed<DataTableColumn[]>(() => [
   {
-    text: '',
-    value: 'ignoredInAccounting',
-    sortable: false,
-    class: '!p-0',
-    cellClass: '!p-0',
-    width: '0px',
+    label: '',
+    key: 'ignoredInAccounting',
+    class: '!p-0 w-px',
+    cellClass: '!p-0 w-px',
   },
   {
-    text: t('transactions.events.headers.event_identifier'),
-    value: 'txHash',
-    sortable: false,
-    width: '60%',
+    label: t('transactions.events.headers.event_identifier'),
+    key: 'txHash',
+    class: 'w-[60%]',
+    cellClass: '!py-2',
   },
   {
-    text: t('common.datetime'),
-    value: 'timestamp',
-    cellClass: 'text-no-wrap',
+    label: t('common.datetime'),
+    key: 'timestamp',
+    cellClass: 'text-no-wrap !py-2',
+    align: 'end',
+    sortable: true,
+  },
+  {
+    label: '',
+    key: 'action',
+    class: 'w-[1.25rem]',
+    cellClass: 'w-[1.25rem] !py-2',
     align: 'end',
   },
   {
-    text: '',
-    value: 'action',
-    width: '20px',
+    label: '',
+    key: 'expand',
     align: 'end',
-    sortable: false,
+    class: '!w-0 !p-0',
+    cellClass: '!w-0 !p-0',
   },
 ]);
 
 const { isTaskRunning } = useTaskStore();
-const { txEvmChains, getEvmChainName } = useSupportedChains();
-const txChains = useArrayMap(txEvmChains, x => x.id);
+const { show } = useConfirmStore();
+const historyStore = useHistoryStore();
+const { fetchAssociatedLocations, resetUndecodedTransactionsStatus } = historyStore;
+const { decodingStatus } = storeToRefs(historyStore);
+const { txChains } = useSupportedChains();
+const txChainIds = useArrayMap(txChains, x => x.id);
 
 const { fetchHistoryEvents, deleteHistoryEvent } = useHistoryEvents();
+const { deleteTransactions } = useHistoryEventsApi();
 
 const { refreshTransactions } = useHistoryTransactions();
 
-const { fetchTransactionEvents } = useHistoryTransactionDecoding();
+const {
+  pullAndRedecodeTransaction,
+  fetchUndecodedTransactionsStatus,
+  redecodeTransactions,
+} = useHistoryTransactionDecoding();
+const { getAccountByAddress } = useBlockchainStore();
+
+const { notify } = useNotificationsStore();
 
 const vueRouter = useRouter();
 
@@ -153,7 +174,7 @@ const {
   filters,
   matchers,
   setPage,
-  setOptions,
+  setTableOptions,
   setFilter,
   updateFilter,
   fetchData,
@@ -186,10 +207,10 @@ const {
     onUpdateFilters(query) {
       const parsedAccounts = RouterAccountsSchema.parse(query);
       const accountsParsed = parsedAccounts.accounts;
-      if (!accountsParsed)
+      if (!accountsParsed || accountsParsed.length === 0)
         set(accounts, []);
       else
-        set(accounts, accountsParsed.length > 0 ? [accountsParsed[0]] : []);
+        set(accounts, accountsParsed.map(({ address, chain }) => getAccountByAddress(address, chain)));
     },
     extraParams: computed(() => ({
       accounts: get(usedAccounts).map(
@@ -224,7 +245,7 @@ const {
         params.location = toSnakeCase(get(locationOverview));
 
       if (accounts.length > 0)
-        params.locationLabels = accounts.map(({ address }) => address);
+        params.locationLabels = accounts.map(account => account.address);
 
       if (isDefined(period)) {
         const { fromTimestamp, toTimestamp } = get(period);
@@ -240,9 +261,18 @@ const {
   },
 );
 
+async function fetchDataAndLocations() {
+  await fetchData();
+  await fetchAssociatedLocations();
+}
+
 const { data } = getCollectionData<HistoryEventEntry>(eventsHeader);
 
 const isEventsLoading: Ref<boolean> = ref(false);
+const decodingStatusDialogPersistent: Ref<boolean> = ref(false);
+const decodingStatusDialogOpen: Ref<boolean> = ref(false);
+const currentAction: Ref<'decode' | 'query'> = ref('query');
+const route = useRoute();
 
 const allEvents: Ref<HistoryEventEntry[]> = asyncComputed(
   async () => {
@@ -268,6 +298,8 @@ const allEvents: Ref<HistoryEventEntry[]> = asyncComputed(
   },
 );
 
+const hasIgnoredEvent = computed(() => get(allEvents).some(event => event.ignoredInAccounting));
+
 const locations = computed<string[]>(() => {
   const filteredData = get(filters);
 
@@ -282,44 +314,37 @@ const locations = computed<string[]>(() => {
   return [];
 });
 
-function onFilterAccountsChanged(acc: Account<BlockchainSelection>[]) {
+function onFilterAccountsChanged(acc: BlockchainAccount<AddressData>[]) {
   set(userAction, true);
   set(accounts, acc.length > 0 ? [acc[0]] : []);
 }
 
-function redecodeAllEvmEvents() {
+function redecodeAllEvents() {
   set(decodingStatusDialogPersistent, true);
   show(
     {
       title: t('transactions.events_decoding.redecode_all'),
       message: t('transactions.events_decoding.confirmation'),
     },
-    () => redecodeAllEvmEventsHandler(),
+    () => redecodeAllEventsHandler(),
     () => {
       set(decodingStatusDialogPersistent, false);
     },
   );
 }
 
-async function redecodeAllEvmEventsHandler() {
+async function redecodeAllEventsHandler() {
   set(decodingStatusDialogPersistent, false);
-
-  const chains = get(onlyChains);
-  const evmChains: { evmChain: string }[] = [];
-
-  if (chains.length > 0) {
-    chains.forEach((item) => {
-      const evmChain = getEvmChainName(item);
-      if (evmChain)
-        evmChains.push({ evmChain });
-    });
-  }
-
-  await fetchTransactionEvents(chains.length === 0 ? null : evmChains, true);
+  set(currentAction, 'decode');
+  await fetchUndecodedTransactionsStatus();
+  await redecodeTransactions(get(onlyChains));
+  await fetchData();
 }
 
 async function forceRedecodeEvmEvents(data: EvmChainAndTxHash) {
-  await fetchTransactionEvents([data], true);
+  set(currentAction, 'decode');
+  await pullAndRedecodeTransaction(data);
+  await fetchData();
 }
 
 async function resetEventsHandler(data: EvmHistoryEvent) {
@@ -334,7 +359,7 @@ async function resetEventsHandler(data: EvmHistoryEvent) {
     await deleteHistoryEvent(eventIds, true);
 
   await forceRedecodeEvmEvents(toEvmChainAndTxHash(data));
-  await fetchData();
+  await fetchDataAndLocations();
 }
 
 function resetEvents(data: EvmHistoryEvent) {
@@ -344,6 +369,34 @@ function resetEvents(data: EvmHistoryEvent) {
       message: t('transactions.events.confirmation.reset.message'),
     },
     () => resetEventsHandler(data),
+  );
+}
+
+function deleteTxAndEvents({ evmChain, txHash }: EvmChainAndTxHash) {
+  show(
+    {
+      title: t('transactions.dialog.delete.title'),
+      message: t('transactions.dialog.delete.message'),
+    },
+    async () => {
+      try {
+        await deleteTransactions(evmChain, txHash);
+        await fetchData();
+      }
+      catch (error: any) {
+        if (!isTaskCancelled(error)) {
+          const title = t('transactions.dialog.delete.error.title');
+          const message = t('transactions.dialog.delete.error.message', {
+            message: error.message,
+          });
+          notify({
+            title,
+            message,
+            display: true,
+          });
+        }
+      }
+    },
   );
 }
 
@@ -368,7 +421,7 @@ setPostSubmitFunc(() => {
   if (groupHeader)
     fetchDataAndRefreshEvents(toEvmChainAndTxHash(groupHeader));
   else
-    fetchData();
+    fetchDataAndLocations();
 });
 
 function suggestNextSequence(): string {
@@ -451,7 +504,7 @@ function getItemClass(item: HistoryEventEntry) {
 
 watch(
   [filters, usedAccounts],
-  async ([filters, usedAccounts], [oldFilters, oldAccounts]) => {
+  ([filters, usedAccounts], [oldFilters, oldAccounts]) => {
     const filterChanged = !isEqual(filters, oldFilters);
     const accountsChanged = !isEqual(usedAccounts, oldAccounts);
 
@@ -473,8 +526,9 @@ watch(
 const premium = usePremium();
 const { isLoading: isSectionLoading } = useStatusStore();
 const sectionLoading = isSectionLoading(Section.HISTORY_EVENT);
-const eventTaskLoading = isTaskRunning(TaskType.EVM_EVENTS_DECODING);
+const eventTaskLoading = isTaskRunning(TaskType.TRANSACTIONS_DECODING);
 const onlineHistoryEventsLoading = isTaskRunning(TaskType.QUERY_ONLINE_EVENTS);
+const isTransactionsLoading = isTaskRunning(TaskType.TX);
 
 const { isAllFinished: isQueryingTxsFinished } = toRefs(
   useTxQueryStatusStore(),
@@ -500,10 +554,15 @@ const loading = refThrottled(
   300,
 );
 
-const { fetchAssociatedLocations } = useHistoryStore();
+const processing = logicOr(
+  isTransactionsLoading,
+  loading,
+  querying,
+  refreshing,
+);
+
 const { pause, resume, isActive } = useIntervalFn(() => {
-  fetchData();
-  fetchAssociatedLocations();
+  startPromise(fetchDataAndLocations());
 }, 20000);
 
 watch(shouldFetchEventsRegularly, (shouldFetchEventsRegularly) => {
@@ -513,8 +572,6 @@ watch(shouldFetchEventsRegularly, (shouldFetchEventsRegularly) => {
   else if (!shouldFetchEventsRegularly && active)
     pause();
 });
-
-const { show } = useConfirmStore();
 
 function onAddMissingRule(data: Pick<AccountingRuleEntry, 'eventType' | 'eventSubtype' | 'counterparty'>) {
   vueRouter.push({
@@ -566,12 +623,11 @@ onMounted(async () => {
 });
 
 async function refresh(userInitiated = false) {
+  set(currentAction, 'query');
   const entryTypesVal = get(entryTypes) || [];
-  const disableEvmEvents
-    = entryTypesVal.length > 0
-    && !entryTypesVal.includes(HistoryEventEntryType.EVM_EVENT);
+  const disableEvmEvents = entryTypesVal.length > 0 && !entryTypesVal.includes(HistoryEventEntryType.EVM_EVENT);
   await refreshTransactions(get(onlyChains), disableEvmEvents, userInitiated);
-  startPromise(Promise.all([fetchData(), fetchAssociatedLocations()]));
+  startPromise(fetchDataAndLocations());
 }
 
 onUnmounted(() => {
@@ -580,7 +636,7 @@ onUnmounted(() => {
 
 watch(eventTaskLoading, async (isLoading, wasLoading) => {
   if (!isLoading && wasLoading)
-    await fetchData();
+    await fetchDataAndLocations();
 });
 
 const {
@@ -598,7 +654,7 @@ function addTransactionHash() {
 }
 
 async function fetchDataAndRefreshEvents(data: EvmChainAndTxHash, reDecodeEvents = false) {
-  await fetchData();
+  await fetchDataAndLocations();
   if (reDecodeEvents)
     await forceRedecodeEvmEvents(data);
 }
@@ -612,10 +668,6 @@ const includeOnlineEvents: ComputedRef<boolean> = useEmptyOrSome(
   entryTypes,
   type => isOnlineHistoryEventType(type),
 );
-
-const decodingStatusDialogPersistent: Ref<boolean> = ref(false);
-const decodingStatusDialogOpen: Ref<boolean> = ref(false);
-const route = useRoute();
 
 watchImmediate(route, async (route) => {
   if (route.query.openDecodingStatusDialog) {
@@ -635,7 +687,7 @@ watchImmediate(route, async (route) => {
       <RuiTooltip :open-delay="400">
         <template #activator>
           <RuiButton
-            :disabled="refreshing"
+            :disabled="processing"
             variant="outlined"
             color="primary"
             @click="refresh(true)"
@@ -667,7 +719,9 @@ watchImmediate(route, async (route) => {
         <HistoryEventsDecodingStatus
           v-if="decodingStatusDialogOpen"
           :refreshing="refreshing"
-          @redecode-all-evm-events="redecodeAllEvmEvents()"
+          :decoding-status="decodingStatus"
+          @redecode-all-events="redecodeAllEvents()"
+          @reset-undecoded-transactions="resetUndecodedTransactionsStatus()"
         >
           <RuiButton
             variant="text"
@@ -679,10 +733,10 @@ watchImmediate(route, async (route) => {
         </HistoryEventsDecodingStatus>
       </VDialog>
 
-      <VMenu
-        offset-y
-        left
-        max-width="200"
+      <RuiMenu
+        :popper="{ placement: 'bottom-end' }"
+        menu-class="max-w-[24rem]"
+        close-on-content-click
       >
         <template #activator="{ on }">
           <RuiBadge
@@ -729,6 +783,7 @@ watchImmediate(route, async (route) => {
           <RuiButton
             variant="list"
             data-cy="history-events__add_by_tx_hash"
+            :disabled="eventTaskLoading"
             @click="addTransactionHash()"
           >
             <template #prepend>
@@ -737,7 +792,7 @@ watchImmediate(route, async (route) => {
             {{ t('transactions.dialog.add_tx') }}
           </RuiButton>
         </div>
-      </VMenu>
+      </RuiMenu>
     </template>
 
     <RuiCard>
@@ -759,16 +814,18 @@ watchImmediate(route, async (route) => {
         <template #filter>
           <TableStatusFilter>
             <div class="py-1 max-w-[16rem]">
-              <VSwitch
+              <RuiSwitch
                 v-model="customizedEventsOnly"
-                class="mb-4 pt-0 px-4"
+                color="primary"
+                class="p-4"
                 hide-details
                 :label="t('transactions.filter.customized_only')"
               />
               <RuiDivider />
-              <VSwitch
+              <RuiSwitch
                 v-model="showIgnoredAssets"
-                class="mb-4 pt-0 px-4"
+                color="primary"
+                class="p-4"
                 hide-details
                 :label="t('transactions.filter.show_ignored_assets')"
               />
@@ -797,11 +854,20 @@ watchImmediate(route, async (route) => {
           </TableFilter>
         </template>
 
+        <RuiButton
+          color="primary"
+          class="!py-2"
+          :disabled="processing"
+          @click="redecodeAllEvents()"
+        >
+          {{ t('transactions.events_decoding.redecode_all') }}
+        </RuiButton>
+
         <HistoryEventsExport :filters="pageParams" />
         <BlockchainAccountSelector
           v-if="!useExternalAccountFilter"
           :value="accounts"
-          :chains="txChains"
+          :chains="txChainIds"
           dense
           :label="t('transactions.filter.account')"
           outlined
@@ -829,71 +895,96 @@ watchImmediate(route, async (route) => {
             entriesFoundTotal,
           }"
         >
-          <DataTable
+          <RuiDataTable
             :expanded="eventsData"
-            :headers="tableHeaders"
-            :items="eventsData"
-            :loading="loading"
-            :options="options"
-            :server-items-length="itemLength"
-            :single-select="false"
+            :cols="tableHeaders"
+            :rows="eventsData"
+            :loading="processing"
+            :pagination="{
+              limit: options.itemsPerPage,
+              page: options.page,
+              total: itemLength,
+            }"
+            :pagination-modifiers="{ external: true }"
+            :sort.sync="sort"
+            :sort-modifiers="{ external: true }"
             :item-class="getItemClass"
-            @update:options="setOptions($event)"
+            :empty="{ label: t('data_table.no_data') }"
+            :texts="{
+              rowsPerPage: t('data_table.rows_per_page'),
+              itemsNumber: t('data_table.items_no'),
+              of: t('common.of'),
+            }"
+            row-attr="txHash"
+            outlined
+            @update:options="setTableOptions($event)"
           >
-            <template #item.ignoredInAccounting="{ item, isMobile }">
+            <template #item.ignoredInAccounting="{ row }">
               <IgnoredInAcountingIcon
-                v-if="item.ignoredInAccounting"
+                v-if="row.ignoredInAccounting"
                 class="ml-4"
-                :mobile="isMobile"
+              />
+              <div
+                v-else
+                class="min-h-[3.25rem]"
               />
             </template>
-            <template #item.txHash="{ item }">
-              <div class="flex items-center gap-2">
+            <template #item.txHash="{ row }">
+              <LazyLoader class="flex items-center gap-2">
                 <LocationIcon
                   icon
-                  :item="item.location"
+                  :item="row.location"
                   size="20px"
                 />
-                <HistoryEventsIdentifier :event="item" />
-              </div>
+                <HistoryEventsIdentifier :event="row" />
+              </LazyLoader>
             </template>
-            <template #item.timestamp="{ item }">
-              <DateDisplay
-                :timestamp="item.timestamp"
-                milliseconds
-              />
+            <template #item.timestamp="{ row }">
+              <LazyLoader>
+                <DateDisplay
+                  :timestamp="row.timestamp"
+                  milliseconds
+                />
+              </LazyLoader>
             </template>
-            <template #item.action="{ item }">
-              <HistoryEventsAction
-                :event="item"
-                :loading="eventTaskLoading"
-                @add-event="addEvent($event)"
-                @toggle-ignore="toggleIgnore($event)"
-                @redecode="forceRedecodeEvmEvents($event)"
-                @reset="resetEvents($event)"
-              />
+            <template #item.action="{ row }">
+              <LazyLoader>
+                <HistoryEventsAction
+                  :event="row"
+                  :loading="eventTaskLoading"
+                  @add-event="addEvent($event)"
+                  @toggle-ignore="toggleIgnore($event)"
+                  @redecode="forceRedecodeEvmEvents($event)"
+                  @reset="resetEvents($event)"
+                  @delete-tx="deleteTxAndEvents($event)"
+                />
+              </LazyLoader>
             </template>
-            <template #expanded-item="{ headers, item }">
+            <template #item.expand />
+            <template #expanded-item="{ row }">
               <HistoryEventsList
+                class="-my-4"
                 :all-events="allEvents"
-                :event-group="item"
-                :colspan="headers.length"
+                :event-group="row"
                 :loading="sectionLoading || eventTaskLoading"
-                @edit-event="editEventHandler($event, item)"
+                :has-ignored-event="hasIgnoredEvent"
+                @edit-event="editEventHandler($event, row)"
                 @delete-event="promptForDelete($event)"
-                @show:missing-rule-action="setMissingRulesDialog($event, item)"
+                @show:missing-rule-action="setMissingRulesDialog($event, row)"
               />
             </template>
-            <template #body.prepend="{ headers }">
-              <TransactionQueryStatus
-                v-if="includeEvmEvents"
+            <template #body.prepend="{ colspan }">
+              <HistoryQueryStatus
+                :include-evm-events="includeEvmEvents"
+                :include-online-events="includeOnlineEvents"
                 :only-chains="onlyChains"
-                :colspan="headers.length"
-              />
-              <HistoryEventsQueryStatus
-                v-if="includeOnlineEvents"
                 :locations="locations"
-                :colspan="headers.length"
+                :decoding-status="decodingStatus"
+                :decoding="eventTaskLoading"
+                :colspan="colspan"
+                :loading="processing"
+                :current-action.sync="currentAction"
+                @show-decode-details="decodingStatusDialogOpen = true"
               />
               <UpgradeRow
                 v-if="showUpgradeRow"
@@ -901,11 +992,11 @@ watchImmediate(route, async (route) => {
                 :total="total"
                 :found="found"
                 :entries-found-total="entriesFoundTotal"
-                :colspan="headers.length"
+                :colspan="colspan"
                 :label="t('common.events')"
               />
             </template>
-          </DataTable>
+          </RuiDataTable>
         </template>
       </CollectionHandler>
 

@@ -51,11 +51,11 @@ const rules = {
   timestamp: { externalServerValidation: () => true },
   txHash: {
     required: helpers.withMessage(
-      t('transactions.events.form.tx_hash.validation.non_empty').toString(),
+      t('transactions.events.form.tx_hash.validation.non_empty'),
       required,
     ),
     isValid: helpers.withMessage(
-      t('transactions.events.form.tx_hash.validation.valid').toString(),
+      t('transactions.events.form.tx_hash.validation.valid'),
       (value: string) => isValidTxHash(value),
     ),
   },
@@ -63,13 +63,13 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.event_identifier.validation.non_empty',
-      ).toString(),
+      ),
       requiredIf(() => !!get(editableItem)),
     ),
   },
   amount: {
     required: helpers.withMessage(
-      t('transactions.events.form.amount.validation.non_empty').toString(),
+      t('transactions.events.form.amount.validation.non_empty'),
       required,
     ),
   },
@@ -77,7 +77,7 @@ const rules = {
     required: helpers.withMessage(
       t('transactions.events.form.fiat_value.validation.non_empty', {
         currency: get(currencySymbol),
-      }).toString(),
+      }),
       required,
     ),
   },
@@ -85,7 +85,7 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.sequence_index.validation.non_empty',
-      ).toString(),
+      ),
       required,
     ),
   },
@@ -94,24 +94,26 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.validator_index.validation.non_empty',
-      ).toString(),
+      ),
       required,
     ),
   },
   depositor: {
     required: helpers.withMessage(
-      t('transactions.events.form.depositor.validation.non_empty').toString(),
+      t('transactions.events.form.depositor.validation.non_empty'),
       required,
     ),
     isValid: helpers.withMessage(
-      t('transactions.events.form.depositor.validation.valid').toString(),
+      t('transactions.events.form.depositor.validation.valid'),
       (value: string) => isValidEthAddress(value),
     ),
   },
 };
 
-const { setValidation, setSubmitFunc, saveHistoryEventHandler }
-  = useHistoryEventsForm();
+const numericAmount = bigNumberifyFromRef(amount);
+const numericUsdValue = bigNumberifyFromRef(usdValue);
+
+const { setValidation, setSubmitFunc, saveHistoryEventHandler } = useHistoryEventsForm();
 
 const v$ = setValidation(
   rules,
@@ -153,7 +155,7 @@ function reset() {
   get(assetPriceForm)?.reset();
 }
 
-async function applyEditableData(entry: EthDepositEvent) {
+function applyEditableData(entry: EthDepositEvent) {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
   set(txHash, entry.txHash);
   set(eventIdentifier, entry.eventIdentifier);
@@ -172,7 +174,7 @@ async function applyEditableData(entry: EthDepositEvent) {
   set(extraData, entry.extraData || {});
 }
 
-async function applyGroupHeaderData(entry: EthDepositEvent) {
+function applyGroupHeaderData(entry: EthDepositEvent) {
   set(sequenceIndex, get(nextSequence) || '0');
   set(eventIdentifier, entry.eventIdentifier);
   set(txHash, entry.txHash);
@@ -228,9 +230,6 @@ async function save(): Promise<boolean> {
 
 setSubmitFunc(save);
 
-const numericAmount = bigNumberifyFromRef(amount);
-const numericUsdValue = bigNumberifyFromRef(usdValue);
-
 function checkPropsData() {
   const editable = get(editableItem);
   if (editable) {
@@ -250,13 +249,9 @@ onMounted(() => {
   checkPropsData();
 });
 
-const { accounts } = useAccountBalances();
+const { getAddresses } = useBlockchainStore();
 
-const depositorSuggestions = computed(() =>
-  get(accounts)
-    .filter(item => item.chain === Blockchain.ETH)
-    .map(item => item.address),
-);
+const depositorSuggestions = computed(() => getAddresses(Blockchain.ETH));
 </script>
 
 <template>
@@ -264,7 +259,7 @@ const depositorSuggestions = computed(() =>
     <div class="grid md:grid-cols-2 gap-4">
       <DateTimePicker
         v-model="datetime"
-        :label="t('transactions.events.form.datetime.label')"
+        :label="t('common.datetime')"
         persistent-hint
         limit-now
         milliseconds
@@ -333,17 +328,16 @@ const depositorSuggestions = computed(() =>
 
     <RuiDivider class="mb-2 mt-6" />
 
-    <VExpansionPanels flat>
-      <VExpansionPanel>
-        <VExpansionPanelHeader
-          class="p-0"
-          data-cy="eth-deposit-event-form__advance-toggle"
-        >
+    <RuiAccordions>
+      <RuiAccordion
+        data-cy="eth-deposit-event-form__advance"
+        header-class="py-4"
+        eager
+      >
+        <template #header>
           {{ t('transactions.events.form.advanced') }}
-        </VExpansionPanelHeader>
-        <VExpansionPanelContent
-          class="[&>.v-expansion-panel-content\_\_wrap]:!p-0"
-        >
+        </template>
+        <div class="py-2">
           <RuiTextField
             v-model="eventIdentifier"
             variant="outlined"
@@ -358,8 +352,8 @@ const depositorSuggestions = computed(() =>
             v-model="extraData"
             :label="t('transactions.events.form.extra_data.label')"
           />
-        </VExpansionPanelContent>
-      </VExpansionPanel>
-    </VExpansionPanels>
+        </div>
+      </RuiAccordion>
+    </RuiAccordions>
   </div>
 </template>

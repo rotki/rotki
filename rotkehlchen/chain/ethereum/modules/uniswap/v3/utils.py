@@ -14,13 +14,13 @@ from rotkehlchen.chain.ethereum.interfaces.ammswap.utils import (
     TokenDetails,
     update_asset_price_in_lp_balances,
 )
-from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import (
-    AddressToUniswapV3LPBalances,
-    NFTLiquidityPool,
-)
 from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV3Oracle
 from rotkehlchen.chain.ethereum.utils import generate_address_via_create2
 from rotkehlchen.chain.evm.contracts import EvmContract
+from rotkehlchen.chain.evm.decoding.uniswap.v3.types import (
+    AddressToUniswapV3LPBalances,
+    NFTLiquidityPool,
+)
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USDC

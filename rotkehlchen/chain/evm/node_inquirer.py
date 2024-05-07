@@ -1,7 +1,7 @@
 import json
 import logging
 import random
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Callable, Sequence
 from contextlib import suppress
 from itertools import zip_longest
@@ -57,7 +57,7 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
-    SUPPORTED_EVM_CHAINS,
+    SUPPORTED_EVM_CHAINS_TYPE,
     CacheType,
     ChainID,
     ChecksumEvmAddress,
@@ -150,7 +150,7 @@ def _query_web3_get_logs(
 
             # errors from: https://infura.io/docs/ethereum/json-rpc/eth-getLogs
             if msg in {'query returned more than 10000 results', 'query timeout exceeded'}:
-                block_range = block_range // 2
+                block_range //= 2
                 if block_range < 50:
                     raise  # stop retrying if block range gets too small
                 # repeat the query with smaller block range
@@ -173,7 +173,7 @@ def _query_web3_get_logs(
     return events
 
 
-class EvmNodeInquirer(metaclass=ABCMeta):
+class EvmNodeInquirer(ABC):
     """Class containing generic functionality for querying evm nodes
 
     The child class must implement the following methods:
@@ -196,7 +196,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: Etherscan,
-            blockchain: SUPPORTED_EVM_CHAINS,
+            blockchain: SUPPORTED_EVM_CHAINS_TYPE,
             etherscan_node: WeightedNode,
             etherscan_node_name: str,
             contracts: EvmContracts,
@@ -542,7 +542,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
 
             return result
 
-        # no node in the call order list was succesfully queried
+        # no node in the call order list was successfully queried
         log.error(
             f'Failed to query {method!s} after trying the following '
             f'nodes: {[x.node_info.name for x in call_order]}',
@@ -629,7 +629,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         """
         web3 = Web3()
         contract = web3.eth.contract(address=contract_address, abi=abi)
-        input_data = contract.encodeABI(method_name, args=arguments if arguments else [])
+        input_data = contract.encode_abi(method_name, args=arguments or [])
         result = self.etherscan.eth_call(
             to_address=contract_address,
             input_data=input_data,
@@ -699,7 +699,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
         contract = web3.eth.contract(address=contract_address, abi=abi)
         try:
             method = getattr(contract.caller(block_identifier=block_identifier), method_name)
-            result = method(*arguments if arguments else [])
+            result = method(*arguments or [])
         except (Web3Exception, ValueError) as e:
             raise BlockchainQueryError(
                 f'Error doing call on contract {contract_address}: {e!s}',
@@ -963,7 +963,7 @@ class EvmNodeInquirer(metaclass=ABCMeta):
                     except RemoteError as e:
                         if 'Please select a smaller result dataset' in str(e):
 
-                            blocks_step = blocks_step // 2
+                            blocks_step //= 2
                             if blocks_step < 100:
                                 raise  # stop trying
                             # else try with the smaller step
@@ -1339,7 +1339,6 @@ class EvmNodeInquirer(metaclass=ABCMeta):
     def get_blocknumber_by_time(
             self,
             ts: Timestamp,
-            etherscan: bool = True,  # pylint: disable=unused-argument  # it is used in the ethereum inquirer method
             closest: Literal['before', 'after'] = 'before',
     ) -> int:
         """Searches for the blocknumber of a specific timestamp
@@ -1404,7 +1403,7 @@ class EvmNodeInquirerWithDSProxy(EvmNodeInquirer):
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: Etherscan,
-            blockchain: SUPPORTED_EVM_CHAINS,
+            blockchain: SUPPORTED_EVM_CHAINS_TYPE,
             etherscan_node: WeightedNode,
             etherscan_node_name: str,
             contracts: EvmContracts,
@@ -1487,7 +1486,7 @@ class DSProxyInquirerWithCacheData(EvmNodeInquirerWithDSProxy, UpdatableCacheDat
             greenlet_manager: GreenletManager,
             database: 'DBHandler',
             etherscan: Etherscan,
-            blockchain: SUPPORTED_EVM_CHAINS,
+            blockchain: SUPPORTED_EVM_CHAINS_TYPE,
             etherscan_node: WeightedNode,
             etherscan_node_name: str,
             contracts: EvmContracts,

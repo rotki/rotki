@@ -11,6 +11,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 

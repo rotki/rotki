@@ -1,7 +1,6 @@
 import { sortBy } from 'lodash-es';
 import { Section, Status } from '@/types/status';
 import { DefiProtocol, isDefiProtocol } from '@/types/modules';
-import type { ComputedRef } from 'vue';
 import type {
   DefiProtocolSummary,
 } from '@/types/defi/overview';
@@ -31,7 +30,7 @@ export const useDefiOverviewStore = defineStore('defi/store', () => {
     noDeposits?: boolean,
   ): ComputedRef<DefiProtocolSummary | undefined> =>
     computed(() => {
-      const currentStatus = getStatus(section);
+      const currentStatus = getStatus({ section });
       if (
         currentStatus !== Status.LOADED
         && currentStatus !== Status.REFRESHING

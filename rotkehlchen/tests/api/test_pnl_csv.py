@@ -19,6 +19,7 @@ from rotkehlchen.assets.asset import CustomAsset
 from rotkehlchen.chain.accounts import BlockchainAccountData
 from rotkehlchen.chain.evm.constants import GENESIS_HASH
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.fval import FVal
@@ -60,6 +61,7 @@ def assert_csv_export_response(response, csv_dir, is_download=False, expected_nu
                 'poloniex',
                 'ethereum',
                 'bitmex',
+                'zksync lite',
             }
             assert row['type'] in (
                 str(AccountingEventType.TRADE),
@@ -206,6 +208,42 @@ def test_history_export_download_csv(
     )
     rows = assert_csv_export_response(response, csv_dir, expected_num_of_events=1)
     assert rows[0]['notes'] == f'Test note to check if label is added with {ETH_ADDRESS1} [ETH_ADDRESS1] address'  # noqa: E501
+
+    # Repeat same label test as above but with zksync which is an evmlike chain
+    tx_hash = make_evm_tx_hash()
+    accounting_history_process(
+        rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen.accountant,
+        start_ts=Timestamp(0),
+        end_ts=Timestamp(1640493376),
+        history_list=[EvmEvent(
+            tx_hash=tx_hash,
+            event_identifier=ZKL_IDENTIFIER.format(tx_hash=tx_hash.hex()),  # pylint: disable=no-member
+            sequence_index=0,
+            timestamp=TimestampMS(1601040360000),
+            location=Location.ZKSYNC_LITE,
+            asset=custom_asset,
+            balance=Balance(amount=FVal('1.5')),
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            notes=f'Test note to check if label is added with {ETH_ADDRESS1} address',
+        )],
+    )
+    # add a label for this address in the DB to check if it's added in the exported note
+    with rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen.data.db.user_write() as cursor:
+        rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen.data.db.edit_blockchain_accounts(
+            write_cursor=cursor,
+            account_data=[BlockchainAccountData(
+                chain=SupportedBlockchain.ZKSYNC_LITE,
+                address=string_to_evm_address(ETH_ADDRESS1),
+                label='ETH_ADDRESS1 IN ZKSYNC',
+            )],
+        )
+    response = requests.get(
+        api_url_for(rotkehlchen_api_server_with_exchanges, 'historyexportingresource'),
+        json={'directory_path': csv_dir},
+    )
+    rows = assert_csv_export_response(response, csv_dir, expected_num_of_events=1)
+    assert f'Test note to check if label is added with {ETH_ADDRESS1} [ETH_ADDRESS1 IN ZKSYNC] address' in rows[0]['notes']  # noqa: E501
 
 
 @pytest.mark.parametrize('mocked_price_queries', [{'ETH': {'EUR': {1569924574: 1}}}])

@@ -7,7 +7,8 @@ import { getUserMenu } from '@/electron-main/menu';
 import { TrayManager } from '@/electron-main/tray-manager';
 import { checkIfDevelopment } from '@/utils/env-utils';
 import { assert } from '@/utils/assertions';
-import createProtocol from './create-protocol';
+import { startPromise } from '@/utils';
+import { createProtocol } from './create-protocol';
 import { SubprocessHandler } from './subprocess-handler';
 import type { Nullable } from '@/types';
 
@@ -15,6 +16,28 @@ const isDevelopment = checkIfDevelopment();
 
 let trayManager: Nullable<TrayManager> = null;
 let forceQuit = false;
+let win: BrowserWindow | null;
+// Keep a global reference of the window object, if you don't, the window will
+// be closed automatically when the JavaScript object is garbage collected.
+const pyHandler = new SubprocessHandler(app);
+
+const isMac = process.platform === 'darwin';
+
+const menuActions = {
+  displayTray: (display: boolean): void => {
+    const applicationMenu = Menu.getApplicationMenu();
+    if (applicationMenu) {
+      const menuItem = applicationMenu.getMenuItemById('MINIMIZE_TO_TRAY');
+      if (menuItem)
+        menuItem.enabled = display;
+    }
+
+    if (display)
+      trayManager?.build();
+    else
+      trayManager?.destroy();
+  },
+};
 
 async function onActivate(): Promise<void> {
   // On macOS it's common to re-create a window in the app when the
@@ -66,7 +89,7 @@ async function onReady(): Promise<void> {
   await createWindow();
   trayManager.listen();
 
-  getWindow().webContents.on('context-menu', (event, props): void => {
+  getWindow().webContents.on('context-menu', (_event, props): void => {
     const menu = new Menu();
     if (props.editFlags.canCut)
       menu.append(new MenuItem({ label: 'Cut', role: 'cut' }));
@@ -78,6 +101,21 @@ async function onReady(): Promise<void> {
       menu.append(new MenuItem({ label: 'Paste', role: 'paste' }));
 
     menu.popup({ window: getWindow() });
+  });
+
+  getWindow().webContents.on('before-input-event', (event, input) => {
+    const win = getWindow();
+    if ((isMac ? input.meta : input.control)) {
+      if ((['ArrowLeft', '['].includes(input.key)) && win.webContents.canGoBack()) {
+        win.webContents.goBack();
+        event.preventDefault();
+      }
+
+      if ((['ArrowRight', ']'].includes(input.key)) && win.webContents.canGoForward()) {
+        win.webContents.goForward();
+        event.preventDefault();
+      }
+    }
   });
 }
 
@@ -105,14 +143,14 @@ else {
 
   // Quit when all windows are closed.
   app.on('window-all-closed', (): void => {
-    if (process.platform !== 'darwin')
+    if (!isMac)
       app.quit();
   });
-  app.on('activate', onActivate);
-  app.on('ready', onReady);
-  app.on('will-quit', async (e) => {
+  app.on('activate', () => startPromise(onActivate()));
+  app.on('ready', () => startPromise(onReady()));
+  app.on('will-quit', (e) => {
     e.preventDefault();
-    await closeApp();
+    startPromise(closeApp());
   });
   app.on('before-quit', (): void => {
     pyHandler.quitting();
@@ -128,27 +166,6 @@ function ensureSafeUpdateRestart(): void {
   app.removeAllListeners('will-quit');
   app.removeAllListeners('before-quit');
 }
-
-const menuActions = {
-  displayTray: (display: boolean): void => {
-    const applicationMenu = Menu.getApplicationMenu();
-    if (applicationMenu) {
-      const menuItem = applicationMenu.getMenuItemById('MINIMIZE_TO_TRAY');
-      if (menuItem)
-        menuItem.enabled = display;
-    }
-
-    if (display)
-      trayManager?.build();
-    else
-      trayManager?.destroy();
-  },
-};
-
-// Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
-let win: BrowserWindow | null;
-const pyHandler = new SubprocessHandler(app);
 
 // Standard scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([
@@ -218,9 +235,9 @@ async function createWindow(): Promise<BrowserWindow> {
   // Register and deregister listeners to window events (resize, move, close) so that window state is saved
   mainWindowState.manage(win);
 
-  win.on('close', async (e) => {
+  async function close(e: Electron.Event) {
     try {
-      if (process.platform === 'darwin' && !forceQuit) {
+      if (isMac && !forceQuit) {
         e.preventDefault();
         win?.hide();
       }
@@ -232,11 +249,13 @@ async function createWindow(): Promise<BrowserWindow> {
       console.error(error);
       await closeApp();
     }
-  });
+  }
 
-  win.on('closed', async () => {
+  win.on('close', e => startPromise(close(e)));
+
+  win.on('closed', () => {
     try {
-      if (process.platform === 'darwin' && !forceQuit)
+      if (isMac && !forceQuit)
         win?.hide();
       else
         win = null;

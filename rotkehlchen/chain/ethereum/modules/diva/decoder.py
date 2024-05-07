@@ -2,9 +2,11 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import DELEGATE_CHANGED
-from rotkehlchen.chain.evm.decoding.interfaces import GovernableDecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import (
+    GovernableDecoderInterface,
+    MerkleClaimDecoderInterface,
+)
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -16,7 +18,7 @@ from rotkehlchen.constants.assets import A_DIVA
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import hex_or_bytes_to_address
 
 from .constants import CPT_DIVA, DIVA_ADDRESS
 
@@ -27,12 +29,11 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-CLAIM_AIRDROP = b'N\xc9\x0e\x96U\x19\xd9&\x81&tg\xf7u\xad\xa5\xbd!J\xa9,\r\xc9=\x90\xa5\xe8\x80\xce\x9e\xd0&'  # noqa: E501
 DIVA_AIDROP_CONTRACT = string_to_evm_address('0x777E2B2Cc7980A6bAC92910B95269895EEf0d2E8')
 DIVA_GOVERNOR = string_to_evm_address('0xFb6B7C11a55C57767643F1FF65c34C8693a11A70')
 
 
-class DivaDecoder(GovernableDecoderInterface):
+class DivaDecoder(GovernableDecoderInterface, MerkleClaimDecoderInterface):
 
     def __init__(
             self,
@@ -75,38 +76,19 @@ class DivaDecoder(GovernableDecoderInterface):
         )
         return DecodingOutput(event=event, refresh_balances=False)
 
-    def _decode_diva_claim(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] != CLAIM_AIRDROP:
-            return DEFAULT_DECODING_OUTPUT
-
-        claiming_address = hex_or_bytes_to_address(context.tx_log.data[32:64])
-        claimed_amount = token_normalized_value(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data[64:]),
-            token=self.diva,
-        )
-
-        for event in context.decoded_events:
-            if (
-                event.event_type == HistoryEventType.RECEIVE and
-                event.location_label == claiming_address and
-                event.asset == self.diva and
-                event.balance.amount == claimed_amount
-            ):
-                event.event_type = HistoryEventType.RECEIVE
-                event.event_subtype = HistoryEventSubType.AIRDROP
-                event.counterparty = CPT_DIVA
-                event.notes = f'Claim {event.balance.amount} DIVA from the DIVA airdrop'
-                break
-
-        return DEFAULT_DECODING_OUTPUT
-
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             DIVA_GOVERNOR: (self._decode_vote_cast,),
             DIVA_ADDRESS: (self._decode_delegation_change,),
-            DIVA_AIDROP_CONTRACT: (self._decode_diva_claim,),
+            DIVA_AIDROP_CONTRACT: (
+                self._decode_merkle_claim,
+                CPT_DIVA,  # counterparty
+                self.diva.identifier,  # token id
+                18,  # token decimals
+                'DIVA from the DIVA airdrop',  # notes suffix
+            ),
         }
 
     @staticmethod

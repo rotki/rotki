@@ -6,6 +6,8 @@ const selectedCurrency = ref<Currency>(get(currencies)[0]);
 const { currency } = storeToRefs(useGeneralSettingsStore());
 const { t } = useI18n();
 
+const currenciesWithKeys = computed(() => get(currencies).map(c => ({ ...c, key: c.tickerSymbol })));
+
 function successMessage(symbol: string) {
   return t('general_settings.validation.currency.success', {
     symbol,
@@ -24,44 +26,45 @@ function calculateFontSize(symbol: string) {
 
 <template>
   <SettingsOption
-    #default="{ error, success, update }"
+    #default="{ error, success, updateImmediate }"
     setting="mainCurrency"
     :error-message="t('general_settings.validation.currency.error')"
     :success-message="successMessage"
   >
-    <VSelect
+    <RuiMenuSelect
       v-model="selectedCurrency"
-      outlined
       class="general-settings__fields__currency-selector"
       :label="t('general_settings.amount.labels.main_currency')"
-      item-text="tickerSymbol"
-      return-object
-      :items="currencies"
+      :options="currenciesWithKeys"
+      text-attr="tickerSymbol"
+      :item-height="68"
+      full-width
+      float-label
+      show-details
+      variant="outlined"
       :success-messages="success"
       :error-messages="error"
-      @change="update($event ? $event.tickerSymbol : $event)"
+      @input="updateImmediate($event?.tickerSymbol)"
     >
-      <template #item="{ item, attrs, on }">
+      <template #item.text="{ option }">
         <ListItem
-          :id="`currency__${item.tickerSymbol.toLocaleLowerCase()}`"
+          :id="`currency__${option.tickerSymbol.toLocaleLowerCase()}`"
           no-hover
           no-padding
-          size="lg"
-          v-bind="attrs"
-          :title="item.name"
+          class="!py-0"
+          :title="option.name"
           :subtitle="t('general_settings.amount.labels.main_currency_subtitle')"
-          v-on="on"
         >
           <template #avatar>
             <div
               class="font-bold text-rui-primary"
-              :style="{ fontSize: calculateFontSize(item.unicodeSymbol) }"
+              :style="{ fontSize: calculateFontSize(option.unicodeSymbol) }"
             >
-              {{ item.unicodeSymbol }}
+              {{ option.unicodeSymbol }}
             </div>
           </template>
         </ListItem>
       </template>
-    </VSelect>
+    </RuiMenuSelect>
   </SettingsOption>
 </template>

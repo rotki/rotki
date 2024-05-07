@@ -208,7 +208,7 @@ class Bitstamp(ExchangeInterface):
                 )
                 continue
             try:
-                usd_price = Inquirer().find_usd_price(asset=asset)
+                usd_price = Inquirer.find_usd_price(asset=asset)
             except RemoteError as e:
                 log.error(str(e))
                 self.msg_aggregator.add_error(

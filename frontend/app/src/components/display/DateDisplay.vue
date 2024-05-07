@@ -7,11 +7,13 @@ const props = withDefaults(
     showTimezone?: boolean;
     noTime?: boolean;
     milliseconds?: boolean;
+    hideTooltip?: boolean;
   }>(),
   {
     showTimezone: false,
     noTime: false,
     milliseconds: false,
+    hideTooltip: false,
   },
 );
 
@@ -66,6 +68,7 @@ const { copy, copied } = useCopy(formattedDate);
     :copied="copied"
     :tooltip="showTooltip ? formattedDateWithTimezone : null"
     :class="{ blur: !shouldShowAmount }"
+    :disabled="hideTooltip"
     @click="copy()"
   >
     {{ splittedByMillisecondsPart[0] }}

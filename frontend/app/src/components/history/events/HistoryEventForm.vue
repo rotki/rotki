@@ -1,8 +1,5 @@
 <script setup lang="ts">
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
-import { toCapitalCase } from '@/utils/text';
-import { isOfEventType } from '@/utils/history/events';
-import type { Ref } from 'vue';
 import type { HistoryEvent } from '@/types/history/events';
 
 const props = withDefaults(
@@ -18,6 +15,7 @@ const props = withDefaults(
   },
 );
 
+const { t } = useI18n();
 const { groupHeader, editableItem } = toRefs(props);
 
 const entryType: Ref<HistoryEventEntryType> = ref(
@@ -43,22 +41,28 @@ watchImmediate([groupHeader, editableItem], ([groupHeader, editableItem]) => {
 
 <template>
   <form class="history-event-form">
-    <VSelect
+    <RuiMenuSelect
       v-model="entryType"
       data-cy="entry-type"
-      :items="historyEventEntryTypes"
+      :options="historyEventEntryTypes"
       :disabled="!!groupHeader"
-      outlined
-      label="Entry Type"
-      hide-details
+      :label="t('common.entry_type')"
+      key-attr="key"
+      full-width
+      float-label
+      variant="outlined"
     >
-      <template #item="{ item }">
-        {{ toCapitalCase(item) }}
+      <template #activator.text="{ value }">
+        <span class="capitalize">
+          {{ value.key }}
+        </span>
       </template>
-      <template #selection="{ item }">
-        {{ toCapitalCase(item) }}
+      <template #item.text="{ option }">
+        <span class="capitalize">
+          {{ option.key }}
+        </span>
       </template>
-    </VSelect>
+    </RuiMenuSelect>
 
     <RuiDivider class="my-8" />
 

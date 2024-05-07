@@ -163,13 +163,10 @@ def _is_token_non_standard(symbol: str, address: ChecksumEvmAddress) -> bool:
     if symbol in {'UNI-V2', 'pDAI'}:
         return True
 
-    if address in (
-            '0xCb2286d9471cc185281c4f763d34A962ED212962',  # Sushi LP token
-            ETH_SPECIAL_ADDRESS,
-    ):
-        return True
-
-    return False
+    return address in (
+        '0xCb2286d9471cc185281c4f763d34A962ED212962',  # Sushi LP token
+        ETH_SPECIAL_ADDRESS,
+    )
 
 
 def _handle_pooltogether(normalized_balance: FVal, token_name: str) -> DefiBalance | None:
@@ -375,7 +372,7 @@ class ZerionSDK:
         try:
             identifier = ethaddress_to_identifier(token_address)
             token = EvmToken(identifier)
-            usd_price = Inquirer().find_usd_price(token)
+            usd_price = Inquirer.find_usd_price(token)
         except (UnknownAsset, UnsupportedAsset):
             if not _is_token_non_standard(token_symbol, token_address):
                 self.msg_aggregator.add_warning(

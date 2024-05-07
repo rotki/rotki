@@ -58,13 +58,10 @@ function calculateFontSize(symbol: string) {
 </script>
 
 <template>
-  <VMenu
+  <RuiMenu
     v-model="visible"
-    transition="slide-y-transition"
-    max-width="350px"
-    min-width="350px"
-    offset-y
-    :close-on-content-click="false"
+    menu-class="w-[22rem]"
+    :popper="{ placement: 'bottom' }"
   >
     <template #activator="{ on }">
       <MenuTooltipButton
@@ -73,26 +70,27 @@ function calculateFontSize(symbol: string) {
             currency: currency.tickerSymbol,
           })
         "
-        class-name="secondary--text text--lighten-4 currency-dropdown text-[1.375rem] font-bold"
+        class-name="currency-dropdown text-[1.375rem] font-bold"
         v-on="on"
       >
         {{ currency.unicodeSymbol }}
       </MenuTooltipButton>
     </template>
-    <RuiTextField
-      v-model="filter"
-      variant="outlined"
-      dense
-      autofocus
-      hide-details
-      class="m-3"
-      color="primary"
-      label="Filter"
-      prepend-inner-icon="mdi-magnify"
-      @keypress.enter="selectFirst()"
-    />
-    <RuiDivider />
-    <div class="max-h-[25rem]">
+    <div class="border-b border-default p-3">
+      <RuiTextField
+        v-model="filter"
+        variant="outlined"
+        dense
+        autofocus
+        hide-details
+        clearable
+        color="primary"
+        :label="t('common.actions.filter')"
+        prepend-inner-icon="mdi-magnify"
+        @keyup.enter="selectFirst()"
+      />
+    </div>
+    <div class="max-h-[25rem] overflow-auto">
       <ListItem
         v-for="item in filteredCurrencies"
         :id="`change-to-${item.tickerSymbol.toLocaleLowerCase()}`"
@@ -112,5 +110,5 @@ function calculateFontSize(symbol: string) {
         </template>
       </ListItem>
     </div>
-  </VMenu>
+  </RuiMenu>
 </template>

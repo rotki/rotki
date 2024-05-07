@@ -116,7 +116,7 @@ class Balancerv2Decoder(DecoderInterface):
             context: EnricherContext,
     ) -> TransferEnrichmentOutput:
         """
-        Enrich tranfer transactions to account for swaps in balancer v2 protocol.
+        Enrich transfer transactions to account for swaps in balancer v2 protocol.
         May raise:
         - UnknownAsset
         - WrongAssetType
@@ -129,19 +129,26 @@ class Balancerv2Decoder(DecoderInterface):
 
         asset = context.event.asset.resolve_to_evm_token()
         if (
-            isinstance(context.action_items[-1].asset, EvmToken) is False or
-            context.action_items[-1].asset.evm_address != context.tx_log.address or  # type: ignore[attr-defined]  # mypy fails to understand that due the previous statmenet in the or this check won't be evaluated if the asset isn't a token
-            context.action_items[-1].amount != context.event.balance.amount
+            isinstance(context.action_items[-1].asset, EvmToken) is False and
+            not ((
+                context.action_items[-1].asset.evm_address != context.tx_log.address and  # type: ignore[attr-defined]  # mypy fails to understand that due the previous statmenet in the or this check won't be evaluated if the asset isn't a token
+                context.action_items[-1].amount != context.event.balance.amount
+            ) or (
+                context.action_items[-1].extra_data['from_token'] != context.tx_log.address and
+                context.action_items[-1].extra_data['amount_in'] != context.event.balance.amount
+            ))
         ):
             return FAILED_ENRICHMENT_OUTPUT
 
         context.event.counterparty = CPT_BALANCER_V2
-        context.event.event_type = HistoryEventType.TRADE
-        if asset == context.event.asset:
+        if context.event.event_type == HistoryEventType.RECEIVE:
             context.event.event_subtype = HistoryEventSubType.RECEIVE
-            context.event.notes = f'Receive {context.event.balance.amount} {asset.symbol} from Balancer v2'  # noqa: E501
+            context.event.notes = f'Receive {context.event.balance.amount} {asset.symbol} as the result of a swap via Balancer v2'  # noqa: E501
         else:
             context.event.event_subtype = HistoryEventSubType.SPEND
+            context.event.notes = f'Swap {context.event.balance.amount} {asset.symbol} via Balancer v2'  # noqa: E501
+
+        context.event.event_type = HistoryEventType.TRADE
 
         return TransferEnrichmentOutput(matched_counterparty=CPT_BALANCER_V2)
 

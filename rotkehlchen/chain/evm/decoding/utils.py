@@ -38,9 +38,7 @@ def maybe_reshuffle_events(
     for event in events_list:
         if event not in actual_events:
             all_other_events.append(event)
-
-            if event.sequence_index > max_seq_index:
-                max_seq_index = event.sequence_index
+            max_seq_index = max(event.sequence_index, max_seq_index)
 
     for idx, event in enumerate(actual_events):
         event.sequence_index = max_seq_index + idx + 1
@@ -56,6 +54,9 @@ def bridge_prepare_data(
         to_address: ChecksumEvmAddress,
 ) -> tuple[HistoryEventType, HistoryEventType, ChainID, ChainID, ChecksumEvmAddress]:
     """Method to prepare the bridge variables
+
+    `source_chain` is the chain where the current transaction is happening
+    `target_chain` is the chain on the other side of the bridge
 
     When coming here the caller has to make sure that:
     - tx_log topics is either in deposit_topics or else is a withdrawal

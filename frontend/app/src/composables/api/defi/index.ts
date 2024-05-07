@@ -10,8 +10,7 @@ import type { ActionResult } from '@rotki/common/lib/data';
 import type { PendingTask } from '@/types/task';
 
 export function useDefiApi() {
-  const fetchAllDefi = async (): Promise<PendingTask> =>
-    fetchExternalAsync(api.instance, '/blockchains/eth/defi');
+  const fetchAllDefi = (): Promise<PendingTask> => fetchExternalAsync(api.instance, '/blockchains/eth/defi');
 
   const fetchAirdrops = async (): Promise<PendingTask> => {
     const response = await api.instance.get<ActionResult<PendingTask>>(
@@ -28,18 +27,15 @@ export function useDefiApi() {
   };
 
   const fetchAirdropsMetadata = async (): Promise<ProtocolMetadata[]> => {
-    const response
-      = await api.instance.get<ActionResult<ProtocolMetadata[]>>(
-        '/airdrops/metadata',
-      );
+    const response = await api.instance.get<ActionResult<ProtocolMetadata[]>>(
+      '/airdrops/metadata',
+    );
 
     return handleResponse(response);
   };
 
   const fetchDefiMetadata = async (): Promise<ProtocolMetadata[]> => {
-    const response
-      = await api.instance.get<ActionResult<ProtocolMetadata[]>>('/defi/metadata');
-
+    const response = await api.instance.get<ActionResult<ProtocolMetadata[]>>('/defi/metadata');
     return handleResponse(response);
   };
 

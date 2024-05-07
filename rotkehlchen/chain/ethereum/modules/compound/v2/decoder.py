@@ -354,7 +354,7 @@ class Compoundv2Decoder(DecoderInterface):
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        compound_tokens = GlobalDBHandler().get_evm_tokens(
+        compound_tokens = GlobalDBHandler.get_evm_tokens(
             chain_id=ChainID.ETHEREUM,
             protocol='compound',
         )

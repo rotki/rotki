@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { toSentenceCase } from '@/utils/text';
 import type { Nullable } from '@rotki/common';
 import type {
   EditableMissingPrice,
@@ -39,6 +38,8 @@ function setDialog(dialog: boolean) {
 
 const reportsStore = useReportsStore();
 const { actionableItems } = toRefs(reportsStore);
+
+const step = ref<number>(1);
 
 const actionableItemsLength = computed(() => {
   let missingAcquisitionsLength = 0;
@@ -80,8 +81,6 @@ function pinSection() {
   setDialog(false);
 }
 
-const step = ref<number>(1);
-
 const stepperContents = computed(() => {
   const contents = [];
 
@@ -104,7 +103,7 @@ const stepperContents = computed(() => {
   }
 
   const missingPricesLength = get(actionableItemsLength).missingPricesLength;
-  if (missingPricesLength > 0) {
+  if (missingPricesLength >= 0) {
     contents.push({
       key: 'missingPrices',
       title: t('profit_loss_report.actionable.missing_prices.title', {
@@ -211,6 +210,7 @@ function close() {
 <template>
   <RuiCard
     no-padding
+    :class="{ '!rounded-none': isPinned }"
     variant="flat"
   >
     <div class="flex bg-rui-primary text-white p-2">

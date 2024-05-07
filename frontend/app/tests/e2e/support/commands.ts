@@ -23,7 +23,7 @@
 //
 // -- This is will overwrite an existing command --
 // Cypress.Commands.overwrite("visit", (originalFn, url, options) => { ... });
-import type { ExternalTrade } from './types';
+import type { ExternalTrade, FieldMessage } from './types';
 
 const backendUrl = Cypress.env('BACKEND_URL');
 
@@ -174,6 +174,14 @@ function assertNoRunningTasks() {
     });
 }
 
+function confirmFieldMessage({ target, mustInclude, messageContains }: FieldMessage) {
+  cy.get(target).as('message');
+  cy.get('@message').should('be.visible');
+  cy.get('@message').should('include.text', mustInclude);
+  if (messageContains)
+    cy.get('@message').should('include.text', messageContains);
+}
+
 Cypress.Commands.add('logout', logout);
 Cypress.Commands.add('updateAssets', updateAssets);
 Cypress.Commands.add('disableModules', disableModules);
@@ -181,3 +189,4 @@ Cypress.Commands.add('createAccount', createAccount);
 Cypress.Commands.add('addExternalTrade', addExternalTrade);
 Cypress.Commands.add('addEtherscanKey', addEtherscanKey);
 Cypress.Commands.add('assertNoRunningTasks', assertNoRunningTasks);
+Cypress.Commands.add('confirmFieldMessage', confirmFieldMessage);

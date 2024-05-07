@@ -60,7 +60,7 @@ class EvmProduct(SerializableEnumNameMixin):
     GAUGE = auto()
 
 
-class EvmEvent(HistoryBaseEntry):  # noqa: PLW1641  # hash in superclass
+class EvmEvent(HistoryBaseEntry):  # hash in superclass
     """This is a class for storing evm events data and it extends HistoryBaseEntry.
 
     It adds the following fields:

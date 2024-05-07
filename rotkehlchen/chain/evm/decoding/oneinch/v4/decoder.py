@@ -1,4 +1,4 @@
-from abc import ABCMeta
+from abc import ABC
 from collections.abc import Callable
 from typing import TYPE_CHECKING
 
@@ -9,9 +9,6 @@ from rotkehlchen.chain.ethereum.modules.oneinch.constants import CPT_ONEINCH_V4
 from rotkehlchen.chain.ethereum.modules.uniswap.v2.constants import (
     SWAP_SIGNATURE as UNISWAP_V2_SWAP_SIGNATURE,
 )
-from rotkehlchen.chain.ethereum.modules.uniswap.v3.constants import (
-    SWAP_SIGNATURE as UNISWAP_V3_SWAP_SIGNATURE,
-)
 from rotkehlchen.chain.evm.decoding.oneinch.decoder import OneinchCommonDecoder
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -19,6 +16,9 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import (
+    SWAP_SIGNATURE as UNISWAP_V3_SWAP_SIGNATURE,
+)
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.decoding.velodrome.decoder import SWAP_V2 as VELODROME_SWAP_SIGNATURE
 from rotkehlchen.chain.evm.decoding.weth.decoder import WETH_DEPOSIT_TOPIC, WETH_WITHDRAW_TOPIC
@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-class Oneinchv3n4DecoderBase(OneinchCommonDecoder, metaclass=ABCMeta):
+class Oneinchv3n4DecoderBase(OneinchCommonDecoder, ABC):
     """Base class for Oneinch v3 and v4"""
 
     def __init__(

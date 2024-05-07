@@ -26,14 +26,7 @@ from rotkehlchen.tests.utils.factories import (
     make_evm_address,
     make_evm_tx_hash,
 )
-from rotkehlchen.types import (
-    ChainID,
-    EVMTxHash,
-    Location,
-    Timestamp,
-    TimestampMS,
-    deserialize_evm_tx_hash,
-)
+from rotkehlchen.types import EVMTxHash, Location, Timestamp, TimestampMS, deserialize_evm_tx_hash
 
 
 def test_get_customized_event_identifiers(database):
@@ -93,9 +86,9 @@ def test_get_customized_event_identifiers(database):
         )
 
     with db.db.conn.read_ctx() as cursor:
-        assert db.get_customized_event_identifiers(cursor, chain_id=None) == [1, 4]
-        assert db.get_customized_event_identifiers(cursor, chain_id=ChainID.ETHEREUM) == [1]
-        assert db.get_customized_event_identifiers(cursor, chain_id=ChainID.OPTIMISM) == [4]
+        assert db.get_customized_event_identifiers(cursor, location=None) == [1, 4]
+        assert db.get_customized_event_identifiers(cursor, location=Location.ETHEREUM) == [1]
+        assert db.get_customized_event_identifiers(cursor, location=Location.OPTIMISM) == [4]
 
 
 def add_history_events_to_db(db: DBHistoryEvents, data: dict[int, tuple[str, TimestampMS, FVal, dict | None]]) -> None:  # noqa: E501

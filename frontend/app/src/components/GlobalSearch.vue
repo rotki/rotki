@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { useAppRoutes } from '@/router/routes';
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
-import type { Ref } from 'vue';
 import type { Exchange } from '@/types/exchanges';
 import type { TradeLocationData } from '@/types/history/trade/location';
 
@@ -203,6 +202,9 @@ function getRoutes(keyword: string): SearchItemWithoutValue[] {
       ...Routes.SETTINGS_MODULES,
       texts: [Routes.SETTINGS.text, Routes.SETTINGS_MODULES.text],
     },
+    {
+      ...Routes.CALENDAR,
+    },
   ];
 
   return filterItems(routeItems, keyword);
@@ -382,7 +384,7 @@ const interop = useInterop();
 onBeforeMount(async () => {
   set(isMac, await interop.isMac());
 
-  window.addEventListener('keydown', async (event) => {
+  window.addEventListener('keydown', (event) => {
     // Mac use Command, Others use Control
     if (
       ((get(isMac) && event.metaKey) || (!get(isMac) && event.ctrlKey))
@@ -404,7 +406,6 @@ onBeforeMount(async () => {
   >
     <template #activator="{ on }">
       <MenuTooltipButton
-        class-name="secondary--text text--lighten-4"
         :tooltip="
           t('global_search.menu_tooltip', {
             modifier,

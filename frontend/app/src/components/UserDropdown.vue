@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useBreakpoint } from '@rotki/ui-library-compat';
+
 const { t } = useI18n();
 
 const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';
@@ -7,7 +9,7 @@ const { logout } = useSessionStore();
 const { username } = storeToRefs(useSessionAuthStore());
 const { isPackaged, clearPassword } = useInterop();
 const { privacyModeIcon, togglePrivacyMode } = usePrivacyMode();
-const { xs } = useDisplay();
+const { isXs } = useBreakpoint();
 
 const savedRememberPassword = useLocalStorage(KEY_REMEMBER_PASSWORD, null);
 
@@ -30,23 +32,19 @@ function showConfirmation() {
 }
 
 const { darkModeEnabled } = useDarkMode();
-const css = useCssModule();
 </script>
 
 <template>
   <div>
-    <VMenu
+    <RuiMenu
       id="user-dropdown"
-      content-class="user-dropdown__menu"
-      transition="slide-y-transition"
-      max-width="300px"
-      min-width="180px"
-      offset-y
+      menu-class="user-dropdown__menu min-w-[10rem] max-w-[22rem]"
+      close-on-content-click
     >
       <template #activator="{ on }">
         <MenuTooltipButton
           tooltip="Account"
-          class-name="user-dropdown secondary--text text--lighten-4"
+          class-name="user-dropdown"
           v-on="on"
         >
           <RuiIcon name="account-circle-line" />
@@ -80,7 +78,7 @@ const css = useCssModule();
         </RouterLink>
 
         <RuiButton
-          v-if="xs"
+          v-if="isXs"
           key="privacy-mode"
           variant="list"
           @click="togglePrivacyMode()"
@@ -95,9 +93,8 @@ const css = useCssModule();
         </RuiButton>
 
         <ThemeControl
-          v-if="xs"
+          v-if="isXs"
           :dark-mode-enabled="darkModeEnabled"
-          :class="css.theme_control"
           menu
         >
           {{ t('user_dropdown.switch_theme') }}
@@ -119,22 +116,6 @@ const css = useCssModule();
           {{ t('user_dropdown.logout') }}
         </RuiButton>
       </div>
-    </VMenu>
+    </RuiMenu>
   </div>
 </template>
-
-<style module lang="scss">
-.theme_control {
-  :global(.v-list-item) {
-    @apply px-3;
-
-    :global(.v-avatar) {
-      @apply mr-2 #{!important};
-
-      + div {
-        @apply text-sm text-black/60 dark:text-white/60 font-medium;
-      }
-    }
-  }
-}
-</style>

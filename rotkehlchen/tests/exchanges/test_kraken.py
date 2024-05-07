@@ -12,7 +12,7 @@ import requests
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
+from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_ADA,
@@ -64,7 +64,11 @@ from rotkehlchen.tests.utils.constants import (
     A_WAVES,
     A_XTZ,
 )
-from rotkehlchen.tests.utils.exchanges import kraken_to_world_pair, try_get_first_exchange
+from rotkehlchen.tests.utils.exchanges import (
+    get_exchange_asset_symbols,
+    kraken_to_world_pair,
+    try_get_first_exchange,
+)
 from rotkehlchen.tests.utils.history import TEST_END_TS, prices
 from rotkehlchen.tests.utils.kraken import MockKraken
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -97,7 +101,8 @@ def test_name():
 def test_coverage_of_kraken_balances():
     response = requests.get('https://api.kraken.com/0/public/Assets')
     got_assets = set(response.json()['result'].keys())
-    expected_assets = (set(KRAKEN_TO_WORLD.keys()) - set(KRAKEN_DELISTED))
+    expected_assets = get_exchange_asset_symbols(Location.KRAKEN) - set(KRAKEN_DELISTED)
+
     # Special/staking assets and which assets they should map to
     special_assets = {
         'XTZ.S': Asset('XTZ'),
@@ -739,6 +744,7 @@ def test_timestamp_deserialization():
 
 
 @pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])
 @pytest.mark.parametrize('mocked_price_queries', [prices])
 @pytest.mark.parametrize('start_with_valid_premium', [False, True])

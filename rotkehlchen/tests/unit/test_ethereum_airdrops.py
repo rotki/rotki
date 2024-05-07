@@ -2,11 +2,13 @@ import datetime
 import json
 from copy import deepcopy
 from http import HTTPStatus
+from pathlib import Path
 from unittest.mock import Mock, patch
 
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.ethereum.airdrops import (
     AIRDROPS_INDEX,
@@ -116,6 +118,37 @@ MOCK_AIRDROP_INDEX = {'airdrops': {
         'name': 'INVALID',
         'icon': 'invalid.svg',
     },
+    'degen2_season1': {
+        'csv_path': 'airdrops/degen2_season1.csv',
+        'csv_hash': '708ae1fcbe33a11a91fd05e1e7c4fa2d514b65cb1f8d3e4ce3556e7bdd8af2f5',
+        'asset_identifier': 'eip155:8453/erc20:0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed',
+        'url': 'https://www.degen.tips/airdrop2/season1',
+        'name': 'DEGEN',
+        'icon': 'degen.svg',
+        'icon_path': 'airdrops/icons/degen.svg',
+        'new_asset_data': {
+            'asset_type': 'EVM_TOKEN',
+            'address': '0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed',
+            'name': 'Degen',
+            'symbol': 'DEGEN',
+            'chain_id': 8453,
+            'decimals': 18,
+        },
+    },
+    'eigen': {
+        'asset_identifier': 'EIGEN_TOKEN_PRE_RELEASE',
+        'url': 'https://eigenfoundation.org',
+        'api_url': 'https://claims.eigenfoundation.org/clique-eigenlayer-api/campaign/eigenlayer/credentials?walletAddress={address}',
+        'amount_path': 'data/pipelines/tokenQualified',
+        'name': 'EIGEN',
+        'icon': 'eigen.svg',
+        'icon_path': 'airdrops/icons/eigen.svg',
+        'new_asset_data': {
+            'asset_type': 'OTHER',
+            'name': 'Eigen',
+            'symbol': 'EIGEN',
+        },
+    },
 }, 'poap_airdrops': {
     'aave_v2_pioneers': [
         'airdrops/poap/poap_aave_v2_pioneers.json',
@@ -123,7 +156,7 @@ MOCK_AIRDROP_INDEX = {'airdrops': {
         'AAVE V2 Pioneers',
         '388003b6c0dc589981ce9e962d6d8b6b2148c72ccf6ec3578ab32d63b547f903',
     ],
-}}
+}, 'airdrops_missing_decoders': ['degen2_season1']}
 
 
 def _mock_airdrop_list(url: str, timeout: int = 0, headers: dict | None = None):  # pylint: disable=unused-argument
@@ -232,11 +265,20 @@ def test_check_airdrops(
                 f'address,tokens\n{TEST_ADDR2},123\n{TEST_ADDR2},123\n\n',  # will be skipped because last row is empty  # noqa: E501
             f'{AIRDROPS_REPO_BASE}/airdrops/poap/poap_aave_v2_pioneers.json':
                 f'{{"{TEST_POAP1}": [\n566\n]}}',
+            f'{AIRDROPS_REPO_BASE}/airdrops/degen2_season1.csv':
+                f'address,tokens\n{TEST_ADDR2},394857.029384576349787465\n',
         }
         if url == AIRDROPS_INDEX:
             mock_response.text = json.dumps(mock_airdrop_index)
             mock_response.json = lambda: mock_airdrop_index
             mock_response.headers = {'ETag': 'etag'}
+        elif url.startswith('https://claims.eigenfoundation.org'):
+            if url.endswith(TEST_ADDR2):
+                mock_response.text = """{"queryId":"1714640773899","status":"Complete","data":{"pipelines":{"tokenQualified":10}}}"""  # noqa: E501
+            else:
+                mock_response.text = """{"queryId":"1714651721784","status":"Complete","data":{"pipelines":{"tokenQualified":0}}}"""  # noqa: E501
+            mock_response.json = lambda: json.loads(mock_response.text)
+            mock_response.status_code = HTTPStatus.OK
         else:
             mock_response.text = url_to_data_map.get(url, 'address,tokens\n')  # Return the data from the dictionary or just a header if 'url' is not found  # noqa: E501
             assert isinstance(mock_response.text, str)
@@ -263,8 +305,7 @@ def test_check_airdrops(
     # one CSV is already present with invalid content, but no cached hash in DB
     csv_dir = data_dir / APPDIR_NAME / AIRDROPSDIR_NAME
     csv_dir.mkdir(parents=True, exist_ok=True)
-    with open(csv_dir / 'shapeshift.csv', 'w', encoding='utf8') as f:
-        f.write('invalid,csv\n')
+    Path(csv_dir / 'shapeshift.csv').write_text('invalid,csv\n', encoding='utf8')
 
     # testing just on the cutoff time of shutter
     freezer.move_to(datetime.datetime.fromtimestamp(1721000000, tz=datetime.UTC))
@@ -297,7 +338,7 @@ def test_check_airdrops(
     with globaldb.conn.read_ctx() as cursor:
         assert cursor.execute(
             'SELECT COUNT(*) FROM unique_cache WHERE key LIKE ?', ('AIRDROPS_HASH%',),
-        ).fetchone()[0] == 10
+        ).fetchone()[0] == 11
         assert cursor.execute(
             'SELECT value FROM unique_cache WHERE key=?', ('AIRDROPS_HASHdiva.csv',),
         ).fetchone()[0] == MOCK_AIRDROP_INDEX['airdrops']['diva']['csv_hash']
@@ -329,7 +370,7 @@ def test_check_airdrops(
     }
     assert messages_aggregator.warnings[0] == 'Skipping airdrop CSV for invalid because it contains an invalid row: []'  # noqa: E501
 
-    assert len(data[TEST_ADDR2]) == 3
+    assert len(data[TEST_ADDR2]) == 5
     assert data[TEST_ADDR2]['uniswap'] == {
         'amount': '400.050642',
         'asset': A_UNI,
@@ -348,6 +389,21 @@ def test_check_airdrops(
         'asset': A_SHU,
         'link': 'https://claim.shutter.network/',
         'claimed': False,
+    }
+    assert data[TEST_ADDR2]['degen2_season1'] == {
+        'amount': '394857.029384576349787465',
+        'asset': Asset('eip155:8453/erc20:0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed'),
+        'link': 'https://www.degen.tips/airdrop2/season1',
+        'claimed': False,
+        'missing_decoder': True,
+        'icon_url': 'https://raw.githubusercontent.com/rotki/data/develop/airdrops/icons/degen.svg',
+    }
+    assert data[TEST_ADDR2]['eigen'] == {
+        'amount': '10',
+        'asset': Asset('EIGEN_TOKEN_PRE_RELEASE'),
+        'link': 'https://eigenfoundation.org',
+        'claimed': False,
+        'icon_url': 'https://raw.githubusercontent.com/rotki/data/develop/airdrops/icons/eigen.svg',
     }
     assert len(data[TEST_POAP1]) == 1
     assert data[TEST_POAP1]['poap'] == [{
@@ -370,8 +426,8 @@ def test_check_airdrops(
             data_dir=data_dir,
             tolerance_for_amount_check=tolerance_for_amount_check,
         )
-        assert mock_get.call_count == 1
-    assert len(data[TEST_ADDR2]) == 2
+        assert mock_get.call_count == 2
+    assert len(data[TEST_ADDR2]) == 4
     assert 'shutter' not in data[TEST_ADDR2]
 
     def update_mock_requests_get(url: str, timeout: int = 0, headers: dict | None = None):  # pylint: disable=unused-argument
@@ -390,7 +446,7 @@ def test_check_airdrops(
             tolerance_for_amount_check=tolerance_for_amount_check,
         )
         # diva CSV and aave JSON were queried again because their hashes were updated
-        assert mock_get.call_count == 3
+        assert mock_get.call_count == 4
 
     # new CSV hashes are saved in the DB
     with globaldb.conn.read_ctx() as cursor:
@@ -399,8 +455,9 @@ def test_check_airdrops(
         ).fetchone()[0] == 'updated_hash'
 
     # Test cache file and row is created
-    for protocol_name in MOCK_AIRDROP_INDEX['airdrops']:
-        assert (data_dir / APPDIR_NAME / AIRDROPSDIR_NAME / f'{protocol_name}.csv').is_file()
+    for protocol_name, data in MOCK_AIRDROP_INDEX['airdrops'].items():
+        if 'csv_path' in data:
+            assert (data_dir / APPDIR_NAME / AIRDROPSDIR_NAME / f'{protocol_name}.csv').is_file()
     for protocol_name in MOCK_AIRDROP_INDEX['poap_airdrops']:
         assert (data_dir / APPDIR_NAME / AIRDROPSPOAPDIR_NAME / f'{protocol_name}.json').is_file()
     with GlobalDBHandler().conn.read_ctx() as cursor:
@@ -461,6 +518,7 @@ def test_fetch_airdrops_metadata(database, remote_etag, database_etag):
         assert metadata == (
             _parse_airdrops(database=database, airdrops_data=mock_airdrop_index['airdrops']),
             mock_airdrop_index['poap_airdrops'],
+            {'degen2_season1'},
         )
         if remote_etag != database_etag:  # check if the value is updated
             assert metadata[0]['diva'].name == 'new_name'

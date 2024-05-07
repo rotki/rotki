@@ -20,13 +20,11 @@ describe('userSecuritySettings.vue', () => {
       pinia,
       vuetify,
       stubs: [
-        'v-tooltip',
         'card-title',
         'asset-select',
         'asset-update',
         'confirm-dialog',
         'data-table',
-        'card',
       ],
       provide: libraryDefaults,
     });
@@ -36,14 +34,14 @@ describe('userSecuritySettings.vue', () => {
     wrapper = createWrapper();
   });
 
-  it('displays no warning by default', async () => {
+  it('displays no warning by default', () => {
     expect(wrapper.find('[data-cy=premium-warning]').exists()).toBe(false);
   });
 
   it('displays warning if premium sync enabled', async () => {
     const { premiumSync } = storeToRefs(usePremiumStore());
     set(premiumSync, true);
-    await wrapper.vm.$nextTick();
+    await nextTick();
     expect(wrapper.find('[data-cy=premium-warning]').exists()).toBe(true);
   });
 });

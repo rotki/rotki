@@ -16,6 +16,7 @@ describe('settings::general', () => {
     currency: 'JPY',
     balanceSaveFrequency: '48',
     dateDisplayFormat: '%d-%m-%Y %H:%M:%S %z',
+    evmchainsToSkipDetection: ['eth', 'avax', 'optimism', 'polygon_pos', 'arbitrum_one', 'base', 'gnosis', 'scroll'],
     thousandSeparator: ',',
     decimalSeparator: '.',
     currencyLocation: 'after' as 'after' | 'before',
@@ -33,7 +34,7 @@ describe('settings::general', () => {
   it('change precision & validate UI message', () => {
     pageGeneral.setFloatingPrecision(settings.floatingPrecision);
     pageGeneral.confirmInlineSuccess(
-      '.general-settings__fields__floating-precision .details',
+      '.general-settings__fields__floating-precision .details .text-rui-success',
       settings.floatingPrecision,
     );
   });
@@ -45,15 +46,27 @@ describe('settings::general', () => {
   it('change main currency and validate UI message', () => {
     pageGeneral.selectCurrency(settings.currency);
     pageGeneral.confirmInlineSuccess(
-      '.general-settings__fields__currency-selector .v-messages__message',
+      '.general-settings__fields__currency-selector .details',
       settings.currency,
     );
+  });
+
+  it('change chains for which to exclude token detection and validate UI message', () => {
+    const target = '.general-settings__fields__account-chains-to-skip-detection .v-text-field__details .v-messages__wrapper';
+    cy.wrap(settings.evmchainsToSkipDetection).each((chain: string) => {
+      pageGeneral.selectChainToIgnore(chain);
+      pageGeneral.confirmInlineSuccess(
+        target,
+        'EVM Chains for which to skip automatic token detection saved successfully',
+      );
+      cy.get(target).should('be.empty');
+    });
   });
 
   it('change balance save frequency and validate UI message', () => {
     pageGeneral.setBalanceSaveFrequency(settings.balanceSaveFrequency);
     pageGeneral.confirmInlineSuccess(
-      '.general-settings__fields__balance-save-frequency .details',
+      '.general-settings__fields__balance-save-frequency .details .text-rui-success',
       settings.balanceSaveFrequency,
     );
   });

@@ -4,23 +4,21 @@ from typing import TYPE_CHECKING
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.interfaces.ammswap.ammswap import AMMSwapPlatform
 from rotkehlchen.chain.ethereum.interfaces.ammswap.types import AssetToPrice, LiquidityPoolAsset
-from rotkehlchen.chain.ethereum.modules.uniswap.constants import CPT_UNISWAP_V2
-from rotkehlchen.chain.ethereum.modules.uniswap.v3.types import (
-    AddressToUniswapV3LPBalances,
-    UniswapV3ProtocolBalance,
-)
 from rotkehlchen.chain.ethereum.modules.uniswap.v3.utils import (
     get_unknown_asset_price_chain,
     uniswap_v3_lp_token_balances,
     update_asset_price_in_uniswap_v3_lp_balances,
+)
+from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V1, CPT_UNISWAP_V2
+from rotkehlchen.chain.evm.decoding.uniswap.v3.types import (
+    AddressToUniswapV3LPBalances,
+    UniswapV3ProtocolBalance,
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
-
-from .constants import CPT_UNISWAP_V1
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken

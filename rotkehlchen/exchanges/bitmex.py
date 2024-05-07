@@ -204,10 +204,8 @@ class Bitmex(ExchangeInterface):
 
         if response.status_code not in {200, 401}:
             raise RemoteError(
-                'Bitmex api request for {} failed with HTTP status code {}'.format(
-                    response.url,
-                    response.status_code,
-                ),
+                f'Bitmex api request for {response.url} failed with HTTP '
+                f'status code {response.status_code}',
             )
 
         try:
@@ -247,7 +245,7 @@ class Bitmex(ExchangeInterface):
         try:
             resp = self._api_query_dict('get', 'user/wallet', {'currency': 'XBt'})
             # Bitmex shows only BTC balance
-            usd_price = Inquirer().find_usd_price(self.btc)
+            usd_price = Inquirer.find_usd_price(self.btc)
         except RemoteError as e:
             msg = f'Bitmex API request failed due to: {e!s}'
             log.error(msg)

@@ -129,7 +129,7 @@ function setTotal(number?: BigNumber) {
 
 const { setValidation, setSubmitFunc, trySubmit } = useEditTotalSnapshotForm();
 
-async function save() {
+function save() {
   const val = get(value);
   const index = val.findIndex(item => item.location === 'total')!;
 

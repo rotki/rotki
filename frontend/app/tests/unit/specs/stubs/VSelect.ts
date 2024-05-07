@@ -1,4 +1,4 @@
-const VSelectStub = {
+export const VSelectStub = {
   template: `
     <div>
       <input :value="value" class="input" type="text" @input="$emit('input', $event.value)">
@@ -8,5 +8,3 @@ const VSelectStub = {
     value: { type: String },
   },
 };
-
-export default VSelectStub;

@@ -5,7 +5,6 @@ import type {
   DataTableColumn,
   DataTableSortData,
 } from '@rotki/ui-library-compat';
-import type { Ref } from 'vue';
 
 const props = withDefaults(
   defineProps<{
@@ -24,17 +23,22 @@ const props = withDefaults(
 const { t } = useI18n();
 
 const { identifier, blockchainOnly, showPercentage, total } = toRefs(props);
-
-const { getBreakdown: getBlockchainBreakdown } = useAccountBalances();
+const { getBreakdown } = useBlockchainStore();
 const { assetBreakdown } = useBalancesBreakdown();
+
+const { getChain } = useSupportedChains();
 
 const breakdowns = computed(() => {
   const asset = get(identifier);
   const breakdown = get(blockchainOnly)
-    ? get(getBlockchainBreakdown(asset))
+    ? get(getBreakdown(asset))
     : get(assetBreakdown(asset));
 
-  return groupAssetBreakdown(breakdown, item => item.location);
+  return groupAssetBreakdown(breakdown, (item) => {
+    // TODO: Remove this when https://github.com/rotki/rotki/issues/6725 is resolved.
+    const location = item.location;
+    return getChain(location, null) || location;
+  });
 });
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -124,7 +128,7 @@ function percentage(value: BigNumber) {
     </template>
     <template #item.percentage="{ row }">
       <PercentageDisplay
-        :value="percentage(row.balance.usdValue)"
+        :value="percentage(row.usdValue)"
         :asset-padding="0.1"
       />
     </template>

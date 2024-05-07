@@ -1,5 +1,5 @@
 import logging
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Iterator
 from typing import TYPE_CHECKING
 
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class ModuleAccountantInterface(metaclass=ABCMeta):
+class ModuleAccountantInterface(ABC):
 
     def __init__(
             self,
@@ -110,7 +110,7 @@ class DepositableAccountantInterface(ModuleAccountantInterface):
             pot.add_asset_change_event(
                 direction=direction,
                 event_type=AccountingEventType.TRANSACTION_EVENT,
-                notes=next_event.notes if next_event.notes else '',
+                notes=next_event.notes or '',
                 location=next_event.location,
                 timestamp=next_event.get_timestamp_in_sec(),
                 asset=next_event.asset,

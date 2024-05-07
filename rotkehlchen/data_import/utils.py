@@ -1,5 +1,5 @@
 import hashlib
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -18,7 +18,7 @@ from rotkehlchen.types import Fee, Location, TimestampMS
 ITEMS_PER_DB_WRITE = 400
 
 
-class BaseExchangeImporter(metaclass=ABCMeta):
+class BaseExchangeImporter(ABC):
     def __init__(self, db: DBHandler) -> None:
         self.db = db
         self.history_db = DBHistoryEvents(self.db)

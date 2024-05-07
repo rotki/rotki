@@ -3,7 +3,6 @@ import { AssetAmountAndValueOverTime } from '@/premium/premium';
 import { Routes } from '@/router/routes';
 import { EVM_TOKEN } from '@/types/asset';
 import type { RawLocation } from 'vue-router';
-import type { ComputedRef } from 'vue';
 import type { AssetBalanceWithPrice } from '@rotki/common';
 
 defineOptions({
@@ -16,9 +15,10 @@ const props = defineProps<{
 
 const { identifier } = toRefs(props);
 const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
-const { isAssetWhitelisted, whitelistAsset, unWhitelistAsset }
-  = useWhitelistedAssetsStore();
+const { isAssetWhitelisted, whitelistAsset, unWhitelistAsset } = useWhitelistedAssetsStore();
 const { markAssetAsSpam, removeAssetFromSpamList } = useSpamAsset();
+const { assetName, assetSymbol, assetInfo, tokenAddress, refetchAssetInfo } = useAssetInfoRetrieval();
+const { getChain } = useSupportedChains();
 
 const isIgnored = isAssetIgnored(identifier);
 const isWhitelisted = isAssetWhitelisted(identifier);
@@ -42,9 +42,6 @@ async function toggleWhitelistAsset() {
 }
 const premium = usePremium();
 
-const { assetName, assetSymbol, assetInfo, tokenAddress, refetchAssetInfo }
-  = useAssetInfoRetrieval();
-const { getChain } = useSupportedChains();
 const name = assetName(identifier);
 const symbol = assetSymbol(identifier);
 const asset = assetInfo(identifier);
@@ -167,7 +164,7 @@ async function toggleSpam() {
           <RuiIcon name="pencil-line" />
         </RuiButton>
       </div>
-      <div class="flex items-center">
+      <div class="flex items-center gap-2">
         <div class="text-body-2 mr-4">
           {{ t('assets.ignore') }}
         </div>
@@ -179,10 +176,12 @@ async function toggleSpam() {
           :disabled="!isWhitelisted && !isSpam"
         >
           <template #activator>
-            <VSwitch
+            <RuiSwitch
+              color="primary"
+              hide-details
               :disabled="isWhitelisted || isSpam"
-              :input-value="isIgnored"
-              @change="toggleIgnoreAsset()"
+              :value="isIgnored"
+              @input="toggleIgnoreAsset()"
             />
           </template>
           {{ isSpam ? t('ignore.spam.hint') : t('ignore.whitelist.hint') }}

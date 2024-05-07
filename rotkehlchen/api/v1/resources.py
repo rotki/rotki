@@ -43,7 +43,6 @@ from rotkehlchen.api.v1.schemas import (
     AssetsSearchByColumnSchema,
     AssetsSearchLevenshteinSchema,
     AssetUpdatesRequestSchema,
-    AsyncHistoricalQuerySchema,
     AsyncIgnoreCacheQueryArgumentSchema,
     AsyncQueryArgumentSchema,
     AsyncTaskSchema,
@@ -56,6 +55,7 @@ from rotkehlchen.api.v1.schemas import (
     BlockchainAccountsPatchSchema,
     BlockchainAccountsPutSchema,
     BlockchainBalanceQuerySchema,
+    BlockchainTransactionDeletionSchema,
     ClearAvatarsCacheSchema,
     ClearCacheSchema,
     ClearIconsCacheSchema,
@@ -79,10 +79,12 @@ from rotkehlchen.api.v1.schemas import (
     EventDetailsQuerySchema,
     EventsOnlineQuerySchema,
     EvmAccountsPutSchema,
+    EvmlikePendingTransactionDecodingSchema,
+    EvmlikeTransactionDecodingSchema,
+    EvmlikeTransactionQuerySchema,
     EvmPendingTransactionDecodingSchema,
     EvmTransactionDecodingSchema,
     EvmTransactionHashAdditionSchema,
-    EvmTransactionPurgingSchema,
     EvmTransactionQuerySchema,
     ExchangeBalanceQuerySchema,
     ExchangeRatesSchema,
@@ -105,6 +107,9 @@ from rotkehlchen.api.v1.schemas import (
     IgnoredActionsModifySchema,
     IgnoredAssetsSchema,
     IntegerIdentifierSchema,
+    LocationAssetMappingsDeleteSchema,
+    LocationAssetMappingsPostSchema,
+    LocationAssetMappingsUpdateSchema,
     ManuallyTrackedBalancesAddSchema,
     ManuallyTrackedBalancesDeleteSchema,
     ManuallyTrackedBalancesEditSchema,
@@ -120,12 +125,15 @@ from rotkehlchen.api.v1.schemas import (
     NamedOracleCacheCreateSchema,
     NamedOracleCacheGetSchema,
     NamedOracleCacheSchema,
+    NewCalendarEntrySchema,
+    NewCalendarReminderListSchema,
     NewUserSchema,
     NFTFilterQuerySchema,
     NFTLpFilterSchema,
     OptionalAddressesWithBlockchainsListSchema,
     QueriedAddressesSchema,
     QueryAddressbookSchema,
+    QueryCalendarSchema,
     ReverseEnsSchema,
     RpcAddNodeSchema,
     RpcNodeEditSchema,
@@ -151,6 +159,8 @@ from rotkehlchen.api.v1.schemas import (
     TradePatchSchema,
     TradeSchema,
     TradesQuerySchema,
+    UpdateCalendarReminderSchema,
+    UpdateCalendarSchema,
     UserActionLoginSchema,
     UserActionSchema,
     UserNotesGetSchema,
@@ -180,6 +190,7 @@ from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.constants.location_details import LOCATION_DETAILS
 from rotkehlchen.data_import.manager import DataImportSource
+from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, ReminderEntry
 from rotkehlchen.db.constants import (
     LINKABLE_ACCOUNTING_PROPERTIES,
     LINKABLE_ACCOUNTING_SETTINGS_NAME,
@@ -195,6 +206,7 @@ from rotkehlchen.db.filtering import (
     EvmTransactionsFilterQuery,
     HistoryBaseEntryFilterQuery,
     LevenshteinFilterQuery,
+    LocationAssetMappingsFilterQuery,
     NFTFilterQuery,
     ReportDataFilterQuery,
     TradesFilterQuery,
@@ -214,7 +226,8 @@ from rotkehlchen.serialization.serialize import process_result
 from rotkehlchen.types import (
     EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
     SUPPORTED_CHAIN_IDS,
-    SUPPORTED_EVM_CHAINS,
+    SUPPORTED_EVM_CHAINS_TYPE,
+    SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     AddressbookEntry,
     AddressbookType,
     ApiKey,
@@ -222,6 +235,7 @@ from rotkehlchen.types import (
     AssetAmount,
     ChecksumEvmAddress,
     Eth2PubKey,
+    EvmlikeChain,
     EVMTxHash,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -230,6 +244,8 @@ from rotkehlchen.types import (
     HistoryEventQueryType,
     ListOfBlockchainAddresses,
     Location,
+    LocationAssetMappingDeleteEntry,
+    LocationAssetMappingUpdateEntry,
     ModuleName,
     OptionalChainAddress,
     Price,
@@ -239,7 +255,7 @@ from rotkehlchen.types import (
     UserNote,
 )
 
-from .types import EvmTransactionDecodingApiData, ModuleWithBalances, ModuleWithStats
+from .types import ModuleWithBalances, ModuleWithStats
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.hdkey import HDKey
@@ -583,22 +599,32 @@ class AssociatedLocations(BaseMethodView):
         return self.rest_api.get_associated_locations()
 
 
+class BlockchainTransactionsResource(BaseMethodView):
+    delete_schema = BlockchainTransactionDeletionSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(delete_schema, location='json')
+    def delete(
+            self,
+            chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE | None,
+            tx_hash: EVMTxHash | None,
+    ) -> Response:
+        return self.rest_api.delete_blockchain_transaction_data(chain=chain, tx_hash=tx_hash)
+
+
 class EvmTransactionsResource(BaseMethodView):
     post_schema = EvmTransactionQuerySchema()
     put_schema = EvmTransactionDecodingSchema()
-    delete_schema = EvmTransactionPurgingSchema()
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json_and_query')
     def post(
             self,
             async_query: bool,
-            only_cache: bool,
             filter_query: EvmTransactionsFilterQuery,
     ) -> Response:
-        return self.rest_api.get_evm_transactions(
+        return self.rest_api.refresh_evm_transactions(
             async_query=async_query,
-            only_cache=only_cache,
             filter_query=filter_query,
         )
 
@@ -607,19 +633,51 @@ class EvmTransactionsResource(BaseMethodView):
     def put(
             self,
             async_query: bool,
-            ignore_cache: bool,
-            data: list[EvmTransactionDecodingApiData],
+            evm_chain: SUPPORTED_CHAIN_IDS,
+            tx_hash: EVMTxHash,
     ) -> Response:
-        return self.rest_api.decode_evm_transactions(
+        return self.rest_api.decode_evm_transaction(
             async_query=async_query,
-            ignore_cache=ignore_cache,
-            data=data,
+            evm_chain=evm_chain,
+            tx_hash=tx_hash,
+        )
+
+
+class EvmlikeTransactionsResource(BaseMethodView):
+    post_schema = EvmlikeTransactionQuerySchema()
+    put_schema = EvmlikeTransactionDecodingSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json_and_query')
+    def post(
+            self,
+            async_query: bool,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            accounts: list[ChecksumEvmAddress] | None,
+            chain: EvmlikeChain | None,
+    ) -> Response:
+        return self.rest_api.refresh_evmlike_transactions(
+            async_query=async_query,
+            from_timestamp=from_timestamp,
+            to_timestamp=to_timestamp,
+            accounts=accounts,
+            chain=chain,
         )
 
     @require_loggedin_user()
-    @use_kwargs(delete_schema, location='json')
-    def delete(self, evm_chain: SUPPORTED_CHAIN_IDS | None) -> Response:
-        return self.rest_api.purge_evm_transaction_data(chain_id=evm_chain)
+    @use_kwargs(put_schema, location='json_and_query')
+    def put(
+            self,
+            async_query: bool,
+            tx_hash: EVMTxHash,
+            chain: EvmlikeChain,
+    ) -> Response:
+        return self.rest_api.decode_evmlike_transactions(
+            async_query=async_query,
+            tx_hash=tx_hash,
+            chain=chain,
+        )
 
 
 class EvmPendingTransactionsDecodingResource(BaseMethodView):
@@ -631,17 +689,43 @@ class EvmPendingTransactionsDecodingResource(BaseMethodView):
     def post(
             self,
             async_query: bool,
-            evm_chains: list[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE],
+            ignore_cache: bool,
+            chains: list[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE],
     ) -> Response:
-        return self.rest_api.decode_pending_evm_transactions(
+        return self.rest_api.decode_evm_transactions(
             async_query=async_query,
-            evm_chains=evm_chains,
+            evm_chains=chains,
+            force_redecode=ignore_cache,
         )
 
     @require_loggedin_user()
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool) -> Response:
         return self.rest_api.get_count_transactions_not_decoded(async_query=async_query)
+
+
+class EvmlikePendingTransactionsDecodingResource(BaseMethodView):
+    post_schema = EvmlikePendingTransactionDecodingSchema()
+    get_schema = AsyncQueryArgumentSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json_and_query')
+    def post(
+            self,
+            async_query: bool,
+            ignore_cache: bool,
+            chains: list[EvmlikeChain],
+    ) -> Response:
+        return self.rest_api.decode_pending_evmlike_transactions(
+            async_query=async_query,
+            ignore_cache=ignore_cache,
+            evmlike_chains=chains,
+        )
+
+    @require_loggedin_user()
+    @use_kwargs(get_schema, location='json_and_query')
+    def get(self, async_query: bool) -> Response:
+        return self.rest_api.get_count_evmlike_transactions_not_decoded(async_query=async_query)
 
 
 class EthereumAirdropsResource(BaseMethodView):
@@ -663,7 +747,11 @@ class RpcNodesResource(BaseMethodView):
         return RpcNodeEditSchema(
             dbhandler=self.rest_api.rotkehlchen.data.db,
         )
-    delete_schema = RpcNodeListDeleteSchema()
+
+    def make_delete_schema(self) -> RpcNodeListDeleteSchema:
+        return RpcNodeListDeleteSchema(
+            dbhandler=self.rest_api.rotkehlchen.data.db,
+        )
 
     @require_loggedin_user()
     @use_kwargs(get_schema, location='view_args')
@@ -719,7 +807,7 @@ class RpcNodesResource(BaseMethodView):
         return self.rest_api.update_rpc_node(node=node)
 
     @require_loggedin_user()
-    @use_kwargs(delete_schema, location='json_and_query_and_view_args')
+    @resource_parser.use_kwargs(make_delete_schema, location='json_and_query_and_view_args')
     def delete(
             self,
             blockchain: SupportedBlockchain,
@@ -2042,48 +2130,6 @@ class YearnVaultsV2BalancesResource(BaseMethodView):
         return self.rest_api.get_yearn_vaults_v2_balances(async_query=async_query)
 
 
-class YearnVaultsHistoryResource(BaseMethodView):
-
-    get_schema = AsyncHistoricalQuerySchema()
-
-    @require_premium_user(active_check=False)
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(
-            self,
-            async_query: bool,
-            reset_db_data: bool,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> Response:
-        return self.rest_api.get_yearn_vaults_history(
-            async_query=async_query,
-            reset_db_data=reset_db_data,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
-
-
-class YearnVaultsV2HistoryResource(BaseMethodView):
-
-    get_schema = AsyncHistoricalQuerySchema()
-
-    @require_premium_user(active_check=False)
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(
-            self,
-            async_query: bool,
-            reset_db_data: bool,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> Response:
-        return self.rest_api.get_yearn_vaults_v2_history(
-            async_query=async_query,
-            reset_db_data=reset_db_data,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
-
-
 class LoopringBalancesResource(BaseMethodView):
 
     get_schema = AsyncQueryArgumentSchema()
@@ -2190,7 +2236,15 @@ class ModuleStatsResource(BaseMethodView):
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> Response:
-        if module in (ModuleWithStats.AAVE, ModuleWithStats.COMPOUND):
+        if module == ModuleWithStats.AAVE:
+            return self.rest_api.get_module_stats_using_balances(
+                async_query=async_query,
+                module=module.serialize(),
+                from_timestamp=from_timestamp,
+                to_timestamp=to_timestamp,
+            )
+
+        if module == ModuleWithStats.COMPOUND:
             return self.rest_api.get_module_stats_using_balances(
                 async_query=async_query,
                 module=module.serialize(),
@@ -2233,27 +2287,6 @@ class PickleDillResource(BaseMethodView):
     @use_kwargs(get_schema, location='json_and_query')
     def get(self, async_query: bool) -> Response:
         return self.rest_api.get_dill_balance(async_query=async_query)
-
-
-class BalancerEventsHistoryResource(BaseMethodView):
-
-    get_schema = AsyncHistoricalQuerySchema()
-
-    @require_premium_user(active_check=False)
-    @use_kwargs(get_schema, location='json_and_query')
-    def get(
-            self,
-            async_query: bool,
-            reset_db_data: bool,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> Response:
-        return self.rest_api.get_balancer_events_history(
-            async_query=async_query,
-            reset_db_data=reset_db_data,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
 
 
 class WatchersResource(BaseMethodView):
@@ -2307,7 +2340,7 @@ class AssetIconsResource(BaseMethodView):
         to send multiform data and a json body in the same request.
         """
         with TemporaryDirectory() as temp_directory:
-            filename = file.filename if file.filename else f'{asset.identifier}.png'
+            filename = file.filename or f'{asset.identifier}.png'
             filepath = Path(temp_directory) / filename
             file.save(str(filepath))
             response = self.rest_api.upload_asset_icon(asset=asset, filepath=filepath)
@@ -2317,6 +2350,37 @@ class AssetIconsResource(BaseMethodView):
     @use_kwargs(patch_schema, location='json')
     def patch(self, asset: AssetWithOracles) -> Response:
         return self.rest_api.refresh_asset_icon(asset=asset)
+
+
+class LocationAssetMappingsResource(BaseMethodView):
+    post_schema = LocationAssetMappingsPostSchema()
+    put_and_patch_schema = LocationAssetMappingsUpdateSchema()
+    delete_schema = LocationAssetMappingsDeleteSchema()
+
+    @use_kwargs(post_schema, location='json')
+    def post(self, filter_query: LocationAssetMappingsFilterQuery) -> Response:
+        return self.rest_api.query_location_asset_mappings(filter_query=filter_query)
+
+    @use_kwargs(put_and_patch_schema, location='json')
+    def put(
+            self,
+            entries: list[LocationAssetMappingUpdateEntry],
+    ) -> Response:
+        return self.rest_api.add_location_asset_mappings(entries=entries)
+
+    @use_kwargs(put_and_patch_schema, location='json')
+    def patch(
+            self,
+            entries: list[LocationAssetMappingUpdateEntry],
+    ) -> Response:
+        return self.rest_api.update_location_asset_mappings(entries=entries)
+
+    @use_kwargs(delete_schema, location='json')
+    def delete(
+            self,
+            entries: list[LocationAssetMappingDeleteEntry],
+    ) -> Response:
+        return self.rest_api.delete_location_asset_mappings(entries=entries)
 
 
 class AllLatestAssetsPriceResource(BaseMethodView):
@@ -2630,7 +2694,7 @@ class UserAssetsResource(BaseMethodView):
     def post(self, async_query: bool, file: FileStorage) -> Response:
         with NamedTemporaryFile(
             delete=False,  # don't delete it on close
-            suffix=file.filename if file.filename else 'assets.zip',
+            suffix=file.filename or 'assets.zip',
         ) as temp_file:
             file.save(temp_file.name)
             response = self.rest_api.import_user_assets(
@@ -2689,8 +2753,8 @@ class DBSnapshotsResource(BaseMethodView):
             location_data_snapshot_file: FileStorage,
     ) -> Response:
         with TemporaryDirectory() as temp_directory:
-            balance_snapshot_filename = balances_snapshot_file.filename if balances_snapshot_file.filename else 'balances_snapshot_import.csv'  # noqa: E501
-            location_data_snapshot_filename = location_data_snapshot_file.filename if location_data_snapshot_file.filename else 'location_data_snapshot.csv'  # noqa: E501
+            balance_snapshot_filename = balances_snapshot_file.filename or 'balances_snapshot_import.csv'  # noqa: E501
+            location_data_snapshot_filename = location_data_snapshot_file.filename or 'location_data_snapshot.csv'  # noqa: E501
             balance_snapshot_filepath = Path(temp_directory) / balance_snapshot_filename
             location_data_snapshot_filepath = Path(temp_directory) / location_data_snapshot_filename  # noqa: E501
             balances_snapshot_file.save(balance_snapshot_filepath)
@@ -2806,7 +2870,7 @@ class DetectTokensResource(BaseMethodView):
     @use_kwargs(post_schema, location='json_and_view_args')
     def post(
             self,
-            blockchain: SUPPORTED_EVM_CHAINS,
+            blockchain: SUPPORTED_EVM_CHAINS_TYPE,
             async_query: bool,
             only_cache: bool,
             addresses: Sequence[ChecksumEvmAddress] | None,
@@ -3138,3 +3202,71 @@ class SpamEvmTokenResource(BaseMethodView):
     @use_kwargs(post_delete_schema, location='json_and_query')
     def delete(self, token: EvmToken) -> Response:
         return self.rest_api.remove_token_from_spam(token=token)
+
+
+class CalendarResource(BaseMethodView):
+
+    def make_create_schema(self) -> NewCalendarEntrySchema:
+        return NewCalendarEntrySchema(
+            self.rest_api.rotkehlchen.chains_aggregator,
+        )
+
+    def make_update_schema(self) -> UpdateCalendarSchema:
+        return UpdateCalendarSchema(
+            self.rest_api.rotkehlchen.chains_aggregator,
+        )
+
+    def make_query_schema(self) -> QueryCalendarSchema:
+        return QueryCalendarSchema(
+            self.rest_api.rotkehlchen.chains_aggregator,
+        )
+
+    delete_schema = IntegerIdentifierSchema()
+
+    @require_loggedin_user()
+    @resource_parser.use_kwargs(make_create_schema, location='json_and_query')
+    def put(self, calendar: CalendarEntry) -> Response:
+        return self.rest_api.create_calendar_entry(calendar=calendar)
+
+    @require_loggedin_user()
+    @use_kwargs(delete_schema, location='json_and_query')
+    def delete(self, identifier: int) -> Response:
+        return self.rest_api.delete_calendar_entry(identifier=identifier)
+
+    @require_loggedin_user()
+    @resource_parser.use_kwargs(make_update_schema, location='json_and_query')
+    def patch(self, calendar: CalendarEntry) -> Response:
+        return self.rest_api.update_calendar_entry(calendar)
+
+    @require_loggedin_user()
+    @resource_parser.use_kwargs(make_query_schema, location='json_and_query')
+    def post(self, filter_query: CalendarFilterQuery) -> Response:
+        return self.rest_api.query_calendar(filter_query=filter_query)
+
+
+class CalendarRemindersResource(BaseMethodView):
+
+    create_schema = NewCalendarReminderListSchema()
+    update_schema = UpdateCalendarReminderSchema()
+    delete_schema = IntegerIdentifierSchema()
+    query_schema = IntegerIdentifierSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(create_schema, location='json_and_query')
+    def put(self, reminders: list[ReminderEntry]) -> Response:
+        return self.rest_api.create_calendar_reminder(reminders=reminders)
+
+    @require_loggedin_user()
+    @use_kwargs(delete_schema, location='json_and_query')
+    def delete(self, identifier: int) -> Response:
+        return self.rest_api.delete_reminder_entry(identifier=identifier)
+
+    @require_loggedin_user()
+    @use_kwargs(update_schema, location='json_and_query')
+    def patch(self, reminder: ReminderEntry) -> Response:
+        return self.rest_api.update_reminder_entry(reminder)
+
+    @require_loggedin_user()
+    @use_kwargs(query_schema, location='json_and_query')
+    def post(self, identifier: int) -> Response:
+        return self.rest_api.query_reminders(event_id=identifier)

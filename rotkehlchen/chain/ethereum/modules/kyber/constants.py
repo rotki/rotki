@@ -1,1 +1,3 @@
-CPT_KYBER = 'kyber legacy'
+from typing import Final
+
+CPT_KYBER_LEGACY: Final = 'kyber legacy'

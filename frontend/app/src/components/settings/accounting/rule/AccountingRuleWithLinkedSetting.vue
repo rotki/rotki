@@ -74,10 +74,11 @@ const elemID = computed(() => `${get(identifier)}-switch`);
 </script>
 
 <template>
-  <div class="flex gap-2 py-4">
-    <VSwitch
+  <div class="flex gap-4 py-4">
+    <RuiSwitch
       :id="elemID"
       v-model="value.value"
+      color="primary"
       :disabled="linkedModel"
     />
     <div class="w-full">

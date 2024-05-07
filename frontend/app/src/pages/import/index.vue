@@ -7,7 +7,7 @@ const { t } = useI18n();
 <template>
   <TablePageLayout :title="[t('import_data.title')]">
     <template #buttons>
-      <HintMenuIcon left>
+      <HintMenuIcon :popper="{ placement: 'left-start' }">
         {{ t('import_data.description') }}
       </HintMenuIcon>
     </template>

@@ -5,11 +5,12 @@ import {
   Priority,
   Severity,
 } from '@rotki/common/lib/messages';
+import dayjs from 'dayjs';
 import {
   type AccountingRuleConflictData,
   type BalanceSnapshotError,
   type EvmTransactionQueryData,
-  type EvmUndecodedTransactionsData,
+  type EvmUnDecodedTransactionsData,
   type HistoryEventsQueryData,
   MESSAGE_WARNING,
   type MissingApiKey,
@@ -20,15 +21,14 @@ import {
 } from '@/types/websocket-messages';
 import { camelCaseTransformer } from '@/services/axios-tranformers';
 import { Routes } from '@/router/routes';
-import router from '@/router';
+import { router } from '@/router';
 import type { Blockchain } from '@rotki/common/lib/blockchain';
+import type { CalendarEventPayload } from '@/types/history/calendar';
 
 export function useMessageHandling() {
   const { setQueryStatus: setTxQueryStatus } = useTxQueryStatusStore();
   const { setQueryStatus: setEventsQueryStatus } = useEventsQueryStatusStore();
-  const { setEvmUndecodedTransactions } = useHistoryStore();
-  const { updateDataMigrationStatus, updateDbUpgradeStatus }
-    = useSessionAuthStore();
+  const { updateDataMigrationStatus, updateDbUpgradeStatus } = useSessionAuthStore();
   const { fetchBlockchainBalances } = useBlockchainBalances();
   const notificationsStore = useNotificationsStore();
   const { data: notifications } = storeToRefs(notificationsStore);
@@ -37,6 +37,7 @@ export function useMessageHandling() {
   const { t } = useI18n();
   const { consumeMessages } = useSessionApi();
   const { uploadStatus, uploadStatusAlreadyHandled } = useSync();
+  const { setUndecodedTransactionsStatus } = useHistoryStore();
   let isRunning = false;
 
   const handleSnapshotError = (data: BalanceSnapshotError): Notification => ({
@@ -49,10 +50,10 @@ export function useMessageHandling() {
     setTxQueryStatus(data);
   };
 
-  const handleEvmUndecodedTransaction = (
-    data: EvmUndecodedTransactionsData,
+  const handleUnDecodedTransaction = (
+    data: EvmUnDecodedTransactionsData,
   ): void => {
-    setEvmUndecodedTransactions(data);
+    setUndecodedTransactionsStatus(data);
   };
 
   const handleHistoryEventsStatus = (data: HistoryEventsQueryData): void => {
@@ -210,6 +211,50 @@ export function useMessageHandling() {
     };
   };
 
+  const { addressNameSelector } = useAddressesNamesStore();
+
+  const handleCalendarReminder = (data: CalendarEventPayload): Notification => {
+    const { name, timestamp } = data;
+    const now = dayjs();
+    const eventTime = dayjs(timestamp * 1000);
+    const isEventTime = now.isSameOrAfter(eventTime);
+
+    let title = name;
+    if (!isEventTime) {
+      const relativeTime = eventTime.from(now);
+      title = `"${name}" ${relativeTime}`;
+    }
+
+    let message = '';
+    if (data.address && data.blockchain) {
+      const address = get(addressNameSelector(data.address)) || data.address;
+      message += `${t('common.account')}: ${address} (${get(getChainName(data.blockchain))}) \n`;
+    }
+
+    if (data.counterparty)
+      message += `${t('common.counterparty')}: ${data.counterparty} \n`;
+
+    if (data.description)
+      message += data.description;
+
+    return {
+      title,
+      message,
+      display: true,
+      severity: Severity.REMINDER,
+      action: {
+        label: t('notification_messages.reminder.open_calendar'),
+        persist: true,
+        action: () => {
+          router.push({
+            path: Routes.CALENDAR,
+            query: { timestamp: timestamp.toString() },
+          });
+        },
+      },
+    };
+  };
+
   const handleMessage = async (data: string): Promise<void> => {
     const message: WebsocketMessage = WebsocketMessage.parse(
       camelCaseTransformer(JSON.parse(data)),
@@ -238,7 +283,7 @@ export function useMessageHandling() {
       handleEvmTransactionsStatus(message.data);
     }
     else if (type === SocketMessageType.EVM_UNDECODED_TRANSACTIONS) {
-      handleEvmUndecodedTransaction(message.data);
+      handleUnDecodedTransaction(message.data);
     }
     else if (type === SocketMessageType.HISTORY_EVENTS_STATUS) {
       handleHistoryEventsStatus(message.data);
@@ -281,6 +326,9 @@ export function useMessageHandling() {
     else if (type === SocketMessageType.ACCOUNTING_RULE_CONFLICT) {
       notifications.push(handleAccountingRuleConflictMessage(message.data));
     }
+    else if (type === SocketMessageType.CALENDAR_REMINDER) {
+      notifications.push(handleCalendarReminder(message.data));
+    }
     else {
       logger.warn(`Unsupported socket message received: '${type}'`);
     }
@@ -288,7 +336,7 @@ export function useMessageHandling() {
     notifications.forEach(notify);
   };
 
-  const handlePollingMessage = async (message: string, isWarning: boolean) => {
+  const handlePollingMessage = (message: string, isWarning: boolean) => {
     const notifications: Notification[] = [];
 
     try {
@@ -298,13 +346,13 @@ export function useMessageHandling() {
       else if (object.type === SocketMessageType.BALANCES_SNAPSHOT_ERROR)
         notifications.push(handleSnapshotError(object));
       else if (object.type === SocketMessageType.EVM_TRANSACTION_STATUS)
-        await handleEvmTransactionsStatus(object);
+        handleEvmTransactionsStatus(object);
       else if (object.type === SocketMessageType.EVM_UNDECODED_TRANSACTIONS)
-        await handleEvmUndecodedTransaction(object);
+        handleUnDecodedTransaction(object);
       else if (object.type === SocketMessageType.DB_UPGRADE_STATUS)
-        await updateDbUpgradeStatus(object);
+        updateDbUpgradeStatus(object);
       else if (object.type === SocketMessageType.DATA_MIGRATION_STATUS)
-        await updateDataMigrationStatus(object);
+        updateDataMigrationStatus(object);
       else
         logger.error('unsupported message:', message);
     }
@@ -325,12 +373,10 @@ export function useMessageHandling() {
       const messages = await backoff(3, () => consumeMessages(), 10000);
       const existing = get(notifications).map(({ message }) => message);
       messages.errors
-        .filter(uniqueStrings)
-        .filter(error => !existing.includes(error))
+        .filter((error, ...args) => uniqueStrings(error, ...args) && !existing.includes(error))
         .forEach(message => handlePollingMessage(message, false));
       messages.warnings
-        .filter(uniqueStrings)
-        .filter(warning => !existing.includes(warning))
+        .filter((warning, ...args) => uniqueStrings(warning, ...args) && !existing.includes(warning))
         .forEach(message => handlePollingMessage(message, true));
     }
     catch (error: any) {

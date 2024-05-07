@@ -19,14 +19,14 @@ const { t } = useI18n();
       t('general_settings.validation.display_date_in_localtime.error')
     "
   >
-    <VSwitch
+    <RuiSwitch
       v-model="displayDateInLocaltime"
-      class="general-settings__fields__display-date-in-localtime mb-4 mt-0"
+      class="general-settings__fields__display-date-in-localtime"
       color="primary"
       :label="t('general_settings.labels.display_date_in_localtime')"
       :success-messages="success"
       :error-messages="error"
-      @change="update($event)"
+      @input="update($event)"
     />
   </SettingsOption>
 </template>

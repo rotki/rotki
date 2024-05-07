@@ -31,8 +31,8 @@ const { t } = useI18n();
 const { editableItem, groupHeader, nextSequence } = toRefs(props);
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { counterparties, historyEventProductsMapping }
-  = useHistoryEventMappings();
+const { historyEventProductsMapping } = useHistoryEventProductMappings();
+const { counterparties } = useHistoryEventCounterpartyMappings();
 
 const lastLocation = useLocalStorage(
   'rotki.history_event.location',
@@ -64,17 +64,27 @@ const errorMessages = ref<Record<string, string[]>>({});
 
 const externalServerValidation = () => true;
 
+const historyEventLimitedProducts: ComputedRef<string[]> = computed(() => {
+  const counterpartyVal = get(counterparty);
+  const mapping = get(historyEventProductsMapping);
+
+  if (!counterpartyVal)
+    return [];
+
+  return mapping[counterpartyVal] ?? [];
+});
+
 const rules = {
   timestamp: { externalServerValidation },
   locationLabel: { externalServerValidation },
   notes: { externalServerValidation },
   txHash: {
     required: helpers.withMessage(
-      t('transactions.events.form.tx_hash.validation.non_empty').toString(),
+      t('transactions.events.form.tx_hash.validation.non_empty'),
       required,
     ),
     isValid: helpers.withMessage(
-      t('transactions.events.form.tx_hash.validation.valid').toString(),
+      t('transactions.events.form.tx_hash.validation.valid'),
       (value: string) => isValidTxHash(value),
     ),
   },
@@ -82,25 +92,25 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.event_identifier.validation.non_empty',
-      ).toString(),
+      ),
       requiredIf(() => !!get(editableItem)),
     ),
   },
   location: {
     required: helpers.withMessage(
-      t('transactions.events.form.location.validation.non_empty').toString(),
+      t('transactions.events.form.location.validation.non_empty'),
       required,
     ),
   },
   asset: {
     required: helpers.withMessage(
-      t('transactions.events.form.asset.validation.non_empty').toString(),
+      t('transactions.events.form.asset.validation.non_empty'),
       required,
     ),
   },
   amount: {
     required: helpers.withMessage(
-      t('transactions.events.form.amount.validation.non_empty').toString(),
+      t('transactions.events.form.amount.validation.non_empty'),
       required,
     ),
   },
@@ -108,13 +118,13 @@ const rules = {
     required: helpers.withMessage(
       t('transactions.events.form.fiat_value.validation.non_empty', {
         currency: get(currencySymbol),
-      }).toString(),
+      }),
       required,
     ),
   },
   address: {
     isValid: helpers.withMessage(
-      t('transactions.events.form.address.validation.valid').toString(),
+      t('transactions.events.form.address.validation.valid'),
       (value: string) => !value || isValidEthAddress(value),
     ),
   },
@@ -122,13 +132,13 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.sequence_index.validation.non_empty',
-      ).toString(),
+      ),
       required,
     ),
   },
   eventType: {
     required: helpers.withMessage(
-      t('transactions.events.form.event_type.validation.non_empty').toString(),
+      t('transactions.events.form.event_type.validation.non_empty'),
       required,
     ),
   },
@@ -136,13 +146,13 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.event_subtype.validation.non_empty',
-      ).toString(),
+      ),
       required,
     ),
   },
   counterparty: {
     isValid: helpers.withMessage(
-      t('transactions.events.form.counterparty.validation.valid').toString(),
+      t('transactions.events.form.counterparty.validation.valid'),
       (value: string) =>
         !value
         || get(counterparties).includes(value)
@@ -151,15 +161,17 @@ const rules = {
   },
   product: {
     isValid: helpers.withMessage(
-      t('transactions.events.form.product.validation.valid').toString(),
+      t('transactions.events.form.product.validation.valid'),
       (value: string) =>
         !value || get(historyEventLimitedProducts).includes(value),
     ),
   },
 };
 
-const { setValidation, setSubmitFunc, saveHistoryEventHandler }
-  = useHistoryEventsForm();
+const numericAmount = bigNumberifyFromRef(amount);
+const numericUsdValue = bigNumberifyFromRef(usdValue);
+
+const { setValidation, setSubmitFunc, saveHistoryEventHandler } = useHistoryEventsForm();
 
 const v$ = setValidation(
   rules,
@@ -215,7 +227,7 @@ function reset() {
   get(assetPriceForm)?.reset();
 }
 
-async function applyEditableData(entry: EvmHistoryEvent) {
+function applyEditableData(entry: EvmHistoryEvent) {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
   set(txHash, entry.txHash);
   set(eventIdentifier, entry.eventIdentifier);
@@ -241,7 +253,7 @@ async function applyEditableData(entry: EvmHistoryEvent) {
   set(extraData, entry.extraData || {});
 }
 
-async function applyGroupHeaderData(entry: EvmHistoryEvent) {
+function applyGroupHeaderData(entry: EvmHistoryEvent) {
   set(sequenceIndex, get(nextSequence) || '0');
   set(eventIdentifier, entry.eventIdentifier);
   set(location, entry.location || get(lastLocation));
@@ -305,9 +317,6 @@ async function save(): Promise<boolean> {
 
 setSubmitFunc(save);
 
-const numericAmount = bigNumberifyFromRef(amount);
-const numericUsdValue = bigNumberifyFromRef(usdValue);
-
 watch(location, (location: string) => {
   if (location)
     set(lastLocation, location);
@@ -328,18 +337,9 @@ function checkPropsData() {
 }
 
 watch([groupHeader, editableItem], checkPropsData);
+
 onMounted(() => {
   checkPropsData();
-});
-
-const historyEventLimitedProducts: ComputedRef<string[]> = computed(() => {
-  const counterpartyVal = get(counterparty);
-  const mapping = get(historyEventProductsMapping);
-
-  if (!counterpartyVal)
-    return [];
-
-  return mapping[counterpartyVal] ?? [];
 });
 
 watch(historyEventLimitedProducts, (products) => {
@@ -348,15 +348,11 @@ watch(historyEventLimitedProducts, (products) => {
     set(product, '');
 });
 
-const { txEvmChainsToLocation } = useSupportedChains();
+const { txChainsToLocation } = useSupportedChains();
 
-const { accounts } = useAccountBalances();
+const { getAddresses } = useBlockchainStore();
 
-const addressSuggestions = computed(() =>
-  get(accounts)
-    .filter(item => item.chain === Blockchain.ETH)
-    .map(item => item.address),
-);
+const addressSuggestions = computed(() => getAddresses(Blockchain.ETH));
 </script>
 
 <template>
@@ -364,7 +360,7 @@ const addressSuggestions = computed(() =>
     <div class="grid md:grid-cols-2 gap-4">
       <DateTimePicker
         v-model="datetime"
-        :label="t('transactions.events.form.datetime.label')"
+        :label="t('common.datetime')"
         persistent-hint
         limit-now
         milliseconds
@@ -377,7 +373,7 @@ const addressSuggestions = computed(() =>
         v-model="location"
         required
         outlined
-        :items="txEvmChainsToLocation"
+        :items="txChainsToLocation"
         :disabled="!!(editableItem || groupHeader)"
         data-cy="location"
         :label="t('common.location')"
@@ -454,14 +450,9 @@ const addressSuggestions = computed(() =>
         :error-messages="toMessages(v$.sequenceIndex)"
         @blur="v$.sequenceIndex.$touch()"
       />
-      <ComboboxWithCustomInput
+      <CounterpartyInput
         v-model="counterparty"
-        outlined
-        required
-        clearable
-        auto-select-first
-        :label="t('transactions.events.form.counterparty.label')"
-        :items="counterparties"
+        :label="t('common.counterparty')"
         data-cy="counterparty"
         :error-messages="toMessages(v$.counterparty)"
         @blur="v$.counterparty.$touch()"
@@ -500,17 +491,16 @@ const addressSuggestions = computed(() =>
 
     <RuiDivider class="mb-2 mt-6" />
 
-    <VExpansionPanels flat>
-      <VExpansionPanel>
-        <VExpansionPanelHeader
-          class="p-0"
-          data-cy="evm-event-form__advance-toggle"
-        >
+    <RuiAccordions>
+      <RuiAccordion
+        data-cy="evm-event-form__advance"
+        header-class="py-4"
+        eager
+      >
+        <template #header>
           {{ t('transactions.events.form.advanced') }}
-        </VExpansionPanelHeader>
-        <VExpansionPanelContent
-          class="[&>.v-expansion-panel-content\_\_wrap]:!p-0"
-        >
+        </template>
+        <div class="py-2">
           <RuiTextField
             v-model="eventIdentifier"
             variant="outlined"
@@ -525,8 +515,8 @@ const addressSuggestions = computed(() =>
             v-model="extraData"
             :label="t('transactions.events.form.extra_data.label')"
           />
-        </VExpansionPanelContent>
-      </VExpansionPanel>
-    </VExpansionPanels>
+        </div>
+      </RuiAccordion>
+    </RuiAccordions>
   </div>
 </template>

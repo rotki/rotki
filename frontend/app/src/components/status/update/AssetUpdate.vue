@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import Fragment from '@/components/helper/Fragment';
-import type { Ref } from 'vue';
 import type {
   AssetUpdateConflictResult,
   AssetVersionUpdate,

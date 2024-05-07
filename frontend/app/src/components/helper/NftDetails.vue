@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { isVideo } from '@/utils/nft';
-import type { ComputedRef } from 'vue';
 import type { StyleValue } from 'vue/types/jsx';
 
 const props = withDefaults(
@@ -19,7 +17,6 @@ const css = useCssModule();
 
 const { identifier } = toRefs(props);
 const { assetInfo } = useAssetInfoRetrieval();
-const { shouldRenderImage } = useNfts();
 
 const frontendStore = useFrontendSettingsStore();
 
@@ -33,6 +30,12 @@ const { t } = useI18n();
 const imageUrlSource: ComputedRef<string | null> = computed(
   () => get(balanceData)?.imageUrl || null,
 );
+
+const {
+  shouldRender,
+  isVideo,
+  renderedMedia,
+} = useNftImage(imageUrlSource);
 
 const domain: ComputedRef<string | null> = computed(() =>
   getDomain(get(imageUrlSource) || ''),
@@ -72,24 +75,6 @@ function allowDomain() {
   updateSetting({ whitelistedDomainsForNftImages: newWhitelisted });
 }
 
-const renderImage: ComputedRef<boolean> = computed(() => {
-  const image = get(imageUrlSource);
-
-  if (!image)
-    return true;
-
-  return shouldRenderImage(image);
-});
-
-const imageUrl: ComputedRef<string> = computed(() => {
-  const image = get(imageUrlSource);
-
-  if (!image || !get(renderImage))
-    return './assets/images/placeholder.svg';
-
-  return image;
-});
-
 const collectionName: ComputedRef<string | null> = computed(() => {
   const data = get(balanceData);
   if (!data || !data.collectionName)
@@ -124,7 +109,7 @@ const fallbackData = computed(() => {
       <div class="cursor-pointer">
         <RuiTooltip
           :popper="{ placement: 'top' }"
-          :disabled="renderImage"
+          :disabled="shouldRender"
           :open-delay="400"
           class="w-full"
           tooltip-class="max-w-[10rem]"
@@ -134,23 +119,21 @@ const fallbackData = computed(() => {
               class="my-2 bg-rui-grey-200 rounded flex items-center justify-center"
               :class="css.preview"
               :style="styled"
-              @click="!renderImage ? showAllowDomainConfirmation() : null"
+              @click="!shouldRender ? showAllowDomainConfirmation() : null"
             >
-              <template v-if="imageUrl">
-                <video
-                  v-if="isVideo(imageUrl)"
-                  width="100%"
-                  height="100%"
-                  :src="imageUrl"
-                />
-                <AppImage
-                  v-else
-                  class="rounded overflow-hidden"
-                  :src="imageUrl"
-                  :size="size"
-                  contain
-                />
-              </template>
+              <video
+                v-if="isVideo"
+                width="100%"
+                height="100%"
+                :src="renderedMedia"
+              />
+              <AppImage
+                v-else
+                class="rounded overflow-hidden"
+                :src="renderedMedia"
+                :size="size"
+                contain
+              />
             </div>
           </template>
 

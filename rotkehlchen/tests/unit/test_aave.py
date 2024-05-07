@@ -83,6 +83,7 @@ def test_aave_v1_events_stats(
         from_timestamp=Timestamp(0),
         to_timestamp=ts_now(),
         given_defi_balances={},
+        given_eth_balances={},
     )
     expected_stats = {
         '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12': AaveStats(

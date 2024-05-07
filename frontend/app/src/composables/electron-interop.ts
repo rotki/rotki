@@ -58,12 +58,12 @@ const interop = {
     if (!window.interop)
       throw new Error('environment does not support interop');
 
-    return window.interop.metamaskImport().then((value) => {
-      if ('error' in value)
-        throw new Error(value.error);
+    const response = await window.interop.metamaskImport();
 
-      return value.addresses;
-    });
+    if ('error' in response)
+      throw new Error(response.error);
+
+    return response.addresses;
   },
 
   restartBackend: async (
@@ -78,18 +78,17 @@ const interop = {
     return await window.interop.config(defaults);
   },
 
-  version: async (): Promise<SystemVersion | WebVersion> => {
+  version: (): Promise<SystemVersion | WebVersion> => {
     if (!window.interop) {
-      return {
+      return Promise.resolve({
         platform: navigator?.platform,
         userAgent: navigator?.userAgent,
-      };
+      });
     }
     return window.interop?.version();
   },
 
-  isMac: async (): Promise<boolean> =>
-    window.interop?.isMac() || navigator.platform?.startsWith?.('Mac'),
+  isMac: (): Promise<boolean> => Promise.resolve(window.interop?.isMac() || navigator.platform?.startsWith?.('Mac')),
 
   resetTray: () => {
     window.interop?.updateTray({});

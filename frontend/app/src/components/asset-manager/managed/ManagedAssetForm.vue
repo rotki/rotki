@@ -10,7 +10,7 @@ import { ApiValidationError } from '@/types/api/errors';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 import { toMessages } from '@/utils/validation';
 import { externalLinks } from '@/data/external-links';
-import type { ComputedRef, Ref } from 'vue';
+import type { SelectOption, SelectOptions } from '@/types/common';
 import type {
   EvmTokenKind,
   SupportedAsset,
@@ -44,7 +44,7 @@ const cryptocompare = ref<string>('');
 const assetType = ref<string>(EVM_TOKEN);
 const evmChain = ref<string>();
 const tokenKind = ref<string>();
-const types = ref<string[]>([EVM_TOKEN]);
+const types = ref<SelectOptions>([{ key: EVM_TOKEN, label: toSentenceCase(EVM_TOKEN) }]);
 const identifier = ref<string>('');
 const protocol = ref<string>('');
 const swappedFor = ref<string>('');
@@ -120,6 +120,8 @@ function clearFieldErrors(fields: Array<keyof SupportedAsset>) {
   fields.forEach(clearFieldError);
 }
 
+const { txEvmChains } = useSupportedChains();
+
 watch([address, evmChain], async ([address, evmChain]) => {
   if (!evmChain)
     return;
@@ -129,17 +131,21 @@ watch([address, evmChain], async ([address, evmChain]) => {
     return;
   }
 
-  set(fetching, true);
-  const {
-    decimals: newDecimals,
-    name: newName,
-    symbol: newSymbol,
-  } = await fetchTokenDetails({ address, evmChain });
-  set(decimals, newDecimals ?? get(decimals));
-  set(name, newName || get(name));
-  set(symbol, newSymbol || get(symbol));
-  set(fetching, false);
-  clearFieldErrors(['decimals', 'name', 'symbol']);
+  if (get(txEvmChains).some(({ evmChainName }) => evmChainName === evmChain)) {
+    set(fetching, true);
+
+    const {
+      decimals: newDecimals,
+      name: newName,
+      symbol: newSymbol,
+    } = await fetchTokenDetails({ address, evmChain });
+
+    set(decimals, newDecimals ?? get(decimals));
+    set(name, newName || get(name));
+    set(symbol, newSymbol || get(symbol));
+    set(fetching, false);
+    clearFieldErrors(['decimals', 'name', 'symbol']);
+  }
 });
 
 watch(assetType, () => {
@@ -182,7 +188,9 @@ onBeforeMount(async () => {
     const queriedTypes = await getAssetTypes();
     set(
       types,
-      queriedTypes.filter(item => item !== CUSTOM_ASSET),
+      queriedTypes
+        .filter(item => item !== CUSTOM_ASSET)
+        .map<SelectOption>(item => ({ key: item, label: toSentenceCase(item) })),
     );
   }
   catch (error: any) {
@@ -350,20 +358,20 @@ setSubmitFunc(save);
     </div>
     <div class="flex flex-col gap-2">
       <div data-cy="type-select">
-        <VSelect
+        <RuiMenuSelect
           v-model="assetType"
-          outlined
           :label="t('asset_form.labels.asset_type')"
+          :options="types"
           :disabled="types.length === 1 || !!editableItem"
-          :items="types"
-        >
-          <template #item="{ item }">
-            {{ toSentenceCase(item) }}
-          </template>
-          <template #selection="{ item }">
-            {{ toSentenceCase(item) }}
-          </template>
-        </VSelect>
+          :error-messages="toMessages(v$.assetType)"
+          class="mb-3"
+          key-attr="key"
+          text-attr="label"
+          variant="outlined"
+          full-width
+          float-label
+          show-details
+        />
       </div>
 
       <div
@@ -371,28 +379,34 @@ setSubmitFunc(save);
         class="grid md:grid-cols-2 gap-x-4 gap-y-2"
       >
         <div data-cy="chain-select">
-          <VSelect
+          <RuiMenuSelect
             v-model="evmChain"
-            outlined
             :label="t('asset_form.labels.chain')"
+            :options="allEvmChains"
             :disabled="!!editableItem"
-            :items="allEvmChains"
-            item-value="name"
-            item-text="label"
             :error-messages="toMessages(v$.evmChain)"
+            key-attr="name"
+            text-attr="label"
+            variant="outlined"
+            full-width
+            float-label
+            show-details
           />
         </div>
 
         <div data-cy="token-select">
-          <VSelect
+          <RuiMenuSelect
             v-model="tokenKind"
-            outlined
             :label="t('asset_form.labels.token_kind')"
+            :options="evmTokenKindsData"
             :disabled="!!editableItem"
-            :items="evmTokenKindsData"
-            item-text="label"
-            item-value="identifier"
             :error-messages="toMessages(v$.tokenKind)"
+            key-attr="identifier"
+            text-attr="label"
+            variant="outlined"
+            full-width
+            float-label
+            show-details
           />
         </div>
       </div>
@@ -523,60 +537,62 @@ setSubmitFunc(save);
         rounded="sm"
         class="mt-2 mb-4 overflow-hidden"
       >
-        <VExpansionPanels
-          flat
-          tile
-        >
-          <VExpansionPanel>
-            <VExpansionPanelHeader>
+        <RuiAccordions>
+          <RuiAccordion
+            header-grow
+            header-class="p-4"
+          >
+            <template #header>
               {{ t('asset_form.optional') }}
-            </VExpansionPanelHeader>
-            <VExpansionPanelContent>
-              <DateTimePicker
-                v-model="started"
-                :label="t('asset_form.labels.started')"
-                :error-messages="toMessages(v$.started)"
-                :disabled="submitting"
-              />
-              <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
-                <RuiTextField
+            </template>
+            <template #default>
+              <div class="p-4">
+                <DateTimePicker
+                  v-model="started"
+                  :label="t('asset_form.labels.started')"
+                  :error-messages="toMessages(v$.started)"
+                  :disabled="submitting"
+                />
+                <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
+                  <RuiTextField
+                    v-if="isEvmToken"
+                    v-model="protocol"
+                    variant="outlined"
+                    color="primary"
+                    clearable
+                    class="asset-form__protocol"
+                    :label="t('common.protocol')"
+                    :error-messages="toMessages(v$.protocol)"
+                    :disabled="submitting"
+                  />
+                  <AssetSelect
+                    v-model="swappedFor"
+                    outlined
+                    persistent-hint
+                    clearable
+                    :label="t('asset_form.labels.swapped_for')"
+                    :error-messages="toMessages(v$.swappedFor)"
+                    :disabled="submitting"
+                  />
+                  <AssetSelect
+                    v-if="!isEvmToken && assetType"
+                    v-model="forked"
+                    outlined
+                    persistent-hint
+                    clearable
+                    :label="t('asset_form.labels.forked')"
+                    :error-messages="toMessages(v$.forked)"
+                    :disabled="submitting"
+                  />
+                </div>
+                <UnderlyingTokenManager
                   v-if="isEvmToken"
-                  v-model="protocol"
-                  variant="outlined"
-                  color="primary"
-                  clearable
-                  class="asset-form__protocol"
-                  :label="t('common.protocol')"
-                  :error-messages="toMessages(v$.protocol)"
-                  :disabled="submitting"
-                />
-                <AssetSelect
-                  v-model="swappedFor"
-                  outlined
-                  persistent-hint
-                  clearable
-                  :label="t('asset_form.labels.swapped_for')"
-                  :error-messages="toMessages(v$.swappedFor)"
-                  :disabled="submitting"
-                />
-                <AssetSelect
-                  v-if="!isEvmToken && assetType"
-                  v-model="forked"
-                  outlined
-                  persistent-hint
-                  clearable
-                  :label="t('asset_form.labels.forked')"
-                  :error-messages="toMessages(v$.forked)"
-                  :disabled="submitting"
+                  v-model="underlyingTokens"
                 />
               </div>
-              <UnderlyingTokenManager
-                v-if="isEvmToken"
-                v-model="underlyingTokens"
-              />
-            </VExpansionPanelContent>
-          </VExpansionPanel>
-        </VExpansionPanels>
+            </template>
+          </RuiAccordion>
+        </RuiAccordions>
       </RuiCard>
 
       <AssetIconForm

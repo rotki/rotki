@@ -38,6 +38,8 @@ const {
 
 const conflictsNumber: Ref<number> = ref(0);
 
+const conflictsDialogOpen: Ref<boolean> = ref(false);
+
 async function checkConflicts() {
   const { total } = await getAccountingRulesConflicts({ limit: 1, offset: 0 });
   set(conflictsNumber, total);
@@ -64,52 +66,44 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
     key: 'eventTypeAndSubtype',
     class: 'whitespace-pre-line',
     cellClass: 'py-4',
-    sortable: false,
   },
   {
     label: t('transactions.events.form.resulting_combination.label'),
     key: 'resultingCombination',
-    sortable: false,
   },
   {
-    label: t('accounting_settings.rule.labels.counterparty'),
+    label: t('common.counterparty'),
     key: 'counterparty',
     class: 'border-r border-default',
     cellClass: 'border-r border-default',
-    sortable: false,
   },
   {
     label: t('accounting_settings.rule.labels.taxable'),
     key: 'taxable',
-    sortable: false,
-    class: 'max-w-[6rem] text-sm whitespace-normal font-medium',
+    class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-center',
     align: 'center',
   },
   {
     label: t('accounting_settings.rule.labels.count_entire_amount_spend'),
     key: 'countEntireAmountSpend',
-    sortable: false,
-    class: 'max-w-[6rem] text-sm whitespace-normal font-medium',
+    class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-center',
     align: 'center',
   },
   {
     label: t('accounting_settings.rule.labels.count_cost_basis_pnl'),
     key: 'countCostBasisPnl',
-    sortable: false,
-    class: 'max-w-[6rem] text-sm whitespace-normal font-medium',
+    class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-center',
     align: 'center',
   },
   {
     label: t('accounting_settings.rule.labels.accounting_treatment'),
     key: 'accountingTreatment',
-    class: 'max-w-[6rem] text-sm whitespace-normal font-medium',
-    sortable: false,
+    class: 'max-w-[6rem] text-sm whitespace-normal font-medium align-center',
   },
   {
     label: t('common.actions_text'),
     key: 'actions',
     align: 'center',
-    sortable: false,
     width: '1px',
   },
 ]);
@@ -226,8 +220,6 @@ onMounted(async () => {
   }
   await refresh();
 });
-
-const conflictsDialogOpen: Ref<boolean> = ref(false);
 </script>
 
 <template>
@@ -328,7 +320,7 @@ const conflictsDialogOpen: Ref<boolean> = ref(false);
               <RuiTooltip
                 :popper="{ placement: 'top' }"
                 :open-delay="400"
-                class="flex items-center"
+                class="flex items-center h-full"
                 tooltip-class="max-w-[10rem]"
               >
                 <template #activator>
@@ -414,10 +406,9 @@ const conflictsDialogOpen: Ref<boolean> = ref(false);
               />
             </template>
             <template #item.counterparty="{ row }">
-              <HistoryEventTypeCounterparty
+              <CounterpartyDisplay
                 v-if="row.counterparty"
-                text
-                :event="{ counterparty: row.counterparty }"
+                :counterparty="row.counterparty"
               />
               <span v-else>-</span>
             </template>

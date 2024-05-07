@@ -22,9 +22,6 @@ For running rotki in debug mode, you can do it either via a config file or the a
 - **Config file**: see the section :ref:`set-the-backend-s-arguments`. This is possible in the **electron app** and the **docker version**. For docker you can even use environment variables as explained `here <https://rotki.readthedocs.io/en/latest/installation_guide.html?#configuring-backend-in-docker>`_.
 - **App UI**: before log in, click the cog wheel at the bottom right corner and select "Debug" (image below). Press the save button and proceed to log in as usual. This is only possible in the **electron app**.
 
-.. warning::
-    At the moment if you use the dappnode rotki package it is **not possible** to enable debug logs. For updates follow: `this issue <https://github.com/dappnode/DAppNodePackage-rotki/issues/29>`_.
-
 .. image:: images/rotki_debug_mode_set.png
    :alt: Run rotki in debug mode via app UI
    :align: center
@@ -307,7 +304,7 @@ Event type/subtype and counterparty
 
 Each combination of event type and subtype and counterparty creates a new unique event type. This is important as they are all treated differently in many parts of rotki, including the accounting. But most importantly this is what determines how they appear in the UI!
 
-The place where the UI mappings happen is `frontend/app/src/store/history/consts.ts <https://github.com/rotki/rotki/blob/1039e04304cc034a57060757a1a8ae88b3c51806/frontend/app/src/store/history/consts.ts>`__.
+The mapping of these HistoryEvents types, subtypes and categories is done in `rotkehlchen/accounting/constants.py <https://github.com/rotki/rotki/blob/17b4368bc15043307fa6acf536b5237b3840c40e/rotkehlchen/accounting/constants.py>`__.
 
 The Accountant
 -----------------
@@ -842,8 +839,8 @@ Code profiling
 Python
 ===========
 
-Flamegraph profiling
-------------------------
+Flamegraph profiling for tests
+---------------------------------
 
 In order to use the flamegraph profiler you need to:
 
@@ -863,6 +860,36 @@ Finally open the svg with any compatible viewer and explore the flamegraph. It w
 .. image:: images/flamegraph_example.svg
    :alt: A flamegraph profiling example
    :align: center
+
+
+Viztracer
+---------------------
+
+A good tool to use for profiling of the actual code as it runs is `Viztracer <https://github.com/gaogaotiantian/viztracer>`_. You can install it with ``pip install viztracer``
+
+Then you can run rotki's dev mode and add profiling arguments for viztracer: ``pnpm run dev --profiling-args "-m viztracer --min_duration 0.2ms"``.
+
+This will produce  a ``result.json`` in the main directory. You need the ``--min_duration`` argument in order to not take data every nanosecond and end up with a GB json file. Generally will need to play with the arguments.
+
+To later open and study the file, you can use vizviewer. i.e. ``vizviewer --flamegraph result.json`` to get a flamegraph or simply ``vizviewer result.json`` to get the normal view.
+
+For more information check the docs.
+
+
+pyspy
+----------
+
+pyspy is a similar tool that will generate a flamegraph but of a running python process and can attach to it.
+
+Get it from `here <https://github.com/benfred/py-spy>`_.
+
+Then you can run the developer version or even a normal binary and find is pid with something like ``ps aux | grep rotki``.
+
+And then you can attach to it with something like ``sudo py-spy record -o py-spy.profile.svg --pid 60243``, assuming the pid is ``60243``.
+
+You can also run rotki's dev mode directly by specifying the profile cmd and its args like this: ``pnpm run dev --profiling-cmd py-spy --profiling-args "record -o py-spy-profile.svg --"``
+
+Once done in both cases there will be an svg output at ``py-spy.profile.svg`` which you can see with any svg viewer including the browser and study the flamegraph.
 
 
 rotki Database
@@ -933,7 +960,7 @@ If a need exists to publish on hub.docker.com then the following steps need to b
     Make sure that you are logged with an account that has access to publish to docker.
 
 This installs the qemu binaries required to build the arm64 binary and uses buildx to build the images.
-Please replace the the ``REVISION`` with the git sha of the tag and the ``ROTKI_VERSION`` with the
+Please replace the ``REVISION`` with the git sha of the tag and the ``ROTKI_VERSION`` with the
 tag name.
 
 .. code-block::

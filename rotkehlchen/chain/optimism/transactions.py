@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.optimism_superchain.transactions import OptimismSuperchainTransactions
+from rotkehlchen.chain.evm.l2_with_l1_fees.transactions import L2WithL1FeesTransactions
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
 if TYPE_CHECKING:
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class OptimismTransactions(OptimismSuperchainTransactions):
+class OptimismTransactions(L2WithL1FeesTransactions):
 
     def __init__(
             self,

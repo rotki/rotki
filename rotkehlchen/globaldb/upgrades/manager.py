@@ -4,6 +4,7 @@ import sqlite3
 import traceback
 from pathlib import Path
 from typing import TYPE_CHECKING
+from rotkehlchen.globaldb.upgrades.v6_v7 import migrate_to_v7
 
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import ts_now
@@ -38,6 +39,10 @@ UPGRADES_LIST = [
     UpgradeRecord(
         from_version=5,
         function=migrate_to_v6,
+    ),
+    UpgradeRecord(
+        from_version=6,
+        function=migrate_to_v7,
     ),
 ]
 

@@ -5,8 +5,6 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.assets.converters import UNSUPPORTED_GEMINI_ASSETS
-from rotkehlchen.assets.exchanges_mappings.gemini import WORLD_TO_GEMINI
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_LINK, A_LTC, A_USD
 from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair, UnsupportedAsset
@@ -18,9 +16,11 @@ from rotkehlchen.tests.fixtures.exchanges.gemini import (
     SANDBOX_GEMINI_WP_API_SECRET,
 )
 from rotkehlchen.tests.utils.constants import A_PAXG, A_ZEC
+from rotkehlchen.tests.utils.exchanges import get_exchange_asset_symbols
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import AssetMovementCategory, Location, Timestamp
 from rotkehlchen.utils.misc import ts_now
+
 
 UNSUPPORTED_GEMINI_PAIRS = {'btcgusdperp', 'ethgusdperp', 'pepegusdperp'}
 
@@ -66,14 +66,14 @@ def test_gemini_wrong_key(sandbox_gemini):
 
 @pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')
 @pytest.mark.parametrize('gemini_test_base_uri', ['https://api.gemini.com'])
-def test_gemini_all_symbols_are_known(sandbox_gemini):
+def test_gemini_all_symbols_are_known(sandbox_gemini, globaldb):
     """Test that the gemini trade pairs are all supported by rotki
 
     Use the real gemini API
     """
-    unsupported_assets = set(UNSUPPORTED_GEMINI_ASSETS)
-    common_items = unsupported_assets.intersection(set(WORLD_TO_GEMINI.values()))
-    assert not common_items, f'Gemini assets {common_items} should not be unsupported'
+    for asset in get_exchange_asset_symbols(Location.GEMINI):
+        assert globaldb.is_asset_symbol_unsupported(Location.GEMINI, asset) is False, f'Gemini assets {asset} should not be unsupported'  # noqa: E501
+
     symbols = sandbox_gemini._public_api_query('symbols')
     for symbol in symbols:
         try:
@@ -91,7 +91,7 @@ def test_gemini_all_symbols_are_known(sandbox_gemini):
                 f'Unknown Gemini asset detected. {e} Symbol: {symbol}',
             ))
         except UnsupportedAsset as e:
-            assert str(e).split(' ')[2] in UNSUPPORTED_GEMINI_ASSETS  # noqa: PT017
+            assert globaldb.is_asset_symbol_unsupported(Location.GEMINI, str(e).split(' ')[2])  # noqa: PT017
 
 
 @pytest.mark.skipif('CI' in os.environ, reason='temporarily skip gemini in CI')

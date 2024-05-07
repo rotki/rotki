@@ -33,18 +33,16 @@ function onEditRule() {
 
 <template>
   <div class="flex items-center">
-    <VMenu
-      max-width="250px"
-      min-width="200px"
-      left
-      offset-y
-      transition="slide-y-transition"
+    <RuiMenu
+      menu-class="max-w-[15rem]"
+      :popper="{ placement: 'bottom-end' }"
+      close-on-content-click
     >
       <template #activator="{ on }">
         <RuiButton
-          class="!p-2"
           icon
           variant="text"
+          class="!p-2.5"
           v-on="on"
         >
           <RuiIcon
@@ -67,6 +65,6 @@ function onEditRule() {
           {{ t('accounting_settings.rule.edit') }}
         </RuiButton>
       </div>
-    </VMenu>
+    </RuiMenu>
   </div>
 </template>

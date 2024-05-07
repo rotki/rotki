@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.ethereum.modules.uniswap.v2.constants import SWAP_SIGNATURE
-from rotkehlchen.chain.ethereum.modules.uniswap.v3.constants import DIRECT_SWAP_SIGNATURE
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -15,6 +14,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.decoding.uniswap.v3.constants import DIRECT_SWAP_SIGNATURE
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.errors.misc import RemoteError
@@ -100,7 +100,7 @@ class ParaswapCommonDecoder(DecoderInterface):
                     partial_refund_event = event
 
         if in_event is None or out_event is None:
-            log.error(f'Could not find the corresponding events when decoding paraswap swap {context.transaction.tx_hash.hex()}')  # noqa: E501
+            log.error(f'Could not find the corresponding events when decoding {self.evm_inquirer.chain_name} paraswap swap {context.transaction.tx_hash.hex()}')  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
         if partial_refund_event is not None:  # if some in_asset is returned back.
@@ -139,7 +139,7 @@ class ParaswapCommonDecoder(DecoderInterface):
                     user_address=sender,
                 )
             except RemoteError as e:
-                log.error(f'Failed to get internal transactions for paraswap swap {context.transaction.tx_hash.hex()} due to {e!s}')  # noqa: E501
+                log.error(f'Failed to get internal transactions for paraswap {self.evm_inquirer.chain_name} swap {context.transaction.tx_hash.hex()} due to {e!s}')  # noqa: E501
             else:
                 if len(internal_fee_txs) > 0:
                     fee_raw = internal_fee_txs[0].value  # assuming only one tx from router to fee claimer  # noqa: E501

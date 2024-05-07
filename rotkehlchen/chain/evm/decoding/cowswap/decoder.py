@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 TRADE_SIGNATURE: Final = b'\xa0zT:\xb8\xa0\x18\x19\x8e\x99\xca\x01\x84\xc9?\xe9\x05\ny@\n\nr4A\xf8M\xe1\xd9r\xcc\x17'  # noqa: E501
-PLACE_NATIVE_ASSET_ORDER_SIGNATURE: Final = b"\xcf_\x9d\xe2\x98A2&R\x03\xb5\xc35\xb2W\'p,\xa7rb\xffb.\x13k\xaasb\xbf\x1d\xa9"  # noqa: E501
+PLACE_NATIVE_ASSET_ORDER_SIGNATURE: Final = b"\xcf_\x9d\xe2\x98A2&R\x03\xb5\xc35\xb2W'p,\xa7rb\xffb.\x13k\xaasb\xbf\x1d\xa9"  # noqa: E501
 REFUND_NATIVE_ASSET_ORDER_SIGNATURE: Final = b'\x19Rq\x06\x8a(\x81\x91\xe4\xb2e\xc6A\xa5k\x982\x91\x9fi\xe9\xe7\xd6\xc2\xf3\x1b\xa4\x02x\xae\xb8Z'  # noqa: E501
 INVALIDATE_NATIVE_ASSET_ORDER_SIGNATURE: Final = b'\xb8\xba\xd1\x02\xac\x8b\xba\xcf\xef1\xff\x1c\x90n\xc6\xd9Q\xc20\xb4\xdc\xe7P\xbb\x03v\xb8\x12\xad5\x85*'  # noqa: E501
 VESTED: Final = b'\x00\xd5\x95\x87\x99\xb1\x83\xa7\xb78\xd3\xad^q\x13\x05)=\xd5\x07j7\xa4\xe3\xb7\xe6a\x1d\xeaa\x14\xf3'  # noqa: E501
@@ -48,7 +48,7 @@ NATIVE_ASSET_FLOW_ADDRESS: Final = string_to_evm_address('0x40A50cf069e992AA4536
 CLAIMED: Final = b'\xd46\xe9\x97=\x1eD\xd4\r\xb4\xd4\x11\x9e<w<\xad\xb12;&9\x81\x96\x8c\x14\xd3\xd1\x91\xc0\xe1H'  # noqa: E501
 
 
-class CowswapCommonDecoder(DecoderInterface, metaclass=abc.ABCMeta):
+class CowswapCommonDecoder(DecoderInterface, abc.ABC):
 
     def __init__(
             self,

@@ -4,13 +4,11 @@ import pytest
 
 from rotkehlchen.chain.ethereum.defi.zerionsdk import KNOWN_ZERION_PROTOCOL_NAMES, ZerionSDK
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.ethereum import (
-    ETHEREUM_TEST_PARAMETERS,
-    wait_until_all_nodes_connected,
-)
+from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE, wait_until_all_nodes_connected
 
 
-@pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
 @pytest.mark.parametrize('mocked_current_prices', [{
     'SNX': FVal('1'),
     'cUSDT': FVal('1'),
@@ -21,7 +19,6 @@ def test_query_all_protocol_balances_for_account(
         function_scope_messages_aggregator,
         inquirer,  # pylint: disable=unused-argument
         ethereum_manager_connect_at_start,
-        call_order,  # pylint: disable=unused-argument
         database,
 ):
     """Simple test that we can get balances for various defi protocols via zerion

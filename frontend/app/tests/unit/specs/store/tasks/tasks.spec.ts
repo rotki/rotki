@@ -9,7 +9,7 @@ import {
 } from '@/types/task';
 import { TaskType } from '@/types/task-type';
 import { server } from '../../../setup-files/server';
-import createPinia from '../../../utils/create-pinia';
+import { createCustomPinia } from '../../../utils/create-pinia';
 import type { ActionResult } from '@rotki/common/lib/data';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
@@ -67,7 +67,7 @@ describe('store:tasks', () => {
   let store: ReturnType<typeof useTaskStore>;
 
   beforeEach(() => {
-    const pinia = createPinia();
+    const pinia = createCustomPinia();
     setActivePinia(pinia);
     store = useTaskStore();
     server.resetHandlers();
@@ -142,6 +142,7 @@ describe('store:tasks', () => {
   });
 
   it('monitor consumes an unknown task', async () => {
+    vi.useFakeTimers();
     server.use(
       ...mockTasks({
         status: {
@@ -159,9 +160,45 @@ describe('store:tasks', () => {
       store.monitor(),
     ]);
 
+    await vi.advanceTimersByTimeAsync(31000);
+    await store.monitor();
+
     expect(response.result).toBe(true);
-    expect(get).toHaveBeenCalledTimes(3);
+    expect(get).toHaveBeenCalledTimes(4);
     expect(get).toHaveBeenCalledWith('/tasks/1', expect.anything());
+    expect(get).toHaveBeenCalledWith('/tasks/2', expect.anything());
+    vi.useRealTimers();
+  });
+
+  it('handles race condition delay', async () => {
+    vi.useFakeTimers();
+    server.use(
+      ...mockTasks({
+        status: {
+          completed: [1, 2],
+          pending: [],
+        },
+        tasks: [getTaskResult(1, true), getTaskResult(2, true)],
+      }),
+    );
+
+    const get = vi.spyOn(api.instance, 'get');
+
+    await Promise.all([
+      store.awaitTask<boolean, TaskMeta>(1, TaskType.IMPORT_CSV, getMeta()),
+      store.monitor(),
+    ]);
+    await vi.advanceTimersByTimeAsync(10000);
+    const [response] = await Promise.all([
+      store.awaitTask<boolean, TaskMeta>(2, TaskType.TX, getMeta()),
+      store.monitor(),
+    ]);
+
+    expect(response.result).toBe(true);
+    expect(get).toHaveBeenCalledTimes(4);
+    expect(get).toHaveBeenCalledWith('/tasks/1', expect.anything());
+    expect(get).toHaveBeenCalledWith('/tasks/2', expect.anything());
+    vi.useRealTimers();
   });
 
   it('monitor awaits non-unique tasks', async () => {

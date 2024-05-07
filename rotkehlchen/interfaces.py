@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class CurrentPriceOracleInterface(metaclass=abc.ABCMeta):
+class CurrentPriceOracleInterface(abc.ABC):
     """
     Interface for oracles able to query current price. Oracle could be rate limited
     """
@@ -54,7 +54,7 @@ class CurrentPriceOracleInterface(metaclass=abc.ABCMeta):
         """
 
 
-class HistoricalPriceOracleInterface(CurrentPriceOracleInterface, metaclass=abc.ABCMeta):
+class HistoricalPriceOracleInterface(CurrentPriceOracleInterface, abc.ABC):
     """Query prices for certain timestamps. Oracle could be rate limited"""
 
     @abc.abstractmethod
@@ -83,7 +83,7 @@ class HistoricalPriceOracleInterface(CurrentPriceOracleInterface, metaclass=abc.
         """
 
 
-class HistoricalPriceOracleWithCoinListInterface(HistoricalPriceOracleInterface, metaclass=abc.ABCMeta):  # noqa: E501
+class HistoricalPriceOracleWithCoinListInterface(HistoricalPriceOracleInterface, abc.ABC):
     """Historical Price Oracle with a cacheable list of all coins"""
 
     def __init__(self, oracle_name: str) -> None:

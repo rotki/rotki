@@ -50,7 +50,7 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
           section: Section.DEFI_SUSHISWAP_BALANCES,
           meta,
           query: async () => await fetchSushiswapBalances(),
-          parser: XswapBalances.parse,
+          parser: data => XswapBalances.parse(data),
           onError,
         },
         state: {
@@ -87,7 +87,7 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
           section: Section.DEFI_SUSHISWAP_EVENTS,
           meta,
           query: async () => await fetchSushiswapEvents(),
-          parser: XswapEvents.parse,
+          parser: data => XswapEvents.parse(data),
           onError,
         },
         state: {
@@ -109,7 +109,7 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
     set(balances, {});
     set(events, {});
     resetStatus();
-    resetStatus(Section.DEFI_SUSHISWAP_EVENTS);
+    resetStatus({ section: Section.DEFI_SUSHISWAP_EVENTS });
   };
 
   return {

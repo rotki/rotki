@@ -1,8 +1,4 @@
-from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.modules.balancer.db import add_balancer_events
-from rotkehlchen.chain.ethereum.modules.balancer.types import BalancerBPTEventType, BalancerEvent
-from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_EUR, A_LTC, A_USD, A_USDC
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
@@ -10,7 +6,6 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetAmount,
-    ChecksumEvmAddress,
     Fee,
     Location,
     Price,
@@ -146,27 +141,6 @@ def test_associated_locations(database):
     database.add_exchange('kraken1', Location.KRAKEN, kraken_api_key1, kraken_api_secret1)
     database.add_exchange('kraken2', Location.KRAKEN, kraken_api_key2, kraken_api_secret2)
     database.add_exchange('binance', Location.BINANCE, binance_api_key, binance_api_secret)
-
-    with database.user_write() as write_cursor:
-        add_balancer_events(
-            write_cursor,
-            [
-                BalancerEvent(
-                    tx_hash='0xa54bf4c68d435e3c8f432fd7e62b7f8aca497a831a3d3fca305a954484ddd7b3',
-                    log_index=23,
-                    address=ChecksumEvmAddress('0xa2107FA5B38d9bbd2C461D6EDf11B11A50F6b974'),
-                    timestamp=Timestamp(1609301469),
-                    event_type=BalancerBPTEventType.MINT,
-                    pool_address_token=EvmToken('eip155:1/erc20:0x514910771AF9Ca656af840dff83E8264EcF986CA'),
-                    lp_balance=Balance(amount=FVal(2), usd_value=FVal(3)),
-                    amounts=[
-                        AssetAmount(ONE),
-                        AssetAmount(FVal(2)),
-                    ],
-                ),
-            ],
-            msg_aggregator=database.msg_aggregator,
-        )
     expected_locations = {
         Location.KRAKEN,
         Location.BINANCE,
@@ -176,7 +150,6 @@ def test_associated_locations(database):
         Location.POLONIEX,
         Location.COINBASE,
         Location.EXTERNAL,
-        Location.BALANCER,
     }
 
     assert set(database.get_associated_locations()) == expected_locations

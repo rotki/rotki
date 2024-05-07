@@ -1,21 +1,26 @@
 import random
-import warnings as test_warnings
 from contextlib import ExitStack
 from http import HTTPStatus
-from typing import Any
+from typing import TYPE_CHECKING, Final
+from unittest.mock import patch
 
 import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.server import APIServer
+from rotkehlchen.assets.asset import UnderlyingToken
+from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.defi.structures import (
     DefiBalance,
     DefiProtocol,
     DefiProtocolBalances,
 )
+from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
+from rotkehlchen.chain.evm.tokens import TokenBalancesType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
+from rotkehlchen.constants.assets import A_DAI, A_USDC, A_USDT, A_WBTC, A_WETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
@@ -25,78 +30,129 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import ChecksumEvmAddress, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    ChainID,
+    ChecksumEvmAddress,
+    EvmTokenKind,
+    Price,
+    deserialize_evm_tx_hash,
+)
 
-AAVE_BALANCESV1_TEST_ACC = '0xC2cB1040220768554cf699b0d863A3cd4324ce32'
-AAVE_BALANCESV2_TEST_ACC = '0x8Fe178db26ebA2eEdb22575265bf10A63c395a3d'
+if TYPE_CHECKING:
+    from collections.abc import Sequence
+
+AAVE_BALANCESV1_TEST_ACC: Final = '0xC2cB1040220768554cf699b0d863A3cd4324ce32'
+AAVE_BALANCESV2_TEST_ACC: Final = '0xf2d02719309c8d5F22498c2d432eDc8eB8683d83'
+AAVE_BALANCESV3_TEST_ACC: Final = '0x18FD4323ea221cD05Fb275256C8f3A0740D0Aaa2'
 
 
-@pytest.mark.parametrize('ethereum_accounts', [[AAVE_BALANCESV1_TEST_ACC, AAVE_BALANCESV2_TEST_ACC]])  # noqa: E501
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [[
+    AAVE_BALANCESV1_TEST_ACC, AAVE_BALANCESV2_TEST_ACC, AAVE_BALANCESV3_TEST_ACC,
+]])
 @pytest.mark.parametrize('ethereum_modules', [['aave']])
-def test_query_aave_balances(
-        rotkehlchen_api_server: APIServer,
-        ethereum_accounts: list[ChecksumEvmAddress] | None,
-) -> None:
-    """Check querying the aave balances endpoint works. Uses real data.
-
-    TODO: Here we should use a test account for which we will know what balances
-    it has and we never modify
-    """
-    async_query = random.choice([False, True])
-    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    setup = setup_balances(
-        rotki,
-        ethereum_accounts=ethereum_accounts,
-        btc_accounts=None,
-        original_queries=['zerion'],
+def test_query_aave_balances(rotkehlchen_api_server: APIServer) -> None:
+    """Check querying the aave balances endpoint works. Uses real data for v1/v2,
+    and mocked for v3 because that need underlying tokens mapping and token balances in db."""
+    a_eth_weth = get_or_create_evm_token(
+        userdb=rotkehlchen_api_server.rest_api.rotkehlchen.data.db,
+        evm_address=string_to_evm_address('0x4d5F47FA6A74757f35C14fD3a6Ef8E3C9BC514E8'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+        symbol='aEthWETH',
+        protocol=CPT_AAVE_V3,
+        underlying_tokens=[UnderlyingToken(
+            address=A_WETH.resolve_to_evm_token().evm_address,
+            token_kind=EvmTokenKind.ERC20,
+            weight=ONE,
+        )],
     )
-    with ExitStack() as stack:
-        # patch ethereum/etherscan to not autodetect tokens
-        setup.enter_ethereum_patches(stack)
+    variable_debt_eth_usdc = get_or_create_evm_token(
+        userdb=rotkehlchen_api_server.rest_api.rotkehlchen.data.db,
+        evm_address=string_to_evm_address('0x72E95b8931767C79bA4EeE721354d6E99a61D004'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+        symbol='variableDebtEthUSDC',
+        protocol=CPT_AAVE_V3,
+        underlying_tokens=[UnderlyingToken(
+            address=A_USDC.resolve_to_evm_token().evm_address,
+            token_kind=EvmTokenKind.ERC20,
+            weight=ONE,
+        )],
+    )
+    aave_prices = {a_eth_weth: Price(FVal(0.1)), variable_debt_eth_usdc: Price(FVal(10))}
+
+    def mock_token_balances(addresses: 'Sequence[ChecksumEvmAddress]') -> TokenBalancesType:
+        return {
+            addresses[2]: {a_eth_weth: FVal(123), variable_debt_eth_usdc: FVal(456)},
+        }, aave_prices
+
+    with patch.object(
+        target=rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.get_evm_manager(chain_id=ChainID.ETHEREUM).tokens,
+        attribute='query_tokens_for_addresses',
+        new=mock_token_balances,
+    ):
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
             'aavebalancesresource',
-        ), json={'async_query': async_query})
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
-            assert outcome['message'] == ''
-            result = outcome['result']
-        else:
-            result = assert_proper_response_with_result(response)
+        ))
 
-    if len(result) == 0:
-        test_warnings.warn(UserWarning(f'Test account {AAVE_BALANCESV1_TEST_ACC} and {AAVE_BALANCESV2_TEST_ACC} have no aave balances'))  # noqa: E501
-        return
-
-    def _assert_valid_entries(balances: dict[str, Any]) -> None:
-        lending = v1_balances['lending']
-        for entry in lending.values():
-            assert len(entry) == 2
-            assert len(entry['balance']) == 2
-            assert 'amount' in entry['balance']
-            assert 'usd_value' in entry['balance']
-            assert '%' in entry['apy']
-        borrowing = balances['borrowing']
-        for entry in borrowing.values():
-            assert len(entry) == 3
-            assert len(entry['balance']) == 2
-            assert 'amount' in entry['balance']
-            assert 'usd_value' in entry['balance']
-            assert '%' in entry['variable_apr']
-            assert '%' in entry['stable_apr']
-
-    v1_balances = result.get(AAVE_BALANCESV1_TEST_ACC)
-    if v1_balances:
-        _assert_valid_entries(v1_balances)
-    else:
-        test_warnings.warn(UserWarning(f'Test account {AAVE_BALANCESV1_TEST_ACC} has no aave v1 balances'))  # noqa: E501
-
-    v2_balances = result.get(AAVE_BALANCESV2_TEST_ACC)
-    if v2_balances:
-        _assert_valid_entries(v2_balances)
-    else:
-        test_warnings.warn(UserWarning(f'Test account {AAVE_BALANCESV2_TEST_ACC} has no aave v2 balances'))  # noqa: E501
+    assert assert_proper_response_with_result(response) == {
+        AAVE_BALANCESV1_TEST_ACC: {
+            'lending': {
+                A_DAI.identifier: {
+                    'balance': Balance(
+                        amount=FVal('25319.644933920807083535'),
+                        usd_value=FVal('37979.4674008812106253025'),
+                    ).serialize(),
+                    'apy': '0.15%',
+                },
+            },
+            'borrowing': {},
+        },
+        AAVE_BALANCESV2_TEST_ACC: {
+            'lending': {
+                A_WBTC.identifier: {
+                    'balance': Balance(
+                        amount=FVal('0.43022092'),
+                        usd_value=FVal('0.645331380'),
+                    ).serialize(),
+                    'apy': '0.11%',
+                },
+            },
+            'borrowing': {
+                A_USDT.identifier: {
+                    'balance': Balance(
+                        amount=FVal('20582.495008'),
+                        usd_value=FVal('30873.7425120'),
+                    ).serialize(),
+                    'stable_apr': '39.20%',
+                    'variable_apr': '33.20%',
+                },
+            },
+        },
+        AAVE_BALANCESV3_TEST_ACC: {
+            'lending': {
+                A_WETH.identifier: {
+                    'balance': Balance(
+                        amount=FVal('123'),
+                        usd_value=FVal('12.3'),
+                    ).serialize(),
+                    'apy': '1.60%',
+                },
+            },
+            'borrowing': {
+                A_USDC.identifier: {
+                    'balance': Balance(
+                        amount=FVal('456'),
+                        usd_value=FVal('4560'),
+                    ).serialize(),
+                    'stable_apr': '9.51%',
+                    'variable_apr': '8.01%',
+                },
+            },
+        },
+    }
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[AAVE_BALANCESV1_TEST_ACC]])

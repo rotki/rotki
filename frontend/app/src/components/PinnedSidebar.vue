@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { ComputedRef } from 'vue';
-
 const props = defineProps<{ visible: boolean }>();
 
 const emit = defineEmits<{

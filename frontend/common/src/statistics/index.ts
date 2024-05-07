@@ -5,8 +5,6 @@ const TimedEntry = z.object({ time: z.number().positive() });
 
 const TimedBalance = Balance.merge(TimedEntry);
 
-export type TimedBalance = z.infer<typeof TimedBalance>;
-
 export const TimedBalances = z.array(TimedBalance);
 
 export type TimedBalances = z.infer<typeof TimedBalances>;
@@ -17,7 +15,7 @@ export type OwnedAssets = z.infer<typeof OwnedAssets>;
 
 const LocationDataItem = z.object({
   time: z.number().positive(),
-  location: z.string().nonempty(),
+  location: z.string().min(1),
   usdValue: NumericString,
 });
 

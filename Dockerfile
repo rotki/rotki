@@ -1,11 +1,11 @@
 # build stage
-FROM --platform=$BUILDPLATFORM node:18-buster as frontend-build-stage
+FROM --platform=$BUILDPLATFORM node:20-buster as frontend-build-stage
 
 ARG BUILDARCH
 WORKDIR /app
 COPY frontend/ .
 RUN if [ "$BUILDARCH" != "amd64" ]; then apt-get update && apt-get install -y build-essential python3 --no-install-recommends; fi
-RUN npm install -g pnpm@8 && pnpm install --no-optional --frozen-lockfile
+RUN npm install -g pnpm@9 && pnpm install --no-optional --frozen-lockfile
 RUN pnpm run docker:build
 
 FROM python:3.11-buster as backend-build-stage
@@ -14,20 +14,19 @@ ARG TARGETARCH
 ARG ROTKI_VERSION
 ENV PACKAGE_FALLBACK_VERSION=$ROTKI_VERSION
 ARG PYINSTALLER_VERSION=v6.3.0
-RUN python3 -m venv /opt/venv
+RUN pip install --upgrade --no-cache-dir uv && uv pip install --system setuptools wheel
 ENV PATH="/opt/venv/bin:$PATH"
 
 WORKDIR /app
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal
 ENV PATH="/root/.cargo/bin:${PATH}"
 COPY colibri/ ./colibri
 RUN cargo build --target-dir /tmp/dist/colibri --manifest-path ./colibri/Cargo.toml --release
 
-RUN python3 -m pip install --upgrade pip setuptools wheel
 COPY ./requirements.txt /app/requirements.txt
 
 WORKDIR /app
-RUN pip install -r requirements.txt
+RUN uv pip install --system -r requirements.txt
 
 COPY . /app
 
@@ -35,12 +34,12 @@ RUN if [ "$TARGETARCH" != "amd64" ]; then \
       git clone https://github.com/pyinstaller/pyinstaller.git && \
       cd pyinstaller && git checkout ${PYINSTALLER_VERSION} && \
       cd bootloader && ./waf all && cd .. && \
-      pip install .; \
+      uv pip install --system "pyinstaller @ ."; \
     else \
-      pip install pyinstaller==${PYINSTALLER_VERSION}; \
+      uv pip install --system pyinstaller==${PYINSTALLER_VERSION}; \
     fi
 
-RUN sed "s/fallback_version.*/fallback_version = \"$PACKAGE_FALLBACK_VERSION\"/" -i pyproject.toml && pip install . && \
+RUN sed "s/fallback_version.*/fallback_version = \"$PACKAGE_FALLBACK_VERSION\"/" -i pyproject.toml && uv pip install --system "rotkehlchen @ ." && \
     python -c "import sys;from rotkehlchen.db.misc import detect_sqlcipher_version; version = detect_sqlcipher_version();sys.exit(0) if version == 4 else sys.exit(1)" && \
     PYTHONOPTIMIZE=2 pyinstaller --noconfirm --clean --distpath /tmp/dist rotkehlchen.spec
 

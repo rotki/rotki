@@ -2,7 +2,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import type { BigNumber } from '@rotki/common';
-import type { ComputedRef } from 'vue';
 import type { MakerDAOVaultModel } from '@/types/defi/maker';
 
 const props = defineProps<{
@@ -66,9 +65,9 @@ const chain = Blockchain.ETH;
     />
     <HistoryEventsView
       v-else
+      use-external-account-filter
       :section-title="t('common.events')"
       :protocols="['makerdao', 'makerdao vault']"
-      :use-external-account-filter="true"
       :external-account-filter="[{ chain, address: owner }]"
       :only-chains="[chain]"
       :entry-types="[HistoryEventEntryType.EVM_EVENT]"

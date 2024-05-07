@@ -820,7 +820,9 @@ def test_query_avax_balances(rotkehlchen_api_server: 'APIServer') -> None:
     assert FVal(total_avax['usd_value']) >= ZERO
 
 
-@pytest.mark.parametrize('number_of_eth_accounts', [1])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.freeze_time('2024-03-29 13:00:00 GMT')
+@pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 def test_ethereum_tokens_detection(
         rotkehlchen_api_server,
         ethereum_accounts,
@@ -915,17 +917,19 @@ def test_blockchain_balances_refresh(rotkehlchen_api_server: 'APIServer', ethere
     )]
     vaults_patch = patch('rotkehlchen.chain.ethereum.modules.makerdao.vaults.MakerdaoVaults.get_vaults', side_effect=lambda: makerdao_vault)  # noqa: E501
 
+    a_usdc = A_USDC.resolve_to_evm_token()
+    a_dai = A_DAI.resolve_to_evm_token()
     account_balance = {ethereum_accounts[0]: BalanceSheet(
         assets=defaultdict(Balance, {
-            A_USDC: Balance(FVal(1), FVal(24)),
-            A_DAI: Balance(FVal(2), FVal(42)),
+            a_usdc: Balance(FVal(1), FVal(24)),
+            a_dai: Balance(FVal(2), FVal(42)),
         }),
     )}
     account_balance_patch = patch.object(chains_aggregator.balances, 'eth', account_balance)
 
     def mock_query_tokens(addresses):
-        mock_balances = {ethereum_accounts[0]: {A_USDC: FVal(23), A_DAI: FVal(3)}}
-        mock_prices = {A_USDC: Price(FVal(10)), A_DAI: Price(FVal(11))}
+        mock_balances = {ethereum_accounts[0]: {a_usdc: FVal(23), a_dai: FVal(3)}}
+        mock_prices = {a_usdc: Price(FVal(10)), a_dai: Price(FVal(11))}
         return (mock_balances, mock_prices) if len(addresses) != 0 else ({}, {})
 
     query_tokens_patch = patch('rotkehlchen.chain.evm.tokens.EvmTokens.query_tokens_for_addresses', side_effect=mock_query_tokens)  # noqa: E501

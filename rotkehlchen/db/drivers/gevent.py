@@ -261,7 +261,7 @@ class DBConnection:
             )
         else:
             self._conn = sqlcipher.connect(  # pylint: disable=no-member
-                database=path,
+                database=str(path),
                 check_same_thread=False,
                 isolation_level=None,
             )

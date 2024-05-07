@@ -45,6 +45,7 @@ import {
 } from '@/electron-main/menu';
 import { selectPort } from '@/electron-main/port-utils';
 import { checkIfDevelopment } from '@/utils/env-utils';
+import { startPromise } from '@/utils';
 import type { TrayManager } from '@/electron-main/tray-manager';
 import type {
   BackendOptions,
@@ -77,7 +78,8 @@ async function select(
 
 function setupMetamaskImport() {
   let importTimeout: any;
-  ipcMain.on(IPC_METAMASK_IMPORT, async (event, _args) => {
+
+  async function importFromMetamask(event: Electron.IpcMainEvent) {
     try {
       const port = startHttp(
         addresses => event.sender.send(IPC_METAMASK_IMPORT, { addresses }),
@@ -95,7 +97,9 @@ function setupMetamaskImport() {
     catch (error: any) {
       event.sender.send(IPC_METAMASK_IMPORT, { error: error.message });
     }
-  });
+  }
+
+  ipcMain.on(IPC_METAMASK_IMPORT, (event, _args) => startPromise(importFromMetamask(event)));
 }
 
 let firstStart = true;
@@ -105,37 +109,38 @@ function setupBackendRestart(
   getWindow: WindowProvider,
   pyHandler: SubprocessHandler,
 ) {
-  ipcMain.on(
-    IPC_RESTART_BACKEND,
-    async (event, options: Partial<BackendOptions>) => {
-      if (firstStart) {
-        firstStart = false;
-        const pids = await pyHandler.checkForBackendProcess();
-        if (pids.length > 0)
-          event.sender.send(IPC_BACKEND_PROCESS_DETECTED, pids);
+  async function restartBackend(event: Electron.IpcMainEvent, options: Partial<BackendOptions>) {
+    if (firstStart) {
+      firstStart = false;
+      const pids = await pyHandler.checkForBackendProcess();
+      if (pids.length > 0)
+        event.sender.send(IPC_BACKEND_PROCESS_DETECTED, pids);
+    }
+
+    let success = false;
+
+    if (!restarting) {
+      restarting = true;
+      try {
+        const win = getWindow();
+        await pyHandler.exitPyProc(true);
+        await pyHandler.createPyProc(win, options);
+        success = true;
       }
-
-      let success = false;
-
-      if (!restarting) {
-        restarting = true;
-        try {
-          const win = getWindow();
-          await pyHandler.exitPyProc(true);
-          await pyHandler.createPyProc(win, options);
-          success = true;
-        }
-        catch (error: any) {
-          console.error(error);
-        }
-        finally {
-          restarting = false;
-        }
+      catch (error: any) {
+        console.error(error);
       }
+      finally {
+        restarting = false;
+      }
+    }
 
-      event.sender.send(IPC_RESTART_BACKEND, success);
-    },
-  );
+    event.sender.send(IPC_RESTART_BACKEND, success);
+  }
+
+  ipcMain.on(IPC_RESTART_BACKEND, (event, options: Partial<BackendOptions>) => {
+    startPromise(restartBackend(event, options));
+  });
 }
 
 function setupVersionInfo() {
@@ -157,16 +162,15 @@ function setupVersionInfo() {
 }
 
 function setupSelectedTheme() {
-  ipcMain.on(IPC_THEME, async (event, selectedTheme: number) => {
-    // @ts-expect-error
-    nativeTheme.themeSource = ['dark', 'system', 'light'][selectedTheme];
-
+  ipcMain.on(IPC_THEME, (event, selectedTheme: number) => {
+    const themeSource = ['dark', 'system', 'light'] as const;
+    nativeTheme.themeSource = themeSource[selectedTheme];
     event.sender.send(IPC_THEME, nativeTheme.shouldUseDarkColors);
   });
 }
 
 function setupTrayInterop(trayManager: TrayManager) {
-  ipcMain.on(IPC_TRAY_UPDATE, async (event, trayUpdate: TrayUpdate) => {
+  ipcMain.on(IPC_TRAY_UPDATE, (_event, trayUpdate: TrayUpdate) => {
     trayManager.update(trayUpdate);
   });
 }
@@ -240,30 +244,30 @@ export function ipcSetup(
     event.returnValue = pyHandler.serverUrl;
   });
 
-  ipcMain.on(IPC_PREMIUM_LOGIN, (event, args) => {
+  ipcMain.on(IPC_PREMIUM_LOGIN, (_event, args) => {
     Menu.setApplicationMenu(
       Menu.buildFromTemplate(getUserMenu(!args, menuActions)),
     );
   });
 
-  ipcMain.on(IPC_CLOSE_APP, async () => await closeApp());
+  ipcMain.on(IPC_CLOSE_APP, () => startPromise(closeApp()));
 
-  ipcMain.on(IPC_OPEN_URL, async (event, args) => {
+  ipcMain.on(IPC_OPEN_URL, (_event, args) => {
     if (!args.startsWith('https://')) {
       console.error(`Error: Requested to open untrusted URL: ${args} `);
       return;
     }
-    await shell.openExternal(args);
+    startPromise(shell.openExternal(args));
   });
 
-  ipcMain.on(
-    IPC_OPEN_DIRECTORY,
-    async (event, title: string, defaultPath?: string) => {
-      const directory = await select(title, 'openDirectory', defaultPath);
+  ipcMain.on(IPC_OPEN_DIRECTORY, (event, title: string, defaultPath?: string) => {
+    select(title, 'openDirectory', defaultPath).then((directory) => {
       event.sender.send(IPC_OPEN_DIRECTORY, directory);
-    },
-  );
-  ipcMain.on(IPC_OPEN_PATH, (event, path) => shell.openPath(path));
+    }).catch(error => console.error(error));
+  });
+  ipcMain.on(IPC_OPEN_PATH, (_event, path) => {
+    startPromise(shell.openPath(path));
+  });
   ipcMain.on(IPC_CONFIG, (event, defaults: boolean) => {
     const options: Partial<BackendOptions> = defaults
       ? { logDirectory: pyHandler.defaultLogDirectory }
@@ -288,7 +292,7 @@ function setupInstallUpdate(
   pyHandler: SubprocessHandler,
   ensureSafeUpdateRestart: () => void,
 ) {
-  ipcMain.on(IPC_INSTALL_UPDATE, async (event) => {
+  async function installUpdate(event: Electron.IpcMainEvent) {
     const quit = new Promise<void>((resolve, reject) => {
       const quitAndInstall = async () => {
         try {
@@ -302,7 +306,9 @@ function setupInstallUpdate(
           reject(error);
         }
       };
-      return setTimeout(quitAndInstall, 5000);
+      return setTimeout(() => {
+        startPromise(quitAndInstall());
+      }, 5000);
     });
     try {
       await quit;
@@ -312,14 +318,16 @@ function setupInstallUpdate(
       pyHandler.logToFile(error);
       event.sender.send(IPC_INSTALL_UPDATE, error);
     }
-  });
+  }
+
+  ipcMain.on(IPC_INSTALL_UPDATE, event => startPromise(installUpdate(event)));
 }
 
 function setupDownloadUpdate(
   getWindow: WindowProvider,
   pyHandler: SubprocessHandler,
 ) {
-  ipcMain.on(IPC_DOWNLOAD_UPDATE, async (event) => {
+  async function downloadUpdate(event: Electron.IpcMainEvent) {
     const window = getWindow();
     const progress = (progress: ProgressInfo) => {
       event.sender.send(IPC_DOWNLOAD_PROGRESS, progress.percent);
@@ -337,11 +345,13 @@ function setupDownloadUpdate(
     finally {
       autoUpdater.off('download-progress', progress);
     }
-  });
+  }
+
+  ipcMain.on(IPC_DOWNLOAD_UPDATE, event => startPromise(downloadUpdate(event)));
 }
 
 function setupCheckForUpdates(pyHandler: SubprocessHandler) {
-  ipcMain.on(IPC_CHECK_FOR_UPDATES, async (event) => {
+  async function checkForUpdates(event: Electron.IpcMainEvent) {
     if (isDevelopment) {
       console.warn('Running in development skipping auto-updater check');
       return;
@@ -352,6 +362,7 @@ function setupCheckForUpdates(pyHandler: SubprocessHandler) {
     autoUpdater.once('update-not-available', () => {
       event.sender.send(IPC_CHECK_FOR_UPDATES, false);
     });
+
     try {
       await autoUpdater.checkForUpdates();
     }
@@ -360,7 +371,9 @@ function setupCheckForUpdates(pyHandler: SubprocessHandler) {
       pyHandler.logToFile(error);
       event.sender.send(IPC_CHECK_FOR_UPDATES, false);
     }
-  });
+  }
+
+  ipcMain.on(IPC_CHECK_FOR_UPDATES, event => startPromise(checkForUpdates(event)));
 }
 
 function setupUpdaterInterop(

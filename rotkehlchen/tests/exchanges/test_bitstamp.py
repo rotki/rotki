@@ -210,13 +210,16 @@ def test_query_balances_skips_inquirer_error(mock_bitstamp):
     """Test an entry that can't get its USD price because of a remote error is
     skipped
     """
-    inquirer = MagicMock()
-    inquirer.find_usd_price.side_effect = RemoteError('test')
-
     def mock_api_query_response(endpoint):  # pylint: disable=unused-argument
         return MockResponse(HTTPStatus.OK, '{"link_balance": "1.00000000"}')
 
-    with patch('rotkehlchen.exchanges.bitstamp.Inquirer', return_value=inquirer), patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response):  # noqa: E501
+    with (
+        patch(
+            'rotkehlchen.exchanges.bitstamp.Inquirer.find_usd_price',
+            side_effect=RemoteError('test'),
+        ),
+        patch.object(mock_bitstamp, '_api_query', side_effect=mock_api_query_response),
+    ):
         assert mock_bitstamp.query_balances() == ({}, '')
 
 

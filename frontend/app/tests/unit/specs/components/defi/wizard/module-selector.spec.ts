@@ -24,7 +24,6 @@ describe('moduleSelector.vue', () => {
     return mount(ModuleSelector, {
       pinia,
       vuetify,
-      stubs: ['card'],
       provide: libraryDefaults,
     });
   };
@@ -41,10 +40,10 @@ describe('moduleSelector.vue', () => {
     api.setSettings = vi.fn();
   });
 
-  it('displays active modules', async () => {
+  it('displays active modules', () => {
     expect(
-      wrapper.find('[data-cy=aave-module-switch]').attributes(),
-    ).toHaveProperty('aria-checked', 'true');
+      (wrapper.find('[data-cy=aave-module-switch] input').element as HTMLInputElement).checked,
+    ).toBeTruthy();
   });
 
   it('disables module on click', async () => {
@@ -55,14 +54,14 @@ describe('moduleSelector.vue', () => {
       other: { havePremium: false, premiumShouldSync: false },
     });
     expect(
-      wrapper.find('[data-cy=aave-module-switch]').attributes(),
-    ).toHaveProperty('aria-checked', 'true');
-    await wrapper.find('[data-cy=aave-module-switch]').trigger('click');
-    await wrapper.vm.$nextTick();
+      (wrapper.find('[data-cy=aave-module-switch] input').element as HTMLInputElement).checked,
+    ).toBeTruthy();
+    await wrapper.find('[data-cy=aave-module-switch] input').trigger('input', { target: false });
+    await nextTick();
     await flushPromises();
     expect(
-      wrapper.find('[data-cy=aave-module-switch]').attributes(),
-    ).toHaveProperty('aria-checked', 'false');
+      (wrapper.find('[data-cy=aave-module-switch] input').element as HTMLInputElement).checked,
+    ).toBeFalsy();
     expect(settingsStore.activeModules).toEqual([]);
   });
 });

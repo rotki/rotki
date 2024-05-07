@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import Fragment from '@/components/helper/Fragment';
-import { externalAssets } from '@/data/external-links';
 import type { LoginCredentials } from '@/types/login';
 
+const { t } = useI18n();
 const { navigateToUserCreation, navigateToDashboard } = useAppNavigation();
 const { upgradeVisible, canRequestData } = storeToRefs(useSessionAuthStore());
 const { backendChanged } = useBackendManagement();
@@ -15,7 +15,7 @@ const showUpgradeProgress: ComputedRef<boolean> = computed(
 
 const isDocker = import.meta.env.VITE_DOCKER;
 
-const { fetchMessages, welcomeHeader, welcomeMessage } = useDynamicMessages();
+const { fetchMessages, welcomeHeader, welcomeMessage, activeWelcomeMessages } = useDynamicMessages();
 const { showReleaseNotes } = useUpdateMessage();
 
 const header = computed(() => {
@@ -38,20 +38,18 @@ async function navigate() {
   set(showReleaseNotes, false);
 }
 
-const { t } = useI18n();
 const css = useCssModule();
 
-onMounted(async () => fetchMessages());
+onMounted(() => fetchMessages());
 </script>
 
 <template>
   <Fragment>
     <section :class="css.section">
       <div :class="css.container">
-        <RuiLogo
+        <RotkiLogo
           :class="css.logo__mobile"
-          text
-          :custom-src="externalAssets.logo.drawer"
+          unique-key="0"
         />
         <div :class="css.wrapper">
           <div data-cy="account-management">
@@ -89,9 +87,9 @@ onMounted(async () => fetchMessages());
     <AccountManagementAside class="p-6 hidden lg:flex lg:p-12">
       <div>
         <span :class="css.logo">
-          <RuiLogo
-            class="w-8 !h-8"
-            :custom-src="externalAssets.logo.drawer"
+          <RotkiLogo
+            size="2"
+            unique-key="0"
           />
         </span>
         <h2 class="text-h3 font-light xl:text-h2 mb-6">
@@ -107,7 +105,7 @@ onMounted(async () => fetchMessages());
         <WelcomeMessageDisplay
           v-else-if="welcomeMessage"
           class="mt-6"
-          :message="welcomeMessage"
+          :messages="activeWelcomeMessages"
         />
       </div>
     </AccountManagementAside>
@@ -135,8 +133,7 @@ onMounted(async () => fetchMessages());
   @apply rounded-full p-4 bg-rui-primary/20 inline-block mb-6 lg:mb-10 xl:mb-40;
 
   &__mobile {
-    @apply my-5 lg:hidden max-w-[27.5rem] mx-auto w-full;
-    @apply h-8 #{!important};
+    @apply my-5 lg:hidden max-w-[27.5rem] mx-auto;
 
     @media screen and (max-width: 487px) {
       @apply px-4 max-w-full;

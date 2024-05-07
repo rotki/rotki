@@ -3,17 +3,37 @@ import {
   type Wrapper,
   mount,
 } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
+import { type Pinia, createPinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import EthBlockEventForm from '@/components/history/events/forms/EthBlockEventForm.vue';
-import VAutocompleteStub from '../../../stubs/VAutocomplete';
-import VComboboxStub from '../../../stubs/VCombobox';
+import { VAutocompleteStub } from '../../../stubs/VAutocomplete';
+import { VComboboxStub } from '../../../stubs/VCombobox';
+import type { AssetMap } from '@/types/asset';
 import type { EthBlockEvent } from '@/types/history/events';
+
+vi.mock('@/store/balances/prices', () => ({
+  useBalancePricesStore: vi.fn().mockReturnValue({
+    getHistoricPrice: vi.fn(),
+  }),
+}));
 
 describe('ethBlockEventForm.vue', () => {
   setupDayjs();
   let wrapper: Wrapper<EthBlockEventForm>;
+  let pinia: Pinia;
+
+  const asset = {
+    name: 'Ethereum',
+    symbol: 'ETH',
+    assetType: 'own chain',
+    isCustomAsset: false,
+  };
+
+  const mapping: AssetMap = {
+    assetCollections: {},
+    assets: { [asset.symbol]: asset },
+  };
 
   const groupHeader: EthBlockEvent = {
     identifier: 11336,
@@ -22,7 +42,7 @@ describe('ethBlockEventForm.vue', () => {
     sequenceIndex: 0,
     timestamp: 1697442021000,
     location: 'ethereum',
-    asset: 'ETH',
+    asset: asset.symbol,
     balance: {
       amount: bigNumberify('100'),
       usdValue: bigNumberify('2000'),
@@ -36,10 +56,16 @@ describe('ethBlockEventForm.vue', () => {
     blockNumber: 444,
   };
 
+  beforeEach(() => {
+    vi.useFakeTimers();
+    pinia = createPinia();
+    setActivePinia(pinia);
+    vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
+    vi.mocked(useBalancePricesStore().getHistoricPrice).mockResolvedValue(One);
+  });
+
   const createWrapper = (options: ThisTypedMountOptions<any> = {}) => {
     const vuetify = new Vuetify();
-    const pinia = createPinia();
-    setActivePinia(pinia);
     return mount(EthBlockEventForm, {
       pinia,
       vuetify,
@@ -52,9 +78,9 @@ describe('ethBlockEventForm.vue', () => {
   };
 
   describe('should prefill the fields based on the props', () => {
-    it('no `groupHeader`, `editableItem`, nor `nextSequence` are passed', async () => {
+    it('no `groupHeader`, nor `editableItem` are passed', async () => {
       wrapper = createWrapper();
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       expect(
         (
@@ -85,13 +111,10 @@ describe('ethBlockEventForm.vue', () => {
       ).toBeFalsy();
     });
 
-    it('`groupHeader` and `nextSequence` are passed', async () => {
-      wrapper = createWrapper({
-        propsData: {
-          groupHeader,
-        },
-      });
-      await wrapper.vm.$nextTick();
+    it('`groupHeader` passed', async () => {
+      wrapper = createWrapper();
+      await nextTick();
+      await wrapper.setProps({ groupHeader });
 
       expect(
         (
@@ -127,14 +150,10 @@ describe('ethBlockEventForm.vue', () => {
       ).toBeFalsy();
     });
 
-    it('`groupHeader`, `editableItem`, and `nextSequence` are passed', async () => {
-      wrapper = createWrapper({
-        propsData: {
-          groupHeader,
-          editableItem: groupHeader,
-        },
-      });
-      await wrapper.vm.$nextTick();
+    it('`groupHeader` and `editableItem` are passed', async () => {
+      wrapper = createWrapper();
+      await nextTick();
+      await wrapper.setProps({ groupHeader, editableItem: groupHeader });
 
       expect(
         (

@@ -6,7 +6,8 @@ from rotkehlchen.chain.ethereum.modules.yearn.constants import (
     CPT_YEARN_V1,
     CPT_YEARN_V2,
     YEARN_ICON,
-    YEARN_LABEL,
+    YEARN_LABEL_V1,
+    YEARN_LABEL_V2,
 )
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -148,12 +149,12 @@ class YearnDecoder(DecoderInterface):
         return (
             CounterpartyDetails(
                 identifier=CPT_YEARN_V1,
-                label=YEARN_LABEL,
+                label=YEARN_LABEL_V1,
                 image=YEARN_ICON,
             ),
             CounterpartyDetails(
                 identifier=CPT_YEARN_V2,
-                label=YEARN_LABEL,
+                label=YEARN_LABEL_V2,
                 image=YEARN_ICON,
             ),
         )

@@ -8,7 +8,7 @@ from rotkehlchen.db.constants import (
     HISTORY_MAPPING_STATE_DECODED,
 )
 from rotkehlchen.db.utils import update_table_schema
-from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -20,11 +20,11 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+@enter_exit_debug_log()
 def _update_nfts_table(write_cursor: 'DBCursor') -> None:
     """
     Update the nft table to remove double quotes due to https://github.com/rotki/rotki/issues/6368
     """
-    log.debug('Enter _update_nfts_table')
     update_table_schema(
         write_cursor=write_cursor,
         table_name='nfts',
@@ -43,23 +43,21 @@ def _update_nfts_table(write_cursor: 'DBCursor') -> None:
         FOREIGN KEY (last_price_asset) REFERENCES assets(identifier) ON UPDATE CASCADE""",  # noqa: E501
         insert_columns='identifier, name, last_price, last_price_asset, manual_price, owner_address, is_lp, image_url, collection_name',  # noqa: E501
     )
-    log.debug('Exit _update_nfts_table')
 
 
+@enter_exit_debug_log()
 def _create_new_tables(write_cursor: 'DBCursor') -> None:
-    log.debug('Enter _create_new_tables')
     write_cursor.execute("""
     CREATE TABLE IF NOT EXISTS optimism_transactions (
         tx_id INTEGER NOT NULL PRIMARY KEY,
         l1_fee TEXT,
     FOREIGN KEY(tx_id) REFERENCES evm_transactions(identifier) ON DELETE CASCADE ON UPDATE CASCADE
     );""")
-    log.debug('Exit _create_new_tables')
 
 
+@enter_exit_debug_log()
 def _reduce_eventid_size(write_cursor: 'DBCursor') -> None:
     """Reduce the size of history event ids"""
-    log.debug('Enter _reduce_eventid_size')
     staking_events = write_cursor.execute(
         'SELECT H.identifier, H.subtype, S.validator_index, S.is_exit_or_blocknumber, '
         'H.timestamp FROM history_events H INNER JOIN eth_staking_events_info S '
@@ -83,16 +81,15 @@ def _reduce_eventid_size(write_cursor: 'DBCursor') -> None:
     write_cursor.executemany(
         'UPDATE history_events SET event_identifier=? WHERE identifier=?', updates,
     )
-    log.debug('Exit _reduce_eventid_size')
 
 
+@enter_exit_debug_log()
 def _update_evm_transaction_data(write_cursor: 'DBCursor') -> None:
     """Turn the primary key of evm transactions to be a unique integer ID instead
     of composite primary with hash + chain id. Saves lots of DB space.
 
     Implements https://github.com/rotki/rotki/issues/6372
     """
-    log.debug('Enter _update_evm_transaction_data')
     txs = write_cursor.execute('SELECT * from evm_transactions').fetchall()
     internal_txs = write_cursor.execute('SELECT * from evm_internal_transactions').fetchall()
     receipts = write_cursor.execute('SELECT * from evmtx_receipts').fetchall()
@@ -229,17 +226,14 @@ def _update_evm_transaction_data(write_cursor: 'DBCursor') -> None:
         [(hashchainlog_to_id[x[0] + x[1].to_bytes(4, byteorder='big') + x[2].to_bytes(4, byteorder='big')], *x[3:]) for x in topics],  # noqa: E501
     )
 
-    log.debug('Exit _update_evm_transaction_data')
 
-
+@enter_exit_debug_log()
 def _add_arbitrum_one_location(write_cursor: 'DBCursor') -> None:
-    log.debug('Enter _add_arbitrum_one_location')
     write_cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("i", 41);')
-    log.debug('Exit _add_arbitrum_one_location')
 
 
+@enter_exit_debug_log()
 def _update_rpc_nodes_table(write_cursor: 'DBCursor') -> None:
-    log.debug('Enter _update_rpc_nodes_table')
     table_exists = write_cursor.execute(
         "SELECT COUNT(*) FROM sqlite_master "
         "WHERE type='table' AND name='rpc_nodes'",
@@ -265,11 +259,10 @@ def _update_rpc_nodes_table(write_cursor: 'DBCursor') -> None:
         UNIQUE(endpoint, blockchain)""",
         insert_columns='identifier, name, endpoint, owned, active, weight, blockchain',
     )
-    log.debug('Exit _update_rpc_nodes_table')
 
 
+@enter_exit_debug_log()
 def _remove_saddle_oracle(write_cursor: 'DBCursor') -> None:
-    log.debug('Enter _remove_saddle_oracle')
     write_cursor.execute('SELECT value FROM settings WHERE name="current_price_oracles"')
     if (data := write_cursor.fetchone()) is None:
         return  # oracles not configured
@@ -284,15 +277,14 @@ def _remove_saddle_oracle(write_cursor: 'DBCursor') -> None:
         'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
         ('current_price_oracles', json.dumps(new_oracles)),
     )
-    log.debug('Exit _remove_saddle_oracle')
 
 
+@enter_exit_debug_log()
 def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
     """
     Reset all decoded evm events except the customized ones for ethereum mainnet,
     optimism and polygon.
     """
-    log.debug('Enter _reset_decoded_events')
     if write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] == 0:
         return
 
@@ -316,9 +308,9 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
         'DELETE from evm_tx_mappings WHERE tx_id IN (SELECT identifier FROM evm_transactions) AND value=?',  # noqa: E501
         (HISTORY_MAPPING_STATE_DECODED,),
     )
-    log.debug('Exit _reset_decoded_events')
 
 
+@enter_exit_debug_log(name='UserDB v38->v39 upgrade')
 def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v38 to v39. This was in v1.30.0 release.
         - Update NFT table to not use double quotes
@@ -327,7 +319,6 @@ def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Reset all decoded events, except the customized ones
         - Add Arbitrum One location and nodes
     """
-    log.debug('Entered userdb v38->v39 upgrade')
     progress_handler.set_total_steps(9)
     with db.user_write() as write_cursor:
         _update_nfts_table(write_cursor)
@@ -349,5 +340,3 @@ def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
 
     db.conn.execute('VACUUM;')
     progress_handler.new_step()
-
-    log.debug('Finished userdb v38->v39 upgrade')

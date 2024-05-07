@@ -4,7 +4,6 @@ import type {
   DataTableColumn,
   DataTableSortData,
 } from '@rotki/ui-library-compat';
-import type { Ref } from 'vue';
 import type { ManualPrice, ManualPriceFormPayload } from '@/types/prices';
 
 const { t } = useI18n();

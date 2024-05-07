@@ -1,4 +1,5 @@
 from typing import Final
+
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.history.events.structures.types import HistoryEventType
@@ -23,6 +24,8 @@ ERC20_APPROVE: Final = b'\x8c[\xe1\xe5\xeb\xec}[\xd1OqB}\x1e\x84\xf3\xdd\x03\x14
 DELEGATE_CHANGED: Final = b'14\xe8\xa2\xe6\xd9~\x92\x9a~T\x01\x1e\xa5H]}\x19m\xd5\xf0\xbaMN\xf9X\x03\xe8\xe3\xfc%\x7f'  # noqa: E501
 SDAI_DEPOSIT: Final = b'\xdc\xbc\x1c\x05$\x0f1\xff:\xd0g\xef\x1e\xe3\\\xe4\x99wbu.:\tR\x84uED\xf4\xc7\t\xd7'  # noqa: E501
 SDAI_REDEEM: Final = b'\xfb\xdey} \x1ch\x1b\x91\x05e)\x11\x9e\x0b\x02@|{\xb9jJ,u\xc0\x1f\xc9fr2\xc8\xdb'  # noqa: E501
+# keccak of Staked(address,uint256)
+STAKED: Final = b'\x9eq\xbc\x8e\xea\x02\xa69i\xf5\t\x81\x8f-\xaf\xb9%E2\x90C\x19\xf9\xdb\xday\xb6{\xd3J_='  # noqa: E501
 
 # Counterparty details shared between chains
 HOP_CPT_DETAILS: Final = CounterpartyDetails(

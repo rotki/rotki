@@ -31,13 +31,16 @@ const { t } = useI18n();
 const { form } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
-const assetType = ref<string>('token');
+const assetType: Ref<string> = ref('token');
 
 const category = usePropVModel(props, 'form', 'category', emit);
 const assetIdentifier = usePropVModel(props, 'form', 'assetIdentifier', emit);
 const amount = usePropVModel(props, 'form', 'amount', emit);
 const usdValue = usePropVModel(props, 'form', 'usdValue', emit);
 const location = usePropVModel(props, 'form', 'location', emit);
+const price: Ref<string> = ref('1');
+
+const usdValueInputFocused: Ref<boolean> = ref(false);
 
 function checkAssetType() {
   const formVal = get(form);
@@ -45,12 +48,39 @@ function checkAssetType() {
     set(assetType, 'nft');
 }
 
-onBeforeMount(() => {
+function updatePrice(forceUpdate = false) {
+  const value = get(usdValue);
+  const amountVal = get(amount);
+  if (value && amountVal && (get(usdValueInputFocused) || forceUpdate))
+    set(price, bigNumberify(get(usdValue)).div(bigNumberify(get(amount))).toFixed());
+}
+
+function calculateValue(forceUpdate = false) {
+  const priceVal = get(price);
+  const amountVal = get(amount);
+  if (priceVal && amountVal && (!get(usdValueInputFocused) || forceUpdate))
+    set(usdValue, bigNumberify(get(price)).multipliedBy(bigNumberify(get(amount))).toFixed());
+}
+
+watchImmediate(form, () => {
   checkAssetType();
 });
 
-watch(form, () => {
-  checkAssetType();
+onBeforeMount(() => {
+  updatePrice(true);
+});
+
+watch(amount, () => {
+  updatePrice();
+  calculateValue();
+});
+
+watch(price, () => {
+  calculateValue();
+});
+
+watch(usdValue, () => {
+  updatePrice();
 });
 
 watch(assetType, (assetType) => {
@@ -77,6 +107,12 @@ const rules = {
       required,
     ),
   },
+  price: {
+    required: helpers.withMessage(
+      t('dashboard.snapshot.edit.dialog.balances.rules.price').toString(),
+      required,
+    ),
+  },
   usdValue: {
     required: helpers.withMessage(
       t('dashboard.snapshot.edit.dialog.balances.rules.value').toString(),
@@ -87,7 +123,7 @@ const rules = {
 
 const { setValidation } = useEditBalancesSnapshotForm();
 
-const v$ = setValidation(rules, form, {
+const v$ = setValidation(rules, computed(() => ({ ...get(form), price })), {
   $autoDirty: true,
 });
 
@@ -150,28 +186,34 @@ function updateAsset(asset: string) {
         />
       </div>
     </div>
-    <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
-      <AmountInput
-        v-model="amount"
-        :disabled="assetType === 'nft'"
-        variant="outlined"
-        :label="t('common.amount')"
-        :error-messages="toMessages(v$.amount)"
-      />
-      <AmountInput
-        v-model="usdValue"
-        variant="outlined"
-        :label="
-          t('common.value_in_symbol', {
-            symbol: currencySymbol,
-          })
-        "
-        :error-messages="toMessages(v$.usdValue)"
-      />
-    </div>
+    <AmountInput
+      v-model="amount"
+      :disabled="assetType === 'nft'"
+      variant="outlined"
+      :label="t('common.amount')"
+      :error-messages="toMessages(v$.amount)"
+    />
+
+    <TwoFieldsAmountInput
+      :primary-value.sync="price"
+      :secondary-value.sync="usdValue"
+      data-cy="trade-rate"
+      :label="{
+        primary: t('common.price'),
+        secondary: t('common.value_in_symbol', {
+          symbol: currencySymbol,
+        }),
+      }"
+      :error-messages="{
+        primary: toMessages(v$.price),
+        secondary: toMessages(v$.usdValue),
+      }"
+      @update:reversed="usdValueInputFocused = $event"
+    />
 
     <EditBalancesSnapshotLocationSelector
       v-model="location"
+      optional-show-existing
       :locations="locations"
       :preview-location-balance="previewLocationBalance"
     />

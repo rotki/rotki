@@ -15,8 +15,8 @@ from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, EvmNodeInquirerWithDSProxy
-    from rotkehlchen.chain.optimism_superchain.node_inquirer import (
-        DSProxyOptimismSuperchainInquirerWithCacheData,
+    from rotkehlchen.chain.evm.l2_with_l1_fees.node_inquirer import (
+        DSProxyL2WithL1FeesInquirerWithCacheData,
     )
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
@@ -86,7 +86,7 @@ class BaseDecoderTools:
     def get_address_or_proxy_owner(self, address: ChecksumEvmAddress) -> ChecksumEvmAddress | None:  # pylint: disable=unused-argument
         """If the address is a DS proxy return its owner, if not return address itself"""
         owner = self.maybe_get_proxy_owner(address)
-        return owner if owner else address
+        return owner or address
 
     def decode_direction(
             self,
@@ -340,7 +340,7 @@ class BaseDecoderToolsWithDSProxy(BaseDecoderTools):
     def __init__(
             self,
             database: 'DBHandler',
-            evm_inquirer: Union['EvmNodeInquirerWithDSProxy', 'DSProxyOptimismSuperchainInquirerWithCacheData'],  # noqa: E501
+            evm_inquirer: Union['EvmNodeInquirerWithDSProxy', 'DSProxyL2WithL1FeesInquirerWithCacheData'],  # noqa: E501
             is_non_conformant_erc721_fn: Callable[[ChecksumEvmAddress], bool],
             address_is_exchange_fn: Callable[[ChecksumEvmAddress], str | None],
     ) -> None:

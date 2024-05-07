@@ -144,7 +144,7 @@ class MakerdaoDsr(HasDSProxy):
             proxy_mappings = self.ethereum.proxies_inquirer.get_accounts_having_proxy()
             balances = {}
             try:
-                current_dai_price = Inquirer().find_usd_price(A_DAI)
+                current_dai_price = Inquirer.find_usd_price(A_DAI)
             except RemoteError:
                 current_dai_price = Price(ONE)
             for account, proxy in proxy_mappings.items():
@@ -374,10 +374,10 @@ class MakerdaoDsr(HasDSProxy):
                 normalized_balance -= m.normalized_balance
 
         chi = self.makerdao_pot.call(self.ethereum, 'chi')
-        normalized_balance = normalized_balance * chi
+        normalized_balance *= chi
         gain = normalized_balance - amount_in_dsr
         try:
-            current_dai_price = Inquirer().find_usd_price(A_DAI)
+            current_dai_price = Inquirer.find_usd_price(A_DAI)
         except RemoteError:
             current_dai_price = Price(ONE)
 

@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.fval import FVal
-from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 
 if TYPE_CHECKING:
     from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
@@ -14,9 +14,8 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+@enter_exit_debug_log()
 def _create_new_tables(cursor: 'DBCursor') -> None:
-    log.debug('Enter _create_new_tables')
-
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS default_rpc_nodes (
@@ -31,12 +30,9 @@ def _create_new_tables(cursor: 'DBCursor') -> None:
         """,
     )
 
-    log.debug('Exit _create_new_tables')
 
-
+@enter_exit_debug_log()
 def _populate_rpc_nodes(cursor: 'DBCursor', root_dir: Path) -> None:
-    log.debug('Enter _populate_rpc_nodes')
-
     nodes_info = json.loads((root_dir / 'data' / 'nodes.json').read_text(encoding='utf8'))
     nodes_tuples = [
         (node['name'], node['endpoint'], False, True, str(FVal(node['weight'])), node['blockchain'])  # noqa: E501
@@ -49,14 +45,14 @@ def _populate_rpc_nodes(cursor: 'DBCursor', root_dir: Path) -> None:
         nodes_tuples,
     )
 
-    log.debug('Exit _populate_rpc_nodes')
 
-
+@enter_exit_debug_log()
 def _reset_curve_cache(write_cursor: 'DBCursor') -> None:
     """Resets curve cache to query gauges and update format of the lp tokens"""
     write_cursor.execute('DELETE FROM general_cache WHERE key LIKE "%CURVE%"')
 
 
+@enter_exit_debug_log()
 def _remove_name_from_contracts(cursor: 'DBCursor') -> None:
     """Removes the name column from contract_data table if it exists"""
     update_table_schema(
@@ -72,12 +68,12 @@ def _remove_name_from_contracts(cursor: 'DBCursor') -> None:
     )
 
 
+@enter_exit_debug_log(name='GlobalDB v4->v5 upgrade')
 def migrate_to_v5(connection: 'DBConnection') -> None:
     """This globalDB upgrade is introduced at 1.28.0 and does the following:
     - Adds the `default_rpc_nodes` table.
     - Resets curve cache.
     """
-    log.debug('Entered globaldb v4->v5 upgrade')
     root_dir = Path(__file__).resolve().parent.parent.parent
 
     with connection.write_ctx() as cursor:
@@ -85,5 +81,3 @@ def migrate_to_v5(connection: 'DBConnection') -> None:
         _populate_rpc_nodes(cursor, root_dir)
         _reset_curve_cache(cursor)
         _remove_name_from_contracts(cursor)
-
-    log.debug('Finished globaldb v4->v5 upgrade')

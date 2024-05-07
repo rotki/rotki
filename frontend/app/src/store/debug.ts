@@ -1,6 +1,8 @@
 import { BigNumber } from '@rotki/common';
 import type { PiniaPluginContext } from 'pinia';
 
+const PREFIX = 'pinia.store.';
+
 function convert(data: any): any {
   if (Array.isArray(data))
     return data.map(entry => convert(entry));
@@ -32,7 +34,7 @@ function isObject(data: any): boolean {
 const storage = sessionStorage;
 
 function getState(key: string) {
-  const items = storage.getItem(key);
+  const items = storage.getItem(PREFIX + key);
   if (!items)
     return null;
 
@@ -45,7 +47,7 @@ function getState(key: string) {
 }
 
 function setState(key: string, state: any): void {
-  storage.setItem(key, JSON.stringify(convert(state)));
+  storage.setItem(PREFIX + key, JSON.stringify(convert(state)));
 }
 
 function shouldPersistStore(): any {
@@ -63,7 +65,7 @@ export function storePiniaPlugins(context: PiniaPluginContext) {
   const storeId = store.$id;
 
   if (!persistStore) {
-    storage.removeItem(storeId);
+    storage.removeItem(PREFIX + storeId);
     return undefined;
   }
 

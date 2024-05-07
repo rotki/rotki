@@ -2,17 +2,12 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { TaskType } from '@/types/task-type';
 import { Section } from '@/types/status';
-import { chainSection } from '@/types/blockchain';
-import type {
-  AccountWithBalance,
-  BlockchainAccountWithBalance,
-  XpubPayload,
-} from '@/types/blockchain/accounts';
+import type { BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
 
 const props = withDefaults(
   defineProps<{
-    balances: AccountWithBalance[];
-    blockchain: Blockchain;
+    balances: BlockchainAccountWithBalance[];
+    blockchain: string;
     title: string;
     loopring?: boolean;
   }>(),
@@ -31,22 +26,15 @@ const { blockchain, loopring } = toRefs(props);
 
 const selectedAddresses = ref<string[]>([]);
 const visibleTags = ref<string[]>([]);
-const editedAccount = ref<string>('');
-const balanceTable = ref<any>(null);
+const editedAccount = ref<BlockchainAccountWithBalance>();
 
 const { isTaskRunning } = useTaskStore();
-const { handleBlockchainRefresh } = useRefresh(blockchain);
-const { detectTokensOfAllAddresses, detectingTokens }
-  = useTokenDetection(blockchain);
-const { show } = useConfirmStore();
+const { handleBlockchainRefresh } = useRefresh();
+const { detectingTokens } = useTokenDetection(blockchain);
 const { getChainName, supportsTransactions } = useSupportedChains();
 
 const isEth2 = computed<boolean>(() => get(blockchain) === Blockchain.ETH2);
-
-const hasTokenDetection = computed<boolean>(() =>
-  supportsTransactions(get(blockchain)),
-);
-
+const hasTokenDetection = computed<boolean>(() => supportsTransactions(get(blockchain)));
 const chainName = computed(() => get(getChainName(blockchain)));
 
 const isQueryingBlockchain = isTaskRunning(TaskType.QUERY_BLOCKCHAIN_BALANCES);
@@ -61,79 +49,40 @@ const isAnyBalancesFetching = computed<boolean>(() => {
 });
 
 const operationRunning = computed<boolean>(
-  () =>
-    get(isTaskRunning(TaskType.ADD_ACCOUNT))
-    || get(isTaskRunning(TaskType.REMOVE_ACCOUNT)),
-);
-
-const section = computed<Section>(() =>
-  get(loopring) ? Section.L2_LOOPRING_BALANCES : chainSection[get(blockchain)],
+  () => get(isTaskRunning(TaskType.ADD_ACCOUNT)) || get(isTaskRunning(TaskType.REMOVE_ACCOUNT)),
 );
 
 const { isLoading } = useStatusStore();
-const isSectionLoading = isLoading(get(section));
+const isSectionLoading = computed<boolean>(() => {
+  const section = get(loopring) ? 'loopring' : get(blockchain);
+  return get(isLoading(Section.BLOCKCHAIN, section));
+});
+
+const selection = computed<BlockchainAccountWithBalance[]>(() => props.balances.filter(account => get(selectedAddresses).includes(getAccountId(account))));
 
 function editAccount(account: BlockchainAccountWithBalance) {
-  set(editedAccount, account.address);
+  set(editedAccount, account);
   emit('edit-account', account);
 }
 
-const { deleteEth2Validators } = useEthAccountsStore();
-const { removeAccount } = useBlockchainAccounts();
-const { refreshAccounts, fetchAccounts } = useBlockchains();
-const { deleteXpub } = useBtcAccountsStore();
-
-async function deleteAccount(payload: XpubPayload | string[]) {
-  if (Array.isArray(payload)) {
-    if (payload.length === 0)
-      return;
-
-    if (get(isEth2)) {
-      await deleteEth2Validators(get(selectedAddresses));
-    }
-    else {
-      await removeAccount({
-        accounts: get(selectedAddresses),
-        blockchain: get(blockchain),
-      });
-    }
-
-    startPromise(refreshAccounts(blockchain));
-    set(selectedAddresses, []);
-  }
-  else {
-    await deleteXpub(payload);
-    get(balanceTable)?.removeCollapsed(payload);
-
-    startPromise(refreshAccounts(blockchain));
-  }
-}
-
-function showConfirmation(payload: XpubPayload | string[]) {
-  let message: string;
-  if (Array.isArray(payload)) {
-    message = t('account_balances.confirm_delete.description_address', {
-      count: payload.length,
-    });
-  }
-  else {
-    message = t('account_balances.confirm_delete.description_xpub', {
-      address: payload.xpub,
-    });
-  }
-  show(
-    {
-      title: t('account_balances.confirm_delete.title'),
-      message,
-    },
-    async () => deleteAccount(payload),
-  );
-}
+const { fetchAccounts } = useBlockchains();
+const { showConfirmation } = useAccountDelete();
 
 async function refreshClick() {
   await fetchAccounts(get(blockchain), true);
-  await handleBlockchainRefresh();
+  await handleBlockchainRefresh(blockchain);
 }
+
+const { massDetecting } = storeToRefs(useBlockchainTokensStore());
+const isMassDetecting = computed(() => {
+  const massDetectingVal = get(massDetecting);
+  if (!massDetectingVal)
+    return false;
+
+  return [get(blockchain), 'all'].includes(massDetectingVal);
+});
+
+const refreshDisabled = logicOr(isSectionLoading, detectingTokens);
 </script>
 
 <template>
@@ -146,7 +95,8 @@ async function refreshClick() {
       <div class="flex flex-row items-center gap-2">
         <SummaryCardRefreshMenu
           data-cy="account-balances-refresh-menu"
-          :loading="isSectionLoading || detectingTokens"
+          :disabled="refreshDisabled"
+          :loading="isMassDetecting"
           :tooltip="
             t('account_balances.refresh_tooltip', {
               blockchain: chainName,
@@ -179,11 +129,9 @@ async function refreshClick() {
               color="error"
               variant="outlined"
               :disabled="
-                isAnyBalancesFetching
-                  || operationRunning
-                  || selectedAddresses.length === 0
+                isAnyBalancesFetching || operationRunning || selectedAddresses.length === 0
               "
-              @click="showConfirmation(selectedAddresses)"
+              @click="showConfirmation(selection)"
             >
               <template #prepend>
                 <RuiIcon name="delete-bin-line" />
@@ -204,9 +152,9 @@ async function refreshClick() {
               class="ml-2"
               variant="outlined"
               color="primary"
-              :loading="detectingTokens"
-              :disabled="detectingTokens || isSectionLoading"
-              @click="detectTokensOfAllAddresses()"
+              :loading="isMassDetecting"
+              :disabled="refreshDisabled"
+              @click="handleBlockchainRefresh(blockchain, true)"
             >
               <template #prepend>
                 <RuiIcon name="refresh-line" />
@@ -227,7 +175,6 @@ async function refreshClick() {
     </div>
 
     <AccountBalanceTable
-      ref="balanceTable"
       class="mt-4"
       :loopring="loopring"
       :blockchain="blockchain"
@@ -235,7 +182,7 @@ async function refreshClick() {
       :visible-tags="visibleTags"
       :selected.sync="selectedAddresses"
       @edit-click="editAccount($event)"
-      @delete-xpub="showConfirmation($event)"
+      @delete-xpub="showConfirmation([$event])"
     />
   </RuiCard>
 </template>

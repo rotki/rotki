@@ -47,14 +47,14 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.event_identifier.validation.non_empty',
-      ).toString(),
+      ),
       requiredIf(() => !!get(editableItem)),
     ),
   },
   timestamp: { externalServerValidation: () => true },
   amount: {
     required: helpers.withMessage(
-      t('transactions.events.form.amount.validation.non_empty').toString(),
+      t('transactions.events.form.amount.validation.non_empty'),
       required,
     ),
   },
@@ -62,7 +62,7 @@ const rules = {
     required: helpers.withMessage(
       t('transactions.events.form.fiat_value.validation.non_empty', {
         currency: get(currencySymbol),
-      }).toString(),
+      }),
       required,
     ),
   },
@@ -70,7 +70,7 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.validator_index.validation.non_empty',
-      ).toString(),
+      ),
       required,
     ),
   },
@@ -78,20 +78,22 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.withdrawal_address.validation.non_empty',
-      ).toString(),
+      ),
       required,
     ),
     isValid: helpers.withMessage(
       t(
         'transactions.events.form.withdrawal_address.validation.valid',
-      ).toString(),
+      ),
       (value: string) => isValidEthAddress(value),
     ),
   },
 };
 
-const { setValidation, setSubmitFunc, saveHistoryEventHandler }
-  = useHistoryEventsForm();
+const numericAmount = bigNumberifyFromRef(amount);
+const numericUsdValue = bigNumberifyFromRef(usdValue);
+
+const { setValidation, setSubmitFunc, saveHistoryEventHandler } = useHistoryEventsForm();
 
 const v$ = setValidation(
   rules,
@@ -129,7 +131,7 @@ function reset() {
   get(assetPriceForm)?.reset();
 }
 
-async function applyEditableData(entry: EthWithdrawalEvent) {
+function applyEditableData(entry: EthWithdrawalEvent) {
   set(eventIdentifier, entry.eventIdentifier);
   set(
     datetime,
@@ -146,7 +148,7 @@ async function applyEditableData(entry: EthWithdrawalEvent) {
   set(isExit, entry.isExit);
 }
 
-async function applyGroupHeaderData(entry: EthWithdrawalEvent) {
+function applyGroupHeaderData(entry: EthWithdrawalEvent) {
   set(eventIdentifier, entry.eventIdentifier);
   set(withdrawalAddress, entry.locationLabel ?? '');
   set(validatorIndex, entry.validatorIndex.toString());
@@ -198,9 +200,6 @@ async function save(): Promise<boolean> {
 
 setSubmitFunc(save);
 
-const numericAmount = bigNumberifyFromRef(amount);
-const numericUsdValue = bigNumberifyFromRef(usdValue);
-
 function checkPropsData() {
   const editable = get(editableItem);
   if (editable) {
@@ -220,13 +219,9 @@ onMounted(() => {
   checkPropsData();
 });
 
-const { accounts } = useAccountBalances();
+const { getAddresses } = useBlockchainStore();
 
-const withdrawalAddressSuggestions = computed(() =>
-  get(accounts)
-    .filter(item => item.chain === Blockchain.ETH)
-    .map(item => item.address),
-);
+const withdrawalAddressSuggestions = computed(() => getAddresses(Blockchain.ETH));
 </script>
 
 <template>
@@ -234,7 +229,7 @@ const withdrawalAddressSuggestions = computed(() =>
     <div class="grid md:grid-cols-2 gap-4">
       <DateTimePicker
         v-model="datetime"
-        :label="t('transactions.events.form.datetime.label')"
+        :label="t('common.datetime')"
         persistent-hint
         limit-now
         milliseconds
@@ -290,17 +285,16 @@ const withdrawalAddressSuggestions = computed(() =>
 
     <RuiDivider class="mb-2 mt-6" />
 
-    <VExpansionPanels flat>
-      <VExpansionPanel>
-        <VExpansionPanelHeader
-          class="p-0"
-          data-cy="eth-block-event-form__advance-toggle"
-        >
+    <RuiAccordions>
+      <RuiAccordion
+        data-cy="eth-block-event-form__advance"
+        header-class="py-4"
+        eager
+      >
+        <template #header>
           {{ t('transactions.events.form.advanced') }}
-        </VExpansionPanelHeader>
-        <VExpansionPanelContent
-          class="[&>.v-expansion-panel-content\_\_wrap]:!p-0"
-        >
+        </template>
+        <div class="py-2">
           <RuiTextField
             v-model="eventIdentifier"
             variant="outlined"
@@ -310,8 +304,8 @@ const withdrawalAddressSuggestions = computed(() =>
             :error-messages="toMessages(v$.eventIdentifier)"
             @blur="v$.eventIdentifier.$touch()"
           />
-        </VExpansionPanelContent>
-      </VExpansionPanel>
-    </VExpansionPanels>
+        </div>
+      </RuiAccordion>
+    </RuiAccordions>
   </div>
 </template>

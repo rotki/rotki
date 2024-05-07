@@ -11,6 +11,8 @@ export enum Blockchain {
   ARBITRUM_ONE = 'arbitrum_one',
   BASE = 'base',
   GNOSIS = 'gnosis',
+  SCROLL = 'scroll',
+  ZKSYNC_LITE = 'zksync_lite',
 }
 
 export type BlockchainSelection = Blockchain | 'ALL';

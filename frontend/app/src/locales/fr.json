@@ -21,8 +21,7 @@
     "user_agent": "Agent utilisateur :"
   },
   "account_balance_table": {
-    "liabilities": "Passifs",
-    "loopring": "Loopring"
+    "liabilities": "Passifs"
   },
   "account_balances": {
     "confirm_delete": {
@@ -64,7 +63,6 @@
       "blockchain": "Choisir blockchain | Choisir blockchains",
       "btc": {
         "derivation_path": "Chemin de dérivation",
-        "derivation_path_hint": "Facultatif",
         "xpub": "XPUB"
       },
       "multiple": "Ajouter plusieurs adresses"
@@ -190,7 +188,6 @@
         "count_cost_basis_pnl_subtitle": "Que ce soit pour compter tout gain ou perte que l'actif a pu avoir par rapport à quand il a été acquis.",
         "count_entire_amount_spend": "Compter le montant total dépensé",
         "count_entire_amount_spend_subtitle": "Que le montant total soit compté comme une dépense, ce qui signifie un résultat net négatif",
-        "counterparty": "Contrepartie",
         "event_subtype": "Sous-type d'événement",
         "event_type": "Type d'événement",
         "taxable": "Imposable",
@@ -453,15 +450,6 @@
           "title": "Interrogation des soldes Balancer"
         }
       },
-      "balancer_events": {
-        "error": {
-          "description": "Échec de la requête des événements Balancer : {message}",
-          "title": "Requête des événements Balancer"
-        },
-        "task": {
-          "title": "Interrogation des événements Balancer"
-        }
-      },
       "balances": {
         "error": {
           "description": "Échec de la récupération des soldes DeFi : {error}",
@@ -607,15 +595,6 @@
         "task": {
           "title": "Interrogation des soldes des coffres yearn.finance {version}"
         }
-      },
-      "yearn_vaults_history": {
-        "error": {
-          "description": "Échec de la récupération de l'historique des coffres yearn.finance {version} : {error}",
-          "title": "Historique des coffres yearn.finance {version}"
-        },
-        "task": {
-          "title": "Interrogation de l'historique des coffres yearn.finance {version}"
-        }
       }
     },
     "delete_eth2_validator": {
@@ -662,12 +641,12 @@
           "title": "Récupération des emplacements associés"
         }
       },
-      "fetch_undecoded_events": {
+      "fetch_undecoded_transactions": {
         "error": {
-          "message": "Échec de la requête de détail pour les événements EVM non décodés : {message}"
+          "message": "Échec de la requête de détail pour les transactions EVM non décodés : {message}"
         },
         "task": {
-          "title": "Récupération du détail pour les événements EVM non décodés."
+          "title": "Récupération du détail pour les transactions EVM non décodés."
         }
       }
     },
@@ -946,11 +925,11 @@
     },
     "transactions_redecode_missing": {
       "error": {
-        "description": "Échec de la récupération des événements manquants des transactions pour la chaîne {evmChain} : {error}",
+        "description": "Échec de la récupération des événements manquants des transactions pour la chaîne {chain} : {error}",
         "title": "Récupération des événements manquants des transactions"
       },
       "task": {
-        "description": "Récupération des événements des transactions pour la chaîne {evmChain}",
+        "description": "Récupération des événements de transactions pour la chaîne {chain}",
         "title": "Récupération des événements manquants des transactions Evm"
       }
     },
@@ -1022,7 +1001,7 @@
       }
     },
     "hint": {
-      "global": "Global",
+      "global": "Mondial",
       "global_description": "L'annuaire d'adresses est enregistré dans la base de données globale (partagé sur tous les comptes de cet appareil)",
       "priority": {
         "list": {
@@ -1046,7 +1025,9 @@
     "headers": {
       "source": "Source"
     },
-    "title": "Airdrops"
+    "title": "Airdrops",
+    "unknown_info": "Ces adresses font l'objet d'un relevé aérien, mais nous ne pouvons pas encore déterminer si elles ont été revendiquées ou non.",
+    "unknown_tooltip": "L'adresse est éligible pour ce largage, mais nous ne pouvons pas encore analyser si elle a été réclamée ou non."
   },
   "alias_names": {
     "error": {
@@ -1099,7 +1080,7 @@
     "name_non_empty": "Le nom de l'actif ne peut pas être vide",
     "optional": "Champs facultatifs",
     "oracle_disable": "Désactiver/Activer la récupération des prix à partir de l'oracle de prix. Si l'oracle n'est pas désactivé, et qu'aucune valeur n'est spécifiée, rotki tentera de récupérer un prix en utilisant le symbole de l'actif.",
-    "replaced": "Cette icône sera remplacée par {name} à la sauvegarde.",
+    "replaced": "Cette icône sera appliquée après avoir cliqué sur \"Enregistrer\".",
     "type_non_empty": "Le type d'actif ne peut pas être vide",
     "types": {
       "error": "Impossible de charger les types d'actifs : {message}"
@@ -1123,6 +1104,31 @@
   "asset_management": {
     "add_error": "Impossible d'ajouter l'actif : {message}",
     "add_title": "Ajouter un nouvel actif",
+    "cex_mapping": {
+      "add_error": "Impossible d'ajouter le mappage : {message}",
+      "add_mapping": "Ajouter une cartographie",
+      "add_title": "Ajouter une nouvelle cartographie",
+      "all_exchanges": "Tous les échanges",
+      "confirm_delete": {
+        "message": "Êtes-vous sûr de vouloir supprimer la cartographie des actifs pour le symbole {asset} dans {location} ?",
+        "title": "Supprimer la cartographie des actifs de la bourse"
+      },
+      "delete_error": "Impossible de supprimer la cartographie : {message}",
+      "edit_error": "Impossible de modifier la correspondance : {message}",
+      "edit_title": "Modifier le mappage",
+      "exchange": "Échanger",
+      "filter_by_exchange": "Filtrer par échange",
+      "form": {
+        "asset_non_empty": "Le champ de l'actif reconnu ne peut pas être vide",
+        "location_non_empty": "Le champ emplacement ne peut pas être vide",
+        "location_symbol_non_empty": "Le champ symbole du bien ne peut pas être vide"
+      },
+      "location_symbol": "Symbole du bien",
+      "filter_by_location_symbol": "Filtrer par symbole d'actif",
+      "recognized_as": "Reconnu comme",
+      "save_for_all": "Sauvegarder cette correspondance pour tous les échanges",
+      "subtitle": "Vous pouvez lier des symboles d'actifs sur une bourse centralisée avec des actifs reconnus par rotki. Ceci est nécessaire pour que rotki puisse traiter les actifs sur les bourses."
+    },
     "confirm_delete": {
       "message": "Voulez-vous vraiment supprimer {asset} de la base de données d'actifs ?",
       "title": "Supprimer l'actif"
@@ -1436,19 +1442,8 @@
   "blockchain_balances": {
     "add_account": "Ajouter un compte",
     "balances": {
-      "arbitrum_one": "Solde Arbitrum One",
-      "avax": "Solde Avalanche",
-      "base": "Solde de base",
-      "bch": "Solde Bitcoin Cash",
-      "btc": "Solde Bitcoin",
-      "dot": "Solde Polkadot",
-      "eth": "Solde Ethereum",
-      "eth2": "Solde de participation Ethereum",
-      "ksm": "Solde Kusama",
-      "loopring": "Solde Loopring",
-      "optimism": "Solde Optimism",
-      "polygon_pos": "Solde Polygon PoS",
-      "gnosis": "Solde Gnosis"
+      "common": "Solde {chain}",
+      "eth2": "de participation Ethereum"
     },
     "evm_detection": {
       "title": "Détecter les comptes EVM",
@@ -1546,6 +1541,7 @@
     "cancel_task_info": "Cette action va laisser le processus en cours d'exécution ({title}) dans un état non fini, êtes-vous sûr de vouloir l'annuler?"
   },
   "common": {
+    "entry_type": "Type d'entrée",
     "account": "Compte",
     "actions": {
       "accept": "Accepter",
@@ -1575,6 +1571,7 @@
       "pull": "Tirer",
       "push": "Pousser",
       "save": "Enregistrer",
+      "save_continue": "Sauvegarder et continuer",
       "search": "Rechercher",
       "skip": "Sauter",
       "terminate": "Terminer",
@@ -1590,6 +1587,7 @@
     "balance": "Solde",
     "category": "Catégorie",
     "claimed": "Réclamé",
+    "counterparty": "Contrepartie",
     "datetime": "Date/Heure",
     "deposits": "Dépôts",
     "description": "Description",
@@ -1604,6 +1602,7 @@
     "no_premium": "Aucun abonnement premium détecté. ",
     "notes": "Notes",
     "of": "de",
+    "optional": "Facultatif",
     "price": "Prix",
     "price_in_symbol": "Prix en {symbol}",
     "priority": "Priorité",
@@ -1620,7 +1619,9 @@
     "validator_index": "Index de validateur",
     "value_in_symbol": "{symbol} Valeur",
     "visit_website": "Pour obtenir un abonnement premium, veuillez visiter notre {0}.",
-    "website": "site web"
+    "website": "site web",
+    "unknown": "Inconnu",
+    "all": "Tous"
   },
   "compound_lending": {
     "header": "Prêt Compound ({asset})",
@@ -1631,12 +1632,17 @@
       "local": "Local",
       "remote": "Distant"
     },
-    "all_buttons_description": "Résoudre pour tous les conflits",
+    "action_hint": {
+      "top": "Des changements locaux ont été détectés. Deux options s'offrent à vous :",
+      "bottom": "Vous avez également une autre option supplémentaire, vous pouvez gérer les conflits individuellement."
+    },
     "hint": "{conflicts} les entrées d'actifs ne peuvent pas être mises à jour automatiquement. {remaining} les entrées restantes nécessitent une entrée utilisateur.",
     "resolve_all_hint": "Tous les conflits seront résolus en utilisant les données {source}.",
-    "keep_local": "Garder local",
-    "keep_remote": "Garder distant",
-    "subtitle": "Des modifications ont été détectées dans les actifs locaux. Sélectionnez si vous souhaitez conserver la version locale ou l'écraser avec la version distante.",
+    "keep_local": "Tout garder au niveau local",
+    "keep_remote": "Conserver toutes les données à distance",
+    "keep_local_tooltip": "Aucun actif affecté ne sera mis à jour. Des mises à jour manuelles peuvent être nécessaires.",
+    "keep_remote_tooltip": "Mettre à jour tous les actifs. Aucune autre action n'est nécessaire.",
+    "subtitle": "{conflicts} les entrées d'actifs ne peuvent pas être mises à jour automatiquement. {remaining} les entrées restantes nécessitent une entrée utilisateur.",
     "table": {
       "headers": {
         "keep": "Garder",
@@ -1644,7 +1650,8 @@
         "remote": "Distant"
       }
     },
-    "title": "Conflits détectés"
+    "title": "Conflits détectés",
+    "manage": "Gérer les conflits"
   },
   "connection_failure": {
     "default": "Connecter à défaut",
@@ -1819,7 +1826,6 @@
             },
             "nft": "NFT",
             "nft_hint": "Format accepté: \"_nft_{'ETH address'}_{'collection number'}\"",
-            "optional": "Facultatif",
             "preview": {
               "from": "De",
               "title": "Cette valeur de localisation sera mise à jour",
@@ -1887,13 +1893,13 @@
         "message_all": "Es-tu sûr de vouloir purger les données en cache pour tous les {source} ?",
         "title": "Confirmer la purge des données en cache"
       },
-      "evm_transaction_purge_confirm": {
-        "message": "Es-tu sûr de vouloir purger les données en cache des transactions EVM ? Cette action supprimera les transactions et les reçus, et prendra beaucoup de temps pour tout re requêter."
-      },
       "error": "Échec de la purge des données en cache pour {source} : {message}",
       "subtitle": "Vous permet de purger les données en cache par rotki",
       "success": "Les données ont été supprimées avec succès",
-      "title": "Purger les données"
+      "title": "Purger les données",
+      "transaction_purge_confirm": {
+        "message": "Êtes-vous sûr de vouloir purger ces données de transactions ? Cette action supprimera les transactions et les reçus, et il faudra beaucoup de temps pour tout réinterroger."
+      }
     },
     "purge_images_cache": {
       "confirm": {
@@ -2549,13 +2555,15 @@
       },
       "label": {
         "include_nfts": "Inclure les NFT dans les graphiques et la valeur nette totale",
-        "include_nfts_hint": "Par défaut, les graphiques et le tableau de bord incluent la valeur de tous les NFT",
+        "include_nfts_hint": "Par défaut, les graphiques et le tableau de bord incluent la valeur de tous les NFT.",
         "render_setting": {
           "allow_all": "Autoriser toutes les images",
-          "only_allow_whitelisted": "Autoriser uniquement les images des domaines de la liste blanche"
+          "only_allow_whitelisted": "N'autoriser que les images des domaines figurant sur la liste blanche"
         },
-        "whitelisted_domains": "Domaines de la liste blanche",
-        "whitelisted_domains_hint": "Appuyez sur le bouton Enregistrer sur la droite pour enregistrer les modifications"
+        "whitelist_domains": "Domaines sur liste blanche",
+        "whitelisted_domains": "Domaines en liste blanche",
+        "whitelisted_domains_hint": "Saisissez un ou plusieurs domaines séparés par des virgules. Cliquez sur le bouton Enregistrer à droite pour enregistrer les modifications.",
+        "whitelisted_domain_entries": "aucune entrée | {count} entrée unique | {count} entrées uniques"
       },
       "subtitle": {
         "include_nfts": "Inclure les NFT dans les graphiques et les montants totaux",
@@ -2566,6 +2574,10 @@
       "update_whitelist_confirmation": {
         "message": "Êtes-vous sûr de vouloir autoriser les images pour les NFT à partir de ces domaines ? | Êtes-vous sûr de vouloir autoriser les images pour les NFT à partir du domaine : {domain} ?",
         "title": "Mettre à jour la liste blanche"
+      },
+      "messages": {
+        "error": "Erreur dans la définition des domaines autorisés pour le rendu d'image des NFTs",
+        "success": "Domaines autorisés pour le rendu d'images des NFTs sauvegardés avec succès"
       }
     },
     "rpc_node_setting": {
@@ -2765,8 +2777,9 @@
   },
   "import_data": {
     "binance": {
-      "line_one": "Importe : Dépôts, retraits, transactions, staking ETH, petits actifs d'échange BNB, récompenses de staking ETH, intérêts Launchpool, intérêts POS épargne, achat POS épargne, rachat POS épargne.",
-      "line_two": "En raison du format csv de Binance, il est possible que toutes les données ne soient pas importées. Dans ce cas, vous recevrez un avertissement.",
+      "line_one": "Les colonnes que nous traitons sont les suivantes : User_ID, UTC_Time, Account, Operation, Coin, Change et Remark.",
+      "line_two": "Vous pouvez obtenir le fichier CSV à partir de {link}.",
+      "line_three": "En raison du format CSV de Binance, il est possible que toutes les données ne soient pas importées. Dans ce cas, vous recevrez un avertissement.",
       "name": "Binance"
     },
     "bisq": {
@@ -3429,7 +3442,6 @@
   },
   "notification_sidebar": {
     "clear_tooltip": "Supprimer toutes les notifications",
-    "close_tooltip": "Fermer la zone de notification",
     "confirmation": {
       "message": "Cette action va supprimer toutes les notifications actives. Souhaitez-vous continuer ?",
       "title": "Supprimer les notifications actives"
@@ -3897,6 +3909,10 @@
       "label": "Échange centralisé à effacer",
       "hint": "Laissez ce champ vide pour supprimer les données de tous les échanges centralisés"
     },
+    "chain_to_clear": {
+      "label": "Chaîne à effacer",
+      "hint": "Laissez ce champ vide pour supprimer les données de toutes les chaînes"
+    },
     "decentralized_exchanges": "Échanges décentralisés",
     "decentralized_exchange_to_clear": {
       "label": "Échange décentralisé à effacer",
@@ -3907,13 +3923,9 @@
       "label": "Module DeFi à effacer",
       "hint": "Laissez ce champ vide pour supprimer les données de tous les modules DeFi"
     },
-    "evm_transactions": "Transactions EVM",
-    "evm_chain_to_clear": {
-      "label": "Chaîne EVM à effacer",
-      "hint": "Laissez ce champ vide pour supprimer les données de toutes les chaînes"
-    },
     "label": "Sélectionner une source de données",
-    "tooltip": "Supprimer les données en cache de la source sélectionnée"
+    "tooltip": "Supprimer les données en cache de la source sélectionnée",
+    "transactions": "Transactions"
   },
   "queried_address_dialog": {
     "add": "Ajouter une adresse",
@@ -4119,10 +4131,19 @@
       "add_event": "Ajouter un nouvel événement",
       "add_event_here": "Ajouter un nouvel événement ici",
       "redecode_events": "Recoder les événements",
-      "reset_customized_events": "Réinitialiser les événements personnalisés"
+      "reset_customized_events": "Réinitialiser les événements personnalisés",
+      "delete_transaction": "Supprimer une transaction et des événements"
     },
     "dialog": {
-      "add_tx": "Ajouter une transaction par hash de transaction"
+      "add_tx": "Ajouter une transaction par hash de transaction",
+      "delete": {
+        "message": "Êtes-vous sûr de vouloir supprimer cette transaction et ses événements? Vous devrez purger toutes les transactions ou ajouter par le hachage de la transaction pour les restaurer.",
+        "title": "Supprimer la transaction et les événements",
+        "error": {
+          "message": "Échec : {message}",
+          "title": "Supprimer la transaction EVM"
+        }
+      }
     },
     "events": {
       "actions": {
@@ -4187,14 +4208,12 @@
           }
         },
         "counterparty": {
-          "label": "Contrepartie",
           "validation": {
             "valid": "Le champ de contrepartie est invalide, remplissez-le avec des contreparties disponibles, ou une adresse valide"
           }
         },
         "datetime": {
-          "hint": "La date et l'heure où l'événement s'est produit",
-          "label": "Date & heure"
+          "hint": "La date et l'heure où l'événement s'est produit"
         },
         "depositor": {
           "label": "Adresse du dépositaire",
@@ -4329,16 +4348,23 @@
       "actions": {
         "redecode_missing_events": "Recoder les événements manquants"
       },
-      "confirmation": "Cette action recodera tous les événements sauf les personnalisés, et peut prendre beaucoup de temps en fonction du nombre d'événements à traiter. Êtes-vous sûr de vouloir continuer?",
+      "confirmation": "Cette action recodera tous les événements sauf les personnalisés, et peut prendre beaucoup de temps en fonction du nombre d'transactions à traiter. Êtes-vous sûr de vouloir continuer?",
       "decoded": {
-        "true": "Tous les événements ont été recodés.",
-        "false": "Certains événements nécessitent d'être recodés."
+        "true": "Tous les transactions ont été recodés.",
+        "false": "Certains transactions nécessitent d'être recodés."
       },
-      "events_processed": "{processed} / {total} événements traités",
+      "transactions_processed": "{processed} / {total} transactions traités",
       "progress": "Progression",
-      "redecode_all": "Recoder tous les événements EVM",
-      "title": "État du recodage des événements EVM",
-      "undecoded_events": "Événements non recodés"
+      "redecode_all": "Recoder tous les transactions EVM",
+      "title": "État du recodage des transactions EVM",
+      "undecoded_transactions": "Transactions non recodés",
+      "decoding": {
+        "processing": "Décodage de {count} transaction | Décodage de {count} de {total} transactions",
+        "pending": "{count} Transactions non décodé | {count} Transactions non décodés",
+        "done": "Transaction décodé {count} | Transactions décodés {count}",
+        "all": "Redécodage des transactions EVM",
+        "all_done": "Redécodage des transactions EVM terminé"
+      }
     },
     "filter": {
       "account": "Filtrer par compte",
@@ -4378,9 +4404,9 @@
       "date_range": "Requête {status} pour {address} entre {start} et {end}",
       "done_date_range": "Requête terminée pour toutes les transactions pour {address} entre {start} et {end}",
       "done_end_date": "Requête terminée pour toutes les transactions pour {address} jusqu'à {end}",
-      "done_group": "Requête terminée pour toutes les informations de transaction pour {length} adresse(s)",
+      "done_group": "Requête terminée pour toutes les informations de transaction pour {count} adresse | Requête terminée pour toutes les informations de transaction pour {count} adresses",
       "end_date": "Requête {status} pour {address} jusqu'à {end}",
-      "group": "Requête d'informations de transaction EVM pour {length} adresse(s)",
+      "group": "Requête d'informations de transaction EVM pour {count} adresse | Requête d'informations de transaction EVM pour {count} adresses",
       "latest_period_date_range": "Période de requête réussie la plus récente est entre {start} et {end}",
       "latest_period_end_date": "Période de requête réussie la plus récente est jusqu'à {end}",
       "statuses": {
@@ -4388,18 +4414,23 @@
         "querying_internal_transactions": "transactions internes EVM",
         "querying_transactions": "transactions EVM"
       },
-      "title": "Statut de la requête de transaction EVM"
+      "title": "Statut de la requête de transactions EVM"
     },
     "query_status_events": {
       "date_range": "Requête d'événements pour {name} entre {start} et {end}",
       "done_date_range": "Requête terminée pour tous les événements pour {name} entre {start} et {end}",
       "done_end_date": "Requête terminée pour tous les événements pour {name} jusqu'à {end}",
-      "done_group": "Requête terminée pour tous les événements pour {length} emplacement(s)",
+      "done_group": "Requête terminée pour tous les événements pour {count} emplacement | Requête terminée pour tous les événements pour {count} emplacements",
       "end_date": "Requête d'événements pour {name} jusqu'à {end}",
-      "group": "Requête d'événements pour {length} emplacement(s)",
+      "group": "Requête d'événements pour {count} emplacement | Requête d'événements pour {count} emplacements",
       "latest_period_date_range": "Période de requête réussie la plus récente est entre {start} et {end}",
       "latest_period_end_date": "Période de requête réussie la plus récente est jusqu'à {end}",
       "title": "Statut de la requête d'historique des événements"
+    },
+    "query_all": {
+      "done_group": "Requête terminée sur tous les événements et toutes les transactions",
+      "group": "Recherche d'événements et de transactions",
+      "modal_title": "Statut de la requête"
     },
     "refresh_tooltip": "Récupérer les événements les plus récents",
     "title": "Historique des événements",

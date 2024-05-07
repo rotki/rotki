@@ -19,17 +19,15 @@ const { queryingLength, length, isAllFinished }
 </script>
 
 <template>
-  <QueryStatusCurrent :finished="isAllFinished">
+  <HistoryQueryStatusCurrent :finished="isAllFinished">
     <template #finished>
-      {{ t('transactions.query_status.done_group', { length }) }}
+      {{ t('transactions.query_status.done_group', length) }}
     </template>
 
     <template #running>
       {{
-        t('transactions.query_status.group', {
-          length: queryingLength,
-        })
+        t('transactions.query_status.group', queryingLength)
       }}
     </template>
-  </QueryStatusCurrent>
+  </HistoryQueryStatusCurrent>
 </template>

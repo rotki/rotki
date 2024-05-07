@@ -2,7 +2,7 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { SocketMessageType } from '@/types/websocket-messages';
 import type { EvmChainInfo } from '@/types/api/chains';
 
-vi.mock('@/store/notifications', async () => ({
+vi.mock('@/store/notifications', () => ({
   useNotificationsStore: vi.fn().mockReturnValue({
     notify: vi.fn(),
   }),
@@ -22,12 +22,24 @@ vi.mock('@/composables/info/chains', () => ({
         id: Blockchain.OPTIMISM,
         type: 'evm',
         name: 'Optimism',
+        image: '',
+        nativeToken: 'ETH',
+      } satisfies EvmChainInfo,
+    ]),
+    txChains: computed(() => [
+      {
+        evmChainName: 'optimism',
+        id: Blockchain.OPTIMISM,
+        type: 'evm',
+        name: 'Optimism',
+        image: '',
         nativeToken: 'ETH',
       } satisfies EvmChainInfo,
     ]),
     getChain: () => Blockchain.OPTIMISM,
     getChainName: () => Blockchain.OPTIMISM,
     getNativeAsset: (chain: Blockchain) => chain,
+    isEvm: (_chain: Blockchain) => true,
   }),
 }));
 
@@ -47,7 +59,7 @@ describe('composables::message-handling', () => {
         type: SocketMessageType.EVM_ACCOUNTS_DETECTION,
         data: [
           {
-            evm_chain: 'optimism',
+            chain: 'optimism',
             address: '0xdead',
           },
         ],

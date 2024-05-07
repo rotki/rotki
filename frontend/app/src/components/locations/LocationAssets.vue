@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { TaskType } from '@/types/task-type';
 import type { AssetBalanceWithPrice } from '@rotki/common';
-import type { ComputedRef } from 'vue';
 
 const props = defineProps<{
   identifier: string;
@@ -33,6 +32,7 @@ const loadingData = computed<boolean>(
       :loading="loadingData"
       :balances="locationBreakdown"
       hide-breakdown
+      sticky-header
     />
   </RuiCard>
 </template>

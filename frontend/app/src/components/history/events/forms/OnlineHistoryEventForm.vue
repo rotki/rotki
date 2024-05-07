@@ -64,25 +64,25 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.event_identifier.validation.non_empty',
-      ).toString(),
+      ),
       required,
     ),
   },
   location: {
     required: helpers.withMessage(
-      t('transactions.events.form.location.validation.non_empty').toString(),
+      t('transactions.events.form.location.validation.non_empty'),
       required,
     ),
   },
   asset: {
     required: helpers.withMessage(
-      t('transactions.events.form.asset.validation.non_empty').toString(),
+      t('transactions.events.form.asset.validation.non_empty'),
       required,
     ),
   },
   amount: {
     required: helpers.withMessage(
-      t('transactions.events.form.amount.validation.non_empty').toString(),
+      t('transactions.events.form.amount.validation.non_empty'),
       required,
     ),
   },
@@ -90,7 +90,7 @@ const rules = {
     required: helpers.withMessage(
       t('transactions.events.form.fiat_value.validation.non_empty', {
         currency: get(currencySymbol),
-      }).toString(),
+      }),
       required,
     ),
   },
@@ -98,13 +98,13 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.sequence_index.validation.non_empty',
-      ).toString(),
+      ),
       required,
     ),
   },
   eventType: {
     required: helpers.withMessage(
-      t('transactions.events.form.event_type.validation.non_empty').toString(),
+      t('transactions.events.form.event_type.validation.non_empty'),
       required,
     ),
   },
@@ -112,14 +112,16 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.event_subtype.validation.non_empty',
-      ).toString(),
+      ),
       required,
     ),
   },
 };
 
-const { setValidation, setSubmitFunc, saveHistoryEventHandler }
-  = useHistoryEventsForm();
+const numericAmount = bigNumberifyFromRef(amount);
+const numericUsdValue = bigNumberifyFromRef(usdValue);
+
+const { setValidation, setSubmitFunc, saveHistoryEventHandler } = useHistoryEventsForm();
 
 const v$ = setValidation(
   rules,
@@ -166,7 +168,7 @@ function reset() {
   get(assetPriceForm)?.reset();
 }
 
-async function applyEditableData(entry: OnlineHistoryEvent) {
+function applyEditableData(entry: OnlineHistoryEvent) {
   set(sequenceIndex, entry.sequenceIndex?.toString() ?? '');
   set(eventIdentifier, entry.eventIdentifier);
   set(
@@ -187,7 +189,7 @@ async function applyEditableData(entry: OnlineHistoryEvent) {
   set(notes, entry.notes ?? '');
 }
 
-async function applyGroupHeaderData(entry: OnlineHistoryEvent) {
+function applyGroupHeaderData(entry: OnlineHistoryEvent) {
   set(sequenceIndex, get(nextSequence) || '0');
   set(location, entry.location || get(lastLocation));
   set(locationLabel, entry.locationLabel ?? '');
@@ -244,9 +246,6 @@ async function save(): Promise<boolean> {
 
 setSubmitFunc(save);
 
-const numericAmount = bigNumberifyFromRef(amount);
-const numericUsdValue = bigNumberifyFromRef(usdValue);
-
 watch(location, (location: string) => {
   if (location)
     set(lastLocation, location);
@@ -284,7 +283,7 @@ const locationLabelSuggestions = computed(() =>
     <div class="grid md:grid-cols-2 gap-4">
       <DateTimePicker
         v-model="datetime"
-        :label="t('transactions.events.form.datetime.label')"
+        :label="t('common.datetime')"
         persistent-hint
         limit-now
         milliseconds

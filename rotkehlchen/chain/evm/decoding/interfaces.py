@@ -1,10 +1,12 @@
 import logging
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any, Final, Literal
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
+from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.chain.evm.constants import MERKLE_CLAIM
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -12,11 +14,12 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address
+from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
@@ -53,7 +56,7 @@ CACHE_QUERY_METHOD_TYPE = (
 )
 
 
-class DecoderInterface(metaclass=ABCMeta):
+class DecoderInterface(ABC):
 
     def __init__(
             self,
@@ -150,7 +153,80 @@ VOTE_CAST_ABI: Final = '{"anonymous":false,"inputs":[{"indexed":true,"internalTy
 VOTE_CAST_WITH_PARAMS_ABI: Final = '{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"voter","type":"address"},{"indexed":false,"internalType":"uint256","name":"proposalId","type":"uint256"},{"indexed":false,"internalType":"uint8","name":"support","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"weight","type":"uint256"},{"indexed":false,"internalType":"string","name":"reason","type":"string"},{"indexed":false,"internalType":"bytes","name":"params","type":"bytes"}],"name":"VoteCastWithParams","type":"event"}'  # noqa: E501
 
 
-class GovernableDecoderInterface(DecoderInterface, metaclass=ABCMeta):
+class MerkleClaimDecoderInterface(DecoderInterface, ABC):
+    """Decoders of protocols containing a merkle airdrop claim"""
+
+    def _maybe_enrich_claim_transfer(
+            self,
+            context: DecoderContext,
+            counterparty: str,
+            token_id: str,
+            notes_suffix: str,
+            claiming_address: ChecksumEvmAddress,
+            claimed_amount: FVal,
+    ) -> DecodingOutput:
+        for event in context.decoded_events:
+            if (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.location_label == claiming_address and
+                event.asset.identifier == token_id and
+                event.balance.amount == claimed_amount
+            ):
+                event.event_type = HistoryEventType.RECEIVE
+                event.event_subtype = HistoryEventSubType.AIRDROP
+                event.counterparty = counterparty
+                event.notes = f'Claim {claimed_amount} {notes_suffix}'
+                event.address = context.tx_log.address
+                break
+        else:
+            log.error(f'Could not find transfer event for {counterparty} airdrop claim {context.transaction.tx_hash.hex()}')  # noqa: E501
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def _decode_indexed_merkle_claim(
+            self,
+            context: DecoderContext,
+            counterparty: str,
+            token_id: str,
+            token_decimals: int,
+            notes_suffix: str,
+    ) -> DecodingOutput:
+        """This decodes all merkledrop claims but with indexed topic arguments"""
+        if context.tx_log.topics[0] != MERKLE_CLAIM:
+            return DEFAULT_DECODING_OUTPUT
+
+        if not self.base.is_tracked(claiming_address := hex_or_bytes_to_address(context.tx_log.topics[2])):  # noqa: E501
+            return DEFAULT_DECODING_OUTPUT
+
+        claimed_amount = token_normalized_value_decimals(
+            token_amount=hex_or_bytes_to_int(context.tx_log.topics[3]),
+            token_decimals=token_decimals,
+        )
+        return self._maybe_enrich_claim_transfer(context, counterparty, token_id, notes_suffix, claiming_address, claimed_amount)  # noqa: E501
+
+    def _decode_merkle_claim(
+            self,
+            context: DecoderContext,
+            counterparty: str,
+            token_id: str,
+            token_decimals: int,
+            notes_suffix: str,
+    ) -> DecodingOutput:
+        """This decodes all merkledrop claims that fit the same event log format"""
+        if context.tx_log.topics[0] != MERKLE_CLAIM:
+            return DEFAULT_DECODING_OUTPUT
+
+        if not self.base.is_tracked(claiming_address := hex_or_bytes_to_address(context.tx_log.data[32:64])):  # noqa: E501
+            return DEFAULT_DECODING_OUTPUT
+
+        claimed_amount = token_normalized_value_decimals(
+            token_amount=hex_or_bytes_to_int(context.tx_log.data[64:96]),
+            token_decimals=token_decimals,
+        )
+        return self._maybe_enrich_claim_transfer(context, counterparty, token_id, notes_suffix, claiming_address, claimed_amount)  # noqa: E501
+
+
+class GovernableDecoderInterface(DecoderInterface, ABC):
     """Decoders of protocols that have voting in Governance
 
     Inheriting decoder classes should add the _decode_vote_cast() method
@@ -214,7 +290,7 @@ class GovernableDecoderInterface(DecoderInterface, metaclass=ABCMeta):
         return DecodingOutput(event=event)
 
 
-class ReloadableDecoderMixin(metaclass=ABCMeta):
+class ReloadableDecoderMixin(ABC):
     """Used by decoders of protocols that use data that can be reloaded from the db or from a
     remote data source, to the decoder's memory."""
 
@@ -224,7 +300,7 @@ class ReloadableDecoderMixin(metaclass=ABCMeta):
         Returns only new mappings of addresses to decode functions"""
 
 
-class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, metaclass=ABCMeta):
+class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, ABC):
     """Used by decoders of protocols that have data stored in the globaldb cache
     tables. It can reload them to the decoder's memory.
     """
@@ -288,7 +364,7 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, metaclass=ABCMeta):
         return new_decoding_mapping
 
 
-class ReloadablePoolsAndGaugesDecoderMixin(ReloadableCacheDecoderMixin, metaclass=ABCMeta):
+class ReloadablePoolsAndGaugesDecoderMixin(ReloadableCacheDecoderMixin, ABC):
     """Used by decoders of protocols that have pools and gauges stored in the globaldb cache
     tables. It can reload them to the decoder's memory.
     """

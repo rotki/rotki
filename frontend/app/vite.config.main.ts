@@ -17,7 +17,7 @@ function binaryDependencyPlugin(): Plugin {
       outDir = config.build.outDir;
       rootDir = config.root;
     },
-    async writeBundle() {
+    writeBundle() {
       if (platform() !== 'win32') {
         console.log('ps-list vendor skipped');
         return;

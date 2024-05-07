@@ -4,7 +4,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
-from rotkehlchen.assets.converters import UNSUPPORTED_BINANCE_ASSETS, asset_from_binance
+from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants.assets import A_BNB, A_BTC
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.binance import BINANCEUS_BASE_URL, Binance
@@ -26,7 +26,7 @@ def test_name():
     assert exchange.name == 'binanceus1'
 
 
-def test_binance_assets_are_known(inquirer):  # pylint: disable=unused-argument
+def test_binance_assets_are_known(inquirer, globaldb):  # pylint: disable=unused-argument
     exchange_data = requests.get('https://api.binance.us/api/v3/exchangeInfo').json()
     binance_assets = set()
     for pair_symbol in exchange_data['symbols']:
@@ -38,7 +38,7 @@ def test_binance_assets_are_known(inquirer):  # pylint: disable=unused-argument
         try:
             _ = asset_from_binance(binance_asset)
         except UnsupportedAsset:
-            assert binance_asset in UNSUPPORTED_BINANCE_ASSETS
+            assert globaldb.is_asset_symbol_unsupported(Location.BINANCE, binance_asset)
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
                 f'Found unknown asset {e.identifier} in binanceus. '
@@ -54,15 +54,15 @@ def test_binanceus_trades_location(function_scope_binance):
     """
     binance = function_scope_binance
 
-    def mock_my_trades(url, **kwargs):  # pylint: disable=unused-argument
-        if 'symbol=BNBBTC' in url:
+    def mock_my_trades(url, params, **kwargs):  # pylint: disable=unused-argument
+        if params.get('symbol') == 'BNBBTC':
             text = BINANCE_MYTRADES_RESPONSE
         else:
             text = '[]'
 
         return MockResponse(200, text)
 
-    with patch.object(binance.session, 'get', side_effect=mock_my_trades):
+    with patch.object(binance.session, 'request', side_effect=mock_my_trades):
         trades = binance.query_trade_history(start_ts=0, end_ts=1564301134, only_cache=False)
 
     expected_trade = Trade(
@@ -100,7 +100,7 @@ def test_binanceus_deposits_withdrawals_location(function_scope_binance):
 
         return MockResponse(200, response_str)
 
-    with patch.object(binance.session, 'get', side_effect=mock_get_deposit_withdrawal):
+    with patch.object(binance.session, 'request', side_effect=mock_get_deposit_withdrawal):
         movements = binance.query_online_deposits_withdrawals(
             start_ts=Timestamp(start_ts),
             end_ts=Timestamp(end_ts),

@@ -58,14 +58,15 @@ const sortProperties = [
       </span>
     </RuiTooltip>
     <div class="flex-1">
-      <VSelect
+      <RuiMenuSelect
         v-model="sortByModel"
-        class="!rounded-l-none border-l-0"
-        hide-details
-        single-line
+        :options="sortProperties"
+        label-class="!rounded-l-none !border-l-0"
+        key-attr="value"
+        text-attr="text"
+        full-width
+        variant="outlined"
         dense
-        outlined
-        :items="sortProperties"
       />
     </div>
   </div>

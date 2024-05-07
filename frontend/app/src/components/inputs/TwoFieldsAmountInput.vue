@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import AmountInput from '@/components/inputs/AmountInput.vue';
-import type { Ref } from 'vue';
 
 const props = withDefaults(
   defineProps<{
@@ -28,6 +27,9 @@ const emit = defineEmits<{
 
 const { errorMessages } = toRefs(props);
 
+const primaryInput: Ref<InstanceType<typeof AmountInput> | null> = ref(null);
+const secondaryInput: Ref<InstanceType<typeof AmountInput> | null> = ref(null);
+
 const reversed: Ref<boolean> = ref(false);
 
 const rootAttrs = useAttrs();
@@ -44,9 +46,6 @@ function reverse() {
       get(secondaryInput)?.focus();
   });
 }
-
-const primaryInput: Ref<InstanceType<typeof AmountInput> | null> = ref(null);
-const secondaryInput: Ref<InstanceType<typeof AmountInput> | null> = ref(null);
 
 function updatePrimaryValue(value: string) {
   emit('update:primary-value', value);

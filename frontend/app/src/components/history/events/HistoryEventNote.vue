@@ -2,7 +2,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type NoteFormat, NoteType } from '@/composables/history/events/notes';
 import type { BigNumber } from '@rotki/common';
-import type { ComputedRef } from 'vue';
 import type { ExplorerUrls } from '@/types/asset/asset-urls';
 
 defineOptions({
@@ -59,9 +58,8 @@ function isLinkType(t: any): t is keyof ExplorerUrls {
         :key="index"
         class="inline-flex"
         :class="{
-          [css.address__content]: true,
-          'pl-2': !note.showIcon,
           [css.address]: true,
+          'pl-2': !note.showIcon,
         }"
         :text="note.address"
         :type="note.type"
@@ -80,7 +78,7 @@ function isLinkType(t: any): t is keyof ExplorerUrls {
         v-else-if="note.type === NoteType.URL && note.url"
         :key="`${index}-link`"
         :url="note.url"
-        class="text-wrap"
+        class="text-wrap hover:underline"
         :text="note.word"
         color="primary"
         custom
@@ -95,18 +93,12 @@ function isLinkType(t: any): t is keyof ExplorerUrls {
 
 <style lang="scss" module>
 .address {
-  @apply align-middle;
-
-  &__content {
-    @apply bg-rui-grey-300 pr-1 rounded-full m-0.5;
-  }
+  @apply align-middle bg-rui-grey-300 pr-1 rounded-full m-0.5;
 }
 
 :global(.dark) {
   .address {
-    &__content {
-      @apply bg-rui-grey-800;
-    }
+    @apply bg-rui-grey-800;
   }
 }
 </style>

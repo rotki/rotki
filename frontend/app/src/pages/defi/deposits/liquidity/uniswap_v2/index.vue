@@ -4,14 +4,13 @@ import { LpType } from '@rotki/common/lib/defi';
 import { UniswapDetails } from '@/premium/premium';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
-import type { ComputedRef } from 'vue';
+import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { XswapBalance } from '@rotki/common/lib/defi/xswap';
-import type { GeneralAccount } from '@rotki/common/lib/account';
 
 const modules = [Module.UNISWAP];
 const chains = [Blockchain.ETH];
 
-const selectedAccounts = ref<GeneralAccount[]>([]);
+const selectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
 const selectedPools = ref<string[]>([]);
 
 const store = useUniswapStore();
@@ -23,8 +22,7 @@ const {
   uniswapPoolProfit,
 } = store;
 
-const { uniswapV2Addresses: addresses, uniswapV2PoolAssets: poolAssets }
-  = storeToRefs(store);
+const { uniswapV2Addresses: addresses, uniswapV2PoolAssets: poolAssets } = storeToRefs(store);
 
 const { isModuleEnabled } = useModules();
 const { isLoading, shouldShowLoadingScreen } = useStatusStore();
@@ -37,7 +35,7 @@ const primaryRefreshing = isLoading(Section.DEFI_UNISWAP_V2_BALANCES);
 const secondaryRefreshing = isLoading(Section.DEFI_UNISWAP_EVENTS);
 const premium = usePremium();
 
-const selectedAddresses = useArrayMap(selectedAccounts, a => a.address);
+const selectedAddresses = useArrayMap(selectedAccounts, account => getAccountAddress(account));
 
 const balances: ComputedRef<XswapBalance[]> = computed(() => {
   const addresses = get(selectedAddresses);

@@ -37,7 +37,7 @@ def mock_github_assets_response(url, timeout):  # pylint: disable=unused-argumen
     if 'collections' in url:
         return MockResponse(200, VALID_ASSET_COLLECTIONS)
     if 'info' in url:
-        local_schema = GlobalDBHandler().get_schema_version()
+        local_schema = GlobalDBHandler.get_schema_version()
         data = json.dumps(
             {
                 'updates': {
@@ -454,7 +454,7 @@ def test_asset_update(assets_updater: AssetsUpdater):
     # consume warnings from other tests
     assets_updater.msg_aggregator.consume_warnings()
     # set a high version of the globaldb to avoid conflicts with future changes
-    GlobalDBHandler().add_setting_value(ASSETS_VERSION_KEY, 997)
+    GlobalDBHandler.add_setting_value(ASSETS_VERSION_KEY, 997)
     with patch('requests.get', wraps=mock_github_assets_response):
         assets_updater.perform_update(up_to_version=999, conflicts={})
 

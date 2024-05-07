@@ -35,9 +35,6 @@ class ValidatorID:
         return isinstance(other, ValidatorID) and self.public_key == other.public_key
 
 
-Eth2ValidatorDBTuple = tuple[int, str, str]
-
-
 ValidatorDailyStatsDBTuple = tuple[
     int,  # validator index
     int,  # timestamp

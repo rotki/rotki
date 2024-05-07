@@ -6,27 +6,25 @@ import type { TaskMeta } from '@/types/task';
 
 export function useSessionPurge() {
   const { resetState } = useDefiStore();
-
   const { refreshGeneralCacheTask } = useSessionApi();
+  const { resetStatus } = useStatusStore();
 
-  const purgeExchange = async (): Promise<void> => {
-    const { resetStatus } = useStatusUpdater(Section.TRADES);
-    resetStatus();
+  const purgeExchange = (): void => {
+    resetStatus(Section.TRADES);
     resetStatus(Section.ASSET_MOVEMENT);
   };
 
-  const purgeTransactions = async (): Promise<void> => {
-    const { resetStatus } = useStatusUpdater(Section.HISTORY_EVENT);
-    resetStatus();
+  const purgeTransactions = (): void => {
+    resetStatus(Section.HISTORY_EVENT);
   };
 
-  const purgeCache = async (
+  const purgeCache = (
     purgeable: Purgeable,
     value: string,
-  ): Promise<void> => {
+  ): void => {
     if (purgeable === Purgeable.CENTRALIZED_EXCHANGES) {
       if (!value)
-        await purgeExchange();
+        purgeExchange();
     }
     else if (purgeable === Purgeable.DECENTRALIZED_EXCHANGES) {
       resetState((value as Module) || Purgeable.DECENTRALIZED_EXCHANGES);
@@ -34,8 +32,8 @@ export function useSessionPurge() {
     else if (purgeable === Purgeable.DEFI_MODULES) {
       resetState((value as Module) || Purgeable.DEFI_MODULES);
     }
-    else if (purgeable === Purgeable.EVM_TRANSACTIONS) {
-      await purgeTransactions();
+    else if (purgeable === Purgeable.TRANSACTIONS) {
+      purgeTransactions();
     }
   };
 

@@ -53,6 +53,7 @@ const staking: ComputedRef<StakingInfo[]> = computed(() => [
 ]);
 
 const router = useRouter();
+const [DefineIcon, ReuseIcon] = createReusableTemplate<{ image: string }>();
 
 const lastLocation = useLocalStorage('rotki.staking.last_location', '');
 
@@ -77,39 +78,40 @@ onBeforeMount(async () => {
 <template>
   <div class="container">
     <RuiCard>
-      <VSelect
-        :value="location"
-        outlined
-        hide-details
-        :items="staking"
-        :label="t('staking_page.dropdown_label')"
-        item-value="id"
-        @change="updateLocation($event)"
-      >
-        <template
-          v-for="slot in ['item', 'selection']"
-          #[slot]="data"
+      <DefineIcon #default="{ image }">
+        <AdaptiveWrapper
+          width="1.5rem"
+          height="1.5rem"
         >
-          <div
-            v-if="data.item"
-            :key="slot"
-            class="flex items-center gap-2"
-          >
-            <AdaptiveWrapper
-              width="24"
-              height="24"
-            >
-              <AppImage
-                width="24px"
-                contain
-                max-height="24px"
-                :src="data.item.image"
-              />
-            </AdaptiveWrapper>
-            {{ data.item.name }}
+          <AppImage
+            contain
+            width="1.5rem"
+            max-height="1.5rem"
+            :src="image"
+          />
+        </AdaptiveWrapper>
+      </DefineIcon>
+      <RuiMenuSelect
+        :value="location"
+        :options="staking"
+        :label="t('staking_page.dropdown_label')"
+        key-attr="id"
+        text-attr="name"
+        full-width
+        float-label
+        variant="outlined"
+        @input="updateLocation($event)"
+      >
+        <template #activator.text="{ value: { image, name } }">
+          <div class="flex items-center gap-3">
+            <ReuseIcon v-bind="{ image }" />
+            {{ name }}
           </div>
         </template>
-      </VSelect>
+        <template #item.prepend="{ option: { image } }">
+          <ReuseIcon v-bind="{ image }" />
+        </template>
+      </RuiMenuSelect>
     </RuiCard>
 
     <div
@@ -120,7 +122,7 @@ onBeforeMount(async () => {
     </div>
     <div v-else>
       <div
-        class="flex flex-row items-center justify-center justify-md-end mt-2 md:mr-6 text-rui-text-secondary gap-2"
+        class="flex items-center justify-center md:justify-end mt-2 md:mr-6 text-rui-text-secondary gap-2"
       >
         <RuiIcon
           class="shrink-0"

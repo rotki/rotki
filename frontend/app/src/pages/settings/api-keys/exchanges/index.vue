@@ -241,11 +241,11 @@ function showRemoveConfirmation(item: Exchange) {
           <LocationDisplay :identifier="row.location" />
         </template>
         <template #item.syncEnabled="{ row }">
-          <VSwitch
-            :input-value="!isNonSyncExchange(row)"
+          <RuiSwitch
+            color="primary"
+            :value="!isNonSyncExchange(row)"
             hide-details
-            class="mt-0"
-            @change="toggleSync(row)"
+            @input="toggleSync(row)"
           />
         </template>
         <template #item.actions="{ row }">

@@ -235,10 +235,8 @@ class Bitcoinde(ExchangeInterface):
                 raise RemoteError(json_ret['errors'])
 
             raise RemoteError(
-                'Bitcoin.de api request for {} failed with HTTP status code {}'.format(
-                    response.url,
-                    response.status_code,
-                ),
+                f'Bitcoin.de api request for {response.url} failed '
+                f'with HTTP status code {response.status_code}',
             )
 
         if not isinstance(json_ret, dict):
@@ -280,7 +278,7 @@ class Bitcoinde(ExchangeInterface):
                     f'report this error.',
                 )
             try:
-                usd_price = Inquirer().find_usd_price(asset=asset)
+                usd_price = Inquirer.find_usd_price(asset=asset)
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing Bitcoin.de balance entry due to inability to '

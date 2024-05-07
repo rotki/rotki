@@ -34,7 +34,7 @@ from rotkehlchen.tests.utils.database import (
     mock_dbhandler_sync_globaldb_assets,
     mock_dbhandler_update_owned_assets,
 )
-from rotkehlchen.types import Location, deserialize_evm_tx_hash
+from rotkehlchen.types import ChainID, Location, SupportedBlockchain, deserialize_evm_tx_hash
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hexbytes import HexBytes
 from rotkehlchen.utils.misc import ts_now
@@ -2237,6 +2237,125 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggr
     db.logout()
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
+    """Test upgrading the DB from version 41 to version 42"""
+    _use_prepared_db(user_data_dir, 'v41_rotkehlchen.db')
+    db_v41 = _init_db_with_target_version(
+        target_version=41,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+    with db_v41.conn.write_ctx() as cursor:
+        assert table_exists(cursor, 'zksynclite_tx_type') is False
+        assert table_exists(cursor, 'zksynclite_transactions') is False
+        assert table_exists(cursor, 'calendar') is False
+        assert table_exists(cursor, 'calendar_reminders') is False
+
+        # history events that need to be deleted because their transaction are not in the database
+        expected_events_ids = [(17987,), (17988,), (17989,)]
+        assert cursor.execute(
+            'SELECT identifier FROM history_events ORDER BY identifier',
+        ).fetchall() == expected_events_ids
+        assert cursor.execute(
+            'SELECT identifier FROM evm_events_info',
+        ).fetchall() == expected_events_ids
+        assert cursor.execute(
+            'SELECT parent_identifier FROM history_events_mappings',
+        ).fetchall() == expected_events_ids
+
+        assert cursor.execute('SELECT MAX(seq) FROM location').fetchone()[0] == 45
+        assert cursor.execute('SELECT COUNT(tx_hash) FROM balancer_events').fetchone()[0] == 2
+        assert cursor.execute('SELECT name from used_query_ranges').fetchall() == [
+            ('ETHinternaltxs_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('ETHtokentxs_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('ETHtxs_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('GNOSISinternaltxs_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('GNOSIStokentxs_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('GNOSIStxs_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('balancer_events_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('gnosisbridge_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('kraken_asset_movements_kraken',),
+            ('kraken_history_events_kraken',),
+            ('kraken_margins_kraken',),
+            ('kraken_trades_kraken',),
+            ('yearn_vaults_events_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('yearn_vaults_v2_events_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+        ]
+        assert cursor.execute(
+            'SELECT COUNT(*), version FROM yearn_vaults_events GROUP BY version',
+        ).fetchall() == [(2, 1), (3, 2)]
+        raw_list = cursor.execute(
+            'SELECT value FROM settings WHERE name=?', ('evmchains_to_skip_detection',),
+        ).fetchone()[0]
+        assert [
+            ChainID.deserialize_from_name(x) for x in json.loads(raw_list)
+        ] == [ChainID.POLYGON_POS, ChainID.GNOSIS]
+
+        # get settings and confirm manualcurrent is present before the upgrade
+        cursor.execute('SELECT value FROM settings WHERE name="current_price_oracles"')
+        oracles = json.loads(cursor.fetchone()[0])
+        assert 'manualcurrent' in oracles
+
+    # Execute upgrade
+    db = _init_db_with_target_version(
+        target_version=42,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+    assert messages_aggregator.consume_errors() == []
+    assert messages_aggregator.consume_warnings() == []
+
+    with db.conn.read_ctx() as cursor:
+        assert table_exists(cursor, 'zksynclite_tx_type') is True
+        assert table_exists(cursor, 'zksynclite_transactions') is True
+        assert table_exists(cursor, 'calendar') is True
+        assert table_exists(cursor, 'calendar_reminders') is True
+        assert table_exists(cursor, 'balancer_events') is False
+        assert table_exists(cursor, 'yearn_vaults_events') is False
+        assert cursor.execute('SELECT name from used_query_ranges').fetchall() == [
+            ('ETHinternaltxs_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('ETHtokentxs_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('ETHtxs_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('GNOSISinternaltxs_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('GNOSIStokentxs_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('GNOSIStxs_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('gnosisbridge_0x7716a99194d758c8537F056825b75Dd0C8FDD89f',),
+            ('kraken_asset_movements_kraken',),
+            ('kraken_history_events_kraken',),
+            ('kraken_margins_kraken',),
+            ('kraken_trades_kraken',),
+        ]
+        assert cursor.execute('SELECT * FROM zksynclite_tx_type').fetchall() == [
+            ('A', 1), ('B', 2), ('C', 3), ('D', 4), ('E', 5), ('F', 6), ('G', 7),
+        ]
+        for new_loc in (Location.SCROLL, Location.ZKSYNC_LITE):
+            assert cursor.execute(  # Check that new locations were added
+                'SELECT location FROM location WHERE seq=?',
+                (new_loc.value,),
+            ).fetchone()[0] == new_loc.serialize_for_db()
+        raw_list = cursor.execute(
+            'SELECT value FROM settings WHERE name=?', ('evmchains_to_skip_detection',),
+        ).fetchone()[0]
+        assert [
+            SupportedBlockchain.deserialize(x) for x in json.loads(raw_list)
+        ] == [SupportedBlockchain.POLYGON_POS, SupportedBlockchain.GNOSIS]
+
+        # get current oracles and check that manualcurrent was removed and all others remain.
+        settings = db.get_settings(cursor=cursor)
+        assert CurrentPriceOracle.MANUALCURRENT not in settings.current_price_oracles
+
+        # the evm events with the exception of 17987 don't have a transaction
+        # in the db, and should have been deleted
+        assert cursor.execute('SELECT identifier FROM history_events').fetchall() == [(17987,)]
+        assert cursor.execute('SELECT identifier FROM evm_events_info').fetchall() == [(17987,)]
+        assert cursor.execute(
+            'SELECT parent_identifier FROM history_events_mappings',
+        ).fetchall() == [(17987,)]
+
+
 def test_latest_upgrade_correctness(user_data_dir):
     """
     This is a test that we can only do for the last upgrade.
@@ -2247,10 +2366,10 @@ def test_latest_upgrade_correctness(user_data_dir):
     this is just to reminds us not to forget to add create table statements.
     """
     msg_aggregator = MessagesAggregator()
-    base_database = 'v40_rotkehlchen.db'
+    base_database = 'v41_rotkehlchen.db'
     _use_prepared_db(user_data_dir, base_database)
     last_db = _init_db_with_target_version(
-        target_version=40,
+        target_version=41,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
         resume_from_backup=False,
@@ -2265,7 +2384,7 @@ def test_latest_upgrade_correctness(user_data_dir):
 
     # Execute upgrade
     db = _init_db_with_target_version(
-        target_version=41,
+        target_version=42,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
         resume_from_backup=False,
@@ -2287,8 +2406,8 @@ def test_latest_upgrade_correctness(user_data_dir):
     result = cursor.execute('SELECT name FROM sqlite_master WHERE type="view"')
     views_after_creation = {x[0] for x in result}
 
-    assert cursor.execute('SELECT value FROM settings WHERE name="version"').fetchone()[0] == '41'
-    removed_tables = set()
+    assert cursor.execute('SELECT value FROM settings WHERE name="version"').fetchone()[0] == '42'
+    removed_tables = {'balancer_events', 'yearn_vaults_events'}
     removed_views = set()
     missing_tables = tables_before - tables_after_upgrade
     missing_views = views_before - views_after_upgrade
@@ -2297,7 +2416,13 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert tables_after_creation - tables_after_upgrade == set()
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {'key_value_cache'}
+    assert new_tables == {
+        'zksynclite_tx_type',
+        'zksynclite_transactions',
+        'zksynclite_swaps',
+        'calendar',
+        'calendar_reminders',
+    }
     new_views = views_after_upgrade - views_before
     assert new_views == set()
 

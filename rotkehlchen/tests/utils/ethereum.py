@@ -23,6 +23,8 @@ from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecod
 from rotkehlchen.chain.optimism.transactions import OptimismTransactions
 from rotkehlchen.chain.polygon_pos.decoding.decoder import PolygonPOSTransactionDecoder
 from rotkehlchen.chain.polygon_pos.transactions import PolygonPOSTransactions
+from rotkehlchen.chain.scroll.decoding.decoder import ScrollTransactionDecoder
+from rotkehlchen.chain.scroll.transactions import ScrollTransactions
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -115,16 +117,34 @@ INFURA_ETH_NODE = WeightedNode(
     weight=ONE,
 )
 
+
+ETHEREUM_WEB3_AND_ETHERSCAN_TEST_PARAMETERS = (
+    'ethereum_manager_connect_at_start',
+    [
+        (INFURA_ETH_NODE,),
+        (ETHEREUM_ETHERSCAN_NODE,),
+    ],
+)
+
+
 ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED = (
     'ethereum_manager_connect_at_start',
     [
-        (
-            PRUNED_AND_NOT_ARCHIVED_NODE,
-            INFURA_ETH_NODE,
-            ETHEREUM_ETHERSCAN_NODE,
-            ETHERSCAN_AND_INFURA_AND_ALCHEMY[1][2][0][0],
-        ),
+        (PRUNED_AND_NOT_ARCHIVED_NODE,),
+        (INFURA_ETH_NODE,),
+        (ETHEREUM_ETHERSCAN_NODE,),
+        (ETHERSCAN_AND_INFURA_AND_ALCHEMY[1][2][0][0],),
     ],
+)
+
+ETHEREUM_NODES_SET_WITH_PRUNED_AND_NOT_ARCHIVED = (
+    'ethereum_manager_connect_at_start',
+    [(
+        PRUNED_AND_NOT_ARCHIVED_NODE,
+        INFURA_ETH_NODE,
+        ETHEREUM_ETHERSCAN_NODE,
+        ETHERSCAN_AND_INFURA_AND_ALCHEMY[1][2][0][0],
+    )],
 )
 
 # Test with etherscan and infura
@@ -141,26 +161,13 @@ else:
     ETHEREUM_TEST_PARAMETERS = ETHERSCAN_AND_INFURA_PARAMS
 
 
-# Test with multiple node types and etherscan
-ETHEREUM_FULL_TEST_PARAMETERS: tuple[str, list[tuple]]
-if 'GITHUB_WORKFLOW' in os.environ:
-    # For Github actions don't use infura. It seems that connecting to it
-    # from Github actions hangs and times out
-    ETHEREUM_FULL_TEST_PARAMETERS = ('ethereum_manager_connect_at_start, call_order', [
-        # Query etherscan only
-        ((), (ETHEREUM_ETHERSCAN_NODE,)),
-    ])
-else:
-    # For Travis and local tests also use Infura, works fine
-    ETHEREUM_FULL_TEST_PARAMETERS = ETHERSCAN_AND_INFURA_AND_ALCHEMY
-
-
 def wait_until_all_nodes_connected(
         connect_at_start,
         evm_inquirer,
         timeout: int = NODE_CONNECTION_TIMEOUT,
 ):
     """Wait until all ethereum nodes are connected or until a timeout is hit"""
+    connect_at_start = [x for x in connect_at_start if x.node_info.name != evm_inquirer.etherscan_node_name]  # noqa: E501
     connected = [False] * len(connect_at_start)
     try:
         with gevent.Timeout(timeout):
@@ -362,6 +369,7 @@ def get_decoded_events_of_transaction(
         ChainID.ARBITRUM_ONE: (ArbitrumOneTransactions, ArbitrumOneTransactionDecoder),
         ChainID.BASE: (BaseTransactions, BaseTransactionDecoder),
         ChainID.GNOSIS: (GnosisTransactions, GnosisTransactionDecoder),
+        ChainID.SCROLL: (ScrollTransactions, ScrollTransactionDecoder),
     }
     mappings_result = chain_mappings.get(evm_inquirer.chain_id)
     if mappings_result is not None:

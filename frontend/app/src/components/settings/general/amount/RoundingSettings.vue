@@ -39,10 +39,10 @@ const { t } = useI18n();
         :value="amountRoundingMode"
         :label="t('rounding_settings.amount_rounding')"
         :hint="t('rounding_settings.amount_rounding_hint')"
-        @change="setAmountRoundingMode($event)"
+        @input="setAmountRoundingMode($event)"
       >
         <AmountDisplay
-          class="ml-2"
+          class="ml-2 mb-6"
           :value="numberExample"
         />
       </RoundingSelector>
@@ -50,10 +50,10 @@ const { t } = useI18n();
         :value="valueRoundingMode"
         :label="t('rounding_settings.value_rounding')"
         :hint="t('rounding_settings.value_rounding_hint')"
-        @change="setValueRoundingMode($event)"
+        @input="setValueRoundingMode($event)"
       >
         <AmountDisplay
-          class="ml-2"
+          class="ml-2 mb-6"
           :value="numberExample"
           fiat-currency="USD"
         />

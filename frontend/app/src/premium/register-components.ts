@@ -2,11 +2,8 @@
 
 import Vue from 'vue';
 import {
-  VBtn,
-  VBtnToggle,
   VColorPicker,
   VDialog,
-  VIcon,
 } from 'vuetify/lib/components';
 import {
   RuiAlert,
@@ -17,6 +14,8 @@ import {
   RuiDataTable,
   RuiDivider,
   RuiIcon,
+  RuiMenu,
+  RuiSlider,
   RuiTextField,
   RuiTooltip,
 } from '@rotki/ui-library-compat';
@@ -34,13 +33,11 @@ import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import GraphTooltipWrapper from '@/components/graphs/GraphTooltipWrapper.vue';
 import AssetDetails from '@/components/helper/AssetDetails.vue';
 import BlockchainAccountSelector from '@/components/helper/BlockchainAccountSelector.vue';
-import DataTable from '@/components/helper/DataTable.vue';
 import RangeSelector from '@/components/helper/date/RangeSelector.vue';
 import AssetIcon from '@/components/helper/display/icons/AssetIcon.vue';
 import HashLink from '@/components/helper/HashLink.vue';
 import LiquidityPoolSelector from '@/components/helper/LiquidityPoolSelector.vue';
 import MenuTooltipButton from '@/components/helper/MenuTooltipButton.vue';
-import TableExpandContainer from '@/components/helper/table/TableExpandContainer.vue';
 import BadgeDisplay from '@/components/history/BadgeDisplay.vue';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
 import LocationDisplay from '@/components/history/LocationDisplay.vue';
@@ -59,9 +56,6 @@ import UniswapPoolAssetBalance from '@/components/defi/uniswap/UniswapPoolAssetB
  */
 function vuetifyRegister(): void {
   // version 17 - 1.24
-  Vue.component('VIcon', VIcon);
-  Vue.component('VBtn', VBtn);
-  Vue.component('VBtnToggle', VBtnToggle);
   Vue.component('VDialog', VDialog);
   Vue.component('VColorPicker', VColorPicker);
 }
@@ -77,6 +71,8 @@ function ruiRegister(): void {
   Vue.component('RuiDataTable', RuiDataTable);
   Vue.component('RuiDivider', RuiDivider);
   Vue.component('RuiChip', RuiChip);
+  Vue.component('RuiMenu', RuiMenu);
+  Vue.component('RuiSlider', RuiSlider);
 }
 
 export function registerComponents(): void {
@@ -104,9 +100,6 @@ export function registerComponents(): void {
   // version 9
   Vue.component('LiquidityPoolSelector', LiquidityPoolSelector);
   Vue.component('TableFilter', TableFilter);
-  // version 10
-  Vue.component('DataTable', DataTable);
-  Vue.component('TableExpandContainer', TableExpandContainer);
   // version 11
   Vue.component('AssetIcon', AssetIcon);
   // version 12 - 1.19

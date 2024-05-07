@@ -107,8 +107,6 @@ async function save() {
 
 setSubmitFunc(save);
 
-const { counterparties } = useHistoryEventMappings();
-
 const accountingTreatments = Object.values(AccountingTreatment).map(
   identifier => ({
     identifier,
@@ -127,15 +125,10 @@ const accountingTreatments = Object.values(AccountingTreatment).map(
       disable-warning
     />
 
-    <VAutocomplete
+    <CounterpartyInput
       v-model="state.counterparty"
       class="md:w-1/2"
-      outlined
-      required
-      clearable
-      auto-select-first
-      :label="t('accounting_settings.rule.labels.counterparty')"
-      :items="counterparties"
+      :label="t('common.counterparty')"
       :error-messages="toMessages(v$.counterparty)"
       @blur="v$.counterparty.$touch()"
     />

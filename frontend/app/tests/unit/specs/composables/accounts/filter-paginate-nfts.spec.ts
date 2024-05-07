@@ -27,7 +27,7 @@ vi.mock('vue', async () => {
 
   return {
     ...mod,
-    onBeforeMount: vi.fn(),
+    onBeforeMount: vi.fn().mockImplementation((fn: Function) => fn()),
   };
 });
 
@@ -42,8 +42,7 @@ describe('composables::history/filter-paginate', () => {
 
   beforeAll(() => {
     setActivePinia(createPinia());
-    fetchNonFungibleBalances
-      = useNonFungibleBalancesStore().fetchNonFungibleBalances;
+    fetchNonFungibleBalances = useNonFungibleBalancesStore().fetchNonFungibleBalances;
   });
 
   afterEach(() => {
@@ -89,7 +88,7 @@ describe('composables::history/filter-paginate', () => {
         },
       );
 
-      expect(get(userAction)).toBe(false);
+      expect(get(userAction)).toBe(true);
       expect(get(isLoading)).toBe(false);
       expect(get(filters)).to.toStrictEqual(undefined);
       expect(get(options).sortBy[0]).toEqual('name');
@@ -107,7 +106,7 @@ describe('composables::history/filter-paginate', () => {
       expect(get(state).total).toEqual(30);
     });
 
-    it('check the return types', async () => {
+    it('check the return types', () => {
       const { isLoading, state, filters, matchers }
         = usePaginationFilters<NonFungibleBalance>(
           locationOverview,

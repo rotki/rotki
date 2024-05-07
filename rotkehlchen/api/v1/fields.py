@@ -535,6 +535,44 @@ class EvmChainNameField(fields.Field):
         return chain_id
 
 
+class EvmChainLikeNameField(fields.Field):
+    """A special case of serializing to an enum. Using the string name of an evm
+    chain to serialize to SupportedBlockchain. Should be superset of EvmChainNameField"""
+
+    def __init__(self, *, limit_to: list[SupportedBlockchain] | None = None, **kwargs: Any) -> None:  # noqa: E501
+        self.limit_to = limit_to
+        super().__init__(**kwargs)
+
+    @staticmethod
+    def _serialize(
+            value: SupportedBlockchain,
+            attr: str | None,  # pylint: disable=unused-argument
+            obj: Any,
+            **_kwargs: Any,
+    ) -> str | None:
+        return value.name.lower() if value else None
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: str | None,  # pylint: disable=unused-argument
+            data: Mapping[str, Any] | None,
+            **_kwargs: Any,
+    ) -> SupportedBlockchain:
+        try:
+            chain = SupportedBlockchain.deserialize(value)
+        except DeserializationError as e:
+            raise ValidationError(str(e)) from e
+
+        if self.limit_to is not None and chain not in self.limit_to:
+            raise ValidationError(
+                f'Given chain {value} is not one of '
+                f'{",".join([str(x) for x in self.limit_to])} as needed by the endpoint',
+            )
+
+        return chain
+
+
 class AssetField(fields.Field):
 
     def __init__(
@@ -991,3 +1029,30 @@ class NonEmptyList(fields.List):
             raise ValidationError('List cant be empty')
 
         return result
+
+
+class EvmCounterpartyField(fields.Field):
+    """
+    Checks if the value provided is among a set of valid counterparties provided.
+    The set of valid options can be dynamically populated by calling set_counterparties
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        self.counterparties: set[str] | None = None
+        super().__init__(*args, **kwargs)
+
+    def set_counterparties(self, counterparties: set[str]) -> None:
+        self.counterparties = counterparties
+
+    def _deserialize(
+            self,
+            value: str,
+            attr: str | None,  # pylint: disable=unused-argument
+            data: Mapping[str, Any] | None,
+            **_kwargs: Any,
+    ) -> str:
+        assert self.counterparties is not None, 'Set of counterparties not provided in EvmCounterpartyField'  # noqa: E501
+        if value is not None and value not in self.counterparties:
+            raise ValidationError(f'Unknown counterparty {value} provided')
+
+        return value

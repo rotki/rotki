@@ -63,7 +63,7 @@ export function useEth2Api() {
     return handleResponse(response);
   };
 
-  const refreshStakingStats = async (
+  const refreshStakingStats = (
     payload: Eth2DailyStatsPayload,
   ): Promise<PendingTask> => stakingStatsQuery(payload, true);
 

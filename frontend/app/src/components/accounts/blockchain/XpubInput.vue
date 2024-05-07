@@ -12,12 +12,12 @@ import type { XpubPayload } from '@/types/blockchain/accounts';
 const props = defineProps<{
   disabled: boolean;
   errorMessages: ValidationErrors;
-  xpub: XpubPayload | null;
+  xpub: XpubPayload | undefined;
   blockchain: BtcChains;
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:xpub', event: XpubPayload | null): void;
+  (e: 'update:xpub', event?: XpubPayload): void;
 }>();
 
 const { t } = useI18n();
@@ -29,7 +29,7 @@ const derivationPath = ref('');
 const xpubKeyPrefix = ref<XpubPrefix>(XpubPrefix.XPUB);
 const advanced = ref(false);
 
-function updateXpub(event: XpubPayload | null) {
+function updateXpub(event?: XpubPayload) {
   emit('update:xpub', event);
 }
 
@@ -45,45 +45,6 @@ function setXpubKeyType(value: string) {
     set(xpubKeyPrefix, prefix);
   }
 }
-
-watch(xpub, (xpub) => {
-  set(xpubKey, xpub?.xpub);
-  const prefix = getPrefix(xpub?.xpubType);
-  if (prefix !== XpubPrefix.XPUB)
-    set(xpubKeyPrefix, prefix);
-
-  set(derivationPath, xpub?.derivationPath);
-});
-
-watch(blockchain, () => {
-  set(xpubKeyPrefix, get(keyTypeListData)[0].value);
-});
-
-onMounted(() => {
-  const payload = get(xpub);
-  set(xpubKey, payload?.xpub || '');
-  const prefix = getPrefix(payload?.xpubType);
-  if (prefix !== XpubPrefix.XPUB)
-    set(xpubKeyPrefix, prefix);
-
-  set(derivationPath, payload?.derivationPath);
-});
-
-watch([xpubKeyPrefix, xpubKey, derivationPath], ([prefix, xpub, path]) => {
-  if (xpub)
-    setXpubKeyType(xpub);
-
-  let payload: XpubPayload | null = null;
-  if (xpub) {
-    payload = {
-      xpub: xpub.trim(),
-      derivationPath: path ?? undefined,
-      xpubType: getKeyType(prefix as XpubPrefix),
-      blockchain: get(blockchain),
-    };
-  }
-  updateXpub(payload);
-});
 
 function onPasteXpub(event: ClipboardEvent) {
   if (get(disabled))
@@ -136,20 +97,67 @@ watch(errorMessages, (errors) => {
   if (!isEmpty(errors))
     get(v$).$validate();
 });
+
+watch(xpub, (xpub) => {
+  set(xpubKey, xpub?.xpub);
+  const prefix = getPrefix(xpub?.xpubType);
+  if (prefix !== XpubPrefix.XPUB)
+    set(xpubKeyPrefix, prefix);
+
+  set(derivationPath, xpub?.derivationPath);
+});
+
+watch(blockchain, () => {
+  set(xpubKeyPrefix, get(keyTypeListData)[0].value);
+});
+
+watch([xpubKeyPrefix, xpubKey, derivationPath], ([prefix, xpub, path]) => {
+  if (xpub)
+    setXpubKeyType(xpub);
+
+  let payload: XpubPayload | undefined;
+  if (xpub) {
+    payload = {
+      xpub: xpub.trim(),
+      derivationPath: path ?? undefined,
+      xpubType: getKeyType(prefix as XpubPrefix),
+      blockchain: get(blockchain),
+    };
+  }
+  updateXpub(payload);
+});
+
+onMounted(() => {
+  const payload = get(xpub);
+  set(xpubKey, payload?.xpub || '');
+  const prefix = getPrefix(payload?.xpubType);
+  if (prefix !== XpubPrefix.XPUB)
+    set(xpubKeyPrefix, prefix);
+
+  set(derivationPath, payload?.derivationPath);
+});
 </script>
 
 <template>
   <div class="mt-2">
     <div class="flex gap-4">
-      <VSelect
+      <RuiMenuSelect
         v-model="xpubKeyPrefix"
-        outlined
-        class="account-form__xpub-key-type flex-1"
-        item-value="value"
-        item-text="label"
+        :options="keyTypeListData"
         :disabled="disabled"
-        :items="keyTypeListData"
-      />
+        class="account-form__xpub-key-type flex-1"
+        key-attr="value"
+        text-attr="label"
+        full-width
+        float-label
+        variant="outlined"
+      >
+        <template #activator.text="{ value }">
+          <span class="my-2 block">
+            {{ value.label }}
+          </span>
+        </template>
+      </RuiMenuSelect>
       <RuiTextField
         v-model="xpubKey"
         variant="outlined"
@@ -202,7 +210,7 @@ watch(errorMessages, (errors) => {
       :error-messages="toMessages(v$.derivationPath)"
       autocomplete="off"
       :disabled="disabled"
-      :hint="t('account_form.labels.btc.derivation_path_hint')"
+      :hint="t('common.optional')"
       @blur="v$.derivationPath.$touch()"
     />
   </div>

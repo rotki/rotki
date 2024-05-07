@@ -37,7 +37,7 @@ class ManualPriceOracle:
             to_asset: Asset,
             timestamp: Timestamp,
     ) -> Price:
-        price_entry = GlobalDBHandler().get_historical_price(
+        price_entry = GlobalDBHandler.get_historical_price(
             from_asset=from_asset,
             to_asset=to_asset,
             timestamp=timestamp,

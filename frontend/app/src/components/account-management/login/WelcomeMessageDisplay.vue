@@ -3,17 +3,17 @@ import { api } from '@/services/rotkehlchen-api';
 import type { WelcomeMessage } from '@/types/dynamic-messages';
 
 const props = defineProps<{
-  message: WelcomeMessage;
+  messages: WelcomeMessage[];
 }>();
-
-const { message } = toRefs(props);
 
 const svg = ref();
 
-const link = useRefMap(message, message => message.action?.url || '');
+const { step, steps, onNavigate, onPause, onResume } = useRandomStepper(props.messages.length);
+
+const activeItem = computed(() => props.messages[get(step) - 1]);
 
 async function fetchSvg() {
-  const url = props.message.icon;
+  const url = get(activeItem).icon;
 
   if (
     !url
@@ -34,13 +34,13 @@ async function fetchSvg() {
   }
 }
 
-watch(message, async (value, oldValue) => {
+watch(activeItem, async (value, oldValue) => {
   if (value.icon && oldValue.icon !== value.icon)
     set(svg, await fetchSvg());
 });
 
 onMounted(async () => {
-  if (props.message.icon)
+  if (get(activeItem)?.icon)
     set(svg, await fetchSvg());
 });
 
@@ -49,38 +49,61 @@ const css = useCssModule();
 
 <template>
   <div
-    class="flex flex-col items-start gap-4 w-full p-6"
+    v-if="activeItem"
+    class="flex flex-col items-start gap-4 w-full p-6 overflow-hidden"
     :class="css.card"
   >
-    <div
-      v-if="message.icon"
-      class="bg-white rounded-[0.625rem] p-3"
-    >
+    <FadeTransition tag="div">
       <div
-        class="object-contain text-rui-primary h-6 w-6"
-        :class="css.icon"
-        v-html="svg"
+        :key="step"
+        class="flex flex-col items-start gap-4"
+        @mouseover="onPause()"
+        @mouseleave="onResume()"
+      >
+        <div
+          v-if="activeItem.icon"
+          class="bg-white rounded-[0.625rem] p-3"
+        >
+          <div
+            class="object-contain text-rui-primary h-6 w-6"
+            :class="css.icon"
+            v-html="svg"
+          />
+        </div>
+        <div
+          v-if="activeItem.header"
+          class="text-h6 text-rui-text"
+        >
+          {{ activeItem.header }}
+        </div>
+        <div class="text-body-1 text-rui-text-secondary">
+          {{ activeItem.text }}
+        </div>
+      </div>
+    </FadeTransition>
+
+    <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-x-3 gap-y-6 w-full">
+      <ExternalLink
+        v-if="activeItem.action"
+        :url="activeItem.action.url || ''"
+        custom
+        @mouseover="onPause()"
+        @mouseleave="onResume()"
+      >
+        <RuiButton color="primary">
+          {{ activeItem.action.text }}
+        </RuiButton>
+      </ExternalLink>
+
+      <RuiFooterStepper
+        v-if="steps > 1"
+        :value="step"
+        :pages="steps"
+        variant="bullet"
+        hide-buttons
+        @input="onNavigate($event)"
       />
     </div>
-    <div
-      v-if="message.header"
-      class="text-h6 text-rui-text"
-    >
-      {{ message.header }}
-    </div>
-    <div class="text-body-1 text-rui-text-secondary">
-      {{ message.text }}
-    </div>
-
-    <ExternalLink
-      v-if="message.action"
-      :url="link"
-      custom
-    >
-      <RuiButton color="primary">
-        {{ message.action.text }}
-      </RuiButton>
-    </ExternalLink>
   </div>
 </template>
 

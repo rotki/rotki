@@ -303,6 +303,26 @@ CREATE TABLE IF NOT EXISTS contract_data (
 );
 """
 
+# Used to store exchange specific asset's symbol mappings with their identifiers.
+# location column is not made as FK like in user DB because it can be NULL,
+# which means the asset mapping is common for all the exchanges.
+DB_CREATE_LOCATION_ASSET_MAPPINGS = """
+CREATE TABLE IF NOT EXISTS location_asset_mappings (
+    location TEXT,
+    exchange_symbol TEXT NOT NULL,
+    local_id TEXT NOT NULL COLLATE NOCASE,
+    UNIQUE (location, exchange_symbol)
+);
+"""
+
+DB_CREATE_LOCATION_UNSUPPORTED_ASSETS = """
+CREATE TABLE IF NOT EXISTS location_unsupported_assets (
+    location CHAR(1) NOT NULL,
+    exchange_symbol TEXT NOT NULL,
+    UNIQUE (location, exchange_symbol)
+);
+"""
+
 DB_SCRIPT_CREATE_TABLES = f"""
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
@@ -326,6 +346,8 @@ BEGIN TRANSACTION;
 {DB_CREATE_CONTRACT_ABI}
 {DB_CREATE_CONTRACT_DATA}
 {DB_CREATE_DEFAULT_RPC_NODES}
+{DB_CREATE_LOCATION_ASSET_MAPPINGS}
+{DB_CREATE_LOCATION_UNSUPPORTED_ASSETS}
 COMMIT;
 PRAGMA foreign_keys=on;
 """

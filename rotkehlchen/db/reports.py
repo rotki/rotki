@@ -263,7 +263,7 @@ class DBAccountingReports:
             )
 
         query, bindings = filter_.prepare()
-        query = 'SELECT timestamp, data FROM pnl_events ' + query
+        query = f'SELECT timestamp, data FROM pnl_events {query}'
         cursor.execute(query, bindings)
 
         records = []
@@ -283,7 +283,7 @@ class DBAccountingReports:
             no_pagination_filter = deepcopy(filter_)
             no_pagination_filter.pagination = None
             query, bindings = no_pagination_filter.prepare()
-            query = 'SELECT COUNT(*) FROM pnl_events ' + query
+            query = f'SELECT COUNT(*) FROM pnl_events {query}'
             results = cursor.execute(query, bindings).fetchone()
             total_filter_count = results[0]
         else:

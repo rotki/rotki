@@ -5,9 +5,7 @@ defineOptions({
 </script>
 
 <template>
-  <VMenu
-    offset-y
-    :close-on-content-click="false"
+  <RuiMenu
     v-bind="$attrs"
     v-on="
       // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
@@ -34,5 +32,5 @@ defineOptions({
       </RuiButton>
     </template>
     <slot />
-  </VMenu>
+  </RuiMenu>
 </template>

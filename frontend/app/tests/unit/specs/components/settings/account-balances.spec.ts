@@ -5,8 +5,18 @@ import Vuetify from 'vuetify';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
-import createCustomPinia from '../../../utils/create-pinia';
+import { createCustomPinia } from '../../../utils/create-pinia';
 import { libraryDefaults } from '../../../utils/provide-defaults';
+
+vi.mock('vue-router/composables', () => ({
+  useRoute: vi.fn().mockReturnValue({
+    query: {
+      limit: '10',
+      offset: '0',
+    },
+  }),
+  useRouter: vi.fn(),
+}));
 
 describe('accountBalances.vue', () => {
   let wrapper: Wrapper<any>;
@@ -43,11 +53,12 @@ describe('accountBalances.vue', () => {
     });
 
     useStatusStore().setStatus({
-      section: Section.BLOCKCHAIN_ETH,
+      section: Section.BLOCKCHAIN,
+      subsection: Blockchain.ETH,
       status: Status.LOADING,
     });
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(
       wrapper
@@ -56,14 +67,15 @@ describe('accountBalances.vue', () => {
         .attributes('disabled'),
     ).toBe('disabled');
 
-    expect(wrapper.find('th div[role=progressbar]').exists()).toBeTruthy();
+    expect(wrapper.find('tbody td div[role=progressbar]').exists()).toBeTruthy();
 
     remove(1);
     useStatusStore().setStatus({
-      section: Section.BLOCKCHAIN_ETH,
+      section: Section.BLOCKCHAIN,
+      subsection: Blockchain.ETH,
       status: Status.LOADED,
     });
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(
       wrapper
@@ -71,7 +83,7 @@ describe('accountBalances.vue', () => {
         .find('button')
         .attributes('disabled'),
     ).toBeUndefined();
-    expect(wrapper.find('th div[role=progressbar]').exists()).toBeFalsy();
+    expect(wrapper.find('tbody td div[role=progressbar]').exists()).toBeFalsy();
     expect(wrapper.find('tbody tr td p').text()).toMatch('data_table.no_data');
   });
 });

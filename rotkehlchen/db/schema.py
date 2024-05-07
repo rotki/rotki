@@ -110,6 +110,10 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('k', 43);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('l', 44);
 /* Bybit */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('m', 45);
+/* Scroll */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('n', 46);
+/* ZKSync Lite */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('o', 47);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)
@@ -206,30 +210,6 @@ CREATE TABLE IF NOT EXISTS user_credentials_mappings (
     PRIMARY KEY (credential_name, credential_location, setting_name)
 );
 """  # noqa: E501
-
-
-DB_CREATE_YEARN_VAULT_EVENTS = """
-CREATE TABLE IF NOT EXISTS yearn_vaults_events (
-    address VARCHAR[42] NOT NULL,
-    event_type VARCHAR[10] NOT NULL,
-    from_asset TEXT NOT NULL,
-    from_amount TEXT NOT NULL,
-    from_usd_value TEXT NOT NULL,
-    to_asset TEXT NOT NULL,
-    to_amount TEXT NOT NULL,
-    to_usd_value TEXT NOT NULL,
-    pnl_amount TEXT,
-    pnl_usd_value TEXT,
-    block_number INTEGER NOT NULL,
-    timestamp INTEGER NOT NULL,
-    tx_hash BLOB NOT NULL,
-    log_index INTEGER NOT NULL,
-    version INTEGER NOT NULL DEFAULT 1,
-    FOREIGN KEY(from_asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
-    FOREIGN KEY(to_asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
-    PRIMARY KEY (event_type, tx_hash, log_index)
-);
-"""
 
 DB_CREATE_EXTERNAL_SERVICE_CREDENTIALS = """
 CREATE TABLE IF NOT EXISTS external_service_credentials (
@@ -405,6 +385,8 @@ CREATE TABLE IF NOT EXISTS evm_transactions (
 );
 """
 
+# The table can be used by any L2 chain that has an extra L1 fee structure
+# It should be renamed, at some point, to something like `l2_with_l1_fees_transactions`
 DB_CREATE_OPTIMISM_TRANSACTIONS = """
 CREATE TABLE IF NOT EXISTS optimism_transactions (
     tx_id INTEGER NOT NULL PRIMARY KEY,
@@ -469,6 +451,62 @@ CREATE TABLE IF NOT EXISTS evmtx_address_mappings (
     PRIMARY KEY (tx_id, address)
 );
 """
+
+
+# Custom enum table for zksyn transaction types
+DB_CREATE_ZKSYNCLITE_TX_TYPE = """
+CREATE TABLE IF NOT EXISTS zksynclite_tx_type (
+  type    CHAR(1)       PRIMARY KEY NOT NULL,
+  seq     INTEGER UNIQUE
+);
+/* Transfer Type */
+INSERT OR IGNORE INTO zksynclite_tx_type(type, seq) VALUES ('A', 1);
+/* Deposit Type */
+INSERT OR IGNORE INTO zksynclite_tx_type(type, seq) VALUES ('B', 2);
+/* Withdraw Type */
+INSERT OR IGNORE INTO zksynclite_tx_type(type, seq) VALUES ('C', 3);
+/* ChangePubKey Type */
+INSERT OR IGNORE INTO zksynclite_tx_type(type, seq) VALUES ('D', 4);
+/* ForcedExit Type */
+INSERT OR IGNORE INTO zksynclite_tx_type(type, seq) VALUES ('E', 5);
+/* FullExit Type */
+INSERT OR IGNORE INTO zksynclite_tx_type(type, seq) VALUES ('F', 6);
+/* Swap Type */
+INSERT OR IGNORE INTO zksynclite_tx_type(type, seq) VALUES ('G', 7);
+"""
+
+# Instead of using an attribute mapping like evm chains adding the is_decoded directly to the table
+# Reasoning is it's the only mapping we care for so no reason to keep a different
+# mappings table for zksync lite transactions
+DB_CREATE_ZKSYNCLITE_TRANSACTIONS = """
+CREATE TABLE IF NOT EXISTS zksynclite_transactions (
+    identifier INTEGER NOT NULL PRIMARY KEY,
+    tx_hash BLOB NOT NULL UNIQUE,
+    type CHAR(1) NOT NULL DEFAULT('A') REFERENCES zksynclite_tx_type(type),
+    is_decoded INTEGER NOT NULL DEFAULT 0 CHECK (is_decoded IN (0, 1)),
+    timestamp INTEGER NOT NULL,
+    block_number INTEGER NOT NULL,
+    from_address TEXT NOT NULL,
+    to_address TEXT,
+    asset TEXT NOT NULL,
+    amount TEXT NOT NULL,
+    fee TEXT,
+    FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE
+);
+"""
+
+DB_CREATE_ZKSYNCLITE_SWAPS = """
+CREATE TABLE IF NOT EXISTS zksynclite_swaps (
+    tx_id INTEGER NOT NULL,
+    from_asset TEXT NOT NULL,
+    from_amount TEXT NOT NULL,
+    to_asset TEXT NOT NULL,
+    to_amount TEXT_NOT NULL,
+    FOREIGN KEY(tx_id) REFERENCES zksynclite_transactions(identifier) ON UPDATE CASCADE ON DELETE CASCADE,
+    FOREIGN KEY(from_asset) REFERENCES assets(identifier) ON UPDATE CASCADE,
+    FOREIGN KEY(to_asset) REFERENCES assets(identifier) ON UPDATE CASCADE
+);
+"""  # noqa: E501
 
 DB_CREATE_USED_QUERY_RANGES = """
 CREATE TABLE IF NOT EXISTS used_query_ranges (
@@ -586,28 +624,6 @@ CREATE TABLE IF NOT EXISTS history_events_mappings (
 );
 """  # noqa: E501
 
-DB_CREATE_BALANCER_EVENTS = """
-CREATE TABLE IF NOT EXISTS balancer_events (
-    tx_hash BLOB NOT NULL,
-    log_index INTEGER NOT NULL,
-    address VARCHAR[42] NOT NULL,
-    timestamp INTEGER NOT NULL,
-    type TEXT NOT NULL,
-    pool_address_token TEXT NOT NULL,
-    lp_amount TEXT NOT NULL,
-    usd_value TEXT NOT NULL,
-    amount0 TEXT NOT NULL,
-    amount1 TEXT NOT NULL,
-    amount2 TEXT,
-    amount3 TEXT,
-    amount4 TEXT,
-    amount5 TEXT,
-    amount6 TEXT,
-    amount7 TEXT,
-    FOREIGN KEY (pool_address_token) REFERENCES assets(identifier) ON UPDATE CASCADE,
-    PRIMARY KEY (tx_hash, log_index)
-);
-"""
 
 DB_CREATE_NFTS = """
 CREATE TABLE IF NOT EXISTS nfts (
@@ -708,6 +724,33 @@ DB_CREATE_KEY_VALUE_CACHE = """CREATE TABLE IF NOT EXISTS key_value_cache (
 );"""
 
 
+DB_CREATE_CALENDAR = """
+CREATE TABLE IF NOT EXISTS calendar (
+    identifier INTEGER PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL,
+    timestamp INTEGER NOT NULL,
+    description TEXT,
+    counterparty TEXT,
+    address TEXT,
+    blockchain TEXT,
+    color TEXT,
+    auto_delete INTEGER NOT NULL CHECK (auto_delete IN (0, 1)),
+    FOREIGN KEY(blockchain, address) REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE,
+    UNIQUE(name, address, blockchain)
+);
+"""  # noqa: E501
+
+
+DB_CREATE_CALENDAR_REMINDERS = """
+CREATE TABLE IF NOT EXISTS calendar_reminders (
+    identifier INTEGER PRIMARY KEY NOT NULL,
+    event_id INTEGER NOT NULL,
+    secs_before INTEGER NOT NULL,
+    FOREIGN KEY(event_id) REFERENCES calendar(identifier) ON DELETE CASCADE
+);
+"""
+
+
 DB_SCRIPT_CREATE_TABLES = f"""
 PRAGMA foreign_keys=off;
 BEGIN TRANSACTION;
@@ -733,6 +776,9 @@ BEGIN TRANSACTION;
 {DB_CREATE_EVMTX_RECEIPT_LOGS}
 {DB_CREATE_EVMTX_RECEIPT_LOG_TOPICS}
 {DB_CREATE_EVMTX_ADDRESS_MAPPINGS}
+{DB_CREATE_ZKSYNCLITE_TX_TYPE}
+{DB_CREATE_ZKSYNCLITE_TRANSACTIONS}
+{DB_CREATE_ZKSYNCLITE_SWAPS}
 {DB_CREATE_MARGIN}
 {DB_CREATE_ASSET_MOVEMENTS}
 {DB_CREATE_USED_QUERY_RANGES}
@@ -740,7 +786,6 @@ BEGIN TRANSACTION;
 {DB_CREATE_SETTINGS}
 {DB_CREATE_TAGS_TABLE}
 {DB_CREATE_TAG_MAPPINGS}
-{DB_CREATE_YEARN_VAULT_EVENTS}
 {DB_CREATE_XPUBS}
 {DB_CREATE_XPUB_MAPPINGS}
 {DB_CREATE_ETH2_VALIDATORS}
@@ -751,7 +796,6 @@ BEGIN TRANSACTION;
 {DB_CREATE_HISTORY_EVENTS_MAPPINGS}
 {DB_CREATE_ACTION_TYPE}
 {DB_CREATE_IGNORED_ACTIONS}
-{DB_CREATE_BALANCER_EVENTS}
 {DB_CREATE_NFTS}
 {DB_CREATE_ENS_MAPPINGS}
 {DB_CREATE_ADDRESS_BOOK}
@@ -762,6 +806,8 @@ BEGIN TRANSACTION;
 {DB_CREATE_MAPPED_ACCOUNTING_RULES}
 {DB_CREATE_UNRESOLVED_REMOTE_CONFLICTS}
 {DB_CREATE_KEY_VALUE_CACHE}
+{DB_CREATE_CALENDAR}
+{DB_CREATE_CALENDAR_REMINDERS}
 COMMIT;
 PRAGMA foreign_keys=on;
 """

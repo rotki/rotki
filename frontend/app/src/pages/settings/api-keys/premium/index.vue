@@ -2,7 +2,6 @@
 import { required } from '@vuelidate/validators';
 import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
-import type { Ref } from 'vue';
 
 const { username } = storeToRefs(useSessionAuthStore());
 const { update } = useSettingsStore();
@@ -47,7 +46,7 @@ async function onSyncChange() {
   await update({ premiumShouldSync: get(sync) });
 }
 
-async function cancelEdit() {
+function cancelEdit() {
   set(edit, false);
   set(apiKey, '');
   set(apiSecret, '');
@@ -189,12 +188,14 @@ const css = useCssModule();
         {{ t('premium_settings.premium_active') }}
       </div>
 
-      <VSwitch
+      <RuiSwitch
         v-model="sync"
+        class="mt-6"
+        color="primary"
         :disabled="!premium || edit"
         hide-details
         :label="t('premium_settings.actions.sync')"
-        @change="onSyncChange()"
+        @input="onSyncChange()"
       />
 
       <template #footer>

@@ -17,6 +17,7 @@ from rotkehlchen.db.constants import (
     HISTORY_BASE_ENTRY_LENGTH,
     HISTORY_MAPPING_KEY_STATE,
     HISTORY_MAPPING_STATE_CUSTOMIZED,
+    HISTORY_MAPPING_STATE_DECODED,
 )
 from rotkehlchen.db.filtering import (
     ALL_EVENTS_DATA_JOIN,
@@ -47,7 +48,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
-    EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
+    EVM_EVMLIKE_LOCATIONS_TYPE,
     EVMTxHash,
     Location,
     Timestamp,
@@ -209,39 +210,69 @@ class DBHistoryEvents:
 
         return None
 
+    def delete_events_by_location(
+            self,
+            write_cursor: 'DBCursor',
+            location: EVM_EVMLIKE_LOCATIONS_TYPE,
+    ) -> None:
+        """Delete all relevant non-customized events for a given location
+
+        Also set evm_tx_mapping as non decoded so they can be redecoded later
+        """
+        customized_event_ids = self.get_customized_event_identifiers(cursor=write_cursor, location=location)  # noqa: E501
+        whereclause = 'WHERE location=?'
+        if (length := len(customized_event_ids)) != 0:
+            whereclause += f' AND history_events.identifier NOT IN ({", ".join(["?"] * length)})'
+            bindings = [location.serialize_for_db(), *customized_event_ids]
+        else:
+            bindings = (location.serialize_for_db(),)  # type: ignore  # different type of elements in the list
+
+        transaction_hashes = write_cursor.execute(f'SELECT evm_events_info.tx_hash FROM history_events INNER JOIN evm_events_info ON history_events.identifier=evm_events_info.identifier {whereclause}', bindings).fetchall()  # noqa: E501
+        write_cursor.execute(f'DELETE FROM history_events {whereclause}', bindings)
+
+        if location != Location.ZKSYNC_LITE and len(transaction_hashes) != 0:
+            write_cursor.executemany(
+                'DELETE from evm_tx_mappings WHERE tx_id IN (SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?) AND value=?',  # noqa: E501
+                [(x[0], location.to_chain_id(), HISTORY_MAPPING_STATE_DECODED) for x in transaction_hashes],  # noqa: E501
+            )
+
     def delete_events_by_tx_hash(
             self,
             write_cursor: 'DBCursor',
             tx_hashes: list[EVMTxHash],
-            chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
+            location: EVM_EVMLIKE_LOCATIONS_TYPE,
+            delete_customized: bool = False,
     ) -> None:
         """Delete all relevant (by transaction hash) history events except those that
-        are customized. Only use with limited number of transactions!!!
+        are customized. If delete_customized is True then delete those too.
+        Only use with limited number of transactions!!!
 
         If you want to reset all decoded events better use the _reset_decoded_events
         code in v37 -> v38 upgrade as that is not limited to the number of transactions
         and won't potentially raise a too many sql variables error
         """
-        customized_event_ids = self.get_customized_event_identifiers(cursor=write_cursor, chain_id=chain_id)  # noqa: E501
-        length = len(customized_event_ids)
+        customized_event_ids = []
+        if not delete_customized:
+            customized_event_ids = self.get_customized_event_identifiers(cursor=write_cursor, location=location)  # noqa: E501
         querystr = f'DELETE FROM history_events WHERE identifier IN (SELECT H.identifier from history_events H INNER JOIN evm_events_info E ON H.identifier=E.identifier AND E.tx_hash IN ({", ".join(["?"] * len(tx_hashes))}))'  # noqa: E501
-        if length != 0:
+        if (length := len(customized_event_ids)) != 0:
             querystr += f' AND identifier NOT IN ({", ".join(["?"] * length)})'
             bindings = [*tx_hashes, *customized_event_ids]
         else:
             bindings = tx_hashes  # type: ignore  # different type of elements in the list
+
         write_cursor.execute(querystr, bindings)
 
     def get_customized_event_identifiers(
             self,
             cursor: 'DBCursor',
-            chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE | None,
+            location: Location | None,
     ) -> list[int]:
         """Returns the identifiers of all the events in the database that have been customized
 
-        Optionally filter by chain_id
+        Optionally filter by Location
         """
-        if chain_id is None:
+        if location is None:
             cursor.execute(
                 'SELECT parent_identifier FROM history_events_mappings WHERE name=? AND value=?',
                 (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
@@ -254,7 +285,7 @@ class DBHistoryEvents:
                 'JOIN history_events C ON C.identifier=A.parent_identifier AND C.location=?',
                 (
                     HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED,
-                    Location.from_chain_id(chain_id).serialize_for_db(),
+                    location.serialize_for_db(),
                 ),
             )
 
@@ -628,12 +659,15 @@ class DBHistoryEvents:
             )
 
             free_query_group_by = maybe_filter_ignore_asset(query_filter)
+            group_by_query = ''
+            if group_by_event_ids:
+                group_by_query = 'GROUP BY event_identifier ORDER BY timestamp DESC, sequence_index ASC LIMIT ?'  # noqa: E501
+                bindings.insert(0, entries_limit)  # add limit's binding before prepared_query's bindings  # noqa: E501
             count_with_limit = cursor.execute(
                 f'SELECT COUNT(*) FROM ('
                 f'SELECT {query_filter.get_columns()} {query_filter.get_join_query()}{free_query_group_by}'  # we take the groups before the limit has been applied  # noqa: E501
-                'GROUP BY event_identifier ORDER BY timestamp DESC, sequence_index ASC LIMIT ?'
-                f'){prepared_query}',
-                [entries_limit] + bindings,  # add limit's binding before prepared_query's bindings
+                f'{group_by_query}){prepared_query}',
+                bindings,
             ).fetchone()[0]
             return count_without_limit, count_with_limit
 

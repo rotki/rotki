@@ -1,7 +1,10 @@
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_EUR
+from rotkehlchen.fval import FVal
 from rotkehlchen.types import deserialize_evm_tx_hash
+
+CURRENT_PRICE_MOCK = FVal('1.5')
 
 A_RDN = Asset('eip155:1/erc20:0x255Aa6DF07540Cb5d3d297f0D0D4D84cb52bc8e6')
 A_GNO = Asset('eip155:1/erc20:0x6810e776880C02933D47DB1b9fc05908e5386b96')

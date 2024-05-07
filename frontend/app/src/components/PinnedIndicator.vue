@@ -18,7 +18,6 @@ const css = useCssModule();
   <MenuTooltipButton
     v-if="pinned"
     :tooltip="t('pinned.tooltip')"
-    class-name="secondary--text text--lighten-4"
     @click="toggleVisibility()"
   >
     <RuiBadge

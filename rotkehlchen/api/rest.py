@@ -43,7 +43,7 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.accounting.structures.processed_event import AccountingEventExportType
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.v1.schemas import TradeSchema
-from rotkehlchen.api.v1.types import EvmTransactionDecodingApiData, IncludeExcludeFilterData
+from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.assets.asset import (
     Asset,
     AssetWithNameAndType,
@@ -89,11 +89,11 @@ from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     save_velodrome_data_to_cache,
 )
 from rotkehlchen.chain.evm.names import find_ens_mappings, search_for_addresses_names
-from rotkehlchen.chain.evm.types import WeightedNode
+from rotkehlchen.chain.evm.types import EvmlikeAccount, WeightedNode
+from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
-    FREE_ETH_TX_LIMIT,
     FREE_HISTORY_EVENTS_LIMIT,
     FREE_TRADES_LIMIT,
     FREE_USER_NOTES_LIMIT,
@@ -113,6 +113,7 @@ from rotkehlchen.constants.timing import ENS_AVATARS_REFRESH
 from rotkehlchen.data_import.manager import DataImportSource
 from rotkehlchen.db.accounting_rules import DBAccountingRules, query_missing_accounting_rules
 from rotkehlchen.db.addressbook import DBAddressbook
+from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar, ReminderEntry
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
     HISTORY_MAPPING_STATE_CUSTOMIZED,
@@ -135,6 +136,7 @@ from rotkehlchen.db.filtering import (
     HistoryBaseEntryFilterQuery,
     HistoryEventFilterQuery,
     LevenshteinFilterQuery,
+    LocationAssetMappingsFilterQuery,
     NFTFilterQuery,
     ReportDataFilterQuery,
     TradesFilterQuery,
@@ -215,11 +217,14 @@ from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS,
     EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE,
-    EVM_LOCATIONS,
+    EVM_EVMLIKE_LOCATIONS,
     SPAM_PROTOCOL,
     SUPPORTED_BITCOIN_CHAINS,
     SUPPORTED_CHAIN_IDS,
-    SUPPORTED_EVM_CHAINS,
+    SUPPORTED_EVM_CHAINS_TYPE,
+    SUPPORTED_EVM_EVMLIKE_CHAINS,
+    SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
+    SUPPORTED_EVMLIKE_CHAINS_TYPE,
     SUPPORTED_SUBSTRATE_CHAINS,
     AddressbookEntry,
     AddressbookType,
@@ -230,6 +235,7 @@ from rotkehlchen.types import (
     CacheType,
     ChecksumEvmAddress,
     Eth2PubKey,
+    EvmlikeChain,
     EVMTxHash,
     ExternalService,
     ExternalServiceApiCredentials,
@@ -238,6 +244,8 @@ from rotkehlchen.types import (
     HistoryEventQueryType,
     ListOfBlockchainAddresses,
     Location,
+    LocationAssetMappingDeleteEntry,
+    LocationAssetMappingUpdateEntry,
     ModuleName,
     OptionalChainAddress,
     Price,
@@ -255,8 +263,8 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.xpub import XpubData
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
-    from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
     from rotkehlchen.chain.evm.manager import EvmManager
+    from rotkehlchen.chain.evm.node_inquirer import UpdatableCacheDataMixin
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.exchanges.kraken import KrakenAccountType
@@ -551,13 +559,13 @@ class RestAPI:
                 fiat_currencies.append(asset.resolve_to_fiat_asset())
                 continue
 
-            usd_price = Inquirer().find_usd_price(asset)
+            usd_price = Inquirer.find_usd_price(asset)
             if usd_price == ZERO_PRICE:
                 asset_rates[asset] = ZERO_PRICE
             else:
                 asset_rates[asset] = Price(ONE / usd_price)
 
-        asset_rates.update(Inquirer().get_fiat_usd_exchange_rates(fiat_currencies))  # type: ignore  # type narrowing does not work here
+        asset_rates.update(Inquirer.get_fiat_usd_exchange_rates(fiat_currencies))  # type: ignore  # type narrowing does not work here
         return _wrap_in_ok_result(process_result(asset_rates))
 
     @async_api_call()
@@ -1628,6 +1636,7 @@ class RestAPI:
                     message=msg,
                     status_code=HTTPStatus.CONFLICT,
                 )
+            log.debug(f'extracted {len(data["events"])} events from {filepath}')
             self.rotkehlchen.accountant.process_history(
                 start_ts=Timestamp(data['pnl_settings']['from_timestamp']),
                 end_ts=Timestamp(data['pnl_settings']['to_timestamp']),
@@ -1765,7 +1774,6 @@ class RestAPI:
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
-        all_evm_chains_num = len(get_args(SUPPORTED_EVM_CHAINS))
         result_dicts: dict[str, dict[ChecksumEvmAddress, list[str]]] = defaultdict(lambda: defaultdict(list))  # noqa: E501
 
         all_key = 'all'  # key used when all the evm chains are returned
@@ -1777,7 +1785,7 @@ class RestAPI:
         ):
             for chain, address in list_of_accounts:
                 result_dicts[response_key][address].append(chain.serialize())
-                if len(result_dicts[response_key][address]) == all_evm_chains_num:
+                if len(result_dicts[response_key][address]) == len(SUPPORTED_EVM_EVMLIKE_CHAINS):
                     result_dicts[response_key][address] = [all_key]
 
         result: dict[str, Any] = result_dicts
@@ -1806,7 +1814,7 @@ class RestAPI:
     @overload
     def add_single_blockchain_accounts(
             self,
-            chain: SUPPORTED_EVM_CHAINS,
+            chain: SUPPORTED_EVM_CHAINS_TYPE,
             account_data: list[SingleBlockchainAccountData[ChecksumEvmAddress]],
     ) -> dict[str, Any]:
         ...
@@ -2423,10 +2431,11 @@ class RestAPI:
             method='get_balances',
             # We need to query defi balances before since defi_balances must be populated
             query_specific_balances_before=['defi'],
-            # Giving the defi balances as a lambda function here so that they
-            # are retrieved only after we are sure the defi balances have been
+            # Giving the eth/defi balances as a lambda functions here so that they
+            # are retrieved only after we are sure the eth/defi balances have been
             # queried.
             given_defi_balances=lambda: self.rotkehlchen.chains_aggregator.defi_balances,
+            given_eth_balances=lambda: self.rotkehlchen.chains_aggregator.balances.eth,
         )
 
     @async_api_call()
@@ -2436,10 +2445,8 @@ class RestAPI:
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
     ) -> dict[str, Any]:
-        """
-        Query the provided module for statistics using the tracked addresses for such module.
-        This function uses the defi balances to enrich statistics.
-        """
+        """Query the provided module for statistics using the tracked addresses for such module.
+        This function uses the eth/defi balances to enrich statistics."""
         return self._eth_module_query(
             module_name=module,
             method='get_stats_for_addresses',
@@ -2448,10 +2455,11 @@ class RestAPI:
             addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module(module),
             from_timestamp=from_timestamp,
             to_timestamp=to_timestamp,
-            # Giving the defi balances as a lambda function here so that they
-            # are retrieved only after we are sure the defi balances have been
+            # Giving the eth/defi balances as lambda functions here so that they
+            # are retrieved only after we are sure the eth/defi balances have been
             # queried.
             given_defi_balances=lambda: self.rotkehlchen.chains_aggregator.defi_balances,
+            given_eth_balances=lambda: self.rotkehlchen.chains_aggregator.balances.eth,
         )
 
     @async_api_call()
@@ -2482,6 +2490,7 @@ class RestAPI:
             # are retrieved only after we are sure the defi balances have been
             # queried.
             given_defi_balances=lambda: self.rotkehlchen.chains_aggregator.defi_balances,
+            given_eth_balances=lambda: self.rotkehlchen.chains_aggregator.balances.eth,
         )
 
     @async_api_call()
@@ -2513,51 +2522,6 @@ class RestAPI:
         )
 
     @async_api_call()
-    def get_yearn_vaults_history(
-            self,
-            reset_db_data: bool,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> dict[str, Any]:
-        return self._eth_module_query(
-            module_name='yearn_vaults',
-            method='get_history',
-            # We need to query defi balances before since defi_balances must be populated
-            query_specific_balances_before=['defi'],
-            # Giving the defi balances as a lambda function here so that they
-            # are retrieved only after we are sure the defi balances have been
-            # queried.
-            given_defi_balances=lambda: self.rotkehlchen.chains_aggregator.defi_balances,
-            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('yearn_vaults'),
-            reset_db_data=reset_db_data,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
-
-    @async_api_call()
-    def get_yearn_vaults_v2_history(
-            self,
-            reset_db_data: bool,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> dict[str, Any]:
-        return self._eth_module_query(
-            module_name='yearn_vaults_v2',
-            method='get_history',
-            query_specific_balances_before=['defi'],
-            # Giving the eth balances as a lambda function here so that they
-            # are retrieved only after we are sure the eth balances have been
-            # queried.
-            given_eth_balances=lambda: self.rotkehlchen.chains_aggregator.balances.eth,
-            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module(
-                'yearn_vaults_v2',
-            ),
-            reset_db_data=reset_db_data,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
-        )
-
-    @async_api_call()
     def get_amm_platform_balances(
             self,
             module: Literal['uniswap', 'sushiswap', 'balancer'],
@@ -2577,23 +2541,6 @@ class RestAPI:
             method='get_balances',
             query_specific_balances_before=None,
             addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('loopring'),
-        )
-
-    @async_api_call()
-    def get_balancer_events_history(
-            self,
-            reset_db_data: bool,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
-    ) -> dict[str, Any]:
-        return self._eth_module_query(
-            module_name='balancer',
-            method='get_events_history',
-            query_specific_balances_before=None,
-            addresses=self.rotkehlchen.chains_aggregator.queried_addresses_for_module('balancer'),
-            reset_db_data=reset_db_data,
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp,
         )
 
     @async_api_call()
@@ -2695,17 +2642,71 @@ class RestAPI:
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def purge_evm_transaction_data(self, chain_id: SUPPORTED_CHAIN_IDS | None) -> Response:
-        chain = None if chain_id is None else chain_id.to_blockchain()
-        DBEvmTx(self.rotkehlchen.data.db).purge_evm_transaction_data(
-            chain=chain,  # type: ignore  # chain_id.to_blockchain() will only give supported chain
-        )
+    @async_api_call()
+    def refresh_evmlike_transactions(
+            self,
+            from_timestamp: Timestamp,
+            to_timestamp: Timestamp,
+            accounts: list[EvmlikeAccount] | None,
+            chain: EvmlikeChain | None,  # pylint: disable=unused-argument
+    ) -> dict[str, Any]:
+        """Refresh evmlike chain transactions. The chain is unused arg since only for zksynclite"""
+        message, status_code = '', HTTPStatus.OK
+        # lazy mode. At the moment this can only be ZKSYnc lite
+        addresses = [x.address for x in accounts] if accounts else self.rotkehlchen.chains_aggregator.accounts.zksync_lite  # noqa: E501
+        for address in addresses:
+            self.rotkehlchen.chains_aggregator.zksync_lite.fetch_transactions(
+                address=address,
+                start_ts=from_timestamp,
+                end_ts=to_timestamp,
+            )
+
+        return {'result': True, 'message': message, 'status_code': status_code}
+
+    def delete_blockchain_transaction_data(
+            self,
+            chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE | None,
+            tx_hash: EVMTxHash | None,
+    ) -> Response:
+        # First delete transaction data
+        if not chain or chain != SupportedBlockchain.ZKSYNC_LITE:
+            DBEvmTx(self.rotkehlchen.data.db).delete_evm_transaction_data(
+                chain=chain,
+                tx_hash=tx_hash,
+            )
+
+        if not chain or chain == SupportedBlockchain.ZKSYNC_LITE:
+            querystr, bindings = 'DELETE FROM zksynclite_transactions', ()
+            if tx_hash is not None:
+                querystr += ' WHERE tx_hash=?'
+                bindings = (tx_hash,)  # type: ignore
+
+            with self.rotkehlchen.data.db.user_write() as write_cursor:
+                write_cursor.execute(querystr, bindings)
+
+        # Then delete events related to the deleted transaction data
+        dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
+        with self.rotkehlchen.data.db.user_write() as write_cursor:
+            if tx_hash is not None:
+                assert chain is not None, 'api should not let this be none if tx_hash is not'
+                dbevents.delete_events_by_tx_hash(
+                    write_cursor=write_cursor,
+                    tx_hashes=[tx_hash],
+                    location=Location.from_chain(chain),
+                )
+            else:
+                chain_locations = [Location.from_chain(chain)] if chain else EVM_EVMLIKE_LOCATIONS
+                for chain_location in chain_locations:
+                    dbevents.delete_events_by_location(
+                        write_cursor=write_cursor,
+                        location=chain_location,
+                    )
+
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @async_api_call()
-    def get_evm_transactions(
+    def refresh_evm_transactions(
             self,
-            only_cache: bool,
             filter_query: EvmTransactionsFilterQuery,
     ) -> dict[str, Any]:
         chain_ids: tuple[SUPPORTED_CHAIN_IDS]
@@ -2714,123 +2715,175 @@ class RestAPI:
         else:
             chain_ids = (filter_query.chain_id,)
 
-        message = ''
-        status_code = HTTPStatus.OK
-        if only_cache is False:  # we query the chain
-            for chain_id in chain_ids:
-                evm_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id)
-                try:
-                    evm_manager.transactions.query_chain(filter_query)
-                except RemoteError as e:
-                    transactions = None
-                    status_code = HTTPStatus.BAD_GATEWAY
-                    message = str(e)
-                    break
-                except sqlcipher.OperationalError as e:  # pylint: disable=no-member
-                    transactions = None
-                    status_code = HTTPStatus.BAD_REQUEST
-                    message = str(e)
-                    break
-
-            if status_code != HTTPStatus.OK:
-                return {'result': None, 'message': message, 'status_code': status_code}
-
-        # if needed, chain will have been queried by now so let's get everything from DB
-        dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
-        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
-            transactions, total_filter_count = dbevmtx.get_evm_transactions_and_limit_info(
-                cursor=cursor,
-                filter_=filter_query,
-                has_premium=self.rotkehlchen.premium is not None,
-            )
-
-            entries_result = [{'entry': entry.serialize()} for entry in transactions]
-            result: dict[str, Any] | None = None
-            kwargs = {}
-            if filter_query.chain_id is not None:
-                kwargs['chain_id'] = filter_query.chain_id.serialize_for_db()
-            result = {
-                'entries': entries_result,
-                'entries_found': total_filter_count,
-                'entries_total': self.rotkehlchen.data.db.get_entries_count(
-                    cursor=cursor,
-                    entries_table='evm_transactions',
-                    **kwargs,  # type: ignore[arg-type]
-                ),
-                'entries_limit': FREE_ETH_TX_LIMIT if self.rotkehlchen.premium is None else -1,
-            }
+        result, message, status_code = True, '', HTTPStatus.OK
+        for chain_id in chain_ids:
+            evm_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id)
+            try:
+                evm_manager.transactions.query_chain(filter_query)
+            except RemoteError as e:
+                result, message, status_code = False, str(e), HTTPStatus.BAD_GATEWAY
+                break
+            except sqlcipher.OperationalError as e:  # pylint: disable=no-member
+                result, message, status_code = False, str(e), HTTPStatus.BAD_REQUEST
+                break
 
         return {'result': result, 'message': message, 'status_code': status_code}
+
+    @async_api_call()
+    def decode_evm_transaction(
+            self,
+            evm_chain: SUPPORTED_CHAIN_IDS,
+            tx_hash: EVMTxHash,
+    ) -> dict[str, Any]:
+        """
+        Repull data for a transaction and redecode all events. Also prices for
+        the assets involed in these events are requeried.
+        """
+        task_manager = self.rotkehlchen.task_manager
+        assert task_manager, 'task manager should have been initialized at this point'
+        success, message, status_code = True, '', HTTPStatus.OK
+        chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(evm_chain)
+        with self.rotkehlchen.data.db.user_write() as write_cursor:
+            write_cursor.execute(
+                'DELETE FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+                (tx_hash, evm_chain.serialize_for_db()))
+        try:
+            chain_manager.transactions.get_or_query_transaction_receipt(tx_hash=tx_hash)
+        except RemoteError as e:
+            return {
+                'result': False,
+                'message': f'Failed to request evm transaction decoding due to hash {tx_hash.hex()} does not correspond to a transaction at {evm_chain.name}. {e!s}',  # noqa: E501
+                'status_code': HTTPStatus.CONFLICT,
+            }
+        except DeserializationError as e:
+            return {
+                'result': False,
+                'message': f'Failed to request evm transaction decoding due to {e!s}',
+                'status_code': HTTPStatus.CONFLICT,
+            }
+
+        try:
+            chain_manager.transactions_decoder.decode_transaction_hashes(
+                tx_hashes=[tx_hash],
+                send_ws_notifications=True,
+                ignore_cache=True,  # always redecode from here
+                delete_customized=True,  # also delete customized events from here
+            )
+            # Trigger the task to query the missing prices for the decoded events
+            events_filter = EvmEventFilterQuery.make(
+                tx_hashes=[tx_hash],  # always same hash
+            )
+            history_events_db = DBHistoryEvents(task_manager.database)
+            entries = history_events_db.get_base_entries_missing_prices(events_filter)
+            query_missing_prices_of_base_entries(
+                database=task_manager.database,
+                entries_missing_prices=entries,
+                base_entries_ignore_set=task_manager.base_entries_ignore_set,
+            )
+        except (RemoteError, DeserializationError) as e:
+            status_code = HTTPStatus.BAD_GATEWAY
+            message = f'Failed to request evm transaction decoding due to {e!s}'
+            success = False
+        except InputError as e:
+            status_code = HTTPStatus.CONFLICT
+            message = f'Failed to request evm transaction decoding due to {e!s}'
+            success = False
+
+        return {'result': success, 'message': message, 'status_code': status_code}
+
+    @async_api_call()
+    def decode_evmlike_transactions(
+            self,
+            tx_hash: EVMTxHash,
+            chain: EvmlikeChain,  # pylint: disable=unused-argument
+    ) -> dict[str, Any]:
+        """
+        Repull all data and redecode events for a single emvlike transaction hash.
+        Chain can only be zksync lite for now.
+        """
+        task_manager = self.rotkehlchen.task_manager
+        assert task_manager, 'task manager should have been initialized at this point'
+        success, message, status_code = True, '', HTTPStatus.OK
+        tracked_addresses = self.rotkehlchen.chains_aggregator.accounts.zksync_lite
+
+        # first delete tranasaction data and all decoded events and related data
+        with self.rotkehlchen.data.db.user_write() as write_cursor:
+            concerning_address = write_cursor.execute('DELETE FROM zksynclite_transactions WHERE tx_hash=? RETURNING from_address', (tx_hash,)).fetchone()  # noqa: E501
+            deleted_event_data = write_cursor.execute(
+                'DELETE FROM history_events WHERE event_identifier=? RETURNING location_label',
+                (ZKL_IDENTIFIER.format(tx_hash=tx_hash.hex()),),
+            ).fetchone()
+            if deleted_event_data is not None:
+                concerning_address = deleted_event_data[0]
+
+        transaction = self.rotkehlchen.chains_aggregator.zksync_lite.query_single_transaction(
+            tx_hash=tx_hash,
+            concerning_address=concerning_address,
+        )
+        if transaction:
+            self.rotkehlchen.chains_aggregator.zksync_lite.decode_transaction(
+                transaction=transaction,
+                tracked_addresses=tracked_addresses,
+            )
+            events_filter = EvmEventFilterQuery.make(
+                tx_hashes=[tx_hash],
+                location=Location.ZKSYNC_LITE,
+            )
+            try:
+                # Trigger the task to query the missing prices for the decoded events
+                history_events_db = DBHistoryEvents(task_manager.database)
+                entries = history_events_db.get_base_entries_missing_prices(events_filter)
+                query_missing_prices_of_base_entries(
+                    database=task_manager.database,
+                    entries_missing_prices=entries,
+                    base_entries_ignore_set=task_manager.base_entries_ignore_set,
+                )
+            except (RemoteError, DeserializationError) as e:
+                status_code = HTTPStatus.BAD_GATEWAY
+                message = f'Failed to request evm transaction decoding due to {e!s}'
+                success = False
+
+        else:
+            status_code = HTTPStatus.BAD_GATEWAY
+            message = f'Failed to fetch transaction {tx_hash.hex()} from zksync lite API'
+            success = False
+
+        return {'result': success, 'message': message, 'status_code': status_code}
 
     @async_api_call()
     def decode_evm_transactions(
             self,
-            ignore_cache: bool,
-            data: list[EvmTransactionDecodingApiData],
-    ) -> dict[str, Any]:
-        """
-        Decode a set of transactions selected by their transaction hash. If the tx_hashes
-        value is None all the transactions for that chain  in the database will be
-        attempted to be decoded. If the tx_hashes argument is provided then the USD
-        price for their events will be queried.
-        """
-        task_manager = self.rotkehlchen.task_manager
-        result = None
-        message = ''
-        status_code = HTTPStatus.OK
-
-        for entry in data:
-            chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(entry['evm_chain'])
-            try:
-                decoded_events = chain_manager.transactions_decoder.decode_transaction_hashes(
-                    ignore_cache=ignore_cache,
-                    tx_hashes=entry['tx_hashes'],
-                    send_ws_notifications=True,
-                )
-                if entry['tx_hashes'] is not None and task_manager is not None:
-                    # Trigger the task to query the missing prices for the decoded events
-                    events_filter = EvmEventFilterQuery.make(
-                        tx_hashes=[event.tx_hash for event in decoded_events],
-                    )
-                    history_events_db = DBHistoryEvents(task_manager.database)
-                    entries = history_events_db.get_base_entries_missing_prices(events_filter)
-                    query_missing_prices_of_base_entries(
-                        database=task_manager.database,
-                        entries_missing_prices=entries,
-                        base_entries_ignore_set=task_manager.base_entries_ignore_set,
-                    )
-            except (RemoteError, DeserializationError) as e:
-                status_code = HTTPStatus.BAD_GATEWAY
-                message = f'Failed to request evm transaction decoding due to {e!s}'
-                break
-            except InputError as e:
-                status_code = HTTPStatus.CONFLICT
-                message = f'Failed to request evm transaction decoding due to {e!s}'
-                break
-        else:  # no break in the for loop, success
-            result = True
-
-        return {'result': result, 'message': message, 'status_code': status_code}
-
-    @async_api_call()
-    def decode_pending_evm_transactions(
-            self,
             evm_chains: list[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE],
+            force_redecode: bool,
     ) -> dict[str, Any]:
         """
-        This method should be called after querying ethereum transactions and does the following:
+        This method should be called after querying evm transactions and does the following:
         - Query missing receipts
-        - Decode ethereum transactions
+        - Decode EVM transactions
 
         It can be a slow process and this is why it is important to set the list of addresses
         queried per module that need to be decoded.
 
         This logic is executed by the frontend in pages where the set of transactions needs to be
         up to date, for example, the liquity module.
+
+        If force redecode is True then all related events, except the
+        customized ones are deleted and rececoded.
+
+        Returns the number of decoded transactions (not events in transactions)
         """
+
         dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
+        dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
         result = {}
         for evm_chain in evm_chains:
+            if force_redecode:
+                with self.rotkehlchen.data.db.user_write() as write_cursor:
+                    dbevents.delete_events_by_location(
+                        write_cursor=write_cursor,
+                        location=Location.from_chain_id(evm_chain),
+                    )
+
             chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(evm_chain)
             # make sure that all the receipts are already queried
             chain_manager.transactions.get_receipts_for_transactions_missing_them()
@@ -2848,14 +2901,52 @@ class RestAPI:
         }
 
     @async_api_call()
+    def decode_pending_evmlike_transactions(
+            self,
+            ignore_cache: bool,
+            evmlike_chains: list[SUPPORTED_EVMLIKE_CHAINS_TYPE],  # pylint: disable=unused-argument
+    ) -> dict[str, Any]:
+        """This method should be called after querying evmlike transactions. Decodes
+        all undecoded evmlike transactions or all transaction if ignore_cache is true.
+
+        Returns the number of decoded transactions (not events in transactions)
+        """
+        decoded_num = 0
+        # For now it's only zksync lite
+        decoded_num = self.rotkehlchen.chains_aggregator.zksync_lite.decode_undecoded_transactions(force_redecode=ignore_cache)   # noqa: E501
+        return {
+            'result': {'decoded_tx_number': decoded_num},
+            'message': '',
+            'status_code': HTTPStatus.OK,
+        }
+
+    @async_api_call()
     def get_count_transactions_not_decoded(self) -> dict[str, Any]:
-        pending_transactions_to_decode = {}
+        transactions_information: dict[str, dict[str, int]] = defaultdict(dict)
         dbevmtx = DBEvmTx(self.rotkehlchen.data.db)
         for chain in EVM_CHAIN_IDS_WITH_TRANSACTIONS:
             if (tx_count := dbevmtx.count_hashes_not_decoded(chain_id=chain)) != 0:
-                pending_transactions_to_decode[chain.to_name()] = tx_count
+                chain_information = transactions_information[chain.to_name()]
+                chain_information['undecoded'] = tx_count
+                chain_information['total'] = dbevmtx.count_evm_transactions(chain_id=chain)
 
-        return _wrap_in_ok_result(pending_transactions_to_decode)
+        return _wrap_in_ok_result(transactions_information)
+
+    @async_api_call()
+    def get_count_evmlike_transactions_not_decoded(self) -> dict[str, Any]:
+        result = {}
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            undecoded = cursor.execute(
+                'SELECT COUNT(*) FROM zksynclite_transactions WHERE is_decoded=0',
+            ).fetchone()[0]
+            if undecoded != 0:
+                cursor.execute('SELECT COUNT(*) FROM zksynclite_transactions')
+                result['zksync_lite'] = {
+                    'undecoded': undecoded,
+                    'total': cursor.fetchone()[0],
+                }
+
+        return _wrap_in_ok_result(result)
 
     def get_asset_icon(
             self,
@@ -2954,6 +3045,64 @@ class RestAPI:
         }
         return _wrap_in_ok_result(process_result(result))
 
+    def query_location_asset_mappings(self, filter_query: LocationAssetMappingsFilterQuery) -> Response:  # noqa: E501
+        """Query the location asset mappings using the provided filter_query
+        and return them in a paginated format"""
+        mappings, mappings_found, mappings_total = GlobalDBHandler.query_location_asset_mappings(
+            filter_query=filter_query,
+        )
+        result = {
+            'entries': mappings,
+            'entries_found': mappings_found,
+            'entries_total': mappings_total,
+        }
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+
+    def add_location_asset_mappings(
+            self,
+            entries: list[LocationAssetMappingUpdateEntry],
+    ) -> Response:
+        """Add the location asset mappings in the global DB for the given location"""
+        try:
+            GlobalDBHandler.add_location_asset_mappings(entries=entries)
+        except InputError as e:
+            return api_response(
+                result=wrap_in_fail_result(str(e)),
+                status_code=HTTPStatus.CONFLICT,
+            )
+        else:
+            return api_response(result=OK_RESULT)
+
+    def update_location_asset_mappings(
+            self,
+            entries: list[LocationAssetMappingUpdateEntry],
+    ) -> Response:
+        """Update the location asset mappings in the global DB for the given location"""
+        try:
+            GlobalDBHandler.update_location_asset_mappings(entries=entries)
+        except InputError as e:
+            return api_response(
+                result=wrap_in_fail_result(str(e)),
+                status_code=HTTPStatus.CONFLICT,
+            )
+        else:
+            return api_response(result=OK_RESULT)
+
+    def delete_location_asset_mappings(
+            self,
+            entries: list[LocationAssetMappingDeleteEntry],
+    ) -> Response:
+        """Delete the location asset mappings from the global DB for the given location"""
+        try:
+            GlobalDBHandler.delete_location_asset_mappings(entries=entries)
+        except InputError as e:
+            return api_response(
+                result=wrap_in_fail_result(str(e)),
+                status_code=HTTPStatus.CONFLICT,
+            )
+        else:
+            return api_response(result=OK_RESULT)
+
     @staticmethod
     def _get_historical_assets_price(
             assets_timestamp: list[tuple[Asset, Timestamp]],
@@ -2976,7 +3125,7 @@ class RestAPI:
                     timestamp=timestamp,
                 )
             except (RemoteError, NoPriceForGivenTimestamp) as e:
-                log.error(
+                log.warning(
                     f'Could not query the historical {target_asset.identifier} price for '
                     f'{asset.identifier} at time {timestamp} due to: {e!s}. Using zero price',
                 )
@@ -3514,12 +3663,9 @@ class RestAPI:
                 entries_table='history_events',
                 group_by='event_identifier' if group_by_event_ids else None,
             )
-            location = filter_query.location
-            chain_id = ChainID(Location.to_chain_id(location)) if location in EVM_LOCATIONS else None  # noqa: E501
-
             customized_event_ids = dbevents.get_customized_event_identifiers(
                 cursor=cursor,
-                chain_id=chain_id,  # type: ignore
+                location=filter_query.location,
             )
             hidden_event_ids = dbevents.get_hidden_event_ids(cursor)
             ignored_ids_mapping = self.rotkehlchen.data.db.get_ignored_action_ids(
@@ -3894,7 +4040,7 @@ class RestAPI:
             self,
             only_cache: bool,
             addresses: Sequence[ChecksumEvmAddress] | None,
-            blockchain: SUPPORTED_EVM_CHAINS,
+            blockchain: SUPPORTED_EVM_CHAINS_TYPE,
     ) -> dict[str, Any]:
         manager: EvmManager = self.rotkehlchen.chains_aggregator.get_chain_manager(blockchain)
         if addresses is None:
@@ -4315,15 +4461,12 @@ class RestAPI:
         Collect the counterparties from decoders in the different evm chains and combine them
         removing duplicates.
         """
-        counterparties: set[CounterpartyDetails] = reduce(
-            operator.or_,
-            [
-                self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id).transactions_decoder.rules.all_counterparties
-                for chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS
-            ],
-        )
         return api_response(
-            result=process_result(_wrap_in_ok_result(list(counterparties))),
+            result=process_result(
+                _wrap_in_ok_result(
+                    result=list(self.rotkehlchen.chains_aggregator.get_all_counterparties()),
+                ),
+            ),
             status_code=HTTPStatus.OK,
         )
 
@@ -4352,12 +4495,12 @@ class RestAPI:
     def refresh_general_cache(self) -> dict[str, Any]:
         eth_node_inquirer = self.rotkehlchen.chains_aggregator.ethereum.node_inquirer
         optimism_inquirer = self.rotkehlchen.chains_aggregator.optimism.node_inquirer
-        base_inquierer = self.rotkehlchen.chains_aggregator.base.node_inquirer
-        caches = (
+        base_inquirer = self.rotkehlchen.chains_aggregator.base.node_inquirer
+        caches: tuple[tuple[str, CacheType, Callable, Callable, 'UpdatableCacheDataMixin'], ...] = (  # noqa: E501
             ('curve pools', CacheType.CURVE_LP_TOKENS, query_curve_data, save_curve_data_to_cache, eth_node_inquirer),  # noqa: E501
             ('convex pools', CacheType.CONVEX_POOL_ADDRESS, query_convex_data, save_convex_data_to_cache, eth_node_inquirer),  # noqa: E501
             ('velodrome pools', CacheType.VELODROME_POOL_ADDRESS, query_velodrome_like_data, save_velodrome_data_to_cache, optimism_inquirer),  # noqa: E501
-            ('aerodrome pools', CacheType.AERODROME_POOL_ADDRESS, query_velodrome_like_data, save_velodrome_data_to_cache, base_inquierer),  # noqa: E501
+            ('aerodrome pools', CacheType.AERODROME_POOL_ADDRESS, query_velodrome_like_data, save_velodrome_data_to_cache, base_inquirer),  # noqa: E501
         )
         for (cache, cache_type, query_method, save_method, inquirer) in caches:
             if inquirer.ensure_cache_data_is_updated(
@@ -4742,3 +4885,96 @@ class RestAPI:
         self.rotkehlchen.data.remove_ignored_assets(assets=[token])
         AssetResolver().clean_memory_cache(token.identifier)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    def create_calendar_entry(self, calendar: CalendarEntry) -> Response:
+        """Create a new calendar entry with the information provided"""
+        try:
+            calendar_event_id = DBCalendar(self.rotkehlchen.data.db).create_calendar_entry(
+                calendar=calendar,
+            )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+        return api_response(_wrap_in_ok_result(
+            {'entry_id': calendar_event_id}),
+            status_code=HTTPStatus.OK,
+        )
+
+    def delete_calendar_entry(self, identifier: int) -> Response:
+        """Delete a calendar entry by its id"""
+        try:
+            DBCalendar(self.rotkehlchen.data.db).delete_entry(
+                identifier=identifier,
+                entry_type='calendar',
+            )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    def query_calendar(self, filter_query: CalendarFilterQuery) -> Response:
+        """Query the calendar table using the provided filter"""
+        result = DBCalendar(self.rotkehlchen.data.db).query_calendar_entry(
+            filter_query=filter_query,
+        )
+        return api_response(_wrap_in_ok_result(
+            result=process_result(result),
+            status_code=HTTPStatus.OK,
+        ))
+
+    def update_calendar_entry(self, calendar: CalendarEntry) -> Response:
+        """Update the calendar entry with the given identifier using the information provided"""
+        try:
+            calendar_event_id = DBCalendar(self.rotkehlchen.data.db).update_calendar_entry(
+                calendar=calendar,
+            )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+
+        return api_response(_wrap_in_ok_result(
+            {'entry_id': calendar_event_id}),
+            status_code=HTTPStatus.OK,
+        )
+
+    def create_calendar_reminder(self, reminders: list[ReminderEntry]) -> Response:
+        """Store in the database the reminder for an event and return the id of the new entry"""
+        success, failed = DBCalendar(self.rotkehlchen.data.db).create_reminder_entries(
+            reminders=reminders,
+        )
+        result = {'success': success}
+        if len(failed):
+            result['failed'] = failed
+
+        return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
+
+    def delete_reminder_entry(self, identifier: int) -> Response:
+        """Delete a reminder entry by its id"""
+        try:
+            DBCalendar(self.rotkehlchen.data.db).delete_entry(
+                identifier=identifier,
+                entry_type='calendar_reminders',
+            )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+
+    def update_reminder_entry(self, reminder: ReminderEntry) -> Response:
+        """Update the calendar reminder entry with the given identifier using the
+        information provided"""
+        try:
+            calendar_event_id = DBCalendar(self.rotkehlchen.data.db).update_reminder_entry(
+                reminder=reminder,
+            )
+        except InputError as e:
+            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.BAD_REQUEST)
+
+        return api_response(_wrap_in_ok_result(
+            {'entry_id': calendar_event_id}),
+            status_code=HTTPStatus.OK,
+        )
+
+    def query_reminders(self, event_id: int) -> Response:
+        """Query the calendar table using the provided filter"""
+        result = DBCalendar(self.rotkehlchen.data.db).query_reminder_entry(event_id=event_id)
+        return api_response(_wrap_in_ok_result(
+            result=process_result(result),
+            status_code=HTTPStatus.OK,
+        ))

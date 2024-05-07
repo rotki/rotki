@@ -31,7 +31,7 @@ class ResourceReadingParser(FlaskParser):
         Edited from core parser to include the resource object.
 
         When allow_async_validation is set to true we avoid doing validation for async requests
-        before spawning the the task and instead any validation error will appear in the async
+        before spawning the task and instead any validation error will appear in the async
         task output.
         """
         location = location or self.location
@@ -69,7 +69,7 @@ class ResourceReadingParser(FlaskParser):
                 )
                 return func(*args, **kwargs)
 
-            wrapper.__wrapped__ = func  # type: ignore
+            wrapper.__wrapped__ = func
             return wrapper
 
         return decorator

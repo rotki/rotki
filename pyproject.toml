@@ -36,7 +36,7 @@ rotkehlchen_mock = "rotkehlchen_mock.__main__:main"
 dependencies = {file = ["requirements.txt"]}
 
 [tool.setuptools_scm]
-fallback_version = "1.32.2"
+fallback_version = "1.33.0"
 
 [tool.setuptools.package-data]
 "rotkehlchen.data" = ["*"]
@@ -84,8 +84,37 @@ disallow_untyped_defs = false
 # -- ruff config section --
 
 [tool.ruff]
-preview = true  # https://docs.astral.sh/ruff/preview/
 line-length = 99
+
+
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+target-version = "py311"
+
+[tool.ruff.lint]
+preview = true  # https://docs.astral.sh/ruff/preview/
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
 
 select = [
     "E",
@@ -163,7 +192,7 @@ ignore = [
     "RET508",  # https://github.com/charliermarsh/ruff/issues/1035
     "PGH003",  # we do use blanket type: ignore. Perhaps can fix in the future
     "SIM108",  # we do use ternary operator when it makes sense. But forcing it everywhere makes the code unreadable.
-    "PLR2004", # we try to use constant vars where possile but this complains abouttoo many things
+    "PLR2004", # we try to use constant vars where possible but this complains abouttoo many things
     "PLR0904", # too many public methods. This is a bit too much to enforce in the codebase
     "PLR0913", # too many arguments to function call. This is a bit too much to enforce in the codebase
     "PLR0914", # too many local variables. This is a bit too much to enforce in the codebase
@@ -184,7 +213,7 @@ ignore = [
     "S103",  # permissive mask on file/directory
     "S105",  # hard coded password checks got false positives
     "S106",  # hard coded password checks got false positives
-    "S311",  # We know pseud-random is not safe for cryptographic operations
+    "S311",  # We know pseudo-random is not safe for cryptographic operations
     "S324",  # insecure hash function. We use it for image md5 for etag. TODO: Change and enable?
     "S608",  # possible sql-injection is overkill since we control the variables in question
     "G004",  # Our logs do use f-strings everywhere at least for now
@@ -194,37 +223,16 @@ ignore = [
     "TRY003",  # long messages outside the exception class. Perhaps enable when we do internationalization and need to put messages in class logic?
     "TRY004",  # Prefer TypeError for wrong type. May be okay but would need to invetigate all usages of suggested changes
     "TRY301",  # Abstract raise to an inner function -- not sure what this? Use exception for control flow?
-    "TRY400",  # loggin.exception instead of logging.error. Not sure I understood this one
-    "PERF203",  # we do use try/except in loops and when python 3.11 comes this is not gonna be needed due to zero cost exception handling
+    "TRY400",  # logging.exception instead of logging.error. Not sure I understood this one
 ]
-# Exclude a variety of commonly ignored directories.
-exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".hg",
-    ".mypy_cache",
-    ".nox",
-    ".pants.d",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "venv",
-]
-# Allow unused variables when underscore-prefixed.
-dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
-target-version = "py311"
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.flake8-quotes]
+avoid-escape = true
+docstring-quotes = "double"
+inline-quotes = "single"
+multiline-quotes = "double"
 
+[tool.ruff.lint.per-file-ignores]
 "tools/*" = [
     "T201",  # got prints in tools
     "INP001",  # no need for __init__ in tools
@@ -240,7 +248,10 @@ target-version = "py311"
     "E501",  # huge lines there
     "Q000",  # double quoted strings needed here
 ]
-"rotkehlchen/tests/*" = ["S113"]  # tests have no timeout in requests
+"rotkehlchen/tests/*" = [
+    "S113",    # tests have no timeout in requests
+    "RUF018",  # We have assignments in assert in tests and that's fine there
+]
 "rotkehlchen/tests/conftest.py" = [
     "S602",  # test setup. No problem with shell=True
     "S605",  # test setup, can't inject in process
@@ -260,12 +271,6 @@ target-version = "py311"
     "S603",  # Script called by us. No variable input
     "S607",  # Script called by us. Partial executable path is fine.
 ]
-
-[tool.ruff.flake8-quotes]
-avoid-escape = true
-docstring-quotes = "double"
-inline-quotes = "single"
-multiline-quotes = "double"
 
 # -- isort config section --
 

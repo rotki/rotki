@@ -9,7 +9,6 @@ import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { OnlineHistoryEventsQueryType } from '@/types/history/events';
 import type { BigNumber } from '@rotki/common';
-import type { GeneralAccount } from '@rotki/common/lib/account';
 import type {
   Eth2ValidatorEntry,
   Eth2Validators,
@@ -21,7 +20,9 @@ const module = Module.ETH2;
 const performanceSection = Section.STAKING_ETH2;
 const statsSection = Section.STAKING_ETH2_STATS;
 
-const filter = ref<EthStakingCombinedFilter>();
+const filter = ref<EthStakingCombinedFilter>({
+  status: 'active',
+});
 const selection = ref<EthStakingFilter>({
   validators: [],
 });
@@ -51,6 +52,8 @@ const {
 const { isLoading } = useStatusStore();
 const { isTaskRunning } = useTaskStore();
 
+const { isFirstLoad } = useStatusUpdater(performanceSection);
+
 const performanceRefreshing = isLoading(performanceSection);
 const statsRefreshing = isLoading(statsSection);
 const blockProductionLoading = isTaskRunning(TaskType.QUERY_ONLINE_EVENTS, {
@@ -59,14 +62,13 @@ const blockProductionLoading = isTaskRunning(TaskType.QUERY_ONLINE_EVENTS, {
 
 const refreshing = logicOr(
   performanceRefreshing,
-  isLoading(Section.BLOCKCHAIN_ETH2),
+  isLoading(Section.BLOCKCHAIN, Blockchain.ETH2),
   blockProductionLoading,
 );
 
 const { getEth2Validators } = useBlockchainAccountsApi();
-const accountsStore = useEthAccountsStore();
-const { eth2Validators } = storeToRefs(accountsStore);
-const { stakingBalances } = storeToRefs(useEthBalancesStore());
+const { fetchEthStakingValidators } = useEthStaking();
+const { ethStakingValidators, stakingValidatorsLimits } = storeToRefs(useBlockchainStore());
 const { fetchBlockchainBalances } = useBlockchainBalances();
 
 const premium = usePremium();
@@ -80,17 +82,17 @@ function shouldRefreshDailyStats() {
 async function refresh(userInitiated = false): Promise<void> {
   const refreshValidators = async (userInitiated: boolean) => {
     await fetchBlockchainBalances({
-      ignoreCache: userInitiated,
+      ignoreCache: userInitiated || isFirstLoad(),
       blockchain: Blockchain.ETH2,
     });
-    await accountsStore.fetchEth2Validators();
+    await fetchEthStakingValidators();
   };
 
   const updatePerformance = async (userInitiated = false): Promise<void> => {
     await refreshPerformance(userInitiated);
     // if the number of validators is bigger than the total entries in performance
     // force a refresh of performance to pick the missing performance entries.
-    const totalValidators = get(eth2Validators).entriesFound;
+    const totalValidators = get(stakingValidatorsLimits)?.total ?? 0;
     const totalPerformanceEntries = get(performance).entriesTotal;
     if (totalValidators > totalPerformanceEntries) {
       logger.log(`forcing refresh validators: ${totalValidators}/performance: ${totalPerformanceEntries}`);
@@ -99,7 +101,7 @@ async function refresh(userInitiated = false): Promise<void> {
   };
 
   await refreshValidators(userInitiated);
-  setTotal(get(eth2Validators));
+  setTotal();
 
   const statsRefresh: Promise<void>[] = (
     (!get(statsRefreshing) && shouldRefreshDailyStats())
@@ -113,30 +115,40 @@ async function refresh(userInitiated = false): Promise<void> {
   set(lastRefresh, dayjs().unix());
 }
 
-function setTotal(validators: Eth2Validators) {
-  const publicKeys = validators.entries.map((validator: Eth2ValidatorEntry) => validator.publicKey);
-  const totalStakedAmount = get(stakingBalances)
-    .filter(x => publicKeys.includes(x.publicKey))
+function setTotal(validators?: Eth2Validators['entries']) {
+  const publicKeys = validators?.map((validator: Eth2ValidatorEntry) => validator.publicKey);
+  const stakingValidators = get(ethStakingValidators);
+  const selectedValidators = publicKeys
+    ? stakingValidators.filter(validator => publicKeys.includes(validator.data.publicKey))
+    : stakingValidators;
+  const totalStakedAmount = selectedValidators
     .reduce((sum, item) => sum.plus(item.amount), Zero);
   set(total, totalStakedAmount);
 }
 
-watch([selection, filter] as const, async ([selection, filter]) => {
-  const statusFilter = filter ? objectOmit(filter, ['fromTimestamp', 'toTimestamp']) : {};
-  const accounts = 'accounts' in selection
-    ? { addresses: selection.accounts.map((account: GeneralAccount) => account.address) }
-    : { validatorIndices: selection.validators.map((validator: Eth2ValidatorEntry) => validator.index) };
+watch([selection, filter], async () => {
+  await fetchValidatorsWithFilter();
+});
+
+async function fetchValidatorsWithFilter() {
+  const filterVal = get(filter);
+  const selectionVal = get(selection);
+  const statusFilter = filterVal ? objectOmit(filterVal, ['fromTimestamp', 'toTimestamp']) : {};
+  const accounts = 'accounts' in selectionVal
+    ? { addresses: selectionVal.accounts.map(account => account.address) }
+    : { validatorIndices: selectionVal.validators.map((validator: Eth2ValidatorEntry) => validator.index) };
 
   const combinedFilter = nonEmptyProperties({ ...statusFilter, ...accounts });
 
-  const validators = isEmpty(combinedFilter) ? get(eth2Validators) : await getEth2Validators(combinedFilter);
+  const validators = isEmpty(combinedFilter) ? undefined : (await getEth2Validators(combinedFilter)).entries;
   setTotal(validators);
-});
+};
 
-onMounted(async () => {
+onBeforeMount(async () => {
   if (get(enabled))
     await refresh(false);
-  setTotal(get(eth2Validators));
+
+  await fetchValidatorsWithFilter();
 });
 </script>
 
@@ -180,7 +192,7 @@ onMounted(async () => {
       </template>
 
       <EthStaking
-        :refreshing="performanceRefreshing"
+        :refreshing="refreshing"
         :total="total"
         :accounts="selection"
         :filter.sync="filter"

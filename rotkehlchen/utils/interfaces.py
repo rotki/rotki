@@ -1,4 +1,4 @@
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Optional
 
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-class EthereumModule(metaclass=ABCMeta):
+class EthereumModule(ABC):
     """Interface to be followed by all Ethereum modules"""
 
     @abstractmethod
@@ -46,7 +46,7 @@ class EthereumModule(metaclass=ABCMeta):
         """Actions to run on module's deactivation"""
 
 
-class ProgressUpdater(metaclass=ABCMeta):
+class ProgressUpdater(ABC):
     """Interface to be followed to give progress updates about something to the frontend
 
     Is designed to be used by processes that update progress for state changes like

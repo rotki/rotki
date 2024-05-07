@@ -17,7 +17,7 @@ const currentAddressNamePriorities = ref<PrioritizedListId[]>([]);
 const { addressNamePriority } = storeToRefs(useGeneralSettingsStore());
 const { resetAddressesNames } = useAddressesNamesStore();
 
-async function finishEditing() {
+function finishEditing() {
   resetCurrentAddressNamePriorities();
   resetAddressesNames();
 }

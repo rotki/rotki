@@ -294,8 +294,46 @@ def test_cryptocompare_asset_support(cryptocompare):
         evm_address_to_identifier(address='0x8bb08042c06FA0Fc26cd2474C5F0C03a1056Ad2F', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # consumer price index but cc has crypto price
         'IRON',  # iron fish but cc has iron
         'VARA',  # equilibre but VARA chain in cc
+        evm_address_to_identifier(address='0x9bf1D7D63dD7a4ce167CF4866388226EEefa702E', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # eaglegx but cc has EagleCoin
+        evm_address_to_identifier(address='0x6589fe1271A0F29346796C6bAf0cdF619e25e58e', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # grain(farm) but cc has Granary
+        evm_address_to_identifier(address='0x6589fe1271A0F29346796C6bAf0cdF619e25e58e', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # grain(farm) but cc has Granary
+        evm_address_to_identifier(address='0x24086EAb82DBDaa4771d0A5D66B0D810458b0E86', chain_id=ChainID.BINANCE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # we have an older meme coin pepeai
+        evm_address_to_identifier(address='0x3007083EAA95497cD6B2b809fB97B6A30bdF53D3', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # address doesn't match
+        'ANDY',  # we have andy on sol but cc has andy
+        evm_address_to_identifier(address='0x22B6C31c2bEB8f2d0d5373146Eed41Ab9eDe3caf', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # we have cocktailbar and cc has coin of champions
+        evm_address_to_identifier(address='0xb8a87405d9a4F2F866319B77004e88dfF66c0d92', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # we have soraAI but cc has sora validator
+        evm_address_to_identifier(address='0x20547341E58fB558637FA15379C92e11F7b7F710', chain_id=ChainID.ARBITRUM_ONE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # we have mozaic and cc has mozik
+        evm_address_to_identifier(address='0xe7E4279b80D319EDe2889855135A22021baf0907', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # we have zeus founding and cc has zeus network
+        evm_address_to_identifier(address='0xf53AD2c6851052A81B42133467480961B2321C09', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # we have pooled eth but cc has jpeg's ETH
+        evm_address_to_identifier(address='0x04cC847F81A01328c69EA58321f2E0F8e8ED9681', chain_id=ChainID.OPTIMISM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # we have a unknown WLD token but cc has worldcoin
+        evm_address_to_identifier(address='0xbbd6CD3A31Cbc5CbD6f89D476D15D5bD2F260AcB', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # we have a unknown AERO token
+        evm_address_to_identifier(address='0x1efF8aF5D577060BA4ac8A29A13525bb0Ee2A3D5', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # we have balancer pool token but cc has black pool
+        evm_address_to_identifier(address='0x59A19D8c652FA0284f44113D0ff9aBa70bd46fB4', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # we have balancer pool token but cc has black pool
+        evm_address_to_identifier(address='0x6432096f054288Ee45b7f6ad8863a1F4A8e1201C', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # we have fomo base but cc has aavegochi fomo
+        'WZRD',  # bitcoin wizards but cc has wizardia
+        evm_address_to_identifier(address='0xb0eCc6ac0073c063DCFC026cCdC9039Cae2998E1', chain_id=ChainID.ARBITRUM_ONE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # account abstraction but cc has alva
+        evm_address_to_identifier(address='0x12652C6d93FDB6F4f37d48A8687783C782BB0d10', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # entangle cc gold fever
+        evm_address_to_identifier(address='0x6043A3f2f4Fe127d81896220369F9E9CF5Fdf66F', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # panda but cc has panda dao
+        evm_address_to_identifier(address='0x77be1ba1Cd2D7a63BFfC772D361168cc327dd8bc', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # meow meme coin but cc has ZERO
+        evm_address_to_identifier(address='0x13832bEC9b7029a82988017a7f6095BDf0207D62', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # milk but cc has milkshake
+        evm_address_to_identifier(address='0xeF0b2Ccb53A683fA48799245f376D6a60929f003', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # unknown moon and cc has reddit moon
+        evm_address_to_identifier(address='0xfF07fc776206BDdd9d285A5E571dcDF98131120B', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # chiUSD but cc has CHI GAS TOKEN
+        evm_address_to_identifier(address='0x6DcB98f460457fe4952e12779Ba852F82eCC62C1', chain_id=ChainID.ARBITRUM_NOVA, token_type=EvmTokenKind.ERC20),  # noqa: E501  # bricks but cc has MyBricks
+        evm_address_to_identifier(address='0x5e06eA564efcB3158a85dBF0B9E017cb003ff56f', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # usd stable but cc has Mountain Protocol
+        evm_address_to_identifier(address='0x1d75AA781665A189b240ca3D6D3CbB540EC7f02A', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # base frens but cc has farm friends
+        evm_address_to_identifier(address='0x8Fa0FF7350B07c2e1244daD303fbe4ec71bB7E9a', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # scam ETH token
+        evm_address_to_identifier(address='0x70da6ec1fCbE89122c66ECAAC8430CB15580b8Ee', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # wif fake token
+        evm_address_to_identifier(address='0x302ab9ae394D675676Ddb41E294169224824fc9A', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # cheezburger but cc has chiliz
+        evm_address_to_identifier(address='0x3108ccFd96816F9E663baA0E8c5951D229E8C6da', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # cc has a dark without any address info
+        'SBF',  # we have sam token but cc has sam in jail
+        evm_address_to_identifier(address='0x79F05c263055BA20EE0e814ACD117C20CAA10e0c', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501  # different ICE
+        evm_address_to_identifier(address='0xc335Df7C25b72eEC661d5Aa32a7c2B7b2a1D1874', chain_id=ChainID.BINANCE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # different ice
+        evm_address_to_identifier(address='0xa8a8d0373642977CD491e29572484012174ADfBd', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # Jesus on base but cc doesn't have any
+        evm_address_to_identifier(address='0x12E8E49A585123F85b08Fe4114443f9E7dbe0746', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # fake jesus on base
+        evm_address_to_identifier(address='0x348Fdfe2c35934A96C1353185F09D0F9efBAdA86', chain_id=ChainID.BASE, token_type=EvmTokenKind.ERC20),  # noqa: E501  # trove on base but trove isn't listed on base
+
     )
-    for asset_data in GlobalDBHandler().get_all_asset_data(mapping=False):
+    for asset_data in GlobalDBHandler.get_all_asset_data(mapping=False):
         potential_support = (
             asset_data.cryptocompare == '' and
             asset_data.symbol in cc_assets and
@@ -327,7 +365,7 @@ def test_assets_tokens_addresses_are_checksummed():
 def test_asset_identifiers_are_unique_all_lowercased():
     """Test that adding an identifier that exists but with different case, would fail"""
     with pytest.raises(InputError):
-        GlobalDBHandler().add_asset(CryptoAsset.initialize(
+        GlobalDBHandler.add_asset(CryptoAsset.initialize(
             identifier='Eth',
             asset_type=AssetType.OWN_CHAIN,
             name='a',

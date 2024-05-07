@@ -44,11 +44,6 @@ const entries = computed(() => {
   return Object.values(entries);
 });
 
-watch(multiple, () => {
-  get(v$).$clearExternalResults();
-  set(userAddresses, '');
-});
-
 function onPasteMulti(event: ClipboardEvent) {
   if (get(disabled))
     return;
@@ -65,11 +60,6 @@ function onPasteAddress(event: ClipboardEvent) {
   const paste = trimOnPaste(event);
   if (paste)
     set(address, paste);
-}
-
-function updateAddresses(addresses: string[]) {
-  get(v$).$clearExternalResults();
-  emit('update:addresses', addresses);
 }
 
 function updateErrorMessages(errorMessages: Record<string, string[]>) {
@@ -140,9 +130,19 @@ const v$ = setValidation(
   },
 );
 
+function updateAddresses(addresses: string[]) {
+  get(v$).$clearExternalResults();
+  emit('update:addresses', addresses);
+}
+
 watch(errorMessages, (errors) => {
   if (!isEmpty(errors))
     get(v$).$validate();
+});
+
+watch(multiple, () => {
+  get(v$).$clearExternalResults();
+  set(userAddresses, '');
 });
 </script>
 

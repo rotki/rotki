@@ -3,22 +3,22 @@ import { api } from '@/services/rotkehlchen-api';
 import type { PendingTask } from '@/types/task';
 
 export function useLiquityApi() {
-  const fetchLiquityBalances = async (): Promise<PendingTask> => {
+  const fetchLiquityBalances = (): Promise<PendingTask> => {
     const url = 'blockchains/eth/modules/liquity/balances';
     return fetchExternalAsync(api.instance, url);
   };
 
-  const fetchLiquityStaking = async (): Promise<PendingTask> => {
+  const fetchLiquityStaking = (): Promise<PendingTask> => {
     const url = 'blockchains/eth/modules/liquity/staking';
     return fetchExternalAsync(api.instance, url);
   };
 
-  const fetchLiquityStakingPools = async (): Promise<PendingTask> => {
+  const fetchLiquityStakingPools = (): Promise<PendingTask> => {
     const url = 'blockchains/eth/modules/liquity/pool';
     return fetchExternalAsync(api.instance, url);
   };
 
-  const fetchLiquityStatistics = async (): Promise<PendingTask> => {
+  const fetchLiquityStatistics = (): Promise<PendingTask> => {
     const url = 'blockchains/eth/modules/liquity/stats';
     return fetchExternalAsync(api.instance, url);
   };

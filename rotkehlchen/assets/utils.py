@@ -1,6 +1,6 @@
 import logging
 from enum import auto
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Optional
+from typing import TYPE_CHECKING, Any, Final, Literal, NamedTuple, Optional
 
 import regex
 
@@ -8,7 +8,15 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken, UnderlyingToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetType
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import (
+    A_ETH,
+    A_WETH,
+    A_WETH_ARB,
+    A_WETH_BASE,
+    A_WETH_OPT,
+    A_WETH_POLYGON,
+    A_WXDAI,
+)
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import NotERC20Conformant
@@ -21,6 +29,7 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EvmTokenKind,
     EVMTxHash,
+    SupportedBlockchain,
     Timestamp,
 )
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
@@ -50,7 +59,7 @@ def add_evm_token_to_db(token_data: EvmToken) -> EvmToken:
     May raise:
     - InputError if token already exists in the DB
     """
-    GlobalDBHandler().add_asset(token_data)
+    GlobalDBHandler.add_asset(token_data)
     # This can, but should not raise UnknownAsset, DeserializationError
     return EvmToken(token_data.identifier)
 
@@ -102,6 +111,7 @@ def edit_token_and_clean_cache(
         evm_inquirer: 'EvmNodeInquirer | None',
         coingecko: str | None = None,
         cryptocompare: str | None = None,
+        protocol: str | None = None,
 ) -> None:
     """
     Update information regarding name and decimals for an ethereum token.
@@ -151,10 +161,14 @@ def edit_token_and_clean_cache(
         object.__setattr__(evm_token, 'cryptocompare', cryptocompare)
         updated_fields = True
 
+    if protocol is not None and evm_token.protocol != protocol:
+        object.__setattr__(evm_token, 'protocol', protocol)
+        updated_fields = True
+
     # clean the cache if we need to update the token
     if updated_fields is True:
         AssetResolver.clean_memory_cache(evm_token.identifier)
-        GlobalDBHandler().edit_evm_token(evm_token)
+        GlobalDBHandler.edit_evm_token(evm_token)
 
 
 def check_if_spam_token(symbol: str | None, name: str | None) -> bool:
@@ -217,6 +231,7 @@ def get_or_create_evm_token(
     existing token will still be silently returned
     Note2: This entire function is designed so that it does not context switch away from
     its calling greenlet so it should be safe to call from multiple greenlets.
+    Note3: If encounter is None, it will broadcast the `NEW_EVM_TOKEN_DETECTED` message by default.
 
     May raise:
     - NotERC20Conformant exception if an ethereum manager is given to query
@@ -245,6 +260,7 @@ def get_or_create_evm_token(
                 evm_inquirer=evm_inquirer,
                 coingecko=coingecko,
                 cryptocompare=cryptocompare,
+                protocol=protocol,
             )
 
         except (UnknownAsset, DeserializationError):
@@ -292,7 +308,7 @@ def get_or_create_evm_token(
             if asset_exists is True:
                 # This means that we need to update the information in the database with the
                 # newly queried data
-                GlobalDBHandler().edit_evm_token(evm_token)
+                GlobalDBHandler.edit_evm_token(evm_token)
             else:
                 # inform frontend new token detected
                 data: dict[str, Any] = {'token_identifier': identifier}
@@ -332,7 +348,7 @@ def set_token_protocol_if_missing(evm_token: EvmToken, protocol: str) -> None:
 
     object.__setattr__(evm_token, 'protocol', protocol)  # since is a frozen dataclass
     AssetResolver.clean_memory_cache(evm_token.identifier)
-    GlobalDBHandler().edit_evm_token(evm_token)
+    GlobalDBHandler.edit_evm_token(evm_token)
 
 
 def get_crypto_asset_by_symbol(
@@ -411,3 +427,13 @@ class IgnoredAssetsHandling(SerializableEnumNameMixin):
         if self == IgnoredAssetsHandling.EXCLUDE:
             return 'NOT IN'
         return 'IN'
+
+
+CHAIN_TO_WRAPPED_TOKEN: Final = {
+    SupportedBlockchain.ETHEREUM: A_WETH,
+    SupportedBlockchain.ARBITRUM_ONE: A_WETH_ARB,
+    SupportedBlockchain.OPTIMISM: A_WETH_OPT,
+    SupportedBlockchain.BASE: A_WETH_BASE,
+    SupportedBlockchain.GNOSIS: A_WXDAI,
+    SupportedBlockchain.POLYGON_POS: A_WETH_POLYGON,
+}

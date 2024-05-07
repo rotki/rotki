@@ -6,8 +6,7 @@ import {
   useBreakpoint,
 } from '@rotki/ui-library-compat';
 import { keyBy } from 'lodash-es';
-import type { GeneralAccount } from '@rotki/common/lib/account';
-import type { Ref } from 'vue';
+import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { Module } from '@/types/modules';
 import type { GalleryNft, Nft, Nfts } from '@/types/nfts';
 import type { NftPrice } from '@/types/prices';
@@ -58,7 +57,7 @@ watchImmediate(firstLimit, () => {
   set(itemsPerPage, get(firstLimit));
 });
 
-const selectedAccounts = ref<GeneralAccount[]>([]);
+const selectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
 const selectedCollection = ref<string | null>(null);
 const premium = usePremium();
 
@@ -78,7 +77,7 @@ const nfts = computed<GalleryNft[]>(() => {
     for (const nft of addressNfts) {
       const price = value[nft.tokenIdentifier];
 
-      if (price && price.manuallyInput) {
+      if (price?.manuallyInput) {
         const { priceAsset, priceInAsset, usdPrice: priceUsd } = price;
         allNfts.push({ ...nft, priceAsset, priceInAsset, priceUsd, address });
       }
@@ -98,7 +97,7 @@ const items = computed(() => {
     return allNfts
       .filter(({ address, collection }) => {
         const sameAccount = hasAccounts
-          ? accounts.find(a => a.address === address)
+          ? accounts.find(account => getAccountAddress(account) === address)
           : true;
         const sameCollection = selection ? selection === collection.name : true;
         return sameAccount && sameCollection;

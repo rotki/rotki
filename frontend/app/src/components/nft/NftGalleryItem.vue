@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import type { ComputedRef } from 'vue';
 import type { StyleValue } from 'vue/types/jsx';
 import type { GalleryNft } from '@/types/nfts';
 
@@ -8,7 +7,6 @@ const props = defineProps<{
 }>();
 
 const { item } = toRefs(props);
-const { shouldRenderImage } = useNfts();
 
 const frontendStore = useFrontendSettingsStore();
 
@@ -19,29 +17,15 @@ const imageUrlSource: ComputedRef<string | null> = computed(
   () => get(item).imageUrl,
 );
 
+const {
+  shouldRender,
+  isVideo,
+  renderedMedia,
+} = useNftImage(imageUrlSource);
+
 const name = computed(() =>
   get(item).name ? get(item).name : get(item).collection.name,
 );
-
-const renderImage: ComputedRef<boolean> = computed(() => {
-  const image = get(imageUrlSource);
-
-  if (!image)
-    return true;
-
-  return shouldRenderImage(image);
-});
-
-const imageUrl = computed(() => {
-  const image = get(imageUrlSource);
-
-  if (!image || !get(renderImage))
-    return './assets/images/placeholder.svg';
-
-  return image;
-});
-
-const isMediaVideo = computed(() => isVideo(get(imageUrl)));
 
 const { t } = useI18n();
 const css = useCssModule();
@@ -86,7 +70,7 @@ function allowDomain() {
 
 const mediaStyle: ComputedRef<StyleValue> = computed(() => {
   const backgroundColor = get(item).backgroundColor;
-  if (!get(renderImage) || !backgroundColor)
+  if (!get(shouldRender) || !backgroundColor)
     return {};
 
   return { backgroundColor };
@@ -101,7 +85,7 @@ const mediaStyle: ComputedRef<StyleValue> = computed(() => {
     <div class="relative flex">
       <RuiTooltip
         :popper="{ placement: 'top' }"
-        :disabled="renderImage"
+        :disabled="shouldRender"
         :open-delay="400"
         class="w-full"
         tooltip-class="max-w-[10rem]"
@@ -113,17 +97,17 @@ const mediaStyle: ComputedRef<StyleValue> = computed(() => {
             custom
           >
             <video
-              v-if="isMediaVideo"
+              v-if="isVideo"
               controls
               width="auto"
-              :src="imageUrl"
+              :src="renderedMedia"
               :style="mediaStyle"
               class="w-full"
               :class="css.media"
             />
             <AppImage
               v-else
-              :src="imageUrl"
+              :src="renderedMedia"
               contain
               :style="mediaStyle"
               width="100%"
@@ -136,7 +120,7 @@ const mediaStyle: ComputedRef<StyleValue> = computed(() => {
       </RuiTooltip>
 
       <RuiTooltip
-        v-if="!renderImage"
+        v-if="!shouldRender"
         :popper="{ placement: 'top' }"
         :open-delay="400"
         :class="css['unlock-button']"

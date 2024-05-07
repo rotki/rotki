@@ -3,7 +3,7 @@ from __future__ import print_function  # isort:skip
 import os
 import platform
 import sys
-from distutils.spawn import find_executable
+from pathlib import Path
 
 from PyInstaller.utils.hooks import collect_submodules
 
@@ -14,8 +14,6 @@ from rotkehlchen.utils.misc import get_system_spec
 
 """
 PyInstaller spec file to build single file or dir distributions
-
-Currently only tested on macOS
 """
 
 # Set to false to produce an exploded single-dir
@@ -23,40 +21,16 @@ ONEFILE = int(os.environ.get('ONEFILE', True))
 MACOS_BUILD_ARCH = os.environ.get('MACOS_BUILD_ARCH', None)
 
 
-def Entrypoint(dist, group, name, scripts=None, pathex=None, hiddenimports=None, hookspath=None,
-               excludes=None, runtime_hooks=None, datas=None):
-    import pkg_resources
-
-    # get toplevel packages of distribution from metadata
-    def get_toplevel(dist):
-        distribution = pkg_resources.get_distribution(dist)
-        if distribution.has_metadata('top_level.txt'):
-            return list(distribution.get_metadata('top_level.txt').split())
-        else:
-            return []
-
-    hiddenimports = hiddenimports or []
-    packages = []
-    for distribution in hiddenimports:
-        try:
-            packages += get_toplevel(distribution)
-        except:
-            pass
-
+def Entrypoint(dist, group, name, scripts=None, pathex=None, hiddenimports=None, hookspath=None, excludes=None, runtime_hooks=None, datas=None):  # noqa: E501
     scripts = scripts or []
     pathex = pathex or []
-    # get the entry point
-    ep = pkg_resources.get_entry_info(dist, group, name)
     # insert path of the egg at the verify front of the search path
-    pathex = [ep.dist.location] + pathex
+    pathex = [Path.cwd()] + pathex
     # script name must not be a valid module name to avoid name clashes on import
     script_path = os.path.join(workpath, name + '-script.py')
-    print("creating script for entry point", dist, group, name)
     with open(script_path, 'w') as fh:
-        print("import", ep.module_name, file=fh)
-        print("%s.%s()" % (ep.module_name, '.'.join(ep.attrs)), file=fh)
-        for package in packages:
-            print("import", package, file=fh)
+        fh.write('import rotkehlchen.__main__\n')
+        fh.write('rotkehlchen.__main__.main()')
 
     return Analysis(
         [script_path] + scripts,
@@ -110,6 +84,8 @@ a = Entrypoint(
         ('rotkehlchen/data/nodes_as_of_1-26-1.json', 'rotkehlchen/data'),
         ('rotkehlchen/data/populate_asset_collections.sql', 'rotkehlchen/data'),
         ('rotkehlchen/data/populate_multiasset_mappings.sql', 'rotkehlchen/data'),
+        ('rotkehlchen/data/populate_location_asset_mappings.sql', 'rotkehlchen/data'),
+        ('rotkehlchen/data/populate_location_unsupported_assets.sql', 'rotkehlchen/data'),
         # TODO
         # We probably should have a better way to specify some data should be loaded
         # by a module in pyinstaller. Should be loaded dynamically by rotki and not

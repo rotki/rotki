@@ -10,7 +10,7 @@ from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.constants.assets import A_BCH, A_BTC
 from rotkehlchen.types import (
     SUPPORTED_BITCOIN_CHAINS,
-    SUPPORTED_EVM_CHAINS,
+    SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     SUPPORTED_NON_BITCOIN_CHAINS,
     SUPPORTED_SUBSTRATE_CHAINS,
     BTCAddress,
@@ -40,15 +40,17 @@ class BlockchainBalances:
     arbitrum_one: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
     base: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
     gnosis: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
+    scroll: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
     eth2: defaultdict[Eth2PubKey, BalanceSheet] = field(init=False)
     btc: dict[BTCAddress, Balance] = field(init=False)
     bch: dict[BTCAddress, Balance] = field(init=False)
     ksm: dict[SubstrateAddress, BalanceSheet] = field(init=False)
     dot: dict[SubstrateAddress, BalanceSheet] = field(init=False)
     avax: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
+    zksync_lite: defaultdict[ChecksumEvmAddress, BalanceSheet] = field(init=False)
 
     @overload
-    def get(self, chain: SUPPORTED_EVM_CHAINS) -> defaultdict[ChecksumEvmAddress, BalanceSheet]:
+    def get(self, chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE) -> defaultdict[ChecksumEvmAddress, BalanceSheet]:  # noqa: E501
         ...
 
     @overload

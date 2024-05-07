@@ -2,31 +2,14 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { BlockchainRefreshButtonBehaviour } from '@/types/settings/frontend-settings';
 import type { MaybeRef } from '@vueuse/core';
 
-export function useRefresh(blockchain?: MaybeRef<Blockchain>) {
-  const { fetchBlockchainBalances } = useBlockchainBalances();
-  const { fetchLoopringBalances } = useEthBalancesStore();
+export const useRefresh = createSharedComposable(() => {
+  const { fetchBlockchainBalances, fetchLoopringBalances } = useBlockchainBalances();
   const { fetchConnectedExchangeBalances } = useExchangeBalancesStore();
+  const { blockchainRefreshButtonBehaviour } = storeToRefs(useFrontendSettingsStore());
+  const { massDetecting } = storeToRefs(useBlockchainTokensStore());
+  const { txEvmChains } = useSupportedChains();
 
-  const { blockchainRefreshButtonBehaviour } = storeToRefs(
-    useFrontendSettingsStore(),
-  );
-
-  const { detectTokensOfAllAddresses: detectTokensOfAllEthAddresses }
-    = useTokenDetection(Blockchain.ETH);
-  const { detectTokensOfAllAddresses: detectTokensOfAllOptimismAddresses }
-    = useTokenDetection(Blockchain.OPTIMISM);
-  const { detectTokensOfAllAddresses: detectTokensOfAllPolygonAddresses }
-    = useTokenDetection(Blockchain.POLYGON_POS);
-  const { detectTokensOfAllAddresses: detectTokensOfAllArbitrumAddresses }
-    = useTokenDetection(Blockchain.ARBITRUM_ONE);
-  const { detectTokensOfAllAddresses: detectTokensOfAllBaseAddresses }
-    = useTokenDetection(Blockchain.BASE);
-  const { detectTokensOfAllAddresses: detectTokensOfAllGnosisAddresses }
-    = useTokenDetection(Blockchain.GNOSIS);
-
-  const { shouldRefreshBalances } = storeToRefs(useBlockchainTokensStore());
-
-  const refreshBlockchainBalances = async (): Promise<void> => {
+  const refreshBlockchainBalances = async (blockchain?: string): Promise<void> => {
     const chain = get(blockchain);
     const pending: Promise<any>[] = [
       fetchBlockchainBalances({
@@ -41,35 +24,24 @@ export function useRefresh(blockchain?: MaybeRef<Blockchain>) {
     await Promise.allSettled(pending);
   };
 
-  const handleBlockchainRefresh = async () => {
+  const handleBlockchainRefresh = async (blockchain?: MaybeRef<string>, forceRedetect = false) => {
     const chain = get(blockchain);
     const behaviour = get(blockchainRefreshButtonBehaviour);
-    if (behaviour === BlockchainRefreshButtonBehaviour.REDETECT_TOKENS) {
-      const promises = [];
-      if (!chain || chain === Blockchain.ETH)
-        promises.push(detectTokensOfAllEthAddresses());
 
-      if (!chain || chain === Blockchain.OPTIMISM)
-        promises.push(detectTokensOfAllOptimismAddresses());
+    if (behaviour === BlockchainRefreshButtonBehaviour.REDETECT_TOKENS || forceRedetect) {
+      const chains = chain ? [chain] : get(txEvmChains).map(chain => chain.id);
 
-      if (!chain || chain === Blockchain.POLYGON_POS)
-        promises.push(detectTokensOfAllPolygonAddresses());
-
-      if (!chain || chain === Blockchain.ARBITRUM_ONE)
-        promises.push(detectTokensOfAllArbitrumAddresses());
-
-      if (!chain || chain === Blockchain.BASE)
-        promises.push(detectTokensOfAllBaseAddresses());
-
-      if (!chain || chain === Blockchain.GNOSIS)
-        promises.push(detectTokensOfAllGnosisAddresses());
-
-      set(shouldRefreshBalances, false);
-      await Promise.all(promises);
-      set(shouldRefreshBalances, true);
+      set(massDetecting, chain || 'all');
+      await awaitParallelExecution(
+        chains,
+        chain => chain,
+        chain => useTokenDetection(chain).detectTokensOfAllAddresses(),
+        1,
+      );
+      set(massDetecting, undefined);
     }
 
-    await refreshBlockchainBalances();
+    await refreshBlockchainBalances(chain);
   };
 
   const refreshBalance = async (balanceSource: string) => {
@@ -84,4 +56,4 @@ export function useRefresh(blockchain?: MaybeRef<Blockchain>) {
     handleBlockchainRefresh,
     refreshBalance,
   };
-}
+});

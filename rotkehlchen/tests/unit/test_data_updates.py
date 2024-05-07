@@ -1,11 +1,14 @@
 import json
 from collections.abc import Callable
 from contextlib import ExitStack
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
+from packaging.version import Version
 
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.accounting_rules import DBAccountingRules
 from rotkehlchen.db.addressbook import DBAddressbook
@@ -14,6 +17,7 @@ from rotkehlchen.db.updates import RotkiDataUpdater, UpdateType
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.api.test_location_asset_mappings import NUM_ASSETS_MAPPINGS_V1_32
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
@@ -21,9 +25,13 @@ from rotkehlchen.types import (
     AddressbookEntry,
     ChainID,
     EvmTokenKind,
+    Location,
     SupportedBlockchain,
 )
 from rotkehlchen.utils.version_check import VersionCheckResult
+
+if TYPE_CHECKING:
+    from gevent import DBCursor
 
 ETHEREUM_SPAM_ASSET_ADDRESS = make_evm_address()
 OPTIMISM_SPAM_ASSET_ADDRESS = make_evm_address()
@@ -153,6 +161,59 @@ ACCOUNTING_RULES_DATA = {
     ],
 }
 
+LOCATION_ASSET_MAPPINGS_DATA: dict[str, dict[str, list[dict[str, Any]]]] = {
+    'location_asset_mappings': {
+        'additions': [
+            {
+                'asset': 'eip155:1/erc20:0x15D4c048F83bd7e37d49eA4C83a07267Ec4203dA',  # already existing  # noqa: E501
+                'location': 'kucoin',
+                'location_symbol': 'GALAX',
+            }, {
+                'asset': 'eip155:1/erc20:0x16ECCfDbb4eE1A85A33f3A9B21175Cd7Ae753dB4',
+                'location': None,
+                'location_symbol': 'ROUTED',
+            }, {
+                'asset': 'eip155:1/erc20:0x16ECCfDbb4eE1A85A33f3A9B21175Cd7Ae753dB4',
+                'location': 'kraken',
+                'location_symbol': 'ROUTED',
+            },
+        ],
+        'updates': [
+            {
+                'asset': f'eip155:1/erc20:{ZERO_ADDRESS}',
+                'location': 'kucoin',
+                'location_symbol': 'ROUTE',
+            }, {
+                'asset': f'eip155:1/erc20:{ZERO_ADDRESS}',
+                'location': 'kraken',
+                'location_symbol': 'ATOM',
+            },
+        ],
+        'deletions': [
+            {
+                'location': 'binance',
+                'location_symbol': 'MOD',
+            }, {
+                'location': 'binance',
+                'location_symbol': 'BQX',
+            },
+        ],
+    },
+}
+
+LOCATION_UNSUPPORTED_ASSETS_DATA: dict[str, dict[str, dict[str, list[str]]]] = {
+    'location_unsupported_assets': {
+        'insert': {
+            'binance': ['OJ', '123'],  # 123 already exists
+            'kucoin': ['OJ', 'NAKA'],  # NAKA already exists
+        },
+        'remove': {
+            'bitfinex': ['OJ', 'IDX'],  # OJ does not exist
+            'bittrex': ['OJ', 'SLV'],  # OJ does not exist
+        },
+    },
+}
+
 
 def make_single_mock_github_data_response(target: UpdateType):
     """Creates a mocking function for a single update type for github requests."""
@@ -164,6 +225,8 @@ def make_single_mock_github_data_response(target: UpdateType):
                 'contracts': {'latest': 1 if target == UpdateType.CONTRACTS else 0},
                 'global_addressbook': {'latest': 1 if target == UpdateType.GLOBAL_ADDRESSBOOK else 0},  # noqa: E501
                 'accounting_rules': {'latest': 1 if target == UpdateType.ACCOUNTING_RULES else 0},
+                'location_asset_mappings': {'latest': 1 if target == UpdateType.LOCATION_ASSET_MAPPINGS else 0},  # noqa: E501
+                'location_unsupported_assets': {'latest': 1 if target == UpdateType.LOCATION_UNSUPPORTED_ASSETS else 0},  # noqa: E501
             }
         elif 'spam_assets/v' in url:
             data = SPAM_ASSET_MOCK_DATA
@@ -175,6 +238,10 @@ def make_single_mock_github_data_response(target: UpdateType):
             data = {'global_addressbook': SERIALIZED_REMOTE_ADDRESSBOOK}
         elif 'accounting_rules/v' in url:
             data = ACCOUNTING_RULES_DATA
+        elif 'location_asset_mappings/v' in url:
+            data = LOCATION_ASSET_MAPPINGS_DATA
+        elif 'location_unsupported_assets/v' in url:
+            data = LOCATION_UNSUPPORTED_ASSETS_DATA
         else:
             raise AssertionError(f'Unknown {url=} during test')
 
@@ -210,6 +277,10 @@ def make_mock_github_response(latest: int, min_version: str | None = None, max_v
             result = {'global_addressbook': SERIALIZED_REMOTE_ADDRESSBOOK}
         elif 'accounting_rules/v' in url:
             result = ACCOUNTING_RULES_DATA
+        elif 'location_asset_mappings/v' in url:
+            result = LOCATION_ASSET_MAPPINGS_DATA
+        elif 'location_unsupported_assets/v' in url:
+            result = LOCATION_UNSUPPORTED_ASSETS_DATA
         else:
             raise AssertionError(f'Unknown {url=} during test')
 
@@ -229,7 +300,7 @@ def fixture_data_updater(messages_aggregator, database, our_version):
     """Initialize the DataUpdater object, optionally mocking our rotki version"""
     with ExitStack() as stack:
         if our_version is not None:
-            stack.enter_context(patch('rotkehlchen.db.updates.get_current_version', return_value=VersionCheckResult(our_version=our_version)))  # noqa: E501
+            stack.enter_context(patch('rotkehlchen.db.updates.get_current_version', return_value=VersionCheckResult(our_version=Version(our_version))))  # noqa: E501
         return RotkiDataUpdater(
             msg_aggregator=messages_aggregator,
             user_db=database,
@@ -244,6 +315,8 @@ def reset_update_type_mappings(data_updater: RotkiDataUpdater) -> None:
         UpdateType.CONTRACTS: data_updater.update_contracts,
         UpdateType.GLOBAL_ADDRESSBOOK: data_updater.update_global_addressbook,
         UpdateType.ACCOUNTING_RULES: data_updater.update_accounting_rules,
+        UpdateType.LOCATION_ASSET_MAPPINGS: data_updater.update_location_asset_mappings,
+        UpdateType.LOCATION_UNSUPPORTED_ASSETS: data_updater.update_location_unsupported_assets,
     }
 
 
@@ -320,6 +393,8 @@ def test_no_update_due_to_update_version(data_updater: RotkiDataUpdater) -> None
                 (UpdateType.CONTRACTS.serialize(), 999),
                 (UpdateType.GLOBAL_ADDRESSBOOK.serialize(), 999),
                 (UpdateType.ACCOUNTING_RULES.serialize(), 999),
+                (UpdateType.LOCATION_ASSET_MAPPINGS.serialize(), 999),
+                (UpdateType.LOCATION_UNSUPPORTED_ASSETS.serialize(), 999),
             ],
         )
     with ExitStack() as stack:
@@ -384,16 +459,17 @@ def test_no_update_due_to_max_rotki(data_updater: RotkiDataUpdater) -> None:
 
 def test_update_rpc_nodes(data_updater: RotkiDataUpdater) -> None:
     """Test that rpc nodes for different blockchains are updated correctly.."""
+    default_rpc_nodes_count = 36
     # check db state of the default rpc nodes before updating
     with GlobalDBHandler().conn.read_ctx() as cursor:
         cursor.execute('SELECT COUNT(*) FROM default_rpc_nodes')
-        assert cursor.fetchone()[0] == 31
+        assert cursor.fetchone()[0] == default_rpc_nodes_count
 
     # check the db state of the user's rpc_nodes
     custom_node_tuple = ('custom node', 'https://node.rotki.com/', 1, 1, '0.50', 'ETH')
     with data_updater.user_db.user_write() as write_cursor:
         write_cursor.execute('SELECT COUNT(*) FROM rpc_nodes')
-        assert write_cursor.fetchone()[0] == 31
+        assert write_cursor.fetchone()[0] == default_rpc_nodes_count
         # add a custom node.
         write_cursor.execute(
             'INSERT INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) '
@@ -401,7 +477,7 @@ def test_update_rpc_nodes(data_updater: RotkiDataUpdater) -> None:
             custom_node_tuple,
         )
         write_cursor.execute('SELECT COUNT(*) FROM rpc_nodes')
-        assert write_cursor.fetchone()[0] == 32
+        assert write_cursor.fetchone()[0] == default_rpc_nodes_count + 1
 
     with patch('requests.get', wraps=make_single_mock_github_data_response(UpdateType.RPC_NODES)):
         data_updater.check_for_updates()
@@ -418,8 +494,8 @@ def test_update_rpc_nodes(data_updater: RotkiDataUpdater) -> None:
 
     assert nodes == [
         (7, 'optimism official', 'https://mainnet.optimism.io', 0, 1, '0.20', 'OPTIMISM'),
-        (32, *custom_node_tuple),
-        (33, 'pocket network', 'https://eth-mainnet.gateway.pokt.network/v1/5f3453978e354ab992c4da79', 0, 1, '0.5', 'ETH'),  # noqa: E501
+        (default_rpc_nodes_count + 1, *custom_node_tuple),
+        (default_rpc_nodes_count + 2, 'pocket network', 'https://eth-mainnet.gateway.pokt.network/v1/5f3453978e354ab992c4da79', 0, 1, '0.5', 'ETH'),  # noqa: E501
     ]
 
 
@@ -552,3 +628,93 @@ def test_accounting_rules_updates(data_updater: RotkiDataUpdater) -> None:
             'counterparty': 'test_counterparty',
         },
     ]
+
+
+def _check_location_asset_mappings(cursor: 'DBCursor', after_upgrade: bool) -> None:
+    """Auxiliary function to check the db values before and after the upgrade"""
+    assert cursor.execute('SELECT COUNT(*) FROM location_asset_mappings').fetchone()[0] == NUM_ASSETS_MAPPINGS_V1_32  # noqa: E501
+
+    for addition, is_present_count in zip(
+        LOCATION_ASSET_MAPPINGS_DATA['location_asset_mappings']['additions'],
+        (1, 0, 0),
+        strict=True,
+    ):
+        result = cursor.execute(  # additions are not present already
+            f"SELECT {'COUNT(*)' if after_upgrade is False else 'local_id'} "
+            'FROM location_asset_mappings WHERE location IS ? AND exchange_symbol IS ?', (
+                None if addition['location'] is None else
+                Location.deserialize(addition['location']).serialize_for_db(),
+                addition['location_symbol'],
+            ),
+        ).fetchone()[0]
+        assert result == is_present_count if after_upgrade is False else result == addition['asset']  # noqa: E501
+
+    for update in LOCATION_ASSET_MAPPINGS_DATA['location_asset_mappings']['updates']:
+        asset_id = cursor.execute(  # mappings to be updated are not updated already
+            'SELECT local_id FROM location_asset_mappings WHERE location IS ? AND exchange_symbol IS ?',  # noqa: E501
+            (Location.deserialize(update['location']).serialize_for_db(), update['location_symbol']),  # noqa: E501
+        ).fetchone()[0]
+        assert (asset_id == update['asset']) == after_upgrade
+
+    for deletion in LOCATION_ASSET_MAPPINGS_DATA['location_asset_mappings']['deletions']:
+        not_exists = cursor.execute(  # mappings to be deleted are present already
+            'SELECT COUNT(*) FROM location_asset_mappings WHERE location IS ? AND exchange_symbol IS ?',  # noqa: E501
+            (Location.deserialize(deletion['location']).serialize_for_db(), deletion['location_symbol']),  # noqa: E501
+        ).fetchone()[0] == 0
+        assert not_exists == after_upgrade
+
+
+def test_location_asset_mappings_updates(
+        data_updater: RotkiDataUpdater,
+        globaldb: 'GlobalDBHandler',
+) -> None:
+    """Test that remote updates for location asset mappings work"""
+    # check state of the location asset mappings before updating
+    with globaldb.conn.read_ctx() as cursor:
+        _check_location_asset_mappings(cursor, after_upgrade=False)
+
+    with patch(
+        'requests.get',
+        wraps=make_single_mock_github_data_response(UpdateType.LOCATION_ASSET_MAPPINGS),
+    ):
+        data_updater.check_for_updates()
+
+    with globaldb.conn.read_ctx() as cursor:
+        _check_location_asset_mappings(cursor, after_upgrade=True)
+
+
+def _check_location_unsupported_assets(cursor: 'DBCursor', after_upgrade: bool) -> None:
+    """Auxiliary function to check the db values before and after the upgrade"""
+    assert cursor.execute('SELECT COUNT(*) FROM location_asset_mappings').fetchone()[0] == NUM_ASSETS_MAPPINGS_V1_32  # noqa: E501
+
+    for operation, expected_count in (
+        ('insert', lambda symbol: 0 if after_upgrade is False and symbol == 'OJ' else 1),
+        ('remove', lambda symbol: 1 if after_upgrade is False and symbol != 'OJ' else 0),
+    ):
+        for location, symbols in LOCATION_UNSUPPORTED_ASSETS_DATA['location_unsupported_assets'][operation].items():  # noqa: E501
+            for symbol in symbols:
+                assert cursor.execute(
+                    'SELECT COUNT(*) FROM location_unsupported_assets '
+                    'WHERE location = ? AND exchange_symbol = ?;', (
+                        Location.deserialize(location).serialize_for_db(), symbol,
+                    ),
+                ).fetchone()[0] == expected_count(symbol)  # type: ignore[no-untyped-call]
+
+
+def test_location_unsupported_assets_updates(
+        data_updater: RotkiDataUpdater,
+        globaldb: 'GlobalDBHandler',
+) -> None:
+    """Test that remote updates for location unsupported assets work"""
+    # check state of the location asset mappings before updating
+    with globaldb.conn.read_ctx() as cursor:
+        _check_location_unsupported_assets(cursor, after_upgrade=False)
+
+    with patch(
+        'requests.get',
+        wraps=make_single_mock_github_data_response(UpdateType.LOCATION_UNSUPPORTED_ASSETS),
+    ):
+        data_updater.check_for_updates()
+
+    with globaldb.conn.read_ctx() as cursor:
+        _check_location_unsupported_assets(cursor, after_upgrade=True)

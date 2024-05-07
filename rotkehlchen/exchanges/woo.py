@@ -120,7 +120,7 @@ class Woo(ExchangeInterface):
                 if (amount := deserialize_asset_amount(entry['holding'] + entry['staked'])) == ZERO:  # noqa: E501
                     continue
                 asset = asset_from_woo(entry['token'])
-                usd_price = Inquirer().find_usd_price(asset=asset)
+                usd_price = Inquirer.find_usd_price(asset=asset)
             except (DeserializationError, KeyError) as e:
                 log.error('Error processing a Woo balance.', entry=entry, error=str(e))
                 self.msg_aggregator.add_error(
@@ -237,7 +237,7 @@ class Woo(ExchangeInterface):
         May Raise:
         - RemoteError
         """
-        call_options = options if options else {}
+        call_options = options or {}
         request_url = f'{self.base_uri}/{endpoint}'
         timestamp = str(ts_now_in_ms())
         parameters = urllib.parse.urlencode(call_options)

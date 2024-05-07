@@ -8,6 +8,11 @@ const transform = (value: boolean) => !value;
 onMounted(() => {
   set(animationsEnabled, get(enabled));
 });
+
+function updateSetting(value: boolean, update: (newValue: any) => void) {
+  set(animationsEnabled, !value);
+  update(value);
+}
 </script>
 
 <template>
@@ -18,13 +23,14 @@ onMounted(() => {
     :transform="transform"
     :error-message="t('frontend_settings.validation.animations.error')"
   >
-    <VSwitch
+    <RuiSwitch
+      color="primary"
       :value="!animationsEnabled"
-      class="general-settings__fields__animation-enabled mt-0"
+      class="general-settings__fields__animation-enabled"
       :label="t('frontend_settings.label.animations')"
       :success-messages="success"
       :error-messages="error"
-      @change="update($event)"
+      @input="updateSetting($event, update)"
     />
   </SettingsOption>
 </template>

@@ -23,14 +23,14 @@ onMounted(() => {
     :error-message="t('account_settings.messages.cost_basis.error')"
     :success-message="switchSuccessMessage"
   >
-    <VSwitch
+    <RuiSwitch
       v-model="calculatePastCostBasis"
       class="accounting-settings__past-cost-basis"
       :success-messages="success"
       :error-messages="error"
       :label="t('accounting_settings.trade.labels.calculate_past_cost_basis')"
       color="primary"
-      @change="update($event)"
+      @input="update($event)"
     />
   </SettingsOption>
 </template>

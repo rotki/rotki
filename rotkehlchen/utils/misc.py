@@ -400,8 +400,4 @@ def is_production() -> bool:
     if getattr(sys, 'frozen', False) is False:
         return False
 
-    version = get_current_version().our_version
-    if 'dev' in version:
-        return False
-
-    return True
+    return get_current_version().our_version.dev is None

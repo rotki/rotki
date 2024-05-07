@@ -12,6 +12,7 @@ from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.chain.gnosis.constants import GNOSIS_GENESIS
 from rotkehlchen.chain.optimism.constants import OPTIMISM_GENESIS
 from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_GENESIS
+from rotkehlchen.chain.scroll.constants import SCROLL_GENESIS
 from rotkehlchen.db.constants import EXTRAINTERNALTXPREFIX, HISTORY_MAPPING_STATE_DECODED
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery, TransactionsNotDecodedFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -24,12 +25,13 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import (
     SUPPORTED_CHAIN_IDS,
-    SUPPORTED_EVM_CHAINS,
+    SUPPORTED_EVM_CHAINS_TYPE,
     ChainID,
     ChecksumEvmAddress,
     EvmInternalTransaction,
     EvmTransaction,
     EVMTxHash,
+    Location,
     SupportedBlockchain,
     Timestamp,
     deserialize_evm_tx_hash,
@@ -220,8 +222,13 @@ class DBEvmTx:
         total_found_result = cursor.execute(query, bindings)
         return txs, total_found_result.fetchone()[0]  # always returns result
 
-    def purge_evm_transaction_data(self, chain: SUPPORTED_EVM_CHAINS | None) -> None:
-        """Deletes all evm transaction related data from the DB"""
+    def delete_evm_transaction_data(
+            self,
+            chain: SUPPORTED_EVM_CHAINS_TYPE | None,
+            tx_hash: EVMTxHash | None,
+    ) -> None:
+        """Deletes evm transaction related data from the DB.
+        Either all data, data related to a single chain or a single chain/tx_hash only"""
         query_ranges_tuples = []
         delete_query = 'DELETE FROM evm_transactions'
         delete_bindings = ()
@@ -230,20 +237,26 @@ class DBEvmTx:
             delete_query += ' WHERE chain_id = ?'
             delete_bindings = (chain.to_chain_id().serialize_for_db(),)    # type: ignore[assignment]
         else:
-            chains = get_args(SUPPORTED_EVM_CHAINS)  # type: ignore[assignment]
+            chains = get_args(SUPPORTED_EVM_CHAINS_TYPE)  # type: ignore[assignment]
+        if tx_hash is not None:
+            delete_query += f' {"WHERE" if len(delete_bindings) == 0 else "AND"} tx_hash=?'
+            delete_bindings += (tx_hash,)  # type: ignore
 
-        for entry in chains:
-            query_ranges_tuples.extend([
-                (f'{entry.to_range_prefix("txs")}\\_%', '\\'),
-                (f'{entry.to_range_prefix("internaltxs")}\\_%', '\\'),
-                (f'{entry.to_range_prefix("tokentxs")}\\_%', '\\'),
-            ])
-        with self.db.user_write() as cursor:
-            cursor.executemany(
-                'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
-                query_ranges_tuples,
-            )
-            cursor.execute(delete_query, delete_bindings)
+        else:  # for entire chains, clear ranges
+            for entry in chains:
+                query_ranges_tuples.extend([
+                    (f'{entry.to_range_prefix("txs")}\\_%', '\\'),
+                    (f'{entry.to_range_prefix("internaltxs")}\\_%', '\\'),
+                    (f'{entry.to_range_prefix("tokentxs")}\\_%', '\\'),
+                ])
+                with self.db.user_write() as write_cursor:
+                    write_cursor.executemany(
+                        'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
+                        query_ranges_tuples,
+                    )
+
+        with self.db.user_write() as write_cursor:  # finally delete transactions
+            write_cursor.execute(delete_query, delete_bindings)
 
     def get_transaction_hashes_no_receipt(
             self,
@@ -440,7 +453,7 @@ class DBEvmTx:
             self,
             write_cursor: 'DBCursor',
             address: ChecksumEvmAddress,
-            chain: SUPPORTED_EVM_CHAINS,
+            chain: SUPPORTED_EVM_CHAINS_TYPE,
     ) -> None:
         """Delete all of the particular evm chain transactions related data
         to the given address from the DB.
@@ -489,7 +502,7 @@ class DBEvmTx:
         dbevents.delete_events_by_tx_hash(
             write_cursor=write_cursor,
             tx_hashes=tx_hashes,
-            chain_id=chain_id,  # type: ignore[arg-type] # comes from SUPPORTED_EVM_CHAINS
+            location=Location.from_chain_id(chain_id),  # type: ignore[arg-type] # comes from SUPPORTED_EVM_CHAINS
         )
         write_cursor.execute(  # delete genesis tx events related to the provided address
             'DELETE FROM history_events WHERE identifier IN ('
@@ -529,7 +542,7 @@ class DBEvmTx:
             self,
             cursor: 'DBCursor',
             address: ChecksumEvmAddress,
-            chain: SUPPORTED_EVM_CHAINS,
+            chain: SUPPORTED_EVM_CHAINS_TYPE,
     ) -> tuple[Timestamp, Timestamp]:
         """Gets the most conservative range that was queried for the
         transactions of an address for a specific evm chain
@@ -589,6 +602,8 @@ class DBEvmTx:
                 timestamp = BASE_GENESIS
             elif chain_id == ChainID.GNOSIS:
                 timestamp = GNOSIS_GENESIS
+            elif chain_id == ChainID.SCROLL:
+                timestamp = SCROLL_GENESIS
             else:
                 timestamp = POLYGON_POS_GENESIS
             tx = EvmTransaction(
@@ -647,3 +662,13 @@ class DBEvmTx:
             nonce=result[11],
             db_id=result[12],
         )
+
+    def count_evm_transactions(self, chain_id: SUPPORTED_CHAIN_IDS) -> int:
+        """Counts the number of unique evm transactions in the requested chain"""
+        query, bindings = EvmTransactionsFilterQuery.make(
+            chain_id=chain_id,
+        ).prepare(with_pagination=False)
+        query = 'SELECT COUNT(DISTINCT evm_transactions.tx_hash) FROM evm_transactions ' + query
+        with self.db.conn.read_ctx() as cursor:
+            cursor.execute(query, bindings)
+            return cursor.fetchone()[0]

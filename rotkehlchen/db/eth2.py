@@ -134,7 +134,7 @@ class DBEth2:
         for daily_stat in daily_stats:
             owned_proportion = validators_ownership.get(daily_stat.validator_index, ONE)
             if owned_proportion != ONE:
-                daily_stat.pnl = daily_stat.pnl * owned_proportion
+                daily_stat.pnl *= owned_proportion
         return daily_stats
 
     def validator_exists(

@@ -32,7 +32,7 @@ jobs:
           echo "version=${version}" >> $GITHUB_OUTPUT
       - name: Create Release
         id: create_release
-        uses: rotki/action-gh-release@v1
+        uses: rotki/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
@@ -145,8 +145,8 @@ jobs:
         id: packaging
         run: |
           echo "::group::packaging dependencies"
-          pip3 install --upgrade pip==${{ env.PIP_VERSION }}
-          pip3 install -r requirements_packaging.txt
+          pip3 install --upgrade uv
+          uv pip install --system -r requirements_packaging.txt
           echo "::endgroup::"
           ./package.py --build full
       - name: Upload to release
@@ -259,11 +259,11 @@ jobs:
         id: packaging
         run: |
           echo "::group::packaging dependencies"
-          pip3 install --upgrade pip==${{ env.PIP_VERSION }}
+          pip3 install --upgrade uv
           pip3 install virtualenv
           python3 -m virtualenv ~/venv
           source ~/venv/bin/activate
-          pip3 install -r requirements_packaging.txt
+          uv pip install --system -r requirements_packaging.txt
           echo "::endgroup::"
           ./package.py --build full
         env:
@@ -342,8 +342,8 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
         run: |
           echo ::group::"packaging dependencies"
-          pip3 install --upgrade pip==${{ env.PIP_VERSION }}
-          pip3 install -r requirements_packaging.txt
+          pip3 install --upgrade uv
+          uv pip install --system -r requirements_packaging.txt
           echo ::endgroup::
           python .\package.py --build full
         shell: powershell

@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.optimism_superchain.etherscan import OptimismSuperchainEtherscan
+from rotkehlchen.chain.evm.l2_with_l1_fees.etherscan import L2WithL1FeesEtherscan
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ExternalService, SupportedBlockchain
 
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class OptimismEtherscan(OptimismSuperchainEtherscan):
+class OptimismEtherscan(L2WithL1FeesEtherscan):
 
     def __init__(
             self,

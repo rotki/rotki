@@ -11,7 +11,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:tag', tag: Tag): void;
-  (e: 'save', tag: Tag): void;
+  (e: 'save', data: { tag: Tag; close?: boolean }): void;
   (e: 'cancel'): void;
 }>();
 
@@ -20,7 +20,8 @@ const { t } = useI18n();
 const name = usePropVModel(props, 'tag', 'name', emit);
 const description = usePropVModel(props, 'tag', 'description', emit);
 
-const { tag } = toRefs(props);
+const { tag, editMode } = toRefs(props);
+const tagPreview = ref();
 
 const rules = {
   name: {
@@ -50,15 +51,15 @@ function changed(event: TagEvent) {
   });
 }
 
-async function save() {
+async function save(close?: boolean) {
   const v = get(v$);
   if (!(await v.$validate()))
     return;
 
-  emit('save', props.tag);
+  emit('save', { tag: props.tag, close });
 }
 
-async function cancel() {
+function cancel() {
   emit('cancel');
 }
 
@@ -73,12 +74,18 @@ function randomize() {
 watch(tag, () => {
   get(v$).$reset();
 });
+
+watchImmediate(editMode, (edit) => {
+  if (edit)
+    get(tagPreview).$el.scrollIntoView({ behavior: 'smooth' });
+});
 </script>
 
 <template>
   <div class="flex flex-col gap-4">
     <div class="flex items-center gap-4">
       <TagIcon
+        ref="tagPreview"
         class="[&>div]:min-w-[7rem]"
         :tag="tag"
       />
@@ -158,10 +165,18 @@ watch(tag, () => {
         {{ t('common.actions.cancel') }}
       </RuiButton>
       <RuiButton
-        data-cy="tag-creator__buttons__save"
+        data-cy="tag-creator__buttons__save_continue"
         color="primary"
         :disabled="v$.$invalid"
         @click="save()"
+      >
+        {{ t('common.actions.save_continue') }}
+      </RuiButton>
+      <RuiButton
+        data-cy="tag-creator__buttons__save"
+        color="primary"
+        :disabled="v$.$invalid"
+        @click="save(true)"
       >
         {{ t('common.actions.save') }}
       </RuiButton>

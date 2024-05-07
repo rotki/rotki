@@ -184,7 +184,7 @@ def _check_boolean_settings(row: dict[str, Any], accountant: 'Accountant'):
 
 def _check_summaries_row(row: dict[str, Any], accountant: 'Accountant'):
     if row['free_amount'] == 'rotki version':
-        assert row['taxable_amount'] == get_current_version().our_version
+        assert row['taxable_amount'] == str(get_current_version().our_version)
     elif row['free_amount'] == 'taxfree_after_period':
         assert row['taxable_amount'] == str(accountant.pots[0].settings.taxfree_after_period)
     else:

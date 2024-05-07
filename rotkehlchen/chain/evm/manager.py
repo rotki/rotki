@@ -1,5 +1,5 @@
 import logging
-from abc import ABCMeta
+from abc import ABC
 from typing import TYPE_CHECKING
 
 from rotkehlchen.fval import FVal
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class EvmManager(metaclass=ABCMeta):  # noqa: B024
+class EvmManager(ABC):  # noqa: B024
     """EvmManager defines a basic implementation for EVM chains."""
     def __init__(
             self,

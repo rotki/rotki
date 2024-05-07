@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import type { DataTableHeader } from '@/types/vuetify';
 import type { MissingAcquisition, SelectedReport } from '@/types/reports';
+import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library-compat';
 
 type GroupedItems = Record<string, MissingAcquisition[]>;
 
@@ -53,135 +53,118 @@ const expanded = ref<MappedGroupedItems[]>([]);
 
 const tableRef = ref<any>(null);
 
+const sort: Ref<DataTableSortData> = ref([]);
+const childSort: Ref<DataTableSortData> = ref({
+  column: 'time',
+  direction: 'asc' as const,
+});
+
 const tableContainer = computed(() => get(tableRef)?.$el);
 
 const { t } = useI18n();
 
-const headers = computed<DataTableHeader[]>(() => {
-  const pinnedClass = get(isPinned) ? { class: 'px-2', cellClass: 'px-2' } : {};
+const headers = computed<DataTableColumn[]>(() => [
+  {
+    label: t('common.asset'),
+    key: 'asset',
+    cellClass: 'py-0',
+    sortable: true,
+  },
+  {
+    label: t('common.datetime'),
+    key: 'startDate',
+    cellClass: 'py-2',
+    sortable: true,
+  },
+  {
+    label: t('profit_loss_report.actionable.missing_acquisitions.headers.missing_acquisitions'),
+    key: 'total_missing_acquisition',
+    align: 'end',
+    sortable: true,
+  },
+  {
+    label: t('profit_loss_report.actionable.missing_acquisitions.headers.total_missing'),
+    key: 'total_amount_missing',
+    align: 'end',
+  },
+  {
+    label: t('profit_loss_report.actionable.missing_acquisitions.headers.quick_action'),
+    key: 'action',
+    cellClass: 'py-0',
+  },
+]);
 
-  return [
-    {
-      text: t('common.asset').toString(),
-      value: 'asset',
-    },
-    {
-      text: t('common.datetime').toString(),
-      value: 'startDate',
-      ...pinnedClass,
-    },
-    {
-      text: t(
-        'profit_loss_report.actionable.missing_acquisitions.headers.missing_acquisitions',
-      ).toString(),
-      value: 'total_missing_acquisition',
-      align: 'end',
-      ...pinnedClass,
-    },
-    {
-      text: t(
-        'profit_loss_report.actionable.missing_acquisitions.headers.total_missing',
-      ).toString(),
-      value: 'total_amount_missing',
-      align: 'end',
-      sortable: false,
-      ...pinnedClass,
-    },
-    {
-      text: t(
-        'profit_loss_report.actionable.missing_acquisitions.headers.quick_action',
-      ).toString(),
-      value: 'action',
-      sortable: false,
-      ...pinnedClass,
-    },
-    {
-      text: '',
-      value: 'expand',
-      align: 'end',
-      sortable: false,
-      ...pinnedClass,
-    },
-  ];
-});
-
-const childHeaders = computed<DataTableHeader[]>(() => {
-  const pinnedClass = get(isPinned) ? { class: 'px-2', cellClass: 'px-2' } : {};
-
-  return [
-    {
-      text: t('common.datetime').toString(),
-      value: 'time',
-      ...pinnedClass,
-    },
-    {
-      text: t(
-        'profit_loss_report.actionable.missing_acquisitions.headers.found_amount',
-      ).toString(),
-      value: 'foundAmount',
-      ...pinnedClass,
-    },
-    {
-      text: t(
-        'profit_loss_report.actionable.missing_acquisitions.headers.missing_amount',
-      ).toString(),
-      value: 'missingAmount',
-      ...pinnedClass,
-    },
-  ];
-});
+const childHeaders = computed<DataTableColumn[]>(() => [
+  {
+    label: t('common.datetime'),
+    key: 'time',
+    sortable: true,
+  },
+  {
+    label: t('profit_loss_report.actionable.missing_acquisitions.headers.found_amount'),
+    key: 'foundAmount',
+    align: 'end',
+    sortable: true,
+  },
+  {
+    label: t('profit_loss_report.actionable.missing_acquisitions.headers.missing_amount'),
+    key: 'missingAmount',
+    align: 'end',
+    sortable: true,
+  },
+]);
 
 const isIgnored = (asset: string) => get(isAssetIgnored(asset));
 </script>
 
 <template>
   <div>
-    <DataTable
+    <RuiDataTable
       ref="tableRef"
       class="table-inside-dialog"
       :class="{
         [$style['table--pinned']]: isPinned,
       }"
-      :headers="headers"
-      :items="groupedMissingAcquisitions"
-      item-key="asset"
+      :cols="headers"
+      :rows="groupedMissingAcquisitions"
+      :sort.sync="sort"
+      row-attr="asset"
       single-expand
       :expanded.sync="expanded"
-      :container="tableContainer"
+      :scroller="tableContainer"
       :dense="isPinned"
-      multi-sort
-      :must-sort="false"
-      disable-floating-header
-      flat
     >
-      <template #item.asset="{ item }">
+      <template #item.asset="{ row }">
         <AssetDetails
-          :asset="item.asset"
+          :asset="row.asset"
           link
         />
       </template>
-      <template #item.startDate="{ item }">
-        <DateDisplay :timestamp="item.startDate" />
-        <template v-if="item.startDate !== item.endDate">
+      <template #item.startDate="{ row }">
+        <DateDisplay :timestamp="row.startDate" />
+        <template v-if="row.startDate !== row.endDate">
           <span>
             {{ t('profit_loss_report.actionable.missing_acquisitions.to') }}
             <br />
           </span>
-          <DateDisplay :timestamp="item.endDate" />
+          <DateDisplay :timestamp="row.endDate" />
         </template>
       </template>
-      <template #item.total_missing_acquisition="{ item }">
-        {{ item.acquisitions.length }}
+      <template #item.total_missing_acquisition="{ row }">
+        {{ row.acquisitions.length }}
       </template>
-      <template #item.total_amount_missing="{ item }">
+      <template #item.total_amount_missing="{ row }">
         <AmountDisplay
           class="text-rui-error"
-          :value="item.totalAmountMissing"
+          :value="row.totalAmountMissing"
         />
       </template>
-      <template #item.action="{ item }">
-        <div class="flex flex-col items-center gap-1">
-          <VMenu offset-y>
+      <template #item.action="{ row }">
+        <div class="flex items-center gap-1">
+          <RuiMenu
+            :popper="{ placement: 'bottom-end' }"
+            close-on-content-click
+          >
             <template #activator="{ on }">
               <RuiButton
                 variant="text"
@@ -197,7 +180,7 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
             <div class="py-2">
               <RuiButton
                 variant="list"
-                @click="ignoreAsset(item.asset)"
+                @click="ignoreAsset(row.asset)"
               >
                 <template #prepend>
                   <RuiIcon name="eye-off-line" />
@@ -205,10 +188,10 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
                 </template>
               </RuiButton>
             </div>
-          </VMenu>
+          </RuiMenu>
 
           <RuiTooltip
-            v-if="isIgnored(item.asset)"
+            v-if="isIgnored(row.asset)"
             :open-delay="400"
           >
             <template #activator>
@@ -230,44 +213,33 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
           </RuiTooltip>
         </div>
       </template>
-      <template #item.expand="{ item }">
-        <RowExpander
-          :expanded="expanded.includes(item)"
-          @click="expanded = expanded.includes(item) ? [] : [item]"
-        />
-      </template>
-      <template #expanded-item="{ item }">
-        <TableExpandContainer
-          no-padding
-          visible
-          :colspan="headers.length"
+      <template #expanded-item="{ row }">
+        <RuiDataTable
+          :cols="childHeaders"
+          :rows="row.acquisitions"
+          :scroller="tableContainer"
+          :sort.sync="childSort"
+          outlined
+          row-attr=""
         >
-          <DataTable
-            flat
-            :headers="childHeaders"
-            :items="item.acquisitions"
-            :container="tableContainer"
-            disable-floating-header
-          >
-            <template #item.time="{ item: childItem }">
-              <DateDisplay :timestamp="childItem.time" />
-            </template>
-            <template #item.foundAmount="{ item: childItem }">
-              <AmountDisplay
-                pnl
-                :value="childItem.foundAmount"
-              />
-            </template>
-            <template #item.missingAmount="{ item: childItem }">
-              <AmountDisplay
-                class="text-rui-error"
-                :value="childItem.missingAmount"
-              />
-            </template>
-          </DataTable>
-        </TableExpandContainer>
+          <template #item.time="{ row: childItem }">
+            <DateDisplay :timestamp="childItem.time" />
+          </template>
+          <template #item.foundAmount="{ row: childItem }">
+            <AmountDisplay
+              pnl
+              :value="childItem.foundAmount"
+            />
+          </template>
+          <template #item.missingAmount="{ row: childItem }">
+            <AmountDisplay
+              class="text-rui-error"
+              :value="childItem.missingAmount"
+            />
+          </template>
+        </RuiDataTable>
       </template>
-    </DataTable>
+    </RuiDataTable>
     <slot name="actions" />
   </div>
 </template>
@@ -276,7 +248,7 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
 .table {
   &--pinned {
     max-height: 100%;
-    height: calc(100vh - 230px);
+    height: calc(100vh - 226px);
   }
 }
 </style>

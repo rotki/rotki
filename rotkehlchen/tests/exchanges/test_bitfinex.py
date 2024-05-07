@@ -7,16 +7,11 @@ from unittest.mock import MagicMock, call, patch
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.converters import (
-    BITFINEX_EXCHANGE_TEST_ASSETS,
-    UNSUPPORTED_BITFINEX_ASSETS,
-    asset_from_bitfinex,
-)
-from rotkehlchen.assets.exchanges_mappings.bitfinex import WORLD_TO_BITFINEX
+from rotkehlchen.assets.converters import BITFINEX_EXCHANGE_TEST_ASSETS, asset_from_bitfinex
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_GLM, A_LINK, A_USD, A_USDT, A_WBTC
-from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.bitfinex import (
     API_ERR_AUTH_NONCE_CODE,
     API_ERR_AUTH_NONCE_MESSAGE,
@@ -28,6 +23,7 @@ from rotkehlchen.exchanges.bitfinex import (
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade, TradeType
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.constants import A_NEO
+from rotkehlchen.tests.utils.exchanges import get_exchange_asset_symbols
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     AssetAmount,
@@ -36,6 +32,7 @@ from rotkehlchen.types import (
     EvmTokenKind,
     Fee,
     Location,
+    LocationAssetMappingUpdateEntry,
     Price,
     Timestamp,
 )
@@ -47,12 +44,12 @@ def test_name():
     assert exchange.name == 'bitfinex1'
 
 
-def test_assets_are_known(mock_bitfinex):
+def test_assets_are_known(mock_bitfinex, globaldb):
     """This tests only exchange (trades) assets (not margin, nor futures ones).
     """
-    unsupported_assets = set(UNSUPPORTED_BITFINEX_ASSETS)
-    common_items = unsupported_assets.intersection(set(WORLD_TO_BITFINEX.values()))
-    assert not common_items, f'Bitfinex assets {common_items} should not be unsupported'
+    for asset in get_exchange_asset_symbols(Location.BITFINEX):
+        assert globaldb.is_asset_symbol_unsupported(Location.BITFINEX, asset) is False, f'Bitfinex assets {asset} should not be unsupported'  # noqa: E501
+
     currencies_response = mock_bitfinex._query_currencies()
     if currencies_response.success is False:
         response = currencies_response.response
@@ -73,19 +70,16 @@ def test_assets_are_known(mock_bitfinex):
         ))
         pytest.xfail('Failed to request {mock_bitfinex.name} exchange pairs list')
 
-    currency_map_response = mock_bitfinex._query_currency_map()
-    if currency_map_response.success is False:
-        response = currency_map_response.response
+    try:
+        mock_bitfinex._query_currency_map()
+    except RemoteError as e:
         test_warnings.warn(UserWarning(
             f'Failed to request {mock_bitfinex.name} currency map. '
-            f'Response status code: {response.status_code}. '
-            f'Response text: {response.text}. Xfailing this test',
+            f'Xfailing this test. {e!s}',
         ))
         pytest.xfail('Failed to request {mock_bitfinex.name} currency map')
 
     test_assets = set(BITFINEX_EXCHANGE_TEST_ASSETS)
-    unsupported_assets = set(UNSUPPORTED_BITFINEX_ASSETS)
-    currency_map = currency_map_response.currency_map
     symbols = set()
     for symbol in currencies_response.currencies:
         if symbol in test_assets:
@@ -97,12 +91,9 @@ def test_assets_are_known(mock_bitfinex):
 
     for symbol in symbols:
         try:
-            asset_from_bitfinex(
-                bitfinex_name=symbol,
-                currency_map=currency_map,
-            )
+            asset_from_bitfinex(bitfinex_name=symbol)
         except UnsupportedAsset:
-            assert symbol in unsupported_assets
+            assert globaldb.is_asset_symbol_unsupported(Location.BITFINEX, symbol)
         except UnknownAsset as e:
             test_warnings.warn(UserWarning(
                 f'Found unknown asset {e.identifier} with symbol {symbol} in '
@@ -110,17 +101,40 @@ def test_assets_are_known(mock_bitfinex):
             ))
 
 
-def test_first_connection(mock_bitfinex):
-    """Test 'currency_map' and 'pair_bfx_symbols_map' contain the expected data.
+def test_first_connection(mock_bitfinex, globaldb):
+    """Test that 'pair_bfx_symbols_map' contain the expected data.
     """
     assert mock_bitfinex.first_connection_made is False
-    assert hasattr(mock_bitfinex, 'currency_map') is False
     assert hasattr(mock_bitfinex, 'pair_bfx_symbols_map') is False
+
+    bitfinex_db_serialized = Location.BITFINEX.serialize_for_db()
+    with globaldb.conn.read_ctx() as cursor:
+        mappings_before = set(cursor.execute(
+            'SELECT exchange_symbol, local_id FROM location_asset_mappings '
+            'WHERE location=?;',
+            (bitfinex_db_serialized,),
+        ).fetchall())
 
     mock_bitfinex.first_connection()
 
-    assert mock_bitfinex.currency_map['UST'] == ethaddress_to_identifier('0xdAC17F958D2ee523a2206206994597C13D831ec7')  # noqa: E501
-    assert mock_bitfinex.currency_map['WBT'] == ethaddress_to_identifier('0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599')  # noqa: E501
+    with globaldb.conn.read_ctx() as cursor:
+        mappings_after = set(cursor.execute(
+            'SELECT exchange_symbol, local_id FROM location_asset_mappings '
+            'WHERE location=?;',
+            (bitfinex_db_serialized,),
+        ).fetchall())
+
+    new_mappings = mappings_after - mappings_before
+    assert len(new_mappings) > 0
+
+    with globaldb.conn.read_ctx() as cursor:
+        for bfx_symbol, _ in new_mappings:
+            assert cursor.execute(
+                'SELECT COUNT(*) FROM location_unsupported_assets '
+                'WHERE location=? AND exchange_symbol=?;',
+                (bitfinex_db_serialized, bfx_symbol),
+            ).fetchone()[0] == 0  # no new mapping added for unsupported assets
+
     assert mock_bitfinex.pair_bfx_symbols_map['BTCUST'] == ('BTC', 'UST')
     assert mock_bitfinex.pair_bfx_symbols_map['UDCUSD'] == ('UDC', 'USD')
     assert mock_bitfinex.first_connection_made is True
@@ -175,22 +189,23 @@ def test_validate_api_key_invalid_key(mock_bitfinex):
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
-def test_query_balances_asset_balance(mock_bitfinex, inquirer):  # pylint: disable=unused-argument
+def test_query_balances_asset_balance(mock_bitfinex, inquirer, globaldb):  # pylint: disable=unused-argument
     """Test the balances of the assets are returned as expected.
 
     Also test the following logic:
       - An asset balance is the result of aggregating its balances per wallet
       type (i.e. exchange, margin and funding).
-      - The balance of an asset in UNSUPPORTED_BITFINEX_ASSETS is skipped.
+      - The balance of an asset in location_unsupported_assets is skipped.
       - The asset ticker is standardized (e.g. WBT to WBTC, UST to USDT).
     """
     mock_bitfinex.first_connection = MagicMock()
-    mock_bitfinex.currency_map = {
-        'UST': ethaddress_to_identifier('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
-        'GNT': 'GLM',
-        'WBT': ethaddress_to_identifier('0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'),
-        'LINK': ethaddress_to_identifier('0x514910771AF9Ca656af840dff83E8264EcF986CA'),
-    }
+    globaldb.add_location_asset_mappings([
+        LocationAssetMappingUpdateEntry(
+            location=Location.BITFINEX,
+            location_symbol='GNT',
+            asset=A_GLM,
+        ),
+    ])
     balances_data = (
         """
         [
@@ -254,8 +269,6 @@ def test_query_balances_asset_balance(mock_bitfinex, inquirer):  # pylint: disab
 def test_api_query_paginated_stops_requesting(mock_bitfinex):
     """Test requests are stopped after retry limit is reached.
     """
-    mock_bitfinex.currency_map = {}
-
     def mock_api_query_response(endpoint, options):  # pylint: disable=unused-argument
         return MockResponse(
             HTTPStatus.INTERNAL_SERVER_ERROR,
@@ -294,8 +307,6 @@ def test_api_query_paginated_retries_request(mock_bitfinex):
     JSON as a dict and later as a list (via `_process_unsuccessful_response()`)
     works as expected.
     """
-    mock_bitfinex.currency_map = {}
-
     def get_paginated_response():
         results = [
             f'{{"error":"{API_RATE_LIMITS_ERROR_MESSAGE}"}}',
@@ -332,10 +343,6 @@ def test_api_query_paginated_retries_request(mock_bitfinex):
 
 
 def test_deserialize_trade_buy(mock_bitfinex):
-    mock_bitfinex.currency_map = {
-        'WBT': ethaddress_to_identifier('0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'),
-        'UST': ethaddress_to_identifier('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
-    }
     mock_bitfinex.pair_bfx_symbols_map = {'WBTUST': ('WBT', 'UST')}
     raw_result = [
         399251013,
@@ -368,7 +375,6 @@ def test_deserialize_trade_buy(mock_bitfinex):
 
 
 def test_deserialize_trade_sell(mock_bitfinex):
-    mock_bitfinex.currency_map = {'UST': ethaddress_to_identifier('0xdAC17F958D2ee523a2206206994597C13D831ec7')}  # noqa: E501
     mock_bitfinex.pair_bfx_symbols_map = {'ETHUST': ('ETH', 'UST')}
     raw_result = [
         399251013,
@@ -412,7 +418,6 @@ def test_delisted_pair_trades_work(mock_bitfinex):
         chain_id=ChainID.ETHEREUM,
         token_kind=EvmTokenKind.ERC20,
     )
-    mock_bitfinex.currency_map = {}
     mock_bitfinex.pair_bfx_symbols_map = {}
     raw_result = [
         399251013,
@@ -462,10 +467,6 @@ def test_query_online_trade_history_case_1(mock_bitfinex):
     """
     api_limit = 2
     mock_bitfinex.first_connection = MagicMock()
-    mock_bitfinex.currency_map = {
-        'UST': ethaddress_to_identifier('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
-        'WBT': ethaddress_to_identifier('0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'),
-    }
     mock_bitfinex.pair_bfx_symbols_map = {
         'ETHUST': ('ETH', 'UST'),
         'WBTUSD': ('WBT', 'USD'),
@@ -684,10 +685,6 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
     """
     api_limit = 2
     mock_bitfinex.first_connection = MagicMock()
-    mock_bitfinex.currency_map = {
-        'UST': ethaddress_to_identifier('0xdAC17F958D2ee523a2206206994597C13D831ec7'),
-        'WBT': ethaddress_to_identifier('0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'),
-    }
     mock_bitfinex.pair_bfx_symbols_map = {
         'ETHUST': ('ETH', 'UST'),
         'WBTUSD': ('WBT', 'USD'),
@@ -845,7 +842,6 @@ def test_query_online_trade_history_case_2(mock_bitfinex):
 
 
 def test_deserialize_asset_movement_deposit(mock_bitfinex):
-    mock_bitfinex.currency_map = {'WBT': ethaddress_to_identifier('0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599')}  # noqa: E501
     raw_result = [
         13105603,
         'WBT',
@@ -891,7 +887,6 @@ def test_deserialize_asset_movement_withdrawal(mock_bitfinex):
     """Test also both 'address' and 'transaction_id' are None for fiat
     movements.
     """
-    mock_bitfinex.currency_map = {}
     raw_result = [
         13105603,
         'EUR',
@@ -953,7 +948,6 @@ def test_query_online_deposits_withdrawals_case_1(mock_bitfinex):
     """
     api_limit = 2
     mock_bitfinex.first_connection = MagicMock()
-    mock_bitfinex.currency_map = {'WBT': ethaddress_to_identifier('0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599')}  # noqa: E501
     # Deposit WBTC
     movement_1 = """
     [
@@ -1206,7 +1200,6 @@ def test_query_online_deposits_withdrawals_case_2(mock_bitfinex):
     """
     api_limit = 2
     mock_bitfinex.first_connection = MagicMock()
-    mock_bitfinex.currency_map = {'WBT': ethaddress_to_identifier('0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599')}  # noqa: E501
     # Deposit WBTC
     movement_1 = """
     [

@@ -1,4 +1,4 @@
-const RuiTooltipStub = {
+export const RuiTooltipStub = {
   setup() {
     const open = ref(false);
 
@@ -13,5 +13,3 @@ const RuiTooltipStub = {
     </div>
   `,
 };
-
-export default RuiTooltipStub;

@@ -16,16 +16,17 @@ from rotkehlchen.types import (
     AVAILABLE_MODULES_MAP,
     DEFAULT_ADDRESS_NAME_PRIORITY,
     DEFAULT_OFF_MODULES,
+    SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     AddressNameSource,
-    ChainID,
     CostBasisMethod,
     ExchangeLocationID,
     ModuleName,
+    SupportedBlockchain,
     Timestamp,
 )
 from rotkehlchen.user_messages import MessagesAggregator
 
-ROTKEHLCHEN_DB_VERSION = 41
+ROTKEHLCHEN_DB_VERSION = 42
 ROTKEHLCHEN_TRANSIENT_DB_VERSION = 1
 DEFAULT_TAXFREE_AFTER_PERIOD = YEAR_IN_SECONDS
 DEFAULT_INCLUDE_CRYPTO2CRYPTO = True
@@ -57,6 +58,8 @@ DEFAULT_CONNECT_TIMEOUT = 30
 DEFAULT_READ_TIMEOUT = 30
 DEFAULT_ORACLE_PENALTY_THRESHOLD_COUNT = 5
 DEFAULT_ORACLE_PENALTY_DURATION = 1800
+DEFAULT_AUTO_DELETE_CALENDAR_ENTRIES = True
+DEFAULT_AUTO_CREATE_CALENDAR_REMINDERS = True
 
 JSON_KEYS = (
     'current_price_oracles',
@@ -79,6 +82,8 @@ BOOLEAN_KEYS = (
     'eth_staking_taxable_after_withdrawal_enabled',
     'include_fees_in_cost_basis',
     'infer_zero_timed_balances',
+    'auto_delete_calendar_entries',
+    'auto_create_calendar_reminders',
 )
 INTEGER_KEYS = (
     'version',
@@ -143,6 +148,8 @@ CachedDBSettingsFieldNames = Literal[
     'read_timeout',
     'oracle_penalty_threshold_count',
     'oracle_penalty_duration',
+    'auto_delete_calendar_entries',
+    'auto_create_calendar_reminders',
 ]
 
 DBSettingsFieldTypes = (
@@ -189,7 +196,7 @@ class DBSettings:
     ssf_graph_multiplier: int = DEFAULT_SSF_GRAPH_MULTIPLIER
     last_data_migration: int = DEFAULT_LAST_DATA_MIGRATION
     non_syncing_exchanges: Sequence[ExchangeLocationID] = field(default_factory=list)
-    evmchains_to_skip_detection: Sequence[ChainID] = field(default_factory=list)
+    evmchains_to_skip_detection: Sequence[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE] = field(default_factory=list)  # Both EVM and EVMLike chains # noqa: E501
     cost_basis_method: CostBasisMethod = DEFAULT_COST_BASIS_METHOD
     treat_eth2_as_eth: bool = DEFAULT_TREAT_ETH2_AS_ETH
     eth_staking_taxable_after_withdrawal_enabled: bool = DEFAULT_ETH_STAKING_TAXABLE_AFTER_WITHDRAWAL_ENABLED  # noqa: E501
@@ -201,6 +208,8 @@ class DBSettings:
     read_timeout: int = DEFAULT_READ_TIMEOUT
     oracle_penalty_threshold_count: int = DEFAULT_ORACLE_PENALTY_THRESHOLD_COUNT
     oracle_penalty_duration: int = DEFAULT_ORACLE_PENALTY_DURATION
+    auto_delete_calendar_entries: bool = DEFAULT_AUTO_DELETE_CALENDAR_ENTRIES
+    auto_create_calendar_reminders: bool = DEFAULT_AUTO_CREATE_CALENDAR_REMINDERS
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}
@@ -245,7 +254,7 @@ class ModifiableDBSettings(NamedTuple):
     pnl_csv_have_summary: bool | None = None
     ssf_graph_multiplier: int | None = None
     non_syncing_exchanges: list[ExchangeLocationID] | None = None
-    evmchains_to_skip_detection: list[ChainID] | None = None
+    evmchains_to_skip_detection: list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE] | None = None
     cost_basis_method: CostBasisMethod | None = None
     treat_eth2_as_eth: bool | None = None
     eth_staking_taxable_after_withdrawal_enabled: bool | None = None
@@ -257,6 +266,8 @@ class ModifiableDBSettings(NamedTuple):
     read_timeout: int | None = None
     oracle_penalty_threshold_count: int | None = None
     oracle_penalty_duration: int | None = None
+    auto_delete_calendar_entries: bool | None = None
+    auto_create_calendar_reminders: bool | None = None
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}
@@ -329,7 +340,7 @@ def db_settings_from_dict(
             specified_args[key] = [ExchangeLocationID.deserialize(x) for x in values]
         elif key == 'evmchains_to_skip_detection':
             values = json.loads(value)
-            specified_args[key] = [ChainID.deserialize_from_name(x) for x in values]
+            specified_args[key] = [SupportedBlockchain.deserialize(x) for x in values]
         elif key == 'cost_basis_method':
             specified_args[key] = CostBasisMethod.deserialize(value)
         elif key == 'address_name_priority':
@@ -366,11 +377,6 @@ def serialize_db_setting(
         value = value.serialize()  # pylint: disable=no-member
     elif setting == 'address_name_priority' and is_modifiable is True:
         value = json.dumps(value)
-    elif setting == 'evmchains_to_skip_detection':
-        if is_modifiable is True:
-            value = json.dumps([x.to_name() for x in value])
-        else:
-            value = [x.to_name() for x in value]
     elif setting in JSON_KEYS:
         if is_modifiable is True:
             value = json.dumps([x.serialize() for x in value])

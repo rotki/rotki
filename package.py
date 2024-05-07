@@ -303,7 +303,7 @@ class Storage:
 
         dst = self.dist_directory
         if sub_dir is not None:
-            dst = dst / sub_dir
+            dst /= sub_dir
 
         logger.info(f'copying {src.name} to {dst}')
 
@@ -320,7 +320,7 @@ class WindowsPackaging:
     def __init__(self, storage: Storage, env: Environment) -> None:
         self.__storage = storage
         self.__env = env
-        self.__p12 = ''
+        self.__p12 = Path('')
 
     @log_group('miniupnpc windows')
     def setup_miniupnpc(self) -> None:
@@ -336,7 +336,7 @@ class WindowsPackaging:
         )
 
         if python_dir.name != 'Scripts':
-            python_dir = python_dir / 'Scripts'
+            python_dir /= 'Scripts'
 
         dll_filename = 'miniupnpc.dll'
         dll_path = python_dir / dll_filename
@@ -389,15 +389,15 @@ class WindowsPackaging:
 
         logger.info('preparing to sign windows installer')
         with NamedTemporaryFile(delete=False, suffix='.p12') as p12:
-            self.__p12 = p12.name
-            os.environ.setdefault('WIN_CSC_LINK', self.__p12)
+            self.__p12 = Path(p12.name)
+            os.environ.setdefault('WIN_CSC_LINK', str(self.__p12))
             certificate_data = base64.b64decode(certificate)
             p12.write(certificate_data)
 
         return True
 
     def cleanup_certificate(self) -> None:
-        Path(self.__p12).unlink(missing_ok=True)
+        self.__p12.unlink(missing_ok=True)
 
 
 class MacPackaging:
@@ -406,7 +406,7 @@ class MacPackaging:
         self.__environment = environment
         self.__default_keychain: str | None = None
         self.__keychain = 'rotki-build.keychain'
-        self.__p12 = '/tmp/certificate.p12'  # noqa: S108  # ask Kelsos if this canchange
+        self.__p12 = Path('/tmp/certificate.p12')  # noqa: S108
 
     @staticmethod
     def unpack_wheels(
@@ -729,12 +729,10 @@ class MacPackaging:
         logger.info('preparing to sign macOS binary')
         p12 = self.__p12
         keychain = self.__keychain
-        os.environ.setdefault('CSC_LINK', p12)
+        os.environ.setdefault('CSC_LINK', str(p12))
 
-        with open(p12, 'wb') as file:
-            certificate_data = base64.b64decode(certificate)
-            file.write(certificate_data)
-
+        certificate_data = base64.b64decode(certificate)
+        p12.write_bytes(certificate_data)
         self.__default_keychain = subprocess.check_output(
             'security default-keychain',
             shell=True,
@@ -748,7 +746,7 @@ class MacPackaging:
         # Unlock the keychains
         subprocess.call(f'security unlock-keychain -p actions {keychain}', shell=True)
         subprocess.call(
-            f'security import {p12} -k {keychain} -P {csc_password} -T /usr/bin/codesign;',
+            f'security import {p12!s} -k {keychain} -P {csc_password} -T /usr/bin/codesign;',
             shell=True,
         )
         subprocess.call(
@@ -763,9 +761,8 @@ class MacPackaging:
         if default_keychain is not None:
             subprocess.call(f'security default-keychain -s {default_keychain}', shell=True)
 
-        temp_certificate = Path(self.__p12)
-        if temp_certificate.exists():
-            temp_certificate.unlink(missing_ok=True)
+        if self.__p12.exists():
+            self.__p12.unlink(missing_ok=True)
         os.environ.pop('CSC_LINK', None)
 
     @log_group('signing')
@@ -1058,9 +1055,9 @@ class BackendBuilder:
             is_x64 = self.__env.is_x86_64()
             no_target = target is None
             if (no_target and not is_x64) or target == ARM_APPL_RUST_TARGET:
-                binary_directory = binary_directory / 'arm64'
+                binary_directory /= 'arm64'
             elif (no_target and is_x64) or target == X64_APPL_RUST_TARGET:
-                binary_directory = binary_directory / 'x64'
+                binary_directory /= 'x64'
 
         binary_directory.mkdir(exist_ok=True, parents=True)
         shutil.copy(backend_binary, binary_directory / binary_name)

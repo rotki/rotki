@@ -52,6 +52,7 @@ const passphrase = computed({
 });
 
 const { getExchangeNonce } = useExchangesStore();
+const { exchangesWithPassphrase, exchangesWithoutApiSecret } = storeToRefs(useLocationStore());
 const { t, te } = useI18n();
 
 const requiresApiSecret = computed(() => {
@@ -90,23 +91,6 @@ function toggleEdit() {
   }
 }
 
-function onExchangeChange(exchange: string) {
-  input({
-    name: suggestedName(exchange),
-    newName: null,
-    location: exchange,
-    apiKey: null,
-    apiSecret: get(exchangesWithoutApiSecret).includes(exchange) ? '' : null,
-    passphrase: null,
-    krakenAccountType: exchange === 'kraken' ? 'starter' : null,
-    binanceMarkets: null,
-  });
-
-  nextTick(() => {
-    get(v$).$reset();
-  });
-}
-
 function input(payload: ExchangePayload) {
   emit('input', payload);
 }
@@ -130,9 +114,6 @@ const krakenAccountTypes = KrakenAccountType.options.map((item) => {
     label,
   };
 });
-
-const { exchangesWithKey, exchangesWithPassphrase, exchangesWithoutApiSecret }
-  = storeToRefs(useLocationStore());
 
 const sensitiveFieldEditable = computed(() => !get(editMode) || get(editKeys));
 
@@ -172,6 +153,23 @@ const rules = {
 const { setValidation } = useExchangeApiKeysForm();
 
 const v$ = setValidation(rules, exchange, { $autoDirty: true });
+
+function onExchangeChange(exchange: string) {
+  input({
+    name: suggestedName(exchange),
+    newName: null,
+    location: exchange,
+    apiKey: null,
+    apiSecret: get(exchangesWithoutApiSecret).includes(exchange) ? '' : null,
+    passphrase: null,
+    krakenAccountType: exchange === 'kraken' ? 'starter' : null,
+    binanceMarkets: null,
+  });
+
+  nextTick(() => {
+    get(v$).$reset();
+  });
+}
 </script>
 
 <template>
@@ -180,33 +178,14 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
     class="flex flex-col gap-2"
   >
     <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
-      <VAutocomplete
-        outlined
+      <ExchangeInput
+        show-with-key-only
         :value="exchange.location"
-        :items="exchangesWithKey"
         :label="t('exchange_keys_form.exchange')"
         data-cy="exchange"
         :disabled="editMode"
-        auto-select-first
-        @change="onExchangeChange($event)"
-      >
-        <template #selection="{ item, attrs, on }">
-          <ExchangeDisplay
-            :exchange="item"
-            :class="`exchange__${item}`"
-            v-bind="attrs"
-            v-on="on"
-          />
-        </template>
-        <template #item="{ item, attrs, on }">
-          <ExchangeDisplay
-            :exchange="item"
-            :class="`exchange__${item}`"
-            v-bind="attrs"
-            v-on="on"
-          />
-        </template>
-      </VAutocomplete>
+        @input="onExchangeChange($event)"
+      />
 
       <RuiTextField
         v-if="editMode"
@@ -230,16 +209,19 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
       />
     </div>
 
-    <VSelect
+    <RuiMenuSelect
       v-if="exchange.location === 'kraken'"
-      outlined
       :value="exchange.krakenAccountType"
       data-cy="account-type"
-      :items="krakenAccountTypes"
-      item-value="identifier"
-      item-text="label"
+      :options="krakenAccountTypes"
       :label="t('exchange_settings.inputs.kraken_account')"
-      @change="input({ ...exchange, krakenAccountType: $event })"
+      key-attr="identifier"
+      text-attr="label"
+      full-width
+      float-label
+      show-details
+      variant="outlined"
+      @input="input({ ...exchange, krakenAccountType: $event })"
     />
 
     <div
@@ -279,6 +261,7 @@ const v$ = setValidation(rules, exchange, { $autoDirty: true });
       :disabled="editMode && !editKeys"
       :error-messages="toMessages(v$.apiKey)"
       data-cy="api-key"
+      prepend-icon="key-line"
       :label="t('exchange_settings.inputs.api_key')"
     />
 

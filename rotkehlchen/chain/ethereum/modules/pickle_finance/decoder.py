@@ -1,10 +1,11 @@
+import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import MerkleClaimDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     FAILED_ENRICHMENT_OUTPUT,
     EnricherContext,
@@ -14,10 +15,11 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import PICKLE_JAR_PROTOCOL
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import PICKLE_JAR_PROTOCOL, ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-from .constants import CPT_PICKLE
+from .constants import CORN_TOKEN_ID, CORNICHON_CLAIM, CPT_PICKLE
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -25,7 +27,11 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-class PickleFinanceDecoder(DecoderInterface):
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
+
+
+class PickleFinanceDecoder(MerkleClaimDecoderInterface):
 
     def __init__(
             self,
@@ -96,6 +102,7 @@ class PickleFinanceDecoder(DecoderInterface):
                 context.event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                 context.event.counterparty = CPT_PICKLE
                 context.event.notes = f'Receive {context.event.balance.amount} {crypto_asset.symbol} after depositing in pickle contract'  # noqa: E501
+                context.event.address = context.tx_log.address
                 return TransferEnrichmentOutput(matched_counterparty=CPT_PICKLE)
         elif (  # Withdraw send wrapped
             context.event.event_type == HistoryEventType.SPEND and
@@ -116,6 +123,7 @@ class PickleFinanceDecoder(DecoderInterface):
                 context.event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                 context.event.counterparty = CPT_PICKLE
                 context.event.notes = f'Return {context.event.balance.amount} {crypto_asset.symbol} to the pickle contract'  # noqa: E501
+                context.event.address = context.tx_log.address
                 return TransferEnrichmentOutput(matched_counterparty=CPT_PICKLE)
         elif (  # Withdraw receive asset
             context.event.event_type == HistoryEventType.RECEIVE and
@@ -146,6 +154,17 @@ class PickleFinanceDecoder(DecoderInterface):
         return [
             self._maybe_enrich_pickle_transfers,
         ]
+
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
+        return {
+            CORNICHON_CLAIM: (
+                self._decode_merkle_claim,
+                CPT_PICKLE,  # counterparty
+                CORN_TOKEN_ID,  # token id
+                18,  # token decimals
+                'CORN from the pickle finance hack compensation airdrop',  # notes suffix
+            ),
+        }
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:

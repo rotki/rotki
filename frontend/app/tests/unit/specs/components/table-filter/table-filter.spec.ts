@@ -6,7 +6,7 @@ import {
 import Vuetify from 'vuetify';
 import { setActivePinia } from 'pinia';
 import TableFilter from '@/components/table-filter/TableFilter.vue';
-import createCustomPinia from '../../../utils/create-pinia';
+import { createCustomPinia } from '../../../utils/create-pinia';
 import type { StringSuggestionMatcher } from '@/types/filtering';
 
 vi.mocked(useCssModule).mockReturnValue({
@@ -78,7 +78,7 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     await wrapper.find('.search-input').trigger('input', { value: 'ty' });
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(wrapper.findAll('.suggestions > button')).toHaveLength(1);
     expect(wrapper.find('.suggestions > button:first-child').text()).toBe(
@@ -97,7 +97,7 @@ describe('table-filter/FilterDropdown.vue', () => {
     // Set matcher to `type`
     await wrapper.find('.search-input').trigger('input', { value: 'type' });
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     // Suggestions for `type`
     const suggestions = matchers[1].suggestions();
@@ -114,7 +114,7 @@ describe('table-filter/FilterDropdown.vue', () => {
     // Choose first suggestions (type 1)
     await wrapper.find('.suggestions > button:first-child').trigger('click');
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(
       wrapper
@@ -131,11 +131,11 @@ describe('table-filter/FilterDropdown.vue', () => {
       .find('.search-input')
       .trigger('input', { value: 'type = type 2' });
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     await wrapper.find('.suggestions > button:first-child').trigger('click');
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(
       wrapper
@@ -152,7 +152,7 @@ describe('table-filter/FilterDropdown.vue', () => {
       .find('.selections > span:nth-child(1) div[role=button] button')
       .trigger('click');
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(wrapper.emitted()['update:matches']?.[2]).toEqual([
       { type: ['type 2'] },
@@ -163,7 +163,7 @@ describe('table-filter/FilterDropdown.vue', () => {
       .find('.selections > span:nth-child(1) div[role=button] span')
       .trigger('click');
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(wrapper.emitted()['update:matches']?.[3]).toEqual([{}]);
     expect(
@@ -182,7 +182,7 @@ describe('table-filter/FilterDropdown.vue', () => {
     // Set matcher to `type`
     await wrapper.find('.search-input').trigger('input', { value: 'type !=' });
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     // Suggestions for `type`
     const suggestions = matchers[1].suggestions();
@@ -199,7 +199,7 @@ describe('table-filter/FilterDropdown.vue', () => {
     // Choose first suggestions with exclusion (type 1)
     await wrapper.find('.suggestions > button:first-child').trigger('click');
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(
       wrapper
@@ -222,7 +222,7 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     wrapper = createWrapper({ propsData });
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(
       wrapper
@@ -246,7 +246,7 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     wrapper = createWrapper({ propsData });
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(
       wrapper

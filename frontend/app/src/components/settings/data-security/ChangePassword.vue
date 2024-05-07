@@ -89,6 +89,7 @@ async function change() {
         color="primary"
         class="user-security-settings__fields__new-password"
         :label="t('change_password.labels.new_password')"
+        prepend-icon="lock-line"
         :error-messages="toMessages(v$.newPassword)"
         variant="outlined"
       />

@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import type { Ref } from 'vue';
 import type {
   SavedFilterLocation,
   SearchMatcher,
@@ -16,6 +15,9 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:matches', matches: Suggestion[]): void;
 }>();
+
+const { t } = useI18n();
+const css = useCssModule();
 
 const { selection, location, matchers } = toRefs(props);
 
@@ -73,9 +75,6 @@ async function addToSavedFilter() {
     });
   }
 }
-
-const { t } = useI18n();
-const css = useCssModule();
 </script>
 
 <template>
@@ -117,13 +116,10 @@ const css = useCssModule();
       </div>
     </RuiTooltip>
 
-    <VMenu
+    <RuiMenu
       v-model="open"
-      offset-y
-      left
-      max-width="400"
-      max-height="500"
-      :close-on-content-click="false"
+      :popper="{ placement: 'bottom-end' }"
+      menu-class="max-w-[25rem] max-h-[32rem]"
     >
       <template #activator="{ on }">
         <RuiTooltip
@@ -150,7 +146,7 @@ const css = useCssModule();
       </template>
       <div
         v-if="savedFilters.length > 0"
-        class="py-4"
+        class="py-2"
       >
         <div
           v-for="(filters, index) in savedFilters"
@@ -158,10 +154,10 @@ const css = useCssModule();
         >
           <RuiDivider
             v-if="index > 0"
-            class="my-3"
+            class="my-1"
           />
-          <div class="flex px-4">
-            <div class="flex flex-wrap pr-4 gap-1">
+          <div class="flex justify-between px-4">
+            <div class="flex flex-wrap items-start pr-4 gap-1 my-0.5">
               <RuiChip
                 v-for="(filter, filterIndex) in filters"
                 :key="filterIndex"
@@ -248,7 +244,7 @@ const css = useCssModule();
           </template>
         </i18n>
       </div>
-    </VMenu>
+    </RuiMenu>
   </div>
 </template>
 

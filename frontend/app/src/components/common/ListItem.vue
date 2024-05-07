@@ -51,7 +51,14 @@ const css = useCssModule();
       :class="avatarSizeClasses"
       class="flex items-center justify-center avatar"
     >
-      <slot name="avatar" />
+      <slot
+        v-if="!loading"
+        name="avatar"
+      />
+      <RuiSkeletonLoader
+        v-else
+        class="w-full h-full rounded-full"
+      />
     </div>
     <div class="flex-1 flex flex-col text-truncate">
       <template v-if="loading">

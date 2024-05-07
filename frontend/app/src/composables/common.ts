@@ -23,39 +23,3 @@ export function useTheme() {
     appBarColor,
   };
 }
-
-export function useDisplay() {
-  const { $vuetify } = useProxy();
-  const mobile = computed(() => $vuetify.breakpoint.mobile);
-  const name = computed(() => $vuetify.breakpoint.name);
-  const width = computed(() => $vuetify.breakpoint.width);
-
-  const xs = computed(() => $vuetify.breakpoint.xs);
-  const sm = computed(() => $vuetify.breakpoint.sm);
-  const md = computed(() => $vuetify.breakpoint.md);
-  const lg = computed(() => $vuetify.breakpoint.lg);
-  const xl = computed(() => $vuetify.breakpoint.xl);
-  const smAndDown = computed(() => $vuetify.breakpoint.smAndDown);
-  const smAndUp = computed(() => $vuetify.breakpoint.smAndUp);
-  const mdAndDown = computed(() => $vuetify.breakpoint.mdAndDown);
-  const mdAndUp = computed(() => $vuetify.breakpoint.mdAndUp);
-  const lgAndDown = computed(() => $vuetify.breakpoint.lgAndDown);
-  const lgAndUp = computed(() => $vuetify.breakpoint.lgAndUp);
-
-  return {
-    xs,
-    sm,
-    md,
-    lg,
-    xl,
-    smAndDown,
-    smAndUp,
-    mdAndDown,
-    mdAndUp,
-    lgAndDown,
-    lgAndUp,
-    mobile,
-    name,
-    width,
-  };
-}

@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useCssModule } from 'vue';
-
 defineProps<{
   countries: string[];
   label: string;

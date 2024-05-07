@@ -46,9 +46,9 @@ describe('premiumSettings.vue', () => {
     await apiKey.setValue('1234');
     await apiSecret.setValue('1234');
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
     await wrapper.find('[data-cy=premium__setup]').trigger('click');
-    await wrapper.vm.$nextTick();
+    await nextTick();
     await flushPromises();
 
     const { premiumUserLoggedIn } = useInterop();
@@ -59,11 +59,11 @@ describe('premiumSettings.vue', () => {
     const { premium } = storeToRefs(usePremiumStore());
     set(premium, true);
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
     api.deletePremiumCredentials = vi.fn().mockResolvedValue({ result: true });
 
     await wrapper.find('[data-cy=premium__delete]').trigger('click');
-    await wrapper.vm.$nextTick();
+    await nextTick();
     await flushPromises();
 
     const { confirm } = useConfirmStore();

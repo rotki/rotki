@@ -4,6 +4,7 @@ import {
   RiAddCircleLine,
   RiAddLine,
   RiAdminLine,
+  RiAlarmLine,
   RiAlarmWarningLine,
   RiArchiveStackAddLine,
   RiArchiveStackReduceLine,
@@ -14,6 +15,7 @@ import {
   RiArrowGoForwardLine,
   RiArrowLeftLine,
   RiArrowLeftRightLine,
+  RiArrowLeftSLine,
   RiArrowRightLine,
   RiArrowRightSLine,
   RiArrowUpCircleLine,
@@ -32,6 +34,7 @@ import {
   RiCalendar2Line,
   RiCalendarEventLine,
   RiCalendarLine,
+  RiCalendarTodoLine,
   RiCashLine,
   RiChatQuoteLine,
   RiCheckDoubleLine,
@@ -65,7 +68,9 @@ import {
   RiEqualizerLine,
   RiErrorWarningLine,
   RiExchangeBoxLine,
+  RiExchangeDollarLine,
   RiExchangeLine,
+  RiExpandRightLine,
   RiExternalLinkLine,
   RiEye2Line,
   RiEyeLine,
@@ -131,6 +136,7 @@ import {
   RiPercentLine,
   RiPlayListAddLine,
   RiPriceTagLine,
+  RiPushpinFill,
   RiPushpinLine,
   RiQuestionLine,
   RiQuestionnaireLine,
@@ -187,8 +193,8 @@ import {
 } from '@rotki/ui-library-compat';
 import '@rotki/ui-library-compat/style.css';
 
-export default (defaults: Partial<RuiOptions['defaults']>) =>
-  createRui({
+export function createRuiPlugin(defaults: Partial<RuiOptions['defaults']>) {
+  return createRui({
     theme: {
       mode: ThemeMode.light,
       icons: [
@@ -380,7 +386,15 @@ export default (defaults: Partial<RuiOptions['defaults']>) =>
         RiCloudOffLine,
         RiCalendarLine,
         RiMapPinTimeLine,
+        RiPushpinFill,
+        RiExchangeDollarLine,
+        RiExpandRightLine,
+        RiCalendarTodoLine,
+        RiArrowLeftSLine,
+        RiArrowRightSLine,
+        RiAlarmLine,
       ],
     },
     defaults,
   });
+}

@@ -202,7 +202,7 @@ def update_ilk_registry(
                 continue
 
             abi_name = f'MAKERDAO_{ilk}_JOIN'
-            abi_id = GlobalDBHandler().get_or_write_abi(
+            abi_id = GlobalDBHandler.get_or_write_abi(
                 serialized_abi=json.dumps(abi, separators=(',', ':')),
                 abi_name=abi_name,
             )

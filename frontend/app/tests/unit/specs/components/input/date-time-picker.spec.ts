@@ -7,8 +7,8 @@ import Vuetify from 'vuetify';
 import { type Pinia, setActivePinia } from 'pinia';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { DateFormat } from '@/types/date-format';
-import createCustomPinia from '../../../utils/create-pinia';
-import VAutocompleteStub from '../../stubs/VAutocomplete';
+import { createCustomPinia } from '../../../utils/create-pinia';
+import { VAutocompleteStub } from '../../stubs/VAutocomplete';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({
@@ -37,7 +37,7 @@ describe('dateTimePicker.vue', () => {
       pinia,
       vuetify,
       stubs: {
-        VMenu: {
+        RuiMenu: {
           template: '<span><slot name="activator"/><slot /></span>',
         },
         VAutocomplete: VAutocompleteStub,
@@ -49,27 +49,27 @@ describe('dateTimePicker.vue', () => {
 
   it('should show indicator when format is wrong', async () => {
     wrapper = createWrapper({});
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     await wrapper.find('input').setValue('12/12/202');
-    await wrapper.vm.$nextTick();
+    await nextTick();
     expect(wrapper.find('.text-rui-error').exists()).toBeTruthy();
 
     await wrapper.find('input').setValue('12/12/2021');
-    await wrapper.vm.$nextTick();
+    await nextTick();
     expect(wrapper.find('.text-rui-error').exists()).toBeFalsy();
 
     await wrapper.find('input').setValue('12/12/2021 12');
-    await wrapper.vm.$nextTick();
+    await nextTick();
     expect(wrapper.find('.text-rui-error').exists()).toBeTruthy();
   });
 
   it('should allow seconds value to be optional', async () => {
     wrapper = createWrapper({});
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     await wrapper.find('input').setValue('12/12/2021 12:12');
-    await wrapper.vm.$nextTick();
+    await nextTick();
     expect(wrapper.find('.text-rui-error').exists()).toBeFalsy();
   });
 
@@ -79,27 +79,27 @@ describe('dateTimePicker.vue', () => {
         milliseconds: true,
       },
     });
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     await wrapper.find('input').setValue('12/12/2021 12:12:12.333');
-    await wrapper.vm.$nextTick();
+    await nextTick();
     expect(wrapper.find('.text-rui-error').exists()).toBeFalsy();
     expect(wrapper.emitted().input?.[0]).toEqual(['12/12/2021 12:12:12.333']);
   });
 
   it('should show trim value when the length of the input exceed the max length allowed', async () => {
     wrapper = createWrapper({});
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     await wrapper.find('input').setValue('12/12/2021 12:12:12');
-    await wrapper.vm.$nextTick();
+    await nextTick();
     expect(wrapper.find('.text-rui-error').exists()).toBeFalsy();
 
     await wrapper.find('input').setValue('12/12/2021 12:12:123');
-    await wrapper.vm.$nextTick();
+    await nextTick();
     await wrapper.find('input').trigger('blur');
     await wrapper.find('input').trigger('focus');
-    await wrapper.vm.$nextTick();
+    await nextTick();
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
       '12/12/2021 12:12:12',
     );
@@ -115,14 +115,14 @@ describe('dateTimePicker.vue', () => {
     wrapper = createWrapper({
       propsData: { limitNow: true },
     });
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     await wrapper.find('input').setValue('12/12/2023');
-    await wrapper.vm.$nextTick();
+    await nextTick();
     expect(wrapper.find('.text-rui-error').exists()).toBeTruthy();
 
     await wrapper.find('input').setValue('12/12/2022');
-    await wrapper.vm.$nextTick();
+    await nextTick();
     expect(wrapper.find('.text-rui-error').exists()).toBeFalsy();
   });
 
@@ -135,13 +135,13 @@ describe('dateTimePicker.vue', () => {
     wrapper = createWrapper({
       propsData: { limitNow: true },
     });
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     await wrapper
       .find('[data-cy=date-time-picker__set-now-button]')
       .trigger('click');
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
       '01/01/2023 01:01:01',
@@ -159,14 +159,14 @@ describe('dateTimePicker.vue', () => {
       propsData: { value: '12/12/2021 12:12:12' },
     });
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
       '2021/12/12 12:12:12',
     );
 
     await wrapper.find('input').setValue('2023/06/06 12:12:12');
     await get(wrapper.vm._setupState.imask).updateValue();
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(wrapper.emitted().input?.[1]).toEqual(['06/06/2023 12:12:12']);
   });
@@ -179,7 +179,7 @@ describe('dateTimePicker.vue', () => {
         },
       });
 
-      await wrapper.vm.$nextTick();
+      await nextTick();
       expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
         '12/12/2021 12:12:12',
       );
@@ -187,18 +187,18 @@ describe('dateTimePicker.vue', () => {
       await wrapper
         .find('.input-value')
         .trigger('input', { value: 'Etc/GMT-7' });
-      await wrapper.vm.$nextTick();
+      await nextTick();
       expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
         '12/12/2021 19:12:12',
       );
 
       await wrapper.find('input').setValue('');
       await get(wrapper.vm._setupState.imask).updateValue();
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       await wrapper.find('input').setValue('12/12/2021 23:59:12');
       await get(wrapper.vm._setupState.imask).updateValue();
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       expect(wrapper.emitted().input?.[2]).toEqual(['12/12/2021 16:59:12']);
     });
@@ -212,29 +212,29 @@ describe('dateTimePicker.vue', () => {
       wrapper = createWrapper({
         propsData: { limitNow: true },
       });
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       await wrapper
         .find('.input-value')
         .trigger('input', { value: 'Etc/GMT-1' });
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       await wrapper.find('input').setValue('01/01/2023 00:00:00');
 
       await get(wrapper.vm._setupState.imask).updateValue();
-      await wrapper.vm.$nextTick();
+      await nextTick();
       expect(wrapper.find('.text-rui-error').exists()).toBeFalsy();
 
       await wrapper.find('input').setValue('01/01/2023 00:59:59');
 
       await get(wrapper.vm._setupState.imask).updateValue();
-      await wrapper.vm.$nextTick();
+      await nextTick();
       expect(wrapper.find('.text-rui-error').exists()).toBeFalsy();
 
       await wrapper.find('input').setValue('01/01/2023 01:00:01');
 
       await get(wrapper.vm._setupState.imask).updateValue();
-      await wrapper.vm.$nextTick();
+      await nextTick();
       expect(wrapper.find('.text-rui-error').exists()).toBeTruthy();
     });
 
@@ -247,18 +247,18 @@ describe('dateTimePicker.vue', () => {
       wrapper = createWrapper({
         propsData: { limitNow: true },
       });
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       await wrapper
         .find('.input-value')
         .trigger('input', { value: 'Etc/GMT-1' });
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       await wrapper
         .find('[data-cy=date-time-picker__set-now-button]')
         .trigger('click');
 
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       expect((wrapper.find('input').element as HTMLInputElement).value).toBe(
         '01/01/2023 06:05:05',

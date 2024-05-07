@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from eth_utils.address import to_checksum_address
 
 from rotkehlchen.db.utils import update_table_schema
-from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.types import CacheType
 
 if TYPE_CHECKING:
@@ -21,9 +21,8 @@ V5_V6_UPGRADE_UNIQUE_CACHE_KEYS: set[CacheType] = {
 }
 
 
+@enter_exit_debug_log()
 def _create_and_populate_unique_cache_table(cursor: 'DBCursor') -> None:
-    log.debug('Enter _create_and_populate_unique_cache_table')
-
     cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS unique_cache (
@@ -39,7 +38,6 @@ def _create_and_populate_unique_cache_table(cursor: 'DBCursor') -> None:
         ('general_cache',),
     )
     if cursor.fetchone() is None:  # If the general_cache table doesn't exist then there is nothing to transfer to the unique_cache table. We can exit immediately.  # noqa: E501
-        log.debug('Exit _create_and_populate_unique_cache_table')
         return
 
     for key_part in V5_V6_UPGRADE_UNIQUE_CACHE_KEYS:
@@ -52,12 +50,11 @@ def _create_and_populate_unique_cache_table(cursor: 'DBCursor') -> None:
             'DELETE FROM general_cache WHERE key LIKE ?',
             (f'{key_part.serialize()}%',),
         )
-    log.debug('Exit _create_and_populate_unique_cache_table')
 
 
+@enter_exit_debug_log()
 def _update_multiasset_mappings(cursor: 'DBCursor') -> None:
     """Update the multiasset mapping table to have unique collection id + asset"""
-    log.debug('Enter _upgrade_multiasset_mappings')
     update_table_schema(
         write_cursor=cursor,
         table_name='multiasset_mappings',
@@ -68,15 +65,14 @@ def _update_multiasset_mappings(cursor: 'DBCursor') -> None:
         PRIMARY KEY(collection_id, asset)""",  # noqa: E501
         insert_columns='collection_id, asset',
     )
-    log.debug('Exit _upgrade_multiasset_mappings')
 
 
+@enter_exit_debug_log()
 def _fix_asset_in_multiasset_mappings(cursor: 'DBCursor') -> None:
     """
     Fix some assets that were not using checksummed addresses in the identifiers
     https://github.com/rotki/rotki/issues/6717
     """
-    log.debug('Enter _fix_asset_in_multiasset_mappings')
     fixes = []
     cursor.execute('SELECT asset FROM multiasset_mappings')
     for (asset_id,) in cursor:
@@ -96,9 +92,9 @@ def _fix_asset_in_multiasset_mappings(cursor: 'DBCursor') -> None:
         fixes.append((new_id, asset_id))
 
     cursor.executemany('UPDATE multiasset_mappings SET asset=? WHERE asset=?', fixes)
-    log.debug('Exit _fix_asset_in_multiasset_mappings')
 
 
+@enter_exit_debug_log()
 def _remove_velo_asset(cursor: 'DBCursor') -> None:
     """
     Remove the VELO asset from the global DB
@@ -111,11 +107,10 @@ def _remove_velo_asset(cursor: 'DBCursor') -> None:
     The replacement took place in the upgrade to version 40 of the user db and in the global DB
     we only need to remove it.
     """
-    log.debug('Enter _remove_velo_asset')
     cursor.execute('DELETE FROM assets WHERE identifier=?', ('VELO',))
-    log.debug('Exit _remove_velo_asset')
 
 
+@enter_exit_debug_log(name='GlobalDB v5->v6 upgrade')
 def migrate_to_v6(connection: 'DBConnection') -> None:
     """This globalDB upgrade does the following:
     - Adds the `unique_cache` table.
@@ -125,8 +120,6 @@ def migrate_to_v6(connection: 'DBConnection') -> None:
 
     This upgrade takes place in v1.31.0
     """
-    log.debug('Entered globaldb v5->v6 upgrade')
-
     with connection.write_ctx() as cursor:
         _create_and_populate_unique_cache_table(cursor)
         _fix_asset_in_multiasset_mappings(cursor)

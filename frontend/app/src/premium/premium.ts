@@ -15,13 +15,12 @@ function findComponents(): string[] {
 }
 
 if (checkIfDevelopment()) {
-  // @ts-expect-error
+  // @ts-expect-error component is dynamic and does not exist in the window type
   findComponents().forEach(component => (window[component] = undefined));
 }
 
-async function loadComponents(): Promise<string[]> {
-  // eslint-disable-next-line no-async-promise-executor
-  return new Promise(async (resolve, reject) => {
+function loadComponents(): Promise<string[]> {
+  return new Promise((resolve, reject) => {
     let components = findComponents();
     if (components.length > 0) {
       resolve(components);
@@ -29,26 +28,27 @@ async function loadComponents(): Promise<string[]> {
     }
 
     const api = useStatisticsApi();
-    const result = await api.queryStatisticsRenderer();
-    const script = document.createElement('script');
-    script.text = result;
-    document.head.append(script);
+    api.queryStatisticsRenderer().then((result) => {
+      const script = document.createElement('script');
+      script.text = result;
+      document.head.append(script);
 
-    components = findComponents();
+      components = findComponents();
 
-    if (components.length === 0) {
-      reject(new Error('There was no component loaded'));
-      return;
-    }
+      if (components.length === 0) {
+        reject(new Error('There was no component loaded'));
+        return;
+      }
 
-    script.addEventListener('error', reject);
-    resolve(components);
+      script.addEventListener('error', reject);
+      resolve(components);
+    }).catch(reject);
   });
 }
 
 export async function loadLibrary() {
   const [component] = await loadComponents();
-  // @ts-expect-error
+  // @ts-expect-error component is dynamic and not added in the window type
   const library = window[component];
   if (!library.installed) {
     Vue.use(library.install);
@@ -71,15 +71,15 @@ async function load(name: string) {
 }
 
 async function PremiumLoading() {
-  return import('@/components/premium/PremiumLoading.vue');
+  return await import('@/components/premium/PremiumLoading.vue');
 }
 
 async function PremiumLoadingError() {
-  return import('@/components/premium/PremiumLoadingError.vue');
+  return await import('@/components/premium/PremiumLoadingError.vue');
 }
 
 async function ThemeSwitchLock() {
-  return import('@/components/premium/ThemeSwitchLock.vue');
+  return await import('@/components/premium/ThemeSwitchLock.vue');
 }
 
 function createFactory(component: Promise<any>, options?: { loading?: any; error?: any }) {
@@ -94,20 +94,12 @@ function createFactory(component: Promise<any>, options?: { loading?: any; error
 
 export const PremiumStatistics = () => createFactory(load('PremiumStatistics'));
 
-export const VaultEventsList = () => createFactory(load('VaultEventsList'));
-
-export const LendingHistory = () => createFactory(load('LendingHistory'));
-
 export function CompoundLendingDetails() {
   return createFactory(load('CompoundLendingDetails'));
 }
 
 export function CompoundBorrowingDetails() {
   return createFactory(load('CompoundBorrowingDetails'));
-}
-
-export function YearnVaultsProfitDetails() {
-  return createFactory(load('YearnVaultsProfitDetails'));
 }
 
 export function AaveBorrowingDetails() {
@@ -141,12 +133,12 @@ export const Sushi = () => createFactory(load('Sushi'));
 
 declare global {
   interface Window {
-    Vue: any;
-    Chart: typeof Chart;
-    VueUse: any;
-    VueUseShared: any;
+    'Vue': any;
+    'Chart': typeof Chart;
+    'VueUse': any;
+    'VueUseShared': any;
     'chartjs-plugin-zoom': any;
-    zod: any;
-    bn: any;
+    'zod': any;
+    'bn': any;
   }
 }

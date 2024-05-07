@@ -48,14 +48,14 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.event_identifier.validation.non_empty',
-      ).toString(),
+      ),
       requiredIf(() => !!get(editableItem)),
     ),
   },
   timestamp: { externalServerValidation: () => true },
   amount: {
     required: helpers.withMessage(
-      t('transactions.events.form.amount.validation.non_empty').toString(),
+      t('transactions.events.form.amount.validation.non_empty'),
       required,
     ),
   },
@@ -63,7 +63,7 @@ const rules = {
     required: helpers.withMessage(
       t('transactions.events.form.fiat_value.validation.non_empty', {
         currency: get(currencySymbol),
-      }).toString(),
+      }),
       required,
     ),
   },
@@ -71,7 +71,7 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.block_number.validation.non_empty',
-      ).toString(),
+      ),
       required,
     ),
   },
@@ -79,7 +79,7 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.validator_index.validation.non_empty',
-      ).toString(),
+      ),
       required,
     ),
   },
@@ -87,18 +87,20 @@ const rules = {
     required: helpers.withMessage(
       t(
         'transactions.events.form.fee_recipient.validation.non_empty',
-      ).toString(),
+      ),
       required,
     ),
     isValid: helpers.withMessage(
-      t('transactions.events.form.fee_recipient.validation.valid').toString(),
+      t('transactions.events.form.fee_recipient.validation.valid'),
       (value: string) => isValidEthAddress(value),
     ),
   },
 };
 
-const { setValidation, setSubmitFunc, saveHistoryEventHandler }
-  = useHistoryEventsForm();
+const numericAmount = bigNumberifyFromRef(amount);
+const numericUsdValue = bigNumberifyFromRef(usdValue);
+
+const { setValidation, setSubmitFunc, saveHistoryEventHandler } = useHistoryEventsForm();
 
 const v$ = setValidation(
   rules,
@@ -138,7 +140,7 @@ function reset() {
   get(assetPriceForm)?.reset();
 }
 
-async function applyEditableData(entry: EthBlockEvent) {
+function applyEditableData(entry: EthBlockEvent) {
   set(eventIdentifier, entry.eventIdentifier);
   set(
     datetime,
@@ -156,7 +158,7 @@ async function applyEditableData(entry: EthBlockEvent) {
   set(isMevReward, entry.eventSubtype === 'mev reward');
 }
 
-async function applyGroupHeaderData(entry: EthBlockEvent) {
+function applyGroupHeaderData(entry: EthBlockEvent) {
   set(eventIdentifier, entry.eventIdentifier);
   set(feeRecipient, entry.locationLabel ?? '');
   set(blockNumber, entry.blockNumber.toString());
@@ -210,9 +212,6 @@ async function save(): Promise<boolean> {
 
 setSubmitFunc(save);
 
-const numericAmount = bigNumberifyFromRef(amount);
-const numericUsdValue = bigNumberifyFromRef(usdValue);
-
 function checkPropsData() {
   const editable = get(editableItem);
   if (editable) {
@@ -232,13 +231,9 @@ onMounted(() => {
   checkPropsData();
 });
 
-const { accounts } = useAccountBalances();
+const { getAddresses } = useBlockchainStore();
 
-const feeRecipientSuggestions = computed(() =>
-  get(accounts)
-    .filter(item => item.chain === Blockchain.ETH)
-    .map(item => item.address),
-);
+const feeRecipientSuggestions = computed(() => getAddresses(Blockchain.ETH));
 </script>
 
 <template>
@@ -247,7 +242,7 @@ const feeRecipientSuggestions = computed(() =>
       <DateTimePicker
         v-model="datetime"
         class="md:col-span-2"
-        :label="t('transactions.events.form.datetime.label')"
+        :label="t('common.datetime')"
         persistent-hint
         limit-now
         milliseconds
@@ -311,17 +306,16 @@ const feeRecipientSuggestions = computed(() =>
 
     <RuiDivider class="mb-2 mt-6" />
 
-    <VExpansionPanels flat>
-      <VExpansionPanel>
-        <VExpansionPanelHeader
-          class="p-0"
-          data-cy="eth-block-event-form__advance-toggle"
-        >
+    <RuiAccordions>
+      <RuiAccordion
+        data-cy="eth-block-event-form__advance"
+        header-class="py-4"
+        eager
+      >
+        <template #header>
           {{ t('transactions.events.form.advanced') }}
-        </VExpansionPanelHeader>
-        <VExpansionPanelContent
-          class="[&>.v-expansion-panel-content\_\_wrap]:!p-0"
-        >
+        </template>
+        <div class="py-2">
           <RuiTextField
             v-model="eventIdentifier"
             variant="outlined"
@@ -331,8 +325,8 @@ const feeRecipientSuggestions = computed(() =>
             :error-messages="toMessages(v$.eventIdentifier)"
             @blur="v$.eventIdentifier.$touch()"
           />
-        </VExpansionPanelContent>
-      </VExpansionPanel>
-    </VExpansionPanels>
+        </div>
+      </RuiAccordion>
+    </RuiAccordions>
   </div>
 </template>

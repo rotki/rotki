@@ -59,16 +59,6 @@ function isStartAfterNow(selection: Quarter) {
   return dayjs(start, 'DD/MM/YYYY HH:mm').isAfter(dayjs());
 }
 
-function onChange(change: { year?: string; quarter?: Quarter }) {
-  const yearVal = get(year);
-  const quarterVal = get(quarter);
-  updateSelection({
-    year: change?.year ?? yearVal,
-    quarter: change?.quarter ?? quarterVal,
-  });
-  updatePeriod(yearVal !== 'custom' ? get(periodEventPayload) : null);
-}
-
 const start = computed(() => startDateTime(get(quarter)));
 const isCustom = computed(() => get(year) === 'custom');
 const end = computed(() => {
@@ -120,6 +110,16 @@ const subPeriods = [
     name: 'Q4',
   },
 ];
+
+function onChange(change: { year?: string; quarter?: Quarter }) {
+  const yearVal = get(year);
+  const quarterVal = get(quarter);
+  updateSelection({
+    year: change?.year ?? yearVal,
+    quarter: change?.quarter ?? quarterVal,
+  });
+  updatePeriod(yearVal !== 'custom' ? get(periodEventPayload) : null);
+}
 
 const yearModel = computed({
   get() {

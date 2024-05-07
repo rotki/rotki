@@ -1,4 +1,4 @@
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 
 CPT_POLYGON = 'polygon'
-CPT_POLYGON_DETAILS = CounterpartyDetails(identifier=CPT_POLYGON, label='Polygon', image='polygon.svg')  # noqa: E501
+CPT_POLYGON_DETAILS = CounterpartyDetails(identifier=CPT_POLYGON, label='Polygon', image='polygon_pos.svg')  # noqa: E501

@@ -7,12 +7,16 @@ from gevent.lock import Semaphore
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, CryptoAsset, EvmToken
 from rotkehlchen.chain.ethereum.constants import RAY
-from rotkehlchen.chain.ethereum.modules.aave.constants import CPT_AAVE_V1, CPT_AAVE_V2
+from rotkehlchen.chain.ethereum.modules.aave.v3.constants import AAVE_V3_DATA_PROVIDER
+from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V1, CPT_AAVE_V2, CPT_AAVE_V3
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.constants.misc import ONE
+from rotkehlchen.constants.resolver import ethaddress_to_identifier, strethaddress_to_identifier
+from rotkehlchen.constants.timing import YEAR_IN_SECONDS
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
@@ -35,7 +39,7 @@ from .common import (
 )
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES
+    from rotkehlchen.chain.ethereum.defi.structures import GIVEN_DEFI_BALANCES, GIVEN_ETH_BALANCES
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -74,25 +78,56 @@ class Aave(EthereumModule):
         self.history_lock = Semaphore()
         self.balances_lock = Semaphore()
         self.counterparties = [CPT_AAVE_V1, CPT_AAVE_V2]
+        self.v3_data_provider = self.ethereum.contracts.contract(AAVE_V3_DATA_PROVIDER)
+        self.v3_reserve_cache: dict[EvmToken, ReserveData] = {}
+
+    def _get_v3_reserve_data(self, reserve_token: 'EvmToken') -> 'ReserveData | None':
+        """Retrieves the reserve data from the v3 data provider. This data is cached only for the
+        current API call, and not cached in the DB. This is because it changes quite frequently."""
+        if (
+            (reserve_data := self.v3_reserve_cache.get(reserve_token)) is None and
+            reserve_token.underlying_tokens is not None and
+            len(reserve_token.underlying_tokens) == 1
+        ):
+            try:
+                reserve_result = self.v3_data_provider.call(
+                    node_inquirer=self.ethereum,
+                    method_name='getReserveData',
+                    arguments=[reserve_token.underlying_tokens[0].address],
+                )
+            except RemoteError as e:
+                self.msg_aggregator.add_error(
+                    f'Failed to get reserve data from Aave v3 data provider for token {reserve_token!s}, due to {e}',  # noqa: E501
+                )
+                return None
+            reserve_data = ReserveData(
+                liquidity_rate=FVal(reserve_result[5]) / RAY,
+                variable_borrow_rate=FVal(reserve_result[6]) / RAY,
+                stable_borrow_rate=FVal(reserve_result[7]) / RAY,
+            )
+            self.v3_reserve_cache[reserve_token] = reserve_data
+        return reserve_data
 
     def get_balances(
             self,
             given_defi_balances: 'GIVEN_DEFI_BALANCES',
+            given_eth_balances: 'GIVEN_ETH_BALANCES',
     ) -> dict[ChecksumEvmAddress, AaveBalances]:
         with self.balances_lock:
-            return self._get_balances(given_defi_balances)
+            return self._get_balances(
+                given_defi_balances=given_defi_balances,
+                given_eth_balances=given_eth_balances,
+            )
 
     def _get_balances(
             self,
             given_defi_balances: 'GIVEN_DEFI_BALANCES',
+            given_eth_balances: 'GIVEN_ETH_BALANCES',
     ) -> dict[ChecksumEvmAddress, AaveBalances]:
-        """Retrieves the aave balances
-
-        Receives the defi balances from zerion as an argument. They can either be directly given
-        as the defi balances mapping or as a callable that will retrieve the
-        balances mapping when executed.
-        """
-        aave_balances = {}
+        """Retrieves the aave balances. It takes the eth token balances and defi balances as an
+        argument. They can either be directly given as the balances mapping or as a callable that
+        will retrieve the balances mapping when executed."""
+        aave_balances: defaultdict[ChecksumEvmAddress, AaveBalances] = defaultdict(lambda: AaveBalances(lending={}, borrowing={}))  # noqa: E501
         reserve_cache: dict[str, ReserveData] = {}
 
         if isinstance(given_defi_balances, dict):
@@ -100,7 +135,7 @@ class Aave(EthereumModule):
         else:
             defi_balances = given_defi_balances()
 
-        for account, balance_entries in defi_balances.items():
+        for account, balance_entries in defi_balances.items():  # for v1 and v2
             lending_map = {}
             borrowing_map = {}
             for balance_entry in balance_entries:
@@ -135,9 +170,9 @@ class Aave(EthereumModule):
                             arguments=[reserve_address],
                         )
                         reserve_data = ReserveData(
-                            liquidity_rate=FVal(reserve_result[4] / RAY),
-                            variable_borrow_rate=FVal(reserve_result[5] / RAY),
-                            stable_borrow_rate=FVal(reserve_result[6] / RAY),
+                            liquidity_rate=FVal(reserve_result[4]) / RAY,
+                            variable_borrow_rate=FVal(reserve_result[5]) / RAY,
+                            stable_borrow_rate=FVal(reserve_result[6]) / RAY,
                         )
                     else:  # Aave V2
                         contract = self.ethereum.contracts.contract(string_to_evm_address('0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9'))  # noqa: E501
@@ -147,9 +182,9 @@ class Aave(EthereumModule):
                             arguments=[reserve_address],
                         )
                         reserve_data = ReserveData(
-                            liquidity_rate=FVal(reserve_result[3] / RAY),
-                            variable_borrow_rate=FVal(reserve_result[4] / RAY),
-                            stable_borrow_rate=FVal(reserve_result[5] / RAY),
+                            liquidity_rate=FVal(reserve_result[3]) / RAY,
+                            variable_borrow_rate=FVal(reserve_result[4]) / RAY,
+                            stable_borrow_rate=FVal(reserve_result[5]) / RAY,
                         )
 
                     reserve_cache[balance_entry.base_balance.token_symbol] = reserve_data
@@ -174,6 +209,42 @@ class Aave(EthereumModule):
 
             aave_balances[account] = AaveBalances(lending=lending_map, borrowing=borrowing_map)  # type: ignore
 
+        for account, balance_sheet in (  # for v3
+            given_eth_balances if isinstance(given_eth_balances, dict) else given_eth_balances()
+        ).items():
+            for asset, balance in balance_sheet.assets.items():
+                if (
+                    asset.is_evm_token() and
+                    (asset := asset.resolve_to_evm_token()).protocol == CPT_AAVE_V3 and
+                    (reserve_data := self._get_v3_reserve_data(asset)) is not None
+                ):
+                    aave_balances[account].lending[CryptoAsset(
+                        # existence of underlying_tokens is checked in _get_v3_reserve_data
+                        strethaddress_to_identifier(asset.underlying_tokens[0].address),  # type: ignore[attr-defined]  # asset is resolved to evm token
+                    )] = AaveLendingBalance(
+                        balance=balance,
+                        # converting to APY according to https://docs.aave.com/developers/guides/rates-guide#formatting-rates  # noqa: E501
+                        apy=(ONE + reserve_data.liquidity_rate / YEAR_IN_SECONDS) ** YEAR_IN_SECONDS - ONE,  # noqa: E501
+                        version=3,
+                    )
+
+            for liability, balance in balance_sheet.liabilities.items():
+                if (
+                    liability.is_evm_token() and
+                    (liability := liability.resolve_to_evm_token()).protocol == CPT_AAVE_V3 and
+                    (reserve_data := self._get_v3_reserve_data(liability)) is not None
+                ):
+                    aave_balances[account].borrowing[CryptoAsset(
+                        # existence of underlying_tokens is checked in _get_v3_reserve_data
+                        strethaddress_to_identifier(liability.underlying_tokens[0].address),  # type: ignore[attr-defined]  # asset is resolved to evm token
+                    )] = AaveBorrowingBalance(
+                        balance=balance,
+                        variable_apr=reserve_data.variable_borrow_rate,
+                        stable_apr=reserve_data.stable_borrow_rate,
+                        version=3,
+                    )
+
+        self.v3_reserve_cache.clear()
         return aave_balances
 
     def _calculate_loss(
@@ -230,7 +301,7 @@ class Aave(EthereumModule):
             if borrow_balance is not None:
                 this_amount += borrow_balance.balance.amount
 
-            usd_price = Inquirer().find_usd_price(borrowed_asset)
+            usd_price = Inquirer.find_usd_price(borrowed_asset)
             total_lost[borrowed_asset] = Balance(
                 # add total_lost amount in case of liquidations
                 amount=total_lost[borrowed_asset].amount + this_amount,
@@ -252,7 +323,7 @@ class Aave(EthereumModule):
             total_earned_atokens: dict[Asset, Balance],
     ) -> None:
         """
-        Calcualte total earned from aave events. `total_earned_atokens` is modified inside
+        Calculate total earned from aave events. `total_earned_atokens` is modified inside
         this function
         """
         atoken_abi = atoken_v2_abi = None
@@ -285,7 +356,7 @@ class Aave(EthereumModule):
                 arguments=[user_address],
             )
             unpaid_interest = lending_balance.balance.amount - (principal_balance / (FVal(10) ** FVal(atoken.get_decimals())))  # noqa: E501
-            usd_price = Inquirer().find_usd_price(atoken)
+            usd_price = Inquirer.find_usd_price(atoken)
             total_earned_atokens[atoken] += Balance(
                 amount=unpaid_interest,
                 usd_value=unpaid_interest * usd_price,
@@ -343,6 +414,7 @@ class Aave(EthereumModule):
             from_timestamp: Timestamp,
             to_timestamp: Timestamp,
             given_defi_balances: 'GIVEN_DEFI_BALANCES',
+            given_eth_balances: 'GIVEN_ETH_BALANCES',
     ) -> dict[ChecksumEvmAddress, AaveStats]:
         """
         Calculate the profit and losses in aave v1 and v2 for the provided addresses
@@ -358,7 +430,10 @@ class Aave(EthereumModule):
         - total_earned_liquidations: A mapping of asset identifier for each repaid asset during
         liquidations.
         """
-        aave_balances = self.get_balances(given_defi_balances)
+        aave_balances = self.get_balances(
+            given_defi_balances=given_defi_balances,
+            given_eth_balances=given_eth_balances,
+        )
         result = {}
         for address in addresses:
             user_stats = self._get_stats_for_address(

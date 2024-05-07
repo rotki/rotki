@@ -26,7 +26,6 @@ const { t } = useI18n();
   >
     <MenuTooltipButton
       :tooltip="t('notification_indicator.tooltip')"
-      class-name="secondary--text text--lighten-4"
       @click="click()"
     >
       <RuiIcon

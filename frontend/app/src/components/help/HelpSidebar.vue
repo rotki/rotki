@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import IndexedDb from '@/utils/indexed-db';
+import { IndexedDb } from '@/utils/indexed-db';
 import { TWITTER_URL, externalLinks } from '@/data/external-links';
 
 const props = defineProps<{
@@ -80,22 +80,22 @@ async function downloadBrowserLog() {
   });
 }
 
-const { smAndDown } = useDisplay();
+const css = useCssModule();
 </script>
 
 <template>
   <VNavigationDrawer
     v-model="display"
+    :class="css.sidebar"
+    class="border-default"
     width="400px"
-    class="help-sidebar"
-    :class="smAndDown ? 'help-sidebar--mobile' : null"
     absolute
     clipped
     right
     temporary
     hide-overlay
   >
-    <div class="flex justify-between items-center p-4">
+    <div class="flex justify-between items-center p-2 pl-4">
       <div class="text-h6">
         {{ t('help_sidebar.title') }}
       </div>
@@ -172,21 +172,8 @@ const { smAndDown } = useDisplay();
   </VNavigationDrawer>
 </template>
 
-<style scoped lang="scss">
-.help-sidebar {
-  top: 64px !important;
-  box-shadow: 0 2px 12px rgba(74, 91, 120, 0.1);
-  padding-top: 0 !important;
-  border-top: var(--v-rotki-light-grey-darken1) solid thin;
-
-  &--mobile {
-    top: 56px !important;
-  }
-
-  &.v-navigation-drawer {
-    &--is-mobile {
-      padding-top: 0 !important;
-    }
-  }
+<style module lang="scss">
+.sidebar {
+  @apply border-t pt-0 top-[3.5rem] md:top-[4rem] #{!important};
 }
 </style>

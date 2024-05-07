@@ -2,6 +2,7 @@ import hashlib
 import hmac
 import json
 import logging
+import operator
 from collections import defaultdict
 from collections.abc import Callable, Iterable
 from http import HTTPStatus
@@ -15,17 +16,15 @@ from gevent.lock import Semaphore
 from requests.adapters import Response
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.converters import (
-    BITFINEX_EXCHANGE_TEST_ASSETS,
-    BITFINEX_TO_WORLD,
-    asset_from_bitfinex,
-)
+from rotkehlchen.assets.converters import BITFINEX_EXCHANGE_TEST_ASSETS, asset_from_bitfinex
+from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants import ZERO
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -87,12 +86,6 @@ class CurrenciesResponse(NamedTuple):
     success: bool
     response: Response
     currencies: list[str]
-
-
-class CurrencyMapResponse(NamedTuple):
-    success: bool
-    response: Response
-    currency_map: dict[str, str]
 
 
 class ExchangePairsResponse(NamedTuple):
@@ -390,7 +383,7 @@ class Bitfinex(ExchangeInterface):
         # NB: sort movements in ascending mode (via its identifier) due to
         # the lack of 'sort' query parameter.
         if case == 'asset_movements':
-            raw_results.sort(key=lambda raw_result: raw_result[id_index])
+            raw_results.sort(key=operator.itemgetter(id_index))
 
         results: list[Trade] | (list[AssetMovement] | list) = []
         for raw_result in raw_results:
@@ -481,10 +474,7 @@ class Bitfinex(ExchangeInterface):
                 f'Unexpected bitfinex movement with status: {raw_result[5]}. '
                 f'Only completed movements are processed. Raw movement: {raw_result}',
             )
-        fee_asset = asset_from_bitfinex(
-            bitfinex_name=raw_result[1],
-            currency_map=self.currency_map,
-        )
+        fee_asset = asset_from_bitfinex(bitfinex_name=raw_result[1])
 
         amount = deserialize_asset_amount(raw_result[12])
         category = (
@@ -544,18 +534,9 @@ class Bitfinex(ExchangeInterface):
                 f'Raw trade: {raw_result}',
             )
 
-        base_asset = asset_from_bitfinex(
-            bitfinex_name=bfx_base_asset_symbol,
-            currency_map=self.currency_map,
-        )
-        quote_asset = asset_from_bitfinex(
-            bitfinex_name=bfx_quote_asset_symbol,
-            currency_map=self.currency_map,
-        )
-        fee_asset = asset_from_bitfinex(
-            bitfinex_name=raw_result[10],
-            currency_map=self.currency_map,
-        )
+        base_asset = asset_from_bitfinex(bitfinex_name=bfx_base_asset_symbol)
+        quote_asset = asset_from_bitfinex(bitfinex_name=bfx_quote_asset_symbol)
+        fee_asset = asset_from_bitfinex(bitfinex_name=raw_result[10])
 
         trade = Trade(
             timestamp=Timestamp(int(raw_result[2] / 1000)),
@@ -630,19 +611,18 @@ class Bitfinex(ExchangeInterface):
             currencies=currencies,
         )
 
-    def _query_currency_map(self) -> CurrencyMapResponse:
+    def _query_currency_map(self) -> None:
         """Query the list that maps standard currency symbols with the version
         of the Bitfinex API. If the request is successful and the list format
-        as well, return it as dict in `<CurrencyMapResponse>.currency_map`.
-        Otherwise populate <CurrencyMapResponse> with data that each endpoint
-        can process as an unsuccessful request.
+        as well, insert or ignore the mapping in location_asset_mappings.
 
         API result format is: [[[<bitfinex_symbol>, <symbol>], ...]]
 
-        May raise IndexError if the list is empty.
+        May raise:
+        - IndexError if the list is empty.
+        - RemoteError if the API returns an error response.
         """
         was_successful = True
-        currency_map = {}
         response = self._api_query('configs_map_currency_symbol')
 
         if response.status_code != HTTPStatus.OK:
@@ -656,18 +636,42 @@ class Bitfinex(ExchangeInterface):
                 log.error(
                     f'{self.name} currency map returned invalid JSON response. Check further logs',
                 )
-            else:
-                currency_map = {
-                    bfx_symbol: symbol for bfx_symbol, symbol in response_list[0]
-                    if bfx_symbol not in set(BITFINEX_EXCHANGE_TEST_ASSETS)
-                }
-                currency_map.update(BITFINEX_TO_WORLD)
+            else:  # add the mappings fetched from the API in globalDB, if they are not already there  # noqa: E501
+                test_assets = set(BITFINEX_EXCHANGE_TEST_ASSETS)
+                bfx_db_serialized = Location.BITFINEX.serialize_for_db()
+                bindings = []
+                for bfx_symbol, symbol in response_list[0]:
+                    if bfx_symbol in test_assets:
+                        continue  # skip test assets
+                    try:
+                        asset = symbol_to_asset_or_token(symbol)
+                    except UnknownAsset:
+                        log.info(f'Found new asset symbol {bfx_symbol} for {symbol} in Bitfinex. Support for it has to be added.')  # noqa: E501
+                        continue  # skip unknown assets
 
-        return CurrencyMapResponse(
-            success=was_successful,
-            response=response,
-            currency_map=currency_map,
-        )
+                    bindings.append((
+                        bfx_db_serialized,
+                        bfx_symbol,
+                        asset.serialize(),
+                        bfx_db_serialized,
+                        bfx_symbol,
+                    ))
+
+                # insert the mapping, and skip unsupported assets
+                with GlobalDBHandler().conn.write_ctx() as write_cursor:
+                    write_cursor.executemany(
+                        'INSERT OR IGNORE INTO location_asset_mappings (location, '
+                        'exchange_symbol, local_id) SELECT ?, ?, ? WHERE NOT EXISTS (SELECT 1 '
+                        'FROM location_unsupported_assets WHERE location=? AND exchange_symbol=?)',
+                        bindings,
+                    )
+
+        if was_successful is False:
+            raise RemoteError(
+                f'bitfinex failed to request exchange currency map. '
+                f'Response status code: {response.status_code}. '
+                f'Response text: {response.text}.',
+            )
 
     def _query_exchange_pairs(self) -> ExchangePairsResponse:
         """Query and return the list of the exchange (trades) pairs in
@@ -793,6 +797,8 @@ class Bitfinex(ExchangeInterface):
 
         These data are stored in properties along with `pair_bfx_symbols_map`,
         a dict that maps a pair between the tickers of the base and quote assets.
+
+        May raise RemoteError if any API request fails.
         """
         if self.first_connection_made:
             return
@@ -813,13 +819,7 @@ class Bitfinex(ExchangeInterface):
                 f'Response text: {exchange_pairs_response.response.text}.',
             )
 
-        currency_map_response = self._query_currency_map()
-        if currency_map_response.success is False:
-            raise RemoteError(
-                f'bitfinex failed to request exchange currency map. '
-                f'Response status code: {currency_map_response.response.status_code}. '
-                f'Response text: {currency_map_response.response.text}.',
-            )
+        self._query_currency_map()
         # Generate a pair - tickers map. Bitfinex test assets have already been
         # removed from both 'pairs' and 'currencies' lists.
         pair_bfx_symbols_map: dict[str, tuple[str, str]] = {}
@@ -837,7 +837,6 @@ class Bitfinex(ExchangeInterface):
 
                 pair_bfx_symbols_map[bfx_pair] = (bfx_base_asset_symbol, bfx_quote_asset_symbol)
 
-        self.currency_map = currency_map_response.currency_map
         self.pair_bfx_symbols_map = pair_bfx_symbols_map
         self.first_connection_made = True
 
@@ -891,10 +890,7 @@ class Bitfinex(ExchangeInterface):
                 continue  # bitfinex can show small negative balances for some coins. Ignore
 
             try:
-                asset = asset_from_bitfinex(
-                    bitfinex_name=wallet[currency_index],
-                    currency_map=self.currency_map,
-                )
+                asset = asset_from_bitfinex(bitfinex_name=wallet[currency_index])
             except (UnknownAsset, UnsupportedAsset) as e:
                 asset_tag = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
                 self.msg_aggregator.add_warning(
@@ -904,7 +900,7 @@ class Bitfinex(ExchangeInterface):
                 continue
 
             try:
-                usd_price = Inquirer().find_usd_price(asset=asset)
+                usd_price = Inquirer.find_usd_price(asset=asset)
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing {self.name} {asset.name} balance result due to inability '

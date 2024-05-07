@@ -1,6 +1,7 @@
 from typing import Any
 
 from hexbytes import HexBytes
+from packaging.version import Version
 from web3.datastructures import AttributeDict
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
@@ -26,13 +27,10 @@ from rotkehlchen.chain.ethereum.modules.aave.aave import (
 )
 from rotkehlchen.chain.ethereum.modules.aave.common import AaveStats
 from rotkehlchen.chain.ethereum.modules.balancer import (
-    BalancerBPTEventPoolToken,
-    BalancerEvent,
     BalancerPoolBalance,
-    BalancerPoolEventsBalance,
     BalancerPoolTokenBalance,
 )
-from rotkehlchen.chain.ethereum.modules.compound.v2.compound import CompoundBalance
+from rotkehlchen.chain.ethereum.modules.compound.utils import CompoundBalance
 from rotkehlchen.chain.ethereum.modules.liquity.trove import Trove
 from rotkehlchen.chain.ethereum.modules.makerdao.dsr import DSRAccountReport, DSRCurrentBalances
 from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (
@@ -43,15 +41,11 @@ from rotkehlchen.chain.ethereum.modules.makerdao.vaults import (
 )
 from rotkehlchen.chain.ethereum.modules.nft.structures import NFTResult
 from rotkehlchen.chain.ethereum.modules.pickle_finance.main import DillBalance
-from rotkehlchen.chain.ethereum.modules.yearn.vaults import (
-    YearnVaultBalance,
-    YearnVaultEvent,
-    YearnVaultHistory,
-)
+from rotkehlchen.chain.ethereum.modules.yearn.vaults import YearnVaultBalance
 from rotkehlchen.chain.evm.accounting.structures import TxAccountingTreatment
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
-from rotkehlchen.chain.optimism.types import OptimismTransaction
+from rotkehlchen.db.calendar import CalendarEntry, ReminderEntry
 from rotkehlchen.db.settings import DBSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData, SingleDBAssetBalance
 from rotkehlchen.exchanges.data_structures import Trade
@@ -74,7 +68,6 @@ from rotkehlchen.types import (
     ChainID,
     CostBasisMethod,
     EvmTokenKind,
-    EvmTransaction,
     ExchangeLocationID,
     Location,
     SupportedBlockchain,
@@ -137,27 +130,24 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
             EvmProduct |
             DBSettings |
             TxAccountingTreatment |
-            EventCategoryDetails
+            EventCategoryDetails |
+            CalendarEntry |
+            ReminderEntry |
+            CounterpartyDetails
     )):
         return entry.serialize()
     if isinstance(entry, (
             Trade |
-            EvmTransaction |
-            OptimismTransaction |
             MakerdaoVault |
             DSRAccountReport |
             Balance |
             AaveLendingBalance |
             AaveBorrowingBalance |
             CompoundBalance |
-            YearnVaultEvent |
             YearnVaultBalance |
             LiquidityPool |
             LiquidityPoolAsset |
             LiquidityPoolEventsBalance |
-            BalancerBPTEventPoolToken |
-            BalancerEvent |
-            BalancerPoolEventsBalance |
             BalancerPoolBalance |
             BalancerPoolTokenBalance |
             ManuallyTrackedBalanceWithValue |
@@ -176,9 +166,7 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
             AaveBalances |
             DefiBalance |
             DefiProtocolBalances |
-            YearnVaultHistory |
             BlockchainAccountData |
-            CounterpartyDetails |
             AaveStats
     )):
         return process_result(entry._asdict())
@@ -200,7 +188,8 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
             EvmTokenKind |
             HistoryBaseEntryType |
             EventCategory |
-            AccountingEventType
+            AccountingEventType |
+            Version
     )):
         return str(entry)
     if isinstance(entry, ChainID):

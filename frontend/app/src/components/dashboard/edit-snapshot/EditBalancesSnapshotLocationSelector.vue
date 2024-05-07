@@ -6,11 +6,13 @@ const props = withDefaults(
     value?: string;
     locations?: string[];
     previewLocationBalance?: Record<string, BigNumber> | null;
+    optionalShowExisting?: boolean;
   }>(),
   {
     value: '',
     locations: () => [],
     previewLocationBalance: null,
+    optionalShowExisting: false,
   },
 );
 
@@ -21,6 +23,8 @@ const emit = defineEmits<{
 const model = useSimpleVModel(props, emit);
 
 const { t } = useI18n();
+
+const showOnlyExisting: Ref<boolean> = ref(true);
 </script>
 
 <template>
@@ -30,11 +34,21 @@ const { t } = useI18n();
     rounded="sm"
   >
     <div class="text-subtitle-2 mb-3">
-      {{ t('dashboard.snapshot.edit.dialog.balances.optional') }}
+      {{ t('common.optional') }}
     </div>
+    <RuiSwitch
+      v-if="optionalShowExisting"
+      v-model="showOnlyExisting"
+      color="primary"
+      size="sm"
+      hide-details
+      class="[&_span]:text-sm [&_span]:mt-0.5 mb-4"
+    >
+      {{ t('dashboard.snapshot.edit.dialog.balances.only_show_existing') }}
+    </RuiSwitch>
     <LocationSelector
       v-model="model"
-      :items="locations"
+      :items="showOnlyExisting ? locations : []"
       class="edit-balances-snapshot__location"
       attach=".edit-balances-snapshot__location"
       :menu-props="{ top: true }"

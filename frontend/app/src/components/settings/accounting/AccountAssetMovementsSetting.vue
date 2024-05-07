@@ -17,7 +17,7 @@ const { t } = useI18n();
     setting="accountForAssetsMovements"
     :error-message="t('account_settings.messages.account_for_assets_movements')"
   >
-    <VSwitch
+    <RuiSwitch
       v-model="accountForAssetsMovements"
       class="accounting-settings__account-for-assets-movements"
       :success-messages="success"
@@ -26,7 +26,7 @@ const { t } = useI18n();
         t('accounting_settings.trade.labels.account_for_assets_movements')
       "
       color="primary"
-      @change="update($event)"
+      @input="update($event)"
     />
   </SettingsOption>
 </template>

@@ -62,12 +62,11 @@ export function useSettings() {
   ) => {
     const payload = { [settingKey]: settingValue };
 
-    const updateMethods: Record<SettingLocation, () => Promise<ActionStatus>>
-      = {
-        [SettingLocation.GENERAL]: () => updateSettings(payload),
-        [SettingLocation.FRONTEND]: () => updateFrontendSettings(payload),
-        [SettingLocation.SESSION]: async () => updateSessionSettings(payload),
-      };
+    const updateMethods: Record<SettingLocation, () => Promise<ActionStatus>> = {
+      [SettingLocation.GENERAL]: () => updateSettings(payload),
+      [SettingLocation.FRONTEND]: () => updateFrontendSettings(payload),
+      [SettingLocation.SESSION]: () => Promise.resolve(updateSessionSettings(payload)),
+    };
 
     return await getActionStatus(updateMethods[settingLocation], message);
   };

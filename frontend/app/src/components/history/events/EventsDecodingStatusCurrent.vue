@@ -1,0 +1,19 @@
+<script setup lang="ts">
+defineProps<{
+  finished: boolean;
+}>();
+
+const { t } = useI18n();
+</script>
+
+<template>
+  <HistoryQueryStatusCurrent :finished="finished">
+    <template #finished>
+      {{ t('transactions.events_decoding.decoding.all_done') }}
+    </template>
+
+    <template #running>
+      {{ t('transactions.events_decoding.decoding.all') }}
+    </template>
+  </HistoryQueryStatusCurrent>
+</template>

@@ -25,11 +25,22 @@ function randomInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
+/**
+ *
+ * @param {number} value - Value of r/g/b point, 0-255 scale
+ * @return {string} - The value converted to hex
+ * @example
+ * toHex(255); // FF
+ */
 function toHex(value: number): string {
-  return Math.round(value * 255)
+  return Math.round(value)
     .toString(16)
     .padStart(2, '0')
     .toUpperCase();
+}
+
+export function rgbPointsToHex(r: number, g: number, b: number) {
+  return `${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 
 function hslToRgb(h: number, s: number, l: number): string {
@@ -65,7 +76,7 @@ function hslToRgb(h: number, s: number, l: number): string {
     b = hue2rgb(p, q, h - 1 / 3);
   }
 
-  return `${toHex(r)}${toHex(g)}${toHex(b)}`;
+  return rgbPointsToHex(r * 255, g * 255, b * 255);
 }
 
 export function randomColor(): string {

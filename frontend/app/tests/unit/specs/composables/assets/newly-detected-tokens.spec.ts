@@ -37,7 +37,7 @@ describe('composables::/assets/newly-detected-tokens', () => {
     expect(get(composable.tokens)).toStrictEqual([]);
   });
 
-  it('ignored tokens are automatically added to the ignore list', async () => {
+  it('ignored tokens are automatically added to the ignore list', () => {
     expect(
       composable.addNewDetectedToken({
         tokenIdentifier: '1234',

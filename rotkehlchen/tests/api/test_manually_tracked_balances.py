@@ -73,8 +73,8 @@ def assert_balances_match(
         expect_found_price: bool = True,
 ) -> None:
     assert len(returned_balances) == len(expected_balances)
-    expected_balances.sort(key=lambda x: x['label'])
-    returned_balances.sort(key=lambda x: x['label'])
+    expected_balances.sort(key=itemgetter('label'))
+    returned_balances.sort(key=itemgetter('label'))
     for idx, entry in enumerate(returned_balances):
         for key, val in entry.items():
             if key == 'usd_value':

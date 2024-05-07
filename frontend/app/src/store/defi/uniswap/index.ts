@@ -162,7 +162,7 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
           section: Section.DEFI_UNISWAP_EVENTS,
           meta,
           query: async () => await fetchUniswapEvents(),
-          parser: XswapEvents.parse,
+          parser: data => XswapEvents.parse(data),
           onError,
         },
         state: {
@@ -185,9 +185,9 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
     set(v3Balances, {});
     set(events, {});
 
-    resetStatus(Section.DEFI_UNISWAP_V2_BALANCES);
-    resetStatus(Section.DEFI_UNISWAP_V3_BALANCES);
-    resetStatus(Section.DEFI_UNISWAP_EVENTS);
+    resetStatus({ section: Section.DEFI_UNISWAP_V2_BALANCES });
+    resetStatus({ section: Section.DEFI_UNISWAP_V3_BALANCES });
+    resetStatus({ section: Section.DEFI_UNISWAP_EVENTS });
   };
 
   return {

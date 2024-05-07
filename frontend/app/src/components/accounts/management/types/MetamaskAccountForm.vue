@@ -1,11 +1,10 @@
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
-import type { Blockchain } from '@rotki/common/lib/blockchain';
 import type { Module } from '@/types/modules';
 import type { AccountPayload } from '@/types/blockchain/accounts';
 
 const props = defineProps<{
-  blockchain: Blockchain;
+  blockchain: string;
   allEvmChains: boolean;
 }>();
 

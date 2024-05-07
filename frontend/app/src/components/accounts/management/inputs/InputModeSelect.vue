@@ -3,10 +3,9 @@ import { isBtcChain } from '@/types/blockchain/chains';
 import { InputMode } from '@/types/input-mode';
 import { isMetaMaskSupported } from '@/utils/metamask';
 import { externalLinks } from '@/data/external-links';
-import type { Blockchain } from '@rotki/common/lib/blockchain';
 
 const props = defineProps<{
-  blockchain: Blockchain;
+  blockchain: string;
   inputMode: InputMode;
 }>();
 
@@ -127,26 +126,31 @@ onUnmounted(() => {
     >
       {{ t('input_mode_select.metamask_import.missing') }}
 
-      <VMenu
+      <RuiMenu
         open-on-hover
-        right
-        offset-x
         :close-delay="400"
-        max-width="300"
+        menu-class="max-w-[20rem]"
+        :popper="{ placement: 'right-start' }"
       >
         <template #activator="{ on }">
-          <div v-on="on">
+          <RuiButton
+            size="sm"
+            variant="text"
+            icon
+            color="warning"
+            v-on="on"
+          >
             <RuiIcon
               class="px-1"
               name="question-line"
             />
-          </div>
+          </RuiButton>
         </template>
-        <div class="p-4 text-caption">
+        <div class="px-4 py-3 text-caption">
           <div>
             {{ t('input_mode_select.metamask_import.missing_tooltip.title') }}
           </div>
-          <ol class="list-disc [&_li]:-ml-3">
+          <ol class="list-disc [&_li]:ml-3">
             <li>
               <i18n
                 path="input_mode_select.metamask_import.missing_tooltip.metamask_is_not_installed"
@@ -185,7 +189,7 @@ onUnmounted(() => {
                   <RuiButton
                     variant="text"
                     color="primary"
-                    class="inline-flex text-[1em] !p-0 px-1 -mx-1"
+                    class="inline-flex text-[1em] !p-0 !px-1 -mx-1"
                     @click="copyPageUrl()"
                   >
                     {{
@@ -199,7 +203,7 @@ onUnmounted(() => {
             </li>
           </ol>
         </div>
-      </VMenu>
+      </RuiMenu>
     </div>
   </div>
 </template>

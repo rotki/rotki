@@ -2,13 +2,18 @@ import random
 import warnings as test_warnings
 from contextlib import ExitStack
 from http import HTTPStatus
+from unittest.mock import patch
 
 import pytest
 import requests
 
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.server import APIServer
+from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_COMP
+from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
@@ -16,8 +21,9 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     wait_for_async_task,
 )
+from rotkehlchen.tests.utils.constants import CURRENT_PRICE_MOCK
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import ChecksumEvmAddress, deserialize_evm_tx_hash
+from rotkehlchen.types import ChecksumEvmAddress, Price, deserialize_evm_tx_hash
 
 TEST_ACC1 = '0x2bddEd18E2CA464355091266B7616956944ee7eE'
 
@@ -78,6 +84,121 @@ def test_query_compound_balances(
     if len(rewards) != 0:
         assert len(rewards) == 1
         assert A_COMP.identifier in rewards
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0x478768685e023B8AF2815369b353b786713fDEa4',
+    '0x3eab2E72fA768C3cB8ab071929AC3C8aed6CbFA6',
+    '0x1107F797c1af4982b038Eb91260b3f9A90eecee9',
+    '0x577e1290fE9561A9654b7b42B1C10c7Ea90c8a07',
+]])
+@pytest.mark.parametrize('have_decoders', [[True]])
+@pytest.mark.parametrize('ethereum_modules', [['compound']])
+def test_query_compound_v3_balances(
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Check querying the compound v3 balances endpoint works. Uses real data for borrowing,
+    mocked balances for lending to avoid randomness in the VCR."""
+    chain_aggregator = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator
+    c_usdc_v3 = EvmToken('eip155:1/erc20:0xc3d688B66703497DAA19211EEdff47f25384cdc3')
+    chain_aggregator.ethereum.transactions_decoder.decode_transaction_hashes(
+        ignore_cache=True,
+        tx_hashes=[
+            deserialize_evm_tx_hash('0x0c9276ed2a202b039d5fa6e9749fd19f631c62e8e4beccc2f4dc0358a4882bb1'),  # Borrow 3,500 USDC from cUSDCv3  # noqa: E501
+            deserialize_evm_tx_hash('0x13965c2a1ba75dafa060d0bdadd332c9330b9c5819a8fee7d557a937728fa22f'),  # Borrow 42.5043 USDC from USDCv3  # noqa: E501
+        ],
+    )
+    compound_v3_balances = Compoundv3Balances(
+        database=chain_aggregator.database,
+        evm_inquirer=chain_aggregator.ethereum.node_inquirer,
+    )
+    unique_borrows, underlying_tokens = compound_v3_balances._extract_unique_borrowed_tokens()
+
+    def mock_extract_unique_borrowed_tokens(
+            self: 'Compoundv3Balances',  # pylint: disable=unused-argument
+    ) -> tuple[dict[EvmToken, list['ChecksumEvmAddress']], dict['ChecksumEvmAddress', EvmToken]]:
+        return {
+            token: sorted(addresses, reverse=True)  # cast set to list to avoid randomness in VCR
+            for token, addresses in unique_borrows.items()
+        }, underlying_tokens
+
+    def mock_query_tokens(addresses):
+        return ({
+            ethereum_accounts[0]: {c_usdc_v3: FVal('333349.851793')},
+            ethereum_accounts[1]: {c_usdc_v3: FVal('0.32795')},
+        }, {c_usdc_v3: Price(CURRENT_PRICE_MOCK)}) if len(addresses) != 0 else ({}, {})
+
+    with (
+        patch(
+            target='rotkehlchen.chain.evm.tokens.EvmTokens.query_tokens_for_addresses',
+            side_effect=mock_query_tokens,
+        ),
+        patch(
+            target='rotkehlchen.chain.evm.decoding.compound.v3.balances.Compoundv3Balances._extract_unique_borrowed_tokens',
+            new=mock_extract_unique_borrowed_tokens,
+        ),
+    ):
+        result = assert_proper_response_with_result(requests.get(api_url_for(
+            rotkehlchen_api_server,
+            'compoundbalancesresource',
+        )))
+
+    def get_balance(amount: str) -> dict[str, str]:
+        return Balance(amount=FVal(amount), usd_value=FVal(amount) * CURRENT_PRICE_MOCK).serialize()  # noqa: E501
+
+    assert result == {
+        ethereum_accounts[0]: {
+            'lending': {
+                c_usdc_v3.identifier: {
+                    'apy': '6.42%',
+                    'balance': get_balance('333349.851793'),
+                },
+            }, 'rewards': {
+                A_COMP.identifier: {
+                    'apy': None,
+                    'balance': get_balance('2.356445'),
+                },
+            },
+        }, ethereum_accounts[1]: {
+            'lending': {
+                c_usdc_v3.identifier: {
+                    'apy': '6.42%',
+                    'balance': get_balance('0.32795'),
+                },
+            }, 'rewards': {
+                A_COMP.identifier: {
+                    'apy': None,
+                    'balance': get_balance('0'),
+                },
+            },
+        }, ethereum_accounts[2]: {
+            'borrowing': {
+                c_usdc_v3.identifier: {
+                    'apy': '8.63%',
+                    'balance': get_balance('166903.418564'),
+                },
+            }, 'lending': {}, 'rewards': {
+                A_COMP.identifier: {
+                    'apy': None,
+                    'balance': get_balance('0.22238'),
+                },
+            },
+        }, ethereum_accounts[3]: {
+            'borrowing': {
+                c_usdc_v3.identifier: {
+                    'apy': '8.63%',
+                    'balance': get_balance('257.564495'),
+                },
+            }, 'rewards': {
+                A_COMP.identifier: {
+                    'apy': None,
+                    'balance': get_balance('0.000038'),
+                },
+            },
+        },
+    }
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])

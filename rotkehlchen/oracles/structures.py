@@ -16,7 +16,6 @@ class CurrentPriceOracle(OracleSource):
 
 
 DEFAULT_CURRENT_PRICE_ORACLES_ORDER = (
-    CurrentPriceOracle.MANUALCURRENT,
     CurrentPriceOracle.COINGECKO,
     CurrentPriceOracle.DEFILLAMA,
     CurrentPriceOracle.CRYPTOCOMPARE,

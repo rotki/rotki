@@ -28,7 +28,7 @@ from rotkehlchen.constants.misc import (
     NFT_DIRECTIVE,
 )
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
-from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
 from rotkehlchen.errors.misc import DBUpgradeError, InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.deserialization import deserialize_price
@@ -39,6 +39,9 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     EvmTokenKind,
+    Location,
+    LocationAssetMappingDeleteEntry,
+    LocationAssetMappingUpdateEntry,
     Price,
     Timestamp,
 )
@@ -55,7 +58,7 @@ from .utils import GLOBAL_DB_VERSION, globaldb_get_setting_value
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.filtering import AssetsFilterQuery
+    from rotkehlchen.db.filtering import AssetsFilterQuery, LocationAssetMappingsFilterQuery
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -121,7 +124,7 @@ def _initialize_and_check_unfinished_upgrades(
             'found. Please open an issue on our github or contact us in our discord server.',
         )
 
-    backup_to_use = sorted(found_backups)[-1]  # Use latest backup
+    backup_to_use = max(found_backups)  # Use latest backup
     shutil.copyfile(
         global_dir / backup_to_use,
         global_dir / db_filename,
@@ -957,7 +960,7 @@ class GlobalDBHandler:
             raise InputError(msg) from e
 
         if entry.underlying_tokens is not None:
-            GlobalDBHandler()._add_underlying_tokens(
+            GlobalDBHandler._add_underlying_tokens(
                 write_cursor=write_cursor,
                 parent_token_identifier=entry.identifier,
                 underlying_tokens=entry.underlying_tokens,
@@ -1080,7 +1083,7 @@ class GlobalDBHandler:
             ) from e
 
         if asset.is_evm_token():
-            GlobalDBHandler().edit_evm_token(asset)  # type: ignore[arg-type]  # It's evm token as guaranteed by the if
+            GlobalDBHandler.edit_evm_token(asset)  # type: ignore[arg-type]  # It's evm token as guaranteed by the if
             return
 
         details_update_query = 'UPDATE common_asset_details SET symbol=?, coingecko=?, cryptocompare=?'  # noqa: E501
@@ -1912,7 +1915,7 @@ class GlobalDBHandler:
         if identifier.startswith(NFT_DIRECTIVE):
             return identifier
 
-        connection = GlobalDBHandler().packaged_db_conn() if use_packaged_db is True else GlobalDBHandler().conn  # noqa: E501
+        connection = GlobalDBHandler.packaged_db_conn() if use_packaged_db is True else GlobalDBHandler().conn  # noqa: E501
         with connection.read_ctx() as cursor:
             normalized_id = cursor.execute(
                 'SELECT identifier FROM assets WHERE identifier=?',
@@ -1978,3 +1981,176 @@ class GlobalDBHandler:
             return (Asset(identifier),)
 
         return collection_assets
+
+    @staticmethod
+    def get_assetid_from_exchange_name(exchange: Location | None, symbol: str, default: str) -> str:  # noqa: E501
+        """Returns the asset's identifier from the ticker symbol of the given exchange according to
+        location_asset_mappings table. Use exchange=None to get the common id for all exchanges.
+        If the mapping is not present returns default."""
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            if exchange is not None and cursor.execute(
+                'SELECT COUNT(*) FROM location_unsupported_assets WHERE location=? AND exchange_symbol=?',  # noqa: E501
+                (exchange.serialize_for_db(), symbol),
+            ).fetchone()[0] > 0:
+                raise UnsupportedAsset(symbol)
+
+            location_filter, bindings = '', [symbol]
+            if exchange is not None:
+                location_filter = 'location IS ? OR'
+                bindings.append(exchange.serialize_for_db())
+            identifier = cursor.execute(
+                f'SELECT local_id FROM location_asset_mappings WHERE exchange_symbol=? AND ({location_filter} location IS NULL)',  # noqa: E501
+                bindings,
+            ).fetchone()
+
+        return default if identifier is None else identifier[0]
+
+    @staticmethod
+    def get_exchange_name_from_assetid(exchange: Location, asset_identifier: str) -> str | None:
+        """Returns the ticker symbol used in the given exchange from asset's identifier according
+        to location_asset_mappings table. If the mapping is not present returns None."""
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            identifier = cursor.execute(
+                'SELECT exchange_symbol FROM location_asset_mappings WHERE (location IS ? OR location IS NULL) AND local_id=?',  # noqa: E501
+                (exchange.serialize_for_db(), asset_identifier),
+            ).fetchone()
+
+        return None if identifier is None else identifier[0]
+
+    @staticmethod
+    def query_location_asset_mappings(
+            filter_query: 'LocationAssetMappingsFilterQuery',
+    ) -> tuple[list[dict[str, str | Location | None]], int, int]:
+        """Returns a tuple with the mappings, their amount according to the filter_query, and total
+        amount without any filter. Mappings are in the form of a list of dicts with the keys,
+        asset, location, and location_symbol."""
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            mappings_total = cursor.execute(
+                'SELECT COUNT(*) FROM location_asset_mappings',
+            ).fetchone()[0]
+
+            query, bindings = filter_query.prepare(with_pagination=False)
+            mappings_count = cursor.execute(
+                f'SELECT COUNT(*) FROM location_asset_mappings {query}', bindings,
+            ).fetchone()[0]
+
+            query, bindings = filter_query.prepare()
+            cursor.execute(
+                f'SELECT local_id, location, exchange_symbol FROM location_asset_mappings {query}', bindings,  # noqa: E501
+            )
+            return [{
+                'asset': identifier,
+                'location': None if location is None else str(Location.deserialize_from_db(location)),  # noqa: E501
+                'location_symbol': symbol,
+            } for identifier, location, symbol in cursor], mappings_count, mappings_total
+
+    @staticmethod
+    def add_location_asset_mappings(
+            entries: list[LocationAssetMappingUpdateEntry],
+            skip_errors: bool = False,
+    ) -> None:
+        """Adds the given mapping entries of asset identifiers and their symbols in the given
+        location to the location_asset_mappings table.
+
+        May Raise (if skip_errors is False):
+        - InputError if any of the pairs of location and exchange_symbol already exist"""
+        with GlobalDBHandler().conn.write_ctx() as cursor:
+            for entry in entries:
+                try:
+                    if entry.location is None and cursor.execute(
+                        'SELECT COUNT(*) FROM location_asset_mappings WHERE location IS NULL AND exchange_symbol=? AND local_id=?',  # noqa: E501
+                        (entry.location_symbol, entry.asset.serialize()),
+                    ).fetchone()[0] > 0:
+                        raise sqlite3.IntegrityError('Entry already exists in the DB')
+
+                    cursor.execute(
+                        'INSERT INTO location_asset_mappings(local_id, location, exchange_symbol) VALUES(?, ?, ?)', (  # noqa: E501
+                            entry.asset.serialize(),
+                            None if entry.location is None else entry.location.serialize_for_db(),
+                            entry.location_symbol,
+                        ),
+                    )
+                except sqlite3.IntegrityError as e:
+                    error_msg = (
+                        f'Failed to add the location asset mapping of {entry.location_symbol} '
+                        f'in {entry.location} because it already exists in the DB.'
+                    )
+                    if skip_errors:
+                        log.error(error_msg)
+                    else:
+                        raise InputError(error_msg) from e
+
+    @staticmethod
+    def update_location_asset_mappings(
+            entries: list[LocationAssetMappingUpdateEntry],
+            skip_errors: bool = False,
+    ) -> None:
+        """Updates the mapped asset identifiers in the location_asset_mappings table based on their
+        location symbol.
+
+        May Raise (if skip_errors is False):
+        - InputError if any of the pairs of location and exchange_symbol does not exist"""
+        with GlobalDBHandler().conn.write_ctx() as cursor:
+            for entry in entries:
+                cursor.execute(
+                    'UPDATE location_asset_mappings SET local_id=? WHERE location IS ? AND exchange_symbol=?', (  # noqa: E501
+                        entry.asset.serialize(),
+                        None if entry.location is None else entry.location.serialize_for_db(),
+                        entry.location_symbol,
+                    ),
+                )
+                if cursor.rowcount != 1:
+                    error_msg = (
+                        f'Failed to update the location asset mapping of {entry.location_symbol} '
+                        f'in {entry.location} because it does not exist in the DB.'
+                    )
+                    if skip_errors:
+                        log.error(error_msg)
+                    else:
+                        raise InputError(error_msg)
+
+    @staticmethod
+    def delete_location_asset_mappings(
+            entries: list[LocationAssetMappingDeleteEntry],
+            skip_errors: bool = False,
+    ) -> None:
+        """Deletes the mappings of given asset identifiers in the given location from the
+        location_asset_mappings table.
+
+        May Raise (if skip_errors is False):
+        - InputError if any of the pairs of location and exchange_symbol does not exist"""
+        with GlobalDBHandler().conn.write_ctx() as cursor:
+            for entry in entries:
+                cursor.execute(
+                    'DELETE FROM location_asset_mappings WHERE location IS ? AND exchange_symbol=?', (  # noqa: E501
+                        None if entry.location is None else entry.location.serialize_for_db(),
+                        entry.location_symbol,
+                    ),
+                )
+                if cursor.rowcount != 1:
+                    error_msg = (
+                        f'Failed to delete the location asset mapping of {entry.location_symbol} '
+                        f'in {entry.location} because it does not exist in the DB.'
+                    )
+                    if skip_errors:
+                        log.error(error_msg)
+                    else:
+                        raise InputError(error_msg)
+
+    @staticmethod
+    def is_asset_symbol_unsupported(location: 'Location', asset_symbol: str) -> bool:
+        """Returns if the asset with the given symbol is not supported in the given location."""
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            return cursor.execute(
+                'SELECT COUNT(*) FROM location_unsupported_assets WHERE location=? AND exchange_symbol=?',  # noqa: E501
+                (location.serialize_for_db(), asset_symbol),
+            ).fetchone()[0] > 0
+
+    @staticmethod
+    def get_protocol_for_asset(asset_identifier: str) -> str | None:
+        """Get the protocol of the asset with the given identifier."""
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            return protocol[0] if (protocol := cursor.execute(
+                'SELECT protocol FROM evm_tokens WHERE identifier=?;',
+                (asset_identifier,),
+            ).fetchone()) is not None else None

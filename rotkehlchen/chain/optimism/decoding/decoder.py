@@ -2,20 +2,13 @@ import logging
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.base import BaseDecoderToolsWithDSProxy
-from rotkehlchen.chain.evm.decoding.structures import (
-    FAILED_ENRICHMENT_OUTPUT,
-    TransferEnrichmentOutput,
-)
-from rotkehlchen.chain.optimism_superchain.decoding.decoder import (
-    OptimismSuperchainTransactionDecoder,
-)
+from rotkehlchen.chain.evm.l2_with_l1_fees.decoding.decoder import L2WithL1FeesTransactionDecoder
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.db.optimismtx import DBOptimismTx
+from rotkehlchen.db.l2withl1feestx import DBL2WithL1FeesTx
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.decoding.structures import EnricherContext
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.chain.optimism.transactions import OptimismTransactions
     from rotkehlchen.db.dbhandler import DBHandler
@@ -24,7 +17,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class OptimismTransactionDecoder(OptimismSuperchainTransactionDecoder):
+class OptimismTransactionDecoder(L2WithL1FeesTransactionDecoder):
 
     def __init__(
             self,
@@ -45,13 +38,10 @@ class OptimismTransactionDecoder(OptimismSuperchainTransactionDecoder):
                 is_non_conformant_erc721_fn=self._is_non_conformant_erc721,
                 address_is_exchange_fn=self._address_is_exchange,
             ),
-            dbevmtx_class=DBOptimismTx,
+            dbevmtx_class=DBL2WithL1FeesTx,
         )
 
     # -- methods that need to be implemented by child classes --
-
-    def _enrich_protocol_tranfers(self, context: 'EnricherContext') -> TransferEnrichmentOutput:  # pylint: disable=unused-argument
-        return FAILED_ENRICHMENT_OUTPUT
 
     @staticmethod
     def _is_non_conformant_erc721(address: ChecksumEvmAddress) -> bool:  # pylint: disable=unused-argument

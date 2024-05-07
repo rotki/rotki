@@ -61,8 +61,10 @@ LOCATION_DETAILS: dict = {
     Location.ARBITRUM_ONE: {'image': 'arbitrum_one.svg'},
     Location.BASE: {'image': 'base.svg'},
     Location.GNOSIS: {'image': 'gnosis.svg'},
+    Location.SCROLL: {'image': 'scroll.svg'},
     Location.WOO: {'image': 'woo.svg'},
     Location.BYBIT: {'image': 'bybit.svg'},
+    Location.ZKSYNC_LITE: {'image': 'zksync_lite.svg'},
 }
 for key, value in LOCATION_DETAILS.items():
     if key in ALL_SUPPORTED_EXCHANGES:

@@ -3,7 +3,7 @@ from typing import Any, Generic, NamedTuple, overload
 
 from rotkehlchen.chain.substrate.types import SubstrateAddress
 from rotkehlchen.types import (
-    SUPPORTED_EVM_CHAINS,
+    SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     AnyBlockchainAddress,
     BlockchainAddress,
     BTCAddress,
@@ -21,14 +21,16 @@ class BlockchainAccounts:
     arbitrum_one: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
     base: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
     gnosis: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
+    scroll: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
     btc: tuple[BTCAddress, ...] = field(default_factory=tuple)
     bch: tuple[BTCAddress, ...] = field(default_factory=tuple)
     ksm: tuple[SubstrateAddress, ...] = field(default_factory=tuple)
     dot: tuple[SubstrateAddress, ...] = field(default_factory=tuple)
     avax: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
+    zksync_lite: tuple[ChecksumEvmAddress, ...] = field(default_factory=tuple)
 
     @overload
-    def get(self, blockchain: SUPPORTED_EVM_CHAINS) -> tuple[ChecksumEvmAddress, ...]:
+    def get(self, blockchain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE) -> tuple[ChecksumEvmAddress, ...]:
         ...
 
     @overload

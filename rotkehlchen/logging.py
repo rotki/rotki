@@ -1,7 +1,7 @@
 import argparse
 import logging.config
 import re
-from collections.abc import MutableMapping
+from collections.abc import Callable, MutableMapping
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -206,3 +206,19 @@ def configure_logging(args: argparse.Namespace) -> None:
         logging.getLogger('substrateinterface.base').setLevel(logging.CRITICAL)
         logging.getLogger('eth_hash').setLevel(logging.CRITICAL)
         logging.getLogger('vcr').setLevel(logging.CRITICAL)
+
+
+log = RotkehlchenLogsAdapter(logging.getLogger(__name__))
+
+
+def enter_exit_debug_log(name: str | None = None) -> 'Callable':
+    """Decorator to debug log enter and exit events of a function"""
+    def log_decorator(function: 'Callable') -> 'Callable':
+        def log_wrapped(*args: tuple[Any, ...], **kwargs: dict[str, Any]) -> None:
+            function_name = function.__name__ if name is None else name
+            log.debug(f'Enter {function_name}')
+            result = function(*args, **kwargs)
+            log.debug(f'Exit {function_name}')
+            return result
+        return log_wrapped
+    return log_decorator

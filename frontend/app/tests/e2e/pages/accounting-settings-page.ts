@@ -1,10 +1,10 @@
 export class AccountingSettingsPage {
   visit() {
     cy.get('.user-dropdown').click();
-    cy.get('[data-cy=user-dropdown]').should('be.visible');
+    cy.get('[data-cy=user-dropdown]').should('exist');
     cy.get('.user-dropdown__settings').click();
     cy.get('a.settings__accounting').click();
-    cy.get('[data-cy=user-dropdown]').should('not.be.visible');
+    cy.get('[data-cy=user-dropdown]').should('not.exist');
   }
 
   setTaxFreePeriodDays(value: string) {
@@ -20,33 +20,19 @@ export class AccountingSettingsPage {
   changeSwitch(target: string, enabled: boolean) {
     cy.get(`${target}`).scrollIntoView();
     cy.get(`${target}`).should('be.visible');
-    cy.get(`${target} input`).should(
-      'have.attr',
-      'aria-checked',
-      (!enabled).toString(),
-    );
-    cy.get(target).click();
-    cy.get(`${target} input`).should(
-      'have.attr',
-      'aria-checked',
-      enabled.toString(),
-    );
-    this.confirmInlineSuccess(`${target} .v-messages__message`);
+    this.verifySwitchState(target, !enabled);
+    cy.get(`${target} input`).click();
+    this.verifySwitchState(target, enabled);
+    this.confirmInlineSuccess(`${target} .details .text-rui-success`);
   }
 
   verifySwitchState(target: string, enabled: boolean) {
     cy.get(`${target} input`).should(
-      'have.attr',
-      'aria-checked',
-      enabled.toString(),
+      enabled ? 'be.checked' : 'not.be.checked',
     );
   }
 
   confirmInlineSuccess(target: string, messageContains?: string) {
-    cy.get(target).as('message');
-    cy.get('@message').should('be.visible');
-    cy.get('@message').should('include.text', 'Setting saved');
-    if (messageContains)
-      cy.get('@message').should('include.text', messageContains);
+    cy.confirmFieldMessage({ target, messageContains, mustInclude: 'Setting saved' });
   }
 }

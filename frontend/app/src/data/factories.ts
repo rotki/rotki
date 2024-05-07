@@ -32,6 +32,8 @@ export function defaultGeneralSettings(mainCurrency: Currency): GeneralSettings 
     readTimeout: Defaults.DEFAULT_READ_TIMEOUT,
     oraclePenaltyThresholdCount: Defaults.DEFAULT_ORACLE_PENALTY_THRESHOLD_COUNT,
     oraclePenaltyDuration: Defaults.DEFAULT_ORACLE_PENALTY_DURATION,
+    autoDeleteCalendarEntries: true,
+    autoCreateCalendarReminders: true,
   };
 }
 

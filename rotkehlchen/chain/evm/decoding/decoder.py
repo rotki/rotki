@@ -1,7 +1,8 @@
 import importlib
 import logging
+import operator
 import pkgutil
-from abc import ABCMeta, abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Callable
 from contextlib import suppress
 from dataclasses import dataclass
@@ -21,6 +22,11 @@ from rotkehlchen.chain.evm.decoding.oneinch.v5.decoder import Oneinchv5Decoder
 from rotkehlchen.chain.evm.decoding.safe.decoder import SafemultisigDecoder
 from rotkehlchen.chain.evm.decoding.socket_bridge.decoder import SocketBridgeDecoder
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.decoding.weth.constants import (
+    CHAINS_WITH_SPECIAL_WETH,
+    CHAINS_WITHOUT_NATIVE_ETH,
+)
+from rotkehlchen.chain.evm.decoding.weth.decoder import WethDecoder
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants import ZERO
 from rotkehlchen.db.constants import HISTORY_MAPPING_STATE_DECODED
@@ -41,7 +47,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction, EVMTxHash
+from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction, EVMTxHash, Location
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address, hex_or_bytes_to_int
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
@@ -49,6 +55,7 @@ from .base import BaseDecoderTools, BaseDecoderToolsWithDSProxy
 from .constants import CPT_GAS, ERC20_APPROVE, ERC20_OR_ERC721_TRANSFER, OUTGOING_EVENT_TYPES
 from .structures import (
     DEFAULT_DECODING_OUTPUT,
+    FAILED_ENRICHMENT_OUTPUT,
     ActionItem,
     DecoderContext,
     DecodingOutput,
@@ -117,7 +124,7 @@ class DecodingRules:
         )
 
 
-class EVMTransactionDecoder(metaclass=ABCMeta):
+class EVMTransactionDecoder(ABC):
 
     def __init__(
             self,
@@ -143,7 +150,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         decoder that should be included for this decoder modules.
         """
         self.database = database
-        self.misc_counterparties = [CounterpartyDetails(identifier=CPT_GAS, label='gas', image='gas.svg')] + misc_counterparties  # noqa: E501
+        self.misc_counterparties = [CounterpartyDetails(identifier=CPT_GAS, label='gas', icon='fire-line')] + misc_counterparties  # noqa: E501
         self.evm_inquirer = evm_inquirer
         self.transactions = transactions
         self.msg_aggregator = database.msg_aggregator
@@ -183,6 +190,15 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         self._add_single_decoder(class_name='Safemultisig', decoder_class=SafemultisigDecoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='Oneinchv5', decoder_class=Oneinchv5Decoder, rules=rules)  # noqa: E501
         self._add_single_decoder(class_name='SocketBridgeDecoder', decoder_class=SocketBridgeDecoder, rules=rules)  # noqa: E501
+
+        # Excluding Gnosis and Polygon PoS because they dont have ETH as native token
+        # Also arb and scroll because they don't follow the weth9 design
+        if self.evm_inquirer.chain_id not in CHAINS_WITHOUT_NATIVE_ETH | CHAINS_WITH_SPECIAL_WETH:
+            self._add_single_decoder(
+                class_name='Weth',
+                decoder_class=WethDecoder,
+                rules=rules,
+            )
 
     def _add_single_decoder(
             self,
@@ -381,7 +397,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 rules.extend(new_rules)
 
         # Sort post decoding rules by priority (which is the first element of the tuple)
-        rules.sort(key=lambda x: x[0])
+        rules.sort(key=operator.itemgetter(0))
         for _, rule in rules:
             try:
                 decoded_events = rule(transaction=transaction, decoded_events=decoded_events, all_logs=all_logs)  # noqa: E501
@@ -525,8 +541,10 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             ignore_cache: bool,
             tx_hashes: list[EVMTxHash] | None,
             send_ws_notifications: bool = False,
+            delete_customized: bool = False,
     ) -> list['EvmEvent']:
         """Make sure that receipts are pulled + events decoded for the given transaction hashes.
+        If delete_customized is True then also customized events are deleted before redecoding.
 
         The transaction hashes must exist in the DB at the time of the call
 
@@ -574,6 +592,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
                 transaction=tx,
                 tx_receipt=receipt,
                 ignore_cache=ignore_cache,
+                delete_customized=delete_customized,
             )
             events.extend(new_events)
             if new_refresh_balances is True:
@@ -597,6 +616,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             transaction: EvmTransaction,
             tx_receipt: EvmTxReceipt,
             ignore_cache: bool,
+            delete_customized: bool = False,
     ) -> tuple[list['EvmEvent'], bool]:
         """
         Get a transaction's events if existing in the DB or decode them.
@@ -604,12 +624,14 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         """
         with self.database.conn.read_ctx() as cursor:
             tx_id = transaction.get_or_query_db_id(cursor)
+
         if ignore_cache is True:  # delete all decoded events
             with self.database.user_write() as write_cursor:
                 self.dbevents.delete_events_by_tx_hash(
                     write_cursor=write_cursor,
                     tx_hashes=[transaction.tx_hash],
-                    chain_id=self.evm_inquirer.chain_id,
+                    location=Location.from_chain_id(self.evm_inquirer.chain_id),
+                    delete_customized=delete_customized,
                 )
                 write_cursor.execute(
                     'DELETE from evm_tx_mappings WHERE tx_id=? AND value=?',
@@ -983,16 +1005,27 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
             if len(intersection) != 0:
                 raise AssertionError(f'{type_name} duplicates found in decoding rules of {self.evm_inquirer.chain_name} {class_name}: {intersection}')  # noqa: E501
 
-    # -- methods to be implemented by child classes --
-
-    @abstractmethod
     def _enrich_protocol_tranfers(self, context: EnricherContext) -> TransferEnrichmentOutput:
-        """
-        Decode special transfers made by contract execution for example at the moment
+        """Decode special transfers made by contract execution for example at the moment
         of depositing assets or withdrawing.
-        It assumes that the event being decoded has been already filtered and is a
-        transfer.
-        """
+        It assumes that the event being decoded has been already filtered and is a transfer.
+        Can be overridden by child classes for chain-specific logic."""
+        for enrich_call in self.rules.token_enricher_rules:
+            try:
+                transfer_enrich: TransferEnrichmentOutput = enrich_call(context)
+            except (UnknownAsset, WrongAssetType) as e:
+                log.error(
+                    f'Failed to enrich {self.evm_inquirer.chain_name} transfer due to '
+                    f'unknown asset {context.event.asset}. {e!s}',
+                )  # Don't try other rules since all of them will fail to resolve the asset
+                return FAILED_ENRICHMENT_OUTPUT
+
+            if transfer_enrich != FAILED_ENRICHMENT_OUTPUT:
+                return transfer_enrich
+
+        return FAILED_ENRICHMENT_OUTPUT
+
+    # -- methods to be implemented by child classes --
 
     @staticmethod
     @abstractmethod
@@ -1006,7 +1039,7 @@ class EVMTransactionDecoder(metaclass=ABCMeta):
         and the counterparty to use if it is."""
 
 
-class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, metaclass=ABCMeta):
+class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, ABC):
     def __init__(
             self,
             database: 'DBHandler',

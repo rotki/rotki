@@ -6,7 +6,7 @@ import { useCurrencies } from '@/types/currencies';
 import { CurrencyLocation } from '@/types/currency-location';
 import { FrontendSettings } from '@/types/settings/frontend-settings';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
-import createCustomPinia from '../../../utils/create-pinia';
+import { createCustomPinia } from '../../../utils/create-pinia';
 import { updateGeneralSettings } from '../../../utils/general-settings';
 import type { Pinia } from 'pinia';
 
@@ -47,7 +47,7 @@ describe('amountDisplay.vue', () => {
     });
   };
 
-  beforeEach(async () => {
+  beforeEach(() => {
     pinia = createCustomPinia();
     setActivePinia(pinia);
     document.body.dataset.app = 'true';
@@ -75,7 +75,7 @@ describe('amountDisplay.vue', () => {
         wrapper.find('[data-cy=amount-display]:nth-child(1)').text(),
       ).toMatch('1.44');
       await wrapper.find('[data-cy=display-amount]').trigger('mouseover');
-      await wrapper.vm.$nextTick();
+      await nextTick();
       expect(wrapper.find('[data-cy=display-full-value]').text()).toMatch(
         '1.445280012',
       );
@@ -90,7 +90,7 @@ describe('amountDisplay.vue', () => {
         wrapper.find('[data-cy=amount-display]:nth-child(1)').text(),
       ).toMatch('1.20');
       await wrapper.find('[data-cy=display-amount]').trigger('mouseover');
-      await wrapper.vm.$nextTick();
+      await nextTick();
       expect(wrapper.find('[data-cy=display-full-value]').text()).toMatch(
         '1.20440001',
       );
@@ -105,7 +105,7 @@ describe('amountDisplay.vue', () => {
           .replace(/ +(?= )/g, ''),
       ).toBe('< 1.21');
       await wrapper.find('[data-cy=display-amount]').trigger('mouseover');
-      await wrapper.vm.$nextTick();
+      await nextTick();
       expect(wrapper.find('[data-cy=display-full-value]').text()).toMatch(
         '1.20540001',
       );
@@ -125,7 +125,7 @@ describe('amountDisplay.vue', () => {
         wrapper.find('[data-cy=amount-display]:nth-child(1)').text(),
       ).toMatch('1.20');
       await wrapper.find('[data-cy=display-amount]').trigger('mouseover');
-      await wrapper.vm.$nextTick();
+      await nextTick();
       expect(wrapper.find('[data-cy=display-full-value]').text()).toMatch(
         '1.20440001',
       );
@@ -161,7 +161,7 @@ describe('amountDisplay.vue', () => {
         '1.44',
       );
       await wrapper.find('[data-cy="display-amount"]').trigger('mouseover');
-      await wrapper.vm.$nextTick();
+      await nextTick();
       expect(wrapper.find('[data-cy="display-full-value"]').text()).not.toBe(
         '1.445280012',
       );
@@ -176,7 +176,7 @@ describe('amountDisplay.vue', () => {
         '1.20',
       );
       await wrapper.find('[data-cy="display-amount"]').trigger('mouseover');
-      await wrapper.vm.$nextTick();
+      await nextTick();
       expect(wrapper.find('[data-cy="display-full-value"]').text()).not.toBe(
         '1.20440001',
       );
@@ -188,7 +188,7 @@ describe('amountDisplay.vue', () => {
         '1.21',
       );
       await wrapper.find('[data-cy="display-amount"]').trigger('mouseover');
-      await wrapper.vm.$nextTick();
+      await nextTick();
       expect(wrapper.find('[data-cy="display-full-value"]').text()).not.toBe(
         '1.20540001',
       );

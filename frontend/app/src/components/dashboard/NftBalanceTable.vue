@@ -8,7 +8,6 @@ import type {
   DataTableColumn,
   DataTableSortData,
 } from '@rotki/ui-library-compat';
-import type { Ref } from 'vue';
 import type { IgnoredAssetsHandlingType } from '@/types/asset';
 import type {
   NonFungibleBalance,
@@ -24,9 +23,8 @@ const nonFungibleRoute = Routes.ACCOUNTS_BALANCES_NON_FUNGIBLE;
 
 const statistics = useStatisticsStore();
 const { totalNetWorthUsd } = storeToRefs(statistics);
-const { fetchNonFungibleBalances, refreshNonFungibleBalances }
-  = useNonFungibleBalancesStore();
-
+const { fetchNonFungibleBalances, refreshNonFungibleBalances } = useNonFungibleBalancesStore();
+const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore());
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { t } = useI18n();
 
@@ -58,6 +56,7 @@ const {
 
 const { isLoading: isSectionLoading } = useStatusStore();
 const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);
+const { totalUsdValue } = getCollectionData<NonFungibleBalance>(balances);
 
 const tableHeaders = computed<DataTableColumn[]>(() => {
   const visibleColumns = get(dashboardTablesVisibleColumns)[group];
@@ -125,12 +124,6 @@ function percentageOfCurrentGroup(value: BigNumber) {
   return calculatePercentage(value, get(totalUsdValue) as BigNumber);
 }
 
-const { dashboardTablesVisibleColumns } = storeToRefs(
-  useFrontendSettingsStore(),
-);
-
-const { totalUsdValue } = getCollectionData<NonFungibleBalance>(balances);
-
 onMounted(async () => {
   await fetchData();
   await refreshNonFungibleBalances();
@@ -162,25 +155,23 @@ watch(loading, async (isLoading, wasLoading) => {
       </RouterLink>
     </template>
     <template #details>
-      <VMenu
+      <RuiMenu
         id="nft_balance_table__column-filter"
-        transition="slide-y-transition"
-        max-width="250px"
-        nudge-bottom="20"
-        offset-y
-        left
+        menu-class="max-w-[15rem]"
+        :popper="{ placement: 'bottom-end' }"
       >
         <template #activator="{ on }">
           <MenuTooltipButton
             :tooltip="t('dashboard_asset_table.select_visible_columns')"
             class-name="nft_balance_table__column-filter__button"
+            custom-color
             v-on="on"
           >
             <RuiIcon name="more-2-fill" />
           </MenuTooltipButton>
         </template>
         <VisibleColumnsSelector :group="group" />
-      </VMenu>
+      </RuiMenu>
     </template>
     <template #shortDetails>
       <AmountDisplay
@@ -210,7 +201,6 @@ watch(loading, async (isLoading, wasLoading) => {
           :pagination-modifiers="{ external: true }"
           :sort-modifiers="{ external: true }"
           :empty="{ description: t('data_table.no_data') }"
-          :sticky-offset="64"
           row-attr="id"
           sticky-header
           outlined

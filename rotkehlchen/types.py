@@ -1,15 +1,17 @@
 import typing
 from collections.abc import Sequence
-from dataclasses import asdict, dataclass
-from enum import Enum, auto
+from dataclasses import dataclass
+from enum import Enum, StrEnum, auto
 from typing import (
     TYPE_CHECKING,
     Any,
     Final,
+    Generic,
     Literal,
     NamedTuple,
     NewType,
     Optional,
+    TypeAlias,
     TypeVar,
     get_args,
 )
@@ -30,6 +32,7 @@ from rotkehlchen.utils.mixins.enums import (
 from rotkehlchen.chain.substrate.types import SubstrateAddress  # isort:skip
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset
     from rotkehlchen.db.drivers.gevent import DBCursor
 
 ModuleName = Literal[
@@ -125,6 +128,7 @@ class ExternalService(SerializableEnumNameMixin):
     ARBITRUM_ONE_ETHERSCAN = auto()
     BASE_ETHERSCAN = auto()
     GNOSIS_ETHERSCAN = auto()
+    SCROLL_ETHERSCAN = auto()
     BLOCKSCOUT = auto()
     MONERIUM = auto()
 
@@ -142,6 +146,8 @@ class ExternalService(SerializableEnumNameMixin):
             return ChainID.BASE
         elif self == ExternalService.GNOSIS_ETHERSCAN:
             return ChainID.GNOSIS
+        elif self == ExternalService.SCROLL_ETHERSCAN:
+            return ChainID.SCROLL
 
         return None
 
@@ -245,6 +251,8 @@ class ChainID(Enum):
     EVMOS = 9001
     POLYGON_ZKEVM = 1101
     ZKSYNC_ERA = 324
+    PULSECHAIN = 369
+    SCROLL = 534352
 
     @classmethod
     def deserialize_from_db(cls, value: int) -> 'ChainID':
@@ -285,6 +293,8 @@ class ChainID(Enum):
             label = 'Arbitrum One'
         elif self == ChainID.ARBITRUM_NOVA:
             label = 'Arbitrum Nova'
+        elif self == ChainID.PULSECHAIN:
+            label = 'PulseChain'
         else:
             label = name.capitalize()
 
@@ -323,7 +333,14 @@ SUPPORTED_CHAIN_IDS = Literal[
     ChainID.ARBITRUM_ONE,
     ChainID.BASE,
     ChainID.GNOSIS,
+    ChainID.SCROLL,
 ]
+
+
+class EvmlikeChain(StrEnum):
+    """This is an enum for EvmLike chains that are not fully compatible with evm chains.
+    For example have no chain id"""
+    ZKSYNC_LITE = auto()
 
 
 @dataclass(frozen=True)
@@ -342,20 +359,6 @@ class EvmTransaction:
     input_data: bytes
     nonce: int
     db_id: int = -1
-
-    def serialize(self) -> dict[str, Any]:
-        result = asdict(self)
-        result.pop('db_id')
-        result['tx_hash'] = result['tx_hash'].hex()
-        result['evm_chain'] = result.pop('chain_id').to_name()
-        result['input_data'] = '0x' + result['input_data'].hex()
-
-        # Most integers are turned to string to be sent via the API
-        result['value'] = str(result['value'])
-        result['gas'] = str(result['gas'])
-        result['gas_price'] = str(result['gas_price'])
-        result['gas_used'] = str(result['gas_used'])
-        return result
 
     def __hash__(self) -> int:
         return hash(self.identifier)
@@ -428,6 +431,8 @@ class SupportedBlockchain(SerializableEnumValueMixin):
     ARBITRUM_ONE = 'ARBITRUM_ONE'
     BASE = 'BASE'
     GNOSIS = 'GNOSIS'
+    SCROLL = 'SCROLL'
+    ZKSYNC_LITE = 'ZKSYNC_LITE'
 
     def __str__(self) -> str:
         return SUPPORTED_BLOCKCHAIN_NAMES_MAPPING.get(self, super().__str__())
@@ -444,7 +449,13 @@ class SupportedBlockchain(SerializableEnumValueMixin):
         return self.value.lower()
 
     def is_evm(self) -> bool:
-        return self in get_args(SUPPORTED_EVM_CHAINS)
+        return self in SUPPORTED_EVM_CHAINS
+
+    def is_evmlike(self) -> bool:
+        return self == SupportedBlockchain.ZKSYNC_LITE
+
+    def is_evm_or_evmlike(self) -> bool:
+        return self.is_evm() or self.is_evmlike()
 
     def is_bitcoin(self) -> bool:
         return self in get_args(SUPPORTED_BITCOIN_CHAINS)
@@ -457,7 +468,7 @@ class SupportedBlockchain(SerializableEnumValueMixin):
 
     def get_native_token_id(self) -> str:
         """Returns the string identifier of the native token for the chain"""
-        if self in (SupportedBlockchain.OPTIMISM, SupportedBlockchain.ARBITRUM_ONE, SupportedBlockchain.BASE):  # noqa: E501
+        if self in (SupportedBlockchain.OPTIMISM, SupportedBlockchain.ARBITRUM_ONE, SupportedBlockchain.BASE, SupportedBlockchain.SCROLL, SupportedBlockchain.ZKSYNC_LITE):  # noqa: E501
             return 'ETH'
         if self == SupportedBlockchain.POLYGON_POS:
             return 'eip155:137/erc20:0x0000000000000000000000000000000000001010'
@@ -466,10 +477,12 @@ class SupportedBlockchain(SerializableEnumValueMixin):
 
         return self.value
 
-    def get_chain_type(self) -> Literal['evm', 'substrate', 'bitcoin', 'eth2']:
+    def get_chain_type(self) -> Literal['evm', 'substrate', 'bitcoin', 'eth2', 'evmlike']:
         """Chain type to return to the API supported chains endpoint"""
         if self.is_evm():
             return 'evm'
+        if self.is_evmlike():
+            return 'evmlike'
         if self.is_substrate():
             return 'substrate'
         if self.is_bitcoin():
@@ -497,6 +510,16 @@ class SupportedBlockchain(SerializableEnumValueMixin):
             return 9000
         raise AssertionError(f'Invalid SupportedBlockchain value: {self}')
 
+    @classmethod
+    def from_location(cls, location: 'EVM_EVMLIKE_LOCATIONS_TYPE') -> 'SupportedBlockchain':
+        """
+        Turns a location to a supported chain.
+        Caller has to make sure Location is a blockchain, otherwise AttributeError is raised.
+
+        For now since we only got evm/evmlike Locations this works only for them.
+        """
+        return getattr(cls, location.name)
+
     def to_chain_id(self) -> ChainID:
         """Warning: Caller has to make sure this is an evm blockchain"""
         return SUPPORTED_BLOCKCHAIN_TO_CHAINID[self]
@@ -515,6 +538,7 @@ SUPPORTED_BLOCKCHAIN_NAMES_MAPPING = {
     SupportedBlockchain.POLYGON_POS: 'Polygon PoS',
     SupportedBlockchain.ARBITRUM_ONE: 'Arbitrum One',
     SupportedBlockchain.GNOSIS: 'Gnosis',
+    SupportedBlockchain.ZKSYNC_LITE: 'ZKSync Lite',
 }
 
 SUPPORTED_BLOCKCHAIN_IMAGE_NAME_MAPPING = {
@@ -530,6 +554,8 @@ SUPPORTED_BLOCKCHAIN_IMAGE_NAME_MAPPING = {
     SupportedBlockchain.ARBITRUM_ONE: 'arbitrum_one.svg',
     SupportedBlockchain.BASE: 'base.svg',
     SupportedBlockchain.GNOSIS: 'gnosis.svg',
+    SupportedBlockchain.SCROLL: 'scroll.svg',
+    SupportedBlockchain.ZKSYNC_LITE: 'zksync_lite.svg',
 }
 
 EVM_CHAINS_WITH_TRANSACTIONS_TYPE = Literal[
@@ -539,6 +565,7 @@ EVM_CHAINS_WITH_TRANSACTIONS_TYPE = Literal[
     SupportedBlockchain.ARBITRUM_ONE,
     SupportedBlockchain.BASE,
     SupportedBlockchain.GNOSIS,
+    SupportedBlockchain.SCROLL,
 ]
 
 EVM_CHAINS_WITH_TRANSACTIONS: tuple[EVM_CHAINS_WITH_TRANSACTIONS_TYPE, ...] = typing.get_args(EVM_CHAINS_WITH_TRANSACTIONS_TYPE)  # noqa: E501
@@ -550,17 +577,21 @@ EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE = Literal[
     ChainID.ARBITRUM_ONE,
     ChainID.BASE,
     ChainID.GNOSIS,
+    ChainID.SCROLL,
 ]
 
 EVM_CHAIN_IDS_WITH_TRANSACTIONS: tuple[EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE, ...] = typing.get_args(EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE)  # noqa: E501
 
 CHAIN_IDS_WITH_BALANCE_PROTOCOLS = Literal[
+    ChainID.ARBITRUM_ONE,
     ChainID.ETHEREUM,
     ChainID.OPTIMISM,
     ChainID.BASE,
+    ChainID.POLYGON_POS,
+    ChainID.SCROLL,
 ]
 
-SUPPORTED_EVM_CHAINS = Literal[
+SUPPORTED_EVM_CHAINS_TYPE = Literal[
     SupportedBlockchain.ETHEREUM,
     SupportedBlockchain.OPTIMISM,
     SupportedBlockchain.AVALANCHE,
@@ -568,7 +599,15 @@ SUPPORTED_EVM_CHAINS = Literal[
     SupportedBlockchain.ARBITRUM_ONE,
     SupportedBlockchain.BASE,
     SupportedBlockchain.GNOSIS,
+    SupportedBlockchain.SCROLL,
 ]
+SUPPORTED_EVM_CHAINS: tuple[SUPPORTED_EVM_CHAINS_TYPE, ...] = typing.get_args(SUPPORTED_EVM_CHAINS_TYPE)  # noqa: E501
+
+SUPPORTED_EVMLIKE_CHAINS_TYPE = Literal[SupportedBlockchain.ZKSYNC_LITE]
+SUPPORTED_EVMLIKE_CHAINS: tuple[SUPPORTED_EVMLIKE_CHAINS_TYPE, ...] = typing.get_args(SUPPORTED_EVMLIKE_CHAINS_TYPE)  # noqa: E501
+
+SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE = SUPPORTED_EVM_CHAINS_TYPE | SUPPORTED_EVMLIKE_CHAINS_TYPE
+SUPPORTED_EVM_EVMLIKE_CHAINS: tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, ...] = SUPPORTED_EVM_CHAINS + SUPPORTED_EVMLIKE_CHAINS  # noqa: E501
 
 SUPPORTED_NON_BITCOIN_CHAINS = Literal[
     SupportedBlockchain.ETHEREUM,
@@ -581,6 +620,8 @@ SUPPORTED_NON_BITCOIN_CHAINS = Literal[
     SupportedBlockchain.ARBITRUM_ONE,
     SupportedBlockchain.BASE,
     SupportedBlockchain.GNOSIS,
+    SupportedBlockchain.SCROLL,
+    SupportedBlockchain.ZKSYNC_LITE,
 ]
 
 SUPPORTED_BITCOIN_CHAINS = Literal[
@@ -601,6 +642,7 @@ SUPPORTED_BLOCKCHAIN_TO_CHAINID = {
     SupportedBlockchain.ARBITRUM_ONE: ChainID.ARBITRUM_ONE,
     SupportedBlockchain.BASE: ChainID.BASE,
     SupportedBlockchain.GNOSIS: ChainID.GNOSIS,
+    SupportedBlockchain.SCROLL: ChainID.SCROLL,
 }
 CHAINID_TO_SUPPORTED_BLOCKCHAIN = {
     value: key
@@ -618,6 +660,8 @@ CHAINS_WITH_CHAIN_MANAGER = Literal[
     SupportedBlockchain.POLKADOT,
     SupportedBlockchain.KUSAMA,
     SupportedBlockchain.GNOSIS,
+    SupportedBlockchain.SCROLL,
+    SupportedBlockchain.ZKSYNC_LITE,
 ]
 
 
@@ -700,9 +744,11 @@ class Location(DBCharEnumMixIn):
     GNOSIS = 43  # on-chain Gnosis events
     WOO = 44
     BYBIT = 45
+    SCROLL = 46  # on-chain Scroll events
+    ZKSYNC_LITE = 47
 
     @staticmethod
-    def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> 'Location':
+    def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> 'EVM_LOCATIONS_TYPE':
         if chain_id == ChainID.ETHEREUM:
             return Location.ETHEREUM
 
@@ -717,6 +763,9 @@ class Location(DBCharEnumMixIn):
 
         if chain_id == ChainID.GNOSIS:
             return Location.GNOSIS
+
+        if chain_id == ChainID.SCROLL:
+            return Location.SCROLL
 
         # else
         return Location.POLYGON_POS
@@ -737,12 +786,45 @@ class Location(DBCharEnumMixIn):
             return ChainID.BASE.value
         if self == Location.GNOSIS:
             return ChainID.GNOSIS.value
+        if self == Location.SCROLL:
+            return ChainID.SCROLL.value
         assert self == Location.POLYGON_POS, 'should have only been polygon pos here'
         return ChainID.POLYGON_POS.value
 
+    @staticmethod
+    def from_chain(chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE) -> 'BLOCKCHAIN_LOCATIONS_TYPE':
+        assert chain in SUPPORTED_EVM_EVMLIKE_CHAINS
+        match chain:
+            case SupportedBlockchain.ETHEREUM:
+                return Location.ETHEREUM
+            case SupportedBlockchain.OPTIMISM:
+                return Location.OPTIMISM
+            case SupportedBlockchain.POLYGON_POS:
+                return Location.POLYGON_POS
+            case SupportedBlockchain.ARBITRUM_ONE:
+                return Location.ARBITRUM_ONE
+            case SupportedBlockchain.BASE:
+                return Location.BASE
+            case SupportedBlockchain.GNOSIS:
+                return Location.GNOSIS
+            case SupportedBlockchain.SCROLL:
+                return Location.SCROLL
+            case SupportedBlockchain.ZKSYNC_LITE:
+                return Location.ZKSYNC_LITE
+            case _:  # should never happen
+                raise AssertionError(f'Got in Location.from_chain for {chain}')
 
-EVM_LOCATIONS_TYPE_ = Literal[Location.ETHEREUM, Location.OPTIMISM, Location.POLYGON_POS, Location.ARBITRUM_ONE, Location.BASE, Location.GNOSIS]  # noqa: E501
-EVM_LOCATIONS: tuple[EVM_LOCATIONS_TYPE_, ...] = typing.get_args(EVM_LOCATIONS_TYPE_)
+
+EVM_LOCATIONS_TYPE = Literal[Location.ETHEREUM, Location.OPTIMISM, Location.POLYGON_POS, Location.ARBITRUM_ONE, Location.BASE, Location.GNOSIS, Location.SCROLL]  # noqa: E501
+EVM_LOCATIONS: tuple[EVM_LOCATIONS_TYPE, ...] = typing.get_args(EVM_LOCATIONS_TYPE)
+EVMLIKE_LOCATIONS_TYPE = Literal[Location.ZKSYNC_LITE]
+EVMLIKE_LOCATIONS: tuple[EVMLIKE_LOCATIONS_TYPE, ...] = typing.get_args(EVMLIKE_LOCATIONS_TYPE)
+EVM_EVMLIKE_LOCATIONS_TYPE = EVM_LOCATIONS_TYPE | EVMLIKE_LOCATIONS_TYPE
+EVM_EVMLIKE_LOCATIONS: tuple[EVM_EVMLIKE_LOCATIONS_TYPE, ...] = EVM_LOCATIONS + EVMLIKE_LOCATIONS
+
+# For now Location enum has only evmlike chains. This will change so keep separate variable
+BLOCKCHAIN_LOCATIONS_TYPE: TypeAlias = EVM_EVMLIKE_LOCATIONS_TYPE
+BLOCKCHAIN_LOCATIONS: Final = EVM_EVMLIKE_LOCATIONS
 
 
 class AssetMovementCategory(DBCharEnumMixIn):
@@ -851,9 +933,58 @@ class AddressbookEntry(NamedTuple):
         return f'Addressbook entry with name "{self.name}", address "{self.address}" and blockchain {str(self.blockchain) if self.blockchain is not None else None}'  # noqa: E501
 
 
-class OptionalChainAddress(NamedTuple):
-    address: ChecksumAddress
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+class LocationAssetMappingDeleteEntry:
+    location: 'Location | None'
+    location_symbol: str
+
+    @classmethod
+    def deserialize(cls: type['LocationAssetMappingDeleteEntry'], data: dict[str, Any]) -> 'LocationAssetMappingDeleteEntry':  # noqa: E501
+        """May raise:
+        -DeserializationError if required keys are missing
+        """
+        try:
+            return cls(
+                location=data['location'],
+                location_symbol=data['location_symbol'],
+            )
+        except KeyError as e:
+            raise DeserializationError(f'Missing key {e!s}') from e
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=True)
+class LocationAssetMappingUpdateEntry(LocationAssetMappingDeleteEntry):
+    asset: 'Asset'
+
+    @classmethod
+    def deserialize(cls: type['LocationAssetMappingUpdateEntry'], data: dict[str, Any]) -> 'LocationAssetMappingUpdateEntry':  # noqa: E501
+        """May raise:
+        -DeserializationError if required keys are missing
+        """
+        try:
+            return cls(
+                asset=data['asset'],
+                location=data['location'],
+                location_symbol=data['location_symbol'],
+            )
+        except KeyError as e:
+            raise DeserializationError(f'Missing key {e!s}') from e
+
+
+T = TypeVar('T')
+
+
+class GenericOptionalChainAddress(Generic[T], NamedTuple):
+    address: T
     blockchain: SupportedBlockchain | None
+
+
+class OptionalChainAddress(GenericOptionalChainAddress[ChecksumAddress]):
+    ...
+
+
+class OptionalBlockchainAddress(GenericOptionalChainAddress[BlockchainAddress]):
+    ...
 
 
 class ChainAddress(OptionalChainAddress):

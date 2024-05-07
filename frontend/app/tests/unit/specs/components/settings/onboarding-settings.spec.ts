@@ -64,7 +64,7 @@ describe('onboardingSetting.vue', () => {
       pinia,
       vuetify,
       stubs: {
-        VSelect: {
+        RuiMenuSelect: {
           template: `
             <div>
               <input :value="value" class="input" type="text" @input="$emit('input', $event.value)">
@@ -86,11 +86,11 @@ describe('onboardingSetting.vue', () => {
 
   beforeEach(async () => {
     wrapper = createWrapper();
-    await wrapper.vm.$nextTick();
+    await nextTick();
   });
 
   describe('standard settings', () => {
-    it('use default value from info api or electron config, save button should be disabled', async () => {
+    it('use default value from info api or electron config, save button should be disabled', () => {
       const dataDirectoryInput = wrapper.find(
         '[data-cy=user-data-directory-input] input',
       ).element as HTMLInputElement;
@@ -125,7 +125,7 @@ describe('onboardingSetting.vue', () => {
         .find('[data-cy=user-data-directory-input] input')
         .setValue(newDataDirectory);
 
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       await wrapper
         .find('[data-cy=onboarding-setting__submit-button]')
@@ -157,7 +157,7 @@ describe('onboardingSetting.vue', () => {
         .find('.loglevel-input .input')
         .trigger('input', { value: 'warning' });
 
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       await wrapper
         .find('[data-cy=onboarding-setting__submit-button]')
@@ -184,7 +184,7 @@ describe('onboardingSetting.vue', () => {
         .find('.loglevel-input .input')
         .trigger('input', { value: 'debug' });
 
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       await wrapper
         .find('[data-cy=onboarding-setting__submit-button]')
@@ -196,16 +196,16 @@ describe('onboardingSetting.vue', () => {
     });
   });
 
-  describe('advanced settings', async () => {
+  describe('advanced settings', () => {
     beforeEach(async () => {
       await wrapper
-        .find('[data-cy=onboarding-setting__advance-toggle]')
+        .find('[data-cy=onboarding-setting__advance] .accordion__header')
         .trigger('click');
 
-      await wrapper.vm.$nextTick();
+      await nextTick();
     });
 
-    it('use default value from info api or electron config, save button should be disabled', async () => {
+    it('use default value from info api or electron config, save button should be disabled', () => {
       const maxLogSizeInput = wrapper.find('[data-cy=max-log-size-input] input')
         .element as HTMLInputElement;
       expect(maxLogSizeInput.value).toBe('300');
@@ -234,7 +234,7 @@ describe('onboardingSetting.vue', () => {
         .find('[data-cy=sqlite-instructions-input] input')
         .setValue(5001);
 
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       await wrapper
         .find('[data-cy=onboarding-setting__submit-button]')
@@ -246,13 +246,13 @@ describe('onboardingSetting.vue', () => {
         sqliteInstructions: 5001,
       });
 
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       // reset button
       await wrapper
         .find('[data-cy=reset-max-log-size] button')
         .trigger('click');
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       const maxLogSizeInput = wrapper.find('[data-cy=max-log-size-input] input')
         .element as HTMLInputElement;
@@ -261,7 +261,7 @@ describe('onboardingSetting.vue', () => {
       await wrapper
         .find('[data-cy=reset-max-log-files] button')
         .trigger('click');
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       const maxLogFilesInput = wrapper.find(
         '[data-cy=max-log-files-input] input',
@@ -271,7 +271,7 @@ describe('onboardingSetting.vue', () => {
       await wrapper
         .find('[data-cy=reset-sqlite-instructions] button')
         .trigger('click');
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       const sqliteInstructions = wrapper.find(
         '[data-cy=sqlite-instructions-input] input',

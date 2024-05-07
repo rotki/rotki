@@ -18,14 +18,14 @@ const routes = setupLayouts([
   },
   {
     path: Routes.USER_LOGIN,
-    component: async () => import('../pages/user/login/index.vue'),
+    component: async () => await import('../pages/user/login/index.vue'),
     meta: {
       layout: 'auth',
     },
   },
   {
     path: Routes.USER_CREATE,
-    component: async () => import('../pages/user/create/index.vue'),
+    component: async () => await import('../pages/user/create/index.vue'),
     meta: {
       layout: 'auth',
     },
@@ -37,14 +37,14 @@ const routes = setupLayouts([
   {
     path: Routes.DASHBOARD,
     name: 'dashboard',
-    component: async () => import('../pages/dashboard/index.vue'),
+    component: async () => await import('../pages/dashboard/index.vue'),
     meta: {
       noteLocation: NoteLocation.DASHBOARD,
     },
   },
   {
     path: Routes.ACCOUNTS_BALANCES,
-    component: async () => import('../pages/balances/index.vue'),
+    component: async () => await import('../pages/balances/index.vue'),
     children: [
       {
         path: '',
@@ -54,7 +54,7 @@ const routes = setupLayouts([
       {
         path: Routes.ACCOUNTS_BALANCES_BLOCKCHAIN,
         name: 'accounts-balances-blockchain',
-        component: () => import('../pages/balances/blockchain/index.vue'),
+        component: async () => await import('../pages/balances/blockchain/index.vue'),
         meta: {
           noteLocation: NoteLocation.ACCOUNTS_BALANCES_BLOCKCHAIN,
         },
@@ -62,14 +62,14 @@ const routes = setupLayouts([
       {
         path: Routes.ACCOUNTS_BALANCES_EXCHANGE,
         name: 'accounts-balances-exchange',
-        component: () => import('../pages/balances/exchange/index.vue'),
+        component: async () => await import('../pages/balances/exchange/index.vue'),
         meta: {
           noteLocation: NoteLocation.ACCOUNTS_BALANCES_EXCHANGE,
         },
       },
       {
         path: `${Routes.ACCOUNTS_BALANCES_EXCHANGE}/:exchange`,
-        component: () => import('../pages/balances/exchange/index.vue'),
+        component: async () => await import('../pages/balances/exchange/index.vue'),
         meta: {
           noteLocation: NoteLocation.ACCOUNTS_BALANCES_EXCHANGE,
         },
@@ -81,7 +81,7 @@ const routes = setupLayouts([
         meta: {
           noteLocation: NoteLocation.ACCOUNTS_BALANCES_NON_FUNGIBLE,
         },
-        component: () => import('../pages/balances/non-fungible/index.vue'),
+        component: async () => await import('../pages/balances/non-fungible/index.vue'),
       },
       {
         path: Routes.ACCOUNTS_BALANCES_MANUAL,
@@ -89,7 +89,7 @@ const routes = setupLayouts([
         meta: {
           noteLocation: NoteLocation.ACCOUNTS_BALANCES_MANUAL,
         },
-        component: () => import('../pages/balances/manual/index.vue'),
+        component: async () => await import('../pages/balances/manual/index.vue'),
       },
     ],
   },
@@ -99,11 +99,11 @@ const routes = setupLayouts([
     meta: {
       noteLocation: NoteLocation.NFTS,
     },
-    component: async () => import('../pages/nfts/index.vue'),
+    component: async () => await import('../pages/nfts/index.vue'),
   },
   {
     path: Routes.HISTORY,
-    component: async () => import('../pages/history/index.vue'),
+    component: async () => await import('../pages/history/index.vue'),
     children: [
       {
         path: '',
@@ -116,7 +116,7 @@ const routes = setupLayouts([
         meta: {
           noteLocation: NoteLocation.HISTORY_TRADES,
         },
-        component: async () => import('../pages/history/trades/index.vue'),
+        component: async () => await import('../pages/history/trades/index.vue'),
       },
       {
         path: Routes.HISTORY_DEPOSITS_WITHDRAWALS,
@@ -124,8 +124,7 @@ const routes = setupLayouts([
         meta: {
           noteLocation: NoteLocation.HISTORY_DEPOSITS_WITHDRAWALS,
         },
-        component: () =>
-          import('../pages/history/deposits-withdrawals/index.vue'),
+        component: async () => await import('../pages/history/deposits-withdrawals/index.vue'),
       },
       {
         path: Routes.HISTORY_EVENTS,
@@ -133,13 +132,13 @@ const routes = setupLayouts([
         meta: {
           noteLocation: NoteLocation.HISTORY_EVENTS,
         },
-        component: () => import('../pages/history/transactions/index.vue'),
+        component: async () => await import('../pages/history/transactions/index.vue'),
       },
     ],
   },
   {
     path: Routes.DEFI,
-    component: async () => import('../pages/defi/index.vue'),
+    component: async () => await import('../pages/defi/index.vue'),
     meta: {
       noteLocation: NoteLocation.DEFI,
     },
@@ -152,11 +151,11 @@ const routes = setupLayouts([
       {
         path: Routes.DEFI_OVERVIEW,
         name: 'defi-overview',
-        component: async () => import('../pages/defi/overview/index.vue'),
+        component: async () => await import('../pages/defi/overview/index.vue'),
       },
       {
         path: Routes.DEFI_DEPOSITS,
-        component: async () => import('../pages/defi/deposits/index.vue'),
+        component: async () => await import('../pages/defi/deposits/index.vue'),
         children: [
           {
             path: '',
@@ -166,13 +165,11 @@ const routes = setupLayouts([
           {
             path: Routes.DEFI_DEPOSITS_PROTOCOLS,
             name: 'defi-deposits-protocols',
-            component: async () =>
-              import('../pages/defi/deposits/protocols/index.vue'),
+            component: async () => await import('../pages/defi/deposits/protocols/index.vue'),
           },
           {
             path: Routes.DEFI_DEPOSITS_LIQUIDITY,
-            component: async () =>
-              import('../pages/defi/deposits/liquidity/index.vue'),
+            component: async () => await import('../pages/defi/deposits/liquidity/index.vue'),
             props: (route: Route) => ({
               location: route.params.location ?? null,
             }),
@@ -182,11 +179,11 @@ const routes = setupLayouts([
       {
         path: Routes.DEFI_LIABILITIES,
         name: 'defi-liabilities',
-        component: async () => import('../pages/defi/liabilities/index.vue'),
+        component: async () => await import('../pages/defi/liabilities/index.vue'),
       },
       {
         path: Routes.DEFI_AIRDROPS,
-        component: async () => import('../pages/defi/airdrops/index.vue'),
+        component: async () => await import('../pages/defi/airdrops/index.vue'),
       },
     ],
   },
@@ -196,30 +193,30 @@ const routes = setupLayouts([
     meta: {
       noteLocation: NoteLocation.STATISTICS,
     },
-    component: async () => import('../pages/statistics/index.vue'),
+    component: async () => await import('../pages/statistics/index.vue'),
   },
   {
     path: Routes.STAKING,
     meta: {
       noteLocation: NoteLocation.STAKING,
     },
-    component: async () => import('../pages/staking/index.vue'),
+    component: async () => await import('../pages/staking/index.vue'),
     props: (route: Route) => ({ location: route.params.location ?? null }),
   },
   {
     path: Routes.PROFIT_LOSS_REPORTS,
-    component: async () => import('../pages/reports/wrapper.vue'),
+    component: async () => await import('../pages/reports/wrapper.vue'),
     children: [
       {
         path: '',
-        component: async () => import('../pages/reports/index.vue'),
+        component: async () => await import('../pages/reports/index.vue'),
         meta: {
           noteLocation: NoteLocation.PROFIT_LOSS_REPORTS,
         },
       },
       {
         path: Routes.PROFIT_LOSS_REPORT,
-        component: async () => import('../pages/reports/[id].vue'),
+        component: async () => await import('../pages/reports/[id].vue'),
         meta: {
           canNavigateBack: true,
           noteLocation: NoteLocation.PROFIT_LOSS_REPORTS,
@@ -232,7 +229,7 @@ const routes = setupLayouts([
     meta: {
       noteLocation: NoteLocation.ASSETS,
     },
-    component: async () => import('../pages/asset-manager/index.vue'),
+    component: async () => await import('../pages/asset-manager/index.vue'),
     children: [
       {
         path: '',
@@ -242,28 +239,41 @@ const routes = setupLayouts([
       {
         path: Routes.ASSET_MANAGER_MANAGED,
         name: 'asset-manager-managed',
-        component: async () =>
-          import('../pages/asset-manager/managed/index.vue'),
+        component: async () => await import('../pages/asset-manager/managed/index.vue'),
         props: (route: Route) => ({ identifier: route.query.id ?? null }),
       },
       {
         path: Routes.ASSET_MANAGER_CUSTOM,
         name: 'asset-manager-custom',
-        component: async () =>
-          import('../pages/asset-manager/custom/index.vue'),
+        component: async () => await import('../pages/asset-manager/custom/index.vue'),
         props: (route: Route) => ({ identifier: route.query.id ?? null }),
       },
       {
-        path: Routes.ASSET_MANAGER_NEWLY_DETECTED,
-        name: 'asset-manager-newly-detected',
-        component: async () =>
-          import('../pages/asset-manager/newly-detected/index.vue'),
+        path: Routes.ASSET_MANAGER_MORE,
+        component: async () => await import('../pages/asset-manager/more/index.vue'),
+        children: [
+          {
+            path: '',
+            name: 'asset-manager-more',
+            redirect: Routes.ASSET_MANAGER_CEX_MAPPING,
+          },
+          {
+            path: Routes.ASSET_MANAGER_NEWLY_DETECTED,
+            name: 'asset-manager-newly-detected',
+            component: async () => await import('../pages/asset-manager/newly-detected/index.vue'),
+          },
+          {
+            path: Routes.ASSET_MANAGER_CEX_MAPPING,
+            name: 'asset-manager-cex-mapping',
+            component: async () => await import('../pages/asset-manager/cex-mapping/index.vue'),
+          },
+        ],
       },
     ],
   },
   {
     path: Routes.PRICE_MANAGER,
-    component: async () => import('../pages/price-manager/index.vue'),
+    component: async () => await import('../pages/price-manager/index.vue'),
     meta: {
       canNavigateBack: true,
       noteLocation: NoteLocation.PRICE_MANAGER,
@@ -278,13 +288,12 @@ const routes = setupLayouts([
       {
         path: Routes.PRICE_MANAGER_LATEST,
         name: 'price-manager-current',
-        component: async () => import('../pages/price-manager/latest/index.vue'),
+        component: async () => await import('../pages/price-manager/latest/index.vue'),
       },
       {
         path: Routes.PRICE_MANAGER_HISTORIC,
         name: 'price-manager-historic',
-        component: async () =>
-          import('../pages/price-manager/historic/index.vue'),
+        component: async () => await import('../pages/price-manager/historic/index.vue'),
       },
     ],
   },
@@ -293,14 +302,14 @@ const routes = setupLayouts([
     meta: {
       noteLocation: NoteLocation.ADDRESS_BOOK_MANAGER,
     },
-    component: async () => import('../pages/address-book-manager/index.vue'),
+    component: async () => await import('../pages/address-book-manager/index.vue'),
   },
   {
     path: Routes.API_KEYS,
     meta: {
       noteLocation: NoteLocation.API_KEYS,
     },
-    component: async () => import('../pages/settings/api-keys/index.vue'),
+    component: async () => await import('../pages/settings/api-keys/index.vue'),
     children: [
       {
         path: '',
@@ -308,17 +317,15 @@ const routes = setupLayouts([
       },
       {
         path: Routes.API_KEYS_ROTKI_PREMIUM,
-        component: async () =>
-          import('../pages/settings/api-keys/premium/index.vue'),
+        component: async () => await import('../pages/settings/api-keys/premium/index.vue'),
       },
       {
         path: Routes.API_KEYS_EXCHANGES,
-        component: () =>
-          import('../pages/settings/api-keys/exchanges/index.vue'),
+        component: async () => await import('../pages/settings/api-keys/exchanges/index.vue'),
       },
       {
         path: Routes.API_KEYS_EXTERNAL_SERVICES,
-        component: () => import('../pages/settings/api-keys/external/index.vue'),
+        component: async () => await import('../pages/settings/api-keys/external/index.vue'),
       },
     ],
   },
@@ -328,11 +335,11 @@ const routes = setupLayouts([
     meta: {
       noteLocation: NoteLocation.IMPORT,
     },
-    component: async () => import('../pages/import/index.vue'),
+    component: async () => await import('../pages/import/index.vue'),
   },
   {
     path: Routes.SETTINGS,
-    component: async () => import('../pages/settings/index.vue'),
+    component: async () => await import('../pages/settings/index.vue'),
     children: [
       {
         path: '',
@@ -343,7 +350,7 @@ const routes = setupLayouts([
         meta: {
           noteLocation: NoteLocation.SETTINGS_GENERAL,
         },
-        component: async () => import('../pages/settings/general/index.vue'),
+        component: async () => await import('../pages/settings/general/index.vue'),
       },
       {
         path: Routes.SETTINGS_ACCOUNTING,
@@ -351,28 +358,27 @@ const routes = setupLayouts([
           canNavigateBack: true,
           noteLocation: NoteLocation.SETTINGS_ACCOUNTING,
         },
-        component: async () => import('../pages/settings/accounting/index.vue'),
+        component: async () => await import('../pages/settings/accounting/index.vue'),
       },
       {
         path: Routes.SETTINGS_DATA_SECURITY,
         meta: {
           noteLocation: NoteLocation.SETTINGS_DATA_SECURITY,
         },
-        component: async () =>
-          import('../pages/settings/data-security/index.vue'),
+        component: async () => await import('../pages/settings/data-security/index.vue'),
       },
       {
         path: Routes.SETTINGS_MODULES,
         meta: {
           noteLocation: NoteLocation.SETTINGS_MODULES,
         },
-        component: async () => import('../pages/settings/modules/index.vue'),
+        component: async () => await import('../pages/settings/modules/index.vue'),
       },
     ],
   },
   {
     path: Routes.ASSETS,
-    component: async () => import('../pages/assets/[identifier].vue'),
+    component: async () => await import('../pages/assets/[identifier].vue'),
     meta: {
       canNavigateBack: true,
       noteLocation: NoteLocation.ASSETS,
@@ -381,10 +387,19 @@ const routes = setupLayouts([
   },
   {
     path: Routes.LOCATIONS,
-    component: async () => import('../pages/locations/[identifier].vue'),
+    component: async () => await import('../pages/locations/[identifier].vue'),
     meta: {
       canNavigateBack: true,
       noteLocation: NoteLocation.LOCATIONS,
+    },
+    props: true,
+  },
+  {
+    path: Routes.CALENDAR,
+    component: async () => await import('../pages/calendar/index.vue'),
+    meta: {
+      canNavigateBack: true,
+      noteLocation: NoteLocation.CALENDAR,
     },
     props: true,
   },
@@ -393,13 +408,13 @@ const routes = setupLayouts([
         {
           path: '/playground',
           name: 'playground',
-          component: async () => import('../pages/playground/index.vue'),
+          component: async () => await import('../pages/playground/index.vue'),
         },
       ]
     : []),
 ]);
 
-const router = new Router({
+export const router = new Router({
   mode: 'hash',
   base,
   scrollBehavior: (to, from, savedPosition) => {
@@ -444,5 +459,3 @@ router.beforeEach((to, from, next) => {
     next(Routes.USER_LOGIN);
   }
 });
-
-export default router;

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import Fragment from '@/components/helper/Fragment';
-import { externalAssets } from '@/data/external-links';
 
 const { appVersion } = storeToRefs(useMainStore());
 
@@ -77,10 +76,10 @@ const steps = [
     <AccountManagementAside class="hidden lg:flex justify-between">
       <div class="p-12">
         <div class="mb-10">
-          <RuiLogo
-            class="!h-8"
+          <RotkiLogo
+            size="2"
+            unique-key="1"
             text
-            :custom-src="externalAssets.logo.drawer"
           />
         </div>
         <div>

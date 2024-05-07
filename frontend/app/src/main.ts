@@ -1,14 +1,14 @@
 /* istanbul ignore file */
 import { PiniaVuePlugin, createPinia } from 'pinia';
-import Vue, { provide } from 'vue';
+import Vue from 'vue';
 import App from '@/App.vue';
 import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import 'typeface-roboto-mono';
 import { vuetify } from '@/plugins/vuetify';
 import { usePremiumApi } from '@/premium/setup-interface';
-import i18n from './i18n';
-import router from './router';
-import createRuiPlugin from './plugins/rui';
+import { i18n } from './i18n';
+import { router } from './router';
+import { createRuiPlugin } from './plugins/rui';
 
 import '@/plugins/rui';
 import '@/main.scss';
@@ -55,7 +55,7 @@ setActivePinia(pinia);
 const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
 
 const rui = createRuiPlugin({
-  table: { itemsPerPage, globalItemsPerPage: true, limits: [10, 25, 50, 100] },
+  table: { itemsPerPage, globalItemsPerPage: true, limits: [10, 25, 50, 100], stickyOffset: 60 },
 });
 
 Vue.use(rui);

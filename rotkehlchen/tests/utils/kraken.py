@@ -3,19 +3,18 @@ import random
 from pathlib import Path
 from typing import Any
 
-from rotkehlchen.assets.converters import KRAKEN_TO_WORLD
-from rotkehlchen.assets.exchanges_mappings.kraken import WORLD_TO_KRAKEN
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.exchanges.data_structures import TradeType
 from rotkehlchen.exchanges.kraken import KRAKEN_DELISTED, Kraken
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.factories import (
     make_random_positive_fval,
     make_random_timestamp,
     make_random_uppercasenumeric_string,
 )
-from rotkehlchen.types import ApiKey, ApiSecret, Timestamp
+from rotkehlchen.types import ApiKey, ApiSecret, Location, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.serialization import jsonloads_dict
@@ -319,13 +318,21 @@ KRAKEN_GENERAL_LEDGER_RESPONSE = """
 """
 
 
+def get_kraken_assets_from_globaldb() -> list[str]:
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        return cursor.execute(
+            'SELECT exchange_symbol FROM location_asset_mappings WHERE location IS ? OR location IS NULL;',  # noqa: E501
+            (Location.KRAKEN.serialize_for_db(),),
+        ).fetchall()
+
+
 def get_random_kraken_asset() -> str:
-    kraken_assets = set(KRAKEN_TO_WORLD.keys()) - set(KRAKEN_DELISTED)
+    kraken_assets = set(get_kraken_assets_from_globaldb()) - set(KRAKEN_DELISTED)
     return random.choice(list(kraken_assets))
 
 
 def generate_random_kraken_balance_response() -> dict[str, FVal]:
-    kraken_assets = set(KRAKEN_TO_WORLD.keys()) - set(KRAKEN_DELISTED)
+    kraken_assets = set(get_kraken_assets_from_globaldb()) - set(KRAKEN_DELISTED)
     number_of_assets = random.randrange(0, len(kraken_assets))
     chosen_assets = random.sample(list(kraken_assets), number_of_assets)
 
@@ -362,7 +369,17 @@ def create_kraken_trade(
     if base_asset is None or quote_asset is None:
         pair = random.choice(tradeable_pairs)
     else:
-        pair = WORLD_TO_KRAKEN[base_asset] + WORLD_TO_KRAKEN[quote_asset]
+        base_symbol = GlobalDBHandler.get_exchange_name_from_assetid(
+            exchange=Location.KRAKEN,
+            asset_identifier=base_asset,
+        )
+        quote_symbol = GlobalDBHandler.get_exchange_name_from_assetid(
+            exchange=Location.KRAKEN,
+            asset_identifier=quote_asset,
+        )
+        assert base_symbol is not None
+        assert quote_symbol is not None
+        pair = base_symbol + quote_symbol
 
     trade['pair'] = pair
     if time:

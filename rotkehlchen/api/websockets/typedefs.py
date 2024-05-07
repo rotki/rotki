@@ -14,8 +14,8 @@ class WSMessageType(Enum):
     EVM_TRANSACTION_STATUS = auto()
     PREMIUM_STATUS_UPDATE = auto()
     DB_UPGRADE_STATUS = auto()
-    # Used for evm address migration after new chain integration
-    EVM_ACCOUNTS_DETECTION = auto()
+    # Used for evm/evmlike address migration after new chain integration
+    EVMLIKE_ACCOUNTS_DETECTION = auto()
     # Used for when a new token is found and saved via processing evm transactions
     NEW_EVM_TOKEN_DETECTED = auto()
     DATA_MIGRATION_STATUS = auto()
@@ -25,6 +25,7 @@ class WSMessageType(Enum):
     DATABASE_UPLOAD_RESULT = auto()
     ACCOUNTING_RULE_CONFLICT = auto()
     EVM_UNDECODED_TRANSACTIONS = auto()
+    CALENDAR_REMINDER = auto()
 
     def __str__(self) -> str:
         return self.name.lower()  # pylint: disable=no-member

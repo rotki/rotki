@@ -5,15 +5,13 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
+from rotkehlchen.chain.evm.constants import MERKLE_CLAIM
 from rotkehlchen.chain.evm.decoding.base import BaseDecoderToolsWithDSProxy
 from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoderWithDSProxy
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
-    FAILED_ENRICHMENT_OUTPUT,
     ActionItem,
     DecodingOutput,
-    EnricherContext,
-    TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
@@ -33,7 +31,6 @@ from .constants import (
     GOVERNORALPHA_PROPOSE,
     GOVERNORALPHA_PROPOSE_ABI,
     GTC_CLAIM,
-    ONEINCH_CLAIM,
 )
 
 if TYPE_CHECKING:
@@ -95,7 +92,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
                     event.notes = f'Claim {event.balance.amount} GTC from the GTC airdrop'
             return DEFAULT_DECODING_OUTPUT
 
-        if tx_log.topics[0] == ONEINCH_CLAIM and tx_log.address == '0xE295aD71242373C37C5FdA7B57F26f9eA1088AFe':  # noqa: E501
+        if tx_log.topics[0] == MERKLE_CLAIM and tx_log.address == '0xE295aD71242373C37C5FdA7B57F26f9eA1088AFe':  # noqa: E501
             for event in decoded_events:
                 if event.asset == A_1INCH and event.event_type == HistoryEventType.RECEIVE:
                     event.event_subtype = HistoryEventSubType.AIRDROP
@@ -165,23 +162,6 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
         return DEFAULT_DECODING_OUTPUT
 
     # -- methods that need to be implemented by child classes --
-
-    def _enrich_protocol_tranfers(self, context: EnricherContext) -> TransferEnrichmentOutput:
-        for enrich_call in self.rules.token_enricher_rules:
-            try:
-                transfer_enrich: TransferEnrichmentOutput = enrich_call(context)
-            except (UnknownAsset, WrongAssetType) as e:
-                log.error(
-                    f'Failed to enrich transfer due to unknown asset '
-                    f'{context.event.asset}. {e!s}',
-                )
-                # Don't try other rules since all of them will fail to resolve the asset
-                return FAILED_ENRICHMENT_OUTPUT
-
-            if transfer_enrich != FAILED_ENRICHMENT_OUTPUT:
-                return transfer_enrich
-
-        return FAILED_ENRICHMENT_OUTPUT
 
     @staticmethod
     def _is_non_conformant_erc721(address: ChecksumEvmAddress) -> bool:

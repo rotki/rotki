@@ -16,11 +16,13 @@ const emit = defineEmits<{
   (e: 'toggle-ignore', event: HistoryEventEntry): void;
   (e: 'redecode', data: EvmChainAndTxHash): void;
   (e: 'reset', event: EvmHistoryEvent): void;
+  (e: 'delete-tx', data: EvmChainAndTxHash): void;
 }>();
 
 const { event } = toRefs(props);
 
 const evmEvent = isEvmEventRef(event);
+const { getChain } = useSupportedChains();
 
 const { t } = useI18n();
 
@@ -28,16 +30,15 @@ const addEvent = (event: HistoryEventEntry) => emit('add-event', event);
 const toggleIgnore = (event: HistoryEventEntry) => emit('toggle-ignore', event);
 const redecode = (data: EvmChainAndTxHash) => emit('redecode', data);
 const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
+const deleteTxAndEvents = ({ txHash, location }: EvmHistoryEvent) => emit('delete-tx', { txHash, evmChain: getChain(location) });
 </script>
 
 <template>
   <div class="flex items-center">
-    <VMenu
-      transition="slide-y-transition"
-      max-width="250px"
-      min-width="200px"
-      left
-      offset-y
+    <RuiMenu
+      menu-class="max-w-[15rem]"
+      :popper="{ placement: 'bottom-end' }"
+      close-on-content-click
     >
       <template #activator="{ on }">
         <RuiButton
@@ -59,10 +60,7 @@ const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
           @click="addEvent(event)"
         >
           <template #prepend>
-            <RuiIcon
-              class="text-rui-text-secondary"
-              name="add-line"
-            />
+            <RuiIcon name="add-line" />
           </template>
           {{ t('transactions.actions.add_event_here') }}
         </RuiButton>
@@ -71,10 +69,7 @@ const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
           @click="toggleIgnore(event)"
         >
           <template #prepend>
-            <RuiIcon
-              class="text-rui-text-secondary"
-              :name="event.ignoredInAccounting ? 'eye-line' : 'eye-off-line'"
-            />
+            <RuiIcon :name="event.ignoredInAccounting ? 'eye-line' : 'eye-off-line'" />
           </template>
           {{
             event.ignoredInAccounting
@@ -89,10 +84,7 @@ const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
             @click="redecode(toEvmChainAndTxHash(evmEvent))"
           >
             <template #prepend>
-              <RuiIcon
-                class="text-rui-text-secondary"
-                name="restart-line"
-              />
+              <RuiIcon name="restart-line" />
             </template>
             {{ t('transactions.actions.redecode_events') }}
           </RuiButton>
@@ -102,15 +94,23 @@ const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
             @click="resetEvent(evmEvent)"
           >
             <template #prepend>
-              <RuiIcon
-                class="text-rui-text-secondary"
-                name="file-edit-line"
-              />
+              <RuiIcon name="file-edit-line" />
             </template>
             {{ t('transactions.actions.reset_customized_events') }}
           </RuiButton>
+          <RuiButton
+            variant="list"
+            color="error"
+            :disabled="loading"
+            @click="deleteTxAndEvents(evmEvent)"
+          >
+            <template #prepend>
+              <RuiIcon name="delete-bin-line" />
+            </template>
+            {{ t('transactions.actions.delete_transaction') }}
+          </RuiButton>
         </template>
       </div>
-    </VMenu>
+    </RuiMenu>
   </div>
 </template>

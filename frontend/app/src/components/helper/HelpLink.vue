@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { toRefs } from 'vue';
-
 const props = withDefaults(
   defineProps<{
     url: string;

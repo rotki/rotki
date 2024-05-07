@@ -3,9 +3,11 @@ withDefaults(
   defineProps<{
     tooltip: string;
     loading?: boolean;
+    disabled?: boolean;
   }>(),
   {
     loading: false,
+    disabled: false,
   },
 );
 
@@ -23,6 +25,7 @@ const css = useCssModule();
   <RefreshButton
     v-if="!slots.refreshMenu"
     :loading="loading"
+    :disabled="disabled"
     :tooltip="tooltip"
     @refresh="refresh()"
   />
@@ -30,17 +33,18 @@ const css = useCssModule();
     v-else
     class="relative pr-1"
   >
-    <VMenu
-      offset-y
-      :close-on-content-click="false"
+    <RuiMenu
+      :popper="{ placement: 'bottom-start' }"
     >
       <template #activator="{ on }">
         <RefreshButton
           :loading="loading"
+          :disabled="disabled"
           :tooltip="tooltip"
           @refresh="refresh()"
         />
         <RuiButton
+          :disabled="disabled"
           :class="css.expander"
           icon
           variant="text"
@@ -54,7 +58,7 @@ const css = useCssModule();
         </RuiButton>
       </template>
       <slot name="refreshMenu" />
-    </VMenu>
+    </RuiMenu>
   </div>
 </template>
 

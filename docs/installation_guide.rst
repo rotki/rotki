@@ -110,7 +110,7 @@ Troubleshooting
 
 If you get "The python backend crashed" or any other error please run the executable via the Command Prompt. Then provide us with the output that is visible in the prompt and this will help us debug your issue.
 
-You should also include all logs that can be found in ``<WindowsDrive>:\Users\<User>\Roaming\rotki\logs\`` (``%APPDATA%\rotki\logs``).
+You should also include all logs that can be found in ``<WindowsDrive>:\Users\<User>\AppData\Roaming\rotki\logs\`` (``%APPDATA%\rotki\logs``).
 
 Docker
 ================
@@ -463,15 +463,19 @@ Linux
 
 Make sure you have `node.js <https://nodejs.org/en/>`_ and `pnpm <https://pnpm.io/>`_. If you don't, use your linux distro's package manager to get them.
 
-rotki uses pnpm v7. To check if you have version 7 of pnpm you can run::
+rotki uses pnpm v9. To check if you have version 9 of pnpm you can run::
 
     pnpm --version
 
 If you are on an older version of pnpm, you can install it by::
 
-    pnpm install -g pnpm@8
+    pnpm install -g pnpm@9
     # or if you don't have it installed you can
-    npm install -g pnpm@8
+    npm install -g pnpm@9
+
+The first time you run pnpm you would need to run::
+
+    pnpm setup
 
 Install electron and any other dependencies by::
 
@@ -603,7 +607,7 @@ OSX
 The tl;dr version is:
 - Use a virtual env with Python 3.11.x
 - Confirm ``pip``(pip3) install correctly and up to date
-- Get your node under control with ``nvm``. It has been tested with v18
+- Get your node under control with ``nvm``. It has been tested with v20
 
 You will also need `VirtualEnv <https://virtualenv.pypa.io>`_.
 
@@ -652,15 +656,15 @@ rotki uses `Electron <https://electronjs.org>`, we need to install it. To do so 
 
     $ brew install node
 
-rotki uses pnpm v8. To check if you have version * of pnpm you can run::
+rotki uses pnpm v9. To check if you have version * of pnpm you can run::
 
     pnpm --version
 
 If you are on an older version of pnpm, you can install it by::
 
-    pnpm install -g pnpm@8
+    pnpm install -g pnpm@9
     # or if you never installed it before you can
-    npm install -g pnpm@8
+    npm install -g pnpm@9
 
 
 Almost there, we can now install all the Node.js dependencies of the frontend app:
@@ -699,7 +703,7 @@ Node & pnpm
 Install `node <https://nodejs.org/en/download/>`_.
 Install ``pnpm``::
 
-    $ npm install -g pnpm@8
+    $ npm install -g pnpm@9
 
 
 Python

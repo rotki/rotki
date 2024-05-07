@@ -14,6 +14,19 @@ export const useTxQueryStatusStore = defineStore(
       evmChain: string;
     }) => address + evmChain;
 
+    const isStatusFinished = (item: EvmTransactionQueryData): boolean =>
+      item.status === EvmTransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED;
+
+    const {
+      queryStatus,
+      isAllFinished,
+      removeQueryStatus: remove,
+      resetQueryStatus,
+    } = useQueryStatusStore<EvmTransactionQueryData>(
+      isStatusFinished,
+      createKey,
+    );
+
     const setQueryStatus = (data: EvmTransactionQueryData): void => {
       const status = { ...get(queryStatus) };
       const key = createKey(data);
@@ -35,19 +48,6 @@ export const useTxQueryStatusStore = defineStore(
 
       set(queryStatus, status);
     };
-
-    const isStatusFinished = (item: EvmTransactionQueryData): boolean =>
-      item.status === EvmTransactionsQueryStatus.QUERYING_TRANSACTIONS_FINISHED;
-
-    const {
-      queryStatus,
-      isAllFinished,
-      removeQueryStatus: remove,
-      resetQueryStatus,
-    } = useQueryStatusStore<EvmTransactionQueryData>(
-      isStatusFinished,
-      createKey,
-    );
 
     const removeQueryStatus = (data: { address: string; evmChain: string }) => {
       remove(createKey(data));

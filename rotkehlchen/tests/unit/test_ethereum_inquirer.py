@@ -9,12 +9,14 @@ from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.errors.misc import EventNotInABI
+from rotkehlchen.errors.misc import EventNotInABI, RemoteError
 from rotkehlchen.tests.utils.checks import assert_serialized_dicts_equal
 from rotkehlchen.tests.utils.ethereum import (
-    ETHEREUM_FULL_TEST_PARAMETERS,
     ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED,
+    ETHEREUM_NODES_SET_WITH_PRUNED_AND_NOT_ARCHIVED,
     ETHEREUM_TEST_PARAMETERS,
+    ETHEREUM_WEB3_AND_ETHERSCAN_TEST_PARAMETERS,
+    INFURA_ETH_NODE,
     wait_until_all_nodes_connected,
 )
 from rotkehlchen.tests.utils.factories import make_evm_address
@@ -34,10 +36,10 @@ def test_get_block_by_number(ethereum_inquirer, call_order, ethereum_manager_con
     assert block['hash'] == '0xe2217ba1639c6ca2183f40b0f800185b3901faece2462854b3162d4c5077752c'
 
 
-@pytest.mark.parametrize(*ETHEREUM_FULL_TEST_PARAMETERS)
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize(*ETHEREUM_WEB3_AND_ETHERSCAN_TEST_PARAMETERS)
 def test_get_transaction_receipt(
         ethereum_inquirer,
-        call_order,
         ethereum_manager_connect_at_start,
         database,
 ):
@@ -46,7 +48,7 @@ def test_get_transaction_receipt(
         evm_inquirer=ethereum_inquirer,
     )
     tx_hash = deserialize_evm_tx_hash('0x12d474b6cbba04fd1a14e55ef45b1eb175985612244631b4b70450c888962a89')  # noqa: E501
-    result = ethereum_inquirer.get_transaction_receipt(tx_hash, call_order=call_order)
+    result = ethereum_inquirer.get_transaction_receipt(tx_hash)
     block_hash = '0x6f3a7838a8788c3371b88df170c3643d19bad896c915a7368681292882b6ad61'
     assert result['blockHash'] == block_hash
     assert len(result['logs']) == 2
@@ -172,8 +174,9 @@ def test_use_open_nodes(ethereum_inquirer, database):
     assert result['blockHash'] == block_hash
 
 
-@pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
-def test_call_contract(ethereum_inquirer, call_order, ethereum_manager_connect_at_start):
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize(*ETHEREUM_WEB3_AND_ETHERSCAN_TEST_PARAMETERS)
+def test_call_contract(ethereum_inquirer, ethereum_manager_connect_at_start):
     wait_until_all_nodes_connected(
         connect_at_start=ethereum_manager_connect_at_start,
         evm_inquirer=ethereum_inquirer,
@@ -183,18 +186,16 @@ def test_call_contract(ethereum_inquirer, call_order, ethereum_manager_connect_a
         contract_address=yearn_ycrv_vault.address,
         abi=yearn_ycrv_vault.abi,
         method_name='symbol',
-        call_order=call_order,
     )
     assert result == 'yyDAI+yUSDC+yUSDT+yTUSD'
     # also test that doing contract.call() has the same result
-    result2 = yearn_ycrv_vault.call(ethereum_inquirer, 'symbol', call_order=call_order)
+    result2 = yearn_ycrv_vault.call(ethereum_inquirer, 'symbol')
     assert result == result2
     result = ethereum_inquirer.call_contract(
         contract_address=yearn_ycrv_vault.address,
         abi=yearn_ycrv_vault.abi,
         method_name='balanceOf',
         arguments=['0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c'],
-        call_order=call_order,
     )
     assert result >= 0
 
@@ -307,22 +308,26 @@ def test_get_log_and_receipt_etherscan_bad_tx_index(
         )
 
 
-def _test_get_blocknumber_by_time(ethereum_inquirer, etherscan):
-    result = ethereum_inquirer.get_blocknumber_by_time(1577836800, etherscan=etherscan)
+def _test_get_blocknumber_by_time(ethereum_inquirer):
+    result = ethereum_inquirer.get_blocknumber_by_time(1577836800)
     assert result == 9193265
 
 
-def test_get_blocknumber_by_time_subgraph(ethereum_inquirer):
-    """Queries the blocks subgraph for known block times"""
-    _test_get_blocknumber_by_time(ethereum_inquirer, False)
+def test_get_blocknumber_by_time_blockscout(ethereum_inquirer):
+    """Queries blockscout api for known block times"""
+    with patch(
+        'rotkehlchen.externalapis.etherscan.Etherscan.get_blocknumber_by_time',
+        side_effect=RemoteError('Mocked failed etherscan api query'),
+    ):
+        _test_get_blocknumber_by_time(ethereum_inquirer)
 
 
 def test_get_blocknumber_by_time_etherscan(ethereum_inquirer):
     """Queries etherscan for known block times"""
-    _test_get_blocknumber_by_time(ethereum_inquirer, True)
+    _test_get_blocknumber_by_time(ethereum_inquirer)
 
 
-@pytest.mark.vcr(match_on=['uri', 'method', 'raw_body'], allow_playback_repeats=True)
+@pytest.mark.vcr()
 @pytest.mark.parametrize(*ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED)
 def test_ethereum_nodes_prune_and_archive_status(
         ethereum_inquirer,
@@ -341,8 +346,10 @@ def test_ethereum_nodes_prune_and_archive_status(
             assert not web3_node.is_pruned
             assert web3_node.is_archive
 
-    # excluding etherscan
-    assert len(ethereum_inquirer.web3_mapping) == len(ethereum_manager_connect_at_start) - 1
+    if ethereum_manager_connect_at_start[0].node_info.name == 'etherscan':
+        assert len(ethereum_inquirer.web3_mapping) == 0  # excluding etherscan
+    else:
+        assert len(ethereum_inquirer.web3_mapping) == 1
 
 
 @pytest.mark.vcr(
@@ -350,7 +357,7 @@ def test_ethereum_nodes_prune_and_archive_status(
     allow_playback_repeats=True,
     filter_query_parameters=['apikey'],
 )
-@pytest.mark.parametrize(*ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED)
+@pytest.mark.parametrize(*ETHEREUM_NODES_SET_WITH_PRUNED_AND_NOT_ARCHIVED)
 def test_get_pruned_nodes_behaviour_in_txn_queries(
         ethereum_inquirer,
         ethereum_manager_connect_at_start,
@@ -423,10 +430,9 @@ def test_get_pruned_nodes_behaviour_in_txn_queries(
         assert etherscan_tx_or_tx_receipt_calls == 2
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
 def test_get_contract_deployed_block(ethereum_inquirer):
-    """Test that getting deployed block of a contract address works
-
-    TODO: Mock it with vcr.py
-    """
+    """Test that getting deployed block of a contract address works"""
     assert ethereum_inquirer.get_contract_deployed_block('0x5a464C28D19848f44199D003BeF5ecc87d090F87') == 12251871  # noqa: E501
     assert ethereum_inquirer.get_contract_deployed_block('0x9531C059098e3d194fF87FebB587aB07B30B1306') is None  # noqa: E501

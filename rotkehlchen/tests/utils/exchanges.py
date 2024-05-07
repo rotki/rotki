@@ -1,11 +1,11 @@
 import json
 import os
 from pathlib import Path
-from typing import Any
+from typing import Any, Final
 from unittest.mock import patch
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
-from rotkehlchen.assets.converters import KRAKEN_TO_WORLD, asset_from_kraken
+from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_ETH, A_ETH2, A_EUR
 from rotkehlchen.db.dbhandler import DBHandler
@@ -31,6 +31,7 @@ from rotkehlchen.exchanges.poloniex import Poloniex
 from rotkehlchen.exchanges.utils import create_binance_symbols_to_pair
 from rotkehlchen.exchanges.woo import Woo
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.constants import A_XMR
 from rotkehlchen.tests.utils.factories import (
     make_api_key,
@@ -52,7 +53,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 
-POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE = """{
+POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE: Final = """{
   "adjustments": [],
   "withdrawals": [
     {
@@ -118,7 +119,7 @@ POLONIEX_MOCK_DEPOSIT_WITHDRAWALS_RESPONSE = """{
   }]
 }"""
 
-POLONIEX_BALANCES_RESPONSE = """[{
+POLONIEX_BALANCES_RESPONSE: Final = """[{
     "accountId": 1337,
     "accountType": "SPOT",
     "balances": [{
@@ -133,7 +134,7 @@ POLONIEX_BALANCES_RESPONSE = """[{
 }]
 """
 
-POLONIEX_TRADES_RESPONSE = """[{
+POLONIEX_TRADES_RESPONSE: Final = """[{
     "symbol": "BCH_BTC",
     "id": 394131412,
     "createTime": 1539713117000,
@@ -157,7 +158,7 @@ POLONIEX_TRADES_RESPONSE = """[{
     "accountType": "SPOT"
 }]"""
 
-BINANCE_BALANCES_RESPONSE = """
+BINANCE_BALANCES_RESPONSE: Final = """
 {
   "makerCommission": 15,
   "takerCommission": 15,
@@ -187,7 +188,7 @@ BINANCE_BALANCES_RESPONSE = """
 }]}"""
 
 
-BINANCE_FUTURES_WALLET_RESPONSE = """{
+BINANCE_FUTURES_WALLET_RESPONSE: Final = """{
     "totalCrossCollateral":"5.8238577133",
     "totalBorrowed":"5.07000000",
     "totalInterest":"0.0",
@@ -211,7 +212,7 @@ BINANCE_FUTURES_WALLET_RESPONSE = """{
     ]
 }"""
 
-BINANCE_POOL_BALANCES_RESPONSE = """[
+BINANCE_POOL_BALANCES_RESPONSE: Final = """[
     {
         "poolId": 2,
         "poolName": "BUSD/USDT",
@@ -248,13 +249,13 @@ BINANCE_POOL_BALANCES_RESPONSE = """[
     }
 ]"""
 
-BINANCE_USDT_FUTURES_BALANCES_RESPONSE = """[
+BINANCE_USDT_FUTURES_BALANCES_RESPONSE: Final = """[
 {"accountAlias": "foo", "asset": "USDT", "availableBalance": "125.55", "balance": "125.55", "crossUnPnl": "0", "crossWalletBalance": "125.55", "maxWithdrawAmount": "125.55"},
  {"accountAlias": "foo", "asset": "BNB", "availableBalance": "0", "balance": "0", "crossUnPnl": "0", "crossWalletBalance": "0", "maxWithdrawAmount": "0"},
  {"accountAlias": "foo", "asset": "BUSD", "availableBalance": "0", "balance": "0", "crossUnPnl": "0", "crossWalletBalance": "0", "maxWithdrawAmount": "0"}
 ]"""  # noqa: E501
 
-BINANCE_COIN_FUTURES_BALANCES_RESPONSE = """[{"accountAlias": "boo", "asset": "ETC", "availableBalance": "0", "balance": "0", "crossUnPnl": "0", "crossWalletBalance": "0", "updateTime": 1608764079532, "withdrawAvailable": "0"},
+BINANCE_COIN_FUTURES_BALANCES_RESPONSE: Final = """[{"accountAlias": "boo", "asset": "ETC", "availableBalance": "0", "balance": "0", "crossUnPnl": "0", "crossWalletBalance": "0", "updateTime": 1608764079532, "withdrawAvailable": "0"},
  {"accountAlias": "boo", "asset": "BTC", "availableBalance": "0.5", "balance": "0.5", "crossUnPnl": "0", "crossWalletBalance": "0.5", "updateTime": 1608764079532, "withdrawAvailable": "0.5"},
  {"accountAlias": "boo", "asset": "ADA", "availableBalance": "0", "balance": "0", "crossUnPnl": "0", "crossWalletBalance": "0", "updateTime": 1608764079532, "withdrawAvailable": "0"},
  {"accountAlias": "boo", "asset": "FIL", "availableBalance": "0", "balance": "0", "crossUnPnl": "0", "crossWalletBalance": "0", "updateTime": 1608764079532, "withdrawAvailable": "0"},
@@ -271,7 +272,7 @@ BINANCE_COIN_FUTURES_BALANCES_RESPONSE = """[{"accountAlias": "boo", "asset": "E
  ]"""  # noqa: E501
 
 
-BINANCE_MYTRADES_RESPONSE = """
+BINANCE_MYTRADES_RESPONSE: Final = """
 [
     {
     "symbol": "BNBBTC",
@@ -289,7 +290,7 @@ BINANCE_MYTRADES_RESPONSE = """
     }]"""
 
 
-BINANCE_FIATBUY_RESPONSE = """{
+BINANCE_FIATBUY_RESPONSE: Final = """{
    "code": "000000",
    "message": "success",
    "data": [{
@@ -309,7 +310,7 @@ BINANCE_FIATBUY_RESPONSE = """{
 }"""
 
 
-BINANCE_FIATSELL_RESPONSE = """{
+BINANCE_FIATSELL_RESPONSE: Final = """{
    "code": "000000",
    "message": "success",
    "data": [{
@@ -329,7 +330,7 @@ BINANCE_FIATSELL_RESPONSE = """{
 }"""
 
 
-BINANCE_DEPOSITS_HISTORY_RESPONSE = """[
+BINANCE_DEPOSITS_HISTORY_RESPONSE: Final = """[
     {
         "insertTime": 1508198532000,
         "amount": 0.04670582,
@@ -348,7 +349,7 @@ BINANCE_DEPOSITS_HISTORY_RESPONSE = """[
     }
 ]"""
 
-BINANCE_WITHDRAWALS_HISTORY_RESPONSE = """[
+BINANCE_WITHDRAWALS_HISTORY_RESPONSE: Final = """[
         {
         "id":"7213fea8e94b4a5593d507237e5a555b",
         "withdrawOrderId": null,
@@ -374,7 +375,7 @@ BINANCE_WITHDRAWALS_HISTORY_RESPONSE = """[
 ]"""  # noqa: E501
 
 
-BINANCE_FIATDEPOSITS_RESPONSE = """{
+BINANCE_FIATDEPOSITS_RESPONSE: Final = """{
    "code": "000000",
    "message": "success",
    "data": [
@@ -395,7 +396,7 @@ BINANCE_FIATDEPOSITS_RESPONSE = """{
 }"""
 
 
-BINANCE_FIATWITHDRAWS_RESPONSE = """{
+BINANCE_FIATWITHDRAWS_RESPONSE: Final = """{
    "code": "000000",
    "message": "success",
    "data": [
@@ -416,7 +417,7 @@ BINANCE_FIATWITHDRAWS_RESPONSE = """{
 }"""
 
 
-BINANCE_SIMPLE_EARN_FLEXIBLE_POSITION = """{
+BINANCE_SIMPLE_EARN_FLEXIBLE_POSITION: Final = """{
     "rows":[{
         "totalAmount": "75.46000000",
         "tierAnnualPercentageRate": {
@@ -440,7 +441,7 @@ BINANCE_SIMPLE_EARN_FLEXIBLE_POSITION = """{
 }"""
 
 
-BINANCE_SIMPLE_EARN_LOCKED_POSITION = """{
+BINANCE_SIMPLE_EARN_LOCKED_POSITION: Final = """{
     "rows":[{
         "positionId": "123123",
         "projectId": "Axs*90",
@@ -457,6 +458,16 @@ BINANCE_SIMPLE_EARN_LOCKED_POSITION = """{
     }],
     "total": 1
 }"""
+
+
+BINANCE_FUNDING_WALLET_BALANCES_RESPONSE: Final = """[{
+    "asset": "USDT",
+    "free": "1",
+    "locked": "0",
+    "freeze": "0",
+    "withdrawing": "0",
+    "btcValuation": "0.00000091"
+}]"""
 
 
 def assert_binance_balances_result(balances: dict[str, Any]) -> None:
@@ -539,22 +550,24 @@ def mock_binance_balance_response(url, **kwargs):  # pylint: disable=unused-argu
     if 'bswap/liquidity' in url:
         return MockResponse(200, BINANCE_POOL_BALANCES_RESPONSE)
     if 'simple-earn/flexible/position' in url:
-        if 'current=1' in url:
+        if kwargs.get('params', {}).get('current') == 1:
             return MockResponse(200, BINANCE_SIMPLE_EARN_FLEXIBLE_POSITION)
         else:
             return MockResponse(200, '{"rows":[], "total": 1}')
     if 'simple-earn/locked/position' in url:
-        if 'current=1' in url:
+        if kwargs.get('params', {}).get('current') == 1:
             return MockResponse(200, BINANCE_SIMPLE_EARN_LOCKED_POSITION)
         else:
             return MockResponse(200, '{"rows":[], "total": 1}')
+    if 'asset/get-funding-asset' in url:
+        return MockResponse(200, BINANCE_FUNDING_WALLET_BALANCES_RESPONSE)
 
     # else
     return MockResponse(200, BINANCE_BALANCES_RESPONSE)
 
 
 def patch_binance_balances_query(binance: 'Binance'):
-    def mock_binance_asset_return(url, timeout, *args):  # pylint: disable=unused-argument
+    def mock_binance_asset_return(url, *args, **kwargs):  # pylint: disable=unused-argument
         if 'futures' in url:
             response = '{"crossCollaterals":[]}'
         elif 'lending' in url:
@@ -569,7 +582,7 @@ def patch_binance_balances_query(binance: 'Binance'):
             response = BINANCE_BALANCES_RESPONSE
         return MockResponse(200, response)
 
-    binance_patch = patch.object(binance.session, 'get', side_effect=mock_binance_asset_return)
+    binance_patch = patch.object(binance.session, 'request', side_effect=mock_binance_asset_return)
     return binance_patch
 
 
@@ -1150,6 +1163,16 @@ def mock_normal_coinbase_query(url, **kwargs):  # pylint: disable=unused-argumen
     raise AssertionError(f'Unexpected url {url} for test')
 
 
+def get_exchange_asset_symbols(exchange: Location) -> set[str]:
+    """Queries and returns all the asset symbols for a given exchange from the globalDB."""
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        cursor.execute(
+            'SELECT exchange_symbol FROM location_asset_mappings WHERE location IS ? OR location IS NULL;',  # noqa: E501
+            (exchange.serialize_for_db(),),
+        )
+        return {asset[0] for asset in cursor}
+
+
 def kraken_to_world_pair(pair: str) -> tuple[AssetWithOracles, AssetWithOracles]:
     """Turns a pair from kraken to our base/quote asset tuple
 
@@ -1159,6 +1182,8 @@ def kraken_to_world_pair(pair: str) -> tuple[AssetWithOracles, AssetWithOracles]
         - UnprocessableTradePair if the pair can't be processed and
           split into its base/quote assets
     """
+    kraken_assets = get_exchange_asset_symbols(Location.KRAKEN)
+
     # handle dark pool pairs
     if pair[-2:] == '.d':
         pair = pair[:-2]
@@ -1171,19 +1196,19 @@ def kraken_to_world_pair(pair: str) -> tuple[AssetWithOracles, AssetWithOracles]
         return A_ETH.resolve_to_asset_with_oracles(), A_DAI.resolve_to_asset_with_oracles()
     elif pair == 'ETH2.SETH':
         return A_ETH2.resolve_to_asset_with_oracles(), A_ETH.resolve_to_asset_with_oracles()
-    elif pair[0:2] in KRAKEN_TO_WORLD:
+    elif pair[0:2] in kraken_assets:
         base_asset_str = pair[0:2]
         quote_asset_str = pair[2:]
-    elif pair[0:3] in KRAKEN_TO_WORLD or pair[0:3] in {'XBT', 'ETH', 'XDG', 'LTC', 'XRP'}:
+    elif pair[0:3] in kraken_assets or pair[0:3] in {'XBT', 'ETH', 'XDG', 'LTC', 'XRP'}:
         base_asset_str = pair[0:3]
         quote_asset_str = pair[3:]
-    elif pair[0:4] in KRAKEN_TO_WORLD:
+    elif pair[0:4] in kraken_assets:
         base_asset_str = pair[0:4]
         quote_asset_str = pair[4:]
-    elif pair[0:5] in KRAKEN_TO_WORLD:
+    elif pair[0:5] in kraken_assets:
         base_asset_str = pair[0:5]
         quote_asset_str = pair[5:]
-    elif pair[0:6] in KRAKEN_TO_WORLD:
+    elif pair[0:6] in kraken_assets:
         base_asset_str = pair[0:6]
         quote_asset_str = pair[6:]
     else:

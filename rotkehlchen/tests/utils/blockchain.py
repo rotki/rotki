@@ -1,4 +1,5 @@
 import json
+import re
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
@@ -23,7 +24,7 @@ from rotkehlchen.tests.utils.eth_tokens import CONTRACT_ADDRESS_TO_TOKEN
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
-    SUPPORTED_EVM_CHAINS,
+    SUPPORTED_EVM_CHAINS_TYPE,
     BTCAddress,
     ChecksumEvmAddress,
     SupportedBlockchain,
@@ -407,7 +408,7 @@ def mock_etherscan_query(
                     response = f'{{"jsonrpc":"2.0","id":1,"result":"{result}"}}'
 
             else:
-                raise AssertionError('Unexpected etherscan multicall during tests: {url}')
+                raise AssertionError(f'Unexpected etherscan multicall during tests: {url}')
 
         elif f'api.etherscan.io/api?module=proxy&action=eth_call&to={eth_scan.address}' in url:
             if 'ethscan' in original_queries:
@@ -622,6 +623,8 @@ def setup_evm_addresses_activity_mock(
         arbitrum_one_addresses: list[ChecksumEvmAddress] | None = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
         base_addresses: list[ChecksumEvmAddress] | None = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
         gnosis_addresses: list[ChecksumEvmAddress] | None = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
+        scroll_addresses: list[ChecksumEvmAddress] | None = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
+        zksync_lite_addresses: list[ChecksumEvmAddress] | None = None,  # pylint: disable=unused-argument  # used by the saved locals  # noqa: E501, RUF100
 ) -> 'ExitStack':
     saved_locals = locals()  # bit hacky, but save locals here so they can be accessed by mock_chain_has_activity  # noqa: E501
 
@@ -640,7 +643,15 @@ def setup_evm_addresses_activity_mock(
             return FVal(1)
         return ZERO
 
-    def mock_chain_has_activity(account: ChecksumEvmAddress, chain: SUPPORTED_EVM_CHAINS):
+    def mock_zksync_lite_query_api(url, options):  # pylint: disable=unused-argument
+        re_match = re.search(r'accounts\/(0x[a-fA-F0-9]{40})\/transactions', url)
+        assert re_match, f'Unexpeced zksync lite url: {url}'
+        address = re_match.group(1)
+        if zksync_lite_addresses and address in zksync_lite_addresses:
+            return {'list': [1, 2]}  # a list with non zero length -- exists
+        return {}  # does not exist
+
+    def mock_chain_has_activity(account: ChecksumEvmAddress, chain: SUPPORTED_EVM_CHAINS_TYPE):
         addresses = saved_locals[f'{chain.to_chain_id().to_name()}_addresses']
         return EtherscanHasChainActivity.TRANSACTIONS if addresses is not None and account in addresses else EtherscanHasChainActivity.NONE  # noqa: E501
 
@@ -658,6 +669,11 @@ def setup_evm_addresses_activity_mock(
         chains_aggregator.avalanche,
         'get_avax_balance',
         side_effect=mock_avax_balance,
+    ))
+    stack.enter_context(patch.object(
+        chains_aggregator.zksync_lite,
+        '_query_api',
+        side_effect=mock_zksync_lite_query_api,
     ))
 
     for chain in EVM_CHAINS_WITH_TRANSACTIONS:

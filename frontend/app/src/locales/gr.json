@@ -15,8 +15,7 @@
     "user_agent": "User Agent:"
   },
   "account_balance_table": {
-    "liabilities": "Υποχρεώσεις",
-    "loopring": "Loopring"
+    "liabilities": "Υποχρεώσεις"
   },
   "account_balances": {
     "confirm_delete": {
@@ -58,7 +57,6 @@
       "blockchain": "Επιλέξτε blockchain | Επιλέξτε blockchains",
       "btc": {
         "derivation_path": "Derivation Path",
-        "derivation_path_hint": "Optional",
         "xpub": "XPUB"
       },
       "multiple": "Add multiple addresses"
@@ -357,15 +355,6 @@
           "title": "Querying Balancer balances"
         }
       },
-      "balancer_events": {
-        "error": {
-          "description": "Failed to query Balancer events: {message}",
-          "title": "Querying Balancer events"
-        },
-        "task": {
-          "title": "Querying Balancer events"
-        }
-      },
       "balances": {
         "error": {
           "description": "Failed to retrieve DeFi balances: {error}",
@@ -510,15 +499,6 @@
         },
         "task": {
           "title": "Querying yearn.finance Vaults {version} balances"
-        }
-      },
-      "yearn_vaults_history": {
-        "error": {
-          "description": "Failed to retrieve yearn.finance Vaults {version} history: {error}",
-          "title": "yearn.finance Vaults {version} history"
-        },
-        "task": {
-          "title": "Querying yearn.finance Vaults {version} history"
         }
       }
     },
@@ -824,11 +804,11 @@
     },
     "transactions_redecode_missing": {
       "error": {
-        "description": "Failed to retrieve missing events from transactions for address {address} ({evmChain}): {error}",
+        "description": "Failed to retrieve missing events from transactions for {chain} chain: {error}",
         "title": "Retrieving missing events from transactions"
       },
       "task": {
-        "description": "Retrieving transactions events for address: {address} ({evmChain})",
+        "description": "Retrieving transactions events for {chain} chain",
         "title": "Evm Transaction Missing Events Retrieval"
       }
     },
@@ -917,7 +897,9 @@
     "headers": {
       "source": "Source"
     },
-    "title": "Airdrops"
+    "title": "Airdrops",
+    "unknown_info": "Για αυτές τις διευθύνσεις είναι διαθέσιμες εναέριες ρίψεις, αλλά δεν μπορούμε ακόμη να αναλύσουμε αν έχουν διεκδικηθεί ή όχι.",
+    "unknown_tooltip": "Η διεύθυνση είναι επιλέξιμη για αυτό το airdrop, αλλά δεν μπορούμε ακόμα να αναλύσουμε αν έχει διεκδικηθεί ή όχι."
   },
   "alias_names": {
     "error": {
@@ -968,7 +950,7 @@
     "name_non_empty": "The name of the asset cannot be empty",
     "optional": "Optional Fields",
     "oracle_disable": "Disable/Enable the price fetching from the price oracle. If the oracle is not disabled, and there is no value specified, rotki will attempt to fetch a price using the asset symbol.",
-    "replaced": "This icon will be replaced with {name} on save.",
+    "replaced": "Αυτό το εικονίδιο θα εφαρμοστεί αφού κάνετε κλικ στην επιλογή \"«Αποθήκευση»\".",
     "type_non_empty": "The type of the asset cannot be empty",
     "types": {
       "error": "We could not load the asset types: {message}"
@@ -991,6 +973,31 @@
   },
   "asset_management": {
     "add_title": "Add a new asset",
+    "cex_mapping": {
+      "add_error": "Δεν μπόρεσε να προσθέσει την αντιστοίχιση: {message}",
+      "add_mapping": "Προσθήκη χαρτογράφησης",
+      "add_title": "Προσθήκη νέας χαρτογράφησης",
+      "all_exchanges": "Όλες οι ανταλλαγές",
+      "confirm_delete": {
+        "message": "Είστε σίγουροι ότι θέλετε να διαγράψετε την αντιστοίχιση περιουσιακών στοιχείων για το σύμβολο {asset} στο {location};",
+        "title": "Διαγραφή χαρτογράφησης περιουσιακών στοιχείων του χρηματιστηρίου"
+      },
+      "delete_error": "Δεν κατέστη δυνατή η διαγραφή της αντιστοίχισης: {message}",
+      "edit_error": "Δεν ήταν δυνατή η επεξεργασία της αντιστοίχισης: {message}",
+      "edit_title": "Επεξεργασία της χαρτογράφησης",
+      "exchange": "Exchange",
+      "filter_by_exchange": "Φιλτράρισμα με βάση την ανταλλαγή",
+      "form": {
+        "asset_non_empty": "Το πεδίο αναγνωρισμένο περιουσιακό στοιχείο δεν μπορεί να είναι κενό",
+        "location_non_empty": "Το πεδίο τοποθεσία δεν μπορεί να είναι κενό",
+        "location_symbol_non_empty": "Το πεδίο Σύμβολο περιουσιακού στοιχείου δεν μπορεί να είναι κενό"
+      },
+      "location_symbol": "Σύμβολο περιουσιακού στοιχείου",
+      "filter_by_location_symbol": "Φίλτρο ανά σύμβολο περιουσιακού στοιχείου",
+      "recognized_as": "Αναγνωρίζεται ως",
+      "save_for_all": "Αποθήκευση αυτής της αντιστοίχισης για όλες τις ανταλλαγές",
+      "subtitle": "Μπορείτε να συνδέσετε σύμβολα περιουσιακών στοιχείων σε ένα κεντρικό ανταλλακτήριο με περιουσιακά στοιχεία που αναγνωρίζονται από το rotki. Αυτό είναι απαραίτητο για να μπορεί το rotki να επεξεργάζεται περιουσιακά στοιχεία στα ανταλλακτήρια."
+    },
     "confirm_delete": {
       "message": "Are you sure you want to delete {asset} from the asset database?",
       "title": "Delete asset"
@@ -1263,19 +1270,8 @@
   "blockchain_balances": {
     "add_account": "Add Account",
     "balances": {
-      "arbitrum_one": "Arbitrum One balances",
-      "avax": "Avalanche balances",
-      "base": "Base balances",
-      "bch": "Bitcoin Cash balances",
-      "btc": "Bitcoin balances",
-      "dot": "Polkadot balances",
-      "eth": "Ethereum balances",
-      "eth2": "ETH balances",
-      "ksm": "Kusama balances",
-      "loopring": "Loopring balances",
-      "optimism": "Optimism balances",
-      "polygon_pos": "Polygon PoS balances",
-      "gnosis": "Gnosis balances"
+      "common": "{chain} balances",
+      "eth2": "ETH staking"
     },
     "form_dialog": {
       "add_title": "Add blockchain account",
@@ -1369,6 +1365,7 @@
     "cancel_task_info": "Αυτή η ενέργεια θα αφήσει την εκτελούμενη διεργασία ({title}) σε ημιτελή κατάσταση, είστε σίγουροι ότι θέλετε να την ακυρώσετε;"
   },
   "common": {
+    "entry_type": "Τύπος εισόδου",
     "account": "Account",
     "actions": {
       "back": "Back",
@@ -1395,7 +1392,8 @@
       "ok": "OK",
       "pull": "Pull",
       "push": "Push",
-      "save": "Save",
+      "save": "Αποθήκευση",
+      "save_continue": "Αποθήκευση & συνέχιση",
       "search": "Search",
       "skip": "Skip",
       "terminate": "Terminate",
@@ -1411,6 +1409,7 @@
     "balance": "Balance",
     "category": "Category",
     "claimed": "Διεκδικήθηκε",
+    "counterparty": "Counterparty",
     "datetime": "Date/Time",
     "deposits": "Deposits",
     "description": "Description",
@@ -1424,6 +1423,7 @@
     "no_premium": "No premium subscription detected. ",
     "notes": "σημειώσεις",
     "of": "από",
+    "optional": "Optional",
     "price": "Price",
     "price_in_symbol": "Price in {symbol}",
     "protocol": "Protocol",
@@ -1438,7 +1438,9 @@
     "unclaimed": "αδιεκδίκητος",
     "validator_index": "Validator Index",
     "value_in_symbol": "{symbol} Value",
-    "visit_website": "To get a premium subscription please visit our {0}."
+    "visit_website": "To get a premium subscription please visit our {0}.",
+    "unknown": "Άγνωστος",
+    "all": "Όλα"
   },
   "compound_lending": {
     "header": "Compound Loan ({asset})",
@@ -1449,11 +1451,17 @@
       "local": "Local",
       "remote": "Remote"
     },
-    "all_buttons_description": "For all conflicts",
-    "hint": "{conflicts} asset entries cannot be automatically updated. {remaining} remaining entry/ies require user input.",
-    "keep_local": "Keep Local",
-    "keep_remote": "Keep Remote",
-    "subtitle": "Local changes have been detected to the following assets. Select if you would like to keep the local version or overwrite it with the remote one.",
+    "action_hint": {
+      "top": "Εντοπίστηκαν τοπικές αλλαγές. Έχετε δύο επιλογές:",
+      "bottom": "Μπορείτε επίσης να διαχειριστείτε τις συγκρούσεις μεμονωμένα."
+    },
+    "hint": "Οι καταχωρήσεις περιουσιακών στοιχείων {conflicts} δεν μπορούν να ενημερωθούν αυτόματα. {remaining} Οι υπόλοιπες καταχωρήσεις απαιτούν την εισαγωγή δεδομένων από τον χρήστη.",
+    "resolve_all_hint": "Όλες οι συγκρούσεις θα επιλυθούν με τη χρήση δεδομένων {source}.",
+    "keep_local": "Κρατήστε τα όλα τοπικά",
+    "keep_remote": "Διατηρήστε όλα τα απομακρυσμένα",
+    "keep_local_tooltip": "Δεν θα ενημερωθεί κανένα επηρεαζόμενο περιουσιακό στοιχείο. Ενδέχεται να χρειαστούν χειροκίνητες ενημερώσεις.",
+    "keep_remote_tooltip": "Ενημερώστε όλα τα περιουσιακά στοιχεία. Δεν απαιτούνται περαιτέρω ενέργειες.",
+    "subtitle": "Οι καταχωρήσεις περιουσιακών στοιχείων {conflicts} δεν μπορούν να ενημερωθούν αυτόματα. {remaining} Οι υπόλοιπες καταχωρήσεις απαιτούν την εισαγωγή δεδομένων από τον χρήστη.",
     "table": {
       "headers": {
         "keep": "Keep",
@@ -1461,7 +1469,8 @@
         "remote": "Remote"
       }
     },
-    "title": "Conflicts detected"
+    "title": "Ανιχνεύονται συγκρούσεις",
+    "manage": "Διαχείριση συγκρούσεων"
   },
   "connection_failure": {
     "default": "Connect to default",
@@ -1622,7 +1631,6 @@
             },
             "nft": "NFT",
             "nft_hint": "Accepted format: \"_nft_{'ETH address'}_{'collection number'}\"",
-            "optional": "Optional",
             "preview": {
               "from": "From",
               "title": "This location value will be updated",
@@ -1689,13 +1697,13 @@
         "message_all": "Είστε σίγουροι ότι θέλετε να καθαρίσετε τα αποθηκευμένα δεδομένα για όλα τα {source}?",
         "title": "Επιβεβαίωση εκκαθάρισης αποθηκευμένων δεδομένων"
       },
-      "evm_transaction_purge_confirm": {
-        "message": "Είστε βέβαιοι ότι θέλετε να εκκαθαρίσετε τα αποθηκευμένα δεδομένα από τις συναλλαγές EVM; Αυτή η ενέργεια θα καταργήσει τις συναλλαγές και τις αποδείξεις και θα χρειαστεί πολύς χρόνος για να ζητήσετε τα πάντα."
-      },
       "error": "Purging the cached data for {source} failed: {message}",
       "subtitle": "Allows you to purge data cached by rotki",
       "success": "Data was successfully deleted",
-      "title": "Purge Data"
+      "title": "Purge Data",
+      "transaction_purge_confirm": {
+        "message": "Είστε σίγουροι ότι θέλετε να διαγράψετε αυτά τα δεδομένα συναλλαγών; Αυτή η ενέργεια θα αφαιρέσει τις συναλλαγές και τις αποδείξεις και θα χρειαστεί πολύς χρόνος για να ξαναζητήσετε τα πάντα."
+      }
     },
     "purge_images_cache": {
       "confirm": {
@@ -2300,13 +2308,25 @@
     "language_contribution_tooltip": "This feature is experimental and may not work as expected for some languages. This is because all static sentences in the app have to be manually translated and that is a long and ongoing process. Therefore, we need your contribution to speed it up. Click here for more information.",
     "nft_setting": {
       "label": {
-        "include_nfts": "Include NFTs in the graphs and total networth",
-        "include_nfts_hint": "By default graphs and dashboard include the value of all the NFTs"
+        "include_nfts": "Συμπεριλάβετε τα NFTs στα γραφήματα και τη συνολική καθαρή αξία",
+        "include_nfts_hint": "Από προεπιλογή τα γραφήματα και ο πίνακας οργάνων περιλαμβάνουν την αξία όλων των NFTs",
+        "render_setting": {
+          "allow_all": "Επιτρέψτε όλες τις εικόνες",
+          "only_allow_whitelisted": "Επιτρέψτε εικόνες μόνο από τομείς στη λίστα επιτρεπόμενων"
+        },
+        "whitelist_domains": "Προσθήκη διαδικτυακών τομέων στην λίστα επιτρεπομένων",
+        "whitelisted_domains": "Επιλεγμένοι τομείς",
+        "whitelisted_domains_hint": "Εισάγετε έναν ή περισσότερους τομείς που χωρίζονται με κόμμα. Πατήστε το κουμπί αποθήκευσης στα δεξιά για να αποθηκεύσετε τις αλλαγές",
+        "whitelisted_domain_entries": "Δεν υπάρχουν καταχωρήσεις | {count} μοναδική καταχώρηση | {count} μοναδικές καταχωρήσεις"
       },
       "subtitle": {
         "include_nfts": "Include NFTs in graphs and total amounts"
       },
-      "title": "NFT setting"
+      "title": "NFT setting",
+      "messages": {
+        "error": "Σφάλμα καθορισμού επιτρεπόμενων τομέων για την απεικόνιση των NFTs",
+        "success": "Οι επιτρεπόμενοι τομείς για την απεικόνιση των NFTs αποθηκεύτηκαν με επιτυχία"
+      }
     },
     "rpc_node_setting": {
       "title": "RPC node setting"
@@ -2481,8 +2501,9 @@
   },
   "import_data": {
     "binance": {
-      "line_one": "Imports: Deposits, Withdrawals, Trades, ETH Staking, Small assets exchange BNB, ETH Staking Rewards, Launchpool Interest, POS savings interest, POS savings purchase, POS savings redemption.",
-      "line_two": "Because of binance's csv format there is a chance that not all data will be imported. If this will happen, you will get warning.",
+      "line_one": "Οι στήλες που επεξεργαζόμαστε περιλαμβάνουν: User_ID, UTC_Time, Account, Operation, Coin, Change και Remark.",
+      "line_two": "Μπορείτε να λάβετε το αρχείο CSV από τη διεύθυνση {link}.",
+      "line_three": "Λόγω της μορφής CSV της Binance, υπάρχει πιθανότητα να μην εισαχθούν όλα τα δεδομένα. Εάν συμβεί αυτό, θα λάβετε μια προειδοποίηση.",
       "name": "Binance"
     },
     "bisq": {
@@ -3080,7 +3101,6 @@
   },
   "notification_sidebar": {
     "clear_tooltip": "Clear all notifications",
-    "close_tooltip": "Close the notification area",
     "confirmation": {
       "message": "This action will clear all the active notifications. Do you want to proceed?",
       "title": "Clear active notifications"
@@ -3503,6 +3523,10 @@
       "label": "Κεντρικοποιημένα ανταλλακτήρια για εκκαθάριση",
       "hint": "Αδειάστε αυτό το πεδίο για να αφαιρέσετε τα δεδομένα για όλα τα κεντρικοποιημένα ανταλλακτήρια."
     },
+    "chain_to_clear": {
+      "label": "chain για εκκαθάριση",
+      "hint": "Αδειάστε αυτό το πεδίο για να αφαιρέσετε τα δεδομένα συναλλαγής για όλες τις αλυσίδες"
+    },
     "decentralized_exchanges": "Αποκεντρωμένα ανταλλακτήρια",
     "decentralized_exchange_to_clear": {
       "label": "Αποκεντρωμένα ανταλλακτήρια για εκκαθάριση",
@@ -3513,13 +3537,9 @@
       "label": "Μονάδα DeFi για εκκαθάριση",
       "hint": "Αδειάστε αυτό το πεδίο για να αφαιρέσετε τα δεδομένα για όλες τις μονάδες defi"
     },
-    "evm_transactions": "Συναλλαγές EVM",
-    "evm_chain_to_clear": {
-      "label": "EVM chain για εκκαθάριση",
-      "hint": "Αδειάστε αυτό το πεδίο για να αφαιρέσετε τα δεδομένα συναλλαγής για όλες τις αλυσίδες"
-    },
     "label": "Επιλέξτε μια πηγή δεδομένων",
-    "tooltip": "Εκκαθάριση των αποθηκευμένων δεδομένων για την επιλεγμένη πηγή"
+    "tooltip": "Εκκαθάριση των αποθηκευμένων δεδομένων για την επιλεγμένη πηγή",
+    "transactions": "Συναλλαγές"
   },
   "queried_address_dialog": {
     "add": "Add address",
@@ -3719,7 +3739,19 @@
     "actions": {
       "add_event": "Add a new event",
       "redecode_events": "Redecode events",
-      "reset_customized_events": "Reset customized events"
+      "reset_customized_events": "Reset customized events",
+      "delete_transaction": "Διαγραφή συναλλαγών και συμβάντων"
+    },
+    "dialog": {
+      "add_tx": "Προσθήκη συναλλαγής με hash tx",
+      "delete": {
+        "message": "Είστε σίγουροι ότι θέλετε να διαγράψετε αυτή τη συναλλαγή και τα συμβάντα της; Θα πρέπει να καθαρίσετε όλες τις συναλλαγές ή να προσθέσετε από τη συναλλαγή έχει να τα αποκαταστήσετε.",
+        "title": "Διαγραφή συναλλαγής και συμβάντων",
+        "error": {
+          "message": "Απέτυχε: {message}",
+          "title": "Διαγραφή συναλλαγής EVM"
+        }
+      }
     },
     "events": {
       "actions": {
@@ -3766,12 +3798,8 @@
             "non_empty": "The asset field cannot be empty"
           }
         },
-        "counterparty": {
-          "label": "Counterparty"
-        },
         "datetime": {
-          "hint": "The date & time of when the event happened",
-          "label": "Date & time"
+          "hint": "The date & time of when the event happened"
         },
         "event_subtype": {
           "label": "Event Subtype",
@@ -3856,9 +3884,9 @@
       "date_range": "Querying {status} for {address} between {start} and {end}",
       "done_date_range": "Done querying all transactions for {address} between {start} and {end}",
       "done_end_date": "Done querying all transactions for {address} until {end}",
-      "done_group": "Done querying all transactions information for {length} address(es)",
+      "done_group": "Done querying all transactions information for {count} address | Done querying all transactions information for {count} addresses",
       "end_date": "Querying {status} for {address} until {end}",
-      "group": "Querying evm transactions information for {length} address(es)",
+      "group": "Querying evm transactions information for {count} address | Querying evm transactions information for {count} addresses",
       "latest_period_date_range": "Latest successfully queried period is between {start} and {end}",
       "latest_period_end_date": "Latest successfully queried period is until {end}",
       "statuses": {
@@ -3866,7 +3894,23 @@
         "querying_internal_transactions": "evm internal transactions",
         "querying_transactions": "evm transactions"
       },
-      "title": "Ethereum Transaction Query Status"
+      "title": "Evm Transactions Κατάσταση ερωτήματος"
+    },
+    "query_status_events": {
+      "date_range": "Αναζήτηση συμβάντων για {name} μεταξύ {start} και {end}",
+      "done_date_range": "Ολοκληρώθηκε η αναζήτηση όλων των συμβάντων για {name} μεταξύ {start} και {end}",
+      "done_end_date": "Ολοκληρώθηκε η αναζήτηση όλων των συμβάντων για {name} μέχρι {end}",
+      "done_group": "Ολοκληρώθηκε η αναζήτηση όλων των συμβάντων για την τοποθεσία {count} | Ολοκληρώθηκε η αναζήτηση όλων των συμβάντων για τις τοποθεσίες {count}",
+      "end_date": "Αναζήτηση συμβάντων για {name} μέχρι {end}",
+      "group": "Ερώτηση συμβάντων για την τοποθεσία {count} | Ερώτηση συμβάντων για τοποθεσίες {count}",
+      "latest_period_date_range": "Η τελευταία περίοδος που ζητήθηκε επιτυχώς είναι μεταξύ {start} και {end}",
+      "latest_period_end_date": "Η τελευταία περίοδος που ζητήθηκε επιτυχώς είναι μέχρι το {end}",
+      "title": "Ιστορικό Γεγονότα Κατάσταση ερώτησης"
+    },
+    "query_all": {
+      "done_group": "Ολοκληρώθηκε η αναζήτηση όλων των συμβάντων και των συναλλαγών",
+      "group": "Διερεύνηση συμβάντων και συναλλαγών",
+      "modal_title": "Κατάσταση ερώτησης"
     },
     "refresh_tooltip": "Fetch latest events",
     "title": "History Events",

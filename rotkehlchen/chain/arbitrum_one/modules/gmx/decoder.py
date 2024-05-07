@@ -61,6 +61,7 @@ class GmxDecoder(ArbitrumDecoderInterface):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
+        self.eth = A_ETH.resolve_to_crypto_asset()
 
     def _decode_swap_event(self, context: DecoderContext) -> DecodingOutput:
         """Decodes swaps using the GMX vault"""
@@ -150,12 +151,13 @@ class GmxDecoder(ArbitrumDecoderInterface):
             )
             return DEFAULT_DECODING_OUTPUT
 
-        path_token = self.base.get_or_create_evm_asset(decoded_data[0][-1])
-        index_token = self.base.get_or_create_evm_asset(decoded_data[1])
+        path_token = self.base.get_or_create_evm_asset(decoded_data[0][0])
         amount_change = asset_normalized_value(amount=decoded_data[2], asset=path_token)
-        fee_amount = asset_normalized_value(amount=decoded_data[fee_index], asset=index_token)
+        fee_amount = asset_normalized_value(amount=decoded_data[fee_index], asset=self.eth)
         is_long = decoded_data[5]
-        transferred_amount = amount_change + fee_amount
+        transferred_amount = amount_change
+        if path_token == A_WETH_ARB:
+            transferred_amount += fee_amount
 
         for event in context.decoded_events:
             if (
@@ -181,20 +183,23 @@ class GmxDecoder(ArbitrumDecoderInterface):
                 event.notes = f'{verb_text.capitalize()} {position_type} {note_proposition} {event.balance.amount} {event_asset.symbol} in GMX'  # noqa: E501
 
                 # And now create a new event for the fee
-                fee_asset = A_ETH if index_token == A_WETH_ARB else index_token
-                fee_asset_symbol = 'ETH' if fee_asset == A_ETH else index_token.symbol
                 context.decoded_events.append(self.base.make_event_from_transaction(
                     transaction=context.transaction,
                     tx_log=context.tx_log,
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.FEE,
-                    asset=fee_asset,
+                    asset=A_ETH,
                     balance=Balance(amount=fee_amount),
                     location_label=event.location_label,
-                    notes=f'Spend {fee_amount} {fee_asset_symbol} as GMX fee',
+                    notes=f'Spend {fee_amount} ETH as GMX fee',
                     counterparty=CPT_GMX,
                     address=context.transaction.to_address,
                 ))
+                event.extra_data = {
+                    'collateral_token': decoded_data[0][-1],
+                    'index_token': decoded_data[1],
+                    'is_long': is_long,
+                }
                 break  # stop iterating
 
         return DEFAULT_DECODING_OUTPUT

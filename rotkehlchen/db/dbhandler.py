@@ -8,7 +8,7 @@ from collections import defaultdict
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager, suppress
 from pathlib import Path
-from typing import Any, Literal, Optional, Unpack, cast, get_args, overload
+from typing import Any, Literal, Optional, Unpack, cast, overload
 
 from gevent.lock import Semaphore
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -29,12 +29,9 @@ from rotkehlchen.chain.bitcoin.xpub import (
     XpubDerivedAddressData,
     deserialize_derivation_path_for_db,
 )
-from rotkehlchen.chain.ethereum.modules.balancer import BALANCER_EVENTS_PREFIX
-from rotkehlchen.chain.ethereum.modules.yearn.constants import (
-    YEARN_VAULTS_PREFIX,
-    YEARN_VAULTS_V2_PREFIX,
-)
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
+from rotkehlchen.chain.substrate.types import SubstrateAddress
+from rotkehlchen.chain.zksync_lite.constants import ZKSYNCLITE_TX_SAVEPREFIX
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_USD
 from rotkehlchen.constants.limits import (
@@ -124,7 +121,14 @@ from rotkehlchen.serialization.deserialize import deserialize_hex_color_code, de
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
     SPAM_PROTOCOL,
-    SUPPORTED_EVM_CHAINS,
+    SUPPORTED_BITCOIN_CHAINS,
+    SUPPORTED_EVM_CHAINS_TYPE,
+    SUPPORTED_EVM_EVMLIKE_CHAINS,
+    SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
+    SUPPORTED_EVMLIKE_CHAINS,
+    SUPPORTED_EVMLIKE_CHAINS_TYPE,
+    SUPPORTED_SUBSTRATE_CHAINS,
+    AnyBlockchainAddress,
     ApiKey,
     ApiSecret,
     BTCAddress,
@@ -143,7 +147,7 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hashing import file_md5
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import get_chunks, ts_now
 from rotkehlchen.utils.serialization import rlk_jsondumps
 
 logger = logging.getLogger(__name__)
@@ -157,12 +161,10 @@ TRANSIENT_DB_NAME = 'rotkehlchen_transient.db'
 # Tuples that contain first the name of a table and then the columns that
 # reference assets ids. This is used to query all assets that a user has ever owned.
 TABLES_WITH_ASSETS = (
-    ('yearn_vaults_events', 'from_asset', 'to_asset'),
     ('manually_tracked_balances', 'asset'),
     ('trades', 'base_asset', 'quote_asset', 'fee_currency'),
     ('margin_positions', 'pl_currency', 'fee_currency'),
     ('asset_movements', 'asset', 'fee_asset'),
-    ('balancer_events', 'pool_address_token'),
     ('timed_balances', 'currency'),
     ('history_events', 'asset'),
 )
@@ -173,6 +175,7 @@ DB_BACKUP_RE = re.compile(r'(\d+)_rotkehlchen_db_v(\d+).backup')
 
 # https://stackoverflow.com/questions/4814167/storing-time-series-data-relational-or-non
 # http://www.sql-join.com/sql-join-types
+
 
 class DBHandler:
     def __init__(
@@ -263,7 +266,7 @@ class DBHandler:
                 'found. Please open an issue on our github or contact us in our discord server.',
             )
 
-        backup_to_use = sorted(found_backups)[-1]  # Use latest backup
+        backup_to_use = max(found_backups)  # Use latest backup
         shutil.copyfile(
             self.user_data_dir / backup_to_use,
             self.user_data_dir / USERDB_NAME,
@@ -287,8 +290,7 @@ class DBHandler:
             log.error(f'At DB teardown could not open the DB: {e!s}')
             return
 
-        with open(self.user_data_dir / DBINFO_FILENAME, 'w', encoding='utf8') as f:
-            f.write(rlk_jsondumps(dbinfo))
+        Path(self.user_data_dir / DBINFO_FILENAME).write_text(rlk_jsondumps(dbinfo), encoding='utf8')  # noqa: E501
 
     def _check_settings(self) -> None:
         """Check that the non_syncing_exchanges setting only has active locations"""
@@ -579,9 +581,8 @@ class DBHandler:
 
         # dump the unencrypted data into a temporary file
         with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmpdirname:  # needed on windows, see https://tinyurl.com/tmp-win-err  # noqa: E501
-            tempdbpath = os.path.join(tmpdirname, 'temp.db')
-            with open(tempdbpath, 'wb') as f:
-                f.write(unencrypted_db_data)
+            tempdbpath = Path(tmpdirname) / 'temp.db'
+            tempdbpath.write_bytes(unencrypted_db_data)
 
             # Now attach to the unencrypted DB and copy it to our DB and encrypt it
             self.conn = DBConnection(
@@ -996,14 +997,6 @@ class DBHandler:
                 'or an entry for the given timestamp already exists',
             ) from e
 
-    def delete_balancer_events_data(self, write_cursor: 'DBCursor') -> None:
-        """Delete all historical Balancer events data"""
-        write_cursor.execute('DELETE FROM balancer_events;')
-        write_cursor.execute(
-            'DELETE FROM used_query_ranges WHERE name LIKE ?',
-            (f'{BALANCER_EVENTS_PREFIX}%',),
-        )
-
     def delete_eth2_daily_stats(self, write_cursor: 'DBCursor') -> None:
         """Delete all historical ETH2 eth2_daily_staking_details data"""
         write_cursor.execute('DELETE FROM eth2_daily_staking_details;')
@@ -1011,19 +1004,10 @@ class DBHandler:
     def purge_module_data(self, module_name: ModuleName | None) -> None:
         with self.user_write() as cursor:
             if module_name is None:
-                self.delete_balancer_events_data(cursor)
-                self.delete_yearn_vaults_data(write_cursor=cursor, version=1)
-                self.delete_yearn_vaults_data(write_cursor=cursor, version=2)
                 self.delete_loopring_data(cursor)
                 self.delete_eth2_daily_stats(cursor)
                 log.debug('Purged all module data from the DB')
                 return
-            elif module_name == 'balancer':
-                self.delete_balancer_events_data(cursor)
-            elif module_name == 'yearn_vaults':
-                self.delete_yearn_vaults_data(write_cursor=cursor, version=1)
-            elif module_name == 'yearn_vaults_v2':
-                self.delete_yearn_vaults_data(write_cursor=cursor, version=2)
             elif module_name == 'loopring':
                 self.delete_loopring_data(cursor)
             elif module_name == 'eth2':
@@ -1033,18 +1017,6 @@ class DBHandler:
                 return
 
             log.debug(f'Purged {module_name} data from the DB')
-
-    def delete_yearn_vaults_data(self, write_cursor: 'DBCursor', version: int) -> None:
-        """Delete all historical yearn vault events data"""
-        if version not in {1, 2}:
-            log.error(f'Called delete yearn vault data with non valid version {version}')
-            return None
-        prefix = YEARN_VAULTS_PREFIX
-        if version == 2:
-            prefix = YEARN_VAULTS_V2_PREFIX
-        write_cursor.execute('DELETE FROM yearn_vaults_events WHERE version=?', (version,))
-        write_cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE ?', (f'{prefix}%',))
-        return None
 
     def delete_loopring_data(self, write_cursor: 'DBCursor') -> None:
         """Delete all loopring related data"""
@@ -1059,8 +1031,6 @@ class DBHandler:
         - {exchange_location_name}_asset_movements_{exchange_name}
         - {location}_history_events_{optional_label}
         - {exchange_location_name}_lending_history_{exchange_name}
-        - yearn_vaults_events_{address}
-        - yearn_vaults_v2_events_{address}
         - gnosisbridge_{address}
         """
         cursor.execute('SELECT start_ts, end_ts FROM used_query_ranges WHERE name=?', (name,))
@@ -1231,6 +1201,10 @@ class DBHandler:
             for address in accounts:
                 self.delete_data_for_evm_address(write_cursor, address, blockchain)  # type: ignore
 
+        if blockchain in SUPPORTED_EVMLIKE_CHAINS:
+            for address in accounts:
+                self.delete_data_for_evmlike_address(write_cursor, address, blockchain)  # type: ignore
+
         write_cursor.executemany(
             'DELETE FROM tag_mappings WHERE '
             'object_reference = ?;', chain_and_account_concat_tuples,
@@ -1383,6 +1357,55 @@ class DBHandler:
 
         return data
 
+    @overload
+    def get_single_blockchain_addresses(
+            self,
+            cursor: 'DBCursor',
+            blockchain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
+    ) -> list[ChecksumEvmAddress]:
+        ...
+
+    @overload
+    def get_single_blockchain_addresses(
+            self,
+            cursor: 'DBCursor',
+            blockchain: SUPPORTED_BITCOIN_CHAINS,
+    ) -> list[BTCAddress]:
+        ...
+
+    @overload
+    def get_single_blockchain_addresses(
+            self,
+            cursor: 'DBCursor',
+            blockchain: SUPPORTED_SUBSTRATE_CHAINS,
+    ) -> list[SubstrateAddress]:
+        ...
+
+    def get_single_blockchain_addresses(
+            self,
+            cursor: 'DBCursor',
+            blockchain: SupportedBlockchain,
+    ) -> list[AnyBlockchainAddress]:
+        """Returns addresses for a particular blockchain"""
+        addresses = []
+        cursor.execute(
+            'SELECT account FROM blockchain_accounts WHERE blockchain=?',
+            (blockchain.value,),
+        )
+        for entry in cursor:
+            if not is_valid_db_blockchain_account(blockchain, entry[0]):
+                self.msg_aggregator.add_warning(
+                    f'Invalid {blockchain} account in DB: {entry[0]}. '
+                    f'This should not happen unless the DB was manually modified. '
+                    f'Skipping entry. This needs to be fixed manually. If you '
+                    f'can not do that alone ask for help in the issue tracker',
+                )
+                continue
+
+            addresses.append(entry[0])
+
+        return addresses
+
     def get_manually_tracked_balances(
             self,
             cursor: 'DBCursor',
@@ -1443,7 +1466,7 @@ class DBHandler:
         insert_tag_mappings(write_cursor=write_cursor, data=data, object_reference_keys=['identifier'])  # noqa: E501
 
         # make sure assets are included in the global db user owned assets
-        GlobalDBHandler().add_user_owned_assets([x.asset for x in data])
+        GlobalDBHandler.add_user_owned_assets([x.asset for x in data])
 
     def edit_manually_tracked_balances(self, write_cursor: 'DBCursor', data: list[ManuallyTrackedBalance]) -> None:  # noqa: E501
         """Edits manually tracked balances
@@ -2045,6 +2068,7 @@ class DBHandler:
                 'history_events',
                 'accounting_rules',
                 'unresolved_remote_conflicts',
+                'calendar',
             ],
             op: Literal['OR', 'AND'] = 'OR',
             group_by: str | None = None,
@@ -2070,16 +2094,11 @@ class DBHandler:
             self,
             write_cursor: 'DBCursor',
             address: ChecksumEvmAddress,
-            blockchain: SUPPORTED_EVM_CHAINS,
+            blockchain: SUPPORTED_EVM_CHAINS_TYPE,
     ) -> None:
         """Deletes all evm related data from the DB for a single evm address"""
         if blockchain == SupportedBlockchain.ETHEREUM:  # mainnet only behaviour
             write_cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'aave_events_{address}',))  # noqa: E501
-            write_cursor.execute(
-                'DELETE FROM used_query_ranges WHERE name = ?',
-                (f'{BALANCER_EVENTS_PREFIX}_{address}',),
-            )
-            write_cursor.execute('DELETE FROM balancer_events WHERE address=?;', (address,))
             write_cursor.execute(  # queried addresses per module
                 'DELETE FROM multisettings WHERE name LIKE "queried_address_%" AND value = ?',
                 (address,),
@@ -2087,6 +2106,7 @@ class DBHandler:
             loopring = DBLoopring(self)
             loopring.remove_accountid_mapping(write_cursor, address)
 
+        write_cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'{ZKSYNCLITE_TX_SAVEPREFIX}{address}',))  # noqa: E501
         write_cursor.execute(
             'DELETE FROM evm_accounts_details WHERE account=? AND chain_id=?',
             (address, blockchain.to_chain_id().serialize_for_db()),
@@ -2098,6 +2118,47 @@ class DBHandler:
 
         dbtx = DBEvmTx(self)
         dbtx.delete_transactions(write_cursor=write_cursor, address=address, chain=blockchain)
+
+    def delete_data_for_evmlike_address(
+            self,
+            write_cursor: 'DBCursor',
+            address: ChecksumEvmAddress,
+            blockchain: SUPPORTED_EVMLIKE_CHAINS_TYPE,  # pylint: disable=unused-argument
+    ) -> None:
+        """Deletes all evmlike chain related data from the DB for a single evm address
+
+        For now it's always gonna be only zksync lite.
+        """
+        other_addresses = self.get_single_blockchain_addresses(
+            cursor=write_cursor,
+            blockchain=SupportedBlockchain.ZKSYNC_LITE,
+        )
+        write_cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'{ZKSYNCLITE_TX_SAVEPREFIX}{address}',))  # noqa: E501
+        other_addresses.remove(address)  # exclude the address in question so it's only the others
+
+        # delete events by tx_hash
+        write_cursor.execute(
+            'SELECT tx_hash, from_address, to_address FROM zksynclite_transactions WHERE '
+            'from_address=? OR to_address=?',
+            (address, address),
+        )
+        hashes_to_remove = [
+            x[0] for x in write_cursor
+            if x[1] not in other_addresses and x[2] not in other_addresses  # pylint: disable=unsupported-membership-test
+        ]
+        for hashes_chunk in get_chunks(hashes_to_remove, n=1000):  # limit num of hashes in a query
+            write_cursor.execute(  # delete transactions themselves
+                f'DELETE FROM zksynclite_transactions WHERE tx_hash IN '
+                f'({",".join("?" * len(hashes_chunk))})',
+                hashes_chunk,
+            )
+            write_cursor.execute(
+                f'DELETE FROM history_events WHERE identifier IN (SELECT H.identifier '
+                f'FROM history_events H INNER JOIN evm_events_info E '
+                f'ON H.identifier=E.identifier AND E.tx_hash IN '
+                f'({", ".join(["?"] * len(hashes_chunk))}) AND H.location=?)',
+                hashes_chunk + [Location.ZKSYNC_LITE.serialize_for_db()],
+            )
 
     def add_trades(self, write_cursor: 'DBCursor', trades: list[Trade]) -> None:
         trade_tuples = [(
@@ -2460,7 +2521,7 @@ class DBHandler:
             next_result_time = results[idx + 1][0]
             max_diff = settings.balance_save_frequency * HOUR_IN_SECONDS * settings.ssf_graph_multiplier  # noqa: E501
             while next_result_time - entry_time > max_diff:
-                entry_time = entry_time + settings.balance_save_frequency * HOUR_IN_SECONDS
+                entry_time += settings.balance_save_frequency * HOUR_IN_SECONDS
                 if entry_time >= next_result_time:
                     break
 
@@ -2572,7 +2633,7 @@ class DBHandler:
     def update_owned_assets_in_globaldb(self, cursor: 'DBCursor') -> None:
         """Makes sure all owned assets of the user are in the Global DB"""
         assets = self.query_owned_assets(cursor)
-        GlobalDBHandler().add_user_owned_assets(assets)
+        GlobalDBHandler.add_user_owned_assets(assets)
 
     def add_asset_identifiers(self, write_cursor: 'DBCursor', asset_identifiers: list[str]) -> None:  # noqa: E501
         """Adds an asset to the user db asset identifier table"""
@@ -2719,8 +2780,8 @@ class DBHandler:
                 # show eth & eth2 as eth in value distribution by asset
                 if treat_eth2_as_eth is True and asset in (A_ETH, A_ETH2):
                     eth_balance.time = time
-                    eth_balance.amount = eth_balance.amount + amount
-                    eth_balance.usd_value = eth_balance.usd_value + usd_value
+                    eth_balance.amount += amount
+                    eth_balance.usd_value += usd_value
                 else:
                     asset_balances.append(
                         DBAssetBalance(
@@ -2802,7 +2863,7 @@ class DBHandler:
                 ) from e
 
             # else something really bad happened
-            log.error('Unexpected DB error: {msg} while adding a tag')
+            log.error(f'Unexpected DB error: {msg} while adding a tag')
             raise
 
     def edit_tag(
@@ -3248,11 +3309,7 @@ class DBHandler:
                 'SELECT location FROM user_credentials UNION '
                 'SELECT location FROM history_events',
             )
-            locations = {Location.deserialize_from_db(loc[0]) for loc in cursor}
-            cursor.execute('SELECT COUNT(*) FROM balancer_events')
-            if cursor.fetchone()[0] >= 1:  # should always return number
-                locations.add(Location.BALANCER)
-        return locations
+            return {Location.deserialize_from_db(loc[0]) for loc in cursor}
 
     def should_save_balances(self, cursor: 'DBCursor') -> bool:
         """
@@ -3547,10 +3604,9 @@ class DBHandler:
             (json.dumps(data, separators=(',', ':')), location.serialize_for_db(), serialized_extra_data),  # noqa: E501
         )
 
-    def get_chains_to_detect_evm_accounts(self) -> list[SUPPORTED_EVM_CHAINS]:
+    def get_chains_to_detect_evm_accounts(self) -> list[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE]:
         """Reads the DB for the excluding chains and calculate which chains to
-        perform EVM accound detection on"""
-        all_chains = get_args(SUPPORTED_EVM_CHAINS)
+        perform EVM account detection on"""
         with self.conn.read_ctx() as cursor:
-            excluded_chain_ids = self.get_settings(cursor).evmchains_to_skip_detection
-        return list(set(all_chains) - {x.to_blockchain() for x in excluded_chain_ids})
+            excluded_chains = self.get_settings(cursor).evmchains_to_skip_detection
+        return list(set(SUPPORTED_EVM_EVMLIKE_CHAINS) - set(excluded_chains))

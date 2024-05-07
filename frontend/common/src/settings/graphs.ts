@@ -175,7 +175,7 @@ export const timeframes: (
   ),
 });
 
-export const TIMEFRAME_CUSTOM = 'CUSTOM' as const;
+export const TIMEFRAME_CUSTOM = 'CUSTOM';
 
 export type CustomizableTimeframe = TimeFramePeriod | typeof TIMEFRAME_CUSTOM;
 

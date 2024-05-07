@@ -17,6 +17,8 @@ const props = withDefaults(
   { identifier: null, mainPage: false },
 );
 
+const { t } = useI18n();
+
 const { identifier, mainPage } = toRefs(props);
 
 const mergeTool = ref<boolean>(false);
@@ -40,15 +42,8 @@ const extraParams = computed(() => {
   };
 });
 
-const dialogTitle = computed<string>(() =>
-  get(editableItem)
-    ? t('asset_management.edit_title')
-    : t('asset_management.add_title'),
-);
-
 const router = useRouter();
 const route = useRoute();
-const { t } = useI18n();
 const { queryAllAssets, deleteAsset } = useAssetManagementApi();
 const { setMessage } = useMessageStore();
 const { show } = useConfirmStore();
@@ -56,58 +51,11 @@ const { ignoredAssets } = storeToRefs(useIgnoredAssetsStore());
 
 const { setOpenDialog, setPostSubmitFunc } = useManagedAssetForm();
 
-function add() {
-  set(editableItem, null);
-  setOpenDialog(true);
-}
-
-function edit(editAsset: SupportedAsset) {
-  set(editableItem, editAsset);
-  setOpenDialog(true);
-}
-
-async function editAsset(assetId: Nullable<string>) {
-  if (assetId) {
-    const all = await queryAllAssets({
-      identifiers: [assetId],
-      limit: 1,
-      offset: 0,
-    });
-
-    const foundAsset = all.data[0];
-    if (foundAsset)
-      edit(foundAsset);
-  }
-}
-
 const { deleteCacheKey } = useAssetCacheStore();
-
-async function deleteAssetHandler(identifier: string) {
-  try {
-    const success = await deleteAsset(identifier);
-    if (success) {
-      await fetchData();
-      deleteCacheKey(identifier);
-    }
-  }
-  catch (error: any) {
-    setMessage({
-      description: t('asset_management.delete_error', {
-        address: identifier,
-        message: error.message,
-      }),
-    });
-  }
-}
 
 async function confirmDelete(toDeleteAsset: SupportedAsset) {
   await deleteAssetHandler(toDeleteAsset.identifier);
 }
-
-watch(ignoredFilter, async (oldValue, newValue) => {
-  if (!isEqual(oldValue, newValue))
-    setPage(1);
-});
 
 const {
   filters,
@@ -143,6 +91,54 @@ const {
     ascending: [true],
   },
 });
+
+const dialogTitle = computed<string>(() =>
+  get(editableItem)
+    ? t('asset_management.edit_title')
+    : t('asset_management.add_title'),
+);
+
+function add() {
+  set(editableItem, null);
+  setOpenDialog(true);
+}
+
+function edit(editAsset: SupportedAsset) {
+  set(editableItem, editAsset);
+  setOpenDialog(true);
+}
+
+async function editAsset(assetId: Nullable<string>) {
+  if (assetId) {
+    const all = await queryAllAssets({
+      identifiers: [assetId],
+      limit: 1,
+      offset: 0,
+    });
+
+    const foundAsset = all.data[0];
+    if (foundAsset)
+      edit(foundAsset);
+  }
+}
+
+async function deleteAssetHandler(identifier: string) {
+  try {
+    const success = await deleteAsset(identifier);
+    if (success) {
+      await fetchData();
+      deleteCacheKey(identifier);
+    }
+  }
+  catch (error: any) {
+    setMessage({
+      description: t('asset_management.delete_error', {
+        address: identifier,
+        message: error.message,
+      }),
+    });
+  }
+}
 
 setPostSubmitFunc(fetchData);
 
@@ -190,6 +186,11 @@ onMounted(async () => {
 watch(identifier, async (assetId) => {
   await editAsset(assetId);
 });
+
+watch(ignoredFilter, (oldValue, newValue) => {
+  if (!isEqual(oldValue, newValue))
+    setPage(1);
+});
 </script>
 
 <template>
@@ -222,10 +223,8 @@ watch(identifier, async (assetId) => {
         </template>
         {{ t('managed_asset_content.add_asset') }}
       </RuiButton>
-      <VMenu
-        offset-y
-        left
-        :close-on-content-click="false"
+      <RuiMenu
+        :popper="{ placement: 'bottom-end' }"
       >
         <template #activator="{ on }">
           <RuiButton
@@ -260,17 +259,16 @@ watch(identifier, async (assetId) => {
             {{ t('asset_management.merge_assets_tooltip') }}
           </RuiTooltip>
         </div>
-      </VMenu>
+      </RuiMenu>
     </template>
 
     <RuiCard>
       <MergeDialog v-model="mergeTool" />
 
       <ManagedAssetTable
-        :tokens="assets.data"
+        :collection="assets"
         :loading="loading"
         :change="!loading"
-        :server-item-length="assets.found"
         :filters="filters"
         :matchers="matchers"
         :ignored-assets="ignoredAssets"
@@ -283,6 +281,7 @@ watch(identifier, async (assetId) => {
         @delete-asset="showDeleteConfirmation($event)"
         @update:options="setTableOptions($event)"
         @update:filters="setFilter($event)"
+        @update:page="setPage($event)"
       />
 
       <ManagedAssetFormDialog

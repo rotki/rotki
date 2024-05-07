@@ -1,6 +1,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { TaskType } from '@/types/task-type';
-import { isBlockchain } from '@/types/blockchain/chains';
+import { isBlockchain, isBtcChain } from '@/types/blockchain/chains';
 import type { MaybeRef } from '@vueuse/core';
 import type {
   AddressBookEntries,
@@ -13,7 +13,6 @@ import type {
 } from '@/types/eth-names';
 import type { TaskMeta } from '@/types/task';
 import type { Collection } from '@/types/collection';
-import type { Chains } from '@/types/asset/asset-urls';
 
 export const useAddressesNamesStore = defineStore(
   'blockchains/accounts/addresses-names',
@@ -26,8 +25,8 @@ export const useAddressesNamesStore = defineStore(
 
     const { awaitTask } = useTaskStore();
     const { t } = useI18n();
-
     const { notify } = useNotificationsStore();
+    const { supportedChains } = useSupportedChains();
 
     const {
       getEnsNames,
@@ -50,58 +49,6 @@ export const useAddressesNamesStore = defineStore(
       setLastRefreshedAvatar();
     });
 
-    const fetchEnsNames = async (
-      payload: AddressBookSimplePayload[],
-      forceUpdate = false,
-    ): Promise<void> => {
-      if (payload.length === 0)
-        return;
-
-      const filteredAddresses = payload
-        .map(({ address }) => address)
-        .filter(uniqueStrings)
-        .filter(isValidEthAddress);
-
-      if (filteredAddresses.length === 0)
-        return;
-
-      if (forceUpdate) {
-        const taskType = TaskType.FETCH_ENS_NAMES;
-        const { taskId } = await getEnsNamesTask(filteredAddresses);
-        try {
-          const { result } = await awaitTask<EthNames, TaskMeta>(
-            taskId,
-            taskType,
-            {
-              title: t('ens_names.task.title'),
-            },
-          );
-          set(ensNames, {
-            ...get(ensNames),
-            ...result,
-          });
-        }
-        catch (error: any) {
-          if (!isTaskCancelled(error)) {
-            notify({
-              title: t('ens_names.task.title'),
-              message: t('ens_names.error.message', { message: error.message }),
-              display: true,
-            });
-          }
-        }
-        resetAddressNamesData(payload);
-      }
-      else {
-        const result = await getEnsNames(filteredAddresses);
-
-        set(ensNames, {
-          ...get(ensNames),
-          ...result,
-        });
-      }
-    };
-
     const ensNameSelector = (address: MaybeRef<string>) =>
       computed<string | null>(() => {
         if (!get(enableAliasNames))
@@ -119,8 +66,7 @@ export const useAddressesNamesStore = defineStore(
         return ensAvatarUrl(ens, get(lastRefreshedAvatar));
       });
 
-    const createKey = (address: string, blockchain: Blockchain) =>
-      `${address}#${blockchain}`;
+    const createKey = (address: string, chain: string) => `${address}#${chain}`;
 
     const fetchAddressesNames = async (keys: string[]) => {
       const payload: AddressNameRequestPayload[] = [];
@@ -169,7 +115,7 @@ export const useAddressesNamesStore = defineStore(
       reset: resetAddressesNames,
     } = useItemCache<string>(keys => fetchAddressesNames(keys));
 
-    const getAddressesWithoutNames = (blockchain?: MaybeRef<Blockchain | null>): ComputedRef<string[]> => computed(() => {
+    const getAddressesWithoutNames = (blockchain?: MaybeRef<string | null>) => computed<string[]>(() => {
       const chain = get(blockchain);
       const entries = !chain ? [...unknown.keys()] : [...unknown.keys()].filter(entry => entry.endsWith(`#${chain}`));
       return entries
@@ -179,7 +125,7 @@ export const useAddressesNamesStore = defineStore(
 
     const addressNameSelector = (
       address: MaybeRef<string>,
-      blockchain: MaybeRef<Chains> = Blockchain.ETH,
+      blockchain: MaybeRef<string> = Blockchain.ETH,
     ) =>
       computed<string | null>(() => {
         const addressVal = get(address);
@@ -188,7 +134,7 @@ export const useAddressesNamesStore = defineStore(
 
         const chain = get(blockchain);
 
-        if (!isBlockchain(chain))
+        if (!isBlockchain(chain) || isBtcChain(chain))
           return null;
 
         const key = createKey(addressVal, chain);
@@ -201,9 +147,9 @@ export const useAddressesNamesStore = defineStore(
 
     const resetAddressNamesData = (items: AddressBookSimplePayload[]) => {
       items.forEach((item) => {
-        const chains: Blockchain[] = item.blockchain
+        const chains: string[] = item.blockchain
           ? [item.blockchain]
-          : Object.values(Blockchain);
+          : get(supportedChains).map(chain => chain.id);
 
         chains.forEach((chain) => {
           const key = createKey(item.address, chain);
@@ -268,6 +214,59 @@ export const useAddressesNamesStore = defineStore(
         resetAddressNamesData(addresses);
 
       return result;
+    };
+
+    const fetchEnsNames = async (
+      payload: AddressBookSimplePayload[],
+      forceUpdate = false,
+    ): Promise<void> => {
+      if (payload.length === 0)
+        return;
+
+      const filteredAddresses = payload
+        .map(({ address }) => address)
+        .filter(uniqueStrings)
+        .filter(isValidEthAddress);
+
+      if (filteredAddresses.length === 0)
+        return;
+
+      let newResult: Record<string, string | null> = {};
+
+      if (forceUpdate) {
+        const taskType = TaskType.FETCH_ENS_NAMES;
+        const { taskId } = await getEnsNamesTask(filteredAddresses);
+        try {
+          const { result } = await awaitTask<EthNames, TaskMeta>(
+            taskId,
+            taskType,
+            {
+              title: t('ens_names.task.title'),
+            },
+          );
+          newResult = result;
+        }
+        catch (error: any) {
+          if (!isTaskCancelled(error)) {
+            notify({
+              title: t('ens_names.task.title'),
+              message: t('ens_names.error.message', { message: error.message }),
+              display: true,
+            });
+          }
+        }
+      }
+      else {
+        newResult = await getEnsNames(filteredAddresses);
+      }
+
+      const payloadToReset = payload.filter(({ address }) => get(ensNames)[address] !== newResult[address]);
+
+      set(ensNames, {
+        ...get(ensNames),
+        ...newResult,
+      });
+      resetAddressNamesData(payloadToReset);
     };
 
     return {

@@ -1,7 +1,9 @@
 <script setup lang="ts">
+import { useBreakpoint } from '@rotki/ui-library-compat';
+
 const { t } = useI18n();
 const premium = usePremium();
-const { mobile } = useDisplay();
+const { isLgAndDown } = useBreakpoint();
 </script>
 
 <template>
@@ -11,7 +13,7 @@ const { mobile } = useDisplay();
   >
     <RuiTooltip
       :popper="{ placement: 'bottom' }"
-      :disabled="!mobile"
+      :disabled="!isLgAndDown"
     >
       <template #activator>
         <ExternalLink
@@ -24,7 +26,7 @@ const { mobile } = useDisplay();
             color="secondary"
             data-cy="get-premium-button"
           >
-            <span v-if="!mobile">{{ t('premium_settings.get') }}</span>
+            <span v-if="!isLgAndDown">{{ t('premium_settings.get') }}</span>
             <template #append>
               <RuiIcon name="vip-crown-line" />
             </template>

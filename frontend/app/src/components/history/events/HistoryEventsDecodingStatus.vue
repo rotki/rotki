@@ -1,54 +1,40 @@
 <script lang="ts" setup>
-import { isEqual } from 'lodash-es';
 import { TaskType } from '@/types/task-type';
+import type { EvmUnDecodedTransactionsData } from '@/types/websocket-messages';
 import type { DataTableColumn } from '@rotki/ui-library-compat';
 
-defineProps<{
+const props = defineProps<{
   refreshing: boolean;
+  decodingStatus: EvmUnDecodedTransactionsData[];
 }>();
 
 const emit = defineEmits<{
-  (e: 'redecode-all-evm-events'): void;
+  (e: 'redecode-all-events'): void;
+  (e: 'reset-undecoded-transactions'): void;
 }>();
 
+const css = useCssModule();
 const { isTaskRunning } = useTaskStore();
-const fetching = isTaskRunning(TaskType.EVM_UNDECODED_EVENTS);
-const eventTaskLoading = isTaskRunning(TaskType.EVM_EVENTS_DECODING);
-const partialEventTaskLoading = isTaskRunning(TaskType.EVM_EVENTS_DECODING, {
+const fetching = isTaskRunning(TaskType.FETCH_UNDECODED_TXS);
+const eventTaskLoading = isTaskRunning(TaskType.TRANSACTIONS_DECODING);
+const partialEventTaskLoading = isTaskRunning(TaskType.TRANSACTIONS_DECODING, {
   all: false,
 });
-const allEventTaskLoading = isTaskRunning(TaskType.EVM_EVENTS_DECODING, {
+const allEventTaskLoading = isTaskRunning(TaskType.TRANSACTIONS_DECODING, {
   all: true,
 });
 
-function redecodeAllEvmEvents() {
-  emit('redecode-all-evm-events');
+function redecodeAllEvents() {
+  emit('redecode-all-events');
 }
 
 const { t } = useI18n();
 
-const {
-  checkMissingTransactionEventsAndRedecode,
-  unDecodedEventsBreakdown,
-  fetchUndecodedEventsBreakdown,
-} = useHistoryTransactionDecoding();
+const { checkMissingEventsAndRedecode } = useHistoryTransactionDecoding();
 
-const historyStore = useHistoryStore();
-const { resetEvmUndecodedTransactionsStatus } = historyStore;
-const { evmUndecodedTransactionsStatus } = storeToRefs(historyStore);
-
-onMounted(() => refresh());
-
-async function refresh() {
-  await fetchUndecodedEventsBreakdown();
-
-  if (Object.keys(get(unDecodedEventsBreakdown)).length === 0)
-    resetEvmUndecodedTransactionsStatus();
-}
-
-async function redecodeMissingEvents() {
-  await checkMissingTransactionEventsAndRedecode();
-  await refresh();
+function refresh() {
+  if (props.decodingStatus.length === 0)
+    emit('reset-undecoded-transactions');
 }
 
 const headers: DataTableColumn[] = [
@@ -59,7 +45,7 @@ const headers: DataTableColumn[] = [
     cellClass: 'py-3',
   },
   {
-    label: t('transactions.events_decoding.undecoded_events'),
+    label: t('transactions.events_decoding.undecoded_transactions'),
     key: 'number',
     align: 'end',
     cellClass: '!pr-12',
@@ -72,34 +58,9 @@ const headers: DataTableColumn[] = [
   },
 ];
 
-const locationsData = computed(() =>
-  Object.entries(get(unDecodedEventsBreakdown)).map(([evmChain, number]) => {
-    const progress = get(evmUndecodedTransactionsStatus)[evmChain];
-    const total = progress?.total || number;
-
-    return {
-      evmChain,
-      total,
-      processed: progress?.processed || 0,
-    };
-  }),
+const total = computed<number>(() =>
+  props.decodingStatus.reduce((sum, item) => sum + (item.total - item.processed), 0),
 );
-
-const total: ComputedRef<number> = computed(() =>
-  get(locationsData).reduce((sum, item) => sum + item.total, 0),
-);
-
-watch(eventTaskLoading, (loading) => {
-  if (!loading) {
-    refresh();
-    resetEvmUndecodedTransactionsStatus();
-  }
-});
-
-watch(evmUndecodedTransactionsStatus, (curr, prev) => {
-  if (!isEqual(curr, prev))
-    refresh();
-});
 
 const [DefineProgress, ReuseProgress] = createReusableTemplate<{
   data: {
@@ -108,20 +69,32 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
     processed: number;
   };
 }>();
+
+watch(allEventTaskLoading, (loading) => {
+  if (!loading) {
+    refresh();
+    emit('reset-undecoded-transactions');
+  }
+});
+
+onMounted(() => refresh());
 </script>
 
 <template>
   <RuiCard>
     <template #custom-header>
       <div class="flex justify-between gap-4 p-4 pb-0">
-        <h5 class="text-h5">
+        <h5 class="text-h6">
           {{ t('transactions.events_decoding.title') }}
         </h5>
         <slot />
       </div>
     </template>
 
-    <div v-if="locationsData.length > 0">
+    <div
+      v-if="decodingStatus.length > 0"
+      :class="css.content"
+    >
       <div class="mb-4">
         {{ t('transactions.events_decoding.decoded.false') }}
       </div>
@@ -140,7 +113,7 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
           />
           <i18n
             tag="span"
-            path="transactions.events_decoding.events_processed"
+            path="transactions.events_decoding.transactions_processed"
           >
             <template #processed>
               {{ data.processed }}
@@ -157,7 +130,7 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
 
       <RuiDataTable
         :cols="headers"
-        :rows="locationsData"
+        :rows="decodingStatus"
         dense
         row-attr="evmChain"
         striped
@@ -167,7 +140,7 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
           <LocationDisplay :identifier="row.evmChain" />
         </template>
         <template #item.number="{ row }">
-          {{ row.total }}
+          {{ row.total - row.processed }}
         </template>
         <template #item.progress="{ row }">
           <ReuseProgress :data="row" />
@@ -199,7 +172,15 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
         success
         size="28"
       />
-      {{ t('transactions.events_decoding.decoded.true') }}
+      <template v-if="fetching">
+        {{ t('transactions.events_decoding.fetching') }}
+      </template>
+      <template v-else-if="eventTaskLoading">
+        {{ t('transactions.events_decoding.preparing') }}
+      </template>
+      <template v-else>
+        {{ t('transactions.events_decoding.decoded.true') }}
+      </template>
     </div>
 
     <template #footer>
@@ -208,7 +189,7 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
         v-if="total"
         color="primary"
         :disabled="refreshing || eventTaskLoading"
-        @click="redecodeMissingEvents()"
+        @click="checkMissingEventsAndRedecode()"
       >
         <template #prepend>
           <RuiIcon
@@ -228,7 +209,7 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
       <RuiButton
         color="error"
         :disabled="refreshing || eventTaskLoading"
-        @click="redecodeAllEvmEvents()"
+        @click="redecodeAllEvents()"
       >
         <template #prepend>
           <RuiIcon
@@ -248,3 +229,11 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
     </template>
   </RuiCard>
 </template>
+
+<style module lang="scss">
+.content {
+  @apply overflow-y-auto -mx-4 px-4 -mt-2 pb-px;
+  max-height: calc(90vh - 11.875rem);
+  min-height: 50vh;
+}
+</style>

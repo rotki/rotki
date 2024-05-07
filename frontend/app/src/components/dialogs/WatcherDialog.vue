@@ -5,7 +5,6 @@ import {
   type WatcherOpTypes,
   WatcherType,
 } from '@/types/session';
-import type { ComputedRef, Ref } from 'vue';
 
 const props = withDefaults(
   defineProps<{
@@ -263,13 +262,18 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ label: string }>();
         {{ message }}
       </template>
 
-      <VSelect
+      <RuiMenuSelect
         v-if="!preselectWatcherType"
         v-model="watcherType"
-        :items="watcherTypes"
+        :options="watcherTypes"
         :label="t('watcher_dialog.labels.type')"
+        key-attr="value"
+        text-attr="text"
+        full-width
+        float-label
+        show-details
         dense
-        outlined
+        variant="outlined"
         required
       />
 
@@ -284,20 +288,22 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ label: string }>();
           class="flex items-center gap-4"
         >
           <div class="grid grid-cols-2 gap-4">
-            <VSelect
+            <RuiMenuSelect
+              v-model="loadedWatchers[key].args.op"
+              :options="operations"
               :class="{
                 'bg-rui-grey-100 dark:bg-rui-grey-800':
                   !existingWatchersEdit[watcher.identifier],
               }"
-              :items="operations"
               :label="t('watcher_dialog.labels.operation')"
-              :readonly="!existingWatchersEdit[watcher.identifier]"
-              :value="loadedWatchers[key].args.op"
+              :disabled="!existingWatchersEdit[watcher.identifier]"
+              key-attr="value"
+              text-attr="text"
               dense
-              hide-details
-              outlined
+              full-width
+              float-label
+              variant="outlined"
               required
-              @input="loadedWatchers[key].args.op = $event"
             />
 
             <RuiTextField
@@ -349,14 +355,17 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ label: string }>();
         <ReuseLabel :label="t('watcher_dialog.add_watcher')" />
         <div class="flex items-center justify-between gap-4">
           <div class="grid grid-cols-2 gap-4">
-            <VSelect
+            <RuiMenuSelect
               v-model="watcherOperation"
               :disabled="!watcherType"
-              :items="operations"
+              :options="operations"
               :label="t('watcher_dialog.labels.operation')"
+              key-attr="value"
+              text-attr="text"
+              full-width
+              float-label
               dense
-              hide-details
-              outlined
+              variant="outlined"
               required
             />
 

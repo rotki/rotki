@@ -4,13 +4,12 @@ from typing import TYPE_CHECKING, Any, Final, Literal
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.convex.constants import CONVEX_CPT_DETAILS, CPT_CONVEX
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS, ENS_CPT_DETAILS
-from rotkehlchen.chain.ethereum.modules.uniswap.constants import UNISWAP_ICON, UNISWAP_LABEL
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.airdrops import match_airdrop_claim
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.cowswap.constants import COWSWAP_CPT_DETAILS
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import MerkleClaimDecoderInterface
 from rotkehlchen.chain.evm.decoding.oneinch.constants import ONEINCH_ICON, ONEINCH_LABEL
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -19,6 +18,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.decoding.uniswap.constants import UNISWAP_ICON, UNISWAP_LABEL
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import (
     A_1INCH,
@@ -51,13 +51,11 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 UNISWAP_DISTRIBUTOR: Final = string_to_evm_address('0x090D4613473dEE047c3f2706764f49E0821D256e')
-UNISWAP_TOKEN_CLAIMED: Final = b'N\xc9\x0e\x96U\x19\xd9&\x81&tg\xf7u\xad\xa5\xbd!J\xa9,\r\xc9=\x90\xa5\xe8\x80\xce\x9e\xd0&'  # noqa: E501
 
 BADGERHUNT: Final = string_to_evm_address('0x394DCfbCf25C5400fcC147EbD9970eD34A474543')
 BADGER_HUNT_EVENT: Final = b'\x8e\xaf\x15aI\x08\xa4\xe9\x02!A\xfeJYk\x1a\xb0\xcbr\xab2\xb2P#\xe3\xda*E\x9c\x9a3\\'  # noqa: E501
 
 ONEINCH: Final = string_to_evm_address('0xE295aD71242373C37C5FdA7B57F26f9eA1088AFe')
-ONEINCH_CLAIMED: Final = b'N\xc9\x0e\x96U\x19\xd9&\x81&tg\xf7u\xad\xa5\xbd!J\xa9,\r\xc9=\x90\xa5\xe8\x80\xce\x9e\xd0&'  # noqa: E501
 
 FPIS: Final = string_to_evm_address('0x61A1f84F12Ba9a56C22c31dDB10EC2e2CA0ceBCf')
 CONVEX: Final = string_to_evm_address('0x2E088A0A19dda628B4304301d1EA70b114e4AcCd')
@@ -94,7 +92,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class AirdropsDecoder(DecoderInterface):
+class AirdropsDecoder(MerkleClaimDecoderInterface):
 
     def __init__(
             self,
@@ -107,28 +105,6 @@ class AirdropsDecoder(DecoderInterface):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-
-    def _decode_uniswap_claim(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] != UNISWAP_TOKEN_CLAIMED:
-            return DEFAULT_DECODING_OUTPUT
-
-        user_address = hex_or_bytes_to_address(context.tx_log.data[32:64])
-        raw_amount = hex_or_bytes_to_int(context.tx_log.data[64:96])
-        amount = token_normalized_value_decimals(
-            token_amount=raw_amount,
-            token_decimals=DEFAULT_TOKEN_DECIMALS,  # uni 18 decimals
-        )
-        for event in context.decoded_events:
-            if match_airdrop_claim(
-                event=event,
-                user_address=user_address,
-                amount=amount,
-                asset=A_UNI,
-                counterparty=CPT_UNISWAP,
-            ):
-                break
-
-        return DEFAULT_DECODING_OUTPUT
 
     def _decode_fox_claim(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] != FOX_CLAIMED:
@@ -169,28 +145,6 @@ class AirdropsDecoder(DecoderInterface):
                 amount=amount,
                 asset=A_BADGER,
                 counterparty=CPT_BADGER,
-            ):
-                break
-
-        return DEFAULT_DECODING_OUTPUT
-
-    def _decode_oneinch_claim(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] != ONEINCH_CLAIMED:
-            return DEFAULT_DECODING_OUTPUT
-
-        raw_amount = hex_or_bytes_to_int(context.tx_log.data[64:96])
-        amount = token_normalized_value_decimals(
-            token_amount=raw_amount,
-            token_decimals=DEFAULT_TOKEN_DECIMALS,  # 1inch 18 decimals
-        )
-        user_address = hex_or_bytes_to_address(context.tx_log.data[32:64])
-        for event in context.decoded_events:
-            if match_airdrop_claim(
-                event=event,
-                user_address=user_address,
-                amount=amount,
-                asset=A_1INCH,
-                counterparty=CPT_ONEINCH,
             ):
                 break
 
@@ -319,9 +273,21 @@ class AirdropsDecoder(DecoderInterface):
 
     def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
         return {
-            UNISWAP_DISTRIBUTOR: (self._decode_uniswap_claim,),
+            UNISWAP_DISTRIBUTOR: (
+                self._decode_merkle_claim,
+                CPT_UNISWAP,  # counterparty
+                A_UNI.identifier,  # token id
+                18,  # token decimals
+                'UNI from the uniswap airdrop',  # notes suffix
+            ),
             BADGERHUNT: (self._decode_badger_claim,),
-            ONEINCH: (self._decode_oneinch_claim,),
+            ONEINCH: (
+                self._decode_merkle_claim,
+                CPT_ONEINCH,  # counterparty
+                A_1INCH.identifier,  # token id
+                18,  # token decimals
+                '1inch from the 1inch airdrop',  # notes suffix
+            ),
             FPIS: (self._decode_fpis_claim, 'fpis'),
             CONVEX: (self._decode_fpis_claim, 'convex'),
             ELFI_LOCKING: (self._decode_elfi_claim,),

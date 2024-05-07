@@ -1,9 +1,9 @@
-from abc import ABCMeta
+import logging
+from abc import ABC
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
-from rotkehlchen.chain.ethereum.modules.weth.constants import CPT_WETH
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -13,7 +13,10 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
+from rotkehlchen.chain.evm.decoding.weth.constants import CHAIN_ID_TO_WETH_MAPPING, CPT_WETH
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
@@ -26,8 +29,11 @@ if TYPE_CHECKING:
 WETH_DEPOSIT_TOPIC = b'\xe1\xff\xfc\xc4\x92=\x04\xb5Y\xf4\xd2\x9a\x8b\xfcl\xda\x04\xeb[\r<F\x07Q\xc2@,\\\\\xc9\x10\x9c'  # noqa: E501
 WETH_WITHDRAW_TOPIC = b'\x7f\xcfS,\x15\xf0\xa6\xdb\x0b\xd6\xd0\xe08\xbe\xa7\x1d0\xd8\x08\xc7\xd9\x8c\xb3\xbfrh\xa9[\xf5\x08\x1be'  # noqa: E501
 
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
-class WethDecoderBase(DecoderInterface, metaclass=ABCMeta):
+
+class WethDecoderBase(DecoderInterface, ABC):
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',
@@ -49,8 +55,7 @@ class WethDecoderBase(DecoderInterface, metaclass=ABCMeta):
     def _decode_wrapper(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == WETH_DEPOSIT_TOPIC:
             return self._decode_deposit_event(context)
-
-        if context.tx_log.topics[0] == WETH_WITHDRAW_TOPIC:
+        elif context.tx_log.topics[0] == WETH_WITHDRAW_TOPIC:
             return self._decode_withdrawal_event(context)
 
         return DEFAULT_DECODING_OUTPUT
@@ -67,13 +72,10 @@ class WethDecoderBase(DecoderInterface, metaclass=ABCMeta):
         for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.SPEND and
-                event.address in (self.wrapped_token.evm_address, depositor) and
+                event.address == self.wrapped_token.evm_address and
                 event.balance.amount == deposited_amount and
                 event.asset == self.base_asset
             ):
-                if event.address == depositor:
-                    return DEFAULT_DECODING_OUTPUT
-
                 event.counterparty = self.counterparty
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
@@ -104,18 +106,14 @@ class WethDecoderBase(DecoderInterface, metaclass=ABCMeta):
             amount=withdrawn_amount_raw,
             asset=self.base_asset,
         )
-
-        in_event = None
+        in_event = out_event = None
         for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.RECEIVE and
-                event.address in (self.wrapped_token.evm_address, withdrawer) and
+                event.address == self.wrapped_token.evm_address and
                 event.balance.amount == withdrawn_amount and
                 event.asset == self.base_asset
             ):
-                if event.address == withdrawer:
-                    return DEFAULT_DECODING_OUTPUT
-
                 in_event = event
                 event.notes = f'Receive {withdrawn_amount} {self.base_asset.symbol}'
                 event.counterparty = self.counterparty
@@ -149,3 +147,27 @@ class WethDecoderBase(DecoderInterface, metaclass=ABCMeta):
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (CounterpartyDetails(identifier=CPT_WETH, label='WETH', image='weth.svg'),)
+
+
+class WethDecoder(WethDecoderBase):
+    """
+    Weth Decoder for EVM chains except Gnosis and Polygon Pos
+    because of different counterparty and not having ETH as native token.
+    Arbitrum One and Scroll are based on this decoder but have some special
+    logic since their contracts don't follow the weth9 implementation.
+    """
+
+    def __init__(
+            self,
+            evm_inquirer: 'EvmNodeInquirer',
+            base_tools: 'BaseDecoderTools',
+            msg_aggregator: 'MessagesAggregator',
+    ) -> None:
+        super().__init__(
+            evm_inquirer=evm_inquirer,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+            base_asset=A_ETH.resolve_to_crypto_asset(),
+            wrapped_token=CHAIN_ID_TO_WETH_MAPPING[evm_inquirer.chain_id].resolve_to_evm_token(),
+            counterparty=CPT_WETH,
+        )

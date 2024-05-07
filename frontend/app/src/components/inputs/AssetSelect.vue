@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { CanceledError } from 'axios';
-import { transformCase } from '@/utils/text';
 import { getValidSelectorFromEvmAddress } from '@/utils/assets';
-import type { Ref } from 'vue';
 import type { AssetInfoWithId } from '@/types/asset';
 import type { NftAsset } from '@/types/nfts';
 

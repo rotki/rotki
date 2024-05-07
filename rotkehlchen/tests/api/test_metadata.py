@@ -14,12 +14,11 @@ if TYPE_CHECKING:
 @pytest.mark.vcr()
 def test_metadata_endpoint(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that all the endpoints that query mappings or metadata from the backend work fine"""
-
     airdrops_response = requests.get(
         api_url_for(rotkehlchen_api_server, 'airdropsmetadataresource'),
     )
     airdrops_result = assert_proper_response_with_result(airdrops_response)
-    assert len(airdrops_result) == 18
+    assert len(airdrops_result) == 22
     for res in airdrops_result:
         assert 'identifier' in res and isinstance(res['identifier'], str)
         assert 'name' in res and isinstance(res['name'], str)

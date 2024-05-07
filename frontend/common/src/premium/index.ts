@@ -35,29 +35,29 @@ export interface PremiumInterface {
 }
 
 export interface StatisticsApi {
-  assetValueDistribution(): Promise<TimedAssetBalances>;
-  locationValueDistribution(): Promise<LocationData>;
-  ownedAssets(): Promise<OwnedAssets>;
-  timedBalances(
+  assetValueDistribution: () => Promise<TimedAssetBalances>;
+  locationValueDistribution: () => Promise<LocationData>;
+  ownedAssets: () => Promise<OwnedAssets>;
+  timedBalances: (
     asset: string,
     start: number,
     end: number,
     collectionId?: number
-  ): Promise<TimedBalances>;
-  fetchNetValue(): Promise<void>;
+  ) => Promise<TimedBalances>;
+  fetchNetValue: () => Promise<void>;
   netValue: (startingData: number) => Ref<NetValue>;
 }
 
 export interface DateUtilities {
-  epoch(): number;
-  format(date: string, oldFormat: string, newFormat: string): string;
-  now(format: string): string;
-  epochToFormat(epoch: number, format: string): string;
-  dateToEpoch(date: string, format: string): number;
-  epochStartSubtract(amount: number, unit: TimeUnit): number;
-  toUserSelectedFormat(timestamp: number): string;
-  getDateInputISOFormat(format: string): string;
-  convertToTimestamp(date: string, dateFormat?: string): number;
+  epoch: () => number;
+  format: (date: string, oldFormat: string, newFormat: string) => string;
+  now: (format: string) => string;
+  epochToFormat: (epoch: number, format: string) => string;
+  dateToEpoch: (date: string, format: string) => number;
+  epochStartSubtract: (amount: number, unit: TimeUnit) => number;
+  toUserSelectedFormat: (timestamp: number) => string;
+  getDateInputISOFormat: (format: string) => string;
+  convertToTimestamp: (date: string, dateFormat?: string) => number;
 }
 
 export interface CompoundApi {
@@ -73,7 +73,6 @@ export interface BalancerApi {
   balancerPools: Ref<XswapPool[]>;
   balancerAddresses: Ref<string[]>;
   fetchBalancerBalances: (refresh: boolean) => Promise<void>;
-  fetchBalancerEvents: (refresh: boolean) => Promise<void>;
 }
 
 export interface SushiApi {
@@ -93,14 +92,14 @@ export interface BalancesApi {
 }
 
 export interface AssetsApi {
-  assetInfo(identifier: MaybeRef<string>): ComputedRef<AssetInfo | null>;
-  assetSymbol(identifier: MaybeRef<string>): ComputedRef<string>;
-  tokenAddress(identifier: MaybeRef<string>): ComputedRef<string>;
+  assetInfo: (identifier: MaybeRef<string>) => ComputedRef<AssetInfo | null>;
+  assetSymbol: (identifier: MaybeRef<string>) => ComputedRef<string>;
+  tokenAddress: (identifier: MaybeRef<string>) => ComputedRef<string>;
 }
 
 export interface UtilsApi {
-  truncate(text: string, length: number): string;
-  getPoolName(type: LpType, assets: string[]): string;
+  truncate: (text: string, length: number) => string;
+  getPoolName: (type: LpType, assets: string[]) => string;
 }
 
 export interface DataUtilities {
@@ -128,9 +127,9 @@ export interface UserSettingsApi {
 }
 
 export interface SettingsApi {
-  update(settings: FrontendSettingsPayload): Promise<void>;
-  defaultThemes(): Themes;
-  themes(): Themes;
+  update: (settings: FrontendSettingsPayload) => Promise<void>;
+  defaultThemes: () => Themes;
+  themes: () => Themes;
   user: UserSettingsApi;
   i18n: {
     t: (
@@ -138,14 +137,9 @@ export interface SettingsApi {
       values?: Record<string, unknown>,
       choice?: number
     ) => string;
-    /**
-     * @deprecated
-     */
-    tc: (
+    te: (
       key: string,
-      choice?: number,
-      values?: Record<string, unknown>
-    ) => string;
+    ) => boolean;
   };
 }
 

@@ -1,14 +1,13 @@
 <script setup lang="ts">
 import {
   Blockchain,
-  type BlockchainSelection,
 } from '@rotki/common/lib/blockchain';
 import { truncateAddress } from '@/utils/truncate';
 import type { Account } from '@rotki/common/lib/account';
 
 const props = withDefaults(
   defineProps<{
-    account: Account<BlockchainSelection>;
+    account: Account;
     useAliasName?: boolean;
     truncate?: boolean;
     hideChainIcon?: boolean;
@@ -56,9 +55,8 @@ const { t } = useI18n();
         v-if="!hideChainIcon"
         class="pr-1"
       >
-        <VAvatar
-          left
-          size="24px"
+        <div
+          class="rounded-full overflow-hidden w-6 h-6 dark:bg-rui-grey-600 flex items-center justify-center"
         >
           <ChainIcon
             v-if="account.chain && account.chain !== 'ALL'"
@@ -75,7 +73,7 @@ const { t } = useI18n();
             </template>
             {{ t('common.multi_chain') }}
           </RuiTooltip>
-        </VAvatar>
+        </div>
       </div>
 
       <EnsAvatar

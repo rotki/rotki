@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { PurgeableImageCache } from '@/types/session/purge';
-import type { ComputedRef, Ref } from 'vue';
 
 const { t } = useI18n();
 

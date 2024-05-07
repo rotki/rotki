@@ -88,9 +88,9 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
           </RuiButton>
         </div>
         <div class="">
-          <VMenu
-            offset-y
-            left
+          <RuiMenu
+            close-on-content-click
+            :popper="{ placement: 'bottom-end' }"
           >
             <template #activator="{ on }">
               <RuiTooltip
@@ -136,7 +136,7 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
                 {{ t('profit_loss_reports.debug.import_data') }}
               </RuiButton>
             </div>
-          </VMenu>
+          </RuiMenu>
         </div>
       </div>
     </template>

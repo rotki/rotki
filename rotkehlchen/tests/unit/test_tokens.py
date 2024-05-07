@@ -30,9 +30,7 @@ def fixture_ethereumtokens(ethereum_inquirer, database, inquirer):  # pylint: di
     return EthereumTokens(database, ethereum_inquirer)
 
 
-# TODO: This needs VCR, but I removed it due to inability to make it work.
-# Recording a cassette works. But rerunning it with the cassete seems to fail when
-# trying to replay the 2nd request, saying it differs.
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ignored_assets', [[A_LPT]])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
 @pytest.mark.parametrize('ethereum_accounts', [[
@@ -125,7 +123,7 @@ def test_last_queried_ts(tokens, freezer):
     # We don't need to query the chain here, so mock tokens list
     evm_tokens_patch = patch(
         'rotkehlchen.globaldb.handler.GlobalDBHandler.get_evm_tokens',
-        new=lambda _, chain_id=ChainID.ETHEREUM, exceptions=None, protocol=None: [],
+        new=lambda chain_id=ChainID.ETHEREUM, exceptions=None, protocol=None: [],
     )
     beginning = ts_now()
     address = '0x4bBa290826C253BD854121346c370a9886d1bC26'

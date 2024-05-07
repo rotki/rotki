@@ -1,26 +1,35 @@
-import type { EvmUndecodedTransactionsData } from '@/types/websocket-messages';
+import type { EvmUnDecodedTransactionsData } from '@/types/websocket-messages';
 
 export const useHistoryStore = defineStore('history', () => {
-  const { notify } = useNotificationsStore();
-  const { t } = useI18n();
-  const associatedLocations: Ref<string[]> = ref([]);
-  const { fetchAssociatedLocations: fetchAssociatedLocationsApi }
-    = useHistoryApi();
+  const associatedLocations = ref<string[]>([]);
+  const undecodedTransactionsStatus = ref<Record<string, EvmUnDecodedTransactionsData>>({});
 
-  const evmUndecodedTransactionsStatus: Ref<
-    Record<string, EvmUndecodedTransactionsData>
-  > = ref({});
+  const decodingStatus = computed<EvmUnDecodedTransactionsData[]>(() => Object.values(get(undecodedTransactionsStatus))
+    .filter(status => status.total > 0));
 
-  const setEvmUndecodedTransactions = (data: EvmUndecodedTransactionsData) => {
-    set(evmUndecodedTransactionsStatus, {
-      ...get(evmUndecodedTransactionsStatus),
+  const setUndecodedTransactionsStatus = (data: EvmUnDecodedTransactionsData) => {
+    set(undecodedTransactionsStatus, {
+      ...get(undecodedTransactionsStatus),
       [data.evmChain]: data,
     });
   };
 
-  const resetEvmUndecodedTransactionsStatus = () => {
-    set(evmUndecodedTransactionsStatus, {});
+  const updateUndecodedTransactionsStatus = (data: Record<string, EvmUnDecodedTransactionsData>): void => {
+    set(undecodedTransactionsStatus, {
+      ...get(undecodedTransactionsStatus),
+      ...data,
+    });
   };
+
+  const resetUndecodedTransactionsStatus = () => {
+    set(undecodedTransactionsStatus, {});
+  };
+
+  const { fetchAssociatedLocations: fetchAssociatedLocationsApi } = useHistoryApi();
+  const { notify } = useNotificationsStore();
+  const { t } = useI18n();
+
+  const getUndecodedTransactionStatus = (): EvmUnDecodedTransactionsData[] => Object.values(get(undecodedTransactionsStatus));
 
   const fetchAssociatedLocations = async () => {
     try {
@@ -30,12 +39,8 @@ export const useHistoryStore = defineStore('history', () => {
       logger.error(error);
       const message = error?.message ?? error ?? '';
       notify({
-        title: t(
-          'actions.history.fetch_associated_locations.error.title',
-        ).toString(),
-        message: t('actions.history.fetch_associated_locations.error.message', {
-          message,
-        }).toString(),
+        title: t('actions.history.fetch_associated_locations.error.title'),
+        message: t('actions.history.fetch_associated_locations.error.message', { message }),
         display: true,
       });
     }
@@ -43,9 +48,12 @@ export const useHistoryStore = defineStore('history', () => {
 
   return {
     associatedLocations,
+    decodingStatus,
+    undecodedTransactionsStatus,
+    setUndecodedTransactionsStatus,
+    getUndecodedTransactionStatus,
+    updateUndecodedTransactionsStatus,
+    resetUndecodedTransactionsStatus,
     fetchAssociatedLocations,
-    evmUndecodedTransactionsStatus,
-    setEvmUndecodedTransactions,
-    resetEvmUndecodedTransactionsStatus,
   };
 });

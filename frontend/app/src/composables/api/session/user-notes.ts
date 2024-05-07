@@ -4,18 +4,19 @@ import { handleResponse } from '@/services/utils';
 import {
   type UserNote,
   UserNoteCollectionResponse,
-  type UserNotesFilter,
+  type UserNotesRequestPayload,
 } from '@/types/notes';
+import type { MaybeRef } from '@vueuse/core';
 import type { Collection } from '@/types/collection';
 import type { ActionResult } from '@rotki/common/lib/data';
 
 export function useUserNotesApi() {
   const fetchUserNotes = async (
-    filter: UserNotesFilter,
+    filter: MaybeRef<UserNotesRequestPayload>,
   ): Promise<Collection<UserNote>> => {
     const response = await api.instance.post<
       ActionResult<Collection<UserNote>>
-    >('/notes', snakeCaseTransformer(filter));
+    >('/notes', snakeCaseTransformer(get(filter)));
 
     return mapCollectionResponse(
       UserNoteCollectionResponse.parse(handleResponse(response)),

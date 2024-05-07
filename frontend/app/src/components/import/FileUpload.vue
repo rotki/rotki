@@ -133,10 +133,14 @@ watch(uploaded, (uploaded) => {
 });
 
 watch(errorMessage, message => onError(message));
+
+defineExpose({
+  removeFile,
+});
 </script>
 
 <template>
-  <div class="flex flex-row">
+  <div class="flex flex-row overflow-hidden">
     <div
       class="p-4 border border-default rounded-md w-full"
       :class="{ 'border-primary': active }"

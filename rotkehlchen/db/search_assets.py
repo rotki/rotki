@@ -1,3 +1,4 @@
+import operator
 from typing import TYPE_CHECKING, Any
 
 from polyleven import levenshtein
@@ -120,5 +121,5 @@ def search_assets_levenshtein(
         if search_nfts is True:
             search_result += _search_only_nfts_levenstein(cursor=cursor, filter_query=filter_query)
 
-    sorted_search_result = [result for _, result in sorted(search_result, key=lambda item: item[0])]  # noqa: E501
+    sorted_search_result = [result for _, result in sorted(search_result, key=operator.itemgetter(0))]  # noqa: E501
     return sorted_search_result[:limit] if limit is not None else sorted_search_result

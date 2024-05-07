@@ -3,22 +3,42 @@ import {
   type Wrapper,
   mount,
 } from '@vue/test-utils';
-import { createPinia, setActivePinia } from 'pinia';
+import { type Pinia, createPinia, setActivePinia } from 'pinia';
 import Vuetify from 'vuetify';
 import flushPromises from 'flush-promises';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import EvmEventForm from '@/components/history/events/forms/EvmEventForm.vue';
-import VAutocompleteStub from '../../../stubs/VAutocomplete';
-import VComboboxStub from '../../../stubs/VCombobox';
+import { VAutocompleteStub } from '../../../stubs/VAutocomplete';
+import { VComboboxStub } from '../../../stubs/VCombobox';
+import type { AssetMap } from '@/types/asset';
 import type { EvmHistoryEvent } from '@/types/history/events';
 
 vi.mock('json-editor-vue', () => ({
   template: '<input />',
 }));
 
+vi.mock('@/store/balances/prices', () => ({
+  useBalancePricesStore: vi.fn().mockReturnValue({
+    getHistoricPrice: vi.fn(),
+  }),
+}));
+
 describe('evmEventForm.vue', () => {
   setupDayjs();
   let wrapper: Wrapper<EvmEventForm>;
+  let pinia: Pinia;
+
+  const asset = {
+    name: 'Ethereum',
+    symbol: 'eip155:1/erc20:0xA3Ee8CEB67906492287FFD256A9422313B5796d4',
+    assetType: 'own chain',
+    isCustomAsset: false,
+  };
+
+  const mapping: AssetMap = {
+    assetCollections: {},
+    assets: { [asset.symbol]: asset },
+  };
 
   const groupHeader: EvmHistoryEvent = {
     identifier: 14344,
@@ -27,13 +47,13 @@ describe('evmEventForm.vue', () => {
     sequenceIndex: 2411,
     timestamp: 1686495083,
     location: 'ethereum',
-    asset: 'eip155:1/erc20:0xA3Ee8CEB67906492287FFD256A9422313B5796d4',
+    asset: asset.symbol,
     balance: {
       amount: bigNumberify(610),
       usdValue: bigNumberify(0),
     },
     eventType: 'receive',
-    eventSubtype: null,
+    eventSubtype: '',
     locationLabel: '0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8',
     notes:
       'Receive 610 Visit https://rafts.cc to claim rewards. from 0x30a2EBF10f34c6C4874b0bDD5740690fD2f3B70C to 0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8',
@@ -44,10 +64,16 @@ describe('evmEventForm.vue', () => {
     txHash: '0x4ba949779d936631dc9eb68fa9308c18de51db253aeea919384c728942f95ba9',
   };
 
+  beforeEach(() => {
+    vi.useFakeTimers();
+    pinia = createPinia();
+    setActivePinia(pinia);
+    vi.mocked(useAssetInfoApi().assetMapping).mockResolvedValue(mapping);
+    vi.mocked(useBalancePricesStore().getHistoricPrice).mockResolvedValue(One);
+  });
+
   const createWrapper = (options: ThisTypedMountOptions<any> = {}) => {
     const vuetify = new Vuetify();
-    const pinia = createPinia();
-    setActivePinia(pinia);
     return mount(EvmEventForm, {
       pinia,
       vuetify,
@@ -62,7 +88,7 @@ describe('evmEventForm.vue', () => {
   describe('should prefill the fields based on the props', () => {
     it('no `groupHeader`, `editableItem`, nor `nextSequence` are passed', async () => {
       wrapper = createWrapper();
-      await wrapper.vm.$nextTick();
+      await nextTick();
 
       expect(
         (wrapper.find('[data-cy=txHash] input').element as HTMLInputElement)
@@ -88,17 +114,13 @@ describe('evmEventForm.vue', () => {
           wrapper.find('[data-cy=sequenceIndex] input')
             .element as HTMLInputElement
         ).value,
-      ).toBe('0');
+      ).toBe('');
     });
 
     it('`groupHeader` and `nextSequence` are passed', async () => {
-      wrapper = createWrapper({
-        propsData: {
-          groupHeader,
-          nextSequence: '10',
-        },
-      });
-      await wrapper.vm.$nextTick();
+      wrapper = createWrapper();
+      await nextTick();
+      await wrapper.setProps({ groupHeader, nextSequence: '10' });
 
       expect(
         (wrapper.find('[data-cy=txHash] input').element as HTMLInputElement)
@@ -140,14 +162,9 @@ describe('evmEventForm.vue', () => {
     });
 
     it('`groupHeader`, `editableItem`, and `nextSequence` are passed', async () => {
-      wrapper = createWrapper({
-        propsData: {
-          groupHeader,
-          editableItem: groupHeader,
-          nextSequence: '10',
-        },
-      });
-      await wrapper.vm.$nextTick();
+      wrapper = createWrapper();
+      await nextTick();
+      await wrapper.setProps({ groupHeader, editableItem: groupHeader, nextSequence: '10' });
 
       expect(
         (wrapper.find('[data-cy=txHash] input').element as HTMLInputElement)
@@ -191,7 +208,7 @@ describe('evmEventForm.vue', () => {
 
   it('should show all eventTypes options correctly', async () => {
     wrapper = createWrapper({ propsData: { groupHeader } });
-    await wrapper.vm.$nextTick();
+    await nextTick();
     await flushPromises();
 
     const { historyEventTypesData } = useHistoryEventMappings();
@@ -203,7 +220,7 @@ describe('evmEventForm.vue', () => {
 
   it('should show all eventSubTypes options correctly', async () => {
     wrapper = createWrapper({ propsData: { groupHeader } });
-    await wrapper.vm.$nextTick();
+    await nextTick();
     await flushPromises();
 
     const { historyEventSubTypesData } = useHistoryEventMappings();
@@ -215,10 +232,10 @@ describe('evmEventForm.vue', () => {
 
   it('should show all counterparties options correctly', async () => {
     wrapper = createWrapper({ propsData: { groupHeader } });
-    await wrapper.vm.$nextTick();
+    await nextTick();
     await flushPromises();
 
-    const { counterparties } = useHistoryEventMappings();
+    const { counterparties } = useHistoryEventCounterpartyMappings();
 
     expect(
       wrapper.findAll('[data-cy=counterparty] .selections span'),
@@ -227,7 +244,7 @@ describe('evmEventForm.vue', () => {
 
   it('should show correct eventSubtypes options, based on selected eventType and counterparty', async () => {
     wrapper = createWrapper({ propsData: { groupHeader } });
-    await wrapper.vm.$nextTick();
+    await nextTick();
     await flushPromises();
 
     const { historyEventTypeGlobalMapping } = useHistoryEventMappings();
@@ -238,13 +255,13 @@ describe('evmEventForm.vue', () => {
       value: selectedEventType,
     });
 
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     const keysFromGlobalMappings = Object.keys(
       get(historyEventTypeGlobalMapping)?.[selectedEventType] ?? {},
     );
 
-    const spans = await wrapper.findAll(
+    const spans = wrapper.findAll(
       '[data-cy=eventSubtype] .selections span',
     );
     expect(spans).toHaveLength(keysFromGlobalMappings.length);
@@ -255,7 +272,7 @@ describe('evmEventForm.vue', () => {
 
   it('should show product options, based on selected counterparty', async () => {
     wrapper = createWrapper({ propsData: { groupHeader } });
-    await wrapper.vm.$nextTick();
+    await nextTick();
     await flushPromises();
 
     expect(wrapper.find('[data-cy=product]').attributes('disabled')).toBe(
@@ -266,7 +283,7 @@ describe('evmEventForm.vue', () => {
     await wrapper.find('[data-cy=counterparty] .input-value').trigger('input', {
       value: '1inch',
     });
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
     expect(wrapper.find('[data-cy=product]').attributes('disabled')).toBe(
       'disabled',
@@ -277,9 +294,9 @@ describe('evmEventForm.vue', () => {
     await wrapper.find('[data-cy=counterparty] .input-value').trigger('input', {
       value: selectedCounterparty,
     });
-    await wrapper.vm.$nextTick();
+    await nextTick();
 
-    const { historyEventProductsMapping } = useHistoryEventMappings();
+    const { historyEventProductsMapping } = useHistoryEventProductMappings();
 
     const products = get(historyEventProductsMapping)[selectedCounterparty];
 

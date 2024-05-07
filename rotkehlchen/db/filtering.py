@@ -1,6 +1,6 @@
 import logging
-from abc import ABCMeta, abstractmethod
-from collections.abc import Collection
+from abc import ABC, abstractmethod
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from typing import Any, Generic, Literal, NamedTuple, TypeVar
@@ -34,6 +34,7 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EVMTxHash,
     Location,
+    OptionalBlockchainAddress,
     OptionalChainAddress,
     SupportedBlockchain,
     Timestamp,
@@ -59,6 +60,7 @@ ETH_DEPOSIT_EVENT_JOIN = ALL_EVENTS_DATA_JOIN
 
 
 T = TypeVar('T')
+V = TypeVar('V')
 T_FilterQ = TypeVar('T_FilterQ', bound='DBFilterQuery')
 T_HistoryBaseEntryFilterQ = TypeVar('T_HistoryBaseEntryFilterQ', bound='HistoryBaseEntryFilterQuery')  # noqa: E501
 T_EthSTakingFilterQ = TypeVar('T_EthSTakingFilterQ', bound='EthStakingEventFilterQuery')
@@ -280,6 +282,14 @@ class DBLocationFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBNullableLocationFilter(DBFilter):
+    location: Location | None
+
+    def prepare(self) -> tuple[list[str], list[Any]]:
+        return (['location IS ?'], [None if self.location is None else self.location.serialize_for_db()])  # noqa: E501
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBSubStringFilter(DBFilter):
     field: str
     search_string: str
@@ -289,7 +299,7 @@ class DBSubStringFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBFilterQuery(metaclass=ABCMeta):
+class DBFilterQuery(ABC):
     and_op: bool
     filters: list[DBFilter]
     join_clause: DBFilter | None = None
@@ -567,10 +577,10 @@ class DBEqualsFilter(DBFilter):
 class DBMultiValueFilter(Generic[T], DBFilter):
     """Filter a column having a value out of a selection of values"""
     column: str
-    values: list[T]
+    values: Sequence[T]
     operator: Literal['IN', 'NOT IN'] = 'IN'
 
-    def prepare(self) -> tuple[list[str], list[T]]:
+    def prepare(self) -> tuple[list[str], Sequence[T]]:
         suffix = ''  # for NOT IN comparison remember NULL is a special case
         if self.operator == 'NOT IN':
             suffix = f' OR {self.column} IS NULL'
@@ -595,7 +605,11 @@ class DBMultiIntegerFilter(DBMultiValueFilter[int]):
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBOptionalChainAddressesFilter(DBFilter):
     """Filter the address column by a selection of optional chain addresses"""
-    optional_chain_addresses: list[OptionalChainAddress] | None
+    optional_chain_addresses: (
+        list[OptionalChainAddress] |
+        list[OptionalBlockchainAddress] |
+        None
+    )
 
     def prepare(self) -> tuple[list[str], list[str]]:
         query_filters = []
@@ -883,7 +897,7 @@ class HistoryEventCustomizedOnlyJoinsFilter(DBFilter):
         return [query], bindings
 
 
-class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation, metaclass=ABCMeta):  # noqa: E501
+class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWithLocation, ABC):
 
     @classmethod
     def make(
@@ -900,6 +914,7 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
             exclude_subtypes: list[HistoryEventSubType] | None = None,
             location: Location | None = None,
             location_labels: list[str] | None = None,
+            excluded_locations: list[Location] | None = None,
             ignored_ids: list[str] | None = None,
             null_columns: list[str] | None = None,
             event_identifiers: list[str] | None = None,
@@ -969,6 +984,13 @@ class HistoryBaseEntryFilterQuery(DBFilterQuery, FilterWithTimestamp, FilterWith
         if location is not None:
             filter_query.location_filter = DBLocationFilter(and_op=True, location=location)
             filters.append(filter_query.location_filter)
+        if excluded_locations is not None:
+            filters.append(DBMultiStringFilter(
+                and_op=True,
+                column='location',
+                values=[x.serialize_for_db() for x in excluded_locations],
+                operator='NOT IN',
+            ))
         if location_labels is not None:
             filters.append(DBMultiStringFilter(
                 and_op=True,
@@ -1056,6 +1078,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             exclude_subtypes: list[HistoryEventSubType] | None = None,
             location: Location | None = None,
             location_labels: list[str] | None = None,
+            excluded_locations: list[Location] | None = None,
             ignored_ids: list[str] | None = None,
             null_columns: list[str] | None = None,
             event_identifiers: list[str] | None = None,
@@ -1084,6 +1107,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             exclude_subtypes=exclude_subtypes,
             location=location,
             location_labels=location_labels,
+            excluded_locations=excluded_locations,
             ignored_ids=ignored_ids,
             null_columns=null_columns,
             event_identifiers=event_identifiers,
@@ -1111,7 +1135,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             filter_query.filters.append(DBMultiBytesFilter(
                 and_op=True,
                 column='tx_hash',
-                values=tx_hashes,  # type: ignore[arg-type]  # EVMTxHash is equal to bytes
+                values=tx_hashes,
                 operator='IN',
             ))
 
@@ -1119,7 +1143,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
             filter_query.filters.append(DBMultiStringFilter(
                 and_op=True,
                 column='address',
-                values=addresses,  # type: ignore[arg-type]  # ChecksumEvmAddress is equal to str
+                values=addresses,
                 operator='IN',
             ))
 
@@ -1134,7 +1158,7 @@ class EvmEventFilterQuery(HistoryBaseEntryFilterQuery):
         return f'{HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS}'
 
 
-class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, metaclass=ABCMeta):
+class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, ABC):
 
     @classmethod
     def make(
@@ -1151,6 +1175,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, metaclass=ABCMeta)
             exclude_subtypes: list[HistoryEventSubType] | None = None,
             location: Location | None = None,
             location_labels: list[str] | None = None,
+            excluded_locations: list[Location] | None = None,
             ignored_ids: list[str] | None = None,
             null_columns: list[str] | None = None,
             event_identifiers: list[str] | None = None,
@@ -1176,6 +1201,7 @@ class EthStakingEventFilterQuery(HistoryBaseEntryFilterQuery, metaclass=ABCMeta)
             exclude_subtypes=exclude_subtypes,
             location=location,
             location_labels=location_labels,
+            excluded_locations=excluded_locations,
             ignored_ids=ignored_ids,
             null_columns=null_columns,
             event_identifiers=event_identifiers,
@@ -1225,6 +1251,7 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
             exclude_subtypes: list[HistoryEventSubType] | None = None,
             location: Location | None = None,
             location_labels: list[str] | None = None,
+            excluded_locations: list[Location] | None = None,
             ignored_ids: list[str] | None = None,
             null_columns: list[str] | None = None,
             event_identifiers: list[str] | None = None,
@@ -1251,6 +1278,7 @@ class EthWithdrawalFilterQuery(EthStakingEventFilterQuery):
             exclude_subtypes=exclude_subtypes,
             location=location,
             location_labels=location_labels,
+            excluded_locations=excluded_locations,
             ignored_ids=ignored_ids,
             null_columns=null_columns,
             event_identifiers=event_identifiers,
@@ -1297,6 +1325,7 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
             exclude_subtypes: list[HistoryEventSubType] | None = None,
             location: Location | None = None,
             location_labels: list[str] | None = None,
+            excluded_locations: list[Location] | None = None,
             ignored_ids: list[str] | None = None,
             null_columns: list[str] | None = None,
             event_identifiers: list[str] | None = None,
@@ -1323,6 +1352,7 @@ class EthDepositEventFilterQuery(EvmEventFilterQuery, EthStakingEventFilterQuery
             exclude_subtypes=exclude_subtypes,
             location=location,
             location_labels=location_labels,
+            excluded_locations=excluded_locations,
             ignored_ids=ignored_ids,
             null_columns=null_columns,
             event_identifiers=event_identifiers,
@@ -1368,9 +1398,6 @@ class DBSubtableSelectFilter(DBFilter):
             querystr += f' WHERE {self.select_condition}'
         querystr += ')'
         return [querystr], []
-
-    def is_ignored_asset_filter(self) -> bool:
-        return self.select_condition is not None and self.select_condition == 'name="ignored_asset"'  # noqa: E501
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -1437,11 +1464,13 @@ class AddressbookFilterQuery(DBFilterQuery):
             blockchain: SupportedBlockchain | None = None,
             optional_chain_addresses: list[OptionalChainAddress] | None = None,
             substring_search: str | None = None,
+            order_by_rules: list[tuple[str, bool]] | None = None,
     ) -> 'AddressbookFilterQuery':
         filter_query = cls.create(
             and_op=and_op,
             limit=limit,
             offset=offset,
+            order_by_rules=order_by_rules,
         )
         filters: list[DBFilter] = []
         if substring_search is not None:
@@ -1572,6 +1601,47 @@ class AssetsFilterQuery(DBFilterQuery):
                 select_condition=f'key="{compute_cache_key((CacheType.SPAM_ASSET_FALSE_POSITIVE,))}"',
             ))
         filter_query.filters = filters
+        return filter_query
+
+
+class LocationAssetMappingsFilterQuery(DBFilterQuery):
+    """DBFilterQuery with a nullable DB Location filter. Here the if location_filter is None then
+    no filter is applied. If location_filter exists, but with the `location` value as None then the
+    filter will be applied with `location IS NULL` clause. Other normal values of location in
+    location filter will work similar to DBLocationFilter."""
+    location_filter: DBNullableLocationFilter | None = None
+
+    @classmethod
+    def make(
+            cls: type['LocationAssetMappingsFilterQuery'],
+            limit: int,
+            offset: int,
+            location: Location | None | Literal['common'] = None,
+            location_symbol: str | None = None,
+            and_op: bool = True,
+    ) -> 'LocationAssetMappingsFilterQuery':
+        """Make and return the LocationAssetMappingsFilterQuery instance according to the passed
+        arguments. `limit` and `offset` are for pagination and works with DBFilterPagination.
+        `location` can be a valid Location value, None, or "common". If `location` is None, filter
+        will not be applied. If valid Location value is given, that location will be filtered. If
+        `location` is "common" then filter will be applied for columns where location is NULL."""
+        filter_query = cls.create(
+            and_op=and_op,
+            limit=limit,
+            offset=offset,
+        )
+        if location_symbol is not None:
+            filter_query.filters.append(DBSubStringFilter(
+                and_op=True,
+                field='exchange_symbol',
+                search_string=location_symbol,
+            ))
+        if location is not None:
+            filter_query.location_filter = DBNullableLocationFilter(
+                and_op=True,
+                location=None if location == 'common' else location,
+            )
+            filter_query.filters.append(filter_query.location_filter)
         return filter_query
 
 

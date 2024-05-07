@@ -1,5 +1,5 @@
 import logging
-from abc import ABCMeta
+from abc import ABC
 from typing import TYPE_CHECKING, Any, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -41,7 +41,7 @@ NEW_PROJECT_APPLICATION_2ARGS = b'\xecy?\xe7\x04\xd3@\xd9b\xcd\x02\xd8\x1a\xd5@E
 FUNDS_DISTRIBUTED = b'z\x0b2\xf6\x04\xa8\xc9C&2(a\x03\x9aD\xb7\xedxbL\xf2 \xba\x8bXj$G\xaf\r\x9c\x9b'  # noqa: E501
 
 
-class GitcoinV2CommonDecoder(DecoderInterface, metaclass=ABCMeta):
+class GitcoinV2CommonDecoder(DecoderInterface, ABC):
     """This is the gitcoin v2 (allo protocol) common decoder
 
     Not the same as gitcoin v1, or v1.5 (they have changed contracts many times).

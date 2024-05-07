@@ -4,6 +4,7 @@ import { Severity } from '@rotki/common/lib/messages';
 import { TaskType } from '@/types/task-type';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { Section } from '@/types/status';
+import type { Account } from '@rotki/common/lib/account';
 import type { MaybeRef } from '@vueuse/core';
 import type {
   AccountPayload,
@@ -11,19 +12,18 @@ import type {
   BaseAddAccountsPayload,
 } from '@/types/blockchain/accounts';
 import type { TaskMeta } from '@/types/task';
+import type { AddressBookSimplePayload } from '@/types/eth-names';
 
 export function useBlockchains() {
   const { addAccount, fetch, addEvmAccount } = useBlockchainAccounts();
-  const { getAccountsByChain } = useAccountBalances();
-  const { fetchBlockchainBalances } = useBlockchainBalances();
-  const { fetchLoopringBalances } = useEthBalancesStore();
+  const { fetchBlockchainBalances, fetchLoopringBalances } = useBlockchainBalances();
   const { fetchDetected } = useBlockchainTokensStore();
   const { enableModule } = useSettingsStore();
   const { reset: resetDefi } = useDefiStore();
   const { resetDefiStatus } = useStatusStore();
-  const { detectEvmAccounts: detectEvmAccountsCaller }
-    = useBlockchainAccountsApi();
-  const { getChainName, supportsTransactions, evmChains } = useSupportedChains();
+  const { detectEvmAccounts: detectEvmAccountsCaller } = useBlockchainAccountsApi();
+  const { getChainName, supportsTransactions, evmChains, isEvm, supportedChains } = useSupportedChains();
+  const { getAddresses } = useBlockchainStore();
 
   const { isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
@@ -34,34 +34,42 @@ export function useBlockchains() {
   );
 
   const getNewAccountPayload = (
-    chain: Blockchain,
+    chain: string,
     payload: AccountPayload[],
   ): AccountPayload[] => {
-    const knownAddresses = getAccountsByChain(chain);
+    const knownAddresses: string[] = getAddresses(chain);
     return payload.filter(({ xpub, address }) => {
       const key = (xpub?.xpub || address).toLocaleLowerCase();
-
       return !knownAddresses.includes(key);
     });
   };
 
+  const { fetchEnsNames } = useAddressesNamesStore();
+
   const fetchAccounts = async (
-    blockchain?: Blockchain,
+    blockchain?: string,
     refreshEns: boolean = false,
   ): Promise<void> => {
-    const promises: Promise<any>[] = [];
+    const chains = blockchain ? [blockchain] : get(supportedChains).map(chain => chain.id);
+    await awaitParallelExecution(chains, chain => chain, fetch, 2);
+    await Promise.allSettled(chains.map(fetch));
 
-    const chains = Object.values(Blockchain);
-    if (!blockchain)
-      promises.push(...chains.map(chain => fetch(chain, refreshEns)));
-    else
-      promises.push(fetch(blockchain, refreshEns));
+    const namesPayload: AddressBookSimplePayload[] = [];
 
-    await Promise.allSettled(promises);
+    chains.forEach((chain) => {
+      if (!get(isEvm(chain)))
+        return;
+
+      const addresses = getAddresses(chain);
+      namesPayload.push(...addresses.map(address => ({ address, blockchain: chain })));
+    });
+
+    if (namesPayload.length > 0)
+      startPromise(fetchEnsNames(namesPayload, refreshEns));
   };
 
   const refreshAccounts = async (
-    blockchain?: MaybeRef<Blockchain>,
+    blockchain?: MaybeRef<string>,
     periodic = false,
   ) => {
     const chain = get(blockchain);
@@ -94,24 +102,18 @@ export function useBlockchains() {
     payload: BaseAddAccountsPayload,
   ): Promise<void> => {
     const blockchain = 'EVM';
-    const finishAddition = async (chain: Blockchain, address: string) => {
+    const accountsToFinish: Account[] = [];
+    const finishAddition = async ({ chain, address }: Account) => {
       const modules = payload.modules;
-      if (chain === Blockchain.ETH) {
-        if (modules) {
-          await enableModule({
-            enable: payload.modules,
-            addresses: [address],
-          });
-        }
-        resetDefi();
-        resetDefiStatus();
-        resetNftSectionStatus();
+      if (chain === Blockchain.ETH && modules) {
+        await enableModule({
+          enable: payload.modules,
+          addresses: [address],
+        });
       }
 
       if (supportsTransactions(chain))
         await fetchDetected(chain, [address]);
-
-      await refreshAccounts(chain);
     };
 
     const promiseResult = await Promise.allSettled(
@@ -149,7 +151,11 @@ export function useBlockchains() {
               logger.error(`${chain} was not a valid blockchain`);
               return;
             }
-            startPromise(finishAddition(chain, address));
+
+            accountsToFinish.push({
+              chain,
+              address,
+            });
           });
 
           notify({
@@ -254,6 +260,22 @@ export function useBlockchains() {
         display: true,
       });
     }
+
+    const finish = async () => {
+      resetDefi();
+      resetDefiStatus();
+      resetNftSectionStatus();
+
+      await refreshAccounts();
+
+      const chains = get(supportedChains).map(chain => chain.id);
+
+      // Sort accounts by chain, so they are called in order
+      const accounts = accountsToFinish.sort((a, b) => chains.indexOf(a.chain) - chains.indexOf(b.chain));
+      await awaitParallelExecution(accounts, item => item.address + item.chain, finishAddition, 2);
+    };
+
+    startPromise(finish());
   };
 
   const addAccounts = async ({
@@ -334,22 +356,23 @@ export function useBlockchains() {
 
     if (registeredAddresses.length > 0) {
       const refresh = async () => {
-        if (blockchain === Blockchain.ETH && modules) {
-          await enableModule({
-            enable: modules,
-            addresses: registeredAddresses,
-          });
-        }
-        resetDefi();
-        resetDefiStatus();
-        const detectAndRefresh = async () => {
-          if (supportsTransactions(blockchain))
-            await fetchDetected(blockchain, registeredAddresses);
+        if (blockchain === Blockchain.ETH) {
+          if (modules) {
+            await enableModule({
+              enable: modules,
+              addresses: registeredAddresses,
+            });
+          }
 
-          await refreshAccounts(blockchain);
-        };
-        await Promise.allSettled([detectAndRefresh()]);
-        resetNftSectionStatus();
+          resetDefi();
+          resetDefiStatus();
+          resetNftSectionStatus();
+        }
+
+        await refreshAccounts(blockchain);
+
+        if (supportsTransactions(blockchain))
+          await fetchDetected(blockchain, registeredAddresses);
       };
       try {
         await fetchAccounts(blockchain);

@@ -8,7 +8,7 @@ const { t } = useI18n();
 const { isTaskRunning } = useTaskStore();
 
 const { balances, liabilities } = useAggregatedBalances();
-const { blockchainTotals } = useAccountBalances();
+const { blockchainTotals } = storeToRefs(useBlockchainStore());
 const aggregatedBalances = balances();
 const aggregatedLiabilities = liabilities();
 
@@ -44,7 +44,7 @@ const { refreshBalance } = useRefresh();
 const { isModuleEnabled } = useModules();
 const nftEnabled = isModuleEnabled(Module.NFTS);
 
-const { dashboardMessage } = useDynamicMessages();
+const { activeDashboardMessages } = useDynamicMessages();
 const dismissedMessage = useSessionStorage(
   'rotki.messages.dash.dismissed',
   false,
@@ -58,9 +58,9 @@ const Type = DashboardTableType;
     data-cy="dashboard"
   >
     <DynamicMessageDisplay
-      v-if="dashboardMessage && !dismissedMessage"
+      v-if="activeDashboardMessages.length > 0 && !dismissedMessage"
       class="!-mt-4"
-      :message="dashboardMessage"
+      :messages="activeDashboardMessages"
       @dismiss="dismissedMessage = true"
     />
     <div class="container">

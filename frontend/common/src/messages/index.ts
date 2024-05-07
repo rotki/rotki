@@ -4,6 +4,7 @@ export enum Severity {
   WARNING = 'warning',
   ERROR = 'error',
   INFO = 'info',
+  REMINDER = 'reminder',
 }
 
 export enum Priority {

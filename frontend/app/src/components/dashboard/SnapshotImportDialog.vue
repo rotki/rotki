@@ -68,7 +68,7 @@ const complete = logicAnd(balanceFile, locationFile);
         {{ t('snapshot_import_dialog.title') }}
       </template>
 
-      <div class="pt-2 flex flex-row gap-2">
+      <div class="flex flex-row gap-2">
         <div>
           <div class="font-bold">
             {{ t('snapshot_import_dialog.balance_snapshot_file') }}

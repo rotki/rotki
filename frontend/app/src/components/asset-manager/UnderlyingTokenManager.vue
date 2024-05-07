@@ -71,6 +71,7 @@ function addToken() {
   else
     underlyingTokens.push(token);
 
+  resetForm();
   get(v$).$reset();
   input(underlyingTokens);
 }
@@ -89,6 +90,12 @@ function deleteToken(address: string) {
       ({ address: tokenAddress }) => tokenAddress !== address,
     ),
   );
+}
+
+function resetForm() {
+  set(underlyingAddress, '');
+  set(underlyingWeight, '');
+  set(tokenKind, EvmTokenKind.ERC20);
 }
 </script>
 
@@ -110,13 +117,14 @@ function deleteToken(address: string) {
       </div>
 
       <div class="col-span-1">
-        <VSelect
+        <RuiMenuSelect
           v-model="tokenKind"
-          outlined
           :label="t('asset_form.labels.token_kind')"
-          :items="evmTokenKindsData"
-          item-text="label"
-          item-value="identifier"
+          :options="evmTokenKindsData"
+          key-attr="identifier"
+          text-attr="label"
+          full-width
+          variant="outlined"
         />
       </div>
 
@@ -158,7 +166,6 @@ function deleteToken(address: string) {
       <RuiButton
         color="primary"
         :disabled="v$.$invalid"
-        class=""
         @click="addToken()"
       >
         <template #prepend>
@@ -168,16 +175,19 @@ function deleteToken(address: string) {
       </RuiButton>
     </div>
 
-    <SimpleTable
-      height="200px"
-      class="underlying-tokens"
-    >
+    <SimpleTable class="underlying-tokens min-h-24">
       <thead>
         <tr>
-          <th>{{ t('common.address') }}</th>
-          <th>{{ t('underlying_token_manager.tokens.token_kind') }}</th>
-          <th>{{ t('underlying_token_manager.tokens.weight') }}</th>
-          <th />
+          <th scope="col">
+            {{ t('common.address') }}
+          </th>
+          <th scope="col">
+            {{ t('underlying_token_manager.tokens.token_kind') }}
+          </th>
+          <th scope="col">
+            {{ t('underlying_token_manager.tokens.weight') }}
+          </th>
+          <th scope="col" />
         </tr>
       </thead>
       <tbody>

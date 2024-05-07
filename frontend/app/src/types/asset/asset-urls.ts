@@ -6,7 +6,7 @@ export interface ExplorerUrls {
   readonly transaction?: string;
 }
 
-export type Chains = Blockchain | 'ETC' | 'zksync';
+export type Chains = Blockchain | 'ETC';
 
 export type AssetExplorerUrls = {
   [key in Chains]: ExplorerUrls;
@@ -47,11 +47,6 @@ export const explorerUrls: AssetExplorerUrls = {
     transaction: 'https://avascan.info/blockchain/c/tx/',
     block: 'https://avascan.info/blockchain/c/block/',
   },
-  zksync: {
-    address: 'https://zkscan.io/explorer/accounts/',
-    transaction: 'https://zkscan.io/explorer/transactions/',
-    block: 'https://zkscan.io/explorer/blocks/',
-  },
   [Blockchain.DOT]: {
     address: 'https://explorer.polkascan.io/polkadot/account/',
     transaction: 'https://explorer.polkascan.io/polkadot/transaction/',
@@ -82,4 +77,18 @@ export const explorerUrls: AssetExplorerUrls = {
     transaction: 'https://gnosisscan.io/tx/',
     block: 'https://gnosisscan.io/block/',
   },
+  [Blockchain.SCROLL]: {
+    address: 'https://scrollscan.com/address/',
+    transaction: 'https://scrollscan.com/tx/',
+    block: 'https://scrollscan.com/block/',
+  },
+  [Blockchain.ZKSYNC_LITE]: {
+    address: 'https://zkscan.io/explorer/accounts/',
+    transaction: 'https://zkscan.io/explorer/transactions/',
+    block: 'https://zkscan.io/explorer/blocks/',
+  },
 };
+
+export function isChains(chain: string): chain is Chains {
+  return Object.keys(explorerUrls).includes(chain);
+}

@@ -23,6 +23,7 @@ from rotkehlchen.globaldb.manual_price_oracles import ManualCurrentOracle
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.oracles.structures import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle
 from rotkehlchen.premium.premium import Premium
+from rotkehlchen.tests.utils.constants import CURRENT_PRICE_MOCK
 from rotkehlchen.tests.utils.inquirer import inquirer_inject_ethereum_set_order
 from rotkehlchen.types import Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
@@ -136,9 +137,7 @@ def fixture_download_rules(last_accounting_rules_version) -> Path:
 
     response = requests.get(f'https://raw.githubusercontent.com/rotki/data/develop/updates/accounting_rules/v{last_accounting_rules_version}.json')
     rules_file.parent.mkdir(exist_ok=True, parents=True)
-    with open(rules_file, 'w', encoding='utf-8') as f:
-        f.write(response.text)
-
+    rules_file.write_text(response.text, encoding='utf-8')
     return rules_file
 
 
@@ -298,7 +297,7 @@ def _create_inquirer(
         result = mocked_current_prices_with_oracles.get((from_asset, to_asset))
         if result is not None:  # check mocked_current_prices_with_oracles first
             return *result, False
-        price, oracle = mocked_prices.get((from_asset, to_asset), (FVal('1.5'), CurrentPriceOracle.BLOCKCHAIN))  # noqa: E501
+        price, oracle = mocked_prices.get((from_asset, to_asset), (CURRENT_PRICE_MOCK, CurrentPriceOracle.BLOCKCHAIN))  # noqa: E501
         return price, oracle, False
 
     def mock_find_usd_price_with_oracle(asset, ignore_cache: bool = False):  # pylint: disable=unused-argument

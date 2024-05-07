@@ -1,57 +1,4 @@
-enum RouteNames {
-  ROOT = 'ROOT',
-  USER = 'USER',
-  USER_LOGIN = 'USER_LOGIN',
-  USER_CREATE = 'USER_CREATE',
-  DASHBOARD = 'DASHBOARD',
-  ACCOUNTS_BALANCES = 'ACCOUNTS_BALANCES',
-  ACCOUNTS_BALANCES_BLOCKCHAIN = 'ACCOUNTS_BALANCES_BLOCKCHAIN',
-  ACCOUNTS_BALANCES_EXCHANGE = 'ACCOUNTS_BALANCES_EXCHANGE',
-  ACCOUNTS_BALANCES_MANUAL = 'ACCOUNTS_BALANCES_MANUAL',
-  ACCOUNTS_BALANCES_NON_FUNGIBLE = 'ACCOUNTS_BALANCES_NON_FUNGIBLE',
-  NFTS = 'NFTS',
-  HISTORY = 'HISTORY',
-  HISTORY_TRADES = 'HISTORY_TRADES',
-  HISTORY_DEPOSITS_WITHDRAWALS = 'HISTORY_DEPOSITS_WITHDRAWALS',
-  HISTORY_EVENTS = 'HISTORY_EVENTS',
-  DEFI = 'DEFI',
-  DEFI_OVERVIEW = 'DEFI_OVERVIEW',
-  DEFI_DEPOSITS = 'DEFI_DEPOSITS',
-  DEFI_LIABILITIES = 'DEFI_LIABILITIES',
-  DEFI_DEPOSITS_PROTOCOLS = 'DEFI_DEPOSITS_PROTOCOLS',
-  DEFI_DEPOSITS_LIQUIDITY = 'DEFI_DEPOSITS_LIQUIDITY',
-  DEFI_AIRDROPS = 'DEFI_AIRDROPS',
-  STATISTICS = 'STATISTICS',
-  STAKING = 'STAKING',
-  PROFIT_LOSS_REPORTS = 'PROFIT_LOSS_REPORTS',
-  PROFIT_LOSS_REPORT = 'PROFIT_LOSS_REPORT',
-  ASSET_MANAGER = 'ASSET_MANAGER',
-  ASSET_MANAGER_MANAGED = 'ASSET_MANAGER_MANAGED',
-  ASSET_MANAGER_CUSTOM = 'ASSET_MANAGER_CUSTOM',
-  ASSET_MANAGER_NEWLY_DETECTED = 'ASSET_MANAGER_NEWLY_DETECTED',
-  PRICE_MANAGER = 'PRICE_MANAGER',
-  PRICE_MANAGER_LATEST = 'PRICE_MANAGER_LATEST',
-  PRICE_MANAGER_HISTORIC = 'PRICE_MANAGER_HISTORIC',
-  ADDRESS_BOOK_MANAGER = 'ADDRESS_BOOK_MANAGER',
-  API_KEYS = 'API_KEYS',
-  API_KEYS_ROTKI_PREMIUM = 'API_KEYS_ROTKI_PREMIUM',
-  API_KEYS_EXCHANGES = 'API_KEYS_EXCHANGES',
-  API_KEYS_EXTERNAL_SERVICES = 'API_KEYS_EXTERNAL_SERVICES',
-  IMPORT = 'IMPORT',
-  SETTINGS = 'SETTINGS',
-  SETTINGS_GENERAL = 'SETTINGS_GENERAL',
-  SETTINGS_ACCOUNTING = 'SETTINGS_ACCOUNTING',
-  SETTINGS_DATA_SECURITY = 'SETTINGS_DATA_SECURITY',
-  SETTINGS_MODULES = 'SETTINGS_MODULES',
-  ASSETS = 'ASSETS',
-  LOCATIONS = 'LOCATIONS',
-}
-
-type AppRouteMap<T> = {
-  [index in RouteNames]: T;
-};
-
-export const Routes: AppRouteMap<string> = {
+export const Routes: Record<string, string> = {
   ROOT: '/',
   DASHBOARD: '/dashboard',
   USER: '/user',
@@ -81,7 +28,9 @@ export const Routes: AppRouteMap<string> = {
   ASSET_MANAGER: '/asset-manager',
   ASSET_MANAGER_MANAGED: '/asset-manager/managed',
   ASSET_MANAGER_CUSTOM: '/asset-manager/custom',
-  ASSET_MANAGER_NEWLY_DETECTED: '/asset-manager/newly-added',
+  ASSET_MANAGER_MORE: '/asset-manager/more',
+  ASSET_MANAGER_NEWLY_DETECTED: '/asset-manager/more/newly-added',
+  ASSET_MANAGER_CEX_MAPPING: '/asset-manager/more/cex-mapping',
   PRICE_MANAGER: '/price-manager',
   PRICE_MANAGER_LATEST: '/price-manager/latest',
   PRICE_MANAGER_HISTORIC: '/price-manager/historic',
@@ -98,6 +47,7 @@ export const Routes: AppRouteMap<string> = {
   SETTINGS_MODULES: '/settings/modules',
   ASSETS: '/assets/:identifier',
   LOCATIONS: '/locations/:identifier',
+  CALENDAR: '/calendar',
 };
 
 export const useAppRoutes = createSharedComposable(() => {
@@ -228,10 +178,20 @@ export const useAppRoutes = createSharedComposable(() => {
       icon: 'database-line',
       text: t('navigation_menu.manage_assets_sub.custom_assets'),
     },
+    ASSET_MANAGER_MORE: {
+      route: Routes.ASSET_MANAGER_MORE,
+      icon: 'expand-right-line',
+      text: t('navigation_menu.manage_assets_sub.more'),
+    },
     ASSET_MANAGER_NEWLY_DETECTED: {
       route: Routes.ASSET_MANAGER_NEWLY_DETECTED,
       icon: 'list-radio',
       text: t('navigation_menu.manage_assets_sub.newly_detected'),
+    },
+    ASSET_MANAGER_CEX_MAPPING: {
+      route: Routes.ASSET_MANAGER_CEX_MAPPING,
+      icon: 'file-list-3-line',
+      text: t('navigation_menu.manage_assets_sub.cex_mapping'),
     },
     PRICE_MANAGER: {
       route: Routes.PRICE_MANAGER,
@@ -310,6 +270,11 @@ export const useAppRoutes = createSharedComposable(() => {
     LOCATIONS: {
       route: Routes.LOCATIONS,
       text: t('navigation_menu.locations'),
+    },
+    CALENDAR: {
+      route: Routes.CALENDAR,
+      icon: 'calendar-todo-line',
+      text: t('navigation_menu.calendar'),
     },
   }));
 

@@ -25,7 +25,7 @@ function getErrorMessage(method: string) {
 
 <template>
   <SettingsOption
-    #default="{ error, success, update }"
+    #default="{ error, success, updateImmediate }"
     setting="costBasisMethod"
     :success-message="getSuccessMessage"
     :error-message="getErrorMessage"
@@ -36,8 +36,7 @@ function getErrorMessage(method: string) {
       :success-messages="success"
       :error-messages="error"
       :label="t('accounting_settings.trade.labels.cost_basis_method')"
-      color="primary"
-      @change="update($event)"
+      @input="updateImmediate($event)"
     />
   </SettingsOption>
 </template>

@@ -15,6 +15,8 @@ import dayjs from 'dayjs';
 import type { NetValue } from '@rotki/common/lib/statistics';
 import type { ValueOverTime } from '@/types/graphs';
 
+type ActiveRangeButton = 'start' | 'end' | 'both';
+
 const props = defineProps<{
   timeframe: TimeFramePeriod;
   timeframes: Timeframes;
@@ -24,9 +26,7 @@ const props = defineProps<{
 const { t } = useI18n();
 
 const { chartData } = toRefs(props);
-const { graphZeroBased, showGraphRangeSelector } = storeToRefs(
-  useFrontendSettingsStore(),
-);
+const { graphZeroBased, showGraphRangeSelector } = storeToRefs(useFrontendSettingsStore());
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { dark } = useTheme();
 
@@ -35,12 +35,15 @@ const selectedBalance = ref<number>(0);
 const showExportSnapshotDialog = ref<boolean>(false);
 const isDblClick = ref<boolean>(false);
 
+const activeRangeButton = ref<ActiveRangeButton>();
+const rangeLastX = ref<number>(0);
+const rangeRef = ref<any>();
+
 const chartId = 'net-worth-chart__chart';
 const tooltipId = 'net-worth-chart__tooltip';
 const rangeId = 'net-worth-chart__range';
 
-const { tooltipContent, tooltipDisplayOption, calculateTooltipPosition }
-  = useTooltip(tooltipId);
+const { tooltipContent, tooltipDisplayOption, calculateTooltipPosition } = useTooltip(tooltipId);
 
 const balanceData = ref<ValueOverTime[]>([]);
 const showVirtualCurrentData = ref<boolean>(true);
@@ -206,9 +209,7 @@ watch(chartData, () => {
   prepareData();
 });
 
-const { getCanvasCtx, baseColor, gradient, fontColor, backgroundColor }
-  = useGraph(chartId);
-
+const { getCanvasCtx, baseColor, gradient, fontColor, backgroundColor } = useGraph(chartId);
 const { getCanvasCtx: getRangeCanvasCtx } = useGraph(rangeId);
 
 function createDatasets(isRange = false) {
@@ -504,13 +505,6 @@ function resetZoom(updateRange = false) {
   xAxis.max = max;
   updateChart(updateRange, true);
 }
-
-type ActiveRangeButton = 'start' | 'end' | 'both';
-
-const activeRangeButton = ref<ActiveRangeButton | null>(null);
-const rangeLastX = ref<number>(0);
-
-const rangeRef = ref<any>(null);
 
 const rangeMarkerStyle = computed<Record<string, string>>(() => {
   const { min: displayedMin, range: displayedRange } = get(displayedXRange);

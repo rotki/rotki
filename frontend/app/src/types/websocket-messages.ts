@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { EvmChainAddress } from '@/types/history/events';
+import { EvmChainAddress, EvmChainLikeAddress } from '@/types/history/events';
+import { CalendarEventPayload } from '@/types/history/calendar';
 
 export const MESSAGE_WARNING = 'warning';
 const MESSAGE_ERROR = 'error';
@@ -26,25 +27,31 @@ export const EvmTransactionsQueryStatus = {
   QUERYING_TRANSACTIONS_FINISHED: 'querying_transactions_finished',
 } as const;
 
-export type EvmTransactionsQueryStatus =
-  (typeof EvmTransactionsQueryStatus)[keyof typeof EvmTransactionsQueryStatus];
+export type EvmTransactionsQueryStatus = (typeof EvmTransactionsQueryStatus)[keyof typeof EvmTransactionsQueryStatus];
 
-export const EvmTransactionQueryData = z
-  .object({
-    status: z.nativeEnum(EvmTransactionsQueryStatus),
-    period: z.tuple([z.number(), z.number()]),
-  })
-  .merge(EvmChainAddress);
+export const EvmTransactionQueryData = z.object({
+  status: z.nativeEnum(EvmTransactionsQueryStatus),
+  period: z.tuple([z.number(), z.number()]),
+}).merge(EvmChainAddress);
 
-export const EvmUndecodedTransactionsData = z.object({
+export const EvmUnDecodedTransactionsData = z.object({
   evmChain: z.string(),
   processed: z.number(),
   total: z.number(),
 });
 
-export type EvmUndecodedTransactionsData = z.infer<
-  typeof EvmUndecodedTransactionsData
+export type EvmUnDecodedTransactionsData = z.infer<
+  typeof EvmUnDecodedTransactionsData
 >;
+
+export const EvmUndecodedTransactionBreakdown = z.object({
+  total: z.number(),
+  undecoded: z.number(),
+});
+
+export const EvmUndecodedTransactionResponse = z.record(EvmUndecodedTransactionBreakdown);
+
+export type EvmUndecodedTransactionResponse = z.infer<typeof EvmUndecodedTransactionResponse>;
 
 export const HistoryEventsQueryStatus = {
   QUERYING_EVENTS_STARTED: 'querying_events_started',
@@ -109,7 +116,7 @@ export const DataMigrationStatusData = z.object({
 
 export type DataMigrationStatusData = z.infer<typeof DataMigrationStatusData>;
 
-export const MigratedAddresses = z.array(EvmChainAddress);
+export const MigratedAddresses = z.array(EvmChainLikeAddress);
 
 export type MigratedAddresses = z.infer<typeof MigratedAddresses>;
 
@@ -155,12 +162,13 @@ export const SocketMessageType = {
   PREMIUM_STATUS_UPDATE: 'premium_status_update',
   DB_UPGRADE_STATUS: 'db_upgrade_status',
   DATA_MIGRATION_STATUS: 'data_migration_status',
-  EVM_ACCOUNTS_DETECTION: 'evm_accounts_detection',
+  EVM_ACCOUNTS_DETECTION: 'evmlike_accounts_detection',
   NEW_EVM_TOKEN_DETECTED: 'new_evm_token_detected',
   MISSING_API_KEY: 'missing_api_key',
   REFRESH_BALANCES: 'refresh_balances',
   DB_UPLOAD_RESULT: 'database_upload_result',
   ACCOUNTING_RULE_CONFLICT: 'accounting_rule_conflict',
+  CALENDAR_REMINDER: 'calendar_reminder',
 } as const;
 
 export type SocketMessageType =
@@ -236,6 +244,11 @@ const AccountingRuleConflictMessage = z.object({
   data: AccountingRuleConflictData,
 });
 
+const CalendarReminderMessage = z.object({
+  type: z.literal(SocketMessageType.CALENDAR_REMINDER),
+  data: CalendarEventPayload,
+});
+
 export const WebsocketMessage = z.union([
   UnknownWebsocketMessage,
   LegacyWebsocketMessage,
@@ -251,6 +264,7 @@ export const WebsocketMessage = z.union([
   RefreshBalancesMessage,
   DbUploadResultMessage,
   AccountingRuleConflictMessage,
+  CalendarReminderMessage,
 ]);
 
 export type WebsocketMessage = z.infer<typeof WebsocketMessage>;

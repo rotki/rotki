@@ -36,3 +36,6 @@ FAKE_GENESIS_TX_RECEIPT: Final = {
 ERC20_PROPERTIES: Final = ('decimals', 'symbol', 'name')
 ERC20_PROPERTIES_NUM: Final = len(ERC20_PROPERTIES)
 ERC721_PROPERTIES: Final = ('symbol', 'name')
+
+# uniswap like merkle distributor claimed signature
+MERKLE_CLAIM: Final = b'N\xc9\x0e\x96U\x19\xd9&\x81&tg\xf7u\xad\xa5\xbd!J\xa9,\r\xc9=\x90\xa5\xe8\x80\xce\x9e\xd0&'  # noqa: E501

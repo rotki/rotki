@@ -34,12 +34,9 @@ const amount = ref<string>('');
 const tags: Ref<string[]> = ref([]);
 const location: Ref<string> = ref(TRADE_LOCATION_EXTERNAL);
 const balanceType: Ref<BalanceType> = ref(BalanceType.ASSET);
-const form = ref<any>(null);
-const priceForm: Ref<InstanceType<typeof ManualBalancesPriceForm> | null>
-  = ref(null);
+const priceForm = ref<InstanceType<typeof ManualBalancesPriceForm>>();
 
 function reset() {
-  get(form)?.reset();
   set(balanceType, get(context));
   set(errors, {});
 }
@@ -70,8 +67,7 @@ watch(
   { immediate: true },
 );
 
-const { editManualBalance, addManualBalance, manualLabels }
-  = useManualBalancesStore();
+const { editManualBalance, addManualBalance, manualLabels } = useManualBalancesStore();
 const { refreshPrices } = useBalances();
 const { setMessage } = useMessageStore();
 
@@ -212,8 +208,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <form
-    ref="form"
+  <RuiForm
     data-cy="manual-balance-form"
     class="flex flex-col gap-2"
   >
@@ -314,5 +309,5 @@ onMounted(() => {
       :title="t('asset_management.add_title')"
       :types="customAssetTypes"
     />
-  </form>
+  </RuiForm>
 </template>

@@ -14,7 +14,7 @@ lint:
 
 
 format:
-	ruff $(ALL_LINT_PATHS) --fix
+	ruff check $(ALL_LINT_PATHS) --fix
 	isort $(ISORT_PARAMS)
 	double-indent $(ALL_LINT_PATHS)
 

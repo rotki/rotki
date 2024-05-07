@@ -15,6 +15,8 @@ const props = withDefaults(
 
 const { editableItem } = toRefs(props);
 
+const search = ref<string | null>('');
+
 const emptyCustomAsset: () => CustomAsset = () => ({
   identifier: '',
   name: '',
@@ -36,8 +38,7 @@ function checkEditableItem() {
   }
 }
 
-watch(editableItem, checkEditableItem);
-onMounted(checkEditableItem);
+watchImmediate(editableItem, checkEditableItem);
 
 function input(asset: Partial<CustomAsset>) {
   set(formData, { ...get(formData), ...asset });
@@ -47,8 +48,6 @@ const assetIconFormRef: Ref<InstanceType<typeof AssetIconForm> | null>
   = ref(null);
 
 const { t } = useI18n();
-
-const search = ref<string | null>('');
 
 const name = useRefPropVModel(formData, 'name');
 const customAssetType = useRefPropVModel(formData, 'customAssetType');

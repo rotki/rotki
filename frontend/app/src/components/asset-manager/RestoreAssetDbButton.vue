@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
 import { DialogType } from '@/types/dialogs';
+import { TaskType } from '@/types/task-type';
 
 withDefaults(
   defineProps<{
@@ -20,7 +21,13 @@ const { restartBackend } = useBackendManagement();
 
 const { t } = useI18n();
 
+const { isTaskRunning } = useTaskStore();
+const loading = isTaskRunning(TaskType.RESET_ASSET);
+
 async function restoreAssets(resetType: ResetType) {
+  if (get(loading))
+    return;
+
   const result = await restoreAssetsDatabase(resetType);
 
   if (result.success) {
@@ -88,15 +95,15 @@ function showDoneConfirmation() {
 </script>
 
 <template>
-  <VMenu
+  <RuiMenu
     v-if="dropdown"
-    offset-x
-    left
+    :popper="{ placement: 'left-start' }"
   >
     <template #activator="{ on }">
       <RuiButton
         id="reset-asset-activator"
         variant="list"
+        :disabled="loading"
         v-on="on"
       >
         <template #prepend>
@@ -120,7 +127,7 @@ function showDoneConfirmation() {
         @click="showRestoreConfirmation('hard')"
       />
     </div>
-  </VMenu>
+  </RuiMenu>
   <div
     v-else
     class="flex flex-row gap-2"
@@ -133,6 +140,7 @@ function showDoneConfirmation() {
         <RuiButton
           variant="outlined"
           color="primary"
+          :loading="loading"
           @click="showRestoreConfirmation('soft')"
         >
           {{ t('asset_update.restore.soft_reset') }}
@@ -147,6 +155,7 @@ function showDoneConfirmation() {
       <template #activator>
         <RuiButton
           color="primary"
+          :loading="loading"
           @click="showRestoreConfirmation('hard')"
         >
           {{ t('asset_update.restore.hard_reset') }}

@@ -3,9 +3,9 @@ import { RotkiApp } from './rotki-app';
 export class GeneralSettingsPage {
   visit() {
     cy.get('.user-dropdown').click();
-    cy.get('[data-cy=user-dropdown]').should('be.visible');
+    cy.get('[data-cy=user-dropdown]').should('exist');
     cy.get('.user-dropdown__settings').click();
-    cy.get('[data-cy=user-dropdown]').should('not.be.visible');
+    cy.get('[data-cy=user-dropdown]').should('not.exist');
     cy.get('a.settings__general').click();
   }
 
@@ -24,15 +24,20 @@ export class GeneralSettingsPage {
   }
 
   changeAnonymousUsageStatistics() {
-    cy.get('.general-settings__fields__anonymous-usage-statistics').click();
+    cy.get('.general-settings__fields__anonymous-usage-statistics input').click();
     this.confirmInlineSuccess(
-      '.general-settings__fields__anonymous-usage-statistics .v-messages__message',
+      '.general-settings__fields__anonymous-usage-statistics .details .text-rui-success',
     );
   }
 
   selectCurrency(value: string) {
     cy.get('.general-settings__fields__currency-selector').click();
     cy.get(`#currency__${value.toLocaleLowerCase()}`).click();
+  }
+
+  selectChainToIgnore(value: string) {
+    cy.get('.general-settings__fields__account-chains-to-skip-detection').click();
+    cy.get('[data-cy=account-chain-skip-detection-field]').type(`{selectall}${value}{enter}{esc}`);
   }
 
   setBalanceSaveFrequency(value: string) {
@@ -81,23 +86,7 @@ export class GeneralSettingsPage {
   }
 
   confirmInlineSuccess(target: string, messageContains?: string) {
-    cy.get(target).as('message');
-    cy.get('@message').should('include.text', 'Setting saved');
-    if (messageContains)
-      cy.get('@message').should('include.text', messageContains);
-  }
-
-  confirmInlineFailure(target: string, messageContains?: string) {
-    cy.get(`${target} .v-messages__message`).should(
-      'include.text',
-      'Setting not saved',
-    );
-    if (messageContains) {
-      cy.get(`${target} .v-messages__message`).should(
-        'include.text',
-        messageContains,
-      );
-    }
+    cy.confirmFieldMessage({ target, messageContains, mustInclude: 'Setting saved' });
   }
 
   verify(settings: {
@@ -106,6 +95,7 @@ export class GeneralSettingsPage {
     dateDisplayFormat: string;
     thousandSeparator: string;
     decimalSeparator: string;
+    evmchainsToSkipDetection: string[];
     currencyLocation: 'after' | 'before';
     currency: string;
     balanceSaveFrequency: string;
@@ -116,14 +106,17 @@ export class GeneralSettingsPage {
       settings.floatingPrecision,
     );
     cy.get('.general-settings__fields__anonymous-usage-statistics input')
-      .should('have.attr', 'aria-checked')
-      .and('include', `${settings.anonymousUsageStatistics}`);
+      .should(settings.anonymousUsageStatistics ? 'be.checked' : 'not.be.checked');
     cy.get(
-      '.general-settings__fields__currency-selector .v-select__selection',
-    ).should('have.text', settings.currency);
+      '.general-settings__fields__currency-selector [data-id="activator"] span[class*=_value_]',
+    ).should('contain.text', settings.currency);
     cy.get('.general-settings__fields__balance-save-frequency input').should(
       'have.value',
       settings.balanceSaveFrequency,
+    );
+    cy.get('.general-settings__fields__account-chains-to-skip-detection .v-select__slot input[type=hidden]').should(
+      'have.value',
+      settings.evmchainsToSkipDetection.join(','),
     );
     cy.get('.general-settings__fields__date-display-format input').should(
       'have.value',

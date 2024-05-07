@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Routes } from '@/router/routes';
-import type { ComputedRef } from 'vue';
 import type { SelectedReport } from '@/types/reports';
 
 defineOptions({

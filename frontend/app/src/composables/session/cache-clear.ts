@@ -41,7 +41,7 @@ export function useCacheClear<T>(clearable: { id: T; text: string }[], clearHand
 
   const { show } = useConfirmStore();
   const showConfirmation = (source: T) => {
-    show(confirmText(text(source), source), async () => clear(source));
+    show(confirmText(text(source), source), () => clear(source));
     set(confirm, true);
   };
 

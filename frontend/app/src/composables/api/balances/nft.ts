@@ -31,7 +31,7 @@ export function useNftBalancesApi() {
     return handleResponse(response);
   };
 
-  const fetchNfBalancesTask = async (
+  const fetchNfBalancesTask = (
     payload: NonFungibleBalancesRequestPayload,
   ): Promise<PendingTask> => internalNfBalances<PendingTask>(payload, true);
 

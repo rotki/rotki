@@ -1,5 +1,4 @@
 
-import logging
 from typing import TYPE_CHECKING
 
 from rotkehlchen.db.constants import (
@@ -8,16 +7,12 @@ from rotkehlchen.db.constants import (
     HISTORY_MAPPING_STATE_DECODED,
 )
 from rotkehlchen.db.utils import update_table_schema
-from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.logging import enter_exit_debug_log
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
-
-
-logger = logging.getLogger(__name__)
-log = RotkehlchenLogsAdapter(logger)
 
 
 DEFAULT_POLYGON_NODES_AT_V38 = [
@@ -30,10 +25,12 @@ DEFAULT_POLYGON_NODES_AT_V38 = [
 ]
 
 
+@enter_exit_debug_log()
 def _add_polygon_pos_location(write_cursor: 'DBCursor') -> None:
     write_cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("h", 40);')
 
 
+@enter_exit_debug_log()
 def _add_polygon_pos_nodes(write_cursor: 'DBCursor') -> None:
     write_cursor.executemany(
         'INSERT INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) '
@@ -42,9 +39,9 @@ def _add_polygon_pos_nodes(write_cursor: 'DBCursor') -> None:
     )
 
 
+@enter_exit_debug_log()
 def _reduce_internal_txs(write_cursor: 'DBCursor') -> None:
     """Reduce the size of the evm internal transactions table by removing unused columns"""
-    log.debug('Enter _reduce_internal_txs')
     update_table_schema(
         write_cursor=write_cursor,
         table_name='evm_internal_transactions',
@@ -58,19 +55,18 @@ def _reduce_internal_txs(write_cursor: 'DBCursor') -> None:
         PRIMARY KEY(parent_tx_hash, chain_id, trace_id, from_address, to_address, value)""",  # noqa: E501
         insert_columns='parent_tx_hash, chain_id, trace_id, from_address, to_address, value',
     )
-    log.debug('Exit _reduce_internal_txs')
 
 
+@enter_exit_debug_log()
 def _drop_aave_events(write_cursor: 'DBCursor') -> None:
     """
     Delete aave events from the database since we don't need them anymore
     """
-    log.debug('Enter _drop_aave_events')
     write_cursor.execute('DROP TABLE IF EXISTS aave_events;')
     write_cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "aave_events%";')
-    log.debug('Exit _drop_aave_events')
 
 
+@enter_exit_debug_log()
 def _delete_uniswap_sushiswap_events(write_cursor: 'DBCursor') -> None:
     """
     Delete query ranges and events for uniswap/sushiswap
@@ -86,11 +82,11 @@ def _delete_uniswap_sushiswap_events(write_cursor: 'DBCursor') -> None:
     )
 
 
+@enter_exit_debug_log()
 def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
     """
     Reset all decoded evm events except the customized ones for ethereum mainnet and optimism.
     """
-    log.debug('Enter _reset_decoded_events')
     if write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] == 0:
         return
 
@@ -114,23 +110,22 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
         'DELETE from evm_tx_mappings WHERE tx_hash IN (SELECT tx_hash FROM evm_transactions) AND value=?',  # noqa: E501
         (HISTORY_MAPPING_STATE_DECODED,),
     )
-    log.debug('Exit _reset_decoded_events')
 
 
+@enter_exit_debug_log()
 def _remove_duplicate_block_mev_rewards(write_cursor: 'DBCursor') -> None:
     """If mev reward is exact same as block production reward then it's a duplicate event.
     In that case it needs to be deleted.
     """
-    log.debug('Enter _remove_duplicate_block_mev_rewards')
     write_cursor.execute(
         'DELETE FROM history_events WHERE identifier IN ('
         'SELECT B.identifier from history_events A INNER JOIN history_events B '
         'ON A.event_identifier=B.event_identifier AND A.subtype="block production" '
         'AND B.subtype="mev reward" AND A.amount=B.amount WHERE A.entry_type=4);',
     )
-    log.debug('Exit _remove_duplicate_block_mev_rewards')
 
 
+@enter_exit_debug_log(name='UserDB v37->v38 upgrade')
 def upgrade_v37_to_v38(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v37 to v38. This was in v1.29.0 release.
         - Reset decoded events
@@ -139,7 +134,6 @@ def upgrade_v37_to_v38(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Drop the unused aave events
         - Remove potential duplicate block mev reward events
     """
-    log.debug('Entered userdb v37->v38 upgrade')
     progress_handler.set_total_steps(7)
     with db.user_write() as write_cursor:
         _reset_decoded_events(write_cursor)
@@ -156,5 +150,3 @@ def upgrade_v37_to_v38(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         progress_handler.new_step()
         _delete_uniswap_sushiswap_events(write_cursor)
         progress_handler.new_step()
-
-    log.debug('Finished userdb v37->v38 upgrade')

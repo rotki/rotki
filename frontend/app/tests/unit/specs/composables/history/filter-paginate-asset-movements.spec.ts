@@ -5,7 +5,7 @@ import type {
   AssetMovement,
   AssetMovementEntry,
   AssetMovementRequestPayload,
-} from '@/types/history/asset-movements/index';
+} from '@/types/history/asset-movements';
 import type { MaybeRef } from '@vueuse/core';
 import type Vue from 'vue';
 
@@ -28,7 +28,7 @@ vi.mock('vue', async () => {
 
   return {
     ...mod,
-    onBeforeMount: vi.fn(),
+    onBeforeMount: vi.fn().mockImplementation((fn: Function) => fn()),
   };
 });
 
@@ -80,7 +80,7 @@ describe('composables::history/filter-paginate', () => {
         fetchAssetMovements,
       );
 
-      expect(get(userAction)).toBe(false);
+      expect(get(userAction)).toBe(true);
       expect(get(isLoading)).toBe(false);
       expect(get(filters)).to.toStrictEqual({});
       expect(get(options).sortBy).toHaveLength(1);
@@ -96,7 +96,7 @@ describe('composables::history/filter-paginate', () => {
       expect(get(state).total).toEqual(45);
     });
 
-    it('check the return types', async () => {
+    it('check the return types', () => {
       const { isLoading, state, filters, matchers } = usePaginationFilters<
         AssetMovement,
         AssetMovementRequestPayload,

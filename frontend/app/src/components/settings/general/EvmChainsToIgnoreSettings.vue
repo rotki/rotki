@@ -1,43 +1,18 @@
 <script setup lang="ts">
-import { keyBy } from 'lodash-es';
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import { Module } from '@/types/modules';
+import type { Blockchain } from '@rotki/common/lib/blockchain';
 
 const { t } = useI18n();
 const css = useCssModule();
-const { isModuleEnabled } = useModules();
 const { evmchainsToSkipDetection } = storeToRefs(useGeneralSettingsStore());
 
-const { getChainName, getEvmChainName, isEvm, evmChainsData, supportedChains }
-  = useSupportedChains();
+const { getChainName, evmChainsData, evmLikeChainsData } = useSupportedChains();
 
-const skippedChains = computed(() => {
-  const savedNames = get(evmchainsToSkipDetection) ?? [];
-  const chainsData = get(evmChainsData) ?? [];
-  const chainsMap = keyBy(chainsData, 'evmChainName');
+const chains = computed(() => [...get(evmChainsData), ...get(evmLikeChainsData)]);
 
-  return savedNames.map(name => chainsMap[name]?.id as Blockchain);
-});
-
-const items = computed(() => {
-  const isEth2Enabled = get(isModuleEnabled(Module.ETH2));
-
-  let data: string[] = get(supportedChains).map(({ id }) => id);
-
-  data = data.filter(symbol => get(isEvm(symbol as Blockchain)));
-
-  if (!isEth2Enabled)
-    data = data.filter(symbol => symbol !== Blockchain.ETH2);
-
-  return data;
-});
-
-function getChainNames(chains: Blockchain[]) {
-  return (chains ?? []).map(getEvmChainName);
-}
+const items = computed(() => get(chains).map(({ id }) => id));
 
 function filter(chain: Blockchain, queryText: string) {
-  const item = get(supportedChains).find(blockchain => blockchain.id === chain);
+  const item = get(chains).find(blockchain => blockchain.id === chain);
   if (!item)
     return false;
 
@@ -51,13 +26,13 @@ function filter(chain: Blockchain, queryText: string) {
 }
 
 function removeChain(chain: Blockchain) {
-  return getChainNames(get(skippedChains).filter(c => c !== chain));
+  return get(evmchainsToSkipDetection).filter(c => c !== chain);
 }
 </script>
 
 <template>
   <div>
-    <div class="text-base mb-3 mt-4">
+    <div class="text-rui-text-secondary text-body-1 mb-3">
       {{ t('general_settings.labels.chains_to_skip_detection') }}
     </div>
     <SettingsOption
@@ -75,10 +50,11 @@ function removeChain(chain: Blockchain) {
         :items="items"
         :filter="filter"
         :label="t('account_form.labels.blockchain', 2)"
-        :value="skippedChains"
+        :value="evmchainsToSkipDetection"
         :success-messages="success"
         :error-messages="error"
         :class="css['chain-select']"
+        class="general-settings__fields__account-chains-to-skip-detection"
         chips
         small-chips
         deletable-chips
@@ -87,7 +63,7 @@ function removeChain(chain: Blockchain) {
         data-cy="account-chain-skip-detection-field"
         outlined
         auto-select-first
-        @input="update(getChainNames($event))"
+        @input="update($event)"
       >
         <template #selection="{ item }">
           <RuiChip

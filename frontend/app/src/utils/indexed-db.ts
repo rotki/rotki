@@ -2,7 +2,7 @@ import * as logger from 'loglevel';
 
 const ROWLIMIT = 50000;
 
-export default class IndexedDb {
+export class IndexedDb {
   constructor(
     private dbName: string,
     private dbVersion: number,

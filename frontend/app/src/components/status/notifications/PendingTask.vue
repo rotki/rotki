@@ -17,22 +17,21 @@ const progress = useToNumber(taskProgress);
 </script>
 
 <template>
-  <div class="flex items-center justify-between flex-nowrap break-all gap-4">
-    <div>
-      <div class="break-normal overflow-hidden text-ellipsis">
+  <div class="flex items-center justify-between flex-nowrap gap-4">
+    <div class="flex flex-col flex-1 break-words">
+      <div class="overflow-hidden text-ellipsis text-sm font-medium mb-1 leading-4">
         {{ task.meta.title }}
       </div>
       <div
         v-if="task.meta.description"
-        class="text-sm text-rui-text-secondary mb-2"
+        class="text-xs text-rui-text-secondary mb-2"
       >
         {{ task.meta.description }}
       </div>
-      <div class="text-caption text-sm">
+      <div class="text-caption text-xs">
         {{ time }}
       </div>
     </div>
-    <span class="grow" />
     <RuiProgress
       color="primary"
       circular

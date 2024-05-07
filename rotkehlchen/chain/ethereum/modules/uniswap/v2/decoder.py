@@ -2,12 +2,6 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.modules.uniswap.constants import (
-    CPT_UNISWAP_V2,
-    UNISWAP_ICON,
-    UNISWAP_LABEL,
-)
-from rotkehlchen.chain.ethereum.modules.uniswap.utils import decode_basic_uniswap_info
 from rotkehlchen.chain.ethereum.modules.uniswap.v2.common import (
     UNISWAP_V2_ROUTER,
     decode_uniswap_like_deposit_and_withdrawals,
@@ -21,6 +15,8 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2, UNISWAP_ICON
+from rotkehlchen.chain.evm.decoding.uniswap.utils import decode_basic_uniswap_info
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
@@ -67,6 +63,7 @@ class Uniswapv2Decoder(DecoderInterface):
             decoded_events=decoded_events,
             counterparty=CPT_UNISWAP_V2,
             notify_user=self.notify_user,
+            native_currency=self.evm_inquirer.native_token,
         )
 
     def _maybe_decode_v2_swap(
@@ -148,6 +145,6 @@ class Uniswapv2Decoder(DecoderInterface):
     def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (CounterpartyDetails(
             identifier=CPT_UNISWAP_V2,
-            label=UNISWAP_LABEL,
+            label=CPT_UNISWAP_V2.capitalize().replace('-v', ' V'),
             image=UNISWAP_ICON,
         ),)

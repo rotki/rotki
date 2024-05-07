@@ -6,7 +6,6 @@ import { helpers, required } from '@vuelidate/validators';
 import { timezones } from '@/data/timezones';
 import { DateFormat } from '@/types/date-format';
 import { toMessages } from '@/utils/validation';
-import type { ComputedRef, Ref } from 'vue';
 
 const props = withDefaults(
   defineProps<{
@@ -20,6 +19,8 @@ const props = withDefaults(
     disabled?: boolean;
     errorMessages?: string[];
     hideDetails?: boolean;
+    dateOnly?: boolean;
+    inputOnly?: boolean;
   }>(),
   {
     label: '',
@@ -32,13 +33,16 @@ const props = withDefaults(
     disabled: false,
     errorMessages: () => [],
     hideDetails: false,
+    dateOnly: false,
+    inputOnly: false,
   },
 );
 
 const emit = defineEmits<{ (e: 'input', value: string): void }>();
 
-const { value, allowEmpty, limitNow, errorMessages, milliseconds }
-  = toRefs(props);
+const { value, allowEmpty, limitNow, errorMessages, milliseconds, dateOnly } = toRefs(props);
+
+const imask: Ref<InputMask<any> | null> = ref(null);
 
 const { t } = useI18n();
 
@@ -100,9 +104,15 @@ const dateFormatErrorMessage: ComputedRef<string> = computed(() => {
     ? t('date_time_picker.milliseconds_format', {
       dateFormat,
     })
-    : t('date_time_picker.default_format', {
-      dateFormat,
-    });
+    : (
+        get(dateOnly)
+          ? t('date_time_picker.date_only_format', {
+            dateFormat,
+          })
+          : t('date_time_picker.default_format', {
+            dateFormat,
+          })
+      );
 });
 
 const rules = {
@@ -173,8 +183,6 @@ function onValueChange(value: string) {
 watch(value, onValueChange);
 watch(selectedTimezone, () => onValueChange(get(value)));
 
-const imask: Ref<InputMask<any> | null> = ref(null);
-
 function input(dateTime: string) {
   emit('input', dateTime);
 }
@@ -209,8 +217,6 @@ function setNow() {
   set(currentValue, nowInString);
   emitIfValid(nowInString);
 }
-
-const css = useCssModule();
 
 function initImask() {
   const inputWrapper = get(inputField)!;
@@ -255,7 +261,10 @@ function initImask() {
       lazy: false,
       overwrite: true,
     },
-    {
+  ];
+
+  if (!get(dateOnly)) {
+    mask.push({
       mask: convertPattern(get(dateTimeFormat)),
       blocks: {
         ...dateBlocks,
@@ -263,8 +272,7 @@ function initImask() {
       },
       lazy: false,
       overwrite: true,
-    },
-    {
+    }, {
       mask: convertPattern(get(dateTimeFormatWithSecond)),
       blocks: {
         ...dateBlocks,
@@ -273,23 +281,22 @@ function initImask() {
       },
       lazy: false,
       overwrite: true,
-    },
-    ...(get(milliseconds)
-      ? [
-          {
-            mask: convertPattern(get(dateTimeFormatWithMilliseconds)),
-            blocks: {
-              ...dateBlocks,
-              ...hourAndMinuteBlocks,
-              ...secondBlocks,
-              ...millisecondsBlocks,
-            },
-            lazy: false,
-            overwrite: true,
-          },
-        ]
-      : []),
-  ];
+    });
+
+    if (get(milliseconds)) {
+      mask.push({
+        mask: convertPattern(get(dateTimeFormatWithMilliseconds)),
+        blocks: {
+          ...dateBlocks,
+          ...hourAndMinuteBlocks,
+          ...secondBlocks,
+          ...millisecondsBlocks,
+        },
+        lazy: false,
+        overwrite: true,
+      });
+    }
+  }
 
   const newImask = IMask(input, {
     mask,
@@ -355,14 +362,13 @@ function filteredListeners(listeners: any) {
       filteredListeners($listeners)
     "
   >
-    <template #append>
-      <VMenu
-        :close-on-content-click="false"
-        transition="scale-transition"
-        :nudge-bottom="56"
-        left
-        max-width="580px"
-        class="date-time-picker"
+    <template
+      v-if="!inputOnly"
+      #append
+    >
+      <RuiMenu
+        :popper="{ placement: 'bottom-end' }"
+        menu-class="date-time-picker max-w-[32rem] z-[500]"
       >
         <template #activator="{ on }">
           <RuiButton
@@ -378,7 +384,7 @@ function filteredListeners(listeners: any) {
           </RuiButton>
         </template>
 
-        <div :class="css.menu">
+        <VApp>
           <VAutocomplete
             v-model="selectedTimezone"
             :label="t('date_time_picker.select_timezone')"
@@ -389,8 +395,8 @@ function filteredListeners(listeners: any) {
             :error-messages="toMessages(v$.timezone)"
             :items="timezones"
           />
-        </div>
-      </VMenu>
+        </VApp>
+      </RuiMenu>
       <RuiButton
         data-cy="date-time-picker__set-now-button"
         variant="text"
@@ -406,43 +412,3 @@ function filteredListeners(listeners: any) {
     </template>
   </RuiTextField>
 </template>
-
-<style module lang="scss">
-.menu {
-  z-index: 999;
-  display: flex;
-  flex-direction: column;
-
-  > * {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-  }
-
-  :global {
-    .v-picker {
-      &__title {
-        height: 102px;
-      }
-    }
-  }
-
-  &:first-child {
-    :global {
-      .v-picker {
-        border-top-right-radius: 0 !important;
-        border-bottom-right-radius: 0 !important;
-      }
-    }
-  }
-
-  &:last-child {
-    :global {
-      .v-picker {
-        border-top-left-radius: 0 !important;
-        border-bottom-left-radius: 0 !important;
-      }
-    }
-  }
-}
-</style>

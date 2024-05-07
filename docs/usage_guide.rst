@@ -291,12 +291,14 @@ When rotki begins it tries to connect to a local kusama node running with an rpc
 Connecting to a Polkadot Client
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Just like with kusama you can set the rpc endpoint of a Polkadot node you would like to connect to here.
+Just like with kusama you can set the RPC endpoint of a Polkadot node you would like to connect to here.
 
 Connecting to a ETH consensus layer beacon node
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can set the RPC endpoint for the ethereum consensus layer beacon node to use when contacting the consensus layer. If it cannot be reached or if it is invalid, beaconcha.in will be used.
+
+If you are running a DAppNode Ethereum validator, you will find the RPC node setting that Rotki needs in the DAppNode Package for the Execution Client, where it is called the "Querying API".
 
 Price Oracle settings
 ---------------------
@@ -860,6 +862,26 @@ After following these steps your balances in the dashboard will be updated inclu
    :alt: Loopring balances in the UI
    :align: center
 
+Monerium
+===========
+
+So long as you provide monerium credentials, all monerium transactions in mainnet, polygon and gnosis chain will be decorated with the bank data (or chain bridging), data you can also see in monerium app.
+
+1. For bank transfers from/to your address you will be able to see the destination/source IBAN along with the memo of the transfer.
+2. For automatic EURe bridging between EVM chains you will see amounts, from/to EVM chains along with from/to address.
+
+.. image:: images/monerium_transactions.png
+   :alt: Monerium decorated transactions
+   :align: center
+
+Note: Monerium API can only use basic authentication at the moment. We are in contact with their team and they will add api keys eventually. But for now they only have basic authentication which means your username + password are stored in rotki (encrypted). Take necessary security precautions and don't use unless you understand the potential risks.
+
+Go to :menuselection:`API Keys --> External Services --> Monerium` and enter your credentials.
+
+.. image:: images/monerium_add_key.png
+   :alt: Add monerium
+   :align: center
+
 Rotki Generic Import
 =====================
 
@@ -972,6 +994,8 @@ For now, the following chains are supported in Rotki (and the list will be growi
 - Arbitrum One
 - Base
 - Gnosis
+- Scroll
+- zkSync Lite
 
 To add or modify an account navigate to the :menuselection:`Blockchain Balances` sub-page and click the "Add Account" button on the top right. Now choose the blockchain on which you want to add an account. Then type or paste the address in the "Account" textbox and press the "Save" Button. Note that you can add multiple accounts if you click the "Add multiple addresses" checkbox and provide a comma separated list of addresses.
 
@@ -1399,10 +1423,16 @@ It is possible that you need to redecode events for an evm transaction. To do th
    :alt: Menu to redecode events for an EVM transaction
    :align: center
 
-The second option is to redecode all EVM transactions that have been queried. To do so you need to click on the three dots at the top of the page, and choose ``Redecode EVM Events``
+The second option is to redecode all EVM transactions that have been queried. To do so you need to click on  ``Redecode EVM Events`` at the top of the page.
 
 .. image:: images/redecode_all_events.png
    :alt: Menu to redecode all queried EVM transactions events
+   :align: center
+
+EVM Transactions and the events can be deleted, but to restore them you will have to either purge all transactions or add by the transaction hash.
+
+.. image:: images/delete_transaction_events.png
+   :alt: Menu to delete EVM transactions events
    :align: center
 
 If you see this warning button, it means the event won't be processed correctly in accounting. It could be due to improper decoding or a missing accounting rule for that event. You can fix it by editing the event or adding the missing accounting rule. You can also edit the events if they have special meaning to you, such as OTC trades or transfers between accounts.
@@ -1501,10 +1531,25 @@ Inspecting list of assets
 =========================
 
 You can now manage the list of supported assets by your local rotki instance.
-You can inspect the list of all supported assets, edit them, delete them or add new ones. They're divided into 3 sections; assets, custom assets, and newly detected assets.
+You can inspect the list of all supported assets, edit them, delete them or add new ones. They're divided into 3 sections; assets, custom assets, and more sections (consist of "Manage CEX (Centralized Exchange) Mapping" and "Newly Detected Tokens" section).
 
 .. image:: images/rotki_manage_assets.png
    :alt: Manage the list of assets
+   :align: center
+
+Whitelisting of ignored assets
+================================
+
+Spam assets are a plague in EVM chains. rotki has an automatic algorithm trying to match assets as spam to not bother the user with automatically ignoring them. You can see all ignored assets in :menuselection:`Manage Assets --> Assets` and filter by ignored. A problem with automatic algorithms marking something as spam is that mistakes can be made and a legit token may be ignored.
+
+.. image:: images/asset_whitelist_filter.png
+   :alt: Filter ignored assets
+   :align: center
+
+To solve this problem we added a whitelist which you can add assets to as can be seen below. Once an asset is added to the whitelist it will be removed from the ignore list and the automatic algorithm will not mark it as spam in the future.
+
+.. image:: images/asset_whitelist_menu.png
+   :alt: Whitelist asset
    :align: center
 
 Adding/editing an asset
@@ -1557,6 +1602,8 @@ There are also some other fields that are completely optional and expand if you 
 Adding/editing a custom asset
 ===============================
 
+There is a lot of assets that rotki can't automatically track and they don't fit into traditional crypto assets. For example an ETF, real estate, ancient coins, valuable art etc. To represent those you can create custom assets, and then add a manual balance of those assets.
+
 .. image:: images/rotki_add_edit_custom_asset.png
    :alt: Add or edit a custom asset
    :align: center
@@ -1568,6 +1615,15 @@ You can fill in the following fields:
 1. The name to be given to the custom asset. This is required.
 2. The type of custom asset being represented. It's just a string. The type field remembers all previously used types. This is required.
 3. The note to be added to the custom asset. This is optional.
+
+Manage CEX (Centralized Exchange) Mapping
+=========================================
+
+Users can link assets on exchanges to those recognized by rotki. If you encounter an error such as ``Asset XXX is not supported`` or ``Found exchange balance result with unknown asset XXX. Ignoring it``, you may need to specify how the XXX asset should be recognized in rotki.
+
+.. image:: images/rotki_manage_cex_mapping.png
+   :alt: Manage centralized exchange asset mapping
+   :align: center
 
 Newly detected tokens
 =====================
@@ -2038,28 +2094,7 @@ You can now take notes in various sections of the application. Note taking is ca
    :alt: Location specific notes
    :align: center
 
-Adding/Editing a note
-=======================
-
-To create a new note, click on the **note icon** at the top right and proceed to click on the ``"+"`` button which will pop up a note creation form.
-
-Editing a note follows similar process with the only exception of clicking the **pen icon** of the note to edit instead of ``"+"`` button.
-
-.. image:: images/rotki_add_edit_notes.png
-   :alt: Create or edit notes
-   :align: center
-
-Pinning/Deleting a note
-========================
-
-To delete a note, click on the button labelled as **1** in the screenshot below.
-
-To pin a note to the top, click on the button labelled as **2** in the screenshot below.
-
-.. image:: images/rotki_pin_delete_notes.png
-   :alt: Delete or pin notes
-   :align: center
-
+You can also pin notes, the pinned notes will appear at the top.
 
 Evm Address Book
 ******************************
@@ -2087,6 +2122,47 @@ Rotki provides an addressbook for EVM blockchains. This replaces addresses with 
    5. Hardcoded Mappings
    6. ENS names.
 
+
+Calendar
+******************************
+
+Rotki provides a calendar view where you can add and track events for your activities. You can also set reminders to perform some actions related to these events.
+
+
+.. image:: images/rotki_calendar.png
+   :alt: Calendar view
+   :align: center
+
+.. image:: images/rotki_add_calendar_event.png
+   :alt: Add calendar event
+   :align: center
+
+Here the non obvious fields are:
+
+- ``Notify me at event time``: Whether to also notify the user at the event time. If this setting is turned off, Rotki will not notify you at the event time, other than the reminder you set beforehand.
+- ``Delete event once it has passed``: Whether to remove events after the time has passed. We recommend turning this feature on to save space, unless you want to keep the event.
+
+Automatic events
+================
+
+Rotki can also create automatic events based on your on-chain activity. The events that Rotki currently can check include:
+
+- ENS Expiration & Renewal
+
+You can customize how Rotki handles automatic events by clicking the `setting` icon at the top.
+
+.. image:: images/rotki_calendar_automatic_events_setting.png
+   :alt: Automatic events setting
+   :align: center
+
+Event reminder
+==============
+
+The notification for the reminder of your event looks like this.
+
+.. image:: images/rotki_calendar_reminder.png
+   :alt: Notification for the reminder
+   :align: center
 
 .. _set-the-backend-s-arguments:
 
@@ -2145,6 +2221,21 @@ ask for the password of the database. The password used for the database is the 
 
 Once the database is unlocked you can browse the information in the ``Browse Data`` tab or execute custom SQL commands. Please be aware that manually modifying the information of the database can lead to inconsistent state.
 So only run commands that you have double checked with our team there. Or use it without supervision only if you really know what you are doing. And always take backups of the database before you modify it.
+
+Long running tasks
+*******************
+
+A list of processing tasks is available on the notifications tray.
+
+.. image:: images/pending_tasks.png
+   :alt: running background tasks
+   :align: center
+
+It is possible to cancel a long running task, but use this feature sparingly.
+
+.. image:: images/pending_tasks_cancel.png
+   :alt: cancel background task
+   :align: center
 
 Using rotki from mobile
 ***********************
@@ -2229,4 +2320,4 @@ Please, make sure all your accounts have the "Allow data sync with rotki Server"
 ENS data not updating for newly registered name/address combination
 =====================================================================
 
-If you just registered your ENS name and you don't see the name and/or avatar being properly displayed in rotki then that means that the value is cached and you need to force a refresh. You can do that by going to "Blockchain&Accounts" view and pressing refresh button next to Ethereum balances.
+If you just registered your ENS name and you don't see the name and/or avatar being properly displayed in rotki then that means that the value is cached and you need to force a refresh. You can do that by going to :menuselection:`Accounts & Balances > Blockchain Balances` view and pressing refresh button next to Ethereum balances table.

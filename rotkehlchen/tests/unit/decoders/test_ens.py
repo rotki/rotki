@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -21,6 +22,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
+from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.types import (
     CacheType,
     ChainID,
@@ -65,19 +67,6 @@ def test_mint_ens_name(database, ethereum_inquirer):
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=2,
-            timestamp=timestamp,
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
-            event_subtype=HistoryEventSubType.SPEND,
-            asset=A_ETH,
-            balance=Balance(amount=FVal(register_fee_str)),
-            location_label=ADDY,
-            notes=f'Register ENS name hania.eth for {register_fee_str} ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # noqa: E501
-            counterparty=CPT_ENS,
-            address=ENS_REGISTRAR_CONTROLLER_1,
-        ), EvmEvent(
-            tx_hash=tx_hash,
             sequence_index=43,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -89,6 +78,20 @@ def test_mint_ens_name(database, ethereum_inquirer):
             notes='Set ENS address for hania.eth',
             counterparty=CPT_ENS,
             address=ENS_REGISTRAR_CONTROLLER_1,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=44,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(register_fee_str)),
+            location_label=ADDY,
+            notes=f'Register ENS name hania.eth for {register_fee_str} ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # noqa: E501
+            counterparty=CPT_ENS,
+            address=ENS_REGISTRAR_CONTROLLER_1,
+            extra_data={'name': 'hania.eth', 'expires': expires_timestamp},
         ),
     ]
     assert expected_events == events[0:3]
@@ -101,7 +104,7 @@ def test_mint_ens_name(database, ethereum_inquirer):
     )
     assert events[3] == EvmEvent(
         tx_hash=tx_hash,
-        sequence_index=47,
+        sequence_index=45,
         timestamp=timestamp,
         location=Location.ETHEREUM,
         event_type=HistoryEventType.TRADE,
@@ -298,6 +301,7 @@ def test_register_v2(database, ethereum_inquirer, ethereum_accounts):
             notes=f'Register ENS name ens2qr.eth for 0.002609751671170445 ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # noqa: E501
             counterparty=CPT_ENS,
             address=ENS_REGISTRAR_CONTROLLER_2,
+            extra_data={'name': 'ens2qr.eth', 'expires': expires_timestamp},
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=289,
@@ -360,6 +364,7 @@ def test_renewal_with_refund_old_controller(database, ethereum_inquirer, ethereu
             notes=f'Renew ENS name dfern.eth for 0.054034186623924151 ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # noqa: E501
             counterparty=CPT_ENS,
             address=ENS_REGISTRAR_CONTROLLER_1,
+            extra_data={'name': 'dfern.eth', 'expires': expires_timestamp},
         ),
     ]
     assert events == expected_events
@@ -409,6 +414,7 @@ def test_renewal_with_refund_new_controller(database, ethereum_inquirer, ethereu
             notes=f'Renew ENS name karapetsas.eth for 0.013465329469696502 ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # noqa: E501
             counterparty=CPT_ENS,
             address=ENS_REGISTRAR_CONTROLLER_2,
+            extra_data={'name': 'karapetsas.eth', 'expires': expires_timestamp},
         ),
     ]
     assert events == expected_events
@@ -579,19 +585,6 @@ def test_for_truncated_labelhash(database, ethereum_inquirer, ethereum_accounts)
             address=None,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=2,
-            timestamp=timestamp,
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.TRADE,
-            event_subtype=HistoryEventSubType.SPEND,
-            asset=A_ETH,
-            balance=Balance(amount=FVal(register_fee_str)),
-            location_label=user_address,
-            notes=f'Register ENS name cantillon.eth for {register_fee_str} ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # noqa: E501
-            counterparty=CPT_ENS,
-            address=ENS_REGISTRAR_CONTROLLER_1,
-        ), EvmEvent(
-            tx_hash=evmhash,
             sequence_index=203,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -605,7 +598,21 @@ def test_for_truncated_labelhash(database, ethereum_inquirer, ethereum_accounts)
             address=ENS_REGISTRAR_CONTROLLER_1,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=207,
+            sequence_index=204,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(register_fee_str)),
+            location_label=user_address,
+            notes=f'Register ENS name cantillon.eth for {register_fee_str} ETH until {decoder.decoders["Ens"].timestamp_to_date(expires_timestamp)}',  # noqa: E501
+            counterparty=CPT_ENS,
+            address=ENS_REGISTRAR_CONTROLLER_1,
+            extra_data={'name': 'cantillon.eth', 'expires': expires_timestamp},
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=205,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
@@ -767,7 +774,7 @@ def test_invalid_ens_name(globaldb: 'GlobalDBHandler'):
     nothing gets stored in the database cache for invalid names.
     """
     name = 'ʀ'
-    full_name = _save_hash_mappings_get_fullname(name=name)
+    full_name = _save_hash_mappings_get_fullname(name=name, tx_hash=make_evm_tx_hash())
     assert full_name == f'{name}.eth'
     with globaldb.conn.read_ctx() as cursor:
         for cache_key in (CacheType.ENS_NAMEHASH, CacheType.ENS_LABELHASH):

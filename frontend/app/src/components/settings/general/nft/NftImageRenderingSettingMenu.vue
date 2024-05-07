@@ -1,9 +1,12 @@
+<script setup lang="ts">
+const dialogOpen = ref(false);
+</script>
+
 <template>
-  <VMenu
-    offset-x
-    left
-    min-width="500"
-    :close-on-content-click="false"
+  <RuiMenu
+    menu-class="max-w-[32rem] !z-[1]"
+    :popper="{ placement: 'bottom-end' }"
+    :persistent="dialogOpen"
   >
     <template #activator="{ on }">
       <RuiButton
@@ -15,6 +18,6 @@
         <RuiIcon name="file-settings-line" />
       </RuiButton>
     </template>
-    <NftImageRenderingSetting />
-  </VMenu>
+    <NftImageRenderingSetting @dialog-open="dialogOpen = $event" />
+  </RuiMenu>
 </template>

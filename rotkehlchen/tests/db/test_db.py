@@ -36,6 +36,8 @@ from rotkehlchen.db.schema import DB_CREATE_ETH2_DAILY_STAKING_DETAILS
 from rotkehlchen.db.settings import (
     DEFAULT_ACCOUNT_FOR_ASSETS_MOVEMENTS,
     DEFAULT_ACTIVE_MODULES,
+    DEFAULT_AUTO_CREATE_CALENDAR_REMINDERS,
+    DEFAULT_AUTO_DELETE_CALENDAR_ENTRIES,
     DEFAULT_BALANCE_SAVE_FREQUENCY,
     DEFAULT_BTC_DERIVATION_GAP_LIMIT,
     DEFAULT_CALCULATE_PAST_COST_BASIS,
@@ -106,7 +108,6 @@ from rotkehlchen.utils.misc import ts_now
 
 TABLES_AT_INIT = [
     'assets',
-    'yearn_vaults_events',
     'timed_balances',
     'timed_location_data',
     'asset_movement_category',
@@ -115,6 +116,7 @@ TABLES_AT_INIT = [
     'user_credentials',
     'user_credentials_mappings',
     'blockchain_accounts',
+    'calendar',
     'evm_accounts_details',
     'multisettings',
     'trades',
@@ -141,7 +143,6 @@ TABLES_AT_INIT = [
     'eth2_validators',
     'ignored_actions',
     'action_type',
-    'balancer_events',
     'nfts',
     'history_events',
     'history_events_mappings',
@@ -156,6 +157,10 @@ TABLES_AT_INIT = [
     'linked_rules_properties',
     'unresolved_remote_conflicts',
     'key_value_cache',
+    'zksynclite_tx_type',
+    'zksynclite_transactions',
+    'zksynclite_swaps',
+    'calendar_reminders',
 ]
 
 
@@ -511,6 +516,8 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         'read_timeout': DEFAULT_READ_TIMEOUT,
         'oracle_penalty_threshold_count': DEFAULT_ORACLE_PENALTY_THRESHOLD_COUNT,
         'oracle_penalty_duration': DEFAULT_ORACLE_PENALTY_DURATION,
+        'auto_delete_calendar_entries': DEFAULT_AUTO_DELETE_CALENDAR_ENTRIES,
+        'auto_create_calendar_reminders': DEFAULT_AUTO_CREATE_CALENDAR_REMINDERS,
     }
     assert len(expected_dict) == len(dataclasses.fields(DBSettings)), 'One or more settings are missing'  # noqa: E501
 
@@ -1826,7 +1833,7 @@ def test_values_are_present_in_db(database, enum_class, table_name):
 
     for enum_class_entry in enum_class:
         r = cursor.execute(query, (enum_class_entry.value,))
-        assert r.fetchone() == (1,)
+        assert r.fetchone() == (1,), f'The value {enum_class_entry.value} for {table_name} enum is not found in the db. Please add it in rotkehlchen/db/schema.py'  # noqa: E501
 
 
 def test_binance_pairs(user_data_dir, sql_vm_instructions_cb):

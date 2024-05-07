@@ -2,10 +2,9 @@
 import { each } from 'lodash-es';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
-import { toSentenceCase } from '@/utils/text';
 import { toMessages } from '@/utils/validation';
+import type { SelectOptions } from '@/types/common';
 import type {
-  AddressBookLocation,
   AddressBookPayload,
 } from '@/types/eth-names';
 
@@ -36,37 +35,15 @@ const location = useSimplePropVModel(props, 'location', emit);
 const blockchain = useSimplePropVModel(props, 'blockchain', emit);
 const enabledForAllChains = useKebabVModel(props, 'enableForAllChains', emit);
 
-const { btcAddresses, bchAddresses } = storeToRefs(useBtcAccountsStore());
-const { ethAddresses } = storeToRefs(useEthAccountsStore());
-const {
-  ksmAddresses,
-  dotAddresses,
-  avaxAddresses,
-  optimismAddresses,
-  polygonAddresses,
-  arbitrumAddresses,
-  baseAddresses,
-  gnosisAddresses,
-} = storeToRefs(useChainsAccountsStore());
+const { addresses } = useBlockchainStore();
 const addressesNamesStore = useAddressesNamesStore();
 const { getAddressesWithoutNames, addressNameSelector } = addressesNamesStore;
 
-const addresses = computed<Record<string, string[]>>(() => ({
-  [Blockchain.BTC]: get(btcAddresses),
-  [Blockchain.BCH]: get(bchAddresses),
-  [Blockchain.ETH]: get(ethAddresses),
-  [Blockchain.KSM]: get(ksmAddresses),
-  [Blockchain.DOT]: get(dotAddresses),
-  [Blockchain.AVAX]: get(avaxAddresses),
-  [Blockchain.OPTIMISM]: get(optimismAddresses),
-  [Blockchain.POLYGON_POS]: get(polygonAddresses),
-  [Blockchain.ARBITRUM_ONE]: get(arbitrumAddresses),
-  [Blockchain.BASE]: get(baseAddresses),
-  [Blockchain.GNOSIS]: get(gnosisAddresses),
-}));
-
 const addressSuggestions = getAddressesWithoutNames(blockchain);
-const locations: AddressBookLocation[] = ['global', 'private'];
+const locations = computed<SelectOptions>(() => [
+  { label: t('address_book.hint.global'), key: 'global' },
+  { label: t('address_book.hint.private'), key: 'private' },
+]);
 
 const rules = {
   blockchain: {
@@ -126,20 +103,18 @@ onMounted(fetchNames);
 
 <template>
   <form>
-    <VSelect
+    <RuiMenuSelect
       v-model="location"
-      outlined
       :label="t('common.location')"
-      :items="locations"
+      class="mb-6"
+      :options="locations"
       :disabled="edit"
-    >
-      <template #item="{ item }">
-        {{ toSentenceCase(item) }}
-      </template>
-      <template #selection="{ item }">
-        {{ toSentenceCase(item) }}
-      </template>
-    </VSelect>
+      key-attr="key"
+      text-attr="label"
+      full-width
+      float-label
+      variant="outlined"
+    />
     <RuiSwitch
       v-model="enabledForAllChains"
       :disabled="edit"
@@ -164,31 +139,27 @@ onMounted(fetchNames);
       clearable
     >
       <template #prepend-inner>
-        <span>
-          <VAvatar
-            size="24"
-            class="mr-2"
-            color="grey"
-          >
-            <AppImage
-              :src="getBlockie(value.address)"
-              size="1.5rem"
-            />
-          </VAvatar>
-        </span>
+        <div
+          class="mr-2 rounded-full overflow-hidden w-6 h-6 bg-rui-grey-300 dark:bg-rui-grey-600"
+        >
+          <AppImage
+            v-if="value.address"
+            :src="getBlockie(value.address)"
+            size="1.5rem"
+          />
+        </div>
       </template>
       <template #item="{ item }">
-        <span v-if="item">
-          <VAvatar
-            size="24"
-            class="mr-2"
-          >
-            <AppImage
-              :src="getBlockie(item)"
-              size="1.5rem"
-            />
-          </VAvatar>
-        </span>
+        <div
+          v-if="item"
+          class="mr-2 rounded-full overflow-hidden w-6 h-6 bg-rui-grey-300 dark:bg-rui-grey-600"
+        >
+          <AppImage
+            v-if="item"
+            :src="getBlockie(item)"
+            size="1.5rem"
+          />
+        </div>
         {{ item }}
       </template>
     </ComboboxWithCustomInput>

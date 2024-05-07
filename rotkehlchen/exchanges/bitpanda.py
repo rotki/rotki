@@ -272,7 +272,7 @@ class Bitpanda(ExchangeInterface):
                 amount = deserialize_asset_amount(entry['attributes']['amount_cryptocoin'])
                 price = deserialize_price(entry['attributes']['price'])
             else:
-                self.msg_aggregator.add_error('Found bitpanda trade with unknown trade type {trade_type}')  # noqa: E501
+                self.msg_aggregator.add_error(f'Found bitpanda trade with unknown trade type {trade_type}')  # noqa: E501
                 return None
 
             trade_id = entry['id']
@@ -511,7 +511,7 @@ class Bitpanda(ExchangeInterface):
                 continue
 
             try:
-                usd_price = Inquirer().find_usd_price(asset=asset)
+                usd_price = Inquirer.find_usd_price(asset=asset)
             except RemoteError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing Bitpanda balance entry due to inability to '

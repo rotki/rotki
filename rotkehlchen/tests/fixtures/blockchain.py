@@ -7,8 +7,10 @@ import pytest
 
 from rotkehlchen.chain.accounts import BlockchainAccounts
 from rotkehlchen.chain.aggregator import ChainsAggregator
+from rotkehlchen.chain.arbitrum_one.decoding.decoder import ArbitrumOneTransactionDecoder
 from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
 from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
+from rotkehlchen.chain.arbitrum_one.transactions import ArbitrumOneTransactions
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.base.decoding.decoder import BaseTransactionDecoder
 from rotkehlchen.chain.base.manager import BaseManager
@@ -29,8 +31,11 @@ from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
 from rotkehlchen.chain.optimism.transactions import OptimismTransactions
 from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
 from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
+from rotkehlchen.chain.scroll.manager import ScrollManager
+from rotkehlchen.chain.scroll.node_inquirer import ScrollInquirer
 from rotkehlchen.chain.substrate.manager import SubstrateChainProperties, SubstrateManager
 from rotkehlchen.chain.substrate.types import SubstrateAddress
+from rotkehlchen.chain.zksync_lite.manager import ZksyncLiteManager
 from rotkehlchen.constants.assets import A_DOT, A_KSM
 from rotkehlchen.db.settings import DEFAULT_BTC_DERIVATION_GAP_LIMIT
 from rotkehlchen.externalapis.beaconchain.service import BeaconChain
@@ -74,6 +79,8 @@ def _initialize_and_yield_evm_inquirer_fixture(
         blockchain = SupportedBlockchain.BASE
     elif klass == GnosisInquirer:
         blockchain = SupportedBlockchain.GNOSIS
+    elif klass == ScrollInquirer:
+        blockchain = SupportedBlockchain.SCROLL
 
     EvmContracts.initialize_common_abis()
     nodes_to_connect_to = maybe_modify_rpc_nodes(database, blockchain, manager_connect_at_start)
@@ -142,6 +149,16 @@ def fixture_gnosis_accounts() -> list[ChecksumEvmAddress]:
     return []
 
 
+@pytest.fixture(name='scroll_accounts')
+def fixture_scroll_accounts() -> list[ChecksumEvmAddress]:
+    return []
+
+
+@pytest.fixture(name='zksync_lite_accounts')
+def fixture_zksync_lite_accounts() -> list[ChecksumEvmAddress]:
+    return []
+
+
 @pytest.fixture(name='btc_accounts')
 def fixture_btc_accounts() -> list[BTCAddress]:
     return []
@@ -185,6 +202,8 @@ def fixture_blockchain_accounts(
         arbitrum_one_accounts: list[ChecksumEvmAddress],
         base_accounts: list[ChecksumEvmAddress],
         gnosis_accounts: list[ChecksumEvmAddress],
+        scroll_accounts: list[ChecksumEvmAddress],
+        zksync_lite_accounts: list[ChecksumEvmAddress],
         avax_accounts: list[ChecksumEvmAddress],
         btc_accounts: list[BTCAddress],
         bch_accounts: list[BTCAddress],
@@ -198,6 +217,8 @@ def fixture_blockchain_accounts(
         arbitrum_one=tuple(arbitrum_one_accounts),
         base=tuple(base_accounts),
         gnosis=tuple(gnosis_accounts),
+        scroll=tuple(scroll_accounts),
+        zksync_lite=tuple(zksync_lite_accounts),
         avax=tuple(avax_accounts),
         btc=tuple(btc_accounts),
         bch=tuple(bch_accounts),
@@ -246,9 +267,7 @@ def fixture_mock_other_web3(network_mocking, should_mock_web3):
     without yielding if web3 and related stuff should be mocked"""
     if network_mocking is False:
         return False
-    if should_mock_web3:
-        return True
-    return False
+    return should_mock_web3
 
 
 @pytest.fixture(name='ethereum_inquirer')
@@ -301,10 +320,7 @@ def fixture_have_decoders() -> bool:
 
 
 @pytest.fixture(name='eth_transactions')
-def fixture_eth_transactions(
-        database,
-        ethereum_inquirer,
-):
+def fixture_eth_transactions(database, ethereum_inquirer):
     return EthereumTransactions(
         ethereum_inquirer=ethereum_inquirer,
         database=database,
@@ -350,21 +366,23 @@ def fixture_optimism_manager(optimism_inquirer):
 
 
 @pytest.fixture(name='optimism_transactions')
-def fixture_optimism_transactions(
-        database,
-        optimism_inquirer,
-):
+def fixture_optimism_transactions(database, optimism_inquirer):
     return OptimismTransactions(
         optimism_inquirer=optimism_inquirer,
         database=database,
     )
 
 
+@pytest.fixture(name='arbitrum_one_transactions')
+def fixture_arbitrum_one_transactions(database, arbitrum_one_inquirer):
+    return ArbitrumOneTransactions(
+        arbitrum_one_inquirer=arbitrum_one_inquirer,
+        database=database,
+    )
+
+
 @pytest.fixture(name='base_transactions')
-def fixture_base_transactions(
-        database,
-        base_inquirer,
-):
+def fixture_base_transactions(database, base_inquirer):
     return BaseTransactions(
         base_inquirer=base_inquirer,
         database=database,
@@ -372,11 +390,7 @@ def fixture_base_transactions(
 
 
 @pytest.fixture(name='optimism_transaction_decoder')
-def fixture_optimism_transaction_decoder(
-        database,
-        optimism_inquirer,
-        optimism_transactions,
-):
+def fixture_optimism_transaction_decoder(database, optimism_inquirer, optimism_transactions):
     with patch_decoder_reload_data():
         yield OptimismTransactionDecoder(
             database=database,
@@ -386,16 +400,26 @@ def fixture_optimism_transaction_decoder(
 
 
 @pytest.fixture(name='base_transaction_decoder')
-def fixture_base_transaction_decoder(
-        database,
-        base_inquirer,
-        base_transactions,
-):
+def fixture_base_transaction_decoder(database, base_inquirer, base_transactions):
     with patch_decoder_reload_data():
         yield BaseTransactionDecoder(
             database=database,
             base_inquirer=base_inquirer,
             transactions=base_transactions,
+        )
+
+
+@pytest.fixture(name='arbitrum_one_transaction_decoder')
+def fixture_arbitrum_one_transaction_decoder(
+        database,
+        arbitrum_one_inquirer,
+        arbitrum_one_transactions,
+):
+    with patch_decoder_reload_data():
+        yield ArbitrumOneTransactionDecoder(
+            database=database,
+            arbitrum_inquirer=arbitrum_one_inquirer,
+            transactions=arbitrum_one_transactions,
         )
 
 
@@ -556,6 +580,42 @@ def fixture_gnosis_transactions(
     )
 
 
+@pytest.fixture(name='scroll_manager_connect_at_start')
+def fixture_scroll_manager_connect_at_start() -> Literal['DEFAULT'] | Sequence[NodeName]:
+    """A sequence of nodes to connect to at the start of the test.
+    Can be either a sequence of nodes to connect to for this chain.
+    Or an empty sequence to connect to no nodes for this chain.
+    Or the DEFAULT string literal meaning to connect to the built-in default nodes.
+    """
+    return ()
+
+
+@pytest.fixture(name='scroll_inquirer')
+def fixture_scroll_inquirer(
+        scroll_manager_connect_at_start,
+        greenlet_manager,
+        database,
+        mock_other_web3,
+):
+    with ExitStack() as stack:
+        yield _initialize_and_yield_evm_inquirer_fixture(
+            parent_stack=stack,
+            klass=ScrollInquirer,
+            class_path='rotkehlchen.chain.scroll.node_inquirer.ScrollInquirer',
+            manager_connect_at_start=scroll_manager_connect_at_start,
+            greenlet_manager=greenlet_manager,
+            database=database,
+            mock_other_web3=mock_other_web3,
+            mock_data={},  # Not used in scroll. TODO: remove it for all other chains too since we now have vcr  # noqa: E501
+            mocked_proxies=None,
+        )
+
+
+@pytest.fixture(name='scroll_manager')
+def fixture_scroll_manager(scroll_inquirer):
+    return ScrollManager(node_inquirer=scroll_inquirer)
+
+
 @pytest.fixture(name='ksm_rpc_endpoint')
 def fixture_ksm_rpc_endpoint() -> str | None:
     return None
@@ -683,6 +743,14 @@ def fixture_avalanche_manager(messages_aggregator):
     )
 
 
+@pytest.fixture(name='zksync_lite_manager')
+def fixture_zksync_lite_manager(ethereum_inquirer, database):
+    return ZksyncLiteManager(
+        ethereum_inquirer=ethereum_inquirer,
+        database=database,
+    )
+
+
 @pytest.fixture(name='ethereum_modules')
 def fixture_ethereum_modules() -> list[str]:
     return []
@@ -715,9 +783,11 @@ def fixture_blockchain(
         arbitrum_one_manager,
         base_manager,
         gnosis_manager,
+        scroll_manager,
         kusama_manager,
         polkadot_manager,
         avalanche_manager,
+        zksync_lite_manager,
         blockchain_accounts,
         inquirer,  # pylint: disable=unused-argument
         messages_aggregator,
@@ -743,9 +813,11 @@ def fixture_blockchain(
         arbitrum_one_manager=arbitrum_one_manager,
         base_manager=base_manager,
         gnosis_manager=gnosis_manager,
+        scroll_manager=scroll_manager,
         kusama_manager=kusama_manager,
         polkadot_manager=polkadot_manager,
         avalanche_manager=avalanche_manager,
+        zksync_lite_manager=zksync_lite_manager,
         msg_aggregator=messages_aggregator,
         database=database,
         greenlet_manager=greenlet_manager,

@@ -1,7 +1,7 @@
 <script lang="ts" setup>
 import { helpers, required } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
-import type { GeneralAccount } from '@rotki/common/lib/account';
+import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type {
   AddTransactionHashPayload,
   EvmChainAndTxHash,
@@ -10,7 +10,7 @@ import type {
 const { t } = useI18n();
 
 const txHash = ref<string>('');
-const accounts = ref<GeneralAccount[]>([]);
+const accounts = ref<BlockchainAccount<AddressData>[]>([]);
 
 const errorMessages = ref<Record<string, string[]>>({});
 
@@ -33,7 +33,7 @@ const rules = {
   associatedAddress: {
     required: helpers.withMessage(
       t('transactions.form.account.validation.non_empty').toString(),
-      (accounts: GeneralAccount[]) => accounts.length > 0,
+      (accounts: BlockchainAccount<AddressData>[]) => accounts.length > 0,
     ),
   },
 };
@@ -71,7 +71,7 @@ async function save(): Promise<EvmChainAndTxHash | null> {
 
   const payload: AddTransactionHashPayload = {
     txHash: txHashVal,
-    associatedAddress: accountsVal[0].address,
+    associatedAddress: getAccountAddress(accountsVal[0]),
     evmChain,
   };
 

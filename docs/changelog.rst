@@ -2,6 +2,35 @@
 Changelog
 =========
 
+* :release:`1.33.0 <2024-05-08>`
+* :feature:`7798` rotki now accurately decodes transactions on the Kyber swap aggregator across all supported chains. 
+* :feature:`-` Users will now be able to delete transactions and the associated events in history events.
+* :feature:`7074` rotki provides a calendar view where users can add and track events related to their activities. Users can also set reminders to perform actions associated with these events.
+* :feature:`-` Claiming the harvest finance hack compensation grain airdrop will be properly shown as airdrop claim in the history events.
+* :feature:`-` Claiming the pickle finance hack compensation cornichon airdrop will be properly shown as airdrop claim in the history events.
+* :feature:`-` Omni airdrop claims are properly decoded and omni airdrop eligibility is shown in rotki's airdrop list.
+* :feature:`7084` Compound v3 events will now get decoded and its assets and liabilities will be shown on the dashboard properly.
+* :feature:`-` Users will now be able to navigate the page (go back or forward) using the keyboard shortcuts "Cmd + Left Arrow" or "Cmd + Right Arrow".
+* :feature:`3617` ZKSync lite is now supported as a chain. Balances are detected and history of the activity of all your tracked addresses for zksync lite will now be visible in the history events section.
+* :feature:`-` fluence dev rewards airdrop claim events will now be properly decoded in the history events.
+* :feature:`-` rotki will now properly decode the transactions for bridging to and from Scroll.
+* :feature:`7708` rotki now properly decodes all native to/from wrapped token transactions (e.g. ETH<->WETH, Matic<->WMatic) on all supported EVM chains
+* :feature:`6636` Aave v3 positions and liabilities will now be properly shown in the dashboard.
+* :feature:`7423` Users will be able to sort address book entries by displayed name and address.
+* :feature:`7086` Added support for GMX v1 in Arbitrum.
+* :feature:`7281` rotki will now properly decode the transactions done on Aave v2 and v3 on all the supported chains.
+* :feature:`2698` Users can now manually link assets on their exchanges to assets recognized by Rotki, without having to wait for a new release.
+* :feature:`-` rotki will now properly decode the Uniswap V3 events on other supported chains.
+* :feature:`5978` rotki will now properly decode the swaps done via the 0x protocol.
+* :feature:`-` The claim event of the Degen airdrop 2 will be correctly decoded.
+* :bug:`-` Binance balances will now include funding wallet's balances.
+* :feature:`-` rotki now supports Coinbase transactions using Advanced Trading.
+* :bug:`-` Velodrome and Aerodrome LP pools will now refresh properly.
+* :bug:`-` Fix a bug where the custom price is not applied in the balance view under the account table.
+* :bug:`-` Deleting an EVM RPC node will no longer fail sometimes with a "Can't delete etherscan node" error. Additionally non-mainnet etherscan nodes are no longer deletable.
+* :bug:`-` Nigerian Naira should be correctly detected in binance.
+* :bug:`-` Kraken balances in new yield-bearing products and automatic staking for new kraken users should now appear properly.
+
 * :release:`1.32.2 <2024-03-15>`
 * :bug:`7531` rotki will now prioritize manual prices above other price oracles and calculations.
 * :bug:`-` rotki will display NFT prices correctly across all asset types.

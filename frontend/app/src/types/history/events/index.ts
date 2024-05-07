@@ -11,12 +11,13 @@ const LiquityStakingEventExtraData = z.object({
   stakedAmount: NumericString,
 });
 
-export interface TransactionRequestPayload
-  extends PaginationRequestPayload<{ timestamp: number }> {
-  readonly fromTimestamp?: string | number;
-  readonly toTimestamp?: string | number;
-  readonly accounts?: EvmChainAddress[] | null;
-  readonly evmChain?: string;
+export enum TransactionChainType {
+  EVM = 'evm',
+  EVMLIKE = 'evmlike',
+}
+
+export interface TransactionRequestPayload {
+  readonly accounts: EvmChainAddress[];
 }
 
 export interface TransactionHashAndEvmChainPayload {
@@ -44,6 +45,13 @@ export const EvmChainAddress = z.object({
 });
 
 export type EvmChainAddress = z.infer<typeof EvmChainAddress>;
+
+export const EvmChainLikeAddress = z.object({
+  address: z.string(),
+  chain: z.string(),
+});
+
+export type EvmChainLikeAddress = z.infer<typeof EvmChainLikeAddress>;
 
 export interface TransactionEventRequestPayload {
   readonly data: TransactionHashAndEvmChainPayload[];

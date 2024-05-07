@@ -7,11 +7,8 @@ import { ProtocolVersion } from '@/types/defi';
 import {
   AaveEarnedDetails,
   CompoundLendingDetails,
-  YearnVaultsProfitDetails,
 } from '@/premium/premium';
-import type { YearnVaultProfitLoss } from '@/types/defi/yearn';
-import type { ComputedRef } from 'vue';
-import type { GeneralAccount } from '@rotki/common/lib/account';
+import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { BigNumber } from '@rotki/common';
 
 const section = Section.DEFI_LENDING;
@@ -27,7 +24,7 @@ const modules: Module[] = [
 
 const chains = [Blockchain.ETH];
 
-const selectedAccounts = ref<GeneralAccount[]>([]);
+const selectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
 const protocol = ref<DefiProtocol | null>(null);
 const premium = usePremium();
 const route = useRoute();
@@ -35,19 +32,15 @@ const { shouldShowLoadingScreen, isLoading } = useStatusStore();
 
 const defiStore = useDefiStore();
 const defiLending = useDefiLending();
-const yearnStore = useYearnStore();
 const aaveStore = useAaveStore();
 
 const { t } = useI18n();
 
-function isProtocol(protocol: DefiProtocol) {
-  return computed(() => {
-    const protocols = get(selectedProtocols);
-    return protocols.length > 0 && protocols.includes(protocol);
-  });
-}
-
-const selectedAddresses = useArrayMap(selectedAccounts, a => a.address);
+const selectedAddresses = useArrayMap(selectedAccounts, account => getAccountAddress(account));
+const accountFilter = useArrayMap(selectedAccounts, account => ({
+  address: getAccountAddress(account),
+  chain: account.chain,
+}));
 
 const selectedProtocols = computed(() => {
   const selected = get(protocol);
@@ -56,7 +49,7 @@ const selectedProtocols = computed(() => {
 
 const defiAddresses = computed(() => {
   const protocols = get(selectedProtocols);
-  return get(defiStore.defiAccounts(protocols)).map(({ address }) => address);
+  return get(defiStore.defiAccounts(protocols)).map(({ data: { address } }) => address);
 });
 
 const lendingBalances = computed(() => {
@@ -89,6 +82,13 @@ const totalUsdEarned = computed<BigNumber>(() => {
   return get(defiLending.totalUsdEarned(protocols, addresses));
 });
 
+function isProtocol(protocol: DefiProtocol) {
+  return computed(() => {
+    const protocols = get(selectedProtocols);
+    return protocols.length > 0 && protocols.includes(protocol);
+  });
+}
+
 const isCompound = isProtocol(DefiProtocol.COMPOUND);
 const isAave = isProtocol(DefiProtocol.AAVE);
 const isYearnVaults = isProtocol(DefiProtocol.YEARN_VAULTS);
@@ -103,21 +103,6 @@ const yearnVersion = computed(() => {
     return ProtocolVersion.V2;
 
   return null;
-});
-
-const yearnProfit = computed(() => {
-  const protocols = get(selectedProtocols);
-  const allSelected = protocols.length === 0;
-  const addresses = get(selectedAddresses);
-  let v1Profit: YearnVaultProfitLoss[] = [];
-  if (get(isYearnVaults) || allSelected)
-    v1Profit = get(yearnStore.yearnVaultsProfit(addresses, ProtocolVersion.V1));
-
-  let v2Profit: YearnVaultProfitLoss[] = [];
-  if (get(isYearnVaultsV2) || allSelected)
-    v2Profit = get(yearnStore.yearnVaultsProfit(addresses, ProtocolVersion.V2));
-
-  return [...v1Profit, ...v2Profit];
 });
 
 const loading = shouldShowLoadingScreen(section);
@@ -143,8 +128,8 @@ const transactionEventProtocols: ComputedRef<string[]> = computed(() => {
   const selectedProtocol = get(protocol);
 
   const mapping: { [key in DefiProtocol]?: string[] } = {
-    [DefiProtocol.AAVE]: ['aave-v1', 'aave-v2'],
-    [DefiProtocol.COMPOUND]: ['compound'],
+    [DefiProtocol.AAVE]: ['aave-v1', 'aave-v2', 'aave-v3'],
+    [DefiProtocol.COMPOUND]: ['compound', 'compound-v3'],
     [DefiProtocol.MAKERDAO_DSR]: ['makerdao dsr'],
     [DefiProtocol.YEARN_VAULTS]: ['yearn-v1'],
     [DefiProtocol.YEARN_VAULTS_V2]: ['yearn-v2'],
@@ -249,11 +234,6 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
           :addresses="selectedAddresses"
         />
 
-        <YearnVaultsProfitDetails
-          v-if="(isYearn || noProtocolSelection) && yearnProfit.length > 0"
-          :profit="yearnProfit"
-        />
-
         <AaveEarnedDetails
           v-if="(isAave || noProtocolSelection) && totalEarnedInAave.length > 0"
           :profit="totalEarnedInAave"
@@ -270,7 +250,7 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
         use-external-account-filter
         :section-title="t('common.events')"
         :protocols="transactionEventProtocols"
-        :external-account-filter="selectedAccounts"
+        :external-account-filter="accountFilter"
         :only-chains="chains"
         :entry-types="[HistoryEventEntryType.EVM_EVENT]"
       />

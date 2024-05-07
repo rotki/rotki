@@ -106,14 +106,14 @@ async function uploadFile() {
 
       try {
         const { taskId } = await importFile(formData);
+        const taskMeta = {
+          title: t('file_upload.task.title', { source: get(source) }),
+          source: get(source),
+        };
         const { result } = await awaitTask<boolean, TaskMeta>(
           taskId,
           taskType,
-          {
-            title: t('file_upload.task.title', {
-              source: get(source),
-            }).toString(),
-          },
+          taskMeta,
         );
 
         if (result)
@@ -153,15 +153,15 @@ const slots = useSlots();
         :error-message="errorMessage"
         @update:uploaded="uploaded = $event"
       />
-      <VSwitch
+      <RuiSwitch
         v-if="!isRotkiCustomImport"
+        color="primary"
+        class="mt-4"
         :value="dateInputFormat !== null"
-        @change="changeShouldCustomDateFormat()"
+        @input="changeShouldCustomDateFormat()"
       >
-        <template #label>
-          {{ t('file_upload.date_input_format.switch_label') }}
-        </template>
-      </VSwitch>
+        {{ t('file_upload.date_input_format.switch_label') }}
+      </RuiSwitch>
       <RuiTextField
         v-if="dateInputFormat !== null"
         v-model="dateInputFormat"

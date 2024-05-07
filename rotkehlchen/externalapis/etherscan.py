@@ -1,6 +1,7 @@
 import json
 import logging
-from abc import ABCMeta
+import operator
+from abc import ABC
 from collections.abc import Iterator
 from enum import Enum, auto
 from http import HTTPStatus
@@ -12,6 +13,7 @@ import requests
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
+from rotkehlchen.chain.scroll.constants import SCROLL_GENESIS
 from rotkehlchen.chain.structures import TimestampOrBlockRange
 from rotkehlchen.db.constants import HISTORY_MAPPING_STATE_DECODED
 from rotkehlchen.db.evmtx import DBEvmTx
@@ -27,12 +29,13 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_timestamp,
 )
 from rotkehlchen.types import (
-    SUPPORTED_EVM_CHAINS,
+    SUPPORTED_EVM_CHAINS_TYPE,
     ChecksumEvmAddress,
     EvmInternalTransaction,
     EvmTransaction,
     EVMTxHash,
     ExternalService,
+    Location,
     SupportedBlockchain,
     Timestamp,
     deserialize_evm_tx_hash,
@@ -70,16 +73,16 @@ def _hashes_tuple_to_list(hashes: set[tuple[EVMTxHash, Timestamp]]) -> list[EVMT
 
     This function needs to exist since Set has no guranteed order of iteration.
     """
-    return [x[0] for x in sorted(hashes, key=lambda x: x[1])]
+    return [x[0] for x in sorted(hashes, key=operator.itemgetter(1))]
 
 
-class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
+class Etherscan(ExternalServiceWithApiKey, ABC):
     """Base class for all Etherscan implementations"""
     def __init__(
             self,
             database: 'DBHandler',
             msg_aggregator: 'MessagesAggregator',
-            chain: SUPPORTED_EVM_CHAINS,
+            chain: SUPPORTED_EVM_CHAINS_TYPE,
             base_url: str,
             service: Literal[
                 ExternalService.ETHERSCAN,
@@ -88,6 +91,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                 ExternalService.ARBITRUM_ONE_ETHERSCAN,
                 ExternalService.BASE_ETHERSCAN,
                 ExternalService.GNOSIS_ETHERSCAN,
+                ExternalService.SCROLL_ETHERSCAN,
             ],
     ) -> None:
         super().__init__(database=database, service_name=service)
@@ -100,6 +104,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             SupportedBlockchain.ARBITRUM_ONE,
             SupportedBlockchain.BASE,
             SupportedBlockchain.GNOSIS,
+            SupportedBlockchain.SCROLL,
         ) else 'api-'
         self.base_url = base_url
         self.session = requests.session()
@@ -117,6 +122,8 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             self.earliest_ts = 1686789347
         elif service == ExternalService.GNOSIS_ETHERSCAN:
             self.earliest_ts = 1539024185
+        elif service == ExternalService.SCROLL_ETHERSCAN:
+            self.earliest_ts = SCROLL_GENESIS
         else:  # Polygon POS
             self.earliest_ts = 1590856200
 
@@ -238,7 +245,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
 
         backoff = 1
         backoff_limit = 33
-        timeout = timeout if timeout else CachedSettings().get_timeout_tuple()
+        timeout = timeout or CachedSettings().get_timeout_tuple()
         while backoff < backoff_limit:
             response = None
             log.debug(f'Querying {self.chain} etherscan: {query_str}')
@@ -259,7 +266,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                     f'backoff for {backoff} seconds.',
                 )
                 gevent.sleep(backoff)
-                backoff = backoff * 2
+                backoff *= 2
                 continue
 
             if response.status_code != 200:
@@ -304,7 +311,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                             # If limit is reached then keep sleeping with the limit.
                             # Etherscan will let the query go through eventually
                             if backoff * 2 < backoff_limit:
-                                backoff = backoff * 2
+                                backoff *= 2
                             continue
 
                     transaction_endpoint_and_none_found = (
@@ -460,7 +467,7 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                             dbevents.delete_events_by_tx_hash(
                                 write_cursor=write_cursor,
                                 tx_hashes=[GENESIS_HASH],
-                                chain_id=self.chain.to_chain_id(),  # type: ignore[arg-type]
+                                location=Location.from_chain(self.chain),
                             )
                             write_cursor.execute(
                                 'DELETE from evm_tx_mappings WHERE tx_id=(SELECT identifier FROM '
@@ -507,8 +514,8 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                     timestamp = deserialize_timestamp(entry['timeStamp'])
                 except DeserializationError as e:
                     log.error(
-                        f"Failed to read transaction timestamp {entry['hash']} from etherscan for "
-                        f'{account} in the range {from_ts} to {to_ts}. {e!s}',
+                        f"Failed to read transaction timestamp {entry['hash']} from {self.chain} "
+                        f'etherscan for {account} in the range {from_ts} to {to_ts}. {e!s}',
                     )
                     continue
 
@@ -520,8 +527,8 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
                     hashes.add((deserialize_evm_tx_hash(entry['hash']), timestamp))
                 except DeserializationError as e:
                     log.error(
-                        f"Failed to read transaction hash {entry['hash']} from etherscan for "
-                        f'{account} in the range {from_ts} to {to_ts}. {e!s}',
+                        f"Failed to read transaction hash {entry['hash']} from {self.chain} "
+                        f'etherscan for {account} in the range {from_ts} to {to_ts}. {e!s}',
                     )
                     continue
 
@@ -688,8 +695,8 @@ class Etherscan(ExternalServiceWithApiKey, metaclass=ABCMeta):
             number = deserialize_int_from_str(result, 'etherscan getblocknobytime')
         except DeserializationError as e:
             raise RemoteError(
-                f'Could not read blocknumber from etherscan getblocknobytime '
-                f'result {result}',
+                f'Could not read blocknumber from {self.chain} etherscan '
+                f'getblocknobytime result {result}',
             ) from e
 
         self.timestamp_to_block_cache.add(key=ts, value=number)

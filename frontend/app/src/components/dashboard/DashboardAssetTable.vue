@@ -12,7 +12,6 @@ import type {
   DataTableSortData,
   TablePaginationData,
 } from '@rotki/ui-library-compat';
-import type { Ref } from 'vue';
 import type { Nullable } from '@/types';
 import type { DashboardTableType } from '@/types/settings/frontend-settings';
 
@@ -208,18 +207,16 @@ watch(search, () => setPage(1));
         clearable
         @click:clear="search = ''"
       />
-      <VMenu
+      <RuiMenu
         id="dashboard-asset-table__column-filter"
-        transition="slide-y-transition"
-        max-width="250px"
-        nudge-bottom="20"
-        offset-y
-        left
+        menu-class="max-w-[15rem]"
+        :popper="{ placement: 'bottom-end' }"
       >
         <template #activator="{ on }">
           <MenuTooltipButton
             :tooltip="t('dashboard_asset_table.select_visible_columns')"
             class-name="dashboard-asset-table__column-filter__button"
+            custom-color
             v-on="on"
           >
             <RuiIcon name="more-2-fill" />
@@ -229,7 +226,7 @@ watch(search, () => setPage(1));
           :group="tableType"
           :group-label="title"
         />
-      </VMenu>
+      </RuiMenu>
     </template>
     <template #shortDetails>
       <AmountDisplay
@@ -253,7 +250,6 @@ watch(search, () => setPage(1));
         limit: pagination.itemsPerPage,
         total: filtered.length,
       }"
-      :sticky-offset="64"
       row-attr="asset"
       sticky-header
       single-expand

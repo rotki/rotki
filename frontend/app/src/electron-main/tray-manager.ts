@@ -1,6 +1,6 @@
 import path from 'node:path';
 import process from 'node:process';
-import { type BrowserWindow, Menu, Tray, app } from 'electron';
+import { type BrowserWindow, Menu, Tray, app, nativeImage } from 'electron';
 import { settingsManager } from '@/electron-main/app-settings';
 import { checkIfDevelopment } from '@/utils/env-utils';
 import type { TrayUpdate } from '@/electron-main/ipc';
@@ -60,7 +60,7 @@ export class TrayManager {
       return;
 
     if (up === undefined) {
-      this.setIcon(isMac ? 'rotki-trayTemplate.png' : 'rotki_tray.png');
+      this.setIcon(isMac ? 'rotki-trayTemplate@5.png' : 'rotki_tray@5x.png');
       this.tray.setTitle('');
       this.tray.setToolTip('rotki is running');
       return;
@@ -93,7 +93,8 @@ export class TrayManager {
 
   private setIcon(iconName: string) {
     const iconPath = path.join(TrayManager.iconPath, iconName);
-    this.tray?.setImage(iconPath);
+    const trayIcon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 });
+    this.tray?.setImage(trayIcon);
   }
 
   private showHide(win: BrowserWindow) {
@@ -117,9 +118,10 @@ export class TrayManager {
   };
 
   build() {
-    const icon = isMac ? 'rotki-trayTemplate.png' : 'rotki_tray.png';
+    const icon = isMac ? 'rotki-trayTemplate@5.png' : 'rotki_tray@5x.png';
     const iconPath = path.join(TrayManager.iconPath, icon);
-    this.tray = new Tray(iconPath);
+    const trayIcon = nativeImage.createFromPath(iconPath).resize({ width: 16, height: 16 });
+    this.tray = new Tray(trayIcon);
     this.tray.setToolTip('rotki is running');
 
     this.tray.setContextMenu(this.buildMenu(true));

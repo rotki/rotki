@@ -4,6 +4,7 @@ import {
   type AddTransactionHashPayload,
   type EvmChainAddress,
   OnlineHistoryEventsQueryType,
+  TransactionChainType,
   type TransactionRequestPayload,
 } from '@/types/history/events';
 import { TaskType } from '@/types/task-type';
@@ -16,46 +17,40 @@ import type { Blockchain } from '@rotki/common/lib/blockchain';
 export const useHistoryTransactions = createSharedComposable(() => {
   const { t } = useI18n();
   const { notify } = useNotificationsStore();
-  const queue = new LimitedParallelizationQueue(4);
+  const queue = new LimitedParallelizationQueue(2);
 
   const {
-    fetchEvmTransactionsTask,
+    fetchTransactionsTask,
     addTransactionHash: addTransactionHashCaller,
     queryOnlineHistoryEvents,
   } = useHistoryEventsApi();
 
-  const { resetEvmUndecodedTransactionsStatus } = useHistoryStore();
+  const { addresses } = storeToRefs(useBlockchainStore());
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { removeQueryStatus, resetQueryStatus } = useTxQueryStatusStore();
-  const { getEvmChainName, supportsTransactions } = useSupportedChains();
-  const { accounts } = useAccountBalances();
-  const { setStatus, resetStatus, fetchDisabled } = useStatusUpdater(
-    Section.HISTORY_EVENT,
-  );
-
-  const { reDecodeMissingTransactionEventsTask }
-    = useHistoryTransactionDecoding();
+  const { getEvmChainName, supportsTransactions, isEvmLikeChains, getChainName } = useSupportedChains();
+  const { setStatus, resetStatus, fetchDisabled } = useStatusUpdater(Section.HISTORY_EVENT);
+  const { decodeTransactionsTask, fetchUndecodedTransactionsStatus } = useHistoryTransactionDecoding();
+  const { resetUndecodedTransactionsStatus } = useHistoryStore();
 
   const syncTransactionTask = async (
     account: EvmChainAddress,
+    type: TransactionChainType = TransactionChainType.EVM,
   ): Promise<void> => {
     const taskType = TaskType.TX;
+    const isEvm = type === TransactionChainType.EVM;
     const defaults: TransactionRequestPayload = {
-      limit: 0,
-      offset: 0,
-      ascending: [false],
-      orderByAttributes: ['timestamp'],
-      onlyCache: false,
       accounts: [account],
     };
 
-    const { taskId } = await fetchEvmTransactionsTask(defaults);
+    const { taskId } = await fetchTransactionsTask(defaults, type);
     const taskMeta = {
       title: t('actions.transactions.task.title'),
       description: t('actions.transactions.task.description', {
         address: account.address,
-        chain: account.evmChain,
+        chain: get(getChainName(account.evmChain)),
       }),
+      isEvm,
     };
 
     try {
@@ -80,85 +75,42 @@ export const useHistoryTransactions = createSharedComposable(() => {
     }
     finally {
       setStatus(
-        get(isTaskRunning(taskType)) ? Status.REFRESHING : Status.LOADED,
+        get(isTaskRunning(taskType, { isEvm })) ? Status.REFRESHING : Status.LOADED,
       );
     }
   };
 
-  const syncAndRedecode = async (
+  const syncAndReDecodeEvents = async (
     evmChain: string,
     accounts: EvmChainAddress[],
+    type: TransactionChainType = TransactionChainType.EVM,
   ): Promise<void> => {
     await awaitParallelExecution(
       accounts,
       item => item.evmChain + item.address,
-      syncTransactionTask,
+      item => syncTransactionTask(item, type),
     );
-    queue.queue(evmChain, () => reDecodeMissingTransactionEventsTask(evmChain));
+    queue.queue(evmChain, () => decodeTransactionsTask(evmChain, type));
   };
 
-  const getTxAccounts = (chains: Blockchain[] = []) =>
-    get(accounts)
-      .filter(
-        ({ chain }) =>
-          supportsTransactions(chain)
-          && (chains.length === 0 || chains.includes(chain)),
-      )
-      .map(({ address, chain }) => ({
+  const getEvmAccounts = (chains: string[] = []): { address: string; evmChain: string }[] =>
+    Object.entries(get(addresses))
+      .filter(([chain]) => supportsTransactions(chain) && (chains.length === 0 || chains.includes(chain)))
+      .flatMap(([chain, addresses]) => {
+        const evmChain = getEvmChainName(chain) ?? '';
+        return addresses.map(address => ({
+          address,
+          evmChain,
+        }));
+      });
+
+  const getEvmLikeAccounts = (chains: string[] = []): { address: string; evmChain: string }[] =>
+    Object.entries(get(addresses))
+      .filter(([chain]) => isEvmLikeChains(chain) && (chains.length === 0 || chains.includes(chain)))
+      .flatMap(([evmChain, addresses]) => addresses.map(address => ({
         address,
-        evmChain: getEvmChainName(chain)!,
-      }));
-
-  const refreshTransactions = async (
-    chains: Blockchain[],
-    disableEvmEvents = false,
-    userInitiated = false,
-  ): Promise<void> => {
-    if (fetchDisabled(userInitiated)) {
-      logger.info('skipping transaction refresh');
-      return;
-    }
-
-    const txAccounts: EvmChainAddress[] = disableEvmEvents
-      ? []
-      : getTxAccounts(chains);
-
-    if (txAccounts.length > 0) {
-      setStatus(Status.REFRESHING);
-      resetQueryStatus();
-      resetEvmUndecodedTransactionsStatus();
-    }
-
-    const grouppedByEvmChain = Object.entries(
-      groupBy(txAccounts, account => account.evmChain),
-    ).map(([evmChain, data]) => ({
-      evmChain,
-      data,
-    }));
-
-    try {
-      await Promise.all([
-        awaitParallelExecution(
-          grouppedByEvmChain,
-          item => item.evmChain,
-          item => syncAndRedecode(item.evmChain, item.data),
-        ),
-        queryOnlineEvent(OnlineHistoryEventsQueryType.ETH_WITHDRAWALS),
-        queryOnlineEvent(OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS),
-        queryOnlineEvent(OnlineHistoryEventsQueryType.EXCHANGES),
-      ]);
-
-      if (txAccounts.length > 0) {
-        setStatus(
-          get(isTaskRunning(TaskType.TX)) ? Status.REFRESHING : Status.LOADED,
-        );
-      }
-    }
-    catch (error) {
-      logger.error(error);
-      resetStatus();
-    }
-  };
+        evmChain,
+      })));
 
   const { isModuleEnabled } = useModules();
   const isEth2Enabled = isModuleEnabled(Module.ETH2);
@@ -202,6 +154,73 @@ export const useHistoryTransactions = createSharedComposable(() => {
           display: true,
         });
       }
+    }
+  };
+
+  const refreshTransactionsHandler = async (addresses: EvmChainAddress[], type: TransactionChainType = TransactionChainType.EVM) => {
+    const groupedByChains = Object.entries(
+      groupBy(addresses, account => account.evmChain),
+    ).map(([evmChain, data]) => ({
+      evmChain,
+      data,
+    }));
+
+    await awaitParallelExecution(
+      groupedByChains,
+      item => item.evmChain,
+      item => syncAndReDecodeEvents(item.evmChain, item.data, type),
+    );
+
+    const isEvm = type === TransactionChainType.EVM;
+    if (addresses.length > 0) {
+      setStatus(
+        get(isTaskRunning(TaskType.TX, { isEvm })) ? Status.REFRESHING : Status.LOADED,
+      );
+    }
+  };
+
+  const refreshTransactions = async (
+    chains: Blockchain[] = [],
+    disableEvmEvents = false,
+    userInitiated = false,
+  ): Promise<void> => {
+    if (fetchDisabled(userInitiated)) {
+      logger.info('skipping transaction refresh');
+      return;
+    }
+
+    const evmAccounts: EvmChainAddress[] = disableEvmEvents
+      ? []
+      : getEvmAccounts(chains);
+
+    const evmLikeAccounts: EvmChainAddress[] = disableEvmEvents
+      ? []
+      : getEvmLikeAccounts(chains);
+
+    if (evmAccounts.length + evmLikeAccounts.length > 0) {
+      setStatus(Status.REFRESHING);
+      resetQueryStatus();
+      resetUndecodedTransactionsStatus();
+    }
+
+    try {
+      if (!disableEvmEvents)
+        await fetchUndecodedTransactionsStatus();
+
+      await Promise.allSettled([
+        refreshTransactionsHandler(evmAccounts, TransactionChainType.EVM),
+        refreshTransactionsHandler(evmLikeAccounts, TransactionChainType.EVMLIKE),
+        queryOnlineEvent(OnlineHistoryEventsQueryType.ETH_WITHDRAWALS),
+        queryOnlineEvent(OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS),
+        queryOnlineEvent(OnlineHistoryEventsQueryType.EXCHANGES),
+      ]);
+
+      if (!disableEvmEvents)
+        await fetchUndecodedTransactionsStatus();
+    }
+    catch (error) {
+      logger.error(error);
+      resetStatus();
     }
   };
 

@@ -1,24 +1,23 @@
 <script setup lang="ts">
 import { DECENTRALIZED_EXCHANGES, Module } from '@/types/modules';
 import { Purgeable } from '@/types/session/purge';
-import type { Ref } from 'vue';
 
 const modules = Object.values(Module);
 const { allExchanges } = storeToRefs(useLocationStore());
-const { txEvmChainsToLocation } = useSupportedChains();
+const { txChains } = useSupportedChains();
 
 const { purgeCache } = useSessionPurge();
 const { deleteModuleData } = useBlockchainBalancesApi();
-const { deleteEvmTransactions } = useHistoryEventsApi();
+const { deleteTransactions } = useHistoryEventsApi();
 const { deleteExchangeData } = useExchangeApi();
 
 const { t } = useI18n();
 
-const source: Ref<Purgeable> = ref(Purgeable.EVM_TRANSACTIONS);
+const source: Ref<Purgeable> = ref(Purgeable.TRANSACTIONS);
 
 const centralizedExchangeToClear: Ref<string> = ref('');
 const decentralizedExchangeToClear: Ref<string> = ref('');
-const evmChainToClear: Ref<string> = ref('');
+const chainToClear: Ref<string> = ref('');
 const moduleToClear: Ref<string> = ref('');
 
 const purgable = [
@@ -38,17 +37,17 @@ const purgable = [
     value: moduleToClear,
   },
   {
-    id: Purgeable.EVM_TRANSACTIONS,
-    text: t('purge_selector.evm_transactions'),
-    value: evmChainToClear,
+    id: Purgeable.TRANSACTIONS,
+    text: t('purge_selector.transactions'),
+    value: chainToClear,
   },
 ];
 
 async function purgeSource(source: Purgeable) {
   const valueRef = purgable.find(({ id }) => id === source)?.value;
   const value = valueRef ? get(valueRef) : '';
-  if (source === Purgeable.EVM_TRANSACTIONS) {
-    await deleteEvmTransactions(value);
+  if (source === Purgeable.TRANSACTIONS) {
+    await deleteTransactions(value);
   }
   else if (source === Purgeable.DEFI_MODULES) {
     await deleteModuleData((value as Module) || null);
@@ -82,9 +81,9 @@ const { status, pending, showConfirmation } = useCacheClear<Purgeable>(
     const value = valueRef ? get(valueRef) : '';
 
     let message = '';
-    if (source === Purgeable.EVM_TRANSACTIONS) {
+    if (source === Purgeable.TRANSACTIONS) {
       message = t(
-        'data_management.purge_data.evm_transaction_purge_confirm.message',
+        'data_management.purge_data.transaction_purge_confirm.message',
       );
     }
     else if (value) {
@@ -105,6 +104,8 @@ const { status, pending, showConfirmation } = useCacheClear<Purgeable>(
     };
   },
 );
+
+const chainsSelection = useArrayMap(txChains, item => item.id);
 </script>
 
 <template>
@@ -130,17 +131,17 @@ const { status, pending, showConfirmation } = useCacheClear<Purgeable>(
           item-value="id"
           :disabled="pending"
         />
-        <LocationSelector
-          v-if="source === Purgeable.EVM_TRANSACTIONS"
-          v-model="evmChainToClear"
+        <ChainSelect
+          v-if="source === Purgeable.TRANSACTIONS"
+          :model-value.sync="chainToClear"
           class="flex-1"
           required
           outlined
           clearable
           persistent-hint
-          :items="txEvmChainsToLocation"
-          :label="t('purge_selector.evm_chain_to_clear.label')"
-          :hint="t('purge_selector.evm_chain_to_clear.hint')"
+          :items="chainsSelection"
+          :label="t('purge_selector.chain_to_clear.label')"
+          :hint="t('purge_selector.chain_to_clear.hint')"
         />
         <LocationSelector
           v-else-if="source === Purgeable.CENTRALIZED_EXCHANGES"

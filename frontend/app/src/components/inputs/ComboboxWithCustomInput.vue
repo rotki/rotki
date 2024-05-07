@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import type { ComputedRef, Ref } from 'vue';
-
 const props = withDefaults(
   defineProps<{
     value?: string | null;

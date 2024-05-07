@@ -11,37 +11,35 @@ const showMenu: Ref<boolean> = ref(false);
 </script>
 
 <template>
-  <VMenu
+  <RuiMenu
     v-model="showMenu"
-    max-width="500px"
-    min-width="280px"
-    left
-    :close-on-content-click="false"
+    menu-class="min-w-[18rem] max-w-[20rem]"
+    :popper="{ placement: 'bottom-end' }"
   >
     <template #activator="{ on }">
       <MenuTooltipButton
         :tooltip="t('statistics_graph_settings.tooltip')"
         class-name="graph-period"
+        custom-color
         v-on="on"
       >
         <RuiIcon name="settings-4-line" />
       </MenuTooltipButton>
     </template>
 
-    <RuiCard variant="flat">
+    <div class="p-4">
       <SsfGraphMultiplierSetting @updated="updated()" />
       <RuiDivider class="my-4" />
       <InferZeroTimedBalancesSetting @updated="updated()" />
 
-      <template #footer>
-        <div class="grow" />
+      <div class="flex justify-end">
         <RuiButton
           color="primary"
           @click="showMenu = false"
         >
           {{ t('common.actions.close') }}
         </RuiButton>
-      </template>
-    </RuiCard>
-  </VMenu>
+      </div>
+    </div>
+  </RuiMenu>
 </template>

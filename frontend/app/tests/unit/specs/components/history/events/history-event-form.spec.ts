@@ -3,7 +3,7 @@ import Vuetify from 'vuetify';
 import { createPinia, setActivePinia } from 'pinia';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import HistoryEventForm from '@/components/history/events/HistoryEventForm.vue';
-import VSelectStub from '../../../stubs/VSelect';
+import { VSelectStub } from '../../../stubs/VSelect';
 
 vi.mock('json-editor-vue', () => ({
   template: '<input />',
@@ -26,7 +26,7 @@ describe('historyEventForm.vue', () => {
     });
   };
 
-  it('should show correct form based on the entryType', () => {
+  it('should show correct form based on the entryType', async () => {
     wrapper = createWrapper();
 
     const entryTypeInput = wrapper.find('[data-cy="entry-type"] input');
@@ -35,14 +35,15 @@ describe('historyEventForm.vue', () => {
     expect(entryTypeElement.value).toBe(HistoryEventEntryType.HISTORY_EVENT);
     expect(wrapper.find('[data-cy=history-event-form]').exists()).toBeTruthy();
 
-    Object.values(HistoryEventEntryType).forEach(async (item) => {
+    const values = Object.values(HistoryEventEntryType);
+    for (const value of values) {
       await entryTypeInput.trigger('input', {
-        value: item,
+        value,
       });
       nextTick(() => {
-        const id = item.split(/ /g).join('-');
+        const id = value.split(/ /g).join('-');
         expect(wrapper.find(`[data-cy=${id}-form]`).exists()).toBeTruthy();
       });
-    });
+    }
   });
 });

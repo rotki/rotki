@@ -1,5 +1,4 @@
 import { BigNumber } from '@rotki/common';
-import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Theme, ThemeColors, ThemeEnum } from '@rotki/common/lib/settings';
 import {
   TimeFramePeriod,
@@ -39,21 +38,7 @@ const ExplorerEndpoints = z.object({
   block: z.string().optional(),
 });
 
-const ExplorersSettings = z.object({
-  ETC: ExplorerEndpoints.optional(),
-  [Blockchain.ETH]: ExplorerEndpoints.optional(),
-  [Blockchain.ETH2]: ExplorerEndpoints.optional(),
-  [Blockchain.BTC]: ExplorerEndpoints.optional(),
-  [Blockchain.BCH]: ExplorerEndpoints.optional(),
-  [Blockchain.KSM]: ExplorerEndpoints.optional(),
-  [Blockchain.DOT]: ExplorerEndpoints.optional(),
-  [Blockchain.AVAX]: ExplorerEndpoints.optional(),
-  [Blockchain.OPTIMISM]: ExplorerEndpoints.optional(),
-  [Blockchain.POLYGON_POS]: ExplorerEndpoints.optional(),
-  [Blockchain.ARBITRUM_ONE]: ExplorerEndpoints.optional(),
-  [Blockchain.BASE]: ExplorerEndpoints.optional(),
-  [Blockchain.GNOSIS]: ExplorerEndpoints.optional(),
-});
+const ExplorersSettings = z.record(z.string(), ExplorerEndpoints.optional());
 
 export type ExplorersSettings = z.infer<typeof ExplorersSettings>;
 

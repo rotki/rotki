@@ -1,3 +1,3 @@
 <template>
-  <ClosedTrades main-page />
+  <ClosedTrades />
 </template>

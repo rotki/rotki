@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithGauges
+from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithGauges
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants import ZERO
@@ -18,7 +18,6 @@ from rotkehlchen.types import ChecksumEvmAddress
 from .constants import CPT_CONVEX, CVX_LOCKER_V2, CVX_REWARDS
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.interfaces.balances import BalancesType
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
 
@@ -50,7 +49,7 @@ class ConvexBalances(ProtocolWithGauges):
 
     def _query_staked_cvx(
             self,
-            balances: 'BalancesType',
+            balances: 'BalancesSheetType',
             staking_contract: EvmContract,
             addresses_with_stake: list[ChecksumEvmAddress],
     ) -> None:
@@ -60,7 +59,7 @@ class ConvexBalances(ProtocolWithGauges):
         is variable.
         The balances variable is mutated in this function.
         """
-        cvx_price = Inquirer().find_usd_price(self.cvx)
+        cvx_price = Inquirer.find_usd_price(self.cvx)
         try:
             call_output = self.evm_inquirer.multicall(
                 calls=[(
@@ -80,11 +79,11 @@ class ConvexBalances(ProtocolWithGauges):
                 continue
 
             balance = Balance(amount=amount, usd_value=cvx_price * amount)
-            balances[address][self.cvx] += balance
+            balances[address].assets[self.cvx] += balance
 
         return None
 
-    def query_balances(self) -> 'BalancesType':
+    def query_balances(self) -> 'BalancesSheetType':
         balances = super().query_balances()  # Query the gauges
         addresses_with_stake_mapping = self.addresses_with_deposits(
             products=[EvmProduct.STAKING],
