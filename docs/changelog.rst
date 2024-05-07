@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.33.0 <2024-05-08>`
 * :feature:`7798` rotki now accurately decodes transactions on the Kyber swap aggregator across all supported chains. 
 * :feature:`-` Users will now be able to delete transactions and the associated events in history events.
 * :feature:`7074` rotki provides a calendar view where users can add and track events related to their activities. Users can also set reminders to perform actions associated with these events.
