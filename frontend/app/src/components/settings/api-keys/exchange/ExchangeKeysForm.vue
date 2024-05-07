@@ -299,18 +299,11 @@ function onExchangeChange(exchange: string) {
       :label="t('exchange_settings.inputs.passphrase')"
     />
 
-  <div
-    v-if="exchange.location === 'coinbase'"
-    class="mt-2"
-  >
-    <a
-      href="https://portal.cdp.coinbase.com/access/api?keyType=trade"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      {{ t('Generate your keys here') }}
-    </a>
-  </div>
+    <div v-if="exchange.location === 'coinbase'" class="mt-2">
+      <a href="https://portal.cdp.coinbase.com/access/api?keyType=trade" target="_blank" rel="noopener noreferrer">
+    {{ t('exchange_keys_form.generate_keys_link') }}
+      </a>
+    </div>
 
     <BinancePairsSelector
       v-if="isBinance"

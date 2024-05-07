@@ -2310,7 +2310,8 @@
     },
     "passphrase": {
       "non_empty": "The passphrase field cannot be empty."
-    }
+    },
+    "generate_keys_link": "Generate your keys here"
   },
   "exchange_settings": {
     "confirmation": {

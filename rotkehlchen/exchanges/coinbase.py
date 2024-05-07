@@ -1,3 +1,5 @@
+import hashlib
+import hmac
 import logging
 import time
 from collections import defaultdict
@@ -9,6 +11,7 @@ from cryptography.hazmat.primitives import serialization
 import secrets
 import requests
 import re
+import gevent
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_coinbase
@@ -58,7 +61,8 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-
+CB_EVENTS_PREFIX = 'CBE_'
+CB_VERSION = '2019-08-25' 
 
 def trade_from_conversion(trade_a: dict[str, Any], trade_b: dict[str, Any]) -> Trade | None:
     """Turn information from a conversion into a trade
@@ -157,15 +161,41 @@ class Coinbase(ExchangeInterface):
             secret=secret,
             database=database,
         )
+        self.is_legacy_api_key=self.determine_key_type(api_key)
         self.apiversion = 'v2'
         self.base_uri = 'https://api.coinbase.com'
         self.msg_aggregator = msg_aggregator
-    
-        # CDP Instance values
-        self.api_key_name=self.api_key
-        self.PRIVATE_KEY=secret.decode('utf-8')
-        self.host='api.coinbase.com'
 
+        if self.is_legacy_api_key:
+            self.session.headers.update({'CB-ACCESS-KEY': self.api_key})
+            self.session.headers.update({'CB-VERSION': CB_VERSION})
+        else:
+            self.api_key_name = self.api_key
+            self.PRIVATE_KEY = secret.decode('utf-8')
+            self.host = 'api.coinbase.com'
+
+
+    def determine_key_type(self, api_key)-> bool:
+        """
+        Determines if the provided API key and secret are legacy or new.
+        Returns True if legacy, False if new.
+        """
+        legacy_pattern = r'^[\w]+$' 
+        new_pattern = r'^organizations/[\w-]+/apiKeys/[\w-]+$'
+
+        if re.match(legacy_pattern, api_key):
+            log.debug("Legacy Key format!")
+            return True
+        elif re.match(new_pattern, api_key):
+            log.debug("New Key format!")
+            return False
+        else:
+            raise ValueError(f'Invalid API key format: {api_key}')
+
+    def first_connection(self) -> None:
+        self.first_connection_made = True
+
+    
 
     # CDP Method 
     def build_jwt(self, uri: str) -> str:
@@ -213,17 +243,84 @@ class Coinbase(ExchangeInterface):
             raise CoinbasePermissionError(f'Error generating JWT token: {str(e)}') from e
         
     def validate_api_key(self) -> tuple[bool, str]:
-        # Validate the format of the API key name
-        api_key_name_pattern = r'^organizations/[\w-]+/apiKeys/[\w-]+$'
-        if not re.match(api_key_name_pattern, self.api_key_name):
-            return False, 'Invalid Coinbase API key name format'
+        """
+        Validates that the Coinbase API key is good for usage in rotki.
+        Makes sure that the following permissions are given to the key:
+        wallet:accounts:read, wallet:transactions:read, wallet:withdrawals:read, wallet:deposits:read
+        """
+        if self.is_legacy_api_key:
+            # Validate legacy API key
+            result, msg = self._validate_single_api_key_action('accounts')
+            if result is None:
+                return False, msg
 
-        # Validate the format of the private key
-        private_key_pattern = r'^-----BEGIN EC PRIVATE KEY-----\n[\w+/=\n]+-----END EC PRIVATE KEY-----\n?$'
-        if not re.match(private_key_pattern, self.PRIVATE_KEY, re.MULTILINE):
-            return False, 'Invalid Coinbase private key format'
+            # now get the account ids
+            account_info = self._get_active_account_info(result)
+            if len(account_info) != 0:
+                # and now try to get all transactions of an account to see if that's possible
+                method = f'accounts/{account_info[0][0]}/transactions'
+                result, msg = self._validate_single_api_key_action(method)
+                if result is None:
+                    return False, msg
 
-        return True, ''
+            return True, ''
+        else:
+            # Validate new API key format
+            api_key_name_pattern = r'^organizations/[\w-]+/apiKeys/[\w-]+$'
+            if not re.match(api_key_name_pattern, self.api_key_name):
+                return False, 'Invalid Coinbase API key name format'
+
+            private_key_pattern = r'^-----BEGIN EC PRIVATE KEY-----\n[\w+/=\n]+-----END EC PRIVATE KEY-----\n?$'
+            if not re.match(private_key_pattern, self.PRIVATE_KEY, re.MULTILINE):
+                return False, 'Invalid Coinbase private key format'
+
+            return True, ''
+    
+    def _validate_single_api_key_action(
+            self,
+            method_str: str,
+            ignore_pagination: bool = False,
+    ) -> tuple[list[Any] | None, str]:
+        try:
+            result = self._api_query(method_str, ignore_pagination=ignore_pagination)
+
+        except CoinbasePermissionError as e:
+            error = str(e)
+            if 'transactions' in method_str:
+                permission = 'wallet:transactions:read'
+            elif 'deposits' in method_str:
+                permission = 'wallet:deposits:read'
+            elif 'withdrawals' in method_str:
+                permission = 'wallet:withdrawals:read'
+            elif 'trades' in method_str:
+                permission = 'wallet:trades:read'
+            # the accounts elif should be at the end since the word appears
+            # in other endpoints
+            elif 'accounts' in method_str:
+                permission = 'wallet:accounts:read'
+            else:
+                raise AssertionError(
+                    f'Unexpected coinbase method {method_str} at API key validation',
+                ) from e
+            msg = (
+                f'Provided Coinbase API key needs to have {permission} permission activated. '
+                f'Please log into your coinbase account and set all required permissions: '
+                f'wallet:accounts:read, wallet:transactions:read, '
+                f'wallet:withdrawals:read, wallet:deposits:read, wallet:trades:read'
+            )
+
+            return None, msg
+        except RemoteError as e:
+            error = str(e)
+            if 'invalid signature' in error:
+                return None, 'Failed to authenticate with the Provided API key/secret'
+            if 'invalid api key' in error:
+                return None, 'Provided API Key is invalid'
+            # else any other remote error
+            return None, error
+
+        return result, ''
+
         
     def first_connection(self) -> None:
         self.first_connection_made = True
@@ -231,9 +328,13 @@ class Coinbase(ExchangeInterface):
     def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
         changed = super().edit_exchange_credentials(credentials)
         if credentials.api_key is not None:
-            self.api_key_name = credentials.api_key
+            if self.is_legacy_api_key:
+                self.session.headers.update({'CB-ACCESS-KEY': self.api_key})
+            else:
+                self.api_key_name = credentials.api_key
         if credentials.api_secret is not None:
-            self.private_key = credentials.api_secret
+            if not self.is_legacy_api_key:
+                self.private_key = credentials.api_secret
         return changed
 
 
@@ -280,32 +381,58 @@ class Coinbase(ExchangeInterface):
             options: dict[str, Any] | None = None,
             ignore_pagination: bool = False,
     ) -> list[Any]:
-        """Performs a coinbase API Query for endpoint
-
-        You can optionally provide extra arguments to the endpoint via the options argument.
-        If you want just the first results then set ignore_pagination to True.
-        """
         all_items: list[Any] = []
+        had_4xx = False
         request_verb = 'GET'
         next_uri = f'/{self.apiversion}/{endpoint}'
         timeout = CachedSettings().get_timeout_tuple()
+        
+        log.debug("Is it legacy? ",request_url=self.is_legacy_api_key)
+
         if options:
             next_uri += f'?{urlencode(options)}'
         while True:
+            if self.is_legacy_api_key:
+                timestamp = str(int(time.time()))
+                message = timestamp + request_verb + next_uri
+
+                signature = hmac.new(
+                    self.secret,
+                    message.encode(),
+                    hashlib.sha256,
+                ).hexdigest()
+                log.debug('Coinbase API query', request_url=next_uri)
+
+                self.session.headers.update({
+                    'CB-ACCESS-SIGN': signature,
+                    'CB-ACCESS-TIMESTAMP': timestamp,
+                })
+            else:
+                request_path = f'{self.host}/{self.apiversion}/{endpoint}'
+                log.debug('CDP Request Path ', request_url=request_path)
+                uri = f'{request_verb} {request_path}'
+                log.debug('CDP URI Path ', request_url=uri)
+                token = self.build_jwt(uri)
+                self.session.headers.update({
+                    'Authorization': f'Bearer {token}',
+                })
+
             full_url = self.base_uri + next_uri
-            #CDP calls
-            request_path = f'{self.host}/{self.apiversion}/{endpoint}'
-            log.debug('CDP Request Path ', request_url=request_path)
-            uri = f'{request_verb} {request_path}'
-            log.debug('CDP URI Path ', request_url=uri)
-            token = self.build_jwt(uri)
-            self.session.headers.update({
-                'Authorization': f'Bearer {token}',
-            })
             try:
                 response = self.session.get(full_url, timeout=timeout)
             except requests.exceptions.RequestException as e:
                 raise RemoteError(f'Coinbase API request failed due to {e!s}') from e
+
+            if response.status_code in (401, 429) and had_4xx is False:
+                had_4xx = True
+                gevent.sleep(.5)
+                continue  # do a single retry since they don't have info on retries
+
+            if response.status_code == 403:
+                if self.is_legacy_api_key:
+                    raise RemoteError(f'API key does not have permission for {endpoint}')
+                else:
+                    raise CoinbasePermissionError(f'API key does not have permission for {endpoint}')
 
             if response.status_code != 200:
                 raise RemoteError(
