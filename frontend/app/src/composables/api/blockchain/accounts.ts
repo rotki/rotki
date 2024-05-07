@@ -16,11 +16,13 @@ import {
 } from '@/services/utils';
 import { type BtcChains, isBtcChain } from '@/types/blockchain/chains';
 import {
+  type AccountPayload,
   BitcoinAccounts,
   type BlockchainAccountPayload,
   BlockchainAccounts,
   type DeleteXpubParams,
   type GeneralAccountData,
+  type XpubAccountPayload,
 } from '@/types/blockchain/accounts';
 import type { ActionResult } from '@rotki/common/lib/data';
 import type { Eth2Validator } from '@/types/balances';
@@ -60,37 +62,11 @@ function payloadToData({
 }
 
 export function useBlockchainAccountsApi() {
-  const addBlockchainAccount = ({
-    address,
-    blockchain,
-    label,
-    tags,
-    xpub,
-  }: BlockchainAccountPayload): Promise<PendingTask> => {
-    const url = xpub
-      ? `/blockchains/${blockchain}/xpub`
-      : `/blockchains/${blockchain}/accounts`;
-
-    const basePayload = {
-      label: label || null,
-      tags,
-    };
-
-    const payload = xpub
-      ? {
-          xpub: xpub.xpub,
-          derivationPath: onlyIfTruthy(xpub.derivationPath),
-          xpubType: onlyIfTruthy(xpub.xpubType),
-          ...basePayload,
-        }
-      : {
-          accounts: [
-            {
-              address,
-              ...basePayload,
-            },
-          ],
-        };
+  const addBlockchainAccount = (chain: string, pay: XpubAccountPayload | AccountPayload[]): Promise<PendingTask> => {
+    const url = !Array.isArray(pay)
+      ? `/blockchains/${chain}/xpub`
+      : `/blockchains/${chain}/accounts`;
+    const payload = (Array.isArray(pay)) ? { accounts: pay } : pay;
     return performAsyncQuery(url, nonEmptyProperties(payload));
   };
 
@@ -113,11 +89,12 @@ export function useBlockchainAccountsApi() {
   };
 
   const editBtcAccount = async (
-    payload: BlockchainAccountPayload,
+    payload: AccountPayload | XpubAccountPayload,
+    chain: string,
   ): Promise<BitcoinAccounts> => {
-    const url = payload.xpub
-      ? `/blockchains/${payload.blockchain}/xpub`
-      : `/blockchains/${payload.blockchain}/accounts`;
+    const url = 'xpub' in payload
+      ? `/blockchains/${chain}/xpub`
+      : `/blockchains/${chain}/accounts`;
     const { label, tags } = payload;
 
     let data:
@@ -128,7 +105,7 @@ export function useBlockchainAccountsApi() {
         label: Nullable<string>;
         tags: Nullable<string[]>;
       };
-    if (payload.xpub) {
+    if ('xpub' in payload) {
       const { derivationPath, xpub } = payload.xpub;
       data = {
         xpub,
@@ -153,14 +130,14 @@ export function useBlockchainAccountsApi() {
   };
 
   const editBlockchainAccount = async (
-    payload: BlockchainAccountPayload,
+    payload: AccountPayload,
+    chain: string,
   ): Promise<BlockchainAccounts> => {
-    const { blockchain } = payload;
-    assert(!isBtcChain(blockchain), 'call editBtcAccount for btc');
+    assert(!isBtcChain(chain), 'call editBtcAccount for btc');
     const response = await api.instance.patch<
       ActionResult<GeneralAccountData[]>
     >(
-      `/blockchains/${blockchain}/accounts`,
+      `/blockchains/${chain}/accounts`,
       nonEmptyProperties(payloadToData(payload)),
       {
         validateStatus: validWithParamsSessionAndExternalService,

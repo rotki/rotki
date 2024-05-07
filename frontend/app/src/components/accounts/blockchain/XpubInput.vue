@@ -3,6 +3,7 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { helpers, required } from '@vuelidate/validators';
 import { isEmpty } from 'lodash-es';
+import useVuelidate from '@vuelidate/core';
 import { XpubPrefix, type XpubType } from '@/utils/xpub';
 import { toMessages } from '@/utils/validation';
 import type { ValidationErrors } from '@/types/api/errors';
@@ -17,7 +18,7 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:xpub', event?: XpubPayload): void;
+  (e: 'update:xpub', xpub: XpubPayload | undefined): void;
 }>();
 
 const { t } = useI18n();
@@ -78,9 +79,7 @@ const rules = {
   },
 };
 
-const { setValidation } = useAccountDialog();
-
-const v$ = setValidation(
+const v$ = useVuelidate(
   rules,
   {
     xpub,
@@ -92,6 +91,10 @@ const v$ = setValidation(
     $externalResults: errorMessages,
   },
 );
+
+async function validate(): Promise<boolean> {
+  return get(v$).$validate();
+}
 
 watch(errorMessages, (errors) => {
   if (!isEmpty(errors))
@@ -121,7 +124,6 @@ watch([xpubKeyPrefix, xpubKey, derivationPath], ([prefix, xpub, path]) => {
       xpub: xpub.trim(),
       derivationPath: path ?? undefined,
       xpubType: getKeyType(prefix as XpubPrefix),
-      blockchain: get(blockchain),
     };
   }
   updateXpub(payload);
@@ -135,6 +137,10 @@ onMounted(() => {
     set(xpubKeyPrefix, prefix);
 
   set(derivationPath, payload?.derivationPath);
+});
+
+defineExpose({
+  validate,
 });
 </script>
 

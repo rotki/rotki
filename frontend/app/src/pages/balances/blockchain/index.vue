@@ -1,8 +1,15 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import {
+  type AccountManageState,
+  createNewBlockchainAccount,
+  editBlockchainAccount,
+} from '@/composables/accounts/blockchain/use-account-manage';
 import type { BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
 
 type Busy = Record<string, ComputedRef<boolean>>;
+
+const account = ref<AccountManageState>();
 
 const { t } = useI18n();
 const router = useRouter();
@@ -12,7 +19,6 @@ const { getBlockchainAccounts } = useBlockchainStore();
 
 const { blockchainAssets } = useBlockchainAggregatedBalances();
 const { isBlockchainLoading, isAccountOperationRunning } = useAccountLoading();
-const { createAccount, editAccount } = useAccountDialog();
 const { supportedChains, txEvmChains } = useSupportedChains();
 
 const busy = computed<Busy>(() => Object.fromEntries(
@@ -45,11 +51,15 @@ function getTitle(chain: string) {
   return t('blockchain_balances.balances.common', { chain: title });
 }
 
+function editAccount(balanceAccount: BlockchainAccountWithBalance) {
+  set(account, editBlockchainAccount(balanceAccount));
+}
+
 onMounted(async () => {
   const query = get(route).query;
 
   if (query.add) {
-    createAccount();
+    set(account, createNewBlockchainAccount());
     await router.replace({ query: {} });
   }
 });
@@ -68,7 +78,7 @@ onMounted(async () => {
         v-blur
         data-cy="add-blockchain-balance"
         color="primary"
-        @click="createAccount()"
+        @click="account = createNewBlockchainAccount()"
       >
         <template #prepend>
           <RuiIcon name="add-line" />
@@ -83,7 +93,7 @@ onMounted(async () => {
           <CardTitle>{{ t('blockchain_balances.title') }}</CardTitle>
         </template>
 
-        <AccountDialog />
+        <AccountDialog v-model="account" />
         <AssetBalances
           data-cy="blockchain-asset-balances"
           :loading="isBlockchainLoading"

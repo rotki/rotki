@@ -71,6 +71,7 @@ declare global {
   const createGenericProjection: typeof import('@vueuse/math')['createGenericProjection']
   const createGlobalState: typeof import('@vueuse/core')['createGlobalState']
   const createInjectionState: typeof import('@vueuse/core')['createInjectionState']
+  const createNewBlockchainAccount: typeof import('./composables/accounts/blockchain/use-account-manage')['createNewBlockchainAccount']
   const createNotification: typeof import('./utils/notifications')['createNotification']
   const createPinia: typeof import('pinia')['createPinia']
   const createProjection: typeof import('@vueuse/math')['createProjection']
@@ -96,6 +97,7 @@ declare global {
   const downloadFileByTextContent: typeof import('./utils/download')['downloadFileByTextContent']
   const downloadFileByUrl: typeof import('./utils/download')['downloadFileByUrl']
   const eagerComputed: typeof import('@vueuse/core')['eagerComputed']
+  const editBlockchainAccount: typeof import('./composables/accounts/blockchain/use-account-manage')['editBlockchainAccount']
   const effectScope: typeof import('vue')['effectScope']
   const extendRef: typeof import('@vueuse/core')['extendRef']
   const fetchDataAsync: typeof import('./utils/fetch-async')['fetchDataAsync']
@@ -330,6 +332,7 @@ declare global {
   const useAccountDelete: typeof import('./composables/accounts/blockchain/use-account-delete')['useAccountDelete']
   const useAccountDialog: typeof import('./composables/accounts/dialog')['useAccountDialog']
   const useAccountLoading: typeof import('./composables/accounts/loading')['useAccountLoading']
+  const useAccountManage: typeof import('./composables/accounts/blockchain/use-account-manage')['useAccountManage']
   const useAccountManagement: typeof import('./composables/user/account')['useAccountManagement']
   const useAccountMigrationStore: typeof import('./store/blockchain/accounts/migrate')['useAccountMigrationStore']
   const useAccountingApi: typeof import('./composables/api/settings/accounting-api')['useAccountingApi']
@@ -837,6 +840,7 @@ declare module 'vue' {
     readonly createGenericProjection: UnwrapRef<typeof import('@vueuse/math')['createGenericProjection']>
     readonly createGlobalState: UnwrapRef<typeof import('@vueuse/core')['createGlobalState']>
     readonly createInjectionState: UnwrapRef<typeof import('@vueuse/core')['createInjectionState']>
+    readonly createNewBlockchainAccount: UnwrapRef<typeof import('./composables/accounts/blockchain/use-account-manage')['createNewBlockchainAccount']>
     readonly createNotification: UnwrapRef<typeof import('./utils/notifications')['createNotification']>
     readonly createPinia: UnwrapRef<typeof import('pinia')['createPinia']>
     readonly createProjection: UnwrapRef<typeof import('@vueuse/math')['createProjection']>
@@ -862,6 +866,7 @@ declare module 'vue' {
     readonly downloadFileByTextContent: UnwrapRef<typeof import('./utils/download')['downloadFileByTextContent']>
     readonly downloadFileByUrl: UnwrapRef<typeof import('./utils/download')['downloadFileByUrl']>
     readonly eagerComputed: UnwrapRef<typeof import('@vueuse/core')['eagerComputed']>
+    readonly editBlockchainAccount: UnwrapRef<typeof import('./composables/accounts/blockchain/use-account-manage')['editBlockchainAccount']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
     readonly extendRef: UnwrapRef<typeof import('@vueuse/core')['extendRef']>
     readonly fetchDataAsync: UnwrapRef<typeof import('./utils/fetch-async')['fetchDataAsync']>
@@ -1089,8 +1094,8 @@ declare module 'vue' {
     readonly useAaveStore: UnwrapRef<typeof import('./store/defi/aave/index')['useAaveStore']>
     readonly useAbs: UnwrapRef<typeof import('@vueuse/math')['useAbs']>
     readonly useAccountDelete: UnwrapRef<typeof import('./composables/accounts/blockchain/use-account-delete')['useAccountDelete']>
-    readonly useAccountDialog: UnwrapRef<typeof import('./composables/accounts/dialog')['useAccountDialog']>
     readonly useAccountLoading: UnwrapRef<typeof import('./composables/accounts/loading')['useAccountLoading']>
+    readonly useAccountManage: UnwrapRef<typeof import('./composables/accounts/blockchain/use-account-manage')['useAccountManage']>
     readonly useAccountManagement: UnwrapRef<typeof import('./composables/user/account')['useAccountManagement']>
     readonly useAccountMigrationStore: UnwrapRef<typeof import('./store/blockchain/accounts/migrate')['useAccountMigrationStore']>
     readonly useAccountingApi: UnwrapRef<typeof import('./composables/api/settings/accounting-api')['useAccountingApi']>
@@ -1586,6 +1591,7 @@ declare module '@vue/runtime-core' {
     readonly createGenericProjection: UnwrapRef<typeof import('@vueuse/math')['createGenericProjection']>
     readonly createGlobalState: UnwrapRef<typeof import('@vueuse/core')['createGlobalState']>
     readonly createInjectionState: UnwrapRef<typeof import('@vueuse/core')['createInjectionState']>
+    readonly createNewBlockchainAccount: UnwrapRef<typeof import('./composables/accounts/blockchain/use-account-manage')['createNewBlockchainAccount']>
     readonly createNotification: UnwrapRef<typeof import('./utils/notifications')['createNotification']>
     readonly createPinia: UnwrapRef<typeof import('pinia')['createPinia']>
     readonly createProjection: UnwrapRef<typeof import('@vueuse/math')['createProjection']>
@@ -1611,6 +1617,7 @@ declare module '@vue/runtime-core' {
     readonly downloadFileByTextContent: UnwrapRef<typeof import('./utils/download')['downloadFileByTextContent']>
     readonly downloadFileByUrl: UnwrapRef<typeof import('./utils/download')['downloadFileByUrl']>
     readonly eagerComputed: UnwrapRef<typeof import('@vueuse/core')['eagerComputed']>
+    readonly editBlockchainAccount: UnwrapRef<typeof import('./composables/accounts/blockchain/use-account-manage')['editBlockchainAccount']>
     readonly effectScope: UnwrapRef<typeof import('vue')['effectScope']>
     readonly extendRef: UnwrapRef<typeof import('@vueuse/core')['extendRef']>
     readonly fetchDataAsync: UnwrapRef<typeof import('./utils/fetch-async')['fetchDataAsync']>
@@ -1838,8 +1845,8 @@ declare module '@vue/runtime-core' {
     readonly useAaveStore: UnwrapRef<typeof import('./store/defi/aave/index')['useAaveStore']>
     readonly useAbs: UnwrapRef<typeof import('@vueuse/math')['useAbs']>
     readonly useAccountDelete: UnwrapRef<typeof import('./composables/accounts/blockchain/use-account-delete')['useAccountDelete']>
-    readonly useAccountDialog: UnwrapRef<typeof import('./composables/accounts/dialog')['useAccountDialog']>
     readonly useAccountLoading: UnwrapRef<typeof import('./composables/accounts/loading')['useAccountLoading']>
+    readonly useAccountManage: UnwrapRef<typeof import('./composables/accounts/blockchain/use-account-manage')['useAccountManage']>
     readonly useAccountManagement: UnwrapRef<typeof import('./composables/user/account')['useAccountManagement']>
     readonly useAccountMigrationStore: UnwrapRef<typeof import('./store/blockchain/accounts/migrate')['useAccountMigrationStore']>
     readonly useAccountingApi: UnwrapRef<typeof import('./composables/api/settings/accounting-api')['useAccountingApi']>

@@ -1,128 +1,37 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import type { Writeable } from '@/types';
-import type { Eth2Validator } from '@/types/balances';
+import Eth2Input from '@/components/accounts/blockchain/Eth2Input.vue';
+import type { StakingValidatorManage } from '@/composables/accounts/blockchain/use-account-manage';
 import type { ValidationErrors } from '@/types/api/errors';
-import type { BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
-import type { ActionStatus } from '@/types/action';
 
-const { t } = useI18n();
+const props = defineProps<{
+  value: StakingValidatorManage;
+  errorMessages: ValidationErrors;
+  loading: boolean;
+}>();
 
-const validator = ref<Eth2Validator | null>(null);
-const errorMessages = ref<ValidationErrors>({});
+const emit = defineEmits<{
+  (e: 'input', value: StakingValidatorManage): void;
+}>();
 
-const { addEth2Validator, editEth2Validator, updateEthStakingOwnership } = useEthStaking();
-const { refreshAccounts, fetchAccounts } = useBlockchains();
-const { setMessage } = useMessageStore();
-const { setSubmitFunc, accountToEdit } = useAccountDialog();
-const { pending, loading } = useAccountLoading();
+const input = ref<InstanceType<typeof Eth2Input>>();
 
-function showMessage(message: string, id: string, edit: boolean) {
-  let description: string;
-  let title: string;
+const validator = useSimplePropVModel(props, 'data', emit);
 
-  if (edit) {
-    title = t('actions.edit_eth2_validator.error.title');
-    description = t('actions.edit_eth2_validator.error.description', {
-      id,
-      message,
-    });
-  }
-  else {
-    title = t('actions.add_eth2_validator.error.title');
-    description = t('actions.add_eth2_validator.error.description', {
-      id,
-      message,
-    });
-  }
-
-  setMessage({
-    description,
-    title,
-    success: false,
-  });
+async function validate(): Promise<boolean> {
+  assert(isDefined(input));
+  return get(input).validate();
 }
 
-async function save() {
-  set(pending, true);
-  const payload: Writeable<Eth2Validator | null> = get(validator);
-  assert(payload);
-
-  let result: ActionStatus<ValidationErrors | string>;
-  const isEdit = isDefined(accountToEdit);
-  if (isEdit) {
-    if (!payload.ownershipPercentage)
-      payload.ownershipPercentage = '100';
-
-    result = await editEth2Validator(payload);
-  }
-  else { result = await addEth2Validator(payload); }
-
-  if (result.success) {
-    if (isEdit) {
-      const newVar = get(accountToEdit);
-      assert(payload.publicKey);
-      assert(payload.ownershipPercentage);
-      const validator = getValidatorData(newVar);
-
-      updateEthStakingOwnership(
-        payload.publicKey,
-        bigNumberify(validator?.ownershipPercentage ?? 100),
-        bigNumberify(payload.ownershipPercentage),
-      );
-      startPromise(fetchAccounts(Blockchain.ETH2));
-    }
-    else {
-      startPromise(refreshAccounts(Blockchain.ETH2));
-    }
-  }
-  else if (typeof result.message === 'string') {
-    showMessage(
-      result.message,
-      payload.publicKey || payload.validatorIndex || '',
-      isEdit,
-    );
-  }
-  else {
-    set(errorMessages, result.message);
-  }
-
-  set(pending, false);
-  return result.success;
-}
-
-function setValidator(acc: BlockchainAccountWithBalance): void {
-  const data = getValidatorData(acc);
-  set(validator, {
-    validatorIndex: data?.index.toString() ?? '',
-    publicKey: data?.publicKey,
-    ownershipPercentage: data?.ownershipPercentage,
-  });
-}
-
-watch(accountToEdit, (edit) => {
-  if (!edit)
-    set(validator, null);
-  else
-    setValidator(edit);
-});
-
-onMounted(() => {
-  setSubmitFunc(save);
-
-  const acc = get(accountToEdit);
-  if (acc)
-    setValidator(acc);
-  else
-    set(validator, null);
+defineExpose({
+  validate,
 });
 </script>
 
 <template>
   <Eth2Input
-    :validator="validator"
-    :disabled="loading || !!accountToEdit"
+    ref="input"
+    :validator.sync="validator"
+    :disabled="loading || value.mode === 'edit'"
     :error-messages="errorMessages"
-    @update:validator="validator = $event"
   />
 </template>
