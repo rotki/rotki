@@ -165,14 +165,14 @@ class Coinbase(ExchangeInterface):
         self.apiversion = 'v2'
         self.base_uri = 'https://api.coinbase.com'
         self.msg_aggregator = msg_aggregator
+        self.host = 'api.coinbase.com'
 
         if self.is_legacy_api_key:
             self.session.headers.update({'CB-ACCESS-KEY': self.api_key})
             self.session.headers.update({'CB-VERSION': CB_VERSION})
         else:
-            self.api_key_name = self.api_key
             self.PRIVATE_KEY = secret.decode('utf-8')
-            self.host = 'api.coinbase.com'
+
 
 
     def determine_key_type(self, api_key)-> bool:
@@ -226,7 +226,7 @@ class Coinbase(ExchangeInterface):
 
             current_time = int(time.time())
             jwt_payload = {
-                'sub': self.api_key_name,
+                'sub': self.api_key,
                 'iss': "coinbase-cloud",
                 'nbf': current_time,
                 'exp': current_time + 120,
@@ -236,11 +236,11 @@ class Coinbase(ExchangeInterface):
                 jwt_payload,
                 private_key,
                 algorithm='ES256',
-                headers={'kid': self.api_key_name, 'nonce': secrets.token_hex()},
+                headers={'kid': self.api_key, 'nonce': secrets.token_hex()},
             )
             return jwt_token
         except (jwt.PyJWTError, ValueError) as e:
-            raise CoinbasePermissionError(f'Error generating JWT token: {str(e)}') from e
+            raise RemoteError(f'Error generating JWT token: {str(e)}') from e
         
     def validate_api_key(self) -> tuple[bool, str]:
         """
@@ -266,8 +266,8 @@ class Coinbase(ExchangeInterface):
             return True, ''
         else:
             # Validate new API key format
-            api_key_name_pattern = r'^organizations/[\w-]+/apiKeys/[\w-]+$'
-            if not re.match(api_key_name_pattern, self.api_key_name):
+            api_key_pattern = r'^organizations/[\w-]+/apiKeys/[\w-]+$'
+            if not re.match(api_key_pattern, self.api_key):
                 return False, 'Invalid Coinbase API key name format'
 
             private_key_pattern = r'^-----BEGIN EC PRIVATE KEY-----\n[\w+/=\n]+-----END EC PRIVATE KEY-----\n?$'
@@ -331,7 +331,7 @@ class Coinbase(ExchangeInterface):
             if self.is_legacy_api_key:
                 self.session.headers.update({'CB-ACCESS-KEY': self.api_key})
             else:
-                self.api_key_name = credentials.api_key
+                self.api_key = credentials.api_key
         if credentials.api_secret is not None:
             if not self.is_legacy_api_key:
                 self.private_key = credentials.api_secret
@@ -432,7 +432,7 @@ class Coinbase(ExchangeInterface):
                 if self.is_legacy_api_key:
                     raise RemoteError(f'API key does not have permission for {endpoint}')
                 else:
-                    raise CoinbasePermissionError(f'API key does not have permission for {endpoint}')
+                    raise RemoteError(f'API key does not have permission for {endpoint}')
 
             if response.status_code != 200:
                 raise RemoteError(

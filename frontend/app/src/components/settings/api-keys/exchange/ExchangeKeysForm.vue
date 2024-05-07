@@ -300,7 +300,7 @@ function onExchangeChange(exchange: string) {
     />
 
     <div v-if="exchange.location === 'coinbase'" class="mt-2">
-      <a href="https://portal.cdp.coinbase.com/access/api?keyType=trade" target="_blank" rel="noopener noreferrer">
+      <a href="https://portal.cdp.coinbase.com/access/api" target="_blank" rel="noopener noreferrer">
     {{ t('exchange_keys_form.generate_keys_link') }}
       </a>
     </div>
