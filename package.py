@@ -493,14 +493,14 @@ class MacPackaging:
     def __get_versions(self, packages: list[str]) -> dict[str, str]:
         """
         Gets the versions of specified packages from requirements.txt
-        and requirements_packaging.txt.
+        and requirements_crossbuild.txt.
 
         :param packages: A list of package names for which we need versions from
         the requirements.txt
         :returns: A Dict where the key is the package and the value is the package version
         """
         package_versions: dict[str, str] = {}
-        for requirement_file_name in ('requirements.txt', 'requirements_packaging.txt'):
+        for requirement_file_name in ('requirements.txt', 'requirements_crossbuild.txt'):
             requirements = self.__storage.working_directory / requirement_file_name
             with open(requirements, encoding='utf8') as fp:
                 while True:
