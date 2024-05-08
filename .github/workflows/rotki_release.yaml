@@ -125,7 +125,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: ${{ env.PNPM_VERSION }}
+          package_json_file: frontend/package.json
       - name: Get pnpm store directory
         id: pnpm-cache
         shell: bash
@@ -239,7 +239,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: ${{ env.PNPM_VERSION }}
+          package_json_file: frontend/package.json
       - name: Get pnpm store directory
         id: pnpm-cache
         shell: bash
@@ -314,7 +314,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: ${{ env.PNPM_VERSION }}
+          package_json_file: frontend/package.json
       - name: Get pnpm store directory
         id: pnpm-cache
         shell: bash

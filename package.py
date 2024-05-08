@@ -1152,9 +1152,9 @@ class FrontendBuilder:
             encoding='utf-8',
             shell=True,
         ))
-        required_version = version.parse('8.0.0')
+        required_version = version.parse('9.0.0')
         if pnpm_version < required_version:
-            logger.error(f'The system pnpm version is < 8.0.0 ({pnpm_version})')
+            logger.error(f'The system pnpm version is < 9.0.0 ({pnpm_version})')
             sys.exit(1)
 
     @log_group('electron app build')
