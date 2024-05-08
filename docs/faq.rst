@@ -57,7 +57,7 @@ Please take a look at the Github issues `here <https://github.com/rotki/rotki/is
 Why doesn't rotki support exchange X/Y/Z or have feature X/Y/Z?
 ============================================================================
 
-rotki is opensource software and we welcome Pull Requests. If you would really like something to be done about a feature request consider supporting us with a `premium subscription <https://rotki.com/products/>`__ and when you register give us your Github username. Your feature request will then be prioritized.
+rotki is opensource software and we welcome Pull Requests. If you would like something to be done about a feature request, you can create an issue on GitHub or do it yourself. Questions are welcome in our `Discord <https://discord.rotki.com>`_.
 
 
 Miscellaneous Questions

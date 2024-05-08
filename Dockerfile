@@ -2,6 +2,8 @@
 FROM --platform=$BUILDPLATFORM node:20-buster as frontend-build-stage
 
 ARG BUILDARCH
+ENV COREPACK_ENABLE_STRICT=0
+ENV CYPRESS_INSTALL_BINARY=0
 WORKDIR /app
 COPY frontend/ .
 RUN if [ "$BUILDARCH" != "amd64" ]; then apt-get update && apt-get install -y build-essential python3 --no-install-recommends; fi
@@ -43,7 +45,7 @@ RUN sed "s/fallback_version.*/fallback_version = \"$PACKAGE_FALLBACK_VERSION\"/"
     python -c "import sys;from rotkehlchen.db.misc import detect_sqlcipher_version; version = detect_sqlcipher_version();sys.exit(0) if version == 4 else sys.exit(1)" && \
     PYTHONOPTIMIZE=2 pyinstaller --noconfirm --clean --distpath /tmp/dist rotkehlchen.spec
 
-FROM nginx:1.21 as runtime
+FROM nginx:1.25 as runtime
 
 LABEL maintainer="Rotki Solutions GmbH <info@rotki.com>"
 

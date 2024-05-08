@@ -493,31 +493,40 @@ class MacPackaging:
     def __get_versions(self, packages: list[str]) -> dict[str, str]:
         """
         Gets the versions of specified packages from requirements.txt
+        and requirements_crossbuild.txt.
 
         :param packages: A list of package names for which we need versions from
         the requirements.txt
         :returns: A Dict where the key is the package and the value is the package version
         """
-        requirements = self.__storage.working_directory / 'requirements.txt'
         package_versions: dict[str, str] = {}
-        with open(requirements, encoding='utf8') as fp:
-            while True:
-                line = fp.readline()
-                if not line:
-                    break
-                if len(line.strip()) == 0 or line.startswith('#'):
-                    continue
-                requirement = line.split('#')[0]
-                req = requirement.split(';')
-                requirement = req[0]
-                if len(req) > 1 and req[1].strip() == "sys_platform == 'win32'":
-                    continue
+        for requirement_file_name in ('requirements.txt', 'requirements_crossbuild.txt'):
+            requirements = self.__storage.working_directory / requirement_file_name
+            with open(requirements, encoding='utf8') as fp:
+                while True:
+                    line = fp.readline()
+                    if not line:
+                        break
+                    if len(line.strip()) == 0 or line.startswith('#'):
+                        continue
+                    requirement = line.split('#')[0]
+                    req = requirement.split(';')
+                    requirement = req[0]
+                    if len(req) > 1 and req[1].strip() == "sys_platform == 'win32'":
+                        continue
 
-                split_requirement = requirement.split('==')
-                package_name = split_requirement[0]
-                if package_name in packages:
-                    package_version = split_requirement[1]
-                    package_versions[package_name.strip()] = package_version.strip()
+                    split_requirement = requirement.split('==')
+                    package_name = split_requirement[0]
+                    if package_name in packages:
+                        package_version = split_requirement[1]
+                        if (processed_package_name := package_name.strip()) in package_versions:
+                            logger.error(
+                                f'{processed_package_name} dependency appeared more than once '
+                                f'while reading the file {requirements}',
+                            )
+                            sys.exit(1)
+                        package_versions[processed_package_name] = package_version.strip()
+
         return package_versions
 
     @log_group('universal2 wheel')
@@ -682,6 +691,7 @@ class MacPackaging:
         """
         self.__build_miniupnpc_universal()
         self.__universal_repackage('coincurve')
+        self.__universal_repackage('ckzg')
 
     def install_wheels(self, install: Callable[[str], None]) -> None:
         """
