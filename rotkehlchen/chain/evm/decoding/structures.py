@@ -12,7 +12,8 @@ if TYPE_CHECKING:
     from rotkehlchen.types import EvmTransaction
 
 
-class ActionItem(NamedTuple):
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class ActionItem:
     """Action items to propagate to other decoders during decoding"""
     action: Literal['transform', 'skip', 'skip & keep']
     from_event_type: 'HistoryEventType'
