@@ -463,15 +463,30 @@ Linux
 
 Make sure you have `node.js <https://nodejs.org/en/>`_ and `pnpm <https://pnpm.io/>`_. If you don't, use your linux distro's package manager to get them.
 
-rotki uses pnpm v9. To check if you have version 9 of pnpm you can run::
+.. _install_pnpm:
+
+Install PNPM
+------------
+
+You need to have the correct version of pnpm installed.
+You can check it in the file ``frontend/package.json`` under the ``packageManager`` key.
+
+For example, if it says::
+
+    "packageManager": "pnpm@9.1.0",
+
+It means you need to have pnpm version ``9.1.0`` installed (We upgrade it from time to time).
+To check the current version of pnpm you have, run::
 
     pnpm --version
 
 If you are on an older version of pnpm, you can install it by::
 
-    pnpm install -g pnpm@9
+    pnpm install -g pnpm@9.1.0
     # or if you don't have it installed you can
-    npm install -g pnpm@9
+    npm install -g pnpm@9.1.0
+
+
 
 The first time you run pnpm you would need to run::
 
@@ -615,8 +630,8 @@ Install `Homebrew <https://brew.sh/>`_ first if not installed yet.
 
 To use Virtualenvwrapper use the following::
 
-    $ pip3 install virtualenv
-    $ pip3 install virtualenvwrapper
+    pip3 install virtualenv
+    pip3 install virtualenvwrapper
 
 And add the following to your shell startup file (e.g. .bashrc, .bash_profile, or .zshrc) ::
 
@@ -629,52 +644,46 @@ And add the following to your shell startup file (e.g. .bashrc, .bash_profile, o
 
 And reload shell startup file::
 
-    $ source ~/.bash_profile
+    source ~/.bash_profile
 
 And activate Python virtual environment::
 
-    $ workon rotki
+    workon rotki
 
 Before using `pip3`, let´s ensure we have the latest version::
 
-    $ pip3 install --upgrade pip
+    pip3 install --upgrade pip
 
 Install all the requirements::
 
-    $ pip3 install -r requirements.txt
+    pip3 install -r requirements.txt
 
 If you want to also have the developer requirements in order to develop rotki
 then do::
 
-    $ pip3 install -r requirements_dev.txt
+    pip3 install -r requirements_dev.txt
 
 Since the electron application is located in a different directory you also need to do::
 
-    $ pip3 install -e .
+    pip3 install -e .
 
 rotki uses `Electron <https://electronjs.org>`, we need to install it. To do so you need ``Node.js`` and ``npm``. If you don't have it use Homebrew to install it::
 
-    $ brew install node
+    brew install node
 
-rotki uses pnpm v9. To check if you have version * of pnpm you can run::
+Install PNPM
+------------
 
-    pnpm --version
+Check :ref:`install_pnpm`, the process should be similar.
 
-If you are on an older version of pnpm, you can install it by::
+Almost there, we can now install all the Node.js dependencies of the frontend app::
 
-    pnpm install -g pnpm@9
-    # or if you never installed it before you can
-    npm install -g pnpm@9
-
-
-Almost there, we can now install all the Node.js dependencies of the frontend app:
-
-    $ cd frontend
-    $ pnpm install --frozen-lockfile
+    cd frontend
+    pnpm install --frozen-lockfile
 
 You can now start rotki, still from the ``frontend`` directory::
 
-    $ pnpm run dev
+    pnpm run dev
 
 Packaging
 -------------
@@ -701,9 +710,11 @@ Dependencies
 Node & pnpm
 ^^^^^^^^^^^^^^^^^^^^
 Install `node <https://nodejs.org/en/download/>`_.
-Install ``pnpm``::
 
-    $ npm install -g pnpm@9
+Install PNPM
+------------
+
+Check :ref:`install_pnpm`, the process should be similar.
 
 
 Python
@@ -843,5 +854,5 @@ Docker
 
 To build Docker image from source using ``Dockerfile``::
 
-    $ docker build -t rotki .
+    docker build -t rotki .
 
