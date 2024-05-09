@@ -5,7 +5,6 @@ from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
 from rotkehlchen.history.events.structures.types import HistoryEventType
 
 CPT_GAS: Final = 'gas'
-CPT_HOP: Final = 'hop-protocol'
 CPT_GITCOIN: Final = 'gitcoin'
 CPT_BASE: Final = 'base'
 CPT_SDAI: Final = 'sDAI'
@@ -28,11 +27,6 @@ SDAI_REDEEM: Final = b'\xfb\xdey} \x1ch\x1b\x91\x05e)\x11\x9e\x0b\x02@|{\xb9jJ,u
 STAKED: Final = b'\x9eq\xbc\x8e\xea\x02\xa69i\xf5\t\x81\x8f-\xaf\xb9%E2\x90C\x19\xf9\xdb\xday\xb6{\xd3J_='  # noqa: E501
 
 # Counterparty details shared between chains
-HOP_CPT_DETAILS: Final = CounterpartyDetails(
-    identifier=CPT_HOP,
-    label='Hop Protocol',
-    image='hop_protocol.png',
-)
 OPTIMISM_CPT_DETAILS: Final = CounterpartyDetails(
     identifier=CPT_OPTIMISM,
     label='Optimism',
