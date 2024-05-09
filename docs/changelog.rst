@@ -2,7 +2,7 @@
 Changelog
 =========
 
-* :bug:`-` compound_v2 decoder will now check that the event address is a compound one for the borrow and mint event decoding. This fixes a bug with decoding transactions containing also flash loans of same asset type.
+* :bug:`-` Compound v2 transactions containing also flash loans of same asset type will now be properly decoded.
 
 * :release:`1.33.0 <2024-05-08>`
 * :feature:`7798` rotki now accurately decodes transactions on the Kyber swap aggregator across all supported chains. 
