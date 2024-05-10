@@ -2010,7 +2010,9 @@
       "api_key": "API Key",
       "api_secret": "API Secret",
       "kraken_account": "Select the type of your Kraken account",
-      "passphrase": "Passphrase"
+      "passphrase": "Passphrase",
+      "private_key": "Private Key",
+      "api_key_name": "API Key Name"
     },
     "keys": "Keys",
     "subtitle": "rotki can connect to supported exchanges and automatically pull your trades and balances from them. See the {0} for more information.",
