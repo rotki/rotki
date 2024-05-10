@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`7358` Added support for detection of staked GRT tokens on Arbitrum.
 * :bug:`-` Fix the issue where the MATIC amount always shows as zero in the Polygon balance table.
 * :bug:`7915` Show OKX balances locked in active trades.
 * :feature:`-` rotki now optionally can use the decentralized TheGraph service. You can get a free api key at https://thegraph.com/studio/apikeys/

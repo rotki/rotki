@@ -24,6 +24,7 @@ class DBCacheStatic(Enum):
     LAST_AAVE_V3_ASSETS_UPDATE: Final = 'last_aave_v3_assets_update'
     LAST_DELETE_PAST_CALENDAR_EVENTS: Final = 'last_delete_past_calendar_events'
     LAST_CREATE_REMINDER_CHECK_TS: Final = 'last_create_reminder_check_ts'
+    LAST_GRAPH_DELEGATIONS_CHECK_TS: Final = 'last_graph_delegations_check_ts'
 
 
 class LabeledLocationArgsType(TypedDict):
@@ -62,6 +63,7 @@ class DBCacheDynamic(Enum):
     LAST_CRYPTOTX_OFFSET: Final = '{location}_{location_name}_last_cryptotx_offset', _deserialize_int_from_str  # noqa: E501
     LAST_QUERY_TS: Final = '{location}_{location_name}_{account_id}_last_query_ts', _deserialize_timestamp_from_str  # noqa: E501
     LAST_QUERY_ID: Final = '{location}_{location_name}_{account_id}_last_query_id', lambda x: x  # return it as is, a string  # noqa: E501
+    LAST_BLOCK_ID: Final = '{location}_{location_name}_{account_id}_last_block_id', _deserialize_int_from_str  # noqa: E501
     WITHDRAWALS_TS: Final = 'ethwithdrawalsts_{address}', _deserialize_timestamp_from_str
     WITHDRAWALS_IDX: Final = 'ethwithdrawalsidx_{address}', _deserialize_int_from_str
     EXTRA_INTERNAL_TX: Final = f'{EXTRAINTERNALTXPREFIX}_{{tx_hash}}_{{receiver}}', string_to_evm_address  # noqa: E501

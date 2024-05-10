@@ -4,16 +4,14 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
-from rotkehlchen.chain.evm.contracts import EvmContract
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
-from rotkehlchen.chain.evm.decoding.thegraph.decoder import GRAPH_TOKEN_LOCK_WALLET_ABI
 from rotkehlchen.chain.evm.tokens import get_chunk_size_call_order
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import EvmEventFilterQuery
-from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmProduct
+from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -46,15 +44,11 @@ class ThegraphCommonBalances(ProtocolWithBalance):
         self.token = native_asset.resolve_to_evm_token()
         self.staking_contract = staking_contract
 
-    def _query_vesting_balances(self, balances: 'BalancesSheetType') -> 'BalancesSheetType':
-        """Query balances of vested GRT tokens if DelegationTransfer events are found.
-        This function modifies and returns the 'balances'
-        """
+    def _get_staking_events(self, location: Location | None = None) -> list[EvmEvent] | None:
         db_filter = EvmEventFilterQuery.make(
             counterparties=[self.counterparty],
-            location=Location.ETHEREUM,
-            event_types=[HistoryEventType.INFORMATIONAL],
-            event_subtypes=[HistoryEventSubType.NONE],
+            products=[EvmProduct.STAKING],
+            location=location,
         )
         with self.event_db.db.conn.read_ctx() as cursor:
             if len(events := self.event_db.get_history_events(
@@ -62,75 +56,56 @@ class ThegraphCommonBalances(ProtocolWithBalance):
                     filter_query=db_filter,
                     has_premium=True,
             )) == 0:
-                return balances
+                return None
+        return events
 
-        vesting_contract_calls: list[tuple[ChecksumEvmAddress, str]] = []
-        call_mapping: list[tuple[ChecksumEvmAddress, EvmContract]] = []
+    def process_staking_events(
+            self, events: list[EvmEvent],
+    ) -> list[tuple['ChecksumEvmAddress', 'ChecksumEvmAddress', 'ChecksumEvmAddress']]:
+        """
+        Processes staking events to generate a unique set of delegations (delegator, indexer, user)
+        """
+        delegations_unique = set()
         for event in events:
-            if (
-                event.location_label is None or
-                event.extra_data is None or
-                (delegator := event.extra_data.get('delegator_l2')) is None
-            ):
-                log.error(f'Event {event.event_identifier} missing delegator_l2 or location_label')
+            if event.location_label is None or event.extra_data is None:
+                log.info(f'Event {event.event_identifier} missing extra_data or location_label')
                 continue
 
-            user_address = string_to_evm_address(event.location_label)
-            contract = EvmContract(
-                address=string_to_evm_address(delegator),
-                abi=GRAPH_TOKEN_LOCK_WALLET_ABI,
-                deployed_block=0,
-            )
-            encoded_call = contract.encode(method_name='totalOutstandingAmount')
-            vesting_contract_calls.append((contract.address, encoded_call))
-            call_mapping.append((user_address, contract))
+            # simple staking where you just need to delegate to an indexer
+            if (indexer := event.extra_data.get('indexer')) is not None:
+                delegations_unique.add(
+                    (
+                        string_to_evm_address(event.location_label),
+                        string_to_evm_address(indexer),
+                        string_to_evm_address(event.location_label),
+                    ),
+                )
+            # staking where you delegate to an L2 delegator and L2 indexer
+            elif (
+                (indexer := event.extra_data.get('indexer_l2')) is not None and
+                (delegator := event.extra_data.get('delegator_l2')) is not None and
+                (beneficiary := event.extra_data.get('beneficiary'))
+            ):
+                delegations_unique.add(
+                    (
+                        string_to_evm_address(delegator),
+                        string_to_evm_address(indexer),
+                        beneficiary,
+                    ),
+                )
+        return list(delegations_unique)
 
-        if len(vesting_contract_calls) == 0:
-            return balances
-
-        try:
-            outputs = self.evm_inquirer.multicall_2(require_success=False, calls=vesting_contract_calls)  # noqa: E501
-        except (RemoteError, BlockchainQueryError) as e:
-            log.error(f'Failed to query GRT vested balance due to {e!s}')
-            return balances
-
-        results: list[tuple[ChecksumEvmAddress, int]] = [
-            (address, delegator.decode(result=result[1], method_name='totalOutstandingAmount')[0])
-            for result, (address, delegator) in zip(outputs, call_mapping, strict=True)
-            if result[0] is True and len(result[1]) != 0
-        ]
-        grt_price = Inquirer.find_usd_price(self.token)
-        for address, balance in results:
-            balance_norm = token_normalized_value(token_amount=balance, token=self.token)
-            balances[address].assets[self.token] += Balance(
-                amount=balance_norm,
-                usd_value=grt_price * balance_norm,
-            )
-
-        return balances
-
-    def query_balances(self) -> 'BalancesSheetType':
+    def query_staked_balances(
+            self,
+            balances: 'BalancesSheetType',
+            delegations: list[tuple['ChecksumEvmAddress', 'ChecksumEvmAddress', 'ChecksumEvmAddress']],  # noqa: E501
+    ) -> 'BalancesSheetType':
         """
         Query balances of GRT tokens delegated to indexers if deposit events are found.
         First, the current shares amounts are fetched from the contract,
         then shares are converted into GRT balances according to the current pool ratio.
         The results include delegation rewards earned over time.
         """
-        balances: BalancesSheetType = defaultdict(BalanceSheet)
-        balances = self._query_vesting_balances(balances)
-
-        # fetch deposit events
-        addresses_with_deposits = self.addresses_with_deposits(products=[EvmProduct.STAKING])
-        # remap all events into a list that will contain all pairs (delegator, indexer)
-        delegations_unique = set()
-        for delegator, event_list in addresses_with_deposits.items():
-            for event in event_list:
-                if event.extra_data is None:
-                    continue
-                if (indexer := event.extra_data.get('indexer')) is not None:
-                    delegations_unique.add((delegator, indexer))
-        delegations = list(delegations_unique)
-
         # user had no delegation events
         if len(delegations) == 0:
             return balances
@@ -146,13 +121,13 @@ class ThegraphCommonBalances(ProtocolWithBalance):
                     method_name='getDelegation',
                     arguments=[indexer, delegator],
                 ),
-            ) for delegator, indexer in delegations],
+            ) for delegator, indexer, _ in delegations],
             call_order=call_order,
             calls_chunk_size=chunk_size,
         )
 
         # process all current delegation balances
-        delegations_active = []
+        delegations_active: list[tuple[ChecksumEvmAddress, ChecksumEvmAddress, ChecksumEvmAddress, int]] = []  # noqa: E501
         for idx, delegation in enumerate(delegations):
             shares, _, _ = staking_contract.decode(
                 delegation_balances[idx],
@@ -160,7 +135,7 @@ class ThegraphCommonBalances(ProtocolWithBalance):
                 arguments=[delegation[1], delegation[0]],
             )[0]
             if shares > 0:
-                delegations_active.append((delegation[0], delegation[1], shares))
+                delegations_active.append((*delegation, shares))
 
         # user has already undelegated everything and has no active stakes
         if len(delegations_active) == 0:
@@ -174,14 +149,14 @@ class ThegraphCommonBalances(ProtocolWithBalance):
                     method_name='delegationPools',
                     arguments=[indexer],
                 ),
-            ) for _, indexer, _ in delegations_active],
+            ) for _, indexer, _, _ in delegations_active],
             call_order=call_order,
             calls_chunk_size=chunk_size,
         )
 
         grt_price = Inquirer.find_usd_price(self.token)
         for idx, stake in enumerate(delegations_active):
-            delegator, indexer, shares_amount = stake[0], stake[1], stake[2]
+            _, indexer, user_address, shares_amount = stake
 
             # each calculation is for one pool
             _, _, _, _, pool_total_tokens, pool_total_shares = staking_contract.decode(
@@ -191,13 +166,26 @@ class ThegraphCommonBalances(ProtocolWithBalance):
             )[0]
 
             # calculate current tokens balance relative to the pool state and shares distribution
-            if pool_total_shares == 0:
+            if pool_total_shares == ZERO:
                 continue
             balance = FVal(shares_amount * pool_total_tokens / pool_total_shares)
             balance_norm = asset_normalized_value(balance.to_int(exact=False), self.token)
-            balances[delegator].assets[self.token] += Balance(
-                amount=balance_norm,
-                usd_value=grt_price * balance_norm,
-            )
+            if balance_norm > ZERO:
+                balances[user_address].assets[self.token] += Balance(
+                    amount=balance_norm,
+                    usd_value=grt_price * balance_norm,
+                )
 
         return balances
+
+    def _base_balance_query(self, location: Location | None) -> BalancesSheetType:
+        """Queries and returns the balances sheet for staking events.
+
+        Retrieves deposit events and processes them to generate a unique set of delegations.
+        Supports both simple and vested staking."""
+        balances: BalancesSheetType = defaultdict(BalanceSheet)
+        if (events := self._get_staking_events(location)) is None:  # fetch deposit events
+            return balances
+
+        delegations = self.process_staking_events(events)
+        return self.query_staked_balances(balances, delegations)
