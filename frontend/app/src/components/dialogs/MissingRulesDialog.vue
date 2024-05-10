@@ -49,7 +49,7 @@ function onRedecode() {
     return false;
 
   emit('re-decode', toEvmChainAndTxHash(entry));
-  emit('input', false);
+  close();
 }
 
 function onEdit() {
@@ -59,7 +59,7 @@ function onEdit() {
     return false;
 
   emit('edit', entry);
-  emit('input', false);
+  close();
 }
 
 function onAddRule() {
@@ -81,89 +81,85 @@ function onAddRule() {
     emit('add-rule', { eventSubtype, eventType, counterparty: null });
   }
 
+  close();
+}
+
+function close() {
   emit('input', false);
 }
 </script>
 
 <template>
-  <VDialogTransition>
-    <VDialog
-      :value="value"
-      :max-width="500"
-      @keydown.esc.stop="emit('input', false)"
-      @input="emit('input', false)"
-    >
-      <RuiCard data-cy="missing-rules-dialog">
-        <template #header>
-          <span
-            class="text-h5"
-            data-cy="dialog-title"
-          >
-            {{ t('actions.history_events.missing_rule.title') }}
-          </span>
-        </template>
+  <RuiDialog
+    :value="value"
+    :max-width="500"
+    @closed="close()"
+  >
+    <RuiCard data-cy="missing-rules-dialog">
+      <template #header>
+        {{ t('actions.history_events.missing_rule.title') }}
+      </template>
 
-        <p class="text-body-1 text-rui-text-secondary">
-          {{ t('actions.history_events.missing_rule.message') }}
-        </p>
+      <p class="text-body-1 text-rui-text-secondary mb-2">
+        {{ t('actions.history_events.missing_rule.message') }}
+      </p>
 
-        <div class="flex flex-col gap-1">
-          <RuiButton
-            v-if="isEvm"
-            size="lg"
-            class="justify-start"
-            variant="text"
-            @click="onRedecode()"
-          >
-            <template #prepend>
-              <RuiIcon
-                color="secondary"
-                name="restart-line"
-              />
-            </template>
-            {{ t('actions.history_events.missing_rule.re_decode') }}
-          </RuiButton>
-          <RuiButton
-            size="lg"
-            class="justify-start"
-            variant="text"
-            @click="onEdit()"
-          >
-            <template #prepend>
-              <RuiIcon
-                color="secondary"
-                name="pencil-line"
-              />
-            </template>
-            {{ t('actions.history_events.missing_rule.edit') }}
-          </RuiButton>
-          <RuiButton
-            size="lg"
-            class="justify-start"
-            variant="text"
-            @click="onAddRule()"
-          >
-            <template #prepend>
-              <RuiIcon
-                color="secondary"
-                name="add-line"
-              />
-            </template>
-            {{ t('actions.history_events.missing_rule.add_rule') }}
-          </RuiButton>
-        </div>
+      <div class="flex flex-col gap-1">
+        <RuiButton
+          v-if="isEvm"
+          size="lg"
+          class="justify-start"
+          variant="text"
+          @click="onRedecode()"
+        >
+          <template #prepend>
+            <RuiIcon
+              color="secondary"
+              name="restart-line"
+            />
+          </template>
+          {{ t('actions.history_events.missing_rule.re_decode') }}
+        </RuiButton>
+        <RuiButton
+          size="lg"
+          class="justify-start"
+          variant="text"
+          @click="onEdit()"
+        >
+          <template #prepend>
+            <RuiIcon
+              color="secondary"
+              name="pencil-line"
+            />
+          </template>
+          {{ t('actions.history_events.missing_rule.edit') }}
+        </RuiButton>
+        <RuiButton
+          size="lg"
+          class="justify-start"
+          variant="text"
+          @click="onAddRule()"
+        >
+          <template #prepend>
+            <RuiIcon
+              color="secondary"
+              name="add-line"
+            />
+          </template>
+          {{ t('actions.history_events.missing_rule.add_rule') }}
+        </RuiButton>
+      </div>
 
-        <template #footer>
-          <div class="grow" />
-          <RuiButton
-            color="primary"
-            data-cy="button-ok"
-            @click="emit('input', false)"
-          >
-            {{ t('common.actions.ok') }}
-          </RuiButton>
-        </template>
-      </RuiCard>
-    </VDialog>
-  </VDialogTransition>
+      <template #footer>
+        <div class="grow" />
+        <RuiButton
+          color="primary"
+          data-cy="button-ok"
+          @click="close()"
+        >
+          {{ t('common.actions.ok') }}
+        </RuiButton>
+      </template>
+    </RuiCard>
+  </RuiDialog>
 </template>

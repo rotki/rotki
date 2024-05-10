@@ -20,12 +20,11 @@ function getTotal({ totalAmount, usdPrice }: XswapAsset) {
 </script>
 
 <template>
-  <VDialog
+  <RuiDialog
     v-model="details"
-    scrollable
     max-width="450px"
   >
-    <template #activator="{ on, attrs }">
+    <template #activator="{ on }">
       <RuiTooltip
         :popper="{ placement: 'top' }"
         :open-delay="400"
@@ -35,7 +34,6 @@ function getTotal({ totalAmount, usdPrice }: XswapAsset) {
             variant="text"
             color="primary"
             icon
-            v-bind="attrs"
             v-on="on"
           >
             <RuiIcon name="external-link-line" />
@@ -101,5 +99,5 @@ function getTotal({ totalAmount, usdPrice }: XswapAsset) {
         />
       </div>
     </RuiCard>
-  </VDialog>
+  </RuiDialog>
 </template>

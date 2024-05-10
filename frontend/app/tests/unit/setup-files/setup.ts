@@ -5,6 +5,9 @@ import { config } from '@vue/test-utils';
 import { mockT } from '../i18n';
 import { RuiIconStub } from '../specs/stubs/RuiIcon';
 import { RuiTooltipStub } from '../specs/stubs/RuiTooltip';
+import { DefaultStubWrapper } from '../specs/stubs/DefaultWrapper';
+import { VAutocompleteStub } from '../specs/stubs/VAutocomplete';
+import { VComboboxStub } from '../specs/stubs/VCombobox';
 import { server } from './server';
 
 beforeAll(() => {
@@ -102,3 +105,7 @@ afterAll(() => server.close());
 // Global stub components
 config.stubs.RuiIcon = RuiIconStub;
 config.stubs.RuiTooltip = RuiTooltipStub;
+config.stubs.RuiTeleport = DefaultStubWrapper;
+config.stubs.AppBridge = DefaultStubWrapper;
+config.stubs.VAutocomplete = VAutocompleteStub;
+config.stubs.VCombobox = VComboboxStub;

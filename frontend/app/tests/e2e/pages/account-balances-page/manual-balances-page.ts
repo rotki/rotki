@@ -38,7 +38,7 @@ export class ManualBalancesPage {
     cy.get('.v-autocomplete__content').should('not.be.visible');
     cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').click();
     cy.get('[data-cy=bottom-dialog]', { timeout: 120000 }).should(
-      'not.be.visible',
+      'not.exist',
     );
   }
 
@@ -149,6 +149,9 @@ export class ManualBalancesPage {
     cy.get('@edit-form').find('.manual-balances-form__amount input').clear();
     cy.get('@edit-form').find('.manual-balances-form__amount').type(amount);
     cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').click();
+    cy.get('[data-cy=bottom-dialog]', { timeout: 120000 }).should(
+      'not.exist',
+    );
   }
 
   deleteBalance(position: number) {

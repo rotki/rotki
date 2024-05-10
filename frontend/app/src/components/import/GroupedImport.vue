@@ -155,7 +155,6 @@ const [DefineIcon, ReuseIcon] = createReusableTemplate<{
         :append-width="1.75"
         :options="sources"
         full-width
-        float-label
         variant="outlined"
       >
         <template #activator.text="{ value: { logo, icon, label } }">

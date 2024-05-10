@@ -54,7 +54,7 @@ async function exportSnapshotCSV() {
 
   try {
     if (appSession) {
-      const path = await openDirectory(t('common.select_directory').toString());
+      const path = await openDirectory(t('common.select_directory'));
 
       if (!path)
         return;
@@ -148,7 +148,7 @@ function showDeleteConfirmation() {
 </script>
 
 <template>
-  <VDialog
+  <RuiDialog
     v-model="display"
     max-width="600"
   >
@@ -216,5 +216,5 @@ function showDeleteConfirmation() {
       @close="editMode = false"
       @finish="finish()"
     />
-  </VDialog>
+  </RuiDialog>
 </template>

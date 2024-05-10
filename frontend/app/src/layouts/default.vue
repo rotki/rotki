@@ -20,13 +20,12 @@ onMounted(async () => await load());
       <AppUpdatePopup />
       <AppCore />
     </AppMessages>
-    <VDialog
-      v-if="showAbout"
+    <RuiDialog
       v-model="showAbout"
       max-width="500"
     >
       <About />
-    </VDialog>
+    </RuiDialog>
     <FrontendUpdateNotifier v-if="!isPackaged" />
   </AppHost>
 </template>

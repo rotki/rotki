@@ -186,9 +186,9 @@ const totalPnl: ComputedRef<BigNumber | null> = computed(() => {
   <RuiCard>
     <template #custom-header>
       <div class="flex items-center justify-between p-4">
-        <h5 class="text-h5">
+        <h6 class="text-h6">
           {{ t('liquity_statistic.title') }}
-        </h5>
+        </h6>
         <RuiButtonGroup
           v-model="selection"
           required

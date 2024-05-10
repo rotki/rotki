@@ -149,13 +149,10 @@ onMounted(() => {
         key-attr="value"
         text-attr="label"
         full-width
-        float-label
         variant="outlined"
       >
         <template #activator.text="{ value }">
-          <span class="my-2 block">
-            {{ value.label }}
-          </span>
+          {{ value.label }}
         </template>
       </RuiMenuSelect>
       <RuiTextField

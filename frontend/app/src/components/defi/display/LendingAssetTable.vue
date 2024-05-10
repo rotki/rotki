@@ -49,6 +49,7 @@ const headers = computed<DataTableColumn[]>(() => [
     :loading="loading"
     :sort.sync="sort"
     row-attr="asset"
+    dense
     outlined
   >
     <template #item.asset="{ row }">

@@ -28,7 +28,7 @@ describe('premiumSettings.vue', () => {
     return mount(PremiumSettings, {
       pinia,
       vuetify,
-      stubs: ['v-dialog', 'i18n', 'card-title'],
+      stubs: ['i18n', 'card-title'],
     });
   }
 

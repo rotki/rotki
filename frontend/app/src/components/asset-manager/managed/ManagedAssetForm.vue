@@ -369,7 +369,6 @@ setSubmitFunc(save);
           text-attr="label"
           variant="outlined"
           full-width
-          float-label
           show-details
         />
       </div>
@@ -389,7 +388,6 @@ setSubmitFunc(save);
             text-attr="label"
             variant="outlined"
             full-width
-            float-label
             show-details
           />
         </div>
@@ -405,7 +403,6 @@ setSubmitFunc(save);
             text-attr="label"
             variant="outlined"
             full-width
-            float-label
             show-details
           />
         </div>

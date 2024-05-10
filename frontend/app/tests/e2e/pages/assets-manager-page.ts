@@ -122,7 +122,7 @@ export class AssetsManagerPage {
     const waitForAssetDeleted = this.createWaitForDeleteManagedAssets();
     cy.get('[data-cy=confirm-dialog]').find('[data-cy=button-confirm]').click();
     waitForAssetDeleted();
-    cy.get('[data-cy=confirm-dialog]').should('not.be.exist');
+    cy.get('[data-cy=confirm-dialog]').should('not.exist');
   }
 
   deleteAnEvmAsset(address = '0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8') {
@@ -233,7 +233,7 @@ export class AssetsManagerPage {
     // create the asset
     cy.get('@submitButton').click();
     // dialog should not be visible
-    cy.get('[data-cy=bottom-dialog]').should('not.be.visible');
+    cy.get('[data-cy=bottom-dialog]').should('not.exist');
 
     // search the asset
     this.searchAssetByAddress(address);
@@ -267,7 +267,7 @@ export class AssetsManagerPage {
     // create the asset
     cy.get('@submitButton').click();
     // dialog should not be visible
-    cy.get('[data-cy=bottom-dialog]').should('not.be.visible');
+    cy.get('[data-cy=bottom-dialog]').should('not.exist');
 
     // search the asset
     this.searchAssetBySymbol(symbol);
@@ -307,7 +307,7 @@ export class AssetsManagerPage {
     cy.get('@submitButton').click();
 
     // dialog should not be visible
-    cy.get('[data-cy=bottom-dialog]').should('not.be.visible');
+    cy.get('[data-cy=bottom-dialog]').should('not.exist');
 
     cy.get('[data-cy=managed-assets-table] [data-cy=list-title]').should(
       'contain',

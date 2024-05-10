@@ -166,7 +166,6 @@ function isBinance(exchange: string | null): exchange is 'binance' | 'binanceus'
             :label="t('exchange_balances.select_exchange')"
             key-attr="key"
             full-width
-            float-label
             variant="outlined"
             @input="openExchangeDetails()"
           >

@@ -3,7 +3,6 @@ import Vuetify from 'vuetify';
 import { createPinia, setActivePinia } from 'pinia';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import HistoryEventForm from '@/components/history/events/HistoryEventForm.vue';
-import { VSelectStub } from '../../../stubs/VSelect';
 
 vi.mock('json-editor-vue', () => ({
   template: '<input />',
@@ -20,9 +19,6 @@ describe('historyEventForm.vue', () => {
     return mount(HistoryEventForm, {
       pinia,
       vuetify,
-      stubs: {
-        VSelect: VSelectStub,
-      },
     });
   };
 

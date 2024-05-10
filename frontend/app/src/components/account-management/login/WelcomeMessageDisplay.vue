@@ -50,7 +50,7 @@ const css = useCssModule();
 <template>
   <div
     v-if="activeItem"
-    class="flex flex-col items-start gap-4 w-full p-6 overflow-hidden"
+    class="flex flex-col items-start gap-4 w-full p-6 overflow-hidden rounded-lg"
     :class="css.card"
   >
     <FadeTransition tag="div">

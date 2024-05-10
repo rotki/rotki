@@ -82,118 +82,119 @@ function close() {
 </script>
 
 <template>
-  <VDialog
-    :value="true"
+  <RuiDialog
+    value
     max-width="450px"
-    @click:outside="close()"
-    @close="close()"
+    @closed="close()"
   >
-    <RuiCard>
-      <template #custom-header>
-        <div class="flex items-center justify-between p-4 gap-4">
-          <AdaptiveWrapper>
-            <AppImage
-              size="24px"
-              contain
-              :src="moduleIcon"
-            />
-          </AdaptiveWrapper>
-          <RuiCardHeader class="p-0">
-            <template #header>
-              {{ t('queried_address_dialog.title') }}
-            </template>
-            <template #subheader>
-              {{ t('queried_address_dialog.subtitle', { module: moduleName }) }}
-            </template>
-          </RuiCardHeader>
+    <AppBridge>
+      <RuiCard>
+        <template #custom-header>
+          <div class="flex items-center justify-between p-4 gap-4">
+            <AdaptiveWrapper>
+              <AppImage
+                size="24px"
+                contain
+                :src="moduleIcon"
+              />
+            </AdaptiveWrapper>
+            <RuiCardHeader class="p-0">
+              <template #header>
+                {{ t('queried_address_dialog.title') }}
+              </template>
+              <template #subheader>
+                {{ t('queried_address_dialog.subtitle', { module: moduleName }) }}
+              </template>
+            </RuiCardHeader>
 
+            <RuiButton
+              class="shrink-0"
+              variant="text"
+              icon
+              @click="close()"
+            >
+              <RuiIcon name="close-line" />
+            </RuiButton>
+          </div>
+        </template>
+        <div class="flex items-center gap-2">
+          <BlockchainAccountSelector
+            v-model="selectedAccounts"
+            outlined
+            flat
+            dense
+            no-padding
+            hide-on-empty-usable
+            max-width="340px"
+            :usable-addresses="usableAddresses"
+            class="queried-address-dialog__selector flex-1"
+            :chains="[ETH]"
+            :label="t('queried_address_dialog.add')"
+          />
           <RuiButton
-            class="shrink-0"
+            :disabled="selectedAccounts.length === 0"
             variant="text"
             icon
-            @click="close()"
+            @click="addAddress()"
           >
-            <RuiIcon name="close-line" />
+            <RuiIcon name="add-line" />
           </RuiButton>
         </div>
-      </template>
-      <div class="flex items-center gap-2">
-        <BlockchainAccountSelector
-          v-model="selectedAccounts"
-          outlined
-          flat
-          dense
-          no-padding
-          hide-on-empty-usable
-          max-width="340px"
-          :usable-addresses="usableAddresses"
-          class="queried-address-dialog__selector flex-1"
-          :chains="[ETH]"
-          :label="t('queried_address_dialog.add')"
-        />
-        <RuiButton
-          :disabled="selectedAccounts.length === 0"
-          variant="text"
-          icon
-          @click="addAddress()"
-        >
-          <RuiIcon name="add-line" />
-        </RuiButton>
-      </div>
-      <div
-        v-if="addresses.length > 0"
-        class="overflow-y-scroll mt-4 h-[16rem]"
-      >
         <div
-          v-for="address in addresses"
-          :key="address"
-          class="flex items-start gap-4 py-2 border-t border-default"
+          v-if="addresses.length > 0"
+          class="overflow-y-scroll mt-4 h-[16rem]"
         >
-          <div class="flex-1">
-            <LabeledAddressDisplay :account="getAccount(address)" />
-            <TagDisplay
-              :tags="getAccount(address).tags"
-              small
-            />
-          </div>
-          <RuiTooltip
-            :popper="{ placement: 'top' }"
-            :open-delay="400"
+          <div
+            v-for="address in addresses"
+            :key="address"
+            class="flex items-start gap-4 py-2 border-t border-default"
           >
-            <template #activator>
-              <RuiButton
-                variant="text"
-                icon
-                color="primary"
-                class="!p-2 mt-0.5"
-                @click="
-                  deleteQueriedAddress({
-                    module,
-                    address,
-                  })
-                "
-              >
-                <RuiIcon
-                  size="16"
-                  name="delete-bin-line"
-                />
-              </RuiButton>
-            </template>
+            <div class="flex-1">
+              <LabeledAddressDisplay :account="getAccount(address)" />
+              <TagDisplay
+                :tags="getAccount(address).tags"
+                small
+              />
+            </div>
+            <RuiTooltip
+              :popper="{ placement: 'top' }"
+              :open-delay="400"
+            >
+              <template #activator>
+                <RuiButton
+                  variant="text"
+                  icon
+                  color="primary"
+                  class="!p-2 mt-0.5"
+                  @click="
+                    deleteQueriedAddress({
+                      module,
+                      address,
+                    })
+                  "
+                >
+                  <RuiIcon
+                    size="16"
+                    name="delete-bin-line"
+                  />
+                </RuiButton>
+              </template>
 
-            {{ t('queried_address_dialog.remove_tooltip') }}
-          </RuiTooltip>
+              {{ t('queried_address_dialog.remove_tooltip') }}
+            </RuiTooltip>
+          </div>
         </div>
-      </div>
-      <div
-        v-else
-        class="border-t border-default mt-4 pt-4 text-body-2 text-center text-rui-text-secondary h-[16rem]"
-      >
-        {{
-          t('queried_address_dialog.all_address_queried', {
-            module: moduleName,
-          })
-        }}
-      </div>
-    </RuiCard>
-  </VDialog>
+        <div
+          v-else
+          class="border-t border-default mt-4 pt-4 text-body-2 text-center text-rui-text-secondary h-[16rem]"
+        >
+          {{
+            t('queried_address_dialog.all_address_queried', {
+              module: moduleName,
+            })
+          }}
+        </div>
+      </RuiCard>
+    </AppBridge>
+  </RuiDialog>
 </template>

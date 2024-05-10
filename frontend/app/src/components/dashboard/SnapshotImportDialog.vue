@@ -45,7 +45,7 @@ const complete = logicAnd(balanceFile, locationFile);
 </script>
 
 <template>
-  <VDialog
+  <RuiDialog
     v-model="visible"
     max-width="600"
     :persistent="persistent"
@@ -118,5 +118,5 @@ const complete = logicAnd(balanceFile, locationFile);
         </RuiButton>
       </template>
     </RuiCard>
-  </VDialog>
+  </RuiDialog>
 </template>

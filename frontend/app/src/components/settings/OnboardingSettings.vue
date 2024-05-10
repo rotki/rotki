@@ -289,7 +289,7 @@ function showResetConfirmation() {
 
 <template>
   <BigDialog
-    :display="true"
+    display
     :title="t('frontend_settings.title')"
     @cancel="dismiss()"
   >
@@ -381,7 +381,6 @@ function showResetConfirmation() {
         key-attr="identifier"
         text-attr="label"
         full-width
-        float-label
         variant="outlined"
       >
         <template #item.prepend="{ option }">

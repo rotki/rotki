@@ -44,7 +44,7 @@ const { t } = useI18n();
     v-if="actionableItemsLength"
     class="flex"
   >
-    <VDialog
+    <RuiDialog
       v-model="mainDialogOpen"
       max-width="1000"
     >
@@ -73,6 +73,6 @@ const { t } = useI18n();
         @set-dialog="mainDialogOpen = $event"
         @regenerate="regenerateReport()"
       />
-    </VDialog>
+    </RuiDialog>
   </div>
 </template>

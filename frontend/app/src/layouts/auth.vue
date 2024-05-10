@@ -17,13 +17,12 @@ const css = useCssModule();
         </div>
       </div>
     </AppMessages>
-    <VDialog
-      v-if="showAbout"
+    <RuiDialog
       v-model="showAbout"
       max-width="500"
     >
       <About />
-    </VDialog>
+    </RuiDialog>
   </AppHost>
 </template>
 

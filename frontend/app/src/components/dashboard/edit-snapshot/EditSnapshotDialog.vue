@@ -159,90 +159,93 @@ const steps = computed(() => [
 </script>
 
 <template>
-  <VDialog
+  <RuiDialog
     persistent
-    :value="true"
+    value
     max-width="1400"
   >
-    <RuiCard
-      no-padding
-      variant="flat"
-    >
-      <div class="flex bg-rui-primary text-white p-2">
-        <RuiButton
-          variant="text"
-          icon
-          @click="close()"
-        >
-          <RuiIcon
-            class="text-white"
-            name="close-line"
-          />
-        </RuiButton>
-
-        <h5 class="pl-2 text-h5 flex items-center">
-          <i18n path="dashboard.snapshot.edit.dialog.title">
-            <template #date>
-              <DateDisplay :timestamp="timestamp" />
-            </template>
-          </i18n>
-        </h5>
-      </div>
-
-      <div v-if="snapshotData">
-        <RuiStepper
-          :steps="steps"
-          :step="step"
-          class="py-4 border-b-2 border-default"
-        />
-        <RuiTabItems v-model="step">
-          <template #default>
-            <RuiTabItem :value="1">
-              <EditBalancesSnapshotTable
-                v-model="snapshotData"
-                :timestamp="timestamp"
-                @update:step="step = $event"
-                @input="save()"
-              />
-            </RuiTabItem>
-            <RuiTabItem :value="2">
-              <EditLocationDataSnapshotTable
-                :value="locationDataSnapshot"
-                :timestamp="timestamp"
-                @update:step="step = $event"
-                @input="updateAndSave($event)"
-              />
-            </RuiTabItem>
-            <RuiTabItem :value="3">
-              <EditSnapshotTotal
-                v-if="step === 3"
-                :value="locationDataSnapshot"
-                :balances-snapshot="balancesSnapshot"
-                :timestamp="timestamp"
-                @update:step="step = $event"
-                @input="updateAndComplete($event)"
-              />
-            </RuiTabItem>
-          </template>
-        </RuiTabItems>
-      </div>
-      <div
-        v-else
-        class="flex flex-col justify-center items-center py-6 bg-white dark:bg-rui-grey-800"
+    <AppBridge>
+      <RuiCard
+        no-padding
+        variant="flat"
+        class="overflow-hidden"
       >
-        <RuiProgress
-          circular
-          variant="indeterminate"
-          color="primary"
-          size="50"
-        />
+        <div class="flex bg-rui-primary text-white p-2">
+          <RuiButton
+            variant="text"
+            icon
+            @click="close()"
+          >
+            <RuiIcon
+              class="text-white"
+              name="close-line"
+            />
+          </RuiButton>
 
-        <div class="pt-6">
-          {{ t('dashboard.snapshot.edit.dialog.fetch.loading') }}
+          <h5 class="pl-2 text-h5 flex items-center">
+            <i18n path="dashboard.snapshot.edit.dialog.title">
+              <template #date>
+                <DateDisplay :timestamp="timestamp" />
+              </template>
+            </i18n>
+          </h5>
         </div>
-      </div>
-    </RuiCard>
-  </VDialog>
+
+        <div v-if="snapshotData">
+          <RuiStepper
+            :steps="steps"
+            :step="step"
+            class="py-4 border-b-2 border-default"
+          />
+          <RuiTabItems v-model="step">
+            <template #default>
+              <RuiTabItem :value="1">
+                <EditBalancesSnapshotTable
+                  v-model="snapshotData"
+                  :timestamp="timestamp"
+                  @update:step="step = $event"
+                  @input="save()"
+                />
+              </RuiTabItem>
+              <RuiTabItem :value="2">
+                <EditLocationDataSnapshotTable
+                  :value="locationDataSnapshot"
+                  :timestamp="timestamp"
+                  @update:step="step = $event"
+                  @input="updateAndSave($event)"
+                />
+              </RuiTabItem>
+              <RuiTabItem :value="3">
+                <EditSnapshotTotal
+                  v-if="step === 3"
+                  :value="locationDataSnapshot"
+                  :balances-snapshot="balancesSnapshot"
+                  :timestamp="timestamp"
+                  @update:step="step = $event"
+                  @input="updateAndComplete($event)"
+                />
+              </RuiTabItem>
+            </template>
+          </RuiTabItems>
+        </div>
+        <div
+          v-else
+          class="flex flex-col justify-center items-center py-6 bg-white dark:bg-rui-grey-800"
+        >
+          <RuiProgress
+            circular
+            variant="indeterminate"
+            color="primary"
+            size="50"
+          />
+
+          <div class="pt-6">
+            {{ t('dashboard.snapshot.edit.dialog.fetch.loading') }}
+          </div>
+        </div>
+      </RuiCard>
+    </AppBridge>
+  </RuiDialog>
 </template>
 
 <style module lang="scss">

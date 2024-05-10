@@ -49,7 +49,6 @@ watchImmediate([groupHeader, editableItem], ([groupHeader, editableItem]) => {
       :label="t('common.entry_type')"
       key-attr="key"
       full-width
-      float-label
       variant="outlined"
     >
       <template #activator.text="{ value }">

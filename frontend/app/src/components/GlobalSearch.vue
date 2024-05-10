@@ -235,31 +235,31 @@ function getExchanges(keyword: string): SearchItemWithoutValue[] {
 function getActions(keyword: string): SearchItemWithoutValue[] {
   const actionItems: SearchItemWithoutValue[] = [
     {
-      text: t('exchange_settings.dialog.add.title').toString(),
+      text: t('exchange_settings.dialog.add.title'),
       route: `${Routes.API_KEYS_EXCHANGES.route}?add=true`,
     },
     {
-      text: t('blockchain_balances.form_dialog.add_title').toString(),
+      text: t('blockchain_balances.form_dialog.add_title'),
       route: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.route}?add=true`,
     },
     {
-      text: t('manual_balances.dialog.add.title').toString(),
+      text: t('manual_balances.dialog.add.title'),
       route: `${Routes.ACCOUNTS_BALANCES_MANUAL.route}?add=true`,
     },
     {
-      text: t('closed_trades.dialog.add.title').toString(),
+      text: t('closed_trades.dialog.add.title'),
       route: `${Routes.HISTORY_TRADES.route}?add=true`,
     },
     {
-      text: t('asset_management.add_title').toString(),
+      text: t('asset_management.add_title'),
       route: `${Routes.ASSET_MANAGER.route}?add=true`,
     },
     {
-      text: t('price_management.latest.add_title').toString(),
+      text: t('price_management.latest.add_title'),
       route: `${Routes.PRICE_MANAGER_LATEST.route}?add=true`,
     },
     {
-      text: t('price_management.historic.add_title').toString(),
+      text: t('price_management.historic.add_title'),
       route: `${Routes.PRICE_MANAGER_HISTORIC.route}?add=true`,
     },
   ].map(item => ({ ...item, icon: 'add-circle-line' }));
@@ -288,7 +288,7 @@ async function getAssets(keyword: string): Promise<SearchItemWithoutValue[]> {
             ':identifier',
             encodeURIComponent(asset),
           ),
-          texts: [t('common.asset').toString(), map[asset] ?? ''],
+          texts: [t('common.asset'), map[asset] ?? ''],
           price,
           asset,
         };
@@ -310,7 +310,7 @@ function* transformLocations(): IterableIterator<SearchItemWithoutValue> {
     const total = locationBalances[identifier];
     yield {
       route: Routes.LOCATIONS.route.replace(':identifier', location.identifier),
-      texts: [t('common.location').toString(), location.name],
+      texts: [t('common.location'), location.name],
       location,
       total,
     } satisfies SearchItemWithoutValue;
@@ -396,13 +396,10 @@ onBeforeMount(async () => {
 </script>
 
 <template>
-  <VDialog
+  <RuiDialog
     v-model="open"
     max-width="800"
-    :open-delay="100"
-    height="400"
-    :content-class="$style.dialog"
-    transition="slide-y-transition"
+    content-class="mt-[16rem] !top-0 pb-2"
   >
     <template #activator="{ on }">
       <MenuTooltipButton
@@ -410,14 +407,14 @@ onBeforeMount(async () => {
           t('global_search.menu_tooltip', {
             modifier,
             key,
-          }).toString()
+          })
         "
         v-on="on"
       >
         <RuiIcon name="search-line" />
       </MenuTooltipButton>
     </template>
-    <div :class="$style.wrapper">
+    <AppBridge>
       <VAutocomplete
         ref="input"
         v-model="selected"
@@ -526,15 +523,6 @@ onBeforeMount(async () => {
           </div>
         </template>
       </VAutocomplete>
-    </div>
-  </VDialog>
+    </AppBridge>
+  </RuiDialog>
 </template>
-
-<style module lang="scss">
-.dialog {
-  margin-top: 200px;
-  align-self: flex-start;
-  box-shadow: none !important;
-  overflow: visible !important;
-}
-</style>

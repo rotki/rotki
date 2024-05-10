@@ -88,7 +88,10 @@ const { copy } = useClipboard({ source: versionText });
 </script>
 
 <template>
-  <RuiCard variant="flat">
+  <RuiCard
+    variant="flat"
+    class="overflow-hidden"
+  >
     <template #custom-header>
       <div class="p-6 bg-rui-primary text-white">
         <RotkiLogo
@@ -103,20 +106,15 @@ const { copy } = useClipboard({ source: versionText });
         </span>
       </div>
     </template>
-    <div
-      class="flex items-center justify-between"
-      :class="css.version"
-    >
-      <div class="flex items-center">
+    <div class="flex items-center justify-between py-2">
+      <div class="flex items-center flex-wrap gap-x-4">
         <div class="font-bold">
           {{ version.version }}
         </div>
-        <div class="ml-4">
-          <ExternalLink
-            :url="`https://github.com/rotki/rotki/releases/tag/v${version.version}`"
-            :text="t('about.release_notes')"
-          />
-        </div>
+        <ExternalLink
+          :url="`https://github.com/rotki/rotki/releases/tag/v${version.version}`"
+          :text="t('about.release_notes')"
+        />
       </div>
       <AppUpdateIndicator />
     </div>
@@ -128,14 +126,14 @@ const { copy } = useClipboard({ source: versionText });
               {{ t('about.data_directory') }}
             </td>
             <td>
-              <div class="flex flex-row justify-between">
+              <div class="flex items-center justify-between">
                 <RuiTooltip
                   :popper="{ placement: 'top' }"
                   :open-delay="400"
                 >
                   <template #activator>
                     <div
-                      class="text-truncate text-rui-text-secondary"
+                      class="truncate text-rui-text-secondary"
                       :class="css.directory"
                     >
                       {{ dataDirectory }}
@@ -253,7 +251,7 @@ const { copy } = useClipboard({ source: versionText });
       </table>
     </div>
     <template #footer>
-      <div class="p-3 flex justify-end w-full">
+      <div class="flex justify-end w-full">
         <RuiButton
           color="primary"
           @click="copy()"
@@ -272,16 +270,12 @@ const { copy } = useClipboard({ source: versionText });
 </template>
 
 <style module lang="scss">
-.version {
-  height: 36px;
-}
-
 .label {
   @apply font-medium py-0.5;
-  min-width: 130px;
+  min-width: 150px;
 }
 
 .directory {
-  max-width: 200px;
+  max-width: 280px;
 }
 </style>

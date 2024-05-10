@@ -48,7 +48,7 @@ export class ApiKeysPage {
     cy.wait('@exchangeAdd', { timeout: 30000 });
 
     cy.get('[data-cy="bottom-dialog"]', { timeout: 45000 }).should(
-      'not.be.visible',
+      'not.exist',
     );
   }
 

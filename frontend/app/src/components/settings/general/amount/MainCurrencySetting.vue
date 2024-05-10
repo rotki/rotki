@@ -39,7 +39,6 @@ function calculateFontSize(symbol: string) {
       text-attr="tickerSymbol"
       :item-height="68"
       full-width
-      float-label
       show-details
       variant="outlined"
       :success-messages="success"

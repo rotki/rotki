@@ -218,7 +218,6 @@ function onExchangeChange(exchange: string) {
       key-attr="identifier"
       text-attr="label"
       full-width
-      float-label
       show-details
       variant="outlined"
       @input="input({ ...exchange, krakenAccountType: $event })"

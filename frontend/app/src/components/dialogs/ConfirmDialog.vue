@@ -47,60 +47,57 @@ const secondaryText = computed(
 </script>
 
 <template>
-  <VDialogTransition>
-    <VDialog
-      v-if="display"
-      :value="true"
-      persistent
-      :max-width="maxWidth"
-      @keydown.esc.stop="emit('cancel')"
-    >
-      <RuiCard data-cy="confirm-dialog">
-        <template #header>
-          <span
-            class="text-h5"
-            data-cy="dialog-title"
-          >
-            {{ title }}
-          </span>
-        </template>
+  <RuiDialog
+    :value="display"
+    persistent
+    :max-width="maxWidth"
+    @keydown.esc.stop="emit('cancel')"
+  >
+    <RuiCard data-cy="confirm-dialog">
+      <template #header>
+        <h5
+          class="text-h5"
+          data-cy="dialog-title"
+        >
+          {{ title }}
+        </h5>
+      </template>
 
-        <div class="flex gap-4">
-          <div>
-            <RuiIcon
-              :color="color"
-              size="36"
-              :name="icon"
-            />
-          </div>
-          <div class="text-body-1 pt-1 w-full break-words">
-            {{ message }}
-            <slot />
-          </div>
-        </div>
-
-        <template #footer>
-          <div class="grow" />
-          <RuiButton
-            v-if="!singleAction"
-            variant="text"
-            color="primary"
-            data-cy="button-cancel"
-            @click="emit('cancel')"
-          >
-            {{ secondaryText }}
-          </RuiButton>
-          <RuiButton
+      <div class="flex gap-4">
+        <div>
+          <RuiIcon
             :color="color"
-            :disabled="disabled"
-            data-cy="button-confirm"
-            :loading="loading"
-            @click="emit('confirm')"
-          >
-            {{ primaryText }}
-          </RuiButton>
-        </template>
-      </RuiCard>
-    </VDialog>
-  </VDialogTransition>
+            size="36"
+            :name="icon"
+          />
+        </div>
+        <div class="text-body-1 pt-1 w-full break-words">
+          {{ message }}
+          <slot />
+        </div>
+      </div>
+
+      <template #footer>
+        <div class="grow" />
+        <RuiButton
+          v-if="!singleAction"
+          variant="text"
+          color="primary"
+          data-cy="button-cancel"
+          @click="emit('cancel')"
+        >
+          {{ secondaryText }}
+        </RuiButton>
+        <RuiButton
+          :color="color"
+          :disabled="disabled"
+          data-cy="button-confirm"
+          :loading="loading"
+          @click="emit('confirm')"
+        >
+          {{ primaryText }}
+        </RuiButton>
+      </template>
+    </RuiCard>
+  </RuiDialog>
 </template>

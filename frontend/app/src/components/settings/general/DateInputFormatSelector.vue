@@ -31,7 +31,6 @@ const { t } = useI18n();
     key-attr="value"
     text-attr="value"
     full-width
-    float-label
     show-details
     variant="outlined"
     v-on="

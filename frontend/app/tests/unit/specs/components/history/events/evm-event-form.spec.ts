@@ -8,8 +8,6 @@ import Vuetify from 'vuetify';
 import flushPromises from 'flush-promises';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import EvmEventForm from '@/components/history/events/forms/EvmEventForm.vue';
-import { VAutocompleteStub } from '../../../stubs/VAutocomplete';
-import { VComboboxStub } from '../../../stubs/VCombobox';
 import type { AssetMap } from '@/types/asset';
 import type { EvmHistoryEvent } from '@/types/history/events';
 
@@ -77,10 +75,6 @@ describe('evmEventForm.vue', () => {
     return mount(EvmEventForm, {
       pinia,
       vuetify,
-      stubs: {
-        VAutocomplete: VAutocompleteStub,
-        VCombobox: VComboboxStub,
-      },
       ...options,
     });
   };

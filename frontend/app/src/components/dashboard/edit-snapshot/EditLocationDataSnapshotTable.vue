@@ -210,6 +210,7 @@ function showDeleteConfirmation(item: IndexedLocationDataSnapshot) {
       :sort.sync="sort"
       :scroller="tableRef?.$el"
       row-attr="location"
+      dense
     >
       <template #item.location="{ row }">
         <LocationDisplay

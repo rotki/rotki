@@ -237,12 +237,11 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ label: string }>();
 </script>
 
 <template>
-  <VDialog
+  <RuiDialog
     :value="display"
     persistent
     max-width="650"
     class="watcher-dialog"
-    @keydown.esc.stop="cancel()"
   >
     <CreateLabel #default="{ label }">
       <div class="flex justify-center items-center gap-4">
@@ -270,128 +269,117 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ label: string }>();
         key-attr="value"
         text-attr="text"
         full-width
-        float-label
         show-details
         dense
         variant="outlined"
         required
       />
 
-      <div
-        v-if="loadedWatchers.length > 0"
-        class="flex flex-col gap-4"
-      >
-        <ReuseLabel :label="t('watcher_dialog.edit')" />
+      <div class="flex flex-col gap-6">
         <div
-          v-for="(watcher, key) in loadedWatchers"
-          :key="key"
-          class="flex items-center gap-4"
+          v-if="loadedWatchers.length > 0"
+          class="flex flex-col gap-4"
         >
-          <div class="grid grid-cols-2 gap-4">
-            <RuiMenuSelect
-              v-model="loadedWatchers[key].args.op"
-              :options="operations"
-              :class="{
-                'bg-rui-grey-100 dark:bg-rui-grey-800':
-                  !existingWatchersEdit[watcher.identifier],
-              }"
-              :label="t('watcher_dialog.labels.operation')"
-              :disabled="!existingWatchersEdit[watcher.identifier]"
-              key-attr="value"
-              text-attr="text"
-              dense
-              full-width
-              float-label
-              variant="outlined"
-              required
-            />
-
-            <RuiTextField
-              :class="{
-                'bg-rui-grey-100 dark:bg-rui-grey-800':
-                  !existingWatchersEdit[watcher.identifier],
-              }"
-              :label="watcherValueLabel"
-              :readonly="!existingWatchersEdit[watcher.identifier]"
-              :value="loadedWatchers[key].args.ratio"
-              dense
-              color="primary"
-              hide-details
-              variant="outlined"
-              @input="loadedWatchers[key].args.ratio = $event"
-            >
-              <template #append>
-                {{ t('percentage_display.symbol') }}
-              </template>
-            </RuiTextField>
-          </div>
-
-          <div class="flex items-center gap-2 justify-end">
-            <RuiButton
-              variant="text"
-              icon
-              @click="editWatcher(loadedWatchers[key])"
-            >
-              <RuiIcon
-                :name="existingWatchersIcon(watcher.identifier)"
-                size="20"
+          <ReuseLabel :label="t('watcher_dialog.edit')" />
+          <div
+            v-for="(watcher, key) in loadedWatchers"
+            :key="key"
+            class="flex items-center gap-4"
+          >
+            <div class="grid grid-cols-2 gap-4">
+              <RuiMenuSelect
+                v-model="loadedWatchers[key].args.op"
+                :options="operations"
+                :label="t('watcher_dialog.labels.operation')"
+                :disabled="!existingWatchersEdit[watcher.identifier]"
+                key-attr="value"
+                text-attr="text"
+                dense
+                full-width
+                variant="outlined"
+                required
               />
-            </RuiButton>
-            <RuiButton
-              variant="text"
-              icon
-              @click="deleteWatcher(watcher.identifier)"
-            >
-              <RuiIcon
-                name="delete-bin-5-line"
-                size="20"
-              />
-            </RuiButton>
+
+              <RuiTextField
+                v-model="loadedWatchers[key].args.ratio"
+                :label="watcherValueLabel"
+                :disabled="!existingWatchersEdit[watcher.identifier]"
+                dense
+                color="primary"
+                hide-details
+                variant="outlined"
+              >
+                <template #append>
+                  {{ t('percentage_display.symbol') }}
+                </template>
+              </RuiTextField>
+            </div>
+
+            <div class="flex items-center gap-2 justify-end">
+              <RuiButton
+                variant="text"
+                icon
+                @click="editWatcher(loadedWatchers[key])"
+              >
+                <RuiIcon
+                  :name="existingWatchersIcon(watcher.identifier)"
+                  size="20"
+                />
+              </RuiButton>
+              <RuiButton
+                variant="text"
+                icon
+                @click="deleteWatcher(watcher.identifier)"
+              >
+                <RuiIcon
+                  name="delete-bin-5-line"
+                  size="20"
+                />
+              </RuiButton>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="flex flex-col gap-4 mt-4">
-        <ReuseLabel :label="t('watcher_dialog.add_watcher')" />
-        <div class="flex items-center justify-between gap-4">
-          <div class="grid grid-cols-2 gap-4">
-            <RuiMenuSelect
-              v-model="watcherOperation"
-              :disabled="!watcherType"
-              :options="operations"
-              :label="t('watcher_dialog.labels.operation')"
-              key-attr="value"
-              text-attr="text"
-              full-width
-              float-label
-              dense
-              variant="outlined"
-              required
-            />
+        <div class="flex flex-col gap-4">
+          <ReuseLabel :label="t('watcher_dialog.add_watcher')" />
+          <div class="flex items-center gap-4">
+            <div class="grid grid-cols-2 gap-4">
+              <RuiMenuSelect
+                v-model="watcherOperation"
+                :disabled="!watcherType"
+                :options="operations"
+                :label="t('watcher_dialog.labels.operation')"
+                key-attr="value"
+                text-attr="text"
+                full-width
+                dense
+                variant="outlined"
+                required
+              />
 
-            <RuiTextField
-              v-model="watcherValue"
-              :label="watcherValueLabel"
-              color="primary"
-              dense
-              hide-details
-              variant="outlined"
+              <RuiTextField
+                v-model="watcherValue"
+                :label="watcherValueLabel"
+                color="primary"
+                dense
+                hide-details
+                variant="outlined"
+              >
+                <template #append>
+                  {{ t('percentage_display.symbol') }}
+                </template>
+              </RuiTextField>
+            </div>
+
+            <RuiButton
+              :disabled="watcherOperation === null || watcherValue === null"
+              variant="text"
+              icon
+              @click="addWatcher()"
             >
-              <template #append>
-                {{ t('percentage_display.symbol') }}
-              </template>
-            </RuiTextField>
+              <RuiIcon name="add-line" />
+            </RuiButton>
           </div>
-
-          <RuiButton
-            :disabled="watcherOperation === null || watcherValue === null"
-            variant="text"
-            icon
-            size="sm"
-            @click="addWatcher()"
-          >
-            <RuiIcon name="add-line" />
-          </RuiButton>
         </div>
       </div>
 
@@ -412,5 +400,5 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ label: string }>();
         </RuiButton>
       </template>
     </RuiCard>
-  </VDialog>
+  </RuiDialog>
 </template>

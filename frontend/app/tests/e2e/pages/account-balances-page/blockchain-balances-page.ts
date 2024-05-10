@@ -55,7 +55,7 @@ export class BlockchainBalancesPage {
     }
 
     cy.get('[data-cy=bottom-dialog]', { timeout: 120000 }).should(
-      'not.be.visible',
+      'not.exist',
     );
   }
 
@@ -153,7 +153,7 @@ export class BlockchainBalancesPage {
       .find('> tbody > tr > td div[role=progressbar]', {
         timeout: 240000,
       })
-      .should('not.be.exist');
+      .should('not.exist');
 
     cy.get(`@${blockchain}-table`)
       .find(
@@ -184,7 +184,7 @@ export class BlockchainBalancesPage {
     cy.get('@account-label').type(label);
     cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').click();
     cy.get('[data-cy=bottom-dialog]', { timeout: 120000 }).should(
-      'not.be.visible',
+      'not.exist',
     );
   }
 
@@ -203,7 +203,7 @@ export class BlockchainBalancesPage {
 
     cy.get(`[data-cy=account-table][data-location=${balance.blockchain}]`, {
       timeout: 120000,
-    }).should('not.be.exist');
+    }).should('not.exist');
   }
 
   confirmDelete() {

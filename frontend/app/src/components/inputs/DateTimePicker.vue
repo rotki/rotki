@@ -384,7 +384,7 @@ function filteredListeners(listeners: any) {
           </RuiButton>
         </template>
 
-        <VApp>
+        <AppBridge>
           <VAutocomplete
             v-model="selectedTimezone"
             :label="t('date_time_picker.select_timezone')"
@@ -395,7 +395,7 @@ function filteredListeners(listeners: any) {
             :error-messages="toMessages(v$.timezone)"
             :items="timezones"
           />
-        </VApp>
+        </AppBridge>
       </RuiMenu>
       <RuiButton
         data-cy="date-time-picker__set-now-button"

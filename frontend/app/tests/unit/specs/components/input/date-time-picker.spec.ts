@@ -8,7 +8,6 @@ import { type Pinia, setActivePinia } from 'pinia';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { DateFormat } from '@/types/date-format';
 import { createCustomPinia } from '../../../utils/create-pinia';
-import { VAutocompleteStub } from '../../stubs/VAutocomplete';
 
 vi.mock('@/composables/api/settings/settings-api', () => ({
   useSettingsApi: vi.fn().mockReturnValue({
@@ -40,7 +39,6 @@ describe('dateTimePicker.vue', () => {
         RuiMenu: {
           template: '<span><slot name="activator"/><slot /></span>',
         },
-        VAutocomplete: VAutocompleteStub,
         TransitionGroup: '<span><slot /></span>',
       },
       ...options,

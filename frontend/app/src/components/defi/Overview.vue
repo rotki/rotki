@@ -132,9 +132,8 @@ const imageUrl = computed(() => {
     <RuiDivider class="my-4" />
 
     <div class="flex justify-end">
-      <VDialog
+      <RuiDialog
         v-model="details"
-        scrollable
         max-width="450px"
       >
         <template #activator="{ on }">
@@ -154,7 +153,7 @@ const imageUrl = computed(() => {
             </template>
           </RuiButton>
         </template>
-        <RuiCard>
+        <RuiCard divide>
           <template #custom-header>
             <div class="flex items-center p-4 gap-4">
               <AppImage
@@ -173,17 +172,15 @@ const imageUrl = computed(() => {
               </RuiCardHeader>
             </div>
           </template>
-          <div class="h-[300px]">
-            <div
+          <div class="h-[300px] flex flex-col gap-2">
+            <DefiAsset
               v-for="(asset, index) in assets"
               :key="index"
-            >
-              <RuiDivider />
-              <DefiAsset :asset="asset" />
-            </div>
+              :asset="asset"
+            />
           </div>
         </RuiCard>
-      </VDialog>
+      </RuiDialog>
     </div>
   </StatCard>
 </template>

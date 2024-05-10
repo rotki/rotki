@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { DialogType, themes } from '@/types/dialogs';
-
 const props = withDefaults(
   defineProps<{
     title: string;
@@ -10,7 +8,6 @@ const props = withDefaults(
     actionDisabled?: boolean;
     primaryAction?: string | null;
     secondaryAction?: string | null;
-    confirmType?: DialogType;
     maxWidth?: string;
     persistent?: boolean;
     divide?: boolean;
@@ -22,7 +19,6 @@ const props = withDefaults(
     actionDisabled: false,
     primaryAction: () => null,
     secondaryAction: () => null,
-    confirmType: DialogType.INFO,
     maxWidth: '900px',
     persistent: false,
     divide: false,
@@ -36,7 +32,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const { subtitle, primaryAction, secondaryAction } = toRefs(props);
+const { subtitle, primaryAction, secondaryAction, display } = toRefs(props);
 const wrapper = ref<HTMLElement>();
 
 const primary = computed(
@@ -50,75 +46,83 @@ const confirm = () => emit('confirm');
 const cancel = () => emit('cancel');
 
 const css = useCssModule();
+
+const displayModel = computed({
+  get() {
+    return get(display);
+  },
+  set(value) {
+    if (!value)
+      cancel();
+  },
+});
 </script>
 
 <template>
-  <VBottomSheet
-    :value="display"
+  <RuiBottomSheet
+    v-model="displayModel"
     v-bind="$attrs"
-    over
     :persistent="persistent"
     class="big-dialog"
     width="98%"
     :max-width="maxWidth"
-    @click:outside="!persistent && cancel()"
-    @keydown.esc.stop="!persistent && cancel()"
-    @input="!persistent && cancel()"
   >
-    <RuiCard
-      :divide="divide"
-      data-cy="bottom-dialog"
-      class="!rounded-b-none"
-    >
-      <template #header>
-        <slot name="header">
-          {{ title }}
-        </slot>
-      </template>
-      <template
-        v-if="subtitle || $slots.subtitle"
-        #subheader
+    <AppBridge>
+      <RuiCard
+        :divide="divide"
+        data-cy="bottom-dialog"
+        class="!rounded-b-none"
       >
-        <slot name="subtitle">
-          {{ subtitle }}
-        </slot>
-      </template>
-      <div
-        v-if="display"
-        ref="wrapper"
-        class="overflow-y-auto -mx-4 px-4 -mt-4 pt-2 pb-4"
-        :class="[css.card, { [css['auto-height']]: autoHeight }]"
-      >
-        <slot :wrapper="wrapper" />
-      </div>
-
-      <RuiDivider class="mb-4 -mx-4" />
-
-      <slot name="footer">
-        <div class="flex flex-row gap-2 w-full">
-          <slot name="left-buttons" />
-          <div class="grow" />
-          <RuiButton
-            color="primary"
-            variant="outlined"
-            data-cy="cancel"
-            @click="cancel()"
-          >
-            {{ secondary }}
-          </RuiButton>
-          <RuiButton
-            data-cy="confirm"
-            :color="themes[confirmType].color"
-            :disabled="actionDisabled || loading"
-            :loading="loading"
-            @click="confirm()"
-          >
-            {{ primary }}
-          </RuiButton>
+        <template #header>
+          <slot name="header">
+            {{ title }}
+          </slot>
+        </template>
+        <template
+          v-if="subtitle || $slots.subtitle"
+          #subheader
+        >
+          <slot name="subtitle">
+            {{ subtitle }}
+          </slot>
+        </template>
+        <div
+          v-if="display"
+          ref="wrapper"
+          class="overflow-y-auto -mx-4 px-4 -mt-4 pt-2 pb-4"
+          :class="[css.card, { [css['auto-height']]: autoHeight }]"
+        >
+          <slot :wrapper="wrapper" />
         </div>
-      </slot>
-    </RuiCard>
-  </VBottomSheet>
+
+        <RuiDivider class="mb-4 -mx-4" />
+
+        <slot name="footer">
+          <div class="flex flex-row gap-2 w-full">
+            <slot name="left-buttons" />
+            <div class="grow" />
+            <RuiButton
+              color="primary"
+              variant="outlined"
+              data-cy="cancel"
+              @click="cancel()"
+            >
+              {{ secondary }}
+            </RuiButton>
+            <RuiButton
+              data-cy="confirm"
+              color="primary"
+              :disabled="actionDisabled || loading"
+              :loading="loading"
+              @click="confirm()"
+            >
+              {{ primary }}
+            </RuiButton>
+          </div>
+        </slot>
+      </RuiCard>
+    </AppBridge>
+  </RuiBottomSheet>
 </template>
 
 <style module lang="scss">

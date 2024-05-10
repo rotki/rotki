@@ -212,7 +212,6 @@ onMounted(async () => {
           text-attr="text"
           dense
           full-width
-          float-label
           variant="outlined"
         />
       </div>

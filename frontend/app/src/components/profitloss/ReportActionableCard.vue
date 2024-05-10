@@ -210,6 +210,7 @@ function close() {
 <template>
   <RuiCard
     no-padding
+    class="overflow-hidden"
     :class="{ '!rounded-none': isPinned }"
     variant="flat"
   >

@@ -170,7 +170,6 @@ function buttonClicked() {
       <RuiTooltip
         :popper="{ placement: 'bottom', offsetDistance: 0 }"
         :open-delay="400"
-        class="z-[9999]"
       >
         <template #activator>
           <RuiButton
@@ -247,7 +246,6 @@ function buttonClicked() {
       <RuiTooltip
         :popper="{ placement: 'bottom', offsetDistance: 0 }"
         :open-delay="400"
-        class="z-[9999]"
       >
         <template #activator>
           <RuiButton
