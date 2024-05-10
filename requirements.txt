@@ -46,3 +46,6 @@ bip-utils==2.9.3
 
 #constraints
 pycparser<=2.17 # ugly -- to avoid https://github.com/eliben/pycparser/pull/198
+
+# To build JWT 
+PyJWT==2.8.0
