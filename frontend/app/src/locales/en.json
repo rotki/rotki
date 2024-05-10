@@ -3533,7 +3533,7 @@
     "missing_api_key": {
       "action": "Enter key",
       "get_key": "Get API key",
-      "message": "Rotki queries for {location} chain is working slower because you dont have {location} {service} API key configured. Press \"@:notification_messages.missing_api_key.get_key\" to make one or \"@:notification_messages.missing_api_key.action\" to add it in the app.",
+      "message": "Rotki queries for {location} chain are working slower because you dont have {location} {service} API key configured. Press \"@:notification_messages.missing_api_key.get_key\" to make one or \"@:notification_messages.missing_api_key.action\" to add it in the app.",
       "title": "{location} {service} API key"
     },
     "new_detected_token": {
