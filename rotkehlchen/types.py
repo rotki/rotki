@@ -131,6 +131,7 @@ class ExternalService(SerializableEnumNameMixin):
     SCROLL_ETHERSCAN = auto()
     BLOCKSCOUT = auto()
     MONERIUM = auto()
+    THEGRAPH = auto()
 
     def get_chain_for_etherscan(self) -> Optional['ChainID']:
         """If the service is an etherscan service return its chain"""
