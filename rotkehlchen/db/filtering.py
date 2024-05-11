@@ -312,7 +312,7 @@ class DBFilterQuery(ABC):
             with_pagination: bool = True,
             with_order: bool = True,
             with_group_by: bool = False,
-            special_free_query: bool = False,
+            without_ignored_asset_filter: bool = False,
     ) -> tuple[str, list[Any]]:
         """Prepares a filter by converting the filters to a query string
 
@@ -320,9 +320,9 @@ class DBFilterQuery(ABC):
         - with_pagination: Use or not the pagination filters
         - with_order: Use or not the order by filters
         - with_group_by: Use or not the group by filters
-        - special_free_query: This is only for history events query and since we have quite
-        a complicated query in the backend to count the limited grouped history events, there is
-        no need to rerun the ignored assets filter as it's already part of the inner
+        - without_ignored_asset_filter: This is only for history events query and since we have
+        quite a complicated query in the backend to count the limited grouped history events, there
+        is no need to rerun the ignored assets filter as it's already part of the inner
         query in order to not count ignored/spam assets in the limit of free events.
         TODO: Quite hacky. Improve this.
         """
@@ -336,7 +336,7 @@ class DBFilterQuery(ABC):
             bindings.extend(single_bindings)
 
         for fil in self.filters:
-            if special_free_query and isinstance(fil, DBIgnoredAssetsFilter):
+            if without_ignored_asset_filter and isinstance(fil, DBIgnoredAssetsFilter):
                 continue  # skip subtable select filter as it's already applied
 
             filters, single_bindings = fil.prepare()

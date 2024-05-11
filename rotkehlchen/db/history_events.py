@@ -66,15 +66,20 @@ log = RotkehlchenLogsAdapter(logger)
 
 def maybe_filter_ignore_asset(
         filter_query: HistoryBaseEntryFilterQuery,
+        include_ignored_assets: bool = False,
 ) -> str:
     """An auxiliar function to find if query_filter contains `DBIgnoredAssetsFilter`. If it does
     then return that filter clause. This is done where we want to filter ignored assets
-    before applying the free limit."""
+    before applying the free limit. If `include_ignored_assets` is true then the filter is returned
+    to include them."""
     for fil in filter_query.filters:
         if isinstance(fil, DBIgnoredAssetsFilter):
             # Also don't count spam asset transactions in the limit
-            return 'WHERE (asset IS NULL OR asset NOT IN (SELECT value FROM multisettings WHERE name="ignored_asset")) '  # noqa: E501
-    return ' '
+            ignored_asset_subquery = 'SELECT value FROM multisettings WHERE name="ignored_asset")'
+            if include_ignored_assets:
+                return f'WHERE (asset IN ({ignored_asset_subquery}) '
+            return f'WHERE (asset IS NULL OR asset NOT IN ({ignored_asset_subquery}) '
+    return ''
 
 
 class DBHistoryEvents:
@@ -310,6 +315,46 @@ class DBHistoryEvents:
 
         return deserialized
 
+    def _create_history_events_query(
+            self,
+            filter_query: HistoryBaseEntryFilterQuery,
+            entries_limit: int,
+            has_premium: bool,
+            group_by_event_ids: bool = False,
+    ) -> tuple[str, list]:
+        """Returns the sql queries and bindings for the history events without pagination."""
+        base_suffix = f'{HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS}, {ETH_STAKING_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN}'  # noqa: E501
+        if (ignore_asset_filter := maybe_filter_ignore_asset(filter_query, include_ignored_assets=True)) != '':  # noqa: E501
+            ignore_asset_filter = (
+                f' WHERE event_identifier NOT IN '
+                f'(SELECT DISTINCT event_identifier FROM history_events {ignore_asset_filter})'
+            )
+
+        premium_base_suffix = f'{base_suffix} {ignore_asset_filter}'
+        free_base_suffix = (
+            f'* FROM (SELECT {base_suffix}) WHERE event_identifier IN ('
+            f'SELECT DISTINCT event_identifier FROM history_events {ignore_asset_filter} '
+            'ORDER BY timestamp DESC,sequence_index ASC LIMIT ?)'  # free query only select the last LIMIT groups  # noqa: E501
+        )
+
+        if has_premium:
+            suffix, limit = premium_base_suffix, []
+        else:
+            suffix, limit = free_base_suffix, [entries_limit]
+
+        if group_by_event_ids:
+            filters, query_bindings = filter_query.prepare(
+                with_group_by=True,
+                with_pagination=False,
+                without_ignored_asset_filter=True,
+            )
+            prefix = 'SELECT COUNT(*), *'
+        else:
+            filters, query_bindings = filter_query.prepare(with_pagination=False)
+            prefix = 'SELECT *'
+
+        return f'{prefix} FROM (SELECT {suffix}) {filters}', limit + query_bindings
+
     @overload
     def get_history_events(
             self,
@@ -397,40 +442,19 @@ class DBHistoryEvents:
         TODO: To not query all columns with all joins for all cases, we perhaps can
         peek on the entry type of the filter and adjust the SELECT fields accordingly?
         """
-        base_prefix = 'SELECT '
-        base_suffix = f'{HISTORY_BASE_ENTRY_FIELDS}, {EVM_EVENT_FIELDS}, {ETH_STAKING_EVENT_FIELDS} {ALL_EVENTS_DATA_JOIN}'  # noqa: E501
-        bindings = []
-        type_idx = 1 if group_by_event_ids is True else 0
-        special_free_query = False
-        free_query_group_by = maybe_filter_ignore_asset(filter_query)
-
-        if has_premium is True:
-            if group_by_event_ids is True:
-                base_prefix += 'COUNT(*), '
-            base_query = f'{base_prefix} {base_suffix}'
-        else:
-            if group_by_event_ids is True:
-                special_free_query = True  # a bit ugly conditions to keep limit at groups for free users  # noqa: E501
-                free_query_group_by += 'GROUP BY event_identifier'
-                base_query = (
-                    f'{base_prefix} * FROM (SELECT COUNT(*), {base_suffix} '
-                    f'{free_query_group_by} ORDER BY timestamp DESC, sequence_index ASC LIMIT ?) '
-                )
-            else:  # if we don't group them but still apply free limit, then apply this limit only on any event_identifiers that fall inside the limit  # noqa: E501
-                base_query = (
-                    f'{base_prefix} * FROM (SELECT {base_suffix} WHERE event_identifier IN '
-                    f'(SELECT DISTINCT event_identifier FROM history_events {free_query_group_by} ORDER BY timestamp DESC, sequence_index ASC LIMIT ?)) '  # noqa: E501
-                )
-            bindings = [FREE_HISTORY_EVENTS_LIMIT]
-
-        prepared_query, prepared_bindings = filter_query.prepare(
-            with_group_by=group_by_event_ids,
-            special_free_query=special_free_query,
+        base_query, filters_bindings = self._create_history_events_query(
+            has_premium=has_premium,
+            filter_query=filter_query,
+            group_by_event_ids=group_by_event_ids,
+            entries_limit=FREE_HISTORY_EVENTS_LIMIT,
         )
-        bindings.extend(prepared_bindings)
 
-        cursor.execute(base_query + prepared_query, bindings)
+        if filter_query.pagination is not None:
+            base_query = f'SELECT * FROM ({base_query}) {filter_query.pagination.prepare()}'
+
+        cursor.execute(base_query, filters_bindings)
         output: list[HistoryBaseEntry] | list[tuple[int, HistoryBaseEntry]] = []
+        type_idx = 1 if group_by_event_ids else 0
         data_start_idx = type_idx + 1
         for entry in cursor:
             entry_type = HistoryBaseEntryType(entry[type_idx])
@@ -642,36 +666,32 @@ class DBHistoryEvents:
         the number of events if any limit is applied, otherwise the second value matches
         the first.
         """
-        prepared_query, bindings = query_filter.prepare(with_pagination=False)
-        # we need to select everything because any column could be used in the filter
-        query = f'SELECT {query_filter.get_columns()} {query_filter.get_join_query()} {prepared_query}'  # noqa: E501
-        if group_by_event_ids:
-            query = f'SELECT event_identifier FROM ({query}) GROUP BY event_identifier'
-        query = f'SELECT COUNT(*) FROM ({query})'
-        count_without_limit = cursor.execute(query, bindings).fetchone()[0]
+        free_limit = FREE_HISTORY_EVENTS_LIMIT if entries_limit is None else entries_limit
+        premium_query, premium_bindings = self._create_history_events_query(
+            has_premium=True,
+            filter_query=query_filter,
+            group_by_event_ids=group_by_event_ids,
+            entries_limit=free_limit,
+        )
+        count_without_limit = cursor.execute(
+            f'SELECT COUNT(*) FROM ({premium_query})',
+            premium_bindings,
+        ).fetchone()[0]
 
-        if entries_limit is not None:
-            prepared_query, bindings = query_filter.prepare(
-                with_group_by=False,
-                special_free_query=True,
-                with_order=False,
-                with_pagination=False,
-            )
+        if entries_limit is None:
+            return count_without_limit, count_without_limit
 
-            free_query_group_by = maybe_filter_ignore_asset(query_filter)
-            group_by_query = ''
-            if group_by_event_ids:
-                group_by_query = 'GROUP BY event_identifier ORDER BY timestamp DESC, sequence_index ASC LIMIT ?'  # noqa: E501
-                bindings.insert(0, entries_limit)  # add limit's binding before prepared_query's bindings  # noqa: E501
-            count_with_limit = cursor.execute(
-                f'SELECT COUNT(*) FROM ('
-                f'SELECT {query_filter.get_columns()} {query_filter.get_join_query()}{free_query_group_by}'  # we take the groups before the limit has been applied  # noqa: E501
-                f'{group_by_query}){prepared_query}',
-                bindings,
-            ).fetchone()[0]
-            return count_without_limit, count_with_limit
-
-        return count_without_limit, count_without_limit
+        free_query, free_bindings = self._create_history_events_query(
+            has_premium=False,
+            filter_query=query_filter,
+            group_by_event_ids=group_by_event_ids,
+            entries_limit=free_limit,
+        )
+        count_with_limit = cursor.execute(
+            f'SELECT COUNT(*) FROM ({free_query})',
+            free_bindings,
+        ).fetchone()[0]
+        return count_without_limit, count_with_limit
 
     def get_value_stats(
             self,

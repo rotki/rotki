@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`6115` Now free users can filter history events too. 
 * :feature:`7570` Users can choose whether to automatically force-push when a time discrepancy warning occurs during automatic database sync.
 * :feature:`-` Degen airdrop 2 season 3 claim event should now be properly decoded in the history events view.
 * :feature:`-` The eigenlayer airdrop claim event should now be properly decoded in the history events view.

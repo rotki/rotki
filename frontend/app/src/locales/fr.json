@@ -4384,7 +4384,6 @@
       "tx_hash": "filtrer par hash de transaction(s)",
       "validator_index": "filtrer par index de validateur(s)"
     },
-    "filtering_premium_hint": "@:common.available_to_premium @:common.visit_website",
     "form": {
       "account": {
         "label": "Compte associé à la transaction",

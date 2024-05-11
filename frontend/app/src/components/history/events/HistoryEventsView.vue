@@ -518,7 +518,6 @@ watch(
   },
 );
 
-const premium = usePremium();
 const { isLoading: isSectionLoading } = useStatusStore();
 const sectionLoading = isSectionLoading(Section.HISTORY_EVENT);
 const eventTaskLoading = isTaskRunning(TaskType.TRANSACTIONS_DECODING);
@@ -804,23 +803,8 @@ watchImmediate(route, async (route) => {
             :matches="filters"
             :matchers="matchers"
             :location="SavedFilterLocation.HISTORY_EVENTS"
-            :disabled="!premium"
             @update:matches="setFilter($event)"
-          >
-            <template #tooltip>
-              <i18n
-                tag="span"
-                path="transactions.filtering_premium_hint"
-              >
-                <ExternalLink
-                  class="!font-bold !text-white"
-                  premium
-                >
-                  {{ t('common.website') }}
-                </ExternalLink>
-              </i18n>
-            </template>
-          </TableFilter>
+          />
         </template>
 
         <RuiButton
