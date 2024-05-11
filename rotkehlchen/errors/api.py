@@ -31,3 +31,7 @@ class PremiumPermissionError(Exception):
 
 class IncorrectApiKeyFormat(Exception):
     pass
+
+
+class APIKeyNotConfigured(Exception):
+    """API key for service not provided"""

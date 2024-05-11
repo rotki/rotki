@@ -20,6 +20,7 @@ from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.errors.api import APIKeyNotConfigured
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.cache import (
@@ -115,7 +116,11 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
         self.ethereum = ethereum_inquirer
         CustomizableDateMixin.__init__(self, base_tools.database)
         self.eth = A_ETH.resolve_to_crypto_asset()
-        self.graph = Graph('https://api.thegraph.com/subgraphs/name/ensdomains/ens')
+        self.graph = Graph(
+            subgraph_id='5XqPmWe6gjyrJtFn9cLy237i4cWw2j9HcUJEXsP5qGtH',
+            database=self.database,
+            label='ENS',
+        )
 
     def _decode_ens_registrar_event(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] in (
@@ -264,8 +269,12 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
                     f'during decoding events. Not adding name to event',
                 )
                 name_to_show = ''
-            else:
-                pass
+            except APIKeyNotConfigured as e:
+                name_to_show = ''
+                log.warning(
+                    f'Not adding name to ENS event in {context.transaction.tx_hash.hex()} since '
+                    f'The Graph cannot be queried. {e}',
+                )
         else:
             name_to_show = f'{found_name}.eth '
 
@@ -338,6 +347,11 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
                     f'Failed to query graph for namehash to ENS name in '
                     f'{tx_hash.hex()} due to {msg} '
                     f'during decoding events. Not adding name to event',
+                )
+            except APIKeyNotConfigured as e:
+                log.warning(
+                    f'Not adding name to ENS event in {tx_hash.hex()} since '
+                    f'The Graph cannot be queried. {e}',
                 )
             else:
                 if '].addr.reverse' in name_to_show:  # then this node is not a namehash
