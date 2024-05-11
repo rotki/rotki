@@ -273,7 +273,7 @@ class Okx(ExchangeInterface):
                 continue
 
             try:
-                amount = deserialize_asset_amount(currency_data['availBal'])+deserialize_asset_amount(currency_data['frozenBal'])
+                amount = deserialize_asset_amount(currency_data['availBal']) + deserialize_asset_amount(currency_data['frozenBal'])
             except DeserializationError as e:
                 self.msg_aggregator.add_error(
                     f'Error processing {self.name} {asset.name} balance result due to inability '
