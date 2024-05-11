@@ -26,7 +26,9 @@ def test_query_withdrawals(blockscout, database):
     with database.conn.read_ctx() as cursor:
         events = dbevents.get_history_events(
             cursor=cursor,
-            filter_query=EthWithdrawalFilterQuery.make(),
+            filter_query=EthWithdrawalFilterQuery.make(
+                order_by_rules=[('timestamp', True), ('history_events_identifier', True)],
+            ),
             has_premium=True,
             group_by_event_ids=False,
         )

@@ -1,4 +1,5 @@
 from typing import Any
+from unittest.mock import patch
 
 import pytest
 
@@ -6,7 +7,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.api.v1.types import IncludeExcludeFilterData
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import A_ETH, A_USDC, A_USDT
 from rotkehlchen.constants.limits import FREE_HISTORY_EVENTS_LIMIT
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.db.dbhandler import DBHandler
@@ -311,3 +312,184 @@ def test_delete_last_event(database):
     assert 'was the last event of a transaction' in msg
     with db.db.conn.read_ctx() as cursor:
         assert len(db.get_history_events(cursor, HistoryEventFilterQuery.make(), True)) == 1, 'EVM event should be left'  # noqa: E501
+
+
+def test_get_history_events_free_filter(database: 'DBHandler'):
+    """Test that the history events filter works consistently with has_premium=True/False"""
+    history_events = DBHistoryEvents(database=database)
+    event_identifiers = [make_evm_tx_hash().hex() for _ in range(5)]  # pylint: disable=no-member
+    dummy_events = (
+        HistoryEvent(
+            event_identifier=event_identifiers[0],
+            sequence_index=0,
+            timestamp=TimestampMS(1000),
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(ONE),
+        ), HistoryEvent(
+            event_identifier=event_identifiers[1],
+            sequence_index=0,
+            timestamp=TimestampMS(2000),
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(FVal(2)),
+        ), HistoryEvent(
+            event_identifier=event_identifiers[1],
+            sequence_index=1,
+            timestamp=TimestampMS(2000),
+            location=Location.COINBASE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_USDC,
+            balance=Balance(FVal(1000)),
+        ), HistoryEvent(
+            event_identifier=event_identifiers[2],
+            sequence_index=0,
+            timestamp=TimestampMS(3000),
+            location=Location.BLOCKCHAIN,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_USDT,
+            balance=Balance(FVal(5)),
+        ), HistoryEvent(
+            event_identifier=event_identifiers[2],
+            sequence_index=1,
+            timestamp=TimestampMS(3000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_USDT,
+            balance=Balance(amount=FVal('1.5')),
+        ), HistoryEvent(
+            event_identifier=event_identifiers[2],
+            sequence_index=2,
+            timestamp=TimestampMS(3000),
+            location=Location.COINBASE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_USDT,
+            balance=Balance(amount=FVal('0.02762431')),
+        ), HistoryEvent(
+            event_identifier=event_identifiers[3],
+            sequence_index=0,
+            timestamp=TimestampMS(4000),
+            location=Location.COINBASE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_USDT,
+            balance=Balance(amount=FVal('0.000076')),
+        ), HistoryEvent(
+            event_identifier=event_identifiers[3],
+            sequence_index=1,
+            timestamp=TimestampMS(4000),
+            location=Location.COINBASE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(amount=ONE),
+        ), HistoryEvent(
+            event_identifier=event_identifiers[3],
+            sequence_index=2,
+            timestamp=TimestampMS(4000),
+            location=Location.COINBASE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(1000)),
+        ), HistoryEvent(
+            event_identifier=event_identifiers[4],
+            sequence_index=0,
+            timestamp=TimestampMS(5000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_USDT,
+            balance=Balance(amount=ONE),
+        ),
+    )
+    with database.conn.write_ctx() as write_cursor:
+        history_events.add_history_events(  # add dummy history events
+            write_cursor=write_cursor,
+            history=dummy_events,
+        )
+        database.add_to_ignored_assets(
+            write_cursor=write_cursor,
+            asset=A_USDC,
+        )
+
+    with database.conn.read_ctx() as cursor:
+        # free and premium results should be same with len(events) < FREE_LIMIT
+        for filters in (  # trying different filters with some combinations
+            HistoryEventFilterQuery.make(location=Location.OPTIMISM),
+            HistoryEventFilterQuery.make(assets=(A_ETH,)),
+            HistoryEventFilterQuery.make(assets=(A_ETH,), location=Location.COINBASE),
+            HistoryEventFilterQuery.make(from_ts=Timestamp(2)),
+            HistoryEventFilterQuery.make(assets=(A_USDT,), to_ts=Timestamp(3)),
+            HistoryEventFilterQuery.make(exclude_ignored_assets=True),
+        ):
+            assert history_events.get_history_events(  # when grouping
+                cursor=cursor,
+                filter_query=filters,
+                has_premium=True,
+                group_by_event_ids=True,
+            ) == history_events.get_history_events(
+                cursor=cursor,
+                filter_query=filters,
+                has_premium=False,
+                group_by_event_ids=True,
+            ) != []
+            assert history_events.get_history_events(  # when not grouping
+                cursor=cursor,
+                filter_query=filters,
+                has_premium=True,
+                group_by_event_ids=False,
+            ) == history_events.get_history_events(
+                cursor=cursor,
+                filter_query=filters,
+                has_premium=False,
+                group_by_event_ids=False,
+            ) != []
+
+        with patch(target='rotkehlchen.db.history_events.FREE_HISTORY_EVENTS_LIMIT', new=3):
+            for filters in (  # trying different filters with some combinations
+                HistoryEventFilterQuery.make(event_subtypes=[HistoryEventSubType.NONE]),
+                HistoryEventFilterQuery.make(assets=(A_ETH, A_USDT)),
+                HistoryEventFilterQuery.make(from_ts=Timestamp(2)),
+                HistoryEventFilterQuery.make(assets=(A_ETH, A_USDC, A_USDT)),
+                HistoryEventFilterQuery.make(exclude_ignored_assets=True),
+            ):
+                premium_grouped_result = history_events.get_history_events(  # when grouping
+                    cursor=cursor,
+                    filter_query=filters,
+                    has_premium=True,
+                    group_by_event_ids=True,
+                )
+                assert len(premium_grouped_result) > 3
+                free_grouped_result = history_events.get_history_events(
+                    cursor=cursor,
+                    filter_query=filters,
+                    has_premium=False,
+                    group_by_event_ids=True,
+                )
+                assert len(free_grouped_result) == min(3, len(premium_grouped_result))
+                assert free_grouped_result == premium_grouped_result[-3:]
+                premium_result = history_events.get_history_events(  # when not grouping
+                    cursor=cursor,
+                    filter_query=filters,
+                    has_premium=True,
+                    group_by_event_ids=False,
+                )
+                assert len(premium_result) > 3
+                free_result = history_events.get_history_events(
+                    cursor=cursor,
+                    filter_query=filters,
+                    has_premium=False,
+                    group_by_event_ids=False,
+                )
+                for free_event in free_result:
+                    assert free_event.identifier is not None
+                    assert free_event.identifier > 3, 'Free sub-events should be from the latest 3 event groups'  # noqa: E501

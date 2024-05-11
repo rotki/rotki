@@ -1992,7 +1992,6 @@
         "message_all": "Are you sure you want to purge the cached data for all {source}?",
         "title": "Confirm cached data purge"
       },
-
       "error": "Purging the cached data for {source} failed: {message}",
       "subtitle": "Allows you to purge data cached by rotki",
       "success": "Data was successfully deleted",
@@ -4566,7 +4565,6 @@
       "tx_hash": "filter by tx hash(es)",
       "validator_index": "filter by validator index(es)"
     },
-    "filtering_premium_hint": "@:common.available_to_premium @:common.visit_website",
     "form": {
       "account": {
         "label": "Account to be associated with the transaction",

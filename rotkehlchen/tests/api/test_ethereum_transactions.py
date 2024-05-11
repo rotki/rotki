@@ -1242,8 +1242,8 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
     tx3 = make_ethereum_transaction(timestamp=3)
     event1 = make_ethereum_event(tx_hash=tx1.tx_hash, index=1, asset=A_ETH, timestamp=TimestampMS(1))  # noqa: E501
     event2 = make_ethereum_event(tx_hash=tx1.tx_hash, index=2, asset=A_BTC, timestamp=TimestampMS(1))  # noqa: E501
-    event3 = make_ethereum_event(tx_hash=tx1.tx_hash, index=3, asset=A_MKR, timestamp=TimestampMS(1))  # noqa: E501
-    event4 = make_ethereum_event(tx_hash=tx2.tx_hash, index=4, asset=A_DAI, timestamp=TimestampMS(2))  # noqa: E501
+    event3 = make_ethereum_event(tx_hash=tx2.tx_hash, index=3, asset=A_MKR, timestamp=TimestampMS(1))  # noqa: E501
+    event4 = make_ethereum_event(tx_hash=tx3.tx_hash, index=4, asset=A_DAI, timestamp=TimestampMS(2))  # noqa: E501
     with db.user_write() as cursor:
         dbevmtx.add_evm_transactions(cursor, [tx1, tx2, tx3], relevant_address=ethereum_accounts[0])  # noqa: E501
         dbevents.add_history_events(cursor, [event1, event2, event3, event4])
@@ -1254,8 +1254,8 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
             'exclude_ignored_assets': False,
             'location': 'ethereum',
         },
-        expected_num_with_grouping=2,
-        expected_totals_with_grouping=2,
+        expected_num_with_grouping=3,
+        expected_totals_with_grouping=3,
         entries_limit=100,
     )
     expected = generate_events_response([event4, event1, event2, event3])
@@ -1265,10 +1265,10 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
         rotkehlchen_api_server,  # test that default exclude_ignored_assets is True
         json={'location': 'ethereum'},
         expected_num_with_grouping=1,
-        expected_totals_with_grouping=2,
+        expected_totals_with_grouping=3,
         entries_limit=100,
     )
-    expected = generate_events_response([event1, event3])
+    expected = generate_events_response([event3])
     assert returned_events == expected
 
 
