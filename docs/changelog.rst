@@ -1,6 +1,7 @@
 =========
 Changelog
 =========
+* :feature:`-` Support for Lido contracts decoding on ethereum chain
 
 * :feature:`-` rotki decodes transactions and detects balances related to Blur staking.
 * :feature:`1633` rotki now supports AAVE staking.

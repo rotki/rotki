@@ -67,6 +67,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'HarvestFinance',
         'Juicebox',
         'Kyber',
+        'Lido',
         'Liquity',
         'Lockedgno',
         'Makerdao',
@@ -182,6 +183,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'eigenlayer',
         'omni',
         'blur',
+        'lido',
     }
 
 
