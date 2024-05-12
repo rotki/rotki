@@ -974,7 +974,7 @@ class LocationAssetMappingUpdateEntry(LocationAssetMappingDeleteEntry):
 T = TypeVar('T')
 
 
-class GenericOptionalChainAddress(Generic[T], NamedTuple):
+class GenericOptionalChainAddress(NamedTuple, Generic[T]):
     address: T
     blockchain: SupportedBlockchain | None
 

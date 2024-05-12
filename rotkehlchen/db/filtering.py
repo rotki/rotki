@@ -574,7 +574,7 @@ class DBEqualsFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBMultiValueFilter(Generic[T], DBFilter):
+class DBMultiValueFilter(DBFilter, Generic[T]):
     """Filter a column having a value out of a selection of values"""
     column: str
     values: Sequence[T]
