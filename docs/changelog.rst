@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`7915` - Show OKX balances locked in active trades.
+* :bug:`-` Compound v2 transactions containing also flash loans of same asset type will now be properly decoded.
 
 * :release:`1.33.0 <2024-05-08>`
 * :feature:`7798` rotki now accurately decodes transactions on the Kyber swap aggregator across all supported chains. 

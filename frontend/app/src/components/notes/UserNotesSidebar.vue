@@ -123,6 +123,7 @@ const css = useCssModule();
     </div>
 
     <UserNotesList
+      v-if="visible"
       :key="location + tab"
       :location="tab === 0 ? '' : location"
     />
