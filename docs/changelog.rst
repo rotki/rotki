@@ -2,8 +2,9 @@
 Changelog
 =========
 
+* :bug:`7915` - Show OKX balances locked in active trades.
+
 * :release:`1.33.0 <2024-05-08>`
-* :bug:`7915` - Fixed an issue where frozen balances were not displayed in OKX accounts. With this update, all balances, including frozen ones, are now correctly shown together, enhancing visibility and account management for users.
 * :feature:`7798` rotki now accurately decodes transactions on the Kyber swap aggregator across all supported chains. 
 * :feature:`-` Users will now be able to delete transactions and the associated events in history events.
 * :feature:`7074` rotki provides a calendar view where users can add and track events related to their activities. Users can also set reminders to perform actions associated with these events.
