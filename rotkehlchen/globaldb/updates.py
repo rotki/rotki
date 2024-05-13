@@ -4,6 +4,7 @@ import re
 import sqlite3
 from contextlib import suppress
 from enum import Enum, auto
+from http import HTTPStatus
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING, Any, Literal, NamedTuple
@@ -678,6 +679,24 @@ class AssetsUpdater:
         # In this case we have conflicts. Everything should also be rolled back
         connection.rollback()
 
+    def _fetch_single_update_file(
+            self,
+            url: str,
+    ) -> str:
+        """Fetch a single update file from github and return its content.
+        If the file is not found then return an empty string.
+
+        May raise:
+        - RemoteError if failed to fetch the file with status code other that 404."""
+        try:
+            return query_file(url=url, is_json=False)
+        except RemoteError as e:
+            if e.error_code == HTTPStatus.NOT_FOUND:
+                log.warning(f'Assets update file not found from {url}: {e!s}')
+                return ''  # this is a no-op when the upgrade doesn't have any mappings
+            else:
+                raise
+
     def _retrieve_update_files(
             self,
             local_schema_version: int,
@@ -725,13 +744,11 @@ class AssetsUpdater:
             asset_collections_url = ASSET_COLLECTIONS_UPDATES_URL.format(branch=self.branch, version=version)  # noqa: E501
             asset_collections_mappings_url = ASSET_COLLECTIONS_MAPPINGS_UPDATES_URL.format(branch=self.branch, version=version)  # noqa: E501
 
-            assets_file = query_file(url=assets_url, is_json=False)
+            assets_file = self._fetch_single_update_file(url=assets_url)
+
             if version >= FIRST_VERSION_WITH_COLLECTIONS:
-                asset_collections_file = query_file(url=asset_collections_url, is_json=False)
-                asset_collections_mappings_file = query_file(
-                    url=asset_collections_mappings_url,
-                    is_json=False,
-                )
+                asset_collections_file = self._fetch_single_update_file(url=asset_collections_url)
+                asset_collections_mappings_file = self._fetch_single_update_file(url=asset_collections_mappings_url)  # noqa: E501
             else:
                 asset_collections_file, asset_collections_mappings_file = '', ''
 

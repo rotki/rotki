@@ -1,4 +1,5 @@
 import json
+from collections.abc import Callable
 from unittest.mock import patch
 
 import pytest
@@ -12,11 +13,11 @@ from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY, AssetsUpdater, Upda
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ChainID, EvmTokenKind, Timestamp
 
-VALID_ASSET_MAPPINGS = """INSERT INTO multiasset_mappings(collection_id, asset) VALUES (99999999, "ETH");
+VALID_ASSET_MAPPINGS = """INSERT INTO multiasset_mappings(collection_id, asset) VALUES (5, "ETH");
     *
-    INSERT INTO multiasset_mappings(collection_id, asset) VALUES (99999999, "eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84");
+    INSERT INTO multiasset_mappings(collection_id, asset) VALUES (5, "BTC");
     *
-"""  # noqa: E501
+"""
 VALID_ASSET_COLLECTIONS = """INSERT INTO asset_collections(id, name, symbol) VALUES (99999999, "My custom ETH", "ETHS")
     *
 """  # noqa: E501
@@ -30,28 +31,37 @@ def fixture_assets_updater(messages_aggregator):
     return AssetsUpdater(messages_aggregator)
 
 
-def mock_github_assets_response(url, timeout):  # pylint: disable=unused-argument
-    """Mock response from github for assets updates"""
-    if 'mappings' in url:
-        return MockResponse(200, VALID_ASSET_MAPPINGS)
-    if 'collections' in url:
-        return MockResponse(200, VALID_ASSET_COLLECTIONS)
-    if 'info' in url:
-        local_schema = GlobalDBHandler.get_schema_version()
-        data = json.dumps(
-            {
+def get_mock_github_assets_response(
+        assets_exists: bool,
+        collections_exists: bool,
+        mappings_exists: bool,
+) -> Callable[..., MockResponse]:
+    """Return mocked response from github for assets updates.
+    Each of the boolean parameters indicates if the mocked response should return
+    corresponding update files' content or 404 error."""
+
+    def mocked_response_fn(url, timeout):  # pylint: disable=unused-argument
+        if 'mappings' in url:
+            return MockResponse(200, VALID_ASSET_MAPPINGS) if mappings_exists else MockResponse(404, '')  # noqa: E501
+        if 'collections' in url:
+            return MockResponse(200, VALID_ASSET_COLLECTIONS) if collections_exists else MockResponse(404, '')  # noqa: E501
+        if 'info' in url:
+            local_schema = GlobalDBHandler.get_schema_version()
+            data = json.dumps({
                 'updates': {
                     '998': {'min_schema_version': 4, 'max_schema_version': 4, 'changes': 1},
                     '999': {'min_schema_version': local_schema, 'max_schema_version': local_schema, 'changes': 1},  # noqa: E501
                 },
                 'latest': 999,
-            },
-        )
-        return MockResponse(200, data)
-    if 'updates' in url:
-        return MockResponse(200, VALID_ASSETS)
+            })
+            return MockResponse(200, data)
 
-    raise AssertionError(f'Unknown url {url}')
+        if 'updates' in url:
+            return MockResponse(200, VALID_ASSETS) if assets_exists else MockResponse(404, '')
+
+        raise AssertionError(f'Unknown url {url}')
+
+    return mocked_response_fn
 
 
 @pytest.mark.parametrize(('text', 'expected_data', 'error_msg'), [
@@ -446,7 +456,15 @@ def test_updates_assets_collections_errors(assets_updater: AssetsUpdater):
     ]
 
 
-def test_asset_update(assets_updater: AssetsUpdater):
+@pytest.mark.parametrize('update_assets', [True, False])
+@pytest.mark.parametrize('update_collections', [True, False])
+@pytest.mark.parametrize('update_mappings', [True, False])
+def test_asset_update(
+        assets_updater: AssetsUpdater,
+        update_assets: bool,
+        update_collections: bool,
+        update_mappings: bool,
+):
     """
     Check that globaldb updates work properly when getting information from github
     and assets collections are applied correctly in the process
@@ -455,18 +473,28 @@ def test_asset_update(assets_updater: AssetsUpdater):
     assets_updater.msg_aggregator.consume_warnings()
     # set a high version of the globaldb to avoid conflicts with future changes
     GlobalDBHandler.add_setting_value(ASSETS_VERSION_KEY, 997)
-    with patch('requests.get', wraps=mock_github_assets_response):
+    with patch('requests.get', wraps=get_mock_github_assets_response(update_assets, update_collections, update_mappings)):  # noqa: E501
         assets_updater.perform_update(up_to_version=999, conflicts={})
 
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        cursor.execute('SELECT * FROM asset_collections WHERE id = 99999999')
-        assert cursor.fetchall() == [(99999999, 'My custom ETH', 'ETHS')]
-        cursor.execute('SELECT * FROM multiasset_mappings WHERE collection_id = 99999999')
-        assert cursor.fetchall() == [(99999999, 'ETH'), (99999999, 'eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84')]  # noqa: E501
+        assert cursor.execute('SELECT * FROM assets WHERE identifier = "MYBONK"').fetchall() == ([
+            ('MYBONK', 'Bonk', 'Y'),
+        ] if update_assets else [])
 
-    # check that we skip versions with wrong schema and that all the versions
-    # required are correctly queried.
-    warnings = assets_updater.msg_aggregator.consume_warnings()
-    assert warnings == [
-        f'Skipping assets update 998 since it requires a min schema of 4 and max schema of 4 while the local DB schema version is {GlobalDBHandler().get_schema_version()}. You will have to follow an alternative method to obtain the assets of this update. Easiest would be to reset global DB.',  # noqa: E501
-    ]
+        cursor.execute('SELECT * FROM asset_collections WHERE id = 99999999')
+        assert cursor.fetchall() == ([
+            (99999999, 'My custom ETH', 'ETHS'),
+        ] if update_collections else [])
+
+        cursor.execute('SELECT * FROM multiasset_mappings WHERE collection_id = 5')
+        assert cursor.fetchall() == ([(5, 'BTC'), (5, 'ETH')] if update_mappings else []) + [  # plus the already existing ones  # noqa: E501
+            (5, 'eip155:1/erc20:0xa1faa113cbE53436Df28FF0aEe54275c13B40975'),
+            (5, 'eip155:43114/erc20:0x2147EFFF675e4A4eE1C2f918d181cDBd7a8E208f'),
+        ]
+
+        # check that we skip versions with wrong schema and that all the versions
+        # required are correctly queried.
+        warnings = assets_updater.msg_aggregator.consume_warnings()
+        assert warnings == [
+            f'Skipping assets update 998 since it requires a min schema of 4 and max schema of 4 while the local DB schema version is {GlobalDBHandler().get_schema_version()}. You will have to follow an alternative method to obtain the assets of this update. Easiest would be to reset global DB.',  # noqa: E501
+        ]

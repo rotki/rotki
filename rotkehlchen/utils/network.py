@@ -144,8 +144,11 @@ def query_file(url: str, is_json: bool = False) -> str | dict[str, Any]:
 
     if response.status_code != 200:
         raise RemoteError(
-            f'File query for {url} failed with status code '
-            f'{response.status_code} and text: {response.text}',
+            message=(
+                f'File query for {url} failed with status code '
+                f'{response.status_code} and text: {response.text}'
+            ),
+            error_code=response.status_code,
         )
 
     if is_json is True:
