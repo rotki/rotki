@@ -2004,8 +2004,6 @@
     "inputs": {
       "api_key": "API Key",
       "api_secret": "API Secret",
-      "private_key": "Private Key",
-      "api_key_name": "API Key Name",
       "kraken_account": "Select the type of your Kraken account",
       "passphrase": "Passphrase"
     },

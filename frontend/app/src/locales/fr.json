@@ -2233,9 +2233,7 @@
       "api_key": "Clé API",
       "api_secret": "Secret API",
       "kraken_account": "Sélectionnez le type de votre compte Kraken",
-      "passphrase": "Phrase d'Authentification",
-      "private_key": "Clé privée",
-      "api_key_name": "Nom de la clé API"
+      "passphrase": "Phrase d'Authentification"
     },
     "keys": "Clés",
     "subtitle": "rotki peut se connecter aux plateformes d'échange prises en charge et extraire automatiquement vos transactions et soldes à partir d'elles. Consultez le {0} pour plus d'informations.",

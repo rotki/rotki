@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`7915` Show OKX balances locked in active trades.
+* :feature:`7816` rotki should now support the new coinbase api key format from the coinbase develop portal.
 * :bug:`-` Compound v2 transactions containing also flash loans of same asset type will now be properly decoded.
 
 * :release:`1.33.0 <2024-05-08>`
