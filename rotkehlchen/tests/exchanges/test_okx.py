@@ -132,7 +132,7 @@ def test_okx_query_balances(mock_okx: Okx):
                "eq":"0.00000065312",
                "eqUsd":"0.00000065312",
                "fixedBal":"0",
-               "frozenBal":"0",
+               "frozenBal":"50",
                "interest":"",
                "isoEq":"0",
                "isoLiab":"",
@@ -173,7 +173,7 @@ def test_okx_query_balances(mock_okx: Okx):
     assert len(balances) == 3
     assert (balances[A_XMR.resolve_to_asset_with_oracles()]).amount == FVal('0.027846')
     assert (balances[A_SOL.resolve_to_asset_with_oracles()]).amount == FVal('299.9920000068')
-    assert (balances[A_USDT.resolve_to_asset_with_oracles()]).amount == FVal('6.5312E-7')
+    assert (balances[A_USDT.resolve_to_asset_with_oracles()]).amount == FVal('50.00000065312')
 
     warnings = mock_okx.msg_aggregator.consume_warnings()
     errors = mock_okx.msg_aggregator.consume_errors()
