@@ -150,7 +150,7 @@ jobs:
           echo "::endgroup::"
           ./package.py --build full
       - name: Upload to release
-        uses: rotki/action-gh-release@v1
+        uses: rotki/action-gh-release@v2
         with:
           tag_name: ${{ env.RELEASE_VERSION }}
           name: Rotki ${{ env.RELEASE_VERSION }} -
@@ -273,7 +273,7 @@ jobs:
           APPLEID: ${{ secrets.APPLEID }}
           APPLEIDPASS: ${{ secrets.APPLEIDPASS }}
       - name: Upload to release
-        uses: rotki/action-gh-release@v1
+        uses: rotki/action-gh-release@v2
         with:
           tag_name: ${{ env.RELEASE_VERSION }}
           name: Rotki ${{ env.RELEASE_VERSION }} -
@@ -348,7 +348,7 @@ jobs:
           python .\package.py --build full
         shell: powershell
       - name: Upload to release
-        uses: rotki/action-gh-release@v1
+        uses: rotki/action-gh-release@v2
         with:
           tag_name: ${{ env.RELEASE_VERSION }}
           name: Rotki ${{ env.RELEASE_VERSION }} -
