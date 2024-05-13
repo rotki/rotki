@@ -178,10 +178,8 @@ class Coinbase(ExchangeInterface):
             self.is_legacy_api_key = True
             log.error(f'Error determining API key format: {e}. Defaulting to legacy key.')
 
-        # Set CB-ACCESS-KEY header if its a legacy key format
-        if self.is_legacy_api_key:
-            self.session.headers.update({'CB-ACCESS-KEY': self.api_key})
-            self.session.headers.update({'CB-VERSION': CB_VERSION})
+        if self.is_legacy_api_key:  # set headers for legacy
+            self.session.headers.update({'CB-ACCESS-KEY': self.api_key, 'CB-VERSION': CB_VERSION})
 
         self.apiversion = 'v2'
         self.base_uri = 'https://api.coinbase.com'
@@ -189,9 +187,6 @@ class Coinbase(ExchangeInterface):
         self.host = 'api.coinbase.com'
 
     def is_legacy_key(self, api_key: str) -> bool:
-        """
-        Determines if the provided API key is a legacy one
-        """
         if LEGACY_RE.match(api_key):
             log.debug('Legacy Key format!')
             return True
@@ -243,6 +238,7 @@ class Coinbase(ExchangeInterface):
             )
         except (jwt.PyJWTError, ValueError) as e:
             raise RemoteError('Error generating JWT token') from e
+
         return jwt_token
 
     def validate_api_key(self) -> tuple[bool, str]:
@@ -256,8 +252,7 @@ class Coinbase(ExchangeInterface):
         """
         self.is_legacy_api_key = self.is_legacy_key(self.api_key)
         if self.is_legacy_api_key:
-            self.session.headers.update({'CB-ACCESS-KEY': self.api_key})
-            self.session.headers.update({'CB-VERSION': CB_VERSION})
+            self.session.headers.update({'CB-ACCESS-KEY': self.api_key, 'CB-VERSION': CB_VERSION})
             result, msg = self._validate_single_api_key_action('accounts')
             if result is None:
                 return False, msg
@@ -332,6 +327,7 @@ class Coinbase(ExchangeInterface):
                 new_is_legacy = self.is_legacy_key(credentials.api_key)
             except AuthenticationError as e:
                 log.error(f'Invalid coinbase API key format: {e}')
+                new_is_legacy = True
 
             if new_is_legacy != self.is_legacy_api_key:  # Key type has changed
                 self.is_legacy_api_key = new_is_legacy
@@ -403,14 +399,11 @@ class Coinbase(ExchangeInterface):
             if self.is_legacy_api_key:
                 timestamp = str(int(time.time()))
                 message = timestamp + request_verb + next_uri
-
                 signature = hmac.new(
                     self.secret,
                     message.encode(),
                     hashlib.sha256,
                 ).hexdigest()
-                log.debug('Coinbase API query', request_url=next_uri)
-
                 self.session.headers.update({
                     'CB-ACCESS-SIGN': signature,
                     'CB-ACCESS-TIMESTAMP': timestamp,
@@ -418,15 +411,13 @@ class Coinbase(ExchangeInterface):
 
             else:
                 uri = f'{request_verb} {self.host}/{self.apiversion}/{endpoint}'
-                log.debug('Coinbase CDP API query', request_url=uri)
                 token = self.build_jwt(uri)
-
                 self.session.headers.update({
                     'Authorization': f'Bearer {token}',
                 })
 
             full_url = self.base_uri + next_uri
-
+            log.debug('Coinbase API query', request_url=full_url)
             try:
                 response = self.session.get(full_url, timeout=timeout)
             except requests.exceptions.RequestException as e:
