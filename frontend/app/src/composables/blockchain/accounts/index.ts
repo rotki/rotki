@@ -3,11 +3,11 @@ import { type BtcChains, isBtcChain } from '@/types/blockchain/chains';
 import { TaskType } from '@/types/task-type';
 import type {
   AccountPayload,
-  BlockchainAccountPayload,
   BtcAccountData,
   DeleteBlockchainAccountParams,
   DeleteXpubParams,
   GeneralAccountData,
+  XpubAccountPayload,
 } from '@/types/blockchain/accounts';
 import type { BlockchainBalances } from '@/types/blockchain/balances';
 import type { BlockchainMetadata } from '@/types/task';
@@ -35,30 +35,20 @@ export function useBlockchainAccounts() {
   const { getNativeAsset } = useSupportedChains();
 
   const addAccount = async (
-    blockchain: string,
-    { address, label, tags, xpub }: AccountPayload,
+    chain: string,
+    payload: AccountPayload[] | XpubAccountPayload,
   ): Promise<string> => {
     const taskType = TaskType.ADD_ACCOUNT;
-    const { taskId } = await addBlockchainAccount({
-      blockchain,
-      address,
-      label,
-      xpub,
-      tags,
-    });
+    const { taskId } = await addBlockchainAccount(chain, payload);
 
+    const address = Array.isArray(payload) ? payload.map(item => item.address).join(',\n') : payload.xpub;
     const { result } = await awaitTask<string[], BlockchainMetadata>(
       taskId,
       taskType,
       {
-        title: t('actions.balances.blockchain_accounts_add.task.title', {
-          blockchain,
-        }),
-        description: t(
-          'actions.balances.blockchain_accounts_add.task.description',
-          { address },
-        ),
-        blockchain,
+        title: t('actions.balances.blockchain_accounts_add.task.title', { blockchain: chain }),
+        description: t('actions.balances.blockchain_accounts_add.task.description', { address }),
+        blockchain: chain,
       },
       true,
     );
@@ -106,15 +96,17 @@ export function useBlockchainAccounts() {
   };
 
   const editAccount = async (
-    payload: BlockchainAccountPayload,
+    payload: AccountPayload | XpubAccountPayload,
+    chain: string,
   ): Promise<BtcAccountData | GeneralAccountData[]> => {
-    const { blockchain } = payload;
+    if (isBtcChain(chain) || 'xpub' in payload)
+      return await editBtcAccount(payload, chain);
 
-    if (isBtcChain(blockchain))
-      return await editBtcAccount(payload);
-
-    const result = editBlockchainAccount(payload);
-    resetAddressNamesData([payload]);
+    const result = editBlockchainAccount(payload, chain);
+    resetAddressNamesData([{
+      ...payload,
+      blockchain: chain,
+    }]);
     return result;
   };
 

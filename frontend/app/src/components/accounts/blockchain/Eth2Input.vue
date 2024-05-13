@@ -5,6 +5,7 @@ import {
   requiredUnless,
 } from '@vuelidate/validators';
 import { isEmpty } from 'lodash-es';
+import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
 import type { Eth2Validator } from '@/types/balances';
 import type { ValidationErrors } from '@/types/api/errors';
@@ -54,9 +55,7 @@ const rules = {
   },
 };
 
-const { setValidation } = useAccountDialog();
-
-const v$ = setValidation(
+const v$ = useVuelidate(
   rules,
   {
     validatorIndex,
@@ -69,6 +68,10 @@ const v$ = setValidation(
     $externalResults: errorMessages,
   },
 );
+
+function validate(): Promise<boolean> {
+  return get(v$).$validate();
+}
 
 watch(errorMessages, (errors) => {
   if (!isEmpty(errors))
@@ -91,6 +94,10 @@ watch(
     emit('update:validator', validator);
   },
 );
+
+defineExpose({
+  validate,
+});
 </script>
 
 <template>

@@ -1,162 +1,167 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { ApiValidationError } from '@/types/api/errors';
+import { objectOmit } from '@vueuse/core';
+import AddressInput from '@/components/accounts/blockchain/AddressInput.vue';
+import type { ValidationErrors } from '@/types/api/errors';
 import type { Module } from '@/types/modules';
-import type {
-  BlockchainAccountPayload,
-  BlockchainAccountWithBalance,
-} from '@/types/blockchain/accounts';
+import type { AccountManage } from '@/composables/accounts/blockchain/use-account-manage';
 
 const props = defineProps<{
-  blockchain: string;
-  allEvmChains: boolean;
+  value: AccountManage;
+  loading: boolean;
+  errorMessages: ValidationErrors;
 }>();
 
-const { blockchain, allEvmChains } = toRefs(props);
+const emit = defineEmits<{
+  (e: 'input', value: AccountManage): void;
+  (e: 'update:error-messages', value: ValidationErrors): void;
+}>();
 
-const addresses = ref<string[]>([]);
-const label = ref('');
-const tags = ref<string[]>([]);
+const { value: modelValue } = toRefs(props);
+
+const allEvmChains = ref(true);
+const address = ref<InstanceType<typeof AddressInput>>();
 const selectedModules = ref<Module[]>([]);
 
-const errorMessages = ref<Record<string, string[]>>({});
-
-const { addAccounts, addEvmAccounts, fetchAccounts } = useBlockchains();
-const { editAccount } = useBlockchainAccounts();
-const { setMessage } = useMessageStore();
 const { isEvm } = useSupportedChains();
-const { setSubmitFunc, accountToEdit } = useAccountDialog();
-const { pending, loading } = useAccountLoading();
-const { t } = useI18n();
 
-const evmChain = isEvm(blockchain);
+const errors = useKebabVModel(props, 'errorMessages', emit);
+const editMode = computed(() => props.value.mode === 'edit');
 
-function reset() {
-  set(addresses, []);
-  set(label, '');
-  set(tags, []);
-  set(selectedModules, []);
+function updateVModel(value: AccountManage): void {
+  emit('input', value);
 }
 
-async function save() {
-  const edit = !!get(accountToEdit);
-  const chain = get(blockchain);
-  const isEth = chain === Blockchain.ETH;
-
-  try {
-    set(pending, true);
-    const entries = get(addresses);
-    if (edit) {
-      const address = entries[0];
-      const payload: BlockchainAccountPayload = {
-        blockchain: chain,
-        address,
-        label: get(label),
-        tags: get(tags),
-      };
-      await editAccount(payload);
-      startPromise(fetchAccounts(chain));
-    }
-    else {
-      const payload = entries.map(address => ({
-        address,
-        label: get(label),
-        tags: get(tags),
-      }));
-
-      const modules = get(selectedModules);
-
-      if (get(logicAnd(allEvmChains, isEvm(chain)))) {
-        await addEvmAccounts({
-          payload,
-          modules,
-        });
-      }
-      else {
-        await addAccounts({
-          blockchain: chain,
-          payload,
-          modules: isEth ? modules : undefined,
-        });
-      }
-    }
-  }
-  catch (error: any) {
-    let errors = error.message;
-
-    if (error instanceof ApiValidationError)
-      errors = error.getValidationErrors({});
-
-    if (typeof errors === 'string') {
-      setMessage({
-        description: t('account_form.error.description', {
-          error: errors,
-        }).toString(),
-        title: t('account_form.error.title'),
-        success: false,
+const tags = computed<string[]>({
+  get() {
+    const model = get(modelValue);
+    return (model.mode === 'edit' ? model.data.tags : model.data.length > 0 ? model.data[0].tags : null) ?? [];
+  },
+  set(tags: string[]) {
+    const model = get(modelValue);
+    const tagData = tags.length > 0 ? tags : null;
+    if (model.mode === 'edit') {
+      updateVModel({
+        ...model,
+        data: {
+          ...model.data,
+          tags: tagData,
+        },
       });
     }
     else {
-      set(errorMessages, errors);
+      updateVModel({
+        ...model,
+        data: [...model.data.map(item => ({ ...item, tags: tagData }))],
+      });
     }
-
-    return false;
-  }
-  finally {
-    set(pending, false);
-  }
-  return true;
-}
-
-function setAccount(account: BlockchainAccountWithBalance): void {
-  set(addresses, 'address' in account.data ? [account.data.address] : []);
-  set(label, account.label ?? '');
-  set(tags, account.tags ?? []);
-}
-
-watch(accountToEdit, (acc) => {
-  if (!acc)
-    reset();
-  else
-    setAccount(acc);
+  },
 });
 
-onMounted(() => {
-  setSubmitFunc(save);
-  const acc = get(accountToEdit);
-  if (!acc)
-    reset();
-  else
-    setAccount(acc);
+const label = computed<string>({
+  get() {
+    const model = get(modelValue);
+    return (model.mode === 'edit' ? model.data.label : (model.data.length > 0 ? model.data[0].label : null)) ?? '';
+  },
+  set(label: string) {
+    const model = get(modelValue);
+    const labelData = label ? { label } : {};
+    if (model.mode === 'edit') {
+      updateVModel({
+        ...model,
+        data: {
+          ...objectOmit(model.data, ['label']),
+          ...labelData,
+        },
+      });
+    }
+    else {
+      updateVModel({
+        ...model,
+        data: [...model.data.map(item => ({ ...objectOmit(item, ['label']), ...labelData }))],
+      });
+    }
+  },
+});
+
+const addresses = computed<string[]>({
+  get() {
+    const model = get(modelValue);
+    return model.mode === 'edit' ? [model.data.address] : model.data.map(({ address }) => address);
+  },
+  set(addresses: string[]) {
+    const model = get(modelValue);
+    if (model.mode === 'edit') {
+      updateVModel({
+        ...model,
+        data: {
+          ...model.data,
+          address: addresses.length > 0 ? addresses[0] : '',
+        },
+      });
+    }
+    else {
+      const accountTags = get(tags);
+      const accountLabel = get(label);
+
+      updateVModel({
+        ...model,
+        data: addresses.map(address => ({
+          address,
+          tags: accountTags.length > 0 ? accountTags : null,
+          ...(accountLabel ? { label: accountLabel } : {}),
+        })),
+      });
+    }
+  },
+});
+
+const showEvmCheck = computed<boolean>(() => {
+  const model = get(modelValue);
+  return get(isEvm(model.chain)) && model.mode !== 'edit';
+});
+
+function onAllEvmChainsUpdate(allChains: boolean) {
+  return set(allEvmChains, allChains);
+}
+
+function validate(): Promise<boolean> {
+  assert(isDefined(address));
+  return get(address).validate();
+}
+
+defineExpose({
+  validate,
 });
 </script>
 
 <template>
   <div class="flex flex-col gap-6">
     <ModuleActivator
-      v-if="blockchain === Blockchain.ETH && !accountToEdit"
+      v-if="value.chain === Blockchain.ETH && !editMode"
       @update:selection="selectedModules = $event"
     />
 
     <slot
-      v-if="evmChain && !accountToEdit"
+      v-if="showEvmCheck"
       name="selector"
-      :loading="loading"
+      :disabled="loading"
+      :attrs="{ value: allEvmChains }"
+      :on="{ input: onAllEvmChainsUpdate }"
     />
 
     <div class="flex flex-col gap-4">
       <AddressInput
+        ref="address"
         :addresses.sync="addresses"
-        :error-messages.sync="errorMessages"
-        :disabled="loading || !!accountToEdit"
-        :multi="!accountToEdit"
+        :error-messages.sync="errors"
+        :disabled="loading || editMode"
+        :multi="!editMode"
       />
       <AccountDataInput
-        :tags="tags"
-        :label="label"
+        :tags.sync="tags"
+        :label.sync="label"
         :disabled="loading"
-        @update:label="label = $event"
-        @update:tags="tags = $event"
       />
     </div>
   </div>

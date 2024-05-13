@@ -1,6 +1,5 @@
 import { z } from 'zod';
 import type BigNumber from 'bignumber.js';
-import type { Blockchain } from '@rotki/common/lib/blockchain';
 import type { Balance } from '@rotki/common';
 import type { Module } from '@/types/modules';
 
@@ -121,7 +120,6 @@ export enum XpubKeyType {
 
 export interface XpubPayload {
   readonly xpub: string;
-  readonly blockchain: Blockchain.BTC | Blockchain.BCH;
   readonly derivationPath: string;
   readonly xpubType: XpubKeyType;
 }
@@ -151,8 +149,11 @@ export interface BlockchainAccountPayload
 export interface AccountPayload {
   readonly address: string;
   readonly label?: string;
-  readonly xpub?: XpubPayload;
   readonly tags: string[] | null;
+}
+
+export interface XpubAccountPayload extends Omit<AccountPayload, 'address'> {
+  readonly xpub: XpubPayload;
 }
 
 export interface ExchangeBalancePayload {
@@ -176,13 +177,9 @@ export interface FetchPricePayload {
   readonly selectedAssets: string[];
 }
 
-export interface BaseAddAccountsPayload {
+export interface AddAccountsPayload {
   readonly payload: AccountPayload[];
   readonly modules?: Module[];
-}
-
-export interface AddAccountsPayload extends BaseAddAccountsPayload {
-  readonly blockchain: string;
 }
 
 export interface AssetBreakdown extends Balance {

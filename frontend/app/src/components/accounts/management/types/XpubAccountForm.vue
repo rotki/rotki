@@ -1,138 +1,99 @@
 <script setup lang="ts">
-import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
-import type { BlockchainAccountWithBalance, XpubPayload } from '@/types/blockchain/accounts';
-import type { BtcChains } from '@/types/blockchain/chains';
+import XpubInput from '@/components/accounts/blockchain/XpubInput.vue';
+import type { ValidationErrors } from '@/types/api/errors';
+import type { XpubPayload } from '@/types/blockchain/accounts';
+import type { XpubManage } from '@/composables/accounts/blockchain/use-account-manage';
 
-const props = defineProps<{ blockchain: BtcChains }>();
+const props = defineProps<{
+  value: XpubManage;
+  loading: boolean;
+  errorMessages: ValidationErrors;
+}>();
 
-const { blockchain } = toRefs(props);
+const emit = defineEmits<{
+  (e: 'input', value: XpubManage): void;
+}>();
 
-const xpub = ref<XpubPayload>();
-const label = ref('');
-const tags = ref<string[]>([]);
+const { value: modelValue } = toRefs(props);
 
-const errorMessages = ref<ValidationErrors>({});
+const input = ref<InstanceType<typeof XpubInput>>();
 
-const { addAccounts, fetchAccounts } = useBlockchains();
-const { editAccount } = useBlockchainAccounts();
-const { setMessage } = useMessageStore();
-const { setSubmitFunc, accountToEdit } = useAccountDialog();
-const { pending, loading } = useAccountLoading();
-const { t } = useI18n();
-
-async function save() {
-  const edit = !!get(accountToEdit);
-
-  const chain = get(blockchain);
-  try {
-    set(pending, true);
-    if (edit) {
-      await editAccount({
-        blockchain: chain,
-        address: '',
-        label: get(label),
-        tags: get(tags),
-        xpub: get(xpub) || undefined,
-      });
-      startPromise(fetchAccounts(chain));
-    }
-    else {
-      await addAccounts({
-        blockchain: chain,
-        payload: [
-          {
-            address: '',
-            label: get(label),
-            tags: get(tags),
-            xpub: get(xpub) || undefined,
-          },
-        ],
-      });
-    }
-
-    set(xpub, null);
-    set(label, '');
-    set(tags, []);
-  }
-  catch (error: any) {
-    logger.error(error);
-    let errors = error.message;
-    if (error instanceof ApiValidationError) {
-      errors = error.getValidationErrors({
-        xpub: '',
-        derivationPath: '',
-      });
-    }
-
-    if (typeof errors === 'string') {
-      setMessage({
-        description: t('account_form.error.description', {
-          error: errors,
-        }),
-        title: t('account_form.error.title'),
-        success: false,
-      });
-    }
-    else {
-      set(errorMessages, errors);
-      return false;
-    }
-
-    return false;
-  }
-  finally {
-    set(pending, false);
-  }
-  return true;
+function updateVModel(value: XpubManage) {
+  emit('input', value);
 }
 
-function setXpub(account: BlockchainAccountWithBalance): void {
-  set(xpub, {
-    xpub: 'xpub' in account.data ? account.data.xpub : '',
-    derivationPath: 'xpub' in account.data ? account.data.derivationPath : '',
-    blockchain: get(blockchain),
-    xpubType: '',
-  });
-  set(label, account.label ?? '');
-  set(tags, account.tags ?? []);
-}
-
-watch(accountToEdit, (acc) => {
-  if (acc) {
-    assert('derivationPath' in acc);
-    setXpub(acc);
-  }
-  else {
-    set(xpub, null);
-  }
+const xpub = computed<XpubPayload>({
+  get() {
+    const model = get(modelValue);
+    return model.data.xpub;
+  },
+  set(xpub: XpubPayload) {
+    const model = get(modelValue);
+    updateVModel({
+      ...model,
+      data: {
+        ...model.data,
+        xpub,
+      },
+    });
+  },
 });
 
-onMounted(() => {
-  setSubmitFunc(save);
+const tags = computed<string[]>({
+  get() {
+    return get(modelValue).data.tags ?? [];
+  },
+  set(tags: string[]) {
+    const model = get(modelValue);
+    updateVModel({
+      ...model,
+      data: {
+        ...model.data,
+        tags: tags.length > 0 ? tags : null,
+      },
+    });
+  },
+});
 
-  const acc = get(accountToEdit);
-  if (acc) {
-    assert('derivationPath' in acc.data);
-    setXpub(acc);
-  }
+const label = computed<string>({
+  get() {
+    return get(modelValue).data.label ?? '';
+  },
+  set(label: string) {
+    const model = get(modelValue);
+    updateVModel({
+      ...model,
+      data: {
+        ...model.data,
+        ...(label ? { label } : {}),
+      },
+    });
+  },
+});
+
+function validate(): Promise<boolean> {
+  assert(isDefined(input));
+  return get(input).validate();
+}
+
+defineExpose({
+  validate,
 });
 </script>
 
 <template>
   <div class="flex flex-col gap-4">
     <XpubInput
-      :disabled="loading || !!accountToEdit"
+      ref="input"
+      :disabled="loading || value.mode === 'edit'"
       :error-messages="errorMessages"
-      :xpub="xpub"
-      :blockchain="blockchain"
-      @update:xpub="xpub = $event"
+      :xpub.sync="xpub"
+      :blockchain="value.chain"
     />
     <AccountDataInput
-      :tags="tags"
-      :label="label"
+      :tags.sync="tags"
+      :label.sync="label"
       :disabled="loading"
-      @update:label="label = $event"
-      @update:tags="tags = $event"
     />
   </div>
 </template>

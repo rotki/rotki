@@ -1,97 +1,87 @@
 <script setup lang="ts">
 import { Severity } from '@rotki/common/lib/messages';
+import { Blockchain } from '@rotki/common/lib/blockchain';
+import type { AccountManageAdd } from '@/composables/accounts/blockchain/use-account-manage';
 import type { Module } from '@/types/modules';
-import type { AccountPayload } from '@/types/blockchain/accounts';
 
 const props = defineProps<{
-  blockchain: string;
-  allEvmChains: boolean;
+  loading: boolean;
+  chain: string;
 }>();
 
-const { blockchain, allEvmChains } = toRefs(props);
+const { t } = useI18n();
+
+const { chain } = toRefs(props);
+const allEvmChains = ref(true);
 
 const selectedModules = ref<Module[]>([]);
 const label = ref('');
 const tags = ref<string[]>([]);
 
-const { notify } = useNotificationsStore();
-const { t } = useI18n();
 const { isPackaged, metamaskImport } = useInterop();
-const { addAccounts, addEvmAccounts } = useBlockchains();
-const { setSubmitFunc, setValidation } = useAccountDialog();
-const { loading } = useAccountLoading();
+const { notify } = useNotificationsStore();
 
-async function save(): Promise<boolean> {
+async function importAccounts(): Promise<AccountManageAdd | null> {
   try {
-    let addresses: string[];
-    if (isPackaged)
-      addresses = await metamaskImport();
-    else
-      addresses = await getMetamaskAddresses();
+    const addresses = await (isPackaged ? metamaskImport() : getMetamaskAddresses());
 
-    const payload: AccountPayload[] = addresses.map(address => ({
-      address,
-      label: get(label),
-      tags: get(tags),
-    }));
-
+    const tagData = get(tags);
     const modules = get(selectedModules);
 
-    if (get(allEvmChains)) {
-      await addEvmAccounts({
-        payload,
-        modules,
-      });
-    }
-    else {
-      await addAccounts({
-        blockchain: get(blockchain),
-        payload,
-        modules,
-      });
-    }
-
-    return true;
+    return {
+      mode: 'add',
+      type: 'account',
+      chain: get(chain),
+      data: addresses.map(address => ({
+        address,
+        tags: tagData.length > 0 ? tagData : null,
+        label: get(label) || undefined,
+      })),
+      ...(modules.length > 0 ? { modules } : {}),
+      evm: get(allEvmChains),
+    };
   }
   catch (error: any) {
+    logger.error(error);
     const title = t('blockchain_balances.metamask_import.error.title');
-    const description = t(
-      'blockchain_balances.metamask_import.error.description',
-      {
-        error: error.message,
-      },
-    );
+    const message = t('blockchain_balances.metamask_import.error.description', { error: error.message });
 
     notify({
       title,
-      message: description,
+      message,
       severity: Severity.ERROR,
       display: true,
     });
-    return false;
+    return null;
   }
 }
 
-onMounted(() => {
-  setSubmitFunc(save);
-  setValidation({}, {});
+function onAllEvmChainsUpdate(e: boolean) {
+  return set(allEvmChains, e);
+}
+
+defineExpose({
+  importAccounts,
 });
 </script>
 
 <template>
   <div class="flex flex-col gap-6">
-    <ModuleActivator @update:selection="selectedModules = $event" />
+    <ModuleActivator
+      v-if="chain === Blockchain.ETH"
+      @update:selection="selectedModules = $event"
+    />
     <slot
       name="selector"
-      :loading="loading"
+      :disabled="loading"
+      :attrs="{ value: allEvmChains }"
+      :on="{ input: onAllEvmChainsUpdate }"
     />
     <div class="mt-4">
       <AccountDataInput
-        :tags="tags"
-        :label="label"
+        :tags.sync="tags"
+        :label.sync="label"
         :disabled="loading"
-        @update:label="label = $event"
-        @update:tags="tags = $event"
       />
     </div>
   </div>

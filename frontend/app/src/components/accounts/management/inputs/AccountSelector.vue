@@ -4,25 +4,25 @@ import { isBtcChain } from '@/types/blockchain/chains';
 import type { InputMode } from '@/types/input-mode';
 
 const props = defineProps<{
-  blockchain: string;
+  chain: string;
   inputMode: InputMode;
+  editMode: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:blockchain', selection: string): void;
+  (e: 'update:chain', selection: string): void;
   (e: 'update:input-mode', mode: InputMode): void;
 }>();
 
-const blockchain = toRef(props, 'blockchain');
+const chain = toRef(props, 'chain');
 
 const { loading } = useAccountLoading();
-const { accountToEdit } = useAccountDialog();
 const { isEvm } = useSupportedChains();
 
-const isEvmChain = isEvm(blockchain);
+const isEvmChain = isEvm(chain);
 
 const showInputModeSelector = logicOr(
-  computed(() => isBtcChain(get(blockchain))),
+  computed(() => isBtcChain(get(chain))),
   isEvmChain,
 );
 
@@ -30,23 +30,23 @@ function updateModelValue(value: string | null) {
   if (!value)
     return;
 
-  emit('update:blockchain', value);
+  emit('update:chain', value);
 }
 </script>
 
 <template>
   <Fragment>
     <ChainSelect
-      :disabled="loading || !!accountToEdit"
-      :model-value="blockchain"
+      :disabled="loading || editMode"
+      :model-value="chain"
       :clearable="false"
       @update:model-value="updateModelValue($event)"
     />
 
     <InputModeSelect
-      v-if="!accountToEdit && showInputModeSelector"
+      v-if="!editMode && showInputModeSelector"
       :input-mode="inputMode"
-      :blockchain="blockchain"
+      :blockchain="chain"
       @update:input-mode="emit('update:input-mode', $event)"
     />
   </Fragment>

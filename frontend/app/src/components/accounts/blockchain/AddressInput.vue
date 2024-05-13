@@ -1,23 +1,20 @@
 <script setup lang="ts">
 import { helpers, requiredIf } from '@vuelidate/validators';
 import { isEmpty } from 'lodash-es';
+import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
+import type { ValidationErrors } from '@/types/api/errors';
 
-const props = withDefaults(
-  defineProps<{
-    addresses: string[];
-    disabled: boolean;
-    multi: boolean;
-    errorMessages?: Record<string, string[]>;
-  }>(),
-  {
-    errorMessages: () => ({}),
-  },
-);
+const props = defineProps<{
+  addresses: string[];
+  disabled: boolean;
+  multi: boolean;
+  errorMessages: ValidationErrors;
+}>();
 
 const emit = defineEmits<{
   (e: 'update:addresses', addresses: string[]): void;
-  (e: 'update:error-messages', errorMessages: Record<string, string[]>): void;
+  (e: 'update:error-messages', errorMessages: ValidationErrors): void;
 }>();
 
 const { t } = useI18n();
@@ -62,7 +59,7 @@ function onPasteAddress(event: ClipboardEvent) {
     set(address, paste);
 }
 
-function updateErrorMessages(errorMessages: Record<string, string[]>) {
+function updateErrorMessages(errorMessages: ValidationErrors) {
   emit('update:error-messages', errorMessages);
 }
 
@@ -94,8 +91,6 @@ const rules = {
   },
 };
 
-const { setValidation } = useAccountDialog();
-
 const errorMessagesModel = computed({
   get() {
     const errors = get(errorMessages);
@@ -117,7 +112,7 @@ const errorMessagesModel = computed({
   },
 });
 
-const v$ = setValidation(
+const v$ = useVuelidate(
   rules,
   {
     address,
@@ -135,6 +130,10 @@ function updateAddresses(addresses: string[]) {
   emit('update:addresses', addresses);
 }
 
+function validate(): Promise<boolean> {
+  return get(v$).$validate();
+}
+
 watch(errorMessages, (errors) => {
   if (!isEmpty(errors))
     get(v$).$validate();
@@ -143,6 +142,10 @@ watch(errorMessages, (errors) => {
 watch(multiple, () => {
   get(v$).$clearExternalResults();
   set(userAddresses, '');
+});
+
+defineExpose({
+  validate,
 });
 </script>
 
