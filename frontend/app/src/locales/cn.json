@@ -2057,8 +2057,6 @@
     "inputs": {
       "api_key": "API Key",
       "api_secret": "API Secret",
-      "private_key": "Private Key",
-      "api_key_name": "API Key Name",
       "kraken_account": "选择您的 Kraken 账户类型",
       "passphrase": "Passphrase"
     },
