@@ -11,16 +11,16 @@ export class TagManager {
     cy.get('.tag_creator__description').type(description);
     if (background && foreground) {
       cy.get(
-        '[data-cy=tag-creator__color-picker__background] .v-color-picker__input input',
+        '[data-cy=tag-creator__color-picker__background] input',
       ).clear();
       cy.get(
-        '[data-cy=tag-creator__color-picker__background] .v-color-picker__input input',
+        '[data-cy=tag-creator__color-picker__background] input',
       ).type(background);
       cy.get(
-        '[data-cy=tag-creator__color-picker__foreground] .v-color-picker__input input',
+        '[data-cy=tag-creator__color-picker__foreground] input',
       ).clear();
       cy.get(
-        '[data-cy=tag-creator__color-picker__foreground] .v-color-picker__input input',
+        '[data-cy=tag-creator__color-picker__foreground] input',
       ).type(foreground);
     }
     cy.get('[data-cy=tag-creator__buttons__save]').click();

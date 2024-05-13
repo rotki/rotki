@@ -127,31 +127,22 @@ watchImmediate(editMode, (edit) => {
         <template #header>
           {{ t('tag_creator.labels.foreground') }}
         </template>
-        <VColorPicker
-          flat
+        <RuiColorPicker
           class="w-full"
           data-cy="tag-creator__color-picker__foreground"
-          mode="hexa"
-          hide-mode-switch
-          :value="`#${tag.foregroundColor}`"
-          @update:color="
-            changed({ foregroundColor: $event.hex.replace('#', '') })
-          "
+          :value="tag.foregroundColor"
+          @input="changed({ foregroundColor: $event })"
         />
       </RuiCard>
       <RuiCard class="flex flex-col items-center">
         <template #header>
           {{ t('tag_creator.labels.background') }}
         </template>
-        <VColorPicker
-          flat
+        <RuiColorPicker
+          class="w-full"
           data-cy="tag-creator__color-picker__background"
-          hide-mode-switch
-          mode="hexa"
-          :value="`#${tag.backgroundColor}`"
-          @update:color="
-            changed({ backgroundColor: $event.hex.replace('#', '') })
-          "
+          :value="tag.backgroundColor"
+          @input="changed({ backgroundColor: $event })"
         />
       </RuiCard>
     </div>
