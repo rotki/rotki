@@ -65,11 +65,11 @@ const {
   state: assets,
   isLoading: loading,
   editableItem,
-  options,
   fetchData,
-  setTableOptions,
   setFilter,
   setPage,
+  sort,
+  pagination,
 } = usePaginationFilters<
   SupportedAsset,
   AssetRequestPayload,
@@ -275,11 +275,11 @@ watch(ignoredFilter, (oldValue, newValue) => {
         :ignored-filter.sync="ignoredFilter"
         :expanded.sync="expanded"
         :selected.sync="selectedRows"
-        :options="options"
+        :pagination.sync="pagination"
+        :sort.sync="sort"
         @refresh="fetchData()"
         @edit="edit($event)"
         @delete-asset="showDeleteConfirmation($event)"
-        @update:options="setTableOptions($event)"
         @update:filters="setFilter($event)"
         @update:page="setPage($event)"
       />

@@ -31,8 +31,7 @@ const editMode = ref<boolean>(false);
 const formPayload = ref<AddressBookPayload>(emptyForm());
 const errorMessages = ref<{ address?: string[]; name?: string[] }>({});
 
-const { getAddressBook, addAddressBook, updateAddressBook }
-  = useAddressesNamesStore();
+const { getAddressBook, addAddressBook, updateAddressBook } = useAddressesNamesStore();
 const { setMessage } = useMessageStore();
 
 const {
@@ -40,11 +39,10 @@ const {
   matchers,
   state,
   isLoading,
-  options,
   fetchData,
   setFilter,
-  setPage,
-  setTableOptions,
+  sort,
+  pagination,
 } = usePaginationFilters<
   AddressBookEntry,
   AddressBookRequestPayload,
@@ -219,11 +217,10 @@ watch(formPayload, ({ blockchain }, { blockchain: oldBlockchain }) => {
               :collection="state"
               :location="loc"
               :loading="isLoading"
-              :options="options"
+              :sort.sync="sort"
+              :pagination.sync="pagination"
               :blockchain="selectedChain"
               @edit="openForm($event)"
-              @update:page="setPage($event)"
-              @update:options="setTableOptions($event)"
               @refresh="fetchData()"
             />
           </template>

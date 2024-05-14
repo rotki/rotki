@@ -11,7 +11,7 @@ import type {
 } from '@/types/history/trade';
 import type { Collection } from '@/types/collection';
 import type { Filters, Matcher } from '@/composables/filters/trades';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library-compat';
+import type { DataTableColumn } from '@rotki/ui-library-compat';
 
 const props = withDefaults(
   defineProps<{
@@ -117,7 +117,6 @@ const { assetSymbol } = assetInfoRetrievalStore;
 const { deleteExternalTrade, fetchTrades, refreshTrades } = useTrades();
 
 const {
-  options,
   selected,
   editableItem,
   itemsToDelete: tradesToDelete,
@@ -128,7 +127,8 @@ const {
   filters,
   matchers,
   setPage,
-  setTableOptions,
+  pagination,
+  sort,
   setFilter,
   fetchData,
 } = usePaginationFilters<
@@ -272,11 +272,6 @@ const value = computed({
   },
 });
 
-const sort: Ref<DataTableSortData> = ref([{
-  column: 'timestamp',
-  direction: 'desc' as const,
-}]);
-
 function getItemClass(item: TradeEntry) {
   return item.ignoredInAccounting ? 'opacity-50' : '';
 }
@@ -410,7 +405,7 @@ watch(loading, async (isLoading, wasLoading) => {
         :collection="trades"
         @set-page="setPage($event)"
       >
-        <template #default="{ data, limit, total, showUpgradeRow, itemLength }">
+        <template #default="{ data, limit, total, showUpgradeRow }">
           <RuiDataTable
             v-model="value"
             :expanded.sync="expanded"
@@ -418,11 +413,7 @@ watch(loading, async (isLoading, wasLoading) => {
             :rows="data"
             :loading="isLoading || loading"
             :loading-text="t('trade_history.loading')"
-            :pagination="{
-              limit: options.itemsPerPage,
-              page: options.page,
-              total: itemLength,
-            }"
+            :pagination.sync="pagination"
             :pagination-modifiers="{ external: true }"
             :sort.sync="sort"
             :sort-modifiers="{ external: true }"
@@ -432,7 +423,6 @@ watch(loading, async (isLoading, wasLoading) => {
             outlined
             single-expand
             sticky-header
-            @update:options="setTableOptions($event)"
           >
             <template #item.ignoredInAccounting="{ row }">
               <IgnoredInAcountingIcon v-if="row.ignoredInAccounting" />

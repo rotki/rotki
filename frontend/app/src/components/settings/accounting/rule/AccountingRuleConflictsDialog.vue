@@ -17,13 +17,11 @@ const emit = defineEmits<{
 
 const close = () => emit('close');
 
-const { getAccountingRulesConflicts, resolveAccountingRuleConflicts }
-  = useAccountingSettings();
+const { getAccountingRulesConflicts, resolveAccountingRuleConflicts } = useAccountingSettings();
 
 const { t } = useI18n();
 
-const { state, isLoading, options, fetchData, setTableOptions, setPage }
-  = usePaginationFilters<
+const { state, isLoading, fetchData, setPage, pagination } = usePaginationFilters<
   AccountingRuleConflict,
   AccountingRuleConflictRequestPayload,
   AccountingRuleConflict,
@@ -99,8 +97,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
   },
 ]);
 
-const { historyEventTypesData, historyEventSubTypesData, getEventTypeData }
-  = useHistoryEventMappings();
+const { historyEventTypesData, historyEventSubTypesData, getEventTypeData } = useHistoryEventMappings();
 
 function getHistoryEventTypeName(eventType: string): string {
   return get(historyEventTypesData).find(item => item.identifier === eventType)
@@ -261,15 +258,11 @@ async function save() {
         class="pb-4"
         @set-page="setPage($event)"
       >
-        <template #default="{ data, itemLength }">
+        <template #default="{ data }">
           <RuiDataTable
             :cols="tableHeaders"
             :loading="isLoading"
-            :pagination="{
-              limit: options.itemsPerPage,
-              page: options.page,
-              total: itemLength,
-            }"
+            :pagination.sync="pagination"
             :pagination-modifiers="{ external: true }"
             :rows="data"
             disable-floating-header
@@ -277,7 +270,6 @@ async function save() {
             outlined
             row-attr="identifier"
             :scroller="wrapper"
-            @update:options="setTableOptions($event)"
           >
             <template #header.taxable>
               <RuiTooltip

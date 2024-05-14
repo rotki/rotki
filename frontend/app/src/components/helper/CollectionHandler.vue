@@ -15,8 +15,7 @@ function setPage(page: number) {
 
 const { collection } = toRefs(props);
 
-const { data, limit, found, total, entriesFoundTotal, totalUsdValue }
-  = getCollectionData(collection);
+const { data, limit, found, total, entriesFoundTotal, totalUsdValue } = getCollectionData(collection);
 
 const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
 watch([data, found, itemsPerPage], ([data, found, itemsPerPage]) => {

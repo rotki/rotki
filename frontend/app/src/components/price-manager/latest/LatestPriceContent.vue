@@ -165,7 +165,7 @@ onMounted(async () => {
         :cols="headers"
         :loading="loading || refreshing"
         :rows="items"
-        row-attr=""
+        row-attr="id"
         :sort.sync="sort"
       >
         <template #item.fromAsset="{ row }">

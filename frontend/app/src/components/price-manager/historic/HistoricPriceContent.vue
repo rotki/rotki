@@ -203,7 +203,7 @@ setPostSubmitFunc(() => refresh({ modified: true }));
         :cols="headers"
         :loading="loading"
         :rows="items"
-        row-attr=""
+        row-attr="fromAsset"
         :sort.sync="sort"
       >
         <template #item.fromAsset="{ row }">

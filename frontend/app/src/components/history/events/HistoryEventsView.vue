@@ -16,7 +16,7 @@ import type {
   HistoryEventEntry,
   HistoryEventRequestPayload,
 } from '@/types/history/events';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library-compat';
+import type { DataTableColumn } from '@rotki/ui-library-compat';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { Writeable } from '@/types';
 import type { Collection } from '@/types/collection';
@@ -100,11 +100,6 @@ const usedAccounts = computed<Account[]>(() => {
   return accountData.length > 0 ? [accountData[0]] : accountData;
 });
 
-const sort: Ref<DataTableSortData> = ref({
-  column: 'timestamp',
-  direction: 'desc' as const,
-});
-
 const tableHeaders = computed<DataTableColumn[]>(() => [
   {
     label: '',
@@ -166,7 +161,6 @@ const { notify } = useNotificationsStore();
 const vueRouter = useRouter();
 
 const {
-  options,
   selected,
   isLoading: isEventsGroupHeaderLoading,
   userAction,
@@ -174,12 +168,13 @@ const {
   filters,
   matchers,
   setPage,
-  setTableOptions,
   setFilter,
   updateFilter,
   fetchData,
   pageParams,
   editableItem,
+  pagination,
+  sort,
 } = usePaginationFilters<
   HistoryEvent,
   HistoryEventRequestPayload,
@@ -518,7 +513,7 @@ watch(
 
     if (filterChanged || accountsChanged) {
       set(locationOverview, filters.location);
-      set(options, { ...get(options), page: 1 });
+      setPage(1);
     }
   },
 );
@@ -530,12 +525,8 @@ const eventTaskLoading = isTaskRunning(TaskType.TRANSACTIONS_DECODING);
 const onlineHistoryEventsLoading = isTaskRunning(TaskType.QUERY_ONLINE_EVENTS);
 const isTransactionsLoading = isTaskRunning(TaskType.TX);
 
-const { isAllFinished: isQueryingTxsFinished } = toRefs(
-  useTxQueryStatusStore(),
-);
-const { isAllFinished: isQueryingOnlineEventsFinished } = toRefs(
-  useEventsQueryStatusStore(),
-);
+const { isAllFinished: isQueryingTxsFinished } = toRefs(useTxQueryStatusStore());
+const { isAllFinished: isQueryingOnlineEventsFinished } = toRefs(useEventsQueryStatusStore());
 
 const refreshing = logicOr(
   sectionLoading,
@@ -865,7 +856,6 @@ watchImmediate(route, async (route) => {
         <template
           #default="{
             data: eventsData,
-            itemLength,
             showUpgradeRow,
             limit,
             total,
@@ -878,11 +868,7 @@ watchImmediate(route, async (route) => {
             :cols="tableHeaders"
             :rows="eventsData"
             :loading="processing"
-            :pagination="{
-              limit: options.itemsPerPage,
-              page: options.page,
-              total: itemLength,
-            }"
+            :pagination.sync="pagination"
             :pagination-modifiers="{ external: true }"
             :sort.sync="sort"
             :sort-modifiers="{ external: true }"
@@ -895,7 +881,6 @@ watchImmediate(route, async (route) => {
             }"
             row-attr="txHash"
             outlined
-            @update:options="setTableOptions($event)"
           >
             <template #item.ignoredInAccounting="{ row }">
               <IgnoredInAcountingIcon

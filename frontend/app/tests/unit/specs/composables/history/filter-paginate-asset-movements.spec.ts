@@ -61,7 +61,7 @@ describe('composables::history/filter-paginate', () => {
       const {
         userAction,
         filters,
-        options,
+        sort,
         state,
         fetchData,
         applyRouteFilter,
@@ -83,8 +83,7 @@ describe('composables::history/filter-paginate', () => {
       expect(get(userAction)).toBe(true);
       expect(get(isLoading)).toBe(false);
       expect(get(filters)).to.toStrictEqual({});
-      expect(get(options).sortBy).toHaveLength(1);
-      expect(get(options).sortDesc).toHaveLength(1);
+      expect(get(sort)).toHaveLength(1);
       expect(get(state).data).toHaveLength(0);
       expect(get(state).total).toEqual(0);
 

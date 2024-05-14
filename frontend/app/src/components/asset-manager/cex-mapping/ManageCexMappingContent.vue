@@ -25,10 +25,8 @@ const {
   state,
   isLoading: loading,
   editableItem,
-  options,
   fetchData,
-  setTableOptions,
-  setPage,
+  pagination,
 } = usePaginationFilters<
   CexMapping,
   CexMappingRequestPayload,
@@ -132,10 +130,8 @@ const dialogTitle = computed<string>(() =>
         :location.sync="selectedLocation"
         :symbol.sync="selectedSymbol"
         :loading="loading"
-        :options="options"
+        :pagination.sync="pagination"
         @refresh="fetchData()"
-        @update:options="setTableOptions($event)"
-        @update:page="setPage($event)"
         @edit="edit($event)"
         @delete="showDeleteConfirmation($event)"
       />

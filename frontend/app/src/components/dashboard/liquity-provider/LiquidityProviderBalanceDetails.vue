@@ -75,7 +75,7 @@ const sort: Ref<DataTableSortData> = ref({
     :cols="tableHeaders"
     :sort="sort"
     :rows="transformAssets(assets)"
-    row-attr=""
+    row-attr="asset"
     class="bg-white dark:bg-[#1E1E1E] my-2"
   >
     <template #item.asset="{ row }">

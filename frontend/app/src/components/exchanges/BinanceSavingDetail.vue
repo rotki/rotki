@@ -43,9 +43,9 @@ function defaultCollectionState(): ExchangeSavingsCollection {
 const {
   isLoading,
   state: collection,
-  options,
+  pagination,
+  sort,
   fetchData,
-  setTableOptions,
 } = usePaginationFilters<
   ExchangeSavingsEvent,
   ExchangeSavingsRequestPayload,
@@ -97,13 +97,6 @@ const receivedTableHeaders = computed<DataTableColumn[]>(() => [
   },
 ]);
 
-const sort: Ref<DataTableSortData> = ref([
-  {
-    column: 'usdValue',
-    direction: 'desc' as const,
-  },
-]);
-
 const tableHeaders = computed<DataTableColumn[]>(() => [
   {
     label: t('common.datetime'),
@@ -146,7 +139,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
         :rows="collection.received"
         :loading="isLoading"
         :sort.sync="receivedTableSort"
-        row-attr=""
+        row-attr="asset"
       >
         <template #item.asset="{ row }">
           <AssetDetails
@@ -186,22 +179,17 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
       </template>
 
       <CollectionHandler :collection="collection">
-        <template #default="{ data, itemLength }">
+        <template #default="{ data }">
           <RuiDataTable
             outlined
             dense
             :cols="tableHeaders"
             :rows="data"
             :sort.sync="sort"
-            :pagination="{
-              limit: options.itemsPerPage,
-              page: options.page,
-              total: itemLength,
-            }"
-            row-attr=""
+            :pagination.sync="pagination"
+            row-attr="asset"
             :pagination-modifiers="{ external: true }"
             :loading="isLoading"
-            @update:options="setTableOptions($event)"
           >
             <template #item.asset="{ row }">
               <AssetDetails

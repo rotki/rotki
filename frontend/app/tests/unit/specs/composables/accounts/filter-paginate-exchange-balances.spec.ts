@@ -71,7 +71,7 @@ describe('composables::history/filter-paginate', () => {
       const {
         userAction,
         filters,
-        options,
+        sort,
         state,
         fetchData,
         applyRouteFilter,
@@ -92,10 +92,11 @@ describe('composables::history/filter-paginate', () => {
       expect(get(userAction)).toBe(true);
       expect(get(isLoading)).toBe(false);
       expect(get(filters)).to.toStrictEqual(undefined);
-      expect(get(options).sortBy[0]).toEqual('timestamp');
-      expect(get(options).sortDesc[0]).toEqual(false);
-      expect(get(options).sortBy).toHaveLength(1);
-      expect(get(options).sortDesc).toHaveLength(1);
+      expect(get(sort)).toHaveLength(1);
+      expect(get(sort)).toMatchObject([{
+        column: 'timestamp',
+        direction: 'asc',
+      }]);
       expect(get(state).data).toHaveLength(0);
       expect(get(state).assets).toHaveLength(0);
       expect(get(state).received).toHaveLength(0);

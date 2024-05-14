@@ -6,7 +6,6 @@ import { TableColumn } from '@/types/table-column';
 import type { BigNumber } from '@rotki/common';
 import type {
   DataTableColumn,
-  DataTableSortData,
 } from '@rotki/ui-library-compat';
 import type { IgnoredAssetsHandlingType } from '@/types/asset';
 import type {
@@ -28,20 +27,15 @@ const { dashboardTablesVisibleColumns } = storeToRefs(useFrontendSettingsStore()
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { t } = useI18n();
 
-const sort: Ref<DataTableSortData> = ref({
-  column: 'lastPrice',
-  direction: 'desc' as const,
-});
-
 const group = DashboardTableType.NFT;
 
 const {
   state: balances,
   isLoading,
-  options,
   fetchData,
   setPage,
-  setTableOptions,
+  pagination,
+  sort,
 } = usePaginationFilters<
   NonFungibleBalance,
   NonFungibleBalancesRequestPayload,
@@ -187,24 +181,19 @@ watch(loading, async (isLoading, wasLoading) => {
       :collection="balances"
       @set-page="setPage($event)"
     >
-      <template #default="{ data, itemLength }">
+      <template #default="{ data }">
         <RuiDataTable
           :cols="tableHeaders"
           :rows="data"
           :loading="isLoading"
           :sort.sync="sort"
-          :pagination="{
-            limit: options.itemsPerPage,
-            page: options.page,
-            total: itemLength,
-          }"
+          :pagination.sync="pagination"
           :pagination-modifiers="{ external: true }"
           :sort-modifiers="{ external: true }"
           :empty="{ description: t('data_table.no_data') }"
           row-attr="id"
           sticky-header
           outlined
-          @update:options="setTableOptions($event)"
         >
           <template #item.name="{ row }">
             <NftDetails :identifier="row.id" />

@@ -252,7 +252,7 @@ function showDeleteConfirmation(entry: OracleCacheMeta) {
       :cols="headers"
       :loading="loading"
       :rows="filteredData"
-      row-attr=""
+      row-attr="id"
       :sort.sync="sort"
     >
       <template #item.fromAsset="{ row }">
