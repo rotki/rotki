@@ -62,7 +62,8 @@
     "last_balance_save": 0,
     "last_data_upload_ts": 0,
     "autoDeleteCalendarEntries": true,
-    "autoCreateCalendarReminders": true
+    "autoCreateCalendarReminders": true,
+    "askUserUponSizeDiscrepancy": true
   },
   "message": ""
 }

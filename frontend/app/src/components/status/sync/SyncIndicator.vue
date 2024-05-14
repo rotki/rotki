@@ -84,6 +84,8 @@ watch(isSyncing, (current, prev) => {
   if (current !== prev && !current)
     cancelSync();
 });
+
+const syncSettingMenuOpen: Ref<boolean> = ref(false);
 </script>
 
 <template>
@@ -93,6 +95,7 @@ watch(isSyncing, (current, prev) => {
         id="balances-saved-dropdown"
         v-model="visible"
         menu-class="z-[215]"
+        :persistent="syncSettingMenuOpen"
       >
         <template #activator="{ on }">
           <MenuTooltipButton
@@ -129,47 +132,56 @@ watch(isSyncing, (current, prev) => {
             </RuiBadge>
           </MenuTooltipButton>
         </template>
-        <div class="p-4 md:w-[250px] w-full">
-          <div class="font-medium">
-            {{ t('sync_indicator.last_data_upload') }}
+        <div class="p-4 w-[20rem] max-w-[calc(100vw-1rem)] flex flex-col gap-4">
+          <div class="flex items-start justify-between">
+            <div>
+              <div class="font-medium">
+                {{ t('sync_indicator.last_data_upload') }}
+              </div>
+              <div class="text-rui-text-secondary">
+                <DateDisplay
+                  v-if="lastDataUpload"
+                  :timestamp="lastDataUpload"
+                />
+                <span v-else>
+                  {{ t('common.never') }}
+                </span>
+              </div>
+            </div>
+            <SyncSettings v-model="syncSettingMenuOpen" />
           </div>
-          <div class="py-2 text-rui-text-secondary">
-            <DateDisplay
-              v-if="lastDataUpload"
-              :timestamp="lastDataUpload"
-            />
-            <span v-else>
-              {{ t('common.never') }}
-            </span>
-          </div>
-          <div
+          <RuiAlert
             v-if="uploadStatus"
-            class="flex flex-col my-2 p-2 gap-2 border border-rui-warning rounded-[0.25rem]"
+            type="warning"
+            outlined
+            class="border border-rui-warning"
           >
-            <div class="flex gap-1">
-              <div class="font-medium leading-5">
-                {{ t('sync_indicator.db_upload_result.title') }}
+            <div class="flex items-start justify-between gap-1">
+              <div>
+                <div class="font-medium leading-5">
+                  {{ t('sync_indicator.db_upload_result.title') }}
+                </div>
+                <div class="text-rui-text-secondary text-sm">
+                  <i18n path="sync_indicator.db_upload_result.message">
+                    <template #reason>
+                      <b class="break-words">
+                        {{ uploadStatus.message }}
+                      </b>
+                    </template>
+                  </i18n>
+                </div>
               </div>
               <RuiButton
                 variant="text"
                 icon
                 size="sm"
+                class="-mt-1 -mr-1"
                 @click="clearUploadStatus()"
               >
                 <RuiIcon name="close-line" />
               </RuiButton>
             </div>
-
-            <div class="text-rui-text-secondary text-sm">
-              <i18n path="sync_indicator.db_upload_result.message">
-                <template #reason>
-                  <b class="break-all">
-                    {{ uploadStatus.message }}
-                  </b>
-                </template>
-              </i18n>
-            </div>
-          </div>
+          </RuiAlert>
           <SyncButtons
             :pending="pending"
             @action="showConfirmation($event)"
@@ -225,10 +237,17 @@ watch(isSyncing, (current, prev) => {
       />
       <RuiCheckbox
         v-model="confirmChecked"
+        class="mt-2"
         color="primary"
+        hide-details
       >
         {{ t('sync_indicator.upload_confirmation.confirm_check') }}
       </RuiCheckbox>
+
+      <AskUserUponSizeDiscrepancySetting
+        v-if="uploadStatus"
+        confirm
+      />
     </ConfirmDialog>
   </Fragment>
 </template>

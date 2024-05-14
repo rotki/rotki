@@ -59,6 +59,7 @@ const GeneralSettings = z.object({
   oraclePenaltyDuration: z.number().min(1),
   autoDeleteCalendarEntries: z.boolean(),
   autoCreateCalendarReminders: z.boolean(),
+  askUserUponSizeDiscrepancy: z.boolean(),
 });
 
 export type GeneralSettings = z.infer<typeof GeneralSettings>;
@@ -164,6 +165,7 @@ function getGeneralSettings(settings: UserSettings): GeneralSettings {
     oraclePenaltyDuration: settings.oraclePenaltyDuration,
     autoDeleteCalendarEntries: settings.autoDeleteCalendarEntries,
     autoCreateCalendarReminders: settings.autoCreateCalendarReminders,
+    askUserUponSizeDiscrepancy: settings.askUserUponSizeDiscrepancy,
   };
 }
 
