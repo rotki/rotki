@@ -2,12 +2,13 @@
 Changelog
 =========
 
+* :bug:`-` Fix the issue where the MATIC amount always shows as zero in the Polygon balance table.
 * :bug:`7915` Show OKX balances locked in active trades.
 * :feature:`7816` rotki should now support the new coinbase api key format from the coinbase develop portal.
 * :bug:`-` Compound v2 transactions containing also flash loans of same asset type will now be properly decoded.
 
 * :release:`1.33.0 <2024-05-08>`
-* :feature:`7798` rotki now accurately decodes transactions on the Kyber swap aggregator across all supported chains. 
+* :feature:`7798` rotki now accurately decodes transactions on the Kyber swap aggregator across all supported chains.
 * :feature:`-` Users will now be able to delete transactions and the associated events in history events.
 * :feature:`7074` rotki provides a calendar view where users can add and track events related to their activities. Users can also set reminders to perform actions associated with these events.
 * :feature:`-` Claiming the harvest finance hack compensation grain airdrop will be properly shown as airdrop claim in the history events.
