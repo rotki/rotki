@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.base.modules.degen.constants import (
     CLAIM_AIRDROP_2_CONTRACT,
+    CLAIM_AIRDROP_3_CONTRACT,
     CPT_DEGEN,
     DEGEN_TOKEN_ID,
 )
@@ -23,6 +24,13 @@ class DegenDecoder(MerkleClaimDecoderInterface):
                 DEGEN_TOKEN_ID,  # token id
                 18,  # token decimals
                 'DEGEN from Degen airdrop 2',  # notes suffix
+            ),
+            CLAIM_AIRDROP_3_CONTRACT: (
+                self._decode_indexed_merkle_claim,
+                CPT_DEGEN,  # counterparty
+                DEGEN_TOKEN_ID,  # token id
+                18,  # token decimals
+                'DEGEN from Degen airdrop 3',  # notes suffix
             ),
         }
 
