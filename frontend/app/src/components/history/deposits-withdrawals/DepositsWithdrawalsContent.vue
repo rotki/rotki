@@ -11,7 +11,7 @@ import type {
 import type { Collection } from '@/types/collection';
 import type { Filters, Matcher } from '@/composables/filters/asset-movement';
 import type { Writeable } from '@/types';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library-compat';
+import type { DataTableColumn } from '@rotki/ui-library-compat';
 
 const props = withDefaults(
   defineProps<{
@@ -92,7 +92,6 @@ const extraParams = computed(() => ({
 const { fetchAssetMovements, refreshAssetMovements } = useAssetMovements();
 
 const {
-  options,
   selected,
   expanded,
   isLoading,
@@ -100,7 +99,8 @@ const {
   filters,
   matchers,
   setPage,
-  setTableOptions,
+  sort,
+  pagination,
   setFilter,
   fetchData,
 } = usePaginationFilters<
@@ -151,11 +151,6 @@ const value = computed({
     set(selected, get(assetMovements).data.filter(({ identifier }: AssetMovementEntry) => values?.includes(identifier)));
   },
 });
-
-const sort: Ref<DataTableSortData> = ref([{
-  column: 'timestamp',
-  direction: 'desc' as const,
-}]);
 
 function getItemClass(item: AssetMovementEntry) {
   return item.ignoredInAccounting ? 'opacity-50' : '';
@@ -263,11 +258,7 @@ watch(loading, async (isLoading, wasLoading) => {
             :rows="data"
             :loading="isLoading || loading"
             :loading-text="t('deposits_withdrawals.loading')"
-            :pagination="{
-              limit: options.itemsPerPage,
-              page: options.page,
-              total: itemLength,
-            }"
+            :pagination.sync="pagination"
             :pagination-modifiers="{ external: true }"
             :sort.sync="sort"
             :sort-modifiers="{ external: true }"
@@ -278,7 +269,6 @@ watch(loading, async (isLoading, wasLoading) => {
             single-expand
             sticky-header
             :item-class="getItemClass"
-            @update:options="setTableOptions($event)"
           >
             <template #item.ignoredInAccounting="{ row }">
               <IgnoredInAcountingIcon v-if="row.ignoredInAccounting" />

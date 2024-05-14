@@ -3,7 +3,6 @@ import Fragment from '@/components/helper/Fragment';
 import UserNotesFormDialog from '@/components/notes/UserNotesFormDialog.vue';
 import type { Collection } from '@/types/collection';
 import type { UserNote, UserNotesRequestPayload } from '@/types/notes';
-import type { TablePaginationData } from '@rotki/ui-library-compat';
 
 const props = withDefaults(defineProps<{ location?: string }>(), {
   location: '',
@@ -41,8 +40,7 @@ const {
   state: notes,
   fetchData,
   setPage,
-  options,
-  setOptions,
+  pagination,
 } = usePaginationFilters<
   UserNote,
   UserNotesRequestPayload,
@@ -74,23 +72,6 @@ async function fetchNotes(loadingIndicator = false) {
 const { limit: itemsPerPage, found, total } = getCollectionData<UserNote>(notes);
 
 const { showUpgradeRow } = setupEntryLimit(itemsPerPage, found, total);
-
-const paginationData = computed({
-  get() {
-    return {
-      page: get(options).page,
-      total: get(total),
-      limit: get(options).itemsPerPage,
-    };
-  },
-  set(value: TablePaginationData) {
-    setOptions({
-      ...get(options),
-      page: value.page,
-      itemsPerPage: value.limit,
-    });
-  },
-});
 
 async function togglePin(note: UserNote) {
   const payload = {
@@ -264,7 +245,7 @@ onMounted(async () => {
               class="mb-4 px-2"
             >
               <RuiTablePagination
-                v-model="paginationData"
+                v-model="pagination"
                 dense
               />
             </RuiCard>

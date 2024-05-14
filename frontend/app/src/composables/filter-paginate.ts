@@ -3,7 +3,7 @@ import { Severity } from '@rotki/common/lib/messages';
 import { isEmpty, isEqual } from 'lodash-es';
 import { type LocationQuery, type RawLocationQuery, RouterPaginationOptionsSchema } from '@/types/route';
 import { FilterBehaviour, type MatchedKeywordWithBehaviour, type SearchMatcher } from '@/types/filtering';
-import type { DataTableOptions } from '@rotki/ui-library-compat';
+import type { DataTableSortData, TablePaginationData } from '@rotki/ui-library-compat';
 import type { MaybeRef } from '@vueuse/core';
 import type { AxiosError } from 'axios';
 import type { ZodSchema } from 'zod';
@@ -73,6 +73,33 @@ export function usePaginationFilters<
   } = options;
 
   const { filters, matchers, updateFilter, RouteFilterSchema } = filterSchema();
+
+  const sort = computed<DataTableSortData>({
+    get() {
+      const opts = get(paginationOptions);
+      return opts.sortBy.map(((sort, index) => ({
+        column: sort,
+        direction: opts.sortDesc?.[index] ? 'desc' : 'asc',
+      })));
+    },
+    set(sort) {
+      set(userAction, true);
+      if (Array.isArray(sort)) {
+        set(paginationOptions, {
+          ...get(paginationOptions),
+          sortBy: sort.map(col => col.column as keyof V).filter(key => !!key),
+          sortDesc: sort.map(col => col.direction === 'desc'),
+        });
+      }
+      else {
+        set(paginationOptions, {
+          ...get(paginationOptions),
+          sortBy: sort?.column ? [sort.column as keyof V] : [],
+          sortDesc: sort?.column ? [sort.direction === 'desc'] : [],
+        });
+      }
+    },
+  });
 
   const transformFilters = (filters: W): W => {
     const matchersVal = get(matchers);
@@ -216,6 +243,26 @@ export function usePaginationFilters<
     },
   );
 
+  const pagination = computed<TablePaginationData>({
+    get() {
+      const opts = get(paginationOptions);
+      return {
+        total: get(state).found,
+        page: opts.page,
+        limit: opts.itemsPerPage,
+      };
+    },
+    set(pagination) {
+      set(userAction, true);
+      const opts = get(paginationOptions);
+      set(paginationOptions, {
+        ...opts,
+        page: pagination?.page ?? opts.page,
+        itemsPerPage: pagination?.limit ?? opts.itemsPerPage,
+      });
+    },
+  });
+
   /**
    * Updates pagination options
    * @template T
@@ -312,31 +359,6 @@ export function usePaginationFilters<
   };
 
   /**
-   * This is for the new table from lib, when all is migrated, then we'll remove setOptions
-   * @param {DataTableOptions} data
-   */
-  const setTableOptions = (data: DataTableOptions) => {
-    const { pagination, sort } = data;
-    const { page, itemsPerPage } = get(paginationOptions);
-
-    if (Array.isArray(sort)) {
-      return setOptions({
-        page: pagination?.page ?? page,
-        itemsPerPage: pagination?.limit ?? itemsPerPage,
-        sortBy: sort.map(col => col.column as keyof V).filter(key => !!key),
-        sortDesc: sort.map(col => col.direction === 'desc'),
-      });
-    }
-
-    setOptions({
-      page: pagination?.page ?? page,
-      itemsPerPage: pagination?.limit ?? itemsPerPage,
-      sortBy: sort?.column ? [sort.column as keyof V] : [],
-      sortDesc: sort?.column ? [sort.direction === 'desc'] : [],
-    });
-  };
-
-  /**
    * Updates the filters
    * @template W
    * @param {W} newFilter
@@ -384,7 +406,6 @@ export function usePaginationFilters<
   });
 
   return {
-    options: paginationOptions,
     pageParams,
     selected,
     openDialog,
@@ -397,9 +418,9 @@ export function usePaginationFilters<
     state,
     filters,
     matchers,
+    sort,
+    pagination,
     setPage,
-    setOptions,
-    setTableOptions,
     setFilter,
     applyRouteFilter,
     updateFilter,

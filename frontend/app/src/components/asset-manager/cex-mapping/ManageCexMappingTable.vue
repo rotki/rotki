@@ -1,22 +1,20 @@
 <script setup lang="ts">
 import type { CexMapping } from '@/types/asset';
 import type { Collection } from '@/types/collection';
-import type { DataTableColumn, DataTableOptions } from '@rotki/ui-library-compat';
-import type { TablePagination } from '@/types/pagination';
+import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library-compat';
 
 const props = withDefaults(defineProps<{
   collection: Collection<CexMapping>;
   location: string;
   symbol?: string;
   loading: boolean;
-  options: TablePagination<CexMapping>;
+  pagination: TablePaginationData;
 }>(), { symbol: undefined });
 
 const emit = defineEmits<{
   (e: 'update:location', location: string): void;
   (e: 'update:symbol', symbol?: string): void;
-  (e: 'update:page', page: number): void;
-  (e: 'update:options', options: DataTableOptions): void;
+  (e: 'update:pagination', pagination: TablePaginationData): void;
   (e: 'edit', mapping: CexMapping): void;
   (e: 'delete', mapping: CexMapping): void;
 }>();
@@ -48,18 +46,18 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
 ]);
 
 const locationModel = useVModel(props, 'location', emit);
-
-function setPage(page: number) {
-  emit('update:page', page);
-}
-
-function updatePagination(options: DataTableOptions) {
-  emit('update:options', options);
-}
+const paginationModel = useVModel(props, 'pagination', emit);
 
 const edit = (mapping: CexMapping) => emit('edit', mapping);
 const deleteMapping = (mapping: CexMapping) => emit('delete', mapping);
 const onSymbolChange = useDebounceFn((value?: string) => emit('update:symbol', value), 500);
+
+function setPage(page: number) {
+  set(paginationModel, {
+    ...get(paginationModel),
+    page,
+  });
+}
 </script>
 
 <template>
@@ -94,23 +92,18 @@ const onSymbolChange = useDebounceFn((value?: string) => emit('update:symbol', v
       :collection="collection"
       @set-page="setPage($event)"
     >
-      <template #default="{ data, found }">
+      <template #default="{ data }">
         <RuiDataTable
           :rows="data"
           dense
           striped
           :loading="loading"
           :cols="tableHeaders"
-          :pagination="{
-            limit: options.itemsPerPage,
-            page: options.page,
-            total: found,
-          }"
+          :pagination.sync="paginationModel"
           :pagination-modifiers="{ external: true }"
           :sticky-offset="64"
           row-attr=""
           outlined
-          @update:options="updatePagination($event)"
         >
           <template #item.location="{ row }">
             <div

@@ -2,10 +2,9 @@
 import { some } from 'lodash-es';
 import type {
   DataTableColumn,
-  DataTableOptions,
   DataTableSortData,
+  TablePaginationData,
 } from '@rotki/ui-library-compat';
-import type { TablePagination } from '@/types/pagination';
 import type { CustomAsset } from '@/types/asset';
 import type {
   Filters,
@@ -16,8 +15,8 @@ const props = withDefaults(
   defineProps<{
     assets: CustomAsset[];
     expanded: CustomAsset[];
-    options: TablePagination<CustomAsset>;
-    serverItemLength: number;
+    pagination: TablePaginationData;
+    sort: DataTableSortData;
     matchers: Matcher[];
     filters: Filters;
     loading?: boolean;
@@ -28,19 +27,18 @@ const props = withDefaults(
 const emit = defineEmits<{
   (e: 'edit', asset: CustomAsset): void;
   (e: 'delete-asset', asset: CustomAsset): void;
-  (e: 'update:options', pagination: DataTableOptions): void;
+  (e: 'update:pagination', pagination: TablePaginationData): void;
+  (e: 'update:sort', sort: DataTableSortData): void;
   (e: 'update:filters', filters: Filters): void;
   (e: 'update:expanded', expandedAssets: CustomAsset[]): void;
 }>();
 
 const { t } = useI18n();
 
-const sort: Ref<DataTableSortData> = ref({
-  column: 'name',
-  direction: 'desc' as const,
-});
+const paginationModel = useVModel(props, 'pagination', emit);
+const sortModel = useVModel(props, 'sort', emit);
 
-const tableHeaders = computed<DataTableColumn[]>(() => [
+const cols = computed<DataTableColumn[]>(() => [
   {
     label: t('common.asset'),
     key: 'name',
@@ -64,10 +62,6 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
 
 const edit = (asset: CustomAsset) => emit('edit', asset);
 const deleteAsset = (asset: CustomAsset) => emit('delete-asset', asset);
-
-function updatePagination(options: DataTableOptions) {
-  emit('update:options', options);
-}
 
 const updateFilter = (filters: Filters) => emit('update:filters', filters);
 
@@ -113,15 +107,11 @@ function expand(item: CustomAsset) {
     <RuiDataTable
       :rows="assets"
       :loading="loading"
-      :cols="tableHeaders"
+      :cols="cols"
       :expanded="expanded"
-      :pagination="{
-        limit: options.itemsPerPage,
-        page: options.page,
-        total: serverItemLength,
-      }"
+      :pagination.sync="paginationModel"
       :pagination-modifiers="{ external: true }"
-      :sort.sync="sort"
+      :sort.sync="sortModel"
       :sort-modifiers="{ external: true }"
       row-attr="identifier"
       data-cy="custom-assets-table"
@@ -129,7 +119,6 @@ function expand(item: CustomAsset) {
       sticky-header
       outlined
       class="custom-assets-table"
-      @update:options="updatePagination($event)"
     >
       <template #item.name="{ row }">
         <AssetDetailsBase

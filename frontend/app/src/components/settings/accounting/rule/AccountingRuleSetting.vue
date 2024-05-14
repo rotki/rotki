@@ -13,17 +13,15 @@ import type {
 const { t } = useI18n();
 const router = useRouter();
 
-const { getAccountingRule, getAccountingRules, getAccountingRulesConflicts }
-  = useAccountingSettings();
+const { getAccountingRule, getAccountingRules, getAccountingRulesConflicts } = useAccountingSettings();
 
 const {
   state,
   isLoading,
-  options,
   fetchData,
-  setTableOptions,
   setPage,
   filters,
+  pagination,
   matchers,
   updateFilter,
   editableItem,
@@ -108,8 +106,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
   },
 ]);
 
-const { historyEventTypesData, historyEventSubTypesData, getEventTypeData }
-  = useHistoryEventMappings();
+const { historyEventTypesData, historyEventSubTypesData, getEventTypeData } = useHistoryEventMappings();
 
 function getHistoryEventTypeName(eventType: string): string {
   return get(historyEventTypesData).find(item => item.identifier === eventType)
@@ -301,20 +298,15 @@ onMounted(async () => {
         :collection="state"
         @set-page="setPage($event)"
       >
-        <template #default="{ data, itemLength }">
+        <template #default="{ data }">
           <RuiDataTable
             outlined
             :rows="data"
             :cols="tableHeaders"
             :loading="isLoading"
-            :pagination="{
-              limit: options.itemsPerPage,
-              page: options.page,
-              total: itemLength,
-            }"
+            :pagination.sync="pagination"
             row-attr="identifier"
             :pagination-modifiers="{ external: true }"
-            @update:options="setTableOptions($event)"
           >
             <template #header.taxable>
               <RuiTooltip

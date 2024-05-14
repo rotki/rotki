@@ -6,42 +6,67 @@ import {
 } from '@rotki/common/lib/messages';
 import type {
   DataTableColumn,
-  DataTableOptions,
   DataTableSortData,
+  TablePaginationData,
 } from '@rotki/ui-library-compat';
 import type {
   AddressBookEntry,
   AddressBookLocation,
 } from '@/types/eth-names';
 import type { Collection } from '@/types/collection';
-import type { TablePagination } from '@/types/pagination';
 
 const props = defineProps<{
   collection: Collection<AddressBookEntry>;
   location: AddressBookLocation;
   loading: boolean;
-  options: TablePagination<AddressBookEntry>;
+  sort: DataTableSortData;
+  pagination: TablePaginationData;
 }>();
 
 const emit = defineEmits<{
   (e: 'edit', item: AddressBookEntry): void;
-  (e: 'update:page', page: number): void;
-  (e: 'update:options', pagination: DataTableOptions): void;
+  (e: 'update:sort', sort: DataTableSortData): void;
+  (e: 'update:pagination', pagination: TablePaginationData): void;
   (e: 'refresh'): void;
 }>();
 
+const { location } = toRefs(props);
+
 const { t } = useI18n();
 
-function setPage(page: number) {
-  emit('update:page', page);
-}
+const paginationModel = useVModel(props, 'pagination', emit);
+const sortModel = useVModel(props, 'sort', emit);
 
-function updatePagination(pagination: DataTableOptions) {
-  return emit('update:options', pagination);
-}
+const cols = computed<DataTableColumn[]>(() => [
+  {
+    label: t('common.address'),
+    key: 'address',
+    sortable: true,
+  },
+  {
+    label: t('common.name'),
+    key: 'name',
+    sortable: true,
+  },
+  {
+    label: '',
+    key: 'actions',
+  },
+]);
 
 function refresh() {
   emit('refresh');
+}
+
+function edit(item: AddressBookEntry) {
+  emit('edit', item);
+}
+
+function setPage(page: number) {
+  set(paginationModel, {
+    ...get(paginationModel),
+    page,
+  });
 }
 
 function addressBookDeletion(location: Ref<AddressBookLocation>) {
@@ -91,34 +116,6 @@ function addressBookDeletion(location: Ref<AddressBookLocation>) {
   };
 }
 
-const { location } = toRefs(props);
-
-function edit(item: AddressBookEntry) {
-  emit('edit', item);
-}
-
-const sort: Ref<DataTableSortData> = ref({
-  column: 'name',
-  direction: 'asc' as const,
-});
-
-const tableHeaders = computed<DataTableColumn[]>(() => [
-  {
-    label: t('common.address').toString(),
-    key: 'address',
-    sortable: true,
-  },
-  {
-    label: t('common.name').toString(),
-    key: 'name',
-    sortable: true,
-  },
-  {
-    label: '',
-    key: 'actions',
-  },
-]);
-
 const { showDeleteConfirmation } = addressBookDeletion(location);
 </script>
 
@@ -128,25 +125,18 @@ const { showDeleteConfirmation } = addressBookDeletion(location);
       :collection="collection"
       @set-page="setPage($event)"
     >
-      <template #default="{ data, itemLength }">
+      <template #default="{ data }">
         <RuiDataTable
           :rows="data"
-          :cols="tableHeaders"
+          :cols="cols"
           :loading="loading"
-          :options="options"
-          :pagination="{
-            limit: options.itemsPerPage,
-            page: options.page,
-            total: itemLength,
-          }"
+          :pagination.sync="paginationModel"
           :pagination-modifiers="{ external: true }"
-          :sort.sync="sort"
+          :sort.sync="sortModel"
           :sort-modifiers="{ external: true }"
-          row-attr=""
+          row-attr="address"
           outlined
           dense
-          :server-items-length="itemLength"
-          @update:options="updatePagination($event)"
         >
           <template #item.address="{ row }">
             <AccountDisplay

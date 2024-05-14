@@ -10,10 +10,9 @@ import type { Collection } from '@/types/collection';
 import type { Filters, Matcher } from '@/composables/filters/assets';
 import type {
   DataTableColumn,
-  DataTableOptions,
   DataTableSortData,
+  TablePaginationData,
 } from '@rotki/ui-library-compat';
-import type { TablePagination } from '@/types/pagination';
 import type { SupportedAsset } from '@rotki/common/lib/data';
 import type { ActionStatus } from '@/types/action';
 
@@ -22,9 +21,10 @@ const props = withDefaults(
     collection: Collection<SupportedAsset>;
     matchers: Matcher[];
     filters: Filters;
+    pagination: TablePaginationData;
+    sort: DataTableSortData;
     expanded: SupportedAsset[];
     selected: string[];
-    options: TablePagination<SupportedAsset>;
     ignoredAssets: string[];
     ignoredFilter: {
       onlyShowOwned: boolean;
@@ -41,11 +41,11 @@ const emit = defineEmits<{
   (e: 'refresh'): void;
   (e: 'edit', asset: SupportedAsset): void;
   (e: 'delete-asset', asset: SupportedAsset): void;
-  (e: 'update:options', options: DataTableOptions): void;
   (e: 'update:filters', filters: Filters): void;
   (e: 'update:selected', selectedAssets: string[]): void;
-  (e: 'update:page', page: number): void;
   (e: 'update:expanded', expandedAssets: SupportedAsset[]): void;
+  (e: 'update:pagination', pagination: TablePaginationData): void;
+  (e: 'update:sort', sort: DataTableSortData): void;
   (
     e: 'update:ignored-filter',
     value: {
@@ -58,12 +58,10 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const sort: Ref<DataTableSortData> = ref({
-  column: 'symbol',
-  direction: 'asc' as const,
-});
+const paginationModel = useVModel(props, 'pagination', emit);
+const sortModel = useVModel(props, 'sort', emit);
 
-const tableHeaders = computed<DataTableColumn[]>(() => [
+const cols = computed<DataTableColumn[]>(() => [
   {
     label: t('common.asset'),
     key: 'symbol',
@@ -105,9 +103,6 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
 const edit = (asset: SupportedAsset) => emit('edit', asset);
 const deleteAsset = (asset: SupportedAsset) => emit('delete-asset', asset);
 
-function updatePagination(options: DataTableOptions) {
-  return emit('update:options', options);
-}
 const updateFilter = (filters: Filters) => emit('update:filters', filters);
 
 function updateSelected(selectedAssets: string[]) {
@@ -149,8 +144,7 @@ function getAsset(item: SupportedAsset) {
 
 const { setMessage } = useMessageStore();
 const { isAssetIgnored, ignoreAsset, unignoreAsset, fetchIgnoredAssets } = useIgnoredAssetsStore();
-const { isAssetWhitelisted, whitelistAsset, unWhitelistAsset }
-  = useWhitelistedAssetsStore();
+const { isAssetWhitelisted, whitelistAsset, unWhitelistAsset } = useWhitelistedAssetsStore();
 
 const { markAssetAsSpam, removeAssetFromSpamList } = useSpamAsset();
 
@@ -232,7 +226,10 @@ function expand(item: SupportedAsset) {
 }
 
 function setPage(page: number) {
-  emit('update:page', page);
+  set(paginationModel, {
+    ...get(paginationModel),
+    page,
+  });
 }
 </script>
 
@@ -281,28 +278,23 @@ function setPage(page: number) {
       :collection="collection"
       @set-page="setPage($event)"
     >
-      <template #default="{ data, found }">
+      <template #default="{ data }">
         <RuiDataTable
           dense
           :value="selected"
           :rows="data"
           :loading="loading"
-          :cols="tableHeaders"
+          :cols="cols"
           :expanded="expanded"
-          :pagination="{
-            limit: options.itemsPerPage,
-            page: options.page,
-            total: found,
-          }"
+          :pagination.sync="paginationModel"
           :pagination-modifiers="{ external: true }"
-          :sort.sync="sort"
+          :sort.sync="sortModel"
           :sort-modifiers="{ external: true }"
           row-attr="identifier"
           data-cy="managed-assets-table"
           single-expand
           sticky-header
           outlined
-          @update:options="updatePagination($event)"
           @input="updateSelected($event ?? [])"
         >
           <template #item.symbol="{ row }">

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Section } from '@/types/status';
-import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library-compat';
+import type { DataTableColumn } from '@rotki/ui-library-compat';
 import type { ActionStatus } from '@/types/action';
 import type { IgnoredAssetsHandlingType } from '@/types/asset';
 import type { Module } from '@/types/modules';
@@ -28,11 +28,6 @@ const ignoredAssetsHandling = ref<IgnoredAssetsHandlingType>('exclude');
 const extraParams = computed(() => ({
   ignoredAssetsHandling: get(ignoredAssetsHandling),
 }));
-
-const sort = ref<DataTableSortData>({
-  column: 'lastPrice',
-  direction: 'desc',
-});
 
 const tableHeaders = computed<DataTableColumn[]>(() => [
   {
@@ -87,9 +82,9 @@ const {
   state: balances,
   isLoading,
   fetchData,
-  options,
+  sort,
   setPage,
-  setTableOptions,
+  pagination,
 } = usePaginationFilters<
   NonFungibleBalance,
   NonFungibleBalancesRequestPayload,
@@ -254,7 +249,7 @@ watch(loading, async (isLoading, wasLoading) => {
         :collection="balances"
         @set-page="setPage($event)"
       >
-        <template #default="{ data, itemLength, totalUsdValue }">
+        <template #default="{ data, totalUsdValue }">
           <RuiDataTable
             v-model="selected"
             row-attr="id"
@@ -264,16 +259,10 @@ watch(loading, async (isLoading, wasLoading) => {
             :rows="data"
             :sort.sync="sort"
             :sort-modifiers="{ external: true }"
-            :options="options"
-            :pagination="{
-              limit: options.itemsPerPage,
-              page: options.page,
-              total: itemLength,
-            }"
+            :pagination.sync="pagination"
             :pagination-modifiers="{ external: true }"
             :loading="isLoading"
             show-select
-            @update:options="setTableOptions($event)"
           >
             <template #item.name="{ row }">
               <NftDetails :identifier="row.id" />
