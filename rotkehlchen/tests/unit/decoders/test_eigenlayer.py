@@ -1,7 +1,13 @@
 import pytest
+
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import CPT_EIGENLAYER
+from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
+    CPT_EIGENLAYER,
+    EIGEN_TOKEN_ID,
+    EIGENLAYER_AIRDROP_DISTRIBUTOR,
+    EIGENLAYER_STRATEGY_MANAGER,
+)
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
@@ -48,8 +54,8 @@ def test_deposit_token(database, ethereum_inquirer, ethereum_accounts):
         asset=a_sweth,
         balance=Balance(amount=ZERO),
         location_label=ethereum_accounts[0],
-        notes=f'Revoke swETH spending approval of {ethereum_accounts[0]} by 0x858646372CC42E1A627fcE94aa7A7033e7CF075A',  # noqa: E501
-        address=string_to_evm_address('0x858646372CC42E1A627fcE94aa7A7033e7CF075A'),
+        notes=f'Revoke swETH spending approval of {ethereum_accounts[0]} by {EIGENLAYER_STRATEGY_MANAGER}',  # noqa: E501
+        address=EIGENLAYER_STRATEGY_MANAGER,
     ), EvmEvent(
         tx_hash=tx_hash,
         sequence_index=113,
@@ -105,6 +111,99 @@ def test_withdraw(database, ethereum_inquirer, ethereum_accounts):
         location_label=ethereum_accounts[0],
         notes=f'Unstake {withdrawn_amount} swETH from EigenLayer',
         counterparty=CPT_EIGENLAYER,
+        product=EvmProduct.STAKING,
+        address=strategy_addr,
+    )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xabe8430e3f0BeCa32915dA84E530f81A01379953']])
+def test_airdrop_claim(database, ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x0a72c7bf0fe1808035f8df466a70453f29c6b57d0bec46913d993a19ef72265c')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas_amount, claim_amount = TimestampMS(1715680739000), '0.00074757962836592', '110'
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas_amount)),
+        location_label=ethereum_accounts[0],
+        notes=f'Burned {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=253,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.AIRDROP,
+        asset=Asset(EIGEN_TOKEN_ID),
+        balance=Balance(amount=FVal(claim_amount)),
+        location_label=ethereum_accounts[0],
+        notes='Claim 110 EIGEN from the Eigenlayer airdrop',
+        counterparty=CPT_EIGENLAYER,
+        address=EIGENLAYER_AIRDROP_DISTRIBUTOR,
+    )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x65151A6343b16c38286f31fcC93e20246629cF8c']])
+def test_stake_eigen(database, ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x4da63226965a8b0584f137efa934106cd0cb7a15b536d6f659945cfd4c260b4e')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas_amount, staked_amount = TimestampMS(1715684387000), '0.00141296787957222', '110'
+    a_eigen, strategy_addr = Asset(EIGEN_TOKEN_ID), '0xaCB55C530Acdb2849e6d4f36992Cd8c9D50ED8F7'
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas_amount)),
+        location_label=ethereum_accounts[0],
+        notes=f'Burned {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=206,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.APPROVE,
+        asset=a_eigen,
+        balance=Balance(amount=ZERO),
+        location_label=ethereum_accounts[0],
+        notes=f'Revoke EIGEN spending approval of {ethereum_accounts[0]} by {EIGENLAYER_STRATEGY_MANAGER}',  # noqa: E501
+        address=EIGENLAYER_STRATEGY_MANAGER,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=207,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.STAKING,
+        event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+        asset=a_eigen,
+        balance=Balance(amount=FVal(staked_amount)),
+        location_label=ethereum_accounts[0],
+        notes=f'Deposit {staked_amount} EIGEN in EigenLayer',
+        counterparty=CPT_EIGENLAYER,
+        extra_data={'strategy': strategy_addr},
         product=EvmProduct.STAKING,
         address=strategy_addr,
     )]

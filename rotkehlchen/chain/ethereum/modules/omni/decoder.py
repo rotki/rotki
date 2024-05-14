@@ -4,8 +4,8 @@ from typing import Any
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.chain.evm.decoding.clique.decoder import CliqueAirdropDecoderInterface
 from rotkehlchen.chain.evm.decoding.constants import STAKED
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -20,32 +20,20 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-from .constants import (
-    CLAIMED,
-    CPT_OMNI,
-    OMNI_AIDROP_CONTRACT,
-    OMNI_STAKING_CONTRACT,
-    OMNI_TOKEN_ID,
-)
+from .constants import CPT_OMNI, OMNI_AIDROP_CONTRACT, OMNI_STAKING_CONTRACT, OMNI_TOKEN_ID
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class OmniDecoder(DecoderInterface):
+class OmniDecoder(CliqueAirdropDecoderInterface):
 
     def _decode_omni_claim(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] != CLAIMED:
-            return DEFAULT_DECODING_OUTPUT
-
-        if not self.base.is_tracked(claiming_address := hex_or_bytes_to_address(context.tx_log.topics[1])):  # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
-
-        claimed_amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data),
-            token_decimals=18,  # omni has 18 decimals
-        )
         transfer_found = False
+        if not (decode_result := self._decode_claim(context)):
+            return DEFAULT_DECODING_OUTPUT
+
+        claiming_address, claimed_amount = decode_result
         notes = f'Claim {claimed_amount} OMNI from the Omni genesis airdrop'
         for event in context.decoded_events:
             if (
