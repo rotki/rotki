@@ -21,6 +21,7 @@ const { t } = useI18n();
         <BtcDerivationGapLimitSetting />
         <TreatEthAsEth2Setting />
         <EvmChainsToIgnoreSettings />
+        <AskUserUponSizeDiscrepancySetting />
       </div>
     </SettingCategory>
 

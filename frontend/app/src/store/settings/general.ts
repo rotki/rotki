@@ -87,6 +87,8 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
 
   const autoCreateCalendarReminders: ComputedRef<boolean> = computed(() => settings.autoCreateCalendarReminders);
 
+  const askUserUponSizeDiscrepancy: ComputedRef<boolean> = computed(() => settings.askUserUponSizeDiscrepancy);
+
   const currencySymbol: ComputedRef<SupportedCurrency> = computed(() => {
     const currency = get(mainCurrency);
     return currency.tickerSymbol;
@@ -127,6 +129,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     oraclePenaltyDuration,
     autoDeleteCalendarEntries,
     autoCreateCalendarReminders,
+    askUserUponSizeDiscrepancy,
     // return settings on development for state persistence
     ...(checkIfDevelopment() ? { settings } : {}),
     update,

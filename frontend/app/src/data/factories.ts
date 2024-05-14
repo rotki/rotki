@@ -34,6 +34,7 @@ export function defaultGeneralSettings(mainCurrency: Currency): GeneralSettings 
     oraclePenaltyDuration: Defaults.DEFAULT_ORACLE_PENALTY_DURATION,
     autoDeleteCalendarEntries: true,
     autoCreateCalendarReminders: true,
+    askUserUponSizeDiscrepancy: true,
   };
 }
 

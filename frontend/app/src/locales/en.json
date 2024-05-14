@@ -4224,6 +4224,13 @@
     "db_upload_result": {
       "message": "We could not complete the upload because {reason}",
       "title": "Database sync attempt unsuccessful"
+    },
+    "setting": {
+      "title": "Sync setting",
+      "ask_user_upon_size_discrepancy": {
+        "label": "Force-push when a size discrepancy occurs during automatic database sync.",
+        "confirm_label": "Force-push whenever a size discrepancy occurs."
+      }
     }
   },
   "table_filter": {
