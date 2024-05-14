@@ -1,8 +1,8 @@
 <script setup lang="ts">
 withDefaults(
   defineProps<{
-    dialog: boolean;
-    confirm: boolean;
+    dialog?: boolean;
+    confirm?: boolean;
   }>(),
   { dialog: false, confirm: false },
 );
