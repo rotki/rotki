@@ -37,6 +37,7 @@ const activeItem = computed(() => props.messages[get(step) - 1]);
             <ExternalLink
               v-if="activeItem.action"
               color="primary"
+              class="text-left md:text-center"
               :url="activeItem.action?.url"
             >
               {{ activeItem.action.text }}

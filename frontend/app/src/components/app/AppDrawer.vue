@@ -12,6 +12,7 @@ const { appBarColor } = useTheme();
     :class="{ 'app__navigation-drawer--mini': isMini }"
     fixed
     :mini-variant="isMini"
+    :mobile-breakpoint="1280"
     :color="appBarColor"
     clipped
     app
