@@ -4,11 +4,13 @@ from typing import Any
 from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     CPT_EIGENLAYER,
     DEPOSIT_TOPIC,
+    EIGEN_TOKEN_ID,
+    EIGENLAYER_AIRDROP_DISTRIBUTOR,
     EIGENLAYER_CPT_DETAILS,
     EIGENLAYER_STRATEGY_MANAGER,
     WITHDRAWAL_COMPLETE_TOPIC,
 )
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.clique.decoder import CliqueAirdropDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -22,12 +24,11 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address
 
-
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class EigenlayerDecoder(DecoderInterface):
+class EigenlayerDecoder(CliqueAirdropDecoderInterface):
 
     def _decode_deposit(self, context: DecoderContext) -> DecodingOutput:
         depositor = hex_or_bytes_to_address(context.tx_log.data[0:32])
@@ -96,10 +97,36 @@ class EigenlayerDecoder(DecoderInterface):
 
         return DEFAULT_DECODING_OUTPUT
 
+    def decode_airdrop(self, context: DecoderContext) -> DecodingOutput:
+        if not (decode_result := self._decode_claim(context)):
+            return DEFAULT_DECODING_OUTPUT
+
+        claiming_address, claimed_amount = decode_result
+        notes = f'Claim {claimed_amount} EIGEN from the Eigenlayer airdrop'
+        for event in context.decoded_events:
+            if (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.location_label == claiming_address and
+                event.asset.identifier == EIGEN_TOKEN_ID and
+                event.balance.amount == claimed_amount
+            ):
+                event.event_type = HistoryEventType.RECEIVE
+                event.event_subtype = HistoryEventSubType.AIRDROP
+                event.counterparty = CPT_EIGENLAYER
+                event.notes = notes
+                break
+        else:
+            log.error(f'Could not match eigenlayer airdrop receive event in {context.transaction.tx_hash.hex()}')  # noqa: E501
+
+        return DEFAULT_DECODING_OUTPUT
+
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return {EIGENLAYER_STRATEGY_MANAGER: (self.decode_event,)}
+        return {
+            EIGENLAYER_STRATEGY_MANAGER: (self.decode_event,),
+            EIGENLAYER_AIRDROP_DISTRIBUTOR: (self.decode_airdrop,),
+        }
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:

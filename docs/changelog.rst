@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`7570` Users can choose whether to automatically force-push when a time discrepancy warning occurs during automatic database sync.
+* :feature:`-` The eigenlayer airdrop claim event should now be properly decoded in the history events view.
 
 * :release:`1.33.0 <2024-05-08>`
 * :feature:`7798` rotki now accurately decodes transactions on the Kyber swap aggregator across all supported chains.
