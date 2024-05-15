@@ -1,6 +1,6 @@
 import { isBlockchain } from '@/types/blockchain/chains';
 
-export const useAssetIcon = createSharedComposable(() => {
+export const useAssetIconStore = defineStore('assets/icon', () => {
   const lastRefreshedAssetIcon: Ref<number> = ref(0);
 
   const setLastRefreshedAssetIcon = () => {
@@ -13,9 +13,9 @@ export const useAssetIcon = createSharedComposable(() => {
 
   const { assetImageUrl } = useAssetIconApi();
 
-  const getAssetImageUrl = (identifier: string, timestamp?: number): string => {
+  const getAssetImageUrl = (identifier: string): string => {
     const id = isBlockchain(identifier) ? identifier.toUpperCase() : identifier;
-    return assetImageUrl(id, timestamp ?? get(lastRefreshedAssetIcon));
+    return assetImageUrl(id, get(lastRefreshedAssetIcon));
   };
 
   return {

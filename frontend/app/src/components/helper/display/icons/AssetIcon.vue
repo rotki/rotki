@@ -8,20 +8,16 @@ const props = withDefaults(
   defineProps<{
     identifier: string;
     size: string;
-    changeable?: boolean;
     styled?: StyleValue;
     noTooltip?: boolean;
-    timestamp?: number | null;
     circle?: boolean;
     padding?: string;
     enableAssociation?: boolean;
     showChain?: boolean;
   }>(),
   {
-    changeable: false,
     styled: undefined,
     noTooltip: false,
-    timestamp: null,
     circle: false,
     padding: '2px',
     enableAssociation: true,
@@ -34,9 +30,7 @@ const emit = defineEmits<{ (e: 'click'): void }>();
 const { t } = useI18n();
 
 const {
-  changeable,
   identifier,
-  timestamp,
   padding,
   size,
   enableAssociation,
@@ -64,7 +58,7 @@ const currency = computed<string | undefined>(() => {
 });
 
 const { assetInfo } = useAssetInfoRetrieval();
-const { getAssetImageUrl } = useAssetIcon();
+const { getAssetImageUrl } = useAssetIconStore();
 
 const asset = assetInfo(mappedIdentifier, enableAssociation);
 const isCustomAsset = computed(() => get(asset)?.isCustomAsset ?? false);
@@ -99,8 +93,7 @@ const url = computed<string>(() => {
   if (get(symbol) === 'WETH')
     return `./assets/images/protocols/weth.svg`;
 
-  const currentTimestamp = get(timestamp) || Date.now();
-  return getAssetImageUrl(id, get(changeable) ? currentTimestamp : undefined);
+  return getAssetImageUrl(id);
 });
 
 const chainIconSize = computed(
@@ -124,10 +117,8 @@ const placeholderStyle = computed(() => {
   };
 });
 
-watch([symbol, changeable, identifier], (curr, prev) => {
+watch([symbol, identifier], () => {
   set(error, false);
-  if (curr[1] !== prev[1])
-    set(pending, true);
 });
 </script>
 

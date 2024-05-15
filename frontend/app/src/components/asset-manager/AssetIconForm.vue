@@ -13,13 +13,14 @@ const preview = computed<string | null>(() => get(identifier) ?? null);
 const icon = ref<File | null>(null);
 
 const refreshIconLoading = ref<boolean>(false);
-const timestamp = ref<number | null>(null);
 const { notify } = useNotificationsStore();
 const { appSession } = useInterop();
 const { setMessage } = useMessageStore();
 const { refreshIcon: refresh, setIcon, uploadIcon } = useAssetIconApi();
 
 const { t } = useI18n();
+
+const { setLastRefreshedAssetIcon } = useAssetIconStore();
 
 async function refreshIcon() {
   set(refreshIconLoading, true);
@@ -38,7 +39,7 @@ async function refreshIcon() {
     });
   }
   set(refreshIconLoading, false);
-  set(timestamp, Date.now());
+  setLastRefreshedAssetIcon();
 }
 
 async function saveIcon(identifier: string) {
@@ -46,21 +47,17 @@ async function saveIcon(identifier: string) {
   if (!iconVal)
     return;
 
-  let success = false;
-  let message = '';
   try {
     if (appSession)
       await setIcon(identifier, iconVal.path);
     else
       await uploadIcon(identifier, iconVal);
 
-    success = true;
+    setLastRefreshedAssetIcon();
   }
   catch (error: any) {
-    message = error.message;
-  }
+    const message = error.message;
 
-  if (!success) {
     setMessage({
       title: t('asset_form.icon_upload.title'),
       description: t('asset_form.icon_upload.description', {
@@ -131,7 +128,6 @@ defineExpose({
           size="72px"
           changeable
           :show-chain="false"
-          :timestamp="timestamp"
         />
       </RuiCard>
       <FileUpload
