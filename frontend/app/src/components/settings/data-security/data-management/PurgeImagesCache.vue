@@ -26,7 +26,7 @@ const ensNamesList: ComputedRef<string[]> = computed(
 );
 
 const { clearIconCache } = useAssetIconApi();
-const { setLastRefreshedAssetIcon } = useAssetIcon();
+const { setLastRefreshedAssetIcon } = useAssetIconStore();
 const { clearEnsAvatarCache } = useAddressesNamesApi();
 const { setLastRefreshedAvatar } = useAddressesNamesStore();
 

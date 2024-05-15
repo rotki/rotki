@@ -18,7 +18,7 @@ body {
   margin-top: 64px !important;
   background: var(--v-rotki-light-grey-base);
 
-  @media only screen and (max-width: 960px) {
+  @media only screen and (max-width: 767px) {
     height: calc(100vh - 56px);
     margin-top: 56px !important;
   }

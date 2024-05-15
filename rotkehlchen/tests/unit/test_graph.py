@@ -1,4 +1,5 @@
 from contextlib import ExitStack
+from typing import Final
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -8,8 +9,8 @@ from rotkehlchen.chain.ethereum.graph import Graph, format_query_indentation
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 
-TEST_URL_1 = 'https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v2'
-TEST_QUERY_1 = (
+UNISWAP_GRAPH_ID: Final = 'A3Np3RQbaBA6oKJgiwDJeo5T3zrYfGHPWFYayMwtNDum'
+TEST_QUERY_1: Final = (
     """
     tokenDayDatas
     (
@@ -25,10 +26,10 @@ TEST_QUERY_1 = (
 )
 
 
-def test_exception_retries():
+def test_exception_retries(database, add_subgraph_api_key):  # pylint: disable=unused-argument
     """Test an exception raised by Client.execute() triggers the retry logic.
     """
-    graph = Graph(TEST_URL_1)
+    graph = Graph(subgraph_id=UNISWAP_GRAPH_ID, database=database, label='uniswap')
     param_types = {'$limit': 'Int!'}
     param_values = {'limit': 1}
     querystr = format_query_indentation(TEST_QUERY_1.format())
@@ -56,13 +57,13 @@ def test_exception_retries():
     assert 'No retries left' in str(e.value)
 
 
-def test_success_result():
+def test_success_result(database, add_subgraph_api_key):  # pylint: disable=unused-argument
     """Test a successful response returns result as expected and does not
     triggers the retry logic.
     """
     expected_result = {'schema': [{'data1'}, {'data2'}]}
 
-    graph = Graph(TEST_URL_1)
+    graph = Graph(subgraph_id=UNISWAP_GRAPH_ID, database=database, label='uniswap')
     param_types = {'$limit': 'Int!'}
     param_values = {'limit': 1}
     querystr = format_query_indentation(TEST_QUERY_1.format())

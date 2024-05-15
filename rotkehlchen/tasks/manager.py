@@ -175,6 +175,7 @@ class TaskManager:
             self._maybe_create_calendar_reminder,
             self._maybe_trigger_calendar_reminder,
             self._maybe_delete_past_calendar_events,
+            self._maybe_query_graph_delegated_tokens,
         ]
         if self.premium_sync_manager is not None:
             self.potential_tasks.append(self._maybe_schedule_db_upload)
@@ -889,6 +890,23 @@ class TaskManager:
             exception_is_error=True,
             method=delete_past_calendar_entries,
             database=self.database,
+        )]
+
+    def _maybe_query_graph_delegated_tokens(self) -> Optional[list[gevent.Greenlet]]:
+        """
+        Periodically query Ethereum transaction logs for Graph staking-related transactions,
+        particularly, search for DelegationTransferredToL2 event. If not found, it decodes
+        and adds them.
+        """
+        if should_run_periodic_task(self.database, DBCacheStatic.LAST_GRAPH_DELEGATIONS_CHECK_TS, DAY_IN_SECONDS) is False:  # noqa: E501
+            return None
+
+        return [self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name="Search for Graph's GRT DelegationTransferredToL2 events",
+            exception_is_error=True,
+            method=self.chains_aggregator.ethereum.transactions.query_for_graph_delegation_txns,  # type: ignore[attr-defined]
+            addresses=self.chains_aggregator.accounts.eth,
         )]
 
     def _schedule(self) -> None:

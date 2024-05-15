@@ -19,6 +19,7 @@ const activeItem = computed(() => props.messages[get(step) - 1]);
     class="px-4 py-2 text-body-1 text-rui-primary flex items-center justify-between border-b border-default w-full bg-white dark:bg-[#1E1E1E] gap-4"
   >
     <div
+      class="flex-1 md:text-center"
       @mouseover="onPause()"
       @mouseleave="onResume()"
     >
@@ -36,6 +37,7 @@ const activeItem = computed(() => props.messages[get(step) - 1]);
             <ExternalLink
               v-if="activeItem.action"
               color="primary"
+              class="text-left md:text-center"
               :url="activeItem.action?.url"
             >
               {{ activeItem.action.text }}

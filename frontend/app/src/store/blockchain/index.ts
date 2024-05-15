@@ -48,7 +48,7 @@ function getAccountBalance(account: BlockchainAccount, chainBalances: Blockchain
   const nativeAsset = account.nativeAsset;
   const balance = assets
     ? {
-        amount: assets[nativeAsset.toUpperCase()]?.amount ?? Zero,
+        amount: assets[nativeAsset]?.amount ?? Zero,
         usdValue: assetSum(accountBalances.assets),
       }
     : {

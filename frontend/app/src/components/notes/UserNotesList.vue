@@ -39,8 +39,8 @@ const extraParams = computed(() => ({
 const {
   state: notes,
   fetchData,
-  setPage,
-  pagination,
+  options,
+  setOptions,
 } = usePaginationFilters<
   UserNote,
   UserNotesRequestPayload,
@@ -62,16 +62,23 @@ async function fetchNotes(loadingIndicator = false) {
 
   await fetchData();
   set(loading, false);
-
-  nextTick(() => {
-    if (get(wrapper))
-      get(wrapper).scrollTop = 0;
-  });
 }
 
 const { limit: itemsPerPage, found, total } = getCollectionData<UserNote>(notes);
 
 const { showUpgradeRow } = setupEntryLimit(itemsPerPage, found, total);
+
+const page: Ref<number> = ref(1);
+const nextPageDisabled: Ref<boolean> = ref(true);
+
+const LIMIT = 10;
+watch(page, (page) => {
+  setOptions({
+    ...get(options),
+    page: 1,
+    itemsPerPage: LIMIT * page,
+  });
+});
 
 async function togglePin(note: UserNote) {
   const payload = {
@@ -166,6 +173,23 @@ debouncedWatch(
 onMounted(async () => {
   await fetchNotes(true);
 });
+
+const { arrivedState } = useScroll(wrapper);
+
+watch(notes, (notes) => {
+  set(nextPageDisabled, notes.data.length >= notes.found);
+});
+
+const bottom: Ref<boolean> = ref(false);
+watch(arrivedState, (arrived) => {
+  set(bottom, arrived.bottom && get(notes).data.length > 0);
+});
+
+const shouldIncreasePage = logicAnd(bottom, logicNot(nextPageDisabled));
+watch(shouldIncreasePage, (increasePage) => {
+  if (increasePage)
+    set(page, get(page) + 1);
+});
 </script>
 
 <template>
@@ -215,10 +239,7 @@ onMounted(async () => {
       ref="wrapper"
       class="px-4 pb-4 note__wrapper"
     >
-      <CollectionHandler
-        :collection="notes"
-        @set-page="setPage($event)"
-      >
+      <CollectionHandler :collection="notes">
         <template #default="{ data, limit }">
           <RuiAlert
             v-if="showUpgradeRow"
@@ -240,15 +261,6 @@ onMounted(async () => {
           </RuiAlert>
 
           <div v-if="data.length > 0">
-            <RuiCard
-              no-padding
-              class="mb-4 px-2"
-            >
-              <RuiTablePagination
-                v-model="pagination"
-                dense
-              />
-            </RuiCard>
             <div class="flex flex-col gap-3">
               <template v-for="note in data">
                 <RuiCard

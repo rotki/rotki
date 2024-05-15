@@ -369,6 +369,7 @@ declare global {
   const useAssetFilter: typeof import('./composables/filters/assets')['useAssetFilter']
   const useAssetIcon: typeof import('./composables/assets/icon')['useAssetIcon']
   const useAssetIconApi: typeof import('./composables/api/assets/icon')['useAssetIconApi']
+  const useAssetIconStore: typeof import('./store/assets/icon')['useAssetIconStore']
   const useAssetIgnoreApi: typeof import('./composables/api/assets/ignore')['useAssetIgnoreApi']
   const useAssetInfoApi: typeof import('./composables/api/assets/info')['useAssetInfoApi']
   const useAssetInfoRetrieval: typeof import('./composables/assets/retrieval')['useAssetInfoRetrieval']
@@ -1130,8 +1131,8 @@ declare module 'vue' {
     readonly useAssetCacheStore: UnwrapRef<typeof import('./store/assets/asset-cache')['useAssetCacheStore']>
     readonly useAssetCexMappingApi: UnwrapRef<typeof import('./composables/api/assets/cex-mapping')['useAssetCexMappingApi']>
     readonly useAssetFilter: UnwrapRef<typeof import('./composables/filters/assets')['useAssetFilter']>
-    readonly useAssetIcon: UnwrapRef<typeof import('./composables/assets/icon')['useAssetIcon']>
     readonly useAssetIconApi: UnwrapRef<typeof import('./composables/api/assets/icon')['useAssetIconApi']>
+    readonly useAssetIconStore: UnwrapRef<typeof import('./store/assets/icon')['useAssetIconStore']>
     readonly useAssetIgnoreApi: UnwrapRef<typeof import('./composables/api/assets/ignore')['useAssetIgnoreApi']>
     readonly useAssetInfoApi: UnwrapRef<typeof import('./composables/api/assets/info')['useAssetInfoApi']>
     readonly useAssetInfoRetrieval: UnwrapRef<typeof import('./composables/assets/retrieval')['useAssetInfoRetrieval']>
@@ -1881,8 +1882,8 @@ declare module '@vue/runtime-core' {
     readonly useAssetCacheStore: UnwrapRef<typeof import('./store/assets/asset-cache')['useAssetCacheStore']>
     readonly useAssetCexMappingApi: UnwrapRef<typeof import('./composables/api/assets/cex-mapping')['useAssetCexMappingApi']>
     readonly useAssetFilter: UnwrapRef<typeof import('./composables/filters/assets')['useAssetFilter']>
-    readonly useAssetIcon: UnwrapRef<typeof import('./composables/assets/icon')['useAssetIcon']>
     readonly useAssetIconApi: UnwrapRef<typeof import('./composables/api/assets/icon')['useAssetIconApi']>
+    readonly useAssetIconStore: UnwrapRef<typeof import('./store/assets/icon')['useAssetIconStore']>
     readonly useAssetIgnoreApi: UnwrapRef<typeof import('./composables/api/assets/ignore')['useAssetIgnoreApi']>
     readonly useAssetInfoApi: UnwrapRef<typeof import('./composables/api/assets/info')['useAssetInfoApi']>
     readonly useAssetInfoRetrieval: UnwrapRef<typeof import('./composables/assets/retrieval')['useAssetInfoRetrieval']>

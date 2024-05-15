@@ -39,7 +39,7 @@ from rotkehlchen.tests.utils.api import (
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
-from rotkehlchen.tests.utils.constants import TXHASH_HEX_TO_BYTES
+from rotkehlchen.tests.utils.constants import GRAPH_QUERY_CRED, TXHASH_HEX_TO_BYTES
 from rotkehlchen.tests.utils.ethereum import (
     TEST_ADDR1,
     TEST_ADDR2,
@@ -56,9 +56,12 @@ from rotkehlchen.tests.utils.factories import (
 )
 from rotkehlchen.tests.utils.mock import MockResponse, mock_evm_chains_with_transactions
 from rotkehlchen.types import (
+    ApiKey,
     ChainID,
     ChecksumEvmAddress,
     EvmTransaction,
+    ExternalService,
+    ExternalServiceApiCredentials,
     SupportedBlockchain,
     Timestamp,
     TimestampMS,
@@ -1488,6 +1491,11 @@ def test_repulling_transaction_with_internal_txs(rotkehlchen_api_server: 'APISer
     tx_hash = deserialize_evm_tx_hash('0x4ea72ae535e32d5edc543a9ace5f736c7037cc63e4088de38511297c764049b5')  # noqa: E501
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     database = rotki.data.db
+    database.add_external_service_credentials([ExternalServiceApiCredentials(
+        service=ExternalService.THEGRAPH,
+        api_key=ApiKey(GRAPH_QUERY_CRED),
+    )])
+
     dbevents = DBHistoryEvents(database)
     ethereum_inquirer = rotki.chains_aggregator.ethereum
     get_decoded_events_of_transaction(

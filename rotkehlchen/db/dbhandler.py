@@ -721,6 +721,15 @@ class DBHandler:
     def get_dynamic_cache(
             self,
             cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.LAST_BLOCK_ID],
+            **kwargs: Unpack[LabeledLocationIdArgsType],
+    ) -> int | None:
+        ...
+
+    @overload
+    def get_dynamic_cache(
+            self,
+            cursor: 'DBCursor',
             name: Literal[DBCacheDynamic.WITHDRAWALS_TS],
             **kwargs: Unpack[AddressArgType],
     ) -> Timestamp | None:
@@ -782,6 +791,16 @@ class DBHandler:
             self,
             write_cursor: 'DBCursor',
             name: Literal[DBCacheDynamic.LAST_QUERY_ID],
+            value: int,
+            **kwargs: Unpack[LabeledLocationIdArgsType],
+    ) -> None:
+        ...
+
+    @overload
+    def set_dynamic_cache(
+            self,
+            write_cursor: 'DBCursor',
+            name: Literal[DBCacheDynamic.LAST_BLOCK_ID],
             value: int,
             **kwargs: Unpack[LabeledLocationIdArgsType],
     ) -> None:

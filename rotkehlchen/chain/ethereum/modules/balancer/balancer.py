@@ -14,6 +14,7 @@ from rotkehlchen.chain.ethereum.graph import (
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.errors.api import APIKeyNotConfigured
 from rotkehlchen.errors.misc import ModuleInitializationFailure, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -53,7 +54,9 @@ class Balancer(EthereumModule):
         try:
             # If both fail, let's take the safest approach and consider the module unusable
             self.graph = Graph(
-                'https://api.thegraph.com/subgraphs/name/balancer-labs/balancer',
+                subgraph_id='93yusydMYauh7cfe9jEfoGABmwnX4GffHd7in8KJi1XB',
+                database=self.database,
+                label='balancer',
             )
         except RemoteError as e:
             self.msg_aggregator.add_error(
@@ -65,8 +68,7 @@ class Balancer(EthereumModule):
         """Get a mapping of known token addresses to USD price"""
         token_to_prices: TokenToPrices = {}
         for token in known_tokens:
-            usd_price = Inquirer.find_usd_price(token)
-            if usd_price == ZERO_PRICE:
+            if (usd_price := Inquirer.find_usd_price(token)) == ZERO_PRICE:
                 self.msg_aggregator.add_error(
                     f'Failed to request the USD price of {token.identifier}. '
                     f"Balances of the balancer pools that have this token won't be accurate.",
@@ -114,6 +116,9 @@ class Balancer(EthereumModule):
                     SUBGRAPH_REMOTE_ERROR_MSG.format(protocol='Balancer', error_msg=str(e)),
                 )
                 raise
+            except APIKeyNotConfigured as e:
+                log.warning(f'Api key for balancer not configured when querying balancer balances. Skipping. {e}')  # noqa: E501
+                break
 
             try:
                 raw_pool_shares = result['poolShares']
@@ -196,6 +201,9 @@ class Balancer(EthereumModule):
                     SUBGRAPH_REMOTE_ERROR_MSG.format(protocol='Balancer', error_msg=str(e)),
                 )
                 raise
+            except APIKeyNotConfigured as e:
+                log.warning(f'Api key for balancer not configured when querying balancer prices. Skipping. {e}')  # noqa: E501
+                break
 
             try:
                 raw_token_prices = result['tokenPrices']

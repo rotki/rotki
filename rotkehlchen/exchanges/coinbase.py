@@ -1,6 +1,8 @@
 import hashlib
 import hmac
 import logging
+import re
+import secrets
 import time
 from collections import defaultdict
 from json.decoder import JSONDecodeError
@@ -8,7 +10,9 @@ from typing import TYPE_CHECKING, Any
 from urllib.parse import urlencode
 
 import gevent
+import jwt
 import requests
+from cryptography.hazmat.primitives import serialization
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_coinbase
@@ -17,6 +21,7 @@ from rotkehlchen.constants.timing import HOUR_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.errors.api import AuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -58,9 +63,16 @@ if TYPE_CHECKING:
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-
 CB_EVENTS_PREFIX = 'CBE_'
 CB_VERSION = '2019-08-25'  # the latest api version we know rotki works fine for: https://docs.cloud.coinbase.com/sign-in-with-coinbase/docs/versioning  # noqa: E501
+LEGACY_RE: re.Pattern = re.compile(r'^[\w]+$')
+NEW_RE: re.Pattern = re.compile(r'^organizations/[\w-]+/apiKeys/[\w-]+$')
+PRIVATE_KEY_RE: re.Pattern = re.compile(
+    r'^-----BEGIN EC PRIVATE KEY-----\n'
+    r'[\w+/=\n]+'
+    r'-----END EC PRIVATE KEY-----\n?$',
+    re.MULTILINE,
+)
 
 
 def trade_from_conversion(trade_a: dict[str, Any], trade_b: dict[str, Any]) -> Trade | None:
@@ -68,7 +80,7 @@ def trade_from_conversion(trade_a: dict[str, Any], trade_b: dict[str, Any]) -> T
 
     Sometimes the amounts can be negative which breaks rotki's logic which is why we use abs().
 
-    Mary raise:
+    May raise:
     - UnknownAsset due to Asset instantiation
     - DeserializationError due to unexpected format of dict entries
     - KeyError due to dict entries missing an expected entry
@@ -160,20 +172,108 @@ class Coinbase(ExchangeInterface):
             secret=secret,
             database=database,
         )
+        try:
+            self.is_legacy_api_key = self.is_legacy_key(api_key)
+        except AuthenticationError as e:
+            self.is_legacy_api_key = True
+            log.error(f'Error determining API key format: {e}. Defaulting to legacy key.')
+
+        if self.is_legacy_api_key:  # set headers for legacy
+            self.session.headers.update({'CB-ACCESS-KEY': self.api_key, 'CB-VERSION': CB_VERSION})
+
         self.apiversion = 'v2'
         self.base_uri = 'https://api.coinbase.com'
         self.msg_aggregator = msg_aggregator
-        self.session.headers.update({'CB-ACCESS-KEY': self.api_key})
-        self.session.headers.update({'CB-VERSION': CB_VERSION})
+        self.host = 'api.coinbase.com'
+
+    def is_legacy_key(self, api_key: str) -> bool:
+        if LEGACY_RE.match(api_key):
+            log.debug('Legacy Key format!')
+            return True
+        elif NEW_RE.match(api_key):
+            log.debug('New Key format!')
+            return False
+        else:
+            raise AuthenticationError(f'Invalid API key format: {api_key}')
 
     def first_connection(self) -> None:
         self.first_connection_made = True
 
-    def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
-        changed = super().edit_exchange_credentials(credentials)
-        if credentials.api_key is not None:
-            self.session.headers.update({'CB-ACCESS-KEY': self.api_key})
-        return changed
+    def build_jwt(self, uri: str) -> str:
+        """Builds a JWT token for authentication with the Coinbase API.
+        The JWT token is built using the provided URI and the stored API key name and private key.
+        The token includes the following claims:
+        - 'sub': The API key name.
+        - 'iss': The issuer, which is set to "coinbase-cloud".
+        - 'nbf': The "not before" timestamp, set to the current time.
+        - 'exp': The expiration timestamp, set to 2 minutes from the current time.
+        - 'uri': The provided URI.
+
+        The token is signed using the ES256 algorithm and includes a unique 'nonce' in the headers.
+
+        Args:
+            uri (str): The URI for which the JWT token is being generated.
+
+        Returns:
+            str: The generated JWT token.
+
+        Raises:
+            RemoteError: If there is an error during the JWT token generation process.
+        """
+        try:
+            private_key = serialization.load_pem_private_key(self.secret, password=None)
+            current_time = int(time.time())
+            jwt_payload = {
+                'sub': self.api_key,
+                'iss': 'coinbase-cloud',
+                'nbf': current_time,
+                'exp': current_time + 120,
+                'uri': uri,
+            }
+            jwt_token = jwt.encode(
+                jwt_payload,
+                private_key,
+                algorithm='ES256',
+                headers={'kid': self.api_key, 'nonce': secrets.token_hex()},
+            )
+        except (jwt.PyJWTError, ValueError) as e:
+            raise RemoteError('Error generating JWT token') from e
+
+        return jwt_token
+
+    def validate_api_key(self) -> tuple[bool, str]:
+        """Validates that the Coinbase API key is good for usage in rotki.
+
+        For Legacy keys, make sure that the following permissions are given to the key:
+        wallet:accounts:read, wallet:transactions:read,
+        wallet:withdrawals:read, wallet:deposits:read
+
+        For CDP keys, make sure they are formatted properly
+        """
+        self.is_legacy_api_key = self.is_legacy_key(self.api_key)
+        if self.is_legacy_api_key:
+            self.session.headers.update({'CB-ACCESS-KEY': self.api_key, 'CB-VERSION': CB_VERSION})
+            result, msg = self._validate_single_api_key_action('accounts')
+            if result is None:
+                return False, msg
+
+            # now get the account ids
+            account_info = self._get_active_account_info(result)
+            if len(account_info) != 0:
+                # and now try to get all transactions of an account to see if that's possible
+                method = f'accounts/{account_info[0][0]}/transactions'
+                result, msg = self._validate_single_api_key_action(method)
+                if result is None:
+                    return False, msg
+
+        else:  # Validate new API key format
+            if not NEW_RE.match(self.api_key):
+                return False, 'Invalid Coinbase API key name format'
+
+            if not PRIVATE_KEY_RE.match(self.secret.decode('utf-8', 'strict')):
+                return False, 'Invalid Coinbase private key format'
+
+        return True, ''
 
     def _validate_single_api_key_action(
             self,
@@ -220,27 +320,24 @@ class Coinbase(ExchangeInterface):
 
         return result, ''
 
-    def validate_api_key(self) -> tuple[bool, str]:
-        """Validates that the Coinbase API key is good for usage in rotki
+    def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
+        changed = super().edit_exchange_credentials(credentials)
+        if credentials.api_key is not None:
+            try:
+                new_is_legacy = self.is_legacy_key(credentials.api_key)
+            except AuthenticationError as e:
+                log.error(f'Invalid coinbase API key format: {e}')
+                new_is_legacy = True
 
-        Makes sure that the following permissions are given to the key:
-        wallet:accounts:read, wallet:transactions:read,
-        wallet:withdrawals:read, wallet:deposits:read
-        """
-        result, msg = self._validate_single_api_key_action('accounts')
-        if result is None:
-            return False, msg
+            if new_is_legacy != self.is_legacy_api_key:  # Key type has changed
+                self.is_legacy_api_key = new_is_legacy
 
-        # now get the account ids
-        account_info = self._get_active_account_info(result)
-        if len(account_info) != 0:
-            # and now try to get all transactions of an account to see if that's possible
-            method = f'accounts/{account_info[0][0]}/transactions'
-            result, msg = self._validate_single_api_key_action(method)
-            if result is None:
-                return False, msg
+            if self.is_legacy_api_key:
+                self.session.headers.update({'CB-ACCESS-KEY': credentials.api_key})
+            else:
+                self.api_key = credentials.api_key
 
-        return True, ''
+        return changed
 
     def _get_active_account_info(self, accounts: list[dict[str, Any]]) -> list[tuple[str, Timestamp]]:  # noqa: E501
         """Gets the account ids and last_update timestamp out of the accounts response
@@ -293,28 +390,34 @@ class Coinbase(ExchangeInterface):
         all_items: list[Any] = []
         had_4xx = False
         request_verb = 'GET'
-        # initialize next_uri before loop
-        next_uri = f'/{self.apiversion}/{endpoint}'
+        next_uri = f'/{self.apiversion}/{endpoint}'  # initialize next_uri before loop
         timeout = CachedSettings().get_timeout_tuple()
+
         if options:
             next_uri += f'?{urlencode(options)}'
         while True:
-            timestamp = str(int(time.time()))
-            message = timestamp + request_verb + next_uri
+            if self.is_legacy_api_key:
+                timestamp = str(int(time.time()))
+                message = timestamp + request_verb + next_uri
+                signature = hmac.new(
+                    self.secret,
+                    message.encode(),
+                    hashlib.sha256,
+                ).hexdigest()
+                self.session.headers.update({
+                    'CB-ACCESS-SIGN': signature,
+                    'CB-ACCESS-TIMESTAMP': timestamp,
+                })
 
-            signature = hmac.new(
-                self.secret,
-                message.encode(),
-                hashlib.sha256,
-            ).hexdigest()
-            log.debug('Coinbase API query', request_url=next_uri)
-
-            self.session.headers.update({
-                'CB-ACCESS-SIGN': signature,
-                'CB-ACCESS-TIMESTAMP': timestamp,
-            })
+            else:
+                uri = f'{request_verb} {self.host}/{self.apiversion}/{endpoint}'
+                token = self.build_jwt(uri)
+                self.session.headers.update({
+                    'Authorization': f'Bearer {token}',
+                })
 
             full_url = self.base_uri + next_uri
+            log.debug('Coinbase API query', request_url=full_url)
             try:
                 response = self.session.get(full_url, timeout=timeout)
             except requests.exceptions.RequestException as e:
@@ -344,8 +447,7 @@ class Coinbase(ExchangeInterface):
             if 'data' not in json_ret:
                 raise RemoteError(f'Coinbase json response does not contain data: {response.text}')
 
-            # `data` attr is a list in itself
-            all_items.extend(json_ret['data'])
+            all_items.extend(json_ret['data'])  # `data` attr is a list in itself
             if ignore_pagination or 'pagination' not in json_ret:
                 # break out of the loop, no need to handle pagination
                 break

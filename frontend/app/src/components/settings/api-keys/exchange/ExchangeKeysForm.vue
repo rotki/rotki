@@ -2,6 +2,7 @@
 import { helpers, requiredIf, requiredUnless } from '@vuelidate/validators';
 import { type ExchangePayload, KrakenAccountType } from '@/types/exchanges';
 import { toMessages } from '@/utils/validation';
+import type { Writeable } from '@/types';
 
 const props = defineProps<{
   exchange: ExchangePayload;
@@ -71,6 +72,11 @@ const isBinance = computed(() => {
   return ['binance', 'binanceus'].includes(location);
 });
 
+const isCoinbase = computed(() => {
+  const { location } = get(exchange);
+  return ['coinbase'].includes(location);
+});
+
 const { getLocationData } = useLocations();
 
 const suggestedName = function (exchange: string): string {
@@ -92,7 +98,14 @@ function toggleEdit() {
 }
 
 function input(payload: ExchangePayload) {
-  emit('input', payload);
+  const newPayload: Writeable<ExchangePayload> = {
+    ...payload,
+  };
+
+  if (get(isCoinbase) && payload.apiSecret)
+    newPayload.apiSecret = payload.apiSecret.replace(/\\n/g, '\n');
+
+  emit('input', newPayload);
 }
 
 onMounted(() => {
@@ -170,12 +183,15 @@ function onExchangeChange(exchange: string) {
     get(v$).$reset();
   });
 }
+
+const coinbaseApiKeyNameFormat = 'organizations/{org_id}/apiKeys/{key_id}';
+const coinbasePrivateKeyFormat = '-----BEGIN EC PRIVATE KEY-----\\n{KEY}\\n-----END EC PRIVATE KEY-----\\n';
 </script>
 
 <template>
   <div
     data-cy="exchange-keys"
-    class="flex flex-col gap-2"
+    class="flex flex-col gap-4"
   >
     <div class="grid md:grid-cols-2 gap-x-4 gap-y-2">
       <ExchangeInput
@@ -261,7 +277,8 @@ function onExchangeChange(exchange: string) {
       :error-messages="toMessages(v$.apiKey)"
       data-cy="api-key"
       prepend-icon="key-line"
-      :label="t('exchange_settings.inputs.api_key')"
+      :label="isCoinbase ? t('exchange_settings.inputs.api_key_name') : t('exchange_settings.inputs.api_key')"
+      :hint="isCoinbase ? `${t('exchange_settings.inputs.format')}: ${coinbaseApiKeyNameFormat}` : ''"
     />
 
     <RuiRevealableTextField
@@ -273,7 +290,8 @@ function onExchangeChange(exchange: string) {
       :error-messages="toMessages(v$.apiSecret)"
       data-cy="api-secret"
       prepend-icon="lock-line"
-      :label="t('exchange_settings.inputs.api_secret')"
+      :label="isCoinbase ? t('exchange_settings.inputs.private_key') : t('exchange_settings.inputs.api_secret')"
+      :hint="isCoinbase ? `${t('exchange_settings.inputs.format')}: ${coinbasePrivateKeyFormat}` : ''"
     />
 
     <RuiRevealableTextField
