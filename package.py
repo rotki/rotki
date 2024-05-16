@@ -636,8 +636,8 @@ class MacPackaging:
             logger.error('make failed for x86_64')
             sys.exit(1)
 
-        shutil.move(Path(libminiupnpc_dylib), temp)
-        shutil.move(Path(libminiupnpc_a), temp)
+        shutil.move('build' / Path(libminiupnpc_dylib), temp)
+        shutil.move('build' / Path(libminiupnpc_a), temp)
 
         make_clean_result = subprocess.call('make clean', shell=True)
 
@@ -655,11 +655,11 @@ class MacPackaging:
             sys.exit(1)
 
         self.macos_link_archs(
-            destination=Path(libminiupnpc_a),
+            destination='build' / Path(libminiupnpc_a),
             source=temp / libminiupnpc_a,
         )
         self.macos_link_archs(
-            destination=Path(libminiupnpc_dylib),
+            destination='build' / Path(libminiupnpc_dylib),
             source=temp / libminiupnpc_dylib,
         )
 
