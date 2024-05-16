@@ -32,6 +32,9 @@ export const i18n = castToVueI18n(
       messages: loadLocaleMessages(),
       silentTranslationWarn:
         import.meta.env.VITE_SILENT_TRANSLATION_WARN === 'true',
+      modifiers: {
+        quote: str => `"${str.toString()}"`,
+      },
     },
     VueI18n,
   ),

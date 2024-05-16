@@ -3052,7 +3052,7 @@
     "missing_api_key": {
       "action": "Introducir clave",
       "get_key": "Obtener clave API",
-      "message": "Las consultas de Rotki para {location} chain funcionan más lentamente porque no tiene {location} {service} API key configurada. Pulsa \"@:notification_messages.missing_api_key.get_key\" para hacer una o \"@:notification_messages.missing_api_key.action\" para añadirla en la app.",
+      "message": "Las consultas de Rotki para {location} chain funcionan más lentamente porque no tiene {location} {service} API key configurada. Pulsa @.quote:notification_messages.missing_api_key.get_key para hacer una o @.quote:notification_messages.missing_api_key.action para añadirla en la app.",
       "title": "{location} {service} clave API"
     },
     "new_detected_token": {

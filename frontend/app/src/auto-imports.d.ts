@@ -526,6 +526,7 @@ declare global {
   const useHistoryTransactions: typeof import('./composables/history/events/tx/index')['useHistoryTransactions']
   const useHistoryTransactionsForm: typeof import('./composables/history/events/tx/form')['useHistoryTransactionsForm']
   const useI18n: typeof import('./composables/usei18n')['useI18n']
+  const useI18nLocale: typeof import('./composables/usei18n')['useI18nLocale']
   const useIdle: typeof import('@vueuse/core')['useIdle']
   const useIgnore: typeof import('./composables/history/index')['useIgnore']
   const useIgnoredAssetsStore: typeof import('./store/assets/ignored')['useIgnoredAssetsStore']
@@ -1284,6 +1285,7 @@ declare module 'vue' {
     readonly useHistoryTransactions: UnwrapRef<typeof import('./composables/history/events/tx/index')['useHistoryTransactions']>
     readonly useHistoryTransactionsForm: UnwrapRef<typeof import('./composables/history/events/tx/form')['useHistoryTransactionsForm']>
     readonly useI18n: UnwrapRef<typeof import('./composables/usei18n')['useI18n']>
+    readonly useI18nLocale: UnwrapRef<typeof import('./composables/usei18n')['useI18nLocale']>
     readonly useIdle: UnwrapRef<typeof import('@vueuse/core')['useIdle']>
     readonly useIgnore: UnwrapRef<typeof import('./composables/history/index')['useIgnore']>
     readonly useIgnoredAssetsStore: UnwrapRef<typeof import('./store/assets/ignored')['useIgnoredAssetsStore']>
@@ -2033,6 +2035,7 @@ declare module '@vue/runtime-core' {
     readonly useHistoryTransactions: UnwrapRef<typeof import('./composables/history/events/tx/index')['useHistoryTransactions']>
     readonly useHistoryTransactionsForm: UnwrapRef<typeof import('./composables/history/events/tx/form')['useHistoryTransactionsForm']>
     readonly useI18n: UnwrapRef<typeof import('./composables/usei18n')['useI18n']>
+    readonly useI18nLocale: UnwrapRef<typeof import('./composables/usei18n')['useI18nLocale']>
     readonly useIdle: UnwrapRef<typeof import('@vueuse/core')['useIdle']>
     readonly useIgnore: UnwrapRef<typeof import('./composables/history/index')['useIgnore']>
     readonly useIgnoredAssetsStore: UnwrapRef<typeof import('./store/assets/ignored')['useIgnoredAssetsStore']>

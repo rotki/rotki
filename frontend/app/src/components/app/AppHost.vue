@@ -9,7 +9,7 @@ const isPlayground = computed(
   () => isDevelopment && get(route).name === 'playground',
 );
 
-const { locale } = useI18n();
+const { locale } = useI18nLocale();
 
 const { adaptiveLanguage } = storeToRefs(useSessionStore());
 
