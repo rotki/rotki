@@ -14,6 +14,8 @@ const emit = defineEmits<{
   (e: 'input', value: string): void;
 }>();
 
+const vModel = useSimpleVModel(props, emit);
+
 const { value } = toRefs(props);
 
 const contextColorsInHex: string[] = contextColors.map((item) => {
@@ -35,6 +37,7 @@ watchImmediate(value, (value) => {
   <div>
     <RuiMenu
       :popper="{ placement: 'left' }"
+      menu-class="max-w-[18rem]"
     >
       <template #activator="{ on }">
         <div
@@ -56,17 +59,7 @@ watchImmediate(value, (value) => {
           @click="emit('input', color)"
         />
       </div>
-      <AppBridge>
-        <VColorPicker
-          class="rounded-none"
-          hide-mode-switch
-          mode="hexa"
-          :value="`#${value}`"
-          @update:color="
-            emit('input', $event.hex.replace('#', ''))
-          "
-        />
-      </AppBridge>
+      <RuiColorPicker v-model="vModel" />
     </RuiMenu>
   </div>
 </template>

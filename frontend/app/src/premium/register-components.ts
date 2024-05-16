@@ -11,7 +11,9 @@ import {
   RuiButtonGroup,
   RuiCard,
   RuiChip,
+  RuiColorPicker,
   RuiDataTable,
+  RuiDialog,
   RuiDivider,
   RuiIcon,
   RuiMenu,
@@ -73,6 +75,8 @@ function ruiRegister(): void {
   Vue.component('RuiChip', RuiChip);
   Vue.component('RuiMenu', RuiMenu);
   Vue.component('RuiSlider', RuiSlider);
+  Vue.component('RuiDialog', RuiDialog);
+  Vue.component('RuiColorPicker', RuiColorPicker);
 }
 
 export function registerComponents(): void {
