@@ -2452,7 +2452,13 @@
         "message": "Successfully updated the credentials for {serviceName}"
       }
     },
-    "subtitle": "rotki connects to various service providers in order to obtain information such as historical prices or blockchain data. In certain cases rotki depends on these APIs for basic information, in which case you will need to provide an API key."
+    "subtitle": "rotki connects to various service providers in order to obtain information such as historical prices or blockchain data. In certain cases rotki depends on these APIs for basic information, in which case you will need to provide an API key.",
+    "thegraph": {
+      "delete_tooltip": "Deletes the Graph API key",
+      "description": "rotki uses the Graph to obtain information about balances of balancer pools.",
+      "hint": "Enter your The Graph API key",
+      "title": "The Graph"
+    }
   },
   "external_trade_form": {
     "amount": {
@@ -3535,8 +3541,14 @@
     "missing_api_key": {
       "action": "Enter key",
       "get_key": "Get API key",
-      "message": "Rotki queries for {location} chain are working slower because you dont have {location} {service} API key configured. Press @.quote:notification_messages.missing_api_key.get_key to make one or @.quote:notification_messages.missing_api_key.action to add it in the app.",
-      "title": "{location} {service} API key"
+      "etherscan": {
+        "message": "Rotki queries for {location} chain are working slower because you dont have {location} {service} API key configured. Press @.quote:notification_messages.missing_api_key.get_key to make one or @.quote:notification_messages.missing_api_key.action to add it in the app.",
+        "title": "{location} {service} API key"
+      },
+      "thegraph": {
+        "message": "Rotki cannot query {location} data because you don't have {service} API key configured, or the API key you are using isn't authorized for {location}. Press @.quote:notification_messages.missing_api_key.get_key to make one or @.quote:notification_messages.missing_api_key.action to add it in the app. Read the docs {docs} for more information.",
+        "title": "{service} API key for {location}"
+      }
     },
     "new_detected_token": {
       "action": "See more",
