@@ -2,7 +2,7 @@ gevent==24.2.1
 greenlet==3.0.3
 gevent-websocket==0.10.1  # like the below is abandoned
 wsaccel==0.6.6  # recommended for acceleration of gevent-websocket. But abandoned.
-web3==6.18.0
+web3==6.19.0
 content-hash==2.0.0
 rotki-pysqlcipher3==2024.1.2
 requests==2.31.0
@@ -20,18 +20,18 @@ beautifulsoup4==4.12.3
 maxminddb==2.6.1
 miniupnpc==2.0.2; sys_platform != 'win32'
 miniupnpc @ https://github.com/rotki/rotki-build/raw/main/miniupnpc/miniupnpc-2.2.6-cp311-cp311-win_amd64.whl ; sys_platform == 'win32'
-cryptography==42.0.5
+cryptography==42.0.7
 py-machineid==0.5.1
 more-itertools==10.2.0  # for peekable iterators
-regex==2024.4.16  # used for unicode information in detection of spam tokens
-eth-abi==5.0.1
+regex==2024.5.15  # used for unicode information in detection of spam tokens
+eth-abi==5.1.0
 
 # For the rest api
-flask-cors==4.0.0
+flask-cors==4.0.1
 flask==3.0.3
-marshmallow==3.21.1
+marshmallow==3.21.2
 webargs==8.4.0
-werkzeug==3.0.2
+werkzeug==3.0.3
 
 # for icon validation
 filetype==1.2.0
