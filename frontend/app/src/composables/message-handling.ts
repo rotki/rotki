@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import {
   type Notification,
   type NotificationAction,
@@ -22,6 +23,7 @@ import {
 import { camelCaseTransformer } from '@/services/axios-tranformers';
 import { Routes } from '@/router/routes';
 import { router } from '@/router';
+import { externalLinks } from '@/data/external-links';
 import type { Blockchain } from '@rotki/common/lib/blockchain';
 import type { CalendarEventPayload } from '@/types/history/calendar';
 
@@ -165,20 +167,24 @@ export function useMessageHandling() {
       });
     }
 
+    const metadata = {
+      service: toHumanReadable(service, 'capitalize'),
+      location: toHumanReadable(locationName, 'capitalize'),
+    };
+
+    const theGraphWarning = service === 'thegraph';
+
     return {
-      title: t('notification_messages.missing_api_key.title', {
-        service: toHumanReadable(service, 'capitalize'),
-        location: toHumanReadable(locationName, 'capitalize'),
-      }),
+      title: theGraphWarning ? t('notification_messages.missing_api_key.thegraph.title', metadata) : t('notification_messages.missing_api_key.etherscan.title', metadata),
       message: '',
       i18nParam: {
-        message: 'notification_messages.missing_api_key.message',
+        message: theGraphWarning ? 'notification_messages.missing_api_key.thegraph.message' : 'notification_messages.missing_api_key.etherscan.message',
         choice: 0,
         props: {
-          service: toHumanReadable(service, 'capitalize'),
-          location: toHumanReadable(locationName, 'capitalize'),
+          ...metadata,
           key: location,
           url: external ?? '',
+          ...(theGraphWarning && { docsUrl: externalLinks.usageGuideSection.theGraphApiKey }),
         },
       },
       severity: Severity.WARNING,
