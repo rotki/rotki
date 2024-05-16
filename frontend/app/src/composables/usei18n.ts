@@ -31,13 +31,15 @@ export function useI18nLocale() {
   const instance = getCurrentInstance();
   const vm = instance?.proxy || new Vue();
 
+  const i18nBridgeRoot = vm._i18nBridgeRoot;
+
   const locale = computed({
     get() {
-      return get(vm._i18nBridgeRoot.global.locale);
+      return get(i18nBridgeRoot.global.locale);
     },
     set(locale: string) {
-      set(vm._i18nBridgeRoot.global.locale, locale);
-      vm._i18nBridgeRoot.locale = locale;
+      set(i18nBridgeRoot.global.locale, locale);
+      i18nBridgeRoot.locale = locale;
     },
   });
 
