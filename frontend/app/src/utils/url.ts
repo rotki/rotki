@@ -1,7 +1,7 @@
 import { camelCase } from 'lodash-es';
 import { pslSuffixes } from '@/data/psl';
 import { Routes } from '@/router/routes';
-import { etherscanLinks } from '@/data/external-links';
+import { etherscanLinks, externalLinks } from '@/data/external-links';
 import { isEtherscanKey } from '@/types/external';
 
 export function getDomain(str: string): string {
@@ -52,6 +52,13 @@ export function getEtherScanRegisterUrl(location: string) {
   return {};
 }
 
+export function getTheGraphRegisterUrl() {
+  return {
+    external: externalLinks.applyTheGraphApiKey,
+    route: { path: Routes.API_KEYS_EXTERNAL_SERVICES, hash: `#thegraph` },
+  };
+}
+
 /**
  * Returns the registration url of a specified service location and a path to the local page
  * @param {string} service
@@ -62,6 +69,8 @@ export function getServiceRegisterUrl(service: string, location: string) {
   switch (service) {
     case 'etherscan':
       return getEtherScanRegisterUrl(location);
+    case 'thegraph':
+      return getTheGraphRegisterUrl();
     default:
       logger.warn(`Unsupported service: '${service}'`);
       return {};

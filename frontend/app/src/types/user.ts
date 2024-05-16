@@ -221,6 +221,7 @@ export const ExternalServiceKeys = z.object({
   opensea: ApiKey.optional(),
   blockscout: ApiKey.optional(),
   monerium: Auth.optional(),
+  thegraph: ApiKey.optional(),
 });
 
 export type ExternalServiceKeys = z.infer<typeof ExternalServiceKeys>;

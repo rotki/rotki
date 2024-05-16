@@ -29,5 +29,6 @@ onMounted(async () => {
     <LoopringApiKey />
     <OpenSeaApiKey />
     <MoneriumAuth />
+    <TheGraphApiKey />
   </TablePageLayout>
 </template>

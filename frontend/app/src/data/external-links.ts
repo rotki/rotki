@@ -25,6 +25,7 @@ export const externalLinks = {
   usageGuideSection: {
     dockerWarning: `${USAGE_GUIDE_URL}#docker`,
     addingAnExchange: `${USAGE_GUIDE_URL}#adding-an-exchange`,
+    theGraphApiKey: `${USAGE_GUIDE_URL}#the-graph-api-key`,
   },
   contribute: CONTRIBUTE_URL,
   contributeSection: {
@@ -47,4 +48,5 @@ export const externalLinks = {
     'https://medium.com/@alxlpsc/critical-privacy-vulnerability-getting-exposed-by-metamask-693c63c2ce94',
   binanceCsvExport:
     'https://www.binance.com/en/my/wallet/history',
+  applyTheGraphApiKey: 'https://thegraph.com/studio/apikeys/',
 };
