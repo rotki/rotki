@@ -39,8 +39,7 @@ const extraParams = computed(() => ({
 const {
   state: notes,
   fetchData,
-  options,
-  setOptions,
+  pagination,
 } = usePaginationFilters<
   UserNote,
   UserNotesRequestPayload,
@@ -73,10 +72,10 @@ const nextPageDisabled: Ref<boolean> = ref(true);
 
 const LIMIT = 10;
 watch(page, (page) => {
-  setOptions({
-    ...get(options),
+  set(pagination, {
+    ...get(pagination),
     page: 1,
-    itemsPerPage: LIMIT * page,
+    limit: LIMIT * page,
   });
 });
 
