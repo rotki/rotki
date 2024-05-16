@@ -90,7 +90,7 @@ async function copy() {
       service: i18nParam.props.service,
       location: i18nParam.props.location,
       url: i18nParam.props.url,
-    }).toString();
+    });
   }
   await copyToClipboard(messageText);
 }
