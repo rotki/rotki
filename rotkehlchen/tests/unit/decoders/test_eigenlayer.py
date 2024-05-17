@@ -7,6 +7,7 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     EIGEN_TOKEN_ID,
     EIGENLAYER_AIRDROP_DISTRIBUTOR,
     EIGENLAYER_STRATEGY_MANAGER,
+    EIGENPOD_DELAYED_WITHDRAWAL_ROUTER,
     EIGENPOD_MANAGER,
 )
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -301,5 +302,44 @@ def test_deploy_eigenpod_via_safe(database, ethereum_inquirer, ethereum_accounts
         notes=f'Successfully executed safe transaction 0xd5732b4ea1baa0f37f840270c1da9e9c4175b79f2469909f2df837b05b8a7f71 for multisig {safe_address}',  # noqa: E501
         counterparty=CPT_SAFE_MULTISIG,
         address=safe_address,
+    )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xd007058e9b58E74C33c6bF6fbCd38BaAB813cBB6']])
+def test_create_delayed_withdrawals(database, ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0xd054c9f07b880ac8e587c725b0427dde2b4c2633250f6f84a5c803fa665fe307')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas_amount, withdrawal_amount = TimestampMS(1715768063000), '0.036853617070145433', '0.021045998'  # noqa: E501
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas_amount)),
+        location_label=ethereum_accounts[0],
+        notes=f'Burned {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        balance=Balance(amount=ZERO),
+        location_label=ethereum_accounts[0],
+        notes=f'Start a delayed withdrawal of {withdrawal_amount} ETH from Eigenlayer by processing 20 partial and 0 full beaconchain withdrawals',  # noqa: E501
+        counterparty=CPT_EIGENLAYER,
+        address=EIGENPOD_DELAYED_WITHDRAWAL_ROUTER,
     )]
     assert events == expected_events
