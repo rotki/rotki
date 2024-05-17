@@ -144,6 +144,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
             notes=f'Deploy eigenpod {eigenpod_address}{suffix}',
             counterparty=CPT_EIGENLAYER,
             address=context.tx_log.address,
+            extra_data={'eigenpod_owner': owner, 'eigenpod_address': eigenpod_address},
         )
         return DecodingOutput(event=event)
 

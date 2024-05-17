@@ -245,6 +245,7 @@ def test_deploy_eigenpod(database, ethereum_inquirer, ethereum_accounts):
         balance=Balance(amount=ZERO),
         location_label=ethereum_accounts[0],
         notes=f'Deploy eigenpod {eigenpod_address}',
+        extra_data={'eigenpod_owner': ethereum_accounts[0], 'eigenpod_address': eigenpod_address},
         counterparty=CPT_EIGENLAYER,
         address=EIGENPOD_MANAGER,
     )]
@@ -284,6 +285,7 @@ def test_deploy_eigenpod_via_safe(database, ethereum_inquirer, ethereum_accounts
         balance=Balance(amount=ZERO),
         location_label=user_address,
         notes=f'Deploy eigenpod {eigenpod_address} with owner {safe_address}',
+        extra_data={'eigenpod_owner': safe_address, 'eigenpod_address': eigenpod_address},
         counterparty=CPT_EIGENLAYER,
         address=EIGENPOD_MANAGER,
     ), EvmEvent(
