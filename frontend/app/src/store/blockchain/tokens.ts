@@ -169,6 +169,9 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
   });
 
   watch(detectionStatus, async (isDetecting, wasDetecting) => {
+    if (isEqual(isDetecting, wasDetecting))
+      return;
+
     const pendingRefresh: string[] = [];
     for (const chain in isDetecting) {
       if (!isDetecting[chain] && wasDetecting[chain])
