@@ -313,6 +313,9 @@ class EvmNodeInquirer(ABC):
           there is a problem with its query.
         """
         balances: dict[ChecksumEvmAddress, FVal] = {}
+        if len(accounts) == 0:
+            return balances
+
         log.debug(
             f'Querying {self.chain_name} chain for {self.blockchain.serialize()} balance',
             eth_addresses=accounts,

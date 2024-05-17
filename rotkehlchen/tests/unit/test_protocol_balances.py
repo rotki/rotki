@@ -23,7 +23,16 @@ from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balanc
 from rotkehlchen.chain.evm.tokens import TokenBalancesType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
-from rotkehlchen.constants.assets import A_CVX, A_GLM, A_GMX, A_GRT, A_GRT_ARB, A_STETH, A_USDC
+from rotkehlchen.constants.assets import (
+    A_CVX,
+    A_ETH,
+    A_GLM,
+    A_GMX,
+    A_GRT,
+    A_GRT_ARB,
+    A_STETH,
+    A_USDC,
+)
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
@@ -362,7 +371,7 @@ def test_octant_balances(
 @pytest.mark.parametrize('ethereum_accounts', [['0x15AcAA0E27b70AfE3D7631cDAf5516BCAbE3bc0F']])
 def test_eigenlayer_balances(
         ethereum_inquirer: 'EthereumInquirer',
-        ethereum_transaction_decoder: 'OptimismTransactionDecoder',
+        ethereum_transaction_decoder: 'EthereumTransactionDecoder',
         ethereum_accounts: list[ChecksumEvmAddress],
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
 ) -> None:
@@ -382,6 +391,35 @@ def test_eigenlayer_balances(
     assert balances[ethereum_accounts[0]].assets[A_STETH.resolve_to_evm_token()] == Balance(
         amount=FVal('0.114063122816914142'),
         usd_value=FVal('0.1710946842253712130'),
+    )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x7E114d4c0aCc9c3B32263F1a18F72f7BBb4a2a88']])
+def test_eigenpod_balances(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_transaction_decoder: 'EthereumTransactionDecoder',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    database = ethereum_transaction_decoder.database
+    tx_hex = deserialize_evm_tx_hash('0xc37ebb25ac8aa9f5070e877fcc41eb0129285333ffc3cdb5c502510a436e7f61')  # noqa: E501
+    safe_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=ethereum_transaction_decoder.database,
+        tx_hash=tx_hex,
+    )
+    assert len(events) == 2
+    balances_inquirer = EigenlayerBalances(
+        database=database,
+        evm_inquirer=ethereum_inquirer,
+    )
+    eigenpod_balance = FVal('0.448543603')
+    balances = balances_inquirer.query_balances()
+    assert balances[safe_address].assets[A_ETH] == Balance(
+        amount=eigenpod_balance,
+        usd_value=FVal('1.5') * eigenpod_balance,
     )
 
 
