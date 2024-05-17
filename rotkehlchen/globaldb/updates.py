@@ -434,7 +434,15 @@ class AssetsUpdater:
 
         try:
             with connection.savepoint_ctx() as cursor:
-                executeall(cursor, action)
+                # if the action is to update an asset, but it doesn't exist in the DB
+                if action.strip().startswith('UPDATE') and cursor.execute(
+                    'SELECT COUNT(*) FROM assets WHERE identifier=?',
+                    (remote_asset_data.identifier,),
+                ).fetchone()[0] == 0:
+                    executeall(cursor, full_insert)  # we apply the full insert query
+                else:
+                    executeall(cursor, action)
+
                 if local_asset is not None:
                     AssetResolver().clean_memory_cache(identifier=local_asset.identifier)
         except sqlite3.Error:  # https://docs.python.org/3/library/sqlite3.html#exceptions
