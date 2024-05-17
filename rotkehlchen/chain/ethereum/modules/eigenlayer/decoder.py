@@ -1,6 +1,7 @@
 import logging
 from typing import Any
 
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     CPT_EIGENLAYER,
     DEPOSIT_TOPIC,
@@ -8,6 +9,8 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     EIGENLAYER_AIRDROP_DISTRIBUTOR,
     EIGENLAYER_CPT_DETAILS,
     EIGENLAYER_STRATEGY_MANAGER,
+    EIGENPOD_MANAGER,
+    POD_DEPLOYED,
     WITHDRAWAL_COMPLETE_TOPIC,
 )
 from rotkehlchen.chain.evm.decoding.clique.decoder import CliqueAirdropDecoderInterface
@@ -17,6 +20,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -120,12 +124,36 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
 
         return DEFAULT_DECODING_OUTPUT
 
+    def decode_eigenpod_creation(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] != POD_DEPLOYED:
+            return DEFAULT_DECODING_OUTPUT
+
+        if not self.base.is_tracked(owner := hex_or_bytes_to_address(context.tx_log.topics[2])):
+            return DEFAULT_DECODING_OUTPUT
+
+        eigenpod_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+        suffix = f' with owner {owner}' if context.transaction.from_address != owner else ''
+        event = self.base.make_event_next_index(
+            tx_hash=context.transaction.tx_hash,
+            timestamp=context.transaction.timestamp,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.CREATE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=context.transaction.from_address,
+            notes=f'Deploy eigenpod {eigenpod_address}{suffix}',
+            counterparty=CPT_EIGENLAYER,
+            address=context.tx_log.address,
+        )
+        return DecodingOutput(event=event)
+
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             EIGENLAYER_STRATEGY_MANAGER: (self.decode_event,),
             EIGENLAYER_AIRDROP_DISTRIBUTOR: (self.decode_airdrop,),
+            EIGENPOD_MANAGER: (self.decode_eigenpod_creation,),
         }
 
     @staticmethod

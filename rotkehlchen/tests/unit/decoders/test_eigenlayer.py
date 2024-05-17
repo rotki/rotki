@@ -7,8 +7,10 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     EIGEN_TOKEN_ID,
     EIGENLAYER_AIRDROP_DISTRIBUTOR,
     EIGENLAYER_STRATEGY_MANAGER,
+    EIGENPOD_MANAGER,
 )
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
@@ -206,5 +208,96 @@ def test_stake_eigen(database, ethereum_inquirer, ethereum_accounts):
         extra_data={'strategy': strategy_addr},
         product=EvmProduct.STAKING,
         address=strategy_addr,
+    )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x80B7EDA1Baa2290478205786615F65052c80882f']])
+def test_deploy_eigenpod(database, ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x910087fb1be44dbf2d89363579c162e70d5666f16182c9015d635c4f81ac07b6')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas_amount, eigenpod_address = TimestampMS(1715733143000), '0.00133529055565527', '0x664BFef14A62F316175d39D355809D04D2Cb7a23'  # noqa: E501
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas_amount)),
+        location_label=ethereum_accounts[0],
+        notes=f'Burned {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.CREATE,
+        asset=A_ETH,
+        balance=Balance(amount=ZERO),
+        location_label=ethereum_accounts[0],
+        notes=f'Deploy eigenpod {eigenpod_address}',
+        counterparty=CPT_EIGENLAYER,
+        address=EIGENPOD_MANAGER,
+    )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x15646dDb42Ee60B26A0BA727CFeB4E8b1A319cdE', '0x24557b5D264757A3fCe2B55b257709D9f8C5aE94']])  # noqa: E501
+def test_deploy_eigenpod_via_safe(database, ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x449447b417019f9d8617e41c735c206d94669e91e066bd3cb0dd609fcd8faff7')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas_amount, eigenpod_address, user_address, safe_address = TimestampMS(1715601779000), '0.002212107522528736', '0x081aC22eb8582eF9f5ae596A5E8Df42b451b28b7', ethereum_accounts[0], ethereum_accounts[1]  # noqa: E501
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas_amount)),
+        location_label=user_address,
+        notes=f'Burned {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.CREATE,
+        asset=A_ETH,
+        balance=Balance(amount=ZERO),
+        location_label=user_address,
+        notes=f'Deploy eigenpod {eigenpod_address} with owner {safe_address}',
+        counterparty=CPT_EIGENLAYER,
+        address=EIGENPOD_MANAGER,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        balance=Balance(amount=ZERO),
+        location_label=user_address,
+        notes=f'Successfully executed safe transaction 0xd5732b4ea1baa0f37f840270c1da9e9c4175b79f2469909f2df837b05b8a7f71 for multisig {safe_address}',  # noqa: E501
+        counterparty=CPT_SAFE_MULTISIG,
+        address=safe_address,
     )]
     assert events == expected_events
