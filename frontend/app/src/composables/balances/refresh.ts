@@ -40,8 +40,9 @@ export const useRefresh = createSharedComposable(() => {
       );
       set(massDetecting, undefined);
     }
-
-    await refreshBlockchainBalances(chain);
+    else {
+      await refreshBlockchainBalances(chain);
+    }
   };
 
   const refreshBalance = async (balanceSource: string) => {

@@ -3071,7 +3071,7 @@
     "missing_api_key": {
       "action": "Εισάγετε κλειδί",
       "get_key": "Λήψη κλειδιού API",
-      "message": "Τα ερωτήματα Rotki για την αλυσίδα {location} λειτουργούν πιο αργά επειδή δεν έχετε {location} {service} API key configured. Πατήστε \"@:notification_messages.missing_api_key.get_key\" για να φτιάξετε ένα ή \"@:notification_messages.missing_api_key.action\" για να το προσθέσετε στην εφαρμογή.",
+      "message": "Τα ερωτήματα Rotki για την αλυσίδα {location} λειτουργούν πιο αργά επειδή δεν έχετε {location} {service} API key configured. Πατήστε @.quote:notification_messages.missing_api_key.get_key για να φτιάξετε ένα ή @.quote:notification_messages.missing_api_key.action για να το προσθέσετε στην εφαρμογή.",
       "title": "Κλειδί API {location} {service}"
     },
     "new_detected_token": {

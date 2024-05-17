@@ -3140,7 +3140,7 @@
     "missing_api_key": {
       "action": "回车键",
       "get_key": "获取 API 密钥",
-      "message": "由于您没有配置 {location} {service} 的 API 密钥，{location}链的 Rotki 查询速度较慢。配置了 API 密钥。请使用\"@:notification_messages.missing_api_key.get_key \"或\"@:notification_messages.missing_api_key.action \"在应用程序中添加密钥。",
+      "message": "由于您没有配置 {location} {service} 的 API 密钥，{location}链的 Rotki 查询速度较慢。配置了 API 密钥。请使用 @.quote:notification_messages.missing_api_key.get_key 或 @.quote:notification_messages.missing_api_key.action 在应用程序中添加密钥。",
       "title": "{location} {service} API 密钥"
     },
     "new_detected_token": {
