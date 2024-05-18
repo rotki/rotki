@@ -16,8 +16,13 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.utils.misc import from_wei
 
-from .constants import CPT_EIGENLAYER
+from .constants import (
+    CPT_EIGENLAYER,
+    EIGENPOD_DELAYED_WITHDRAWAL_ROUTER,
+    EIGENPOD_DELAYED_WITHDRAWAL_ROUTER_ABI,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
@@ -117,6 +122,7 @@ class EigenlayerBalances(ProtocolWithBalance):
         return balances
 
     def _query_eigenpod_balances(self, balances: 'BalancesSheetType') -> 'BalancesSheetType':
+        """Queries the balance of ETH in the eigenpod and in the Delayed Withdrawal router"""
         if len(eigenpod_data := self.addresses_with_activity(
             event_types={(HistoryEventType.INFORMATIONAL, HistoryEventSubType.CREATE)},
         )) == 0:
@@ -133,12 +139,40 @@ class EigenlayerBalances(ProtocolWithBalance):
 
                 owner_mapping[eigenpod] = owner
 
-        eth_price = Inquirer.find_usd_price(A_ETH)
+        eth_price = Inquirer.find_usd_price(A_ETH)  # now query all eigenpod balances an dadd it
         for eigenpod_address, amount in self.evm_inquirer.get_multi_balance(accounts=list(owner_mapping.keys())).items():  # noqa: E501
             if amount > ZERO:
                 balances[owner_mapping[eigenpod_address]].assets[A_ETH] += Balance(
                     amount=amount,
                     usd_value=eth_price * amount,
+                )
+
+        # finally check the balance in the delayed withdrawal router for all eigenpod owners
+        contract = EvmContract(  # TODO: perhaps move this in the DB
+            address=EIGENPOD_DELAYED_WITHDRAWAL_ROUTER,
+            abi=EIGENPOD_DELAYED_WITHDRAWAL_ROUTER_ABI,
+            deployed_block=17445565,
+        )
+        owners = list(owner_mapping.values())
+        calls = [
+            (contract.address, contract.encode(method_name='getUserDelayedWithdrawals', arguments=[address]))  # noqa: E501
+            for address in owners
+        ]  # construct and execute the multicall for all owners
+        output = self.evm_inquirer.multicall(calls=calls)
+        for encoded_result, owner in zip(output, owners, strict=True):
+            result = contract.decode(
+                result=encoded_result,
+                method_name='getUserDelayedWithdrawals',
+                arguments=[owner],
+            )
+            amount = ZERO  # result has all pending delayed withdrawals (amount, block_number)
+            for tuple_entry in result[0]:  # each entry is like (7164493000000000, 19869505)
+                amount += tuple_entry[0]
+
+            if (eth_amount := from_wei(amount)) > ZERO:
+                balances[owner].assets[A_ETH] += Balance(
+                    amount=eth_amount,
+                    usd_value=eth_price * eth_amount,
                 )
 
         return balances
