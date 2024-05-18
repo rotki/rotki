@@ -20,3 +20,6 @@ EIGENLAYER_CPT_DETAILS: Final = CounterpartyDetails(
     image='eigenlayer.png',
 )
 EIGEN_TOKEN_ID: Final = 'eip155:1/erc20:0xec53bF9167f50cDEB3Ae105f56099aaaB9061F83'
+
+# not the full ABI, just the one function we call
+EIGENPOD_DELAYED_WITHDRAWAL_ROUTER_ABI: Final = [{'inputs': [{'internalType': 'address', 'name': 'user', 'type': 'address'}], 'name': 'getUserDelayedWithdrawals', 'outputs': [{'components': [{'internalType': 'uint224', 'name': 'amount', 'type': 'uint224'}, {'internalType': 'uint32', 'name': 'blockCreated', 'type': 'uint32'}], 'internalType': 'struct IDelayedWithdrawalRouter.DelayedWithdrawal[]', 'name': '', 'type': 'tuple[]'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
