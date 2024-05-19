@@ -6,6 +6,7 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     CPT_EIGENLAYER,
     EIGEN_TOKEN_ID,
     EIGENLAYER_AIRDROP_DISTRIBUTOR,
+    EIGENLAYER_DELEGATION,
     EIGENLAYER_STRATEGY_MANAGER,
     EIGENPOD_DELAYED_WITHDRAWAL_ROUTER,
     EIGENPOD_MANAGER,
@@ -284,7 +285,7 @@ def test_deploy_eigenpod_via_safe(database, ethereum_inquirer, ethereum_accounts
         event_subtype=HistoryEventSubType.CREATE,
         asset=A_ETH,
         balance=Balance(amount=ZERO),
-        location_label=user_address,
+        location_label=safe_address,
         notes=f'Deploy eigenpod {eigenpod_address} with owner {safe_address}',
         extra_data={'eigenpod_owner': safe_address, 'eigenpod_address': eigenpod_address},
         counterparty=CPT_EIGENLAYER,
@@ -342,4 +343,45 @@ def test_create_delayed_withdrawals(database, ethereum_inquirer, ethereum_accoun
         counterparty=CPT_EIGENLAYER,
         address=EIGENPOD_DELAYED_WITHDRAWAL_ROUTER,
     )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x78524bEeAc12368e600457478738c233f436e9f6']])
+def test_native_restake_delegate(database, ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0xd857a09084c1dfc1d2df83cbeed70e99b79b1e3a74c7385df7dc7065a79e184c')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, eth_restaked = TimestampMS(1715866679000), '160'
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(amount=ZERO),
+            location_label=ethereum_accounts[0],
+            notes=f'Delegate {eth_restaked} restaked ETH to 0x5dCdf02a7188257b7c37dD3158756dA9Ccd4A9Cb for {ethereum_accounts[0]}',  # noqa: E501
+            counterparty=CPT_EIGENLAYER,
+            address=EIGENLAYER_DELEGATION,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(amount=ZERO),
+            location_label=ethereum_accounts[0],
+            notes=f'Restake {eth_restaked} ETH for {ethereum_accounts[0]}',
+            counterparty=CPT_EIGENLAYER,
+            address=EIGENPOD_MANAGER,
+        )]
     assert events == expected_events

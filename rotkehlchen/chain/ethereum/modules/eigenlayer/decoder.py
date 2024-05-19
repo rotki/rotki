@@ -9,12 +9,15 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     EIGEN_TOKEN_ID,
     EIGENLAYER_AIRDROP_DISTRIBUTOR,
     EIGENLAYER_CPT_DETAILS,
+    EIGENLAYER_DELEGATION,
     EIGENLAYER_STRATEGY_MANAGER,
     EIGENPOD_DELAYED_WITHDRAWAL_ROUTER,
     EIGENPOD_MANAGER,
     FULL_WITHDRAWAL_REDEEMED,
+    OPERATOR_SHARES_INCREASED,
     PARTIAL_WITHDRAWAL_REDEEMED,
     POD_DEPLOYED,
+    POD_SHARES_UPDATED,
     WITHDRAWAL_COMPLETE_TOPIC,
 )
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
@@ -31,7 +34,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address, hex_or_bytes_to_int
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -129,10 +132,37 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
 
         return DEFAULT_DECODING_OUTPUT
 
-    def decode_eigenpod_creation(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] != POD_DEPLOYED:
+    def decode_eigenpod_manager_events(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] == POD_DEPLOYED:
+            return self.decode_eigenpod_creation(context)
+        elif context.tx_log.topics[0] == POD_SHARES_UPDATED:
+            return self.decode_eigenpod_shares_updated(context)
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def decode_eigenpod_shares_updated(self, context: DecoderContext) -> DecodingOutput:
+        if not self.base.is_tracked(owner := hex_or_bytes_to_address(context.tx_log.topics[1])):
             return DEFAULT_DECODING_OUTPUT
 
+        shares_delta = hex_or_bytes_to_int(context.tx_log.data[0:32])
+        notes = f'{"Restake" if shares_delta > 0 else "Unstake"} {from_wei(shares_delta)} ETH'
+        if context.transaction.from_address != owner:
+            notes += f' for {owner}'
+        event = self.base.make_event_next_index(
+            tx_hash=context.transaction.tx_hash,
+            timestamp=context.transaction.timestamp,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=owner,
+            notes=notes,
+            counterparty=CPT_EIGENLAYER,
+            address=context.tx_log.address,
+        )
+        return DecodingOutput(event=event)
+
+    def decode_eigenpod_creation(self, context: DecoderContext) -> DecodingOutput:
         if not self.base.is_tracked(owner := hex_or_bytes_to_address(context.tx_log.topics[2])):
             return DEFAULT_DECODING_OUTPUT
 
@@ -145,7 +175,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
             event_subtype=HistoryEventSubType.CREATE,
             asset=A_ETH,
             balance=Balance(),
-            location_label=context.transaction.from_address,
+            location_label=owner,
             notes=f'Deploy eigenpod {eigenpod_address}{suffix}',
             counterparty=CPT_EIGENLAYER,
             address=context.tx_log.address,
@@ -180,7 +210,33 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
             balance=Balance(),
-            location_label=context.transaction.from_address,
+            location_label=pod_owner,
+            notes=notes,
+            counterparty=CPT_EIGENLAYER,
+            address=context.tx_log.address,
+        )
+        return DecodingOutput(event=event)
+
+    def decode_delegation(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] != OPERATOR_SHARES_INCREASED:
+            return DEFAULT_DECODING_OUTPUT
+
+        if not self.base.is_tracked(staker := hex_or_bytes_to_address(context.tx_log.data[0:32])):
+            return DEFAULT_DECODING_OUTPUT
+
+        operator = hex_or_bytes_to_address(context.tx_log.topics[1])
+        shares = hex_or_bytes_to_int(context.tx_log.data[64:96])
+        notes = f'Delegate {from_wei(shares)} restaked ETH to {operator}'
+        if context.transaction.from_address != staker:
+            notes += f' for {staker}'
+        event = self.base.make_event_next_index(
+            tx_hash=context.transaction.tx_hash,
+            timestamp=context.transaction.timestamp,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=staker,
             notes=notes,
             counterparty=CPT_EIGENLAYER,
             address=context.tx_log.address,
@@ -193,8 +249,9 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
         return {
             EIGENLAYER_STRATEGY_MANAGER: (self.decode_event,),
             EIGENLAYER_AIRDROP_DISTRIBUTOR: (self.decode_airdrop,),
-            EIGENPOD_MANAGER: (self.decode_eigenpod_creation,),
+            EIGENPOD_MANAGER: (self.decode_eigenpod_manager_events,),
             EIGENPOD_DELAYED_WITHDRAWAL_ROUTER: (self.decode_delayed_withdrawal,),
+            EIGENLAYER_DELEGATION: (self.decode_delegation,),
         }
 
     @staticmethod
