@@ -4,7 +4,8 @@ from typing import Any
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     CPT_EIGENLAYER,
-    DELAYED_WITHDRAWAL_CREATED,
+    DELAYED_WITHDRAWALS_CLAIMED,
+    DELAYED_WITHDRAWALS_CREATED,
     DEPOSIT_TOPIC,
     EIGEN_TOKEN_ID,
     EIGENLAYER_AIRDROP_DISTRIBUTOR,
@@ -20,7 +21,6 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     POD_SHARES_UPDATED,
     WITHDRAWAL_COMPLETE_TOPIC,
 )
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.decoding.clique.decoder import CliqueAirdropDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -183,16 +183,21 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
         )
         return DecodingOutput(event=event)
 
-    def decode_delayed_withdrawal(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] != DELAYED_WITHDRAWAL_CREATED:
-            return DEFAULT_DECODING_OUTPUT
+    def decode_delayed_withdrawals(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] == DELAYED_WITHDRAWALS_CREATED:
+            return self.decode_delayed_withdrawals_created(context)
+        elif context.tx_log.topics[0] == DELAYED_WITHDRAWALS_CLAIMED:
+            return self.decode_delayed_withdrawals_claimed(context)
 
+        return DEFAULT_DECODING_OUTPUT
+
+    def decode_delayed_withdrawals_created(self, context: DecoderContext) -> DecodingOutput:
         pod_owner = hex_or_bytes_to_address(context.tx_log.data[0:32])
         recipient = hex_or_bytes_to_address(context.tx_log.data[32:64])
         if not self.base.any_tracked([pod_owner, recipient]):
             return DEFAULT_DECODING_OUTPUT
 
-        amount = token_normalized_value_decimals(token_amount=hex_or_bytes_to_int(context.tx_log.data[64:96]), token_decimals=18)  # noqa: E501
+        amount = from_wei(hex_or_bytes_to_int(context.tx_log.data[64:96]))
         partial_withdrawals_redeemed, full_withdrawals_redeemed = 0, 0
         for log_entry in context.all_logs:
             if log_entry.topics[0] == PARTIAL_WITHDRAWAL_REDEEMED:
@@ -216,6 +221,30 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
             address=context.tx_log.address,
         )
         return DecodingOutput(event=event)
+
+    def decode_delayed_withdrawals_claimed(self, context: DecoderContext) -> DecodingOutput:
+        if not self.base.is_tracked(recipient := hex_or_bytes_to_address(context.tx_log.data[0:32])):  # noqa: E501
+            return DEFAULT_DECODING_OUTPUT
+
+        amount = from_wei(hex_or_bytes_to_int(context.tx_log.data[32:64]))
+        for event in context.decoded_events:
+            if (
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.asset == A_ETH and
+                    event.location_label == recipient and
+                    event.balance.amount == amount
+            ):  # not sure if TRANSFER/NONE is best match here but
+                # since withdrawals are already tracked by validator index
+                # at this point we need to make it into an event that counts
+                # as transfer between accounts to avoid double counting
+                event.event_type = HistoryEventType.TRANSFER
+                event.event_subtype = HistoryEventSubType.NONE
+                event.notes = f'Claim {event.balance.amount} ETH from Eigenlayer delayed withdrawals'  # noqa: E501
+                event.counterparty = CPT_EIGENLAYER
+
+        log.error(f'Did not find matching eigenlayer ETH transfer for delayed withdrawal claim in {context.transaction.tx_hash.hex()}. Skipping')  # noqa: E501
+
+        return DEFAULT_DECODING_OUTPUT
 
     def decode_delegation(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] != OPERATOR_SHARES_INCREASED:
@@ -250,7 +279,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
             EIGENLAYER_STRATEGY_MANAGER: (self.decode_event,),
             EIGENLAYER_AIRDROP_DISTRIBUTOR: (self.decode_airdrop,),
             EIGENPOD_MANAGER: (self.decode_eigenpod_manager_events,),
-            EIGENPOD_DELAYED_WITHDRAWAL_ROUTER: (self.decode_delayed_withdrawal,),
+            EIGENPOD_DELAYED_WITHDRAWAL_ROUTER: (self.decode_delayed_withdrawals,),
             EIGENLAYER_DELEGATION: (self.decode_delegation,),
         }
 
