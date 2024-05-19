@@ -133,7 +133,7 @@ def timestamp_to_date(
     return date.rstrip()
 
 
-def from_wei(wei_value: FVal) -> FVal:
+def from_wei(wei_value: FVal | int) -> FVal:
     return wei_value / FVal(10 ** 18)
 
 
