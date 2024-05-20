@@ -56,6 +56,8 @@ const emit = defineEmits<{
   ): void;
 }>();
 
+const { collection } = toRefs(props);
+
 const { t } = useI18n();
 
 const sort: Ref<DataTableSortData> = ref({
@@ -172,12 +174,16 @@ async function toggleIgnoreAsset(identifier: string) {
 
 const isSpamAsset = (asset: SupportedAsset) => asset.protocol === 'spam';
 
+const { refetchAssetInfo } = useAssetInfoRetrieval();
+
 async function toggleSpam(item: SupportedAsset) {
   const { identifier } = item;
   if (isSpamAsset(item))
     await removeAssetFromSpamList(identifier);
   else
     await markAssetAsSpam(identifier);
+
+  refetchAssetInfo(identifier);
 
   emit('refresh');
 }
@@ -234,6 +240,12 @@ function expand(item: SupportedAsset) {
 function setPage(page: number) {
   emit('update:page', page);
 }
+
+const disabledRows = computed(() => {
+  const data = get(collection).data;
+
+  return data.filter(item => get(isAssetWhitelisted(item.identifier)) || isSpamAsset(item));
+});
 </script>
 
 <template>
@@ -297,6 +309,7 @@ function setPage(page: number) {
           :pagination-modifiers="{ external: true }"
           :sort.sync="sort"
           :sort-modifiers="{ external: true }"
+          :disabled-rows="disabledRows"
           row-attr="identifier"
           data-cy="managed-assets-table"
           single-expand
