@@ -1,7 +1,6 @@
 import { api } from '@/services/rotkehlchen-api';
-import type { MaybeRef } from '@vueuse/core';
 
-export function useNftImage(mediaUrl: MaybeRef<string | null>) {
+export function useNftImage(mediaUrl: Ref<string | null>) {
   const { shouldRenderImage } = useNfts();
 
   const isMediaVideo = async (url: string): Promise<boolean> => {
@@ -28,13 +27,21 @@ export function useNftImage(mediaUrl: MaybeRef<string | null>) {
 
   const checkingType: Ref<boolean> = ref(false);
 
-  const isVideo = asyncComputed(() => {
-    const media = get(mediaUrl);
-    if (!media || !get(shouldRender))
-      return false;
+  const isVideo: Ref<boolean> = ref(false);
 
-    return isMediaVideo(media);
-  }, false, { evaluating: checkingType });
+  watch([mediaUrl, shouldRender], async ([media, shouldRender], [prevMedia, prevShouldRender]) => {
+    if (media === prevMedia && shouldRender === prevShouldRender)
+      return;
+
+    if (!media || !shouldRender) {
+      set(isVideo, false);
+      return;
+    }
+
+    set(checkingType, true);
+    set(isVideo, await isMediaVideo(media));
+    set(checkingType, false);
+  });
 
   const renderedMedia = computed(() => {
     const media = get(mediaUrl);
