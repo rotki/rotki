@@ -22,7 +22,7 @@ export class ManualBalancesPage {
     cy.get('.manual-balances-form__asset').type(balance.keyword);
     cy.get('[data-cy="no_assets"]').should('not.exist');
     cy.get(`#asset-${balance.asset.toLowerCase()}`).should('be.visible');
-    cy.get('.v-autocomplete__content .v-list > div').should(($list) => {
+    cy.get('[role=menu-content] button').should(($list) => {
       expect($list.eq(0)).to.contain(balance.asset);
       $list.first().trigger('click');
     });
@@ -32,10 +32,10 @@ export class ManualBalancesPage {
       cy.get('.manual-balances-form__tags').type(`${tag}{enter}`);
 
     cy.get('.manual-balances-form__location').click();
-    cy.get('.manual-balances-form__location').type(
-      `{selectall}{backspace}${balance.location}{enter}`,
-    );
-    cy.get('.v-autocomplete__content').should('not.be.visible');
+    cy.get('.manual-balances-form__location').type(balance.location);
+    cy.get('[role=menu-content] button').should('have.length', 1);
+    cy.get('.manual-balances-form__location').type('{enter}');
+    cy.get('[role=menu-content]').should('not.exist');
     cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').click();
     cy.get('[data-cy=bottom-dialog]', { timeout: 120000 }).should(
       'not.exist',

@@ -164,22 +164,21 @@ function isBinance(exchange: string | null): exchange is 'binance' | 'binanceus'
             v-model="selectedExchange"
             :options="usedExchanges"
             :label="t('exchange_balances.select_exchange')"
-            key-attr="key"
-            full-width
+            hide-details
             variant="outlined"
             @input="openExchangeDetails()"
           >
-            <template #activator.text="{ value }">
+            <template #selection="{ item }">
               <ExchangeAmountRow
-                class="pr-3"
-                :balance="exchangeBalance(value.key)"
-                :exchange="value.key"
+                class="pr-3 py-1"
+                :balance="exchangeBalance(item)"
+                :exchange="item"
               />
             </template>
-            <template #item.text="{ option }">
+            <template #item="{ item }">
               <ExchangeAmountRow
-                :balance="exchangeBalance(option.key)"
-                :exchange="option.key"
+                :balance="exchangeBalance(item)"
+                :exchange="item"
               />
             </template>
           </RuiMenuSelect>

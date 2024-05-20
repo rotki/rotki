@@ -111,17 +111,17 @@ onBeforeMount(async () => {
         :label="t('staking_page.dropdown_label')"
         key-attr="id"
         text-attr="name"
-        full-width
+        hide-details
         variant="outlined"
         @input="updateLocation($event)"
       >
-        <template #activator.text="{ value: { image, name } }">
+        <template #selection="{ item: { image, name } }">
           <div class="flex items-center gap-3">
             <ReuseIcon v-bind="{ image }" />
             {{ name }}
           </div>
         </template>
-        <template #item.prepend="{ option: { image } }">
+        <template #item.prepend="{ item: { image } }">
           <ReuseIcon v-bind="{ image }" />
         </template>
       </RuiMenuSelect>

@@ -135,7 +135,6 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
         v-model="selectedAccounts"
         :chains="chains"
         :usable-addresses="addresses"
-        flat
         dense
         outlined
         no-padding
@@ -144,9 +143,7 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
         v-model="selectedPools"
         :pools="poolAssets"
         :type="lpType"
-        flat
         dense
-        outlined
         no-padding
       />
     </div>

@@ -42,7 +42,7 @@ const { t } = useI18n();
         @input="setAmountRoundingMode($event)"
       >
         <AmountDisplay
-          class="ml-2 mb-6"
+          class="ml-2 mt-4"
           :value="numberExample"
         />
       </RoundingSelector>
@@ -53,7 +53,7 @@ const { t } = useI18n();
         @input="setValueRoundingMode($event)"
       >
         <AmountDisplay
-          class="ml-2 mb-6"
+          class="ml-2 mt-4"
           :value="numberExample"
           fiat-currency="USD"
         />

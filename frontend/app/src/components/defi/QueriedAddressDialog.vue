@@ -121,7 +121,6 @@ function close() {
           <BlockchainAccountSelector
             v-model="selectedAccounts"
             outlined
-            flat
             dense
             no-padding
             hide-on-empty-usable

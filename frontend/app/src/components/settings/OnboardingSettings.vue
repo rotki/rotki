@@ -372,7 +372,7 @@ function showResetConfirmation() {
         class="loglevel-input"
         :disabled="!!fileConfig.loglevel"
         :label="t('backend_settings.settings.log_level.label')"
-        :show-details="!!fileConfig.loglevel"
+        :hide-details="!fileConfig.loglevel"
         :hint="
           !!fileConfig.loglevel
             ? t('backend_settings.config_file_disabled')
@@ -380,26 +380,25 @@ function showResetConfirmation() {
         "
         key-attr="identifier"
         text-attr="label"
-        full-width
         variant="outlined"
       >
-        <template #item.prepend="{ option }">
+        <template #item.prepend="{ item }">
           <RuiIcon
             class="text-rui-text-secondary"
-            :name="icon(option.identifier)"
+            :name="icon(item.identifier)"
           />
         </template>
-        <template #item.text="{ option }">
-          <span class="capitalize"> {{ option.identifier.toLocaleLowerCase() }} </span>
+        <template #item="{ item }">
+          <span class="capitalize"> {{ item.identifier.toLocaleLowerCase() }} </span>
         </template>
 
-        <template #activator.text="{ value }">
+        <template #selection="{ item }">
           <div class="flex items-center gap-4">
             <RuiIcon
               class="text-rui-text-secondary"
-              :name="icon(value.identifier)"
+              :name="icon(item.identifier)"
             />
-            <span class="capitalize"> {{ value.identifier.toLocaleLowerCase() }} </span>
+            <span class="capitalize"> {{ item.identifier.toLocaleLowerCase() }} </span>
           </div>
         </template>
       </RuiMenuSelect>

@@ -49,7 +49,6 @@ const { items, showIgnored, excludes, errorMessages, value, includeNfts }
   = toRefs(props);
 const { isAssetIgnored } = useIgnoredAssetsStore();
 
-const autoCompleteInput = ref(null);
 const search = ref<string>('');
 const assets: Ref<(AssetInfoWithId | NftAsset)[]> = ref([]);
 const error = ref('');
@@ -74,7 +73,7 @@ const visibleAssets = computed<AssetInfoWithId[]>(() => {
   const knownAssets = get(assets);
 
   const includeIgnored = get(showIgnored);
-  return knownAssets.filter(({ identifier }: AssetInfoWithId) => {
+  const filtered = knownAssets.filter(({ identifier }: AssetInfoWithId) => {
     const unIgnored = includeIgnored || !get(isAssetIgnored(identifier));
 
     const included
@@ -89,11 +88,9 @@ const visibleAssets = computed<AssetInfoWithId[]>(() => {
 
     return !!identifier && unIgnored && included && !excluded;
   });
-});
 
-function assetText(asset: AssetInfoWithId): string {
-  return `${asset.symbol} ${asset.name}`;
-}
+  return uniqueObjects<AssetInfoWithId>(filtered, item => item.identifier);
+});
 
 function blur() {
   useTimeoutFn(() => {
@@ -182,30 +179,27 @@ watch(visibleAssets, () => {
 </script>
 
 <template>
-  <VAutocomplete
-    ref="autoCompleteInput"
+  <RuiAutoComplete
     :value="value"
     :disabled="disabled"
-    :items="visibleAssets"
-    class="asset-select"
+    :options="visibleAssets"
+    class="asset-select w-full [&_.group]:py-1.5"
     :hint="hint"
     :label="label"
     :clearable="clearable"
-    :persistent-hint="persistentHint"
     :required="required"
     :success-messages="successMessages"
     :error-messages="errors"
-    item-value="identifier"
+    key-attr="identifier"
+    text-attr="identifier"
     :search-input.sync="search"
-    :item-text="assetText"
     :hide-details="hideDetails"
     :hide-no-data="loading || !search || !!error"
     auto-select-first
     :loading="loading"
-    :menu-props="{ closeOnContentClick: true }"
-    :outlined="outlined"
+    :variant="outlined ? 'outlined' : 'default'"
+    :item-height="60"
     no-filter
-    :class="outlined ? 'asset-select--outlined' : null"
     v-on="
       // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
       $listeners
@@ -218,12 +212,12 @@ watch(visibleAssets, () => {
         <NftDetails
           v-if="item.assetType === 'nft'"
           :identifier="item.identifier"
-          size="40px"
-          class="overflow-hidden"
+          size="36px"
+          class="overflow-hidden text-sm -my-2"
         />
         <AssetDetailsBase
           v-else
-          class="asset-select__details"
+          class="py-0"
           :asset="item"
         />
       </template>
@@ -232,106 +226,28 @@ watch(visibleAssets, () => {
       <NftDetails
         v-if="item.assetType === 'nft'"
         :identifier="item.identifier"
-        size="40px"
-        class="overflow-hidden"
+        size="36px"
+        class="overflow-hidden text-sm -my-2"
       />
       <AssetDetailsBase
         v-else
         :id="`asset-${getValidSelectorFromEvmAddress(
           item.identifier.toLocaleLowerCase(),
         )}`"
-        class="asset-select__details"
+        class="py-0 -my-1"
         :asset="item"
       />
     </template>
     <template #no-data>
       <div
         data-cy="no_assets"
-        class="px-4 py-2"
+        class="p-4"
       >
         {{ t('asset_select.no_results') }}
-      </div>
-    </template>
-    <template #append>
-      <div
-        v-if="loading"
-        class="h-full flex items-center"
-      >
-        <RuiProgress
-          class="asset-select__loading"
-          color="primary"
-          variant="indeterminate"
-          circular
-          thickness="3"
-          size="30"
-        />
       </div>
     </template>
     <template #prepend>
       <slot name="prepend" />
     </template>
-  </VAutocomplete>
+  </RuiAutoComplete>
 </template>
-
-<style scoped lang="scss">
-.asset-select {
-  &__details {
-    padding-top: 4px;
-    padding-bottom: 4px;
-  }
-
-  &__loading {
-    margin-top: -2px;
-  }
-
-  &--outlined {
-    /* stylelint-disable selector-class-pattern,selector-nested-pattern */
-
-    :deep(.v-select__slot) {
-      /* stylelint-enable selector-class-pattern,selector-nested-pattern */
-
-      .v-input {
-        &__icon {
-          &--append {
-            i {
-              bottom: 10px;
-            }
-          }
-
-          &--clear {
-            button {
-              bottom: 10px;
-            }
-          }
-        }
-      }
-    }
-  }
-
-  /* stylelint-disable selector-class-pattern,selector-nested-pattern */
-
-  :deep(.v-select__slot) {
-    /* stylelint-enable selector-class-pattern,selector-nested-pattern */
-    height: 56px;
-    margin-top: -2px;
-
-    .v-label {
-      top: 20px;
-    }
-
-    .v-input {
-      &__icon {
-        padding-top: 20px;
-      }
-    }
-
-    .v-select {
-      &__selections {
-        margin-top: 4px;
-        display: flex;
-        flex-flow: nowrap;
-      }
-    }
-  }
-}
-</style>

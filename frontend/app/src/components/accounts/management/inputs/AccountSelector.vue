@@ -39,7 +39,6 @@ function updateModelValue(value: string | null) {
     <ChainSelect
       :disabled="loading || editMode"
       :model-value="chain"
-      :clearable="false"
       @update:model-value="updateModelValue($event)"
     />
 

@@ -197,8 +197,8 @@ onMounted(() => {
         label="Unit"
         :options="unitData"
         variant="outlined"
-        full-width
         key-attr="key"
+        text-attr="label"
         dense
         :error-messages="toMessages(v$.unit)"
         @input="triggerUpdate()"

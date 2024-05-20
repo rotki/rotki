@@ -18,52 +18,32 @@ const emit = defineEmits<{
 
 const { value } = toRefs(props);
 
-const search: Ref<string> = ref('');
-
 function input(value: Eth2ValidatorEntry[]) {
   emit('input', value);
-}
-
-function filter({ publicKey, index }: Eth2ValidatorEntry, queryText: string) {
-  return publicKey.includes(queryText)
-    || index.toString().includes(queryText);
-}
-
-function removeValidator(validator: Eth2ValidatorEntry) {
-  const selection = [...get(value)];
-  const index = selection.findIndex(v => v.publicKey === validator.publicKey);
-  if (index >= 0)
-    selection.splice(index, 1);
-
-  input(selection);
 }
 
 const { t } = useI18n();
 </script>
 
 <template>
-  <VAutocomplete
-    :filter="filter"
+  <RuiAutoComplete
     :value="value"
-    :items="items"
-    :search-input.sync="search"
+    :options="items"
     :loading="loading"
     :disabled="loading"
     hide-details
     hide-selected
     hide-no-data
-    return-object
     chips
     clearable
-    multiple
-    solo
-    flat
     dense
-    outlined
-    item-value="publicKey"
+    auto-select-first
+    return-object
+    key-attr="publicKey"
+    text-attr="index"
+    :item-height="68"
+    variant="outlined"
     :label="t('validator_filter_input.label')"
-    :open-on-clear="false"
-    item-text="publicKey"
     @input="input($event)"
   >
     <template #item="{ item }">
@@ -73,17 +53,10 @@ const { t } = useI18n();
       />
     </template>
     <template #selection="{ item }">
-      <RuiChip
-        size="sm"
-        class="text-truncate m-0.5"
-        closeable
-        @click:close="removeValidator(item)"
-      >
-        <ValidatorDisplay
-          :validator="item"
-          horizontal
-        />
-      </RuiChip>
+      <ValidatorDisplay
+        :validator="item"
+        horizontal
+      />
     </template>
-  </VAutocomplete>
+  </RuiAutoComplete>
 </template>

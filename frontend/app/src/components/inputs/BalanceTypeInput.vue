@@ -27,9 +27,8 @@ const balanceTypes = computed(() => [
     v-model="model"
     :options="balanceTypes"
     v-bind="$attrs"
-    full-width
-    show-details
-    key-attr="key"
     variant="outlined"
+    key-attr="key"
+    text-attr="label"
   />
 </template>

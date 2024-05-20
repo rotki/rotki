@@ -99,6 +99,7 @@ onMounted(() => {
         class="px-4 pb-4 text-h5 font-medium text-rui-text-secondary"
         :value="info.amount"
         :asset="identifier"
+        no-truncate
       />
     </RuiCard>
     <RuiCard no-padding>

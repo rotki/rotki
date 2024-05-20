@@ -39,8 +39,6 @@ const { isEvm, supportedChains } = useSupportedChains();
 
 const { t } = useI18n();
 
-const search = ref<string | null>(null);
-
 const filteredItems = computed(() => {
   const isEth2Enabled = get(isModuleEnabled(Module.ETH2));
 
@@ -59,62 +57,45 @@ const filteredItems = computed(() => {
   return data;
 });
 
-function clearSearch() {
-  set(search, '');
-}
-
 function updateBlockchain(blockchain: Blockchain) {
-  clearSearch();
   emit('update:model-value', blockchain);
 }
 
-function filter(chain: Blockchain, queryText: string) {
-  const item = get(supportedChains).find(blockchain => blockchain.id === chain);
-  if (!item)
-    return false;
-
-  const nameIncludes = item.name
-    .toLocaleLowerCase()
-    .includes(queryText.toLocaleLowerCase());
-
-  const idIncludes = item.id
-    .toLocaleLowerCase()
-    .includes(queryText.toLocaleLowerCase());
-
-  return nameIncludes || idIncludes;
-}
+const mappedOptions = computed(() => {
+  const filtered = get(filteredItems);
+  return get(supportedChains).filter(item => filtered.includes(item.id));
+});
 </script>
 
 <template>
-  <VAutocomplete
+  <RuiAutoComplete
     :dense="dense"
     :disabled="disabled"
-    :filter="filter"
-    :items="filteredItems"
+    :options="mappedOptions"
     :label="t('account_form.labels.blockchain')"
-    :search-input.sync="search"
     :value="modelValue"
     data-cy="account-blockchain-field"
-    outlined
+    variant="outlined"
     auto-select-first
-    single-line
+    key-attr="id"
+    text-attr="name"
+    :item-height="dense ? 48 : 56"
     v-bind="rootAttrs"
-    @change="updateBlockchain($event)"
-    @blur="clearSearch()"
+    @input="updateBlockchain($event)"
   >
     <template #selection="{ item }">
       <ChainDisplay
-        v-if="!search"
-        :chain="item"
+        :class="{ '-my-1': dense }"
         :dense="dense"
-        class="!py-0"
+        :chain="item.id"
       />
     </template>
     <template #item="{ item }">
       <ChainDisplay
-        :chain="item"
+        :class="{ 'my-1': dense }"
         :dense="dense"
+        :chain="item.id"
       />
     </template>
-  </VAutocomplete>
+  </RuiAutoComplete>
 </template>

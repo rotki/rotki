@@ -56,7 +56,6 @@ const v$ = setValidation(
     <LocationSelector
       v-model="location"
       :excludes="excludedLocations"
-      outlined
       :label="t('common.location')"
       :error-messages="toMessages(v$.location)"
     />

@@ -183,14 +183,13 @@ function showDeleteConfirmation(entry: OracleCacheMeta) {
     <template #subheader>
       {{ t('oracle_cache_management.subtitle') }}
     </template>
-    <VAutocomplete
+    <RuiAutoComplete
       v-model="selection"
       :label="t('oracle_cache_management.select_oracle')"
-      prepend-inner-icon="mdi-magnify"
-      outlined
-      :items="oracles"
-      item-value="identifier"
-      item-text="identifier"
+      variant="outlined"
+      :options="oracles"
+      :item-height="60"
+      key-attr="identifier"
     >
       <template #selection="{ item }">
         <PrioritizedListEntry :data="item" />
@@ -198,7 +197,7 @@ function showDeleteConfirmation(entry: OracleCacheMeta) {
       <template #item="{ item }">
         <PrioritizedListEntry :data="item" />
       </template>
-    </VAutocomplete>
+    </RuiAutoComplete>
     <div class="pb-8">
       <div class="flex items-start gap-4">
         <AssetSelect

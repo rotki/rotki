@@ -25,7 +25,7 @@ describe('historyEventForm.vue', () => {
   it('should show correct form based on the entryType', async () => {
     wrapper = createWrapper();
 
-    const entryTypeInput = wrapper.find('[data-cy="entry-type"] input');
+    const entryTypeInput = wrapper.find('[data-cy="entry-type"] ~ input');
     const entryTypeElement = entryTypeInput.element as HTMLInputElement;
 
     expect(entryTypeElement.value).toBe(HistoryEventEntryType.HISTORY_EVENT);

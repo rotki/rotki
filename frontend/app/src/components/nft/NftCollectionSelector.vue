@@ -19,15 +19,15 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <VAutocomplete
+  <RuiAutoComplete
     v-model="model"
     :label="t('nft_gallery.select_collection')"
-    single-line
     clearable
     hide-details
     hide-selected
-    :items="items"
-    outlined
+    :options="items"
+    variant="outlined"
+    :item-height="42"
     dense
   >
     <template #selection="{ item }">
@@ -44,10 +44,10 @@ const { t } = useI18n();
       <RuiChip
         tile
         size="sm"
-        class="font-medium text-caption"
+        class="font-medium text-caption my-1"
       >
         {{ item }}
       </RuiChip>
     </template>
-  </VAutocomplete>
+  </RuiAutoComplete>
 </template>

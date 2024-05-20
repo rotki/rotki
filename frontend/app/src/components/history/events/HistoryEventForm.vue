@@ -47,18 +47,17 @@ watchImmediate([groupHeader, editableItem], ([groupHeader, editableItem]) => {
       :options="historyEventEntryTypes"
       :disabled="!!groupHeader"
       :label="t('common.entry_type')"
-      key-attr="key"
-      full-width
+      hide-details
       variant="outlined"
     >
-      <template #activator.text="{ value }">
+      <template #selection="{ item }">
         <span class="capitalize">
-          {{ value.key }}
+          {{ item }}
         </span>
       </template>
-      <template #item.text="{ option }">
+      <template #item="{ item }">
         <span class="capitalize">
-          {{ option.key }}
+          {{ item }}
         </span>
       </template>
     </RuiMenuSelect>

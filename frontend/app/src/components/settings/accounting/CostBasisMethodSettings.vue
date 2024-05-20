@@ -8,25 +8,22 @@ const { costBasisMethodData } = useCostBasisMethod();
     v-bind="rootAttrs"
     :options="costBasisMethodData"
     key-attr="identifier"
-    text-attr="label"
-    full-width
-    show-details
     variant="outlined"
     v-on="
       // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
       $listeners
     "
   >
-    <template #activator.text="{ value }">
-      <span class="font-medium uppercase">{{ value.identifier }}</span>
+    <template #selection="{ item }">
+      <span class="font-medium uppercase">{{ item.identifier }}</span>
     </template>
-    <template #item.text="{ option }">
+    <template #item="{ item }">
       <ListItem
         no-padding
         no-hover
         class="!py-0"
-        :title="option.identifier.toUpperCase()"
-        :subtitle="option.label"
+        :title="item.identifier.toUpperCase()"
+        :subtitle="item.label"
       />
     </template>
   </RuiMenuSelect>

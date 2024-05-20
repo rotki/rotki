@@ -123,7 +123,6 @@ function resetForm() {
           :options="evmTokenKindsData"
           key-attr="identifier"
           text-attr="label"
-          full-width
           variant="outlined"
         />
       </div>

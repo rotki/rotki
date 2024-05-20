@@ -196,7 +196,6 @@ onMounted(async () => {
       <div class="flex flex-col md:flex-row flex-wrap items-start gap-4 mb-4">
         <BlockchainAccountSelector
           v-model="selectedAccounts"
-          multiple
           class="w-full flex-1 !shadow-none !border-none !p-0"
           no-padding
           dense
@@ -211,7 +210,7 @@ onMounted(async () => {
           key-attr="value"
           text-attr="text"
           dense
-          full-width
+          hide-details
           variant="outlined"
         />
       </div>

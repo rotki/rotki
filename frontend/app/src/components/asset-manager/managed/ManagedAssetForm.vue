@@ -368,8 +368,6 @@ setSubmitFunc(save);
           key-attr="key"
           text-attr="label"
           variant="outlined"
-          full-width
-          show-details
         />
       </div>
 
@@ -387,8 +385,6 @@ setSubmitFunc(save);
             key-attr="name"
             text-attr="label"
             variant="outlined"
-            full-width
-            show-details
           />
         </div>
 
@@ -402,8 +398,6 @@ setSubmitFunc(save);
             key-attr="identifier"
             text-attr="label"
             variant="outlined"
-            full-width
-            show-details
           />
         </div>
       </div>
@@ -565,7 +559,6 @@ setSubmitFunc(save);
                   <AssetSelect
                     v-model="swappedFor"
                     outlined
-                    persistent-hint
                     clearable
                     :label="t('asset_form.labels.swapped_for')"
                     :error-messages="toMessages(v$.swappedFor)"
@@ -575,7 +568,6 @@ setSubmitFunc(save);
                     v-if="!isEvmToken && assetType"
                     v-model="forked"
                     outlined
-                    persistent-hint
                     clearable
                     :label="t('asset_form.labels.forked')"
                     :error-messages="toMessages(v$.forked)"

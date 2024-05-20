@@ -81,14 +81,14 @@ const css = useCssModule();
 
     <div class="flex items-center gap-4">
       <div class="flex flex-col md:flex-row md:gap-4 flex-1">
-        <VAutocomplete
+        <RuiAutoComplete
           v-model="source"
           class="flex-1"
-          outlined
+          variant="outlined"
           :label="t('data_management.purge_images_cache.select_image_source')"
-          :items="purgable"
-          item-text="text"
-          item-value="id"
+          :options="purgable"
+          text-attr="text"
+          key-attr="id"
           :disabled="pending"
         />
         <AssetSelect
@@ -96,7 +96,6 @@ const css = useCssModule();
           v-model="assetToClear"
           class="flex-1"
           outlined
-          persistent-hint
           :label="t('data_management.purge_images_cache.label.asset_to_clear')"
           :hint="t('data_management.purge_images_cache.hint')"
         />

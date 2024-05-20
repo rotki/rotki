@@ -61,10 +61,10 @@ const sortProperties = [
       <RuiMenuSelect
         v-model="sortByModel"
         :options="sortProperties"
-        label-class="!rounded-l-none !border-l-0"
+        class="[&_fieldset]:!rounded-l-none [&_fieldset]:!border-l-0"
         key-attr="value"
         text-attr="text"
-        full-width
+        hide-details
         variant="outlined"
         dense
       />

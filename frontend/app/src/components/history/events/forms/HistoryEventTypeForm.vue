@@ -95,27 +95,25 @@ const { t } = useI18n();
 <template>
   <div>
     <div class="grid md:grid-cols-3 gap-4">
-      <VAutocomplete
+      <RuiAutoComplete
         v-model="eventTypeModel"
-        outlined
-        required
+        variant="outlined"
         :label="t('transactions.events.form.event_type.label')"
-        :items="historyEventTypesData"
-        item-value="identifier"
-        item-text="label"
+        :options="historyEventTypesData"
+        key-attr="identifier"
+        text-attr="label"
         data-cy="eventType"
         auto-select-first
         :error-messages="toMessages(v$.eventType)"
         @blur="v$.eventType.$touch()"
       />
-      <VAutocomplete
+      <RuiAutoComplete
         v-model="eventSubtypeModel"
-        outlined
-        required
+        variant="outlined"
         :label="t('transactions.events.form.event_subtype.label')"
-        :items="historyEventSubTypeFilteredData"
-        item-value="identifier"
-        item-text="label"
+        :options="historyEventSubTypeFilteredData"
+        key-attr="identifier"
+        text-attr="label"
         data-cy="eventSubtype"
         auto-select-first
         :error-messages="toMessages(v$.eventSubtype)"

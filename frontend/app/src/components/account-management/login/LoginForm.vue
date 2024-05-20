@@ -359,24 +359,29 @@ function abortLogin() {
               data-cy="username-input"
               dense
             />
-            <VAutocomplete
+            <RuiAutoComplete
               v-else
               ref="usernameRef"
               v-model="username"
               :search-input.sync="usernameSearch"
               :label="t('login.label_username')"
-              :items="orderedUsernamesList"
+              :options="orderedUsernamesList"
               :disabled="loading || conflictExist || customBackendDisplay"
               :error-messages="usernameErrors"
               data-cy="username-input"
               class="mb-2"
               auto-select-first
-              validate-on-blur
               :hide-no-data="savedUsernames.length > 0"
               clearable
-              outlined
+              variant="outlined"
+              :item-height="38"
               dense
             >
+              <template #item="{ item }">
+                <div class="py-1">
+                  {{ item }}
+                </div>
+              </template>
               <template #no-data>
                 <div class="px-4 py-2 text-body-2 font-medium">
                   <i18n path="login.no_profiles_found">
@@ -395,7 +400,7 @@ function abortLogin() {
                   </i18n>
                 </div>
               </template>
-            </VAutocomplete>
+            </RuiAutoComplete>
 
             <RuiRevealableTextField
               ref="passwordRef"

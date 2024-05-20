@@ -800,6 +800,7 @@ watchImmediate(route, async (route) => {
             </div>
           </TableStatusFilter>
           <TableFilter
+            class="min-w-[20rem]"
             :matches="filters"
             :matchers="matchers"
             :location="SavedFilterLocation.HISTORY_EVENTS"
@@ -819,6 +820,7 @@ watchImmediate(route, async (route) => {
         <HistoryEventsExport :filters="pageParams" />
         <BlockchainAccountSelector
           v-if="!useExternalAccountFilter"
+          class="min-w-[15rem] max-w-[20rem]"
           :value="accounts"
           :chains="txChainIds"
           dense
@@ -828,7 +830,6 @@ watchImmediate(route, async (route) => {
           multichain
           hide-chain-icon
           unique
-          flat
           @input="onFilterAccountsChanged($event)"
         />
       </HistoryTableActions>

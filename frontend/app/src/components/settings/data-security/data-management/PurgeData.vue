@@ -121,22 +121,20 @@ const chainsSelection = useArrayMap(txChains, item => item.id);
 
     <div class="flex items-center gap-4">
       <div class="flex flex-col md:flex-row md:gap-4 flex-1">
-        <VAutocomplete
+        <RuiAutoComplete
           v-model="source"
           class="flex-1"
-          outlined
+          variant="outlined"
           :label="t('purge_selector.label')"
-          :items="purgable"
-          item-text="text"
-          item-value="id"
+          :options="purgable"
+          text-attr="text"
+          key-attr="id"
           :disabled="pending"
         />
         <ChainSelect
           v-if="source === Purgeable.TRANSACTIONS"
           :model-value.sync="chainToClear"
           class="flex-1"
-          required
-          outlined
           clearable
           persistent-hint
           :items="chainsSelection"
@@ -147,8 +145,6 @@ const chainsSelection = useArrayMap(txChains, item => item.id);
           v-else-if="source === Purgeable.CENTRALIZED_EXCHANGES"
           v-model="centralizedExchangeToClear"
           class="flex-1"
-          required
-          outlined
           clearable
           persistent-hint
           :items="allExchanges"
@@ -159,8 +155,6 @@ const chainsSelection = useArrayMap(txChains, item => item.id);
           v-else-if="source === Purgeable.DECENTRALIZED_EXCHANGES"
           v-model="decentralizedExchangeToClear"
           class="flex-1"
-          required
-          outlined
           clearable
           persistent-hint
           :items="DECENTRALIZED_EXCHANGES"
@@ -171,10 +165,6 @@ const chainsSelection = useArrayMap(txChains, item => item.id);
           v-else-if="source === Purgeable.DEFI_MODULES"
           v-model="moduleToClear"
           class="flex-1"
-          required
-          outlined
-          clearable
-          persistent-hint
           :items="modules"
           :label="t('purge_selector.defi_module_to_clear.label')"
           :hint="t('purge_selector.defi_module_to_clear.hint')"

@@ -254,7 +254,6 @@ function sortNfts(sortBy: Ref<'name' | 'priceUsd' | 'collection'>, sortDesc: Ref
             dense
             outlined
             no-padding
-            flat
             :usable-addresses="availableAddresses"
           />
 

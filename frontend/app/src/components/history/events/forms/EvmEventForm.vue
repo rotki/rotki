@@ -357,7 +357,7 @@ const addressSuggestions = computed(() => getAddresses(Blockchain.ETH));
 
 <template>
   <div>
-    <div class="grid md:grid-cols-2 gap-4">
+    <div class="grid md:grid-cols-2 gap-4 mb-4">
       <DateTimePicker
         v-model="datetime"
         :label="t('common.datetime')"
@@ -371,8 +371,6 @@ const addressSuggestions = computed(() => getAddresses(Blockchain.ETH));
       />
       <LocationSelector
         v-model="location"
-        required
-        outlined
         :items="txChainsToLocation"
         :disabled="!!(editableItem || groupHeader)"
         data-cy="location"
@@ -457,15 +455,14 @@ const addressSuggestions = computed(() => getAddresses(Blockchain.ETH));
         :error-messages="toMessages(v$.counterparty)"
         @blur="v$.counterparty.$touch()"
       />
-      <VAutocomplete
+      <RuiAutoComplete
         v-model="product"
         clearable
-        outlined
-        required
+        variant="outlined"
         auto-select-first
         :disabled="historyEventLimitedProducts.length === 0"
         :label="t('transactions.events.form.product.label')"
-        :items="historyEventLimitedProducts"
+        :options="historyEventLimitedProducts"
         data-cy="product"
         :error-messages="toMessages(v$.product)"
         @blur="v$.product.$touch()"

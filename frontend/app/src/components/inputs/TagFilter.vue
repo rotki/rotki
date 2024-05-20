@@ -28,44 +28,34 @@ const availableTagsList = computed<Tag[]>(() => {
 function input(tags: string[]) {
   emit('input', tags);
 }
-
-function remove(tag: string) {
-  const tags = get(value);
-  const index = tags.indexOf(tag);
-  input([...tags.slice(0, index), ...tags.slice(index + 1)]);
-}
 </script>
 
 <template>
-  <VAutocomplete
+  <RuiAutoComplete
     :value="value"
     :disabled="disabled"
-    :items="availableTagsList"
+    :options="availableTagsList"
     class="tag-filter"
-    small-chips
     :label="t('tag_filter.label')"
-    prepend-inner-icon="mdi-magnify"
-    item-text="name"
-    :menu-props="{ closeOnContentClick: true }"
-    outlined
-    dense
-    item-value="name"
-    multiple
+    key-attr="name"
+    text-attr="name"
+    variant="outlined"
     clearable
+    dense
     :hide-details="hideDetails"
     @input="input($event)"
-    @click:clear="input([])"
   >
-    <template #selection="{ item, select }">
+    <template #selection="{ item, chipOn, chipAttrs }">
       <RuiChip
         tile
         size="sm"
-        class="font-medium m-0.5"
+        class="font-medium !leading-3"
         :bg-color="`#${item.backgroundColor}`"
         :text-color="`#${item.foregroundColor}`"
         closeable
-        @click:close="remove(item.name)"
-        @click="select($event)"
+        clickable
+        v-bind="chipAttrs"
+        v-on="chipOn"
       >
         {{ item.name }}
       </RuiChip>
@@ -77,21 +67,5 @@ function remove(tag: string) {
         small
       />
     </template>
-  </VAutocomplete>
+  </RuiAutoComplete>
 </template>
-
-<style scoped lang="scss">
-.tag-filter {
-  &__clear {
-    margin-top: -4px;
-  }
-
-  /* stylelint-disable selector-class-pattern,selector-nested-pattern */
-
-  :deep(.v-select__slot) {
-    min-height: 40px;
-  }
-
-  /* stylelint-enable selector-class-pattern,selector-nested-pattern */
-}
-</style>

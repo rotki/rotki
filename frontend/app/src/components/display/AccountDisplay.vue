@@ -69,7 +69,10 @@ const { t } = useI18n();
             :open-delay="400"
           >
             <template #activator>
-              <RuiIcon name="links-line" />
+              <RuiIcon
+                name="links-line"
+                class="text-rui-text-secondary"
+              />
             </template>
             {{ t('common.multi_chain') }}
           </RuiTooltip>

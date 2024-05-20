@@ -1,12 +1,12 @@
-export const VAutocompleteStub = {
+export const RuiAutoCompleteStub = {
   template: `
     <div :data-cy="dataCy" :disabled="disabled">
       <div>
         <input :value="value?.toString()" class="input-value" type="text" @input="$emit('input', $event.value)">
       </div>
       <div class="selections">
-        <span v-for="item in items">
-          {{ item[itemValue] ?? item }}
+        <span v-for="item in options">
+          {{ item[keyProp] ?? item }}
         </span>
       </div>
       <div v-if="error || message" class="details">
@@ -18,8 +18,8 @@ export const VAutocompleteStub = {
     value: { type: [String, Array<string>] },
     successMessages: { type: [String, Array<string>], default: () => [] },
     errorMessages: { type: [String, Array<string>], default: () => [] },
-    items: { type: Array<any> },
-    itemValue: { type: String },
+    options: { type: Array<any> },
+    keyProp: { type: String },
     dataCy: { type: String, default: '' },
     disabled: { type: Boolean, default: false },
   },

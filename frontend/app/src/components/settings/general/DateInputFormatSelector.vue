@@ -30,23 +30,21 @@ const { t } = useI18n();
     :item-height="68"
     key-attr="value"
     text-attr="value"
-    full-width
-    show-details
     variant="outlined"
     v-on="
       // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
       $listeners
     "
   >
-    <template #item.text="{ option }">
+    <template #item="{ item }">
       <ListItem
         no-hover
         no-padding
         class="!py-0"
-        :title="option.value"
+        :title="item.value"
         :subtitle="
           t('general_settings.date_input_format_hint', {
-            format: dateInputFormatExample(option.value),
+            format: dateInputFormatExample(item.value),
           })
         "
       />

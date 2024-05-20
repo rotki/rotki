@@ -107,14 +107,14 @@ const elemID = computed(() => `${get(identifier)}-switch`);
         v-if="linkedModel"
         class="ml-7 mt-1 md:w-1/2"
       >
-        <VAutocomplete
+        <RuiMenuSelect
           v-model="linkedSettingModel"
-          outlined
+          variant="outlined"
           hide-details
           dense
-          item-value="identifier"
-          item-text="label"
-          :items="linkableSettingOptions"
+          key-attr="identifier"
+          text-attr="label"
+          :options="linkableSettingOptions"
         />
         <div
           v-if="linkedPropertyValue !== null"

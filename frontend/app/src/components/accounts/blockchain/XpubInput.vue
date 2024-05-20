@@ -154,13 +154,9 @@ defineExpose({
         class="account-form__xpub-key-type flex-1"
         key-attr="value"
         text-attr="label"
-        full-width
+        hide-details
         variant="outlined"
-      >
-        <template #activator.text="{ value }">
-          {{ value.label }}
-        </template>
-      </RuiMenuSelect>
+      />
       <RuiTextField
         v-model="xpubKey"
         variant="outlined"

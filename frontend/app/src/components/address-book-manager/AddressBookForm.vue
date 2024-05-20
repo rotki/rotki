@@ -111,7 +111,6 @@ onMounted(fetchNames);
       :disabled="edit"
       key-attr="key"
       text-attr="label"
-      full-width
       variant="outlined"
     />
     <RuiSwitch

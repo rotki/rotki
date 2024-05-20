@@ -100,35 +100,33 @@ const { t } = useI18n();
         :options="supportedExplorers"
         :label="t('explorers.chain_selector')"
         :item-height="56"
-        dense
-        key-attr="key"
-        full-width
-        show-details
         variant="outlined"
         @input="onChange()"
       >
-        <template #item.text="{ option }">
+        <template #item="{ item }">
           <ChainDisplay
-            v-if="!additional.includes(option.key)"
+            v-if="!additional.includes(item)"
             dense
-            :chain="option.key"
+            :chain="item"
           />
           <AssetDetails
             v-else
-            :asset="option.key"
             dense
+            class="[&>div]:!py-0 -my-[0.375rem]"
+            :asset="item"
           />
         </template>
-        <template #activator.text="{ value }">
+        <template #selection="{ item }">
           <ChainDisplay
-            v-if="!additional.includes(value.key)"
+            v-if="!additional.includes(item)"
             dense
-            :chain="value.key"
+            :chain="item"
           />
           <AssetDetails
             v-else
-            :asset="value.key"
             dense
+            class="[&>div]:!py-0 -my-[0.375rem]"
+            :asset="item"
           />
         </template>
       </RuiMenuSelect>
