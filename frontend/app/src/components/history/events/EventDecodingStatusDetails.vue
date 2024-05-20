@@ -8,7 +8,9 @@ const { t } = useI18n();
 
 const { isTaskRunning } = useTaskStore();
 
-const isComplete = computed<boolean>(() => props.item.total === props.item.processed);
+const remaining = computed<number>(() => props.item.total - props.item.processed);
+
+const isComplete = computed<boolean>(() => get(remaining) === 0);
 
 const decoding = computed<boolean>(() => get(isTaskRunning(TaskType.TRANSACTIONS_DECODING, { chain: props.item.evmChain })));
 </script>
@@ -26,7 +28,7 @@ const decoding = computed<boolean>(() => get(isTaskRunning(TaskType.TRANSACTIONS
         {{ t('transactions.events_decoding.decoding.done', { count: item.total }) }}
       </template>
       <template v-else-if="!decoding">
-        {{ t('transactions.events_decoding.decoding.pending', { count: item.total }) }}
+        {{ t('transactions.events_decoding.decoding.pending', { count: remaining }) }}
       </template>
       <template v-else>
         {{ t('transactions.events_decoding.decoding.processing', { count: item.processed, total: item.total }) }}
