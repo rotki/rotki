@@ -1,7 +1,7 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.chain.ethereum.modules.lido.constants import CPT_LIDO_ETH
+from rotkehlchen.chain.ethereum.modules.lido.constants import CPT_LIDO
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_ETH, A_STETH
@@ -12,7 +12,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
-# @pytest.mark.vcr()
+@pytest.mark.vcr()
 @pytest.mark.parametrize('ethereum_accounts', [['0x4C49d4Bd6a571827B4A556a0e1e3071DA6231B9D']])
 def test_lido_steth_staking(database, ethereum_inquirer, ethereum_accounts):
     tx_hex = deserialize_evm_tx_hash('0x23a3ee601475424e91bdc0999a780afe57bf37cbcce6d1c09a4dfaaae1765451')  # noqa: E501
@@ -22,10 +22,7 @@ def test_lido_steth_staking(database, ethereum_inquirer, ethereum_accounts):
         database=database,
         tx_hash=tx_hex,
     )
-    timestamp = TimestampMS(1710486191000)
-    gas_str = '0.002846110430778206'
-    amount_deposited_eth_str = '1.12137397'
-    amount_minted_steth_str = '1.121373969999999999'
+    timestamp, gas_str, amount_deposited, amount_minted = TimestampMS(1710486191000), '0.002846110430778206', '1.12137397', '1.121373969999999999'  # noqa: E501
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
@@ -47,10 +44,10 @@ def test_lido_steth_staking(database, ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.DEPOSIT,
             event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
             asset=A_ETH,
-            balance=Balance(FVal(amount_deposited_eth_str)),
+            balance=Balance(FVal(amount_deposited)),
             location_label=ethereum_accounts[0],
-            notes=f'Submit {amount_deposited_eth_str} {A_ETH.symbol_or_name()} to Lido for receiving {A_STETH.symbol_or_name()} in exchange',  # noqa: E501
-            counterparty=CPT_LIDO_ETH,
+            notes=f'Submit {amount_deposited} {A_ETH.symbol_or_name()} to Lido for receiving {A_STETH.symbol_or_name()} in exchange',  # noqa: E501
+            counterparty=CPT_LIDO,
             address=A_STETH.resolve_to_evm_token().evm_address,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -60,12 +57,12 @@ def test_lido_steth_staking(database, ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.RECEIVE,
             event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             asset=A_STETH,
-            balance=Balance(FVal(amount_minted_steth_str)),
+            balance=Balance(FVal(amount_minted)),
             location_label=ethereum_accounts[0],
-            notes=f'Receive {amount_minted_steth_str} {A_STETH.symbol_or_name()} in exchange of the deposited {A_ETH.symbol_or_name()}',  # noqa: E501
-            counterparty=CPT_LIDO_ETH,
+            notes=f'Receive {amount_minted} {A_STETH.symbol_or_name()} in exchange of the deposited {A_ETH.symbol_or_name()}',  # noqa: E501
+            counterparty=CPT_LIDO,
             address=ZERO_ADDRESS,
-            extra_data={'staked_eth': str(amount_deposited_eth_str)},
+            extra_data={'staked_eth': str(amount_deposited)},
         ),
     ]
     assert events == expected_events
