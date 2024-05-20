@@ -903,7 +903,14 @@ class EVMTransactionDecoder(ABC):
                     action_item.asset == found_token and
                     action_item.from_event_type == transfer.event_type and
                     action_item.from_event_subtype == transfer.event_subtype and
-                    (action_item.amount is None or action_item.amount == transfer.balance.amount) and  # noqa: E501
+                    (
+                        (action_item.amount is None or action_item.amount == transfer.balance.amount) or  # noqa: E501
+                        (
+                            action_item.amount_error_tolerance is not None and
+                            action_item.amount is not None and
+                            abs(action_item.amount - transfer.balance.amount) < action_item.amount_error_tolerance  # abs used for supporting also different cases than stETH, if they exist # noqa: E501
+                        )
+                    ) and
                     (action_item.location_label is None or action_item.location_label == transfer.location_label)  # noqa: E501
             ):
                 if action_item.action == 'skip':
@@ -920,7 +927,7 @@ class EVMTransactionDecoder(ABC):
                 if action_item.to_event_subtype is not None:
                     transfer.event_subtype = action_item.to_event_subtype
                 if action_item.to_notes is not None:
-                    transfer.notes = action_item.to_notes
+                    transfer.notes = action_item.to_notes if action_item.amount_error_tolerance is None else action_item.to_notes.format(amount=transfer.balance.amount)  # noqa: E501
                 if action_item.to_counterparty is not None:
                     transfer.counterparty = action_item.to_counterparty
                 if action_item.extra_data is not None:

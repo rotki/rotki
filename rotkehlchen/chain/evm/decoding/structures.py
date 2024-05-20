@@ -30,6 +30,8 @@ class ActionItem:
     # Optional event data that pairs it with the event of the action item
     # Contains a tuple with the paired event and whether it's an out event (True) or in event
     paired_event_data: tuple['EvmEvent', bool] | None = None
+    # Error tolerance that can be used for protocols having rounding errors as stETH
+    amount_error_tolerance: Optional['FVal'] = None
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
