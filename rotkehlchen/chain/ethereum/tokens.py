@@ -23,8 +23,6 @@ ETH_TOKEN_EXCEPTIONS = {
     # since the SDK entry might return other tokens from sushi and we don't
     # fully support sushi now.
     string_to_evm_address('0x8798249c2E607446EfB7Ad49eC89dD1865Ff4272'),
-    # Ignore stkAave since it's queried by defi SDK.
-    string_to_evm_address('0x4da27a545c0c5B758a6BA100e3a049001de870f5'),
     # Ignore the following tokens. They are old tokens of upgraded contracts which
     # duplicated the balances at upgrade instead of doing a token swap.
     # e.g.: https://github.com/rotki/rotki/issues/3548
