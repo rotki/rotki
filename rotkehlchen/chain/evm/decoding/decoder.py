@@ -571,7 +571,7 @@ class EVMTransactionDecoder(ABC):
                 self.msg_aggregator.add_message(
                     message_type=WSMessageType.EVM_UNDECODED_TRANSACTIONS,
                     data={
-                        'evm_chain': self.evm_inquirer.chain_name,
+                        'chain': self.evm_inquirer.chain_name,
                         'total': total_transactions,
                         'processed': tx_index,
                     },
@@ -602,7 +602,7 @@ class EVMTransactionDecoder(ABC):
             self.msg_aggregator.add_message(
                 message_type=WSMessageType.EVM_UNDECODED_TRANSACTIONS,
                 data={
-                    'evm_chain': self.evm_inquirer.chain_name,
+                    'chain': self.evm_inquirer.chain_name,
                     'total': total_transactions,
                     'processed': total_transactions,
                 },

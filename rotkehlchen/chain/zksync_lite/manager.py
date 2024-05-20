@@ -11,6 +11,7 @@ import requests
 from pysqlcipher3.dbapi2 import IntegrityError
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, CryptoAsset
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
@@ -32,6 +33,7 @@ from rotkehlchen.serialization.deserialize import deserialize_evm_address, deser
 from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
+    EvmlikeChain,
     EVMTxHash,
     Fee,
     Location,
@@ -838,9 +840,14 @@ class ZksyncLiteManager:
                 (1, transaction.tx_hash),
             )
 
-    def decode_undecoded_transactions(self, force_redecode: bool) -> int:
+    def decode_undecoded_transactions(
+            self,
+            force_redecode: bool,
+            send_ws_notifications: bool = False,
+    ) -> int:
         """Decodes undecoded zksync lite transactions. If force redecode is True
-        then all transactions are redecoded.
+        then all transactions are redecoded. If send_ws_notifications is True then the decoding
+        progress is broadcasted via websocket messages.
         Returns the number of decoded transactions (not events in transactions)
         """
         queryfilter, bindings = '', ()
@@ -851,7 +858,8 @@ class ZksyncLiteManager:
         with self.database.conn.read_ctx() as cursor:
             tracked_addresses = self.database.get_blockchain_accounts(cursor).zksync_lite
 
-        for transaction in transactions:
+        total_transactions = len(transactions)
+        for tx_index, transaction in enumerate(transactions):
             with self.database.user_write() as write_cursor:  # delete old tx events
                 write_cursor.execute(
                     'DELETE FROM history_events WHERE event_identifier=?',
@@ -859,5 +867,25 @@ class ZksyncLiteManager:
                 )
 
             self.decode_transaction(transaction, tracked_addresses)
+
+            if send_ws_notifications and tx_index % 10 == 0:
+                self.database.msg_aggregator.add_message(
+                    message_type=WSMessageType.EVM_UNDECODED_TRANSACTIONS,
+                    data={
+                        'chain': EvmlikeChain.ZKSYNC_LITE,
+                        'total': total_transactions,
+                        'processed': tx_index,
+                    },
+                )
+
+        if send_ws_notifications:
+            self.database.msg_aggregator.add_message(
+                message_type=WSMessageType.EVM_UNDECODED_TRANSACTIONS,
+                data={
+                    'chain': EvmlikeChain.ZKSYNC_LITE,
+                    'total': total_transactions,
+                    'processed': total_transactions,
+                },
+            )
 
         return len(transactions)

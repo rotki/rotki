@@ -317,11 +317,11 @@ When the endpoint to start the task for decoding undecoded transactions is queri
 
     {
         "type": "evm_undecoded_transactions",
-        "data": {evm_chain":"ethereum", "total":2, "processed":0}
+        "data": {chain":"ethereum", "total":2, "processed":0}
     }
 
 
-- ``evm_chain``: Evm chain where the task is decoding transactions.
+- ``chain``: Chain where the task is decoding transactions.
 - ``total``: Total number of transactions that will be decoded.
 - ``processed``: The total number of transactions that have already been decoded.
 
