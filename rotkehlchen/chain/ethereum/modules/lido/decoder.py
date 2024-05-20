@@ -1,10 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from rotkehlchen.chain.ethereum.utils import (
-    token_normalized_value_decimals,
-    token_raw_value_decimals,
-)
+from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -14,11 +11,10 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.constants.assets import A_ETH, A_STETH
-from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_LIDO, LIDO_STETH_SUBMITTED, STETH_MAX_ROUND_ERROR_WEI
 
@@ -48,7 +44,6 @@ class LidoDecoder(DecoderInterface):
 
     def _decode_lido_staking_in_steth(self, context: DecoderContext, sender: ChecksumEvmAddress) -> DecodingOutput:  # noqa: E501
         """Decode the submit of eth to lido contract for obtaining steth in return"""
-        # decode the ETH collateral amount submitted for staking in Lido
         amount_raw = hex_or_bytes_to_int(context.tx_log.data[:32])
         collateral_amount = token_normalized_value_decimals(
             token_amount=amount_raw,
@@ -69,14 +64,14 @@ class LidoDecoder(DecoderInterface):
             ):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-                event.notes = f'Submit {collateral_amount} ETH to Lido for receiving stETH in exchange'  # noqa: E501
+                event.notes = f'Submit {collateral_amount} ETH to Lido'
                 event.counterparty = CPT_LIDO
-                #  preparing next action to be processed when erc20 transfer will be decoded by rotki  # noqa: E501
-                #  needed because submit event is emitted prior to the erc20 transfer
+                #  preparing next action to be processed when erc20 transfer will be decoded
+                #  by rotki needed because submit event is emitted prior to the erc20 transfer
                 paired_event = event
                 action_from_event_type = HistoryEventType.RECEIVE
                 action_to_event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
-                action_to_notes = f'Receive {{amount}} stETH in exchange of the deposited ETH'  # {amount} to be set by transform ActionItem  # noqa: E501,F541
+                action_to_notes = 'Receive {amount} stETH in exchange for the deposited ETH'  # {amount} to be set by transform ActionItem  # noqa: E501
                 break
         else:  # did not find anything
             log.error(
@@ -93,7 +88,7 @@ class LidoDecoder(DecoderInterface):
                 from_event_subtype=HistoryEventSubType.NONE,
                 asset=A_STETH,
                 amount=collateral_amount,
-                amount_error_tolerance=FVal(token_raw_value_decimals(STETH_MAX_ROUND_ERROR_WEI, 18)),  # passing the maximum rounding error for finding the related stETH transfer  # noqa: E501
+                amount_error_tolerance=from_wei(STETH_MAX_ROUND_ERROR_WEI),  # passing the maximum rounding error for finding the related stETH transfer  # noqa: E501
                 to_event_subtype=action_to_event_subtype,
                 to_notes=action_to_notes,
                 to_counterparty=CPT_LIDO,
@@ -105,12 +100,11 @@ class LidoDecoder(DecoderInterface):
 
     def _decode_lido_eth_staking_contract(self, context: DecoderContext) -> DecodingOutput:
         """Decode interactions with stETH ans wstETH contracts"""
-
         if (
             context.tx_log.topics[0] == LIDO_STETH_SUBMITTED and
-            self.base.any_tracked([hex_or_bytes_to_address(context.tx_log.topics[1])])
+            self.base.is_tracked(sender := hex_or_bytes_to_address(context.tx_log.topics[1]))
         ):
-            return self._decode_lido_staking_in_steth(context=context, sender=hex_or_bytes_to_address(context.tx_log.topics[1]))  # noqa: E501
+            return self._decode_lido_staking_in_steth(context=context, sender=sender)
         else:
             return DEFAULT_DECODING_OUTPUT
 

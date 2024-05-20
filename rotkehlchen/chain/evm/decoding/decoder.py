@@ -908,7 +908,7 @@ class EVMTransactionDecoder(ABC):
                         (
                             action_item.amount_error_tolerance is not None and
                             action_item.amount is not None and
-                            abs(action_item.amount - transfer.balance.amount) < action_item.amount_error_tolerance  # abs used for supporting also different cases than stETH, if they exist # noqa: E501
+                            abs(action_item.amount - transfer.balance.amount) < action_item.amount_error_tolerance  # noqa: E501
                         )
                     ) and
                     (action_item.location_label is None or action_item.location_label == transfer.location_label)  # noqa: E501
