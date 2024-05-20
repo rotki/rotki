@@ -13,6 +13,7 @@ from rotkehlchen.chain.arbitrum_one.modules.gmx.balances import GmxBalances
 from rotkehlchen.chain.arbitrum_one.modules.thegraph.balances import (
     ThegraphBalances as ThegraphBalancesArbitrumOne,
 )
+from rotkehlchen.chain.ethereum.modules.aave.balances import AaveBalances
 from rotkehlchen.chain.ethereum.modules.convex.balances import ConvexBalances
 from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
 from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBalances
@@ -24,6 +25,7 @@ from rotkehlchen.chain.evm.tokens import TokenBalancesType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
 from rotkehlchen.constants.assets import (
+    A_AAVE,
     A_CVX,
     A_ETH,
     A_GLM,
@@ -534,6 +536,32 @@ def test_gmx_balances_staking(
             amount=FVal('4.201981641893733976'),
             usd_value=FVal('164.46556146372074782064'),
         ),
+    }
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x6A61Ea7832f84C3096c70f042aB88D9a56732D7B']])
+def test_aave_balances_staking(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_transaction_decoder: 'EthereumTransactionDecoder',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Test the balance query for staked AAVE balances. It adds a staking event
+    and then queries the balances for that address."""
+    amount = FVal('0.134274348203440352')
+    get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=ethereum_transaction_decoder.database,
+        tx_hash=deserialize_evm_tx_hash('0xfaf96358784483a96a61db6aa4ecf4ac87294b841671ca208de6b5d8f83edf17'),
+    )
+    balances_inquirer = AaveBalances(
+        database=ethereum_transaction_decoder.database,
+        evm_inquirer=ethereum_inquirer,
+    )
+    balances = balances_inquirer.query_balances()
+    assert balances[ethereum_accounts[0]].assets == {
+        A_AAVE: Balance(amount=amount, usd_value=amount * FVal(1.5)),
     }
 
 

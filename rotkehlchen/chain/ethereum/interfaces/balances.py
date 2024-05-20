@@ -38,6 +38,7 @@ PROTOCOLS_WITH_BALANCES = Literal[
     'eigenlayer',
     'gmx',
     'compound-v3',
+    'aave',
 ]
 BalancesType = dict[ChecksumEvmAddress, dict[EvmToken, Balance]]
 BalancesSheetType = dict[ChecksumEvmAddress, BalanceSheet]

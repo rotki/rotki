@@ -1,6 +1,6 @@
 from typing import Final
 
-
+CPT_AAVE: Final = 'aave'
 CPT_AAVE_V1: Final = 'aave-v1'
 CPT_AAVE_V2: Final = 'aave-v2'
 CPT_AAVE_V3: Final = 'aave-v3'

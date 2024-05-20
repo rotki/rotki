@@ -5,16 +5,17 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
+from rotkehlchen.chain.ethereum.modules.aave.constants import STK_AAVE_ADDR, STKAAVE_IDENTIFIER
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V1, CPT_AAVE_V2
+from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE, CPT_AAVE_V1, CPT_AAVE_V2
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_POLYGON_POS_MATIC, A_REN, A_WETH
+from rotkehlchen.constants.assets import A_AAVE, A_DAI, A_ETH, A_POLYGON_POS_MATIC, A_REN, A_WETH
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.aave import A_ADAI_V1, A_AETH_V1
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -1038,6 +1039,130 @@ def test_aave_v2_borrow_polygon(database, polygon_pos_inquirer, polygon_pos_acco
             notes=f'Borrow {borrowed_amount} DAI from AAVE v2 with variable APY 5.27%',
             counterparty=CPT_AAVE_V2,
             address=string_to_evm_address('0x27F8D03b3a2196956ED754baDc28D73be8830A6e'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x6A61Ea7832f84C3096c70f042aB88D9a56732D7B']])
+def test_aave_stake(database, ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
+    """Test that the decoder can decode the stake event from Aave"""
+    tx_hash = deserialize_evm_tx_hash('0xfaf96358784483a96a61db6aa4ecf4ac87294b841671ca208de6b5d8f83edf17')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, staked, gas_fees, approval_amount = TimestampMS(1716118019000), '5.126267078394001645', '0.000367527', '115792089237316195423570985008687907853269984665640564038985.825837738726184306'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label=ethereum_accounts[0],
+            notes=f'Burned {gas_fees} ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=64,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=A_AAVE,
+            balance=Balance(amount=FVal(approval_amount)),
+            location_label=ethereum_accounts[0],
+            notes=f'Set AAVE spending approval of {ethereum_accounts[0]} by {STK_AAVE_ADDR} to {approval_amount}',  # noqa: E501
+            tx_hash=tx_hash,
+            address=STK_AAVE_ADDR,
+        ), EvmEvent(
+            sequence_index=65,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_AAVE,
+            balance=Balance(amount=FVal(staked)),
+            location_label=ethereum_accounts[0],
+            notes=f'Stake {staked} AAVE',
+            tx_hash=tx_hash,
+            counterparty=CPT_AAVE,
+            product=EvmProduct.STAKING,
+            address=STK_AAVE_ADDR,
+        ), EvmEvent(
+            sequence_index=66,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset(STKAAVE_IDENTIFIER),
+            balance=Balance(amount=FVal(staked)),
+            location_label=ethereum_accounts[0],
+            notes=f'Receive {staked} stkAAVE from staking in Aave',
+            counterparty=CPT_AAVE,
+            tx_hash=tx_hash,
+            address=ZERO_ADDRESS,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x201B93778C36Aad0510d96c0a3733A6Efa9d0bC5']])
+def test_aave_unstake(database, ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
+    """Test that the decoder can decode the unstake/redeem event from Aave"""
+    tx_hash = deserialize_evm_tx_hash('0xaaef5990d08a0f4cb83b0f98b995f734c96ab6dca41bf7de54c3719fe463ce24')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, unstaked, gas_fees = TimestampMS(1716216731000), '2.71357', '0.001456740929488432'
+    expected_events = [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label=ethereum_accounts[0],
+            notes=f'Burned {gas_fees} ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=449,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset(STKAAVE_IDENTIFIER),
+            balance=Balance(amount=FVal(unstaked)),
+            location_label=ethereum_accounts[0],
+            notes=f'Unstake {unstaked} stkAAVE',
+            tx_hash=tx_hash,
+            address=ZERO_ADDRESS,
+            counterparty=CPT_AAVE,
+            product=EvmProduct.STAKING,
+        ), EvmEvent(
+            sequence_index=450,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_AAVE,
+            balance=Balance(amount=FVal(unstaked)),
+            location_label=ethereum_accounts[0],
+            notes=f'Receive {unstaked} AAVE after unstaking from Aave',
+            tx_hash=tx_hash,
+            address=STK_AAVE_ADDR,
+            counterparty=CPT_AAVE,
         ),
     ]
     assert events == expected_events
