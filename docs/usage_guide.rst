@@ -1548,6 +1548,8 @@ Events that have been modified will appear marked in the UI.
 Customization of the list of supported assets
 *********************************************
 
+.. _inspecting-list-of-assets:
+
 Inspecting list of assets
 =========================
 
@@ -1557,6 +1559,8 @@ You can inspect the list of all supported assets, edit them, delete them or add 
 .. image:: images/rotki_manage_assets.png
    :alt: Manage the list of assets
    :align: center
+
+.. _whitelisting-of-ignored-assets:
 
 Whitelisting of ignored assets
 ================================
@@ -2342,3 +2346,12 @@ ENS data not updating for newly registered name/address combination
 =====================================================================
 
 If you just registered your ENS name and you don't see the name and/or avatar being properly displayed in rotki then that means that the value is cached and you need to force a refresh. You can do that by going to :menuselection:`Accounts & Balances > Blockchain Balances` view and pressing refresh button next to Ethereum balances table.
+
+My asset is not showing in rotki
+================================
+
+If your asset is not showing in Rotki, even though you are sure that you have a balance, you need to first ensure that the asset is present on the list of assets (read :ref:`inspecting-list-of-assets`).
+
+If you still cannot find your asset, it might be ignored. By default, Rotki only displays un-ignored assets in the table. To also show the ignored assets, choose the  :menuselection:`Filter by ignored status > Show all`, and then unignore the asset manually. Additionally, you can whitelist the asset to prevent it from being automatically ignored by rotki's spam detection. (read: :ref:`whitelisting-of-ignored-assets`)
+
+If the asset is still not showing, you may need to add it manually.
