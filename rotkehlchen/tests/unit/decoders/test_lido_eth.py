@@ -46,7 +46,7 @@ def test_lido_steth_staking(database, ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(FVal(amount_deposited)),
             location_label=ethereum_accounts[0],
-            notes=f'Submit {amount_deposited} {A_ETH.symbol_or_name()} to Lido for receiving {A_STETH.symbol_or_name()} in exchange',  # noqa: E501
+            notes=f'Submit {amount_deposited} {A_ETH.symbol_or_name()} to Lido',
             counterparty=CPT_LIDO,
             address=A_STETH.resolve_to_evm_token().evm_address,
         ), EvmEvent(
@@ -59,7 +59,7 @@ def test_lido_steth_staking(database, ethereum_inquirer, ethereum_accounts):
             asset=A_STETH,
             balance=Balance(FVal(amount_minted)),
             location_label=ethereum_accounts[0],
-            notes=f'Receive {amount_minted} {A_STETH.symbol_or_name()} in exchange of the deposited {A_ETH.symbol_or_name()}',  # noqa: E501
+            notes=f'Receive {amount_minted} {A_STETH.symbol_or_name()} in exchange for the deposited {A_ETH.symbol_or_name()}',  # noqa: E501
             counterparty=CPT_LIDO,
             address=ZERO_ADDRESS,
             extra_data={'staked_eth': str(amount_deposited)},
