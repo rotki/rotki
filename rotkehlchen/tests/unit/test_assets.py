@@ -4,6 +4,7 @@ import sqlite3
 import warnings as test_warnings
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from typing import TYPE_CHECKING
 from unittest.mock import PropertyMock, patch
 
 import pytest
@@ -20,8 +21,14 @@ from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
+from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.types import SPAM_PROTOCOL, ChainID, EvmTokenKind
+from rotkehlchen.tasks.assets import autodetect_spam_assets_in_db
+from rotkehlchen.tests.utils.factories import make_evm_address
+from rotkehlchen.types import SPAM_PROTOCOL, CacheType, ChainID, EvmTokenKind
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 def test_unknown_asset():
@@ -836,3 +843,26 @@ def test_nexo_converter():
     assert asset_from_nexo('USDT') == A_USDT
     assert asset_from_nexo('USDTERC') == A_USDT
     assert EvmToken('eip155:1/erc20:0xB62132e35a6c13ee1EE0f84dC5d40bad8d815206') == asset_from_nexo('NEXONEXO')  # noqa: E501
+
+
+def test_spam_detection_respects_whitelist(globaldb: 'GlobalDBHandler', database: 'DBHandler'):
+    """Check that automatic spam detection doesn't add whitelisted assets"""
+    token = Asset('eip155:1/erc20:0xB63B606Ac810a52cCa15e44bB630fd42D8d1d83d')  # crypto.com that gets detected as spam due to the . in the name  # noqa: E501
+    new_token_whitelisted = EvmToken.initialize(
+        address=make_evm_address(),
+        name='crypto.com',  # use a number that will flag it as spam
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+    )
+    globaldb.add_asset(new_token_whitelisted)
+
+    with globaldb.conn.write_ctx() as write_cursor:
+        globaldb_set_general_cache_values(
+            write_cursor=write_cursor,
+            key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
+            values=(new_token_whitelisted.identifier,),
+        )
+
+    autodetect_spam_assets_in_db(database)
+    assert token.resolve_to_evm_token().protocol != SPAM_PROTOCOL
+    assert Asset(new_token_whitelisted.identifier).resolve_to_evm_token().protocol != SPAM_PROTOCOL

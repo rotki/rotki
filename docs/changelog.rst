@@ -5,6 +5,7 @@ Changelog
 * :feature:`7358` Added support for detection of staked GRT tokens on Arbitrum.
 * :bug:`-` Fix the issue where the MATIC amount always shows as zero in the Polygon balance table.
 * :bug:`7915` Show OKX balances locked in active trades.
+* :bug:`-` Periodic detection of spam tokens won't consider spam those tokens that have been whitelisted.
 * :feature:`-` rotki now optionally can use the decentralized TheGraph service. You can get a free api key at https://thegraph.com/studio/apikeys/
 * :feature:`7816` rotki should now support the new coinbase api key format from the coinbase develop portal.
 * :bug:`-` Compound v2 transactions containing also flash loans of same asset type will now be properly decoded.
