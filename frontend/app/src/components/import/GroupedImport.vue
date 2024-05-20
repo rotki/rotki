@@ -120,7 +120,7 @@ const sources = computed<ImportSource[]>(() => [
 
 const selectedSource = ref<ImportSource | null>(null);
 
-const [DefineIcon, ReuseIcon] = createReusableTemplate<{
+const [DefineDisplay, ReuseDisplay] = createReusableTemplate<{
   logo: string;
   icon: string;
 }>();
@@ -129,44 +129,47 @@ const [DefineIcon, ReuseIcon] = createReusableTemplate<{
 <template>
   <RuiCard>
     <div class="p-1 pt-2">
-      <DefineIcon #default="{ logo, icon }">
-        <AdaptiveWrapper
-          padding="0"
-          width="1.5rem"
-          height="1.5rem"
-        >
-          <AppImage
-            v-if="logo"
-            :src="logo"
-            size="1.5rem"
-            contain
-          />
-          <RuiIcon
-            v-else-if="icon"
-            size="24"
-            class="text-rui-light-text-secondary"
-            :name="icon"
-          />
-        </AdaptiveWrapper>
-      </DefineIcon>
-      <RuiMenuSelect
+      <DefineDisplay #default="{ logo, icon, label }">
+        <div class="flex items-center gap-3">
+          <AdaptiveWrapper
+            padding="0"
+            width="1.5rem"
+            height="1.5rem"
+          >
+            <AppImage
+              v-if="logo"
+              :src="logo"
+              size="1.5rem"
+              contain
+            />
+            <RuiIcon
+              v-else-if="icon"
+              size="24"
+              class="text-rui-light-text-secondary"
+              :name="icon"
+            />
+          </AdaptiveWrapper>
+          {{ label }}
+        </div>
+      </DefineDisplay>
+      <RuiAutoComplete
         v-model="selectedSource"
         :label="t('import_data.select_source.title')"
         :append-width="1.75"
         :options="sources"
-        full-width
+        key-attr="key"
+        text-attr="label"
+        hide-details
+        return-object
         variant="outlined"
       >
-        <template #activator.text="{ value: { logo, icon, label } }">
-          <div class="flex items-center gap-3">
-            <ReuseIcon v-bind="{ logo, icon }" />
-            {{ label }}
-          </div>
+        <template #selection="{ item }">
+          <ReuseDisplay v-bind="item" />
         </template>
-        <template #item.prepend="{ option: { logo, icon } }">
-          <ReuseIcon v-bind="{ logo, icon }" />
+        <template #item="{ item }">
+          <ReuseDisplay v-bind="item" />
         </template>
-      </RuiMenuSelect>
+      </RuiAutoComplete>
       <div
         v-if="selectedSource"
         class="mt-8"

@@ -65,8 +65,8 @@ importers:
         specifier: workspace:*
         version: link:../common
       '@rotki/ui-library-compat':
-        specifier: 0.24.0
-        version: 0.24.0(@vueuse/core@10.7.2(vue@2.7.16))(@vueuse/shared@10.7.2(vue@2.7.16))(vue@2.7.16)
+        specifier: 0.25.2
+        version: 0.25.2(@vueuse/core@10.7.2(vue@2.7.16))(@vueuse/shared@10.7.2(vue@2.7.16))(vue@2.7.16)
       '@types/lodash-es':
         specifier: 4.17.12
         version: 4.17.12
@@ -1642,8 +1642,8 @@ packages:
     peerDependencies:
       eslint: ^8.0.0 || ^9.0.0
 
-  '@rotki/ui-library-compat@0.24.0':
-    resolution: {integrity: sha512-nZOMX65diA4/NenYEmLqpfYFGnOxezlap8T7Pl8Ic51itqBaw/yMl03VL9lLwvTW7Ael5RhnpaIsuwrh/GcuQQ==}
+  '@rotki/ui-library-compat@0.25.2':
+    resolution: {integrity: sha512-6UaJ9lWz3ZmtYJ/KNfykcpogBfy0SEE1S+fz9ILRLOVGrM3+Wg3pYwh3gVaTj7zzGT9c5v7hcmQOY5szKZ/yXw==}
     engines: {pnpm: '>=9 <10'}
     peerDependencies:
       '@vueuse/core': '>10.0.0'
@@ -8212,7 +8212,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@rotki/ui-library-compat@0.24.0(@vueuse/core@10.7.2(vue@2.7.16))(@vueuse/shared@10.7.2(vue@2.7.16))(vue@2.7.16)':
+  '@rotki/ui-library-compat@0.25.2(@vueuse/core@10.7.2(vue@2.7.16))(@vueuse/shared@10.7.2(vue@2.7.16))(vue@2.7.16)':
     dependencies:
       '@vueuse/core': 10.7.2(vue@2.7.16)
       '@vueuse/shared': 10.7.2(vue@2.7.16)

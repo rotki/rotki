@@ -72,8 +72,7 @@ const css = useCssModule();
 </template>
 
 <style lang="scss" module>
-.wrapper,
-.icon {
+.wrapper {
   height: v-bind(size);
   width: v-bind(size);
 }

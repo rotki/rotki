@@ -110,7 +110,6 @@ setSubmitFunc(save);
       :chains="txChains"
       outlined
       no-padding
-      flat
       :label="t('transactions.form.account.label')"
       :error-messages="toMessages(v$.associatedAddress)"
     />

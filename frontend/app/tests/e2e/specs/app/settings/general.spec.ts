@@ -52,7 +52,7 @@ describe('settings::general', () => {
   });
 
   it('change chains for which to exclude token detection and validate UI message', () => {
-    const target = '.general-settings__fields__account-chains-to-skip-detection .v-text-field__details .v-messages__wrapper';
+    const target = '.general-settings__fields__account-chains-to-skip-detection .details';
     cy.wrap(settings.evmchainsToSkipDetection).each((chain: string) => {
       pageGeneral.selectChainToIgnore(chain);
       pageGeneral.confirmInlineSuccess(

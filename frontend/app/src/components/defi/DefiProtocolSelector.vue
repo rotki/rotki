@@ -56,38 +56,37 @@ const protocolsData = computed(() =>
 
 <template>
   <RuiCard>
-    <VAutocomplete
+    <RuiAutoComplete
       :value="value"
       :search-input.sync="search"
-      :items="protocolsData"
+      :options="protocolsData"
       hide-details
       hide-selected
       hide-no-data
       clearable
-      chips
       dense
-      outlined
-      :open-on-clear="false"
+      auto-select-first
+      :item-height="44"
+      variant="outlined"
       :label="t('defi_protocol_selector.label')"
-      item-text="name"
-      item-value="identifier"
+      text-attr="name"
+      key-attr="identifier"
       class="defi-protocol-selector"
       @input="input($event)"
     >
-      <template #selection="{ attrs, item }">
+      <template #selection="{ item }">
         <DefiIcon
-          v-bind="attrs"
           :item="item"
           size="1.125rem"
         />
       </template>
-      <template #item="{ attrs, item }">
+      <template #item="{ item }">
         <DefiIcon
-          v-bind="attrs"
+          class="py-1"
           :item="item"
         />
       </template>
-    </VAutocomplete>
+    </RuiAutoComplete>
     <div class="p-2 text-body-2 text-rui-text-secondary">
       {{
         value

@@ -188,7 +188,6 @@ onMounted(async () => {
               v-model="accounts"
               class="md:w-[24rem]"
               multichain
-              multiple
               dense
               outlined
             />

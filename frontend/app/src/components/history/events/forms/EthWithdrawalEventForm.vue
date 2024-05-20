@@ -226,7 +226,7 @@ const withdrawalAddressSuggestions = computed(() => getAddresses(Blockchain.ETH)
 
 <template>
   <div>
-    <div class="grid md:grid-cols-2 gap-4">
+    <div class="grid md:grid-cols-2 gap-4 mb-4">
       <DateTimePicker
         v-model="datetime"
         :label="t('common.datetime')"

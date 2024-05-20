@@ -38,28 +38,26 @@ function calculateFontSize(symbol: string) {
       :options="currenciesWithKeys"
       text-attr="tickerSymbol"
       :item-height="68"
-      full-width
-      show-details
       variant="outlined"
       :success-messages="success"
       :error-messages="error"
       @input="updateImmediate($event?.tickerSymbol)"
     >
-      <template #item.text="{ option }">
+      <template #item="{ item }">
         <ListItem
-          :id="`currency__${option.tickerSymbol.toLocaleLowerCase()}`"
+          :id="`currency__${item.tickerSymbol.toLocaleLowerCase()}`"
           no-hover
           no-padding
           class="!py-0"
-          :title="option.name"
+          :title="item.name"
           :subtitle="t('general_settings.amount.labels.main_currency_subtitle')"
         >
           <template #avatar>
             <div
               class="font-bold text-rui-primary"
-              :style="{ fontSize: calculateFontSize(option.unicodeSymbol) }"
+              :style="{ fontSize: calculateFontSize(item.unicodeSymbol) }"
             >
-              {{ option.unicodeSymbol }}
+              {{ item.unicodeSymbol }}
             </div>
           </template>
         </ListItem>

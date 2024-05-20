@@ -122,27 +122,30 @@ const refreshTooltip: ComputedRef<string> = computed(() =>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <RuiCard>
-          <VAutocomplete
+          <RuiAutoComplete
             v-model="selection"
             class="borrowing__vault-selection"
             :label="t('borrowing.select_loan')"
-            chips
             dense
-            outlined
-            item-key="identifier"
-            :items="loans"
-            item-text="identifier"
+            variant="outlined"
+            key-attr="identifier"
+            text-attr="identifier"
+            :options="loans"
             hide-details
             clearable
-            :open-on-clear="false"
+            auto-select-first
+            :item-height="40"
           >
             <template #selection="{ item }">
               <DefiSelectorItem :item="item" />
             </template>
             <template #item="{ item }">
-              <DefiSelectorItem :item="item" />
+              <DefiSelectorItem
+                class="py-1"
+                :item="item"
+              />
             </template>
-          </VAutocomplete>
+          </RuiAutoComplete>
           <div class="p-2 text-body-2 text-rui-text-secondary">
             {{ t('borrowing.select_loan_hint') }}
           </div>

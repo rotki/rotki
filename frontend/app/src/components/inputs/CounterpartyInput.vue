@@ -20,14 +20,13 @@ const { counterparties } = useHistoryEventCounterpartyMappings();
 </script>
 
 <template>
-  <VAutocomplete
+  <RuiAutoComplete
     v-model="vModel"
-    outlined
-    required
+    variant="outlined"
     clearable
     v-bind="rootAttrs"
     auto-select-first
-    :items="counterparties"
+    :options="counterparties"
     v-on="
       // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
       $listeners
@@ -39,5 +38,5 @@ const { counterparties } = useHistoryEventCounterpartyMappings();
     <template #selection="{ item }">
       <CounterpartyDisplay :counterparty="item" />
     </template>
-  </VAutocomplete>
+  </RuiAutoComplete>
 </template>

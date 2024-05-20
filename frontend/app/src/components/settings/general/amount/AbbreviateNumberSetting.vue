@@ -74,8 +74,6 @@ const items = computed(() => {
         :label="t('frontend_settings.label.minimum_digit_to_be_abbreviated')"
         key-attr="value"
         text-attr="label"
-        full-width
-        show-details
         variant="outlined"
         :success-messages="success"
         :error-messages="error"

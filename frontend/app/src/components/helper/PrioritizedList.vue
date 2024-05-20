@@ -114,17 +114,16 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
 
       <div
         v-if="!disableAdd"
-        class="flex px-4 pb-2 gap-4 items-start border-b border-default"
+        class="flex px-4 py-2 gap-4 items-start border-b border-default"
       >
-        <VAutocomplete
+        <RuiAutoComplete
           v-model="selection"
-          class="grow"
-          prepend-inner-icon="mdi-magnify"
-          outlined
+          variant="outlined"
+          :label="t('common.actions.search')"
           :no-data-text="t('prioritized_list.all_added', itemNameTr)"
-          :items="missing"
+          :options="missing"
+          :item-height="52"
           :hint="autoCompleteHint"
-          persistent-hint
         >
           <template #selection="{ item }">
             <PrioritizedListEntry
@@ -138,7 +137,7 @@ const autoCompleteHint: ComputedRef<string> = computed(() => {
               size="24px"
             />
           </template>
-        </VAutocomplete>
+        </RuiAutoComplete>
         <RuiTooltip :open-delay="400">
           <template #activator>
             <RuiButton

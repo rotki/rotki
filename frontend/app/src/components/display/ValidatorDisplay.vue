@@ -27,7 +27,7 @@ const { scrambleIdentifier, scrambleHex, shouldShowAmount } = useScramble();
       blur: !shouldShowAmount,
     }"
   >
-    <div class="font-medium text-truncate">
+    <div class="font-medium text-truncate text-rui-text">
       {{ truncateAddress(scrambleHex(validator.publicKey), length) }}
     </div>
     <div>

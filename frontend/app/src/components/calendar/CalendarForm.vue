@@ -211,12 +211,10 @@ setSubmitFunc(save);
       v-model="accounts"
       outlined
       no-padding
-      flat
       :label="t('common.account')"
       :error-messages="toMessages(v$.accounts)"
       show-details
       :custom-hint="t('common.optional')"
-      persistent-hint
     />
 
     <CounterpartyInput

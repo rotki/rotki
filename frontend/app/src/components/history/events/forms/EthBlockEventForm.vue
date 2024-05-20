@@ -238,7 +238,7 @@ const feeRecipientSuggestions = computed(() => getAddresses(Blockchain.ETH));
 
 <template>
   <div>
-    <div class="grid md:grid-cols-4 gap-4">
+    <div class="grid md:grid-cols-4 gap-4 mb-4">
       <DateTimePicker
         v-model="datetime"
         class="md:col-span-2"

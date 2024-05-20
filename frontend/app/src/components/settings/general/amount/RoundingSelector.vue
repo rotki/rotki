@@ -24,28 +24,26 @@ const selections = [
 </script>
 
 <template>
-  <div class="flex gap-4 items-center">
+  <div class="flex gap-4 flex-start">
     <RuiMenuSelect
       v-bind="rootAttrs"
       :options="selections"
       key-attr="value"
       text-attr="text"
       :item-height="58"
-      full-width
-      show-details
       variant="outlined"
       v-on="
         // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
         $listeners
       "
     >
-      <template #item.text="{ option }">
+      <template #item="{ item }">
         <ListItem
           class="!py-0 !gap-0 leading-none"
           no-hover
           no-padding
-          :title="option.text"
-          :subtitle="option.description"
+          :title="item.text"
+          :subtitle="item.description"
         />
       </template>
       <template #item.append="{ active }">

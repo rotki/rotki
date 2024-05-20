@@ -24,6 +24,7 @@ const props = withDefaults(
     // This prop to give color to the text based on the value
     pnl?: boolean;
     noScramble?: boolean;
+    noTruncate?: boolean;
     timestamp?: number;
     // Whether the `timestamp` prop is presented with `milliseconds` value or not
     milliseconds?: boolean;
@@ -45,6 +46,7 @@ const props = withDefaults(
     assetPadding: 0,
     pnl: false,
     noScramble: false,
+    noTruncate: false,
     timestamp: -1,
     milliseconds: false,
     xl: false,
@@ -341,7 +343,7 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate<{ name: string }>();
     <DefineSymbol #default="{ name }">
       <span
         data-cy="display-currency"
-        class="truncate max-w-[5rem]"
+        :class="{ 'truncate max-w-[5rem]': !noTruncate }"
       >
         {{ name }}
       </span>
@@ -374,7 +376,7 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate<{ name: string }>();
           [`skeleton min-w-[3.5rem] max-w-[4rem] ${css.loading}`]: anyLoading,
         },
       ]"
-      class="inline-flex items-center gap-1 transition duration-200 rounded-lg"
+      class="inline-flex items-center gap-1 transition duration-200 rounded-lg max-w-full"
       data-cy="amount-display"
     >
       <template v-if="!anyLoading">

@@ -268,8 +268,6 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ label: string }>();
         :label="t('watcher_dialog.labels.type')"
         key-attr="value"
         text-attr="text"
-        full-width
-        show-details
         dense
         variant="outlined"
         required
@@ -295,9 +293,8 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ label: string }>();
                 key-attr="value"
                 text-attr="text"
                 dense
-                full-width
+                hide-details
                 variant="outlined"
-                required
               />
 
               <RuiTextField
@@ -351,8 +348,8 @@ const [CreateLabel, ReuseLabel] = createReusableTemplate<{ label: string }>();
                 :label="t('watcher_dialog.labels.operation')"
                 key-attr="value"
                 text-attr="text"
-                full-width
                 dense
+                hide-details
                 variant="outlined"
                 required
               />

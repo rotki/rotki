@@ -125,7 +125,6 @@ watch(tags, () => {
       :outlined="outlined"
       :search-input.sync="search"
       item-text="name"
-      :menu-props="{ closeOnContentClick: true }"
       item-value="name"
       multiple
       @input="input($event)"

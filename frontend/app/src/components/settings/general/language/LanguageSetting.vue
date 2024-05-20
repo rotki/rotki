@@ -46,7 +46,7 @@ const rootAttrs = useAttrs();
 
 <template>
   <div>
-    <div class="flex items-center gap-2">
+    <div class="flex gap-2">
       <SettingsOption
         #default="{ error, success, updateImmediate }"
         class="w-full"
@@ -60,24 +60,21 @@ const rootAttrs = useAttrs();
           :label="t('general_settings.labels.language')"
           :success-messages="success"
           :error-messages="error"
-          :show-details="!!success || !!error"
           key-attr="identifier"
-          text-attr="label"
-          full-width
           variant="outlined"
           v-bind="rootAttrs"
           @input="updateSetting($event, updateImmediate)"
         >
-          <template #activator.text="{ value }">
+          <template #selection="{ item }">
             <LanguageSelectorItem
-              :countries="value.countries ?? [value.identifier]"
-              :label="value.label"
+              :countries="item.countries ?? [item.identifier]"
+              :label="item.label"
             />
           </template>
-          <template #item.text="{ option }">
+          <template #item="{ item }">
             <LanguageSelectorItem
-              :countries="option.countries ?? [option.identifier]"
-              :label="option.label"
+              :countries="item.countries ?? [item.identifier]"
+              :label="item.label"
             />
           </template>
         </RuiMenuSelect>
@@ -93,6 +90,7 @@ const rootAttrs = useAttrs();
           >
             <RuiButton
               variant="text"
+              class="mt-1"
               icon
             >
               <RuiIcon name="file-edit-line" />

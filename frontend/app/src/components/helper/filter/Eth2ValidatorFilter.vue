@@ -41,12 +41,10 @@ watch(accounts, accounts => updateAccounts(accounts));
     v-if="'accounts' in value"
     v-model="accounts"
     no-padding
-    flat
     dense
     outlined
     :chains="[chain]"
     :label="t('eth2_validator_filter.label')"
-    multiple
   />
   <ValidatorFilterInput
     v-else

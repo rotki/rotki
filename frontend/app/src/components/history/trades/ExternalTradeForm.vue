@@ -335,7 +335,6 @@ onMounted(setEditMode);
           v-model="base"
           class="flex-1"
           outlined
-          required
           data-cy="base-asset"
           :error-messages="toMessages(v$.baseAsset)"
           :hint="t('external_trade_form.base_asset.hint')"
@@ -348,7 +347,6 @@ onMounted(setEditMode);
         <AssetSelect
           v-model="quote"
           class="flex-1"
-          required
           outlined
           data-cy="quote-asset"
           :error-messages="toMessages(v$.quoteAsset)"
@@ -479,10 +477,8 @@ onMounted(setEditMode);
         v-model="feeCurrency"
         data-cy="fee-currency"
         outlined
-        persistent-hint
         :label="t('external_trade_form.fee_currency.label')"
         :hint="t('external_trade_form.fee_currency.hint')"
-        :required="!!fee"
         :error-messages="toMessages(v$.feeCurrency)"
         @input="triggerFeeValidator()"
       />

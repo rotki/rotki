@@ -37,7 +37,10 @@ export class GeneralSettingsPage {
 
   selectChainToIgnore(value: string) {
     cy.get('.general-settings__fields__account-chains-to-skip-detection').click();
-    cy.get('[data-cy=account-chain-skip-detection-field]').type(`{selectall}${value}{enter}{esc}`);
+    cy.get('[data-cy=account-chain-skip-detection-field] input').should('not.be.disabled');
+    cy.get('[data-cy=account-chain-skip-detection-field] input').type(value);
+    cy.get('[role=menu-content] button').should('have.length', 1);
+    cy.get('[data-cy=account-chain-skip-detection-field] input').type('{enter}');
   }
 
   setBalanceSaveFrequency(value: string) {
@@ -114,10 +117,10 @@ export class GeneralSettingsPage {
       'have.value',
       settings.balanceSaveFrequency,
     );
-    cy.get('.general-settings__fields__account-chains-to-skip-detection .v-select__slot input[type=hidden]').should(
-      'have.value',
-      settings.evmchainsToSkipDetection.join(','),
-    );
+
+    settings.evmchainsToSkipDetection.forEach((item) => {
+      cy.get(`.general-settings__fields__account-chains-to-skip-detection .rui-chip[data-value=${item}]`).should('exist');
+    });
     cy.get('.general-settings__fields__date-display-format input').should(
       'have.value',
       settings.dateDisplayFormat,

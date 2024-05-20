@@ -53,7 +53,7 @@ export class RotkiApp {
 
   clear() {
     cy.logout();
-    cy.visit('/');
+    this.visit();
   }
 
   fasterLogin(username: string, password = '1234', disableModules = false) {
@@ -77,8 +77,7 @@ export class RotkiApp {
   }
 
   relogin(username: string, password = '1234'): void {
-    cy.logout();
-    cy.visit('/#/user/login');
+    this.clear();
     this.login(username, password);
   }
 

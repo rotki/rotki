@@ -282,12 +282,11 @@ defineExpose({
   <div>
     <div
       v-if="v$"
-      class="grid md:grid-cols-2 gap-4"
+      class="grid md:grid-cols-2 gap-4 mb-4"
     >
       <AssetSelect
         v-model="assetModel"
         outlined
-        required
         :disabled="disableAsset"
         data-cy="asset"
         :error-messages="disableAsset ? [''] : toMessages(v$.asset)"

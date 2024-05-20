@@ -3,9 +3,9 @@ import dayjs from 'dayjs';
 import IMask, { type InputMask, MaskedRange } from 'imask';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
-import { timezones } from '@/data/timezones';
 import { DateFormat } from '@/types/date-format';
 import { toMessages } from '@/utils/validation';
+import { timezones } from '@/data/timezones';
 
 const props = withDefaults(
   defineProps<{
@@ -368,7 +368,7 @@ function filteredListeners(listeners: any) {
     >
       <RuiMenu
         :popper="{ placement: 'bottom-end' }"
-        menu-class="date-time-picker max-w-[32rem] z-[500]"
+        menu-class="date-time-picker w-[20rem]"
       >
         <template #activator="{ on }">
           <RuiButton
@@ -384,18 +384,14 @@ function filteredListeners(listeners: any) {
           </RuiButton>
         </template>
 
-        <AppBridge>
-          <VAutocomplete
-            v-model="selectedTimezone"
-            :label="t('date_time_picker.select_timezone')"
-            class="!p-4 pb-0"
-            outlined
-            persistent-hint
-            menu-pros="auto"
-            :error-messages="toMessages(v$.timezone)"
-            :items="timezones"
-          />
-        </AppBridge>
+        <RuiAutoComplete
+          v-model="selectedTimezone"
+          :label="t('date_time_picker.select_timezone')"
+          class="!p-4 pb-0"
+          variant="outlined"
+          :error-messages="toMessages(v$.timezone)"
+          :options="timezones"
+        />
       </RuiMenu>
       <RuiButton
         data-cy="date-time-picker__set-now-button"

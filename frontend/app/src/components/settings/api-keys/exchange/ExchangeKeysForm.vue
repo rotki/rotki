@@ -233,8 +233,6 @@ const coinbasePrivateKeyFormat = '-----BEGIN EC PRIVATE KEY-----\\n{KEY}\\n-----
       :label="t('exchange_settings.inputs.kraken_account')"
       key-attr="identifier"
       text-attr="label"
-      full-width
-      show-details
       variant="outlined"
       @input="input({ ...exchange, krakenAccountType: $event })"
     />
@@ -308,7 +306,6 @@ const coinbasePrivateKeyFormat = '-----BEGIN EC PRIVATE KEY-----\\n{KEY}\\n-----
 
     <BinancePairsSelector
       v-if="isBinance"
-      outlined
       :name="exchange.name"
       :location="exchange.location"
       @input="input({ ...exchange, binanceMarkets: $event })"

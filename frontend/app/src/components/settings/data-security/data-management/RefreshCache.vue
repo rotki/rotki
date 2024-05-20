@@ -51,14 +51,14 @@ const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
     </RuiCardHeader>
 
     <div class="flex items-center gap-4">
-      <VAutocomplete
+      <RuiAutoComplete
         v-model="source"
         class="flex-1"
-        outlined
+        variant="outlined"
         :label="t('data_management.refresh_cache.select_cache')"
-        :items="refreshable"
-        item-text="text"
-        item-value="id"
+        :options="refreshable"
+        text-attr="text"
+        key-attr="id"
         :disabled="pending"
       />
 

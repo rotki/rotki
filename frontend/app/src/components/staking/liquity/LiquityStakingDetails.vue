@@ -277,8 +277,6 @@ const slots = useSlots();
         dense
         outlined
         no-padding
-        multiple
-        flat
         :usable-addresses="availableAddresses"
       />
 

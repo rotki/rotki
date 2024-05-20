@@ -175,14 +175,14 @@ watch(formPayload, ({ blockchain }, { blockchain: oldBlockchain }) => {
         <ChainSelect
           :model-value="selectedChain"
           hide-details
-          class="flex-1 max-w-full md:max-w-[15rem]"
+          class="flex-1 max-w-full md:max-w-[18rem]"
           clearable
           dense
           exclude-eth-staking
           @update:model-value="selectedChain = $event"
         />
 
-        <div class="max-w-[25rem]">
+        <div class="w-[20rem] max-w-[30rem]">
           <TableFilter
             :matchers="matchers"
             :matches="filters"

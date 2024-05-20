@@ -19,13 +19,17 @@ const name = getChainName(chain);
 
 <template>
   <ListItem
-    :size="dense ? 'sm' : 'md'"
+    size="sm"
     :title="name"
     no-padding
     no-hover
+    class="!py-0"
   >
     <template #avatar>
-      <ChainIcon :chain="chain" />
+      <ChainIcon
+        :chain="chain"
+        :size="dense ? '20px' : '26px'"
+      />
     </template>
   </ListItem>
 </template>

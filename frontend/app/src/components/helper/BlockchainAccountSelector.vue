@@ -60,7 +60,6 @@ const {
   unique,
 } = toRefs(props);
 
-const search = ref('');
 const { t } = useI18n();
 
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainStore());
@@ -70,7 +69,7 @@ const accounts = computed<AccountWithAddressData[]>(
 );
 
 const internalValue = computed(() => {
-  const accounts = get(value);
+  const accounts = get(value).map(item => ({ ...item, address: getAccountAddress(item), key: getAccountId(item) }));
   if (get(multiple))
     return accounts;
 
@@ -134,7 +133,7 @@ const hintText = computed(() => {
 
 const displayedAccounts = computed<Account[]>(() => {
   const addresses = get(usableAddresses);
-  const accounts = [...get(selectableAccounts)].map(item => ({ ...item, address: getAccountAddress(item) }));
+  const accounts = [...get(selectableAccounts)].map(item => ({ ...item, address: getAccountAddress(item), key: getAccountId(item) }));
   if (addresses.length > 0)
     return accounts.filter(account => addresses.includes(account.address));
 
@@ -145,21 +144,22 @@ const { addressNameSelector } = useAddressesNamesStore();
 
 function filter(item: BlockchainAccount, queryText: string) {
   const chain = item.chain === 'ALL' ? Blockchain.ETH : item.chain;
-  const text = (get(addressNameSelector(getAccountAddress(item), chain)) ?? '').toLowerCase();
-  const address = getAccountAddress(item).toLocaleLowerCase();
-  const query = queryText.toLocaleLowerCase();
+  const text = getTextToken(get(addressNameSelector(getAccountAddress(item), chain)) ?? '');
+  const address = getTextToken(getAccountAddress(item));
+  const query = getTextToken(queryText);
 
   const labelMatches = text.includes(query);
   const addressMatches = address.includes(query);
 
-  const tagMatches = item.tags
+  if (labelMatches || addressMatches)
+    return true;
+
+  return item.tags
     ? item.tags
-      .map(tag => tag.toLocaleLowerCase())
+      .map(tag => getTextToken(tag))
       .join(' ')
       .includes(query)
     : false;
-
-  return labelMatches || tagMatches || addressMatches;
 }
 
 function filterOutElements(
@@ -193,8 +193,6 @@ function input(nextValue: null | AccountWithAddressData | AccountWithAddressData
   emit('input', result);
 }
 
-const getItemKey = (item: AccountWithAddressData) => getAccountId(item);
-
 const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
 
 const rootAttrs = useAttrs();
@@ -203,89 +201,52 @@ const rootAttrs = useAttrs();
 <template>
   <div>
     <DefineAutocomplete>
-      <VAutocomplete
+      <RuiAutoComplete
         :value="internalValue"
-        :items="displayedAccounts"
+        :options="displayedAccounts"
         :filter="filter"
         auto-select-first
-        :search-input.sync="search"
-        :multiple="multiple"
         :loading="loading"
         :disabled="loading"
         :hide-details="!showDetails"
         hide-selected
         :hide-no-data="!hideOnEmptyUsable"
-        return-object
-        chips
-        single-line
+        :chips="multiple"
+        :item-height="40"
         clearable
         :dense="dense"
+        :variant="outlined ? 'outlined' : 'default'"
         :outlined="outlined"
-        :item-text="getItemKey"
         :hint="customHint"
-        :open-on-clear="false"
-        :label="label ? label : t('blockchain_account_selector.default_label')"
-        :class="outlined ? 'blockchain-account-selector--outlined' : null"
+        key-attr="key"
+        :label="label || t('blockchain_account_selector.default_label')"
         class="blockchain-account-selector"
         :error-messages="errorMessages"
         v-bind="rootAttrs"
+        :no-data-text="t('blockchain_account_selector.no_data')"
+        return-object
         @input="input($event)"
       >
-        <template #no-data>
-          <span class="text-caption px-2">
-            {{ t('blockchain_account_selector.no_data') }}
-          </span>
+        <template #selection="{ item }">
+          <AccountDisplay
+            :account="item"
+            :hide-chain-icon="hideChainIcon"
+          />
         </template>
-        <template #selection="data">
-          <RuiChip
-            v-if="multiple"
-            :key="data.item.chain + data.item.address"
-            v-bind="data.attrs"
-            clickable
-            closeable
-            size="sm"
-            class="m-0.5"
-            @click:close="data.parent.selectItem(data.item)"
-          >
+        <template #item="{ item }">
+          <div class="grow py-1">
             <AccountDisplay
-              :account="data.item"
+              :account="item"
               :hide-chain-icon="hideChainIcon"
             />
-          </RuiChip>
-          <div
-            v-else
-            class="overflow-x-hidden"
-          >
-            <AccountDisplay
-              :account="data.item"
-              :hide-chain-icon="hideChainIcon"
-              class="pr-2"
-            />
-          </div>
-        </template>
-        <template #item="data">
-          <div
-            class="blockchain-account-selector__list__item flex items-center justify-between grow"
-          >
-            <div class="blockchain-account-selector__list__item__address-label">
-              <RuiChip
-                class="text-truncate"
-                size="sm"
-              >
-                <AccountDisplay
-                  :account="data.item"
-                  :hide-chain-icon="hideChainIcon"
-                />
-              </RuiChip>
-            </div>
             <TagDisplay
-              class="mb-1"
-              :tags="data.item.tags"
-              :small="true"
+              :class="hideChainIcon ? 'pl-8' : 'pl-[3.75rem]'"
+              :tags="item.tags"
+              small
             />
           </div>
         </template>
-      </VAutocomplete>
+      </RuiAutoComplete>
     </DefineAutocomplete>
 
     <div
@@ -310,25 +271,3 @@ const rootAttrs = useAttrs();
     </RuiCard>
   </div>
 </template>
-
-<style scoped lang="scss">
-.blockchain-account-selector {
-  &__list {
-    &__item {
-      max-width: 100%;
-    }
-  }
-
-  /* stylelint-disable selector-class-pattern,selector-nested-pattern */
-
-  :deep(.v-select__selections) {
-    padding: 2px;
-
-    input {
-      min-width: 0;
-    }
-  }
-
-  /* stylelint-enable selector-class-pattern,selector-nested-pattern */
-}
-</style>

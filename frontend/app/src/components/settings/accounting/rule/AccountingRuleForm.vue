@@ -161,13 +161,13 @@ const accountingTreatments = Object.values(AccountingTreatment).map(
 
     <RuiDivider class="mb-6" />
 
-    <VAutocomplete
+    <RuiAutoComplete
       v-model="state.accountingTreatment"
       class="md:w-1/2"
-      outlined
-      :items="accountingTreatments"
-      item-value="identifier"
-      item-text="label"
+      variant="outlined"
+      :options="accountingTreatments"
+      key-attr="identifier"
+      text-attr="label"
       clearable
       :label="t('accounting_settings.rule.labels.accounting_treatment')"
       :error-messages="toMessages(v$.accountingTreatment)"

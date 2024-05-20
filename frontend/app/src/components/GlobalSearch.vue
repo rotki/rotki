@@ -44,7 +44,6 @@ const { balances } = useAggregatedBalances();
 const { balancesByLocation } = useBalancesBreakdown();
 const { getLocationData } = useLocations();
 const { assetSearch } = useAssetInfoApi();
-const { dark } = useTheme();
 
 function getItemText(item: SearchItemWithoutValue): string {
   const text = item.texts ? item.texts.join(' ') : item.text;
@@ -361,7 +360,7 @@ watch(open, (open) => {
   nextTick(() => {
     if (open) {
       setTimeout(() => {
-        get(input)?.$refs?.input?.focus?.();
+        get(input)?.$refs?.textInput?.focus?.();
       }, 100);
     }
     set(selected, '');
@@ -414,27 +413,37 @@ onBeforeMount(async () => {
         <RuiIcon name="search-line" />
       </MenuTooltipButton>
     </template>
-    <AppBridge>
-      <VAutocomplete
+    <RuiCard
+      variant="flat"
+      no-padding
+      rounded="sm"
+      class="[&>div:last-child]:overflow-hidden"
+    >
+      <RuiAutoComplete
         ref="input"
         v-model="selected"
         no-filter
-        filled
         :no-data-text="t('global_search.no_actions')"
         :search-input.sync="search"
-        :background-color="dark ? 'black' : 'white'"
         hide-details
-        :items="visibleItems"
+        :loading="loading"
+        :item-height="50"
+        :options="visibleItems"
+        text-attr="text"
+        key-attr="value"
+        label=""
         auto-select-first
-        prepend-inner-icon="mdi-magnify"
-        append-icon=""
         :placeholder="t('global_search.search_placeholder')"
         @input="change($event)"
       >
+        <template #selection>
+          <span />
+        </template>
         <template #item="{ item }">
           <div class="flex items-center text-body-2 w-full">
             <AssetIcon
               v-if="item.asset"
+              class="-my-1"
               size="30px"
               :identifier="item.asset"
             />
@@ -453,35 +462,43 @@ onBeforeMount(async () => {
                 contain
                 size="26px"
               />
+              <RuiIcon
+                v-else-if="item.icon"
+                :name="item.icon"
+                size="26px"
+              />
             </template>
-            <span class="ml-3">
+            <div class="ml-3 flex items-center">
               <template v-if="item.texts">
-                <span
+                <div
                   v-for="(text, index) in item.texts"
                   :key="text + index"
+                  class="flex items-center"
                 >
-                  <span v-if="index === item.texts.length - 1">{{ text }}</span>
-                  <span
+                  <div v-if="index === item.texts.length - 1">
+                    {{ text }}
+                  </div>
+                  <div
                     v-else
-                    class="text-rui-text-secondary"
+                    class="flex items-center text-rui-text-secondary"
                   >
                     {{ text }}
                     <RuiIcon
-                      class="d-inline mr-2"
+                      class="d-inline mx-2"
                       size="16"
                       name="arrow-right-s-line"
                     />
-                  </span>
-                </span>
+                  </div>
+                </div>
               </template>
               <template v-else>
                 {{ item.text }}
               </template>
-            </span>
+            </div>
             <div class="grow" />
             <div
               v-if="item.price"
-              class="text-right"
+              class="text-right -my-6"
             >
               <div class="text-caption">
                 {{ t('common.price') }}:
@@ -494,7 +511,7 @@ onBeforeMount(async () => {
             </div>
             <div
               v-if="item.total"
-              class="text-right"
+              class="text-right -my-4"
             >
               <div class="text-caption">
                 {{ t('common.total') }}:
@@ -507,22 +524,7 @@ onBeforeMount(async () => {
             </div>
           </div>
         </template>
-        <template #append>
-          <div
-            v-if="loading"
-            class="h-full flex items-center"
-          >
-            <RuiProgress
-              class="asset-select__loading"
-              circular
-              color="primary"
-              variant="indeterminate"
-              thickness="2"
-              size="20"
-            />
-          </div>
-        </template>
-      </VAutocomplete>
-    </AppBridge>
+      </RuiAutoComplete>
+    </RuiCard>
   </RuiDialog>
 </template>

@@ -52,35 +52,35 @@ watch([locations, model], ([locations, value], [prevLocations, prevValue]) => {
 </script>
 
 <template>
-  <VAutocomplete
-    v-bind="rootAttrs"
+  <RuiAutoComplete
     v-model="model"
+    variant="outlined"
     data-cy="location-input"
-    :items="locations"
-    :attach="attach"
-    item-value="identifier"
-    item-text="name"
+    :options="locations"
+    key-attr="identifier"
+    text-attr="name"
+    :item-height="52"
     auto-select-first
+    v-bind="rootAttrs"
     v-on="
       // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
       $listeners
     "
   >
-    <template #item="{ item, attrs }">
+    <template #item="{ item }">
       <LocationIcon
         :id="`balance-location__${item.identifier}`"
-        v-bind="attrs"
+        class="!justify-start"
         horizontal
         :item="item.identifier"
       />
     </template>
-    <template #selection="{ item, attrs }">
+    <template #selection="{ item }">
       <LocationIcon
-        class="pr-2"
-        v-bind="attrs"
+        class="!justify-start pr-2"
         horizontal
         :item="item.identifier"
       />
     </template>
-  </VAutocomplete>
+  </RuiAutoComplete>
 </template>

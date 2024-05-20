@@ -50,9 +50,6 @@ const showOnlyExisting: Ref<boolean> = ref(true);
       v-model="model"
       :items="showOnlyExisting ? locations : []"
       class="edit-balances-snapshot__location"
-      attach=".edit-balances-snapshot__location"
-      :menu-props="{ top: true }"
-      outlined
       clearable
       :persistent-hint="!value"
       :hide-details="!!value"

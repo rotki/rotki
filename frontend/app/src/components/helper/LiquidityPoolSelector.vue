@@ -7,12 +7,10 @@ const props = withDefaults(
     pools: XswapPool[];
     type: LpType;
     value: string[];
-    outlined?: boolean;
     dense?: boolean;
     noPadding?: boolean;
   }>(),
   {
-    outlined: false,
     dense: false,
     noPadding: false,
   },
@@ -31,13 +29,6 @@ function filter(item: XswapPool, queryText: string) {
   return name.includes(searchString);
 }
 
-function remove(asset: XswapPool) {
-  const addresses = [...get(value)];
-  const index = addresses.indexOf(asset.address);
-  addresses.splice(index, 1);
-  input(addresses);
-}
-
 const { t } = useI18n();
 </script>
 
@@ -46,47 +37,31 @@ const { t } = useI18n();
     variant="flat"
     :no-padding="noPadding"
     rounded="sm"
-    class="[&>div:last-child]:overflow-hidden"
+    class="[&>div:last-child]:overflow-visible"
   >
-    <VAutocomplete
+    <RuiAutoComplete
       :value="value"
       :label="t('liquidity_pool_selector.label')"
-      :items="pools"
+      :options="pools"
       :dense="dense"
-      :outlined="outlined"
+      variant="outlined"
       :filter="filter"
-      :menu-props="{ closeOnContentClick: true }"
-      multiple
       clearable
-      deletable-chips
-      single-line
       hide-details
-      hide-selected
-      item-value="address"
+      key-attr="address"
       chips
+      hide-selected
+      :item-height="44"
       @input="input($event)"
     >
-      <template #selection="data">
-        <RuiChip
-          class="font-medium"
-          v-bind="data.attrs"
-          closeable
-          size="sm"
-          :input-value="data.selected"
-          @click="data.select"
-          @click:close="remove(data.item)"
-        >
-          {{ getPoolName(type, data.item.assets) }}
-        </RuiChip>
+      <template #selection="{ item }">
+        {{ getPoolName(type, item.assets) }}
       </template>
       <template #item="{ item }">
-        <span
-          :id="`ua-${item.address.toLocaleLowerCase()}`"
-          class="font-medium text-sm"
-        >
+        <div class="font-medium py-2">
           {{ getPoolName(type, item.assets) }}
-        </span>
+        </div>
       </template>
-    </VAutocomplete>
+    </RuiAutoComplete>
   </RuiCard>
 </template>

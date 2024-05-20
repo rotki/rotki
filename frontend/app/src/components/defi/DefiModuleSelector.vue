@@ -13,12 +13,10 @@ const props = withDefaults(
   defineProps<{
     value?: string;
     items?: Module[];
-    attach?: string;
   }>(),
   {
     value: '',
     items: () => [],
-    attach: undefined,
   },
 );
 
@@ -38,31 +36,27 @@ const modules = computed<SupportedModule[]>(() => {
 </script>
 
 <template>
-  <VAutocomplete
+  <RuiAutoComplete
     v-bind="$attrs"
     v-model="model"
     data-cy="defi-input"
-    :items="modules"
-    :attach="attach"
-    item-value="identifier"
-    item-text="name"
+    :options="modules"
+    key-attr="identifier"
+    text-attr="name"
     auto-select-first
+    clearable
+    variant="outlined"
+    :item-height="52"
     v-on="
       // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
       $listeners
     "
   >
-    <template #selection="{ attrs, item }">
-      <DefiIcon
-        v-bind="attrs"
-        :item="item"
-      />
+    <template #selection="{ item }">
+      <DefiIcon :item="item" />
     </template>
-    <template #item="{ attrs, item }">
-      <DefiIcon
-        v-bind="attrs"
-        :item="item"
-      />
+    <template #item="{ item }">
+      <DefiIcon :item="item" />
     </template>
-  </VAutocomplete>
+  </RuiAutoComplete>
 </template>

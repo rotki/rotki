@@ -17,9 +17,10 @@ export class ApiKeysPage {
     cy.get('[data-cy="bottom-dialog"]', { timeout: 45000 }).should(
       'be.visible',
     );
-    cy.get('@keys')
-      .find('input[data-cy="exchange"]')
-      .type(`{selectall}{backspace}${exchange}{enter}`);
+    cy.get('@keys').find('[data-cy="exchange"][data-id=activator]').click();
+    cy.get('@keys').find('[data-cy="exchange"] input').type(exchange);
+    cy.get('[role=menu-content] button').should('have.length', 1);
+    cy.get('@keys').find('[data-cy="exchange"] input').type('{enter}');
 
     cy.get('@keys').find('[data-cy="name"]').type(name);
     cy.get('@keys').find('[data-cy="api-key"]').type(apiKey);

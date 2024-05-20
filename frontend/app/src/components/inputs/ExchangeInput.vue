@@ -23,34 +23,30 @@ const rootAttrs = useAttrs();
 </script>
 
 <template>
-  <VAutocomplete
+  <RuiAutoComplete
     v-model="vModel"
-    outlined
+    variant="outlined"
     v-bind="rootAttrs"
-    :items="showWithKeyOnly ? exchangesWithKey : allExchanges"
+    :options="showWithKeyOnly ? exchangesWithKey : allExchanges"
     :dense="dense"
+    :item-height="52"
     auto-select-first
     v-on="
       // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
       $listeners
     "
   >
-    <template #selection="{ item, attrs, on }">
+    <template #selection="{ item }">
       <ExchangeDisplay
         :exchange="item"
         :class="`exchange__${item}`"
-        :size="dense ? '1.125rem' : undefined"
-        v-bind="attrs"
-        v-on="on"
       />
     </template>
-    <template #item="{ item, attrs, on }">
+    <template #item="{ item }">
       <ExchangeDisplay
         :exchange="item"
-        :class="`exchange__${item}`"
-        v-bind="attrs"
-        v-on="on"
+        :class="[`exchange__${item}`, dense && 'py-2']"
       />
     </template>
-  </VAutocomplete>
+  </RuiAutoComplete>
 </template>
