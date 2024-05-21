@@ -1153,6 +1153,12 @@
     "merge_assets": "Merge Assets",
     "merge_assets_tooltip": "Merge two assets into one (can be used to migrate custom assets to officially supported ones)"
   },
+  "asset_search": {
+    "error": {
+      "title": "Asset search",
+      "message": "Failed to search asset: {message}"
+    }
+  },
   "asset_select": {
     "no_results": "No assets matching your search"
   },

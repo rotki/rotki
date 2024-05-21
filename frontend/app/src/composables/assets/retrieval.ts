@@ -1,4 +1,5 @@
-import { CUSTOM_ASSET } from '@/types/asset';
+import { NotificationGroup, Severity } from '@rotki/common/lib/messages';
+import { type AssetsWithId, CUSTOM_ASSET } from '@/types/asset';
 import { TaskType } from '@/types/task-type';
 import type { MaybeRef } from '@vueuse/core';
 import type { AssetInfo } from '@rotki/common/lib/data';
@@ -8,7 +9,7 @@ import type { EvmChainAddress } from '@/types/history/events';
 
 export function useAssetInfoRetrieval() {
   const { t } = useI18n();
-  const { erc20details } = useAssetInfoApi();
+  const { erc20details, assetSearch: assetSearchCaller } = useAssetInfoApi();
   const { retrieve, queueIdentifier } = useAssetCacheStore();
   const { treatEth2AsEth } = storeToRefs(useGeneralSettingsStore());
   const { notify } = useNotificationsStore();
@@ -158,6 +159,29 @@ export function useAssetInfoRetrieval() {
     }
   };
 
+  const assetSearch = async (
+    keyword: string,
+    limit = 25,
+    searchNfts = false,
+    signal?: AbortSignal,
+  ): Promise<AssetsWithId> => {
+    try {
+      return await assetSearchCaller(keyword, limit, searchNfts, signal);
+    }
+    catch (error: any) {
+      notify({
+        title: t('asset_search.error.title'),
+        message: t('asset_search.error.message', {
+          message: error.message,
+        }),
+        severity: Severity.ERROR,
+        display: true,
+        group: NotificationGroup.ASSET_SEARCH_ERROR,
+      });
+      return [];
+    }
+  };
+
   return {
     fetchTokenDetails,
     getAssociatedAssetIdentifier,
@@ -166,5 +190,6 @@ export function useAssetInfoRetrieval() {
     assetSymbol,
     assetName,
     tokenAddress,
+    assetSearch,
   };
 }

@@ -43,7 +43,7 @@ const { connectedExchanges } = storeToRefs(useExchangesStore());
 const { balances } = useAggregatedBalances();
 const { balancesByLocation } = useBalancesBreakdown();
 const { getLocationData } = useLocations();
-const { assetSearch } = useAssetInfoApi();
+const { assetSearch } = useAssetInfoRetrieval();
 const { dark } = useTheme();
 
 function getItemText(item: SearchItemWithoutValue): string {
@@ -268,35 +268,30 @@ function getActions(keyword: string): SearchItemWithoutValue[] {
 }
 
 async function getAssets(keyword: string): Promise<SearchItemWithoutValue[]> {
-  try {
-    const matches = await assetSearch(keyword, 5);
-    const assetBalances = get(balances()) as AssetBalanceWithPrice[];
-    const map: Record<string, string> = {};
-    for (const match of matches)
-      map[match.identifier] = match.symbol ?? match.name ?? '';
+  const matches = await assetSearch(keyword, 5);
+  const assetBalances = get(balances()) as AssetBalanceWithPrice[];
+  const map: Record<string, string> = {};
+  for (const match of matches)
+    map[match.identifier] = match.symbol ?? match.name ?? '';
 
-    const ids = matches.map(({ identifier }) => identifier);
+  const ids = matches.map(({ identifier }) => identifier);
 
-    return assetBalances
-      .filter(balance => ids.includes(balance.asset))
-      .map((balance) => {
-        const price = balance.usdPrice.gt(0) ? balance.usdPrice : undefined;
-        const asset = balance.asset;
+  return assetBalances
+    .filter(balance => ids.includes(balance.asset))
+    .map((balance) => {
+      const price = balance.usdPrice.gt(0) ? balance.usdPrice : undefined;
+      const asset = balance.asset;
 
-        return {
-          route: Routes.ASSETS.route.replace(
-            ':identifier',
-            encodeURIComponent(asset),
-          ),
-          texts: [t('common.asset').toString(), map[asset] ?? ''],
-          price,
-          asset,
-        };
-      });
-  }
-  catch {
-    return [];
-  }
+      return {
+        route: Routes.ASSETS.route.replace(
+          ':identifier',
+          encodeURIComponent(asset),
+        ),
+        texts: [t('common.asset').toString(), map[asset] ?? ''],
+        price,
+        asset,
+      };
+    });
 }
 
 function* transformLocations(): IterableIterator<SearchItemWithoutValue> {
