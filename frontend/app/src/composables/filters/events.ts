@@ -63,8 +63,7 @@ export function useHistoryEventFilter(disabled: {
   const { historyEventTypes, historyEventTypeGlobalMapping } = useHistoryEventMappings();
   const { historyEventProducts } = useHistoryEventProductMappings();
   const { counterparties } = useHistoryEventCounterpartyMappings();
-  const { assetSearch } = useAssetInfoApi();
-  const { assetInfo } = useAssetInfoRetrieval();
+  const { assetSearch, assetInfo } = useAssetInfoRetrieval();
   const { associatedLocations } = storeToRefs(useHistoryStore());
   const { t } = useI18n();
 
