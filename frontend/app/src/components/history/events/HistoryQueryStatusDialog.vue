@@ -116,7 +116,7 @@ const css = useCssModule();
             <template v-if="decodingStatus.length > 0">
               <EventDecodingStatusDetails
                 v-for="item in decodingStatus"
-                :key="item.evmChain"
+                :key="item.chain"
                 class="py-1"
                 :item="item"
               />

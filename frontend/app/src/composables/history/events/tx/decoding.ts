@@ -62,7 +62,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
 
       updateUndecodedTransactionsStatus(
         Object.fromEntries(Object.entries(breakdown).map(([chain, entry]) => [chain, {
-          evmChain: chain,
+          chain,
           total: entry.total,
           processed: entry.total - entry.undecoded,
         }])),
@@ -144,12 +144,12 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
   const checkMissingEventsAndRedecodeHandler = async (type: TransactionChainType) => {
     const isEvmType = type === TransactionChainType.EVM;
     const chains = getUndecodedTransactionStatus()
-      .filter(({ total, processed, evmChain }) => {
-        const chain = getChain(evmChain);
-        const isEvmLike = isEvmLikeChains(chain);
+      .filter(({ total, processed, chain }) => {
+        const blockchain = getChain(chain);
+        const isEvmLike = isEvmLikeChains(blockchain);
         return processed < total && (isEvmType === !isEvmLike);
       })
-      .map(({ evmChain }) => evmChain);
+      .map(({ chain }) => chain);
     await awaitParallelExecution(
       chains,
       item => item,
@@ -196,7 +196,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     resetUndecodedTransactionsStatus();
     updateUndecodedTransactionsStatus({
       [transaction.evmChain]: {
-        evmChain: transaction.evmChain,
+        chain: transaction.evmChain,
         total: 1,
         processed: 0,
       },
