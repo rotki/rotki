@@ -20,6 +20,7 @@ from rotkehlchen.globaldb.cache import (
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.schema import (
+    DB_CREATE_ASSET_COLLECTIONS,
     DB_CREATE_LOCATION_ASSET_MAPPINGS,
     DB_CREATE_LOCATION_UNSUPPORTED_ASSETS,
 )
@@ -627,6 +628,31 @@ def test_upgrade_v7_v8(globaldb: GlobalDBHandler):
             ('SPAM_ASSET_FALSE_POSITIVE', 'eip155:1/erc20:0xA0b73E1Ff0B80914AB6fe0444E65848C4C34450b'),  # noqa: E501
         ).fetchone()[0] == 0
 
+        # check that asset asset_collections table have duplicated entries
+        unique_entries = {}
+        duplicated_entries = set()
+        for collection_id, name, symbol in cursor.execute('SELECT id, name, symbol FROM asset_collections;'):  # noqa: E501
+            if (name, symbol) not in unique_entries:
+                unique_entries[(name, symbol)] = collection_id
+            else:
+                duplicated_entries.add((collection_id, name, symbol))
+
+        v7_multiasset_mappings = cursor.execute(
+            'SELECT rowid, collection_id, asset FROM multiasset_mappings;',
+        ).fetchall()
+
+    assert unique_entries['Wormhole Token', 'W'] == 263
+    assert unique_entries['TokenFi', 'TOKEN'] == 264
+    assert unique_entries['HTX', 'HTX'] == 265
+    assert unique_entries['Kyber Network Crystal v2', 'KNC'] == 301
+    assert unique_entries['PancakeSwap Token', 'CAKE'] == 302
+    assert (262, 'Starknet', 'STRK') in duplicated_entries
+    assert (303, 'Starknet', 'STRK') in duplicated_entries
+    assert (304, 'Wormhole Token', 'W') in duplicated_entries
+    assert (305, 'TokenFi', 'TOKEN') in duplicated_entries
+    assert (306, 'HTX', 'HTX') in duplicated_entries
+
+    # execute upgrade
     with ExitStack() as stack:
         patch_for_globaldb_upgrade_to(stack, 8)
         maybe_upgrade_globaldb(
@@ -634,6 +660,7 @@ def test_upgrade_v7_v8(globaldb: GlobalDBHandler):
             global_dir=globaldb._data_directory / GLOBALDIR_NAME,  # type: ignore
             db_filename=GLOBALDB_NAME,
         )
+    assert globaldb.get_setting_value('version', 0) == 8
 
     with globaldb.conn.read_ctx() as cursor:
         assert cursor.execute(
@@ -644,6 +671,32 @@ def test_upgrade_v7_v8(globaldb: GlobalDBHandler):
             'SELECT COUNT(*) from general_cache where key=? AND value=?',
             ('SPAM_ASSET_FALSE_POSITIVE', 'eip155:1/erc20:0xA0b73E1Ff0B80914AB6fe0444E65848C4C34450b'),  # noqa: E501
         ).fetchone()[0] == 1
+
+        # check that asset_collections have unique entries now with correctly mapped ids
+        assert table_exists(
+            cursor=cursor,
+            name='asset_collections',
+            schema=DB_CREATE_ASSET_COLLECTIONS,
+        ) is True
+
+        for collection_id, name, symbol in (
+            (260, 'Moon App', 'APP'),
+            (261, 'Starknet', 'STRK'),
+            (262, 'Wormhole Token', 'W'),
+            (263, 'TokenFi', 'TOKEN'),
+            (264, 'HTX', 'HTX'),
+            (300, 'Kyber Network Crystal v2', 'KNC'),
+            (301, 'PancakeSwap Token', 'CAKE'),
+        ):
+            assert cursor.execute(
+                'SELECT COUNT(*) FROM asset_collections WHERE id=? AND name=? AND symbol=?',
+                (collection_id, name, symbol),
+            ).fetchone()[0] == 1
+
+        # and multiasset_mappings are exactly same
+        assert v7_multiasset_mappings == cursor.execute(
+            'SELECT rowid, collection_id, asset FROM multiasset_mappings;',
+        ).fetchall()
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])

@@ -182,7 +182,8 @@ DB_CREATE_ASSET_COLLECTIONS = """
 CREATE TABLE IF NOT EXISTS asset_collections(
     id INTEGER PRIMARY KEY,
     name TEXT NOT NULL,
-    symbol TEXT NOT NULL
+    symbol TEXT NOT NULL,
+    UNIQUE (name, symbol)
 );
 """
 
