@@ -7,7 +7,7 @@ Vue.use(VueI18n, { bridge: true });
 function loadLocaleMessages(): LocaleMessages {
   const messages: LocaleMessages = {};
   try {
-    const locales = import.meta.globEager('./locales/*.json') as any;
+    const locales = import.meta.glob('./locales/*.json', { eager: true }) as any;
 
     for (const key in locales) {
       const matched = key.match(/([\w-]+)\./i);

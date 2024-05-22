@@ -151,7 +151,7 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     await nextTick();
 
-    expect(wrapper.find('I18n-stub').attributes().path).toBe(
+    expect(wrapper.find('i18n-stub').attributes().path).toBe(
       'table_filter.no_suggestions',
     );
   });
