@@ -8,12 +8,19 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ETH, A_USDC, A_WETH_POLYGON, A_XDAI
+from rotkehlchen.constants.assets import (
+    A_ETH,
+    A_USDC,
+    A_WETH_ARB,
+    A_WETH_BASE,
+    A_WETH_POLYGON,
+    A_XDAI,
+)
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
@@ -21,6 +28,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
     from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
+    from rotkehlchen.db.dbhandler import DBHandler
 
 ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 
@@ -649,6 +657,395 @@ def test_hop_eth_bridge_arbitrum_custom_recipient(
             notes=f'Spend {hop_fee} ETH as a hop fee',
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x33ceb27b39d2Bb7D2e61F7564d3Df29344020417'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('base_accounts', [['0xAE70bC0Cbe03ceF2a14eCA507a2863441C6Df7A1']])
+def test_hop_add_liquidity(
+        database: 'DBHandler',
+        base_inquirer: 'BaseInquirer',
+        base_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0xa50286f6288ca13452a490d766aaf969d20cce7035b514423a7b1432fd329cc5')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas, lp_amount, lp_token_amount = TimestampMS(1714582939000), '0.000013783759721971', '0.025', '0.023220146656543904'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=base_accounts[0],
+            notes=f'Burned {gas} ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=214,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_WETH_BASE,
+            balance=Balance(amount=FVal(lp_amount)),
+            location_label=base_accounts[0],
+            notes=f'Deposit {lp_amount} WETH to Hop',
+            tx_hash=tx_hash,
+            counterparty=CPT_HOP,
+            address=string_to_evm_address('0x0ce6c85cF43553DE10FC56cecA0aef6Ff0DD444d'),
+        ), EvmEvent(
+            sequence_index=215,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:8453/erc20:0xe9605BEc1c5C3E81F974F80b8dA9fBEFF4845d4D'),
+            balance=Balance(amount=FVal(lp_token_amount)),
+            location_label=base_accounts[0],
+            notes=f'Receive {lp_token_amount} HOP-LP-ETH after providing liquidity in Hop',
+            tx_hash=tx_hash,
+            counterparty=CPT_HOP,
+            address=ZERO_ADDRESS,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D']])
+def test_hop_add_liquidity_2(
+        database: 'DBHandler',
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0x52ab27e8f15148c0f41df0114429321d2a1e9411f2ea2fe7c8fb9c663bc09ecb')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas, lp_amount, lp_amount_2, lp_token_amount, approval_amount_1, approval_amount_2 = TimestampMS(1716391406000), '0.00000298668', '0.001', '0.005129453530970625', '0.005676129314105837', '115792089237316195423570985008687907853269984665640564039457.583007913129639935', '115792089237316195423570985008687907853269984665640564039457.57887845959866931'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Burned {gas} ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=4,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_WETH_ARB,
+            balance=Balance(amount=FVal(lp_amount)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Deposit {lp_amount} WETH to Hop',
+            tx_hash=tx_hash,
+            counterparty=CPT_HOP,
+            address=string_to_evm_address('0x652d27c0F72771Ce5C76fd400edD61B406Ac6D97'),
+        ), EvmEvent(
+            sequence_index=5,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=A_WETH_ARB,
+            balance=Balance(amount=FVal(approval_amount_1)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Set WETH spending approval of {arbitrum_one_accounts[0]} by 0x652d27c0F72771Ce5C76fd400edD61B406Ac6D97 to {approval_amount_1}',  # noqa: E501
+            tx_hash=tx_hash,
+            address=string_to_evm_address('0x652d27c0F72771Ce5C76fd400edD61B406Ac6D97'),
+        ), EvmEvent(
+            sequence_index=6,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=Asset('eip155:42161/erc20:0xDa7c0de432a9346bB6e96aC74e3B61A36d8a77eB'),
+            balance=Balance(amount=FVal(lp_amount_2)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Deposit {lp_amount_2} hETH to Hop',
+            tx_hash=tx_hash,
+            counterparty=CPT_HOP,
+            address=string_to_evm_address('0x652d27c0F72771Ce5C76fd400edD61B406Ac6D97'),
+        ), EvmEvent(
+            sequence_index=7,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:42161/erc20:0xDa7c0de432a9346bB6e96aC74e3B61A36d8a77eB'),
+            balance=Balance(amount=FVal(approval_amount_2)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Set hETH spending approval of {arbitrum_one_accounts[0]} by 0x652d27c0F72771Ce5C76fd400edD61B406Ac6D97 to {approval_amount_2}',  # noqa: E501
+            tx_hash=tx_hash,
+            address=string_to_evm_address('0x652d27c0F72771Ce5C76fd400edD61B406Ac6D97'),
+        ), EvmEvent(
+            sequence_index=8,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:42161/erc20:0x59745774Ed5EfF903e615F5A2282Cae03484985a'),
+            balance=Balance(amount=FVal(lp_token_amount)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Receive {lp_token_amount} HOP-LP-ETH after providing liquidity in Hop',
+            tx_hash=tx_hash,
+            counterparty=CPT_HOP,
+            address=ZERO_ADDRESS,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('base_accounts', [['0xA38b8E0cA73916fD611Bbf9E854FDBB25865e42a']])
+def test_hop_remove_liquidity(
+        database: 'DBHandler',
+        base_inquirer: 'BaseInquirer',
+        base_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0xc3662d3d68f845dd848c9df2aef4efedf9c9a01580872619a2f4eaafdbf98feb')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas, lp_amount, withdrawn = TimestampMS(1714729295000), '0.000019101983974486', '0.75', '0.807405509354959205'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=base_accounts[0],
+            notes=f'Burned {gas} ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=35,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:8453/erc20:0xe9605BEc1c5C3E81F974F80b8dA9fBEFF4845d4D'),
+            balance=Balance(amount=FVal(0)),
+            location_label=base_accounts[0],
+            notes=f'Revoke HOP-LP-ETH spending approval of {base_accounts[0]} by 0x0ce6c85cF43553DE10FC56cecA0aef6Ff0DD444d',  # noqa: E501
+            tx_hash=tx_hash,
+            address=string_to_evm_address('0x0ce6c85cF43553DE10FC56cecA0aef6Ff0DD444d'),
+        ), EvmEvent(
+            sequence_index=36,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset('eip155:8453/erc20:0xe9605BEc1c5C3E81F974F80b8dA9fBEFF4845d4D'),
+            balance=Balance(amount=FVal(lp_amount)),
+            location_label=base_accounts[0],
+            notes=f'Return {lp_amount} HOP-LP-ETH',
+            tx_hash=tx_hash,
+            counterparty=CPT_HOP,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            sequence_index=37,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_WETH_BASE,
+            balance=Balance(amount=FVal(withdrawn)),
+            location_label=base_accounts[0],
+            notes=f'Withdraw {withdrawn} WETH from Hop',
+            tx_hash=tx_hash,
+            counterparty=CPT_HOP,
+            address=string_to_evm_address('0x0ce6c85cF43553DE10FC56cecA0aef6Ff0DD444d'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('base_accounts', [['0x8Df3480a31B5a32508Cd1E29A6Ff84fd03b96430']])
+def test_hop_remove_liquidity_2(
+        database: 'DBHandler',
+        base_inquirer: 'BaseInquirer',
+        base_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0x4995c8896bb845ab506b759530d35e306d6ef5418630b60bbf26ca0fae90fcaa')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas, lp_amount, withdrawn_1, withdrawn_2 = TimestampMS(1716298905000), '0.000020283535960823', '0.014812373943526529', '0.008484007194088721', '0.007520340659511852'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=base_accounts[0],
+            notes=f'Burned {gas} ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=172,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_WETH_BASE,
+            balance=Balance(amount=FVal(withdrawn_1)),
+            location_label=base_accounts[0],
+            notes=f'Withdraw {withdrawn_1} WETH from Hop',
+            tx_hash=tx_hash,
+            counterparty=CPT_HOP,
+            address=string_to_evm_address('0x0ce6c85cF43553DE10FC56cecA0aef6Ff0DD444d'),
+        ), EvmEvent(
+            sequence_index=173,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=Asset('eip155:8453/erc20:0xC1985d7a3429cDC85E59E2E4Fcc805b857e6Ee2E'),
+            balance=Balance(amount=FVal(withdrawn_2)),
+            location_label=base_accounts[0],
+            notes=f'Withdraw {withdrawn_2} hETH from Hop',
+            tx_hash=tx_hash,
+            counterparty=CPT_HOP,
+            address=string_to_evm_address('0x0ce6c85cF43553DE10FC56cecA0aef6Ff0DD444d'),
+        ), EvmEvent(
+            sequence_index=174,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:8453/erc20:0xe9605BEc1c5C3E81F974F80b8dA9fBEFF4845d4D'),
+            balance=Balance(amount=FVal(0)),
+            location_label=base_accounts[0],
+            notes=f'Revoke HOP-LP-ETH spending approval of {base_accounts[0]} by 0x0ce6c85cF43553DE10FC56cecA0aef6Ff0DD444d',  # noqa: E501
+            tx_hash=tx_hash,
+            address=string_to_evm_address('0x0ce6c85cF43553DE10FC56cecA0aef6Ff0DD444d'),
+        ), EvmEvent(
+            sequence_index=175,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset('eip155:8453/erc20:0xe9605BEc1c5C3E81F974F80b8dA9fBEFF4845d4D'),
+            balance=Balance(amount=FVal(lp_amount)),
+            location_label=base_accounts[0],
+            notes=f'Return {lp_amount} HOP-LP-ETH',
+            tx_hash=tx_hash,
+            counterparty=CPT_HOP,
+            address=ZERO_ADDRESS,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0xCe0945D35cCc4ccA674e13D3cc2918843C4B56d6']])
+def test_hop_remove_liquidity_usdc_gnosis(
+        database: 'DBHandler',
+        gnosis_inquirer: 'GnosisInquirer',
+        gnosis_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0x5833d34d7f20ee4e71b902dac85a025f40739a1d646091553104a3e345a38f81')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas, lp_amount, withdrawn, withdrawn_2, approval_amount = TimestampMS(1716258450000), '0.000645488318952488', '2.138240168467212015', '0.258527', '2.026586', '0.861759831532787985'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_XDAI,
+            balance=Balance(amount=FVal(gas)),
+            location_label=gnosis_accounts[0],
+            notes=f'Burned {gas} XDAI for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=83,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=Asset('eip155:100/erc20:0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83'),
+            balance=Balance(amount=FVal(withdrawn)),
+            location_label=gnosis_accounts[0],
+            notes=f'Withdraw {withdrawn} USDC from Hop',
+            tx_hash=tx_hash,
+            counterparty=CPT_HOP,
+            address=string_to_evm_address('0x5C32143C8B198F392d01f8446b754c181224ac26'),
+        ), EvmEvent(
+            sequence_index=84,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=Asset('eip155:100/erc20:0x9ec9551d4A1a1593b0ee8124D98590CC71b3B09D'),
+            balance=Balance(amount=FVal(withdrawn_2)),
+            location_label=gnosis_accounts[0],
+            notes=f'Withdraw {withdrawn_2} hUSDC from Hop',
+            tx_hash=tx_hash,
+            counterparty=CPT_HOP,
+            address=string_to_evm_address('0x5C32143C8B198F392d01f8446b754c181224ac26'),
+        ), EvmEvent(
+            sequence_index=85,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:100/erc20:0x9D373d22FD091d7f9A6649EB067557cc12Fb1A0A'),
+            balance=Balance(amount=FVal(approval_amount)),
+            location_label=gnosis_accounts[0],
+            notes=f'Set HOP-LP-USDC spending approval of {gnosis_accounts[0]} by 0x5C32143C8B198F392d01f8446b754c181224ac26 to {approval_amount}',  # noqa: E501
+            tx_hash=tx_hash,
+            address=string_to_evm_address('0x5C32143C8B198F392d01f8446b754c181224ac26'),
+        ), EvmEvent(
+            sequence_index=86,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset('eip155:100/erc20:0x9D373d22FD091d7f9A6649EB067557cc12Fb1A0A'),
+            balance=Balance(amount=FVal(lp_amount)),
+            location_label=gnosis_accounts[0],
+            notes=f'Return {lp_amount} HOP-LP-USDC',
+            tx_hash=tx_hash,
+            counterparty=CPT_HOP,
+            address=ZERO_ADDRESS,
         ),
     ]
     assert events == expected_events

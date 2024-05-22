@@ -47,7 +47,7 @@ class HopDecoder(HopCommonDecoder):
             return DEFAULT_DECODING_OUTPUT
 
         amount_raw = hex_or_bytes_to_int(context.tx_log.data[:32])
-        amount = self._get_bridgeasset_amount(amount_raw=amount_raw, bridge=bridge)
+        amount = self._get_bridge_asset_amount(amount_raw=amount_raw, identifier=bridge.identifier)
 
         for event in context.decoded_events:
             if event.event_type == HistoryEventType.SPEND and event.address == context.tx_log.address and event.asset.identifier == bridge.identifier and event.balance.amount == amount:  # noqa: E501
