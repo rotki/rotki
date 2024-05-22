@@ -22,8 +22,7 @@ export function saveBackendUrl({ sessionOnly, url }: BackendSettings): void {
 }
 
 export function getBackendUrl(): BackendSettings {
-  const sessionOnly
-    = !!localStorage.getItem(KEY_BACKEND_URL_SESSION_ONLY) ?? false;
+  const sessionOnly = !!localStorage.getItem(KEY_BACKEND_URL_SESSION_ONLY) || false;
   const url = localStorage.getItem(KEY_BACKEND_URL) ?? '';
   return {
     url,
