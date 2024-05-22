@@ -1,5 +1,6 @@
 from typing import TYPE_CHECKING, Final
 
+from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.logging import enter_exit_debug_log
 from rotkehlchen.utils.misc import ts_now
 
@@ -66,11 +67,53 @@ def fix_detected_spam_tokens(write_cursor: 'DBCursor') -> None:
     )
 
 
+@enter_exit_debug_log()
+def set_unique_asset_collections(write_cursor: 'DBCursor') -> None:
+    """It does the following:
+    - Fixes the asset_collections table, to remove duplicated entries.
+    - Adds UNIQUE constraint in asset_collections table.
+    """
+    v7_multiasset_mappings = write_cursor.execute(
+        'SELECT rowid, collection_id, asset FROM multiasset_mappings;',
+    ).fetchall()
+
+    all_entries = write_cursor.execute('SELECT id, name, symbol FROM asset_collections;').fetchall()  # noqa: E501
+    unique_entries = set()
+    duplicated_entries = 0  # to count how many duplicated entries are found until some iteration
+    for collection_id, name, symbol in all_entries:
+        if (name, symbol) not in unique_entries:  # if it's not found yet
+            write_cursor.execute(
+                'INSERT OR REPLACE INTO asset_collections(id, name, symbol) VALUES (?, ?, ?);',
+                # if we find any duplicate entries till now then we subtract their count from the id  # noqa: E501
+                # so that these next entries will be shifted back to their right position (at the position of the duplicated entry).  # noqa: E501
+                (collection_id - duplicated_entries, name, symbol),
+            )
+            unique_entries.add((name, symbol))
+        else:  # if it's found again, don't insert it and increment the counter
+            write_cursor.execute('DELETE FROM asset_collections WHERE id=?;', (collection_id,))
+            duplicated_entries += 1
+
+    update_table_schema(
+        write_cursor=write_cursor,
+        table_name='asset_collections',
+        schema="""id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            symbol TEXT NOT NULL,
+            UNIQUE (name, symbol)""",
+    )
+    write_cursor.executemany(
+        'INSERT OR IGNORE INTO multiasset_mappings(rowid, collection_id, asset) VALUES (?, ?, ?);',
+        v7_multiasset_mappings,
+    )
+
+
 @enter_exit_debug_log(name='globaldb v7->v8 upgrade')
 def migrate_to_v8(connection: 'DBConnection') -> None:
     """This globalDB upgrade does the following:
     - Fix autodetected spam assets by mistake
+    - Adds UNIQUE constraint in asset_collections table.
 
     This upgrade takes place in v1.34.0"""
     with connection.write_ctx() as write_cursor:
         fix_detected_spam_tokens(write_cursor)
+        set_unique_asset_collections(write_cursor)
