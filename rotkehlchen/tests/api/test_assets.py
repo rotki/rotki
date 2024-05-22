@@ -1080,6 +1080,11 @@ def test_false_positive(rotkehlchen_api_server: APIServer, globaldb: GlobalDBHan
     """Test the endpoint to add/remove an asset from the whitelist of spam assets"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
+    with globaldb.conn.read_ctx() as cursor:
+        existing_whitelisted_count = cursor.execute(
+            'SELECT COUNT(*) from general_cache WHERE key=?',
+            ('SPAM_ASSET_FALSE_POSITIVE',),
+        ).fetchone()[0]
 
     # setup as if DAI was in the spam assets
     with db.user_write() as write_cursor:
@@ -1110,15 +1115,15 @@ def test_false_positive(rotkehlchen_api_server: APIServer, globaldb: GlobalDBHan
         assert A_DAI not in db.get_ignored_asset_ids(cursor=cursor)
 
     with globaldb.conn.read_ctx() as cursor:
-        assert globaldb_get_general_cache_values(
+        assert A_DAI.identifier in globaldb_get_general_cache_values(
             cursor=cursor,
             key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
-        ) == [A_DAI.identifier]
+        )
 
     # check that we can query it from the api
     response = requests.get(api_url_for(rotkehlchen_api_server, 'falsepositivespamtokenresource'))
     result = assert_proper_response_with_result(response)
-    assert result == [A_DAI]
+    assert A_DAI in result
 
     # test that the filter in the search for assets works
     response = requests.post(
@@ -1128,8 +1133,9 @@ def test_false_positive(rotkehlchen_api_server: APIServer, globaldb: GlobalDBHan
         ), json={'show_whitelisted_assets_only': True},
     )
     result = assert_proper_response_with_result(response)
-    assert result['entries_found'] == 1
-    assert result['entries'][0]['identifier'] == A_DAI.identifier
+    with globaldb.conn.read_ctx() as cursor:
+        assert result['entries_found'] == existing_whitelisted_count + 1
+    assert A_DAI.identifier in {entry['identifier'] for entry in result['entries']}
 
     # remove it from the list of false positives
     response = requests.delete(
@@ -1142,7 +1148,7 @@ def test_false_positive(rotkehlchen_api_server: APIServer, globaldb: GlobalDBHan
         assert len(globaldb_get_general_cache_values(
             cursor=cursor,
             key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
-        )) == 0
+        )) == existing_whitelisted_count
 
 
 def test_setting_tokens_as_spam(rotkehlchen_api_server: APIServer) -> None:
@@ -1171,10 +1177,10 @@ def test_setting_tokens_as_spam(rotkehlchen_api_server: APIServer) -> None:
         assert A_DAI in rotki.data.db.get_ignored_asset_ids(cursor)
 
     with globaldb.conn.read_ctx() as cursor:
-        assert len(globaldb_get_general_cache_values(
+        assert A_DAI.identifier not in globaldb_get_general_cache_values(
             cursor=cursor,
             key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
-        )) == 0
+        )
 
     # check that it fails if we try to add any other asset type
     response = requests.post(

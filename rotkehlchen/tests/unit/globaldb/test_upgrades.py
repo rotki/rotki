@@ -610,6 +610,42 @@ def test_upgrade_v6_v7(globaldb: GlobalDBHandler):
             ).fetchone()[0] == expected_mappings_count
 
 
+@pytest.mark.parametrize('globaldb_upgrades', [[]])
+@pytest.mark.parametrize('custom_globaldb', ['v7_global.db'])
+@pytest.mark.parametrize('target_globaldb_version', [7])
+@pytest.mark.parametrize('reload_user_assets', [False])
+def test_upgrade_v7_v8(globaldb: GlobalDBHandler):
+    """Test the global DB upgrade from v7 to v8"""
+    # Check the state before upgrading
+    with globaldb.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT protocol from evm_tokens where identifier=?',
+            ('eip155:1/erc20:0xA0b73E1Ff0B80914AB6fe0444E65848C4C34450b',),
+        ).fetchone()[0] == 'spam'
+        assert cursor.execute(
+            'SELECT COUNT(*) from general_cache where key=? AND value=?',
+            ('SPAM_ASSET_FALSE_POSITIVE', 'eip155:1/erc20:0xA0b73E1Ff0B80914AB6fe0444E65848C4C34450b'),  # noqa: E501
+        ).fetchone()[0] == 0
+
+    with ExitStack() as stack:
+        patch_for_globaldb_upgrade_to(stack, 8)
+        maybe_upgrade_globaldb(
+            connection=globaldb.conn,
+            global_dir=globaldb._data_directory / GLOBALDIR_NAME,  # type: ignore
+            db_filename=GLOBALDB_NAME,
+        )
+
+    with globaldb.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT protocol from evm_tokens where identifier=?',
+            ('eip155:1/erc20:0xA0b73E1Ff0B80914AB6fe0444E65848C4C34450b',),
+        ).fetchone()[0] is None
+        assert cursor.execute(
+            'SELECT COUNT(*) from general_cache where key=? AND value=?',
+            ('SPAM_ASSET_FALSE_POSITIVE', 'eip155:1/erc20:0xA0b73E1Ff0B80914AB6fe0444E65848C4C34450b'),  # noqa: E501
+        ).fetchone()[0] == 1
+
+
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [2])
 @pytest.mark.parametrize('reload_user_assets', [False])
