@@ -16,7 +16,7 @@ class HopBridgeEventData(NamedTuple):
         amm_wrapper (ChecksumEvmAddress | None): The address of the AMM wrapper used for
             asset bridging. This field is optional and can be None if no AMM wrapper is used.
         saddle_swap (ChecksumEvmAddress | None): The address of the Token Swap used for
-            swaping bridging assets to native assets.
+            swaping bridging hop assets to native assets.
     """
     identifier: str
     hop_identifier: str | None = None
