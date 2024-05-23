@@ -34,6 +34,7 @@ class HopDecoder(HopCommonDecoder):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
             bridges=BRIDGES,
+            reward_contracts=set(),
         )
 
     def _decode_send_to_l2(self, context: DecoderContext) -> DecodingOutput:

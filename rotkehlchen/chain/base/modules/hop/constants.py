@@ -19,3 +19,8 @@ BRIDGES: Final = {
         amm_wrapper=ZERO_ADDRESS,
     ),
 }
+
+REWARD_CONTRACTS: Final = {
+    string_to_evm_address('0x7aC115536FE3A185100B2c4DE4cb328bf3A58Ba6'),  # HOP (USDC.e)
+    string_to_evm_address('0x12e59C59D282D2C00f3166915BED6DC2F5e2B5C7'),  # HOP (ETH)
+}

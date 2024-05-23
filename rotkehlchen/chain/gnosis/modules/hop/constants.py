@@ -34,3 +34,14 @@ BRIDGES: Final = {
         amm_wrapper=ZERO_ADDRESS,
     ),
 }
+
+REWARD_CONTRACTS: Final = {
+    string_to_evm_address('0x5D13179c5fa40b87D53Ff67ca26245D3D5B2F872'),  # GNO (USDC.e)
+    string_to_evm_address('0x636A7ee78faCd079DaBC8f81EDA1D09AA9D440A7'),  # HOP (USDC.e)
+    string_to_evm_address('0x2C2Ab81Cf235e86374468b387e241DF22459A265'),  # GNO (USDT)
+    string_to_evm_address('0x3d4Cc8A61c7528Fd86C55cfe061a78dCBA48EDd1'),  # HOP (USDT)
+    string_to_evm_address('0x12a3a66720dD925fa93f7C895bC20Ca9560AdFe7'),  # GNO (DAI)
+    string_to_evm_address('0xBF7a02d963b23D84313F07a04ad663409CEE5A92'),  # HOP (DAI)
+    string_to_evm_address('0xC61bA16e864eFbd06a9fe30Aab39D18B8F63710a'),  # GNO (ETH)
+    string_to_evm_address('0x712F0cf37Bdb8299D0666727F73a5cAbA7c1c24c'),  # HOP (ETH)
+}

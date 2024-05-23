@@ -36,3 +36,12 @@ BRIDGES: Final = {
         saddle_swap=string_to_evm_address('0xFFe42d3Ba79Ee5Ee74a999CAd0c60EF1153F0b82'),
     ),
 }
+
+REWARD_CONTRACTS: Final = {
+    string_to_evm_address('0xb0CabFE930642AD3E7DECdc741884d8C3F7EbC70'),  # HOP (USDC.e)
+    string_to_evm_address('0x9Dd8685463285aD5a94D2c128bda3c5e8a6173c8'),  # HOP (USDT)
+    string_to_evm_address('0xd4D28588ac1D9EF272aa29d4424e3E2A03789D1E'),  # HOP (DAI)
+    string_to_evm_address('0x755569159598f3702bdD7DFF6233A317C156d3Dd'),  # HOP (ETH)
+    string_to_evm_address('0x3D4cAD734B464Ed6EdCF6254C2A3e5fA5D449b32'),  # RPL (rETH)
+    string_to_evm_address('0x4e9840f3C1ff368a10731D15c11516b9Fe7E1898'),  # HOP (MAGIC)
+}

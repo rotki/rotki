@@ -37,3 +37,15 @@ BRIDGES: Final = {
         hop_identifier='eip155:137/erc20:0xc5102fE9359FD9a28f877a67E36B0F050d81a3CC',
     ),
 }
+
+REWARD_CONTRACTS: Final = {
+    string_to_evm_address('0x2C2Ab81Cf235e86374468b387e241DF22459A265'),  # WMATIC (USDC.e)
+    string_to_evm_address('0x7811737716942967Ae6567B26a5051cC72af550E'),  # HOP (USDC.e)
+    string_to_evm_address('0x07932e9A5AB8800922B2688FB1FA0DAAd8341772'),  # WMATIC (USDT)
+    string_to_evm_address('0x297E5079DF8173Ae1696899d3eACD708f0aF82Ce'),  # HOP (USDT)
+    string_to_evm_address('0x4Aeb0B5B1F3e74314A7Fa934dB090af603E8289b'),  # WMATIC (DAI)
+    string_to_evm_address('0xd6dC6F69f81537Fe9DEcc18152b7005B45Dc2eE7'),  # HOP (DAI)
+    string_to_evm_address('0x7bCeDA1Db99D64F25eFA279BB11CE48E15Fda427'),  # WMATIC (ETH)
+    string_to_evm_address('0xAA7b3a4A084e6461D486E53a03CF45004F0963b7'),  # HOP (ETH)
+    string_to_evm_address('0x7dEEbCaD1416110022F444B03aEb1D20eB4Ea53f'),  # WMATIC (MATIC)
+}

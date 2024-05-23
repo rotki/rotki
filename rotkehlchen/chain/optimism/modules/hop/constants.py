@@ -47,3 +47,15 @@ BRIDGES: Final = {
         saddle_swap=string_to_evm_address('0x9Dd8685463285aD5a94D2c128bda3c5e8a6173c8'),
     ),
 }
+
+REWARD_CONTRACTS: Final = {
+    string_to_evm_address('0xf587B9309c603feEdf0445aF4D3B21300989e93a'),  # HOP (USDC.e)
+    string_to_evm_address('0xAeB1b49921E0D2D96FcDBe0D486190B2907B3e0B'),  # HOP (USDT)
+    string_to_evm_address('0x392B9780cFD362bD6951edFA9eBc31e68748b190'),  # HOP (DAI)
+    string_to_evm_address('0x95d6A95BECfd98a7032Ed0c7d950ff6e0Fa8d697'),  # HOP (ETH)
+    string_to_evm_address('0x25a5A48C35e75BD2EFf53D94f0BB60d5A00E36ea'),  # HOP (SNX)
+    string_to_evm_address('0x09992Dd7B32f7b35D347DE9Bdaf1919a57d38E82'),  # OP (SNX)
+    string_to_evm_address('0x2935008eE9943f859C4fbb863c5402fFC06f462E'),  # HOP (sUSD)
+    string_to_evm_address('0x25FB92E505F752F730cAD0Bd4fa17ecE4A384266'),  # OP (sUSD)
+    string_to_evm_address('0x266e2dc3C4c59E42AA07afeE5B09E964cFFe6778'),  # RPL (rETH)
+}

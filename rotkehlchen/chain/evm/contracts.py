@@ -94,6 +94,11 @@ class EvmContract(NamedTuple):
             method_name: str,
             arguments: list[Any] | None = None,
     ) -> tuple[Any, ...]:
+        """Decodes the result of a contract call given the method name and arguments
+
+        May raise:
+            DeserializationError: If the decoding fails
+        """
         contract = WEB3.eth.contract(address=self.address, abi=self.abi)
         fn_abi = contract._find_matching_fn_abi(
             fn_identifier=method_name,
