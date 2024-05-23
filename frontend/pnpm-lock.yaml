@@ -167,9 +167,6 @@ importers:
       '@babel/preset-env':
         specifier: 7.24.5
         version: 7.24.5(@babel/core@7.24.5)
-      '@cypress/code-coverage':
-        specifier: 3.12.39
-        version: 3.12.39(@babel/core@7.24.5)(@babel/preset-env@7.24.5(@babel/core@7.24.5))(babel-loader@9.1.3(@babel/core@7.24.5)(webpack@5.91.0))(cypress@13.3.0)(webpack@5.91.0)
       babel-loader:
         specifier: 9.1.3
         version: 9.1.3(@babel/core@7.24.5)(webpack@5.91.0)
@@ -177,6 +174,9 @@ importers:
         specifier: 5.91.0
         version: 5.91.0
     devDependencies:
+      '@cypress/code-coverage':
+        specifier: 3.12.39
+        version: 3.12.39(@babel/core@7.24.5)(@babel/preset-env@7.24.5(@babel/core@7.24.5))(babel-loader@9.1.3(@babel/core@7.24.5)(webpack@5.91.0))(cypress@13.3.0)(webpack@5.91.0)
       '@electron/notarize':
         specifier: 2.3.2
         version: 2.3.2
@@ -7599,7 +7599,6 @@ snapshots:
       webpack: 5.91.0
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   '@cypress/request@3.0.1':
     dependencies:
@@ -7633,7 +7632,6 @@ snapshots:
       webpack: 5.91.0
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   '@cypress/xvfb@1.2.4(supports-color@8.1.1)':
     dependencies:
@@ -8331,7 +8329,6 @@ snapshots:
     dependencies:
       '@types/eslint': 8.56.10
       '@types/estree': 1.0.5
-    optional: true
 
   '@types/eslint@8.56.10':
     dependencies:
@@ -8853,26 +8850,20 @@ snapshots:
     dependencies:
       '@webassemblyjs/helper-numbers': 1.11.6
       '@webassemblyjs/helper-wasm-bytecode': 1.11.6
-    optional: true
 
-  '@webassemblyjs/floating-point-hex-parser@1.11.6':
-    optional: true
+  '@webassemblyjs/floating-point-hex-parser@1.11.6': {}
 
-  '@webassemblyjs/helper-api-error@1.11.6':
-    optional: true
+  '@webassemblyjs/helper-api-error@1.11.6': {}
 
-  '@webassemblyjs/helper-buffer@1.12.1':
-    optional: true
+  '@webassemblyjs/helper-buffer@1.12.1': {}
 
   '@webassemblyjs/helper-numbers@1.11.6':
     dependencies:
       '@webassemblyjs/floating-point-hex-parser': 1.11.6
       '@webassemblyjs/helper-api-error': 1.11.6
       '@xtuc/long': 4.2.2
-    optional: true
 
-  '@webassemblyjs/helper-wasm-bytecode@1.11.6':
-    optional: true
+  '@webassemblyjs/helper-wasm-bytecode@1.11.6': {}
 
   '@webassemblyjs/helper-wasm-section@1.12.1':
     dependencies:
@@ -8880,20 +8871,16 @@ snapshots:
       '@webassemblyjs/helper-buffer': 1.12.1
       '@webassemblyjs/helper-wasm-bytecode': 1.11.6
       '@webassemblyjs/wasm-gen': 1.12.1
-    optional: true
 
   '@webassemblyjs/ieee754@1.11.6':
     dependencies:
       '@xtuc/ieee754': 1.2.0
-    optional: true
 
   '@webassemblyjs/leb128@1.11.6':
     dependencies:
       '@xtuc/long': 4.2.2
-    optional: true
 
-  '@webassemblyjs/utf8@1.11.6':
-    optional: true
+  '@webassemblyjs/utf8@1.11.6': {}
 
   '@webassemblyjs/wasm-edit@1.12.1':
     dependencies:
@@ -8905,7 +8892,6 @@ snapshots:
       '@webassemblyjs/wasm-opt': 1.12.1
       '@webassemblyjs/wasm-parser': 1.12.1
       '@webassemblyjs/wast-printer': 1.12.1
-    optional: true
 
   '@webassemblyjs/wasm-gen@1.12.1':
     dependencies:
@@ -8914,7 +8900,6 @@ snapshots:
       '@webassemblyjs/ieee754': 1.11.6
       '@webassemblyjs/leb128': 1.11.6
       '@webassemblyjs/utf8': 1.11.6
-    optional: true
 
   '@webassemblyjs/wasm-opt@1.12.1':
     dependencies:
@@ -8922,7 +8907,6 @@ snapshots:
       '@webassemblyjs/helper-buffer': 1.12.1
       '@webassemblyjs/wasm-gen': 1.12.1
       '@webassemblyjs/wasm-parser': 1.12.1
-    optional: true
 
   '@webassemblyjs/wasm-parser@1.12.1':
     dependencies:
@@ -8932,21 +8916,17 @@ snapshots:
       '@webassemblyjs/ieee754': 1.11.6
       '@webassemblyjs/leb128': 1.11.6
       '@webassemblyjs/utf8': 1.11.6
-    optional: true
 
   '@webassemblyjs/wast-printer@1.12.1':
     dependencies:
       '@webassemblyjs/ast': 1.12.1
       '@xtuc/long': 4.2.2
-    optional: true
 
   '@xmldom/xmldom@0.8.10': {}
 
-  '@xtuc/ieee754@1.2.0':
-    optional: true
+  '@xtuc/ieee754@1.2.0': {}
 
-  '@xtuc/long@4.2.2':
-    optional: true
+  '@xtuc/long@4.2.2': {}
 
   abbrev@2.0.0: {}
 
@@ -8958,7 +8938,6 @@ snapshots:
   acorn-import-assertions@1.9.0(acorn@8.11.3):
     dependencies:
       acorn: 8.11.3
-    optional: true
 
   acorn-jsx@5.3.2(acorn@7.4.1):
     dependencies:
@@ -9003,7 +8982,6 @@ snapshots:
     dependencies:
       ajv: 8.13.0
       fast-deep-equal: 3.1.3
-    optional: true
 
   ajv@6.12.6:
     dependencies:
@@ -9089,7 +9067,6 @@ snapshots:
   append-transform@2.0.0:
     dependencies:
       default-require-extensions: 3.0.1
-    optional: true
 
   arch@2.2.0: {}
 
@@ -9129,8 +9106,7 @@ snapshots:
       tar-stream: 2.2.0
       zip-stream: 4.1.1
 
-  archy@1.0.0:
-    optional: true
+  archy@1.0.0: {}
 
   arg@4.1.3: {}
 
@@ -9232,7 +9208,6 @@ snapshots:
       find-cache-dir: 4.0.0
       schema-utils: 4.2.0
       webpack: 5.91.0
-    optional: true
 
   babel-plugin-polyfill-corejs2@0.4.11(@babel/core@7.24.5):
     dependencies:
@@ -9284,8 +9259,7 @@ snapshots:
     dependencies:
       bluebird: 3.7.2
 
-  bluebird@3.7.1:
-    optional: true
+  bluebird@3.7.1: {}
 
   bluebird@3.7.2: {}
 
@@ -9400,7 +9374,6 @@ snapshots:
       make-dir: 3.1.0
       package-hash: 4.0.0
       write-file-atomic: 3.0.3
-    optional: true
 
   call-bind@1.0.7:
     dependencies:
@@ -9478,8 +9451,7 @@ snapshots:
 
   chownr@2.0.0: {}
 
-  chrome-trace-event@1.0.3:
-    optional: true
+  chrome-trace-event@1.0.3: {}
 
   chromium-pickle-js@0.2.0: {}
 
@@ -9526,7 +9498,6 @@ snapshots:
       string-width: 4.2.3
       strip-ansi: 6.0.1
       wrap-ansi: 6.2.0
-    optional: true
 
   cliui@8.0.1:
     dependencies:
@@ -9586,13 +9557,11 @@ snapshots:
 
   commander@8.3.0: {}
 
-  common-path-prefix@3.0.0:
-    optional: true
+  common-path-prefix@3.0.0: {}
 
   common-tags@1.8.2: {}
 
-  commondir@1.0.1:
-    optional: true
+  commondir@1.0.1: {}
 
   compare-version@0.1.2: {}
 
@@ -9642,8 +9611,7 @@ snapshots:
 
   content-type@1.0.5: {}
 
-  convert-source-map@1.9.0:
-    optional: true
+  convert-source-map@1.9.0: {}
 
   convert-source-map@2.0.0: {}
 
@@ -9815,8 +9783,7 @@ snapshots:
       es-errors: 1.3.0
       is-data-view: 1.0.1
 
-  dayjs@1.11.10:
-    optional: true
+  dayjs@1.11.10: {}
 
   dayjs@1.11.11: {}
 
@@ -9848,8 +9815,7 @@ snapshots:
     optionalDependencies:
       supports-color: 8.1.1
 
-  decamelize@1.2.0:
-    optional: true
+  decamelize@1.2.0: {}
 
   decimal.js@10.4.3: {}
 
@@ -9868,7 +9834,6 @@ snapshots:
   default-require-extensions@3.0.1:
     dependencies:
       strip-bom: 4.0.0
-    optional: true
 
   defer-to-connect@2.0.1: {}
 
@@ -10104,7 +10069,6 @@ snapshots:
     dependencies:
       graceful-fs: 4.2.11
       tapable: 2.2.1
-    optional: true
 
   enquirer@2.4.1:
     dependencies:
@@ -10176,8 +10140,7 @@ snapshots:
 
   es-errors@1.3.0: {}
 
-  es-module-lexer@1.5.3:
-    optional: true
+  es-module-lexer@1.5.3: {}
 
   es-object-atoms@1.0.0:
     dependencies:
@@ -10195,8 +10158,7 @@ snapshots:
       is-date-object: 1.0.5
       is-symbol: 1.0.4
 
-  es6-error@4.1.1:
-    optional: true
+  es6-error@4.1.1: {}
 
   esbuild@0.20.2:
     optionalDependencies:
@@ -10588,8 +10550,7 @@ snapshots:
 
   eventemitter3@5.0.1: {}
 
-  events@3.3.0:
-    optional: true
+  events@3.3.0: {}
 
   execa@4.1.0:
     dependencies:
@@ -10760,13 +10721,11 @@ snapshots:
       commondir: 1.0.1
       make-dir: 3.1.0
       pkg-dir: 4.2.0
-    optional: true
 
   find-cache-dir@4.0.0:
     dependencies:
       common-path-prefix: 3.0.0
       pkg-dir: 7.0.0
-    optional: true
 
   find-up@3.0.0:
     dependencies:
@@ -10786,7 +10745,6 @@ snapshots:
     dependencies:
       locate-path: 7.2.0
       path-exists: 5.0.0
-    optional: true
 
   find-up@7.0.0:
     dependencies:
@@ -10821,7 +10779,6 @@ snapshots:
     dependencies:
       cross-spawn: 7.0.3
       signal-exit: 3.0.7
-    optional: true
 
   foreground-child@3.1.1:
     dependencies:
@@ -10850,8 +10807,7 @@ snapshots:
 
   from@0.1.7: {}
 
-  fromentries@1.3.2:
-    optional: true
+  fromentries@1.3.2: {}
 
   fs-constants@1.0.0: {}
 
@@ -10954,8 +10910,7 @@ snapshots:
     dependencies:
       is-glob: 4.0.3
 
-  glob-to-regexp@0.4.1:
-    optional: true
+  glob-to-regexp@0.4.1: {}
 
   glob@10.3.16:
     dependencies:
@@ -11078,7 +11033,6 @@ snapshots:
     dependencies:
       is-stream: 2.0.1
       type-fest: 0.8.1
-    optional: true
 
   hasown@2.0.2:
     dependencies:
@@ -11400,8 +11354,7 @@ snapshots:
 
   is-whitespace@0.3.0: {}
 
-  is-windows@1.0.2:
-    optional: true
+  is-windows@1.0.2: {}
 
   isarray@1.0.0: {}
 
@@ -11420,7 +11373,6 @@ snapshots:
   istanbul-lib-hook@3.0.0:
     dependencies:
       append-transform: 2.0.0
-    optional: true
 
   istanbul-lib-instrument@4.0.3:
     dependencies:
@@ -11430,7 +11382,6 @@ snapshots:
       semver: 6.3.1
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   istanbul-lib-instrument@5.2.1:
     dependencies:
@@ -11450,7 +11401,6 @@ snapshots:
       p-map: 3.0.0
       rimraf: 3.0.2
       uuid: 8.3.2
-    optional: true
 
   istanbul-lib-report@3.0.1:
     dependencies:
@@ -11465,7 +11415,6 @@ snapshots:
       source-map: 0.6.1
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   istanbul-lib-source-maps@5.0.4:
     dependencies:
@@ -11498,7 +11447,6 @@ snapshots:
       '@types/node': 20.12.12
       merge-stream: 2.0.0
       supports-color: 8.1.1
-    optional: true
 
   jiti@1.21.0: {}
 
@@ -11702,8 +11650,7 @@ snapshots:
       rfdc: 1.3.1
       wrap-ansi: 9.0.0
 
-  loader-runner@4.3.0:
-    optional: true
+  loader-runner@4.3.0: {}
 
   local-pkg@0.5.0:
     dependencies:
@@ -11741,8 +11688,7 @@ snapshots:
 
   lodash.flatten@4.4.0: {}
 
-  lodash.flattendeep@4.4.0:
-    optional: true
+  lodash.flattendeep@4.4.0: {}
 
   lodash.isequal@4.5.0: {}
 
@@ -11819,7 +11765,6 @@ snapshots:
   make-dir@3.1.0:
     dependencies:
       semver: 6.3.1
-    optional: true
 
   make-dir@4.0.0:
     dependencies:
@@ -11999,15 +11944,13 @@ snapshots:
 
   negotiator@0.6.3: {}
 
-  neo-async@2.6.2:
-    optional: true
+  neo-async@2.6.2: {}
 
   node-addon-api@1.7.2: {}
 
   node-preload@0.2.1:
     dependencies:
       process-on-spawn: 1.0.0
-    optional: true
 
   node-releases@2.0.14: {}
 
@@ -12086,7 +12029,6 @@ snapshots:
       yargs: 15.4.1
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   object-assign@4.1.1: {}
 
@@ -12169,7 +12111,6 @@ snapshots:
   p-map@3.0.0:
     dependencies:
       aggregate-error: 3.1.0
-    optional: true
 
   p-map@4.0.0:
     dependencies:
@@ -12183,7 +12124,6 @@ snapshots:
       hasha: 5.2.2
       lodash.flattendeep: 4.4.0
       release-zalgo: 1.0.0
-    optional: true
 
   pako@1.0.11: {}
 
@@ -12283,12 +12223,10 @@ snapshots:
   pkg-dir@4.2.0:
     dependencies:
       find-up: 4.1.0
-    optional: true
 
   pkg-dir@7.0.0:
     dependencies:
       find-up: 6.3.0
-    optional: true
 
   pkg-types@1.1.1:
     dependencies:
@@ -12407,7 +12345,6 @@ snapshots:
   process-on-spawn@1.0.0:
     dependencies:
       fromentries: 1.3.2
-    optional: true
 
   process@0.11.10: {}
 
@@ -12573,7 +12510,6 @@ snapshots:
   release-zalgo@1.0.0:
     dependencies:
       es6-error: 4.1.1
-    optional: true
 
   request-progress@3.0.0:
     dependencies:
@@ -12583,8 +12519,7 @@ snapshots:
 
   require-from-string@2.0.2: {}
 
-  require-main-filename@2.0.0:
-    optional: true
+  require-main-filename@2.0.0: {}
 
   requireindex@1.2.0: {}
 
@@ -12724,7 +12659,6 @@ snapshots:
       '@types/json-schema': 7.0.15
       ajv: 6.12.6
       ajv-keywords: 3.5.2(ajv@6.12.6)
-    optional: true
 
   schema-utils@4.2.0:
     dependencies:
@@ -12732,7 +12666,6 @@ snapshots:
       ajv: 8.13.0
       ajv-formats: 2.1.1(ajv@8.13.0)
       ajv-keywords: 5.1.0(ajv@8.13.0)
-    optional: true
 
   scule@1.2.0: {}
 
@@ -12785,8 +12718,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  set-blocking@2.0.0:
-    optional: true
+  set-blocking@2.0.0: {}
 
   set-function-length@1.2.2:
     dependencies:
@@ -12884,7 +12816,6 @@ snapshots:
       rimraf: 3.0.2
       signal-exit: 3.0.7
       which: 2.0.2
-    optional: true
 
   spdx-correct@3.2.0:
     dependencies:
@@ -13030,8 +12961,7 @@ snapshots:
     dependencies:
       ansi-regex: 6.0.1
 
-  strip-bom@4.0.0:
-    optional: true
+  strip-bom@4.0.0: {}
 
   strip-comments@2.0.1: {}
 
@@ -13241,8 +13171,7 @@ snapshots:
     transitivePeerDependencies:
       - ts-node
 
-  tapable@2.2.1:
-    optional: true
+  tapable@2.2.1: {}
 
   tar-stream@2.2.0:
     dependencies:
@@ -13288,7 +13217,6 @@ snapshots:
       serialize-javascript: 6.0.2
       terser: 5.31.0
       webpack: 5.91.0
-    optional: true
 
   terser@5.31.0:
     dependencies:
@@ -13459,7 +13387,6 @@ snapshots:
   typedarray-to-buffer@3.1.5:
     dependencies:
       is-typedarray: 1.0.0
-    optional: true
 
   typeface-roboto-mono@1.1.13: {}
 
@@ -13907,7 +13834,6 @@ snapshots:
     dependencies:
       glob-to-regexp: 0.4.1
       graceful-fs: 4.2.11
-    optional: true
 
   webidl-conversions@4.0.2: {}
 
@@ -13947,7 +13873,6 @@ snapshots:
       - '@swc/core'
       - esbuild
       - uglify-js
-    optional: true
 
   whatwg-encoding@3.1.1:
     dependencies:
@@ -13974,8 +13899,7 @@ snapshots:
       is-string: 1.0.7
       is-symbol: 1.0.4
 
-  which-module@2.0.1:
-    optional: true
+  which-module@2.0.1: {}
 
   which-typed-array@1.1.15:
     dependencies:
@@ -14145,7 +14069,6 @@ snapshots:
       is-typedarray: 1.0.0
       signal-exit: 3.0.7
       typedarray-to-buffer: 3.1.5
-    optional: true
 
   write-file-atomic@5.0.1:
     dependencies:
@@ -14162,8 +14085,7 @@ snapshots:
 
   xmlchars@2.2.0: {}
 
-  y18n@4.0.3:
-    optional: true
+  y18n@4.0.3: {}
 
   y18n@5.0.8: {}
 
@@ -14185,7 +14107,6 @@ snapshots:
     dependencies:
       camelcase: 5.3.1
       decamelize: 1.2.0
-    optional: true
 
   yargs-parser@21.1.1: {}
 
@@ -14202,7 +14123,6 @@ snapshots:
       which-module: 2.0.1
       y18n: 4.0.3
       yargs-parser: 18.1.3
-    optional: true
 
   yargs@17.7.2:
     dependencies:
