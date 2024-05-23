@@ -1285,6 +1285,12 @@ def test_for_spam_tokens(database: 'DBHandler', ethereum_inquirer: EthereumInqui
     with database.conn.read_ctx() as cursor:
         assert token.identifier not in database.get_ignored_asset_ids(cursor)
 
+    # check for names that used `-` and then something that could be a url extension
+    assert check_if_spam_token(
+        symbol='yvCurve-LINK',
+        name='Curve LINK Pool yVault',
+    ) is False
+
 
 def test_get_evm_tokens(globaldb):
     tokens = globaldb.get_evm_tokens(chain_id=ChainID.POLYGON_POS)
