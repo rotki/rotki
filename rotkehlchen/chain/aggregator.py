@@ -46,6 +46,7 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBal
 from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
+from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
@@ -197,10 +198,11 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         EigenlayerBalances,
         BlurBalances,
     ),
-    ChainID.OPTIMISM: (VelodromeBalances,),
-    ChainID.BASE: (Compoundv3Balances, AerodromeBalances),
-    ChainID.ARBITRUM_ONE: (Compoundv3Balances, GmxBalances, ThegraphBalancesArbitrumOne),
-    ChainID.POLYGON_POS: (Compoundv3Balances,),
+    ChainID.OPTIMISM: (VelodromeBalances, HopBalances),
+    ChainID.BASE: (Compoundv3Balances, AerodromeBalances, HopBalances),
+    ChainID.ARBITRUM_ONE: (Compoundv3Balances, GmxBalances, ThegraphBalancesArbitrumOne, HopBalances),  # noqa: E501
+    ChainID.POLYGON_POS: (Compoundv3Balances, HopBalances),
+    ChainID.GNOSIS: (HopBalances,),
     ChainID.SCROLL: (Compoundv3Balances,),
 }
 

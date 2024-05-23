@@ -24,7 +24,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
@@ -34,10 +34,13 @@ from .constants import (
     ADD_LIQUIDITY,
     REMOVE_LIQUIDITY,
     REMOVE_LIQUIDITY_ONE,
+    REWARDS_PAID,
+    STAKED,
     TOKEN_SWAP,
     TRANSFER_FROM_L1_COMPLETED,
     TRANSFER_SENT,
     WITHDRAWAL_BONDED,
+    WITHDRAWN,
     WITHDREW,
 )
 
@@ -57,6 +60,7 @@ class HopCommonDecoder(DecoderInterface):
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             bridges: dict[ChecksumEvmAddress, HopBridgeEventData],
+            reward_contracts: set[ChecksumEvmAddress],
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -70,6 +74,7 @@ class HopCommonDecoder(DecoderInterface):
             for _, value in bridges.items()
             if value.saddle_swap is not None
         }
+        self.reward_contracts = reward_contracts
 
     def _get_bridge_asset_amount(self, amount_raw: int, identifier: str) -> FVal:
         """Normalize raw amount based on bridge asset type."""
@@ -430,6 +435,66 @@ class HopCommonDecoder(DecoderInterface):
 
         return DEFAULT_DECODING_OUTPUT
 
+    def _decode_staking_events(self, context: DecoderContext) -> DecodingOutput:
+        """Decode events related to staking (stake, unstake, claim rewards) on Hop protocol."""
+        if context.tx_log.topics[0] == STAKED:
+            return self._decode_common_staking(
+                context=context,
+                event_type=HistoryEventType.SPEND,
+                event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+                action='Stake',
+                preposition='in',
+                product=EvmProduct.STAKING,
+            )
+
+        if context.tx_log.topics[0] == REWARDS_PAID:
+            return self._decode_common_staking(
+                context=context,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.REWARD,
+                action='Claim',
+                preposition='from',
+            )
+
+        if context.tx_log.topics[0] == WITHDRAWN:
+            return self._decode_common_staking(
+                context=context,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.REMOVE_ASSET,
+                action='Unstake',
+                preposition='from',
+            )
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def _decode_common_staking(
+            self,
+            context: DecoderContext,
+            event_type: HistoryEventType,
+            event_subtype: HistoryEventSubType,
+            action: str,
+            preposition: str,
+            product: EvmProduct | None = None,
+    ) -> DecodingOutput:
+        amount = token_normalized_value_decimals(
+            token_amount=hex_or_bytes_to_int(context.tx_log.data[:32]),
+            token_decimals=DEFAULT_TOKEN_DECIMALS,
+        )
+        for event in context.decoded_events:
+            if (
+                event.event_type == event_type and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.balance.amount == amount
+            ):
+                event.event_type = HistoryEventType.STAKING
+                event.event_subtype = event_subtype
+                event.counterparty = CPT_HOP
+                event.notes = f'{action} {amount} {event.asset.symbol_or_name()} {preposition} Hop'
+                event.product = product
+                break
+
+        return DEFAULT_DECODING_OUTPUT
+
     def _decode_events(self, context: DecoderContext) -> DecodingOutput:
         """This function is used to decode the bridging events done via Hop protocol."""
         if context.tx_log.topics[0] == WITHDRAWAL_BONDED:
@@ -448,8 +513,14 @@ class HopCommonDecoder(DecoderInterface):
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         addresses = set(self.bridges.keys())
-        saddle_swaps = {bridge.saddle_swap for bridge in self.bridges.values() if bridge.saddle_swap}  # noqa: E501
-        return dict.fromkeys(addresses, (self._decode_events,)) | dict.fromkeys(saddle_swaps, (self._decode_saddle_swap,))  # noqa: E501
+        saddle_swaps = {
+            bridge.saddle_swap for bridge in self.bridges.values() if bridge.saddle_swap
+        }
+        return (
+            dict.fromkeys(addresses, (self._decode_events,)) |
+            dict.fromkeys(saddle_swaps, (self._decode_saddle_swap,)) |
+            dict.fromkeys(self.reward_contracts, (self._decode_staking_events,))
+        )
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:

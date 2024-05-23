@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`7202` Hop protocol related events and balances of staked tokens should be now decoded and detected properly.
 * :feature:`-` rotki decodes transactions and detects balances related to Blur staking.
 * :feature:`1633` rotki now supports AAVE staking.
 * :feature:`7568` Eigenlayer native restaking events are now properly decoded and balances in native restaking eigenpods or the delayed withdrawal system are automatically detected.

@@ -23,6 +23,7 @@ from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
+from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
 from rotkehlchen.chain.evm.tokens import TokenBalancesType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
@@ -732,3 +733,34 @@ def test_blur_balances(
         amount=amount,
         usd_value=amount * FVal(1.5),
     )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D']])
+def test_hop_balances_staking(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_transaction_decoder: 'ArbitrumOneTransactionDecoder',
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Test the balance query for staked hop lp balances. It adds a staking event
+    and then queries the balances for that address."""
+    lp_amount, reward_amount = FVal('0.005676129314105837'), FVal('0.06248913329652552')
+    get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        database=arbitrum_one_transaction_decoder.database,
+        tx_hash=deserialize_evm_tx_hash('0x6329984b82cb85903fee9fef61fb77cdf848ff6344056156da2e66676ad91473'),
+    )
+    balances_inquirer = HopBalances(
+        database=arbitrum_one_transaction_decoder.database,
+        evm_inquirer=arbitrum_one_inquirer,
+    )
+    balances = balances_inquirer.query_balances()
+    assert balances[arbitrum_one_accounts[0]].assets == {
+        Asset('eip155:42161/erc20:0x59745774Ed5EfF903e615F5A2282Cae03484985a'): Balance(
+            amount=lp_amount, usd_value=lp_amount * FVal(1.5),
+        ),
+        Asset('eip155:42161/erc20:0xc5102fE9359FD9a28f877a67E36B0F050d81a3CC'): Balance(
+            amount=reward_amount, usd_value=reward_amount * FVal(1.5),
+        ),
+    }
