@@ -96,6 +96,7 @@ class Environment:
         os.environ.pop(CERTIFICATE_KEY, None)
         os.environ.pop(APPLE_ID, None)
         os.environ.pop(APPLE_ID_PASS, None)
+        os.environ.setdefault('CYPRESS_INSTALL_BINARY', '0')
 
     def macos_sign_env(self) -> dict[str, str]:
         env = os.environ.copy()
@@ -1229,7 +1230,7 @@ class FrontendBuilder:
             f'Restoring dependencies using Node.js {node_version} and pnpm@{pnpm_version}',
         )
         ret_code = subprocess.call(
-            'pnpm install --no-optional --frozen-lockfile',
+            'pnpm install --frozen-lockfile',
             shell=True,
         )
         if ret_code != 0:
