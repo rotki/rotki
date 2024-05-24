@@ -23,11 +23,8 @@ from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 from .constants import POLYGON_MIGRATION_ADDRESS
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
-    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
-    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -37,18 +34,6 @@ MIGRATED = b'\x8b\x80\xbd\x19\xae\xa7\xb75\xbcmu\xdb\x8dj\xdb\xe1\x8b(\xc3\rb\xb
 
 class PolygonDecoder(DecoderInterface):
     """General polygon related decoder for ethereum mainnet. For now matic->pol migration"""
-
-    def __init__(
-            self,
-            evm_inquirer: 'EvmNodeInquirer',
-            base_tools: 'BaseDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-    ) -> None:
-        super().__init__(
-            evm_inquirer=evm_inquirer,
-            base_tools=base_tools,
-            msg_aggregator=msg_aggregator,
-        )
 
     def _decode_migration(self, context: DecoderContext) -> DecodingOutput:
         """Decode a MATIC -> POL migration"""
