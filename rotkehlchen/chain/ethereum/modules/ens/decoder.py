@@ -119,7 +119,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
         self.graph = Graph(
             subgraph_id='5XqPmWe6gjyrJtFn9cLy237i4cWw2j9HcUJEXsP5qGtH',
             database=self.database,
-            label='ENS',
+            label=CPT_ENS,
         )
 
     def _decode_ens_registrar_event(self, context: DecoderContext) -> DecodingOutput:
