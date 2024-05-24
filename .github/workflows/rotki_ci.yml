@@ -199,7 +199,6 @@ jobs:
           python-version: ${{ env.PYTHON_VERSION }}
       - name: Set up uv
         run: |
-          echo "VIRTUAL_ENV=${Python_ROOT_DIR}" >> $GITHUB_ENV
           pip install --upgrade pip
           pip install --no-cache uv
       - name: Install dependencies
