@@ -1735,6 +1735,7 @@
       "local": "Local",
       "remote": "Remote"
     },
+    "all_buttons_description": "Resolve for all conflicts",
     "action_hint": {
       "top": "Local changes have been detected. You have two options:",
       "bottom": "You also have another extra option, you can manage the conflicts individually."
