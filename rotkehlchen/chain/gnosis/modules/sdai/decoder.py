@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.decoding.constants import (
@@ -21,24 +21,8 @@ from rotkehlchen.utils.misc import hex_or_bytes_to_int
 
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS  # all tokens in this decoder use default(18)  # noqa: E501 # isort: skip
 
-if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
-    from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
-    from rotkehlchen.user_messages import MessagesAggregator
-
 
 class SdaiDecoder(DecoderInterface):
-    def __init__(
-            self,
-            gnosis_inquirer: 'GnosisInquirer',
-            base_tools: 'BaseDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-    ) -> None:
-        super().__init__(
-            evm_inquirer=gnosis_inquirer,
-            base_tools=base_tools,
-            msg_aggregator=msg_aggregator,
-        )
 
     def _decode_sdai_deposit_events(self, context: DecoderContext) -> DecodingOutput:
         amount_raw = hex_or_bytes_to_int(context.tx_log.data[:32])
