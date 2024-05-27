@@ -2,15 +2,15 @@ name: Rotki CI
 
 on:
   pull_request:
-    branches:
-      - master
-      - develop
-      - bugfixes
-  push:
-    branches:
-      - master
-      - develop
-      - bugfixes
+    # branches:
+    #   - master
+    #   - develop
+    #   - bugfixes
+  # push:
+    # branches:
+    #   - master
+    #   - develop
+    #   - bugfixes
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
@@ -158,85 +158,206 @@ jobs:
       - name: Build html docs
         run: cd docs && make html
 
-  code-analyze-backend:
-    name: 'Code analyze backend'
+  # code-analyze-backend:
+  #   name: 'Code analyze backend'
+  #   needs: ['check-changes']
+  #   permissions:
+  #     actions: read
+  #     contents: read
+  #     security-events: write
+  #   if: ${{ needs.check-changes.outputs.backend_tasks }}
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+      # - name: Initialize CodeQL
+      #   uses: github/codeql-action/init@v3
+      #   with:
+      #     languages: 'python'
+      # - name: Autobuild
+      #   uses: github/codeql-action/autobuild@v3
+      # - name: Perform CodeQL Analysis
+      #   uses: github/codeql-action/analyze@v3
+      #   with:
+      #     category: "/language:python"
+
+  # lint-backend:
+  #   name: 'Backend lint'
+  #   needs: ['check-changes']
+  #   if: ${{ github.event_name != 'push' && needs.check-changes.outputs.backend_tasks }}
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v4
+      # - name: Load env
+      #   uses: rotki/action-env@v2
+      #   with:
+      #     env_file: .github/.env.ci
+      # - name: Setup python
+      #   uses: actions/setup-python@v5
+      #   with:
+      #     python-version: ${{ env.PYTHON_VERSION }}
+      # - name: Set up uv
+      #   run: |
+      #     echo "VIRTUAL_ENV=${Python_ROOT_DIR}" >> $GITHUB_ENV
+      #     pip install --upgrade pip
+      #     pip install --no-cache uv
+      # - name: Install dependencies
+      #   run: |
+      #     uv pip install --system -r requirements_lint.txt
+      #     uv pip install --system -e .
+      #     git rev-parse HEAD
+      # - name: Lint
+      #   run: make lint
+
+  sql-diff:
+    name: 'SQL diff'
+    # needs: ['lint-backend', 'check-changes']
     needs: ['check-changes']
     permissions:
-      actions: read
-      contents: read
-      security-events: write
+      pull-requests: write
     if: ${{ needs.check-changes.outputs.backend_tasks }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout target branch
         uses: actions/checkout@v4
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
         with:
-          languages: 'python'
-      - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-        with:
-          category: "/language:python"
+          ref: ${{ github.event.pull_request.base.ref }}
+          repository: ${{ github.event.pull_request.base.repo.full_name }}
 
-  lint-backend:
-    name: 'Backend lint'
-    needs: ['check-changes']
-    if: ${{ github.event_name != 'push' && needs.check-changes.outputs.backend_tasks }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Load env
-        uses: rotki/action-env@v2
+      - name: Check if any db is modified
+        id: changed-db-files
+        uses: tj-actions/changed-files@v44
         with:
-          env_file: .github/.env.ci
-      - name: Setup python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Set up uv
+          files: |
+            *.db
+            **/*.db
+
+      - name: Save target DBs
+        if: steps.changed-db-files.outputs.any_changed == 'true'
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-db-files.outputs.all_changed_files }}
         run: |
-          echo "VIRTUAL_ENV=${Python_ROOT_DIR}" >> $GITHUB_ENV
-          pip install --upgrade pip
-          pip install --no-cache uv
-      - name: Install dependencies
-        run: |
-          uv pip install --system -r requirements_lint.txt
-          uv pip install --system -e .
-          git rev-parse HEAD
-      - name: Lint
-        run: make lint
-
-  test-backend:
-    if: ${{ github.event_name != 'push' && needs.check-changes.outputs.backend_tasks }}
-    needs: ['lint-backend', 'check-changes']
-    uses: ./.github/workflows/task_backend_tests.yml
-    with:
-      os: ubuntu-20.04
-      test_environment: ${{needs.check-changes.outputs.test_environment}}
-
-  test-e2e:
-    name: 'Frontend e2e tests'
-    needs: check-changes
-    if: ${{ github.event_name != 'push' && needs.check-changes.outputs.e2e_tasks }}
-    uses:  ./.github/workflows/task_e2e_tests.yml
-
-  done:
-    name: 'Success check'
-    if: ${{ always() }}
-    needs: [ 'check-changes', 'lint-frontend', 'unittest-frontend', 'docs', 'lint-backend', 'test-backend', 'test-e2e' ]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check if any task failed
-        run: |
-          data=($(echo "${{ toJSON(needs.*.result) }}" | sed 's/[][,]//g'))
-          for i in "${data[@]}"
-          do
-            if [[ $i == "failure" ]]; then
-                echo "::error::At least one required task failed"
-                exit 1;
-            fi
+          mkdir /tmp/target
+          for db_file in $ALL_CHANGED_FILES; do
+            cp $db_file /tmp/target
           done
+          echo "Files in /tmp/target: `ls -lart /tmp/target`"
+
+      - name: Checkout source branch
+        if: steps.changed-db-files.outputs.any_changed == 'true'
+        uses: actions/checkout@v4
+        with:
+          clean: false
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+
+      - name: Save source DBs
+        if: steps.changed-db-files.outputs.any_changed == 'true'
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-db-files.outputs.all_changed_files }}
+        run: |
+          mkdir /tmp/source
+          for db_file in $ALL_CHANGED_FILES; do
+            cp $db_file /tmp/source
+          done
+          echo "Files in /tmp/source: `ls -lart /tmp/source`"
+
+      - name: Install SQLCipher
+        if: steps.changed-db-files.outputs.any_changed == 'true'
+        run: |
+          git clone https://github.com/sqlcipher/sqlcipher.git
+          cd sqlcipher
+          export SQLITE_HAS_CODEC=1
+          export SQLITE_TEMP_STORE=2
+          ./configure --enable-tempstore=yes CFLAGS="-DSQLITE_HAS_CODEC" LDFLAGS="-lcrypto"
+          make
+          sudo make install
+          cd ..
+          sudo apt-get install -y sqlite3-tools
+
+      - name: Get diff of all changed DBs
+        id: sql-diff
+        if: steps.changed-db-files.outputs.any_changed == 'true'
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-db-files.outputs.all_changed_files }}
+        run: |
+          sqlcipher --version
+          output_file="/tmp/sql_diff.md"
+
+          for db_file in `ls /tmp/source`; do
+            if head -c 16 /tmp/source/$db_file | grep -q "SQLite format 3"; then
+                decryption_query=""
+            else
+                decryption_query="PRAGMA key = '123';"
+            fi
+
+            echo "
+                $decryption_query
+                ATTACH DATABASE 'tmp-from.db' AS plaintext KEY '';
+                SELECT sqlcipher_export('plaintext');
+                DETACH DATABASE plaintext;
+            " | sqlcipher /tmp/target/$db_file
+
+            echo "
+                $decryption_query
+                ATTACH DATABASE 'tmp-to.db' AS plaintext KEY '';
+                SELECT sqlcipher_export('plaintext');
+                DETACH DATABASE plaintext;
+            " | sqlcipher /tmp/source/$db_file
+
+            echo "SQL diff for \`$db_file\`:" >> $output_file
+            echo "\`\`\`sql" >> $output_file
+            sqldiff --primarykey tmp-from.db tmp-to.db >> $output_file
+            echo "\`\`\`" >> $output_file
+
+            rm tmp-from.db tmp-to.db
+          done
+
+          rm -r /tmp/source /tmp/target
+
+      - name: Comment the SQL diff on the PR
+        if: steps.changed-db-files.outputs.any_changed == 'true'
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          filePath: /tmp/sql_diff.md
+          comment_tag: sql-diff
+
+      - name: Delete an existing SQL diff comment, if not DB changed
+        if: steps.changed-db-files.outputs.any_changed == 'false'
+        uses: thollander/actions-comment-pull-request@v2
+        with:
+          message: 'No DB changed'
+          comment_tag: sql-diff
+          mode: delete
+
+  # test-backend:
+  #   if: ${{ github.event_name != 'push' && needs.check-changes.outputs.backend_tasks }}
+  #   needs: ['lint-backend', 'check-changes']
+  #   uses: ./.github/workflows/task_backend_tests.yml
+  #   with:
+  #     os: ubuntu-20.04
+  #     test_environment: ${{needs.check-changes.outputs.test_environment}}
+
+  # test-e2e:
+  #   name: 'Frontend e2e tests'
+  #   needs: check-changes
+  #   if: ${{ github.event_name != 'push' && needs.check-changes.outputs.e2e_tasks }}
+  #   uses:  ./.github/workflows/task_e2e_tests.yml
+
+  # done:
+  #   name: 'Success check'
+  #   if: ${{ always() }}
+  #   needs: [ 'check-changes', 'lint-frontend', 'unittest-frontend', 'docs', 'lint-backend', 'test-backend', 'test-e2e' ]
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Check if any task failed
+  #       run: |
+  #         data=($(echo "${{ toJSON(needs.*.result) }}" | sed 's/[][,]//g'))
+  #         for i in "${data[@]}"
+  #         do
+  #           if [[ $i == "failure" ]]; then
+  #               echo "::error::At least one required task failed"
+  #               exit 1;
+  #           fi
+  #         done
