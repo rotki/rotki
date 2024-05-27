@@ -157,7 +157,10 @@ const [DefineDisplay, ReuseDisplay] = createReusableTemplate<{
         :label="t('import_data.select_source.title')"
         :append-width="1.75"
         :options="sources"
+        key-attr="key"
+        text-attr="label"
         hide-details
+        return-object
         variant="outlined"
       >
         <template #selection="{ item }">

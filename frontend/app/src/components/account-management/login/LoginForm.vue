@@ -369,7 +369,7 @@ function abortLogin() {
               :disabled="loading || conflictExist || customBackendDisplay"
               :error-messages="usernameErrors"
               data-cy="username-input"
-              class="mb-2"
+              class="mb-2 [&_[data-id=activator]]:bg-transparent"
               auto-select-first
               :hide-no-data="savedUsernames.length > 0"
               clearable
