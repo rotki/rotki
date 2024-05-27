@@ -170,7 +170,7 @@ jobs:
       MACOSX_DEPLOYMENT_TARGET: 10.9
       CMAKE_OSX_ARCHITECTURES: 'x86_64;arm64'
     environment: macos_sign
-    runs-on: macos-11
+    runs-on: macos-12
     needs: create_draft
     steps:
       - name: Checkout
