@@ -85,6 +85,7 @@ VELODROME_POOL_PROTOCOL = 'velodrome_pool'
 AERODROME_POOL_PROTOCOL = 'aerodrome_pool'
 PICKLE_JAR_PROTOCOL = 'pickle_jar'
 SPAM_PROTOCOL = 'spam'
+GEARBOX_POOL_PROTOCOL = 'gearbox_pool'
 
 
 # The protocols for which we know how to calculate their prices
@@ -1081,6 +1082,10 @@ class CacheType(Enum):
     COINLIST = auto()  # coinlist / all coins cache for various oracles
     AIRDROPS_METADATA = auto()  # airdrops index fetched from rotki/data repo
     AIRDROPS_HASH = auto()  # hash of airdrops csv file
+    GEARBOX_POOL_ADDRESS = auto()
+    GEARBOX_POOL_NAME = auto()
+    GEARBOX_POOL_FARMING_TOKEN = auto()
+    GEARBOX_POOL_LP_TOKENS = auto()
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -1103,6 +1108,9 @@ UniqueCacheType = Literal[
     CacheType.COINLIST,
     CacheType.AIRDROPS_METADATA,
     CacheType.AIRDROPS_HASH,
+    CacheType.GEARBOX_POOL_ADDRESS,
+    CacheType.GEARBOX_POOL_NAME,
+    CacheType.GEARBOX_POOL_FARMING_TOKEN,
 ]
 
 UNIQUE_CACHE_KEYS: tuple[UniqueCacheType, ...] = typing.get_args(UniqueCacheType)
@@ -1117,6 +1125,8 @@ GeneralCacheType = Literal[
     CacheType.AERODROME_GAUGE_ADDRESS,
     CacheType.CONVEX_POOL_ADDRESS,
     CacheType.SPAM_ASSET_FALSE_POSITIVE,
+    CacheType.GEARBOX_POOL_ADDRESS,
+    CacheType.GEARBOX_POOL_LP_TOKENS,
 ]
 
 

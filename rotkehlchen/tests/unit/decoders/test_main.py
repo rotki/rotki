@@ -62,6 +62,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Ens',
         'Eth2',
         'Fluence',
+        'Gearbox',
         'Gitcoin',
         'Gitcoinv2',
         'Golem',
@@ -188,6 +189,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'blur',
         'lido',
         'cctp',
+        'gearbox',
     }
 
 

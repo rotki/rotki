@@ -24,4 +24,5 @@ if TYPE_CHECKING:
         'CVX_LOCKER_V2',
         'COMPOUND_V3_TOKEN',
         'COMPOUND_V3_REWARDS',
+        'GEARBOX_FARMING_POOL',
     ]

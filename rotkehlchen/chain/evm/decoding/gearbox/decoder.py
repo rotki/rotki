@@ -1,0 +1,181 @@
+import logging
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
+
+from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
+    GearboxPoolData,
+    query_gearbox_data,
+    save_gearbox_data_to_cache,
+)
+from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableCacheDecoderMixin
+from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_DECODING_OUTPUT,
+    ActionItem,
+    DecoderContext,
+    DecodingOutput,
+)
+from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress
+from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+
+from .constants import CPT_GEARBOX, DEPOSIT, GEARBOX_CPT_DETAILS, WITHDRAW
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.user_messages import MessagesAggregator
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
+
+
+class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
+    def __init__(
+            self,
+            evm_inquirer: 'EvmNodeInquirer',
+            base_tools: 'BaseDecoderTools',
+            msg_aggregator: 'MessagesAggregator',
+            read_fn: Callable[[ChainID | None], tuple[dict[ChecksumEvmAddress, Any]]],
+            chain_id: ChainID,
+    ) -> None:
+        super().__init__(
+            evm_inquirer=evm_inquirer,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+        )
+        ReloadableCacheDecoderMixin.__init__(
+            self,
+            evm_inquirer=evm_inquirer,
+            cache_type_to_check_for_freshness=CacheType.GEARBOX_POOL_ADDRESS,
+            query_data_method=query_gearbox_data,
+            save_data_to_cache_method=save_gearbox_data_to_cache,
+            read_data_from_cache_method=read_fn,
+            chain_id=chain_id,
+        )
+
+    @property
+    def pools(self) -> dict[ChecksumEvmAddress, GearboxPoolData]:
+        assert isinstance(self.cache_data[0], dict), 'GearboxCommonDecoder cache_data[0] is not a dict'  # noqa: E501
+        return self.cache_data[0]
+
+    def _cache_mapping_methods(self) -> tuple[Callable[[DecoderContext], DecodingOutput]]:
+        return (self._decode_pool_events,)
+
+    def _decode_common(self, context: DecoderContext, user_address_bytes: bytes) -> tuple[ChecksumEvmAddress, GearboxPoolData, FVal, FVal] | None:  # noqa: E501
+        """This function decodes the common data for the deposit and withdraw events."""
+        if not self.base.is_tracked(user_address := hex_or_bytes_to_address(user_address_bytes)):
+            return None
+
+        try:
+            pool_info = self.pools[context.tx_log.address]
+        except KeyError:
+            log.error(f'Could not find {self.evm_inquirer.chain_name} Gearbox pool info for {context.tx_log.address}')  # noqa: E501
+            return None
+
+        amount = token_normalized_value(
+            token_amount=hex_or_bytes_to_int(context.tx_log.data[:32]),
+            token=(token := EvmToken(pool_info.farming_pool_token)),
+        )
+        shares = token_normalized_value(
+            token_amount=hex_or_bytes_to_int(context.tx_log.data[32:64]),
+            token=token,
+        )
+        return user_address, pool_info, amount, shares
+
+    @staticmethod
+    def _get_note_by_pool(pool_info: GearboxPoolData, asset: Asset, amount: FVal) -> str:
+        """Determines if the user is providing liquidity or staking and returns
+        the appropriate note."""
+        action = 'providing liquidity' if asset.identifier in pool_info.lp_tokens else 'depositing'
+        return f'Receive {amount} {asset.symbol_or_name()} after {action} in Gearbox'
+
+    def _decode_deposit(self, context: DecoderContext) -> DecodingOutput:
+        """
+        Decode the deposit event done via Gearbox protocol. The ActionItem handles both the
+        lp tokens (providing liqudity) and the farming pool (staking) token/event. The note for the
+        event is different depending on the asset being deposited. Gearbox pools can have
+        multiple lp tokens, they include their old lp tokens with the newer ones.
+        """
+        if (lp_data := self._decode_common(context, context.transaction.input_data[36:68])) is None:  # noqa: E501
+            return DEFAULT_DECODING_OUTPUT
+
+        user_address, pool_info, amount, shares = lp_data
+        for event in context.decoded_events:
+            if (
+                event.event_type == HistoryEventType.SPEND and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.balance.amount == amount and
+                event.location_label == user_address
+            ):
+                event.event_type = HistoryEventType.DEPOSIT
+                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.counterparty = CPT_GEARBOX
+                event.notes = f'Deposit {event.balance.amount} {event.asset.symbol_or_name()} to Gearbox'  # noqa: E501
+                break
+
+        return DecodingOutput(
+            action_items=[
+                ActionItem(
+                    action='transform',
+                    from_event_type=HistoryEventType.RECEIVE,
+                    from_event_subtype=HistoryEventSubType.NONE,
+                    asset=(asset := Asset(asset_id)),
+                    amount=shares,
+                    location_label=user_address,
+                    to_event_type=HistoryEventType.RECEIVE,
+                    to_event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+                    to_notes=self._get_note_by_pool(pool_info, asset, shares),
+                    to_counterparty=CPT_GEARBOX,
+                ) for asset_id in pool_info.lp_tokens.union({pool_info.farming_pool_token})
+            ],
+        )
+
+    def _decode_withdraw(self, context: DecoderContext) -> DecodingOutput:
+        if (lp_data := self._decode_common(context, context.tx_log.topics[2])) is None:
+            return DEFAULT_DECODING_OUTPUT
+
+        user_address, _, amount, shares = lp_data
+        for event in context.decoded_events:
+            if (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.location_label == user_address and
+                event.balance.amount == amount
+            ):
+                event.event_type = HistoryEventType.WITHDRAWAL
+                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.counterparty = CPT_GEARBOX
+                event.notes = f'Withdraw {event.balance.amount} {event.asset.symbol_or_name()} from Gearbox'  # noqa: E501
+            elif (
+                event.event_type == HistoryEventType.SPEND and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.balance.amount == shares and
+                event.location_label == user_address
+            ):
+                event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
+                event.counterparty = CPT_GEARBOX
+                event.notes = f'Return {event.balance.amount} {event.asset.symbol_or_name()}'
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def _decode_pool_events(self, context: DecoderContext) -> DecodingOutput:
+        """Decode the deposit and withdrawal events done via Gearbox protocol."""
+        if context.tx_log.topics[0] == DEPOSIT:
+            return self._decode_deposit(context=context)
+
+        if context.tx_log.topics[0] == WITHDRAW:
+            return self._decode_withdraw(context=context)
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
+        return dict.fromkeys(self.pools, (self._decode_pool_events,))
+
+    @ staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (GEARBOX_CPT_DETAILS,)

@@ -79,7 +79,7 @@ class CurvePoolData(NamedTuple):
     underlying_coins: list[ChecksumEvmAddress] | None
 
 
-def read_curve_pools_and_gauges() -> tuple[dict[ChecksumEvmAddress, list[ChecksumEvmAddress]], set[ChecksumEvmAddress]]:  # noqa: E501
+def read_curve_pools_and_gauges(chain_id: ChainID | None = None) -> tuple[dict[ChecksumEvmAddress, list[ChecksumEvmAddress]], set[ChecksumEvmAddress]]:  # noqa: E501 # pylint: disable=unused-argument
     """Reads globaldb cache and returns:
     - A set of all known curve pools addresses.
     - A set of all known curve gauges addresses.

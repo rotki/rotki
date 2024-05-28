@@ -18,7 +18,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CacheType, ChecksumEvmAddress
+from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
@@ -51,6 +51,10 @@ CACHE_QUERY_METHOD_TYPE = (
     ] |
     Callable[
         ['EthereumInquirer', Literal[CacheType.CONVEX_POOL_ADDRESS]],
+        list | None,
+    ] |
+    Callable[
+        ['EthereumInquirer', Literal[CacheType.GEARBOX_POOL_ADDRESS]],
         list | None,
     ]
 )
@@ -311,7 +315,8 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, ABC):
             cache_type_to_check_for_freshness: CacheType,
             query_data_method: CACHE_QUERY_METHOD_TYPE,
             save_data_to_cache_method: Callable[['DBCursor', 'DBHandler', list], None],
-            read_data_from_cache_method: Callable[[], tuple[dict[ChecksumEvmAddress, Any] | set[ChecksumEvmAddress], ...]],  # noqa: E501
+            read_data_from_cache_method: Callable[[ChainID | None], tuple[dict[ChecksumEvmAddress, Any] | set[ChecksumEvmAddress], ...]],  # noqa: E501
+            chain_id: ChainID | None = None,
     ) -> None:
         """
         :param evm_inquirer: The evm inquirer used to query the remote data source.
@@ -327,7 +332,8 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, ABC):
         self.query_data_method = query_data_method
         self.save_data_to_cache_method = save_data_to_cache_method
         self.read_data_from_cache_method = read_data_from_cache_method
-        self.cache_data = self.read_data_from_cache_method()
+        self.chain_id = chain_id
+        self.cache_data = self.read_data_from_cache_method(chain_id)
 
     @abstractmethod
     def _cache_mapping_methods(self) -> tuple[Callable, ...]:
@@ -346,7 +352,7 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, ABC):
             save_method=self.save_data_to_cache_method,
         )
 
-        new_cache_data = self.read_data_from_cache_method()
+        new_cache_data = self.read_data_from_cache_method(self.chain_id)
         cache_diff = [  # get the new items for the different information stored in the cache
             (new_data.keys() if isinstance(new_data, dict) else new_data) -
             (data.keys() if isinstance(data, dict) else data)

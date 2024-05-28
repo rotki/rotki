@@ -14,7 +14,7 @@ from rotkehlchen.globaldb.cache import (
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CacheType, ChecksumEvmAddress
+from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address
 
 if TYPE_CHECKING:
@@ -64,7 +64,7 @@ def save_convex_data_to_cache(
         )
 
 
-def read_convex_data_from_cache() -> tuple[dict[ChecksumEvmAddress, str]]:
+def read_convex_data_from_cache(chain_id: ChainID | None = None) -> tuple[dict[ChecksumEvmAddress, str]]:  # noqa: E501 # pylint: disable=unused-argument
     """Reads convex pools and names from global db cache tables."""
     pools: dict[ChecksumEvmAddress, str] = {}
     with GlobalDBHandler().conn.read_ctx() as cursor:
