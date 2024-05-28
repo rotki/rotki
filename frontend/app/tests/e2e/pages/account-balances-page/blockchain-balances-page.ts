@@ -19,7 +19,7 @@ export class BlockchainBalancesPage {
     cy.assertNoRunningTasks();
   }
 
-  isGroupped(balance: FixtureBlockchainBalance) {
+  isGrouped(balance: FixtureBlockchainBalance) {
     return balance.blockchain === Blockchain.ETH;
   }
 
@@ -74,7 +74,7 @@ export class BlockchainBalancesPage {
     cy.get('@blockchain-section')
       .find('tbody')
       .find('tr')
-      .eq(position + (this.isGroupped(balance) ? 0 : 1))
+      .eq(position + (this.isGrouped(balance) ? 0 : 1))
       .as('row');
 
     cy.get('@row')
@@ -171,7 +171,7 @@ export class BlockchainBalancesPage {
   ) {
     cy.get(`[data-cy=account-table][data-location=${balance.blockchain}] tbody`)
       .find('tr')
-      .eq(position + (this.isGroupped(balance) ? 0 : 1))
+      .eq(position + (this.isGrouped(balance) ? 0 : 1))
       .find('button[data-cy="row-edit"]')
       .click();
 
@@ -191,7 +191,7 @@ export class BlockchainBalancesPage {
   deleteBalance(balance: FixtureBlockchainBalance, position: number) {
     cy.get(`[data-cy=account-table][data-location=${balance.blockchain}] tbody`)
       .find('tr')
-      .eq(position + (this.isGroupped(balance) ? 0 : 1))
+      .eq(position + (this.isGrouped(balance) ? 0 : 1))
       .find('[data-cy*=table-toggle-check-] input[type=checkbox]')
       .click();
 

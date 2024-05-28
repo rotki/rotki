@@ -31,7 +31,9 @@ describe('trade history', () => {
     it('add two external trades', () => {
       // add trade by input rate
       tradeHistoryPage.addTrade(externalTrades[0]);
+      tradeHistoryPage.visibleEntries(1);
       // add trade by input quote amount
+      tradeHistoryPage.visit();
       tradeHistoryPage.addTrade(externalTrades[1]);
       tradeHistoryPage.visibleEntries(2);
       tradeHistoryPage.tradeIsVisible(0, externalTrades[0]);
