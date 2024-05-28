@@ -1,6 +1,7 @@
 import json
 from http import HTTPStatus
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import Literal, get_args
 
 import pytest
@@ -53,6 +54,7 @@ def _setup_conflict_tests(
         'event_type': HistoryEventType.SPEND.serialize(),
         'event_subtype': HistoryEventSubType.RETURN_WRAPPED.serialize(),
         'counterparty': 'compound',
+        'accounting_treatment': TxAccountingTreatment.SWAP.serialize(),
     }
     rule_2 = {
         'taxable': {'value': True, 'linked_setting': 'include_crypto2crypto'},
@@ -376,7 +378,7 @@ def test_listing_conflicts(
                     'value': False,
                     'linked_setting': 'include_crypto2crypto',
                 },
-                'accounting_treatment': None,
+                'accounting_treatment': 'swap',
                 'event_type': 'spend',
                 'event_subtype': 'return wrapped',
                 'counterparty': 'compound',
@@ -523,3 +525,114 @@ def test_cache_invalidation(rotkehlchen_api_server: APIServer):
         entry['event_accounting_rule_status'] == EventAccountingRuleStatus.NOT_PROCESSED.serialize()  # noqa: E501
         for entry in result['entries']
     )
+
+
+@pytest.mark.parametrize('initialize_accounting_rules', [True])
+def test_import_export_accounting_rules(rotkehlchen_api_server: 'APIServer'):
+    """Test that exporting and importing accounting rules works fine."""
+    with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
+        initial_rules = cursor.execute(
+            'SELECT * FROM accounting_rules WHERE identifier IN (1, 82);',
+        ).fetchall()
+        initial_properties = cursor.execute('SELECT * FROM linked_rules_properties').fetchall()
+
+    with TemporaryDirectory() as temp_directory:
+        response = requests.post(
+            api_url_for(  # export the accounting rules into a json file
+                rotkehlchen_api_server,
+                'accountingrulesexportresource',
+            ), json={'directory_path': temp_directory},
+        )
+        assert_proper_response_with_result(response)
+
+        rules_file_path = Path(temp_directory) / 'accounting_rules.json'
+        with open(rules_file_path, encoding='utf-8') as file:
+            rules_data = json.load(file)
+
+        assert len(rules_data['accounting_rules']) == 82
+        assert rules_data['accounting_rules']['1'] == {
+            'event_type': 'deposit',
+            'event_subtype': 'deposit asset',
+            'counterparty': 'aave-v1',
+            'rule': {
+                'taxable': {'value': False},
+                'count_entire_amount_spend': {'value': False},
+                'count_cost_basis_pnl': {'value': True},
+                'accounting_treatment': 'swap',
+            },
+        }
+        assert rules_data['accounting_rules']['82'] == {
+            'event_type': 'deposit',
+            'event_subtype': 'fee',
+            'counterparty': None,
+            'rule': {
+                'taxable': {'value': True},
+                'count_entire_amount_spend': {'value': False},
+                'count_cost_basis_pnl': {'value': True},
+                'accounting_treatment': None,
+            },
+        }
+        assert rules_data['linked_properties'] == {
+            '1': {
+                'accounting_rule': 46,
+                'property_name': 'count_cost_basis_pnl',
+                'setting_name': 'include_crypto2crypto',
+            },
+            '2': {
+                'accounting_rule': 65,
+                'property_name': 'taxable',
+                'setting_name': 'include_gas_costs',
+            },
+            '3': {
+                'accounting_rule': 65,
+                'property_name': 'count_entire_amount_spend',
+                'setting_name': 'include_gas_costs',
+            },
+            '4': {
+                'accounting_rule': 65,
+                'property_name': 'count_cost_basis_pnl',
+                'setting_name': 'include_crypto2crypto',
+            },
+        }
+
+        # edit the rules and setting properties
+        with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn.write_ctx() as write_cursor:
+            write_cursor.execute(
+                'UPDATE accounting_rules SET identifier = 83 WHERE identifier = 82;',
+            )
+            write_cursor.execute(
+                'UPDATE linked_rules_properties SET setting_name = "include_gas_costs" WHERE identifier = 2;',  # noqa: E501
+            )
+
+        response = requests.put(
+            api_url_for(  # import the accounting rules from this json file
+                rotkehlchen_api_server,
+                'accountingrulesimportresource',
+            ), json={'filepath': rules_file_path.as_posix()},
+        )
+        assert_simple_ok_response(response)
+
+        with open(rules_file_path, encoding='utf-8') as file:
+            response = requests.patch(
+                api_url_for(  # also as multipart/form-data
+                    rotkehlchen_api_server,
+                    'accountingrulesimportresource',
+                ), files={'filepath': file},
+            )
+        assert_simple_ok_response(response)
+
+    # Check that the imported rules are in the DB
+    with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT * FROM accounting_rules WHERE identifier IN (1, 82);',
+        ).fetchall() == [
+            (1, 'deposit', 'deposit asset', 'aave-v1', 0, 0, 1, 'A'),
+            (82, 'deposit', 'fee', 'NONE', 1, 0, 1, None),
+        ] == initial_rules
+
+        assert cursor.execute('SELECT * FROM linked_rules_properties').fetchall() == [
+            (1, 46, 'count_cost_basis_pnl', 'include_crypto2crypto'),
+            (2, 65, 'taxable', 'include_gas_costs'),
+            (3, 65, 'count_entire_amount_spend', 'include_gas_costs'),
+            (4, 65, 'count_cost_basis_pnl', 'include_crypto2crypto'),
+        ] == initial_properties

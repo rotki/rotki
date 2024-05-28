@@ -1,6 +1,7 @@
 from enum import auto
 from typing import TYPE_CHECKING, Any, Protocol
 
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.utils.mixins.enums import DBCharEnumMixIn
 
 if TYPE_CHECKING:
@@ -75,8 +76,24 @@ class BaseEventSettings:
             'taxable': {'value': self.taxable},
             'count_cost_basis_pnl': {'value': self.count_cost_basis_pnl},
             'count_entire_amount_spend': {'value': self.count_entire_amount_spend},
-            'accounting_treatment': self.accounting_treatment,
+            'accounting_treatment': self.accounting_treatment.serialize() if self.accounting_treatment else None,  # noqa: E501
         }
+
+    @classmethod
+    def deserialize(cls, entry: dict[str, Any]) -> 'BaseEventSettings':
+        """Deserialize the accounting settings from a serialized dict.
+
+        - May raise a DeserializationError if any required fields are missing
+        """
+        try:
+            return cls(
+                taxable=entry['taxable']['value'],
+                count_entire_amount_spend=entry['count_entire_amount_spend']['value'],
+                count_cost_basis_pnl=entry['count_cost_basis_pnl']['value'],
+                accounting_treatment=TxAccountingTreatment.deserialize(entry['accounting_treatment']) if entry['accounting_treatment'] else None,  # noqa: E501
+            )
+        except KeyError as e:
+            raise DeserializationError(f'Failed to deserialize BaseEventSettings from {entry} due to missing key {e}') from e  # noqa: E501
 
     def __hash__(self) -> int:
         return hash(f'{self.taxable}{self.count_entire_amount_spend}{self.count_cost_basis_pnl}{self.accounting_treatment!s}')  # noqa: E501

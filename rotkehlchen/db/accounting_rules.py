@@ -21,6 +21,7 @@ from rotkehlchen.db.filtering import AccountingRulesFilterQuery, HistoryEventFil
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import DEFAULT_INCLUDE_CRYPTO2CRYPTO, DEFAULT_INCLUDE_GAS_COSTS
 from rotkehlchen.errors.misc import InputError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 from rotkehlchen.history.events.structures.eth2 import EthStakingEvent
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -236,22 +237,20 @@ class DBAccountingRules:
                 f'Link of rule for {rule_property} to setting {setting_name} already exists',
             ) from e
 
-    def query_rules(
+    def fetch_accounting_rules_from_db(
             self,
-            filter_query: AccountingRulesFilterQuery,
-    ) -> tuple[list[RuleInformation], int]:
-        """
-        Query rules in the database using the provided filter. It returns the list of rules and
-        the total amount of rules matching the filter without pagination.
-        """
+            filter_query_str: str,
+            bindings: Sequence[Any],
+    ) -> dict[int, RuleInformation]:
+        """Query the accounting rules from the database using the provided filter. Returns
+        the dict of identifier -> accounting rules."""
         query = (
             'SELECT identifier, type, subtype, counterparty, taxable, count_entire_amount_spend, '
             'count_cost_basis_pnl, accounting_treatment FROM accounting_rules '
         )
-        filter_query_str, bindings = filter_query.prepare()
         with self.db.conn.read_ctx() as cursor:
             cursor.execute(query + filter_query_str, bindings)
-            rules = {
+            return {
                 entry[0]: RuleInformation(
                     identifier=entry[0],
                     event_key=(
@@ -264,6 +263,19 @@ class DBAccountingRules:
                 )
                 for entry in cursor
             }
+
+    def query_rules(
+            self,
+            filter_query: AccountingRulesFilterQuery,
+    ) -> tuple[list[RuleInformation], int]:
+        """
+        Query rules in the database using the provided filter along with their property settings.
+        It returns the list of rules and the total amount of rules matching the filter
+        without pagination."""
+        filter_query_str, bindings = filter_query.prepare()
+        rules = self.fetch_accounting_rules_from_db(filter_query_str, bindings)
+
+        with self.db.conn.read_ctx() as cursor:
             query, bindings = filter_query.prepare(with_pagination=False)
             query = 'SELECT COUNT(*) from accounting_rules ' + query
             total_found_result = cursor.execute(query, bindings).fetchone()[0]
@@ -319,6 +331,83 @@ class DBAccountingRules:
                 data[linked_property]['linked_setting'] = setting_name
             entries.append(data)
         return entries, total_found_result
+
+    def get_accounting_rules_and_properties(self) -> dict[str, dict]:
+        """Returns all the accounting rules and linked properties from the database."""
+        accounting_rules = {
+            identifier: {
+                'event_type': rule_info.event_key[0].serialize(),
+                'event_subtype': rule_info.event_key[1].serialize(),
+                'counterparty': rule_info.event_key[2] if rule_info.event_key[2] != NO_ACCOUNTING_COUNTERPARTY else None,  # noqa: E501
+                'rule': rule_info.rule.serialize(),
+            }
+            for identifier, rule_info in self.fetch_accounting_rules_from_db('', []).items()
+        }
+
+        with self.db.conn.read_ctx() as cursor:
+            linked_properties = {
+                entry[0]: {
+                    'accounting_rule': entry[1],
+                    'property_name': entry[2],
+                    'setting_name': entry[3],
+                }
+                for entry in cursor.execute(
+                    'SELECT identifier, accounting_rule, property_name, setting_name FROM '
+                    'linked_rules_properties;',
+                )
+            }
+
+        return {
+            'accounting_rules': accounting_rules,
+            'linked_properties': linked_properties,
+        }
+
+    def import_accounting_rules(
+            self,
+            accounting_rules: dict,
+            linked_properties: dict,
+    ) -> tuple[bool, str]:
+        """Import the given accounting rules and linked properties into the database. It overwrites
+        the existing rules if the same rule already exists. Returns a tuple with a boolean
+        indicating success or failure and an error message."""
+        with self.db.conn.write_ctx() as write_cursor:
+            try:
+                write_cursor.executemany(
+                    'INSERT OR REPLACE INTO accounting_rules(identifier, type, subtype, '
+                    'counterparty, taxable, count_entire_amount_spend, count_cost_basis_pnl, '
+                    'accounting_treatment) VALUES (?, ?, ?, ?, ?, ?, ?, ?);',
+                    [
+                        (
+                            identifier,
+                            rule_info['event_type'],
+                            rule_info['event_subtype'],
+                            rule_info['counterparty'] if rule_info['counterparty'] is not None else NO_ACCOUNTING_COUNTERPARTY,  # noqa: E501
+                            *BaseEventSettings.deserialize(rule_info['rule']).serialize_for_db(),
+                        )
+                        for identifier, rule_info in accounting_rules.items()
+                    ],
+                )
+            except (sqlcipher.IntegrityError, DeserializationError) as e:  # pylint: disable=no-member
+                return False, f'Failed to import accounting rules due to: {e!s}'
+
+            try:
+                write_cursor.executemany(
+                    'INSERT OR REPLACE INTO linked_rules_properties(identifier, accounting_rule, '
+                    'property_name, setting_name) VALUES (?, ?, ?, ?)',
+                    [
+                        (
+                            identifier,
+                            linked_property['accounting_rule'],
+                            linked_property['property_name'],
+                            linked_property['setting_name'],
+                        )
+                        for identifier, linked_property in linked_properties.items()
+                    ],
+                )
+            except sqlcipher.IntegrityError as e:  # pylint: disable=no-member
+                return False, f'Failed to import linked properties due to: {e!s}'
+
+        return True, ''
 
 
 def _events_to_consume(

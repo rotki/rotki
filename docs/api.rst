@@ -5679,6 +5679,97 @@ Import PnL report debug data
    :statuscode 500: Internal rotki error.
 
 
+Export Accounting rules
+============================
+
+.. http:post:: /api/(version)/accounting/rules/transfer
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   Doing a POST on the Export Accounting rules endpoint will trigger an export of all the accounting rules from the DB into a file on the given ``directory_path``.
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      POST /api/1/accounting/rules/transfer HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"directory_path": "/home/user/Documents"}
+
+   :reqjson string directory_path: The directory in which to write the exported JSON file
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true
+          "message": ""
+      }
+
+   :resjson bool result: Boolean denoting success or failure of the export
+   :statuscode 200: File was exported successfully
+   :statuscode 400: Provided JSON is in some way malformed.
+   :statuscode 409: No user is currently logged in. No permissions to write in the given directory. Check error message.
+   :statuscode 500: Internal rotki error.
+
+
+Import Accounting rules
+============================
+
+.. http:put:: /api/(version)/accounting/rules/transfer
+.. http:patch:: /api/(version)/accounting/rules/transfer
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   Doing a PUT on the Import Accounting rules endpoint with a path to the exported accounting rules json file will import the accounting rules from it.
+   Doing a PATCH on the Import Accounting rules endpoint with the exported accounting rules json as multipart/form-data will import the accounting rules from it.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PUT /api/1/accounting/rules/transfer HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+       {
+            "filepath": "/home/user/Documents/accounting_rules.json",
+            "async_query": false
+        }
+
+   :reqjson str file: The path to the exported accounting rules JSON file.
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result": true,
+          "message": ""
+      }
+
+   :resjson bool result: Boolean denoting success or failure of the import
+
+   :statuscode 200: Import of accounting rules successfully
+   :statuscode 400: Provided JSON is in some way malformed. Import JSON contains some invalid data types.
+   :statuscode 409: No user is currently logged in. JSON does not contain required keys. Error importing accounting rules. Check error message.
+   :statuscode 500: Internal rotki error.
+
+
 Export action history to CSV
 ================================
 
