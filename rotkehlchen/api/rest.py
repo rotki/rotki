@@ -296,6 +296,17 @@ def wrap_in_fail_result(message: str, status_code: HTTPStatus | None = None) -> 
     return result
 
 
+def _maybe_get_temp_file(filepath: FileStorage | Path) -> Path:
+    """Checks if filepath is a FileStorage and if so,
+    creates a temporary copied file and returns its path."""
+    if isinstance(filepath, FileStorage):
+        _, tmpfilepath = tempfile.mkstemp()
+        filepath.save(tmpfilepath)
+        return Path(tmpfilepath)
+
+    return filepath
+
+
 def api_response(
         result: dict[str, Any],
         status_code: HTTPStatus = HTTPStatus.OK,
@@ -1649,12 +1660,70 @@ class RestAPI:
                 async_query: bool,
                 filepath: FileStorage | Path,
         ) -> Response:
-            if isinstance(filepath, FileStorage):
-                _, tmpfilepath = tempfile.mkstemp()
-                filepath.save(tmpfilepath)
-                filepath = Path(tmpfilepath)
-
+            filepath = _maybe_get_temp_file(filepath)
             return self._import_history_debug(async_query=async_query, filepath=filepath)  # pylint: disable=unexpected-keyword-arg  # pylint doesn't see the async decorator
+
+    @async_api_call()
+    def export_accounting_rules(self, directory_path: Path) -> dict[str, Any]:
+        """Exports all the accounting rules and linked properties into a json file
+        in the given directory."""
+        db_accounting = DBAccountingRules(self.rotkehlchen.data.db)
+        rules_and_properties = db_accounting.get_accounting_rules_and_properties()
+
+        directory_path.mkdir(parents=True, exist_ok=True)
+        try:
+            with open(directory_path / 'accounting_rules.json', mode='w', encoding='utf-8') as file:  # noqa: E501
+                json.dump(rules_and_properties, file)
+        except (PermissionError, json.JSONDecodeError) as e:
+            return wrap_in_fail_result(
+                message=f'Failed to export accounting rules due to: {e!s}',
+                status_code=HTTPStatus.BAD_REQUEST,
+            )
+
+        return OK_RESULT
+
+    @async_api_call()
+    def import_accounting_rules(self, filepath: FileStorage | Path) -> dict[str, Any]:
+        """Imports the accounting rules from the given json file and stores them in the DB."""
+        filepath = _maybe_get_temp_file(filepath)
+        try:
+            with open(filepath, encoding='utf-8') as f:
+                json_data = json.load(f)
+        except json.JSONDecodeError as e:
+            return wrap_in_fail_result(
+                message=f'Failed to import accounting rules due to: {e!s}',
+                status_code=HTTPStatus.BAD_REQUEST,
+            )
+        except PermissionError as e:
+            return wrap_in_fail_result(
+                message=f'Failed to import accounting rules due to: {e!s}',
+                status_code=HTTPStatus.CONFLICT,
+            )
+
+        db_accounting_rules = DBAccountingRules(self.rotkehlchen.data.db)
+        try:
+            success, error_msg = db_accounting_rules.import_accounting_rules(
+                accounting_rules=json_data['accounting_rules'],
+                linked_properties=json_data['linked_properties'],
+            )
+        except KeyError as e:
+            success = False
+            error_msg = f'Key {e!s} not found in the accounting rules json file'
+
+        if success is False:
+            return wrap_in_fail_result(
+                message=error_msg,
+                status_code=HTTPStatus.CONFLICT,
+            )
+
+        for rule_info in json_data['accounting_rules'].values():
+            self._invalidate_cache_for_accounting_rule(
+                event_type=HistoryEventType.deserialize(rule_info['event_type']),
+                event_subtype=HistoryEventSubType.deserialize(rule_info['event_subtype']),
+                counterparty=rule_info['counterparty'],
+            )
+
+        return OK_RESULT
 
     def get_history_actionable_items(self) -> Response:
         pot = self.rotkehlchen.accountant.pots[0]

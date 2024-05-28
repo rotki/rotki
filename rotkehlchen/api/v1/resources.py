@@ -43,6 +43,8 @@ from rotkehlchen.api.v1.schemas import (
     AssetsSearchByColumnSchema,
     AssetsSearchLevenshteinSchema,
     AssetUpdatesRequestSchema,
+    AsyncDirectoryPathSchema,
+    AsyncFilePathSchema,
     AsyncIgnoreCacheQueryArgumentSchema,
     AsyncQueryArgumentSchema,
     AsyncTaskSchema,
@@ -101,7 +103,6 @@ from rotkehlchen.api.v1.schemas import (
     HistoryEventSchema,
     HistoryEventsDeletionSchema,
     HistoryExportingSchema,
-    HistoryProcessingDebugImportSchema,
     HistoryProcessingExportSchema,
     HistoryProcessingSchema,
     IgnoredActionsModifySchema,
@@ -1528,7 +1529,7 @@ class HistoryProcessingResource(BaseMethodView):
 
 class HistoryProcessingDebugResource(BaseMethodView):
     post_schema = HistoryProcessingExportSchema()
-    upload_schema = HistoryProcessingDebugImportSchema()
+    upload_schema = AsyncFilePathSchema()
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json_and_query')
@@ -1562,6 +1563,38 @@ class HistoryProcessingDebugResource(BaseMethodView):
                 async_query=async_query,
                 filepath=filepath,
             )
+
+
+class AccountingRulesImportResource(BaseMethodView):
+    upload_schema = AsyncFilePathSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(upload_schema, location='json')
+    def put(self, async_query: bool, filepath: Path) -> Response:
+        return self.rest_api.import_accounting_rules(
+            async_query=async_query,
+            filepath=filepath,
+        )
+
+    @require_loggedin_user()
+    @use_kwargs(upload_schema, location='form_and_file')
+    def patch(self, async_query: bool, filepath: FileStorage) -> Response:
+        return self.rest_api.import_accounting_rules(
+            async_query=async_query,
+            filepath=filepath,
+        )
+
+
+class AccountingRulesExportResource(BaseMethodView):
+    post_schema = AsyncDirectoryPathSchema()
+
+    @require_loggedin_user()
+    @use_kwargs(post_schema, location='json_and_query')
+    def post(self, async_query: bool, directory_path: Path | None) -> Response:
+        return self.rest_api.export_accounting_rules(
+            async_query=async_query,
+            directory_path=directory_path,
+        )
 
 
 class HistoryActionableItemsResource(BaseMethodView):

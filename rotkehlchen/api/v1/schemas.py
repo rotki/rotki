@@ -1606,12 +1606,16 @@ class ModuleHistoryProcessingSchema(HistoryProcessingSchema):
     module = SerializableEnumField(enum_class=ModuleWithStats, required=True)
 
 
-class HistoryProcessingExportSchema(HistoryProcessingSchema):
+class AsyncDirectoryPathSchema(AsyncQueryArgumentSchema):
     directory_path = DirectoryField(load_default=None)
 
 
-class HistoryProcessingDebugImportSchema(AsyncQueryArgumentSchema):
+class AsyncFilePathSchema(AsyncQueryArgumentSchema):
     filepath = FileField(required=True, allowed_extensions=['.json'])
+
+
+class HistoryProcessingExportSchema(AsyncDirectoryPathSchema, TimestampRangeSchema):
+    """Schema for exporting history events"""
 
 
 class AccountingReportsSchema(Schema):
