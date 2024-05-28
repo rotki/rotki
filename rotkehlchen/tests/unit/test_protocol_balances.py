@@ -661,14 +661,18 @@ def test_compound_v3_token_balances_liabilities(
 ) -> None:
     """Test that the balances of compound v3 supplied/borrowed tokens are correct."""
     c_usdc_v3 = EvmToken('eip155:1/erc20:0xc3d688B66703497DAA19211EEdff47f25384cdc3')
-    blockchain.ethereum.transactions_decoder.decode_transaction_hashes(
-        ignore_cache=True,
-        tx_hashes=[
-            deserialize_evm_tx_hash('0x0c9276ed2a202b039d5fa6e9749fd19f631c62e8e4beccc2f4dc0358a4882bb1'),  # Borrow 3,500 USDC from cUSDCv3  # noqa: E501
-            deserialize_evm_tx_hash('0x13965c2a1ba75dafa060d0bdadd332c9330b9c5819a8fee7d557a937728fa22f'),  # Borrow 42.5043 USDC from USDCv3  # noqa: E501
-            deserialize_evm_tx_hash('0xd53dbca004a5f4a178d881e0194c4464ac5fd52db017329be01413514cb4796e'),  # Borrow 594,629.451218 USDC from USDCv3  # noqa: E501
-        ],
-    )
+
+    with patch(
+        target='rotkehlchen.chain.ethereum.node_inquirer.EthereumInquirer.ensure_cache_data_is_updated',
+    ):
+        blockchain.ethereum.transactions_decoder.decode_transaction_hashes(
+            ignore_cache=True,
+            tx_hashes=[
+                deserialize_evm_tx_hash('0x0c9276ed2a202b039d5fa6e9749fd19f631c62e8e4beccc2f4dc0358a4882bb1'),  # Borrow 3,500 USDC from cUSDCv3  # noqa: E501
+                deserialize_evm_tx_hash('0x13965c2a1ba75dafa060d0bdadd332c9330b9c5819a8fee7d557a937728fa22f'),  # Borrow 42.5043 USDC from USDCv3  # noqa: E501
+                deserialize_evm_tx_hash('0xd53dbca004a5f4a178d881e0194c4464ac5fd52db017329be01413514cb4796e'),  # Borrow 594,629.451218 USDC from USDCv3  # noqa: E501
+            ],
+        )
     compound_v3_balances = Compoundv3Balances(
         database=blockchain.database,
         evm_inquirer=blockchain.ethereum.node_inquirer,

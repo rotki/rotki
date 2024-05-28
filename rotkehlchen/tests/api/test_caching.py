@@ -133,6 +133,10 @@ def test_general_cache_refresh(rotkehlchen_api_server: 'APIServer'):
             'rotkehlchen.api.rest.query_velodrome_like_data',
             new=MagicMock(),
         ))
+        patched_gearbox_query = stack.enter_context(patch(
+            'rotkehlchen.api.rest.query_gearbox_data',
+            new=MagicMock(),
+        ))
         patched_query_yearn_vaults = stack.enter_context(patch(
             'rotkehlchen.api.rest.query_yearn_vaults',
             new=MagicMock(),
@@ -149,6 +153,7 @@ def test_general_cache_refresh(rotkehlchen_api_server: 'APIServer'):
         assert_proper_response(response)
         assert patched_convex_query.call_count == 1, 'Convex pools should have been queried despite should_update_protocol_cache being False'  # noqa: E501
         assert patched_curve_query.call_count == 1, 'Curve pools should have been queried despite should_update_protocol_cache being False'  # noqa: E501
+        assert patched_gearbox_query.call_count == 1, 'Gearbox pools should have been queried despite should_update_protocol_cache being False'  # noqa: E501
         # we query query_velodrome_like_data twice. First for velodrome and then for aerodrome
         assert patched_velodrome_query.call_count == 2, 'Velodrome pools should have been queried despite should_update_protocol_cache being False'  # noqa: E501
         assert patched_query_yearn_vaults.call_count == 1, 'Yearn vaults refresh should have been triggered'  # noqa: E501

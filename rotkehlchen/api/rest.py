@@ -84,6 +84,10 @@ from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import try_download_ens_avatar
 from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
+from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
+    query_gearbox_data,
+    save_gearbox_data_to_cache,
+)
 from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     query_velodrome_like_data,
     save_velodrome_data_to_cache,
@@ -4556,6 +4560,7 @@ class RestAPI:
             ('convex pools', CacheType.CONVEX_POOL_ADDRESS, query_convex_data, save_convex_data_to_cache, eth_node_inquirer),  # noqa: E501
             ('velodrome pools', CacheType.VELODROME_POOL_ADDRESS, query_velodrome_like_data, save_velodrome_data_to_cache, optimism_inquirer),  # noqa: E501
             ('aerodrome pools', CacheType.AERODROME_POOL_ADDRESS, query_velodrome_like_data, save_velodrome_data_to_cache, base_inquirer),  # noqa: E501
+            ('gearbox pools', CacheType.GEARBOX_POOL_ADDRESS, query_gearbox_data, save_gearbox_data_to_cache, eth_node_inquirer),  # noqa: E501
         )
         for (cache, cache_type, query_method, save_method, inquirer) in caches:
             if inquirer.ensure_cache_data_is_updated(
