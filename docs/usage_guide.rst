@@ -1815,6 +1815,14 @@ The liquidity pool support allows premium users to see their balances, the per p
   :alt: Defi Liquidity Pools Summary on Dashboard
   :align: center
 
+.. _the-graph-api-key:
+.. note::
+   For the balancer pools, you need ```The Graph``` API key to get the balances. Additionally, you need to ensure that the generated API key is authorized for Balancer subgraphs.
+
+   .. image:: images/balancer_subgraphs.png
+     :alt: Balancer Subgraphs
+     :align: center
+
 
 Liabilities
 =============
