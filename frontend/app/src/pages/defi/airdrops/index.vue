@@ -29,7 +29,7 @@ const statusFilters: Ref<{ text: string; value: Statuses }[]> = ref([
   { text: t('common.unclaimed'), value: 'unclaimed' },
   { text: t('common.claimed'), value: 'claimed' },
 ]);
-const status: Ref<Statuses> = ref('unclaimed');
+const status: Ref<Statuses> = ref('');
 const loading: Ref<boolean> = ref(false);
 
 const refreshTooltip: ComputedRef<string> = computed(() =>
