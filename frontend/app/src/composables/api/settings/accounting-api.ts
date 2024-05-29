@@ -12,6 +12,7 @@ import {
 import { handleResponse, validStatus } from '@/services/utils';
 import { api } from '@/services/rotkehlchen-api';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
+import type { PendingTask } from '@/types/task';
 import type { CollectionResponse } from '@/types/collection';
 import type { ActionResult } from '@rotki/common/lib/data';
 
@@ -149,6 +150,54 @@ export function useAccountingApi() {
     return handleResponse(response);
   };
 
+  const exportAccountingRules = async (
+    directoryPath?: string,
+  ): Promise<PendingTask> => {
+    const response = await api.instance.post<ActionResult<PendingTask>>(
+      '/accounting/rules/export',
+      snakeCaseTransformer({
+        asyncQuery: true,
+        directoryPath,
+      }),
+      {
+        validateStatus: validStatus,
+      },
+    );
+
+    return handleResponse(response);
+  };
+
+  const importAccountingRulesData = async (filepath: string): Promise<PendingTask> => {
+    const response = await api.instance.put<ActionResult<PendingTask>>(
+      '/accounting/rules/import',
+      snakeCaseTransformer({
+        filepath,
+        asyncQuery: true,
+      }),
+      {
+        validateStatus: validStatus,
+      },
+    );
+    return handleResponse(response);
+  };
+
+  const uploadAccountingRulesData = async (filepath: File): Promise<PendingTask> => {
+    const data = new FormData();
+    data.append('filepath', filepath);
+    data.append('async_query', 'true');
+    const response = await api.instance.patch<ActionResult<PendingTask>>(
+      '/accounting/rules/import',
+      data,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      },
+    );
+
+    return handleResponse(response);
+  };
+
   return {
     fetchAccountingRule,
     fetchAccountingRules,
@@ -158,5 +207,8 @@ export function useAccountingApi() {
     getAccountingRuleLinkedMapping,
     fetchAccountingRuleConflicts,
     resolveAccountingRuleConflicts,
+    exportAccountingRules,
+    importAccountingRulesData,
+    uploadAccountingRulesData,
   };
 }

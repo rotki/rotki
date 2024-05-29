@@ -177,6 +177,7 @@
       "delete_error": "Could not delete accounting rule: {message}",
       "edit": "Edit accounting rule",
       "edit_error": "Could not edit accounting rule: {message}",
+      "export": "Export accounting rules",
       "fetch_error": {
         "title": "Retrieving accounting rules",
         "message": "Failed retrieving accounting rules: {message}"
@@ -186,6 +187,7 @@
         "event_subtype": "filter by event sub type",
         "event_type": "filter by event type"
       },
+      "import": "Import accounting rules",
       "labels": {
         "accounting_treatment": "Accounting Treatment",
         "count_cost_basis_pnl": "Count cost basis PnL",
@@ -218,6 +220,22 @@
     }
   },
   "actions": {
+    "accounting_rules": {
+      "export": {
+        "message": {
+          "failure": "Accounting rules export failed: {description}",
+          "success": "Accounting rules exported successfully"
+        },
+        "title": "Accounting Rules Export"
+      },
+      "import": {
+        "message": {
+          "failure": "Accounting rules import failed: {description}",
+          "success": "Accounting rules imported successfully"
+        },
+        "title": "Accounting Rules Import"
+      }
+    },
     "add_eth2_validator": {
       "error": {
         "description": "There was an error while adding the ETH staking validator {id}: {message}",
@@ -4045,8 +4063,6 @@
       },
       "show_issues": "Show Issues"
     },
-    "csv_export_error": "There was an error with export",
-    "download_failed": "Download of report is not possible",
     "error": {
       "subtitle": "The report generation was not possible due to an error",
       "title": "Profit and Loss Report Generation"

@@ -1,3 +1,5 @@
+import { TaskType } from '@/types/task-type';
+import { jsonTransformer } from '@/services/axios-tranformers';
 import type { MaybeRef } from '@vueuse/core';
 import type {
   AccountingRuleConflict,
@@ -8,6 +10,8 @@ import type {
 } from '@/types/settings/accounting';
 import type { Collection } from '@/types/collection';
 import type { ActionStatus } from '@/types/action';
+import type { TaskMeta } from '@/types/task';
+import type { Message } from '@rotki/common/lib/messages';
 
 export function useAccountingSettings() {
   const {
@@ -15,6 +19,9 @@ export function useAccountingSettings() {
     fetchAccountingRules,
     fetchAccountingRuleConflicts,
     resolveAccountingRuleConflicts: resolveAccountingRuleConflictsCaller,
+    exportAccountingRules,
+    importAccountingRulesData,
+    uploadAccountingRulesData,
   } = useAccountingApi();
 
   const { t } = useI18n();
@@ -106,10 +113,123 @@ export function useAccountingSettings() {
     }
   };
 
+  const { setMessage } = useMessageStore();
+  const { awaitTask } = useTaskStore();
+
+  const exportAccountingRulesData = async (
+    directoryPath?: string,
+  ): Promise<{ result: boolean | object; message?: string } | null> => {
+    try {
+      const { taskId } = await exportAccountingRules(directoryPath);
+      const { result } = await awaitTask<boolean | object, TaskMeta>(
+        taskId,
+        TaskType.EXPORT_ACCOUNTING_RULES,
+        {
+          title: t('actions.accounting_rules.export.title'),
+          transformer: [jsonTransformer],
+        },
+      );
+
+      return {
+        result,
+      };
+    }
+    catch (error: any) {
+      if (!isTaskCancelled(error))
+        return null;
+
+      return {
+        result: false,
+        message: error.message,
+      };
+    }
+  };
+
+  const { appSession, openDirectory } = useInterop();
+
+  async function exportJSON(): Promise<void> {
+    let message: Message | null = null;
+
+    try {
+      let directoryPath;
+      if (appSession) {
+        directoryPath = await openDirectory(t('common.select_directory'));
+        if (!directoryPath)
+          return;
+      }
+
+      const response = await exportAccountingRulesData(directoryPath);
+      if (response === null)
+        return;
+
+      const { result, message: taskMessage } = response;
+
+      if (appSession) {
+        message = {
+          title: t('actions.accounting_rules.export.title'),
+          description: result
+            ? t('actions.accounting_rules.export.message.success')
+            : t('actions.accounting_rules.export.message.failure', {
+              description: taskMessage,
+            }),
+          success: !!result,
+        };
+      }
+      else {
+        downloadFileByTextContent(
+          JSON.stringify(result, null, 2),
+          'accounting_rules.json',
+          'application/json',
+        );
+      }
+    }
+    catch (error: any) {
+      message = {
+        title: t('actions.accounting_rules.export.title'),
+        description: t('actions.accounting_rules.export.message.failure', {
+          description: error.message,
+        }),
+        success: false,
+      };
+    }
+
+    if (message)
+      setMessage(message);
+  }
+
+  async function importJSON(file: File): Promise<ActionStatus | null> {
+    let success: boolean;
+    let message = '';
+
+    const taskType = TaskType.IMPORT_ACCOUNTING_RULES;
+
+    try {
+      const { taskId } = appSession
+        ? await importAccountingRulesData(file.path)
+        : await uploadAccountingRulesData(file);
+
+      const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, {
+        title: t('actions.accounting_rules.import.title'),
+      });
+      success = result;
+    }
+    catch (error: any) {
+      if (isTaskCancelled(error))
+        return null;
+
+      message = error.message;
+      success = false;
+    }
+
+    return { success, message };
+  }
+
   return {
     getAccountingRule,
     getAccountingRules,
     getAccountingRulesConflicts,
     resolveAccountingRuleConflicts,
+    exportJSON,
+    importJSON,
   };
 }
