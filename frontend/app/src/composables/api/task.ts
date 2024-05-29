@@ -12,7 +12,6 @@ import {
 } from '@/types/login';
 import { api } from '@/services/rotkehlchen-api';
 import { ApiValidationError } from '@/types/api/errors';
-import { basicAxiosTransformer } from '@/services/axios-tranformers';
 import type { AxiosRequestConfig, AxiosResponseTransformer } from 'axios';
 import type { ActionResult } from '@rotki/common/lib/data';
 
@@ -31,8 +30,10 @@ export function useTaskApi() {
   const queryTaskResult = async <T>(id: number, transformer?: AxiosResponseTransformer[]): Promise<ActionResult<T>> => {
     const config: Partial<AxiosRequestConfig> = {
       validateStatus: validTaskStatus,
-      transformResponse: transformer ?? basicAxiosTransformer,
     };
+
+    if (transformer)
+      config.transformResponse = transformer;
 
     const response = await api.instance.get<
       ActionResult<TaskResultResponse<ActionResult<T>>>
