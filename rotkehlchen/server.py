@@ -59,7 +59,7 @@ class RotkehlchenServer:
             gevent.hub.signal(signal.SIGQUIT, self.shutdown)
             gevent.hub.signal(signal.SIGTERM, self.shutdown)
         else:
-            # Handle the window control signal as stated here https://pyinstaller.org/en/stable/feature-notes.html#signal-handling-in-console-windows-applications-and-onefile-application-cleanup  # noqa: E501
+            # Handle the windows control signal as stated here: https://pyinstaller.org/en/stable/feature-notes.html#signal-handling-in-console-windows-applications-and-onefile-application-cleanup  # noqa: E501
             # This logic handles the signal sent from the bootloader equivalent to sigterm in
             # addition to the signals sent by windows's taskkill.
             # Research documented in https://github.com/yabirgb/rotki-python-research
