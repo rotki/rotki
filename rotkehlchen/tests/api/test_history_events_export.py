@@ -37,16 +37,17 @@ def assert_csv_export_response(
         assert data['result'] is True
 
     base_headers = (
-        'location',
         'identifier',
         'entry_type',
         'event_identifier',
         'sequence_index',
         'timestamp',
+        'location',
         'asset',
-        'balance_amount',
-        'balance_usd_value',
+        'amount',
+        'usd_value',
         'event_type',
+        'event_subtype',
         'location_label',
         'notes',
     )
@@ -67,6 +68,8 @@ def assert_csv_export_response(
         reader = csv.DictReader(csvfile)
         count = 0
         for row in reader:
+            assert tuple(row.keys())[:len(base_headers)] == base_headers, 'order of columns does not match'  # noqa: E501
+
             for attr in base_headers:
                 assert row[attr] is not None
             if includes_extra_headers:

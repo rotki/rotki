@@ -248,9 +248,14 @@ class HistoryBaseEntry(AccountingEventMixin, ABC):
         """Serialize event data for CSV export"""
         entry = self.serialize()
         balance = entry.pop('balance')
-        entry['balance_amount'] = balance['amount']
-        entry['balance_usd_value'] = balance['usd_value']
-        return entry
+        new_dict = {}
+        for key, value in entry.items():
+            new_dict[key] = value
+            if key == 'asset':  # input the amount/usd value right after the asset
+                new_dict['amount'] = balance['amount']
+                new_dict['usd_value'] = balance['usd_value']
+
+        return new_dict
 
     def serialize_for_api(
             self,
