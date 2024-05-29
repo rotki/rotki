@@ -56,9 +56,17 @@ class RotkehlchenServer:
         hub.threadpool_size = 2
         hub.threadpool.maxsize = 2
         if os.name != 'nt':
-            gevent.hub.signal(signal.SIGQUIT, self.shutdown)  # type: ignore[attr-defined,unused-ignore]  # pylint: disable=no-member  # linters don't understand the os.name check
+            gevent.hub.signal(signal.SIGQUIT, self.shutdown)
+            gevent.hub.signal(signal.SIGTERM, self.shutdown)
+        else:
+            # Handle the window control signal as stated here https://pyinstaller.org/en/stable/feature-notes.html#signal-handling-in-console-windows-applications-and-onefile-application-cleanup  # noqa: E501
+            # This logic handles the signal sent from the bootloader equivalent to sigterm in
+            # addition to the signals sent by windows's taskkill.
+            # Research documented in https://github.com/yabirgb/rotki-python-research
+            import win32api  # pylint: disable=import-outside-toplevel  # isort:skip
+            win32api.SetConsoleCtrlHandler(self.shutdown, True)
+
         gevent.hub.signal(signal.SIGINT, self.shutdown)
-        gevent.hub.signal(signal.SIGTERM, self.shutdown)
         # The api server's RestAPI starts rotki main loop
         self.api_server.start(
             host=self.args.api_host,

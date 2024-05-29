@@ -18,6 +18,7 @@ py-bip39-bindings==0.1.11
 substrate-interface==1.7.8
 beautifulsoup4==4.12.3
 maxminddb==2.6.1
+pywin32==306; sys_platform == 'win32'
 miniupnpc==2.0.2; sys_platform != 'win32'
 miniupnpc @ https://github.com/rotki/rotki-build/raw/main/miniupnpc/miniupnpc-2.2.6-cp311-cp311-win_amd64.whl ; sys_platform == 'win32'
 cryptography==42.0.5

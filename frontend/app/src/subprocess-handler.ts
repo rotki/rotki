@@ -593,22 +593,24 @@ export class SubprocessHandler {
   }
 
   private async waitForTermination(tasks: Task[], processes: number[]) {
-    function stillRunning(): number {
+    function stillRunning(tasks: Task[]): number {
       return tasks.filter(({ pid }) => processes.includes(pid)).length;
     }
 
-    let running = stillRunning();
+    const running = stillRunning(tasks);
     if (running === 0)
-      return;
+      return this.logToFile('The task killed successfully');
 
     for (let i = 0; i < 10; i++) {
       this.logToFile(
         `The ${running} processes are still running. Waiting for 2 seconds`,
       );
       await wait(2000);
-      running = stillRunning();
-      if (stillRunning.length === 0)
+      tasks = await tasklist();
+      if (stillRunning(tasks) === 0) {
+        this.logToFile('The task killed successfully');
         break;
+      }
     }
   }
 }
