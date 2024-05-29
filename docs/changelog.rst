@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`` Fix the issue where airdrops aren't properly filtered by status.a
 * :bug:`7905` rotki will now properly show the decoding progress of zksync-lite transactions.
 * :feature:`7358` Added support for detection of staked GRT tokens on Arbitrum.
 * :bug:`-` Fix the issue where the MATIC amount always shows as zero in the Polygon balance table.
