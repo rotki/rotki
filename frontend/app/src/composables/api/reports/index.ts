@@ -102,8 +102,9 @@ export function useReportsApi() {
   const uploadReportData = async (filepath: File): Promise<PendingTask> => {
     const data = new FormData();
     data.append('filepath', filepath);
+    data.append('async_query', 'true');
     const response = await api.instance.patch<ActionResult<PendingTask>>(
-      '/history/debug?async_query=true',
+      '/history/debug',
       data,
       {
         headers: {

@@ -1,4 +1,5 @@
 import type { TaskType } from '@/types/task-type';
+import type { AxiosResponseTransformer } from 'axios';
 
 export interface Task<T extends TaskMeta> {
   readonly id: number;
@@ -11,6 +12,7 @@ export interface TaskMeta {
   readonly title: string;
   readonly description?: string;
   readonly ignoreResult?: boolean;
+  readonly transformer?: AxiosResponseTransformer[];
 }
 
 export interface ExchangeMeta extends TaskMeta {

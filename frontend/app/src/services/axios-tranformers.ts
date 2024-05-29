@@ -61,11 +61,13 @@ const jsonTransformer: AxiosResponseTransformer = (data, headers) => {
   return result;
 };
 
-export function setupTransformer(skipRoot = false): AxiosResponseTransformer[] {
-  return [
-    jsonTransformer,
-    skipRoot ? noRootCamelCaseTransformer : camelCaseTransformer,
-  ];
+export function setupTransformer(camelCaseTransform = true, skipRoot = false): AxiosResponseTransformer[] {
+  const transformer = [jsonTransformer];
+
+  if (camelCaseTransform)
+    transformer.push(skipRoot ? noRootCamelCaseTransformer : camelCaseTransformer);
+
+  return transformer;
 }
 
 export const basicAxiosTransformer = setupTransformer();

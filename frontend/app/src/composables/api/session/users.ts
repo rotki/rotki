@@ -22,7 +22,7 @@ export function useUsersApi() {
     const response = await api.instance.get<ActionResult<AccountSession>>(
       `/users`,
       {
-        transformResponse: setupTransformer(true),
+        transformResponse: setupTransformer(true, true),
       },
     );
     return AccountSession.parse(handleResponse(response));

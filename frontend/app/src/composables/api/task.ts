@@ -12,7 +12,8 @@ import {
 } from '@/types/login';
 import { api } from '@/services/rotkehlchen-api';
 import { ApiValidationError } from '@/types/api/errors';
-import type { AxiosRequestConfig } from 'axios';
+import { basicAxiosTransformer } from '@/services/axios-tranformers';
+import type { AxiosRequestConfig, AxiosResponseTransformer } from 'axios';
 import type { ActionResult } from '@rotki/common/lib/data';
 
 export function useTaskApi() {
@@ -27,9 +28,10 @@ export function useTaskApi() {
     return handleResponse(response);
   };
 
-  const queryTaskResult = async <T>(id: number): Promise<ActionResult<T>> => {
+  const queryTaskResult = async <T>(id: number, transformer?: AxiosResponseTransformer[]): Promise<ActionResult<T>> => {
     const config: Partial<AxiosRequestConfig> = {
       validateStatus: validTaskStatus,
+      transformResponse: transformer ?? basicAxiosTransformer,
     };
 
     const response = await api.instance.get<

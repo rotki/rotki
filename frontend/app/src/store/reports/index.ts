@@ -2,6 +2,7 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { CURRENCY_USD } from '@/types/currencies';
 import { TaskType } from '@/types/task-type';
 import { isBlockchain } from '@/types/blockchain/chains';
+import { setupTransformer } from '@/services/axios-tranformers';
 import type { Message } from '@rotki/common/lib/messages';
 import type {
   ProfitLossReportDebugPayload,
@@ -312,7 +313,7 @@ export const useReportsStore = defineStore('reports', () => {
         TaskType.TRADE_HISTORY,
         {
           title: t('actions.reports.generate.task.title'),
-          // TODO skip transform?
+          transformer: setupTransformer(false),
         },
       );
 
