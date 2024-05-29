@@ -4047,7 +4047,7 @@ Get asset location mappings for a location
             "message": ""
         }
 
-    :resjson object entries: An array of mapping objects. Each entry is composed of the asset identifier under the ``"asset"`` key, its ticker symbol used in the location under the ``"location_symbol"`` key, and its location under the ``"location"`` key. 
+    :resjson object entries: An array of mapping objects. Each entry is composed of the asset identifier under the ``"asset"`` key, its ticker symbol used in the location under the ``"location_symbol"`` key, and its location under the ``"location"`` key.
     :resjson int entries_found: The number of entries found for the current filter. Ignores pagination.
     :resjson int entries_total: The number of total entries ignoring all filters.
     :resjson str message: Error message if any errors occurred.
@@ -5682,7 +5682,7 @@ Import PnL report debug data
 Export Accounting rules
 ============================
 
-.. http:post:: /api/(version)/accounting/rules/transfer
+.. http:post:: /api/(version)/accounting/rules/export
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -5713,7 +5713,7 @@ Export Accounting rules
           "message": ""
       }
 
-   :resjson bool result: Boolean denoting success or failure of the export
+   :resjson bool result: Boolean denoting success or failure of the export. If ``directory_path`` is not present, it will return the JSON data directly.
    :statuscode 200: File was exported successfully
    :statuscode 400: Provided JSON is in some way malformed.
    :statuscode 409: No user is currently logged in. No permissions to write in the given directory. Check error message.
@@ -5723,8 +5723,8 @@ Export Accounting rules
 Import Accounting rules
 ============================
 
-.. http:put:: /api/(version)/accounting/rules/transfer
-.. http:patch:: /api/(version)/accounting/rules/transfer
+.. http:put:: /api/(version)/accounting/rules/import
+.. http:patch:: /api/(version)/accounting/rules/import
 
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
@@ -8217,7 +8217,7 @@ Getting eth2 staking performance
       This endpoint is only available for premium users
 
    .. note::
-      This endpoint can also be queried asynchronously by using ``"async_query": true``	      
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
 
    **Example Request**:
 
@@ -13311,7 +13311,7 @@ Managing calendar entries
          "message": ""
       }
 
-  :resjson object result: object with the identifier of the calendar entry created. 
+  :resjson object result: object with the identifier of the calendar entry created.
   :statuscode 200: Entry correctly stored.
   :statuscode 401: No user is currently logged in.
   :statuscode 409: Failed to validate the data.
@@ -13355,7 +13355,7 @@ Managing calendar entries
          "message": ""
       }
 
-  :resjson object result: object with the identifier of the calendar entry updated. 
+  :resjson object result: object with the identifier of the calendar entry updated.
   :statuscode 200: Entry correctly updated.
   :statuscode 401: No user is currently logged in.
   :statuscode 409: Failed to validate the data. Event not found.
@@ -13525,7 +13525,7 @@ Managing calendar reminders
          "message": ""
       }
 
-  :resjson object result: object with the identifier of the calendar reminder updated. 
+  :resjson object result: object with the identifier of the calendar reminder updated.
   :statuscode 200: Entry correctly updated.
   :statuscode 401: No user is currently logged in.
   :statuscode 409: Failed to validate the data. Event not found.
