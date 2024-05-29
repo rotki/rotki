@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.33.1 <2024-05-29>`
 * :bug:`-` Fix the issue where airdrops aren't properly filtered by status.
 * :bug:`7791` Killing the rotki processes in Windows should now work fine and no zombie processes should remain. In turn this should also make the auto upgrade work for Windows.
 * :bug:`7905` rotki will now properly show the decoding progress of zksync-lite transactions.
