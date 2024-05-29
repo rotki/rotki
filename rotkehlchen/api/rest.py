@@ -1664,11 +1664,14 @@ class RestAPI:
             return self._import_history_debug(async_query=async_query, filepath=filepath)  # pylint: disable=unexpected-keyword-arg  # pylint doesn't see the async decorator
 
     @async_api_call()
-    def export_accounting_rules(self, directory_path: Path) -> dict[str, Any]:
+    def export_accounting_rules(self, directory_path: Path | None) -> dict[str, Any]:
         """Exports all the accounting rules and linked properties into a json file
         in the given directory."""
         db_accounting = DBAccountingRules(self.rotkehlchen.data.db)
         rules_and_properties = db_accounting.get_accounting_rules_and_properties()
+
+        if directory_path is None:
+            return _wrap_in_ok_result(rules_and_properties)
 
         directory_path.mkdir(parents=True, exist_ok=True)
         try:
