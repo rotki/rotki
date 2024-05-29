@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`7981` Circle's CCTP bridge transfers are decoded properly for all supported EVM chains.
 * :feature:`7202` Hop protocol related events and balances of staked tokens should be now decoded and detected properly.
 * :feature:`-` rotki decodes transactions and detects balances related to Blur staking.
 * :feature:`1633` rotki now supports AAVE staking.

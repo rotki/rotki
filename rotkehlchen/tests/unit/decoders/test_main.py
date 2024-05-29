@@ -50,6 +50,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Balancerv2',
         'BaseBridge',
         'Blur',
+        'Cctp',
         'Compoundv2',
         'Compoundv3',
         'Cowswap',
@@ -184,6 +185,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'omni',
         'blur',
         'lido',
+        'cctp',
     }
 
 
