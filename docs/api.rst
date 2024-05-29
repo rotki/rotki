@@ -8572,7 +8572,7 @@ Querying ethereum airdrops
                      "asset": "eip155:1/erc20:0x111111111117dC0aa78b770fA6A738034120C302",
                      "link": "https://1inch.exchange/",
                      "claimed": false,
-                     "missing_decoder": true
+                     "has_decoder": false
                   },
                   "uniswap": {
                      "amount": "400",
