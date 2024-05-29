@@ -145,7 +145,7 @@ jobs:
         id: packaging
         run: |
           echo "::group::packaging dependencies"
-          pip3 install --upgrade uv
+          pip3 install --upgrade uv==${{UV_VERSION}}
           uv pip install --system -r requirements_packaging.txt
           echo "::endgroup::"
           ./package.py --build full
@@ -259,11 +259,11 @@ jobs:
         id: packaging
         run: |
           echo "::group::packaging dependencies"
-          pip3 install --upgrade uv
+          pip3 install --upgrade uv==${{UV_VERSION}}
           pip3 install virtualenv
           python3 -m virtualenv ~/venv
           source ~/venv/bin/activate
-          uv pip install --system -r requirements_packaging.txt
+          uv pip install -r requirements_packaging.txt
           echo "::endgroup::"
           ./package.py --build full
         env:
@@ -342,7 +342,7 @@ jobs:
           CSC_KEY_PASSWORD: ${{ secrets.CERTIFICATE_PASSWORD }}
         run: |
           echo ::group::"packaging dependencies"
-          pip3 install --upgrade uv
+          pip3 install --upgrade uv==${{UV_VERSION}}
           uv pip install --system -r requirements_packaging.txt
           echo ::endgroup::
           python .\package.py --build full
