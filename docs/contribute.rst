@@ -263,6 +263,8 @@ As an example decoder we can look at `makerdao <https://github.com/rotki/rotki/b
 
 It needs to contain a class that inherits from the ``DecoderInterface`` and is named as ``ModulenameDecoder``.
 
+Note: If your new decoder decodes an airdrop's claiming event and this airdrop is present in the `data repo airdrop index <https://github.com/rotki/data/blob/develop/airdrops/index_v2.json>`__ with ``has_decoder`` as ``false``. Please update that also.
+
 Counterparties
 ^^^^^^^^^^^^^^^^
 
@@ -391,6 +393,29 @@ This is how rotki inserts a variable inside a sentence. You **must** keep this v
     }
 
 3. For missing keys from other language files, by default it will use the value of the master file which is ``English``.
+
+Add a new Airdrop
+===================================
+
+To add a new airdrop in the DeFi/Airdrops section, go to the `data repo here <https://github.com/rotki/data/tree/develop>`__.
+
+- Add the entry in ``airdrops/index_v2.json`` under the ``airdrops`` field.
+- If the token is new and is not expected to exist in the userDB and globalDB then ``new_asset_data`` should be added in the index.
+- If the asset's icon is not present in ``rotki`` repo, it should be added in ``airdrops/icons`` directory, with its path provided in its airdrop's index entry. If it's present, simply mention its name in the ``icon`` field.
+- If no decoder is present to decode the claiming event of this airdrop, add a ``has_decoder`` field in the entry with the value as ``false``.
+
+Adding Token Airdrops with a CSV
+--------------------------------
+
+- Add the CSV in the ``airdrops/`` directory, with its path provided in its index entry.
+    - The CSV's header should have first column as ``address`` and second column as ``amount``.
+    - The amounts should be normalised according to their decimals.
+
+Adding Token Airdrops with an API
+---------------------------------
+
+- Add the API URL under the ``api_url`` fiels, with an ``{address}`` placeholder. This ``{address}`` will be replaced by user's address at the time of checking the eligibility.
+- Add the ``amount_path`` in the form of string with ``/`` seperated fields. The returned JSON from the above API will be parsed using this path by reading each seperated field from left to right, down the JSON. At the end, it should reach the amount of tokens, for which the user's address is eligible.
 
 Working on issues
 *************************

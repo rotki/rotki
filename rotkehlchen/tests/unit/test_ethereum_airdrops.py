@@ -126,6 +126,7 @@ MOCK_AIRDROP_INDEX = {'airdrops': {
         'name': 'DEGEN',
         'icon': 'degen.svg',
         'icon_path': 'airdrops/icons/degen.svg',
+        'has_decoder': False,
         'new_asset_data': {
             'asset_type': 'EVM_TOKEN',
             'address': '0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed',
@@ -156,7 +157,7 @@ MOCK_AIRDROP_INDEX = {'airdrops': {
         'AAVE V2 Pioneers',
         '388003b6c0dc589981ce9e962d6d8b6b2148c72ccf6ec3578ab32d63b547f903',
     ],
-}, 'airdrops_missing_decoders': ['degen2_season1']}
+}}
 
 
 def _mock_airdrop_list(url: str, timeout: int = 0, headers: dict | None = None):  # pylint: disable=unused-argument
@@ -395,7 +396,7 @@ def test_check_airdrops(
         'asset': Asset('eip155:8453/erc20:0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed'),
         'link': 'https://www.degen.tips/airdrop2/season1',
         'claimed': False,
-        'missing_decoder': True,
+        'has_decoder': False,
         'icon_url': 'https://raw.githubusercontent.com/rotki/data/develop/airdrops/icons/degen.svg',
     }
     assert data[TEST_ADDR2]['eigen'] == {
@@ -518,7 +519,6 @@ def test_fetch_airdrops_metadata(database, remote_etag, database_etag):
         assert metadata == (
             _parse_airdrops(database=database, airdrops_data=mock_airdrop_index['airdrops']),
             mock_airdrop_index['poap_airdrops'],
-            {'degen2_season1'},
         )
         if remote_etag != database_etag:  # check if the value is updated
             assert metadata[0]['diva'].name == 'new_name'

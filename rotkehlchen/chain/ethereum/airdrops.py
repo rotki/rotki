@@ -61,6 +61,7 @@ class Airdrop:
     icon: str
     icon_url: str | None = None
     cutoff_time: Timestamp | None = None
+    has_decoder: bool = True
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, kw_only=True)  # noqa: E501
@@ -92,11 +93,10 @@ def _enrich_user_airdrop_data(
         user_data: dict[str, Any],
         protocol_name: str,
         airdrop_data: Airdrop,
-        airdrops_without_decoder: set[str],
 ) -> None:
     """Modify user_data to add information about icons and if the decoder is missing"""
-    if protocol_name in airdrops_without_decoder:
-        user_data[protocol_name]['missing_decoder'] = True
+    if airdrop_data.has_decoder is False:
+        user_data[protocol_name]['has_decoder'] = False
     if airdrop_data.icon_url is not None:
         user_data[protocol_name]['icon_url'] = airdrop_data.icon_url
 
@@ -162,6 +162,7 @@ def _parse_airdrops(database: 'DBHandler', airdrops_data: dict[str, Any]) -> dic
                     icon=airdrop_data['icon'],
                     icon_url=icon_url,
                     cutoff_time=airdrop_data.get('cutoff_time'),
+                    has_decoder=airdrop_data.get('has_decoder', True),
                 )
             elif 'api_url' in airdrop_data:
                 new_airdrop = AirdropAPIData(
@@ -173,6 +174,7 @@ def _parse_airdrops(database: 'DBHandler', airdrops_data: dict[str, Any]) -> dic
                     icon=airdrop_data['icon'],
                     icon_url=icon_url,
                     cutoff_time=airdrop_data.get('cutoff_time'),
+                    has_decoder=airdrop_data.get('has_decoder', True),
                 )
             else:
                 log.error(f'Invalid CSV airdrop format found {airdrop_data}. Skipping')
@@ -184,10 +186,9 @@ def _parse_airdrops(database: 'DBHandler', airdrops_data: dict[str, Any]) -> dic
     return airdrops
 
 
-def fetch_airdrops_metadata(database: 'DBHandler') -> tuple[dict[str, Airdrop], dict[str, list[str]], set[str]]:  # noqa: E501
+def fetch_airdrops_metadata(database: 'DBHandler') -> tuple[dict[str, Airdrop], dict[str, list[str]]]:  # noqa: E501
     """Fetches airdrop metadata from the rotki/data repository. If it's not cached, parses them,
     and returns them in two parts: a dict of Airdrop instances and a dict of POAP airdrops data.
-    Also returns the list of airdrops that don't have decoders yet.
 
     May raise - RemoteError if the request fails or metadata is invalid.
     """
@@ -237,7 +238,6 @@ def fetch_airdrops_metadata(database: 'DBHandler') -> tuple[dict[str, Airdrop], 
     return (
         _parse_airdrops(database=database, airdrops_data=airdrops_data['airdrops']),
         airdrops_data['poap_airdrops'],
-        set(airdrops_data.get('airdrops_missing_decoders', [])),
     )
 
 
@@ -384,7 +384,6 @@ def process_airdrop_with_api_data(
         addresses: Sequence[ChecksumEvmAddress],
         airdrop_data: AirdropAPIData,
         protocol_name: str,
-        airdrops_without_decoder: set[str],
         tolerance_for_amount_check: FVal,
 ) -> tuple[list[AirdropClaimEventQueryParams], dict[ChecksumEvmAddress, dict]]:
     """Query the airdrops that have information available only by consuming APIs
@@ -448,7 +447,6 @@ def process_airdrop_with_api_data(
             user_data=found_data[address],
             protocol_name=protocol_name,
             airdrop_data=airdrop_data,
-            airdrops_without_decoder=airdrops_without_decoder,
         )
 
         temp_airdrop_tuples.append(
@@ -475,7 +473,6 @@ def _process_csv_airdrop(
         protocol_name: str,
         tolerance_for_amount_check: FVal,
         current_time: Timestamp,
-        airdrops_without_decoder: set[str],
 ) -> tuple[list[AirdropClaimEventQueryParams], dict[ChecksumEvmAddress, dict]]:
     """Process csv to find the addresses that have a claimable amount.
 
@@ -528,7 +525,6 @@ def _process_csv_airdrop(
                 user_data=temp_found_data[addr],
                 protocol_name=protocol_name,
                 airdrop_data=airdrop_data,
-                airdrops_without_decoder=airdrops_without_decoder,
             )
             temp_airdrop_tuples.append(
                 AirdropClaimEventQueryParams(
@@ -563,7 +559,7 @@ def check_airdrops(
     found_data: dict[ChecksumEvmAddress, dict] = defaultdict(lambda: defaultdict(dict))
     airdrop_tuples = []
     current_time = ts_now()
-    airdrops, poap_airdrops, airdrops_without_decoder = fetch_airdrops_metadata(database=database)
+    airdrops, poap_airdrops = fetch_airdrops_metadata(database=database)
 
     for protocol_name, airdrop_data in airdrops.items():
         if isinstance(airdrop_data, CSVAirdrop):
@@ -575,14 +571,12 @@ def check_airdrops(
                 protocol_name=protocol_name,
                 tolerance_for_amount_check=tolerance_for_amount_check,
                 current_time=current_time,
-                airdrops_without_decoder=airdrops_without_decoder,
             )
         else:  # airdrop with api metadata AirdropAPIData
             temp_airdrop_tuples, temp_found_data = process_airdrop_with_api_data(
                 addresses=addresses,
                 airdrop_data=airdrop_data,  # type: ignore
                 protocol_name=protocol_name,
-                airdrops_without_decoder=airdrops_without_decoder,
                 tolerance_for_amount_check=tolerance_for_amount_check,
             )
 
