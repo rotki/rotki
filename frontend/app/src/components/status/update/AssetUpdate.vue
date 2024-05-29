@@ -110,26 +110,16 @@ async function updateAssets(resolution?: ConflictResolution) {
 
 const restarting: Ref<boolean> = ref(false);
 
-const { navigateToDashboard, navigateToUserLogin } = useAppNavigation();
-
 async function updateComplete() {
   if (get(restarting))
     return;
 
   set(restarting, true);
-  const headlessVal = get(headless);
-
-  if (headlessVal)
-    await navigateToDashboard();
-
-  await logout(!headlessVal);
+  await logout(true);
   setConnected(false);
   await restartBackend();
   await connect();
   set(restarting, false);
-
-  if (headlessVal)
-    await navigateToUserLogin();
 }
 
 const { show } = useConfirmStore();
