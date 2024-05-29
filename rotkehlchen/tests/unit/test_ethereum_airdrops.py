@@ -362,12 +362,14 @@ def test_check_airdrops(
         'asset': A_UNI,
         'link': 'https://app.uniswap.org/',
         'claimed': True,
+        'has_decoder': True,
     }
     assert data[TEST_ADDR1]['1inch'] == {
         'amount': '630.374421472277638654',
         'asset': A_1INCH,
         'link': 'https://1inch.exchange/',
         'claimed': False,
+        'has_decoder': True,
     }
     assert messages_aggregator.warnings[0] == 'Skipping airdrop CSV for invalid because it contains an invalid row: []'  # noqa: E501
 
@@ -377,6 +379,7 @@ def test_check_airdrops(
         'asset': A_UNI,
         'link': 'https://app.uniswap.org/',
         'claimed': False,
+        'has_decoder': True,
     }
     assert data[TEST_ADDR2]['grain'] == {
         'amount': '16301.717650649890035791',
@@ -384,12 +387,14 @@ def test_check_airdrops(
         'link': 'https://claim.harvest.finance/',
         'claimed': False,
         'icon_url': f'{AIRDROPS_REPO_BASE}/airdrops/icons/grain.svg',
+        'has_decoder': True,
     }
     assert data[TEST_ADDR2]['shutter'] == {
         'amount': '394857.029384576349787465',
         'asset': A_SHU,
         'link': 'https://claim.shutter.network/',
         'claimed': False,
+        'has_decoder': True,
     }
     assert data[TEST_ADDR2]['degen2_season1'] == {
         'amount': '394857.029384576349787465',
@@ -405,6 +410,7 @@ def test_check_airdrops(
         'link': 'https://eigenfoundation.org',
         'claimed': False,
         'icon_url': 'https://raw.githubusercontent.com/rotki/data/develop/airdrops/icons/eigen.svg',
+        'has_decoder': True,
     }
     assert len(data[TEST_POAP1]) == 1
     assert data[TEST_POAP1]['poap'] == [{

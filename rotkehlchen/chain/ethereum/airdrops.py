@@ -94,9 +94,7 @@ def _enrich_user_airdrop_data(
         protocol_name: str,
         airdrop_data: Airdrop,
 ) -> None:
-    """Modify user_data to add information about icons and if the decoder is missing"""
-    if airdrop_data.has_decoder is False:
-        user_data[protocol_name]['has_decoder'] = False
+    """Modify user_data to add information about icons"""
     if airdrop_data.icon_url is not None:
         user_data[protocol_name]['icon_url'] = airdrop_data.icon_url
 
@@ -442,6 +440,7 @@ def process_airdrop_with_api_data(
             'asset': airdrop_data.asset,
             'link': airdrop_data.url,
             'claimed': False,
+            'has_decoder': airdrop_data.has_decoder,
         }
         _enrich_user_airdrop_data(
             user_data=found_data[address],
@@ -520,6 +519,7 @@ def _process_csv_airdrop(
                 'asset': airdrop_data.asset,
                 'link': airdrop_data.url,
                 'claimed': False,
+                'has_decoder': airdrop_data.has_decoder,
             }
             _enrich_user_airdrop_data(
                 user_data=temp_found_data[addr],
