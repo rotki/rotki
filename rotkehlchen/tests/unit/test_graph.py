@@ -30,6 +30,7 @@ def test_exception_retries(database, add_subgraph_api_key):  # pylint: disable=u
     """Test an exception raised by Client.execute() triggers the retry logic.
     """
     graph = Graph(subgraph_id=UNISWAP_GRAPH_ID, database=database, label='uniswap')
+    graph._get_api_key()  # load api key to avoid recreating the client since we mock it
     param_types = {'$limit': 'Int!'}
     param_values = {'limit': 1}
     querystr = format_query_indentation(TEST_QUERY_1.format())
@@ -64,6 +65,7 @@ def test_success_result(database, add_subgraph_api_key):  # pylint: disable=unus
     expected_result = {'schema': [{'data1'}, {'data2'}]}
 
     graph = Graph(subgraph_id=UNISWAP_GRAPH_ID, database=database, label='uniswap')
+    graph._get_api_key()  # load api key to avoid recreating the client since we mock it
     param_types = {'$limit': 'Int!'}
     param_values = {'limit': 1}
     querystr = format_query_indentation(TEST_QUERY_1.format())
