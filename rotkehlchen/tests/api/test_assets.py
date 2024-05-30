@@ -31,7 +31,7 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
 )
 from rotkehlchen.tests.utils.checks import assert_asset_result_order
 from rotkehlchen.tests.utils.constants import A_GNO, A_RDN
@@ -138,7 +138,7 @@ def test_query_owned_assets(
                 'ownedassetsresource',
             ),
         )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert set(result) == {'ETH', 'BTC', 'EUR', A_RDN, A_USDC}
 
 
@@ -155,7 +155,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server):
             'ignoredassetsresource',
         ), json={'assets': ignored_assets},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     expected_ignored_assets = set(ignored_assets)
     assert expected_ignored_assets == set(result['successful'])
 
@@ -169,7 +169,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server):
                 'ignoredassetsresource',
             ),
         )
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert expected_ignored_assets == set(result)
 
         # remove 2 assets from ignored assets
@@ -179,7 +179,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server):
                 'ignoredassetsresource',
             ), json={'assets': [A_GNO.identifier, 'XMR']},
         )
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert set(result['successful']) == {A_GNO.identifier, 'XMR'}
         assert len(result['no_action']) == 0
 
@@ -193,7 +193,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server):
                 'ignoredassetsresource',
             ),
         )
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert assets_after_deletion == set(result)
 
 
@@ -279,7 +279,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server, method):
                 'ignoredassetsresource',
             ), json={'assets': [asset]},
         )
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert result == {
             'successful': [],
             'no_action': [asset],
@@ -303,7 +303,7 @@ def test_get_all_assets(rotkehlchen_api_server):
             'ascending': [True],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) <= 20
     assert 'entries_found' in result
     assert 'entries_total' in result
@@ -326,7 +326,7 @@ def test_get_all_assets(rotkehlchen_api_server):
             'ascending': [False],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) <= 50
     assert 'entries_found' in result
     assert 'entries_total' in result
@@ -361,7 +361,7 @@ def test_get_all_assets(rotkehlchen_api_server):
             'ignored_assets_handling': 'exclude',
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) <= 20
     assert 'entries_found' in result
     assert 'entries_total' in result
@@ -386,7 +386,7 @@ def test_get_all_assets(rotkehlchen_api_server):
             'show_user_owned_assets_only': True,
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assets_names = {r['name'] for r in result['entries']}
     assets_chain = {r.get('evm_chain', None) for r in result['entries']}
     assert result['entries_found'] == 3
@@ -419,7 +419,7 @@ def test_get_all_assets(rotkehlchen_api_server):
             'ascending': [True],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 1
     assert result['entries'][0]['identifier'] == custom_asset_id
     assert result['entries'][0]['asset_type'] == 'custom asset'
@@ -440,7 +440,7 @@ def test_get_all_assets(rotkehlchen_api_server):
             'ignored_assets_handling': 'exclude',
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert 50 >= len(result['entries']) > 2
     for entry in result['entries']:
         assert 'uniswap' in entry['name'].casefold()
@@ -474,7 +474,7 @@ def test_get_all_assets(rotkehlchen_api_server):
             'identifiers': [A_DAI.identifier],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['entries'][0]['identifier'] == A_DAI
     assert 'address' in result['entries'][0]
     assert 'decimals' in result['entries'][0]
@@ -491,7 +491,7 @@ def test_get_all_assets(rotkehlchen_api_server):
             'identifiers': [A_BTC.identifier, A_USD.identifier, custom_asset_id],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['entries'][0]['identifier'] == A_USD
     assert result['entries'][1]['identifier'] == custom_asset_id
     assert result['entries'][2]['identifier'] == A_BTC
@@ -504,7 +504,7 @@ def test_get_all_assets(rotkehlchen_api_server):
         ),
         json={'asset_type': 'evm token'},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     for entry in result['entries']:
         assert 'underlying_tokens' in entry
         assert entry['evm_chain'] in [x.to_name() for x in ChainID]
@@ -531,7 +531,7 @@ def test_get_all_assets(rotkehlchen_api_server):
         ),
         json={'evm_chain': 'ethereum', 'symbol': 'UNI'},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert all(i['evm_chain'] == 'ethereum' and 'UNI' in i['symbol'].upper() for i in result['entries'])  # noqa: E501
 
     # check that filtering by address and evm_chain works.
@@ -545,7 +545,7 @@ def test_get_all_assets(rotkehlchen_api_server):
             'address': '0x6b175474e89094c44da98b954eedeac495271d0f',
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 1
     assert result['entries'][0]['address'] == '0x6B175474E89094C44Da98b954EedeAC495271d0F'
     assert result['entries'][0]['evm_chain'] == 'ethereum'
@@ -580,7 +580,7 @@ def test_get_assets_mappings(rotkehlchen_api_server):
         ),
         json={'identifiers': queried_assets},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assets = result['assets']
     assert len(assets) == len(queried_assets)
     for identifier, details in assets.items():
@@ -614,7 +614,7 @@ def test_get_assets_mappings(rotkehlchen_api_server):
         ),
         json={'identifiers': ['BTC', 'TRY', 'invalid']},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assets = result['assets']
     assert len(assets) == 2
     assert all(identifier in {'BTC', 'TRY'} for identifier in assets)
@@ -635,7 +635,7 @@ def test_search_assets(rotkehlchen_api_server):
             'ascending': [True],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result) <= 50
     for entry in result:
         assert 'bitcoin' in entry['name'].lower()
@@ -656,7 +656,7 @@ def test_search_assets(rotkehlchen_api_server):
             'ascending': [False],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result) <= 10
     for entry in result:
         assert 'eth' in entry['symbol'].lower()
@@ -677,7 +677,7 @@ def test_search_assets(rotkehlchen_api_server):
             'ascending': [True],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result) == 0
 
     # use the return_exact_matches flag
@@ -695,7 +695,7 @@ def test_search_assets(rotkehlchen_api_server):
             'ascending': [False],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result) == 4
     assert any(entry['name'] == 'Ethereum' for entry in result)
     for entry in result:
@@ -723,7 +723,7 @@ def test_search_assets(rotkehlchen_api_server):
             'ascending': [True],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result) == 4
     assert any(entry['name'] == 'Ethereum' for entry in result)
     for entry in result:
@@ -771,7 +771,7 @@ def test_search_assets(rotkehlchen_api_server):
             'ascending': [True],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert {asset['evm_chain'] for asset in result} == {
         'polygon_pos',
         'optimism',
@@ -797,7 +797,7 @@ def test_search_assets(rotkehlchen_api_server):
             'ascending': [True],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert 50 >= len(result) > 10
     assert all(entry['evm_chain'] == 'ethereum' and 'DAI' in entry['symbol'] for entry in result)
     assert_asset_result_order(data=result, is_ascending=True, order_field='name')
@@ -833,7 +833,7 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
             'limit': 50,
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result) <= 50
     # check that Bitcoin(BTC) appears at the top of result.
     assert_asset_at_top_position('BTC', max_position_index=1, result=result)
@@ -868,7 +868,7 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
             'limit': 50,
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result) <= 50
     assert_substring_in_search_result(result, 'ETH')
     # check that Ethereum(ETH) appear at the top of result.
@@ -893,7 +893,7 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
             'limit': 50,
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result) <= 50
     assert_substring_in_search_result(result, 'ETH')
     # check that Ethereum(ETH) appears at the top of result.
@@ -911,7 +911,7 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
             'limit': 50,
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result) == 0
 
     # check that using evm_chain filter works.
@@ -926,7 +926,7 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
             'evm_chain': 'ethereum',
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert 50 >= len(result) > 10
     assert all(entry['evm_chain'] == 'ethereum' and entry['asset_type'] != 'custom asset' and 'custom_asset_type' not in entry for entry in result)  # noqa: E501
 
@@ -958,7 +958,7 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
             'limit': 50,
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert_substring_in_search_result(result, 'my custom')
     assert all(custom_asset_id == entry['identifier'] and entry['asset_type'] == 'custom asset' and entry['custom_asset_type'] == 'random' for entry in result)  # noqa: E501
 
@@ -998,7 +998,7 @@ def test_search_nfts_with_levenshtein(rotkehlchen_api_server):
             'search_nfts': True,
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == [{
         'identifier': 'my-nft-identifier',
         'name': 'super-duper-nft',
@@ -1019,7 +1019,7 @@ def test_search_nfts_with_levenshtein(rotkehlchen_api_server):
             'limit': 50,
         },
     )
-    results_without_nfts = [x['identifier'] for x in assert_proper_response_with_result(response)]
+    results_without_nfts = [x['identifier'] for x in assert_proper_sync_response_with_result(response)]  # noqa: E501
 
     response = requests.post(
         api_url_for(
@@ -1032,7 +1032,7 @@ def test_search_nfts_with_levenshtein(rotkehlchen_api_server):
             'search_nfts': True,
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     results_with_nfts = [x['identifier'] for x in result]
     assert set(results_with_nfts) - set(results_without_nfts) == {'my-nft-identifier'}
 
@@ -1072,7 +1072,7 @@ def test_only_ignored_assets(rotkehlchen_api_server):
             'ignored_assets_handling': 'show_only',
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert {entry['identifier'] for entry in result['entries']} == set(ignored_assets)
 
 
@@ -1122,7 +1122,7 @@ def test_false_positive(rotkehlchen_api_server: APIServer, globaldb: GlobalDBHan
 
     # check that we can query it from the api
     response = requests.get(api_url_for(rotkehlchen_api_server, 'falsepositivespamtokenresource'))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert A_DAI in result
 
     # test that the filter in the search for assets works
@@ -1132,7 +1132,7 @@ def test_false_positive(rotkehlchen_api_server: APIServer, globaldb: GlobalDBHan
             'allassetsresource',
         ), json={'show_whitelisted_assets_only': True},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     with globaldb.conn.read_ctx() as cursor:
         assert result['entries_found'] == existing_whitelisted_count + 1
     assert A_DAI.identifier in {entry['identifier'] for entry in result['entries']}

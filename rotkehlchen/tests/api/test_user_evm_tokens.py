@@ -18,7 +18,7 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
 )
 from rotkehlchen.tests.utils.constants import A_MKR
 from rotkehlchen.tests.utils.factories import make_evm_address
@@ -60,7 +60,7 @@ def test_query_user_tokens(rotkehlchen_api_server):
         ),
         json={'address': user_token_address1, 'evm_chain': ChainID.ETHEREUM.to_name()},
     )
-    result = assert_proper_response_with_result(response)['entries'][0]
+    result = assert_proper_sync_response_with_result(response)['entries'][0]
     expected_result = expected_tokens[0].to_dict()
     expected_result['identifier'] = ethaddress_to_identifier(user_token_address1)
     assert result == expected_result
@@ -73,7 +73,7 @@ def test_query_user_tokens(rotkehlchen_api_server):
         ),
         json={'asset_type': 'evm token'},
     )
-    result = assert_proper_response_with_result(response)['entries']
+    result = assert_proper_sync_response_with_result(response)['entries']
     expected_result = [x.to_dict() for x in expected_tokens]
     assert_token_entry_exists_in_result(result, expected_result)
     # This check is to make sure the sqlite query works correctly and queries only for tokens
@@ -88,7 +88,7 @@ def test_query_user_tokens(rotkehlchen_api_server):
         ),
         json={'address': unknown_address, 'evm_chain': ChainID.ETHEREUM.to_name()},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 0
 
 
@@ -114,7 +114,7 @@ def test_adding_user_tokens(rotkehlchen_api_server, cache_coinlist):  # pylint: 
         ),
         json=serialized_token,
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == {'identifier': USER_TOKEN3.identifier}
 
     response = requests.post(
@@ -124,7 +124,7 @@ def test_adding_user_tokens(rotkehlchen_api_server, cache_coinlist):  # pylint: 
         ),
         json={'asset_type': 'evm token'},
     )
-    result = assert_proper_response_with_result(response)['entries']
+    result = assert_proper_sync_response_with_result(response)['entries']
     expected_tokens = expected_tokens.copy() + [
         USER_TOKEN3,
         EvmToken.initialize(
@@ -339,7 +339,7 @@ def test_editing_user_tokens(rotkehlchen_api_server, cache_coinlist):  # pylint:
         ),
         json={'asset_type': 'evm token'},
     )
-    result = assert_proper_response_with_result(response)['entries']
+    result = assert_proper_sync_response_with_result(response)['entries']
     expected_tokens = deepcopy(expected_tokens)
     object.__setattr__(expected_tokens[0], 'name', new_name)
     object.__setattr__(expected_tokens[0], 'symbol', new_symbol)
@@ -444,7 +444,7 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
         ),
         json={'asset_type': 'evm token'},
     )
-    result = assert_proper_response_with_result(response)['entries']
+    result = assert_proper_sync_response_with_result(response)['entries']
     expected_tokens = initial_expected_tokens[:-1]
     expected_result = [x.to_dict() for x in expected_tokens]
     assert_token_entry_exists_in_result(result, expected_result)
@@ -500,7 +500,7 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
         ),
         json={'address': initial_tokens[0].evm_address, 'evm_chain': ChainID.ETHEREUM.to_name()},
     )
-    result = assert_proper_response_with_result(response)['entries'][0]
+    result = assert_proper_sync_response_with_result(response)['entries'][0]
     assert result['swapped_for'] == A_MKR.identifier
 
     # test that trying to delete a token (MKR) that is used as swapped_for
@@ -534,7 +534,7 @@ def test_deleting_user_tokens(rotkehlchen_api_server):
         ),
         json={'asset_type': 'evm token'},
     )
-    result = assert_proper_response_with_result(response)['entries']
+    result = assert_proper_sync_response_with_result(response)['entries']
     expected_tokens = initial_expected_tokens[2:-1]
     expected_result = [x.to_dict() for x in expected_tokens]
     assert_token_entry_exists_in_result(result, expected_result)
@@ -607,7 +607,7 @@ def test_add_non_ethereum_token(rotkehlchen_api_server):
             'underlying_tokens': None,
         },
     )
-    identifier = assert_proper_response_with_result(response)['identifier']
+    identifier = assert_proper_sync_response_with_result(response)['identifier']
     assert identifier == 'eip155:56/erc20:0xC88eA7a5df3A7BA59C72393C5b2dc2CE260ff04D'
     token = EvmToken(identifier)
     assert token.name == 'Some random name'
@@ -692,7 +692,7 @@ def test_adding_evm_token_with_underlying_token(rotkehlchen_api_server, cache_co
         ),
         json=payload,
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['identifier'] == token_identifier
 
     response = requests.post(
@@ -704,7 +704,7 @@ def test_adding_evm_token_with_underlying_token(rotkehlchen_api_server, cache_co
             'identifiers': [token_identifier],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     underlying_tokens = [
         {
             'address': '0xB2FdD60AD80ca7bA89B9BAb3b5336c2601C020b4',
@@ -749,7 +749,7 @@ def test_adding_evm_token_with_underlying_token(rotkehlchen_api_server, cache_co
             'limit': 2,
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['entries_found'] == 2
     assert result['entries'][1]['underlying_tokens'] == underlying_tokens
     assert len(result['entries'][0]['underlying_tokens']) == 2
@@ -767,7 +767,7 @@ def test_adding_evm_token_with_underlying_token(rotkehlchen_api_server, cache_co
             'ascending': [True],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['entries_found'] == 2
     assert result['entries'][0]['underlying_tokens'] == [
         {

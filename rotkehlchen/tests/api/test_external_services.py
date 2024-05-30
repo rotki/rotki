@@ -6,7 +6,7 @@ import requests
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
 )
 
 
@@ -19,7 +19,7 @@ def test_add_get_external_service(rotkehlchen_api_server):
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == {}
 
     # Now add some data and see that the response shows they are added
@@ -38,14 +38,14 @@ def test_add_get_external_service(rotkehlchen_api_server):
         api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
         json=data,
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == expected_result
 
     # Query again and see that the newly added services are returned
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == expected_result
 
     # Test that we can replace a value of an already existing service
@@ -56,14 +56,14 @@ def test_add_get_external_service(rotkehlchen_api_server):
         api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
         json=data,
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == expected_result
 
     # Query again and see that the modified services are returned
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == expected_result
 
 
@@ -83,7 +83,7 @@ def test_delete_external_service(rotkehlchen_api_server):
         api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
         json=data,
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == expected_result
 
     # Now try to delete an entry and see the response shows it's deleted
@@ -93,14 +93,14 @@ def test_delete_external_service(rotkehlchen_api_server):
         api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
         json=data,
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == expected_result
 
     # Query again and see that the modified services are returned
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == expected_result
 
     # Now try to delete an existing and a non-existing service to make sure
@@ -110,14 +110,14 @@ def test_delete_external_service(rotkehlchen_api_server):
         api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
         json=data,
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == {}
 
     # Query again and see that the modified services are returned
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == {}
 
 

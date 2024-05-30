@@ -12,7 +12,7 @@ from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants import ONE
 from rotkehlchen.tests.utils.api import (
     api_url_for,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
     assert_simple_ok_response,
 )
 from rotkehlchen.tests.utils.exchanges import try_get_first_exchange
@@ -96,7 +96,7 @@ def test_skipped_external_events(rotkehlchen_api_server_with_exchanges, globaldb
             'stakingresource',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 0
 
     with rotki.data.db.user_write() as write_cursor:
@@ -122,7 +122,7 @@ def test_skipped_external_events(rotkehlchen_api_server_with_exchanges, globaldb
             'to_timestamp': 1640493378,
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     events = result['entries']
     assert len(events) == 1, 'only 1 event should have been found now and rest written to skipped'
 
@@ -130,7 +130,7 @@ def test_skipped_external_events(rotkehlchen_api_server_with_exchanges, globaldb
     response = requests.get(
         api_url_for(server, 'historyskippedexternaleventresource'),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['total'] == 6  # 5 is due to +2 unknown assets set up during fixture
     assert result['locations']['kraken'] == 6
     assert len(result['locations']) == 1
@@ -171,13 +171,13 @@ def test_skipped_external_events(rotkehlchen_api_server_with_exchanges, globaldb
     response = requests.post(
         api_url_for(server, 'historyskippedexternaleventresource'),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['total'] == 6
     assert result['successful'] == 4
     response = requests.get(
         api_url_for(server, 'historyskippedexternaleventresource'),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['total'] == 2, 'only 2 skipped events should be left'
     assert result['locations']['kraken'] == 2, 'only 2 skipped events should be left'
     assert len(result['locations']) == 1
@@ -193,6 +193,6 @@ def test_skipped_external_events(rotkehlchen_api_server_with_exchanges, globaldb
             'to_timestamp': 1640493378,
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     events = result['entries']
     assert len(events) == 3

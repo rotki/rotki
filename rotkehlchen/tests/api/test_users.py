@@ -23,7 +23,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_async_response,
     assert_error_response,
     assert_ok_async_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
     assert_simple_ok_response,
     wait_for_async_task,
     wait_for_async_task_with_result,
@@ -59,7 +59,7 @@ def check_user_status(api_server: APIServer) -> dict[str, str]:
     response = requests.get(
         api_url_for(api_server, 'usersresource'),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     return result
 
 
@@ -70,7 +70,7 @@ def test_loggedin_user_querying(rotkehlchen_api_server: APIServer, username: str
     user_dir.mkdir(exist_ok=True)
     (user_dir / USERDB_NAME).touch()
     response = requests.get(api_url_for(rotkehlchen_api_server, 'usersresource'))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result[username] == 'loggedin'
     assert result['another_user'] == 'loggedout'
     assert len(result) == 2
@@ -92,7 +92,7 @@ def test_not_loggedin_user_querying(
     (user_dir / USERDB_NAME).touch()
 
     response = requests.get(api_url_for(rotkehlchen_api_server, 'usersresource'))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result[username] == 'loggedout'
     assert result['another_user'] == 'loggedout'
     assert len(result) == 2
@@ -117,13 +117,13 @@ def test_user_creation(rotkehlchen_api_server, data_dir):
                 outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
                 result = outcome['result']
             else:
-                result = assert_proper_response_with_result(response)
+                result = assert_proper_sync_response_with_result(response)
 
         check_proper_unlock_result(result, {'submit_usage_analytics': True})
 
         # Query users and make sure the new user is logged in
         response = requests.get(api_url_for(rotkehlchen_api_server, 'usersresource'))
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert result[username] == 'loggedin'
         assert len(result) == idx + 1
 
@@ -155,12 +155,12 @@ def test_user_creation_with_no_analytics(rotkehlchen_api_server, data_dir):
     with ExitStack() as stack:
         patch_no_op_unlock(rotki, stack, should_mock_settings=False)
         response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         check_proper_unlock_result(result, {'submit_usage_analytics': False})
 
     # Query users and make sure the new user is logged in
     response = requests.get(api_url_for(rotkehlchen_api_server, 'usersresource'))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result[username] == 'loggedin'
     assert len(result) == 1
 
@@ -221,12 +221,12 @@ def test_user_creation_with_premium_credentials(rotkehlchen_api_server, data_dir
     with patched_premium_at_start, ExitStack() as stack:
         patch_no_op_unlock(rotki, stack)
         response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     check_proper_unlock_result(result)
 
     # Query users and make sure the new user is logged in
     response = requests.get(api_url_for(rotkehlchen_api_server, 'usersresource'))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result[username] == 'loggedin'
     assert len(result) == 1
 
@@ -305,12 +305,12 @@ def test_user_creation_with_invalid_premium_credentials(rotkehlchen_api_server, 
     with ExitStack() as stack:
         patch_no_op_unlock(rotki, stack)
         response = requests.put(api_url_for(rotkehlchen_api_server, 'usersresource'), json=data)
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     check_proper_unlock_result(result)
 
     # Query users and make sure the new user is logged in
     response = requests.get(api_url_for(rotkehlchen_api_server, 'usersresource'))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result[username] == 'loggedin'
     assert len(result) == 2
 

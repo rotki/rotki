@@ -10,7 +10,7 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
 )
 from rotkehlchen.tests.utils.checks import assert_asset_result_order
 
@@ -56,7 +56,7 @@ def test_get_custom_assets(rotkehlchen_api_server) -> None:
             'customassetsresource',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['entries_found'] == len(TEST_CUSTOM_ASSETS)
     assert result['entries'] == [entry.to_dict(export_with_type=False) for entry in TEST_CUSTOM_ASSETS]  # noqa: E501
 
@@ -69,7 +69,7 @@ def test_get_custom_assets(rotkehlchen_api_server) -> None:
         ),
         json={'name': 'goLD'},  # also check that case doesn't matter
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 1
     assert result['entries_found'] == 1
     assert result['entries'][0] == TEST_CUSTOM_ASSETS[0].to_dict(export_with_type=False)
@@ -82,7 +82,7 @@ def test_get_custom_assets(rotkehlchen_api_server) -> None:
         ),
         json={'custom_asset_type': 'ReAl EsTaTe'},  # also check that case doesn't matter
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 2
     assert result['entries_found'] == 2
     assert result['entries'] == [entry.to_dict(export_with_type=False) for entry in TEST_CUSTOM_ASSETS[1:3]]  # noqa: E501
@@ -95,7 +95,7 @@ def test_get_custom_assets(rotkehlchen_api_server) -> None:
         ),
         json={'identifier': TEST_CUSTOM_ASSETS[3].identifier},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 1
     assert result['entries_found'] == 1
     assert result['entries'][0] == TEST_CUSTOM_ASSETS[3].to_dict(export_with_type=False)
@@ -108,7 +108,7 @@ def test_get_custom_assets(rotkehlchen_api_server) -> None:
         ),
         json={'name': 'idontexist'},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 0
 
     # sort by custom asset type
@@ -122,7 +122,7 @@ def test_get_custom_assets(rotkehlchen_api_server) -> None:
             'ascending': [True],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 4
     assert_asset_result_order(
         data=result['entries'],
@@ -141,7 +141,7 @@ def test_get_custom_assets(rotkehlchen_api_server) -> None:
             'ascending': [True],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 4
     assert_asset_result_order(
         data=result['entries'],
@@ -168,7 +168,7 @@ def test_add_custom_asset(rotkehlchen_api_server) -> None:
         ),
         json=data,
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 1
     assert result['entries'][0]['name'] == data['name']
     assert result['entries'][0]['custom_asset_type'] == data['custom_asset_type']
@@ -223,7 +223,7 @@ def test_edit_custom_asset(rotkehlchen_api_server) -> None:
         ),
         json={'name': 'Milky Way'},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 1
     assert result['entries'][0] == data
 
@@ -275,7 +275,7 @@ def test_edit_custom_asset(rotkehlchen_api_server) -> None:
         ),
         json={'name': 'Land'},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 1
     assert result['entries'][0] == data
 
@@ -299,7 +299,7 @@ def test_delete_custom_asset(rotkehlchen_api_server) -> None:
             'customassetsresource',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 3
     assert TEST_CUSTOM_ASSETS[0].identifier not in [entry['identifier'] for entry in result['entries']]  # noqa: E501
     assert TEST_CUSTOM_ASSETS[0].name not in [entry['name'] for entry in result['entries']]
@@ -326,7 +326,7 @@ def test_custom_asset_types(rotkehlchen_api_server) -> None:
             'customassetstypesresource',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result) == 0
 
     # add custom assets
@@ -337,6 +337,6 @@ def test_custom_asset_types(rotkehlchen_api_server) -> None:
             'customassetstypesresource',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result) == 3
     assert result == ['inheritance', 'real estate', 'stocks']

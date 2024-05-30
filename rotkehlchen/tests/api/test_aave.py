@@ -26,7 +26,7 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_ok_async_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
@@ -97,7 +97,7 @@ def test_query_aave_balances(rotkehlchen_api_server: APIServer) -> None:
             'aavebalancesresource',
         ))
 
-    assert assert_proper_response_with_result(response) == {
+    assert assert_proper_sync_response_with_result(response) == {
         AAVE_BALANCESV1_TEST_ACC: {
             'lending': {
                 A_DAI.identifier: {
@@ -264,7 +264,7 @@ def test_query_aave_defi_borrowing(
         ))
 
     assert response is not None
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     account_data = result[addrs]
     assert len(account_data['lending']) == 1
     assert len(account_data['borrowing']) == 1
@@ -306,7 +306,7 @@ def test_events_aave_v2(rotkehlchen_api_server: 'APIServer') -> None:
         'modulestatsresource',
         module='aave',
     ))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == {
         '0xe903fEed7c1098Ba92E4b7092ca77bBc48503d90': {
             'total_earned_interest': {

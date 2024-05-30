@@ -15,7 +15,7 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
 )
 from rotkehlchen.tests.utils.balances import get_asset_balance_total
 from rotkehlchen.tests.utils.constants import A_RDN
@@ -59,7 +59,7 @@ def test_query_statistics_netvalue(
         ),
     )
 
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result) == 2
     assert len(result['times']) == 1
     assert len(result['data']) == 1
@@ -102,7 +102,7 @@ def test_query_statistics_asset_balance(
         json={'asset': 'ETH'},
     )
     if start_with_valid_premium:
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert len(result) == 1
         entry = result[0]
         assert len(entry) == 4
@@ -125,7 +125,7 @@ def test_query_statistics_asset_balance(
         ), json={'from_timestamp': 0, 'to_timestamp': start_time + 60000, 'asset': 'BTC'},
     )
     if start_with_valid_premium:
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert len(result) == 1
         entry = result[0]
         assert len(entry) == 4
@@ -148,7 +148,7 @@ def test_query_statistics_asset_balance(
         ), json={'from_timestamp': 0, 'to_timestamp': start_time - 1, 'asset': 'BTC'},
     )
     if start_with_valid_premium:
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert len(result) == 0
     else:
         assert_error_response(
@@ -271,7 +271,7 @@ def test_query_statistics_value_distribution(
     def assert_okay_by_location(response):
         """Helper function to run next query and its assertion twice"""
         if start_with_valid_premium:
-            result = assert_proper_response_with_result(response)
+            result = assert_proper_sync_response_with_result(response)
             assert len(result) == 6
             locations = {'poloniex', 'binance', 'banks', 'blockchain', 'total', 'kraken'}
             for entry in result:
@@ -313,7 +313,7 @@ def test_query_statistics_value_distribution(
         ), json={'distribution_by': 'asset'},
     )
     if start_with_valid_premium:
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         if db_settings['treat_eth2_as_eth'] is True:
             assert len(result) == 4
             totals = {
@@ -415,7 +415,7 @@ def test_query_statistics_renderer(rotkehlchen_api_server, start_with_valid_prem
             ),
         )
     if start_with_valid_premium:
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert result == 'codegoeshere'
     else:
         assert_error_response(

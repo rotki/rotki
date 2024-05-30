@@ -17,7 +17,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_ok_async_response,
     assert_proper_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.constants import A_RDN
@@ -144,7 +144,7 @@ def _populate_initial_balances(api_server) -> list[dict[str, Any]]:
             'manuallytrackedbalancesresource',
         ), json={'balances': balances},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     expected_balances = []
     for new_id, balance in enumerate(balances, start=1):
         new_balance = balance.copy()
@@ -177,7 +177,7 @@ def test_add_and_query_manually_tracked_balances(
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
         result = outcome['result']
     else:
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
     assert result['balances'] == [], 'In the beginning we should have no entries'
 
     balances = _populate_initial_balances(rotkehlchen_api_server)
@@ -194,7 +194,7 @@ def test_add_and_query_manually_tracked_balances(
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
         result = outcome['result']
     else:
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
     assert_balances_match(expected_balances=balances, returned_balances=result['balances'])
 
     now = ts_now()
@@ -213,7 +213,7 @@ def test_add_and_query_manually_tracked_balances(
             outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
             result = outcome['result']
         else:
-            result = assert_proper_response_with_result(response)
+            result = assert_proper_sync_response_with_result(response)
 
     assets = result['assets']
     assert len(assets) == 5
@@ -269,7 +269,7 @@ def test_add_manually_tracked_balances_no_price(rotkehlchen_api_server):
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
         result = outcome['result']
     else:
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
     expected_balances = []
     for new_id, balance in enumerate(balances, start=1):
         new_balance = balance.copy()
@@ -292,7 +292,7 @@ def test_add_manually_tracked_balances_no_price(rotkehlchen_api_server):
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
         result = outcome['result']
     else:
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
     assert_balances_match(
         expected_balances=expected_balances,
         returned_balances=result['balances'],
@@ -324,7 +324,7 @@ def test_edit_manually_tracked_balances(rotkehlchen_api_server):
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
         result = outcome['result']
     else:
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
 
     expected_balances = balances_to_edit + balances[3:]
     assert_balances_match(
@@ -344,7 +344,7 @@ def test_edit_manually_tracked_balances(rotkehlchen_api_server):
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
         result = outcome['result']
     else:
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
     assert_balances_match(
         expected_balances=expected_balances,
         returned_balances=result['balances'],
@@ -682,7 +682,7 @@ def test_delete_manually_tracked_balances(rotkehlchen_api_server):
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
         result = outcome['result']
     else:
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
     assert_balances_match(
         expected_balances=expected_balances,
         returned_balances=result['balances'],
@@ -700,7 +700,7 @@ def test_delete_manually_tracked_balances(rotkehlchen_api_server):
         outcome = wait_for_async_task(rotkehlchen_api_server, task_id)
         result = outcome['result']
     else:
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
     assert_balances_match(
         expected_balances=expected_balances,
         returned_balances=result['balances'],
@@ -795,7 +795,7 @@ def test_update_manual_balance_label(rotkehlchen_api_server):
             'balances': [balance_to_patch_1, balance_to_patch_2],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert_balances_match(
         expected_balances=expected_balances,
         returned_balances=result['balances'],
@@ -807,7 +807,7 @@ def test_update_manual_balance_label(rotkehlchen_api_server):
             'manuallytrackedbalancesresource',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert_balances_match(
         expected_balances=expected_balances,
         returned_balances=result['balances'],

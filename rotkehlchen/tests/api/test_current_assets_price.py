@@ -14,9 +14,9 @@ from rotkehlchen.inquirer import CurrentPriceOracle, Inquirer
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
-    assert_maybe_async_response_with_result,
     assert_proper_response,
     assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
 )
 from rotkehlchen.types import ChecksumEvmAddress, Price
 from rotkehlchen.utils.misc import timestamp_to_date
@@ -42,7 +42,7 @@ def test_get_current_assets_price_in_usd(rotkehlchen_api_server):
             'async_query': async_query,
         },
     )
-    result = assert_maybe_async_response_with_result(
+    result = assert_proper_response_with_result(
         response=response,
         rotkehlchen_api_server=rotkehlchen_api_server,
         async_query=async_query,
@@ -74,7 +74,7 @@ def test_get_current_assets_price_in_btc(rotkehlchen_api_server):
             'async_query': async_query,
         },
     )
-    result = assert_maybe_async_response_with_result(
+    result = assert_proper_response_with_result(
         response=response,
         rotkehlchen_api_server=rotkehlchen_api_server,
         async_query=async_query,
@@ -105,7 +105,7 @@ def test_add_manual_latest_price(rotkehlchen_api_server):
             'assets': [A_ETH.identifier, A_USD.identifier],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['assets']['ETH'] == ['100', CurrentPriceOracle.MANUALCURRENT.value, True]  # check that manual current price was used  # noqa: E501
     assert result['assets']['USD'][0] != '100'
 
@@ -119,7 +119,7 @@ def test_add_manual_latest_price(rotkehlchen_api_server):
             'assets': [A_EUR.identifier],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['assets']['EUR'][0] != '0.01'  # should not work vice versa
     assert result['assets']['EUR'][0] != '100'
 
@@ -148,7 +148,7 @@ def test_add_manual_latest_price(rotkehlchen_api_server):
             'assets': [A_ETH.identifier, A_USD.identifier],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['assets']['ETH'] == ['100', CurrentPriceOracle.MANUALCURRENT.value, True]
     assert result['assets']['USD'] == ['23', CurrentPriceOracle.MANUALCURRENT.value, True]
 
@@ -190,7 +190,7 @@ def test_edit_manual_current_price(rotkehlchen_api_server):
             'assets': [A_ETH.identifier, A_USD.identifier],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['assets']['ETH'][0] == '45'
     assert result['assets']['USD'][0] == '25'
 
@@ -347,7 +347,7 @@ def test_get_all_current_prices(rotkehlchen_api_server):
             'alllatestassetspriceresource',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == []
 
     # Add prices to the database and one that overwrites another with the same from/to
@@ -380,7 +380,7 @@ def test_get_all_current_prices(rotkehlchen_api_server):
             'alllatestassetspriceresource',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     expected_response = [
         {'from_asset': 'ETH', 'to_asset': 'EUR', 'price': '5'},
         {'from_asset': 'EUR', 'to_asset': 'USD', 'price': '1.01'},
@@ -395,7 +395,7 @@ def test_get_all_current_prices(rotkehlchen_api_server):
         ),
         json={'to_asset': 'USD'},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == [{'from_asset': 'EUR', 'to_asset': 'USD', 'price': '1.01'}]
 
     # try filtering by from asset
@@ -406,7 +406,7 @@ def test_get_all_current_prices(rotkehlchen_api_server):
         ),
         json={'from_asset': 'ETH'},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == [{'from_asset': 'ETH', 'to_asset': 'EUR', 'price': '5'}]
 
     # try filtering both fields
@@ -417,7 +417,7 @@ def test_get_all_current_prices(rotkehlchen_api_server):
         ),
         json={'from_asset': 'ETH', 'to_asset': 'EUR'},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == [{'from_asset': 'ETH', 'to_asset': 'EUR', 'price': '5'}]
 
     # try empty search
@@ -428,7 +428,7 @@ def test_get_all_current_prices(rotkehlchen_api_server):
         ),
         json={'from_asset': 'ETH', 'to_asset': 'USD'},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result) == 0
 
 
@@ -475,7 +475,7 @@ def test_prices_cache_invalidation_for_manual_prices(rotkehlchen_api_server):
             'ignore_cache': False,
         },
     )
-    old_result = assert_proper_response_with_result(response)
+    old_result = assert_proper_sync_response_with_result(response)
 
     # now update the btc price of eth manually and see that usd price returned is
     # the latest price when `ignore_cache` is False.
@@ -500,7 +500,7 @@ def test_prices_cache_invalidation_for_manual_prices(rotkehlchen_api_server):
             'target_asset': 'USD',
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     # the max diff is to account for price changes between the requests interval
     assert FVal(result['assets']['ETH'][0]).is_close(FVal(old_result['assets']['ETH'][0]) * 10, max_diff='100')  # noqa: E501
     assert result['target_asset'] == 'USD'
@@ -525,7 +525,7 @@ def test_prices_cache_invalidation_for_manual_prices(rotkehlchen_api_server):
             'target_asset': 'USD',
         },
     )
-    avax_result = assert_proper_response_with_result(response)
+    avax_result = assert_proper_sync_response_with_result(response)
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -536,7 +536,7 @@ def test_prices_cache_invalidation_for_manual_prices(rotkehlchen_api_server):
             'target_asset': 'USD',
         },
     )
-    eth_result = assert_proper_response_with_result(response)
+    eth_result = assert_proper_sync_response_with_result(response)
     # # the max diff is to account for price changes between the requests interval
     assert FVal(avax_result['assets']['AVAX'][0]).is_close(FVal(eth_result['assets']['ETH'][0]), max_diff='10')  # noqa: E501
     assert result['target_asset'] == 'USD'
@@ -585,7 +585,7 @@ def test_get_manual_prices_with_nfts(
         ),
         json={'to_asset': 'ETH'},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == [
         {
             'from_asset': 'BTC',
@@ -607,7 +607,7 @@ def test_get_manual_prices_with_nfts(
         ),
         json={'to_asset': 'BTC'},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == [
         {
             'from_asset': '_nft_custom2',

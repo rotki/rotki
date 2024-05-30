@@ -19,7 +19,7 @@ from rotkehlchen.db.filtering import ReportDataFilterQuery
 from rotkehlchen.db.reports import DBAccountingReports
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.fval import FVal
-from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
+from rotkehlchen.tests.utils.api import api_url_for, assert_proper_sync_response_with_result
 from rotkehlchen.types import AssetAmount, Fee, Location, Price, Timestamp, TimestampMS, TradeType
 from rotkehlchen.utils.version_check import get_current_version
 
@@ -371,7 +371,7 @@ def toggle_ignore_an_asset(
                 'ignoredassetsresource',
             ), json={'assets': [asset_to_ignore.identifier]},
         )
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert asset_to_ignore.identifier not in result
 
         with rotki.data.db.conn.read_ctx() as cursor:
@@ -387,7 +387,7 @@ def toggle_ignore_an_asset(
         ), json={'assets': [asset_to_ignore.identifier]},
     )
     assert response.status_code == 200
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert asset_to_ignore.identifier in result['successful']
 
     with rotki.data.db.conn.read_ctx() as cursor:

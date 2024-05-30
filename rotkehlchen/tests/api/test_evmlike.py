@@ -16,7 +16,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_proper_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
     assert_simple_ok_response,
 )
 from rotkehlchen.tests.utils.factories import make_evm_address
@@ -107,7 +107,7 @@ def test_evmlike_blockchain_balances(
                 'blockchainbalancesresource',
             ), json={'async_query': False},
         )
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert balance_query.call_count == 1
         assert result == {
             'per_account': {
@@ -147,7 +147,7 @@ def test_evmlike_add_accounts(rotkehlchen_api_server: 'APIServer') -> None:
         'blockchainsaccountsresource',
         blockchain='ZKSYNC_LITE',
     ))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == []
 
     response = requests.put(api_url_for(
@@ -162,7 +162,7 @@ def test_evmlike_add_accounts(rotkehlchen_api_server: 'APIServer') -> None:
         'blockchainsaccountsresource',
         blockchain='ZKSYNC_LITE',
     ))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == [{'address': addy_0, 'label': None, 'tags': None}]
     assert rotki.chains_aggregator.accounts.zksync_lite == (addy_0,)
 
@@ -178,7 +178,7 @@ def test_evmlike_add_accounts(rotkehlchen_api_server: 'APIServer') -> None:
         'blockchainsaccountsresource',
         blockchain='ZKSYNC_LITE',
     ))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert {'address': addy_1, 'label': 'addy 1 label', 'tags': None} in result
     assert {'address': addy_0, 'label': None, 'tags': None} in result
 
@@ -197,7 +197,7 @@ def test_evmlike_add_accounts(rotkehlchen_api_server: 'APIServer') -> None:
         'blockchainsaccountsresource',
         blockchain='ZKSYNC_LITE',
     ), json={'accounts': [{'address': non_checksummed}]})
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == [checksummed]  # see it's returned/saved checksummed
 
     response = requests.get(api_url_for(
@@ -205,7 +205,7 @@ def test_evmlike_add_accounts(rotkehlchen_api_server: 'APIServer') -> None:
         'blockchainsaccountsresource',
         blockchain='ZKSYNC_LITE',
     ))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert {'address': checksummed, 'label': None, 'tags': None} in result
 
     response = requests.delete(api_url_for(  # delete non-checksummed address
@@ -252,7 +252,7 @@ def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite
             'evmlikependingtransactionsdecodingresource',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == {'zksync_lite': {'undecoded': 16, 'total': 16}}
 
     response = requests.post(
@@ -269,19 +269,19 @@ def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite
             'evmlikependingtransactionsdecodingresource',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == {}
 
     response = requests.post(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
     )
     assert_proper_response(response)
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     response = requests.post(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
         json={'location': Location.ZKSYNC_LITE.serialize()},
     )
-    assert assert_proper_response_with_result(response) == result, 'filtering by location should be same'  # noqa: E501
+    assert assert_proper_sync_response_with_result(response) == result, 'filtering by location should be same'  # noqa: E501
     assert len(result['entries']) == 17
     compare_events_without_id(result['entries'][0]['entry'], EvmEvent(
         event_identifier='zkl0xbd723b5a5f87e485a478bc7d1f365db79440b6e9305bff3b16a0e0ab83e51970',

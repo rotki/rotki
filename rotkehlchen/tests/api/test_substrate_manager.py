@@ -2,7 +2,7 @@ import pytest
 import requests
 
 from rotkehlchen.chain.substrate.types import KusamaNodeName
-from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
+from rotkehlchen.tests.utils.api import api_url_for, assert_proper_sync_response_with_result
 from rotkehlchen.tests.utils.substrate import KUSAMA_TEST_RPC_ENDPOINT
 
 
@@ -30,7 +30,7 @@ def test_set_unset_own_rpc_endpoint(rotkehlchen_api_server):
     )
 
     # Check settings response
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['ksm_rpc_endpoint'] == KUSAMA_TEST_RPC_ENDPOINT
 
     # Check SubstrateManager instance
@@ -47,7 +47,7 @@ def test_set_unset_own_rpc_endpoint(rotkehlchen_api_server):
     )
 
     # Check settings response
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['ksm_rpc_endpoint'] == ''
 
     # Check SubstrateManager instance

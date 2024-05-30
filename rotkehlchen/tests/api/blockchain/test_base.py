@@ -23,9 +23,9 @@ from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
     assert_error_response,
-    assert_maybe_async_response_with_result,
     assert_proper_response,
     assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
 )
 from rotkehlchen.tests.utils.blockchain import (
     assert_btc_balances_result,
@@ -115,7 +115,7 @@ def test_query_bitcoin_blockchain_bech32_balances(
             rotkehlchen_api_server,
             'blockchainbalancesresource',
         ))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert_btc_balances_result(
         result=result,
         btc_accounts=btc_accounts,
@@ -153,7 +153,7 @@ def test_query_blockchain_balances(
             'named_blockchain_balances_resource',
             blockchain='ETH',
         ), json={'async_query': async_query})
-        outcome = assert_maybe_async_response_with_result(
+        outcome = assert_proper_response_with_result(
             response=response,
             rotkehlchen_api_server=rotkehlchen_api_server,
             async_query=async_query,
@@ -176,7 +176,7 @@ def test_query_blockchain_balances(
             'named_blockchain_balances_resource',
             blockchain='BTC',
         ), json={'async_query': async_query})
-        outcome = assert_maybe_async_response_with_result(
+        outcome = assert_proper_response_with_result(
             response=response,
             rotkehlchen_api_server=rotkehlchen_api_server,
             async_query=async_query,
@@ -196,7 +196,7 @@ def test_query_blockchain_balances(
             rotkehlchen_api_server,
             'blockchainbalancesresource',
         ), json={'async_query': async_query})
-        outcome = assert_maybe_async_response_with_result(
+        outcome = assert_proper_response_with_result(
             response=response,
             rotkehlchen_api_server=rotkehlchen_api_server,
             async_query=async_query,
@@ -250,7 +250,7 @@ def test_query_blockchain_balances_ignore_cache(
             'named_blockchain_balances_resource',
             blockchain='ETH',
         ))
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert_eth_balances_result(
             rotki=rotki,
             result=result,
@@ -268,7 +268,7 @@ def test_query_blockchain_balances_ignore_cache(
             'named_blockchain_balances_resource',
             blockchain='ETH',
         ))
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert_eth_balances_result(
             rotki=rotki,
             result=result,
@@ -286,7 +286,7 @@ def test_query_blockchain_balances_ignore_cache(
             'named_blockchain_balances_resource',
             blockchain='ETH',
         ), json={'ignore_cache': True})
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert_eth_balances_result(
             rotki=rotki,
             result=result,
@@ -352,7 +352,7 @@ def _add_blockchain_accounts_test_start(
             blockchain='ETH',
         ), json=data)
 
-        result = assert_maybe_async_response_with_result(
+        result = assert_proper_response_with_result(
             response=response,
             rotkehlchen_api_server=api_server,
             async_query=async_query,
@@ -364,7 +364,7 @@ def _add_blockchain_accounts_test_start(
             api_server,
             'blockchainbalancesresource',
         ))
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
 
     assert_eth_balances_result(
         rotki=rotki,
@@ -389,7 +389,7 @@ def _add_blockchain_accounts_test_start(
             api_server,
             'blockchainbalancesresource',
         ))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert_eth_balances_result(
         rotki=rotki,
         result=result,
@@ -443,7 +443,7 @@ def test_add_blockchain_accounts(  # hard to VCR, the order of requests is not a
             'accounts': [{'address': UNIT_BTC_ADDRESS3}],
             'async_query': async_query,
         })
-        result = assert_maybe_async_response_with_result(
+        result = assert_proper_response_with_result(
             response=response,
             rotkehlchen_api_server=rotkehlchen_api_server,
             async_query=async_query,
@@ -454,7 +454,7 @@ def test_add_blockchain_accounts(  # hard to VCR, the order of requests is not a
             'blockchainbalancesresource',
             blockchain=SupportedBlockchain.BITCOIN.value,
         ))
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
 
     assert_btc_balances_result(
         result=result,
@@ -479,7 +479,7 @@ def test_add_blockchain_accounts(  # hard to VCR, the order of requests is not a
             rotkehlchen_api_server,
             'blockchainbalancesresource',
         ), json={'async_query': async_query})
-        outcome = assert_maybe_async_response_with_result(
+        outcome = assert_proper_response_with_result(
             response=response,
             rotkehlchen_api_server=rotkehlchen_api_server,
             async_query=async_query,
@@ -939,7 +939,7 @@ def test_add_blockchain_accounts_with_tags_and_label_and_querying_them(rotkehlch
         'blockchainsaccountsresource',
         blockchain='ETH',
     ))
-    response_data = assert_proper_response_with_result(response)
+    response_data = assert_proper_sync_response_with_result(response)
     assert len(response_data) == len(accounts_data)
     for entry in response_data:
         # find the corresponding account in accounts data
@@ -1025,7 +1025,7 @@ def test_edit_blockchain_accounts(
         blockchain='ETH',
     ), json=request_data)
 
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     expected_result = request_data['accounts'] + [
         {'address': ethereum_accounts[0]},
     ]
@@ -1037,7 +1037,7 @@ def test_edit_blockchain_accounts(
         'blockchainsaccountsresource',
         blockchain='ETH',
     ))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     compare_account_data(result, expected_result)
 
     # Edit 1 account so that both a label is edited but also a tag is removed and a tag is edited
@@ -1056,7 +1056,7 @@ def test_edit_blockchain_accounts(
         'blockchainsaccountsresource',
         blockchain='ETH',
     ))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     for result_entry in result:  # order of return is not guaranteed
         if result_entry['address'] == ethereum_accounts[2]:
             assert result_entry['address'] == request_data['accounts'][0]['address']
@@ -1077,7 +1077,7 @@ def test_edit_blockchain_accounts(
         'blockchainsaccountsresource',
         blockchain='BTC',
     ), json=request_data)
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result) == 2
     # Assert the result is in the expected format and is edited
     standalone = result['standalone']
@@ -1442,7 +1442,7 @@ def _remove_blockchain_accounts_test_start(
             'blockchainsaccountsresource',
             blockchain='ETH',
         ), json={'accounts': removed_eth_accounts, 'async_query': async_query})
-        result = assert_maybe_async_response_with_result(
+        result = assert_proper_response_with_result(
             response=response,
             rotkehlchen_api_server=api_server,
             async_query=async_query,
@@ -1478,7 +1478,7 @@ def _remove_blockchain_accounts_test_start(
             api_server,
             'blockchainbalancesresource',
         ))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert_eth_balances_result(
         rotki=rotki,
         result=result,
@@ -1537,7 +1537,7 @@ def test_remove_blockchain_accounts(
             'blockchainsaccountsresource',
             blockchain=SupportedBlockchain.BITCOIN.value,
         ), json={'accounts': [UNIT_BTC_ADDRESS1], 'async_query': async_query})
-        outcome = assert_maybe_async_response_with_result(
+        outcome = assert_proper_response_with_result(
             response=response,
             rotkehlchen_api_server=rotkehlchen_api_server,
             async_query=async_query,
@@ -1564,7 +1564,7 @@ def test_remove_blockchain_accounts(
             rotkehlchen_api_server,
             'blockchainbalancesresource',
         ), json={'async_query': async_query})
-        outcome = assert_maybe_async_response_with_result(
+        outcome = assert_proper_response_with_result(
             response=response,
             rotkehlchen_api_server=rotkehlchen_api_server,
             async_query=async_query,

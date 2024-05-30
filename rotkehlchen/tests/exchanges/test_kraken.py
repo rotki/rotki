@@ -46,7 +46,7 @@ from rotkehlchen.serialization.deserialize import deserialize_timestamp_from_flo
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
 )
 from rotkehlchen.tests.utils.constants import (
     A_AUD,
@@ -837,7 +837,7 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
             'stakingresource',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 0
 
     with rotki.data.db.user_write() as write_cursor:
@@ -863,7 +863,7 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
         },
     )
 
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     events = result['entries']
 
     assert len(events) == 3
@@ -899,7 +899,7 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
             'limit': 1,
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['entries_found'] == 1
     assert set(result['assets']) == {'ETH', 'ETH2', 'XTZ'}
 
@@ -915,7 +915,7 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
             'asset': 'ETH2',
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 1
     assert len(result['received']) == 1
 
@@ -931,7 +931,7 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
             'event_subtypes': ['reward'],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 3
 
     response = requests.post(
@@ -948,7 +948,7 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
             ],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 4
 
     # test that sorting for a non-existing column is handled correctly
@@ -987,7 +987,7 @@ def test_kraken_staking(rotkehlchen_api_server_with_exchanges, start_with_valid_
             'order_by_attributes': ['event_type'],
         },
     )
-    assert_proper_response_with_result(response)
+    assert_proper_sync_response_with_result(response)
 
     _, without_eth2_staking_report_result, _ = query_api_create_and_get_report(
         server=rotkehlchen_api_server_with_exchanges,

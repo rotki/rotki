@@ -18,7 +18,7 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_ok_async_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.constants import CURRENT_PRICE_MOCK
@@ -60,7 +60,7 @@ def test_query_compound_balances(
             assert outcome['message'] == ''
             result = outcome['result']
         else:
-            result = assert_proper_response_with_result(response)
+            result = assert_proper_sync_response_with_result(response)
 
     if len(result) != 1:
         test_warnings.warn(UserWarning(f'Test account {TEST_ACC1} has no compound balances'))
@@ -140,7 +140,7 @@ def test_query_compound_v3_balances(
             new=mock_extract_unique_borrowed_tokens,
         ),
     ):
-        result = assert_proper_response_with_result(requests.get(api_url_for(
+        result = assert_proper_sync_response_with_result(requests.get(api_url_for(
             rotkehlchen_api_server,
             'compoundbalancesresource',
         )))
@@ -249,7 +249,7 @@ def test_events_compound(rotkehlchen_api_server: 'APIServer') -> None:
         'modulestatsresource',
         module='compound',
     ))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == {
         'interest_profit': {
             '0xF59D4937BF1305856C3a267bB07791507a3377Ee': {

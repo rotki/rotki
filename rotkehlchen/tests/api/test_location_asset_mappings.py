@@ -6,7 +6,7 @@ import requests
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
 )
 
 if TYPE_CHECKING:
@@ -23,7 +23,7 @@ def _get_all_location_mappings(rotkehlchen_api_server: 'APIServer') -> Any:
             'locationassetmappingsresource',
         ),
     )
-    return assert_proper_response_with_result(response=response)
+    return assert_proper_sync_response_with_result(response=response)
 
 
 def test_location_asset_mappings_query(rotkehlchen_api_server: 'APIServer') -> None:
@@ -40,7 +40,7 @@ def test_location_asset_mappings_query(rotkehlchen_api_server: 'APIServer') -> N
         ),
         json={'location': None},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == result['entries_found'] == 33
 
     # query all common mappings
@@ -51,7 +51,7 @@ def test_location_asset_mappings_query(rotkehlchen_api_server: 'APIServer') -> N
         ),
         json={'location': None},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == result['entries_found'] == 33
 
     # query all kraken mappings
@@ -62,7 +62,7 @@ def test_location_asset_mappings_query(rotkehlchen_api_server: 'APIServer') -> N
         ),
         json={'location': 'kraken'},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == result['entries_found'] == 228
 
     # query by symbol all the kraken mappings
@@ -73,7 +73,7 @@ def test_location_asset_mappings_query(rotkehlchen_api_server: 'APIServer') -> N
         ),
         json={'location_symbol': 'eth', 'location': 'kraken'},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert all(entry['location'] == 'kraken' for entry in result['entries'])
     assert {'XETH', 'ETHW', 'WETH', 'ETH2'}.issubset(
         {entry['location_symbol'] for entry in result['entries']},
@@ -103,7 +103,7 @@ def test_location_asset_mappings_add(rotkehlchen_api_server: 'APIServer') -> Non
             'entries': added_mappings,
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result is True
 
     # check that the mappings were indeed added
@@ -117,7 +117,7 @@ def test_location_asset_mappings_add(rotkehlchen_api_server: 'APIServer') -> Non
             'limit': 2000,
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     all_mappings_after_addition = result['entries']
     assert len(all_mappings_after_addition) == result['entries_found'] == NUM_ASSETS_MAPPINGS_V1_32 + 2  # noqa: E501
     for new_mapping in added_mappings:
@@ -143,7 +143,7 @@ def test_location_asset_mappings_update(rotkehlchen_api_server: 'APIServer') -> 
         ),
         json={'entries': [updated_mapping]},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result is True
 
     # check if the mappings is updated
@@ -171,7 +171,7 @@ def test_location_asset_mappings_delete(rotkehlchen_api_server: 'APIServer') -> 
             'entries': [deleted_mapping],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result is True
 
     result = _get_all_location_mappings(rotkehlchen_api_server)
@@ -195,7 +195,7 @@ def test_location_asset_mappings_pagination(rotkehlchen_api_server: 'APIServer')
             'limit': 1,
         },
     )
-    result = assert_proper_response_with_result(response=response)
+    result = assert_proper_sync_response_with_result(response=response)
     assert result['entries'] == [all_mappings[0]]
     assert result['entries_found'] == NUM_ASSETS_MAPPINGS_V1_32
 
@@ -210,7 +210,7 @@ def test_location_asset_mappings_pagination(rotkehlchen_api_server: 'APIServer')
             'limit': 1,
         },
     )
-    result = assert_proper_response_with_result(response=response)
+    result = assert_proper_sync_response_with_result(response=response)
     assert result['entries'] == [all_mappings[1]]
     assert result['entries_found'] == NUM_ASSETS_MAPPINGS_V1_32
 

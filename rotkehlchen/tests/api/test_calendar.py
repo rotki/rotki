@@ -1,4 +1,5 @@
 from http import HTTPStatus
+
 import pytest
 import requests
 
@@ -10,7 +11,7 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
 )
 from rotkehlchen.types import ChecksumEvmAddress, SupportedBlockchain
 
@@ -45,7 +46,7 @@ def test_basic_calendar_operations(
         },
     )
 
-    data = assert_proper_response_with_result(response)
+    data = assert_proper_sync_response_with_result(response)
     assert data['entry_id'] == 1
 
     response = requests.put(
@@ -60,7 +61,7 @@ def test_basic_calendar_operations(
             'auto_delete': False,
         },
     )
-    data = assert_proper_response_with_result(response)
+    data = assert_proper_sync_response_with_result(response)
     assert data['entry_id'] == 2
 
     with database.conn.read_ctx() as cursor:
@@ -125,7 +126,7 @@ def test_basic_calendar_operations(
         api_url_for(rotkehlchen_api_server, 'calendarresource'),
         json=future_ts,
     )
-    assert assert_proper_response_with_result(response) == {
+    assert assert_proper_sync_response_with_result(response) == {
         'entries': [ens_json_event, curve_json_event],
         'entries_found': 2,
         'entries_total': 2,
@@ -137,7 +138,7 @@ def test_basic_calendar_operations(
         url=api_url_for(rotkehlchen_api_server, 'calendarresource'),
         json={'from_timestamp': 1977652400, 'to_timestamp': 1977652511},
     )
-    assert assert_proper_response_with_result(response) == {
+    assert assert_proper_sync_response_with_result(response) == {
         'entries': [ens_json_event],
         'entries_found': 1,
         'entries_total': 2,
@@ -151,7 +152,7 @@ def test_basic_calendar_operations(
             'accounts': [{'address': ethereum_accounts[0], 'blockchain': 'eth'}],
         } | future_ts,
     )
-    assert assert_proper_response_with_result(response) == {
+    assert assert_proper_sync_response_with_result(response) == {
         'entries': [ens_json_event],
         'entries_found': 1,
         'entries_total': 2,
@@ -163,7 +164,7 @@ def test_basic_calendar_operations(
         url=api_url_for(rotkehlchen_api_server, 'calendarresource'),
         json={'counterparty': CPT_CURVE} | future_ts,
     )
-    assert assert_proper_response_with_result(response) == {
+    assert assert_proper_sync_response_with_result(response) == {
         'entries': [curve_json_event],
         'entries_found': 1,
         'entries_total': 2,
@@ -175,7 +176,7 @@ def test_basic_calendar_operations(
         url=api_url_for(rotkehlchen_api_server, 'calendarresource'),
         json={'name': 'renewal'} | future_ts,
     )
-    assert assert_proper_response_with_result(response) == {
+    assert assert_proper_sync_response_with_result(response) == {
         'entries': [ens_json_event],
         'entries_found': 1,
         'entries_total': 2,
@@ -187,7 +188,7 @@ def test_basic_calendar_operations(
         url=api_url_for(rotkehlchen_api_server, 'calendarresource'),
         json={'name': 'Unlock'} | future_ts,
     )
-    assert assert_proper_response_with_result(response) == {
+    assert assert_proper_sync_response_with_result(response) == {
         'entries': [curve_json_event],
         'entries_found': 1,
         'entries_total': 2,
@@ -224,7 +225,7 @@ def test_basic_calendar_operations(
         url=api_url_for(rotkehlchen_api_server, 'calendarresource'),
         json={'accounts': [{'address': crv_event[4]}]} | future_ts,
     )
-    result = assert_proper_response_with_result(response)['entries']
+    result = assert_proper_sync_response_with_result(response)['entries']
     assert result[0]['blockchain'] == SupportedBlockchain.ETHEREUM.serialize()
     assert result[1]['blockchain'] == SupportedBlockchain.GNOSIS.serialize()
 
@@ -373,7 +374,7 @@ def test_reminder_operations(rotkehlchen_api_server: APIServer):
             'auto_delete': False,
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     calendar_id = result['entry_id']
     assert calendar_id == 1
 
@@ -387,7 +388,7 @@ def test_reminder_operations(rotkehlchen_api_server: APIServer):
             'secs_before': DAY_IN_SECONDS * 3,
         }]},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['success'] == [calendar_id]
     assert result['failed'] == [100]
 
@@ -396,7 +397,7 @@ def test_reminder_operations(rotkehlchen_api_server: APIServer):
         api_url_for(rotkehlchen_api_server, 'calendarremindersresource'),
         json={'identifier': calendar_id},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == {
         'entries': [{
             'identifier': 1,
@@ -419,7 +420,7 @@ def test_reminder_operations(rotkehlchen_api_server: APIServer):
         api_url_for(rotkehlchen_api_server, 'calendarremindersresource'),
         json={'identifier': calendar_id},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == {
         'entries': [{
             'identifier': 1,
@@ -436,5 +437,5 @@ def test_reminder_operations(rotkehlchen_api_server: APIServer):
         api_url_for(rotkehlchen_api_server, 'calendarremindersresource'),
         json={'identifier': calendar_id},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == {'entries': []}

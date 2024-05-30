@@ -27,9 +27,9 @@ from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
-    assert_maybe_async_response_with_result,
     assert_ok_async_response,
     assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.constants import ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3
@@ -152,7 +152,7 @@ def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
             'historyactionableitemsresource',
         ),
     )
-    result = assert_proper_response_with_result(response=response, status_code=HTTPStatus.OK)
+    result = assert_proper_sync_response_with_result(response=response, status_code=HTTPStatus.OK)
     assert len(result['missing_acquisitions']) == 9 if fees_in_cost_basis is False else 8
     assert len(result['missing_prices']) == 0
     assert result['report_id'] == 1
@@ -337,7 +337,7 @@ def test_query_pnl_report_events_pagination_filtering(
             report_id=report_id,
         ),
     )
-    events_result = assert_proper_response_with_result(response)
+    events_result = assert_proper_sync_response_with_result(response)
     master_events = events_result['entries']
 
     events = []
@@ -355,7 +355,7 @@ def test_query_pnl_report_events_pagination_filtering(
                 'ascending': [ascending_timestamp],
             },
         )
-        events_result = assert_proper_response_with_result(response)
+        events_result = assert_proper_sync_response_with_result(response)
         assert len(events_result['entries']) <= 10
         events.extend(events_result['entries'])
 
@@ -406,7 +406,7 @@ def test_history_debug_export(rotkehlchen_api_server: 'APIServer') -> None:
             'to_timestamp': now,
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert tuple(result.keys()) == expected_keys
     assert result['pnl_settings'] == {'from_timestamp': Timestamp(0), 'to_timestamp': now}
     assert result['ignored_events_ids'] == {'history_event': [tx_id]}
@@ -428,7 +428,7 @@ def test_history_debug_import(rotkehlchen_api_server):
                 'async_query': async_query,
             },
         )
-        assert assert_maybe_async_response_with_result(
+        assert assert_proper_response_with_result(
             response=response,
             rotkehlchen_api_server=rotkehlchen_api_server,
             async_query=async_query,
@@ -443,7 +443,7 @@ def test_history_debug_import(rotkehlchen_api_server):
                 files={'filepath': infile},
                 data={'async_query': async_query},
             )
-            assert assert_maybe_async_response_with_result(
+            assert assert_proper_response_with_result(
                 response=response,
                 rotkehlchen_api_server=rotkehlchen_api_server,
                 async_query=async_query,
@@ -525,7 +525,7 @@ def test_missing_prices_in_pnl_report(rotkehlchen_api_server):
             'historyactionableitemsresource',
         ),
     )
-    result = assert_proper_response_with_result(response=response, status_code=HTTPStatus.OK)
+    result = assert_proper_sync_response_with_result(response=response, status_code=HTTPStatus.OK)
     assert coingecko_api_calls == 2
     assert result['report_id'] == 1
     assert result['missing_prices'] == [{

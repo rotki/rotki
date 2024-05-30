@@ -18,7 +18,7 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
 )
 from rotkehlchen.types import ChainID, Location, SupportedBlockchain
 from rotkehlchen.utils.misc import get_system_spec
@@ -76,7 +76,7 @@ def test_query_info_version_when_up_to_date(rotkehlchen_api_server):
             ),
         )
 
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == generate_expected_info(expected_version, rotki.data_dir)
 
     with version_patch, release_patch:
@@ -90,7 +90,7 @@ def test_query_info_version_when_up_to_date(rotkehlchen_api_server):
             },
         )
 
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == generate_expected_info(expected_version, rotki.data_dir, latest_version=expected_version)  # noqa: E501
 
     with version_patch, release_patch, patch.dict(os.environ, {'ROTKI_ACCEPT_DOCKER_RISK': 'whatever'}):  # noqa: E501
@@ -101,7 +101,7 @@ def test_query_info_version_when_up_to_date(rotkehlchen_api_server):
             ),
         )
 
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == generate_expected_info(
         expected_version=expected_version,
         data_dir=rotki.data_dir,
@@ -148,7 +148,7 @@ def test_query_version_when_update_required(rotkehlchen_api_server):
             },
         )
 
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     our_version = get_system_spec()['rotkehlchen']
     assert result == generate_expected_info(
         expected_version=our_version,
@@ -168,7 +168,7 @@ def test_manage_nodes(rotkehlchen_api_server):
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result) == 5
     for node in result:
         if node['name'] != ETHEREUM_ETHERSCAN_NODE_NAME:
@@ -188,7 +188,7 @@ def test_manage_nodes(rotkehlchen_api_server):
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert not any(node['name'] == 'cloudflare' for node in result)
 
     # now try to add it again
@@ -206,7 +206,7 @@ def test_manage_nodes(rotkehlchen_api_server):
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     for node in result:
         if node['name'] == 'cloudflare':
             assert FVal(node['weight']) == 20
@@ -267,7 +267,7 @@ def test_manage_nodes(rotkehlchen_api_server):
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     for node in result:
         if node['identifier'] == 4:
             assert FVal(node['weight']) == 20
@@ -294,7 +294,7 @@ def test_manage_nodes(rotkehlchen_api_server):
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     for node in result:
         if node['identifier'] == 4:
             assert FVal(node['weight']) == 20
@@ -332,7 +332,7 @@ def test_manage_nodes(rotkehlchen_api_server):
             'active': True,
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     # set owned to false and see that we have the expected amount of nodes
     response = requests.patch(
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
@@ -349,7 +349,7 @@ def test_manage_nodes(rotkehlchen_api_server):
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     # Check that the rebalancing didn't get affected by the owned node
     for node in result:
         if node['name'] == 'anchor':
@@ -368,7 +368,7 @@ def test_manage_nodes(rotkehlchen_api_server):
             'active': True,
         },
     )
-    assert_proper_response_with_result(response)
+    assert_proper_sync_response_with_result(response)
 
     response = requests.patch(  # test that editing optimism etherscan weight works
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain='OPTIMISM'),
@@ -381,7 +381,7 @@ def test_manage_nodes(rotkehlchen_api_server):
             'active': True,
         },
     )
-    assert_proper_response_with_result(response)
+    assert_proper_sync_response_with_result(response)
 
     # try to delete normal etherscan and optimism etherscan and see it fails
     for identifier in (1, 6):
@@ -400,7 +400,7 @@ def test_manage_nodes(rotkehlchen_api_server):
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=blockchain_key),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     for node in result:
         response = requests.patch(
             api_url_for(rotkehlchen_api_server, 'rpcnodesresource', blockchain=node['blockchain']),
@@ -420,7 +420,7 @@ def test_manage_nodes(rotkehlchen_api_server):
 def test_configuration(rotkehlchen_api_server):
     """Test that the configuration endpoint returns the expected information"""
     response = requests.get(api_url_for(rotkehlchen_api_server, 'configurationsresource'))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['max_size_in_mb_all_logs']['value'] == 659
     assert result['max_size_in_mb_all_logs']['is_default'] is False
     assert result['max_logfiles_num']['is_default'] is True
@@ -431,7 +431,7 @@ def test_configuration(rotkehlchen_api_server):
 
 def test_query_all_chain_ids(rotkehlchen_api_server):
     response = requests.get(api_url_for(rotkehlchen_api_server, 'allevmchainsresource'))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     for chain in ChainID:
         name, label = chain.name_and_label()
         assert {'id': chain.value, 'name': name, 'label': label} in result
@@ -453,7 +453,7 @@ def test_events_mappings(rotkehlchen_api_server_with_exchanges):
             'typesmappingsresource',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert 'global_mappings' in result
     assert result['entry_type_mappings'] == {
         'eth withdrawal event': {
@@ -479,7 +479,7 @@ def test_events_mappings(rotkehlchen_api_server_with_exchanges):
             'locationresource',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     excluded_locations = {Location.TOTAL}
     valid_locations = {location.serialize() for location in Location if location not in excluded_locations}  # noqa: E501
     assert set(result['locations'].keys()) == valid_locations
@@ -492,7 +492,7 @@ def test_events_mappings(rotkehlchen_api_server_with_exchanges):
             'evmproductsresource',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['mappings'][CPT_CONVEX] == [EvmProduct.GAUGE.serialize(), EvmProduct.STAKING.serialize()]  # noqa: E501
     assert result['mappings'][CPT_CURVE] == [EvmProduct.GAUGE.serialize()]
     assert result['products'] == [product.serialize() for product in EvmProduct]
@@ -507,7 +507,7 @@ def test_counterparties(rotkehlchen_api_server_with_exchanges):
             'evmcounterpartiesresource',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     for counterparty_details in result:
         assert 'identifier' in counterparty_details
         assert 'label' in counterparty_details

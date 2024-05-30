@@ -19,7 +19,7 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
     assert_simple_ok_response,
 )
 from rotkehlchen.tests.utils.constants import A_JPY
@@ -538,7 +538,7 @@ def test_queried_addresses_per_protocol(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'queriedaddressesresource'), json=data,
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == {'aave': [address1]}
 
     address2 = make_evm_address()
@@ -546,7 +546,7 @@ def test_queried_addresses_per_protocol(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'queriedaddressesresource'), json=data,
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert_queried_addresses_match(result, {
         'aave': [address1],
         'makerdao_vaults': [address2],
@@ -557,7 +557,7 @@ def test_queried_addresses_per_protocol(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'queriedaddressesresource'), json=data,
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert_queried_addresses_match(result, {
         'aave': [address1, address2],
         'makerdao_vaults': [address2],
@@ -580,7 +580,7 @@ def test_queried_addresses_per_protocol(rotkehlchen_api_server):
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'queriedaddressesresource'), json=data,
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert_queried_addresses_match(result, {
         'aave': [address1, address2],
         'makerdao_vaults': [address2],
@@ -590,7 +590,7 @@ def test_queried_addresses_per_protocol(rotkehlchen_api_server):
     response = requests.delete(
         api_url_for(rotkehlchen_api_server, 'queriedaddressesresource'), json=data,
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert_queried_addresses_match(result, {
         'aave': [address1, address2],
         'makerdao_vaults': [address2],
@@ -609,7 +609,7 @@ def test_queried_addresses_per_protocol(rotkehlchen_api_server):
 
     # test that getting the queried addresses per module works
     response = requests.get(api_url_for(rotkehlchen_api_server, 'queriedaddressesresource'))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert_queried_addresses_match(result, {
         'aave': [address1, address2],
         'makerdao_vaults': [address2],

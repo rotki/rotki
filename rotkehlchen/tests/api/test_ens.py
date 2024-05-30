@@ -11,7 +11,7 @@ from rotkehlchen.errors.misc import BlockchainQueryError, RemoteError
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
 )
 from rotkehlchen.types import ChecksumEvmAddress, EnsMapping, Timestamp
 from rotkehlchen.utils.misc import ts_now
@@ -91,7 +91,7 @@ def test_reverse_ens(rotkehlchen_api_server):
             ),
             json={'ethereum_addresses': addrs_1},
         )
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         expected_resp_1 = {
             addrs_1[0]: 'rotki.eth',
             addrs_1[1]: 'lefteris.eth',
@@ -111,7 +111,7 @@ def test_reverse_ens(rotkehlchen_api_server):
             ),
             json={'ethereum_addresses': addrs_2},
         )
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         expected_resp_2 = {
             addrs_2[0]: 'rotki.eth',
             addrs_2[1]: 'abc.eth',
@@ -143,7 +143,7 @@ def test_reverse_ens(rotkehlchen_api_server):
             ),
             json={'ethereum_addresses': addrs_1 + addrs_2[1:], 'ignore_cache': True},
         )
-        assert_proper_response_with_result(response)
+        assert_proper_sync_response_with_result(response)
     db_changes_after = db_conn.total_changes
     # Check that we have 5 updates because we have 5 rows in ens_mappings table
     assert db_changes_after == 5 + db_changes_before

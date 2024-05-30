@@ -19,8 +19,8 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
-    assert_maybe_async_response_with_result,
     assert_proper_response,
+    assert_proper_response_with_result,
 )
 from rotkehlchen.tests.utils.checks import assert_serialized_lists_equal
 from rotkehlchen.tests.utils.factories import make_evm_address
@@ -460,7 +460,7 @@ def test_query_current_dsr_balance(
             rotkehlchen_api_server,
             'makerdaodsrbalanceresource',
         ), json={'async_query': async_query})
-        outcome = assert_maybe_async_response_with_result(
+        outcome = assert_proper_response_with_result(
             response=response,
             rotkehlchen_api_server=rotkehlchen_api_server,
             async_query=async_query,
@@ -555,7 +555,7 @@ def test_query_historical_dsr(
             rotkehlchen_api_server,
             'makerdaodsrhistoryresource',
         ), json={'async_query': async_query})
-        outcome = assert_maybe_async_response_with_result(
+        outcome = assert_proper_response_with_result(
             response=response,
             rotkehlchen_api_server=rotkehlchen_api_server,
             async_query=async_query,

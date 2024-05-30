@@ -11,10 +11,10 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
-    assert_maybe_async_response_with_result,
     assert_ok_async_response,
     assert_proper_response,
     assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.ens import ENS_BRUNO, ENS_BRUNO_KSM_ADDR
@@ -83,7 +83,7 @@ def test_add_ksm_blockchain_account(rotkehlchen_api_server, kusama_manager_conne
         'named_blockchain_balances_resource',
         blockchain=kusama_chain_key,
     ))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
 
     # Check per account
     account_balances = result['per_account'][kusama_chain_key][SUBSTRATE_ACC1_KSM_ADDR]
@@ -126,7 +126,7 @@ def test_remove_ksm_blockchain_account(rotkehlchen_api_server):
             'async_query': False,
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
 
     # Check per account
     assert SUBSTRATE_ACC2_KSM_ADDR not in result['per_account'][kusama_chain_key]
@@ -194,7 +194,7 @@ def test_add_ksm_blockchain_account_ens_domain(rotkehlchen_api_server):
             'async_query': async_query,
         },
     )
-    result = assert_maybe_async_response_with_result(
+    result = assert_proper_response_with_result(
         response=response,
         rotkehlchen_api_server=rotkehlchen_api_server,
         async_query=async_query,

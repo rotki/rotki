@@ -23,9 +23,9 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_async_response,
     assert_error_response,
-    assert_maybe_async_response_with_result,
     assert_ok_async_response,
     assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.factories import make_evm_address
@@ -105,7 +105,7 @@ def test_query_transactions(rotkehlchen_api_server: 'APIServer'):
         assert outcome['message'] == ''
         result = outcome['result']
     else:
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
 
     assert result is True
 
@@ -175,7 +175,7 @@ def test_evm_transaction_hash_addition(rotkehlchen_api_server: 'APIServer') -> N
             'associated_address': ADDY,
         },
     )
-    assert assert_maybe_async_response_with_result(
+    assert assert_proper_response_with_result(
         response=response,
         rotkehlchen_api_server=rotkehlchen_api_server,
         async_query=is_async_query,

@@ -3,7 +3,7 @@ import pytest
 import requests
 
 from rotkehlchen.tests.utils.aave import AAVE_TEST_ACC_1
-from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
+from rotkehlchen.tests.utils.api import api_url_for, assert_proper_sync_response_with_result
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -18,7 +18,7 @@ def test_query_defi_balances(rotkehlchen_api_server, ethereum_accounts):  # pyli
         rotkehlchen_api_server,
         'defibalancesresource',
     ))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
 
     # assert some defi balances were detected
     first_entry = result[AAVE_TEST_ACC_1][0]

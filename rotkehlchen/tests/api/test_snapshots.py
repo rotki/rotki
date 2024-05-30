@@ -28,7 +28,7 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
     assert_simple_ok_response,
 )
 from rotkehlchen.types import Location, Timestamp
@@ -723,7 +723,7 @@ def test_get_snapshot_json(rotkehlchen_api_server):
             timestamp=ts,
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['balances_snapshot']) == 2
     assert len(result['location_data_snapshot']) == 3
 
@@ -789,7 +789,7 @@ def test_edit_snapshot(rotkehlchen_api_server):
             timestamp=ts,
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['balances_snapshot']) == 2
     assert len(result['location_data_snapshot']) == 2
     assert result == snapshot_payload
@@ -838,7 +838,7 @@ def test_edit_snapshot(rotkehlchen_api_server):
             timestamp=ts,
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['balances_snapshot']) == 2
     assert len(result['location_data_snapshot']) == 2
     assert result == snapshot_payload

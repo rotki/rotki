@@ -1,10 +1,10 @@
 from typing import TYPE_CHECKING
-import pytest
 
+import pytest
 import requests
 
 from rotkehlchen.chain.ethereum.defi.protocols import DEFI_PROTOCOLS
-from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
+from rotkehlchen.tests.utils.api import api_url_for, assert_proper_sync_response_with_result
 from rotkehlchen.types import SupportedBlockchain
 
 if TYPE_CHECKING:
@@ -17,7 +17,7 @@ def test_metadata_endpoint(rotkehlchen_api_server: 'APIServer') -> None:
     airdrops_response = requests.get(
         api_url_for(rotkehlchen_api_server, 'airdropsmetadataresource'),
     )
-    airdrops_result = assert_proper_response_with_result(airdrops_response)
+    airdrops_result = assert_proper_sync_response_with_result(airdrops_response)
     assert len(airdrops_result) == 22
     for res in airdrops_result:
         assert 'identifier' in res and isinstance(res['identifier'], str)
@@ -34,14 +34,14 @@ def test_metadata_endpoint(rotkehlchen_api_server: 'APIServer') -> None:
         for identifier, protocol in DEFI_PROTOCOLS.items()
     ]
     defi_response = requests.get(api_url_for(rotkehlchen_api_server, 'defimetadataresource'))
-    defi_result = assert_proper_response_with_result(defi_response)
+    defi_result = assert_proper_sync_response_with_result(defi_response)
     assert defi_result == defi_expected_result
 
     # testing the supported chains endpoint
     supported_chains_response = requests.get(
         api_url_for(rotkehlchen_api_server, 'supportedchainsresource'),
     )
-    supported_chains_result = assert_proper_response_with_result(supported_chains_response)
+    supported_chains_result = assert_proper_sync_response_with_result(supported_chains_response)
     for entry in SupportedBlockchain:
         for result_entry in supported_chains_result:
             if (
