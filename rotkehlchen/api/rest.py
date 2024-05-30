@@ -296,17 +296,6 @@ def wrap_in_fail_result(message: str, status_code: HTTPStatus | None = None) -> 
     return result
 
 
-def _maybe_get_temp_file(filepath: FileStorage | Path) -> Path:
-    """Checks if filepath is a FileStorage and if so,
-    creates a temporary copied file and returns its path."""
-    if isinstance(filepath, FileStorage):
-        _, tmpfilepath = tempfile.mkstemp()
-        filepath.save(tmpfilepath)
-        return Path(tmpfilepath)
-
-    return filepath
-
-
 def api_response(
         result: dict[str, Any],
         status_code: HTTPStatus = HTTPStatus.OK,
@@ -1637,7 +1626,7 @@ class RestAPI:
 
     if getattr(sys, 'frozen', False) is False:
         @async_api_call()
-        def _import_history_debug(self, filepath: Path) -> dict[str, Any]:
+        def import_history_debug(self, filepath: Path) -> dict[str, Any]:
             """Imports the PnL debug data for processing and report generation"""
             json_importer = DebugHistoryImporter(self.rotkehlchen.data.db)
             success, msg, data = json_importer.import_history_debug(filepath=filepath)
@@ -1654,14 +1643,6 @@ class RestAPI:
                 events=data['events'],
             )
             return OK_RESULT
-
-        def import_history_debug(
-                self,
-                async_query: bool,
-                filepath: FileStorage | Path,
-        ) -> Response:
-            filepath = _maybe_get_temp_file(filepath)
-            return self._import_history_debug(async_query=async_query, filepath=filepath)  # pylint: disable=unexpected-keyword-arg  # pylint doesn't see the async decorator
 
     @async_api_call()
     def export_accounting_rules(self, directory_path: Path | None) -> dict[str, Any]:
@@ -1686,9 +1667,8 @@ class RestAPI:
         return OK_RESULT
 
     @async_api_call()
-    def import_accounting_rules(self, filepath: FileStorage | Path) -> dict[str, Any]:
+    def import_accounting_rules(self, filepath: Path) -> dict[str, Any]:
         """Imports the accounting rules from the given json file and stores them in the DB."""
-        filepath = _maybe_get_temp_file(filepath)
         try:
             with open(filepath, encoding='utf-8') as f:
                 json_data = json.load(f)

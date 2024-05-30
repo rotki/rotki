@@ -23,11 +23,10 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_async_response,
     assert_error_response,
+    assert_maybe_async_response_with_result,
     assert_ok_async_response,
     assert_proper_response_with_result,
-    assert_simple_ok_response,
     wait_for_async_task,
-    wait_for_async_task_with_result,
 )
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
@@ -176,12 +175,11 @@ def test_evm_transaction_hash_addition(rotkehlchen_api_server: 'APIServer') -> N
             'associated_address': ADDY,
         },
     )
-    if is_async_query is True:
-        task_id = assert_ok_async_response(response)
-        result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
-        assert result is True
-    else:
-        assert_simple_ok_response(response)
+    assert assert_maybe_async_response_with_result(
+        response=response,
+        rotkehlchen_api_server=rotkehlchen_api_server,
+        async_query=is_async_query,
+    )
 
     # now see that the transaction is present in the db
     # and the transaction was decoded properly
@@ -254,7 +252,7 @@ def test_evm_transaction_hash_addition(rotkehlchen_api_server: 'APIServer') -> N
         },
     )
     if is_async_query:
-        task_id = assert_ok_async_response(response)  # type: ignore[unreachable]
+        task_id = assert_ok_async_response(response)
         response_data = wait_for_async_task(rotkehlchen_api_server, task_id)
         assert_error_async_response(response_data, f'{random_tx_hash} not found on chain.', status_code=HTTPStatus.NOT_FOUND)  # noqa: E501
     else:

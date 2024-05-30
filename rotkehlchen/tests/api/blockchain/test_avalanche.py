@@ -11,11 +11,11 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
+    assert_maybe_async_response_with_result,
     assert_ok_async_response,
     assert_proper_response,
     assert_proper_response_with_result,
     wait_for_async_task,
-    wait_for_async_task_with_result,
 )
 from rotkehlchen.tests.utils.avalanche import AVALANCHE_ACC1_AVAX_ADDR, AVALANCHE_ACC2_AVAX_ADDR
 from rotkehlchen.tests.utils.substrate import SUBSTRATE_ACC1_DOT_ADDR
@@ -111,11 +111,11 @@ def test_remove_avax_blockchain_account(rotkehlchen_api_server: 'APIServer') -> 
             'async_query': async_query,
         },
     )
-    if async_query:
-        task_id = assert_ok_async_response(response)
-        result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
-    else:
-        result = assert_proper_response_with_result(response)
+    result = assert_maybe_async_response_with_result(
+        response=response,
+        rotkehlchen_api_server=rotkehlchen_api_server,
+        async_query=async_query,
+    )
 
     # Check per account
     avax_chain_key = SupportedBlockchain.AVALANCHE.serialize()

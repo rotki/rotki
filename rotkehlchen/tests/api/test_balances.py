@@ -21,6 +21,7 @@ from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
     assert_error_response,
+    assert_maybe_async_response_with_result,
     assert_ok_async_response,
     assert_proper_response,
     assert_proper_response_with_result,
@@ -183,14 +184,11 @@ def test_query_all_balances(
                 'allbalancesresource',
             ), json={'async_query': async_query},
         )
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task_with_result(
-                rotkehlchen_api_server_with_exchanges,
-                task_id,
-            )
-        else:
-            outcome = assert_proper_response_with_result(response)
+        outcome = assert_maybe_async_response_with_result(
+            response=response,
+            rotkehlchen_api_server=rotkehlchen_api_server_with_exchanges,
+            async_query=async_query,
+        )
 
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0

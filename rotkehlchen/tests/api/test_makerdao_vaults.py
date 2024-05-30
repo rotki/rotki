@@ -17,10 +17,9 @@ from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
     assert_error_response,
-    assert_ok_async_response,
+    assert_maybe_async_response_with_result,
     assert_proper_response,
     assert_proper_response_with_result,
-    wait_for_async_task_with_result,
 )
 from rotkehlchen.tests.utils.checks import (
     assert_serialized_dicts_equal,
@@ -223,15 +222,12 @@ def test_query_vaults(rotkehlchen_api_server, ethereum_accounts):
         rotkehlchen_api_server,
         'makerdaovaultsresource',
     ), json={'async_query': async_query})
-    if async_query:
-        task_id = assert_ok_async_response(response)
-        vaults = wait_for_async_task_with_result(
-            rotkehlchen_api_server,
-            task_id,
-            timeout=ASYNC_TASK_WAIT_TIMEOUT * 3,
-        )
-    else:
-        vaults = assert_proper_response_with_result(response)
+    vaults = assert_maybe_async_response_with_result(
+        response=response,
+        rotkehlchen_api_server=rotkehlchen_api_server,
+        async_query=async_query,
+        timeout=ASYNC_TASK_WAIT_TIMEOUT * 3,
+    )
 
     _check_vaults_values(vaults, ethereum_accounts[0])
 
@@ -239,15 +235,12 @@ def test_query_vaults(rotkehlchen_api_server, ethereum_accounts):
         rotkehlchen_api_server,
         'makerdaovaultdetailsresource',
     ), json={'async_query': async_query})
-    if async_query:
-        task_id = assert_ok_async_response(response)
-        details = wait_for_async_task_with_result(
-            rotkehlchen_api_server,
-            task_id,
-            timeout=ASYNC_TASK_WAIT_TIMEOUT * 3,
-        )
-    else:
-        details = assert_proper_response_with_result(response)
+    details = assert_maybe_async_response_with_result(
+        response=response,
+        rotkehlchen_api_server=rotkehlchen_api_server,
+        async_query=async_query,
+        timeout=ASYNC_TASK_WAIT_TIMEOUT * 3,
+    )
     _check_vault_details_values(
         details=details,
         total_interest_owed_list=[FVal('0.2810015984764')],

@@ -93,6 +93,20 @@ def assert_proper_response_with_result(
     return data['result']
 
 
+def assert_maybe_async_response_with_result(
+        response: requests.Response,
+        rotkehlchen_api_server: APIServer,
+        async_query: bool = False,
+        timeout: int = ASYNC_TASK_WAIT_TIMEOUT,
+) -> Any:
+    """Asserts that the response (sync or async) is okay and returns the result."""
+    return wait_for_async_task_with_result(
+        server=rotkehlchen_api_server,
+        task_id=assert_ok_async_response(response),
+        timeout=timeout,
+    ) if async_query else assert_proper_response_with_result(response)
+
+
 def _check_error_response_properties(
         response_data: dict[str, Any],
         contained_in_msg: str | list[str] | None,
