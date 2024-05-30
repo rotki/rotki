@@ -13,7 +13,9 @@ vi.mock('@/composables/assets/retrieval', () => ({
 }));
 
 describe('composables::history/notes', () => {
+  setActivePinia(createPinia());
   const { formatNotes } = useHistoryEventNote();
+  const store = useSessionSettingsStore();
 
   it('normal text', () => {
     const notes = 'Normal text';
@@ -291,6 +293,26 @@ describe('composables::history/notes', () => {
     ];
 
     expect(formatted).toMatchObject(expected);
+  });
+
+  it('scramble IBAN', () => {
+    store.update({ scrambleData: false });
+    const iban = 'DE88 5678 9012 1234 345 67';
+    const notes = `Send 8,325.00 EURe via bank transfer to Rotki Solutions GmbH (${iban}) with memo "for salaries and insurance`;
+
+    const notesData = formatNotes({ notes, counterparty: 'monerium' });
+    let formatted = get(notesData);
+    let notesToString = formatted.filter(item => item.type === NoteType.WORD).map(item => item.word).join('');
+    let included = notesToString.includes(iban.split(' ').join(''));
+
+    expect(included).toBeTruthy();
+
+    store.update({ scrambleData: true });
+    formatted = get(notesData);
+    notesToString = formatted.filter(item => item.type === NoteType.WORD).map(item => item.word).join('');
+    included = notesToString.includes(iban.split(' ').join(''));
+
+    expect(included).toBeFalsy();
   });
 
   it('works with punctuation', () => {

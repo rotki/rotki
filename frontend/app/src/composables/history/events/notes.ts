@@ -27,6 +27,7 @@ export interface NoteFormat {
 
 export function useHistoryEventNote() {
   const { assetSymbol } = useAssetInfoRetrieval();
+  const { scrambleData, scrambleIdentifier } = useScramble();
 
   function separateByPunctuation(word: string) {
     // Use a regular expression to find trailing characters
@@ -55,6 +56,7 @@ export function useHistoryEventNote() {
     noTxHash,
     validatorIndex,
     blockNumber,
+    counterparty,
   }: {
     notes: MaybeRef<string>;
     amount?: MaybeRef<BigNumber | undefined>;
@@ -62,16 +64,47 @@ export function useHistoryEventNote() {
     noTxHash?: MaybeRef<boolean>;
     validatorIndex?: MaybeRef<number | undefined>;
     blockNumber?: MaybeRef<number | undefined>;
+    counterparty?: MaybeRef<string | undefined>;
   }): ComputedRef<NoteFormat[]> =>
     computed(() => {
       const asset = get(assetSymbol(assetId));
 
-      const notesVal = get(notes);
+      let notesVal = get(notes);
       if (!notesVal)
         return [];
 
       const formats: NoteFormat[] = [];
       let skip = false;
+
+      // Scramble IBANS
+      if (get(scrambleData) && get(counterparty) === 'monerium') {
+        // Regex pattern to match IBANs in the text
+        const ibanPattern = /\b[A-Z]{2}\d{2}(?:\s?[\dA-Z]{1,4}){1,7}\b/g;
+
+        // Find all IBAN matches
+        const ibans = notesVal.match(ibanPattern);
+
+        if (ibans) {
+          ibans.filter(uniqueStrings)?.forEach((iban) => {
+            const ibanMatchPattern = /^([A-Z]{2})(\d{2})\s?([\d\sA-Z]{1,30})$/;
+            const match = iban.match(ibanMatchPattern);
+
+            if (match) {
+              const checkDigit = match[2];
+              const scrambledCheckDigit = scrambleIdentifier(checkDigit, 10, 99);
+
+              // Extract and split the BBAN part into individual groups by spaces
+              const bban = match[3].trim();
+              const bbanGroups = bban.split(/\s+/);
+
+              const scrambledBbanNumbers = bbanGroups.map(item => scrambleIdentifier(item, 1000, 9999));
+              const formatted = `XX${scrambledCheckDigit} ${scrambledBbanNumbers.join(' ')}`;
+
+              notesVal = notesVal.replace(new RegExp(iban, 'g'), formatted);
+            }
+          });
+        }
+      }
 
       // label each word from notes whether it is an address or not
       const words = notesVal.split(/[\s,]+/);
