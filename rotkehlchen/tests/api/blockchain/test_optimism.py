@@ -8,7 +8,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_proper_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
 )
 from rotkehlchen.types import SupportedBlockchain
 from rotkehlchen.utils.misc import ts_now
@@ -40,7 +40,7 @@ def test_add_optimism_blockchain_account(rotkehlchen_api_server):
         'named_blockchain_balances_resource',
         blockchain=optimism_chain_key,
     ))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
 
     # Check per account
     account_balances = result['per_account'][optimism_chain_key][TEST_ADDY]
@@ -64,7 +64,7 @@ def test_add_optimism_blockchain_account(rotkehlchen_api_server):
             blockchain=optimism_chain_key,
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     optimism_tokens = {
         A_OP,
         Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
@@ -84,7 +84,7 @@ def test_add_optimism_blockchain_account(rotkehlchen_api_server):
             'ignore_cache': True,
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
 
     # Check per account
     account_balances = result['per_account'][optimism_chain_key][TEST_ADDY]

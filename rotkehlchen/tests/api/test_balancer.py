@@ -14,7 +14,7 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_ok_async_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
@@ -94,7 +94,7 @@ def test_get_balances(rotkehlchen_api_server, ethereum_accounts):
             assert outcome['message'] == ''
             result = outcome['result']
         else:
-            result = assert_proper_response_with_result(response)
+            result = assert_proper_sync_response_with_result(response)
 
     if len(result) != 1:
         test_warnings.warn(

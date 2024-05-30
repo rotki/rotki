@@ -4,7 +4,7 @@ import requests
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_proper_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
 )
 from rotkehlchen.tests.utils.history import mock_history_processing_and_exchanges
 from rotkehlchen.types import Location
@@ -27,7 +27,7 @@ def test_query_messages(rotkehlchen_api_server_with_exchanges):
     response = requests.get(
         api_url_for(rotkehlchen_api_server_with_exchanges, 'messagesresource'),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     errors = result['errors']
     warnings = result['warnings']
     assert len(errors) == 0

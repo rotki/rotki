@@ -5,8 +5,8 @@ import requests
 
 from rotkehlchen.tests.utils.api import (
     api_url_for,
-    assert_maybe_async_response_with_result,
     assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
 )
 from rotkehlchen.tests.utils.history import prepare_rotki_for_history_processing_test
 from rotkehlchen.types import Timestamp
@@ -41,7 +41,7 @@ def query_api_create_and_get_report(
             api_url_for(server, 'historyprocessingresource'),
             json={'from_timestamp': start_ts, 'to_timestamp': end_ts, 'async_query': async_query},
         )
-        outcome = assert_maybe_async_response_with_result(
+        outcome = assert_proper_response_with_result(
             response=response,
             rotkehlchen_api_server=server,
             async_query=async_query,
@@ -51,7 +51,7 @@ def query_api_create_and_get_report(
     response = requests.get(
         api_url_for(server, 'per_report_resource', report_id=report_id),
     )
-    report_result = assert_proper_response_with_result(response)
+    report_result = assert_proper_sync_response_with_result(response)
 
     response = requests.post(
         api_url_for(server, 'per_report_data_resource', report_id=report_id),
@@ -62,5 +62,5 @@ def query_api_create_and_get_report(
             'ascending': [events_ascending_timestamp],
         },
     )
-    events_result = assert_proper_response_with_result(response)
+    events_result = assert_proper_sync_response_with_result(response)
     return report_id, report_result, events_result

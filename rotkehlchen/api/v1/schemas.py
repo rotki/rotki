@@ -1622,7 +1622,12 @@ class AsyncFilePathSchema(AsyncQueryArgumentSchema):
             data: dict[str, Any],
             **_kwargs: Any,
     ) -> Any:
+        """
+        Change multipart/form-data to a file object if it's in that form,
+        so that it can be read with the same code
+        """
         if isinstance(data['filepath'], FileStorage):
+            # TODO cleanup: https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=65410141  # noqa: E501
             _, tmpfilepath = tempfile.mkstemp()
             data['filepath'].save(tmpfilepath)
             data['filepath'] = Path(tmpfilepath)

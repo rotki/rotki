@@ -21,10 +21,10 @@ from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
     assert_error_response,
-    assert_maybe_async_response_with_result,
     assert_ok_async_response,
     assert_proper_response,
     assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
     wait_for_async_task,
     wait_for_async_task_with_result,
 )
@@ -184,7 +184,7 @@ def test_query_all_balances(
                 'allbalancesresource',
             ), json={'async_query': async_query},
         )
-        outcome = assert_maybe_async_response_with_result(
+        outcome = assert_proper_response_with_result(
             response=response,
             rotkehlchen_api_server=rotkehlchen_api_server_with_exchanges,
             async_query=async_query,
@@ -292,7 +292,7 @@ def test_query_all_balances_ignore_cache(
                 'allbalancesresource',
             ),
         )
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert_all_balances(
             result=result,
             db=rotki.data.db,
@@ -316,7 +316,7 @@ def test_query_all_balances_ignore_cache(
                 'allbalancesresource',
             ),
         )
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert_all_balances(
             result=result,
             db=rotki.data.db,
@@ -342,7 +342,7 @@ def test_query_all_balances_ignore_cache(
                 'allbalancesresource',
             ), json={'ignore_cache': True},
         )
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert_all_balances(
             result=result,
             db=rotki.data.db,
@@ -442,7 +442,7 @@ def test_query_all_balances_with_manually_tracked_balances(
                 'allbalancesresource',
             ),
         )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert_all_balances(
         result=result,
         db=rotki.data.db,
@@ -458,7 +458,7 @@ def test_query_all_balances_with_manually_tracked_balances(
                 'allbalancesresource',
             ),
         )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert_all_balances(
         result=result,
         db=rotki.data.db,
@@ -520,7 +520,7 @@ def test_balance_snapshot_error_message(
             ),
         )
 
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == {'assets': {}, 'liabilities': {}, 'location': {}, 'net_usd': '0'}
     websocket_connection.wait_until_messages_num(num=2, timeout=10)
     assert websocket_connection.messages_num() == 2
@@ -796,7 +796,7 @@ def test_query_avax_balances(rotkehlchen_api_server: 'APIServer') -> None:
             task_id = assert_ok_async_response(response)
             result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
         else:
-            result = assert_proper_response_with_result(response)
+            result = assert_proper_sync_response_with_result(response)
 
     # Check per account
     account_1_balances = result['per_account'][avax_chain_key][AVALANCHE_ACC1_AVAX_ADDR]
@@ -839,7 +839,7 @@ def test_ethereum_tokens_detection(
                 'addresses': ethereum_accounts,
             },
         )
-        return assert_proper_response_with_result(response)
+        return assert_proper_sync_response_with_result(response)
 
     empty_tokens_result = {
         account: {
@@ -884,7 +884,7 @@ def test_balances_behaviour_with_manual_current_prices(rotkehlchen_api_server, e
                 'allbalancesresource',
             ),
         )
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         # (3 ETH) * (10 BTC per ETH) * (1,5 USD per BTC) = 45 USD of ETH
         eth_result = result['assets'][A_ETH.identifier]
         assert eth_result['amount'] == '3'
@@ -947,7 +947,7 @@ def test_blockchain_balances_refresh(rotkehlchen_api_server: 'APIServer', ethere
                     rotkehlchen_api_server,
                     'blockchainbalancesresource',
                 ), json={'async_query': False, 'blockchain': 'ETH', 'ignore_cache': True})
-                result = assert_proper_response_with_result(response)
+                result = assert_proper_sync_response_with_result(response)
             assert result is not None
             return result
 

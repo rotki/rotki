@@ -3,7 +3,7 @@ import random
 import pytest
 import requests
 
-from rotkehlchen.tests.utils.api import api_url_for, assert_maybe_async_response_with_result
+from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result
 
 PICKLE_ADDR = '0x5c4D8CEE7dE74E31cE69E76276d862180545c307'
 
@@ -23,7 +23,7 @@ def test_pickle_dill(
         rotkehlchen_api_server,
         'pickledillresource',
     ), json={'async_query': async_query})
-    result = assert_maybe_async_response_with_result(
+    result = assert_proper_response_with_result(
         response=response,
         rotkehlchen_api_server=rotkehlchen_api_server,
         async_query=async_query,

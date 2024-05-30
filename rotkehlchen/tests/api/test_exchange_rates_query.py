@@ -9,7 +9,7 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
 )
 
 
@@ -50,7 +50,7 @@ def test_querying_exchange_rates(rotkehlchen_api_server):
         api_url_for(rotkehlchen_api_server, 'exchangeratesresource') + '?currencies=' +
         ','.join(data['currencies']),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     expected_currencies = [A_EUR, A_USD, A_KRW, A_ETH]
     assert len(result) == len(expected_currencies)
     for currency in expected_currencies:
@@ -77,4 +77,4 @@ def test_querying_exchange_rates_errors(rotkehlchen_api_server):
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'exchangeratesresource'), json=data,
     )
-    assert_proper_response_with_result(response)
+    assert_proper_sync_response_with_result(response)

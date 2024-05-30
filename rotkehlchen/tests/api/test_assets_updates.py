@@ -20,7 +20,7 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_ok_async_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -152,7 +152,7 @@ INSERT INTO assets(identifier, name, type) VALUES("EUR", "Ευρώ", "A"); INSER
             result = outcome['result']
             assert outcome['message'] == ''
         else:
-            result = assert_proper_response_with_result(response)
+            result = assert_proper_sync_response_with_result(response)
         assert result['local'] == 999999992
         assert result['remote'] == 999999996
         assert result['new_changes'] == 5  # 994 (3) + 995(2)
@@ -173,7 +173,7 @@ INSERT INTO assets(identifier, name, type) VALUES("EUR", "Ευρώ", "A"); INSER
             assert outcome['message'] == ''
             result = outcome['result']
         else:
-            result = assert_proper_response_with_result(response)
+            result = assert_proper_sync_response_with_result(response)
 
         errors = rotki.msg_aggregator.consume_errors()
         warnings = rotki.msg_aggregator.consume_warnings()
@@ -278,7 +278,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
             result = outcome['result']
             assert outcome['message'] == ''
         else:
-            result = assert_proper_response_with_result(response)
+            result = assert_proper_sync_response_with_result(response)
         assert result['local'] == 999999990
         assert result['remote'] == 999999991
         assert result['new_changes'] == 3
@@ -299,7 +299,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
             assert outcome['message'] == 'Found conflicts during assets upgrade'
             result = outcome['result']
         else:
-            result = assert_proper_response_with_result(
+            result = assert_proper_sync_response_with_result(
                 response,
                 message='Found conflicts during assets upgrade',
                 status_code=HTTPStatus.CONFLICT,
@@ -430,7 +430,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
             assert outcome['message'] == ''
             result = outcome['result']
         else:
-            result = assert_proper_response_with_result(
+            result = assert_proper_sync_response_with_result(
                 response,
                 message='',
                 status_code=HTTPStatus.OK,
@@ -550,7 +550,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0xa74476443119
             result = outcome['result']
             assert outcome['message'] == ''
         else:
-            result = assert_proper_response_with_result(response)
+            result = assert_proper_sync_response_with_result(response)
         assert result['local'] == 999999990
         assert result['remote'] == 999999991
         assert result['new_changes'] == 2
@@ -571,7 +571,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0xa74476443119
             assert outcome['message'] == 'Found conflicts during assets upgrade'
             result = outcome['result']
         else:
-            result = assert_proper_response_with_result(
+            result = assert_proper_sync_response_with_result(
                 response,
                 message='Found conflicts during assets upgrade',
                 status_code=HTTPStatus.CONFLICT,
@@ -640,7 +640,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0xa74476443119
             assert outcome['message'] == ''
             result = outcome['result']
         else:
-            result = assert_proper_response_with_result(
+            result = assert_proper_sync_response_with_result(
                 response,
                 message='',
                 status_code=HTTPStatus.OK,
@@ -717,7 +717,7 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
                 'assetupdatesresource',
             ),
         )
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert result['local'] == 0
         assert result['remote'] == 1
         assert result['new_changes'] == 2
@@ -728,7 +728,7 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
                 'assetupdatesresource',
             ),
         )
-        result = assert_proper_response_with_result(
+        result = assert_proper_sync_response_with_result(
             response,
             message='Found conflicts during assets upgrade',
             status_code=HTTPStatus.CONFLICT,
@@ -788,7 +788,7 @@ INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protoco
             ),
             json={'conflicts': conflicts},
         )
-        result = assert_proper_response_with_result(
+        result = assert_proper_sync_response_with_result(
             response,
             message='',
             status_code=HTTPStatus.OK,

@@ -34,7 +34,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_ok_async_response,
     assert_proper_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
     assert_simple_ok_response,
     wait_for_async_task,
 )
@@ -206,7 +206,7 @@ def query_events(server, json, expected_num_with_grouping, expected_totals_with_
         api_url_for(server, 'historyeventresource'),
         json=extra_json,
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     entries = result['entries']
     assert result['entries_limit'] == entries_limit
     assert result['entries_found'] == expected_num_with_grouping
@@ -221,7 +221,7 @@ def query_events(server, json, expected_num_with_grouping, expected_totals_with_
                 api_url_for(server, 'historyeventresource'),
                 json=extra_json,
             )
-            result = assert_proper_response_with_result(response)
+            result = assert_proper_sync_response_with_result(response)
             augmented_entries.extend(result['entries'])
         else:
             entry.pop('grouped_events_num')
@@ -502,7 +502,7 @@ def test_query_over_10k_transactions(rotkehlchen_api_server):
             json={'evm_chain': 'ethereum'},
         )
 
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) >= expected_at_least
     assert result['entries_found'] >= expected_at_least
     assert result['entries_limit'] == -1
@@ -663,7 +663,7 @@ def test_query_transactions_removed_address(
         'blockchainsaccountsresource',
         blockchain='ETH',
     ), json={'accounts': [ethereum_accounts[0]]})
-    assert_proper_response_with_result(response)
+    assert_proper_sync_response_with_result(response)
 
     # Check that only the 3 remaining transactions from the other account are returned
     dbevmtx = DBEvmTx(rotki.data.db)
@@ -959,7 +959,7 @@ def test_query_transactions_check_decoded_events(
         api_url_for(rotkehlchen_api_server, 'historyeventresource'),
         json={key: value for key, value in tx4_events[0]['entry'].items() if key != 'event_identifier'},  # noqa: E501
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     tx4_events[0]['entry']['identifier'] = result['identifier']
 
     # Also add a cache entry for a transaction
@@ -1323,7 +1323,7 @@ def test_no_value_eth_transfer(rotkehlchen_api_server: 'APIServer'):
         ),
         json={'tx_hashes': [tx_str]},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['entries'][0]['entry']['asset'] == A_ETH
     assert result['entries'][0]['entry']['balance']['amount'] == '0'
 
@@ -1350,7 +1350,7 @@ def test_decoding_missing_transactions(
             'evmpendingtransactionsdecodingresource',
         ), json={'async_query': False, 'chains': ['ethereum']},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['decoded_tx_number']['ethereum'] == len(transactions)
 
     websocket_connection.wait_until_messages_num(num=4, timeout=4)
@@ -1385,7 +1385,7 @@ def test_decoding_missing_transactions(
             'evmpendingtransactionsdecodingresource',
         ), json={'async_query': True},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     outcome = wait_for_async_task(rotkehlchen_api_server, result['task_id'])
     assert outcome['result']['decoded_tx_number'] == {}
 
@@ -1471,7 +1471,7 @@ def test_count_transactions_missing_decoding(rotkehlchen_api_server: 'APIServer'
         assert outcome['message'] == ''
         result = outcome['result']
     else:
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
 
     assert result == {
         'base': {'undecoded': 1, 'total': 1},

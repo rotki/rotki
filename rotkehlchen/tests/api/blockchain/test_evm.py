@@ -22,7 +22,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_ok_async_response,
     assert_proper_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.avalanche import AVALANCHE_ACC1_AVAX_ADDR
@@ -80,7 +80,7 @@ def test_add_same_evm_account_for_multiple_chains(rotkehlchen_api_server):
             rotkehlchen_api_server,
             'blockchainbalancesresource',
         ))
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
 
     for chain, native_token in ((SupportedBlockchain.ETHEREUM, A_ETH), (SupportedBlockchain.AVALANCHE, A_AVAX)):  # noqa: E501
         # Check per account
@@ -166,7 +166,7 @@ def test_adding_editing_ens_account_works(rotkehlchen_api_server):
         blockchain='ETH',
     ), json=request_data)
 
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == [resolved_account]
     assert rotki.chains_aggregator.accounts.eth[-1] == resolved_account
 
@@ -191,7 +191,7 @@ def test_adding_editing_ens_account_works(rotkehlchen_api_server):
         'blockchainsaccountsresource',
         blockchain='ETH',
     ), json=request_data)
-    result = assert_proper_response_with_result(response)[0]
+    result = assert_proper_sync_response_with_result(response)[0]
     assert result['address'] == '0x9531C059098e3d194fF87FebB587aB07B30B1306'
     assert result['label'] == label
 
@@ -293,7 +293,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer'):
             'evmaccountsresource',
         ), json=request_data)
 
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
 
     assert result == {
         'added': {
@@ -338,7 +338,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer'):
         'blockchainsaccountsresource',
         blockchain='ETH',
     ))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == [
         {'address': contract_account, 'label': None, 'tags': None},
         {'address': common_account, 'label': label, 'tags': ['metamask']},
@@ -348,7 +348,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer'):
         'blockchainsaccountsresource',
         blockchain='AVAX',
     ))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == [
         {'address': common_account, 'label': label, 'tags': ['metamask']},
     ]
@@ -357,7 +357,7 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer'):
         'blockchainsaccountsresource',
         blockchain='OPTIMISM',
     ))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == [
         {'address': common_account, 'label': label, 'tags': ['metamask']},
     ]

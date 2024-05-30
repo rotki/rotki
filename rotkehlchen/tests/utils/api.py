@@ -78,7 +78,7 @@ def assert_simple_ok_response(response: requests.Response) -> None:
     assert data['message'] == ''
 
 
-def assert_proper_response_with_result(
+def assert_proper_sync_response_with_result(
         response: requests.Response | None,
         message: str | None = None,
         status_code: HTTPStatus = HTTPStatus.OK,
@@ -93,7 +93,7 @@ def assert_proper_response_with_result(
     return data['result']
 
 
-def assert_maybe_async_response_with_result(
+def assert_proper_response_with_result(
         response: requests.Response,
         rotkehlchen_api_server: APIServer,
         async_query: bool = False,
@@ -104,7 +104,7 @@ def assert_maybe_async_response_with_result(
         server=rotkehlchen_api_server,
         task_id=assert_ok_async_response(response),
         timeout=timeout,
-    ) if async_query else assert_proper_response_with_result(response)
+    ) if async_query else assert_proper_sync_response_with_result(response)
 
 
 def _check_error_response_properties(

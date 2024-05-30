@@ -11,8 +11,8 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
-    assert_maybe_async_response_with_result,
     assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
     assert_simple_ok_response,
 )
 
@@ -56,7 +56,7 @@ def test_get_historical_assets_price(rotkehlchen_api_server):
             'async_query': async_query,
         },
     )
-    result = assert_maybe_async_response_with_result(
+    result = assert_proper_response_with_result(
         response=response,
         rotkehlchen_api_server=rotkehlchen_api_server,
         async_query=async_query,
@@ -226,7 +226,7 @@ def test_manual_historical_price(rotkehlchen_api_server, globaldb):
             'from_asset': A_CRV.identifier,
         },
     )
-    data = assert_proper_response_with_result(response)
+    data = assert_proper_sync_response_with_result(response)
     _assert_expected_prices(data, after_deletion=False, crv_1611166340_price='1.50')
     # Check that calling PUT for an existing price replaces the price
     response = requests.put(
@@ -250,7 +250,7 @@ def test_manual_historical_price(rotkehlchen_api_server, globaldb):
             'from_asset': A_CRV.identifier,
         },
     )
-    data = assert_proper_response_with_result(response)
+    data = assert_proper_sync_response_with_result(response)
     _assert_expected_prices(data, after_deletion=False)
     # If we query against the to_asset we should get the same entry
     response = requests.get(
@@ -270,7 +270,7 @@ def test_manual_historical_price(rotkehlchen_api_server, globaldb):
             'historicalassetspriceresource',
         ),
     )
-    data = assert_proper_response_with_result(response)
+    data = assert_proper_sync_response_with_result(response)
     _assert_expected_prices(data, after_deletion=False)
     # Delete entry
     response = requests.delete(
@@ -294,7 +294,7 @@ def test_manual_historical_price(rotkehlchen_api_server, globaldb):
             'from_asset': A_CRV.identifier,
         },
     )
-    data = assert_proper_response_with_result(response)
+    data = assert_proper_sync_response_with_result(response)
     _assert_expected_prices(data, after_deletion=True)
     # Delete an entry that is not in database
     response = requests.delete(

@@ -16,7 +16,7 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
 )
 from rotkehlchen.tests.utils.factories import (
     ADDRESS_ETH,
@@ -63,7 +63,7 @@ def test_get_addressbook(
             book_type=book_type,
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     deserialized_entries = [AddressbookEntry.deserialize(data=raw_entry) for raw_entry in result['entries']]  # noqa: E501
     assert deserialized_entries == entries_set
     assert deserialized_entries != sorted(deserialized_entries, key=lambda x: x.name)  # not sorted
@@ -83,7 +83,7 @@ def test_get_addressbook(
             ],
         },
     )
-    result = assert_proper_response_with_result(response=response)
+    result = assert_proper_sync_response_with_result(response=response)
     assert result['entries_found'] == 3
     assert result['entries_total'] == len(entries_set)
     deserialized_entries = [AddressbookEntry.deserialize(data=raw_entry) for raw_entry in result['entries']]  # noqa: E501
@@ -105,7 +105,7 @@ def test_get_addressbook(
             ],
         },
     )
-    result = assert_proper_response_with_result(response=response)
+    result = assert_proper_sync_response_with_result(response=response)
     deserialized_entries = [AddressbookEntry.deserialize(data=raw_entry) for raw_entry in result['entries']]  # noqa: E501
     assert set(deserialized_entries) == {generated_entries[1]}
     assert result['entries_found'] == 1
@@ -123,7 +123,7 @@ def test_get_addressbook(
             'blockchain': SupportedBlockchain.ETHEREUM.serialize(),
         },
     )
-    result = assert_proper_response_with_result(response=response)
+    result = assert_proper_sync_response_with_result(response=response)
     deserialized_entries = [AddressbookEntry.deserialize(data=raw_entry) for raw_entry in result['entries']]  # noqa: E501
     assert set(deserialized_entries) == {generated_entries[2]}
     assert result['entries_found'] == 1
@@ -142,7 +142,7 @@ def test_get_addressbook(
             'blockchain': SupportedBlockchain.ETHEREUM.serialize(),
         },
     )
-    result = assert_proper_response_with_result(response=response)
+    result = assert_proper_sync_response_with_result(response=response)
     deserialized_entries = [AddressbookEntry.deserialize(data=raw_entry) for raw_entry in result['entries']]  # noqa: E501
     assert set(deserialized_entries) == {generated_entries[0]}
     assert result['entries_found'] == 2
@@ -161,7 +161,7 @@ def test_get_addressbook(
             'blockchain': SupportedBlockchain.ETHEREUM.serialize(),
         },
     )
-    result = assert_proper_response_with_result(response=response)
+    result = assert_proper_sync_response_with_result(response=response)
     deserialized_entries = [AddressbookEntry.deserialize(data=raw_entry) for raw_entry in result['entries']]  # noqa: E501
     assert set(deserialized_entries) == {generated_entries[2]}
     assert result['entries_found'] == 2
@@ -176,7 +176,7 @@ def test_get_addressbook(
         ),
         json={'addresses': [{'address': KELSOS_ADDR}]},
     )
-    result = assert_proper_response_with_result(response=response)
+    result = assert_proper_sync_response_with_result(response=response)
     assert AddressbookEntry.deserialize(data=result['entries'][0]) == KELSOS_BOOK_ENTRY
     assert result['entries_found'] == 1
     assert result['entries_total'] == len(entries_set)
@@ -195,7 +195,7 @@ def test_get_addressbook(
             ],
         },
     )
-    result = assert_proper_response_with_result(response=response)
+    result = assert_proper_sync_response_with_result(response=response)
     deserialized_entries = [AddressbookEntry.deserialize(data=raw_entry) for raw_entry in result['entries']]  # noqa: E501
     assert set(deserialized_entries) == set(generated_entries[0:3])
     assert result['entries_found'] == 3
@@ -214,7 +214,7 @@ def test_get_addressbook(
                 'ascending': [True],
             },
         )
-        result = assert_proper_response_with_result(response=response)
+        result = assert_proper_sync_response_with_result(response=response)
         entries = [raw_entry[attribute] for raw_entry in result['entries']]
         assert entries == sorted(entries)
 
@@ -305,7 +305,7 @@ def test_insert_into_addressbook(
             'addresses': [{'address': ADDRESS_MULTICHAIN}],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 2
 
     # insert the new entry replacing all the previous values stored
@@ -329,7 +329,7 @@ def test_insert_into_addressbook(
         ),
         json={'addresses': [{'address': ADDRESS_MULTICHAIN}]},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['entries'] == [new_entry.serialize()]
 
     # try inserting a non checksummed address
@@ -347,7 +347,7 @@ def test_insert_into_addressbook(
         ),
         json={'entries': [new_entry.serialize()]},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
 
     # check that in the database it was inserted checksummed
     with db_addressbook.read_ctx(book_type=book_type) as cursor:
@@ -667,7 +667,7 @@ def test_names_compilation(rotkehlchen_api_server: 'APIServer') -> None:
     ]
 
     response = names_request(publicly_known_addresses)
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert {AddressbookEntry.deserialize(x) for x in result} == set(publicly_known_expected)
 
     # now query names that are saved for all chains, but for a specific chain and see they appear
@@ -675,7 +675,7 @@ def test_names_compilation(rotkehlchen_api_server: 'APIServer') -> None:
         OptionalChainAddress(address_rotki, SupportedBlockchain.ETHEREUM),
         OptionalChainAddress(address_titan, SupportedBlockchain.ETHEREUM),
     ])
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert {AddressbookEntry.deserialize(x) for x in result} == {
         AddressbookEntry(address=address_rotki, blockchain=SupportedBlockchain.ETHEREUM, name='rotki.eth'),  # noqa: E501
         AddressbookEntry(address=address_titan, blockchain=SupportedBlockchain.ETHEREUM, name='Titan Builder'),  # noqa: E501
@@ -701,7 +701,7 @@ def test_names_compilation(rotkehlchen_api_server: 'APIServer') -> None:
         AddressbookEntry(address=address_cody, blockchain=SupportedBlockchain.ETHEREUM, name='Cody'),  # noqa: E501
     }
     response = names_request(global_addressbook_addresses)
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert {AddressbookEntry.deserialize(x) for x in result} == global_addressbook_expected
 
     with db_handler.user_write() as cursor:
@@ -726,7 +726,7 @@ def test_names_compilation(rotkehlchen_api_server: 'APIServer') -> None:
         AddressbookEntry(address=address_cody, blockchain=SupportedBlockchain.ETHEREUM, name='Cody'),  # noqa: E501
     }
     response = names_request(labels_addresses)
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert {AddressbookEntry.deserialize(x) for x in result} == labels_expected
 
     with db_addressbook.write_ctx(book_type=AddressbookType.PRIVATE) as write_cursor:
@@ -753,7 +753,7 @@ def test_names_compilation(rotkehlchen_api_server: 'APIServer') -> None:
         AddressbookEntry(address=address_rose, blockchain=SupportedBlockchain.ETHEREUM, name='Rose'),  # noqa: E501
     }
     response = names_request(private_addressbook_addresses)
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert {AddressbookEntry.deserialize(x) for x in result} == private_addressbook_expected
 
 
@@ -785,7 +785,7 @@ def test_insert_into_addressbook_no_blockchain(
             'entries': [custom_name.serialize()],
         },
     )
-    assert_proper_response_with_result(response)
+    assert_proper_sync_response_with_result(response)
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -798,7 +798,7 @@ def test_insert_into_addressbook_no_blockchain(
             ],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['entries'] == [custom_name.serialize()]
 
     # now add the same name for all blockchains and see the value replaced
@@ -817,7 +817,7 @@ def test_insert_into_addressbook_no_blockchain(
             'entries': [custom_name.serialize()],
         },
     )
-    assert_proper_response_with_result(response)
+    assert_proper_sync_response_with_result(response)
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -830,7 +830,7 @@ def test_insert_into_addressbook_no_blockchain(
             ],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['entries'] == [custom_name.serialize()]
     if book_type == AddressbookType.PRIVATE:
         with database.conn.read_ctx() as cursor:

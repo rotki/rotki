@@ -29,7 +29,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_ok_async_response,
     assert_proper_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
     assert_simple_ok_response,
     wait_for_async_task,
 )
@@ -59,7 +59,7 @@ def test_add_user_assets(rotkehlchen_api_server, globaldb, cache_coinlist):  # p
         ),
         json=user_asset1,
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     user_asset1_id = result['identifier']
 
     data = globaldb.get_asset_data(identifier=user_asset1_id, form_with_incomplete_data=False)
@@ -86,7 +86,7 @@ def test_add_user_assets(rotkehlchen_api_server, globaldb, cache_coinlist):  # p
         ),
         json=user_asset2,
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     user_asset2_id = result['identifier']
 
     data = globaldb.get_asset_data(identifier=user_asset2_id, form_with_incomplete_data=False)
@@ -251,7 +251,7 @@ def test_editing_user_assets(rotkehlchen_api_server, globaldb, cache_coinlist): 
         ),
         json=user_asset1,
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     user_asset1_id = result['identifier']
 
     data = globaldb.get_asset_data(identifier=user_asset1_id, form_with_incomplete_data=False)
@@ -279,7 +279,7 @@ def test_editing_user_assets(rotkehlchen_api_server, globaldb, cache_coinlist): 
         ),
         json=user_asset1_v2,
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result is True
 
     data = globaldb.get_asset_data(identifier=user_asset1_id, form_with_incomplete_data=False)
@@ -444,7 +444,7 @@ def test_deleting_user_assets(rotkehlchen_api_server, globaldb, cache_coinlist):
         ),
         json=user_asset1,
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     user_asset1_id = result['identifier']
 
     user_asset2 = {
@@ -464,7 +464,7 @@ def test_deleting_user_assets(rotkehlchen_api_server, globaldb, cache_coinlist):
         ),
         json=user_asset2,
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     user_asset2_id = result['identifier']
 
     user_asset3 = {
@@ -479,7 +479,7 @@ def test_deleting_user_assets(rotkehlchen_api_server, globaldb, cache_coinlist):
         ),
         json=user_asset3,
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     user_asset3_id = result['identifier']
 
     # Delete user asset 3 and assert it works
@@ -551,7 +551,7 @@ def test_user_asset_delete_guard(rotkehlchen_api_server):
         ),
         json=user_asset1,
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     user_asset1_id = result['identifier']
     with user_db.user_write() as cursor:
         user_db.add_manually_tracked_balances(cursor, [ManuallyTrackedBalance(
@@ -589,7 +589,7 @@ def test_query_asset_types(rotkehlchen_api_server):
             'assetstypesresource',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == [str(x) for x in AssetType if x not in ASSET_TYPES_EXCLUDED_FOR_USERS]
     assert all(isinstance(AssetType.deserialize(x), AssetType) for x in result)
 
@@ -617,7 +617,7 @@ def test_replace_asset(rotkehlchen_api_server, globaldb, only_in_globaldb):
         ),
         json=user_asset1,
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     user_asset1_id = result['identifier']
 
     if only_in_globaldb:
@@ -642,7 +642,7 @@ def test_replace_asset(rotkehlchen_api_server, globaldb, only_in_globaldb):
                 'manuallytrackedbalancesresource',
             ), json={'async_query': False, 'balances': balances},
         )
-        assert_proper_response_with_result(response)
+        assert_proper_sync_response_with_result(response)
 
     # before the replacement. Check that we got a globaldb entry in owned assets
     global_cursor = globaldb.conn.cursor()
@@ -661,7 +661,7 @@ def test_replace_asset(rotkehlchen_api_server, globaldb, only_in_globaldb):
                 'manuallytrackedbalancesresource',
             ), json={'async_query': False},
         )
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert result['balances'] == expected_balances
         assert cursor.execute(
             'SELECT COUNT(*) from manually_tracked_balances WHERE asset=?;',
@@ -694,7 +694,7 @@ def test_replace_asset(rotkehlchen_api_server, globaldb, only_in_globaldb):
                 'manuallytrackedbalancesresource',
             ), json={'async_query': False},
         )
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         expected_balances[0]['asset'] = 'ICP'
         assert result['balances'] == expected_balances
         # check the previous asset is not in userdb anymore
@@ -764,7 +764,7 @@ def test_replace_asset_not_in_globaldb(rotkehlchen_api_server, globaldb):
             'manuallytrackedbalancesresource',
         ), json={'async_query': False},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['balances'] == [{
         'identifier': 1,
         'asset': 'ICP',
@@ -826,7 +826,7 @@ def test_replace_asset_edge_cases(rotkehlchen_api_server, globaldb):
         ),
         json=user_asset,
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     user_asset_id = result['identifier']
 
     # Test that trying to replace an asset that's used as a foreign key elsewhere in
@@ -845,7 +845,7 @@ def test_replace_asset_edge_cases(rotkehlchen_api_server, globaldb):
             'manuallytrackedbalancesresource',
         ), json={'async_query': False, 'balances': balances},
     )
-    assert_proper_response_with_result(response)
+    assert_proper_sync_response_with_result(response)
     global_cursor = globaldb.conn.cursor()
 
     def assert_db() -> None:
@@ -975,7 +975,7 @@ def test_exporting_user_assets_list(
             )
 
         if with_custom_path:
-            result = assert_proper_response_with_result(response)
+            result = assert_proper_sync_response_with_result(response)
             if with_custom_path:
                 assert path in result['file']
             zip_file = ZipFile(result['file'])
@@ -1017,7 +1017,7 @@ def test_exporting_user_assets_list(
                 'userassetsresource',
             ), json={'action': 'download', 'destination': path},
         )
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -1062,7 +1062,7 @@ def test_importing_user_assets_list(
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
 
-    assert_proper_response_with_result(response)
+    assert_proper_sync_response_with_result(response)
     stinch = EvmToken('eip155:1/erc20:0xA0446D8804611944F1B527eCD37d7dcbE442caba')
     assert stinch.symbol == 'st1INCH'
     assert len(stinch.underlying_tokens) == 1

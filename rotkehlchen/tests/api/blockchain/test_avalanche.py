@@ -11,10 +11,10 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
-    assert_maybe_async_response_with_result,
     assert_ok_async_response,
     assert_proper_response,
     assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.avalanche import AVALANCHE_ACC1_AVAX_ADDR, AVALANCHE_ACC2_AVAX_ADDR
@@ -73,7 +73,7 @@ def test_add_avax_blockchain_account(rotkehlchen_api_server: 'APIServer') -> Non
         'named_blockchain_balances_resource',
         blockchain=avalance_chain_key,
     ))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
 
     # Check per account
     account_balances = result['per_account'][avalance_chain_key][AVALANCHE_ACC1_AVAX_ADDR]
@@ -111,7 +111,7 @@ def test_remove_avax_blockchain_account(rotkehlchen_api_server: 'APIServer') -> 
             'async_query': async_query,
         },
     )
-    result = assert_maybe_async_response_with_result(
+    result = assert_proper_response_with_result(
         response=response,
         rotkehlchen_api_server=rotkehlchen_api_server,
         async_query=async_query,

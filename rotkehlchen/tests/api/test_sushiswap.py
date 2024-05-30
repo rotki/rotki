@@ -14,7 +14,7 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_ok_async_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE, get_decoded_events_of_transaction
@@ -74,7 +74,7 @@ def test_get_balances(
         assert outcome['message'] == ''
         result = outcome['result']
     else:
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
 
     address_balances = result[ethereum_accounts[0]]
     for lp in address_balances:
@@ -160,7 +160,7 @@ def test_get_events_history_filtering_by_timestamp(rotkehlchen_api_server: 'APIS
         assert outcome['message'] == ''
         result = outcome['result']
     else:
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
 
     events_balances = result[TEST_EVENTS_ADDRESS_1]
 

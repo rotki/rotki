@@ -7,7 +7,7 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
 )
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
@@ -744,7 +744,7 @@ def test_delete_all_tags(rotkehlchen_api_server):
             blockchain='BTC',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['standalone'][0]['tags'] is None  # Should have been deleted
     with rotki.data.db.conn.read_ctx() as cursor:
         # Also check that the tag mapping is gone from the db

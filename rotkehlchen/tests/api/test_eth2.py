@@ -31,8 +31,8 @@ from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
     assert_error_response,
-    assert_maybe_async_response_with_result,
     assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
     assert_simple_ok_response,
 )
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
@@ -104,7 +104,7 @@ def test_eth2_daily_stats(rotkehlchen_api_server):
             'eth2dailystatsresource',
         ), json={'only_cache': False},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     total_stats = len(result['entries'])
     assert total_stats == result['entries_total']
     assert total_stats == result['entries_found']
@@ -122,7 +122,7 @@ def test_eth2_daily_stats(rotkehlchen_api_server):
             'eth2dailystatsresource',
         ), json={'only_cache': True, 'validator_indices': [CLEAN_HISTORY_VALIDATOR1, CLEAN_HISTORY_VALIDATOR3]},  # noqa: E501
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['entries_total'] == total_stats
     assert result['entries_found'] == validator1_and_3_stats
     assert len(result['entries']) == validator1_and_3_stats
@@ -135,7 +135,7 @@ def test_eth2_daily_stats(rotkehlchen_api_server):
             'eth2dailystatsresource',
         ), json={'only_cache': True, 'addresses': [CLEAN_HISTORY_WITHDRAWAL2]},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['entries_total'] == total_stats
     assert result['entries_found'] == validator_2_stats
     assert len(result['entries']) == validator_2_stats
@@ -148,7 +148,7 @@ def test_eth2_daily_stats(rotkehlchen_api_server):
             'eth2dailystatsresource',
         ), json={'only_cache': True, 'status': 'exited'},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['entries_total'] == total_stats
     assert result['entries_found'] == validator_3_stats
     assert len(result['entries']) == validator_3_stats
@@ -162,7 +162,7 @@ def test_eth2_daily_stats(rotkehlchen_api_server):
             'eth2dailystatsresource',
         ), json={'only_cache': True, 'validator_indices': queried_validators, 'from_timestamp': from_ts, 'to_timestamp': to_ts},  # noqa: E501
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['entries_total'] == total_stats
     assert result['entries_found'] <= total_stats
     assert len(result['entries']) == result['entries_found']
@@ -192,7 +192,7 @@ def test_eth2_daily_stats(rotkehlchen_api_server):
             'eth2dailystatsresource',
         ), json=json,
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['entries_total'] == total_stats
     assert result['entries_found'] <= total_stats
     assert len(result['entries']) == 5
@@ -221,7 +221,7 @@ def test_eth2_daily_stats(rotkehlchen_api_server):
         )
         assert scraper.call_count == 0
 
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     total_stats = len(result['entries'])
     assert total_stats == result['entries_total']
     assert total_stats == result['entries_found']
@@ -260,7 +260,7 @@ def test_staking_performance(rotkehlchen_api_server, ethereum_accounts):
         'blockchainsaccountsresource',
         blockchain='ETH',
     ), json=data)
-    assert_proper_response_with_result(response)
+    assert_proper_sync_response_with_result(response)
 
     detected_validator = ValidatorDetailsWithStatus(
         activation_timestamp=Timestamp(1684036055),
@@ -284,7 +284,7 @@ def test_staking_performance(rotkehlchen_api_server, ethereum_accounts):
             'eth2validatorsresource',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == {'entries': [x.serialize() for x in (detected_validator, exited_validator)], 'entries_found': 2, 'entries_limit': -1}  # noqa: E501
 
     # Query withdrawals/block productions
@@ -304,7 +304,7 @@ def test_staking_performance(rotkehlchen_api_server, ethereum_accounts):
             'eth2validatorsresource',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['entries'][1]['index'] == exited_validator.validator_index
     assert result['entries'][1]['status'] == 'exited'
 
@@ -321,7 +321,7 @@ def test_staking_performance(rotkehlchen_api_server, ethereum_accounts):
                 detected_validator.validator_index, exited_validator.validator_index,
             ]},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
 
     expected_validators_result = {
         'sums': {
@@ -362,7 +362,7 @@ def test_staking_performance(rotkehlchen_api_server, ethereum_accounts):
                     'eth2stakeperformanceresource',
                 ), json={'limit': 10, 'offset': 0 + page},
             )
-            result = assert_proper_response_with_result(response)
+            result = assert_proper_sync_response_with_result(response)
             assert result['entries_found'] == total_validators
             assert result['entries_total'] == total_validators
             assert len(result['validators']) in (10, 2)
@@ -388,7 +388,7 @@ def test_staking_performance(rotkehlchen_api_server, ethereum_accounts):
                 'eth2stakeperformanceresource',
             ), json={'limit': 500, 'offset': 0, 'status': status},
         )
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert result['entries_found'] == expected_num
         assert len(result['validators']) == expected_num
         assert result['entries_total'] == total_validators
@@ -400,7 +400,7 @@ def test_staking_performance(rotkehlchen_api_server, ethereum_accounts):
             'eth2stakeperformanceresource',
         ), json={'limit': 500, 'offset': 0, 'from_timestamp': 1704063600, 'to_timestamp': 1706742000},  # noqa: E501
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['entries_found'] == 313
     assert len(result['validators']) == 313
     assert result['entries_total'] == total_validators
@@ -412,7 +412,7 @@ def test_staking_performance(rotkehlchen_api_server, ethereum_accounts):
             'eth2stakeperformanceresource',
         ), json={'limit': 500, 'offset': 0, 'addresses': [make_evm_address()]},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['entries_found'] == 0
     assert len(result['validators']) == 0
     assert result['entries_total'] == total_validators
@@ -430,7 +430,7 @@ def test_staking_performance(rotkehlchen_api_server, ethereum_accounts):
             'validator_indices': [exited_validator.validator_index],
         },
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == expected_validators_result
 
 
@@ -463,7 +463,7 @@ def test_eth2_add_eth1_account(rotkehlchen_api_server):
             blockchain='ETH',
         ), json=data)
 
-        result = assert_maybe_async_response_with_result(
+        result = assert_proper_response_with_result(
             response=response,
             rotkehlchen_api_server=rotkehlchen_api_server,
             async_query=async_query,
@@ -477,7 +477,7 @@ def test_eth2_add_eth1_account(rotkehlchen_api_server):
                 'eth2validatorsresource',
             ),
         )
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         # That address has only 1 validator. If that changes in the future this
         # test will fail and we will need to adjust the test
         validator_pubkey = '0x800199f8f3af15a22c42ccd7185948870eceeba2d06199ea30e7e28eb976a69284e393ba2f401e8983d011534b303a57'  # noqa: E501
@@ -494,7 +494,7 @@ def test_eth2_add_eth1_account(rotkehlchen_api_server):
             rotkehlchen_api_server,
             'blockchainbalancesresource',
         ))
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         per_acc = result['per_account']
         assert FVal(per_acc['eth'][new_account]['assets'][A_ETH.identifier]['amount']) > ZERO
         assert FVal(per_acc['eth2'][validator_pubkey]['assets'][A_ETH2.identifier]['amount']) == ZERO  # exited # noqa: E501
@@ -545,7 +545,7 @@ def test_add_get_edit_delete_eth2_validators(rotkehlchen_api_server, start_with_
         ),
     )
     expected_limit = -1 if start_with_valid_premium else FREE_VALIDATORS_LIMIT
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == {'entries': [], 'entries_limit': expected_limit, 'entries_found': 0}
 
     validators = [ValidatorDetailsWithStatus(
@@ -610,7 +610,7 @@ def test_add_get_edit_delete_eth2_validators(rotkehlchen_api_server, start_with_
             'eth2validatorsresource',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == {'entries': [x.serialize() for x in validators], 'entries_limit': expected_limit, 'entries_found': 4}  # noqa: E501
 
     if start_with_valid_premium is False:
@@ -692,7 +692,7 @@ def test_add_get_edit_delete_eth2_validators(rotkehlchen_api_server, start_with_
             'eth2validatorsresource',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == {'entries': [validators[1].serialize()], 'entries_limit': expected_limit, 'entries_found': 1}  # noqa: E501
 
     # Try to add validator with a custom ownership percentage
@@ -741,7 +741,7 @@ def test_add_get_edit_delete_eth2_validators(rotkehlchen_api_server, start_with_
             'eth2validatorsresource',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == {'entries': [validator.serialize() for validator in custom_percentage_validators], 'entries_limit': expected_limit, 'entries_found': 2}  # noqa: E501
 
 
@@ -895,7 +895,7 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
             'eth2validatorsresource',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == {'entries': [], 'entries_limit': -1, 'entries_found': 0}
 
     validators = [ValidatorDetailsWithStatus(
@@ -933,7 +933,7 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
             'eth2validatorsresource',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == {'entries': [x.serialize() for x in validators], 'entries_limit': -1, 'entries_found': 2}  # noqa: E501
 
     async_query = random.choice([False, True])
@@ -949,7 +949,7 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
             blockchain='ETH2',
         ), json={'async_query': async_query})
 
-    outcome = assert_maybe_async_response_with_result(
+    outcome = assert_proper_response_with_result(
         response=response,
         rotkehlchen_api_server=rotkehlchen_api_server,
         async_query=async_query,
@@ -983,7 +983,7 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
         'named_blockchain_balances_resource',
         blockchain='ETH2',
     ), json={'async_query': False, 'ignore_cache': True})
-    outcome = assert_proper_response_with_result(response)
+    outcome = assert_proper_sync_response_with_result(response)
 
     assert len(outcome['per_account']) == 1  # only ETH2
     per_acc = outcome['per_account']['eth2']
@@ -1055,7 +1055,7 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
         ),
         json={'group_by_event_ids': True},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == result['entries_found'] == result['entries_total'] == 7
     event_identifier = None
     for entry in result['entries']:
@@ -1076,7 +1076,7 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
         ),
         json={'group_by_event_ids': False, 'event_identifiers': [event_identifier]},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == result['entries_found'] == 3
     assert result['entries_total'] == 12
     for outer_entry in result['entries']:
@@ -1116,7 +1116,7 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
         ),
         json={'validator_indices': [vindex1, 42]},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 8
     for entry in result['entries']:
         assert entry['entry']['entry_type'] == 'eth block event'
@@ -1131,7 +1131,7 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
         ),
         json={'counterparties': [CPT_ETH2]},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 11
     for entry in result['entries']:
         assert entry['entry']['entry_type'] == 'eth block event'
@@ -1149,7 +1149,7 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
         ),
         json={'entry_types': entry_types_include_arg},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 11
     for outer_entry in result['entries']:
         entry = outer_entry['entry']
@@ -1168,7 +1168,7 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
         ),
         json={'entry_types': entry_types_exclude_arg},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 1
     for outer_entry in result['entries']:
         entry = outer_entry['entry']
@@ -1220,7 +1220,7 @@ def test_get_validators(rotkehlchen_api_server):
             'eth2validatorsresource',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['entries'] == [validator1_data, validator2_data, validator3_data]
 
     response = requests.get(  # Check filtering by index works
@@ -1229,7 +1229,7 @@ def test_get_validators(rotkehlchen_api_server):
             'eth2validatorsresource',
         ), json={'validator_indices': [CLEAN_HISTORY_VALIDATOR1]},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['entries'] == [validator1_data]
 
     response = requests.get(  # Check filtering by address works
@@ -1238,7 +1238,7 @@ def test_get_validators(rotkehlchen_api_server):
             'eth2validatorsresource',
         ), json={'addresses': [CLEAN_HISTORY_WITHDRAWAL2]},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['entries'] == [validator2_data]
 
     response = requests.get(  # Check filtering by status works
@@ -1247,5 +1247,5 @@ def test_get_validators(rotkehlchen_api_server):
             'eth2validatorsresource',
         ), json={'status': 'exited'},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['entries'] == [validator3_data]

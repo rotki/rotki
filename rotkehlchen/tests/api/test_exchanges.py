@@ -34,10 +34,10 @@ from rotkehlchen.tests.utils.accounting import toggle_ignore_an_asset
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
-    assert_maybe_async_response_with_result,
     assert_ok_async_response,
     assert_proper_response,
     assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
     assert_simple_ok_response,
     wait_for_async_task,
 )
@@ -161,7 +161,7 @@ def test_setup_exchange(rotkehlchen_api_server):
 
     # and check that kraken is now registered
     response = requests.get(api_url_for(rotkehlchen_api_server, 'exchangesresource'))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == [{'location': 'kraken', 'name': 'my_kraken', KRAKEN_ACCOUNT_TYPE_KEY: 'starter'}]  # noqa: E501
 
     # Check that we get an error if we try to re-setup an already setup exchange
@@ -186,7 +186,7 @@ def test_setup_exchange(rotkehlchen_api_server):
 
     # and check that kraken is now registered
     response = requests.get(api_url_for(rotkehlchen_api_server, 'exchangesresource'))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == [
         {'location': 'kraken', 'name': 'my_kraken', KRAKEN_ACCOUNT_TYPE_KEY: 'starter'},
         {'location': 'kraken', 'name': 'my_other_kraken', KRAKEN_ACCOUNT_TYPE_KEY: 'starter'},
@@ -201,7 +201,7 @@ def test_setup_exchange(rotkehlchen_api_server):
     assert_simple_ok_response(response)
     # and check that coinbasepro is now registered
     response = requests.get(api_url_for(rotkehlchen_api_server, 'exchangesresource'))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == [
         {'location': 'kraken', 'name': 'my_kraken', KRAKEN_ACCOUNT_TYPE_KEY: 'starter'},
         {'location': 'kraken', 'name': 'my_other_kraken', KRAKEN_ACCOUNT_TYPE_KEY: 'starter'},
@@ -252,7 +252,7 @@ def test_kraken_malformed_response(rotkehlchen_api_server_with_exchanges):
                 location='kraken',
             ),
         )
-    result = assert_proper_response_with_result(response=response)
+    result = assert_proper_sync_response_with_result(response=response)
     assert result == {}
 
 
@@ -283,7 +283,7 @@ def test_setup_exchange_does_not_stay_in_mapping_after_500_error(rotkehlchen_api
 
     # and check that kraken is now registered
     response = requests.get(api_url_for(rotkehlchen_api_server, 'exchangesresource'))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == [{'location': 'kraken', 'name': 'my_kraken', KRAKEN_ACCOUNT_TYPE_KEY: 'starter'}]  # noqa: E501
 
 
@@ -407,7 +407,7 @@ def test_remove_exchange(rotkehlchen_api_server):
     assert_simple_ok_response(response)
     # and check it's registered
     response = requests.get(api_url_for(rotkehlchen_api_server, 'exchangesresource'))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == [{'location': 'coinbase', 'name': 'Coinbase 1'}]
 
     # Add query ranges to see that they also get deleted when removing the exchange
@@ -434,7 +434,7 @@ def test_remove_exchange(rotkehlchen_api_server):
     assert_simple_ok_response(response)
     # and check that it's not registered anymore
     response = requests.get(api_url_for(rotkehlchen_api_server, 'exchangesresource'))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == []
     # Also check that the coinbase query ranges have been deleted but not the other ones
     cursor = db.conn.cursor()
@@ -511,7 +511,7 @@ def test_exchange_query_balances(rotkehlchen_api_server_with_exchanges):
             'named_exchanges_balances_resource',
             location='binance',
         ), json={'async_query': async_query})
-        outcome = assert_maybe_async_response_with_result(
+        outcome = assert_proper_response_with_result(
             response=response,
             rotkehlchen_api_server=rotkehlchen_api_server_with_exchanges,
             async_query=async_query,
@@ -526,7 +526,7 @@ def test_exchange_query_balances(rotkehlchen_api_server_with_exchanges):
             api_url_for(server, 'exchangebalancesresource'),
             json={'async_query': async_query},
         )
-        result = assert_maybe_async_response_with_result(
+        result = assert_proper_response_with_result(
             response=response,
             rotkehlchen_api_server=rotkehlchen_api_server_with_exchanges,
             async_query=async_query,
@@ -554,7 +554,7 @@ def test_exchange_query_balances_ignore_cache(rotkehlchen_api_server_with_exchan
             'named_exchanges_balances_resource',
             location='binance',
         ))
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert_binance_balances_result(result)
         assert bnd.call_count == 2
         assert bnl.call_count == 4
@@ -565,7 +565,7 @@ def test_exchange_query_balances_ignore_cache(rotkehlchen_api_server_with_exchan
             'named_exchanges_balances_resource',
             location='binance',
         ))
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert_binance_balances_result(result)
         assert bnd.call_count == 2, 'call count should not have changed. Cache must have been used'
         assert bnl.call_count == 4, 'call count should not have changed. Cache must have been used'
@@ -576,7 +576,7 @@ def test_exchange_query_balances_ignore_cache(rotkehlchen_api_server_with_exchan
             'named_exchanges_balances_resource',
             location='binance',
         ), json={'ignore_cache': True})
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert_binance_balances_result(result)
         assert bnd.call_count == 4, 'call count should have changed. Cache should have been ignored'  # noqa: E501
         assert bnl.call_count == 8, 'call count should have changed. Cache should have been ignored'  # noqa: E501
@@ -632,7 +632,7 @@ def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges: 'APIServer
             outcome = wait_for_async_task(rotkehlchen_api_server_with_exchanges, task_id)
             result = outcome['result']
         else:
-            result = assert_proper_response_with_result(response)
+            result = assert_proper_sync_response_with_result(response)
     assert result['entries_found'] > 0
     assert result['entries_limit'] == FREE_TRADES_LIMIT
     assert_binance_trades_result([x['entry'] for x in result['entries']])
@@ -648,7 +648,7 @@ def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges: 'APIServer
             outcome = wait_for_async_task(rotkehlchen_api_server_with_exchanges, task_id)
             result = outcome['result']
         else:
-            result = assert_proper_response_with_result(response)
+            result = assert_proper_sync_response_with_result(response)
 
     trades = result['entries']
     assert_binance_trades_result([x['entry'] for x in trades if x['entry']['location'] == 'binance'])  # noqa: E501
@@ -661,7 +661,7 @@ def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges: 'APIServer
             outcome = wait_for_async_task(rotkehlchen_api_server_with_exchanges, task_id)
             result = outcome['result']
         else:
-            result = assert_proper_response_with_result(response)
+            result = assert_proper_sync_response_with_result(response)
         trades = result['entries']
         assert_binance_trades_result([x['entry'] for x in trades if x['entry']['location'] == 'binance'])  # noqa: E501
         assert_poloniex_trades_result(
@@ -687,7 +687,7 @@ def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges: 'APIServer
             json={'location': 'poloniex'},
         )
 
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) != 0
 
     # exclude poloniex as location and delete the trades from there
@@ -707,7 +707,7 @@ def test_exchange_query_trades(rotkehlchen_api_server_with_exchanges: 'APIServer
             url=api_url_for(server, 'tradesresource'),
             json={'location': 'poloniex'},
         )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 0
 
 
@@ -732,7 +732,7 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges, start_with
             outcome = wait_for_async_task(rotkehlchen_api_server_with_exchanges, task_id)
             result = outcome['result']
         else:
-            result = assert_proper_response_with_result(response)
+            result = assert_proper_sync_response_with_result(response)
     assert result['entries_found'] == 4
     assert result['entries_limit'] == -1 if start_with_valid_premium else FREE_ASSET_MOVEMENTS_LIMIT  # noqa: E501
     poloniex_ids = [x['entry']['identifier'] for x in result['entries']]
@@ -763,7 +763,7 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges, start_with
             outcome = wait_for_async_task(rotkehlchen_api_server_with_exchanges, task_id)
             result = outcome['result']
         else:
-            result = assert_proper_response_with_result(response)
+            result = assert_proper_sync_response_with_result(response)
 
     movements = result['entries']
     assert_poloniex_asset_movements([x['entry'] for x in movements if x['entry']['location'] == 'poloniex'], True)  # noqa: E501
@@ -776,7 +776,7 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges, start_with
             outcome = wait_for_async_task(rotkehlchen_api_server_with_exchanges, task_id)
             result = outcome['result']
         else:
-            result = assert_proper_response_with_result(response)
+            result = assert_proper_sync_response_with_result(response)
         movements = result['entries']
         assert_poloniex_asset_movements(
             to_check_list=[x['entry'] for x in movements if x['entry']['location'] == 'poloniex'],
@@ -809,14 +809,14 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges, start_with
             api_url_for(server, 'assetmovementsresource'),
             json=data,
         )
-        without_ignore_response = assert_proper_response_with_result(without_ignore_response)
+        without_ignore_response = assert_proper_sync_response_with_result(without_ignore_response)
 
         toggle_ignore_an_asset(rotkehlchen_api_server_with_exchanges, A_BTC)
         data |= {'exclude_ignored_assets': True}
         ignored_response = requests.get(api_url_for(server, 'assetmovementsresource'), json=data)
-        ignored_response = assert_proper_response_with_result(ignored_response)
+        ignored_response = assert_proper_sync_response_with_result(ignored_response)
         default_response = requests.get(api_url_for(server, 'assetmovementsresource'))
-        default_response = assert_proper_response_with_result(default_response)
+        default_response = assert_proper_sync_response_with_result(default_response)
         assert ignored_response == default_response, '`exclude_ignored_assets` should be True by default'  # noqa: E501
 
         assert all(
@@ -830,7 +830,7 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges, start_with
             api_url_for(server, 'assetmovementsresource'),
             json=data,
         )
-        not_exclude_response = assert_proper_response_with_result(not_exclude_response)
+        not_exclude_response = assert_proper_sync_response_with_result(not_exclude_response)
         assert not_exclude_response == without_ignore_response, '`exclude_ignored_assets` = False should not exclude any asset movements'  # noqa: E501
 
         # reset the ignored status of BTC
@@ -839,7 +839,7 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges, start_with
     # and now test pagination
     data = {'only_cache': True, 'offset': 1, 'limit': 2, 'location': 'kraken'}
     response = requests.get(api_url_for(server, 'assetmovementsresource'), json=data)
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['entries_limit'] == -1 if start_with_valid_premium else FREE_ASSET_MOVEMENTS_LIMIT  # noqa: E501
     assert result['entries_found'] == 6
     assert result['entries_total'] == 10
@@ -860,7 +860,7 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges, start_with
                 'assetmovementsresource',
             ), json=data,
         )
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert result['entries_limit'] == -1 if start_with_valid_premium else FREE_ASSET_MOVEMENTS_LIMIT  # noqa: E501
         assert result['entries_total'] == 10
         assert result['entries_found'] == 10
@@ -873,7 +873,7 @@ def test_query_asset_movements(rotkehlchen_api_server_with_exchanges, start_with
                 'assetmovementsresource',
             ), json=data,
         )
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert result['entries_limit'] == -1 if start_with_valid_premium else FREE_ASSET_MOVEMENTS_LIMIT  # noqa: E501
         assert result['entries_total'] == 10
         assert result['entries_found'] == 10
@@ -964,7 +964,7 @@ def test_query_asset_movements_over_limit(
                     'assetmovementsresource',
                 ), json={'location': 'poloniex'},
             )
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert result['entries_found'] == polo_entries_num
         assert result['entries_total'] == all_movements_num
         assert result['entries_limit'] == -1 if start_with_valid_premium else FREE_ASSET_MOVEMENTS_LIMIT  # noqa: E501
@@ -975,7 +975,7 @@ def test_query_asset_movements_over_limit(
             api_url_for(server, 'assetmovementsresource'),
             json={'location': 'kraken'},
         )
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
 
         if start_with_valid_premium:
             assert len(result['entries']) == kraken_entries_num
@@ -1035,7 +1035,7 @@ def test_delete_external_exchange_data_works(rotkehlchen_api_server_with_exchang
             location='cryptocom',
         ),
     )
-    result = assert_proper_response_with_result(response)  # just check no validation error happens
+    result = assert_proper_sync_response_with_result(response)  # check no validation error happens
     assert result is True
     with rotki.data.db.conn.read_ctx() as cursor:
         assert len(rotki.data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)) == 1  # noqa: E501
@@ -1100,7 +1100,7 @@ def test_edit_exchange_account(rotkehlchen_api_server_with_exchanges: 'APIServer
         'kraken_account_type': KrakenAccountType.STARTER.serialize(),
     }
     response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result is True
     assert kraken is not None
     assert kraken.name == 'my_kraken'
@@ -1121,7 +1121,7 @@ def test_edit_exchange_account(rotkehlchen_api_server_with_exchanges: 'APIServer
 
         data = {'name': 'poloniex', 'location': 'poloniex', 'new_name': 'my_poloniex'}
         response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert result is True
         poloniex = try_get_first_exchange(rotki.exchange_manager, Location.POLONIEX)
         assert poloniex is not None
@@ -1187,7 +1187,7 @@ def test_edit_exchange_account_passphrase(rotkehlchen_api_server_with_exchanges)
     data = {'name': 'kucoin', 'location': 'kucoin', 'new_name': 'my_kucoin', 'passphrase': '$123$'}
     with mock_validate_api_key_success(Location.KUCOIN):
         response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result is True
     kucoin = try_get_first_exchange(rotki.exchange_manager, Location.KUCOIN)
     assert kucoin.name == 'my_kucoin'
@@ -1197,7 +1197,7 @@ def test_edit_exchange_account_passphrase(rotkehlchen_api_server_with_exchanges)
     data = {'name': 'coinbasepro', 'location': 'coinbasepro', 'passphrase': '$321$'}
     with mock_validate_api_key_success(Location.COINBASEPRO):
         response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result is True
     coinbasepro = try_get_first_exchange(rotki.exchange_manager, Location.COINBASEPRO)
     assert coinbasepro.name == 'coinbasepro'
@@ -1215,7 +1215,7 @@ def test_edit_exchange_kraken_account_type(rotkehlchen_api_server_with_exchanges
 
     data = {'name': 'mockkraken', 'location': 'kraken', KRAKEN_ACCOUNT_TYPE_KEY: 'intermediate'}
     response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result is True
     kraken = try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN)
     assert kraken.name == 'mockkraken'
@@ -1226,7 +1226,7 @@ def test_edit_exchange_kraken_account_type(rotkehlchen_api_server_with_exchanges
     # at second edit, also change name
     data = {'name': 'mockkraken', 'new_name': 'lolkraken', 'location': 'kraken', KRAKEN_ACCOUNT_TYPE_KEY: 'pro'}  # noqa: E501
     response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result is True
     kraken = try_get_first_exchange(rotki.exchange_manager, Location.KRAKEN)
     assert kraken.name == 'lolkraken'
@@ -1319,7 +1319,7 @@ def test_binance_query_pairs(rotkehlchen_api_server_with_exchanges):
             ),
             params={'location': Location.BINANCE},
         )
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         some_pairs = {'ETHUSDC', 'BTCUSDC', 'BNBBTC', 'FTTBNB'}
         assert some_pairs.issubset(result)
         binance_pairs_num = len(binance_globaldb.get_all_binance_pairs(Location.BINANCE))
@@ -1334,7 +1334,7 @@ def test_binance_query_pairs(rotkehlchen_api_server_with_exchanges):
     )
     binanceus_pairs_num = len(binance_globaldb.get_all_binance_pairs(Location.BINANCEUS))
     assert binanceus_pairs_num != 0
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     some_pairs = {'ETHUSD', 'BTCUSDC', 'BNBUSDT'}
     assert some_pairs.issubset(result)
     assert 'FTTBNB' not in result

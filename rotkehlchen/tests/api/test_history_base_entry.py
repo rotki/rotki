@@ -22,7 +22,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_ok_async_response,
     assert_proper_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
     assert_simple_ok_response,
 )
 from rotkehlchen.tests.utils.history_base_entry import (
@@ -116,7 +116,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
             api_url_for(rotkehlchen_api_server, 'historyeventresource'),
             json=json_data,
         )
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert 'identifier' in result
         entry.identifier = result['identifier']
 
@@ -328,7 +328,7 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer'):
             'historyeventresource',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     events = result['entries']
     assert events[1]['has_details'] is True
 
@@ -365,7 +365,7 @@ def test_event_with_details(rotkehlchen_api_server: 'APIServer'):
             'eventdetailsresource',
         ), json={'identifier': events[1]['entry']['identifier']},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result == {SUB_SWAPS_DETAILS: event2.extra_data[SUB_SWAPS_DETAILS]}  # type: ignore[index]  # extra_data is not None here
 
 
@@ -390,7 +390,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
             'historyeventresource',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['entries_found'] == 9
     assert result['entries_limit'] == 100
     assert result['entries_total'] == 9
@@ -414,7 +414,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
         ),
         json={'group_by_event_ids': True},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert result['entries_found'] == 6
     assert result['entries_limit'] == 100
     assert result['entries_total'] == 6
@@ -431,7 +431,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
         ),
         json={'group_by_event_ids': True, 'offset': 1, 'limit': 1},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 1
     assert result['entries_found'] == 6
     assert result['entries_limit'] == 100
@@ -445,7 +445,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
         ),
         json={'group_by_event_ids': True, 'offset': 0, 'limit': 1, 'asset': 'ETH'},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 1
     assert result['entries_found'] == 4
     assert result['entries_limit'] == 100
@@ -459,7 +459,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
         ),
         json={'location': Location.KRAKEN.serialize()},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 1
     assert result['entries_found'] == 1
     assert result['entries_limit'] == 100
@@ -472,7 +472,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
         ),
         json={'location': Location.ETHEREUM.serialize()},
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 8
     assert result['entries_found'] == 8
     assert result['entries_limit'] == 100
@@ -488,7 +488,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
             ),
             json={'group_by_event_ids': True, 'offset': 0, 'limit': 5, 'exclude_ignored_assets': exclude_ignored_assets},  # noqa: E501
         )
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert len(result['entries']) == min(found, 5)
         assert result['entries_found'] == found
         assert result['entries_limit'] == 100
@@ -503,7 +503,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
             ),
             json={'group_by_event_ids': False, 'offset': 0, 'limit': 5, 'exclude_ignored_assets': exclude_ignored_assets},  # noqa: E501
         )
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
         assert len(result['entries']) == min(sub_events_found, 5)
         assert result['entries_found'] == events_found
         assert result['entries_limit'] == 100

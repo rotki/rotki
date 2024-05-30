@@ -18,7 +18,7 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_ok_async_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.constants import A_DOLLAR_BASED
@@ -99,7 +99,7 @@ def test_get_balances(
         assert outcome['message'] == ''
         result = outcome['result']
     else:
-        result = assert_proper_response_with_result(response)
+        result = assert_proper_sync_response_with_result(response)
 
     address_balances = result[LP_HOLDER_ADDRESS]
     for lp in address_balances:
@@ -211,7 +211,7 @@ def test_get_events_history_filtering_by_timestamp(
             assert outcome['message'] == ''
             result = outcome['result']
         else:
-            result = assert_proper_response_with_result(response)
+            result = assert_proper_sync_response_with_result(response)
 
     events_balances = result[ethereum_accounts[0]]
     assert len(events_balances) == 1
@@ -235,7 +235,7 @@ def test_get_v3_balances_premium(rotkehlchen_api_server):
             version='3',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
 
     if LP_V3_HOLDER_ADDRESS not in result or len(result[LP_V3_HOLDER_ADDRESS]) == 0:
         test_warnings.warn(
@@ -288,7 +288,7 @@ def test_get_v3_balances_no_premium(rotkehlchen_api_server):
             version='3',
         ),
     )
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
 
     if LP_V3_HOLDER_ADDRESS not in result or len(result[LP_V3_HOLDER_ADDRESS]) == 0:
         test_warnings.warn(

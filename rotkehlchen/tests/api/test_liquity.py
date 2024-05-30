@@ -17,8 +17,8 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import (
     api_url_for,
-    assert_maybe_async_response_with_result,
     assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
 )
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -47,7 +47,7 @@ def test_trove_position(rotkehlchen_api_server, inquirer):  # pylint: disable=un
         rotkehlchen_api_server,
         'liquitytrovesresource',
     ), json={'async_query': async_query})
-    result = assert_maybe_async_response_with_result(
+    result = assert_proper_response_with_result(
         response=response,
         rotkehlchen_api_server=rotkehlchen_api_server,
         async_query=async_query,
@@ -88,7 +88,7 @@ def test_trove_staking(rotkehlchen_api_server, inquirer):  # pylint: disable=unu
         rotkehlchen_api_server,
         'liquitystakingresource',
     ), json={'async_query': async_query})
-    result = assert_maybe_async_response_with_result(
+    result = assert_proper_response_with_result(
         response=response,
         rotkehlchen_api_server=rotkehlchen_api_server,
         async_query=async_query,
@@ -130,7 +130,7 @@ def test_account_without_info(rotkehlchen_api_server, inquirer):  # pylint: disa
         rotkehlchen_api_server,
         'liquitytrovesresource',
     ), json={'async_query': async_query})
-    result = assert_maybe_async_response_with_result(
+    result = assert_proper_response_with_result(
         response=response,
         rotkehlchen_api_server=rotkehlchen_api_server,
         async_query=async_query,
@@ -151,7 +151,7 @@ def test_account_with_proxy(rotkehlchen_api_server, inquirer):  # pylint: disabl
         rotkehlchen_api_server,
         'liquitytrovesresource',
     ), json={'async_query': async_query})
-    result = assert_maybe_async_response_with_result(
+    result = assert_proper_response_with_result(
         response=response,
         rotkehlchen_api_server=rotkehlchen_api_server,
         async_query=async_query,
@@ -194,7 +194,7 @@ def test_stability_pool(rotkehlchen_api_server):
             'liquitystabilitypoolresource',
         ), json={'async_query': async_query})
 
-    result = assert_maybe_async_response_with_result(
+    result = assert_proper_response_with_result(
         response=response,
         rotkehlchen_api_server=rotkehlchen_api_server,
         async_query=async_query,
@@ -341,7 +341,7 @@ def test_staking_stats(rotkehlchen_api_server: APIServer, ethereum_accounts: lis
         'modulestatsresource',
         module='liquity',
     ), json={'async_query': False})
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
 
     global_stats = result['global_stats']
     address_0_data = result['by_address'][ethereum_accounts[0]]
@@ -369,7 +369,7 @@ def test_proxy_info_is_shown(rotkehlchen_api_server, ethereum_accounts):
         'liquitystabilitypoolresource',
     ), json={'async_query': False})
 
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert 'gains' in result[user_address]['proxies']['0x33EAfDB72b69BFBe6b5911eDCbab41011e63C523']
 
     # check the other endpoint.
@@ -377,5 +377,5 @@ def test_proxy_info_is_shown(rotkehlchen_api_server, ethereum_accounts):
         rotkehlchen_api_server,
         'liquitystakingresource',
     ), json={'async_query': False})
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     assert 'staked' in result[user_address]['proxies']['0x33EAfDB72b69BFBe6b5911eDCbab41011e63C523']  # noqa: E501

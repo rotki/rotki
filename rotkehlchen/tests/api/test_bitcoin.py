@@ -10,7 +10,7 @@ from rotkehlchen.tests.utils.api import (
     assert_error_response,
     assert_ok_async_response,
     assert_proper_response,
-    assert_proper_response_with_result,
+    assert_proper_sync_response_with_result,
     wait_for_async_task,
 )
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
@@ -148,7 +148,7 @@ def test_add_delete_xpub(rotkehlchen_api_server):
         rotkehlchen_api_server,
         'blockchainbalancesresource',
     ))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     _check_xpub_addition_outcome(result, TEST_BITCOIN_XPUB_1)
 
     # Make sure that adding existing xpub fails
@@ -190,7 +190,7 @@ def test_add_delete_xpub(rotkehlchen_api_server):
         rotkehlchen_api_server,
         'blockchainbalancesresource',
     ))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
     _check_xpub_addition_outcome(result, TEST_BITCOIN_XPUB_1)
 
     # Also make sure that blockchain account data endpoint returns everything correctly
@@ -199,7 +199,7 @@ def test_add_delete_xpub(rotkehlchen_api_server):
         'blockchainsaccountsresource',
         blockchain='BTC',
     ))
-    outcome = assert_proper_response_with_result(response)
+    outcome = assert_proper_sync_response_with_result(response)
     assert len(outcome['standalone']) == 2
     for entry in outcome['standalone']:
         assert entry['address'] in (UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2)
@@ -359,7 +359,7 @@ def test_add_delete_xpub_multiple_chains(rotkehlchen_api_server):
         'blockchainsaccountsresource',
         blockchain='BTC',
     ))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
 
     assert len(result['xpubs']) == 1
     xpub_return = result['xpubs'][0]
@@ -371,7 +371,7 @@ def test_add_delete_xpub_multiple_chains(rotkehlchen_api_server):
         'blockchainsaccountsresource',
         blockchain='BCH',
     ))
-    result = assert_proper_response_with_result(response)
+    result = assert_proper_sync_response_with_result(response)
 
     assert len(result['xpubs']) == 1
     xpub_return = result['xpubs'][0]
