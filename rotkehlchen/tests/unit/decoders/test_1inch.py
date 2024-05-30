@@ -12,6 +12,7 @@ from rotkehlchen.chain.ethereum.modules.oneinch.constants import (
 from rotkehlchen.chain.ethereum.modules.oneinch.v2.constants import ONEINCH_V2_MAINNET_ROUTER
 from rotkehlchen.chain.ethereum.modules.oneinch.v3.constants import ONEINCH_V3_MAINNET_ROUTER
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.decoding.oneinch.constants import CPT_ONEINCH_V6, ONEINCH_V6_ROUTER
 from rotkehlchen.chain.evm.decoding.oneinch.v4.constants import ONEINCH_V4_ROUTER
 from rotkehlchen.chain.evm.decoding.oneinch.v5.decoder import ONEINCH_V5_ROUTER
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2
@@ -805,3 +806,69 @@ def test_half_decoded_1inch_v5_swap(database, ethereum_inquirer, ethereum_accoun
         ),
     ]
     assert events == expetec_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('base_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+def test_1inch_base_v6_swap(database, base_inquirer, base_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x5b41c094c49462cd97fc19dc898ef23c24f859b46dbd38ecf5d34d3d0fd291f5')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas, swap_amount, receive_amount = TimestampMS(1716833467000), '0.000019908608867869', '311804', '0.002362174980374604'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=base_accounts[0],
+            notes=f'Burned {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:8453/erc20:0xAd1C24dE53fAD18270D5C99026302E989D212b41'),
+            balance=Balance(amount=FVal(0)),
+            location_label=base_accounts[0],
+            notes=f'Revoke BERD spending approval of {base_accounts[0]} by {ONEINCH_V6_ROUTER}',
+            address=ONEINCH_V6_ROUTER,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=3,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=Asset('eip155:8453/erc20:0xAd1C24dE53fAD18270D5C99026302E989D212b41'),
+            balance=Balance(amount=FVal(swap_amount)),
+            location_label=base_accounts[0],
+            notes=f'Swap {swap_amount} BERD in 1inch-v6',
+            counterparty=CPT_ONEINCH_V6,
+            address=ONEINCH_V6_ROUTER,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=4,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(receive_amount)),
+            location_label=base_accounts[0],
+            notes=f'Receive {receive_amount} ETH as a result of a 1inch-v6 swap',
+            counterparty=CPT_ONEINCH_V6,
+            address=ONEINCH_V6_ROUTER,
+        ),
+    ]
+    assert expected_events == events
