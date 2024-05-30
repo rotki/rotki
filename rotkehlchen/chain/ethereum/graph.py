@@ -12,12 +12,13 @@ from gql.transport.requests import RequestsHTTPTransport
 from graphql.error import GraphQLError
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.api import APIKeyNotConfigured
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ExternalService
+from rotkehlchen.types import ApiKey, ExternalService
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -50,7 +51,12 @@ def format_query_indentation(querystr: str) -> str:
 
 class Graph(ExternalServiceWithApiKey):
 
-    def __init__(self, subgraph_id: str, database: 'DBHandler', label: str) -> None:
+    def __init__(
+            self,
+            subgraph_id: str,
+            database: 'DBHandler',
+            label: str,
+    ) -> None:
         """
         subgraph_id is the id that TheGraph assigns to the subgraph in their decentralized
         service. `label` is a human readable tag for the subgraph so the user knows what service
@@ -72,7 +78,9 @@ class Graph(ExternalServiceWithApiKey):
 
         - May raise APIKeyNotConfigured
         """
-        if (api_key := self._get_api_key()) is None:
+        previous_key = self.api_key
+        if (api_key := self._get_api_key()) is None and self.graph_label == CPT_ENS:
+            api_key = ApiKey('d943ea1af415001154223fdf46b6f193')  # key created by yabir enabled for ens  # noqa: E501
             if self.warning_given is False:
                 self.db.msg_aggregator.add_message(  # type: ignore[union-attr]  # self.db is not None here
                     message_type=WSMessageType.MISSING_API_KEY,
@@ -82,10 +90,10 @@ class Graph(ExternalServiceWithApiKey):
                     },
                 )
                 self.warning_given = True
-
+        elif api_key is None:  # don't bother the user and fail silently. We avoid exhausting the default key  # noqa: E501
             raise APIKeyNotConfigured(f'API key for subgraph {self.graph_label} not found')
 
-        if self.client is not None and self.api_key == api_key:
+        if self.client is not None and api_key == previous_key:
             return self.client
 
         try:

@@ -93,6 +93,18 @@ def globaldb_get_general_cache_values(
     return [entry[0] for entry in cursor]
 
 
+def globaldb_general_cache_exists(
+        cursor: DBCursor,
+        key_parts: Iterable[str | GeneralCacheType],
+        value: str,
+) -> bool:
+    """Check if a combination key/value exists in the general cache"""
+    return cursor.execute(
+        'SELECT COUNT(*) FROM general_cache WHERE key=? AND value=?',
+        (compute_cache_key(key_parts), value),
+    ).fetchone()[0] == 1
+
+
 def globaldb_set_unique_cache_value_at_ts(
         write_cursor: DBCursor,
         key_parts: Iterable[str | UniqueCacheType],

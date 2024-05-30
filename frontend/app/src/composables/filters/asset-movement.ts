@@ -39,8 +39,7 @@ export function useAssetMovementFilters() {
   const locationsStore = useHistoryStore();
   const { associatedLocations } = storeToRefs(locationsStore);
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
-  const { assetSearch } = useAssetInfoApi();
-  const { assetInfo } = useAssetInfoRetrieval();
+  const { assetSearch, assetInfo } = useAssetInfoRetrieval();
   const { t } = useI18n();
 
   const matchers: ComputedRef<Matcher[]> = computed(

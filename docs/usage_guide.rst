@@ -801,16 +801,78 @@ And choose the markets in the `Filter market pair(s)` search.
 
 Once finished click on save.
 
-Adding an external service API Key
-=====================================
+External services
+=================
 
 Rotki relies on various external services for data such as historical crypto prices or EVM transactions. To get that data some of these services require API keys. So you should go to their webpage, create a free account and generate an API key. Once this is done you can enter the API key in the section of the API keys page.
 
-.. image:: images/add_external_service.png
-   :alt: Add API keys for an external service
-   :align: center
+Go to :menuselection:`API Keys --> External Services`.
+
+Etherscan
+---------
 
 At the moment there is no compulsory API key. But if you don't use your own node etherscan queries without an API key are really slow. So if you don't already have an account with them please create one `here <https://etherscan.io/register>`_ and then generate a free API key and set it in the app as explained above. It's free of charge.
+
+.. image:: images/add_etherscan_keys.png
+   :alt: Add Etherscan keys
+   :align: center
+
+Loopring balances
+-----------------
+
+To have your loopring balances detected you will need an API Key from loopring. To get one visit `https://loopring.io/#/layer2/security <https://loopring.io/#/layer2/security>`_ and unlock your account. In the list of options you need to click in **Export Account**
+
+.. image:: images/get_loopring_keys.png
+   :alt: Get loopring keys
+   :align: center
+
+Then in rotki you need to add the API key, in the ``Loopring`` section.
+
+.. image:: images/loopring_add_key.png
+   :alt: Add loopring key
+   :align: center
+
+After following these steps your balances in the dashboard will be updated including the loopring information
+
+.. image:: images/loopring_balances.png
+   :alt: Loopring balances in the UI
+   :align: center
+
+Monerium
+--------
+
+As long as you provide Monerium credentials, all Monerium transactions on Mainnet, Polygon, and Gnosis chain will be decorated with bank data (or chain bridging data), which you can also see in the Monerium app.
+
+1. For bank transfers from/to your address you will be able to see the destination/source IBAN along with the memo of the transfer.
+2. For automatic EURe bridging between EVM chains you will see amounts, from/to EVM chains along with from/to address.
+
+.. image:: images/monerium_transactions.png
+   :alt: Monerium decorated transactions
+   :align: center
+
+Note: Monerium API can only use basic authentication at the moment. We are in contact with their team and they will add api keys eventually. But for now they only have basic authentication which means your username + password are stored in rotki (encrypted). Take necessary security precautions and don't use unless you understand the potential risks.
+
+.. image:: images/monerium_add_key.png
+   :alt: Add monerium
+   :align: center
+
+
+.. _the-graph-api-key:
+The graph
+---------
+
+Rotki uses the graph to obtain Balancer balances, and particular ENS data. You can create one `here <https://thegraph.com/studio/apikeys>`_
+
+   .. image:: images/create_the_graph_api_key.png
+     :alt: Create The Graph API key
+     :align: center
+
+After creating the API key, you can add it to Rotki. Additionally, ensure that the generated API key is authorized for the Balancer and ENS subgraphs.
+
+   .. image:: images/the_graph_subgraphs.png
+     :alt: The Graph subgraphs
+     :align: center
+
 
 Cointracking.info
 ====================
@@ -857,47 +919,6 @@ uphold.com
 ====================
 
 You can import transaction history CSV data exported from the uphold.com activity page.  Transactions will be created when the row's origin currency and destination currency are the same.  Trades will be created if the currencies differ and a rate will be determined automatically.
-
-Loopring balances
-===================
-
-To have your loopring balances detected you will need an API Key from loopring. To get one visit `https://loopring.io/#/layer2/security <https://loopring.io/#/layer2/security>`_ and unlock your account. In the list of options you need to click in **Export Account**
-
-.. image:: images/get_loopring_keys.png
-   :alt: Get loopring keys
-   :align: center
-
-Then in rotki you need to add the API key. Go to  :menuselection:`API Keys > External Services > Loopring` and paste the key that you obtained in the loopring website.
-
-.. image:: images/loopring_add_key.png
-   :alt: Add loopring key
-   :align: center
-
-After following these steps your balances in the dashboard will be updated including the loopring information
-
-.. image:: images/loopring_balances.png
-   :alt: Loopring balances in the UI
-   :align: center
-
-Monerium
-===========
-
-So long as you provide monerium credentials, all monerium transactions in mainnet, polygon and gnosis chain will be decorated with the bank data (or chain bridging), data you can also see in monerium app.
-
-1. For bank transfers from/to your address you will be able to see the destination/source IBAN along with the memo of the transfer.
-2. For automatic EURe bridging between EVM chains you will see amounts, from/to EVM chains along with from/to address.
-
-.. image:: images/monerium_transactions.png
-   :alt: Monerium decorated transactions
-   :align: center
-
-Note: Monerium API can only use basic authentication at the moment. We are in contact with their team and they will add api keys eventually. But for now they only have basic authentication which means your username + password are stored in rotki (encrypted). Take necessary security precautions and don't use unless you understand the potential risks.
-
-Go to :menuselection:`API Keys --> External Services --> Monerium` and enter your credentials.
-
-.. image:: images/monerium_add_key.png
-   :alt: Add monerium
-   :align: center
 
 Rotki Generic Import
 =====================
@@ -1818,6 +1839,9 @@ The liquidity pool support allows premium users to see their balances, the per p
 .. image:: images/sc_decentralized_lp_summary.png
   :alt: Defi Liquidity Pools Summary on Dashboard
   :align: center
+
+.. note::
+   For the balancer pools, you need ``The Graph`` API key to get the balances. Read :ref:`_the-graph-api-key`
 
 
 Liabilities

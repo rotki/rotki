@@ -23,6 +23,8 @@ VALID_ASSET_COLLECTIONS = """INSERT INTO asset_collections(id, name, symbol) VAL
 """  # noqa: E501
 VALID_ASSETS = """INSERT INTO assets(identifier, name, type) VALUES("MYBONK", "Bonk", "Y"); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("MYBONK", "BONK", "bonk", "BONK", NULL, 1672279200, NULL);
     *
+UPDATE common_asset_details SET coingecko="coingecko-id" where identifier="new-asset";
+INSERT INTO assets(identifier, name, type) VALUES("new-asset", "New Asset", "Y"); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("new-asset", "NEW", "coingecko-id", "", NULL, 1672279200, NULL);
 """  # noqa: E501
 
 
@@ -479,6 +481,9 @@ def test_asset_update(
     with GlobalDBHandler().conn.read_ctx() as cursor:
         assert cursor.execute('SELECT * FROM assets WHERE identifier = "MYBONK"').fetchall() == ([
             ('MYBONK', 'Bonk', 'Y'),
+        ] if update_assets else [])
+        assert cursor.execute('SELECT * FROM assets WHERE identifier = "new-asset"').fetchall() == ([  # noqa: E501
+            ('new-asset', 'New Asset', 'Y'),
         ] if update_assets else [])
 
         cursor.execute('SELECT * FROM asset_collections WHERE id = 99999999')

@@ -35,7 +35,7 @@ export const EvmTransactionQueryData = z.object({
 }).merge(EvmChainAddress);
 
 export const EvmUnDecodedTransactionsData = z.object({
-  evmChain: z.string(),
+  chain: z.string(),
   processed: z.number(),
   total: z.number(),
 });

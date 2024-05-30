@@ -126,6 +126,7 @@ MOCK_AIRDROP_INDEX = {'airdrops': {
         'name': 'DEGEN',
         'icon': 'degen.svg',
         'icon_path': 'airdrops/icons/degen.svg',
+        'has_decoder': False,
         'new_asset_data': {
             'asset_type': 'EVM_TOKEN',
             'address': '0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed',
@@ -156,7 +157,7 @@ MOCK_AIRDROP_INDEX = {'airdrops': {
         'AAVE V2 Pioneers',
         '388003b6c0dc589981ce9e962d6d8b6b2148c72ccf6ec3578ab32d63b547f903',
     ],
-}, 'airdrops_missing_decoders': ['degen2_season1']}
+}}
 
 
 def _mock_airdrop_list(url: str, timeout: int = 0, headers: dict | None = None):  # pylint: disable=unused-argument
@@ -361,12 +362,14 @@ def test_check_airdrops(
         'asset': A_UNI,
         'link': 'https://app.uniswap.org/',
         'claimed': True,
+        'has_decoder': True,
     }
     assert data[TEST_ADDR1]['1inch'] == {
         'amount': '630.374421472277638654',
         'asset': A_1INCH,
         'link': 'https://1inch.exchange/',
         'claimed': False,
+        'has_decoder': True,
     }
     assert messages_aggregator.warnings[0] == 'Skipping airdrop CSV for invalid because it contains an invalid row: []'  # noqa: E501
 
@@ -376,6 +379,7 @@ def test_check_airdrops(
         'asset': A_UNI,
         'link': 'https://app.uniswap.org/',
         'claimed': False,
+        'has_decoder': True,
     }
     assert data[TEST_ADDR2]['grain'] == {
         'amount': '16301.717650649890035791',
@@ -383,19 +387,21 @@ def test_check_airdrops(
         'link': 'https://claim.harvest.finance/',
         'claimed': False,
         'icon_url': f'{AIRDROPS_REPO_BASE}/airdrops/icons/grain.svg',
+        'has_decoder': True,
     }
     assert data[TEST_ADDR2]['shutter'] == {
         'amount': '394857.029384576349787465',
         'asset': A_SHU,
         'link': 'https://claim.shutter.network/',
         'claimed': False,
+        'has_decoder': True,
     }
     assert data[TEST_ADDR2]['degen2_season1'] == {
         'amount': '394857.029384576349787465',
         'asset': Asset('eip155:8453/erc20:0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed'),
         'link': 'https://www.degen.tips/airdrop2/season1',
         'claimed': False,
-        'missing_decoder': True,
+        'has_decoder': False,
         'icon_url': 'https://raw.githubusercontent.com/rotki/data/develop/airdrops/icons/degen.svg',
     }
     assert data[TEST_ADDR2]['eigen'] == {
@@ -404,6 +410,7 @@ def test_check_airdrops(
         'link': 'https://eigenfoundation.org',
         'claimed': False,
         'icon_url': 'https://raw.githubusercontent.com/rotki/data/develop/airdrops/icons/eigen.svg',
+        'has_decoder': True,
     }
     assert len(data[TEST_POAP1]) == 1
     assert data[TEST_POAP1]['poap'] == [{
@@ -518,7 +525,6 @@ def test_fetch_airdrops_metadata(database, remote_etag, database_etag):
         assert metadata == (
             _parse_airdrops(database=database, airdrops_data=mock_airdrop_index['airdrops']),
             mock_airdrop_index['poap_airdrops'],
-            {'degen2_season1'},
         )
         if remote_etag != database_etag:  # check if the value is updated
             assert metadata[0]['diva'].name == 'new_name'

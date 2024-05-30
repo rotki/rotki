@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
 
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
@@ -40,7 +40,10 @@ from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.globaldb.cache import globaldb_get_general_cache_values
+from rotkehlchen.globaldb.cache import (
+    globaldb_general_cache_exists,
+    globaldb_get_general_cache_values,
+)
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
@@ -71,6 +74,10 @@ SYMBOL_AND_NAME_ASSETS_QUERY = (
     'A.identifier=B.identifier WHERE B.PROTOCOL IS NOT ? ORDER BY C.symbol'
 )
 MULTISEND_SPAM_THRESHOLD = 10  # we cover the case of multiple token rewards in the same transactions  # noqa: E501
+KNOWN_FALSE_POSITIVES: Final = {
+    'eip155:1/erc20:0xA0b73E1Ff0B80914AB6fe0444E65848C4C34450b',  # crypto.com CRO token
+    'eip155:1/erc20:0xB63B606Ac810a52cCa15e44bB630fd42D8d1d83d',  # crypto.com
+}
 
 
 def _add_spam_asset(
@@ -110,8 +117,20 @@ def autodetect_spam_assets_in_db(user_db: DBHandler) -> None:
     with globaldb.conn.read_ctx() as cursor:
         cursor.execute(SYMBOL_AND_NAME_ASSETS_QUERY, (SPAM_PROTOCOL,))
         for symbol, name, identifier, chain_id in cursor:
+            if identifier in KNOWN_FALSE_POSITIVES:
+                continue
+
             if check_if_spam_token(symbol=symbol, name=name) is False:
                 continue
+
+            # check if the asset is whitelisted and skip if it is
+            with GlobalDBHandler().conn.read_ctx() as globaldb_cursor:
+                if globaldb_general_cache_exists(
+                    cursor=globaldb_cursor,
+                    key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
+                    value=identifier,
+                ):
+                    continue
 
             deserialized_chain_id = ChainID.deserialize_from_db(chain_id)
             detected_spam_assets.append(identifier)

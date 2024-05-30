@@ -40,7 +40,7 @@ function refresh() {
 const headers: DataTableColumn[] = [
   {
     label: t('common.location'),
-    key: 'evmChain',
+    key: 'chain',
     align: 'center',
     cellClass: 'py-3',
   },
@@ -136,8 +136,8 @@ onMounted(() => refresh());
         striped
         outlined
       >
-        <template #item.evmChain="{ row }">
-          <LocationDisplay :identifier="row.evmChain" />
+        <template #item.chain="{ row }">
+          <LocationDisplay :identifier="row.chain" />
         </template>
         <template #item.number="{ row }">
           {{ row.total - row.processed }}

@@ -1,13 +1,35 @@
 import type { AssetInfo } from '@rotki/common/lib/data';
+import type { AssetMap } from '@/types/asset';
 
 export const useAssetCacheStore = defineStore('assets/cache', () => {
   const fetchedAssetCollections: Ref<Record<string, AssetInfo>> = ref({});
 
   const { assetMapping } = useAssetInfoApi();
+  const { t } = useI18n();
+  const { notify } = useNotificationsStore();
+
+  const getAssetMappingHandler = async (identifiers: string[]): Promise<AssetMap> => {
+    try {
+      return await assetMapping(identifiers);
+    }
+    catch (error: any) {
+      notify({
+        title: t('asset_search.error.title'),
+        message: t('asset_search.error.message', {
+          message: error.message,
+        }),
+        display: true,
+      });
+      return {
+        assetCollections: {},
+        assets: {},
+      };
+    }
+  };
 
   const { cache, isPending, retrieve, reset, deleteCacheKey, queueIdentifier }
     = useItemCache<AssetInfo>(async (keys: string[]) => {
-      const response = await assetMapping(keys);
+      const response = await getAssetMappingHandler(keys);
       return function* () {
         for (const key of keys) {
           const { assetCollections, assets } = response;

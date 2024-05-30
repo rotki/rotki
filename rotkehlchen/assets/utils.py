@@ -45,7 +45,7 @@ SPAM_ASSET_REGEX = r"""
     https:// |                      # Matches 'https://'
     claim | visit | invited |       # Matches 'claim' or 'visit' anywhere in the string
     ^\$.+\..+ |                     # Matches strings that start with '$' and contain '.'
-    (\p{Sk}|\p{P})+(com|io|site|xyz|li|org|cc|net|pm)+  # Matches common domain extensions. It also detects any letter modifier or punctuation in unicode before the domain extension
+    (\p{Sk}|\p{Po})+(com|io|site|xyz|li|org|cc|net|pm)+  # Matches common domain extensions. It also detects any letter modifier or punctuation in unicode before the domain extension
 """  # noqa: E501
 # Compile the regex pattern:
 # - re.IGNORECASE makes it case-insensitive

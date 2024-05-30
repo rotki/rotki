@@ -1153,6 +1153,12 @@
     "merge_assets": "Merge Assets",
     "merge_assets_tooltip": "Merge two assets into one (can be used to migrate custom assets to officially supported ones)"
   },
+  "asset_search": {
+    "error": {
+      "title": "Asset search",
+      "message": "Failed to search asset: {message}"
+    }
+  },
   "asset_select": {
     "no_results": "No assets matching your search"
   },
@@ -1729,6 +1735,7 @@
       "local": "Local",
       "remote": "Remote"
     },
+    "all_buttons_description": "Resolve for all conflicts",
     "action_hint": {
       "top": "Local changes have been detected. You have two options:",
       "bottom": "You also have another extra option, you can manage the conflicts individually."
@@ -2455,7 +2462,7 @@
     "subtitle": "rotki connects to various service providers in order to obtain information such as historical prices or blockchain data. In certain cases rotki depends on these APIs for basic information, in which case you will need to provide an API key.",
     "thegraph": {
       "delete_tooltip": "Deletes the Graph API key",
-      "description": "rotki uses the Graph to obtain information about balances of balancer pools.",
+      "description": "rotki uses the Graph to obtain a variety of information such as balancer balances and ENS data",
       "hint": "Enter your The Graph API key",
       "title": "The Graph"
     }

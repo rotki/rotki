@@ -15,6 +15,8 @@ jobs:
     env:
       CI: true
       TEST_ENVIRONMENT: ${{ inputs.test_environment }}
+      TARGET_BRANCH: ${{ github.base_ref }}
+      SOURCE_BRANCH: ${{ github.head_ref }}
     runs-on: ${{ inputs.os }}
     name: 'Backend tests'
     timeout-minutes: 50
@@ -32,6 +34,16 @@ jobs:
         with:
           repository: rotki/test-caching
           path: test-caching
+          fetch-depth: 0
+      - name: Ensure VCR branch is fully rebased
+        run: |
+          cd $HOME/work/rotki/rotki/test-caching
+          if [ `git rev-parse --verify remotes/origin/$SOURCE_BRANCH 2>/dev/null` ]
+          then
+              [ `git rev-parse remotes/origin/$TARGET_BRANCH` = `git merge-base remotes/origin/$TARGET_BRANCH remotes/origin/$SOURCE_BRANCH` ] &&
+              echo "VCR setup: $SOURCE_BRANCH fully rebased on $TARGET_BRANCH" && exit ||
+              echo "VCR setup: $SOURCE_BRANCH not fully rebased on $TARGET_BRANCH" && exit 1
+          fi
       - name: Load env
         uses: rotki/action-env@v2
         with:

@@ -153,14 +153,20 @@ async function checkValue() {
   if (!val)
     return;
 
-  const mapping = await assetMapping([val]);
-  set(assets, [
-    ...get(assets),
-    {
-      identifier: val,
-      ...mapping.assets[transformCase(val, true)],
-    },
-  ]);
+  try {
+    const mapping = await assetMapping([val]);
+    set(assets, [
+      ...get(assets),
+      {
+        identifier: val,
+        ...mapping.assets[transformCase(val, true)],
+      },
+    ]);
+  }
+  catch (error_: any) {
+    set(loading, false);
+    set(error, error_.message);
+  }
 }
 
 onMounted(async () => {

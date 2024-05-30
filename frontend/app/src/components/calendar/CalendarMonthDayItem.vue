@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useRotkiTheme } from '@rotki/ui-library-compat';
 import type { Dayjs } from 'dayjs';
 import type { CalendarEvent } from '@/types/history/calendar';
 
@@ -47,9 +48,15 @@ const hidden = computed(() => get(events).length - get(visibleEvents).length);
 
 const { t } = useI18n();
 
-function getColor(color: string | undefined, isBg: boolean = false) {
+const { isDark } = useRotkiTheme();
+
+function getColor(isDark: boolean, color: string | undefined, isBg: boolean = false) {
   if (!color)
     return undefined;
+
+  if (isDark)
+    return isBg ? `#${color}80` : '#ffffff';
+
   return `#${color}${isBg ? '1a' : ''}`;
 }
 </script>
@@ -86,8 +93,8 @@ function getColor(color: string | undefined, isBg: boolean = false) {
         :class="{
           'bg-rui-grey-400 !text-rui-text-disabled': isPast,
         }"
-        :bg-color="isPast ? undefined : getColor(event.color, true)"
-        :text-color="isPast ? undefined : getColor(event.color)"
+        :bg-color="isPast ? undefined : getColor(isDark, event.color, true)"
+        :text-color="isPast ? undefined : getColor(isDark, event.color)"
         @click="edit(event)"
       >
         {{ event.name }}

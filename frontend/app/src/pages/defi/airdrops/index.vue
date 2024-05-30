@@ -29,7 +29,7 @@ const statusFilters: Ref<{ text: string; value: Statuses }[]> = ref([
   { text: t('common.unclaimed'), value: 'unclaimed' },
   { text: t('common.claimed'), value: 'claimed' },
 ]);
-const status: Ref<Statuses> = ref('unclaimed');
+const status: Ref<Statuses> = ref('');
 const loading: Ref<boolean> = ref(false);
 
 const refreshTooltip: ComputedRef<string> = computed(() =>
@@ -49,9 +49,9 @@ const entries = computed(() => {
       const currentStatus = get(status);
       switch (currentStatus) {
         case 'unknown':
-          return airdrop.missingDecoder;
+          return !airdrop.hasDecoder;
         case 'unclaimed':
-          return !airdrop.claimed && !airdrop.missingDecoder;
+          return airdrop.hasDecoder && !airdrop.claimed;
         case 'claimed':
           return airdrop.claimed;
         default:
@@ -111,7 +111,7 @@ function airdropList(addresses: string[]): ComputedRef<Airdrop[]> {
           });
         }
         else {
-          const { amount, asset, link, claimed, missingDecoder } = element as AirdropDetail;
+          const { amount, asset, link, claimed, hasDecoder } = element as AirdropDetail;
           result.push({
             address,
             amount,
@@ -119,7 +119,7 @@ function airdropList(addresses: string[]): ComputedRef<Airdrop[]> {
             source,
             asset,
             claimed,
-            missingDecoder,
+            hasDecoder,
           });
         }
       }
@@ -245,9 +245,9 @@ onMounted(async () => {
           />
           <span v-else>{{ row.details.length }}</span>
         </template>
-        <template #item.claimed="{ row: { claimed, missingDecoder } }">
+        <template #item.claimed="{ row: { claimed, hasDecoder } }">
           <RuiTooltip
-            v-if="missingDecoder"
+            v-if="!hasDecoder"
             :popper="{ placement: 'top' }"
             :open-delay="400"
             tooltip-class="max-w-[12rem]"

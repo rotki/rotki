@@ -12,14 +12,14 @@ const remaining = computed<number>(() => props.item.total - props.item.processed
 
 const isComplete = computed<boolean>(() => get(remaining) === 0);
 
-const decoding = computed<boolean>(() => get(isTaskRunning(TaskType.TRANSACTIONS_DECODING, { chain: props.item.evmChain })));
+const decoding = computed<boolean>(() => get(isTaskRunning(TaskType.TRANSACTIONS_DECODING, { chain: props.item.chain })));
 </script>
 
 <template>
   <div class="flex items-center gap-2">
     <AdaptiveWrapper>
       <EvmChainIcon
-        :chain="item.evmChain"
+        :chain="item.chain"
         size="1.25rem"
       />
     </AdaptiveWrapper>

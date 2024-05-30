@@ -1,5 +1,5 @@
 import { BigNumber } from '@rotki/common';
-import type { AxiosResponseTransformer } from 'axios';
+import type { AxiosResponseHeaders, AxiosResponseTransformer } from 'axios';
 
 function isObject(data: any): boolean {
   return typeof data === 'object'
@@ -48,7 +48,7 @@ export function noRootCamelCaseTransformer(data: any): any {
   return convertKeys(data, true, true);
 }
 
-const jsonTransformer: AxiosResponseTransformer = (data, headers) => {
+export function jsonTransformer(data: any, headers: AxiosResponseHeaders): AxiosResponseTransformer {
   let result = data;
   const contentType = headers?.['content-type'];
   const isJson = contentType?.includes('application/json') ?? false;
@@ -59,7 +59,7 @@ const jsonTransformer: AxiosResponseTransformer = (data, headers) => {
     catch {}
   }
   return result;
-};
+}
 
 export function setupTransformer(skipRoot = false): AxiosResponseTransformer[] {
   return [

@@ -1,4 +1,4 @@
-import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
+import { type MatchedKeyword, type SearchMatcher, assetSuggestions } from '@/types/filtering';
 
 enum KrakenStakingKeys {
   TYPE = 'type',
@@ -22,7 +22,7 @@ export function useKrakenStakingFilter() {
   const filters: Ref<Filters> = ref({});
 
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
-  const { assetSearch } = useAssetInfoApi();
+  const { assetSearch } = useAssetInfoRetrieval();
   const { krakenStakingEventTypeData } = useKrakenStakingEventTypes();
   const { t } = useI18n();
 
@@ -41,7 +41,7 @@ export function useKrakenStakingFilter() {
         keyValue: KrakenStakingValueKeys.ASSET,
         description: t('kraken_staking_events.filter.asset'),
         asset: true,
-        suggestions: async (value: string) => await assetSearch(value, 5),
+        suggestions: assetSuggestions(assetSearch),
       },
       {
         key: KrakenStakingKeys.TYPE,

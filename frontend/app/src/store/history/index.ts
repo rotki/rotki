@@ -10,7 +10,7 @@ export const useHistoryStore = defineStore('history', () => {
   const setUndecodedTransactionsStatus = (data: EvmUnDecodedTransactionsData) => {
     set(undecodedTransactionsStatus, {
       ...get(undecodedTransactionsStatus),
-      [data.evmChain]: data,
+      [data.chain]: data,
     });
   };
 

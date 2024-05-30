@@ -2982,7 +2982,10 @@ class RestAPI:
         """
         decoded_num = 0
         # For now it's only zksync lite
-        decoded_num = self.rotkehlchen.chains_aggregator.zksync_lite.decode_undecoded_transactions(force_redecode=ignore_cache)   # noqa: E501
+        decoded_num = self.rotkehlchen.chains_aggregator.zksync_lite.decode_undecoded_transactions(
+            force_redecode=ignore_cache,
+            send_ws_notifications=True,
+        )
         return {
             'result': {'decoded_tx_number': decoded_num},
             'message': '',

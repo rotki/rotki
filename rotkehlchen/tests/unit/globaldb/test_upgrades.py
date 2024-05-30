@@ -3,6 +3,7 @@ import shutil
 from contextlib import ExitStack
 from pathlib import Path
 from sqlite3 import IntegrityError
+from typing import Final
 
 import pytest
 from eth_utils.address import to_checksum_address
@@ -50,8 +51,8 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now
 
 # TODO: Perhaps have a saved version of that global DB for the tests and query it too?
-ASSETS_IN_V2_GLOBALDB = 3095
-YEARN_V1_ASSETS_IN_V3 = 32
+ASSETS_IN_V2_GLOBALDB: Final = 3095
+YEARN_V1_ASSETS_IN_V3: Final = 32
 
 
 def _count_sql_file_sentences(file_name: str, skip_statements: int = 0):

@@ -37,8 +37,7 @@ export function useTradeFilters() {
 
   const { associatedLocations } = storeToRefs(useHistoryStore());
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
-  const { assetSearch } = useAssetInfoApi();
-  const { assetInfo } = useAssetInfoRetrieval();
+  const { assetSearch, assetInfo } = useAssetInfoRetrieval();
   const { t } = useI18n();
 
   const matchers: ComputedRef<Matcher[]> = computed(

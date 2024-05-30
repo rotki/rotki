@@ -284,7 +284,7 @@ export const useTaskStore = defineStore('tasks', () => {
     removeFromUnknownTasks(task.id);
 
     try {
-      const result = await api.queryTaskResult(task.id);
+      const result = await api.queryTaskResult(task.id, task.meta.transformer);
       assert(result !== null);
       handleResult(result, task);
     }
