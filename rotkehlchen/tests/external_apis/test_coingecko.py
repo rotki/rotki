@@ -31,12 +31,13 @@ def assert_coin_data_same(given, expected, compare_description=False):
     assert given.image_url == expected.image_url
 
 
+@pytest.mark.vcr()
 def test_asset_data(session_coingecko):
     expected_data = CoingeckoAssetData(
         identifier='bitcoin',
         symbol='btc',
         name='Bitcoin',
-        image_url='https://assets.coingecko.com/coins/images/1/small/bitcoin.png?1696501400',
+        image_url='https://coin-images.coingecko.com/coins/images/1/small/bitcoin.png?1696501400',
     )
     data = session_coingecko.asset_data(A_BTC.resolve_to_asset_with_oracles().to_coingecko())
     assert_coin_data_same(data, expected_data)
@@ -45,7 +46,7 @@ def test_asset_data(session_coingecko):
         identifier='yearn-finance',
         symbol='yfi',
         name='yearn.finance',
-        image_url='https://assets.coingecko.com/coins/images/11849/small/yearn.jpg?1696511720',
+        image_url='https://coin-images.coingecko.com/coins/images/11849/small/yearn.jpg?1696511720',
     )
     data = session_coingecko.asset_data(A_YFI.resolve_to_asset_with_oracles().to_coingecko())
     assert_coin_data_same(data, expected_data, compare_description=False)
@@ -95,8 +96,8 @@ def test_asset_icons_for_collections(icon_manager: IconManager) -> None:
         elif 'https://api.coingecko.com/api/v3/coins/ethereum' in url:
             return MockResponse(HTTPStatus.OK, (test_data_folder / 'coins' / 'ethereum.json').read_text(encoding='utf8'))  # noqa: E501
         elif url in {
-            'https://assets.coingecko.com/coins/images/9956/small/4943.png?1636636734',
-            'https://assets.coingecko.com/coins/images/279/small/ethereum.png?1595348880',
+            'https://coin-images.coingecko.com/coins/images/9956/small/4943.png?1636636734',
+            'https://coin-images.coingecko.com/coins/images/279/small/ethereum.png?1595348880',
         }:
             icon_name = '4943.png'
             if '279' in url:
