@@ -17,9 +17,8 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.api import (
     api_url_for,
-    assert_ok_async_response,
+    assert_maybe_async_response_with_result,
     assert_proper_response_with_result,
-    wait_for_async_task_with_result,
 )
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -48,11 +47,11 @@ def test_trove_position(rotkehlchen_api_server, inquirer):  # pylint: disable=un
         rotkehlchen_api_server,
         'liquitytrovesresource',
     ), json={'async_query': async_query})
-    if async_query:
-        task_id = assert_ok_async_response(response)
-        result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
-    else:
-        result = assert_proper_response_with_result(response)
+    result = assert_maybe_async_response_with_result(
+        response=response,
+        rotkehlchen_api_server=rotkehlchen_api_server,
+        async_query=async_query,
+    )
 
     assert LQTY_ADDR in result
     trove_data = result[LQTY_ADDR]
@@ -89,11 +88,11 @@ def test_trove_staking(rotkehlchen_api_server, inquirer):  # pylint: disable=unu
         rotkehlchen_api_server,
         'liquitystakingresource',
     ), json={'async_query': async_query})
-    if async_query:
-        task_id = assert_ok_async_response(response)
-        result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
-    else:
-        result = assert_proper_response_with_result(response)
+    result = assert_maybe_async_response_with_result(
+        response=response,
+        rotkehlchen_api_server=rotkehlchen_api_server,
+        async_query=async_query,
+    )
 
     assert LQTY_STAKING in result
     stake_data = result[LQTY_STAKING]
@@ -131,11 +130,11 @@ def test_account_without_info(rotkehlchen_api_server, inquirer):  # pylint: disa
         rotkehlchen_api_server,
         'liquitytrovesresource',
     ), json={'async_query': async_query})
-    if async_query:
-        task_id = assert_ok_async_response(response)
-        result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
-    else:
-        result = assert_proper_response_with_result(response)
+    result = assert_maybe_async_response_with_result(
+        response=response,
+        rotkehlchen_api_server=rotkehlchen_api_server,
+        async_query=async_query,
+    )
 
     assert ADDR_WITHOUT_TROVE not in result
 
@@ -152,11 +151,11 @@ def test_account_with_proxy(rotkehlchen_api_server, inquirer):  # pylint: disabl
         rotkehlchen_api_server,
         'liquitytrovesresource',
     ), json={'async_query': async_query})
-    if async_query:
-        task_id = assert_ok_async_response(response)
-        result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
-    else:
-        result = assert_proper_response_with_result(response)
+    result = assert_maybe_async_response_with_result(
+        response=response,
+        rotkehlchen_api_server=rotkehlchen_api_server,
+        async_query=async_query,
+    )
 
     assert LQTY_PROXY in result
     assert ADDR_WITHOUT_TROVE not in result
@@ -195,11 +194,11 @@ def test_stability_pool(rotkehlchen_api_server):
             'liquitystabilitypoolresource',
         ), json={'async_query': async_query})
 
-    if async_query:
-        task_id = assert_ok_async_response(response)
-        result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
-    else:
-        result = assert_proper_response_with_result(response)
+    result = assert_maybe_async_response_with_result(
+        response=response,
+        rotkehlchen_api_server=rotkehlchen_api_server,
+        async_query=async_query,
+    )
 
     assert JUSTIN in result
     assert LIQUITY_POOL_DEPOSITOR in result

@@ -1558,7 +1558,7 @@ class HistoryProcessingDebugResource(BaseMethodView):
 
         @require_loggedin_user()
         @use_kwargs(upload_schema, location='form_and_file')
-        def patch(self, async_query: bool, filepath: FileStorage) -> Response:
+        def patch(self, async_query: bool, filepath: Path) -> Response:
             return self.rest_api.import_history_debug(
                 async_query=async_query,
                 filepath=filepath,
@@ -1578,7 +1578,7 @@ class AccountingRulesImportResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(upload_schema, location='form_and_file')
-    def patch(self, async_query: bool, filepath: FileStorage) -> Response:
+    def patch(self, async_query: bool, filepath: Path) -> Response:
         return self.rest_api.import_accounting_rules(
             async_query=async_query,
             filepath=filepath,

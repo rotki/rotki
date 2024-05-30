@@ -34,12 +34,12 @@ from rotkehlchen.tests.utils.accounting import toggle_ignore_an_asset
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
+    assert_maybe_async_response_with_result,
     assert_ok_async_response,
     assert_proper_response,
     assert_proper_response_with_result,
     assert_simple_ok_response,
     wait_for_async_task,
-    wait_for_async_task_with_result,
 )
 from rotkehlchen.tests.utils.exchanges import (
     assert_binance_balances_result,
@@ -511,11 +511,11 @@ def test_exchange_query_balances(rotkehlchen_api_server_with_exchanges):
             'named_exchanges_balances_resource',
             location='binance',
         ), json={'async_query': async_query})
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task_with_result(server, task_id)
-        else:
-            outcome = assert_proper_response_with_result(response)
+        outcome = assert_maybe_async_response_with_result(
+            response=response,
+            rotkehlchen_api_server=rotkehlchen_api_server_with_exchanges,
+            async_query=async_query,
+        )
     assert_binance_balances_result(outcome)
 
     # query balances of all setup exchanges
@@ -526,11 +526,11 @@ def test_exchange_query_balances(rotkehlchen_api_server_with_exchanges):
             api_url_for(server, 'exchangebalancesresource'),
             json={'async_query': async_query},
         )
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            result = wait_for_async_task_with_result(server, task_id)
-        else:
-            result = assert_proper_response_with_result(response)
+        result = assert_maybe_async_response_with_result(
+            response=response,
+            rotkehlchen_api_server=rotkehlchen_api_server_with_exchanges,
+            async_query=async_query,
+        )
 
     assert_binance_balances_result(result['binance'])
     assert_poloniex_balances_result(result['poloniex'])

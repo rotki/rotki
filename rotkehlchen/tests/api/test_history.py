@@ -27,11 +27,10 @@ from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
+    assert_maybe_async_response_with_result,
     assert_ok_async_response,
     assert_proper_response_with_result,
-    assert_simple_ok_response,
     wait_for_async_task,
-    wait_for_async_task_with_result,
 )
 from rotkehlchen.tests.utils.constants import ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3
 from rotkehlchen.tests.utils.factories import make_evm_tx_hash
@@ -429,15 +428,11 @@ def test_history_debug_import(rotkehlchen_api_server):
                 'async_query': async_query,
             },
         )
-        if async_query is True:
-            result = wait_for_async_task_with_result(
-                server=rotkehlchen_api_server,
-                task_id=response.json()['result']['task_id'],
-            )
-            assert result is True
-
-        else:
-            assert_simple_ok_response(response)
+        assert assert_maybe_async_response_with_result(
+            response=response,
+            rotkehlchen_api_server=rotkehlchen_api_server,
+            async_query=async_query,
+        )
     else:
         with open(str(filepath), encoding='utf8') as infile:
             response = requests.patch(
@@ -448,14 +443,11 @@ def test_history_debug_import(rotkehlchen_api_server):
                 files={'filepath': infile},
                 data={'async_query': async_query},
             )
-            if async_query is True:
-                result = wait_for_async_task_with_result(
-                    server=rotkehlchen_api_server,
-                    task_id=response.json()['result']['task_id'],
-                )
-                assert result is True
-            else:
-                assert_simple_ok_response(response)
+            assert assert_maybe_async_response_with_result(
+                response=response,
+                rotkehlchen_api_server=rotkehlchen_api_server,
+                async_query=async_query,
+            )
     assert_pnl_debug_import(
         filepath=filepath,
         database=rotkehlchen_api_server.rest_api.rotkehlchen.data.db,

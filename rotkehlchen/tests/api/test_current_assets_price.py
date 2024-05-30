@@ -14,10 +14,9 @@ from rotkehlchen.inquirer import CurrentPriceOracle, Inquirer
 from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
-    assert_ok_async_response,
+    assert_maybe_async_response_with_result,
     assert_proper_response,
     assert_proper_response_with_result,
-    wait_for_async_task_with_result,
 )
 from rotkehlchen.types import ChecksumEvmAddress, Price
 from rotkehlchen.utils.misc import timestamp_to_date
@@ -43,11 +42,11 @@ def test_get_current_assets_price_in_usd(rotkehlchen_api_server):
             'async_query': async_query,
         },
     )
-    if async_query:
-        task_id = assert_ok_async_response(response)
-        result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
-    else:
-        result = assert_proper_response_with_result(response)
+    result = assert_maybe_async_response_with_result(
+        response=response,
+        rotkehlchen_api_server=rotkehlchen_api_server,
+        async_query=async_query,
+    )
 
     assert len(result) == 3
     assert result['assets']['BTC'] == ['33183.98', CurrentPriceOracle.BLOCKCHAIN.value, False]
@@ -75,11 +74,11 @@ def test_get_current_assets_price_in_btc(rotkehlchen_api_server):
             'async_query': async_query,
         },
     )
-    if async_query:
-        task_id = assert_ok_async_response(response)
-        result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
-    else:
-        result = assert_proper_response_with_result(response)
+    result = assert_maybe_async_response_with_result(
+        response=response,
+        rotkehlchen_api_server=rotkehlchen_api_server,
+        async_query=async_query,
+    )
 
     assert len(result) == 3
     assert result['assets']['BTC'] == ['1', CurrentPriceOracle.BLOCKCHAIN.value, False]

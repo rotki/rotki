@@ -23,10 +23,9 @@ from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
     assert_error_response,
-    assert_ok_async_response,
+    assert_maybe_async_response_with_result,
     assert_proper_response,
     assert_proper_response_with_result,
-    wait_for_async_task_with_result,
 )
 from rotkehlchen.tests.utils.blockchain import (
     assert_btc_balances_result,
@@ -154,15 +153,12 @@ def test_query_blockchain_balances(
             'named_blockchain_balances_resource',
             blockchain='ETH',
         ), json={'async_query': async_query})
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task_with_result(
-                server=rotkehlchen_api_server,
-                task_id=task_id,
-                timeout=ASYNC_TASK_WAIT_TIMEOUT * 5,
-            )
-        else:
-            outcome = assert_proper_response_with_result(response)
+        outcome = assert_maybe_async_response_with_result(
+            response=response,
+            rotkehlchen_api_server=rotkehlchen_api_server,
+            async_query=async_query,
+            timeout=ASYNC_TASK_WAIT_TIMEOUT * 5,
+        )
 
     assert_eth_balances_result(
         rotki=rotki,
@@ -180,11 +176,11 @@ def test_query_blockchain_balances(
             'named_blockchain_balances_resource',
             blockchain='BTC',
         ), json={'async_query': async_query})
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
-        else:
-            outcome = assert_proper_response_with_result(response)
+        outcome = assert_maybe_async_response_with_result(
+            response=response,
+            rotkehlchen_api_server=rotkehlchen_api_server,
+            async_query=async_query,
+        )
 
     assert_btc_balances_result(
         result=outcome,
@@ -200,15 +196,12 @@ def test_query_blockchain_balances(
             rotkehlchen_api_server,
             'blockchainbalancesresource',
         ), json={'async_query': async_query})
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task_with_result(
-                server=rotkehlchen_api_server,
-                task_id=task_id,
-                timeout=ASYNC_TASK_WAIT_TIMEOUT * 5,
-            )
-        else:
-            outcome = assert_proper_response_with_result(response)
+        outcome = assert_maybe_async_response_with_result(
+            response=response,
+            rotkehlchen_api_server=rotkehlchen_api_server,
+            async_query=async_query,
+            timeout=ASYNC_TASK_WAIT_TIMEOUT * 5,
+        )
 
     assert_eth_balances_result(
         rotki=rotki,
@@ -359,15 +352,12 @@ def _add_blockchain_accounts_test_start(
             blockchain='ETH',
         ), json=data)
 
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            result = wait_for_async_task_with_result(
-                api_server,
-                task_id,
-                timeout=ASYNC_TASK_WAIT_TIMEOUT * 4,
-            )
-        else:
-            result = assert_proper_response_with_result(response)
+        result = assert_maybe_async_response_with_result(
+            response=response,
+            rotkehlchen_api_server=api_server,
+            async_query=async_query,
+            timeout=ASYNC_TASK_WAIT_TIMEOUT * 4,
+        )
 
         assert result == new_eth_accounts
         response = requests.get(api_url_for(
@@ -453,11 +443,11 @@ def test_add_blockchain_accounts(  # hard to VCR, the order of requests is not a
             'accounts': [{'address': UNIT_BTC_ADDRESS3}],
             'async_query': async_query,
         })
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            result = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
-        else:
-            result = assert_proper_response_with_result(response)
+        result = assert_maybe_async_response_with_result(
+            response=response,
+            rotkehlchen_api_server=rotkehlchen_api_server,
+            async_query=async_query,
+        )
         assert result == [UNIT_BTC_ADDRESS3]
         response = requests.get(api_url_for(
             rotkehlchen_api_server,
@@ -489,15 +479,12 @@ def test_add_blockchain_accounts(  # hard to VCR, the order of requests is not a
             rotkehlchen_api_server,
             'blockchainbalancesresource',
         ), json={'async_query': async_query})
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task_with_result(
-                server=rotkehlchen_api_server,
-                task_id=task_id,
-                timeout=ASYNC_TASK_WAIT_TIMEOUT * 3,
-            )
-        else:
-            outcome = assert_proper_response_with_result(response)
+        outcome = assert_maybe_async_response_with_result(
+            response=response,
+            rotkehlchen_api_server=rotkehlchen_api_server,
+            async_query=async_query,
+            timeout=ASYNC_TASK_WAIT_TIMEOUT * 3,
+        )
 
     assert_btc_balances_result(
         result=outcome,
@@ -1455,11 +1442,11 @@ def _remove_blockchain_accounts_test_start(
             'blockchainsaccountsresource',
             blockchain='ETH',
         ), json={'accounts': removed_eth_accounts, 'async_query': async_query})
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            result = wait_for_async_task_with_result(api_server, task_id)
-        else:
-            result = assert_proper_response_with_result(response)
+        result = assert_maybe_async_response_with_result(
+            response=response,
+            rotkehlchen_api_server=api_server,
+            async_query=async_query,
+        )
 
     if query_balances_before_first_modification is True:
         assert_eth_balances_result(
@@ -1550,11 +1537,11 @@ def test_remove_blockchain_accounts(
             'blockchainsaccountsresource',
             blockchain=SupportedBlockchain.BITCOIN.value,
         ), json={'accounts': [UNIT_BTC_ADDRESS1], 'async_query': async_query})
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task_with_result(rotkehlchen_api_server, task_id)
-        else:
-            outcome = assert_proper_response_with_result(response)
+        outcome = assert_maybe_async_response_with_result(
+            response=response,
+            rotkehlchen_api_server=rotkehlchen_api_server,
+            async_query=async_query,
+        )
     assert_btc_balances_result(
         result=outcome,
         btc_accounts=btc_accounts_after_removal,
@@ -1577,15 +1564,12 @@ def test_remove_blockchain_accounts(
             rotkehlchen_api_server,
             'blockchainbalancesresource',
         ), json={'async_query': async_query})
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task_with_result(
-                server=rotkehlchen_api_server,
-                task_id=task_id,
-                timeout=ASYNC_TASK_WAIT_TIMEOUT * 3,
-            )
-        else:
-            outcome = assert_proper_response_with_result(response)
+        outcome = assert_maybe_async_response_with_result(
+            response=response,
+            rotkehlchen_api_server=rotkehlchen_api_server,
+            async_query=async_query,
+            timeout=ASYNC_TASK_WAIT_TIMEOUT * 3,
+        )
 
     assert_btc_balances_result(
         result=outcome,

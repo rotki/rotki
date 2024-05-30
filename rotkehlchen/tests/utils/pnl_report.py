@@ -5,9 +5,8 @@ import requests
 
 from rotkehlchen.tests.utils.api import (
     api_url_for,
-    assert_ok_async_response,
+    assert_maybe_async_response_with_result,
     assert_proper_response_with_result,
-    wait_for_async_task_with_result,
 )
 from rotkehlchen.tests.utils.history import prepare_rotki_for_history_processing_test
 from rotkehlchen.types import Timestamp
@@ -42,11 +41,11 @@ def query_api_create_and_get_report(
             api_url_for(server, 'historyprocessingresource'),
             json={'from_timestamp': start_ts, 'to_timestamp': end_ts, 'async_query': async_query},
         )
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            outcome = wait_for_async_task_with_result(server, task_id)
-        else:
-            outcome = assert_proper_response_with_result(response)
+        outcome = assert_maybe_async_response_with_result(
+            response=response,
+            rotkehlchen_api_server=server,
+            async_query=async_query,
+        )
 
     report_id = outcome
     response = requests.get(

@@ -1,7 +1,9 @@
 import logging
 import operator
+import tempfile
 import typing
 from collections.abc import Callable
+from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final, Literal, cast, get_args
 
 import marshmallow
@@ -9,6 +11,7 @@ import webargs
 from eth_utils import to_checksum_address
 from marshmallow import INCLUDE, Schema, fields, post_load, validate, validates_schema
 from marshmallow.exceptions import ValidationError
+from werkzeug.datastructures import FileStorage
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.accounting.structures.types import ActionType
@@ -1612,6 +1615,19 @@ class AsyncDirectoryPathSchema(AsyncQueryArgumentSchema):
 
 class AsyncFilePathSchema(AsyncQueryArgumentSchema):
     filepath = FileField(required=True, allowed_extensions=['.json'])
+
+    @post_load
+    def transform_data(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> Any:
+        if isinstance(data['filepath'], FileStorage):
+            _, tmpfilepath = tempfile.mkstemp()
+            data['filepath'].save(tmpfilepath)
+            data['filepath'] = Path(tmpfilepath)
+
+        return data
 
 
 class HistoryProcessingExportSchema(AsyncDirectoryPathSchema, TimestampRangeSchema):

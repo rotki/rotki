@@ -31,10 +31,9 @@ from rotkehlchen.tests.utils.api import (
     ASYNC_TASK_WAIT_TIMEOUT,
     api_url_for,
     assert_error_response,
-    assert_ok_async_response,
+    assert_maybe_async_response_with_result,
     assert_proper_response_with_result,
     assert_simple_ok_response,
-    wait_for_async_task_with_result,
 )
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
@@ -464,15 +463,12 @@ def test_eth2_add_eth1_account(rotkehlchen_api_server):
             blockchain='ETH',
         ), json=data)
 
-        if async_query:
-            task_id = assert_ok_async_response(response)
-            result = wait_for_async_task_with_result(
-                rotkehlchen_api_server,
-                task_id,
-                timeout=ASYNC_TASK_WAIT_TIMEOUT * 4,
-            )
-        else:
-            result = assert_proper_response_with_result(response)
+        result = assert_maybe_async_response_with_result(
+            response=response,
+            rotkehlchen_api_server=rotkehlchen_api_server,
+            async_query=async_query,
+            timeout=ASYNC_TASK_WAIT_TIMEOUT * 4,
+        )
 
         # now get all detected validators
         response = requests.get(
@@ -953,15 +949,12 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
             blockchain='ETH2',
         ), json={'async_query': async_query})
 
-    if async_query:
-        task_id = assert_ok_async_response(response)
-        outcome = wait_for_async_task_with_result(
-            server=rotkehlchen_api_server,
-            task_id=task_id,
-            timeout=ASYNC_TASK_WAIT_TIMEOUT * 5,
-        )
-    else:
-        outcome = assert_proper_response_with_result(response)
+    outcome = assert_maybe_async_response_with_result(
+        response=response,
+        rotkehlchen_api_server=rotkehlchen_api_server,
+        async_query=async_query,
+        timeout=ASYNC_TASK_WAIT_TIMEOUT * 5,
+    )
 
     assert len(outcome['per_account']) == 1  # only ETH2
     per_acc = outcome['per_account']['eth2']
