@@ -33,7 +33,6 @@ const tagsModel = useVModel(props, 'tags', emit);
     <TagInput
       v-model="tagsModel"
       data-cy="account-tag-field"
-      outlined
       :disabled="disabled"
     />
   </Fragment>

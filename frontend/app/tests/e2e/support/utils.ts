@@ -12,7 +12,7 @@ export function setCheckBox(selector: string, enabled = false) {
 }
 
 export function selectAsset(element: string, value: string, id?: string) {
-  cy.get(element).type(value);
+  cy.get(`${element} input`).type(value);
   const identifier = getValidSelectorFromEvmAddress(
     (id ?? value).toLocaleLowerCase(),
   );

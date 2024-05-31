@@ -15,8 +15,6 @@ const props = withDefaults(
 
 const { editableItem } = toRefs(props);
 
-const search = ref<string | null>('');
-
 const emptyCustomAsset: () => CustomAsset = () => ({
   identifier: '',
   name: '',
@@ -28,14 +26,11 @@ const formData = ref<CustomAsset>(emptyCustomAsset());
 
 function checkEditableItem() {
   const form = get(editableItem);
-  if (form) {
-    set(search, form.customAssetType);
+  if (form)
     set(formData, form);
-  }
-  else {
-    set(search, '');
+
+  else
     set(formData, emptyCustomAsset());
-  }
 }
 
 watchImmediate(editableItem, checkEditableItem);
@@ -59,13 +54,6 @@ const note = computed({
   set(value?: string) {
     input({ notes: value ?? null });
   },
-});
-
-watch(search, (type) => {
-  if (type === null)
-    type = get(formData).customAssetType;
-
-  set(customAssetType, type);
 });
 
 const rules = {
@@ -146,16 +134,13 @@ setSubmitFunc(save);
         :label="t('common.name')"
         :error-messages="toMessages(v$.name)"
       />
-      <VCombobox
+      <AutoCompleteWithSearchSync
         v-model="customAssetType"
         data-cy="type"
         :items="types"
-        outlined
-        persistent-hint
         clearable
         :label="t('common.type')"
         :error-messages="toMessages(v$.type)"
-        :search-input.sync="search"
       />
     </div>
     <RuiTextArea

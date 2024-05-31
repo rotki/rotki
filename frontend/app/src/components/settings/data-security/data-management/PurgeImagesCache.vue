@@ -64,8 +64,6 @@ const { status, pending, showConfirmation }
       }),
     }),
   );
-
-const css = useCssModule();
 </script>
 
 <template>
@@ -99,27 +97,24 @@ const css = useCssModule();
           :label="t('data_management.purge_images_cache.label.asset_to_clear')"
           :hint="t('data_management.purge_images_cache.hint')"
         />
-        <VCombobox
+        <RuiAutoComplete
           v-else
           v-model="ensToClear"
           class="flex-1"
-          :items="ensNamesList"
-          outlined
-          :class="css['ens-input']"
+          :options="ensNamesList"
+          variant="outlined"
           chips
-          deletable-chips
           clearable
+          custom-value
           :label="t('data_management.purge_images_cache.label.ens_to_clear')"
           :hint="t('data_management.purge_images_cache.hint')"
-          multiple
-          persistent-hint
         />
       </div>
 
       <RuiTooltip
         :popper="{ placement: 'top' }"
         :open-delay="400"
-        class="-mt-8"
+        class="-mt-6"
       >
         <template #activator>
           <RuiButton
@@ -142,15 +137,3 @@ const css = useCssModule();
     />
   </div>
 </template>
-
-<style module lang="scss">
-.ens-input {
-  :global {
-    .v-select {
-      &__selections {
-        min-height: auto !important;
-      }
-    }
-  }
-}
-</style>

@@ -40,6 +40,7 @@ function input(tags: string[]) {
     key-attr="name"
     text-attr="name"
     variant="outlined"
+    :item-height="40"
     clearable
     dense
     :hide-details="hideDetails"

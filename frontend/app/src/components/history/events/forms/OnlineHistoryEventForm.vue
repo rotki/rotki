@@ -335,10 +335,9 @@ const locationLabelSuggestions = computed(() =>
     <RuiDivider class="mb-6 mt-2" />
 
     <div class="grid md:grid-cols-2 gap-4">
-      <ComboboxWithCustomInput
+      <AutoCompleteWithSearchSync
         v-model="locationLabel"
         :items="locationLabelSuggestions"
-        outlined
         clearable
         data-cy="locationLabel"
         :label="t('transactions.events.form.location_label.label')"

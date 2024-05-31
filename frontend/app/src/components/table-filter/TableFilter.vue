@@ -29,6 +29,9 @@ const { matchers, matches } = toRefs(props);
 
 const input = ref();
 const selection = ref<Suggestion[]>([]);
+
+const selectionWithIdentifier = computed(() => selection.value.map((item, index) => ({ ...item, indexValue: index })));
+
 const search = ref('');
 const selectedSuggestion = ref(0);
 const suggestedFilter = ref<Suggestion>({
@@ -49,7 +52,8 @@ const selectedMatcher = computed(() => {
 const usedKeys = computed(() => get(selection).map(entry => entry.key));
 
 function removeSelection(item: Suggestion) {
-  updateMatches(get(selection).filter(sel => sel !== item));
+  const newSelection = get(selection).filter(sel => getSuggestionText(sel).text !== getSuggestionText(item).text);
+  updateMatches(newSelection);
 }
 
 function clickItem(item: Suggestion) {
@@ -82,7 +86,7 @@ function setSearchToMatcherKey(matcher: SearchMatcher<any>) {
   const allowExclusion = 'string' in matcher && matcher.allowExclusion;
   const filter = `${matcher.key}${allowExclusion ? '' : '='}`;
   set(search, filter);
-  get(input).focus();
+  get(input)?.$refs?.textInput?.focus?.();
 }
 
 function updateMatches(pairs: Suggestion[]) {
@@ -179,7 +183,8 @@ async function applySuggestion() {
   const selectedIndex = get(selectedSuggestion);
   if (!get(selectedMatcher)) {
     const filteredMatchersVal = get(filteredMatchers);
-    if (filteredMatchersVal.length >= selectedIndex)
+
+    if (filteredMatchersVal.length > selectedIndex)
       setSearchToMatcherKey(filteredMatchersVal[selectedIndex]);
 
     return;
@@ -279,12 +284,23 @@ function getDisplayValue(suggestion: Suggestion) {
 
 function getSuggestionText(suggestion: Suggestion) {
   const operator = suggestion.exclude ? '!=' : '=';
-  return `${suggestion.key}${operator}${getDisplayValue(suggestion)}`;
+  const startSelection = suggestion.key.length + operator.length;
+  const value = getDisplayValue(suggestion);
+  return {
+    text: `${suggestion.key}${operator}${value}`,
+    startSelection,
+    endSelection: startSelection + value.length,
+  };
 }
 
 function selectItem(suggestion: Suggestion) {
   nextTick(() => {
-    set(search, getSuggestionText(suggestion));
+    const suggestionText = getSuggestionText(suggestion);
+    set(search, suggestionText.text);
+    nextTick(() => {
+      get(input)?.$refs?.textInput?.focus();
+      get(input)?.$refs?.textInput?.setSelectionRange?.(suggestionText.startSelection, suggestionText.endSelection);
+    });
   });
 }
 
@@ -367,23 +383,20 @@ const { t } = useI18n();
         class="flex items-center gap-2"
         data-cy="table-filter"
       >
-        <VCombobox
+        <RuiAutoComplete
           ref="input"
-          :value="selection"
-          outlined
+          :value="selectionWithIdentifier"
+          variant="outlined"
           dense
-          chips
           :disabled="disabled"
-          small-chips
-          deletable-chips
           :label="t('table_filter.label')"
-          solo
-          flat
-          multiple
           clearable
           hide-details
-          :menu-props="{ maxHeight: '390px' }"
-          prepend-inner-icon="mdi-filter-variant"
+          custom-value
+          :options="[]"
+          key-attr="indexValue"
+          return-object
+          disable-interaction
           :search-input.sync="search"
           @input="updateMatches($event)"
           @keydown.enter="applySuggestion()"
@@ -392,15 +405,16 @@ const { t } = useI18n();
           @keydown.down.prevent
           @keydown.down="moveSuggestion(false)"
         >
-          <template #selection="{ item }">
+          <template #selection="{ item, chipOn, chipAttrs }">
             <RuiChip
               tile
               size="sm"
-              class="font-medium !py-0 m-0.5"
+              class="font-medium !py-0"
               clickable
               closeable
-              @click:close="removeSelection(item)"
+              v-bind="chipAttrs"
               @click="clickItem(item)"
+              v-on="chipOn"
             >
               <SuggestedItem
                 chip
@@ -410,6 +424,7 @@ const { t } = useI18n();
           </template>
           <template #no-data>
             <FilterDropdown
+              class="py-4"
               :matchers="filteredMatchers"
               :used="usedKeys"
               :keyword="search"
@@ -422,7 +437,7 @@ const { t } = useI18n();
               @click="setSearchToMatcherKey($event)"
             />
           </template>
-        </VCombobox>
+        </RuiAutoComplete>
 
         <SavedFilterManagement
           v-if="location"

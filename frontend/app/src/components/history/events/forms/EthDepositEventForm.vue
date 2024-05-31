@@ -304,10 +304,9 @@ const depositorSuggestions = computed(() => getAddresses(Blockchain.ETH));
     <RuiDivider class="my-10" />
 
     <div class="grid md:grid-cols-2 gap-4">
-      <ComboboxWithCustomInput
+      <AutoCompleteWithSearchSync
         v-model="depositor"
         :items="depositorSuggestions"
-        outlined
         data-cy="depositor"
         :label="t('transactions.events.form.depositor.label')"
         :error-messages="toMessages(v$.depositor)"

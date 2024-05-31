@@ -48,20 +48,7 @@ describe('tagInput.vue', () => {
       pinia,
       vuetify,
       stubs: {
-        VCombobox: {
-          template: `
-            <div>
-              <input class="search-input" type="text" @input="$emit('input', [...value, $event.value])">
-              <div class="selections">
-                <span v-for="item in value"><slot name="selection" v-bind="{ item, selected: item }"/></span>
-              </div>
-              <span><slot name="no-data" /></span>
-            </div>
-          `,
-          props: {
-            value: { type: Array },
-          },
-        },
+        RuiAutoComplete: false,
       },
       ...options,
     });
@@ -78,17 +65,20 @@ describe('tagInput.vue', () => {
 
     await nextTick();
 
-    await wrapper.find('input[type=text]').trigger('input', { value: 'tag1' });
+    await wrapper.find('input[type=text]').setValue('tag1');
+    await wrapper.find('[data-id=activator]').trigger('keydown.enter');
 
     await nextTick();
 
     const emitted: string[] = ['tag1'];
-    expect(wrapper.emitted().input?.[0]?.[0]).toEqual(emitted);
-    set(value, emitted);
+    expect(wrapper.emitted().input?.at(-1)?.[0]).toEqual(emitted);
 
     await nextTick();
 
-    expect(wrapper.find('.selections div[role=button] span').text()).toBe(
+    await wrapper.find('[data-id=activator]').trigger('click');
+    await vi.delay();
+
+    expect(wrapper.find('[role=menu-content] button').text()).toBe(
       'tag1',
     );
   });
@@ -104,15 +94,17 @@ describe('tagInput.vue', () => {
 
     await nextTick();
 
-    await wrapper.find('input[type=text]').trigger('input', { value: 'tag2' });
+    await wrapper.find('input[type=text]').setValue('tag2');
+    await wrapper.find('[data-id=activator]').trigger('keydown.enter');
 
     await nextTick();
 
     set(value, ['tag2']);
 
-    await nextTick();
+    await wrapper.find('[data-id=activator]').trigger('click');
+    await vi.delay();
 
-    expect(wrapper.find('.selections div[role=button] span').text()).toBe(
+    expect(wrapper.find('[role=menu-content] button:nth-child(2)').text()).toBe(
       'tag2',
     );
 
@@ -121,14 +113,15 @@ describe('tagInput.vue', () => {
     await nextTick();
 
     const emitted: string[] = [];
-    expect(wrapper.emitted().input?.[1]?.[0]).toEqual(emitted);
+    expect(wrapper.emitted().input?.at(-1)?.[0]).toEqual(emitted);
 
     set(value, emitted);
 
-    await nextTick();
+    await vi.delay();
 
+    expect(wrapper.find('[role=menu-content]').exists()).toBeTruthy();
     expect(
-      wrapper.find('.selections div[role=button] span').exists(),
+      wrapper.find('[role=menu-content] button:nth-child(2)').exists(),
     ).toBeFalsy();
   });
 });

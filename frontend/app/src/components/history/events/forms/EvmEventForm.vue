@@ -414,10 +414,9 @@ const addressSuggestions = computed(() => getAddresses(Blockchain.ETH));
     <RuiDivider class="mb-6 mt-2" />
 
     <div class="grid md:grid-cols-2 gap-4">
-      <ComboboxWithCustomInput
+      <AutoCompleteWithSearchSync
         v-model="locationLabel"
         :items="addressSuggestions"
-        outlined
         clearable
         data-cy="locationLabel"
         :label="t('transactions.events.form.location_label.label')"
@@ -426,10 +425,9 @@ const addressSuggestions = computed(() => getAddresses(Blockchain.ETH));
         @blur="v$.locationLabel.$touch()"
       />
 
-      <ComboboxWithCustomInput
+      <AutoCompleteWithSearchSync
         v-model="address"
         :items="addressSuggestions"
-        outlined
         clearable
         data-cy="address"
         :label="t('transactions.events.form.address.label')"
