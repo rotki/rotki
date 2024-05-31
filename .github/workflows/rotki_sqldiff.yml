@@ -1,0 +1,32 @@
+name: SQLDiff
+
+on:
+  pull_request_target:
+    branches:
+      - develop
+      - bugfixes
+      - master
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  sql-diff:
+    name: SQLDiff
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout
+        id: checkout
+        uses: actions/checkout@v4
+
+      - name: Install required
+        run: sudo apt-get install -y sqlcipher sqlite3-tools
+
+      - name: SQLDiff action
+        id: sql-diff
+        uses: rotki/action-sqldiff@v1
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          files: '*.db'
