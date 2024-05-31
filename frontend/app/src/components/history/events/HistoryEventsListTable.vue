@@ -15,13 +15,11 @@ interface DeleteEvent {
 const props = withDefaults(
   defineProps<{
     events: HistoryEventEntry[];
-    blockNumber?: number;
     loading?: boolean;
     total?: number;
   }>(),
   {
     loading: false,
-    blockNumber: undefined,
     total: 0,
   },
 );
@@ -55,6 +53,7 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
   const data: {
     validatorIndex?: number;
     blockNumber?: number;
+    counterparty?: string;
   } = {};
 
   if ('validatorIndex' in event)
@@ -62,6 +61,9 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
 
   if ('blockNumber' in event)
     data.blockNumber = event.blockNumber;
+
+  if ('counterparty' in event && event.counterparty)
+    data.counterparty = event.counterparty;
 
   // todo: validate optional or nullable state of schema
   const { notes, asset } = objectPick(event, ['notes', 'asset']);
@@ -100,7 +102,6 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
           :amount="item.balance.amount"
           :chain="getChain(item.location)"
           :no-tx-hash="isNoTxHash(item)"
-          :block-number="blockNumber"
           class="break-words leading-6 md:col-span-3 lg:col-span-7"
         />
         <RowActions

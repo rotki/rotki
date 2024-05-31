@@ -49,13 +49,13 @@ export function useScramble() {
     return multiplied;
   };
 
-  const scrambleIdentifier = (number: number | string): string => {
+  const scrambleIdentifier = (number: number | string, lowerBound = 100000, upperBound = 999999): string => {
     const parsed = typeof number === 'string' ? parseInt(number) : number;
     if (!get(scrambleData))
       return parsed.toString();
 
-    const min = Math.max(100000, 10 ** Math.floor(Math.log10(parsed)));
-    const max = Math.max(999999, min * 10);
+    const min = Math.max(lowerBound, 10 ** Math.floor(Math.log10(parsed)));
+    const max = Math.max(upperBound, min * 10);
 
     return scrambleInteger(parsed, min, max).toString();
   };

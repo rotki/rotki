@@ -73,7 +73,6 @@ watch(
   },
 );
 
-const blockEvent = isEthBlockEventRef(eventGroup);
 const [DefineTable, ReuseTable] = createReusableTemplate<{ data: HistoryEventEntry[] }>();
 
 const limitedEvents: ComputedRef<HistoryEventEntry[]> = computed(() => {
@@ -99,7 +98,6 @@ function handleMoreClick() {
       <HistoryEventsListTable
         :events="data"
         :total="events.length"
-        :block-number="blockEvent?.blockNumber"
         :loading="loading"
         @delete-event="emit('delete-event', $event)"
         @show:missing-rule-action="emit('show:missing-rule-action', $event)"

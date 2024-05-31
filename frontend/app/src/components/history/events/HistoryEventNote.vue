@@ -17,6 +17,7 @@ const props = withDefaults(
     noTxHash?: boolean;
     validatorIndex?: number;
     blockNumber?: number;
+    counterparty?: string;
   }>(),
   {
     notes: '',
@@ -29,7 +30,7 @@ const props = withDefaults(
   },
 );
 
-const { notes, amount, asset, noTxHash, validatorIndex, blockNumber }
+const { notes, amount, asset, noTxHash, validatorIndex, blockNumber, counterparty }
   = toRefs(props);
 
 const { formatNotes } = useHistoryEventNote();
@@ -41,6 +42,7 @@ const formattedNotes: ComputedRef<NoteFormat[]> = formatNotes({
   noTxHash,
   validatorIndex,
   blockNumber,
+  counterparty,
 });
 
 const css = useCssModule();
