@@ -206,7 +206,7 @@ def augmented_spam_detection(user_db: DBHandler) -> None:
                 continue
 
             asset = Asset(asset_id)
-            events: list['EvmEvent'] = history_db.get_history_events(
+            events: list[EvmEvent] = history_db.get_history_events(
                 cursor=cursor,
                 filter_query=EvmEventFilterQuery.make(
                     assets=(asset,),
@@ -231,7 +231,7 @@ def augmented_spam_detection(user_db: DBHandler) -> None:
                 log.error(f'Could not find receipt for event {events[0].identifier=}')
                 continue
 
-            transfer_counter: defaultdict['ChecksumEvmAddress', int] = defaultdict(int)
+            transfer_counter: defaultdict[ChecksumEvmAddress, int] = defaultdict(int)
             # check if there is a contract that made what we consider a spam amount of transfers
             for log_event in receipt.logs:
                 if log_event.topics[0] == ERC20_OR_ERC721_TRANSFER:

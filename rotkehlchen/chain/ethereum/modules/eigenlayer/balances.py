@@ -84,7 +84,7 @@ class EigenlayerBalances(ProtocolWithBalance):
             counterparty=CPT_EIGENLAYER,
             deposit_event_types={(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET)},
         )
-        self.evm_inquirer: 'EthereumInquirer'
+        self.evm_inquirer: EthereumInquirer
 
     def _query_lst_deposits(self, balances: 'BalancesSheetType') -> 'BalancesSheetType':
         addresses_with_deposits = self.addresses_with_deposits(products=[EvmProduct.STAKING])

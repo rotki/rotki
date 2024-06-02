@@ -57,7 +57,7 @@ class SocketBridgeDecoder(DecoderInterface):
         token_address = hex_or_bytes_to_address(context.tx_log.data[32:64])
 
         if token_address == ETH_SPECIAL_ADDRESS:
-            bridged_asset: 'CryptoAsset' = self.eth
+            bridged_asset: CryptoAsset = self.eth
         else:
             bridged_asset = get_or_create_evm_token(
                 userdb=self.evm_inquirer.database,

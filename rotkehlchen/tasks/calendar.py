@@ -78,7 +78,7 @@ def delete_past_calendar_entries(database: DBHandler) -> None:
 def maybe_create_ens_reminders(database: DBHandler) -> None:
     """Check ENS registration and renewal history events and create reminders if needed."""
     db_history_events = DBHistoryEvents(database=database)
-    ens_events: list['EvmEvent'] = []
+    ens_events: list[EvmEvent] = []
     with database.conn.read_ctx() as cursor:
         for event_type, event_subtype in (
             (HistoryEventType.TRADE, HistoryEventSubType.SPEND),
