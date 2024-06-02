@@ -49,8 +49,8 @@ class Compoundv3Balances(ProtocolWithBalance):
         compound token's address -> set of addresses which borrowed the underlying token, and a
         dict of compound token's address -> its underlying token.
         """
-        unique_borrows: dict['EvmToken', set['ChecksumEvmAddress']] = defaultdict(set)
-        underlying_tokens: dict['ChecksumEvmAddress', 'EvmToken'] = {}
+        unique_borrows: dict[EvmToken, set[ChecksumEvmAddress]] = defaultdict(set)
+        underlying_tokens: dict[ChecksumEvmAddress, EvmToken] = {}
         for address, events in self.addresses_with_activity(
             event_types={(HistoryEventType.RECEIVE, HistoryEventSubType.GENERATE_DEBT)},
         ).items():
@@ -101,7 +101,7 @@ class Compoundv3Balances(ProtocolWithBalance):
             return balances
 
         # prepare the arguments for the contract calls and the encoded call
-        calls: list[tuple['ChecksumEvmAddress', str]] = []
+        calls: list[tuple[ChecksumEvmAddress, str]] = []
         calls_arguments: list[CompoundArguments] = []
         token_contract = EvmContract(
             address=ZERO_ADDRESS,  # not used here

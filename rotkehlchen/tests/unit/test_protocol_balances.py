@@ -612,7 +612,7 @@ def test_aave_v3_balances(blockchain: 'ChainsAggregator') -> None:
             addresses[1]: {stable_debt_eth_usdc: FVal(456), variable_debt_eth_usdc: FVal(789)},
         }, aave_prices
 
-    balances: defaultdict['ChecksumEvmAddress', 'BalanceSheet'] = defaultdict(BalanceSheet)
+    balances: defaultdict[ChecksumEvmAddress, BalanceSheet] = defaultdict(BalanceSheet)
     with patch.object(
         target=ethereum_manager.tokens,
         attribute='query_tokens_for_addresses',

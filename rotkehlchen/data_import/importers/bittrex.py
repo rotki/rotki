@@ -167,8 +167,8 @@ class BittrexImporter(BaseExchangeImporter):
         - UnsupportedCSVEntry if operation not supported
         - InputError if a column we need is missing
         """
-        consumer_fn: 'Callable[[dict[str, Any], BittrexFileType, str], AssetMovement] | Callable[[dict[str, Any], BittrexFileType, str], Trade]'  # noqa: E501
-        save_fn: 'Callable[[DBCursor, Trade], None] | Callable[[DBCursor, AssetMovement], None]'
+        consumer_fn: Callable[[dict[str, Any], BittrexFileType, str], AssetMovement] | Callable[[dict[str, Any], BittrexFileType, str], Trade]  # noqa: E501
+        save_fn: Callable[[DBCursor, Trade], None] | Callable[[DBCursor, AssetMovement], None]
         with open(filepath, encoding='utf-8-sig') as csvfile:
             while True:
                 saved_pos = csvfile.tell()

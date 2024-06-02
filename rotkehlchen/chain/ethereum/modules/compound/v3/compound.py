@@ -43,7 +43,7 @@ class CompoundV3:
         """Make multicalls to the compound v3 tokens to get the lending and borrowing interest
         rates from the contracts. First get the utilization for each token and then pass it in the
         supply/borrow rate calls. Returns them as a dict of asset -> balance type -> rate."""
-        rates: defaultdict['ChecksumEvmAddress', defaultdict[BalanceType, FVal]] = defaultdict(lambda: defaultdict(FVal))  # noqa: E501
+        rates: defaultdict[ChecksumEvmAddress, defaultdict[BalanceType, FVal]] = defaultdict(lambda: defaultdict(FVal))  # noqa: E501
         token_contract = EvmContract(
             address=ZERO_ADDRESS,  # not used here
             abi=self.ethereum.contracts.abi('COMPOUND_V3_TOKEN'),
@@ -60,7 +60,7 @@ class CompoundV3:
             log.error(f'Failed to query Compound v3 token utilizations while fetching the interest rates due to {e!s}')  # noqa: E501
             return rates
 
-        rates_calls: dict[BalanceType, list[tuple['ChecksumEvmAddress', str]]] = defaultdict(list)
+        rates_calls: dict[BalanceType, list[tuple[ChecksumEvmAddress, str]]] = defaultdict(list)
         rates_calls_arguments: dict[BalanceType, list[str]] = defaultdict(list)
         for idx, (token_address, _) in enumerate(calls):  # prepare calls for interest rates
             for balance_type in tokens_and_types[token_address]:
@@ -121,15 +121,15 @@ class CompoundV3:
     ) -> dict['EvmToken', dict[ChecksumEvmAddress, FVal]]:
         """Make multicalls to the compound v3 reward contracts to get the rewards of the users.
         Returns them as a dict of token -> user_address -> rewards."""
-        rewards: dict['EvmToken', dict[ChecksumEvmAddress, FVal]] = defaultdict(lambda: defaultdict(FVal))  # noqa: E501
+        rewards: dict[EvmToken, dict[ChecksumEvmAddress, FVal]] = defaultdict(lambda: defaultdict(FVal))  # noqa: E501
         reward_contract = EvmContract(
             address=ZERO_ADDRESS,  # not used here
             abi=self.ethereum.contracts.abi('COMPOUND_V3_REWARDS'),
             deployed_block=0,  # not used here
         )
-        calls: list[tuple['ChecksumEvmAddress', str]] = []
-        token_arguments: list['ChecksumEvmAddress'] = []
-        user_address_arguments: list['ChecksumEvmAddress'] = []
+        calls: list[tuple[ChecksumEvmAddress, str]] = []
+        token_arguments: list[ChecksumEvmAddress] = []
+        user_address_arguments: list[ChecksumEvmAddress] = []
         for token_address in (  # Ethereum mainnet tokens taken from https://docs.compound.finance/#networks
             string_to_evm_address('0xc3d688B66703497DAA19211EEdff47f25384cdc3'),  # cUSDCv3
             string_to_evm_address('0xA17581A9E3356d9A858b789D68B4d866e593aE94'),  # cWETHv3
@@ -187,8 +187,8 @@ class CompoundV3:
             given_eth_balances: 'GIVEN_ETH_BALANCES',
     ) -> dict[ChecksumEvmAddress, dict[str, dict['Asset', CompoundBalance]]]:
         v3_balances: dict[ChecksumEvmAddress, dict[str, dict[EvmToken, Balance]]] = defaultdict(lambda: defaultdict(lambda: defaultdict(Balance)))  # noqa: E501
-        interest_rate_multicall_args: dict['ChecksumEvmAddress', list[BalanceType]] = defaultdict(list)  # noqa: E501
-        rewards_multicall_args: list['ChecksumEvmAddress'] = []
+        interest_rate_multicall_args: dict[ChecksumEvmAddress, list[BalanceType]] = defaultdict(list)  # noqa: E501
+        rewards_multicall_args: list[ChecksumEvmAddress] = []
         for account, asset_balances in (
             given_eth_balances if isinstance(given_eth_balances, dict) else given_eth_balances()
         ).items():

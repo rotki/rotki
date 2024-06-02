@@ -117,8 +117,8 @@ class ZeroxCommonDecoder(DecoderInterface):
     ) -> list['EvmEvent']:
         """This function is used to decode the swaps done via 0x. It checks if already decoded
         events interacted with the 0x router, and overwrites them if they did."""
-        send_address_to_events: dict[ChecksumEvmAddress, 'EvmEvent'] = {}
-        receive_address_to_events: dict[ChecksumEvmAddress, 'EvmEvent'] = {}
+        send_address_to_events: dict[ChecksumEvmAddress, EvmEvent] = {}
+        receive_address_to_events: dict[ChecksumEvmAddress, EvmEvent] = {}
         sent_asset = received_asset = None
         for event in decoded_events:
             if (

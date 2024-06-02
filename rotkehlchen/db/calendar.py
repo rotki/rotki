@@ -186,7 +186,7 @@ class CalendarFilterQuery(DBFilterQuery, FilterWithTimestamp):
             to_ts=to_ts,
         )
 
-        filters: list['DBFilter'] = [filter_query.timestamp_filter]
+        filters: list[DBFilter] = [filter_query.timestamp_filter]
         if addresses is not None:
             filters.append(DBOptionalChainAddressesFilter(
                 and_op=False,
