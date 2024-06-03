@@ -15,6 +15,7 @@ Changelog
 * :feature:`-` Degen airdrop 2 season 3 claim event should now be properly decoded in the history events view.
 * :feature:`-` The eigenlayer airdrop claim event should now be properly decoded in the history events view.
 * :feature:`8007` All votes in Arbitrum DAO will be decoded properly now.
+* :bug:`8022` When there are NFTs valued in different assets sorting them by fiat price will show the correct price.
 
 * :release:`1.33.1 <2024-05-29>`
 * :bug:`-` Fix the issue where airdrops aren't properly filtered by status.

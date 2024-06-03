@@ -10,7 +10,6 @@ import type {
 import type { IgnoredAssetsHandlingType } from '@/types/asset';
 import type {
   NonFungibleBalance,
-  NonFungibleBalanceWithLastPrice,
   NonFungibleBalancesRequestPayload,
 } from '@/types/nfbalances';
 
@@ -39,11 +38,11 @@ const {
 } = usePaginationFilters<
   NonFungibleBalance,
   NonFungibleBalancesRequestPayload,
-  NonFungibleBalanceWithLastPrice
+  NonFungibleBalance
 >(null, false, useEmptyFilter, fetchNonFungibleBalances, {
   extraParams,
   defaultSortBy: {
-    key: 'lastPrice',
+    key: 'usdPrice',
     ascending: [false],
   },
 });
@@ -74,7 +73,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => {
       label: t('common.price_in_symbol', {
         symbol: get(currencySymbol),
       }),
-      key: 'lastPrice',
+      key: 'usdPrice',
       align: 'end',
       class: 'text-no-wrap',
       cellClass: 'py-0',
@@ -206,7 +205,7 @@ watch(loading, async (isLoading, wasLoading) => {
             />
             <span v-else>-</span>
           </template>
-          <template #item.lastPrice="{ row }">
+          <template #item.usdPrice="{ row }">
             <AmountDisplay
               no-scramble
               :price-asset="row.priceAsset"

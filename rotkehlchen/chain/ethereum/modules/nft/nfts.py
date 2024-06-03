@@ -71,12 +71,15 @@ def _deserialize_nft_price(
     return price_in_asset, price_asset, usd_price
 
 
-def _deserialize_nft_from_db(entry: NFT_DB_READ_TUPLE) -> dict[str, Any]:
-    """From a db tuple extract the information required by the API for a NFT"""
-    price_in_asset, price_asset, usd_price = _deserialize_nft_price(
-        last_price=entry[2],
-        last_price_asset=entry[3],
-    )
+def _deserialize_nft_from_db(
+        entry: NFT_DB_READ_TUPLE,
+        price_tuple: tuple[FVal, Asset, FVal],
+) -> dict[str, Any]:
+    """From a db tuple extract the information required by the API for an NFT.
+    It requires a tuple with the price in the asset used to value the nft,
+    the asset used to value the nft and the usd price of the nft.
+    """
+    price_in_asset, price_asset, usd_price = price_tuple
     return {
         'id': entry[0],
         'name': entry[1],
@@ -172,29 +175,42 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
 
     def get_db_nft_balances(self, filter_query: 'NFTFilterQuery') -> dict[str, Any]:
         """Filters (with `filter_query`) and returns cached nft balances in the nfts table"""
-        query, bindings = filter_query.prepare()
         total_usd_value = ZERO
+        query, bindings = filter_query.prepare(with_pagination=False)
+        with self.db.conn.read_ctx() as cursor:
+            entries_total = cursor.execute('SELECT COUNT(*) FROM nfts').fetchone()[0]
+            entries_found = 0
+            usd_price_tuples = {}  # store the queried prices and calculated usd price
+            cursor.execute(
+                'SELECT last_price, last_price_asset, identifier FROM nfts ' + query,
+                bindings,
+            )
+            for db_entry in cursor:  # we do this query because the previous one is limited to the page and we need to query the total usd price  # noqa: E501
+                price_in_asset, price_asset, usd_price = _deserialize_nft_price(
+                    last_price=db_entry[0],
+                    last_price_asset=db_entry[1],
+                )
+                usd_price_tuples[db_entry[2]] = (price_in_asset, price_asset, usd_price)  # save all the prices to reuse them when creating the response  # noqa: E501
+                total_usd_value += usd_price
+                entries_found += 1
+
+        with self.db.user_write() as write_ctx:
+            write_ctx.executemany(
+                'UPDATE nfts SET usd_price=? WHERE identifier=?',
+                [(float(price_tuple[2]), ident) for ident, price_tuple in usd_price_tuples.items()],  # noqa: E501
+            )  # update the usd price since the consumer of the api always sorts by usd price
+
+        query, bindings = filter_query.prepare()
         with self.db.conn.read_ctx() as cursor:
             cursor.execute(  # this sometimes causes https://github.com/rotki/rotki/issues/5432
                 'SELECT identifier, name, last_price, last_price_asset, manual_price, is_lp, '
                 'image_url, collection_name FROM nfts ' + query,
                 bindings,
             )
-            entries = [_deserialize_nft_from_db(x) for x in cursor]
-            query, bindings = filter_query.prepare(with_pagination=False)
-            cursor.execute(
-                'SELECT last_price, last_price_asset FROM nfts ' + query,
-                bindings,
-            )
-            entries_found = 0
-            for db_entry in cursor:
-                _, _, usd_price = _deserialize_nft_price(
-                    last_price=db_entry[0],
-                    last_price_asset=db_entry[1],
-                )
-                total_usd_value += usd_price
-                entries_found += 1
-            entries_total = cursor.execute('SELECT COUNT(*) FROM nfts').fetchone()[0]
+            entries = [
+                _deserialize_nft_from_db(entry=x, price_tuple=usd_price_tuples[x[0]])
+                for x in cursor
+            ]
 
         return {
             'entries': entries,

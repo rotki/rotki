@@ -16,10 +16,6 @@ export const NonFungibleBalance = PriceInformation.merge(
 
 export type NonFungibleBalance = z.infer<typeof NonFungibleBalance>;
 
-export interface NonFungibleBalanceWithLastPrice extends NonFungibleBalance {
-  lastPrice?: any;
-}
-
 const NonFungibleBalanceArray = z.array(NonFungibleBalance);
 
 export const NonFungibleBalances = z.record(NonFungibleBalanceArray);

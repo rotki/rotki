@@ -2356,6 +2356,35 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
         ).fetchall() == [(17987,)]
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_42_to_43(user_data_dir, messages_aggregator):
+    """Test upgrading the DB from version 42 to version 43"""
+    _use_prepared_db(user_data_dir, 'v42_rotkehlchen.db')
+    db_v42 = _init_db_with_target_version(
+        target_version=42,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+    with db_v42.conn.read_ctx() as cursor:
+        nfts = cursor.execute('SELECT name FROM nfts').fetchall()
+        assert nfts == [('yabir.eth',)]
+
+    # Execute upgrade
+    db = _init_db_with_target_version(
+        target_version=43,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+    assert messages_aggregator.consume_errors() == []
+    assert messages_aggregator.consume_warnings() == []
+
+    with db.conn.read_ctx() as cursor:
+        nfts = cursor.execute('SELECT name, usd_price FROM nfts').fetchall()
+        assert nfts == [('yabir.eth', 0)]
+
+
 def test_latest_upgrade_correctness(user_data_dir):
     """
     This is a test that we can only do for the last upgrade.
@@ -2366,10 +2395,10 @@ def test_latest_upgrade_correctness(user_data_dir):
     this is just to reminds us not to forget to add create table statements.
     """
     msg_aggregator = MessagesAggregator()
-    base_database = 'v41_rotkehlchen.db'
+    base_database = 'v42_rotkehlchen.db'
     _use_prepared_db(user_data_dir, base_database)
     last_db = _init_db_with_target_version(
-        target_version=41,
+        target_version=43,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
         resume_from_backup=False,
@@ -2384,7 +2413,7 @@ def test_latest_upgrade_correctness(user_data_dir):
 
     # Execute upgrade
     db = _init_db_with_target_version(
-        target_version=42,
+        target_version=43,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
         resume_from_backup=False,
@@ -2406,8 +2435,8 @@ def test_latest_upgrade_correctness(user_data_dir):
     result = cursor.execute('SELECT name FROM sqlite_master WHERE type="view"')
     views_after_creation = {x[0] for x in result}
 
-    assert cursor.execute('SELECT value FROM settings WHERE name="version"').fetchone()[0] == '42'
-    removed_tables = {'balancer_events', 'yearn_vaults_events'}
+    assert cursor.execute('SELECT value FROM settings WHERE name="version"').fetchone()[0] == '43'
+    removed_tables = set()
     removed_views = set()
     missing_tables = tables_before - tables_after_upgrade
     missing_views = views_before - views_after_upgrade
@@ -2416,13 +2445,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert tables_after_creation - tables_after_upgrade == set()
     assert views_after_creation - views_after_upgrade == set()
     new_tables = tables_after_upgrade - tables_before
-    assert new_tables == {
-        'zksynclite_tx_type',
-        'zksynclite_transactions',
-        'zksynclite_swaps',
-        'calendar',
-        'calendar_reminders',
-    }
+    assert new_tables == set()
     new_views = views_after_upgrade - views_before
     assert new_views == set()
 
