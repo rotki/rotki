@@ -296,7 +296,7 @@ export const useReportsStore = defineStore('reports', () => {
 
   const exportReportData = async (
     payload: ProfitLossReportDebugPayload,
-  ): Promise<number | unknown> => {
+  ): Promise<boolean | object> => {
     set(reportProgress, {
       processingState: '',
       totalProgress: '0',
@@ -308,7 +308,7 @@ export const useReportsStore = defineStore('reports', () => {
     const { awaitTask } = useTaskStore();
     try {
       const { taskId } = await exportReportDataCaller(payload);
-      const { result } = await awaitTask<number, TaskMeta>(
+      const { result } = await awaitTask<boolean | object, TaskMeta>(
         taskId,
         TaskType.TRADE_HISTORY,
         {

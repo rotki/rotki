@@ -18,7 +18,7 @@ const { downloadReportCSV } = useReportsApi();
 
 function showMessage(description: string) {
   setMessage({
-    title: t('profit_loss_report.csv_export_error').toString(),
+    title: t('profit_loss_report.csv_export_error'),
     description,
     success: false,
   });
@@ -27,9 +27,7 @@ function showMessage(description: string) {
 async function exportCSV() {
   try {
     if (appSession) {
-      const directory = await openDirectory(
-        t('common.select_directory').toString(),
-      );
+      const directory = await openDirectory(t('common.select_directory'));
       if (!directory)
         return;
 
@@ -39,7 +37,7 @@ async function exportCSV() {
       const result = await downloadReportCSV();
       if (!result.success) {
         showMessage(
-          result.message ?? t('profit_loss_report.download_failed').toString(),
+          result.message ?? t('profit_loss_report.download_failed'),
         );
       }
     }

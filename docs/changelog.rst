@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`7675` Users will now be able to export & import accounting rules.
 * :feature:`8003` 1inch v6 events should now be properly decoded for all supported EVM chains.
 * :feature:`7981` Circle's CCTP bridge transfers are decoded properly for all supported EVM chains.
 * :feature:`7202` Hop protocol related events and balances of staked tokens should be now decoded and detected properly.
@@ -12,7 +13,7 @@ Changelog
 * :feature:`7570` Users can choose whether to automatically force-push when a time discrepancy warning occurs during automatic database sync.
 * :feature:`-` Degen airdrop 2 season 3 claim event should now be properly decoded in the history events view.
 * :feature:`-` The eigenlayer airdrop claim event should now be properly decoded in the history events view.
-  
+
 * :release:`1.33.1 <2024-05-29>`
 * :bug:`-` Fix the issue where airdrops aren't properly filtered by status.
 * :bug:`7791` Killing the rotki processes in Windows should now work fine and no zombie processes should remain. In turn this should also make the auto upgrade work for Windows.

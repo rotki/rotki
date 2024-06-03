@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { TaskType } from '@/types/task-type';
 import type { DataTableColumn } from '@rotki/ui-library-compat';
 import type { Collection } from '@/types/collection';
 import type {
@@ -13,7 +14,12 @@ import type {
 const { t } = useI18n();
 const router = useRouter();
 
-const { getAccountingRule, getAccountingRules, getAccountingRulesConflicts } = useAccountingSettings();
+const {
+  getAccountingRule,
+  getAccountingRules,
+  getAccountingRulesConflicts,
+  exportJSON,
+} = useAccountingSettings();
 
 const {
   state,
@@ -217,6 +223,13 @@ onMounted(async () => {
   }
   await refresh();
 });
+
+const { isTaskRunning } = useTaskStore();
+
+const exportFileLoading = isTaskRunning(TaskType.EXPORT_ACCOUNTING_RULES);
+const importFileLoading = isTaskRunning(TaskType.IMPORT_ACCOUNTING_RULES);
+
+const importFileDialog: Ref<boolean> = ref(false);
 </script>
 
 <template>
@@ -291,6 +304,47 @@ onMounted(async () => {
               @update:matches="updateFilter($event)"
             />
           </div>
+          <RuiMenu
+            :popper="{ placement: 'bottom-end' }"
+            close-on-content-click
+          >
+            <template #activator="{ on }">
+              <RuiButton
+                variant="text"
+                icon
+                size="sm"
+                class="!p-2"
+                v-on="on"
+              >
+                <RuiIcon
+                  name="more-2-fill"
+                  size="20"
+                />
+              </RuiButton>
+            </template>
+            <div class="py-2">
+              <RuiButton
+                variant="list"
+                :loading="exportFileLoading"
+                @click="exportJSON()"
+              >
+                <template #prepend>
+                  <RuiIcon name="file-download-line" />
+                </template>
+                {{ t('accounting_settings.rule.export') }}
+              </RuiButton>
+              <RuiButton
+                variant="list"
+                :loading="importFileLoading"
+                @click="importFileDialog = true"
+              >
+                <template #prepend>
+                  <RuiIcon name="file-upload-line" />
+                </template>
+                {{ t('accounting_settings.rule.import') }}
+              </RuiButton>
+            </div>
+          </RuiMenu>
         </div>
       </template>
 
@@ -443,6 +497,11 @@ onMounted(async () => {
     <AccountingRuleFormDialog
       :loading="isLoading"
       :editable-item="editableItem"
+    />
+    <AccountingRuleImportDialog
+      v-model="importFileDialog"
+      :loading="importFileLoading"
+      @refresh="refresh()"
     />
   </TablePageLayout>
 </template>

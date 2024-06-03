@@ -3,22 +3,23 @@ import { type Message, Priority, Severity } from '@rotki/common/lib/messages';
 import { Routes } from '@/router/routes';
 import { TaskType } from '@/types/task-type';
 import { displayDateFormatter } from '@/data/date-formatter';
+import FileUpload from '@/components/import/FileUpload.vue';
 import type {
   ProfitLossReportDebugPayload,
   ProfitLossReportPeriod,
 } from '@/types/reports';
 import type { TaskMeta } from '@/types/task';
 
-const { isTaskRunning } = useTaskStore();
+const { isTaskRunning, awaitTask } = useTaskStore();
 const reportsStore = useReportsStore();
 const { reportError } = storeToRefs(reportsStore);
 const { generateReport, clearError, exportReportData, fetchReports }
   = reportsStore;
 const isRunning = isTaskRunning(TaskType.TRADE_HISTORY);
 const importDataDialog = ref<boolean>(false);
-const reportDebugData = ref<File | null>(null);
+const reportDebugData = ref<File>();
 const importDataLoading = ref<boolean>(false);
-const reportDebugDataUploader = ref<any>(null);
+const reportDebugDataUploader = ref<InstanceType<typeof FileUpload>>();
 
 const router = useRouter();
 const route = useRoute();
@@ -104,10 +105,8 @@ async function exportData({ start, end }: ProfitLossReportPeriod) {
   let message: Message | null = null;
 
   try {
-    const isLocal = appSession;
-    if (isLocal) {
-      const directoryPath
-        = (await openDirectory(t('common.select_directory'))) || '';
+    if (appSession) {
+      const directoryPath = await openDirectory(t('common.select_directory'));
       if (!directoryPath)
         return;
 
@@ -116,7 +115,7 @@ async function exportData({ start, end }: ProfitLossReportPeriod) {
 
     const result = await exportReportData(payload);
 
-    if (isLocal) {
+    if (appSession) {
       message = {
         title: t('profit_loss_reports.debug.export_message.title'),
         description: result
@@ -156,7 +155,6 @@ async function importData() {
   let success: boolean;
   let message = '';
 
-  const { awaitTask } = useTaskStore();
   const taskType = TaskType.IMPORT_PNL_REPORT_DATA;
 
   try {
@@ -197,7 +195,7 @@ async function importData() {
   set(importDataLoading, false);
   set(importDataDialog, false);
   get(reportDebugDataUploader)?.removeFile();
-  set(reportDebugData, null);
+  set(reportDebugData, undefined);
 }
 
 const processingState = computed(() => reportsStore.processingState);
