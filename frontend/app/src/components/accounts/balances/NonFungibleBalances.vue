@@ -6,7 +6,6 @@ import type { IgnoredAssetsHandlingType } from '@/types/asset';
 import type { Module } from '@/types/modules';
 import type {
   NonFungibleBalance,
-  NonFungibleBalanceWithLastPrice,
   NonFungibleBalancesRequestPayload,
 } from '@/types/nfbalances';
 import type { ManualPriceFormPayload } from '@/types/prices';
@@ -52,7 +51,7 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
   },
   {
     label: t('common.price_in_symbol', { symbol: get(currencySymbol) }),
-    key: 'lastPrice',
+    key: 'usdPrice',
     align: 'end',
     class: 'text-no-wrap',
     sortable: true,
@@ -88,14 +87,14 @@ const {
 } = usePaginationFilters<
   NonFungibleBalance,
   NonFungibleBalancesRequestPayload,
-  NonFungibleBalanceWithLastPrice
+  NonFungibleBalance
 >(null, true, useEmptyFilter, fetchNonFungibleBalances, {
   onUpdateFilters(query) {
     set(ignoredAssetsHandling, query.ignoredAssetsHandling || 'exclude');
   },
   extraParams,
   defaultSortBy: {
-    key: 'lastPrice',
+    key: 'usdPrice',
     ascending: [false],
   },
 });
@@ -285,7 +284,7 @@ watch(loading, async (isLoading, wasLoading) => {
               />
               <span v-else>-</span>
             </template>
-            <template #item.lastPrice="{ row }">
+            <template #item.usdPrice="{ row }">
               <AmountDisplay
                 :price-asset="row.priceAsset"
                 :amount="row.priceInAsset"

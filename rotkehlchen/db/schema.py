@@ -625,6 +625,9 @@ CREATE TABLE IF NOT EXISTS history_events_mappings (
 """  # noqa: E501
 
 
+# usd_price is a column of the table because we sort by price in the fiat currency and that price
+# needs to be calculated from last_price and the price of last_price_asset. If we don't sort using
+# the usd_price when the NFTs are valued in different assets the order is not correct.
 DB_CREATE_NFTS = """
 CREATE TABLE IF NOT EXISTS nfts (
     identifier TEXT NOT NULL PRIMARY KEY,
@@ -637,6 +640,7 @@ CREATE TABLE IF NOT EXISTS nfts (
     is_lp INTEGER NOT NULL CHECK (is_lp IN (0, 1)),
     image_url TEXT,
     collection_name TEXT,
+    usd_price REAL NOT NULL DEFAULT 0,
     FOREIGN KEY(blockchain, owner_address) REFERENCES blockchain_accounts(blockchain, account) ON DELETE CASCADE,
     FOREIGN KEY (identifier) REFERENCES assets(identifier) ON UPDATE CASCADE,
     FOREIGN KEY (last_price_asset) REFERENCES assets(identifier) ON UPDATE CASCADE
