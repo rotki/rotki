@@ -1450,6 +1450,8 @@ class UpdatableCacheDataMixin(LockableQueryMixIn):
             query_method: Callable,
             save_method: Callable,
             force_refresh: bool = False,
+            chain_id: ChainID | None = None,
+            cache_key_parts: Sequence[str] | None = None,
     ) -> bool:
         """
         It checks if the cache data is fresh enough and if not, it queries
@@ -1460,9 +1462,12 @@ class UpdatableCacheDataMixin(LockableQueryMixIn):
         - query_method: The method that queries the remote source for the data
         - save_method: The method that saves the data to the cache tables
         - force_refresh: If True, the cache will be updated even if it is fresh
+        - cache_key_parts: The parts to be used to check cache freshness along with cache_type
         """
+        if cache_key_parts is None:
+            cache_key_parts = []
         if (
-            should_update_protocol_cache(cache_type) is False and
+            should_update_protocol_cache(cache_type, *cache_key_parts) is False and
             force_refresh is False
         ):
             return False
@@ -1471,11 +1476,14 @@ class UpdatableCacheDataMixin(LockableQueryMixIn):
         if new_data is None:
             return False
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            save_method(
-                write_cursor=write_cursor,
-                database=self.database,
-                new_data=new_data,
-            )
+            save_method_kwargs = {
+                'write_cursor': write_cursor,
+                'database': self.database,
+                'new_data': new_data,
+            }
+            if chain_id is not None:
+                save_method_kwargs['chain_id'] = chain_id
+            save_method(**save_method_kwargs)
         return True
 
 

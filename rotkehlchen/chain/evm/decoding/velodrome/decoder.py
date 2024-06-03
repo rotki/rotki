@@ -32,7 +32,7 @@ from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress
+from rotkehlchen.types import CacheType, ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
@@ -57,7 +57,7 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
             counterparty: Literal['velodrome', 'aerodrome'],
             routers: set[ChecksumEvmAddress],
             pool_cache_type: CacheType,
-            read_fn: Callable[[ChainID | None], tuple[set[ChecksumEvmAddress], set[ChecksumEvmAddress]]],  # noqa: E501
+            read_fn: Callable[[], tuple[set[ChecksumEvmAddress], set[ChecksumEvmAddress]]],
             pool_token_protocol: str,
     ) -> None:
         super().__init__(

@@ -44,7 +44,6 @@ class GearboxPoolData:
     pool_name: str
     farming_pool_token: str
     lp_tokens: set[str]
-    chain_id: ChainID
     underlying_token: ChecksumEvmAddress | None = None
 
 
@@ -66,10 +65,11 @@ def save_gearbox_data_to_cache(
         write_cursor: 'DBCursor',
         database: Optional['DBHandler'],  # pylint: disable=unused-argument
         new_data: list[GearboxPoolData],
+        chain_id: ChainID,
 ) -> None:
     """Stores data about gearbox pools and their names in the global db cache tables."""
     for pool in new_data:
-        str_chain_id = str(pool.chain_id.serialize())
+        str_chain_id = str(chain_id.serialize())
         globaldb_set_general_cache_values(
             write_cursor=write_cursor,
             key_parts=(CacheType.GEARBOX_POOL_ADDRESS, str_chain_id),
@@ -127,7 +127,6 @@ def read_gearbox_data_from_cache(chain_id: ChainID | None) -> tuple[dict[Checksu
                 pool_name=pool_name,
                 farming_pool_token=farming_pool_token,
                 lp_tokens={addr[1] for addr in token_lp_addresses},  # just the token address
-                chain_id=chain_id,
             )
 
     return (pools,)
@@ -278,7 +277,6 @@ def query_gearbox_data_from_chain(
             farming_pool_token=farming_pool_token,
             lp_tokens=lp_token_ids,
             underlying_token=underlying_token_address,
-            chain_id=evm_inquirer.chain_id,
         ))
     return new_pools
 

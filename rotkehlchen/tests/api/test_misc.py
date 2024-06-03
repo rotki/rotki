@@ -10,7 +10,7 @@ import requests
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.ethereum.modules.convex.constants import CPT_CONVEX
-from rotkehlchen.chain.ethereum.modules.curve.constants import CPT_CURVE
+from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_BACKUP_FILES, DEFAULT_SQL_VM_INSTRUCTIONS_CB
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmProduct

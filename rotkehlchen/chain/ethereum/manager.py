@@ -2,6 +2,10 @@ import logging
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
+from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
+    query_curve_data,
+    save_curve_data_to_cache,
+)
 from rotkehlchen.chain.evm.manager import EvmManager
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -9,7 +13,6 @@ from rotkehlchen.types import CacheType
 
 from .accountant import EthereumAccountingAggregator
 from .decoding.decoder import EthereumTransactionDecoder
-from .modules.curve.curve_cache import query_curve_data, save_curve_data_to_cache
 from .tokens import EthereumTokens
 
 if TYPE_CHECKING:
@@ -61,9 +64,11 @@ class EthereumManager(EvmManager):
         Also updates the curve decoder
         """
         if self.node_inquirer.ensure_cache_data_is_updated(
-                cache_type=CacheType.CURVE_LP_TOKENS,
-                query_method=query_curve_data,
-                save_method=save_curve_data_to_cache,
+            cache_type=CacheType.CURVE_LP_TOKENS,
+            query_method=query_curve_data,
+            save_method=save_curve_data_to_cache,
+            chain_id=self.node_inquirer.chain_id,
+            cache_key_parts=(str(self.node_inquirer.chain_id.serialize_for_db())),
         ) is False:
             return
 
