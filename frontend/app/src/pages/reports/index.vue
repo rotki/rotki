@@ -17,9 +17,9 @@ const { generateReport, clearError, exportReportData, fetchReports }
   = reportsStore;
 const isRunning = isTaskRunning(TaskType.TRADE_HISTORY);
 const importDataDialog = ref<boolean>(false);
-const reportDebugData = ref<File | null>(null);
+const reportDebugData = ref<File>();
 const importDataLoading = ref<boolean>(false);
-const reportDebugDataUploader = ref<InstanceType<typeof FileUpload> | undefined>(undefined);
+const reportDebugDataUploader = ref<InstanceType<typeof FileUpload>>();
 
 const router = useRouter();
 const route = useRoute();
@@ -195,7 +195,7 @@ async function importData() {
   set(importDataLoading, false);
   set(importDataDialog, false);
   get(reportDebugDataUploader)?.removeFile();
-  set(reportDebugData, null);
+  set(reportDebugData, undefined);
 }
 
 const processingState = computed(() => reportsStore.processingState);

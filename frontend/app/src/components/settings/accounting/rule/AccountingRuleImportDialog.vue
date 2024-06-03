@@ -13,8 +13,8 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const importFileUploader = ref<InstanceType<typeof FileUpload> | undefined>(undefined);
-const importFile: Ref<File | null> = ref(null);
+const importFileUploader = ref<InstanceType<typeof FileUpload>>();
+const importFile = ref<File>();
 
 const model = useSimpleVModel(props, emit);
 
@@ -43,7 +43,7 @@ async function importData() {
 
   if (success) {
     set(model, false);
-    set(importFile, null);
+    set(importFile, undefined);
     get(importFileUploader)?.removeFile();
     emit('refresh');
   }

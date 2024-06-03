@@ -3,7 +3,7 @@ import type { ImportSourceType } from '@/types/upload-types';
 
 const props = withDefaults(
   defineProps<{
-    value: File | null;
+    value?: File | null;
     source: ImportSourceType;
     loading?: boolean;
     fileFilter?: string;
@@ -11,6 +11,7 @@ const props = withDefaults(
     errorMessage?: string;
   }>(),
   {
+    value: undefined,
     loading: false,
     fileFilter: '.csv',
     uploaded: false,
