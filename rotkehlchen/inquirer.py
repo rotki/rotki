@@ -9,6 +9,7 @@ from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken, FiatAsse
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.evm.utils import lp_price_from_uniswaplike_pool_contract
@@ -811,25 +812,29 @@ class Inquirer:
         May raise:
         - RemoteError
         """
-        ethereum = self.get_evm_manager(chain_id=ChainID.ETHEREUM)
+        ethereum = self.get_evm_manager(chain_id=lp_token.chain_id)
         ethereum.assure_curve_cache_is_queried_and_decoder_updated()  # type:ignore  # ethereum is an EthereumManager here
 
         with GlobalDBHandler().conn.read_ctx() as cursor:
             pool_address_in_cache = globaldb_get_unique_cache_value(
                 cursor=cursor,
-                key_parts=(CacheType.CURVE_POOL_ADDRESS, lp_token.evm_address),
+                key_parts=(CacheType.CURVE_POOL_ADDRESS, str(lp_token.chain_id.serialize_for_db()), lp_token.evm_address),  # noqa: E501
             )
             if pool_address_in_cache is None:
                 return None
             # pool address is guaranteed to be checksumed due to how we save it
             pool_address = string_to_evm_address(pool_address_in_cache)
-            pool_tokens_addresses = read_curve_pool_tokens(cursor=cursor, pool_address=pool_address)  # noqa: E501
+            pool_tokens_addresses = read_curve_pool_tokens(
+                cursor=cursor,
+                pool_address=pool_address,
+                chain_id=ChainID.ETHEREUM,
+            )
 
         tokens: list[EvmToken] = []
         try:  # Translate addresses to tokens
             for token_address_str in pool_tokens_addresses:
                 token_address = string_to_evm_address(token_address_str)
-                if token_address == '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE':
+                if token_address == ETH_SPECIAL_ADDRESS:
                     tokens.append(self.weth)
                 else:
                     token_identifier = ethaddress_to_identifier(token_address)

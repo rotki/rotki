@@ -8,7 +8,7 @@ from rotkehlchen.accounting.pnl import PNL
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.processed_event import ProcessedAccountingEvent
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.ethereum.modules.curve.constants import CPT_CURVE
+from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_DAI, A_USDC, A_USDT
 from rotkehlchen.fval import FVal

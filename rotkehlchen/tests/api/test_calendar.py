@@ -4,8 +4,8 @@ import pytest
 import requests
 
 from rotkehlchen.api.server import APIServer
-from rotkehlchen.chain.ethereum.modules.curve.constants import CPT_CURVE
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
+from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.tests.utils.api import (
     api_url_for,

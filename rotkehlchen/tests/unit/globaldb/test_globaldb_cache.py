@@ -13,11 +13,8 @@ from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
     read_convex_data_from_cache,
     save_convex_data_to_cache,
 )
-from rotkehlchen.chain.ethereum.modules.curve.constants import CURVE_ADDRESS_PROVIDER
-from rotkehlchen.chain.ethereum.modules.curve.curve_cache import (
-    CURVE_API_URLS,
-    read_curve_pools_and_gauges,
-)
+from rotkehlchen.chain.evm.decoding.curve.constants import CURVE_ADDRESS_PROVIDER, CURVE_API_URLS
+from rotkehlchen.chain.evm.decoding.curve.curve_cache import read_curve_pools_and_gauges
 from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     query_velodrome_like_data,
     read_velodrome_pools_and_gauges_from_cache,
@@ -249,7 +246,7 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api, globaldb):
     ))
 
     # Check the pools, coins and addresses from addressbook have been properly cleared
-    pools, gauges = read_curve_pools_and_gauges()
+    pools, gauges = read_curve_pools_and_gauges(chain_id=ChainID.ETHEREUM)
     for pool in CURVE_EXPECTED_LP_TOKENS_TO_POOLS.values():
         assert pool not in pools
     for pool in CURVE_EXPECTED_POOL_COINS:
@@ -264,7 +261,7 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api, globaldb):
         assert not address_in_addressbook(entry.address, global_cursor)
 
     ethereum_inquirer = rotkehlchen_instance.chains_aggregator.ethereum.node_inquirer
-    curve_address_provider = ethereum_inquirer.contracts.contract(CURVE_ADDRESS_PROVIDER)
+    curve_address_provider = ethereum_inquirer.contracts.contract(CURVE_ADDRESS_PROVIDER[ChainID.ETHEREUM])  # noqa: E501
 
     def mock_call_contract(contract, node_inquirer, method_name, **kwargs):
         if use_curve_api is True:
@@ -311,7 +308,7 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api, globaldb):
     with freeze_time(future_timestamp), requests_patch, call_contract_patch:
         rotkehlchen_instance.chains_aggregator.ethereum.assure_curve_cache_is_queried_and_decoder_updated()
 
-    pools, gauges = read_curve_pools_and_gauges()
+    pools, gauges = read_curve_pools_and_gauges(chain_id=ChainID.ETHEREUM)
     for pool in CURVE_EXPECTED_LP_TOKENS_TO_POOLS.values():
         assert pool in pools
     for pool, pool_coins in CURVE_EXPECTED_POOL_COINS.items():

@@ -69,10 +69,6 @@ from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
     query_convex_data,
     save_convex_data_to_cache,
 )
-from rotkehlchen.chain.ethereum.modules.curve.curve_cache import (
-    query_curve_data,
-    save_curve_data_to_cache,
-)
 from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
 from rotkehlchen.chain.ethereum.modules.liquity.constants import CPT_LIQUITY
@@ -84,6 +80,10 @@ from rotkehlchen.chain.ethereum.modules.nft.structures import NftLpHandling
 from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import try_download_ens_avatar
 from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
+from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
+    query_curve_data,
+    save_curve_data_to_cache,
+)
 from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     query_gearbox_data,
     save_gearbox_data_to_cache,
@@ -4555,18 +4555,20 @@ class RestAPI:
         eth_node_inquirer = self.rotkehlchen.chains_aggregator.ethereum.node_inquirer
         optimism_inquirer = self.rotkehlchen.chains_aggregator.optimism.node_inquirer
         base_inquirer = self.rotkehlchen.chains_aggregator.base.node_inquirer
-        caches: tuple[tuple[str, CacheType, Callable, Callable, UpdatableCacheDataMixin], ...] = (
-            ('curve pools', CacheType.CURVE_LP_TOKENS, query_curve_data, save_curve_data_to_cache, eth_node_inquirer),  # noqa: E501
-            ('convex pools', CacheType.CONVEX_POOL_ADDRESS, query_convex_data, save_convex_data_to_cache, eth_node_inquirer),  # noqa: E501
-            ('velodrome pools', CacheType.VELODROME_POOL_ADDRESS, query_velodrome_like_data, save_velodrome_data_to_cache, optimism_inquirer),  # noqa: E501
-            ('aerodrome pools', CacheType.AERODROME_POOL_ADDRESS, query_velodrome_like_data, save_velodrome_data_to_cache, base_inquirer),  # noqa: E501
-            ('gearbox pools', CacheType.GEARBOX_POOL_ADDRESS, query_gearbox_data, save_gearbox_data_to_cache, eth_node_inquirer),  # noqa: E501
+        caches: tuple[tuple[str, CacheType, Callable, Callable, ChainID | None, UpdatableCacheDataMixin], ...] = (  # noqa: E501
+            ('curve pools', CacheType.CURVE_LP_TOKENS, query_curve_data, save_curve_data_to_cache, ChainID.ETHEREUM, eth_node_inquirer),  # noqa: E501
+            ('convex pools', CacheType.CONVEX_POOL_ADDRESS, query_convex_data, save_convex_data_to_cache, None, eth_node_inquirer),  # noqa: E501
+            ('velodrome pools', CacheType.VELODROME_POOL_ADDRESS, query_velodrome_like_data, save_velodrome_data_to_cache, None, optimism_inquirer),  # noqa: E501
+            ('aerodrome pools', CacheType.AERODROME_POOL_ADDRESS, query_velodrome_like_data, save_velodrome_data_to_cache, None, base_inquirer),  # noqa: E501
+            ('gearbox pools', CacheType.GEARBOX_POOL_ADDRESS, query_gearbox_data, save_gearbox_data_to_cache, ChainID.ETHEREUM, eth_node_inquirer),  # noqa: E501
         )
-        for (cache, cache_type, query_method, save_method, inquirer) in caches:
+        for (cache, cache_type, query_method, save_method, chain_id, inquirer) in caches:
             if inquirer.ensure_cache_data_is_updated(
                 cache_type=cache_type,
                 query_method=query_method,
                 save_method=save_method,
+                chain_id=chain_id,
+                cache_key_parts=[] if chain_id is None else (str(chain_id.serialize_for_db()),),
                 force_refresh=True,
             ) is False:
                 return wrap_in_fail_result(

@@ -121,7 +121,7 @@ def read_velodrome_like_pools_and_gauges_from_cache(
     return pool_addresses, gauge_addresses
 
 
-def read_velodrome_pools_and_gauges_from_cache(chain_id: ChainID | None = None) -> tuple[set[ChecksumEvmAddress], set[ChecksumEvmAddress]]:  # noqa: E501 # pylint: disable=unused-argument
+def read_velodrome_pools_and_gauges_from_cache() -> tuple[set[ChecksumEvmAddress], set[ChecksumEvmAddress]]:  # noqa: E501
     """
     Reads globaldb cache and returns:
     - A set of all known addresses of velodrome pools.
@@ -133,7 +133,7 @@ def read_velodrome_pools_and_gauges_from_cache(chain_id: ChainID | None = None) 
     )
 
 
-def read_aerodrome_pools_and_gauges_from_cache(chain_id: ChainID | None = None) -> tuple[set[ChecksumEvmAddress], set[ChecksumEvmAddress]]:  # noqa: E501 # pylint: disable=unused-argument
+def read_aerodrome_pools_and_gauges_from_cache() -> tuple[set[ChecksumEvmAddress], set[ChecksumEvmAddress]]:  # noqa: E501
     """
     Reads globaldb cache and returns:
     - A set of all known addresses of aerodrome pools.

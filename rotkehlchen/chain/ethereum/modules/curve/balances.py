@@ -1,11 +1,10 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.ethereum.interfaces.balances import ProtocolWithGauges
+from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress
-
-from .constants import CPT_CURVE
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer

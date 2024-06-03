@@ -7,6 +7,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.types import (
     CacheType,
+    ChainID,
     ChecksumEvmAddress,
     GeneralCacheType,
     Timestamp,
@@ -28,8 +29,10 @@ def compute_cache_key(key_parts: Iterable[str | CacheType]) -> str:
     return cache_key
 
 
-# Using any random address here, since length of all addresses is the same
-BASE_POOL_TOKENS_KEY_LENGTH = len(compute_cache_key([CacheType.CURVE_POOL_TOKENS, ZERO_ADDRESS]))
+def base_pool_tokens_key_length(chain_id: ChainID) -> int:
+    """Returns the length of the base pool tokens cache key for the given chain id.
+    Using any random address here, since length of all addresses is the same."""
+    return len(compute_cache_key([CacheType.CURVE_POOL_TOKENS, str(chain_id.serialize_for_db()), ZERO_ADDRESS]))  # noqa: E501
 
 
 def globaldb_set_general_cache_values_at_ts(
@@ -228,6 +231,7 @@ def globaldb_get_unique_cache_last_queried_ts_by_key(
 def read_curve_pool_tokens(
         cursor: 'DBCursor',
         pool_address: ChecksumEvmAddress,
+        chain_id: 'ChainID',
 ) -> list[ChecksumEvmAddress]:
     """
     Reads tokens for a particular curve pool. Tokens are stored with their indices to make sure
@@ -236,11 +240,11 @@ def read_curve_pool_tokens(
     """
     tokens_data = globaldb_get_general_cache_keys_and_values_like(
         cursor=cursor,
-        key_parts=(CacheType.CURVE_POOL_TOKENS, pool_address),
+        key_parts=(CacheType.CURVE_POOL_TOKENS, str(chain_id.serialize_for_db()), pool_address),
     )
     found_tokens: list[tuple[int, ChecksumEvmAddress]] = []
     for key, address in tokens_data:
-        index = int(key[BASE_POOL_TOKENS_KEY_LENGTH:])  # len(key) > BASE_POOL_TOKENS_KEY_LENGTH
+        index = int(key[base_pool_tokens_key_length(chain_id):])  # len(key) > base_pool_tokens_key_length(chain_id)  # noqa: E501
         found_tokens.append((index, string_to_evm_address(address)))
 
     found_tokens.sort(key=operator.itemgetter(0))

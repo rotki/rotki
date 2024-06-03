@@ -1,7 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Mapping
-from typing import TYPE_CHECKING, Any, Final, Literal
+from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
@@ -58,6 +58,20 @@ CACHE_QUERY_METHOD_TYPE = (
         list | None,
     ]
 )
+SAVE_CACHE_DATA_METHOD_TYPE = Callable[
+    ['DBCursor', 'DBHandler', list, ChainID],
+    None,
+] | Callable[
+    ['DBCursor', 'DBHandler', list],
+    None,
+]
+CACHE_READ_DATA_METHOD_TYPE = Callable[
+    [],
+    tuple[dict[ChecksumEvmAddress, Any] | set[ChecksumEvmAddress], ...],
+] | Callable[
+    [ChainID],
+    tuple[dict[ChecksumEvmAddress, Any] | set[ChecksumEvmAddress], ...],
+]
 
 
 class DecoderInterface(ABC):
@@ -309,13 +323,36 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, ABC):
     tables. It can reload them to the decoder's memory.
     """
 
+    @overload  # without chain_id
     def __init__(
             self,
             evm_inquirer: 'EvmNodeInquirer',
             cache_type_to_check_for_freshness: CacheType,
             query_data_method: CACHE_QUERY_METHOD_TYPE,
             save_data_to_cache_method: Callable[['DBCursor', 'DBHandler', list], None],
-            read_data_from_cache_method: Callable[[ChainID | None], tuple[dict[ChecksumEvmAddress, Any] | set[ChecksumEvmAddress], ...]],  # noqa: E501
+            read_data_from_cache_method: Callable[[], tuple[dict[ChecksumEvmAddress, Any] | set[ChecksumEvmAddress], ...]],  # noqa: E501
+    ) -> None:
+        ...
+
+    @overload  # with chain_id
+    def __init__(
+            self,
+            evm_inquirer: 'EvmNodeInquirer',
+            cache_type_to_check_for_freshness: CacheType,
+            query_data_method: CACHE_QUERY_METHOD_TYPE,
+            save_data_to_cache_method: Callable[['DBCursor', 'DBHandler', list, ChainID], None],
+            read_data_from_cache_method: Callable[[ChainID], tuple[dict[ChecksumEvmAddress, Any] | set[ChecksumEvmAddress], ...]],  # noqa: E501
+            chain_id: ChainID,
+    ) -> None:
+        ...
+
+    def __init__(
+            self,
+            evm_inquirer: 'EvmNodeInquirer',
+            cache_type_to_check_for_freshness: CacheType,
+            query_data_method: CACHE_QUERY_METHOD_TYPE,
+            save_data_to_cache_method: SAVE_CACHE_DATA_METHOD_TYPE,
+            read_data_from_cache_method: Callable[..., tuple[dict[ChecksumEvmAddress, Any] | set[ChecksumEvmAddress], ...]],  # noqa: E501
             chain_id: ChainID | None = None,
     ) -> None:
         """
@@ -324,6 +361,7 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, ABC):
         :param query_data_method: The method that queries the remote source for data.
         :param save_data_to_cache_method: The method that saves the data to the cache tables.
         :param read_data_from_cache_method: The method that reads the data from the
+        :param chain_id: The optional chain id of the data to read from the cache tables.
         cache tables. This function returns a tuple of values, because subclasses may return
         more than a set of caches (example: different set of pools).
         """
@@ -333,7 +371,10 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, ABC):
         self.save_data_to_cache_method = save_data_to_cache_method
         self.read_data_from_cache_method = read_data_from_cache_method
         self.chain_id = chain_id
-        self.cache_data = self.read_data_from_cache_method(chain_id)
+        if self.chain_id is None:
+            self.cache_data = self.read_data_from_cache_method()
+        else:
+            self.cache_data = self.read_data_from_cache_method(chain_id)
 
     @abstractmethod
     def _cache_mapping_methods(self) -> tuple[Callable, ...]:
@@ -350,9 +391,14 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, ABC):
             cache_type=self.cache_type_to_check_for_freshness,
             query_method=self.query_data_method,
             save_method=self.save_data_to_cache_method,
+            chain_id=self.chain_id,
+            cache_key_parts=(str(self.chain_id.serialize_for_db()),) if self.chain_id else None,
         )
 
-        new_cache_data = self.read_data_from_cache_method(self.chain_id)
+        if self.chain_id is None:
+            new_cache_data = self.read_data_from_cache_method()
+        else:
+            new_cache_data = self.read_data_from_cache_method(self.chain_id)
         cache_diff = [  # get the new items for the different information stored in the cache
             (new_data.keys() if isinstance(new_data, dict) else new_data) -
             (data.keys() if isinstance(data, dict) else data)

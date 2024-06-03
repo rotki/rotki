@@ -12,7 +12,7 @@ from freezegun import freeze_time
 from rotkehlchen.assets.asset import Asset, CustomAsset, EvmToken, FiatAsset, UnderlyingToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.utils import get_or_create_evm_token
-from rotkehlchen.chain.ethereum.modules.curve.curve_cache import (
+from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
     query_curve_data,
     save_curve_data_to_cache,
 )
@@ -422,13 +422,15 @@ def test_find_velodrome_v2_lp_token_price(inquirer, optimism_manager):
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_curve_lp_token_price(inquirer: 'Inquirer', ethereum_manager: 'EthereumManager'):
     with GlobalDBHandler().conn.write_ctx() as write_cursor:  # querying curve lp token price normally triggers curve cache query. Set all query ts to now, so it does not happen.  # noqa: E501
-        write_cursor.execute('UPDATE general_cache SET last_queried_ts=? WHERE key=?', (ts_now(), 'CURVE_LP_TOKENS'))  # noqa: E501
+        write_cursor.execute('UPDATE general_cache SET last_queried_ts=? WHERE key=?', (ts_now(), 'CURVE_LP_TOKENS1'))  # noqa: E501
 
     inquirer.set_oracles_order([CurrentPriceOracle.DEFILLAMA])
     ethereum_manager.node_inquirer.ensure_cache_data_is_updated(
         cache_type=CacheType.CURVE_LP_TOKENS,
         query_method=query_curve_data,
         save_method=save_curve_data_to_cache,
+        chain_id=ChainID.ETHEREUM,
+        cache_key_parts=(str(ChainID.ETHEREUM.serialize_for_db()),),
     )
 
     inquirer.inject_evm_managers([(ChainID.ETHEREUM, ethereum_manager)])
