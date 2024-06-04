@@ -53,13 +53,31 @@ def test_trove_position(rotkehlchen_api_server, inquirer):  # pylint: disable=un
         async_query=async_query,
     )
 
-    assert LQTY_ADDR in result
-    trove_data = result[LQTY_ADDR]
-    assert 'collateral' in trove_data
-    assert 'debt' in trove_data
-    assert 'collateralization_ratio' in trove_data
-    assert 'liquidation_price' in trove_data
-    assert trove_data['active'] is True
+    assert LQTY_ADDR in result['balances']
+    assert 'balances' in result
+    assert 'total_collateral_ratio' in result
+    assert result['total_collateral_ratio'] == '279754357977226400'
+
+    balances = result['balances']
+
+    assert balances == {
+        '0x063c26fF1592688B73d8e2A18BA4C23654e2792E': {
+            'collateral': {
+                'amount': '0',
+                'usd_value': '0.0',
+                'asset': 'ETH',
+            },
+            'debt': {
+                'amount': '0',
+                'usd_value': '0.0',
+                'asset': 'eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0',
+            },
+            'collateralization_ratio': None,
+            'liquidation_price': None,
+            'active': True,
+            'trove_id': 148,
+        },
+    }
 
 
 @pytest.mark.parametrize('should_mock_web3', [True])
@@ -136,7 +154,14 @@ def test_account_without_info(rotkehlchen_api_server, inquirer):  # pylint: disa
         async_query=async_query,
     )
 
-    assert ADDR_WITHOUT_TROVE not in result
+    assert 'balances' in result
+    assert 'total_collateral_ratio' in result
+    assert result['total_collateral_ratio'] == '279754357977226400'
+
+    balances = result['balances']
+    assert isinstance(balances, dict)
+
+    assert ADDR_WITHOUT_TROVE not in balances
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -157,9 +182,51 @@ def test_account_with_proxy(rotkehlchen_api_server, inquirer):  # pylint: disabl
         async_query=async_query,
     )
 
-    assert LQTY_PROXY in result
-    assert ADDR_WITHOUT_TROVE not in result
-    assert LQTY_ADDR in result
+    assert 'balances' in result
+    assert 'total_collateral_ratio' in result
+    assert result['total_collateral_ratio'] == '279754357977226400'
+
+    balances = result['balances']
+    assert isinstance(balances, dict)
+
+    assert LQTY_PROXY in balances
+    assert ADDR_WITHOUT_TROVE not in balances
+    assert LQTY_ADDR in balances
+
+    assert balances == {
+        '0x063c26fF1592688B73d8e2A18BA4C23654e2792E': {
+            'collateral': {
+                'amount': '0',
+                'usd_value': '0.0',
+                'asset': 'ETH',
+            },
+            'debt': {
+                'amount': '0',
+                'usd_value': '0.0',
+                'asset': 'eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0',
+            },
+            'collateralization_ratio': None,
+            'liquidation_price': None,
+            'active': True,
+            'trove_id': 148,
+        },
+        '0x9476832d4687c14b2c1a04E2ee4693162a7340B6': {
+            'collateral': {
+                'amount': '0',
+                'usd_value': '0.0',
+                'asset': 'ETH',
+            },
+            'debt': {
+                'amount': '0',
+                'usd_value': '0.0',
+                'asset': 'eip155:1/erc20:0x5f98805A4E8be255a32880FDeC7F6728C6568bA0',
+            },
+            'collateralization_ratio': None,
+            'liquidation_price': None,
+            'active': True,
+            'trove_id': 267,
+        },
+    }
     # test that the list of addresses was not mutated
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     assert len(rotki.chains_aggregator.accounts.eth) == 3
