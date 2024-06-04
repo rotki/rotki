@@ -1,12 +1,13 @@
 import logging
-from typing import TYPE_CHECKING, Any, Final
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_CPT_DETAILS, CPT_ARBITRUM_ONE
 from rotkehlchen.chain.evm.decoding.interfaces import GovernableDecoderInterface
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
-from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
+
+from .constants import GOVERNOR_ADDRESSES
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -14,7 +15,6 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-GOVERNOR_ADDRESS: Final = string_to_evm_address('0xf07DeD9dC292157749B6Fd268E37DF6EA38395B9')
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -38,7 +38,7 @@ class ArbitrumGovernorDecoder(GovernableDecoderInterface):
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return {GOVERNOR_ADDRESS: (self._decode_vote_cast,)}
+        return dict.fromkeys(GOVERNOR_ADDRESSES, (self._decode_vote_cast,))
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
