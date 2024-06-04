@@ -135,6 +135,47 @@ def test_vote_cast_2(database, arbitrum_one_inquirer, arbitrum_one_accounts):
             notes='Voted FOR arbitrum_one governance proposal https://www.tally.xyz/gov/arbitrum/proposal/42524710257895482033293584464762477376427316183960646909542733545381165923770',
             tx_hash=tx_hash,
             counterparty=CPT_ARBITRUM_ONE,
+            address=GOVERNOR_ADDRESSES[3],
+        ),
+    ]
+    assert expected_events == events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+def test_vote_cast_treasury(database, arbitrum_one_inquirer, arbitrum_one_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x8f5eed6ec89eeccbdfa141b91129118a8294d35a1b44f9e7d570945d17f42765')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas = TimestampMS(1717152106000), '0.00000270109'
+    expected_events = [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Burned {gas} ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=10,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.GOVERNANCE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(0)),
+            location_label=arbitrum_one_accounts[0],
+            notes="Voted AGAINST arbitrum_one governance proposal https://www.tally.xyz/gov/arbitrum/proposal/53472400873981607449547539050199074000442490831067826984987297151333310022877 with reasoning: IMO games or arbitrum is a path that is interesting but the amounts are big and I'm not sure how they adjust to the industry. This is giving a lot of money and might be the wrong path where games that no one enjoy get developed and then nothing happens after it. How the money will be spent is described but I believe the amounts are more than what is needed for such a program",  # noqa: E501
+            tx_hash=tx_hash,
+            counterparty=CPT_ARBITRUM_ONE,
             address=GOVERNOR_ADDRESSES[1],
         ),
     ]

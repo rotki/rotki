@@ -13,7 +13,7 @@ Changelog
 * :feature:`7570` Users can choose whether to automatically force-push when a time discrepancy warning occurs during automatic database sync.
 * :feature:`-` Degen airdrop 2 season 3 claim event should now be properly decoded in the history events view.
 * :feature:`-` The eigenlayer airdrop claim event should now be properly decoded in the history events view.
-* :feature:`8007` Arbitrum DAO votes using the new governance contract should now be decoded properly.
+* :feature:`8007` All votes in Arbitrum DAO will be decoded properly now.
 
 * :release:`1.33.1 <2024-05-29>`
 * :bug:`-` Fix the issue where airdrops aren't properly filtered by status.
