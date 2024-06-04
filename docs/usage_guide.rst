@@ -873,20 +873,28 @@ After creating the API key, you can add it to Rotki. Additionally, ensure that t
      :alt: The Graph subgraphs
      :align: center
 
+Import exchange data (CSV)
+==========================
+
+For exchanges that don't support integration through API keys (or haven't integrated to rotki), you can still import your trades or transactions. First, export the CSV file from the exchange's user interface. Then, import this CSV file into rotki.
+
+Go to :menuselection:`Import Data`.
+
+   .. image:: images/sc_data_import.png
+     :alt: Import CSV Data
+     :align: center
+
+You can only use a CSV file here. Additionally, the time format in the CSV might differ from what Rotki expects. To address this, enable the ``Use custom date format to parse your file`` setting before clicking ``Import``. Then, specify the time format used in the CSV file.
 
 Cointracking.info
-====================
+-----------------
 
 You can also import data from `cointracking.info <https://cointracking.info/>`_ into rotki by clicking on "Import Data" on the left sidebar and then following the instructions.
 
 Rotki can import any trade CSV data exported from cointracking.info. But in general it's not recommended to utilize cointracking as their exported data are missing a lot of information.
 
-.. image:: images/sc_data_import.png
-   :alt: Importing data from cointracking.info
-   :align: center
-
 Binance.com
-=============
+-----------
 
 You can import data from `binance.com <https://binance.com/>`_ into rotki by clicking on "Import Data" on the left sidebar and then following the instructions.
 
@@ -895,28 +903,28 @@ Rotki can import a CSV data file exported from Binance. But due to Binance's csv
 By importing a csv file you are able to import more than with the API. Particularly: Trades, Deposits and Withdrawals, Small assets exchange BNB, ETH 2.0 Staking and ETH 2.0 Staking Rewards, Launchpool Interests, POS savings interest, POS savings purchase, POS savings redemption.
 
 BitMEX.com
-=============
+----------
 
 You can import data from `bitmex.com <https://bitmex.com/>`_ into rotki by clicking on "Import Data" on the left sidebar and then following the instructions.
 
 Rotki can import a CSV data file exported from BitMEX. You may see warnings if data can't be imported. If this happens please reach out to us on discord or open an issue on github.
 
 Bitstamp.net
-=============
+------------
 
 You can import data from `bitstamp.net <https://www.bitstamp.net/>`_ into rotki by clicking on "Import Data" on the left sidebar and then following the instructions.
 
 Rotki can import a CSV data file exported from Bitstamp. You may see warnings if data can't be imported. If this happens please reach out to us on discord or open an issue on github.
 
 ShapeShift.com
-====================
+--------------
 
 You can import trade CSV data file exported from shapeshift.com.  Transactions will come from adding your Blockchain Accounts used with ShapeShift to rotki.
 
 Import data in the same section as the image above in the prior heading.  When exporting trades from ShapeShift, the selected wallet may show DEX trades in the user interface.  If it is not the Native wallet, DEX trades may not show up in the user interface, but they still export to CSV.  This importer ignores DEX trades, as they are covered by premium support for Uniswap and SushiSwap.
 
 uphold.com
-====================
+----------
 
 You can import transaction history CSV data exported from the uphold.com activity page.  Transactions will be created when the row's origin currency and destination currency are the same.  Trades will be created if the currencies differ and a rate will be determined automatically.
 
