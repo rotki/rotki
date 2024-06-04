@@ -18,7 +18,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import ChecksumEvmAddress, Price
 from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
@@ -57,6 +57,11 @@ class LiquityBalanceWithProxy(TypedDict):
     balances: dict[str, AssetBalance] | None
 
 
+class GetPositionsResult (TypedDict):
+    balances: dict[ChecksumEvmAddress, Trove]
+    total_collateral_ratio: FVal | None
+
+
 def default_balance_with_proxy_factory() -> LiquityBalanceWithProxy:
     return cast(LiquityBalanceWithProxy, {'proxies': None, 'balances': None})
 
@@ -81,11 +86,28 @@ class Liquity(HasDSProxy):
         self.stability_pool_contract = self.ethereum.contracts.contract(string_to_evm_address('0x66017D22b0f8556afDd19FC67041899Eb65a21bb'))  # noqa: E501
         self.staking_contract = self.ethereum.contracts.contract(string_to_evm_address('0x4f9Fbb3f1E99B56e0Fe2892e623Ed36A76Fc605d'))  # noqa: E501
 
+    def _calculate_total_collateral_ratio(self, eth_price: Price) -> FVal | None:
+        """Query Liquity smart contract for Total Collateral Ratio (TCR).
+        If the TCR of the system falls below 150% the system enters recovery Mode"""
+        try:
+            total_collateral_ratio = self.trove_manager_contract.call(
+                node_inquirer=self.ethereum,
+                method_name='getTCR',
+                arguments=[FVal(eth_price * 10**18).to_int(True)],
+            )
+
+        except RemoteError as e:
+            log.error(f'Failed to query liquity contract for protocol collateral ratio: {e}')
+            return None
+
+        return FVal(total_collateral_ratio * 100)
+
     def get_positions(
             self,
             given_addresses: Sequence[ChecksumEvmAddress],
-    ) -> dict[ChecksumEvmAddress, Trove]:
-        """Query liquity contract to detect open troves"""
+    ) -> GetPositionsResult:
+        """Query liquity contract to detect open troves and
+        query total collateral ratio of the protocol"""
         addresses = list(given_addresses)  # turn to a mutable list copy to add proxies
         proxied_addresses = self.ethereum.proxies_inquirer.get_accounts_having_proxy()
         proxies_to_address = {v: k for k, v in proxied_addresses.items()}
@@ -159,7 +181,11 @@ class Liquity(HasDSProxy):
                         f'Ignoring Liquity trove information. '
                         f'Failed to decode contract information. {e!s}.',
                     )
-        return data
+        final_result = GetPositionsResult(
+            balances=data,
+            total_collateral_ratio=self._calculate_total_collateral_ratio(eth_price),
+        )
+        return final_result
 
     def _query_deposits_and_rewards(
             self,
