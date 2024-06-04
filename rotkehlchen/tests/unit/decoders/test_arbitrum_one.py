@@ -3,7 +3,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.arbitrum_one.constants import CPT_ARBITRUM_ONE
 from rotkehlchen.chain.arbitrum_one.modules.airdrops.decoder import ARBITRUM_ONE_AIRDROP
-from rotkehlchen.chain.arbitrum_one.modules.arbitrum_governor.decoder import GOVERNOR_ADDRESS
+from rotkehlchen.chain.arbitrum_one.modules.arbitrum_governor.constants import GOVERNOR_ADDRESSES
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ARB, A_ETH
@@ -95,6 +95,47 @@ def test_vote_cast(database, arbitrum_one_inquirer, arbitrum_one_accounts):
             location_label=user_address,
             notes='Voted FOR arbitrum_one governance proposal https://www.tally.xyz/gov/arbitrum/proposal/28300903567340237987946172947371304329455149918972967618773111648600015289785',
             counterparty=CPT_ARBITRUM_ONE,
-            address=GOVERNOR_ADDRESS,
+            address=GOVERNOR_ADDRESSES[0],
         )]
+    assert expected_events == events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+def test_vote_cast_2(database, arbitrum_one_inquirer, arbitrum_one_accounts):
+    tx_hash = deserialize_evm_tx_hash('0xf58c9b1ee6643d6af1fd3b5edbfb311bd86eb3417da561fd1650f12be775d71a')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas = TimestampMS(1713188011000), '0.00000252921'
+    expected_events = [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Burned {gas} ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=5,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.GOVERNANCE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(0)),
+            location_label=arbitrum_one_accounts[0],
+            notes='Voted FOR arbitrum_one governance proposal https://www.tally.xyz/gov/arbitrum/proposal/42524710257895482033293584464762477376427316183960646909542733545381165923770',
+            tx_hash=tx_hash,
+            counterparty=CPT_ARBITRUM_ONE,
+            address=GOVERNOR_ADDRESSES[1],
+        ),
+    ]
     assert expected_events == events
