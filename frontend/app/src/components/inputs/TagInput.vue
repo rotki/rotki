@@ -190,12 +190,10 @@ watch(tags, () => {
       max-width="800"
       class="tag-input__tag-manager"
     >
-      <AppBridge>
-        <TagManager
-          dialog
-          @close="manageTags = false"
-        />
-      </AppBridge>
+      <TagManager
+        dialog
+        @close="manageTags = false"
+      />
     </RuiDialog>
   </div>
 </template>

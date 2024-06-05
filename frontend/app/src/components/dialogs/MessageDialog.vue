@@ -37,44 +37,42 @@ const icon = computed<string>(() =>
     @keydown.esc="emit('dismiss')"
     @keydown.enter="emit('dismiss')"
   >
-    <AppBridge>
-      <RuiCard>
-        <template #header>
-          <h5
+    <RuiCard>
+      <template #header>
+        <h5
+          :class="success ? 'text-rui-success' : 'text-rui-error'"
+          class="text-h5"
+        >
+          {{ title }}
+        </h5>
+      </template>
+
+      <div class="flex flex-row items-center gap-2">
+        <div>
+          <RuiIcon
+            size="40"
+            :name="icon"
             :class="success ? 'text-rui-success' : 'text-rui-error'"
-            class="text-h5"
-          >
-            {{ title }}
-          </h5>
-        </template>
-
-        <div class="flex flex-row items-center gap-2">
-          <div>
-            <RuiIcon
-              size="40"
-              :name="icon"
-              :class="success ? 'text-rui-success' : 'text-rui-error'"
-            />
-          </div>
-          <div
-            class="hyphens-auto break-words"
-            data-cy="message-dialog__title"
-          >
-            {{ message }}
-          </div>
+          />
         </div>
+        <div
+          class="hyphens-auto break-words"
+          data-cy="message-dialog__title"
+        >
+          {{ message }}
+        </div>
+      </div>
 
-        <template #footer>
-          <div class="grow" />
-          <RuiButton
-            data-cy="message-dialog__ok"
-            :color="success ? 'success' : 'error'"
-            @click="emit('dismiss')"
-          >
-            {{ t('common.actions.ok') }}
-          </RuiButton>
-        </template>
-      </RuiCard>
-    </AppBridge>
+      <template #footer>
+        <div class="grow" />
+        <RuiButton
+          data-cy="message-dialog__ok"
+          :color="success ? 'success' : 'error'"
+          @click="emit('dismiss')"
+        >
+          {{ t('common.actions.ok') }}
+        </RuiButton>
+      </template>
+    </RuiCard>
   </RuiDialog>
 </template>

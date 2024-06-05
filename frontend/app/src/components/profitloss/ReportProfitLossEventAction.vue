@@ -114,65 +114,63 @@ async function updatePrice() {
       v-model="showDialog"
       max-width="450px"
     >
-      <AppBridge>
-        <RuiCard>
-          <template #header>
-            {{ t('profit_loss_events.edit_historic_price') }}
-          </template>
+      <RuiCard>
+        <template #header>
+          {{ t('profit_loss_events.edit_historic_price') }}
+        </template>
 
-          <form class="flex flex-col gap-4">
-            <AssetSelect
-              :value="event.assetIdentifier"
-              :label="t('price_form.from_asset')"
-              hide-details
-              disabled
-              outlined
-            />
-            <AssetSelect
-              :value="currency"
-              :label="t('price_form.to_asset')"
-              hide-details
-              disabled
-              outlined
-            />
-            <DateTimePicker
-              :value="datetime"
-              disabled
-              hide-details
-              :label="t('common.datetime')"
-            />
-            <AmountInput
-              v-model="price"
-              variant="outlined"
-              :loading="fetchingPrice"
-              :disabled="fetchingPrice"
-              :label="t('common.price')"
-              :error-messages="toMessages(v$.price)"
-            />
-          </form>
+        <form class="flex flex-col gap-4">
+          <AssetSelect
+            :value="event.assetIdentifier"
+            :label="t('price_form.from_asset')"
+            hide-details
+            disabled
+            outlined
+          />
+          <AssetSelect
+            :value="currency"
+            :label="t('price_form.to_asset')"
+            hide-details
+            disabled
+            outlined
+          />
+          <DateTimePicker
+            :value="datetime"
+            disabled
+            hide-details
+            :label="t('common.datetime')"
+          />
+          <AmountInput
+            v-model="price"
+            variant="outlined"
+            :loading="fetchingPrice"
+            :disabled="fetchingPrice"
+            :label="t('common.price')"
+            :error-messages="toMessages(v$.price)"
+          />
+        </form>
 
-          <div class="text-body-2 text-rui-text-secondary">
-            {{ t('profit_loss_events.edit_price_warning') }}
-          </div>
+        <div class="text-body-2 text-rui-text-secondary">
+          {{ t('profit_loss_events.edit_price_warning') }}
+        </div>
 
-          <template #footer>
-            <div class="grow" />
-            <RuiButton
-              variant="text"
-              color="primary"
-              @click="showDialog = false"
-            >
-              {{ t('common.actions.cancel') }}
-            </RuiButton>
-            <RuiButton
-              color="primary"
-              @click="updatePrice()"
-            >
-              {{ t('price_form.update_price') }}
-            </RuiButton>
-          </template>
-        </RuiCard>
-      </AppBridge>
+        <template #footer>
+          <div class="grow" />
+          <RuiButton
+            variant="text"
+            color="primary"
+            @click="showDialog = false"
+          >
+            {{ t('common.actions.cancel') }}
+          </RuiButton>
+          <RuiButton
+            color="primary"
+            @click="updatePrice()"
+          >
+            {{ t('price_form.update_price') }}
+          </RuiButton>
+        </template>
+      </RuiCard>
     </RuiDialog>
   </div>
 </template>

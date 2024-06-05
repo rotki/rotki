@@ -122,5 +122,4 @@ vi.delay = delay;
 config.stubs.RuiIcon = RuiIconStub;
 config.stubs.RuiTooltip = RuiTooltipStub;
 config.stubs.RuiTeleport = DefaultStubWrapper;
-config.stubs.AppBridge = DefaultStubWrapper;
 config.stubs.RuiAutoComplete = RuiAutoCompleteStub;
