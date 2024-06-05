@@ -6,6 +6,8 @@ export class AssetsManagerPage {
   }
 
   ignoredAssets() {
+    cy.get('[data-cy=status-filter]').scrollIntoView();
+    cy.get('[data-cy=status-filter]').should('be.visible');
     cy.get('[data-cy=status-filter]').click();
     return cy
       .get('[data-cy=asset-filter-show_only]')

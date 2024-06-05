@@ -355,7 +355,7 @@ watch(open, (open) => {
   nextTick(() => {
     if (open) {
       setTimeout(() => {
-        get(input)?.$refs?.textInput?.focus?.();
+        get(input)?.focus?.();
       }, 100);
     }
     set(selected, '');
