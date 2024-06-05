@@ -86,7 +86,7 @@ function setSearchToMatcherKey(matcher: SearchMatcher<any>) {
   const allowExclusion = 'string' in matcher && matcher.allowExclusion;
   const filter = `${matcher.key}${allowExclusion ? '' : '='}`;
   set(search, filter);
-  get(input)?.$refs?.textInput?.focus?.();
+  get(input)?.focus?.();
 }
 
 function updateMatches(pairs: Suggestion[]) {
@@ -298,8 +298,7 @@ function selectItem(suggestion: Suggestion) {
     const suggestionText = getSuggestionText(suggestion);
     set(search, suggestionText.text);
     nextTick(() => {
-      get(input)?.$refs?.textInput?.focus();
-      get(input)?.$refs?.textInput?.setSelectionRange?.(suggestionText.startSelection, suggestionText.endSelection);
+      get(input)?.setSelectionRange?.(suggestionText.startSelection, suggestionText.endSelection);
     });
   });
 }

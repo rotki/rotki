@@ -69,10 +69,11 @@ beforeAll(() => {
         .fn().mockImplementation((options: []) => ({
           containerProps: {
             ref: ref(),
-            onScroll: () => {},
+            onScroll: vi.fn(),
           },
           list: computed(() => get(options).map((data, index) => ({ data, index }))),
           wrapperProps: {},
+          scrollTo: vi.fn(),
         })),
     };
   });
