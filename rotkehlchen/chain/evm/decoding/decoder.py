@@ -209,7 +209,7 @@ class EVMTransactionDecoder(ABC):
             rules: DecodingRules,
     ) -> None:
         """Initialize a single decoder, add it to the set of decoders to use
-        and append its rules to the pased rules
+        and append its rules to the passed rules
         """
         if class_name in self.decoders:
             raise ModuleLoadingError(f'{self.evm_inquirer.chain_name} decoder with name {class_name} already loaded')  # noqa: E501
