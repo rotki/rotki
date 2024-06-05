@@ -102,75 +102,73 @@ function input(value: boolean) {
     v-model="display"
     max-width="500"
   >
-    <AppBridge>
-      <RuiCard>
-        <template #header>
-          {{ t('merge_dialog.title') }}
-        </template>
-        <template #subheader>
-          {{ t('merge_dialog.subtitle') }}
-        </template>
-        <div class="mb-4 text-body-2 text-rui-text-secondary">
-          {{ t('merge_dialog.hint') }}
+    <RuiCard>
+      <template #header>
+        {{ t('merge_dialog.title') }}
+      </template>
+      <template #subheader>
+        {{ t('merge_dialog.subtitle') }}
+      </template>
+      <div class="mb-4 text-body-2 text-rui-text-secondary">
+        {{ t('merge_dialog.hint') }}
+      </div>
+
+      <form>
+        <!-- We use `v-text-field` here instead `asset-select` -->
+        <!-- because the source can be filled with unknown identifier -->
+        <RuiTextField
+          v-model="sourceIdentifier"
+          :label="t('merge_dialog.source.label')"
+          :error-messages="toMessages(v$.sourceIdentifier)"
+          variant="outlined"
+          color="primary"
+          :disabled="pending"
+          :hint="t('merge_dialog.source_hint')"
+          @focus="clearErrors()"
+          @blur="v$.sourceIdentifier.$touch()"
+        />
+        <div class="my-4 flex justify-center">
+          <RuiIcon name="arrow-down-line" />
         </div>
+        <AssetSelect
+          v-model="targetIdentifier"
+          outlined
+          :error-messages="toMessages(v$.targetIdentifier)"
+          :label="t('merge_dialog.target.label')"
+          :disabled="pending"
+          :asset.sync="target"
+          :excludes="sourceIdentifier ? [sourceIdentifier] : []"
+          :hint="target ? t('merge_dialog.target_hint', { identifier: target.identifier }) : ''"
+          persistent-hint
+          @focus="clearErrors()"
+          @blur="v$.targetIdentifier.$touch()"
+        />
+      </form>
 
-        <form>
-          <!-- We use `v-text-field` here instead `asset-select` -->
-          <!-- because the source can be filled with unknown identifier -->
-          <RuiTextField
-            v-model="sourceIdentifier"
-            :label="t('merge_dialog.source.label')"
-            :error-messages="toMessages(v$.sourceIdentifier)"
-            variant="outlined"
-            color="primary"
-            :disabled="pending"
-            :hint="t('merge_dialog.source_hint')"
-            @focus="clearErrors()"
-            @blur="v$.sourceIdentifier.$touch()"
-          />
-          <div class="my-4 flex justify-center">
-            <RuiIcon name="arrow-down-line" />
-          </div>
-          <AssetSelect
-            v-model="targetIdentifier"
-            outlined
-            :error-messages="toMessages(v$.targetIdentifier)"
-            :label="t('merge_dialog.target.label')"
-            :disabled="pending"
-            :asset.sync="target"
-            :excludes="sourceIdentifier ? [sourceIdentifier] : []"
-            :hint="target ? t('merge_dialog.target_hint', { identifier: target.identifier }) : ''"
-            persistent-hint
-            @focus="clearErrors()"
-            @blur="v$.targetIdentifier.$touch()"
-          />
-        </form>
-
-        <RuiAlert
-          v-if="done"
-          type="success"
+      <RuiAlert
+        v-if="done"
+        type="success"
+      >
+        {{ t('merge_dialog.done') }}
+      </RuiAlert>
+      <template #footer>
+        <div class="grow" />
+        <RuiButton
+          variant="text"
+          color="primary"
+          @click="input(false)"
         >
-          {{ t('merge_dialog.done') }}
-        </RuiAlert>
-        <template #footer>
-          <div class="grow" />
-          <RuiButton
-            variant="text"
-            color="primary"
-            @click="input(false)"
-          >
-            {{ t('common.actions.close') }}
-          </RuiButton>
-          <RuiButton
-            color="primary"
-            :disabled="v$.$invalid || pending"
-            :loading="pending"
-            @click="merge()"
-          >
-            {{ t('merge_dialog.merge') }}
-          </RuiButton>
-        </template>
-      </RuiCard>
-    </AppBridge>
+          {{ t('common.actions.close') }}
+        </RuiButton>
+        <RuiButton
+          color="primary"
+          :disabled="v$.$invalid || pending"
+          :loading="pending"
+          @click="merge()"
+        >
+          {{ t('merge_dialog.merge') }}
+        </RuiButton>
+      </template>
+    </RuiCard>
   </RuiDialog>
 </template>

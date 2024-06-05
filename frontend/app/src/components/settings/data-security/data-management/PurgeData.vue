@@ -173,7 +173,7 @@ const chainsSelection = useArrayMap(txChains, item => item.id);
       <RuiTooltip
         :popper="{ placement: 'top' }"
         :open-delay="400"
-        class="-mt-8"
+        class="-mt-6"
       >
         <template #activator>
           <RuiButton

@@ -289,7 +289,6 @@ onMounted(() => {
       v-model="tags"
       :label="t('manual_balances_form.fields.tags')"
       :disabled="submitting"
-      outlined
       class="manual-balances-form__tags"
     />
 

@@ -85,7 +85,7 @@ function showDeleteConfirmation(selectedTag: Tag) {
 <template>
   <RuiCard>
     <template #custom-header>
-      <div class="p-4">
+      <div class="p-4 text-rui-text">
         <div class="flex items-center gap-4">
           <div class="text-h6">
             {{ t('tag_manager.title') }}

@@ -285,10 +285,9 @@ const feeRecipientSuggestions = computed(() => getAddresses(Blockchain.ETH));
 
     <RuiDivider class="my-10" />
 
-    <ComboboxWithCustomInput
+    <AutoCompleteWithSearchSync
       v-model="feeRecipient"
       :items="feeRecipientSuggestions"
-      outlined
       data-cy="feeRecipient"
       :label="t('transactions.events.form.fee_recipient.label')"
       :error-messages="toMessages(v$.feeRecipient)"

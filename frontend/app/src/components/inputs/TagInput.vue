@@ -6,11 +6,9 @@ const props = withDefaults(
     value: string[];
     disabled?: boolean;
     label?: string;
-    outlined?: boolean;
   }>(),
   {
     label: 'Tags',
-    outlined: false,
   },
 );
 
@@ -72,12 +70,16 @@ function attemptTagCreation(element: string) {
     .catch(error => logger.error(error));
 }
 
-function input(_value: (string | Tag)[]) {
+function input(_value: ({ name: string } | string | Tag)[]) {
   const tags: string[] = [];
   for (const element of _value) {
     if (typeof element === 'string') {
       attemptTagCreation(element);
       tags.push(element);
+    }
+    else if (!('description' in element)) {
+      attemptTagCreation(element.name);
+      tags.push(element.name);
     }
     else {
       tags.push(element.name);
@@ -112,25 +114,28 @@ watch(tags, () => {
 </script>
 
 <template>
-  <div>
-    <VCombobox
+  <div class="flex items-start gap-2">
+    <RuiAutoComplete
       :value="filteredValue"
       :disabled="disabled"
-      :items="tags"
-      class="tag-input"
-      small-chips
+      :options="tags"
+      class="tag-input flex-1"
       :hide-no-data="!search"
-      hide-selected
       :label="label"
-      :outlined="outlined"
+      variant="outlined"
       :search-input.sync="search"
-      item-text="name"
-      item-value="name"
-      multiple
+      text-attr="name"
+      key-attr="name"
+      return-object
+      custom-value
+      :item-height="54"
       @input="input($event)"
     >
       <template #no-data>
-        <ListItem class="p-2">
+        <ListItem
+          class="p-2 py-4"
+          @click="input([...filteredValue, search])"
+        >
           <template #title>
             <span>{{ t('common.actions.create') }}</span>
             <RuiChip
@@ -145,7 +150,7 @@ watch(tags, () => {
           </template>
         </ListItem>
       </template>
-      <template #selection="{ item, select }">
+      <template #selection="{ item, chipAttrs, chipOn }">
         <RuiChip
           tile
           class="font-medium m-0.5"
@@ -153,49 +158,42 @@ watch(tags, () => {
           :text-color="`#${item.foregroundColor}`"
           closeable
           :disabled="disabled"
+          clickable
           size="sm"
-          @click:close="remove(item.name)"
-          @click="select($event)"
+          v-bind="chipAttrs"
+          v-on="chipOn"
         >
           {{ item.name }}
         </RuiChip>
       </template>
       <template #item="{ item }">
-        <template v-if="typeof item !== 'object'">
-          {{ item }}
-        </template>
-        <template v-else>
-          <TagIcon
-            :tag="item"
-            show-description
-          />
-        </template>
+        <TagIcon
+          :tag="item"
+          show-description
+          small
+        />
       </template>
-      <template #append-outer>
-        <RuiButton
-          class="tag-input__manage-tags -mt-4"
-          icon
-          variant="text"
-          color="primary"
-          type="button"
-          :disabled="disabled"
-          @click="manageTags = true"
-        >
-          <RuiIcon name="pencil-line" />
-        </RuiButton>
-      </template>
-    </VCombobox>
+    </RuiAutoComplete>
+    <RuiButton
+      class="tag-input__manage-tags mt-1"
+      icon
+      variant="text"
+      color="primary"
+      type="button"
+      :disabled="disabled"
+      @click="manageTags = true"
+    >
+      <RuiIcon name="pencil-line" />
+    </RuiButton>
     <RuiDialog
       v-model="manageTags"
       max-width="800"
       class="tag-input__tag-manager"
     >
-      <AppBridge>
-        <TagManager
-          dialog
-          @close="manageTags = false"
-        />
-      </AppBridge>
+      <TagManager
+        dialog
+        @close="manageTags = false"
+      />
     </RuiDialog>
   </div>
 </template>

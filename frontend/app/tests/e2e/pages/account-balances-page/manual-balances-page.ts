@@ -2,6 +2,7 @@ import { BigNumber } from '@rotki/common';
 import { toSentenceCase } from '@/utils/text';
 import { RotkiApp } from '../rotki-app';
 import { formatAmount, updateLocationBalance } from '../../utils/amounts';
+import { selectAsset } from '../../support/utils';
 
 export interface FixtureManualBalance {
   readonly asset: string;
@@ -19,13 +20,7 @@ export class ManualBalancesPage {
 
   addBalance(balance: FixtureManualBalance) {
     cy.get('[data-cy=bottom-dialog]').should('be.visible');
-    cy.get('.manual-balances-form__asset').type(balance.keyword);
-    cy.get('[data-cy="no_assets"]').should('not.exist');
-    cy.get(`#asset-${balance.asset.toLowerCase()}`).should('be.visible');
-    cy.get('[role=menu-content] button').should(($list) => {
-      expect($list.eq(0)).to.contain(balance.asset);
-      $list.first().trigger('click');
-    });
+    selectAsset('.manual-balances-form__asset', balance.keyword, balance.asset);
     cy.get('.manual-balances-form__label').type(balance.label);
     cy.get('.manual-balances-form__amount').type(balance.amount);
     for (const tag of balance.tags)

@@ -65,7 +65,7 @@ const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
       <RuiTooltip
         :popper="{ placement: 'top' }"
         :open-delay="400"
-        class="-mt-8"
+        class="-mt-6"
       >
         <template #activator>
           <RuiButton

@@ -17,10 +17,6 @@ describe('trade history', () => {
     });
   });
 
-  after(() => {
-    app.clear();
-  });
-
   describe('manage data', () => {
     before(() => {
       username = createUser();
@@ -125,5 +121,7 @@ describe('trade history', () => {
     cy.go(1);
     tradeHistoryPage.totalEntries(12);
     app.shouldHaveQueryParam('page', '1');
+
+    app.logout();
   });
 });

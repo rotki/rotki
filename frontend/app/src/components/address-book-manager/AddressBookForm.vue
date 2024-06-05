@@ -125,42 +125,38 @@ onMounted(fetchNames);
       exclude-eth-staking
       :error-messages="toMessages(v$.blockchain)"
     />
-    <ComboboxWithCustomInput
-      v-model.trim="address"
-      outlined
-      :label="t('address_book.form.labels.address')"
-      :items="addressSuggestions"
-      :no-data-text="t('address_book.form.no_suggestions_available')"
-      :disabled="edit"
-      :error-messages="toMessages(v$.address)"
-      auto-select-first
-      clearable
-    >
-      <template #prepend-inner>
-        <div
-          class="mr-2 rounded-full overflow-hidden w-6 h-6 bg-rui-grey-300 dark:bg-rui-grey-600"
-        >
-          <AppImage
-            v-if="value.address"
-            :src="getBlockie(value.address)"
-            size="1.5rem"
-          />
-        </div>
-      </template>
-      <template #item="{ item }">
-        <div
-          v-if="item"
-          class="mr-2 rounded-full overflow-hidden w-6 h-6 bg-rui-grey-300 dark:bg-rui-grey-600"
-        >
-          <AppImage
+    <div class="flex gap-2">
+      <div class="m-3 rounded-full overflow-hidden w-8 h-8 bg-rui-grey-300 dark:bg-rui-grey-600">
+        <AppImage
+          v-if="value.address"
+          :src="getBlockie(value.address)"
+          size="2rem"
+        />
+      </div>
+      <AutoCompleteWithSearchSync
+        v-model.trim="address"
+        class="flex-1"
+        :label="t('address_book.form.labels.address')"
+        :items="addressSuggestions"
+        :no-data-text="t('address_book.form.no_suggestions_available')"
+        :disabled="edit"
+        :error-messages="toMessages(v$.address)"
+        clearable
+      >
+        <template #item.prepend="{ item }">
+          <div
             v-if="item"
-            :src="getBlockie(item)"
-            size="1.5rem"
-          />
-        </div>
-        {{ item }}
-      </template>
-    </ComboboxWithCustomInput>
+            class="mr-2 rounded-full overflow-hidden w-6 h-6 bg-rui-grey-300 dark:bg-rui-grey-600"
+          >
+            <AppImage
+              v-if="item"
+              :src="getBlockie(item)"
+              size="1.5rem"
+            />
+          </div>
+        </template>
+      </AutoCompleteWithSearchSync>
+    </div>
     <RuiTextField
       v-model="name"
       class="mt-2"

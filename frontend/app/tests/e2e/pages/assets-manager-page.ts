@@ -35,24 +35,20 @@ export class AssetsManagerPage {
   }
 
   searchAsset(asset: string) {
-    cy.get('[data-cy="table-filter"]').type(
-      `{selectall}{backspace}symbol: ${asset}{enter}{esc}`,
+    cy.get('[data-cy="table-filter"] [data-id=activator] > span:last-child').click();
+    cy.get('[data-cy="table-filter"] [data-id=activator] > span:nth-child(3)').click();
+    cy.get('[data-cy="table-filter"] input').type(
+      `symbol: ${asset}{enter}{esc}`,
     );
     cy.get('div[class*=thead__loader]').should('not.exist');
     this.visibleEntries(1);
   }
 
   searchAssetByAddress(address: string) {
-    cy.get('[data-cy="table-filter"]').type(
-      `{selectall}{backspace}address: ${address}{enter}{esc}`,
-    );
-    cy.get('div[class*=thead__loader]').should('not.exist');
-    this.visibleEntries(1);
-  }
-
-  searchAssetBySymbol(symbol: string) {
-    cy.get('[data-cy="table-filter"]').type(
-      `{selectall}{backspace}symbol: ${symbol}{enter}{esc}`,
+    cy.get('[data-cy="table-filter"] [data-id=activator] > span:last-child').click();
+    cy.get('[data-cy="table-filter"] [data-id=activator] > span:nth-child(3)').click();
+    cy.get('[data-cy="table-filter"] input').type(
+      `address: ${address}{enter}{esc}`,
     );
     cy.get('div[class*=thead__loader]').should('not.exist');
     this.visibleEntries(1);
@@ -132,7 +128,7 @@ export class AssetsManagerPage {
   }
 
   deleteOtherAsset(symbol = 'SYMBOL 2') {
-    this.searchAssetBySymbol(symbol);
+    this.searchAsset(symbol);
     cy.get('[data-cy=managed-assets-table] [data-cy=row-delete]').click();
     this.confirmDelete();
   }
@@ -270,7 +266,7 @@ export class AssetsManagerPage {
     cy.get('[data-cy=bottom-dialog]').should('not.exist');
 
     // search the asset
-    this.searchAssetBySymbol(symbol);
+    this.searchAsset(symbol);
 
     cy.get('[data-cy=managed-assets-table] [data-cy=list-title]').should(
       'contain',

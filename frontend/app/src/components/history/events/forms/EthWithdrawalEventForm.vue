@@ -264,10 +264,9 @@ const withdrawalAddressSuggestions = computed(() => getAddresses(Blockchain.ETH)
 
     <RuiDivider class="my-10" />
 
-    <ComboboxWithCustomInput
+    <AutoCompleteWithSearchSync
       v-model="withdrawalAddress"
       :items="withdrawalAddressSuggestions"
-      outlined
       data-cy="withdrawalAddress"
       :label="t('transactions.events.form.withdrawal_address.label')"
       :error-messages="toMessages(v$.withdrawalAddress)"

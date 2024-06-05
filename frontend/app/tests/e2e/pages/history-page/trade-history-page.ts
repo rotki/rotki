@@ -44,8 +44,8 @@ export class TradeHistoryPage {
     cy.get('[data-cy=trade-rate] [data-cy=primary]')
       .parent()
       .parent()
-      .find('.v-progress-linear')
-      .should('not.exist');
+      .find('[role=progressbar]')
+      .should('not.be.visible');
     if (trade.quote_amount) {
       cy.get('[data-cy=grouped-amount-input__swap-button]').click();
       cy.get('[data-cy=trade-rate] [data-cy=secondary] input').type(
@@ -133,7 +133,7 @@ export class TradeHistoryPage {
     cy.get('[data-cy=bottom-dialog] [data-cy=confirm]').click();
     waitForTrades();
     cy.get('[data-cy=trade-form]').should('not.exist');
-    cy.get('.v-progress-linear__buffer').should('not.exist');
+    cy.get('.notification-indicator-progress').should('not.exist');
   }
 
   deleteTrade(position: number) {
@@ -155,8 +155,9 @@ export class TradeHistoryPage {
 
   filterTrades(filter: string) {
     cy.get('[data-cy="table-filter"]').scrollIntoView();
-    cy.get('[data-cy="table-filter"]').should('be.visible');
-    cy.get('[data-cy="table-filter"]').type(`${filter}{enter}{esc}`);
+    cy.get('[data-cy="table-filter"] [data-id=activator] > span:last-child').click();
+    cy.get('[data-cy="table-filter"] input').type(`${filter}`);
+    cy.get('div[role="menu-content"] button:first-child').click();
   }
 
   nextPage() {

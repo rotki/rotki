@@ -65,8 +65,8 @@ importers:
         specifier: workspace:*
         version: link:../common
       '@rotki/ui-library-compat':
-        specifier: 0.25.2
-        version: 0.25.2(@vueuse/core@10.7.2(vue@2.7.16))(@vueuse/shared@10.7.2(vue@2.7.16))(vue@2.7.16)
+        specifier: 0.26.0
+        version: 0.26.0(@vueuse/core@10.7.2(vue@2.7.16))(@vueuse/shared@10.7.2(vue@2.7.16))(vue@2.7.16)
       '@types/lodash-es':
         specifier: 4.17.12
         version: 4.17.12
@@ -169,7 +169,7 @@ importers:
         version: 7.24.5(@babel/core@7.24.5)
       '@cypress/code-coverage':
         specifier: 3.12.39
-        version: 3.12.39(@babel/core@7.24.5)(@babel/preset-env@7.24.5(@babel/core@7.24.5))(babel-loader@9.1.3(@babel/core@7.24.5)(webpack@5.91.0))(cypress@13.3.0)(webpack@5.91.0)
+        version: 3.12.39(@babel/core@7.24.5)(@babel/preset-env@7.24.5(@babel/core@7.24.5))(babel-loader@9.1.3(@babel/core@7.24.5)(webpack@5.91.0))(cypress@13.11.0)(webpack@5.91.0)
       babel-loader:
         specifier: 9.1.3
         version: 9.1.3(@babel/core@7.24.5)(webpack@5.91.0)
@@ -214,8 +214,8 @@ importers:
         specifier: 6.3.9
         version: 6.3.9
       cypress:
-        specifier: 13.3.0
-        version: 13.3.0
+        specifier: 13.11.0
+        version: 13.11.0
       dmg-license:
         specifier: 1.0.11
         version: 1.0.11
@@ -1642,8 +1642,8 @@ packages:
     peerDependencies:
       eslint: ^8.0.0 || ^9.0.0
 
-  '@rotki/ui-library-compat@0.25.2':
-    resolution: {integrity: sha512-6UaJ9lWz3ZmtYJ/KNfykcpogBfy0SEE1S+fz9ILRLOVGrM3+Wg3pYwh3gVaTj7zzGT9c5v7hcmQOY5szKZ/yXw==}
+  '@rotki/ui-library-compat@0.26.0':
+    resolution: {integrity: sha512-O5YiALUHdZwpA1kI+taQQcSFNCm4BzS4r+j75yWldTxmNjzEnwV1m7/UZ9wcFw/P4nkNZwY1MYzMTUXvEncZ7w==}
     engines: {pnpm: '>=9 <10'}
     peerDependencies:
       '@vueuse/core': '>10.0.0'
@@ -1792,9 +1792,6 @@ packages:
 
   '@types/mute-stream@0.0.4':
     resolution: {integrity: sha512-CPM9nzrCPPJHQNA9keH9CVkVI+WR5kMa+7XEs5jcGQ0VoAGnLv242w8lIVgwAEfmE4oufJRaTc9PNLQl0ioAow==}
-
-  '@types/node@18.19.33':
-    resolution: {integrity: sha512-NR9+KrpSajr2qBVp/Yt5TU/rp+b5Mayi3+OlMlcg2cVCfRmcG5PWZ7S4+MG9PZ5gWBoc9Pd0BKSRViuBCRPu0A==}
 
   '@types/node@20.12.12':
     resolution: {integrity: sha512-eWLDGF/FOSPtAvEqeRAQ4C8LSA7M1I7i0ky1I8U7kD1J5ITyW3AsRhQrKVoWf5pFKZ2kILsEGJhsI9r93PYnOw==}
@@ -2890,8 +2887,8 @@ packages:
     resolution: {integrity: sha512-eiN+Qu8NwSLxZYia6WzB8xlX/rAQ/8EgK5A4dIF7Bz96mzcr5dW1jlcNmjG0QWySWKfPdCerH3RQ96ZqqsE8cA==}
     engines: {node: '>= 0.1.90'}
 
-  cypress@13.3.0:
-    resolution: {integrity: sha512-mpI8qcTwLGiA4zEQvTC/U1xGUezVV4V8HQCOYjlEOrVmU1etVvxOjkCXHGwrlYdZU/EPmUiWfsO3yt1o+Q2bgw==}
+  cypress@13.11.0:
+    resolution: {integrity: sha512-NXXogbAxVlVje4XHX+Cx5eMFZv4Dho/2rIcdBHg9CNPFUGZdM4cRdgIgM7USmNYsC12XY0bZENEQ+KBk72fl+A==}
     engines: {node: ^16.0.0 || ^18.0.0 || >=20.0.0}
     hasBin: true
 
@@ -7581,14 +7578,14 @@ snapshots:
     dependencies:
       postcss-selector-parser: 6.1.0
 
-  '@cypress/code-coverage@3.12.39(@babel/core@7.24.5)(@babel/preset-env@7.24.5(@babel/core@7.24.5))(babel-loader@9.1.3(@babel/core@7.24.5)(webpack@5.91.0))(cypress@13.3.0)(webpack@5.91.0)':
+  '@cypress/code-coverage@3.12.39(@babel/core@7.24.5)(@babel/preset-env@7.24.5(@babel/core@7.24.5))(babel-loader@9.1.3(@babel/core@7.24.5)(webpack@5.91.0))(cypress@13.11.0)(webpack@5.91.0)':
     dependencies:
       '@babel/core': 7.24.5
       '@babel/preset-env': 7.24.5(@babel/core@7.24.5)
       '@cypress/webpack-preprocessor': 6.0.1(@babel/core@7.24.5)(@babel/preset-env@7.24.5(@babel/core@7.24.5))(babel-loader@9.1.3(@babel/core@7.24.5)(webpack@5.91.0))(webpack@5.91.0)
       babel-loader: 9.1.3(@babel/core@7.24.5)(webpack@5.91.0)
       chalk: 4.1.2
-      cypress: 13.3.0
+      cypress: 13.11.0
       dayjs: 1.11.10
       debug: 4.3.4(supports-color@5.5.0)
       execa: 4.1.0
@@ -8212,7 +8209,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@rotki/ui-library-compat@0.25.2(@vueuse/core@10.7.2(vue@2.7.16))(@vueuse/shared@10.7.2(vue@2.7.16))(vue@2.7.16)':
+  '@rotki/ui-library-compat@0.26.0(@vueuse/core@10.7.2(vue@2.7.16))(@vueuse/shared@10.7.2(vue@2.7.16))(vue@2.7.16)':
     dependencies:
       '@vueuse/core': 10.7.2(vue@2.7.16)
       '@vueuse/shared': 10.7.2(vue@2.7.16)
@@ -8391,10 +8388,6 @@ snapshots:
   '@types/mute-stream@0.0.4':
     dependencies:
       '@types/node': 20.12.12
-
-  '@types/node@18.19.33':
-    dependencies:
-      undici-types: 5.26.5
 
   '@types/node@20.12.12':
     dependencies:
@@ -9742,11 +9735,10 @@ snapshots:
       csv-stringify: 6.5.0
       stream-transform: 3.3.2
 
-  cypress@13.3.0:
+  cypress@13.11.0:
     dependencies:
       '@cypress/request': 3.0.1
       '@cypress/xvfb': 1.2.4(supports-color@8.1.1)
-      '@types/node': 18.19.33
       '@types/sinonjs__fake-timers': 8.1.1
       '@types/sizzle': 2.3.8
       arch: 2.2.0
@@ -13655,7 +13647,7 @@ snapshots:
     dependencies:
       assert-plus: 1.0.0
       core-util-is: 1.0.2
-      extsprintf: 1.3.0
+      extsprintf: 1.4.1
 
   verror@1.10.1:
     dependencies:

@@ -19,22 +19,13 @@ function input(value: string) {
 
 const { items } = toRefs(props);
 
-const search: Ref<string | null> = ref('');
+const search: Ref<string | undefined> = ref('');
 
 watch(search, (search) => {
-  if (search === null)
+  if (search === undefined)
     search = '';
 
   input(search);
-});
-
-const filteredItems: ComputedRef<any[]> = computed(() => {
-  const suggestions = get(items);
-  const searchVal = get(search);
-  if (!searchVal)
-    return suggestions;
-
-  return suggestions.filter(suggestion => suggestion.includes(searchVal));
 });
 
 const rootAttrs = useAttrs();
@@ -42,11 +33,13 @@ const slots = useSlots();
 </script>
 
 <template>
-  <VCombobox
+  <RuiAutoComplete
     :value="value"
     v-bind="rootAttrs"
     :search-input.sync="search"
-    :items="filteredItems"
+    :options="items"
+    variant="outlined"
+    custom-value
     v-on="
       // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api
       $listeners
@@ -70,5 +63,5 @@ const slots = useSlots();
         :name="slot"
       />
     </template>
-  </VCombobox>
+  </RuiAutoComplete>
 </template>

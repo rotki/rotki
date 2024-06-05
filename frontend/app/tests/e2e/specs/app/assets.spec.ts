@@ -62,7 +62,7 @@ describe('assets', () => {
       page.addAnEvmAsset();
     });
 
-    it('adds an non EVM asset', () => {
+    it('adds a non EVM asset', () => {
       page.showAddAssetModal();
       page.addOtherAsset();
     });

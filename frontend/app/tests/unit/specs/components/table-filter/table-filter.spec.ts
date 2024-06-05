@@ -23,21 +23,7 @@ describe('table-filter/FilterDropdown.vue', () => {
       pinia,
       vuetify,
       stubs: {
-        VCombobox: {
-          template: `
-            <div>
-              <input :value="searchInput" class="search-input" type="text" @input="$emit('update:search-input', $event.value)">
-              <div class="selections">
-                <span v-for="item in value"><slot name="selection" v-bind="{ item, selection: item }"/></span>
-              </div>
-              <span><slot name="no-data" /></span>
-            </div>
-          `,
-          props: {
-            value: { type: Array },
-            searchInput: { type: String },
-          },
-        },
+        RuiAutoComplete: false,
       },
       ...options,
     });
@@ -72,13 +58,15 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     wrapper = createWrapper({ propsData });
 
+    await wrapper.find('[data-id=activator]').trigger('click');
+    await vi.delay();
+
     expect(wrapper.findAll('.suggestions > button')).toHaveLength(
       matchers.length,
     );
 
-    await wrapper.find('.search-input').trigger('input', { value: 'ty' });
-
-    await nextTick();
+    await wrapper.find('input').setValue('ty');
+    await vi.delay();
 
     expect(wrapper.findAll('.suggestions > button')).toHaveLength(1);
     expect(wrapper.find('.suggestions > button:first-child').text()).toBe(
@@ -94,10 +82,12 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     wrapper = createWrapper({ propsData });
 
-    // Set matcher to `type`
-    await wrapper.find('.search-input').trigger('input', { value: 'type' });
+    await wrapper.find('[data-id=activator]').trigger('click');
+    await vi.delay();
 
-    await nextTick();
+    // Set matcher to `type`
+    await wrapper.find('input').setValue('type');
+    await vi.delay();
 
     // Suggestions for `type`
     const suggestions = matchers[1].suggestions();
@@ -118,20 +108,17 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     expect(
       wrapper
-        .find('.selections > span:nth-child(1) div[role=button] span')
+        .find('[data-id="activator"] .flex:nth-child(1) > .rui-chip > span')
         .text(),
     ).toBe('type = type 1');
 
-    expect(wrapper.emitted()['update:matches']?.[0]).toEqual([
+    expect(wrapper.emitted()['update:matches']?.at(-1)).toEqual([
       { type: ['type 1'] },
     ]);
 
     // Choose second suggestion (type 2)
-    await wrapper
-      .find('.search-input')
-      .trigger('input', { value: 'type = type 2' });
-
-    await nextTick();
+    await wrapper.find('input').setValue('type = type 2');
+    await vi.delay();
 
     await wrapper.find('.suggestions > button:first-child').trigger('click');
 
@@ -139,35 +126,35 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     expect(
       wrapper
-        .find('.selections > span:nth-child(2) div[role=button] span')
+        .find('[data-id="activator"] .flex:nth-child(2) > .rui-chip > span')
         .text(),
     ).toBe('type = type 2');
 
-    expect(wrapper.emitted()['update:matches']?.[1]).toEqual([
+    expect(wrapper.emitted()['update:matches']?.at(-1)).toEqual([
       { type: ['type 1', 'type 2'] },
     ]);
 
     // Remove first selected item (type 1)
     await wrapper
-      .find('.selections > span:nth-child(1) div[role=button] button')
+      .find('[data-id="activator"] .flex:nth-child(1) > .rui-chip > button')
       .trigger('click');
 
     await nextTick();
 
-    expect(wrapper.emitted()['update:matches']?.[2]).toEqual([
+    expect(wrapper.emitted()['update:matches']?.at(-1)).toEqual([
       { type: ['type 2'] },
     ]);
 
     // Click selected item remains (type 2), set it to text field
     await wrapper
-      .find('.selections > span:nth-child(1) div[role=button] span')
+      .find('[data-id="activator"] .flex:nth-child(1) > .rui-chip')
       .trigger('click');
 
     await nextTick();
 
-    expect(wrapper.emitted()['update:matches']?.[3]).toEqual([{}]);
+    expect(wrapper.emitted()['update:matches']?.at(-1)).toEqual([{}]);
     expect(
-      (wrapper.find('.search-input').element as HTMLInputElement).value,
+      (wrapper.find('input').element as HTMLInputElement).value,
     ).toBe('type=type 2');
   });
 
@@ -179,10 +166,12 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     wrapper = createWrapper({ propsData });
 
-    // Set matcher to `type`
-    await wrapper.find('.search-input').trigger('input', { value: 'type !=' });
+    await wrapper.find('[data-id=activator]').trigger('click');
+    await vi.delay();
 
-    await nextTick();
+    // Set matcher to `type`
+    await wrapper.find('input').setValue('type !=');
+    await vi.delay();
 
     // Suggestions for `type`
     const suggestions = matchers[1].suggestions();
@@ -203,11 +192,11 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     expect(
       wrapper
-        .find('.selections > span:nth-child(1) div[role=button] span')
+        .find('[data-id="activator"] .flex:nth-child(1) > .rui-chip > span')
         .text(),
     ).toBe('type != type 1');
 
-    expect(wrapper.emitted()['update:matches']?.[0]).toEqual([
+    expect(wrapper.emitted()['update:matches']?.at(-1)).toEqual([
       { type: ['!type 1'] },
     ]);
   });
@@ -226,12 +215,12 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     expect(
       wrapper
-        .find('.selections > span:nth-child(1) div[role=button] span')
+        .find('[data-id="activator"] .flex:nth-child(1) > .rui-chip > span')
         .text(),
     ).toBe('type = type 1');
     expect(
       wrapper
-        .find('.selections > span:nth-child(2) div[role=button] span')
+        .find('[data-id="activator"] .flex:nth-child(2) > .rui-chip > span')
         .text(),
     ).toBe('type = type 2');
   });
@@ -250,7 +239,7 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     expect(
       wrapper
-        .find('.selections > span:nth-child(1) div[role=button] span')
+        .find('[data-id="activator"] .flex:nth-child(1) > .rui-chip > span')
         .text(),
     ).toBe('type != type 1');
   });

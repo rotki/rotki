@@ -3,11 +3,10 @@ import Vue from 'vue';
 import Vuetify from 'vuetify';
 import { config } from '@vue/test-utils';
 import { mockT } from '../i18n';
-import { RuiAutoCompleteStub } from '../specs/stubs/RuiAutoComplete';
 import { RuiIconStub } from '../specs/stubs/RuiIcon';
 import { RuiTooltipStub } from '../specs/stubs/RuiTooltip';
 import { DefaultStubWrapper } from '../specs/stubs/DefaultWrapper';
-import { VComboboxStub } from '../specs/stubs/VCombobox';
+import { RuiAutoCompleteStub } from '../specs/stubs/RuiAutoComplete';
 import { server } from './server';
 
 beforeAll(() => {
@@ -66,6 +65,15 @@ beforeAll(() => {
         .mockReturnValue({ left: 0, right: 0, top: 0, bottom: 0 }),
       useFocus: vi.fn().mockReturnValue({ focused: false }),
       useResizeObserver: vi.fn(),
+      useVirtualList: vi
+        .fn().mockImplementation((options: []) => ({
+          containerProps: {
+            ref: ref(),
+            onScroll: () => {},
+          },
+          list: computed(() => get(options).map((data, index) => ({ data, index }))),
+          wrapperProps: {},
+        })),
     };
   });
 
@@ -102,10 +110,16 @@ afterEach(() => server.resetHandlers());
 
 afterAll(() => server.close());
 
+function delay(ms: number = 200): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+vi.delay = delay;
+
 // Global stub components
 config.stubs.RuiIcon = RuiIconStub;
 config.stubs.RuiTooltip = RuiTooltipStub;
 config.stubs.RuiTeleport = DefaultStubWrapper;
-config.stubs.AppBridge = DefaultStubWrapper;
 config.stubs.RuiAutoComplete = RuiAutoCompleteStub;
-config.stubs.VCombobox = VComboboxStub;
