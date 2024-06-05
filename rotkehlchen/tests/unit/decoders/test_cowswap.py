@@ -8,6 +8,7 @@ from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.chain.evm.decoding.cowswap.decoder import GPV2_SETTLEMENT_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import (
+    A_ARB,
     A_ETH,
     A_GNOSIS_VCOW,
     A_USDC,
@@ -815,3 +816,60 @@ def test_gnosis_vested_claim(database, gnosis_inquirer, gnosis_accounts):
             address=string_to_evm_address('0x177127622c4A00F3d409B75571e12cB3c8973d3c'),
         ),
     ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+def test_swap_token_to_token_arb(database, arbitrum_one_inquirer, arbitrum_one_accounts):
+    tx_hex = deserialize_evm_tx_hash('0xd1b5ca7b7616f827216d4fd541f87b5c4571e568754f1d05ad87370975d4c69a')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = arbitrum_one_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    swapped_amount, received_amount, timestamp = '0.219694007376947474', '0.228831', TimestampMS(1717523107000)  # noqa: E501
+    expected_events = [
+        EvmEvent(  # approval
+            tx_hash=evmhash,
+            sequence_index=6,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=A_ARB,
+            balance=Balance(amount=FVal('115792089237316195423570985008687907853269984665640564039457.584007913129639935')),
+            location_label=user_address,
+            notes='Set ARB spending approval of 0xc37b40ABdB939635068d3c5f13E7faF686F03B65 by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110 to 115792089237316195423570985008687907853269984665640564039457.584007913129639935',  # noqa: E501
+            address='0xC92E8bdf79f0507f65a392b0ab4667716BFE0110',
+        ),
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=7,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_ARB,
+            balance=Balance(amount=FVal(swapped_amount)),
+            location_label=user_address,
+            notes=f'Swap {swapped_amount} ARB in cowswap',
+            counterparty=CPT_COWSWAP,
+            address=GPV2_SETTLEMENT_ADDRESS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=8,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=Asset('eip155:42161/erc20:0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'),
+            balance=Balance(amount=FVal(received_amount)),
+            location_label=user_address,
+            notes=f'Receive {received_amount} USDT as the result of a swap in cowswap',
+            counterparty=CPT_COWSWAP,
+            address=GPV2_SETTLEMENT_ADDRESS,
+        ),
+    ]
+    assert events == expected_events

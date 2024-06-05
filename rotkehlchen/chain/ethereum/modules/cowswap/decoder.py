@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.evm.decoding.cowswap.decoder import CowswapCommonDecoder
+from rotkehlchen.chain.evm.decoding.cowswap.decoder import CowswapCommonDecoderWithVCOW
 from rotkehlchen.constants.assets import A_COW, A_ETH, A_VCOW, A_WETH
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class CowswapDecoder(CowswapCommonDecoder):
+class CowswapDecoder(CowswapCommonDecoderWithVCOW):
 
     def __init__(
             self,

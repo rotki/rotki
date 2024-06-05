@@ -57,8 +57,6 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
             msg_aggregator: 'MessagesAggregator',
             native_asset: Asset,
             wrapped_native_asset: Asset,
-            vcow_token: Asset,
-            cow_token: Asset,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -69,8 +67,6 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
         self.wrapped_native_asset = wrapped_native_asset.resolve_to_evm_token()
         self.settlement_address = GPV2_SETTLEMENT_ADDRESS
         self.native_asset_flow_address = NATIVE_ASSET_FLOW_ADDRESS
-        self.vcow_token = vcow_token.resolve_to_evm_token()
-        self.cow_token = cow_token.resolve_to_evm_token()
 
     def _decode_native_asset_orders(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == PLACE_NATIVE_ASSET_ORDER_SIGNATURE:
@@ -241,7 +237,7 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
 
         return trades_events
 
-    def _coswap_post_decoding(
+    def _cowswap_post_decoding(
             self,
             transaction: EvmTransaction,
             decoded_events: list['EvmEvent'],
@@ -249,22 +245,7 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
     ) -> list['EvmEvent']:
         if transaction.to_address == self.settlement_address:
             return self._aggregator_post_decoding(transaction, decoded_events, all_logs)
-        # else check if it's a vested claim and make sure out event comes first and fix notes
-        # notes fixing is needed only in gnosis but for consistency move notes populating here
-        out_event, in_event = None, None
-        for event in decoded_events:
-            if event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.RETURN_WRAPPED and event.counterparty == CPT_COWSWAP and event.asset == self.vcow_token:  # noqa: E501
-                out_event = event
-                event.notes = f'Exchange {event.balance.amount} vested vCOW for COW'
-            elif event.event_type == HistoryEventType.WITHDRAWAL and event.event_subtype == HistoryEventSubType.REMOVE_ASSET and event.counterparty == CPT_COWSWAP and event.asset == self.cow_token:  # noqa: E501
-                in_event = event
-                event.notes = f'Claim {event.balance.amount} COW from vesting tokens'
 
-        if out_event and in_event:
-            maybe_reshuffle_events(
-                ordered_events=[out_event, in_event],
-                events_list=decoded_events,
-            )
         return decoded_events
 
     def _aggregator_post_decoding(
@@ -303,6 +284,94 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
 
         return decoded_events
 
+    # -- DecoderInterface methods
+
+    @staticmethod
+    def counterparties() -> tuple[CounterpartyDetails, ...]:
+        return (COWSWAP_CPT_DETAILS,)
+
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
+        return {self.native_asset_flow_address: (self._decode_native_asset_orders,)}
+
+    def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
+        return {self.settlement_address: CPT_COWSWAP}
+
+    def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
+        return {CPT_COWSWAP: [(0, self._cowswap_post_decoding)]}
+
+
+class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
+    """Cowswap common decoder for chains that have the COW token"""
+
+    def __init__(
+            self,
+            evm_inquirer: 'EvmNodeInquirer',
+            base_tools: 'BaseDecoderTools',
+            msg_aggregator: 'MessagesAggregator',
+            native_asset: Asset,
+            wrapped_native_asset: Asset,
+            vcow_token: Asset,
+            cow_token: Asset,
+    ) -> None:
+        super().__init__(
+            evm_inquirer=evm_inquirer,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+            native_asset=native_asset,
+            wrapped_native_asset=wrapped_native_asset,
+        )
+        self.vcow_token = vcow_token.resolve_to_evm_token()
+        self.cow_token = cow_token.resolve_to_evm_token()
+
+    def _cowswap_post_decoding(
+            self,
+            transaction: EvmTransaction,
+            decoded_events: list['EvmEvent'],
+            all_logs: list['EvmTxReceiptLog'],
+    ) -> list['EvmEvent']:
+        if transaction.to_address == self.settlement_address:
+            return super()._cowswap_post_decoding(
+                transaction=transaction,
+                decoded_events=decoded_events,
+                all_logs=all_logs,
+            )
+
+        # else check if it's a vested claim and make sure out event comes first and fix notes
+        # notes fixing is needed only in gnosis but for consistency move notes populating here
+        out_event, in_event = None, None
+        for event in decoded_events:
+            if event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.RETURN_WRAPPED and event.counterparty == CPT_COWSWAP and event.asset == self.vcow_token:  # noqa: E501
+                out_event = event
+                event.notes = f'Exchange {event.balance.amount} vested vCOW for COW'
+            elif event.event_type == HistoryEventType.WITHDRAWAL and event.event_subtype == HistoryEventSubType.REMOVE_ASSET and event.counterparty == CPT_COWSWAP and event.asset == self.cow_token:  # noqa: E501
+                in_event = event
+                event.notes = f'Claim {event.balance.amount} COW from vesting tokens'
+
+        if out_event and in_event:
+            maybe_reshuffle_events(
+                ordered_events=[out_event, in_event],
+                events_list=decoded_events,
+            )
+        return decoded_events
+
+    def _decode_normal_claim(self, context: DecoderContext) -> DecodingOutput:
+        raw_amount = hex_or_bytes_to_int(context.tx_log.data[128:160])
+        amount = asset_normalized_value(amount=raw_amount, asset=self.vcow_token)
+        for event in context.decoded_events:
+            if match_airdrop_claim(
+                event,
+                user_address=hex_or_bytes_to_address(context.tx_log.data[64:96]),
+                amount=amount,
+                asset=self.vcow_token,
+                counterparty=CPT_COWSWAP,
+            ):
+                break
+
+        else:
+            log.error(f'Could not find the normal COW token claim for {self.evm_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}')  # noqa: E501
+
+        return DEFAULT_DECODING_OUTPUT
+
     def _decode_vested_claim(self, context: DecoderContext) -> DecodingOutput:
         """Decode a claim of vested cow token from vcow token"""
         if not self.base.is_tracked(user_address := hex_or_bytes_to_address(context.tx_log.topics[1])):  # noqa: E501
@@ -331,24 +400,6 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
             ],
         )
 
-    def _decode_normal_claim(self, context: DecoderContext) -> DecodingOutput:
-        raw_amount = hex_or_bytes_to_int(context.tx_log.data[128:160])
-        amount = asset_normalized_value(amount=raw_amount, asset=self.vcow_token)
-        for event in context.decoded_events:
-            if match_airdrop_claim(
-                event,
-                user_address=hex_or_bytes_to_address(context.tx_log.data[64:96]),
-                amount=amount,
-                asset=self.vcow_token,
-                counterparty=CPT_COWSWAP,
-            ):
-                break
-
-        else:
-            log.error(f'Could not find the normal COW token claim for {self.evm_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}')  # noqa: E501
-
-        return DEFAULT_DECODING_OUTPUT
-
     def _decode_cow_claim(self, context: DecoderContext) -> DecodingOutput:
         """Decode claim of cow token either normally or from vcow token"""
         if context.tx_log.topics[0] == CLAIMED:
@@ -358,23 +409,12 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
 
         return DEFAULT_DECODING_OUTPUT
 
-    # -- DecoderInterface methods
-
-    @staticmethod
-    def counterparties() -> tuple[CounterpartyDetails, ...]:
-        return (COWSWAP_CPT_DETAILS,)
-
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return {
-            self.native_asset_flow_address: (self._decode_native_asset_orders,),
+        return super().addresses_to_decoders() | {
             self.vcow_token.evm_address: (self._decode_cow_claim,),
         }
 
-    def post_decoding_rules(self) -> dict[str, list[tuple[int, Callable]]]:
-        return {CPT_COWSWAP: [(0, self._coswap_post_decoding)]}
-
     def addresses_to_counterparties(self) -> dict[ChecksumEvmAddress, str]:
-        return {
-            self.settlement_address: CPT_COWSWAP,
+        return super().addresses_to_counterparties() | {
             self.vcow_token.evm_address: CPT_COWSWAP,
         }
