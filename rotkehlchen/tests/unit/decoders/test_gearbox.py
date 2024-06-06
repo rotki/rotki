@@ -4,6 +4,7 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.gearbox.constants import CPT_GEARBOX
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -15,7 +16,9 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -200,6 +203,448 @@ def test_gearbox_withdraw(
             tx_hash=tx_hash,
             counterparty=CPT_GEARBOX,
             address=string_to_evm_address('0xe7146F53dBcae9D6Fa3555FE502648deb0B2F823'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D']])
+def test_gearbox_deposit_arbitrum(
+        database: 'DBHandler',
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0x00db27b8c09c9ec4478f27da7e40b90afbb577cfb4822536eab5a52dcae321e6')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas, deposit_amount, lp_token_amount = TimestampMS(1716815867000), '0.00000249681', '0.001', '0.00098428586189406'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Burned {gas} ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(deposit_amount)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Deposit {deposit_amount} ETH to Gearbox',
+            tx_hash=tx_hash,
+            counterparty=CPT_GEARBOX,
+            address=string_to_evm_address('0x78c1B41b825f89FAE4736878Fa63752F8D789BD6'),
+        ), EvmEvent(
+            sequence_index=40,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:42161/erc20:0x6773fF780Dd38175247795545Ee37adD6ab6139a'),
+            balance=Balance(amount=FVal(lp_token_amount)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Receive {lp_token_amount} farmdWETHV3 after depositing in Gearbox',
+            tx_hash=tx_hash,
+            counterparty=CPT_GEARBOX,
+            address=string_to_evm_address('0x78c1B41b825f89FAE4736878Fa63752F8D789BD6'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D']])
+def test_gearbox_deposit_arbitrum_lp(
+        database: 'DBHandler',
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0x7dbb02839dab23bc87ed6f4f5899fc77986c576e6fedf16cfbd9751fbe09e2eb')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas, deposit_amount, lp_token_amount = TimestampMS(1716899425000), '0.0000022431', '0.001', '0.000984005521495659'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Burned {gas} ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(deposit_amount)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Deposit {deposit_amount} ETH to Gearbox',
+            tx_hash=tx_hash,
+            counterparty=CPT_GEARBOX,
+            address=string_to_evm_address('0xA909d7924a5aeb6c31c6A3AD30E9950d4B40F8cB'),
+        ), EvmEvent(
+            sequence_index=33,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:42161/erc20:0x04419d3509f13054f60d253E0c79491d9E683399'),
+            balance=Balance(amount=FVal(lp_token_amount)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Receive {lp_token_amount} dWETHV3 after providing liquidity in Gearbox',
+            tx_hash=tx_hash,
+            counterparty=CPT_GEARBOX,
+            address=ZERO_ADDRESS,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x3a212d3d7504dC4A39E21C731d0E80b114A2108b']])
+def test_gearbox_withdraw_arbitrum(
+        database: 'DBHandler',
+        arbitrum_one_inquirer: 'EthereumInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0x9b3f388e53c6b0f2eb12c323aebb05d47e27f6d9f511bd1176ed826a351c6c06')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas, lp_amount, withdrawn = TimestampMS(1717435594000), '0.00000250989', '0.7', '0.712544409227268693'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Burned {gas} ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(withdrawn)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Withdraw {withdrawn} ETH from Gearbox',
+            tx_hash=tx_hash,
+            counterparty=CPT_GEARBOX,
+            address=string_to_evm_address('0x78c1B41b825f89FAE4736878Fa63752F8D789BD6'),
+        ), EvmEvent(
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset('eip155:42161/erc20:0x6773fF780Dd38175247795545Ee37adD6ab6139a'),
+            balance=Balance(amount=FVal(lp_amount)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Return {lp_amount} farmdWETHV3',
+            tx_hash=tx_hash,
+            counterparty=CPT_GEARBOX,
+            address=string_to_evm_address('0x78c1B41b825f89FAE4736878Fa63752F8D789BD6'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x7b007E8c0f77B50bEC8009f0e97F523DBa6FE506']])
+def test_gearbox_deposit_usdc_arbitrum(
+        database: 'DBHandler',
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0xc7a3b95862eba49a86b8eefe81837ea141037feda8c0da236d9c3adb370fdfb3')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas, deposit_amount, lp_token_amount, approval_amount = TimestampMS(1717508317000), '0.00000368093', '125.164428', '121.463529', '125.164428'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Burned {gas} ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=7,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8'),
+            balance=Balance(amount=FVal(approval_amount)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Set USDC.e spending approval of {arbitrum_one_accounts[0]} by 0xD72e1B9A5FC74b35435f71603a81dAE217c2D863 to {approval_amount}',  # noqa: E501
+            tx_hash=tx_hash,
+            address=string_to_evm_address('0xD72e1B9A5FC74b35435f71603a81dAE217c2D863'),
+        ), EvmEvent(
+            sequence_index=8,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=Asset('eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8'),
+            balance=Balance(amount=FVal(deposit_amount)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Deposit {deposit_amount} USDC.e to Gearbox',
+            tx_hash=tx_hash,
+            counterparty=CPT_GEARBOX,
+            address=string_to_evm_address('0xD72e1B9A5FC74b35435f71603a81dAE217c2D863'),
+        ), EvmEvent(
+            sequence_index=9,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8'),
+            balance=Balance(amount=FVal(0)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Revoke USDC.e spending approval of {arbitrum_one_accounts[0]} by 0xD72e1B9A5FC74b35435f71603a81dAE217c2D863',  # noqa: E501
+            tx_hash=tx_hash,
+            address=string_to_evm_address('0xD72e1B9A5FC74b35435f71603a81dAE217c2D863'),
+        ), EvmEvent(
+            sequence_index=17,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:42161/erc20:0x608F9e2E8933Ce6b39A8CddBc34a1e3E8D21cE75'),
+            balance=Balance(amount=FVal(lp_token_amount)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Receive {lp_token_amount} farmdUSDCV3 after depositing in Gearbox',
+            tx_hash=tx_hash,
+            counterparty=CPT_GEARBOX,
+            address=string_to_evm_address('0xD72e1B9A5FC74b35435f71603a81dAE217c2D863'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0xb8150a1B6945e75D05769D685b127b41E6335Bbc']])
+def test_gearbox_deposit_optimism(
+        database: 'DBHandler',
+        optimism_inquirer: 'OptimismInquirer',
+        optimism_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0x1dc1803865e909909bf20a82b0d88b476bcac13c7a0efa57c531baa06b0cb27e')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas, deposit_amount, lp_token_amount = TimestampMS(1714433685000), '0.000010672234173866', '0.1', '0.099957406908026936'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=optimism_accounts[0],
+            notes=f'Burned {gas} ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(deposit_amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Deposit {deposit_amount} ETH to Gearbox',
+            tx_hash=tx_hash,
+            counterparty=CPT_GEARBOX,
+            address=string_to_evm_address('0xEa8ca794aEe0f998Ed6AB50F4042c28807E546Eb'),
+        ), EvmEvent(
+            sequence_index=97,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:10/erc20:0x704c4C9F0d29257E5b0E526b20b48EfFC8f758b2'),
+            balance=Balance(amount=FVal(lp_token_amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Receive {lp_token_amount} farmdWETHV3 after depositing in Gearbox',
+            tx_hash=tx_hash,
+            counterparty=CPT_GEARBOX,
+            address=string_to_evm_address('0xEa8ca794aEe0f998Ed6AB50F4042c28807E546Eb'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0xb8150a1B6945e75D05769D685b127b41E6335Bbc']])
+def test_gearbox_deposit_usdc_optimism(
+        database: 'DBHandler',
+        optimism_inquirer: 'OptimismInquirer',
+        optimism_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0x25baef6edb2fae8fde18b7ee49dbba94bdaa500db1388cc5b22bdb4ba953d7b4')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas, deposit_amount, approval_amount = TimestampMS(1714434001000), '0.000011648221611152', '300', '394.3605'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=optimism_accounts[0],
+            notes=f'Burned {gas} ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=3,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
+            balance=Balance(amount=FVal(deposit_amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Deposit {deposit_amount} USDC.e to Gearbox',
+            tx_hash=tx_hash,
+            counterparty=CPT_GEARBOX,
+            address=string_to_evm_address('0x931BC69a32BE7A36f9B00Bf63D17Fa8fB9a8C525'),
+        ), EvmEvent(
+            sequence_index=4,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
+            balance=Balance(amount=FVal(approval_amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Set USDC.e spending approval of {optimism_accounts[0]} by 0x931BC69a32BE7A36f9B00Bf63D17Fa8fB9a8C525 to {approval_amount}',  # noqa: E501
+            tx_hash=tx_hash,
+            address=string_to_evm_address('0x931BC69a32BE7A36f9B00Bf63D17Fa8fB9a8C525'),
+        ), EvmEvent(
+            sequence_index=12,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:10/erc20:0x73302b63Ad4a16C498f26dB89cb27F37a72E4E04'),
+            balance=Balance(amount=FVal(deposit_amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Receive {deposit_amount} farmdUSDCV3 after depositing in Gearbox',
+            tx_hash=tx_hash,
+            counterparty=CPT_GEARBOX,
+            address=string_to_evm_address('0x931BC69a32BE7A36f9B00Bf63D17Fa8fB9a8C525'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0x42ccF4f456D7c7fEBF274242CACcD74AAa0a53d7']])
+def test_gearbox_withdraw_optimism_usdc(
+        database: 'DBHandler',
+        optimism_inquirer: 'OptimismInquirer',
+        optimism_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0x03569fa219dd445c120a38eb294a21feee8da7f0e1d3b6aed1d87a3ca519b16d')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas, lp_amount = TimestampMS(1712552439000), '0.000001104938540339', '50'
+    expected_events = [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=optimism_accounts[0],
+            notes=f'Burned {gas} ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=125,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset('eip155:10/erc20:0x73302b63Ad4a16C498f26dB89cb27F37a72E4E04'),
+            balance=Balance(amount=FVal(lp_amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Return {lp_amount} farmdUSDCV3',
+            tx_hash=tx_hash,
+            counterparty=CPT_GEARBOX,
+            address=string_to_evm_address('0x931BC69a32BE7A36f9B00Bf63D17Fa8fB9a8C525'),
+        ), EvmEvent(
+            sequence_index=129,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
+            balance=Balance(amount=FVal(lp_amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Withdraw {lp_amount} USDC.e from Gearbox',
+            tx_hash=tx_hash,
+            counterparty=CPT_GEARBOX,
+            address=string_to_evm_address('0x5520dAa93A187f4Ec67344e6D2C4FC9B080B6A35'),
         ),
     ]
     assert events == expected_events
