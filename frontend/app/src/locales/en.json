@@ -1651,7 +1651,8 @@
       "close": "Close",
       "confirm": "Confirm",
       "continue": "Continue",
-      "copy": "Copy to clipboard",
+      "copy": "Copy",
+      "copy_to_clipboard": "Copy to clipboard",
       "create": "Create",
       "delete": "Delete",
       "dismiss": "Dismiss",
@@ -3524,11 +3525,6 @@
       "in_this_page_tooltip": "Notes specialize for  \"{page}\" section"
     },
     "tooltip": "Notes"
-  },
-  "notification": {
-    "copy": "Copy",
-    "copy_tooltip": "Copy the message to clipboard",
-    "dismiss_tooltip": "Dismiss Notification"
   },
   "notification_indicator": {
     "tooltip": "Notifications"
