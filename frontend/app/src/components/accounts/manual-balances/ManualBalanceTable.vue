@@ -1,18 +1,20 @@
 <script setup lang="ts">
-import type { ManualBalance } from '@/types/manual-balances';
+import { objectOmit } from '@vueuse/shared';
+import { isEqual } from 'lodash-es';
+import { Section } from '@/types/status';
+import type { Filters, Matcher } from '@/composables/filters/manual-balances';
+import type { Collection } from '@/types/collection';
 import type {
-  DataTableColumn,
-  DataTableSortData,
-} from '@rotki/ui-library-compat';
+  ManualBalance,
+  ManualBalanceRequestPayload,
+  ManualBalanceWithPrice,
+} from '@/types/manual-balances';
+import type { DataTableColumn } from '@rotki/ui-library-compat';
 
-const props = withDefaults(
-  defineProps<{
-    title: string;
-    balances: ManualBalance[];
-    loading?: boolean;
-  }>(),
-  { loading: false },
-);
+const props = defineProps<{
+  title: string;
+  type: 'liabilities' | 'balances';
+}>();
 
 const emit = defineEmits<{
   (e: 'refresh'): void;
@@ -21,55 +23,63 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const { balances } = toRefs(props);
+const tags = ref<string[]>([]);
+const refreshing = ref(false);
 
-const onlyTags = ref<string[]>([]);
-const sort = ref<DataTableSortData>({
-  column: 'usdValue',
-  direction: 'desc',
-});
-
-function refresh() {
-  emit('refresh');
-}
-
-function edit(balance: ManualBalance) {
-  emit('edit', balance);
-}
-
+const store = useManualBalancesStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { deleteManualBalance } = useManualBalancesStore();
+const { manualBalances, manualLiabilities } = storeToRefs(store);
+const {
+  fetchLiabilities,
+  fetchBalances,
+  fetchManualBalances,
+  deleteManualBalance,
+} = store;
+const { isLoading } = useStatusStore();
+const { fetchAssociatedLocations } = useHistoryStore();
 
-const { assetPrice } = useBalancePricesStore();
+const dataSource = computed(() => props.type === 'liabilities' ? get(manualLiabilities) : get(manualBalances));
 
-const visibleBalances = computed<ManualBalance[]>(() => {
-  let mappedBalances: ManualBalance[];
-  const selectedTags = get(onlyTags);
-  if (selectedTags.length === 0) {
-    mappedBalances = get(balances);
-  }
-  else {
-    mappedBalances = get(balances).filter((balance) => {
-      const tags = balance.tags ?? [];
-      return selectedTags.every(tag => tags.includes(tag));
-    });
-  }
-
-  return mappedBalances.map(item => ({
-    ...item,
-    usdPrice: get(assetPrice(item.asset)),
-  }));
-});
-
-const { exchangeRate } = useBalancePricesStore();
-
-const total = computed(() =>
-  aggregateTotal(
-    get(visibleBalances),
-    get(currencySymbol),
-    get(exchangeRate(get(currencySymbol))) ?? One,
-  ),
+const {
+  isLoading: loading,
+  filters,
+  matchers,
+  state,
+  fetchData,
+  pagination,
+  sort,
+} = usePaginationFilters<
+    ManualBalanceWithPrice,
+    ManualBalanceRequestPayload,
+    ManualBalanceWithPrice,
+    Collection<ManualBalanceWithPrice>,
+    Filters,
+    Matcher
+>(
+  null,
+  false,
+  () => useManualBalanceFilter(),
+  payload => props.type === 'liabilities' ? fetchLiabilities(payload) : fetchBalances(payload),
+  {
+    extraParams: computed(() => ({
+      tags: get(tags),
+    })),
+    defaultSortBy: {
+      key: 'usdValue',
+    },
+  },
 );
+
+async function refresh() {
+  set(refreshing, true);
+  await fetchManualBalances(true);
+  await fetchAssociatedLocations();
+  set(refreshing, false);
+}
+
+function edit(balance: ManualBalanceWithPrice) {
+  emit('edit', objectOmit(balance, ['usdValue', 'usdPrice']));
+}
 
 function getRowClass(item: ManualBalance) {
   return `manual-balance__location__${item.location}`;
@@ -84,7 +94,7 @@ const cols = computed<DataTableColumn[]>(() => [
     cellClass: 'py-2',
   },
   {
-    label: t('manual_balances_table.columns.label'),
+    label: t('common.label'),
     key: 'label',
     sortable: true,
   },
@@ -119,7 +129,7 @@ const cols = computed<DataTableColumn[]>(() => [
   {
     label: t('common.actions_text'),
     key: 'actions',
-    align: 'start',
+    align: 'end',
     width: '50',
   },
 ]);
@@ -135,6 +145,18 @@ function showDeleteConfirmation(id: number) {
     () => deleteManualBalance(id),
   );
 }
+
+watchImmediate(dataSource, async (newBalances, oldBalances) => {
+  if (isEqual(newBalances, oldBalances))
+    return;
+
+  await fetchData();
+});
+
+watchDebounced(isLoading(Section.PRICES), async (isLoading, wasLoading) => {
+  if (!isLoading && wasLoading)
+    await fetchData();
+}, { debounce: 800, maxWait: 1000 });
 </script>
 
 <template>
@@ -143,7 +165,7 @@ function showDeleteConfirmation(id: number) {
       <div class="px-4 pt-4">
         <div class="flex flex-row items-center flex-wrap gap-3">
           <RefreshButton
-            :loading="loading"
+            :loading="refreshing"
             :tooltip="t('manual_balances_table.refresh.tooltip')"
             @refresh="refresh()"
           />
@@ -152,9 +174,14 @@ function showDeleteConfirmation(id: number) {
           </span>
           <div class="grow" />
           <TagFilter
-            v-model="onlyTags"
+            v-model="tags"
             class="max-w-sm"
             hide-details
+          />
+          <TableFilter
+            :matchers="matchers"
+            :matches.sync="filters"
+            class="max-w-sm"
           />
         </div>
       </div>
@@ -165,12 +192,11 @@ function showDeleteConfirmation(id: number) {
       :loading="loading"
       :cols="cols"
       row-attr="id"
-      :rows="visibleBalances"
-      :sort="sort"
+      :rows="state.data"
+      :sort.sync="sort"
+      :pagination.sync="pagination"
       :item-class="getRowClass"
       class="manual-balances-list"
-      sort-by="usdValue"
-      @update:sort="sort = $event"
     >
       <template #item.label="{ row }">
         <div
@@ -230,6 +256,7 @@ function showDeleteConfirmation(id: number) {
       </template>
       <template #item.actions="{ row }">
         <RowActions
+          align="end"
           :edit-tooltip="t('manual_balances_table.edit_tooltip')"
           :delete-tooltip="t('manual_balances_table.delete_tooltip')"
           @edit-click="edit(row)"
@@ -237,7 +264,7 @@ function showDeleteConfirmation(id: number) {
         />
       </template>
       <template
-        v-if="visibleBalances.length > 0"
+        v-if="state.data.length > 0"
         #body.append
       >
         <RowAppend
@@ -251,11 +278,12 @@ function showDeleteConfirmation(id: number) {
           </template>
 
           <AmountDisplay
+            v-if="state.totalUsdValue"
             show-currency="symbol"
             class="p-4"
             :fiat-currency="currencySymbol"
             data-cy="manual-balances__amount"
-            :value="total"
+            :value="state.totalUsdValue"
           />
         </RowAppend>
       </template>

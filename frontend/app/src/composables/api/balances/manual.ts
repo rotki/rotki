@@ -5,7 +5,7 @@ import {
   validWithParamsSessionAndExternalService,
   validWithSessionAndExternalService,
 } from '@/services/utils';
-import { type ManualBalance, ManualBalances } from '@/types/manual-balances';
+import { type ManualBalance, ManualBalances, type RawManualBalance } from '@/types/manual-balances';
 import type { ActionResult } from '@rotki/common/lib/data';
 import type { PendingTask } from '@/types/task';
 
@@ -22,7 +22,7 @@ export function useManualBalancesApi() {
   };
 
   const addManualBalances = async (
-    balances: Omit<ManualBalance, 'identifier'>[],
+    balances: RawManualBalance[],
   ): Promise<PendingTask> => {
     const response = await api.instance.put<ActionResult<PendingTask>>(
       'balances/manual',

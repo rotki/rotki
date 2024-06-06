@@ -278,6 +278,7 @@ declare global {
   const shallowRef: typeof import('vue')['shallowRef']
   const size: typeof import('./utils/data')['size']
   const sortAndFilterAccounts: typeof import('./utils/blockchain/accounts/index')['sortAndFilterAccounts']
+  const sortAndFilterManualBalance: typeof import('./utils/balances/manual/manual-balances')['sortAndFilterManualBalance']
   const sortDesc: typeof import('./utils/bignumbers')['sortDesc']
   const splitSearch: typeof import('./utils/search')['splitSearch']
   const startPromise: typeof import('./utils/index')['startPromise']
@@ -567,6 +568,7 @@ declare global {
   const useMakerDaoStore: typeof import('./store/defi/makerdao/index')['useMakerDaoStore']
   const useManagedAssetForm: typeof import('./composables/assets/forms/managed-asset-form')['useManagedAssetForm']
   const useManualAssetBalances: typeof import('./composables/balances/manual/index')['useManualAssetBalances']
+  const useManualBalanceFilter: typeof import('./composables/filters/manual-balances')['useManualBalanceFilter']
   const useManualBalancesApi: typeof import('./composables/api/balances/manual')['useManualBalancesApi']
   const useManualBalancesForm: typeof import('./composables/balances/manual/form')['useManualBalancesForm']
   const useManualBalancesStore: typeof import('./store/balances/manual')['useManualBalancesStore']
@@ -1046,6 +1048,7 @@ declare module 'vue' {
     readonly shallowReadonly: UnwrapRef<typeof import('vue')['shallowReadonly']>
     readonly shallowRef: UnwrapRef<typeof import('vue')['shallowRef']>
     readonly size: UnwrapRef<typeof import('./utils/data')['size']>
+    readonly sortAndFilterManualBalance: UnwrapRef<typeof import('./utils/balances/manual/manual-balances')['sortAndFilterManualBalance']>
     readonly sortDesc: UnwrapRef<typeof import('./utils/bignumbers')['sortDesc']>
     readonly splitSearch: UnwrapRef<typeof import('./utils/search')['splitSearch']>
     readonly startPromise: UnwrapRef<typeof import('./utils/index')['startPromise']>
@@ -1329,6 +1332,7 @@ declare module 'vue' {
     readonly useMakerDaoStore: UnwrapRef<typeof import('./store/defi/makerdao/index')['useMakerDaoStore']>
     readonly useManagedAssetForm: UnwrapRef<typeof import('./composables/assets/forms/managed-asset-form')['useManagedAssetForm']>
     readonly useManualAssetBalances: UnwrapRef<typeof import('./composables/balances/manual/index')['useManualAssetBalances']>
+    readonly useManualBalanceFilter: UnwrapRef<typeof import('./composables/filters/manual-balances')['useManualBalanceFilter']>
     readonly useManualBalancesApi: UnwrapRef<typeof import('./composables/api/balances/manual')['useManualBalancesApi']>
     readonly useManualBalancesForm: UnwrapRef<typeof import('./composables/balances/manual/form')['useManualBalancesForm']>
     readonly useManualBalancesStore: UnwrapRef<typeof import('./store/balances/manual')['useManualBalancesStore']>
@@ -1799,6 +1803,7 @@ declare module '@vue/runtime-core' {
     readonly shallowReadonly: UnwrapRef<typeof import('vue')['shallowReadonly']>
     readonly shallowRef: UnwrapRef<typeof import('vue')['shallowRef']>
     readonly size: UnwrapRef<typeof import('./utils/data')['size']>
+    readonly sortAndFilterManualBalance: UnwrapRef<typeof import('./utils/balances/manual/manual-balances')['sortAndFilterManualBalance']>
     readonly sortDesc: UnwrapRef<typeof import('./utils/bignumbers')['sortDesc']>
     readonly splitSearch: UnwrapRef<typeof import('./utils/search')['splitSearch']>
     readonly startPromise: UnwrapRef<typeof import('./utils/index')['startPromise']>
@@ -2082,6 +2087,7 @@ declare module '@vue/runtime-core' {
     readonly useMakerDaoStore: UnwrapRef<typeof import('./store/defi/makerdao/index')['useMakerDaoStore']>
     readonly useManagedAssetForm: UnwrapRef<typeof import('./composables/assets/forms/managed-asset-form')['useManagedAssetForm']>
     readonly useManualAssetBalances: UnwrapRef<typeof import('./composables/balances/manual/index')['useManualAssetBalances']>
+    readonly useManualBalanceFilter: UnwrapRef<typeof import('./composables/filters/manual-balances')['useManualBalanceFilter']>
     readonly useManualBalancesApi: UnwrapRef<typeof import('./composables/api/balances/manual')['useManualBalancesApi']>
     readonly useManualBalancesForm: UnwrapRef<typeof import('./composables/balances/manual/form')['useManualBalancesForm']>
     readonly useManualBalancesStore: UnwrapRef<typeof import('./store/balances/manual')['useManualBalancesStore']>

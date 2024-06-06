@@ -17,7 +17,7 @@ const input = ref<InstanceType<typeof Eth2Input>>();
 
 const validator = useSimplePropVModel(props, 'data', emit);
 
-async function validate(): Promise<boolean> {
+function validate(): Promise<boolean> {
   assert(isDefined(input));
   return get(input).validate();
 }

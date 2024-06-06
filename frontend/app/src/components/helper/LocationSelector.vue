@@ -7,9 +7,8 @@ const props = withDefaults(
     value?: string;
     items?: string[];
     excludes?: string[];
-    attach?: string;
   }>(),
-  { value: '', items: () => [], excludes: () => [], attach: undefined },
+  { value: '', items: () => [], excludes: () => [] },
 );
 
 const emit = defineEmits<{
