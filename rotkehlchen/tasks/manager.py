@@ -14,6 +14,8 @@ from rotkehlchen.chain.ethereum.modules.makerdao.cache import (
 )
 from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
+from rotkehlchen.chain.evm.constants import EVM_ADDRESS_REGEX
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.timing import (
     AAVE_V3_ASSETS_UPDATE,
     AUGMENTED_SPAM_ASSETS_DETECTION_REFRESH,
@@ -26,15 +28,22 @@ from rotkehlchen.constants.timing import (
 )
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.calendar import CalendarEntry
+from rotkehlchen.db.constants import EVM_EVENT_FIELDS, HISTORY_BASE_ENTRY_FIELDS
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import EvmTransactionsFilterQuery, HistoryEventFilterQuery
-from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.filtering import (
+    EVM_EVENT_JOIN,
+    EvmTransactionsFilterQuery,
+    HistoryEventFilterQuery,
+)
+from rotkehlchen.db.history_events import DBHistoryEvents, filter_ignore_asset_query
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.monerium import Monerium
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.types import EventDirection
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, premium_create_and_verify
@@ -53,6 +62,7 @@ from rotkehlchen.tasks.calendar import (
 from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries, should_run_periodic_task
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
+    EVM_LOCATIONS,
     SUPPORTED_BITCOIN_CHAINS,
     CacheType,
     ChecksumEvmAddress,
@@ -63,7 +73,7 @@ from rotkehlchen.types import (
     Timestamp,
     get_args,
 )
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 
 from .events import process_events
 
@@ -536,21 +546,66 @@ class TaskManager:
         Update the balances of a user if the difference between last time they were updated
         and the current time exceeds the `balance_save_frequency`.
         """
-        with self.database.conn.read_ctx() as cursor:
-            if self.database.should_save_balances(cursor):
-                task_name = 'Periodically update snapshot balances'
-                log.debug(f'Scheduling task to {task_name}')
-                return [self.greenlet_manager.spawn_and_track(
-                    after_seconds=None,
-                    task_name=task_name,
-                    exception_is_error=True,
-                    method=self.query_balances,
-                    requested_save_data=True,
-                    save_despite_errors=False,
-                    timestamp=None,
-                    ignore_cache=True,
-                )]
-        return None
+        with self.database.conn.write_ctx() as write_cursor:
+            if not self.database.should_save_balances(write_cursor):
+                return None
+
+            if CachedSettings().get_settings().auto_detect_tokens is True:
+                last_save_time = self.database.get_last_balance_save_time(write_cursor)
+                detected_tokens = defaultdict(list)
+                # we query the decoded history events that are the first event of each distinct
+                # unignored asset (usually that asset's first receive event),
+                # and then filter only the ones that happened on or after last_save_time.
+                for event_data in write_cursor.execute(
+                    # events that are the earliest events of distinct assets after last_save_time
+                    f'SELECT * FROM  (SELECT MIN(timestamp), {HISTORY_BASE_ENTRY_FIELDS}, '
+                    f'{EVM_EVENT_FIELDS} {EVM_EVENT_JOIN} {filter_ignore_asset_query()} '
+                    'GROUP BY asset) WHERE timestamp >= ?;',
+                    (ts_sec_to_ms(last_save_time),),
+                ):
+                    event = EvmEvent.deserialize_from_db(event_data[2:])
+                    if event.location not in EVM_LOCATIONS or not event.asset.is_evm_token():
+                        # if the location or asset is not evm, we skip it
+                        continue
+
+                    chain = SupportedBlockchain.from_location(event.location)  # type: ignore[arg-type]  # event.location is one of EVM_LOCATIONS
+                    evm_asset = event.asset.resolve_to_evm_token()
+                    if (
+                        event.location_label is None or
+                        EVM_ADDRESS_REGEX.fullmatch(event.location_label) is None
+                    ):
+                        log.warning(
+                            f'Found invalid location label {event.location_label} in history '
+                            f'events in {event.location} while detecting new tokens. Skipping.',
+                        )
+                        continue
+
+                    if (
+                        (direction := event.maybe_get_direction()) is not None and
+                        direction == EventDirection.IN
+                    ):  # if it's an IN event, we save the asset as a detected token
+                        detected_tokens[(chain, event.location_label)].append(evm_asset)
+
+                for (chain, location_label), tokens in detected_tokens.items():
+                    self.database.save_tokens_for_address(
+                        write_cursor=write_cursor,
+                        address=string_to_evm_address(location_label),
+                        blockchain=chain,
+                        tokens=tokens,
+                    )
+
+        task_name = 'Periodically update snapshot balances'
+        log.debug(f'Scheduling task to {task_name}')
+        return [self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name=task_name,
+            exception_is_error=True,
+            method=self.query_balances,
+            requested_save_data=True,
+            save_despite_errors=False,
+            timestamp=None,
+            ignore_cache=True,
+        )]
 
     def _maybe_query_produced_blocks(self) -> Optional[list[gevent.Greenlet]]:
         """Schedules the blocks production query if enough time has passed"""

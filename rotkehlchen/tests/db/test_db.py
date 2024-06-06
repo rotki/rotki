@@ -39,6 +39,7 @@ from rotkehlchen.db.settings import (
     DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY,
     DEFAULT_AUTO_CREATE_CALENDAR_REMINDERS,
     DEFAULT_AUTO_DELETE_CALENDAR_ENTRIES,
+    DEFAULT_AUTO_DETECT_TOKENS,
     DEFAULT_BALANCE_SAVE_FREQUENCY,
     DEFAULT_BTC_DERIVATION_GAP_LIMIT,
     DEFAULT_CALCULATE_PAST_COST_BASIS,
@@ -520,6 +521,7 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         'auto_delete_calendar_entries': DEFAULT_AUTO_DELETE_CALENDAR_ENTRIES,
         'auto_create_calendar_reminders': DEFAULT_AUTO_CREATE_CALENDAR_REMINDERS,
         'ask_user_upon_size_discrepancy': DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY,
+        'auto_detect_tokens': DEFAULT_AUTO_DETECT_TOKENS,
     }
     assert len(expected_dict) == len(dataclasses.fields(DBSettings)), 'One or more settings are missing'  # noqa: E501
 
