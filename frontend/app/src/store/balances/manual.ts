@@ -1,13 +1,11 @@
-import {
-  type AssetBalances,
-  type BalanceByLocation,
-  BalanceType,
-  type LocationBalance,
-} from '@/types/balances';
+import { type AssetBalances, type BalanceByLocation, BalanceType, type LocationBalance } from '@/types/balances';
 import {
   type ManualBalance,
+  type ManualBalanceRequestPayload,
+  type ManualBalanceWithPrice,
   type ManualBalanceWithValue,
   ManualBalances,
+  type RawManualBalance,
 } from '@/types/manual-balances';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
@@ -18,6 +16,7 @@ import type { AssetPrices } from '@/types/prices';
 import type { TaskMeta } from '@/types/task';
 import type { ActionStatus } from '@/types/action';
 import type { AssetBreakdown } from '@/types/blockchain/accounts';
+import type { Collection } from '@/types/collection';
 
 export const useManualBalancesStore = defineStore('balances/manual', () => {
   const manualBalancesData = ref<ManualBalanceWithValue[]>([]);
@@ -26,7 +25,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
   const { notify } = useNotificationsStore();
   const { setMessage } = useMessageStore();
   const { awaitTask } = useTaskStore();
-  const { exchangeRate } = useBalancePricesStore();
+  const { exchangeRate, assetPrice, isAssetPriceInCurrentCurrency } = useBalancePricesStore();
   const {
     queryManualBalances,
     addManualBalances,
@@ -36,20 +35,15 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
   const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
 
-  const manualBalances: ComputedRef<ManualBalanceWithValue[]> = computed(() =>
+  const manualBalances = computed<ManualBalanceWithValue[]>(() =>
     get(manualBalancesData).filter(x => x.balanceType === BalanceType.ASSET),
   );
 
-  const manualLiabilities: ComputedRef<ManualBalanceWithValue[]> = computed(
-    () =>
-      get(manualBalancesData).filter(
-        x => x.balanceType === BalanceType.LIABILITY,
-      ),
+  const manualLiabilities = computed<ManualBalanceWithValue[]>(() =>
+    get(manualBalancesData).filter(x => x.balanceType === BalanceType.LIABILITY),
   );
 
-  const manualLabels = computed<string[]>(() =>
-    get(manualBalancesData).map(x => x.label),
-  );
+  const manualLabels = computed<string[]>(() => get(manualBalancesData).map(x => x.label));
 
   const manualBalanceByLocation = computed<LocationBalance[]>(() => {
     const mainCurrency = get(currencySymbol);
@@ -62,13 +56,11 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
       // because we mix different assets we need to convert them before they are aggregated
       // thus in amount display we always pass the manualBalanceByLocation in the user's main currency
       let convertedValue: BigNumber;
-      if (mainCurrency === perLocationBalance.asset) {
+      if (mainCurrency === perLocationBalance.asset)
         convertedValue = perLocationBalance.amount as BigNumber;
-      }
-      else {
-        convertedValue
-            = perLocationBalance.usdValue.multipliedBy(currentExchangeRate);
-      }
+
+      else
+        convertedValue = perLocationBalance.usdValue.multipliedBy(currentExchangeRate);
 
       // to avoid double-conversion, we take as usdValue the amount property when the original asset type and
       // user's main currency coincide
@@ -141,14 +133,16 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
     return assets;
   });
 
-  const fetchManualBalances = async (): Promise<void> => {
-    const { getStatus, setStatus, resetStatus } = useStatusUpdater(
-      Section.MANUAL_BALANCES,
-    );
+  const { getStatus, setStatus, resetStatus, fetchDisabled } = useStatusUpdater(Section.MANUAL_BALANCES);
+
+  const fetchManualBalances = async (userInitiated = false): Promise<void> => {
+    if (fetchDisabled(userInitiated)) {
+      logger.debug('skipping manual balance refresh');
+      return;
+    }
     const currentStatus: Status = getStatus();
 
-    const newStatus
-      = currentStatus === Status.LOADED ? Status.REFRESHING : Status.LOADING;
+    const newStatus = currentStatus === Status.LOADED ? Status.REFRESHING : Status.LOADING;
     setStatus(newStatus);
 
     try {
@@ -182,7 +176,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
   };
 
   const addManualBalance = async (
-    balance: Omit<ManualBalance, 'identifier'>,
+    balance: RawManualBalance,
   ): Promise<ActionStatus<ValidationErrors | string>> => {
     try {
       const taskType = TaskType.MANUAL_BALANCES_ADD;
@@ -249,6 +243,12 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
     }
   };
 
+  const save = (
+    balance: ManualBalance | RawManualBalance,
+  ): Promise<ActionStatus<ValidationErrors | string>> => ('identifier' in balance)
+    ? editManualBalance(balance)
+    : addManualBalance(balance);
+
   const deleteManualBalance = async (id: number): Promise<void> => {
     try {
       const { balances } = await deleteManualBalances([id]);
@@ -256,7 +256,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
     }
     catch (error: any) {
       setMessage({
-        title: t('actions.balances.manual_delete.error.title').toString(),
+        title: t('actions.balances.manual_delete.error.title'),
         description: error.message,
       });
     }
@@ -277,6 +277,43 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
     set(manualBalancesData, newManualBalancesData);
   };
 
+  const resolvers = {
+    /**
+     * Resolves the asset price in the selected currency.
+     * We use this to make sure that total is not affected by double conversion problems.
+     *
+     * @param asset The asset for which we want the price
+     */
+    resolveAssetPrice(asset: string) {
+      const inCurrentCurrency = get(isAssetPriceInCurrentCurrency(asset));
+      const price = get(assetPrice(asset));
+      if (!price)
+        return undefined;
+
+      if (inCurrentCurrency)
+        return price;
+
+      const currentExchangeRate = get(exchangeRate(get(currencySymbol)));
+
+      if (!currentExchangeRate)
+        return price;
+
+      return price.times(currentExchangeRate);
+    },
+  };
+
+  const fetchLiabilities = (
+    payload: MaybeRef<ManualBalanceRequestPayload>,
+  ): Promise<Collection<ManualBalanceWithPrice>> => Promise.resolve(
+    sortAndFilterManualBalance(get(manualLiabilities), get(payload), resolvers),
+  );
+
+  const fetchBalances = (
+    payload: MaybeRef<ManualBalanceRequestPayload>,
+  ): Promise<Collection<ManualBalanceWithPrice>> => Promise.resolve(
+    sortAndFilterManualBalance(get(manualBalances), get(payload), resolvers),
+  );
+
   return {
     manualBalancesData,
     manualBalances,
@@ -290,6 +327,9 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
     editManualBalance,
     deleteManualBalance,
     updatePrices,
+    fetchLiabilities,
+    fetchBalances,
+    save,
   };
 });
 

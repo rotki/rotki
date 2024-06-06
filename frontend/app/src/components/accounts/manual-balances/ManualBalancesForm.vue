@@ -1,77 +1,57 @@
 <script setup lang="ts">
 import { helpers, required } from '@vuelidate/validators';
-import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
+import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
-import { BalanceType } from '@/types/balances';
 import ManualBalancesPriceForm from '@/components/accounts/manual-balances/ManualBalancesPriceForm.vue';
-import type { ManualBalance } from '@/types/manual-balances';
+import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
 
-const props = withDefaults(
-  defineProps<{
-    edit?: ManualBalance | null;
-    context?: BalanceType;
-  }>(),
-  {
-    edit: null,
-    context: BalanceType.ASSET,
-  },
-);
+const props = defineProps<{
+  value: RawManualBalance | ManualBalance;
+  errorMessages: Record<string, string[]>;
+  submitting: boolean;
+}>();
 
 const emit = defineEmits<{
-  (e: 'clear'): void;
+  (e: 'input', value: RawManualBalance | ManualBalance): void;
+  (e: 'update:error-messages', value: Record<string, string[]>): void;
 }>();
 
 const { t } = useI18n();
 
-const { edit, context } = toRefs(props);
-
-const errors: Ref<Record<string, string[]>> = ref({});
-
-const identifier = ref<number | null>(null);
-const asset = ref<string>('');
-const label = ref<string>('');
-const amount = ref<string>('');
-const tags: Ref<string[]> = ref([]);
-const location: Ref<string> = ref(TRADE_LOCATION_EXTERNAL);
-const balanceType: Ref<BalanceType> = ref(BalanceType.ASSET);
 const priceForm = ref<InstanceType<typeof ManualBalancesPriceForm>>();
 
-function reset() {
-  set(balanceType, get(context));
-  set(errors, {});
-}
+const asset = useSimplePropVModel(props, 'asset', emit);
+const label = useSimplePropVModel(props, 'label', emit);
+const balanceType = useSimplePropVModel(props, 'balanceType', emit);
+const location = useSimplePropVModel(props, 'location', emit);
 
-function clear() {
-  emit('clear');
-  reset();
-}
-
-function setBalance(balance: ManualBalance) {
-  set(identifier, balance.identifier);
-  set(asset, balance.asset);
-  set(label, balance.label);
-  set(amount, balance.amount.toFixed());
-  set(tags, balance.tags ?? []);
-  set(location, balance.location);
-  set(balanceType, balance.balanceType);
-}
-
-watch(
-  edit,
-  (balance) => {
-    if (!balance)
-      reset();
-    else
-      setBalance(balance);
+const tags = computed<string[]>({
+  get() {
+    return props.value.tags ?? [];
   },
-  { immediate: true },
-);
+  set(tags: string[]) {
+    emit('input', {
+      ...props.value,
+      tags: tags.length > 0 ? tags : null,
+    });
+  },
+});
 
-const { editManualBalance, addManualBalance, manualLabels } = useManualBalancesStore();
-const { refreshPrices } = useBalances();
-const { setMessage } = useMessageStore();
+const amount = computed({
+  get() {
+    return props.value.amount.toString();
+  },
+  set(amount: string) {
+    emit('input', {
+      ...props.value,
+      amount: bigNumberify(amount),
+    });
+  },
+});
 
-const { submitting, setValidation, setSubmitFunc } = useManualBalancesForm();
+const errors = useKebabVModel(props, 'errorMessages', emit);
+
+const { manualLabels } = useManualBalancesStore();
 
 const rules = {
   amount: {
@@ -85,6 +65,11 @@ const rules = {
       t('manual_balances_form.validation.label_empty'),
       required,
     ),
+    doesNotExist: helpers.withMessage(({
+      $model: label,
+    }) => t('manual_balances_form.validation.label_exists', {
+      label,
+    }), (label: string) => !get(manualLabels).includes(label)),
   },
   asset: {
     required: helpers.withMessage(
@@ -97,7 +82,7 @@ const rules = {
   },
 };
 
-const v$ = setValidation(
+const v$ = useVuelidate(
   rules,
   {
     amount,
@@ -107,79 +92,6 @@ const v$ = setValidation(
   },
   { $autoDirty: true, $externalResults: errors },
 );
-
-async function save() {
-  const balance: Omit<ManualBalance, 'identifier' | 'asset'> = {
-    amount: bigNumberify(get(amount)),
-    label: get(label),
-    tags: get(tags),
-    location: get(location),
-    balanceType: get(balanceType),
-  };
-
-  const usedAsset: string = get(asset);
-
-  const idVal = get(identifier);
-  const isEdit = get(edit) && idVal;
-
-  const form = get(priceForm);
-  await form?.savePrice(usedAsset);
-
-  const status = await (isEdit
-    ? editManualBalance({ ...balance, identifier: idVal, asset: usedAsset })
-    : addManualBalance({ ...balance, asset: usedAsset }));
-
-  startPromise(refreshPrices(true));
-
-  if (status.success) {
-    clear();
-    return true;
-  }
-
-  if (status.message) {
-    if (typeof status.message !== 'string') {
-      set(errors, status.message);
-      await get(v$).$validate();
-    }
-    else {
-      const obj = { message: status.message };
-      setMessage({
-        description: isEdit
-          ? t('actions.manual_balances.edit.error.description', obj)
-          : t('actions.manual_balances.add.error.description', obj),
-      });
-    }
-  }
-  return false;
-}
-
-setSubmitFunc(save);
-
-watch(label, (label) => {
-  if (get(edit))
-    return;
-
-  const validationErrors = get(errors).label;
-  if (get(manualLabels).includes(label)) {
-    if (validationErrors && validationErrors.length > 0)
-      return;
-
-    set(errors, {
-      ...get(errors),
-      label: [
-        t('manual_balances_form.validation.label_exists', {
-          label,
-        }).toString(),
-      ],
-    });
-  }
-  else {
-    const { label, ...data } = get(errors);
-    set(errors, data);
-  }
-
-  get(v$).label.$validate();
-});
 
 const { setOpenDialog, setPostSubmitFunc } = useCustomAssetForm();
 
@@ -200,10 +112,17 @@ async function openCustomAssetForm() {
   setOpenDialog(true);
 }
 
-onMounted(() => {
-  const editPayload = get(edit);
-  if (editPayload)
-    set(asset, editPayload.asset);
+async function validate() {
+  await get(v$).$validate();
+}
+
+async function savePrice() {
+  await get(priceForm)?.savePrice(get(asset));
+}
+
+defineExpose({
+  validate,
+  savePrice,
 });
 </script>
 

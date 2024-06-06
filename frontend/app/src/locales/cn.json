@@ -2921,9 +2921,6 @@
     }
   },
   "manual_balances_table": {
-    "columns": {
-      "label": "标签"
-    },
     "delete_dialog": {
       "message": "您确定要删除此条目吗？",
       "title": "删除手动跟踪余额"

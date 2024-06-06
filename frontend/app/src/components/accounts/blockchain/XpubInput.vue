@@ -92,7 +92,7 @@ const v$ = useVuelidate(
   },
 );
 
-async function validate(): Promise<boolean> {
+function validate(): Promise<boolean> {
   return get(v$).$validate();
 }
 

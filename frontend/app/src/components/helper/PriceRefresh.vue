@@ -38,6 +38,7 @@ const disabled: ComputedRef<boolean> = computed(
     variant="outlined"
     color="primary"
     :loading="refreshing"
+    data-cy="price-refresh"
     :disabled="disabled"
     @click="refresh()"
   >

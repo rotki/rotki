@@ -3182,9 +3182,6 @@
     }
   },
   "manual_balances_table": {
-    "columns": {
-      "label": "Étiquette"
-    },
     "delete_dialog": {
       "message": "Voulez-vous vraiment supprimer cette entrée ?",
       "title": "Supprimer le solde manuel"

@@ -1,64 +1,91 @@
 <script setup lang="ts">
-import type { ManualBalance } from '@/types/manual-balances';
+import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
+import { BalanceType } from '@/types/balances';
+import ManualBalancesForm from '@/components/accounts/manual-balances/ManualBalancesForm.vue';
+import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
 
-const balanceToEdit: Ref<ManualBalance | null> = ref(null);
+const balance = ref<ManualBalance | RawManualBalance>();
 const loading = ref(false);
-
-const store = useManualBalancesStore();
-const { fetchManualBalances } = store;
-const { manualBalances, manualLiabilities } = storeToRefs(store);
-
-const dialogTitle = ref('');
-const dialogSubtitle = ref('');
+const errorMessages = ref<Record<string, string[]>>({});
+const form = ref<InstanceType<typeof ManualBalancesForm>>();
 
 const { t } = useI18n();
 
-const {
-  openDialog,
-  submitting,
-  setOpenDialog,
-  trySubmit,
-  closeDialog,
-  setPostSubmitFunc,
-} = useManualBalancesForm();
+const isEdit = computed(() => isDefined(balance) && 'identifier' in get(balance));
 
-function add() {
-  set(dialogTitle, t('manual_balances.dialog.add.title').toString());
-  set(dialogSubtitle, '');
-  setOpenDialog(true);
-}
+const dialogTitle = computed<string>(() => {
+  if (get(isEdit))
+    return t('manual_balances.dialog.edit.title');
+  return t('manual_balances.dialog.add.title');
+});
 
-function edit(balance: ManualBalance) {
-  set(balanceToEdit, balance);
-  set(dialogTitle, t('manual_balances.dialog.edit.title').toString());
-  set(dialogSubtitle, t('manual_balances.dialog.edit.subtitle').toString());
-  setOpenDialog(true);
-}
-
-function cancelForm() {
-  closeDialog();
-  set(balanceToEdit, null);
-}
-
-async function refresh() {
-  set(loading, true);
-  await fetchManualBalances();
-  set(loading, false);
-}
-
-function postSubmit() {
-  set(balanceToEdit, null);
-}
-
-setPostSubmitFunc(postSubmit);
+const dialogSubtitle = computed<string>(() => {
+  if (get(isEdit))
+    return t('manual_balances.dialog.edit.subtitle');
+  return '';
+});
 
 const router = useRouter();
+const { setMessage } = useMessageStore();
+const { save: saveBalance, fetchManualBalances } = useManualBalancesStore();
+const { refreshPrices } = useBalances();
+const { fetchAssociatedLocations } = useHistoryStore();
+
+async function save() {
+  if (!isDefined(balance))
+    return;
+
+  set(loading, true);
+
+  await get(form)?.savePrice();
+
+  const status = await saveBalance(get(balance));
+
+  startPromise(refreshPrices(true));
+
+  if (status.success) {
+    set(balance, undefined);
+    set(loading, false);
+    return true;
+  }
+
+  if (status.message) {
+    if (typeof status.message !== 'string') {
+      set(errorMessages, status.message);
+      await get(form)?.validate();
+    }
+    else {
+      const obj = { message: status.message };
+      setMessage({
+        description: get(isEdit)
+          ? t('actions.manual_balances.edit.error.description', obj)
+          : t('actions.manual_balances.add.error.description', obj),
+      });
+    }
+  }
+  set(loading, false);
+  return false;
+}
+
+function add() {
+  set(balance, {
+    location: TRADE_LOCATION_EXTERNAL,
+    asset: '',
+    label: '',
+    balanceType: BalanceType.ASSET,
+    tags: null,
+    amount: Zero,
+  } satisfies RawManualBalance);
+}
+
 onMounted(async () => {
   const { currentRoute } = router;
   if (currentRoute.query.add) {
     add();
     await router.replace({ query: {} });
   }
+  await fetchManualBalances();
+  await fetchAssociatedLocations();
 });
 </script>
 
@@ -87,30 +114,32 @@ onMounted(async () => {
     <ManualBalanceTable
       data-cy="manual-balances"
       :title="t('manual_balances.balances')"
-      :balances="manualBalances"
-      :loading="loading"
-      @edit="edit($event)"
-      @refresh="refresh()"
+      type="balances"
+      @edit="balance = $event"
     />
     <ManualBalanceTable
       data-cy="manual-liabilities"
       :title="t('manual_balances.liabilities')"
       class="mt-8"
-      :balances="manualLiabilities"
-      :loading="loading"
-      @edit="edit($event)"
-      @refresh="refresh()"
+      type="liabilities"
+      @edit="balance = $event"
     />
     <BigDialog
-      :display="openDialog"
+      :display="!!balance"
       :title="dialogTitle"
       :subtitle="dialogSubtitle"
-      :loading="submitting"
+      :loading="loading"
       :primary-action="t('common.actions.save')"
-      @confirm="trySubmit()"
-      @cancel="cancelForm()"
+      @confirm="save()"
+      @cancel="balance = undefined"
     >
-      <ManualBalancesForm :edit="balanceToEdit" />
+      <ManualBalancesForm
+        v-if="balance"
+        ref="form"
+        v-model="balance"
+        :submitting="loading"
+        :error-messages.sync="errorMessages"
+      />
     </BigDialog>
   </TablePageLayout>
 </template>

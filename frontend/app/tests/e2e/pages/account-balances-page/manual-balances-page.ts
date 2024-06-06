@@ -35,6 +35,7 @@ export class ManualBalancesPage {
     cy.get('[data-cy=bottom-dialog]', { timeout: 120000 }).should(
       'not.exist',
     );
+    cy.get('[data-cy=price-refresh]').should('not.be.disabled');
   }
 
   visibleEntries(visible: number) {
@@ -147,6 +148,7 @@ export class ManualBalancesPage {
     cy.get('[data-cy=bottom-dialog]', { timeout: 120000 }).should(
       'not.exist',
     );
+    cy.get('[data-cy=price-refresh]').should('not.be.disabled');
   }
 
   deleteBalance(position: number) {

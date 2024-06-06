@@ -2865,9 +2865,6 @@
     }
   },
   "manual_balances_table": {
-    "columns": {
-      "label": "Label"
-    },
     "delete_dialog": {
       "message": "Are you sure you want to delete this entry?",
       "title": "Delete manually tracked balance"
