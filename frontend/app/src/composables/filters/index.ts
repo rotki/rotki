@@ -1,10 +1,8 @@
-import { z } from 'zod';
+import type { FilterSchema } from '@/composables/filter-paginate';
 
-export function useEmptyFilter<F extends NonNullable<unknown> | void, M>() {
+export function useEmptyFilter<F extends NonNullable<unknown> | void, M>(): FilterSchema<F | undefined, M> {
   return {
-    filters: ref<F>(),
+    filters: ref(),
     matchers: computed<M[]>(() => []),
-    RouteFilterSchema: z.object({}),
-    updateFilter: (_filter: F) => {},
   };
 }

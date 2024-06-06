@@ -66,7 +66,6 @@ const {
   isLoading: loading,
   editableItem,
   fetchData,
-  setFilter,
   setPage,
   sort,
   pagination,
@@ -269,7 +268,7 @@ watch(ignoredFilter, (oldValue, newValue) => {
         :collection="assets"
         :loading="loading"
         :change="!loading"
-        :filters="filters"
+        :filters.sync="filters"
         :matchers="matchers"
         :ignored-assets="ignoredAssets"
         :ignored-filter.sync="ignoredFilter"
@@ -280,7 +279,6 @@ watch(ignoredFilter, (oldValue, newValue) => {
         @refresh="fetchData()"
         @edit="edit($event)"
         @delete-asset="showDeleteConfirmation($event)"
-        @update:filters="setFilter($event)"
         @update:page="setPage($event)"
       />
 

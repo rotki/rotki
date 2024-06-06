@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
+import type { FilterSchema } from '@/composables/filter-paginate';
 
 enum AddressBookFilterKeys {
   NAME = 'name',
@@ -18,12 +19,12 @@ export type Matcher = SearchMatcher<
 
 export type Filters = MatchedKeyword<AddressBookFilterValueKeys>;
 
-export function useAddressBookFilter() {
-  const filters: Ref<Filters> = ref({});
+export function useAddressBookFilter(): FilterSchema<Filters, Matcher> {
+  const filters = ref<Filters>({});
 
   const { t } = useI18n();
 
-  const matchers: ComputedRef<Matcher[]> = computed(() => [
+  const matchers = computed<Matcher[]>(() => [
     {
       key: AddressBookFilterKeys.NAME,
       keyValue: AddressBookFilterValueKeys.NAME,
@@ -44,10 +45,6 @@ export function useAddressBookFilter() {
     },
   ]);
 
-  const updateFilter = (newFilters: Filters) => {
-    set(filters, newFilters);
-  };
-
   const OptionalString = z.string().optional();
   const RouteFilterSchema = z.object({
     [AddressBookFilterValueKeys.NAME]: OptionalString,
@@ -57,7 +54,6 @@ export function useAddressBookFilter() {
   return {
     filters,
     matchers,
-    updateFilter,
     RouteFilterSchema,
   };
 }

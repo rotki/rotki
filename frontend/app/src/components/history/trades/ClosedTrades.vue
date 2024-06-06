@@ -129,7 +129,6 @@ const {
   setPage,
   pagination,
   sort,
-  setFilter,
   fetchData,
 } = usePaginationFilters<
   Trade,
@@ -367,10 +366,9 @@ watch(loading, async (isLoading, wasLoading) => {
           </TableStatusFilter>
           <TableFilter
             class="min-w-full sm:min-w-[20rem]"
-            :matches="filters"
+            :matches.sync="filters"
             :matchers="matchers"
             :location="SavedFilterLocation.HISTORY_TRADES"
-            @update:matches="setFilter($event)"
           />
         </template>
 

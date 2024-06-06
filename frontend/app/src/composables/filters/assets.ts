@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
+import type { FilterSchema } from '@/composables/filter-paginate';
 
 enum AssetFilterKeys {
   SYMBOL = 'symbol',
@@ -19,13 +20,13 @@ export type Matcher = SearchMatcher<AssetFilterKeys, AssetFilterValueKeys>;
 
 export type Filters = MatchedKeyword<AssetFilterValueKeys>;
 
-export function useAssetFilter() {
-  const filters: Ref<Filters> = ref({});
+export function useAssetFilter(): FilterSchema<Filters, Matcher> {
+  const filters = ref<Filters>({});
 
   const { allEvmChains } = useSupportedChains();
   const { t } = useI18n();
 
-  const matchers: ComputedRef<Matcher[]> = computed(() => [
+  const matchers = computed<Matcher[]>(() => [
     {
       key: AssetFilterKeys.SYMBOL,
       keyValue: AssetFilterValueKeys.SYMBOL,
@@ -62,10 +63,6 @@ export function useAssetFilter() {
     },
   ]);
 
-  const updateFilter = (newFilters: Filters) => {
-    set(filters, newFilters);
-  };
-
   const OptionalString = z.string().optional();
   const RouteFilterSchema = z.object({
     [AssetFilterValueKeys.SYMBOL]: OptionalString,
@@ -77,7 +74,6 @@ export function useAssetFilter() {
   return {
     filters,
     matchers,
-    updateFilter,
     RouteFilterSchema,
   };
 }

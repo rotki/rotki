@@ -40,7 +40,6 @@ const {
   state,
   isLoading,
   fetchData,
-  setFilter,
   sort,
   pagination,
 } = usePaginationFilters<
@@ -185,8 +184,7 @@ watch(formPayload, ({ blockchain }, { blockchain: oldBlockchain }) => {
         <div class="w-[20rem] max-w-[30rem]">
           <TableFilter
             :matchers="matchers"
-            :matches="filters"
-            @update:matches="setFilter($event)"
+            :matches.sync="filters"
           />
         </div>
       </div>
