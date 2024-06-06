@@ -6,7 +6,10 @@ from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
-from rotkehlchen.chain.evm.decoding.gearbox.constants import CPT_GEARBOX, GEARBOX_DATA_COMPRESSOR
+from rotkehlchen.chain.evm.decoding.gearbox.constants import (
+    CHAIN_ID_TO_DATA_COMPRESSOR,
+    CPT_GEARBOX,
+)
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
@@ -221,10 +224,9 @@ def query_gearbox_data_from_chain(
     May raise:
     - RemoteError if failed to query chain
     """
-    pools_data = evm_inquirer.contracts.contract(GEARBOX_DATA_COMPRESSOR).call(
-        node_inquirer=evm_inquirer,
-        method_name='getPoolsV3List',
-    )
+    pools_data = evm_inquirer.contracts.contract(
+        CHAIN_ID_TO_DATA_COMPRESSOR[evm_inquirer.chain_id],
+    ).call(node_inquirer=evm_inquirer, method_name='getPoolsV3List')
     new_pools = []
     for pool_data in pools_data:
         try:
