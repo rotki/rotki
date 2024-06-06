@@ -10,6 +10,7 @@ import {
   dateValidator,
 } from '@/types/filtering';
 import type { MaybeRef } from '@vueuse/core';
+import type { FilterSchema } from '@/composables/filter-paginate';
 
 enum HistoryEventFilterKeys {
   START = 'start',
@@ -56,8 +57,8 @@ export function useHistoryEventFilter(disabled: {
   validators?: boolean;
   eventTypes?: boolean;
   eventSubtypes?: boolean;
-}, entryTypes?: MaybeRef<HistoryEventEntryType[] | undefined>) {
-  const filters: Ref<Filters> = ref({});
+}, entryTypes?: MaybeRef<HistoryEventEntryType[] | undefined>): FilterSchema<Filters, Matcher> {
+  const filters = ref<Filters>({});
 
   const { dateInputFormat } = storeToRefs(useFrontendSettingsStore());
   const { historyEventTypes, historyEventTypeGlobalMapping } = useHistoryEventMappings();
@@ -67,7 +68,7 @@ export function useHistoryEventFilter(disabled: {
   const { associatedLocations } = storeToRefs(useHistoryStore());
   const { t } = useI18n();
 
-  const matchers: ComputedRef<Matcher[]> = computed(() => {
+  const matchers = computed<Matcher[]>(() => {
     const data: Matcher[] = [
       ...(disabled?.period
         ? []
@@ -259,12 +260,6 @@ export function useHistoryEventFilter(disabled: {
     return data;
   });
 
-  const updateFilter = (newFilters: Filters) => {
-    set(filters, {
-      ...newFilters,
-    });
-  };
-
   const OptionalString = z.string().optional();
   const OptionalMultipleString = z
     .array(z.string())
@@ -290,7 +285,6 @@ export function useHistoryEventFilter(disabled: {
   return {
     matchers,
     filters,
-    updateFilter,
     RouteFilterSchema,
   };
 }

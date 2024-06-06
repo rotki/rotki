@@ -11,11 +11,10 @@ import type { PaginationRequestPayload } from '@/types/common';
 import type { Collection } from '@/types/collection';
 import type { TablePagination } from '@/types/pagination';
 
-interface FilterSchema<F, M> {
+export interface FilterSchema<F, M> {
   filters: Ref<F>;
   matchers: ComputedRef<M[]>;
-  updateFilter: (filter: F) => void;
-  RouteFilterSchema: ZodSchema;
+  RouteFilterSchema?: ZodSchema;
 }
 
 /**
@@ -72,7 +71,7 @@ export function usePaginationFilters<
     defaultSortBy,
   } = options;
 
-  const { filters, matchers, updateFilter, RouteFilterSchema } = filterSchema();
+  const { filters, matchers, RouteFilterSchema } = filterSchema();
 
   const sort = computed<DataTableSortData>({
     get() {
@@ -263,6 +262,16 @@ export function usePaginationFilters<
     },
   });
 
+  const filter = computed<W>({
+    get() {
+      return get(filters);
+    },
+    set(value: W) {
+      set(userAction, true);
+      set(filters, value);
+    },
+  });
+
   /**
    * Updates pagination options
    * @template T
@@ -286,16 +295,16 @@ export function usePaginationFilters<
     if (isEmpty(query)) {
       // for empty query, we reset the filters, and pagination to defaults
       onUpdateFilters?.(query);
-      updateFilter(RouteFilterSchema.parse({}));
+      set(filters, RouteFilterSchema?.parse({}));
       return setOptions(defaultOptions<V>(options.defaultSortBy));
     }
 
     const parsedOptions = RouterPaginationOptionsSchema.parse(query);
-    const parsedFilters = RouteFilterSchema.parse(query);
+    const parsedFilters = RouteFilterSchema?.parse(query);
 
     onUpdateFilters?.(query);
 
-    updateFilter(parsedFilters);
+    set(filters, parsedFilters);
     set(paginationOptions, {
       ...get(paginationOptions),
       ...parsedOptions,
@@ -359,13 +368,12 @@ export function usePaginationFilters<
   };
 
   /**
-   * Updates the filters
+   * Updates the filters without triggering a user action
    * @template W
    * @param {W} newFilter
    */
-  const setFilter = (newFilter: W) => {
-    set(userAction, true);
-    updateFilter(newFilter);
+  const updateFilter = (newFilter: W) => {
+    set(filters, newFilter);
   };
 
   onBeforeMount(() => {
@@ -416,14 +424,13 @@ export function usePaginationFilters<
     isLoading,
     userAction,
     state,
-    filters,
+    filters: filter,
     matchers,
     sort,
     pagination,
     setPage,
-    setFilter,
     applyRouteFilter,
-    updateFilter,
     fetchData,
+    updateFilter,
   };
 }

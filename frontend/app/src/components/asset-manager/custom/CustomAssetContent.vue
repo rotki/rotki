@@ -56,7 +56,6 @@ const {
   expanded,
   matchers,
   fetchData,
-  setFilter,
   isLoading: loading,
   editableItem,
   pagination,
@@ -172,14 +171,13 @@ watch(identifier, (assetId) => {
       :assets="state.data"
       :loading="loading"
       :server-item-length="state.found"
-      :filters="filters"
+      :filters.sync="filters"
       :matchers="matchers"
       :expanded.sync="expanded"
       :pagination.sync="pagination"
       :sort.sync="sort"
       @edit="edit($event)"
       @delete-asset="showDeleteConfirmation($event)"
-      @update:filters="setFilter($event)"
     />
     <CustomAssetFormDialog
       :title="dialogTitle"

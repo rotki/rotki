@@ -14,7 +14,7 @@ export function useSavedFilter(location: MaybeRef<SavedFilterLocation>, isAsset:
 
   const { savedFilters: allSavedFilters } = storeToRefs(frontendStore);
 
-  const savedFilters: ComputedRef<Suggestion[][]> = computed(() => {
+  const savedFilters = computed<Suggestion[][]>(() => {
     const baseSuggestions = get(allSavedFilters)[get(location)] || [];
 
     return baseSuggestions.map(suggestions =>

@@ -168,7 +168,6 @@ const {
   filters,
   matchers,
   setPage,
-  setFilter,
   updateFilter,
   fetchData,
   pageParams,
@@ -801,10 +800,9 @@ watchImmediate(route, async (route) => {
           </TableStatusFilter>
           <TableFilter
             class="min-w-[20rem]"
-            :matches="filters"
+            :matches.sync="filters"
             :matchers="matchers"
             :location="SavedFilterLocation.HISTORY_EVENTS"
-            @update:matches="setFilter($event)"
           />
         </template>
 

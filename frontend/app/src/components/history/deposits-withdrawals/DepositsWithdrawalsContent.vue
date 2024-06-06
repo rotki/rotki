@@ -101,7 +101,6 @@ const {
   setPage,
   sort,
   pagination,
-  setFilter,
   fetchData,
 } = usePaginationFilters<
   AssetMovement,
@@ -221,10 +220,9 @@ watch(loading, async (isLoading, wasLoading) => {
           </TableStatusFilter>
           <TableFilter
             class="min-w-full sm:min-w-[20rem]"
-            :matches="filters"
+            :matches.sync="filters"
             :matchers="matchers"
             :location="SavedFilterLocation.HISTORY_DEPOSITS_WITHDRAWALS"
-            @update:matches="setFilter($event)"
           />
         </template>
         <IgnoreButtons

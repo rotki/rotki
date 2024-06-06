@@ -9,6 +9,7 @@ import {
   dateValidator,
 } from '@/types/filtering';
 import { MovementCategory } from '@/types/history/asset-movements';
+import type { FilterSchema } from '@/composables/filter-paginate';
 
 enum AssetMovementFilterKeys {
   LOCATION = 'location',
@@ -33,8 +34,8 @@ export type Matcher = SearchMatcher<
 
 export type Filters = MatchedKeyword<AssetMovementFilterValueKeys>;
 
-export function useAssetMovementFilters() {
-  const filters: Ref<Filters> = ref({});
+export function useAssetMovementFilters(): FilterSchema<Filters, Matcher> {
+  const filters = ref<Filters>({});
 
   const locationsStore = useHistoryStore();
   const { associatedLocations } = storeToRefs(locationsStore);
@@ -42,67 +43,60 @@ export function useAssetMovementFilters() {
   const { assetSearch, assetInfo } = useAssetInfoRetrieval();
   const { t } = useI18n();
 
-  const matchers: ComputedRef<Matcher[]> = computed(
-    () =>
-      [
-        {
-          key: AssetMovementFilterKeys.ASSET,
-          keyValue: AssetMovementFilterValueKeys.ASSET,
-          description: t('deposit_withdrawals.filter.asset'),
-          asset: true,
-          suggestions: assetSuggestions(assetSearch),
-          deserializer: assetDeserializer(assetInfo),
-        },
-        {
-          key: AssetMovementFilterKeys.ACTION,
-          keyValue: AssetMovementFilterValueKeys.ACTION,
-          description: t('deposit_withdrawals.filter.action'),
-          string: true,
-          suggestions: () => MovementCategory.options,
-          validate: type =>
-            (MovementCategory.options as string[]).includes(type),
-        },
-        {
-          key: AssetMovementFilterKeys.START,
-          keyValue: AssetMovementFilterValueKeys.START,
-          description: t('deposit_withdrawals.filter.start_date'),
-          string: true,
-          hint: t('deposit_withdrawals.filter.date_hint', {
-            format: getDateInputISOFormat(get(dateInputFormat)),
-          }),
-          suggestions: () => [],
-          validate: dateValidator(dateInputFormat),
-          serializer: dateSerializer(dateInputFormat),
-          deserializer: dateDeserializer(dateInputFormat),
-        },
-        {
-          key: AssetMovementFilterKeys.END,
-          keyValue: AssetMovementFilterValueKeys.END,
-          description: t('deposit_withdrawals.filter.end_date'),
-          hint: t('deposit_withdrawals.filter.date_hint', {
-            format: getDateInputISOFormat(get(dateInputFormat)),
-          }),
-          string: true,
-          suggestions: () => [],
-          validate: dateValidator(dateInputFormat),
-          serializer: dateSerializer(dateInputFormat),
-          deserializer: dateDeserializer(dateInputFormat),
-        },
-        {
-          key: AssetMovementFilterKeys.LOCATION,
-          keyValue: AssetMovementFilterValueKeys.LOCATION,
-          description: t('deposit_withdrawals.filter.location'),
-          string: true,
-          suggestions: () => get(associatedLocations),
-          validate: location =>
-            get(associatedLocations).includes(location),
-        },
-      ] satisfies Matcher[],
-  );
-
-  const updateFilter = (newFilters: Filters) => {
-    set(filters, newFilters);
-  };
+  const matchers = computed<Matcher[]>(() => [
+    {
+      key: AssetMovementFilterKeys.ASSET,
+      keyValue: AssetMovementFilterValueKeys.ASSET,
+      description: t('deposit_withdrawals.filter.asset'),
+      asset: true,
+      suggestions: assetSuggestions(assetSearch),
+      deserializer: assetDeserializer(assetInfo),
+    },
+    {
+      key: AssetMovementFilterKeys.ACTION,
+      keyValue: AssetMovementFilterValueKeys.ACTION,
+      description: t('deposit_withdrawals.filter.action'),
+      string: true,
+      suggestions: () => MovementCategory.options,
+      validate: type =>
+        (MovementCategory.options as string[]).includes(type),
+    },
+    {
+      key: AssetMovementFilterKeys.START,
+      keyValue: AssetMovementFilterValueKeys.START,
+      description: t('deposit_withdrawals.filter.start_date'),
+      string: true,
+      hint: t('deposit_withdrawals.filter.date_hint', {
+        format: getDateInputISOFormat(get(dateInputFormat)),
+      }),
+      suggestions: () => [],
+      validate: dateValidator(dateInputFormat),
+      serializer: dateSerializer(dateInputFormat),
+      deserializer: dateDeserializer(dateInputFormat),
+    },
+    {
+      key: AssetMovementFilterKeys.END,
+      keyValue: AssetMovementFilterValueKeys.END,
+      description: t('deposit_withdrawals.filter.end_date'),
+      hint: t('deposit_withdrawals.filter.date_hint', {
+        format: getDateInputISOFormat(get(dateInputFormat)),
+      }),
+      string: true,
+      suggestions: () => [],
+      validate: dateValidator(dateInputFormat),
+      serializer: dateSerializer(dateInputFormat),
+      deserializer: dateDeserializer(dateInputFormat),
+    },
+    {
+      key: AssetMovementFilterKeys.LOCATION,
+      keyValue: AssetMovementFilterValueKeys.LOCATION,
+      description: t('deposit_withdrawals.filter.location'),
+      string: true,
+      suggestions: () => get(associatedLocations),
+      validate: location =>
+        get(associatedLocations).includes(location),
+    },
+  ] satisfies Matcher[]);
 
   const OptionalString = z.string().optional();
   const RouteFilterSchema = z.object({
@@ -116,7 +110,6 @@ export function useAssetMovementFilters() {
   return {
     filters,
     matchers,
-    updateFilter,
     RouteFilterSchema,
   };
 }

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { MaybeRef } from '@vueuse/core';
 import type { MatchedKeyword, SearchMatcher } from '@/types/filtering';
+import type { FilterSchema } from '@/composables/filter-paginate';
 
 enum CustomAssetFilterKeys {
   NAME = 'name',
@@ -19,12 +20,12 @@ export type Matcher = SearchMatcher<
 
 export type Filters = MatchedKeyword<CustomAssetFilterValueKeys>;
 
-export function useCustomAssetFilter(suggestions: MaybeRef<string[]>) {
-  const filters: Ref<Filters> = ref({});
+export function useCustomAssetFilter(suggestions: MaybeRef<string[]>): FilterSchema<Filters, Matcher> {
+  const filters = ref<Filters>({});
 
   const { t } = useI18n();
 
-  const matchers: ComputedRef<Matcher[]> = computed(() => [
+  const matchers = computed<Matcher[]>(() => [
     {
       key: CustomAssetFilterKeys.NAME,
       keyValue: CustomAssetFilterValueKeys.NAME,
@@ -45,10 +46,6 @@ export function useCustomAssetFilter(suggestions: MaybeRef<string[]>) {
     },
   ]);
 
-  const updateFilter = (newFilters: Filters) => {
-    set(filters, newFilters);
-  };
-
   const OptionalString = z.string().optional();
   const RouteFilterSchema = z.object({
     [CustomAssetFilterValueKeys.NAME]: OptionalString,
@@ -58,7 +55,6 @@ export function useCustomAssetFilter(suggestions: MaybeRef<string[]>) {
   return {
     filters,
     matchers,
-    updateFilter,
     RouteFilterSchema,
   };
 }

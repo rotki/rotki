@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { FilterSchema } from '@/composables/filter-paginate';
 import type {
   MatchedKeywordWithBehaviour,
   SearchMatcher,
@@ -24,8 +25,8 @@ export type Matcher = SearchMatcher<
 export type Filters =
   MatchedKeywordWithBehaviour<AccountingRuleFilterValueKeys>;
 
-export function useAccountingRuleFilter() {
-  const filters: Ref<Filters> = ref({});
+export function useAccountingRuleFilter(): FilterSchema<Filters, Matcher> {
+  const filters = ref<Filters>({});
 
   const { historyEventTypes, historyEventSubTypes } = useHistoryEventMappings();
   const { counterparties } = useHistoryEventCounterpartyMappings();
@@ -61,10 +62,6 @@ export function useAccountingRuleFilter() {
     },
   ]);
 
-  const updateFilter = (newFilters: Filters) => {
-    set(filters, newFilters);
-  };
-
   const OptionalMultipleString = z
     .array(z.string())
     .or(z.string())
@@ -80,7 +77,6 @@ export function useAccountingRuleFilter() {
   return {
     matchers,
     filters,
-    updateFilter,
     RouteFilterSchema,
   };
 }
