@@ -5,13 +5,14 @@ from unittest.mock import MagicMock, patch
 import gevent
 import pytest
 
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_YFI
+from rotkehlchen.constants.assets import A_DAI, A_USDC, A_USDT, A_YFI
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import evm_address_to_identifier
@@ -19,9 +20,13 @@ from rotkehlchen.constants.timing import DATA_UPDATES_REFRESH, DAY_IN_SECONDS, W
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar
 from rotkehlchen.db.evmtx import DBEvmTx
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings, ModifiableDBSettings
+from rotkehlchen.db.utils import LocationData
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, SubscriptionStatus
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.tasks.calendar import ENS_CALENDAR_COLOR
@@ -34,7 +39,7 @@ from rotkehlchen.tests.utils.ethereum import (
     get_decoded_events_of_transaction,
     setup_ethereum_transactions_test,
 )
-from rotkehlchen.tests.utils.factories import make_evm_address
+from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
 from rotkehlchen.tests.utils.mock import mock_evm_chains_with_transactions
 from rotkehlchen.tests.utils.premium import VALID_PREMIUM_KEY, VALID_PREMIUM_SECRET
 from rotkehlchen.types import (
@@ -45,6 +50,7 @@ from rotkehlchen.types import (
     Location,
     SupportedBlockchain,
     Timestamp,
+    TimestampMS,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
@@ -57,6 +63,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.exchanges.exchange import ExchangeInterface
     from rotkehlchen.exchanges.manager import ExchangeManager
+    from rotkehlchen.rotkehlchen import Rotkehlchen
 
 
 def test_potential_maybe_schedule_task(task_manager: TaskManager):
@@ -283,15 +290,80 @@ def test_check_premium_status(rotkehlchen_api_server, username):
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])
-def test_update_snapshot_balances(task_manager: TaskManager):
+def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
+    database = rotkehlchen_instance.data.db
+    db_history_events = DBHistoryEvents(database)
+    with db_history_events.db.user_write() as write_cursor:
+        database.add_multiple_location_data(
+            write_cursor=write_cursor,
+            location_data=[LocationData(
+                time=Timestamp(2),
+                location=Location.ETHEREUM.serialize_for_db(),
+                usd_value='',
+            )],
+        )
+        accounts = database.get_blockchain_accounts(write_cursor).get(SupportedBlockchain.ETHEREUM)
+        db_history_events.add_history_events(
+            write_cursor=write_cursor,
+            history=[
+                EvmEvent(  # is before last_balance_save
+                    event_identifier='0x15ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791',
+                    sequence_index=1,
+                    timestamp=TimestampMS(1000),
+                    location=Location.OPTIMISM,
+                    event_type=HistoryEventType.RECEIVE,
+                    event_subtype=HistoryEventSubType.NONE,
+                    asset=A_USDT,
+                    balance=Balance(ONE),
+                    location_label=accounts[0],
+                    tx_hash=make_evm_tx_hash(),
+                ), EvmEvent(  # USDT was received before last_balance_save
+                    event_identifier='0x25ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791',
+                    sequence_index=1,
+                    timestamp=TimestampMS(2000),
+                    location=Location.ETHEREUM,
+                    event_type=HistoryEventType.WITHDRAWAL,
+                    event_subtype=HistoryEventSubType.REMOVE_ASSET,
+                    asset=A_USDT,
+                    balance=Balance(),
+                    location_label=accounts[0],
+                    tx_hash=make_evm_tx_hash(),
+                ), EvmEvent(  # is a new receive event of this token after last_balance_save
+                    event_identifier='0x75ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791',
+                    sequence_index=1,
+                    timestamp=TimestampMS(3000),
+                    location=Location.ETHEREUM,
+                    event_type=HistoryEventType.TRADE,
+                    event_subtype=HistoryEventSubType.RECEIVE,
+                    asset=A_DAI,
+                    balance=Balance(ONE),
+                    location_label=accounts[1],
+                    tx_hash=make_evm_tx_hash(),
+                ), EvmEvent(  # is a new receive event of this token after last_balance_save
+                    event_identifier='0x35ceef8e258c08fc2724c1286da0426cb6ec8df208a9ec269108430c30262791',
+                    sequence_index=1,
+                    timestamp=TimestampMS(4000),
+                    location=Location.OPTIMISM,
+                    event_type=HistoryEventType.TRADE,
+                    event_subtype=HistoryEventSubType.RECEIVE,
+                    asset=A_USDC,
+                    balance=Balance(ONE),
+                    location_label=accounts[2],
+                    tx_hash=make_evm_tx_hash(),
+                ),
+            ],
+        )
+
+    task_manager = rotkehlchen_instance.task_manager
+    assert task_manager is not None
     task_manager.potential_tasks = [task_manager._maybe_update_snapshot_balances]
-    query_balances_patch = patch.object(
-        task_manager,
-        'query_balances',
-    )
     timeout = 5
     try:
-        with gevent.Timeout(timeout), query_balances_patch as query_mock:
+        with (
+            gevent.Timeout(timeout),
+            patch.object(task_manager, 'query_balances') as query_mock,
+            patch.object(task_manager.database, 'save_tokens_for_address') as save_tokens_mock,
+        ):
             task_manager.schedule()
             while query_mock.call_count != 1:
                 gevent.sleep(.2)
@@ -302,6 +374,14 @@ def test_update_snapshot_balances(task_manager: TaskManager):
                 timestamp=None,
                 ignore_cache=True,
             )
+
+            assert save_tokens_mock.call_count == 2
+            assert save_tokens_mock.call_args_list[0].kwargs['address'] == accounts[1]
+            assert save_tokens_mock.call_args_list[0].kwargs['blockchain'] == SupportedBlockchain.ETHEREUM  # noqa: E501
+            assert save_tokens_mock.call_args_list[0].kwargs['tokens'] == [A_DAI]
+            assert save_tokens_mock.call_args_list[1].kwargs['address'] == accounts[2]
+            assert save_tokens_mock.call_args_list[1].kwargs['blockchain'] == SupportedBlockchain.OPTIMISM  # noqa: E501
+            assert save_tokens_mock.call_args_list[1].kwargs['tokens'] == [A_USDC]
     except gevent.Timeout as e:
         raise AssertionError(f'Update snapshot balances was not completed within {timeout} seconds') from e  # noqa: E501
 

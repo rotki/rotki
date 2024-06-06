@@ -61,6 +61,7 @@ DEFAULT_ORACLE_PENALTY_DURATION = 1800
 DEFAULT_AUTO_DELETE_CALENDAR_ENTRIES = True
 DEFAULT_AUTO_CREATE_CALENDAR_REMINDERS = True
 DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY = True
+DEFAULT_AUTO_DETECT_TOKENS = True
 
 JSON_KEYS = (
     'current_price_oracles',
@@ -86,6 +87,7 @@ BOOLEAN_KEYS = (
     'auto_delete_calendar_entries',
     'auto_create_calendar_reminders',
     'ask_user_upon_size_discrepancy',
+    'auto_detect_tokens',
 )
 INTEGER_KEYS = (
     'version',
@@ -214,6 +216,7 @@ class DBSettings:
     auto_delete_calendar_entries: bool = DEFAULT_AUTO_DELETE_CALENDAR_ENTRIES
     auto_create_calendar_reminders: bool = DEFAULT_AUTO_CREATE_CALENDAR_REMINDERS
     ask_user_upon_size_discrepancy: bool = DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY
+    auto_detect_tokens: bool = DEFAULT_AUTO_DETECT_TOKENS
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}
@@ -273,6 +276,7 @@ class ModifiableDBSettings(NamedTuple):
     auto_delete_calendar_entries: bool | None = None
     auto_create_calendar_reminders: bool | None = None
     ask_user_upon_size_discrepancy: bool | None = None
+    auto_detect_tokens: bool | None = None
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}

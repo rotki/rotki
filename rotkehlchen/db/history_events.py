@@ -64,6 +64,15 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+def filter_ignore_asset_query(include_ignored_assets: bool = False) -> str:
+    """Create and return the subquery to filter ignored assets. If `include_ignored_assets`
+    is true then the filter is returned to include them."""
+    ignored_asset_subquery = 'SELECT value FROM multisettings WHERE name="ignored_asset")'
+    if include_ignored_assets:
+        return f'WHERE (asset IN ({ignored_asset_subquery}) '
+    return f'WHERE (asset IS NULL OR asset NOT IN ({ignored_asset_subquery}) '
+
+
 def maybe_filter_ignore_asset(
         filter_query: HistoryBaseEntryFilterQuery,
         include_ignored_assets: bool = False,
@@ -74,11 +83,7 @@ def maybe_filter_ignore_asset(
     to include them."""
     for fil in filter_query.filters:
         if isinstance(fil, DBIgnoredAssetsFilter):
-            # Also don't count spam asset transactions in the limit
-            ignored_asset_subquery = 'SELECT value FROM multisettings WHERE name="ignored_asset")'
-            if include_ignored_assets:
-                return f'WHERE (asset IN ({ignored_asset_subquery}) '
-            return f'WHERE (asset IS NULL OR asset NOT IN ({ignored_asset_subquery}) '
+            return filter_ignore_asset_query(include_ignored_assets)
     return ''
 
 
