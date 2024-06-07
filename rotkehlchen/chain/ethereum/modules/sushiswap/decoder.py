@@ -2,11 +2,9 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.modules.sushiswap.constants import CPT_SUSHISWAP_V2
-from rotkehlchen.chain.ethereum.modules.uniswap.v2.common import (
+from rotkehlchen.chain.ethereum.modules.sushiswap.constants import (
+    CPT_SUSHISWAP_V2,
     SUSHISWAP_ROUTER,
-    decode_uniswap_like_deposit_and_withdrawals,
-    decode_uniswap_v2_like_swap,
 )
 from rotkehlchen.chain.ethereum.modules.uniswap.v2.constants import SWAP_SIGNATURE
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -16,6 +14,10 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.decoding.uniswap_v2_like.common import (
+    decode_uniswap_like_deposit_and_withdrawals,
+    decode_uniswap_v2_like_swap,
+)
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.types import EvmTransaction
@@ -48,8 +50,9 @@ class SushiswapDecoder(DecoderInterface):
                 decoded_events=decoded_events,
                 transaction=transaction,
                 counterparty=CPT_SUSHISWAP_V2,
+                counterparty_addresses=[SUSHISWAP_ROUTER],
                 database=self.evm_inquirer.database,
-                ethereum_inquirer=self.evm_inquirer,  # type: ignore[arg-type]  # is ethereum
+                evm_inquirer=self.evm_inquirer,
                 notify_user=self.notify_user,
             )
         return DEFAULT_DECODING_OUTPUT
@@ -71,7 +74,7 @@ class SushiswapDecoder(DecoderInterface):
                 event_action_type='addition',
                 counterparty=CPT_SUSHISWAP_V2,
                 database=self.evm_inquirer.database,
-                ethereum_inquirer=self.evm_inquirer,  # type: ignore[arg-type]  # is ethereum
+                evm_inquirer=self.evm_inquirer,
                 factory_address=SUSHISWAP_V2_FACTORY,
                 init_code_hash=SUSHISWAP_V2_INIT_CODE_HASH,
                 tx_hash=transaction.tx_hash,
@@ -84,7 +87,7 @@ class SushiswapDecoder(DecoderInterface):
                 event_action_type='removal',
                 counterparty=CPT_SUSHISWAP_V2,
                 database=self.evm_inquirer.database,
-                ethereum_inquirer=self.evm_inquirer,  # type: ignore[arg-type]  # is ethereum
+                evm_inquirer=self.evm_inquirer,
                 factory_address=SUSHISWAP_V2_FACTORY,
                 init_code_hash=SUSHISWAP_V2_INIT_CODE_HASH,
                 tx_hash=transaction.tx_hash,

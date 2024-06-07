@@ -2,12 +2,10 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.modules.uniswap.v2.common import (
+from rotkehlchen.chain.ethereum.modules.uniswap.v2.constants import (
+    SWAP_SIGNATURE,
     UNISWAP_V2_ROUTER,
-    decode_uniswap_like_deposit_and_withdrawals,
-    decode_uniswap_v2_like_swap,
 )
-from rotkehlchen.chain.ethereum.modules.uniswap.v2.constants import SWAP_SIGNATURE
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -17,6 +15,10 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.uniswap.constants import CPT_UNISWAP_V2, UNISWAP_ICON
 from rotkehlchen.chain.evm.decoding.uniswap.utils import decode_basic_uniswap_info
+from rotkehlchen.chain.evm.decoding.uniswap_v2_like.common import (
+    decode_uniswap_like_deposit_and_withdrawals,
+    decode_uniswap_v2_like_swap,
+)
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
@@ -86,8 +88,9 @@ class Uniswapv2Decoder(DecoderInterface):
                     transaction=transaction,
                     counterparty=CPT_UNISWAP_V2,
                     database=self.evm_inquirer.database,
-                    ethereum_inquirer=self.evm_inquirer,  # type: ignore[arg-type]  # is ethereum
+                    evm_inquirer=self.evm_inquirer,
                     notify_user=self.notify_user,
+                    counterparty_addresses=[UNISWAP_V2_ROUTER],
                 )
 
             # Else some aggregator (potentially complex) is used, so we decode only basic info
@@ -112,7 +115,7 @@ class Uniswapv2Decoder(DecoderInterface):
                 all_logs=all_logs,
                 event_action_type='addition',
                 counterparty=CPT_UNISWAP_V2,
-                ethereum_inquirer=self.evm_inquirer,  # type: ignore[arg-type]  # is ethereum
+                evm_inquirer=self.evm_inquirer,
                 database=self.evm_inquirer.database,
                 factory_address=UNISWAP_V2_FACTORY,
                 init_code_hash=UNISWAP_V2_INIT_CODE_HASH,
@@ -125,7 +128,7 @@ class Uniswapv2Decoder(DecoderInterface):
                 all_logs=all_logs,
                 event_action_type='removal',
                 counterparty=CPT_UNISWAP_V2,
-                ethereum_inquirer=self.evm_inquirer,  # type: ignore[arg-type]  # is ethereum
+                evm_inquirer=self.evm_inquirer,
                 database=self.evm_inquirer.database,
                 factory_address=UNISWAP_V2_FACTORY,
                 init_code_hash=UNISWAP_V2_INIT_CODE_HASH,

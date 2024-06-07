@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`7948` Syncswap in Scroll is now supported.
 * :feature:`7675` Users will now be able to export & import accounting rules.
 * :feature:`8003` 1inch v6 events should now be properly decoded for all supported EVM chains.
 * :feature:`7981` Circle's CCTP bridge transfers are decoded properly for all supported EVM chains.
