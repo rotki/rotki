@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`7974` Users will now be able to filter manual balances by asset, label and location.
 * :feature:`5103` rotki will now automatically detect tokens along with their balances if the setting has been turned on. Set to true by default.
 * :feature:`7675` Users will now be able to export & import accounting rules.
 * :feature:`8003` 1inch v6 events should now be properly decoded for all supported EVM chains.
