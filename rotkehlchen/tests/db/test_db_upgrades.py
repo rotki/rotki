@@ -2390,6 +2390,9 @@ def test_upgrade_db_42_to_43(user_data_dir, messages_aggregator):
         assert cursor.execute('SELECT COUNT(*) from evm_events_info WHERE counterparty=?', ('hop-protocol',)).fetchone()[0] == 0  # noqa: E501
         assert cursor.execute('SELECT COUNT(*) from evm_events_info WHERE counterparty=?', ('hop',)).fetchone()[0] == 1  # noqa: E501
 
+        cursor.execute('SELECT seq FROM location WHERE location=?', 'p')
+        assert cursor.fetchone() == (Location.HTX.value,)
+
 
 def test_latest_upgrade_correctness(user_data_dir):
     """

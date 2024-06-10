@@ -1271,8 +1271,8 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges):
             assert_simple_ok_response(response)
             assert exchange.api_key == new_key
             assert exchange.secret == new_secret.encode()
-            if location == Location.ICONOMI:
-                continue  # except for iconomi
+            if location in (Location.ICONOMI, Location.HTX):
+                continue  # except for iconomi AND huobi
             # all of the api keys end up in session headers. Check they are properly
             # updated there
             assert any(new_key in value for _, value in exchange.session.headers.items())
@@ -1298,8 +1298,8 @@ def test_edit_exchange_credentials(rotkehlchen_api_server_with_exchanges):
             # Test that the api key/secret DID NOT change
             assert exchange.api_key == new_key
             assert exchange.secret == new_secret.encode()
-            if location == Location.ICONOMI:
-                continue  # except for iconomi
+            if location in (Location.ICONOMI, Location.HTX):
+                continue  # except for iconomi AND huobi
             # all of the api keys end up in session headers. Check they are properly
             # updated there
             assert any(new_key in value for _, value in exchange.session.headers.items())

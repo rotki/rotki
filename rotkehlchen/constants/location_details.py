@@ -64,6 +64,7 @@ LOCATION_DETAILS: dict = {
     Location.SCROLL: {'image': 'scroll.svg'},
     Location.WOO: {'image': 'woo.svg'},
     Location.BYBIT: {'image': 'bybit.svg'},
+    Location.HTX: {'image': 'htx.svg'},
     Location.ZKSYNC_LITE: {'image': 'zksync_lite.svg'},
 }
 for key, value in LOCATION_DETAILS.items():

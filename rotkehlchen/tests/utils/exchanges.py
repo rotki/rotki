@@ -22,6 +22,7 @@ from rotkehlchen.exchanges.coinbasepro import Coinbasepro
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.exchanges.gemini import Gemini
+from rotkehlchen.exchanges.htx import Htx
 from rotkehlchen.exchanges.iconomi import Iconomi
 from rotkehlchen.exchanges.independentreserve import Independentreserve
 from rotkehlchen.exchanges.kucoin import Kucoin
@@ -750,6 +751,19 @@ def create_test_bybit(
 ) -> Bybit:
     return Bybit(
         name='bybit',
+        api_key=make_api_key(),
+        secret=make_api_secret(),
+        database=database,
+        msg_aggregator=msg_aggregator,
+    )
+
+
+def create_test_htx(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+) -> Htx:
+    return Htx(
+        name='htx',
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,

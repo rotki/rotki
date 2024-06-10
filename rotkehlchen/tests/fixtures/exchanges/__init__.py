@@ -12,6 +12,7 @@ from .bybit import *  # noqa: F403
 from .coinbase import *  # noqa: F403
 from .coinbasepro import *  # noqa: F403
 from .gemini import *  # noqa: F403
+from .htx import *  # noqa: F403
 from .iconomi import *  # noqa: F403
 from .independentreserve import *  # noqa: F403
 from .kraken import *  # noqa: F403
