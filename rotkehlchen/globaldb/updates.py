@@ -118,9 +118,9 @@ class AssetsUpdater:
 
     def __init__(self, msg_aggregator: 'MessagesAggregator') -> None:
         self.msg_aggregator = msg_aggregator
-        self.local_assets_version = GlobalDBHandler().get_setting_value(ASSETS_VERSION_KEY, 0)
+        self.local_assets_version = GlobalDBHandler.get_setting_value(ASSETS_VERSION_KEY, 0)
         self.last_remote_checked_version = -1  # integer value that represents no update
-        self.conflicts: list[tuple[AssetData, AssetData]] = []
+        self.conflicts: dict[str, tuple[AssetData, AssetData]] = {}
         self.assets_re = re.compile(r'.*INSERT +INTO +assets\( *identifier *, *name *, *type *\) *VALUES\(([^,]*?),([^,]*?),([^,]*?)\).*?')  # noqa: E501
         self.evm_tokens_re = re.compile(r'.*INSERT +INTO +evm_tokens\( *identifier *, *token_kind *, *chain *, *address *, *decimals *, *protocol *\) *VALUES\(([^,]*?),([^,]*?),([^,]*?),([^,]*?),([^,]*?),([^,]*?)\).*')  # noqa: E501
         self.common_asset_details_re = re.compile(r'.*INSERT +INTO +common_asset_details\( *identifier *, *symbol *, *coingecko *, *cryptocompare *, *forked *, *started *, *swapped_for *\) *VALUES\((.*?),(.*?),(.*?),(.*?),(.*?),([^,]*?),([^,]*?)\).*')  # noqa: E501
@@ -485,7 +485,8 @@ class AssetsUpdater:
                 serialized=False,
                 specific_ids=[local_asset.identifier],
             )[0]
-            self.conflicts.append((local_data, remote_asset_data))
+            # always take the last one, if there is multiple conflicts for a single asset
+            self.conflicts[local_asset.identifier] = (local_data, remote_asset_data)
 
     def _apply_single_version_update(
             self,
@@ -590,7 +591,7 @@ class AssetsUpdater:
         if self.last_remote_checked_version == -1:
             self.check_for_updates()
 
-        self.conflicts = []  # reset the stored conflicts
+        self.conflicts = {}  # reset the stored conflicts
         infojson = self._get_remote_info_json()
         local_schema_version = GlobalDBHandler().get_schema_version()
         data_directory = GlobalDBHandler()._data_directory
@@ -630,7 +631,7 @@ class AssetsUpdater:
                 if len(self.conflicts) != 0:
                     return [
                         {'identifier': x[0].identifier, 'local': x[0].serialize(), 'remote': x[1].serialize()}  # noqa: E501
-                        for x in self.conflicts
+                        for x in self.conflicts.values()
                     ]
 
                 # otherwise we are sure the DB will work without conflicts so let's
@@ -680,7 +681,7 @@ class AssetsUpdater:
                     update_file_type=UpdateFileType.ASSET_COLLECTIONS_MAPPINGS,
                 )
 
-        if self.conflicts == []:
+        if len(self.conflicts) == 0:
             connection.commit()
             return
 

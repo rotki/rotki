@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` Fix the issue where the popup notification breaks the experience when the notification sidebar is already open.
+* :bug:`-` Fixed an issue with the assets updates where conflicts couldn't be resolved for multiple changes in a single asset.
 
 * :release:`1.33.1 <2024-05-29>`
 * :bug:`-` Fix the issue where airdrops aren't properly filtered by status.
