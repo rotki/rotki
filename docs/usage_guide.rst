@@ -1099,7 +1099,21 @@ Rotki automatically resolves ens name and ens avatar for every evm address that 
 Token detection
 ===============
 
-For every evm address it is possible to trigger the process of detecting tokens by clicking in the refresh arrow for that address. In addition it is possible to trigger the detection process for all the addresses by clicking on ``RE-DETECT TOKENS``.
+For EVM accounts, it is possible to trigger the process of detecting tokens before refreshing the balances. There are several ways to do that:
+
+.. image:: images/refresh_all_accounts_tokens.png
+   :alt: Refresh all accounts tokens
+   :align: center
+
+1. To re-detect tokens for all EVM accounts in all chains, go to the dashboard and toggle the arrow here. You can change the default behavior of the refresh button to ``Re-detect tokens and refresh balances`` and then click the refresh button.
+
+.. image:: images/refresh_particular_account_tokens.png
+   :alt: Refresh particular accounts tokens
+   :align: center
+
+2. To re-detect tokens for all addresses of one EVM chain, click ``Re-detect tokens`` in the particular chain balance table.
+
+3. To re-detect tokens for only one account, click the refresh button in the corresponding row.
 
 Checking Exchange Balances
 ===========================
@@ -2269,15 +2283,43 @@ A very good idea about the rotki data directory would be to be making frequent b
 Manually accessing the database
 *******************************
 
-It is possible that to detect potential problems with data or modify the state of the database the user needs to manually access it. To do so we recommend the usage of `DB Browser for SQLite <https://sqlitebrowser.org/dl/>`_.
-DB Browser for SQLite is an open source software that provides an accessible UI and brings two programs, one with the normal browser and another with the functionalities to access encrypted databases. You can download it
-for Windows, MacOS and Linux at the previous link.
+To detect potential problems with data or modify the state of the database, you might need to manually access it. Here’s a guide on how to do this using `DB Browser for SQLite` or `sqlcipher` CLI tool.
 
-Once installed you have to start the program with the sqlcipher functionality and after that you need to select the rotki database. This database can be found in the :ref:`rotki data directory<rotki_data_directory>`. Once you open it, the program will
-ask for the password of the database. The password used for the database is the same as the one you use to unlock your rotki account.
+Using DB Browser for SQLite
+===========================
 
-Once the database is unlocked you can browse the information in the ``Browse Data`` tab or execute custom SQL commands. Please be aware that manually modifying the information of the database can lead to inconsistent state.
-So only run commands that you have double checked with our team there. Or use it without supervision only if you really know what you are doing. And always take backups of the database before you modify it.
+1. **Download and Install**: Get `DB Browser for SQLite <https://sqlitebrowser.org/dl/>`_. It's available for Windows, macOS, and Linux.
+2. **Starting the Program**: Launch the program with the SQLCipher functionality.
+3. **Opening the Rotki Database**:
+
+   - Navigate to the Rotki database in the :ref:`rotki data directory<rotki_data_directory>`.
+   - Enter the password you use to unlock your Rotki account to decrypt the database.
+
+4. **Browsing and Modifying Data**:
+
+   - Use the ``Browse Data`` tab to view the information.
+   - Execute custom SQL commands if needed. However, be cautious and ensure you have double-checked commands with our team or are confident in what you are doing.
+   - Always take backups before modifying the database to avoid inconsistent states.
+
+Using sqlcipher CLI Tool
+========================
+
+1. **Installation**:
+
+   - **Debian and Ubuntu Users**: Ensure you have a recent version of sqlcipher (v4 or later). The versions in the distribution repositories might be outdated. Use a `PPA <https://launchpad.net/ubuntu/+ppas>`__ **(use at your own risk)** or follow this `StackOverflow thread <https://stackoverflow.com/questions/48105035/sqlite-browser-without-sqlcipher-support-in-ubuntu>`__ to recompile ``sqlitebrowser`` with sqlcipher support.
+
+2. **Opening the Database**:
+
+   - Use the command line tool ``sqlcipher`` (not ``sqlite3`` since the database is encrypted).
+   - After opening the database, specify the password to decrypt it by entering:
+
+
+     ::
+
+       PRAGMA key='your-secret-key';
+
+By following these steps, you can access and modify the Rotki database securely. Always ensure to backup your database before making any changes.
+
 
 Long running tasks
 *******************

@@ -933,22 +933,7 @@ The global database is stored at ``global/global.db``.
 
 The accounts you create in rotki have their own database stored at ``users/<account_name>/rotkehlchen.db``.
 
-Exploring the database
-======================
-
-To open the user database you can use `sqlitebrowser <https://sqlitebrowser.org/>`__.
-It supports sqlcipher and will ask for the password used to decrypt the database.
-
-If you prefer the command line instead, you can use the ``sqlcipher`` cli tool. Note: using just ``sqlite3`` cli will not work since the database is encrypted.
-
-Note to Debian and Ubuntu users: we are using SQLCipher encryption v4, therefore a recent version of sqlcipher is required. Unfortunately
-the version available in the distribution repositories are too old and won't let you open the database using ``sqlitebrowser`` nor ``sqlcipher``.
-On top of that, the ``sqlitebrowser`` version provided is not compiled with sqlcipher support.
-As a workaround, you can find a `PPA <https://launchpad.net/ubuntu/+ppas>`__ **(use at your own risk)** to
-install more recent versions of both packages and you can also recompile sqlitebrowser with sqlcipher support following this
-`stackoverflow thread <https://stackoverflow.com/questions/48105035/sqlite-browser-without-sqlcipher-support-in-ubuntu>`__.
-
-When using sqlcipher, you need to specify the password to decrypt the database entering ``PRAGMA key='your-secret-key';`` right after opening the database.
+If you need to manually access the database, you can find the guide `here <https://rotki.readthedocs.io/en/stable/usage_guide.html#manually-accessing-the-database>`__
 
 DB Upgrades
 =================
