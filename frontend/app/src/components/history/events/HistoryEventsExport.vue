@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import type { Message } from '@rotki/common/lib/messages';
+import { TaskType } from '@/types/task-type';
+import type { TaskMeta } from '@/types/task';
+import type { ActionStatus } from '@/types/action';
 import type { HistoryEventRequestPayload } from '@/types/history/events';
+import type { Message } from '@rotki/common/lib/messages';
 
 const props = defineProps<{
   filters: HistoryEventRequestPayload;
@@ -16,6 +19,8 @@ const { downloadHistoryEventsCSV, exportHistoryEventsCSV }
   = useHistoryEventsApi();
 
 const { setMessage } = useMessageStore();
+const { awaitTask } = useTaskStore();
+const { notify } = useNotificationsStore();
 
 function showExportCSVError(description: string) {
   setMessage({
@@ -25,26 +30,49 @@ function showExportCSVError(description: string) {
   });
 }
 
-async function createCsv(path: string): Promise<void> {
+async function createCsv(path: string): Promise<ActionStatus> {
   let message: Message;
   try {
-    const success = await exportHistoryEventsCSV(path, get(filters));
+    const taskType = TaskType.EXPORT_HISTORY_EVENTS;
+    const { taskId } = await exportHistoryEventsCSV(path, get(filters));
+    const { result } = await awaitTask<boolean, TaskMeta>(
+      taskId,
+      taskType,
+      {
+        title: t('actions.history_events_export.title').toString(),
+      },
+    );
+
     message = {
       title: t('actions.history_events_export.title').toString(),
-      description: success
+      description: result
         ? t('actions.history_events_export.message.success').toString()
         : t('actions.history_events_export.message.failure').toString(),
-      success,
+      success: result,
+    };
+    setMessage(message);
+    return {
+      success: true,
     };
   }
   catch (error: any) {
-    message = {
-      title: t('actions.history_events_export.title').toString(),
-      description: error.message,
+    if (!isTaskCancelled(error)) {
+      const title = t('actions.history_events_export.title').toString();
+      const description = t('actions.history_events_export.message.failure', {
+        message: error.message,
+      }).toString();
+
+      notify({
+        title,
+        message: description,
+        display: true,
+      });
+    }
+    return {
       success: false,
+      message: error.message,
     };
   }
-  setMessage(message);
 }
 
 async function exportCSV() {

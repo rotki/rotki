@@ -3376,7 +3376,7 @@ class SkippedExternalEventsExportSchema(Schema):
     directory_path = DirectoryField(load_default=None)
 
 
-class ExportHistoryEventSchema(HistoryEventSchema):
+class ExportHistoryEventSchema(HistoryEventSchema, AsyncQueryArgumentSchema):
     """Schema for quering history events"""
     directory_path = DirectoryField(required=True)
 
@@ -3387,6 +3387,8 @@ class ExportHistoryEventSchema(HistoryEventSchema):
         extra_fields = {}
         if (directory_path := data.get('directory_path')) is not None:
             extra_fields['directory_path'] = directory_path
+        if (async_query := data.get('async_query')) is not None:
+            extra_fields['async_query'] = async_query
         return extra_fields
 
 

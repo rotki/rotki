@@ -12,6 +12,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
 from rotkehlchen.constants.assets import A_ETH2
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import (
     EventDirection,
     HistoryEventSubType,
@@ -244,16 +245,21 @@ class HistoryBaseEntry(AccountingEventMixin, ABC):
             'notes': self.notes,
         }
 
-    def serialize_for_csv(self) -> dict[str, Any]:
-        """Serialize event data for CSV export"""
+    def serialize_for_csv(self, fiat_value: FVal) -> dict[str, Any]:
+        """Serialize event data for CSV export.
+
+        This method serializes event data, adding 'amount' and 'fiat_value'
+        right after the 'asset' in the serialized dictionary. Note that
+        'fiat_value' is not in USD but in the user-selected currency.
+        """
         entry = self.serialize()
         balance = entry.pop('balance')
         new_dict = {}
         for key, value in entry.items():
             new_dict[key] = value
-            if key == 'asset':  # input the amount/usd value right after the asset
+            if key == 'asset':
                 new_dict['amount'] = balance['amount']
-                new_dict['usd_value'] = balance['usd_value']
+                new_dict['fiat_value'] = fiat_value
 
         return new_dict
 

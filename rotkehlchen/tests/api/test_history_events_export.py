@@ -3,12 +3,13 @@ import os
 from http import HTTPStatus
 from pathlib import Path
 
+import pytest
 import requests
 
 from rotkehlchen.accounting.export.csv import FILENAME_HISTORY_EVENTS_CSV
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
-from rotkehlchen.tests.utils.history import prepare_rotki_for_history_processing_test
+from rotkehlchen.tests.utils.history import prepare_rotki_for_history_processing_test, prices
 from rotkehlchen.tests.utils.history_base_entry import add_entries
 
 
@@ -45,7 +46,7 @@ def assert_csv_export_response(
         'location',
         'asset',
         'amount',
-        'usd_value',
+        'fiat_value',
         'event_type',
         'event_subtype',
         'location_label',
@@ -79,6 +80,9 @@ def assert_csv_export_response(
         assert count == expected_count
 
 
+@pytest.mark.vcr()
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.parametrize('mocked_price_queries', [prices])
 def test_history_export_download_csv(
         rotkehlchen_api_server_with_exchanges,
         tmpdir_factory,
@@ -94,9 +98,7 @@ def test_history_export_download_csv(
     # now query the export endpoint with json body
     response = requests.post(
         api_url_for(rotkehlchen_api_server_with_exchanges, 'exporthistoryeventresource'),
-        json={
-            'directory_path': csv_dir,
-        },
+        json={'async_query': False, 'directory_path': csv_dir},
     )
     assert_csv_export_response(response, csv_dir)
 
@@ -113,6 +115,7 @@ def test_history_export_download_csv(
     # now query the download CSV endpoint
     response = requests.put(
         api_url_for(rotkehlchen_api_server_with_exchanges, 'exporthistoryeventresource'),
+        json={'async_query': False},
     )
     temp_csv_file = Path(download_dir, FILENAME_HISTORY_EVENTS_CSV)
     temp_csv_file.write_bytes(response.content)

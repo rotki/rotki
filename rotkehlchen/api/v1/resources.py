@@ -3108,13 +3108,13 @@ class ExportHistoryEventResource(BaseMethodView):
 
     @require_loggedin_user()
     @use_kwargs(post_schema, location='json_and_query')
-    def post(self, filter_query: 'HistoryBaseEntryFilterQuery', directory_path: Path) -> Response:
-        return self.rest_api.export_history_events(filter_query=filter_query, directory_path=directory_path)  # noqa: E501
+    def post(self, async_query: bool, filter_query: 'HistoryBaseEntryFilterQuery', directory_path: Path) -> dict[str, Any]:  # noqa: E501
+        return self.rest_api.export_history_events(filter_query=filter_query, directory_path=directory_path, async_query=async_query)  # noqa: E501
 
     @require_loggedin_user()
     @use_kwargs(put_schema, location='json_and_query')
-    def put(self, filter_query: 'HistoryBaseEntryFilterQuery') -> Response:
-        return self.rest_api.export_history_events(filter_query=filter_query, directory_path=None)
+    def put(self, async_query: bool, filter_query: 'HistoryBaseEntryFilterQuery') -> Response | dict[str, Any]:  # noqa: E501
+        return self.rest_api.export_history_events(filter_query=filter_query, directory_path=None, async_query=async_query)  # noqa: E501
 
 
 class AccountingRulesResource(BaseMethodView):
