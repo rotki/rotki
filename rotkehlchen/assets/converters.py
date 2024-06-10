@@ -436,6 +436,23 @@ def asset_from_common_identifier(common_identifier: str) -> AssetWithOracles:
     ))
 
 
+def asset_from_htx(htx_name: str) -> AssetWithOracles:
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+    """
+    if not isinstance(htx_name, str):
+        raise DeserializationError(f'Got non-string type {type(htx_name)} for HTX asset')
+
+    htx_name = htx_name.upper()
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=Location.KRAKEN,  # TODO: Change this to HTX once we add the mappings
+        symbol=htx_name,
+        default=htx_name,
+    ))
+
+
 LOCATION_TO_ASSET_MAPPING: dict[Location, Callable[[str], AssetWithOracles]] = {
     Location.BINANCE: asset_from_binance,
     Location.CRYPTOCOM: asset_from_cryptocom,
@@ -451,5 +468,6 @@ LOCATION_TO_ASSET_MAPPING: dict[Location, Callable[[str], AssetWithOracles]] = {
     Location.KUCOIN: asset_from_kucoin,
     Location.OKX: asset_from_okx,
     Location.WOO: asset_from_woo,
+    Location.HTX: asset_from_htx,
     Location.EXTERNAL: asset_from_common_identifier,
 }

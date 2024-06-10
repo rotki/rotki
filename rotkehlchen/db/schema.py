@@ -114,6 +114,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('m', 45);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('n', 46);
 /* ZKSync Lite */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('o', 47);
+/* HTX Lite */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('p', 48);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)
