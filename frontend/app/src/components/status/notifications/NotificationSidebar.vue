@@ -103,17 +103,13 @@ watch([y, selectedTab, selectedNotifications], ([currentY, currSelectedTab, curr
 </script>
 
 <template>
-  <VNavigationDrawer
-    :class="css.sidebar"
-    class="border-default"
+  <RuiNavigationDrawer
+    :content-class="css.sidebar"
     width="400px"
-    absolute
-    clipped
     :value="visible"
-    :stateless="dialogVisible"
-    right
+    position="right"
     temporary
-    hide-overlay
+    :stateless="dialogVisible"
     @input="input($event)"
   >
     <DefineNoMessages>
@@ -212,14 +208,10 @@ watch([y, selectedTab, selectedNotifications], ([currentY, currSelectedTab, curr
         </RouterLink>
       </div>
     </div>
-  </VNavigationDrawer>
+  </RuiNavigationDrawer>
 </template>
 
 <style module lang="scss">
-.sidebar {
-  @apply border-t pt-0 top-[3.5rem] md:top-[4rem] #{!important};
-}
-
 .no-messages {
   @apply flex flex-col items-center justify-center flex-1;
 }

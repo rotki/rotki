@@ -23,14 +23,11 @@ const component: ComputedRef = computed(() => {
 </script>
 
 <template>
-  <VNavigationDrawer
+  <RuiNavigationDrawer
     v-model="display"
-    class="pinned-sidebar"
-    clipped
     width="560px"
-    right
     temporary
-    hide-overlay
+    position="right"
   >
     <div>
       <Component
@@ -39,24 +36,5 @@ const component: ComputedRef = computed(() => {
         v-bind="pinned.props"
       />
     </div>
-  </VNavigationDrawer>
+  </RuiNavigationDrawer>
 </template>
-
-<style scoped lang="scss">
-.pinned-sidebar {
-  top: 64px !important;
-  box-shadow: 0 2px 12px rgba(74, 91, 120, 0.1);
-  padding-top: 0 !important;
-  border-top: var(--v-rotki-light-grey-darken1) solid thin;
-
-  &--mobile {
-    top: 56px !important;
-  }
-
-  &.v-navigation-drawer {
-    &--is-mobile {
-      padding-top: 0 !important;
-    }
-  }
-}
-</style>

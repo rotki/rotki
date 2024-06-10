@@ -9,10 +9,7 @@ const { showDrawer, isMini } = storeToRefs(visibilityStore);
 const { appBarColor } = useTheme();
 const { isXlAndDown } = useBreakpoint();
 
-const small = computed(() => get(showDrawer) && get(isMini));
-const expanded = computed(
-  () => get(showDrawer) && !get(isMini) && !get(isXlAndDown),
-);
+const expanded = logicAnd(showDrawer, logicNot(isXlAndDown));
 const { overall } = storeToRefs(useStatisticsStore());
 const { logged } = storeToRefs(useSessionAuthStore());
 
@@ -71,7 +68,7 @@ const shouldShowScrollToTopButton: ComputedRef<boolean> = computed(
     <div
       class="app-main"
       :class="{
-        small,
+        small: isMini,
         expanded,
       }"
     >
@@ -161,7 +158,7 @@ const shouldShowScrollToTopButton: ComputedRef<boolean> = computed(
     min-height: calc(100vh - 64px);
 
     &.small {
-      padding-left: 56px;
+      @apply pl-[3.5rem];
     }
 
     &.expanded {
