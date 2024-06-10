@@ -94,6 +94,7 @@ from rotkehlchen.chain.evm.names import find_ens_mappings, search_for_addresses_
 from rotkehlchen.chain.evm.types import EvmlikeAccount, WeightedNode
 from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
 from rotkehlchen.constants import ONE
+from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.limits import (
     FREE_ASSET_MOVEMENTS_LIMIT,
     FREE_HISTORY_EVENTS_LIMIT,
@@ -108,6 +109,7 @@ from rotkehlchen.constants.misc import (
     DEFAULT_SQL_VM_INSTRUCTIONS_CB,
     HTTP_STATUS_INTERNAL_DB_ERROR,
     IMAGESDIR_NAME,
+    ZERO,
 )
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import ChainID
@@ -174,7 +176,7 @@ from rotkehlchen.errors.misc import (
     SystemPermissionError,
     TagConstraintError,
 )
-from rotkehlchen.errors.price import NoPriceForGivenTimestamp
+from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.data_structures import Trade
@@ -257,7 +259,7 @@ from rotkehlchen.types import (
     TradeType,
     UserNote,
 )
-from rotkehlchen.utils.misc import combine_dicts, ts_now
+from rotkehlchen.utils.misc import combine_dicts, ts_ms_to_sec, ts_now
 from rotkehlchen.utils.snapshots import parse_import_snapshot_data
 from rotkehlchen.utils.version_check import get_current_version
 
@@ -351,6 +353,8 @@ def async_api_call() -> Callable:
                 )
 
             response = func(rest_api, **kwargs)
+            if isinstance(response, Response):  # the case of returning a file in a async response
+                return response
             return make_response_from_dict(response)
 
         return inner
@@ -4669,12 +4673,13 @@ class RestAPI:
             status_code=HTTPStatus.OK,
         )
 
+    @async_api_call()
     def export_history_events(
             self,
             filter_query: HistoryBaseEntryFilterQuery,
             directory_path: Path | None,
-    ) -> Response:
-        """ Export or Download history events data to a CSV file."""
+    ) -> dict[str, Any] | Response:
+        """Export or Download history events data to a CSV file."""
         dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
         with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             history_events, _, _ = dbevents.get_history_events_and_limit_info(
@@ -4685,15 +4690,49 @@ class RestAPI:
             )
 
         if len(history_events) == 0:
-            return api_response(
-                wrap_in_fail_result('No history processed in order to perform an export'),
+            return wrap_in_fail_result(
+                message='No history processed in order to perform an export',
                 status_code=HTTPStatus.CONFLICT,
             )
 
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+            settings = self.rotkehlchen.get_settings(cursor)
+            currency = settings.main_currency.resolve_to_asset_with_oracles()
+
         serialized_history_events = []
         headers: dict[str, None] = {}
+        if currency == A_USD:
+            entries = dbevents.get_base_entries_missing_prices(EvmEventFilterQuery.make())
+            query_missing_prices_of_base_entries(
+                database=self.rotkehlchen.data.db,
+                entries_missing_prices=entries,
+            )
         for event in history_events:
-            serialized_event = event.serialize_for_csv()
+            if currency != A_USD:
+                try:
+                    # ask oracles for the rate in the given timestamp and currency
+                    price = PriceHistorian.query_historical_price(
+                        from_asset=event.asset,
+                        to_asset=currency,
+                        timestamp=ts_ms_to_sec(event.timestamp),
+                    )
+                except (PriceQueryUnsupportedAsset, RemoteError):
+                    fiat_value = ZERO
+                except NoPriceForGivenTimestamp as e:
+                    # In the case of NoPriceForGivenTimestamp when we got rate limited
+                    if e.rate_limited is True:
+                        return wrap_in_fail_result(
+                            message='Try again later. Rate limited by the price oracle',
+                            status_code=HTTPStatus.TOO_MANY_REQUESTS,
+                        )
+                    fiat_value = ZERO
+                else:
+                    fiat_value = event.balance.amount * price
+            else:
+                # if the asset is USD or the value is zero, we don't need to ask for the rate
+                fiat_value = event.balance.usd_value
+
+            serialized_event = event.serialize_for_csv(fiat_value)
             serialized_history_events.append(serialized_event)
             # maintain insertion order without storing extra info
             headers.update(dict.fromkeys(serialized_event))
@@ -4714,13 +4753,13 @@ class RestAPI:
                         download_name=FILENAME_HISTORY_EVENTS_CSV,
                     )
                 except (CSVWriteError, PermissionError) as e:
-                    return api_response(
-                        wrap_in_fail_result(str(e)),
+                    return wrap_in_fail_result(
+                        message=str(e),
                         status_code=HTTPStatus.CONFLICT,
                     )
                 except FileNotFoundError:
-                    return api_response(
-                        wrap_in_fail_result('No file was found'),
+                    return wrap_in_fail_result(
+                        message='No file was found',
                         status_code=HTTPStatus.NOT_FOUND,
                     )
 
@@ -4733,9 +4772,9 @@ class RestAPI:
                 headers.keys(),
             )
         except (CSVWriteError, PermissionError) as e:
-            return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
+            return wrap_in_fail_result(message=str(e), status_code=HTTPStatus.CONFLICT)
 
-        return api_response(OK_RESULT, status_code=HTTPStatus.OK)
+        return OK_RESULT
 
     def _invalidate_cache_for_accounting_rule(
             self,

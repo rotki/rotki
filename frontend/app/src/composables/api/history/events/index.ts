@@ -184,10 +184,10 @@ export function useHistoryEventsApi() {
 
   const getTransactionTypeMappings = async (): Promise<HistoryEventTypeData> => {
     const response = await api.instance.get<
-        ActionResult<HistoryEventTypeData>
-      >('/history/events/type_mappings', {
-        validateStatus: validStatus,
-      });
+      ActionResult<HistoryEventTypeData>
+    >('/history/events/type_mappings', {
+      validateStatus: validStatus,
+    });
 
     return HistoryEventTypeData.parse(handleResponse(response));
   };
@@ -207,10 +207,10 @@ export function useHistoryEventsApi() {
 
   const getHistoryEventProductsData = async (): Promise<HistoryEventProductData> => {
     const response = await api.instance.get<
-        ActionResult<HistoryEventProductData>
-      >('/history/events/products', {
-        validateStatus: validStatus,
-      });
+      ActionResult<HistoryEventProductData>
+    >('/history/events/products', {
+      validateStatus: validStatus,
+    });
 
     return handleResponse(response);
   };
@@ -244,11 +244,12 @@ export function useHistoryEventsApi() {
   const exportHistoryEventsCSV = async (
     directoryPath: string,
     filters: HistoryEventRequestPayload,
-  ): Promise<boolean> => {
-    const response = await api.instance.post<ActionResult<boolean>>(
+  ): Promise<PendingTask> => {
+    const response = await api.instance.post<ActionResult<PendingTask>>(
       '/history/events/export',
       snakeCaseTransformer({
         directoryPath,
+        asyncQuery: true,
         ...omit(filters, ['accounts']),
       }),
       {
@@ -265,7 +266,10 @@ export function useHistoryEventsApi() {
     try {
       const response = await api.instance.put(
         '/history/events/export',
-        snakeCaseTransformer(omit(filters, ['accounts'])),
+        snakeCaseTransformer({
+          asyncQuery: true,
+          ...omit(filters, ['accounts']),
+        }),
         {
           responseType: 'blob',
           validateStatus: validTaskStatus,

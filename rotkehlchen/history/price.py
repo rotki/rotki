@@ -167,7 +167,7 @@ class PriceHistorian:
             from_asset: The ticker symbol of the asset for which we want to know
                         the price.
             to_asset: The ticker symbol of the asset against which we want to
-                      know the price.
+                        know the price.
             timestamp: The timestamp at which to query the price
 
         May raise:
