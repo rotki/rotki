@@ -30,7 +30,7 @@ body {
 }
 
 aside {
-  @apply fixed max-h-[calc(100vh-3.5rem)] md:max-h-[calc(100vh-4rem)] #{!important};
+  @apply top-[3.5rem] md:top-[4rem] max-h-[calc(100vh-3.5rem)] md:max-h-[calc(100vh-4rem)] #{!important};
 }
 
 .table-inside-dialog {

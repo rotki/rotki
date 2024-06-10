@@ -25,32 +25,32 @@ interface Entry {
 const entries: Entry[] = [
   {
     icon: 'book-open-line',
-    title: t('help_sidebar.user_guide.title').toString(),
-    subtitle: t('help_sidebar.user_guide.subtitle').toString(),
+    title: t('help_sidebar.user_guide.title'),
+    subtitle: t('help_sidebar.user_guide.subtitle'),
     link: externalLinks.usageGuide,
   },
   {
     icon: 'questionnaire-line',
-    title: t('help_sidebar.faq.title').toString(),
-    subtitle: t('help_sidebar.faq.subtitle').toString(),
+    title: t('help_sidebar.faq.title'),
+    subtitle: t('help_sidebar.faq.subtitle'),
     link: externalLinks.faq,
   },
   {
     icon: 'discord-line',
-    title: t('help_sidebar.support.title').toString(),
-    subtitle: t('help_sidebar.support.subtitle').toString(),
+    title: t('help_sidebar.support.title'),
+    subtitle: t('help_sidebar.support.subtitle'),
     link: externalLinks.discord,
   },
   {
     icon: 'github-line',
-    title: t('help_sidebar.github.title').toString(),
-    subtitle: t('help_sidebar.github.subtitle').toString(),
+    title: t('help_sidebar.github.title'),
+    subtitle: t('help_sidebar.github.subtitle'),
     link: externalLinks.github,
   },
   {
     icon: 'twitter-x-line',
-    title: t('help_sidebar.twitter.title').toString(),
-    subtitle: t('help_sidebar.twitter.subtitle').toString(),
+    title: t('help_sidebar.twitter.title'),
+    subtitle: t('help_sidebar.twitter.subtitle'),
     link: TWITTER_URL,
   },
 ];
@@ -69,8 +69,8 @@ async function downloadBrowserLog() {
     if (data?.length === 0) {
       const { notify } = useNotificationsStore();
       notify({
-        title: t('help_sidebar.browser_log.error.empty.title').toString(),
-        message: t('help_sidebar.browser_log.error.empty.message').toString(),
+        title: t('help_sidebar.browser_log.error.empty.title'),
+        message: t('help_sidebar.browser_log.error.empty.message'),
         display: true,
       });
       return;
@@ -79,21 +79,14 @@ async function downloadBrowserLog() {
     downloadFileByTextContent(messages, 'frontend_log.txt');
   });
 }
-
-const css = useCssModule();
 </script>
 
 <template>
-  <VNavigationDrawer
+  <RuiNavigationDrawer
     v-model="display"
-    :class="css.sidebar"
-    class="border-default"
     width="400px"
-    absolute
-    clipped
-    right
     temporary
-    hide-overlay
+    position="right"
   >
     <div class="flex justify-between items-center p-2 pl-4">
       <div class="text-h6">
@@ -113,7 +106,7 @@ const css = useCssModule();
         :key="index"
         :href="interop.isPackaged ? undefined : item.link"
         target="_blank"
-        class="flex items-center gap-6 py-4 px-6 hover:!bg-rui-grey-100 hover:dark:!bg-rui-grey-800"
+        class="flex items-center gap-6 py-4 px-6 hover:!bg-rui-grey-100 hover:dark:!bg-rui-grey-800 cursor-pointer"
         :class="{ 'border-t border-default': index > 0 }"
         @click="interop.isPackaged ? interop.openUrl(item.link) : null"
       >
@@ -169,11 +162,5 @@ const css = useCssModule();
         </div>
       </template>
     </div>
-  </VNavigationDrawer>
+  </RuiNavigationDrawer>
 </template>
-
-<style module lang="scss">
-.sidebar {
-  @apply border-t pt-0 top-[3.5rem] md:top-[4rem] #{!important};
-}
-</style>

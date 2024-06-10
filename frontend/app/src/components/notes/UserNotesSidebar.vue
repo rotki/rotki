@@ -19,6 +19,8 @@ const tab = ref<number>(0);
 
 const route = useRoute();
 
+const { openDialog } = useUserNotesForm();
+
 const location = computed<string>(() => {
   const meta = get(route).meta;
 
@@ -66,21 +68,15 @@ watch(locationName, (locationName) => {
   if (locationName === '')
     set(tab, 0);
 });
-
-const css = useCssModule();
 </script>
 
 <template>
-  <VNavigationDrawer
+  <RuiNavigationDrawer
     v-model="display"
     width="460px"
-    :class="css.sidebar"
-    class="border-default"
-    absolute
-    clipped
-    right
     temporary
-    hide-overlay
+    :stateless="openDialog"
+    position="right"
   >
     <div
       class="flex items-center justify-between gap-2 w-full border-b border-default"
@@ -127,11 +123,5 @@ const css = useCssModule();
       :key="location + tab"
       :location="tab === 0 ? '' : location"
     />
-  </VNavigationDrawer>
+  </RuiNavigationDrawer>
 </template>
-
-<style module lang="scss">
-.sidebar {
-  @apply border-t pt-0 top-[3.5rem] md:top-[4rem] #{!important};
-}
-</style>

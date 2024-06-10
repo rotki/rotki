@@ -1,70 +1,49 @@
 <script setup lang="ts">
+import { useBreakpoint } from '@rotki/ui-library-compat';
+
 const { isMini, showDrawer } = storeToRefs(useAreaVisibilityStore());
 const { appVersion } = storeToRefs(useMainStore());
-const { appBarColor } = useTheme();
+
+const { isXlAndDown } = useBreakpoint();
+
+const route = useRoute();
+watch(route, () => {
+  if (get(showDrawer) && get(isXlAndDown))
+    set(showDrawer, false);
+});
 </script>
 
 <template>
-  <VNavigationDrawer
+  <RuiNavigationDrawer
     v-model="showDrawer"
     width="300"
-    class="app__navigation-drawer"
-    :class="{ 'app__navigation-drawer--mini': isMini }"
-    fixed
-    :mini-variant="isMini"
-    :mobile-breakpoint="1280"
-    :color="appBarColor"
-    clipped
-    app
+    :content-class="{
+      'flex flex-col border-t border-r border-default': true,
+      '!top-0 !max-h-full': isXlAndDown,
+    }"
+    :mini-variant="!isXlAndDown"
+    :overlay="isXlAndDown"
   >
-    <div
-      class="app__logo"
-      :class="{ 'app__logo--mini': isMini }"
-    >
-      <RotkiLogo
-        :text="!isMini"
-        :size="isMini ? 1.625 : 3"
-      />
+    <div class="flex-1 overflow-y-auto overflow-x-hidden pb-2">
+      <div
+        class="flex py-6"
+        :class="{
+          'px-4': !isMini,
+          'px-0 [&>div]:h-8 justify-center': isMini,
+        }"
+      >
+        <RotkiLogo
+          :text="!isMini"
+          :size="isMini ? 1.625 : 3"
+        />
+      </div>
+      <NavigationMenu :is-mini="isMini" />
     </div>
-    <NavigationMenu :is-mini="isMini" />
-    <div class="grow" />
     <div
       v-if="!isMini"
-      class="my-2 text-center px-2 app__navigation-drawer__version"
+      class="p-2 text-center border-t border-default text-overline"
     >
-      <span class="text-overline">
-        <RuiDivider class="mx-3 my-1" />
-        {{ appVersion }}
-      </span>
+      {{ appVersion }}
     </div>
-  </VNavigationDrawer>
+  </RuiNavigationDrawer>
 </template>
-
-<style scoped lang="scss">
-.app {
-  &__logo {
-    padding: 1.5rem 1rem;
-
-    &--mini {
-      padding: 1rem 0.5rem;
-      margin-bottom: 1rem;
-
-      > div {
-        height: 32px;
-        display: flex;
-        justify-content: center;
-      }
-    }
-  }
-
-  &__navigation-drawer {
-    padding-bottom: 3rem;
-
-    &__version {
-      position: fixed;
-      bottom: 0;
-      width: 100%;
-    }
-  }
-}
-</style>
