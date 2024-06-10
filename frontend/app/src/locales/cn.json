@@ -1399,7 +1399,8 @@
       "close": "关闭",
       "confirm": "确认",
       "continue": "继续",
-      "copy": "复制到剪贴板",
+      "copy": "复制",
+      "copy_to_clipboard": "复制到剪贴板",
       "create": "创建",
       "delete": "删除",
       "dismiss": "驳回",
@@ -3120,11 +3121,6 @@
       "in_this_page_tooltip": "专用于 \"{page}\" 部分的注释"
     },
     "tooltip": "注释"
-  },
-  "notification": {
-    "copy": "复制",
-    "copy_tooltip": "将消息复制到剪贴板",
-    "dismiss_tooltip": "关闭通知"
   },
   "notification_indicator": {
     "tooltip": "通知"

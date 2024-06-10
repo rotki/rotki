@@ -1552,7 +1552,8 @@
       "close": "Fermer",
       "confirm": "Confirmer",
       "continue": "Continuer",
-      "copy": "Copier dans le presse-papier",
+      "copy": "Copier",
+      "copy_to_clipboard": "Copier dans le presse-papier",
       "create": "Créer",
       "delete": "Supprimer",
       "dismiss": "Rejeter",
@@ -3387,11 +3388,6 @@
       "in_this_page_tooltip": "Notes spécialisées pour la section \"{page}\""
     },
     "tooltip": "Notes"
-  },
-  "notification": {
-    "copy": "Copier",
-    "copy_tooltip": "Copier le message dans le presse-papiers",
-    "dismiss_tooltip": "Rejeter la notification"
   },
   "notification_indicator": {
     "tooltip": "Notifications"
