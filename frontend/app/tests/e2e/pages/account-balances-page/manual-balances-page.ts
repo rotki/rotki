@@ -139,7 +139,11 @@ export class ManualBalancesPage {
       .find('tr')
       .eq(position)
       .find('button[data-cy="row-edit"]')
-      .click();
+      .as('edit-button');
+
+    cy.get('@edit-button').should('be.visible');
+    cy.get('@edit-button').should('not.be.disabled');
+    cy.get('@edit-button').click();
 
     cy.get('[data-cy="manual-balance-form"]').as('edit-form');
     cy.get('@edit-form').find('.manual-balances-form__amount input').clear();
@@ -172,5 +176,11 @@ export class ManualBalancesPage {
     cy.get('[data-cy="manual-balances"]').scrollIntoView();
     cy.get('[data-cy="manual-balances"]').contains(`${currency} Value`);
     cy.get('[data-cy="manual-balances"]').should('be.visible');
+  }
+
+  openAddDialog() {
+    cy.get('.manual-balances__add-balance').should('be.visible');
+    cy.get('.manual-balances__add-balance').should('not.be.disabled');
+    cy.get('.manual-balances__add-balance').click();
   }
 }

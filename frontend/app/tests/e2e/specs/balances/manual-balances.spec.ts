@@ -33,10 +33,8 @@ describe('balances', () => {
   });
 
   it('add manual balances', () => {
-    cy.get('.manual-balances__add-balance').should('be.visible');
-
     for (let i = 0; i < 3; i++) {
-      cy.get('.manual-balances__add-balance').click();
+      manualBalancesPage.openAddDialog();
       const balance = manualBalances[i];
       manualBalancesPage.addBalance(balance);
       manualBalancesPage.visibleEntries(i + 1);
@@ -158,7 +156,7 @@ describe('balances', () => {
       amount: secondNewAmount,
     });
 
-    cy.get('.manual-balances__add-balance').click();
+    manualBalancesPage.openAddDialog();
 
     const apiManualBalance = { ...manualBalances[1], label: 'extra' };
     manualBalancesPage.addBalance(apiManualBalance);
