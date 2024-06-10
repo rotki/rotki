@@ -3,6 +3,7 @@ from collections.abc import Callable
 from unittest.mock import patch
 
 import pytest
+import requests
 
 from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -10,6 +11,8 @@ from rotkehlchen.constants.assets import A_BTC, A_ETH
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.updates import ASSETS_VERSION_KEY, AssetsUpdater, UpdateFileType
+from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
+from rotkehlchen.tests.api.test_assets_updates import mock_asset_updates
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ChainID, EvmTokenKind, Timestamp
 
@@ -503,3 +506,37 @@ def test_asset_update(
         assert warnings == [
             f'Skipping assets update 998 since it requires a min schema of 4 and max schema of 4 while the local DB schema version is {GlobalDBHandler().get_schema_version()}. You will have to follow an alternative method to obtain the assets of this update. Easiest would be to reset global DB.',  # noqa: E501
         ]
+
+
+def test_conflict_updates(assets_updater: AssetsUpdater, globaldb: GlobalDBHandler):
+    """Test that the logic doesn't add duplicates for assets that were inserted twice
+    in the globaldb assets updates
+    """
+    update_1 = """INSERT INTO assets(identifier, name, type) VALUES("eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8", "Bridged USDC", "C"); INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES("eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8", "A", 42161, "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8", 6, ""); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8", "USDC.e", "usd-coin", "USDC", NULL, 1623868379, NULL);
+*"""  # noqa: E501
+    update_2 = """INSERT INTO assets(identifier, name, type) VALUES("eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8", "Bridged USDC", "C"); INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES("eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8", "A", 42161, "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8", 6, NULL); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8", "USDC.e", "usd-coin-ethereum-bridged", "USDC", NULL, 1623868379, NULL);
+*"""  # noqa: E501
+    update_patch = mock_asset_updates(
+        original_requests_get=requests.get,
+        latest=2,
+        updates={'1': {
+            'changes': 1,
+            'min_schema_version': GLOBAL_DB_VERSION,
+            'max_schema_version': GLOBAL_DB_VERSION,
+        }, '2': {
+            'changes': 1,
+            'min_schema_version': GLOBAL_DB_VERSION,
+            'max_schema_version': GLOBAL_DB_VERSION,
+        }},
+        sql_actions={'1': {'assets': update_1, 'collections': '', 'mappings': ''}, '2': {'assets': update_2, 'collections': '', 'mappings': ''}},  # noqa: E501
+    )
+    cursor = globaldb.conn.cursor()
+    cursor.execute(f'DELETE FROM settings WHERE name="{ASSETS_VERSION_KEY}"')
+    with update_patch:
+        conflicts = assets_updater.perform_update(
+            up_to_version=2,
+            conflicts=None,
+        )
+    assert conflicts is not None
+    assert len(conflicts) == 1
+    assert conflicts[0]['remote'] == {'name': 'Bridged USDC', 'symbol': 'USDC.e', 'asset_type': 'evm token', 'started': 1623868379, 'forked': None, 'swapped_for': None, 'address': '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8', 'token_kind': 'erc20', 'decimals': 6, 'cryptocompare': 'USDC', 'coingecko': 'usd-coin-ethereum-bridged', 'protocol': None, 'evm_chain': 'arbitrum_one'}  # noqa: E501
