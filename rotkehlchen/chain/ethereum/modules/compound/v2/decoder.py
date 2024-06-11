@@ -114,7 +114,7 @@ class Compoundv2Decoder(DecoderInterface):
             to_event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
             to_notes=f'Receive {minted_amount} {compound_token.symbol} from compound',
             to_counterparty=CPT_COMPOUND,
-            paired_event_data=(out_event, True),
+            paired_events_data=((out_event,), True),
         )
         return DecodingOutput(action_items=[action_item])
 

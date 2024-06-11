@@ -1,3 +1,4 @@
+from collections.abc import Sequence
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Final, Literal, NamedTuple, Optional
 
@@ -29,7 +30,7 @@ class ActionItem:
     extra_data: dict | None = None
     # Optional event data that pairs it with the event of the action item
     # Contains a tuple with the paired event and whether it's an out event (True) or in event
-    paired_event_data: tuple['EvmEvent', bool] | None = None
+    paired_events_data: tuple[Sequence['EvmEvent'], bool] | None = None
     # Error tolerance that can be used for protocols having rounding errors. Such as with stETH (https://github.com/lidofinance/lido-dao/issues/442)
     # In those cases the notes should also be formatted to have an amount as format string since at
     # action item matching this format will populate the note with the actual amount

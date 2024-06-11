@@ -7,7 +7,8 @@ from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.curve.constants import (
     CURVE_ADDRESS_PROVIDER,
-    CURVE_API_URLS,
+    CURVE_API_URL,
+    CURVE_CHAIN_ID,
     CURVE_METAREGISTRY_METHODS,
     IGNORED_CURVE_POOLS,
 )
@@ -294,7 +295,10 @@ def save_curve_data_to_cache(
             )
 
 
-def _query_curve_data_from_api(existing_pools: list[ChecksumEvmAddress]) -> list[CurvePoolData]:
+def _query_curve_data_from_api(
+        chain_id: ChainID,
+        existing_pools: list[ChecksumEvmAddress],
+) -> list[CurvePoolData]:
     """
     Query all curve information(lp tokens, pools, gagues, pool coins) from curve api.
 
@@ -302,16 +306,16 @@ def _query_curve_data_from_api(existing_pools: list[ChecksumEvmAddress]) -> list
     - RemoteError if failed to query curve api
     """
     all_api_pools = []
-    for api_url in CURVE_API_URLS:
-        log.debug(f'Querying curve api {api_url}')
-        response_json = request_get_dict(api_url)
-        if response_json['success'] is False:
-            raise RemoteError(f'Curve api endpoint {api_url} returned failure. Response: {response_json}')  # noqa: E501
+    api_url = CURVE_API_URL.format(curve_blockchain_id=CURVE_CHAIN_ID[chain_id])
+    log.debug(f'Querying curve api {api_url}')
+    response_json = request_get_dict(api_url)
+    if response_json['success'] is False:
+        raise RemoteError(f'Curve api endpoint {api_url} returned failure. Response: {response_json}')  # noqa: E501
 
-        try:
-            all_api_pools.extend(response_json['data']['poolData'])
-        except KeyError as e:
-            raise RemoteError(f'Curve api endpoint {api_url} response is missing {e} key') from e
+    try:
+        all_api_pools.extend(response_json['data']['poolData'])
+    except KeyError as e:
+        raise RemoteError(f'Curve api endpoint {api_url} response is missing {e} key') from e
 
     processed_new_pools = []
     for api_pool_data in all_api_pools:
@@ -354,7 +358,7 @@ def _query_curve_data_from_chain(
     May raise:
     - RemoteError if failed to query chain
     """
-    address_provider = evm_inquirer.contracts.contract(CURVE_ADDRESS_PROVIDER[evm_inquirer.chain_id])  # noqa: E501
+    address_provider = evm_inquirer.contracts.contract(CURVE_ADDRESS_PROVIDER)
     try:
         metaregistry_address = deserialize_evm_address(address_provider.call(
             node_inquirer=evm_inquirer,
@@ -454,7 +458,10 @@ def query_curve_data(
             )
         ]
     try:
-        pools_data: list[CurvePoolData] | None = _query_curve_data_from_api(existing_pools=existing_pools)  # noqa: E501
+        pools_data: list[CurvePoolData] | None = _query_curve_data_from_api(
+            chain_id=inquirer.chain_id,
+            existing_pools=existing_pools,
+        )
     except (RemoteError, UnableToDecryptRemoteData) as e:
         log.error(f'Could not query curve api due to: {e}. Will query metaregistry on chain')
         try:
@@ -474,3 +481,26 @@ def query_curve_data(
         all_pools=pools_data,
     )
     return verified_pools
+
+
+def get_lp_and_gauge_token_addresses(
+        pool_address: 'ChecksumEvmAddress',
+        chain_id: ChainID,
+) -> set['ChecksumEvmAddress']:
+    """Reads the db to get the lp and gauge token addresses for the given pool address"""
+    addresses = set()
+    chain_id_str = str(chain_id.serialize_for_db())
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        if (key := cursor.execute(
+            'SELECT key FROM unique_cache WHERE value = ?',
+            (pool_address,),
+        ).fetchone()) is not None:
+            addresses.add(key[0][-42:])  # 42 is the length of the EVM address
+
+            if (gauge_address := globaldb_get_unique_cache_value(
+                cursor=cursor,
+                key_parts=(CacheType.CURVE_GAUGE_ADDRESS, chain_id_str, pool_address),
+            )) is not None:
+                addresses.add(gauge_address)
+
+    return addresses

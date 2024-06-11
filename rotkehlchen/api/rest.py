@@ -1,14 +1,12 @@
 import datetime
 import json
 import logging
-import operator
 import os
 import sys
 import tempfile
 import traceback
 from collections import defaultdict
 from collections.abc import Callable, Sequence
-from functools import reduce
 from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional, get_args, overload
@@ -268,7 +266,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
     from rotkehlchen.chain.evm.manager import EvmManager
-    from rotkehlchen.chain.evm.node_inquirer import UpdatableCacheDataMixin
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.exchanges.kraken import KrakenAccountType
@@ -4533,13 +4530,17 @@ class RestAPI:
         """
         Collect the mappings of counterparties to the products they list
         """
-        products_mappings = reduce(
-            operator.or_,
-            [
-                self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id).transactions_decoder.get_decoders_products()
-                for chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS
-            ],
-        )
+        products_mappings: dict[str, list[EvmProduct]] = {}
+        for chain_id in EVM_CHAIN_IDS_WITH_TRANSACTIONS:
+            decoder_products = self.rotkehlchen.chains_aggregator.get_evm_manager(chain_id).transactions_decoder.get_decoders_products()  # noqa: E501
+            for decoder, products in decoder_products.items():
+                if decoder in products_mappings:
+                    for product in products:
+                        # checking if it's not already in the list to avoid overwriting the existing list  # noqa: E501
+                        if product not in products_mappings[decoder]:
+                            products_mappings[decoder].append(product)
+                else:
+                    products_mappings[decoder] = products
         return api_response(
             result=process_result(_wrap_in_ok_result(
                 {
@@ -4555,15 +4556,24 @@ class RestAPI:
         eth_node_inquirer = self.rotkehlchen.chains_aggregator.ethereum.node_inquirer
         optimism_inquirer = self.rotkehlchen.chains_aggregator.optimism.node_inquirer
         base_inquirer = self.rotkehlchen.chains_aggregator.base.node_inquirer
-        caches: tuple[tuple[str, CacheType, Callable, Callable, ChainID | None, UpdatableCacheDataMixin], ...] = (  # noqa: E501
-            ('curve pools', CacheType.CURVE_LP_TOKENS, query_curve_data, save_curve_data_to_cache, ChainID.ETHEREUM, eth_node_inquirer),  # noqa: E501
+        arbitrum_inquirer = self.rotkehlchen.chains_aggregator.arbitrum_one.node_inquirer
+        gnosis_inquirer = self.rotkehlchen.chains_aggregator.gnosis.node_inquirer
+        for (cache, cache_type, query_method, save_method, chain_id, inquirer) in [
+            ('curve pools', CacheType.CURVE_LP_TOKENS, query_curve_data, save_curve_data_to_cache, chain_id, node_inquirer)  # noqa: E501
+            for chain_id, node_inquirer in (
+                (ChainID.ETHEREUM, eth_node_inquirer),
+                (ChainID.OPTIMISM, optimism_inquirer),
+                (ChainID.ARBITRUM_ONE, arbitrum_inquirer),
+                (ChainID.BASE, base_inquirer),
+                (ChainID.GNOSIS, gnosis_inquirer),
+            )
+        ] + [
             ('convex pools', CacheType.CONVEX_POOL_ADDRESS, query_convex_data, save_convex_data_to_cache, None, eth_node_inquirer),  # noqa: E501
             ('velodrome pools', CacheType.VELODROME_POOL_ADDRESS, query_velodrome_like_data, save_velodrome_data_to_cache, None, optimism_inquirer),  # noqa: E501
             ('aerodrome pools', CacheType.AERODROME_POOL_ADDRESS, query_velodrome_like_data, save_velodrome_data_to_cache, None, base_inquirer),  # noqa: E501
             ('gearbox pools', CacheType.GEARBOX_POOL_ADDRESS, query_gearbox_data, save_gearbox_data_to_cache, ChainID.ETHEREUM, eth_node_inquirer),  # noqa: E501
-        )
-        for (cache, cache_type, query_method, save_method, chain_id, inquirer) in caches:
-            if inquirer.ensure_cache_data_is_updated(
+        ]:
+            if inquirer.ensure_cache_data_is_updated(  # type: ignore[attr-defined]  # all inquirers have ensure_cache_data_is_updated
                 cache_type=cache_type,
                 query_method=query_method,
                 save_method=save_method,

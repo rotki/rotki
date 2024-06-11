@@ -92,7 +92,7 @@ class LidoDecoder(DecoderInterface):
                 to_event_subtype=action_to_event_subtype,
                 to_notes=action_to_notes,
                 to_counterparty=CPT_LIDO,
-                paired_event_data=(paired_event, True),
+                paired_events_data=((paired_event,), True),
                 extra_data={'staked_eth': str(collateral_amount)},
             ))
 

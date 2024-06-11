@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.assets.utils import TokenEncounterInfo
 
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
@@ -315,13 +316,18 @@ class BaseDecoderTools:
             extra_data=extra_data,
         )
 
-    def get_or_create_evm_token(self, address: ChecksumEvmAddress) -> EvmToken:
+    def get_or_create_evm_token(
+            self,
+            address: ChecksumEvmAddress,
+            encounter: 'TokenEncounterInfo | None' = None,
+    ) -> EvmToken:
         """A version of get_create_evm_token to be called from the decoders"""
         return get_or_create_evm_token(
             userdb=self.database,
             evm_address=address,
             chain_id=self.evm_inquirer.chain_id,
             evm_inquirer=self.evm_inquirer,
+            encounter=encounter,
         )
 
     def get_or_create_evm_asset(self, address: ChecksumEvmAddress) -> CryptoAsset:

@@ -76,7 +76,7 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('ethereum_accounts', [['0xd289986c25Ae3f4644949e25bC369e9d8e0caeaD']])
+@pytest.mark.parametrize('ethereum_accounts', [['0xb24cE065a3A9bbCCED4B74b6F4435b852286396d']])
 def test_curve_balances(
         ethereum_inquirer: 'EthereumInquirer',
         ethereum_transaction_decoder: 'EthereumTransactionDecoder',
@@ -84,7 +84,7 @@ def test_curve_balances(
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
 ) -> None:
     database = ethereum_transaction_decoder.database
-    tx_hex = deserialize_evm_tx_hash('0x5ae70d68241d85feac65c90e4546154e232dba9fecad9036bcec10082acc9d46')  # noqa: E501
+    tx_hex = deserialize_evm_tx_hash('0x09b67a0846ce2f6bea50221cfb5ac67f5b2f55b89300e45f58bf2f69dc589d43')  # noqa: E501
     get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         database=ethereum_transaction_decoder.database,
@@ -98,8 +98,8 @@ def test_curve_balances(
     user_balance = curve_balances[ethereum_accounts[0]]
     asset = EvmToken('eip155:1/erc20:0xC25a3A3b969415c80451098fa907EC722572917F')
     assert user_balance.assets[asset] == Balance(
-        amount=FVal('7985.261401730774426743'),
-        usd_value=FVal('11977.8921025961616401145'),
+        amount=FVal('2402.233522210805651105'),
+        usd_value=FVal('3603.3502833162084766575'),
     )
 
 
