@@ -95,13 +95,26 @@ function isDiff(conflict: AssetUpdateConflictResult, field: AssetKey) {
 
 const remaining = computed(() => {
   const resolved = get(resolutionLength);
-  return get(conflicts).length - resolved;
+  return uniqueObjects(get(conflicts), ({ identifier }) => identifier).length - resolved;
 });
 
-const valid = computed(() => {
+const warnDuplicate = computed<boolean>(() => {
+  const identifiers = get(conflicts).map(({ identifier }) => identifier).sort();
+  const uniqueIdentifiers = identifiers.filter(uniqueStrings);
+  return identifiers.length > uniqueIdentifiers.length;
+});
+
+const duplicateIdentifiers = computed<string[]>(() => get(conflicts)
+  .map(({ identifier }) => identifier)
+  .sort()
+  .filter((e, i, a) => a.indexOf(e) !== i));
+
+const valid = computed<boolean>(() => {
   const identifiers = get(conflicts)
     .map(({ identifier }) => identifier)
+    .filter(uniqueStrings)
     .sort();
+
   const resolved = Object.keys(get(resolution)).sort();
   if (identifiers.length !== resolved.length)
     return false;
@@ -158,6 +171,17 @@ onMounted(() => {
       </i18n>
     </template>
     <template #default="{ wrapper }">
+      <RuiAlert
+        v-if="warnDuplicate"
+        class="my-2"
+        type="warning"
+      >
+        <i18n path="conflict_dialog.duplicate_warn">
+          <template #identifiers>
+            <strong> {{ duplicateIdentifiers.join(', ') }} </strong>
+          </template>
+        </i18n>
+      </RuiAlert>
       <div
         v-if="!manualResolution"
         class="text-subtitle-1 flex flex-col"
@@ -274,28 +298,3 @@ onMounted(() => {
     </template>
   </BigDialog>
 </template>
-
-<style module lang="scss">
-.mobile {
-  :global {
-    .v-data-table {
-      &__mobile-row {
-        padding: 12px 16px !important;
-
-        &__header {
-          text-orientation: sideways;
-          writing-mode: vertical-lr;
-        }
-      }
-
-      &__mobile-table-row {
-        td {
-          &:nth-child(2) {
-            background-color: rgba(0, 0, 0, 0.1);
-          }
-        }
-      }
-    }
-  }
-}
-</style>
