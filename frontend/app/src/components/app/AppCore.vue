@@ -71,7 +71,7 @@ const shouldShowScrollToTopButton: ComputedRef<boolean> = computed(
         expanded,
       }"
     >
-      <VMain>
+      <main>
         <Transition
           v-if="!logged"
           enter-class="opacity-0"
@@ -93,7 +93,7 @@ const shouldShowScrollToTopButton: ComputedRef<boolean> = computed(
           </div>
         </Transition>
         <RouterView v-else />
-      </VMain>
+      </main>
 
       <Transition
         enter-class="opacity-0"
@@ -119,10 +119,6 @@ const shouldShowScrollToTopButton: ComputedRef<boolean> = computed(
 </template>
 
 <style scoped lang="scss">
-.v-main {
-  padding: 0 !important;
-}
-
 .app {
   &-main {
     padding-top: 1rem;
