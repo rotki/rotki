@@ -1,10 +1,12 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.stakedao.constants import (
     CPT_STAKEDAO,
     STAKEDAO_CLAIMER1,
     STAKEDAO_CLAIMER2,
+    STAKEDAO_CLAIMER_OLD,
 )
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_CRV, A_ETH
@@ -57,6 +59,50 @@ def test_claim_one(database, ethereum_inquirer, ethereum_accounts):
             notes=f'Claimed {amount_str} CRV from StakeDAO veCRV bribes for the period starting at {timestamp_to_date(period, formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
             counterparty=CPT_STAKEDAO,
             address=STAKEDAO_CLAIMER2,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x54dEa0D442c3254419382f0b5Fc5D245eb241569']])
+def test_old_claim(database, ethereum_inquirer, ethereum_accounts):
+    tx_hex = deserialize_evm_tx_hash('0xc76710a3bd4428ae8f462f75b31fcf56bbf40c4cfe2746f62259437526735073')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    timestamp, gas_str, amount_str, period = TimestampMS(1673676767000), '0.002265930693617121', '1.029361212967421451', 1673481600  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_str)),
+            location_label=user_address,
+            notes=f'Burned {gas_str} ETH for gas',
+            counterparty=CPT_GAS,
+            address=None,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=377,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:1/erc20:0x41D5D79431A913C4aE7d69a668ecdfE5fF9DFB68'),
+            balance=Balance(amount=FVal(amount_str)),
+            location_label=user_address,
+            notes=f'Claimed {amount_str} INV from StakeDAO veCRV bribes for the period starting at {timestamp_to_date(period, formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
+            counterparty=CPT_STAKEDAO,
+            address=STAKEDAO_CLAIMER_OLD,
         ),
     ]
     assert events == expected_events
