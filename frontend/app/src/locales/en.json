@@ -1758,6 +1758,7 @@
       "top": "Local changes have been detected. You have two options:",
       "bottom": "You also have another extra option, you can manage the conflicts individually."
     },
+    "duplicate_warn": "Assets with the following identifier(s) {identifiers} appear multiple times in the conflict data, which indicates a problem. If the conflict resolution fails please contact the team.",
     "hint": "{conflicts} asset entries cannot be automatically updated. {remaining} remaining entry/ies require user input.",
     "resolve_all_hint": "All conflicts will be resolved by using {source} data.",
     "keep_local": "Keep All Local",
