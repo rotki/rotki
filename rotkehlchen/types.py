@@ -85,7 +85,7 @@ VELODROME_POOL_PROTOCOL = 'velodrome_pool'
 AERODROME_POOL_PROTOCOL = 'aerodrome_pool'
 PICKLE_JAR_PROTOCOL = 'pickle_jar'
 SPAM_PROTOCOL = 'spam'
-GEARBOX_POOL_PROTOCOL = 'gearbox_pool'
+GEARBOX_PROTOCOL = 'gearbox'
 
 
 # The protocols for which we know how to calculate their prices
