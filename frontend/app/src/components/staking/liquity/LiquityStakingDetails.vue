@@ -367,6 +367,13 @@ const slots = useSlots();
 
 <style lang="scss" module>
 .proxies {
+  &-wrapper,
+  &-item {
+    &::before {
+      @apply border-rui-grey-200;
+    }
+  }
+
   &-wrapper {
     @apply relative;
 
@@ -374,7 +381,6 @@ const slots = useSlots();
       @apply absolute top-0 left-0 border-l;
       content: '';
       height: calc(100% - 0.8rem);
-      border-color: var(--border-color);
     }
   }
 
@@ -384,7 +390,17 @@ const slots = useSlots();
     &::before {
       @apply absolute w-4 right-full top-1/2 border-t;
       content: '';
-      border-color: var(--border-color);
+    }
+  }
+}
+
+:global(.dark) {
+  .proxies {
+    &-wrapper,
+    &-item {
+      &::before {
+        @apply border-rui-grey-800;
+      }
     }
   }
 }

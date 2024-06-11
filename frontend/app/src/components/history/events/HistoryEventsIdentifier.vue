@@ -41,7 +41,7 @@ const { is2xlAndUp } = useBreakpoint();
       #blockNumber
     >
       <HashLink
-        :class="css.address__content"
+        :class="css.wrapper"
         :text="blockEvent.blockNumber.toString()"
         :show-icon="false"
         type="block"
@@ -53,7 +53,7 @@ const { is2xlAndUp } = useBreakpoint();
       #validatorIndex
     >
       <HashLink
-        :class="css.address__content"
+        :class="css.wrapper"
         :text="withdrawEvent.validatorIndex.toString()"
         :show-icon="false"
         :chain="Blockchain.ETH2"
@@ -66,7 +66,7 @@ const { is2xlAndUp } = useBreakpoint();
       #txHash
     >
       <HashLink
-        :class="css.address__content"
+        :class="css.wrapper"
         :text="evmOrDepositEvent.txHash"
         :show-icon="false"
         type="transaction"
@@ -79,12 +79,13 @@ const { is2xlAndUp } = useBreakpoint();
 </template>
 
 <style lang="scss" module>
-.address {
-  &__content {
-    background: var(--v-rotki-light-grey-darken1);
-    padding: 0.125rem 0.25rem 0.125rem 0.5rem;
-    border-radius: 3rem;
-    margin: 2px;
+.wrapper {
+  @apply bg-rui-grey-300 py-0.5 pr-1 pl-2 rounded-full m-0.5;
+}
+
+:global(.dark) {
+  .wrapper {
+    @apply bg-rui-grey-800;
   }
 }
 </style>

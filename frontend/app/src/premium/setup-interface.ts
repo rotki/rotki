@@ -1,4 +1,5 @@
 import dayjs from 'dayjs';
+import { useRotkiTheme } from '@rotki/ui-library-compat';
 import { displayDateFormatter } from '@/data/date-formatter';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import {
@@ -73,6 +74,7 @@ function settings(): SettingsApi {
     async update(settings: FrontendSettingsPayload): Promise<void> {
       await frontendStore.updateSetting(settings);
     },
+    isDark: useRotkiTheme().isDark,
     defaultThemes(): Themes {
       return {
         dark: DARK_COLORS,
@@ -101,6 +103,7 @@ export function usePremiumApi(): PremiumInterface {
       date,
       data: data(),
       settings: settings(),
+      graphs: useGraph,
     }),
   };
 }

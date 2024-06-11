@@ -130,6 +130,7 @@ export interface SettingsApi {
   update: (settings: FrontendSettingsPayload) => Promise<void>;
   defaultThemes: () => Themes;
   themes: () => Themes;
+  isDark: ComputedRef<boolean>;
   user: UserSettingsApi;
   i18n: {
     t: (
@@ -143,8 +144,19 @@ export interface SettingsApi {
   };
 }
 
+export type GraphApi = (canvasId: string) => {
+  getCanvasCtx: () => CanvasRenderingContext2D;
+  baseColor: ComputedRef<string>;
+  gradient: ComputedRef<CanvasGradient>;
+  secondaryColor: ComputedRef<string>;
+  backgroundColor: ComputedRef<string>;
+  fontColor: ComputedRef<string>;
+  gridColor: ComputedRef<string>;
+};
+
 export interface PremiumApi {
   readonly date: DateUtilities;
   readonly data: DataUtilities;
   readonly settings: SettingsApi;
+  readonly graphs: GraphApi;
 }

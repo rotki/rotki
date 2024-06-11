@@ -15,27 +15,19 @@ export function useGraph(canvasId: string) {
     return context;
   };
 
-  const { theme } = useTheme();
   const { isDark } = useRotkiTheme();
+
+  const { usedTheme } = useDarkMode();
 
   const white = '#ffffff';
   const secondaryBlack = '#3f1300';
 
-  const baseColor = computed(() => {
-    const activeTheme = get(theme);
-    const graphColor = activeTheme.currentTheme.graph;
-    return (graphColor || '#96DFD2') as string;
-  });
-
-  const fadeColor = computed(() => {
-    const activeTheme = get(theme);
-    const graphFade = activeTheme.currentTheme.graphFade;
-    return (graphFade || white) as string;
-  });
+  const baseColor = computed(() => get(usedTheme).graph);
+  const fadeColor = computed(() => get(isDark) ? '#1e1e1e' : white);
 
   const gradient = computed(() => {
     const context = getCanvasCtx();
-    const areaGradient = context.createLinearGradient(0, 0, 0, 150);
+    const areaGradient = context.createLinearGradient(0, 0, 0, 200);
     areaGradient.addColorStop(0, get(baseColor));
     areaGradient.addColorStop(1, `${get(fadeColor)}00`);
     return areaGradient;
@@ -44,7 +36,7 @@ export function useGraph(canvasId: string) {
   const secondaryColor = computed(() => (get(isDark) ? white : secondaryBlack));
   const backgroundColor = computed(() => (!get(isDark) ? white : secondaryBlack));
 
-  const fontColor = computed(() => (get(isDark) ? white : 'rgba(0,0,0,.6)'));
+  const fontColor = computed(() => (get(isDark) ? white : 'rgba(0,0,0,.8)'));
   const gridColor = computed(() => (get(isDark) ? '#555' : '#ddd'));
 
   return {

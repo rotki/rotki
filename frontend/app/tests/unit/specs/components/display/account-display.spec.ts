@@ -3,7 +3,7 @@ import { type Wrapper, mount } from '@vue/test-utils';
 import { type Pinia, createPinia, setActivePinia } from 'pinia';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import { PrivacyMode } from '@/types/session';
-import type { GeneralAccount } from '@rotki/common/lib/account';
+import type { Account } from '@rotki/common/lib/account';
 
 vi.mock('@/composables/api/assets/icon', () => ({
   useAssetIconApi: () => ({
@@ -16,11 +16,9 @@ describe('accountDisplay.vue', () => {
   let wrapper: Wrapper<any>;
   let pinia: Pinia;
 
-  const account: GeneralAccount = {
+  const account: Account = {
     chain: Blockchain.ETH,
     address: '0x52bc44d5378309EE2abF1539BF71dE1b7d7bE3b5',
-    label: 'Test Account',
-    tags: [],
   };
 
   function createWrapper() {

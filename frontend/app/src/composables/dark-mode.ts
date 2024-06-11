@@ -1,5 +1,6 @@
 import { ThemeMode, useRotkiTheme } from '@rotki/ui-library-compat';
 import { getColors } from 'theme-colors';
+import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import type { ThemeColors } from '@rotki/common/lib/settings';
 
 export const useDarkMode = createSharedComposable(() => {
@@ -7,6 +8,8 @@ export const useDarkMode = createSharedComposable(() => {
   const store = useSessionStore();
   const { darkModeEnabled } = storeToRefs(store);
   const { darkTheme, lightTheme } = storeToRefs(useFrontendSettingsStore());
+
+  const premium = usePremium();
 
   const updateDarkMode = (enabled: boolean) => {
     set(darkModeEnabled, enabled);
@@ -36,13 +39,19 @@ export const useDarkMode = createSharedComposable(() => {
     setThemeConfig({ ...conf, [variant]: variantConf });
   };
 
-  watchDeep(darkTheme, (theme) => {
+  // Use default theme if not premium
+  const usedDarkTheme = computed(() => get(premium) ? get(darkTheme) : DARK_COLORS);
+  const usedLightTheme = computed(() => get(premium) ? get(lightTheme) : LIGHT_COLORS);
+
+  const usedTheme = computed(() => get(darkModeEnabled) ? get(usedDarkTheme) : get(usedLightTheme));
+
+  watchDeep(usedDarkTheme, (theme) => {
     updateThemeColors('dark', theme);
   }, {
     immediate: true,
   });
 
-  watchDeep(lightTheme, (theme) => {
+  watchDeep(usedLightTheme, (theme) => {
     updateThemeColors('light', theme);
   }, {
     immediate: true,
@@ -55,5 +64,6 @@ export const useDarkMode = createSharedComposable(() => {
   return {
     darkModeEnabled,
     updateDarkMode,
+    usedTheme,
   };
 });

@@ -7,7 +7,7 @@ const { isPackaged } = useInterop();
 const { updateDarkMode } = useDarkMode();
 const { load } = useDataLoader();
 
-onMounted(async () => await load());
+onMounted(load);
 </script>
 
 <template>

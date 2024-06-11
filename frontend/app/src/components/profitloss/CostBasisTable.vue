@@ -170,16 +170,10 @@ const matchedAcquisitions = computed<Acquisition[]>(() => {
 
 <style module lang="scss">
 .group {
-  position: absolute;
-  width: 2px;
-  top: -1rem;
-  bottom: -1rem;
-  left: .8125rem;
+  @apply absolute w-0.5 -top-[1px] -bottom-4 left-[0.8125rem];
 
   &__line {
-    height: 100%;
-    transform: translateX(-50%);
-    border-left: 2px dashed var(--v-primary-base);
+    @apply border-l-2 border-dashed border-rui-primary h-full transform -translate-x-1/2;
   }
 }
 </style>
