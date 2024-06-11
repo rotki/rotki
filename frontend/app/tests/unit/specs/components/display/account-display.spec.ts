@@ -1,7 +1,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type Wrapper, mount } from '@vue/test-utils';
 import { type Pinia, createPinia, setActivePinia } from 'pinia';
-import Vuetify from 'vuetify';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import { PrivacyMode } from '@/types/session';
 import type { GeneralAccount } from '@rotki/common/lib/account';
@@ -25,10 +24,8 @@ describe('accountDisplay.vue', () => {
   };
 
   function createWrapper() {
-    const vuetify = new Vuetify();
     return mount(AccountDisplay, {
       pinia,
-      vuetify,
       stubs: {
         AssetIcon: true,
       },

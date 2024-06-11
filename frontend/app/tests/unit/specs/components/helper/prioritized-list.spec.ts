@@ -7,13 +7,11 @@ import {
 import { PiniaVuePlugin } from 'pinia';
 import { expect } from 'vitest';
 import Vue from 'vue';
-import Vuetify from 'vuetify';
 import PrioritizedList from '@/components/helper/PrioritizedList.vue';
 import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
 import { PrioritizedListData } from '@/types/settings/prioritized-list-data';
 import '../../../i18n';
 
-Vue.use(Vuetify);
 Vue.use(PiniaVuePlugin);
 
 describe('prioritizedList.vue', () => {
@@ -38,12 +36,10 @@ describe('prioritizedList.vue', () => {
   };
 
   const createWrapper = (options: ThisTypedMountOptions<any>) => {
-    const vuetify = new Vuetify();
     const pinia = createPinia();
     setActivePinia(pinia);
     return mount(PrioritizedList, {
       pinia,
-      vuetify,
       stubs: ['action-status-indicator'],
       ...options,
     });

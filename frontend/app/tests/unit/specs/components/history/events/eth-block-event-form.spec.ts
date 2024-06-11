@@ -4,7 +4,6 @@ import {
   mount,
 } from '@vue/test-utils';
 import { type Pinia, createPinia, setActivePinia } from 'pinia';
-import Vuetify from 'vuetify';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import EthBlockEventForm from '@/components/history/events/forms/EthBlockEventForm.vue';
 import type { AssetMap } from '@/types/asset';
@@ -62,14 +61,10 @@ describe('ethBlockEventForm.vue', () => {
     vi.mocked(useBalancePricesStore().getHistoricPrice).mockResolvedValue(One);
   });
 
-  const createWrapper = (options: ThisTypedMountOptions<any> = {}) => {
-    const vuetify = new Vuetify();
-    return mount(EthBlockEventForm, {
-      pinia,
-      vuetify,
-      ...options,
-    });
-  };
+  const createWrapper = (options: ThisTypedMountOptions<any> = {}) => mount(EthBlockEventForm, {
+    pinia,
+    ...options,
+  });
 
   describe('should prefill the fields based on the props', () => {
     it('no `groupHeader`, nor `editableItem` are passed', async () => {

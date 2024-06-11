@@ -3,7 +3,6 @@ import {
   type Wrapper,
   mount,
 } from '@vue/test-utils';
-import Vuetify from 'vuetify';
 import { setActivePinia } from 'pinia';
 import TagInput from '@/components/inputs/TagInput.vue';
 import { createCustomPinia } from '../../../utils/create-pinia';
@@ -41,12 +40,10 @@ describe('tagInput.vue', () => {
   });
 
   const createWrapper = (options: ThisTypedMountOptions<any>) => {
-    const vuetify = new Vuetify();
     const pinia = createCustomPinia();
     setActivePinia(pinia);
     return mount(TagInput, {
       pinia,
-      vuetify,
       stubs: {
         RuiAutoComplete: false,
       },

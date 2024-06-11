@@ -1,5 +1,4 @@
 import { type Wrapper, mount } from '@vue/test-utils';
-import Vuetify from 'vuetify';
 import { beforeEach } from 'vitest';
 import OnboardingSettings from '@/components/settings/OnboardingSettings.vue';
 import { useMainStore } from '@/store/main';
@@ -59,10 +58,8 @@ describe('onboardingSetting.vue', () => {
   let wrapper: Wrapper<OnboardingSettings>;
 
   function createWrapper() {
-    const vuetify = new Vuetify();
     return mount(OnboardingSettings, {
       pinia,
-      vuetify,
       stubs: {
         RuiMenuSelect: {
           template: `

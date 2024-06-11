@@ -1,5 +1,4 @@
 import { type Wrapper, mount } from '@vue/test-utils';
-import Vuetify from 'vuetify';
 import SuggestedItem from '@/components/table-filter/SuggestedItem.vue';
 import type { Suggestion } from '@/types/filtering';
 
@@ -24,15 +23,11 @@ describe('table-filter/SuggestedItem.vue', () => {
   const createWrapper = (props: {
     suggestion?: Suggestion;
     chip?: boolean;
-  }) => {
-    const vuetify = new Vuetify();
-    return mount(SuggestedItem, {
-      vuetify,
-      propsData: {
-        ...props,
-      },
-    });
-  };
+  }) => mount(SuggestedItem, {
+    propsData: {
+      ...props,
+    },
+  });
 
   const key = 'start';
   const value = '12/12/2012';

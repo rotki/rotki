@@ -1,7 +1,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { type Wrapper, mount } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';
-import Vuetify from 'vuetify';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
@@ -22,11 +21,9 @@ describe('accountBalances.vue', () => {
   let wrapper: Wrapper<any>;
 
   beforeEach(() => {
-    const vuetify = new Vuetify();
     const pinia = createCustomPinia();
     setActivePinia(pinia);
     wrapper = mount(AccountBalances, {
-      vuetify,
       pinia,
       propsData: {
         blockchain: Blockchain.ETH,

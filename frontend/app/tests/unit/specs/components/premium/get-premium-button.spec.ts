@@ -1,5 +1,4 @@
 import { type Wrapper, mount } from '@vue/test-utils';
-import Vuetify from 'vuetify';
 import { type Pinia, setActivePinia } from 'pinia';
 import GetPremiumButton from '@/components/premium/GetPremiumButton.vue';
 
@@ -13,13 +12,9 @@ describe('getPremiumButton.vue', () => {
     setActivePinia(pinia);
   });
 
-  const createWrapper = () => {
-    const vuetify = new Vuetify();
-    return mount(GetPremiumButton, {
-      pinia,
-      vuetify,
-    });
-  };
+  const createWrapper = () => mount(GetPremiumButton, {
+    pinia,
+  });
 
   it('should show get premium button', () => {
     wrapper = createWrapper();

@@ -5,7 +5,6 @@ import {
 } from '@vue/test-utils';
 import BigNumber from 'bignumber.js';
 import { type Pinia, createPinia, setActivePinia } from 'pinia';
-import Vuetify from 'vuetify';
 import ExternalTradeForm from '@/components/history/trades/ExternalTradeForm.vue';
 import type { AssetMap } from '@/types/asset';
 import type { Trade } from '@/types/history/trade';
@@ -63,14 +62,10 @@ describe('externalTradeForm.vue', () => {
     vi.mocked(useBalancePricesStore().getHistoricPrice).mockResolvedValue(One);
   });
 
-  const createWrapper = (options: ThisTypedMountOptions<any> = {}) => {
-    const vuetify = new Vuetify();
-    return mount(ExternalTradeForm, {
-      pinia,
-      vuetify,
-      ...options,
-    });
-  };
+  const createWrapper = (options: ThisTypedMountOptions<any> = {}) => mount(ExternalTradeForm, {
+    pinia,
+    ...options,
+  });
 
   describe('should prefill the fields based on the props', () => {
     it('no `editableItem` passed', async () => {

@@ -3,7 +3,6 @@ import {
   type Wrapper,
   mount,
 } from '@vue/test-utils';
-import Vuetify from 'vuetify';
 import { type Pinia, setActivePinia } from 'pinia';
 import DateTimePicker from '@/components/inputs/DateTimePicker.vue';
 import { DateFormat } from '@/types/date-format';
@@ -30,20 +29,16 @@ describe('dateTimePicker.vue', () => {
     useFrontendSettingsStore().$reset();
   });
 
-  const createWrapper = (options: ThisTypedMountOptions<any>) => {
-    const vuetify = new Vuetify();
-    return mount(DateTimePicker, {
-      pinia,
-      vuetify,
-      stubs: {
-        RuiMenu: {
-          template: '<span><slot name="activator"/><slot /></span>',
-        },
-        TransitionGroup: '<span><slot /></span>',
+  const createWrapper = (options: ThisTypedMountOptions<any>) => mount(DateTimePicker, {
+    pinia,
+    stubs: {
+      RuiMenu: {
+        template: '<span><slot name="activator"/><slot /></span>',
       },
-      ...options,
-    });
-  };
+      TransitionGroup: '<span><slot /></span>',
+    },
+    ...options,
+  });
 
   it('should show indicator when format is wrong', async () => {
     wrapper = createWrapper({});

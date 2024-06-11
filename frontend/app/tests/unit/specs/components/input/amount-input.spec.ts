@@ -3,7 +3,6 @@ import {
   type Wrapper,
   mount,
 } from '@vue/test-utils';
-import Vuetify from 'vuetify';
 import { type Pinia, setActivePinia } from 'pinia';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import { createCustomPinia } from '../../../utils/create-pinia';
@@ -28,14 +27,10 @@ describe('amountInput.vue', () => {
     useFrontendSettingsStore().$reset();
   });
 
-  const createWrapper = (options: ThisTypedMountOptions<any>) => {
-    const vuetify = new Vuetify();
-    return mount(AmountInput, {
-      pinia,
-      vuetify,
-      ...options,
-    });
-  };
+  const createWrapper = (options: ThisTypedMountOptions<any>) => mount(AmountInput, {
+    pinia,
+    ...options,
+  });
 
   it('should format the numbers', async () => {
     wrapper = createWrapper({});

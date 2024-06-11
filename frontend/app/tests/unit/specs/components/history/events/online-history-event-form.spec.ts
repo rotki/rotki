@@ -4,7 +4,6 @@ import {
   mount,
 } from '@vue/test-utils';
 import { type Pinia, createPinia, setActivePinia } from 'pinia';
-import Vuetify from 'vuetify';
 import flushPromises from 'flush-promises';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import OnlineHistoryEventForm from '@/components/history/events/forms/OnlineHistoryEventForm.vue';
@@ -60,14 +59,10 @@ describe('onlineHistoryEventForm.vue', () => {
     vi.mocked(useBalancePricesStore().getHistoricPrice).mockResolvedValue(One);
   });
 
-  const createWrapper = (options: ThisTypedMountOptions<any> = {}) => {
-    const vuetify = new Vuetify();
-    return mount(OnlineHistoryEventForm, {
-      pinia,
-      vuetify,
-      ...options,
-    });
-  };
+  const createWrapper = (options: ThisTypedMountOptions<any> = {}) => mount(OnlineHistoryEventForm, {
+    pinia,
+    ...options,
+  });
 
   describe('should prefill the fields based on the props', () => {
     it('no `groupHeader`, `editableItem`, nor `nextSequence` are passed', async () => {
