@@ -49,18 +49,16 @@ const shouldShowScrollToTopButton: ComputedRef<boolean> = computed(
     <NotificationPopup />
     <AppDrawer />
 
-    <header class="app__app-bar fixed top-0 left-0 w-full bg-white dark:bg-[#1E1E1E] md:h-[64px] h-[56px] border-b dark:border-b-0">
-      <nav class="flex flex-row md:h-[64px] h-[56px] items-center">
-        <div class="mx-2">
-          <RuiButton
-            icon
-            variant="text"
-            class="!text-rui-text-secondary"
-            @click="toggleDrawer()"
-          >
-            <RuiIcon name="menu-line" />
-          </RuiButton>
-        </div>
+    <header class="app__app-bar fixed top-0 left-0 w-full bg-white dark:bg-[#1E1E1E] md:h-16 h-[3.5rem] border-b border-rui-grey-300 dark:border-b-0">
+      <nav class="flex items-center md:h-16 h-[3.5rem] px-2">
+        <RuiButton
+          icon
+          variant="text"
+          class="!text-rui-text-secondary"
+          @click="toggleDrawer()"
+        >
+          <RuiIcon name="menu-line" />
+        </RuiButton>
         <AppIndicators />
       </nav>
     </header>
