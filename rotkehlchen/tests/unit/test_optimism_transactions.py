@@ -5,6 +5,7 @@ from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.types import ChainID, deserialize_evm_tx_hash
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('optimism_accounts', [['0xd6Ade875eEC93a7aAb7EfB7DBF13d1457443f95B']])
 def test_query_transactions_no_fee(optimism_transactions, optimism_accounts):
     """Test to query an optimism transaction with and without l1_fee existing in the DB.
