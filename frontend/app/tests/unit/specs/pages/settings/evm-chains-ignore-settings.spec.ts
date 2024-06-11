@@ -1,7 +1,6 @@
 import { type Wrapper, mount } from '@vue/test-utils';
 import { promiseTimeout } from '@vueuse/core';
 import flushPromises from 'flush-promises';
-import Vuetify from 'vuetify';
 import { ApiValidationError } from '@/types/api/errors';
 import EvmChainsToIgnoreSettings from '@/components/settings/general/EvmChainsToIgnoreSettings.vue';
 import { libraryDefaults } from '../../../utils/provide-defaults';
@@ -42,12 +41,10 @@ describe('evmChainsToIgnoreSettings.vue', () => {
   let wrapper: Wrapper<any>;
 
   function createWrapper() {
-    const vuetify = new Vuetify();
     const pinia = createPinia();
     setActivePinia(pinia);
     return mount(EvmChainsToIgnoreSettings, {
       pinia,
-      vuetify,
       provide: libraryDefaults,
     });
   }

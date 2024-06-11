@@ -1,7 +1,6 @@
 import { type Wrapper, mount } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { type Pinia, setActivePinia } from 'pinia';
-import Vuetify from 'vuetify';
 import { computed, reactive } from 'vue';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import ExternalServices from '@/pages/settings/api-keys/external/index.vue';
@@ -63,10 +62,8 @@ describe('/settings/api-keys/external-services', () => {
   };
 
   function createWrapper(): Wrapper<ExternalServices> {
-    const vuetify = new Vuetify();
     return mount(ExternalServices, {
       pinia,
-      vuetify,
       components: {
         EvmChainIcon,
       },

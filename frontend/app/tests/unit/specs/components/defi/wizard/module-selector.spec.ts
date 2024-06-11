@@ -1,6 +1,5 @@
 import { type Wrapper, mount } from '@vue/test-utils';
 import { type Pinia, createPinia, setActivePinia } from 'pinia';
-import Vuetify from 'vuetify';
 import flushPromises from 'flush-promises';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
 import { Module } from '@/types/modules';
@@ -19,14 +18,10 @@ describe('moduleSelector.vue', () => {
   let pinia: Pinia;
   let api: ReturnType<typeof useSettingsApi>;
 
-  const createWrapper = () => {
-    const vuetify = new Vuetify();
-    return mount(ModuleSelector, {
-      pinia,
-      vuetify,
-      provide: libraryDefaults,
-    });
-  };
+  const createWrapper = () => mount(ModuleSelector, {
+    pinia,
+    provide: libraryDefaults,
+  });
 
   beforeEach(() => {
     pinia = createPinia();

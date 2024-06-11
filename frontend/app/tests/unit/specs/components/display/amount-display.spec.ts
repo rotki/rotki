@@ -1,6 +1,5 @@
 import { BigNumber } from '@rotki/common';
 import { type Wrapper, mount } from '@vue/test-utils';
-import Vuetify from 'vuetify';
 import flushPromises from 'flush-promises';
 import { useCurrencies } from '@/types/currencies';
 import { CurrencyLocation } from '@/types/currency-location';
@@ -35,17 +34,13 @@ describe('amountDisplay.vue', () => {
       priceOfAsset?: BigNumber;
       timestamp?: number;
     } = {},
-  ) => {
-    const vuetify = new Vuetify();
-    return mount(AmountDisplay, {
-      pinia,
-      vuetify,
-      propsData: {
-        value,
-        ...props,
-      },
-    });
-  };
+  ) => mount(AmountDisplay, {
+    pinia,
+    propsData: {
+      value,
+      ...props,
+    },
+  });
 
   beforeEach(() => {
     pinia = createCustomPinia();

@@ -1,6 +1,5 @@
 import { type Wrapper, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import Vuetify from 'vuetify';
 import DefiWizard from '@/components/defi/wizard/DefiWizard.vue';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { FrontendSettings } from '@/types/settings/frontend-settings';
@@ -17,12 +16,10 @@ describe('defiWizard.vue', () => {
   let api: ReturnType<typeof useSettingsApi>;
 
   const createWrapper = () => {
-    const vuetify = new Vuetify();
     const pinia = createPinia();
     setActivePinia(pinia);
     return mount(DefiWizard, {
       pinia,
-      vuetify,
       stubs: ['module-selector', 'module-address-selector'],
     });
   };

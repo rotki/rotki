@@ -1,6 +1,5 @@
 import { type Wrapper, mount } from '@vue/test-utils';
 import flushPromises from 'flush-promises/index';
-import Vuetify from 'vuetify';
 import PremiumSettings from '@/pages/settings/api-keys/premium/index.vue';
 
 vi.mock('@/composables/electron-interop', () => {
@@ -22,12 +21,10 @@ describe('premiumSettings.vue', () => {
   let api: ReturnType<typeof usePremiumCredentialsApi>;
 
   function createWrapper() {
-    const vuetify = new Vuetify();
     const pinia = createPinia();
     setActivePinia(pinia);
     return mount(PremiumSettings, {
       pinia,
-      vuetify,
       stubs: ['i18n', 'card-title'],
     });
   }

@@ -1,5 +1,4 @@
 import { type Wrapper, mount } from '@vue/test-utils';
-import Vuetify from 'vuetify';
 import { createPinia, setActivePinia } from 'pinia';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import HistoryEventForm from '@/components/history/events/HistoryEventForm.vue';
@@ -13,12 +12,10 @@ describe('historyEventForm.vue', () => {
   let wrapper: Wrapper<HistoryEventForm>;
 
   const createWrapper = () => {
-    const vuetify = new Vuetify();
     const pinia = createPinia();
     setActivePinia(pinia);
     return mount(HistoryEventForm, {
       pinia,
-      vuetify,
     });
   };
 

@@ -1,18 +1,15 @@
 import { type Wrapper, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
-import Vuetify from 'vuetify';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 
 describe('serviceKey.vue', () => {
   let wrapper: Wrapper<any>;
 
   function createWrapper(): Wrapper<any> {
-    const vuetify = new Vuetify();
     const pinia = createPinia();
     setActivePinia(pinia);
     return mount(ServiceKey, {
       pinia,
-      vuetify,
       propsData: {
         apiKey: '',
         name: 'etherscan',

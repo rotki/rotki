@@ -1,5 +1,4 @@
 import { type Pinia, setActivePinia } from 'pinia';
-import Vuetify from 'vuetify';
 import {
   type ThisTypedMountOptions,
   type Wrapper,
@@ -118,15 +117,11 @@ describe('evmNativeTokenBreakdown.vue', () => {
     setActivePinia(pinia);
   });
 
-  const createWrapper = (options: ThisTypedMountOptions<any>) => {
-    const vuetify = new Vuetify();
-    return mount(EvmNativeTokenBreakdown, {
-      pinia,
-      vuetify,
-      provide: libraryDefaults,
-      ...options,
-    });
-  };
+  const createWrapper = (options: ThisTypedMountOptions<any>) => mount(EvmNativeTokenBreakdown, {
+    pinia,
+    provide: libraryDefaults,
+    ...options,
+  });
 
   it('should show correct entries', () => {
     wrapper = createWrapper({ propsData: { identifier: 'ETH' } });

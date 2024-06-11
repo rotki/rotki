@@ -3,7 +3,6 @@ import {
   type Wrapper,
   mount,
 } from '@vue/test-utils';
-import Vuetify from 'vuetify';
 import { setActivePinia } from 'pinia';
 import FilterDropdown from '@/components/table-filter/FilterDropdown.vue';
 import { createCustomPinia } from '../../../utils/create-pinia';
@@ -16,12 +15,10 @@ vi.mocked(useCssModule).mockReturnValue({
 describe('table-filter/FilterDropdown.vue', () => {
   let wrapper: Wrapper<any>;
   const createWrapper = (options: ThisTypedMountOptions<any> = {}) => {
-    const vuetify = new Vuetify();
     const pinia = createCustomPinia();
     setActivePinia(pinia);
     return mount(FilterDropdown, {
       pinia,
-      vuetify,
       stubs: ['filter-entry', 'suggested-item', 'I18n'],
       ...options,
     });

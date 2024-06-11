@@ -1,6 +1,5 @@
 import { PiniaVuePlugin } from 'pinia';
 import Vue from 'vue';
-import Vuetify from 'vuetify';
 import { config } from '@vue/test-utils';
 import { mockT } from '../i18n';
 import { RuiIconStub } from '../specs/stubs/RuiIcon';
@@ -10,7 +9,6 @@ import { RuiAutoCompleteStub } from '../specs/stubs/RuiAutoComplete';
 import { server } from './server';
 
 beforeAll(() => {
-  Vue.use(Vuetify);
   Vue.use(PiniaVuePlugin);
   server.listen({
     onUnhandledRequest: 'warn',

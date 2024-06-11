@@ -1,5 +1,4 @@
 import { type Wrapper, mount } from '@vue/test-utils';
-import Vuetify from 'vuetify';
 import FilterEntry from '@/components/table-filter/FilterEntry.vue';
 import type { SearchMatcher } from '@/types/filtering';
 
@@ -12,15 +11,11 @@ describe('table-filter/FilterEntry.vue', () => {
   const createWrapper = (props: {
     matcher: SearchMatcher<any>;
     active: boolean;
-  }) => {
-    const vuetify = new Vuetify();
-    return mount(FilterEntry, {
-      vuetify,
-      propsData: {
-        ...props,
-      },
-    });
-  };
+  }) => mount(FilterEntry, {
+    propsData: {
+      ...props,
+    },
+  });
 
   const matcher: SearchMatcher<any> = {
     key: 'start',

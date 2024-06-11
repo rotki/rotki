@@ -2,10 +2,6 @@
 
 import Vue from 'vue';
 import {
-  VColorPicker,
-  VDialog,
-} from 'vuetify/lib/components';
-import {
   RuiAlert,
   RuiButton,
   RuiButtonGroup,
@@ -52,15 +48,6 @@ import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import LpPoolHeader from '@/components/display/defi/LpPoolHeader.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import UniswapPoolAssetBalance from '@/components/defi/uniswap/UniswapPoolAssetBalance.vue';
-
-/**
- * Vuetify components that are used in the premium components
- */
-function vuetifyRegister(): void {
-  // version 17 - 1.24
-  Vue.component('VDialog', VDialog);
-  Vue.component('VColorPicker', VColorPicker);
-}
 
 function ruiRegister(): void {
   Vue.component('RuiAlert', RuiAlert);
@@ -134,7 +121,6 @@ export function registerComponents(): void {
   Vue.component('RowAppend', RowAppend);
   // Version 25 - 1.32
   Vue.component('UniswapPoolAssetBalance', UniswapPoolAssetBalance);
-  vuetifyRegister();
   ruiRegister();
   logger.info('Components registered');
 }
