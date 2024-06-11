@@ -17,7 +17,12 @@ async function dismissAll() {
   set(visibleNotification, { ...get(visibleNotification), display: false });
 }
 
+const { showNotificationBar } = storeToRefs(useAreaVisibilityStore());
+
 function checkQueue() {
+  if (get(showNotificationBar))
+    return;
+
   const data = [...get(queue)];
   if (!get(visibleNotification).display && data.length > 0) {
     const next = data.shift();
@@ -30,13 +35,14 @@ function checkQueue() {
   }
 }
 
-watch(queue, checkQueue, { deep: true });
-
-onMounted(() => {
-  checkQueue();
-});
+watch(queue, checkQueue, { deep: true, immediate: true });
 
 const { dark } = useTheme();
+
+watch(showNotificationBar, (showNotificationBar) => {
+  if (showNotificationBar)
+    dismissAll();
+});
 </script>
 
 <template>
