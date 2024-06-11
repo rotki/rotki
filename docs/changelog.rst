@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` Fix the issue where the popup notification breaks the experience when the notification sidebar is already open.
+
 * :release:`1.33.1 <2024-05-29>`
 * :bug:`-` Fix the issue where airdrops aren't properly filtered by status.
 * :bug:`7791` Killing the rotki processes in Windows should now work fine and no zombie processes should remain. In turn this should also make the auto upgrade work for Windows.
