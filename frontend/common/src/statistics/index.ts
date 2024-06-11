@@ -5,6 +5,8 @@ const TimedEntry = z.object({ time: z.number().positive() });
 
 const TimedBalance = Balance.merge(TimedEntry);
 
+export type TimedBalance = z.infer<typeof TimedBalance>;
+
 export const TimedBalances = z.array(TimedBalance);
 
 export type TimedBalances = z.infer<typeof TimedBalances>;
