@@ -365,6 +365,18 @@ class Compoundv2Decoder(DecoderInterface):
                 event.notes = f'Collect {event.balance.amount} COMP from compound'
                 break
 
+        else:  # not found, so transfer may come after
+            action_item = ActionItem(
+                action='transform',
+                from_event_type=HistoryEventType.RECEIVE,
+                from_event_subtype=HistoryEventSubType.NONE,
+                asset=A_COMP,
+                to_event_subtype=HistoryEventSubType.REWARD,
+                to_notes='Collect {amount} COMP from compound',  # amount set at actionitem process
+                to_counterparty=CPT_COMPOUND,
+            )
+            return DecodingOutput(action_items=[action_item])
+
         return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods

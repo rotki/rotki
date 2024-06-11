@@ -3,7 +3,10 @@ from typing import TYPE_CHECKING
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
+from rotkehlchen.chain.ethereum.modules.compound.constants import (
+    COMPTROLLER_PROXY_ADDRESS,
+    CPT_COMPOUND,
+)
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
@@ -317,6 +320,50 @@ def test_compound_multiple_comp_claim(database, ethereum_inquirer):
             counterparty=CPT_COMPOUND,
             address=string_to_evm_address('0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B'),
         )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0xB8cCf257d32b134ffecb902e5Bef3042841B8A4A']])
+def test_compound_comp_claim_last_transfer(database, ethereum_inquirer, ethereum_accounts):
+    """
+    Test comp claim case that was not decoded properly before due to
+    the transfer being last the last event
+    """
+    tx_hash = deserialize_evm_tx_hash('0xbd2dcb1121bf230a855788a77aa054dc1aae7a898cb4a7d7c45c5866f3f887ac')  # noqa: E501
+    timestamp = TimestampMS(1622430975000)
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas_amount, amount = TimestampMS(1672433507000), '0.0041468661739364', '12.817402848098541218'  # noqa: E501
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas_amount)),
+        location_label=ethereum_accounts[0],
+        notes=f'Burned {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=61,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.REWARD,
+        asset=A_COMP,
+        balance=Balance(amount=FVal(amount)),
+        location_label=ethereum_accounts[0],
+        notes=f'Collect {amount} COMP from compound',
+        counterparty=CPT_COMPOUND,
+        address=COMPTROLLER_PROXY_ADDRESS,
+    )]
     assert events == expected_events
 
 
