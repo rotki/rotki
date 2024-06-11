@@ -198,7 +198,7 @@ class Compoundv3CommonDecoder(DecoderInterface):
                 to_event_subtype=action_to_event_subtype,
                 to_notes=action_to_notes,
                 to_counterparty=CPT_COMPOUND_V3,
-                paired_event_data=(paired_event, True),
+                paired_events_data=((paired_event,), True),
             ))
 
         return DecodingOutput(action_items=action_items)
@@ -266,7 +266,7 @@ class Compoundv3CommonDecoder(DecoderInterface):
                 to_event_subtype=action_to_event_subtype,
                 to_notes=action_to_notes,
                 to_counterparty=CPT_COMPOUND_V3,
-                paired_event_data=(paired_event, False),
+                paired_events_data=((paired_event,), False),
             ))
 
         return DecodingOutput(action_items=action_items)

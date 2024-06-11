@@ -9,6 +9,7 @@ ADD_LIQUIDITY_EVENTS: Final = {
     b'B?d\x95\xa0\x8f\xc6RB\\\xf4\xed\r\x1f\x9e7\xe5q\xd9\xb9R\x9b\x1c\x1c#\xcc\xe7\x80\xb2\xe7\xdf\r',  # ADD_LIQUIDITY  # noqa: E501
     b'&\xf5Z\x85\x08\x1d$\x97N\x85\xc6\xc0\x00E\xd0\xf0E9\x91\xe9Xs\xf5+\xff\r!\xaf@y\xa7h',  # ADD_LIQUIDITY_2_ASSETS  # noqa: E501
     b'?\x19\x15w^\x0c\x9a8\xa5z{\xb7\xf1\xf9\x00_Ho\xb9\x04\xe1\xf8J\xa2\x156MVs\x19\xa5\x8d',  # ADD_LIQUIDITY_4_ASSETS  # noqa: E501
+    b'\x18\x9cb;fk\x1bE\xb8=qx\xf3\x9b\x8c\x08|\xb0\x97t1|\xa2\xf5<-<7&\xf2"\xa2',  # AddLiquidity in DepositAndStake Zap  # noqa: E501
 }
 REMOVE_LIQUIDITY_IMBALANCE: Final = {
     b'\xb9d\xb7/s\xf5\xef[\xf0\xfd\xc5Y\xb2\xfa\xb9\xa7\xb1*9\xe4x\x17\xa5G\xf1\xf0\xae\xe4\x7f\xeb\xd6\x02',
@@ -27,19 +28,23 @@ GAUGE_WITHDRAW: Final = b'\x88N\xda\xd9\xceo\xa2D\r\x8aT\xcc\x124\x90\xeb\x96\xd
 GAUGE_VOTE: Final = b'E\xca\x9aL\x8d\x01\x19\xeb2\x9eX\r(\xfeh\x9eHN\x1b\xe20\xda\x807\xad\xe9T}-%\xcc\x91'  # noqa: E501
 TOKEN_EXCHANGE: Final = b'\x8b>\x96\xf2\xb8\x89\xfaw\x1cS\xc9\x81\xb4\r\xaf\x00_c\xf67\xf1\x86\x9fppR\xd1Z=\xd9q@'  # noqa: E501
 TOKEN_EXCHANGE_UNDERLYING: Final = b'\xd0\x13\xca#\xe7ze\x00<,e\x9cTB\xc0\x0c\x80Sq\xb7\xfc\x1e\xbdL lA\xd1Sk\xd9\x0b'  # noqa: E501
+# token exchange topic of new generation (NG) pools
+TOKEN_EXCHANGE_NG: Final = b'\x14?\x1f\x8e\x86\x1f\xbd\xed\xdd[F\xe8D\xb7\xd3\xac{\x86\xa1"\xf3n\x8cF8Y\xeeh\x11\xb1\xf2\x9c'  # noqa: E501
 EXCHANGE_MULTIPLE: Final = b'\x14\xb5a\x17\x8a\xe0\xf3h\xf4\x0f\xaf\xd0H\\Oq)\xeaq\xcd\xc0\x0bL\xe1\xe5\x94\x0f\x9b\xc6Y\xc8\xb2'  # noqa: E501
+# token exchange topic of new generation (NG) router
+EXCHANGE_NG: Final = b'V\xd0f\x1e$\r\xfb\x19\x9e\xf1\x96\xe1noBG9\x906c\x14\xf0"j\xc9x\xf7\xbe<\xd9\xee\x83'  # noqa: E501
 
 # list of pools that we know contain bad tokens
 IGNORED_CURVE_POOLS = {'0x066B6e1E93FA7dcd3F0Eb7f8baC7D5A747CE0BF9'}
-CURVE_API_URLS = (
-    'https://api.curve.fi/api/getPools/ethereum/main',
-    'https://api.curve.fi/api/getPools/ethereum/crypto',
-    'https://api.curve.fi/api/getPools/ethereum/factory',
-    'https://api.curve.fi/api/getPools/ethereum/factory-crypto',
-    'https://api.curve.fi/api/getPools/ethereum/factory-crvusd',
-    'https://api.curve.fi/api/getPools/ethereum/factory-tricrypto',
-    'https://api.curve.fi/api/getPools/ethereum/factory-stable-ng',
-)
+CURVE_API_URL = 'https://api.curve.fi/v1/getPools/all/{curve_blockchain_id}'
+CURVE_CHAIN_ID = {
+    ChainID.ETHEREUM: 'ethereum',
+    ChainID.POLYGON_POS: 'polygon',
+    ChainID.OPTIMISM: 'optimism',
+    ChainID.ARBITRUM_ONE: 'arbitrum',
+    ChainID.GNOSIS: 'xdai',
+    ChainID.BASE: 'base',
+}
 CURVE_METAREGISTRY_METHODS = [
     'get_pool_name',
     'get_gauge',
@@ -47,6 +52,7 @@ CURVE_METAREGISTRY_METHODS = [
     'get_coins',
     'get_underlying_coins',
 ]
-CURVE_ADDRESS_PROVIDER: Final = {
-    ChainID.ETHEREUM: string_to_evm_address('0x0000000022D53366457F9d5E68Ec105046FC4383'),
-}
+# The address provider address is same for all the supported chains
+CURVE_ADDRESS_PROVIDER: Final = string_to_evm_address('0x5ffe7FB82894076ECB99A30D6A32e969e6e35E98')
+CURVE_SWAP_ROUTER_NG: Final = string_to_evm_address('0xF0d4c12A5768D806021F80a262B4d39d26C58b8D')
+DEPOSIT_AND_STAKE_ZAP: Final = string_to_evm_address('0x37c5ab57AF7100Bdc9B668d766e193CCbF6614FD')

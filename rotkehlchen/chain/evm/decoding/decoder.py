@@ -3,7 +3,7 @@ import logging
 import operator
 import pkgutil
 from abc import ABC, abstractmethod
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from contextlib import suppress
 from dataclasses import dataclass
 from types import ModuleType
@@ -929,10 +929,13 @@ class EVMTransactionDecoder(ABC):
                 if action_item.to_event_subtype is not None:
                     transfer.event_subtype = action_item.to_event_subtype
                 if action_item.to_notes is not None:
+                    format_kwargs = {}
                     if '{amount}' in action_item.to_notes:
-                        transfer.notes = action_item.to_notes.format(amount=transfer.balance.amount)  # noqa: E501
-                    else:
-                        transfer.notes = action_item.to_notes
+                        format_kwargs['amount'] = str(transfer.balance.amount)
+                    if '{symbol}' in action_item.to_notes:
+                        format_kwargs['symbol'] = found_token.symbol
+
+                    transfer.notes = action_item.to_notes.format(**format_kwargs)
 
                 if action_item.to_counterparty is not None:
                     transfer.counterparty = action_item.to_counterparty
@@ -941,15 +944,15 @@ class EVMTransactionDecoder(ABC):
                 if action_item.to_address is not None:
                     transfer.address = action_item.to_address
 
-                if action_item.paired_event_data is not None:
+                if action_item.paired_events_data is not None:
                     # If there is a paired event to this, take care of the order
-                    out_event = transfer
-                    in_event = action_item.paired_event_data[0]
-                    if action_item.paired_event_data[1] is True:
-                        out_event = action_item.paired_event_data[0]
-                        in_event = transfer
+                    out_events: Sequence[EvmEvent] = [transfer]
+                    in_events = action_item.paired_events_data[0]
+                    if action_item.paired_events_data[1] is True:
+                        out_events = action_item.paired_events_data[0]
+                        in_events = [transfer]
                     maybe_reshuffle_events(
-                        ordered_events=[out_event, in_event],
+                        ordered_events=[*out_events, *in_events],
                         events_list=decoded_events + [transfer],
                     )
 

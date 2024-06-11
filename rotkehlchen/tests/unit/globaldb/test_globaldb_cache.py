@@ -13,7 +13,11 @@ from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
     read_convex_data_from_cache,
     save_convex_data_to_cache,
 )
-from rotkehlchen.chain.evm.decoding.curve.constants import CURVE_ADDRESS_PROVIDER, CURVE_API_URLS
+from rotkehlchen.chain.evm.decoding.curve.constants import (
+    CURVE_ADDRESS_PROVIDER,
+    CURVE_API_URL,
+    CURVE_CHAIN_ID,
+)
 from rotkehlchen.chain.evm.decoding.curve.curve_cache import read_curve_pools_and_gauges
 from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     query_velodrome_like_data,
@@ -261,7 +265,7 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api, globaldb):
         assert not address_in_addressbook(entry.address, global_cursor)
 
     ethereum_inquirer = rotkehlchen_instance.chains_aggregator.ethereum.node_inquirer
-    curve_address_provider = ethereum_inquirer.contracts.contract(CURVE_ADDRESS_PROVIDER[ChainID.ETHEREUM])  # noqa: E501
+    curve_address_provider = ethereum_inquirer.contracts.contract(CURVE_ADDRESS_PROVIDER)
 
     def mock_call_contract(contract, node_inquirer, method_name, **kwargs):
         if use_curve_api is True:
@@ -291,12 +295,10 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api, globaldb):
         empty pools list for 3 out of the 4 curve api endpoints and for the remaining one perform
         a real request and take from the response only 2 first pools.
         """
-        assert url in CURVE_API_URLS, f'Unexpected url {url} was called'
+        curve_api_url = CURVE_API_URL.format(curve_blockchain_id=CURVE_CHAIN_ID[ChainID.ETHEREUM])
+        assert url == curve_api_url, f'Unexpected url {url} was called'
         if use_curve_api is False:
             return MockResponse(status_code=200, text=json.dumps({'success': False, 'data': {'poolData': []}}))  # noqa: E501
-
-        if url != CURVE_API_URLS[0]:
-            return MockResponse(status_code=200, text=json.dumps({'success': True, 'data': {'poolData': []}}))  # noqa: E501
 
         response_json = requests_get(url).json()
         response_json['data']['poolData'] = response_json['data']['poolData'][:2]

@@ -44,6 +44,7 @@ CURVE_DEPOSIT_CONTRACTS: Final = {
     string_to_evm_address('0x7abdbaf29929e7f8621b757d2a7c04d78d633834'),  # curve sbtc
     string_to_evm_address('0xA2d40Edbf76C6C0701BA8899e2d059798eBa628e'),  # curve sbtc2
 }
+DEPOSIT_AND_STAKE_ZAP: Final = string_to_evm_address('0x56C526b0159a258887e0d79ec3a80dfb940d0cD7')
 GAUGE_CONTROLLER: Final = string_to_evm_address('0x2F50D538606Fa9EDD2B11E2446BEb18C9D5846bB')
 CURVE_SWAP_ROUTER: Final = string_to_evm_address('0x99a58482BD75cbab83b27EC03CA68fF489b5788f')
 AAVE_POOLS: Final = {
