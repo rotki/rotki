@@ -18,7 +18,7 @@ watch(route, () => {
     v-model="showDrawer"
     width="300"
     :content-class="{
-      'flex flex-col border-t border-r border-default': true,
+      'flex flex-col border-r border-rui-grey-300 dark:border-rui-grey-800': true,
       '!top-0 !max-h-full': isXlAndDown,
     }"
     :mini-variant="!isXlAndDown"

@@ -13,7 +13,7 @@ const { showPinned, showNotesSidebar, showNotificationBar, showHelpBar }
 
 <template>
   <Fragment>
-    <div class="flex overflow-hidden grow">
+    <div class="flex overflow-hidden grow items-center">
       <SyncIndicator />
       <GlobalSearch v-if="isSmAndUp" />
       <BackButton />
@@ -26,6 +26,7 @@ const { showPinned, showNotesSidebar, showNotificationBar, showHelpBar }
       >
         <RuiButton
           variant="text"
+          class="!text-rui-text-secondary"
           icon
         >
           <RuiIcon name="code-box-line" />
