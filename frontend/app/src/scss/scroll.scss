@@ -1,7 +1,6 @@
 /* stylelint-disable no-descending-specificity */
 
 * {
-  scrollbar-color: var(--v-rotki-scrollbar-darken1) !important;
   scrollbar-width: medium;
 
   &::-webkit-scrollbar {
@@ -9,18 +8,18 @@
     height: 14px;
 
     &-thumb {
+      @apply bg-rui-grey-300 dark:bg-rui-grey-700;
       height: 6px;
       background-clip: padding-box;
       border-radius: 7px;
-      background-color: var(--v-rotki-scrollbar-darken1) !important;
       border: 4px solid transparent;
 
       &:hover {
-        background-color: var(--v-rotki-scrollbar-darken2) !important;
+        @apply bg-rui-grey-400 dark:bg-rui-grey-600;
       }
 
       &:active {
-        background-color: var(--v-rotki-scrollbar-darken3) !important;
+        @apply bg-rui-grey-500 dark:bg-rui-grey-500;
       }
     }
   }

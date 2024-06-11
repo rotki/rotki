@@ -1267,7 +1267,6 @@ declare module 'vue' {
     readonly useFloor: UnwrapRef<typeof import('@vueuse/math')['useFloor']>
     readonly useFocus: UnwrapRef<typeof import('@vueuse/core')['useFocus']>
     readonly useFocusWithin: UnwrapRef<typeof import('@vueuse/core')['useFocusWithin']>
-    readonly useFooterProps: UnwrapRef<typeof import('./composables/datatable.common')['useFooterProps']>
     readonly useForm: UnwrapRef<typeof import('./composables/form')['useForm']>
     readonly useFps: UnwrapRef<typeof import('@vueuse/core')['useFps']>
     readonly useFrontendSettingsStore: UnwrapRef<typeof import('./store/settings/frontend')['useFrontendSettingsStore']>
@@ -1391,7 +1390,6 @@ declare module 'vue' {
     readonly usePrivacyMode: UnwrapRef<typeof import('./composables/privacy')['usePrivacyMode']>
     readonly useProjection: UnwrapRef<typeof import('@vueuse/math')['useProjection']>
     readonly usePropVModel: UnwrapRef<typeof import('./utils/model/index')['usePropVModel']>
-    readonly useProxy: UnwrapRef<typeof import('./composables/common')['useProxy']>
     readonly useQueriedAddressApi: UnwrapRef<typeof import('./composables/api/session/queried-addresses')['useQueriedAddressApi']>
     readonly useQueriedAddressesStore: UnwrapRef<typeof import('./store/session/queried-addresses')['useQueriedAddressesStore']>
     readonly useQueryStatus: UnwrapRef<typeof import('./composables/history/events/query-status/index')['useQueryStatus']>
@@ -1461,7 +1459,6 @@ declare module 'vue' {
     readonly useTextDirection: UnwrapRef<typeof import('@vueuse/core')['useTextDirection']>
     readonly useTextSelection: UnwrapRef<typeof import('@vueuse/core')['useTextSelection']>
     readonly useTextareaAutosize: UnwrapRef<typeof import('@vueuse/core')['useTextareaAutosize']>
-    readonly useTheme: UnwrapRef<typeof import('./composables/common')['useTheme']>
     readonly useThrottle: UnwrapRef<typeof import('@vueuse/core')['useThrottle']>
     readonly useThrottleFn: UnwrapRef<typeof import('@vueuse/core')['useThrottleFn']>
     readonly useThrottledRefHistory: UnwrapRef<typeof import('@vueuse/core')['useThrottledRefHistory']>
@@ -2022,7 +2019,6 @@ declare module '@vue/runtime-core' {
     readonly useFloor: UnwrapRef<typeof import('@vueuse/math')['useFloor']>
     readonly useFocus: UnwrapRef<typeof import('@vueuse/core')['useFocus']>
     readonly useFocusWithin: UnwrapRef<typeof import('@vueuse/core')['useFocusWithin']>
-    readonly useFooterProps: UnwrapRef<typeof import('./composables/datatable.common')['useFooterProps']>
     readonly useForm: UnwrapRef<typeof import('./composables/form')['useForm']>
     readonly useFps: UnwrapRef<typeof import('@vueuse/core')['useFps']>
     readonly useFrontendSettingsStore: UnwrapRef<typeof import('./store/settings/frontend')['useFrontendSettingsStore']>
@@ -2146,7 +2142,6 @@ declare module '@vue/runtime-core' {
     readonly usePrivacyMode: UnwrapRef<typeof import('./composables/privacy')['usePrivacyMode']>
     readonly useProjection: UnwrapRef<typeof import('@vueuse/math')['useProjection']>
     readonly usePropVModel: UnwrapRef<typeof import('./utils/model/index')['usePropVModel']>
-    readonly useProxy: UnwrapRef<typeof import('./composables/common')['useProxy']>
     readonly useQueriedAddressApi: UnwrapRef<typeof import('./composables/api/session/queried-addresses')['useQueriedAddressApi']>
     readonly useQueriedAddressesStore: UnwrapRef<typeof import('./store/session/queried-addresses')['useQueriedAddressesStore']>
     readonly useQueryStatus: UnwrapRef<typeof import('./composables/history/events/query-status/index')['useQueryStatus']>
@@ -2216,7 +2211,6 @@ declare module '@vue/runtime-core' {
     readonly useTextDirection: UnwrapRef<typeof import('@vueuse/core')['useTextDirection']>
     readonly useTextSelection: UnwrapRef<typeof import('@vueuse/core')['useTextSelection']>
     readonly useTextareaAutosize: UnwrapRef<typeof import('@vueuse/core')['useTextareaAutosize']>
-    readonly useTheme: UnwrapRef<typeof import('./composables/common')['useTheme']>
     readonly useThrottle: UnwrapRef<typeof import('@vueuse/core')['useThrottle']>
     readonly useThrottleFn: UnwrapRef<typeof import('@vueuse/core')['useThrottleFn']>
     readonly useThrottledRefHistory: UnwrapRef<typeof import('@vueuse/core')['useThrottledRefHistory']>

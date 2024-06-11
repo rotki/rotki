@@ -346,36 +346,21 @@ const css = useCssModule();
 
 <style module lang="scss">
 .group {
-  height: 100%;
-  position: relative;
-  width: 10px;
-  margin-left: 1.5rem;
+  @apply relative h-full w-2.5 ml-6;
 
   &__dot {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    width: 10px;
-    height: 10px;
-    border-radius: 10px;
-    background: var(--v-primary-base);
+    @apply absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-rui-primary;
   }
 
   &__line {
-    position: absolute;
-    height: 50%;
-    left: 50%;
-    width: 0;
-    transform: translateX(-50%);
-    border-left: 2px dashed var(--v-primary-base);
+    @apply absolute h-1/2 left-1/2 w-0 transform -translate-x-1/2 border-l-2 border-dashed border-rui-primary;
 
     &-top {
-      top: 0;
+      @apply top-0;
     }
 
     &-bottom {
-      bottom: 0;
+      @apply bottom-0;
     }
   }
 }

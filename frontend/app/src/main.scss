@@ -10,17 +10,12 @@ html {
 }
 
 body {
-  overflow-y: auto !important;
-  overflow-x: hidden;
-  scroll-behavior: smooth;
-  scroll-padding-top: 64px;
-  height: calc(100vh - 64px);
-  margin-top: 64px !important;
-  background: var(--v-rotki-light-grey-base);
+  @apply transition-all bg-rui-grey-50 dark:bg-[#121212] overflow-x-hidden h-[calc(100vh-4rem)] scroll-smooth scroll-pt-16;
+  @apply mt-16 overflow-y-auto #{!important};
 
   @media only screen and (max-width: 767px) {
-    height: calc(100vh - 56px);
-    margin-top: 56px !important;
+    @apply h-[calc(100vh-3.5rem)];
+    @apply mt-14 #{!important};
   }
 }
 
@@ -34,32 +29,19 @@ aside {
 }
 
 .table-inside-dialog {
-  scroll-behavior: smooth;
+  @apply scroll-smooth overflow-auto;
   max-height: calc(100vh - 21.25rem);
-  overflow: auto;
 }
 
 input {
   &::-webkit-outer-spin-button,
   &::-webkit-inner-spin-button {
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
+    @apply appearance-none
   }
 
   &[type='number'] {
     -moz-appearance: textfield;
   }
-}
-
-// Override vuetify styles
-
-.light {
-  --border-color: rgba(0, 0, 0, 0.12);
-}
-
-.dark {
-  --border-color: rgba(255, 255, 255, 0.12);
 }
 
 .v-application {
@@ -69,7 +51,7 @@ input {
 }
 
 .skeleton {
-  @apply animate-pulse bg-gray-200 dark:bg-gray-800
+  @apply animate-pulse bg-gray-200 dark:bg-gray-800;
 }
 
 .icon-bg {

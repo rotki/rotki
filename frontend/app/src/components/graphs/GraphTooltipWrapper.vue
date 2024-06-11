@@ -40,7 +40,7 @@ withDefaults(
   font-family: 'Roboto', sans-serif;
   font-size: 16px;
   border-radius: 6px;
-  filter: drop-shadow(0 0 8px var(--v-rotki-grey-base));
+  filter: drop-shadow(0 0 0.5rem rgba(var(--rui-grey-400)));
   pointer-events: none;
   transition: 0.3s all;
   white-space: nowrap;
@@ -136,6 +136,8 @@ withDefaults(
 
 :global(.dark) {
   .tooltip {
+    filter: drop-shadow(0 0 0.5rem rgba(var(--rui-grey-800)));
+
     &:before {
       border-color: black;
     }

@@ -769,9 +769,7 @@ const css = useCssModule();
   }
 
   &__marker {
-    @apply absolute w-full h-[90%] top-0 z-[2] cursor-all-scroll;
-
-    background: var(--border-color);
+    @apply absolute w-full h-[90%] top-0 z-[2] cursor-all-scroll bg-black/[0.1];
 
     &__limit {
       @apply flex items-center absolute w-[0.625rem] h-full cursor-ew-resize;
@@ -796,6 +794,14 @@ const css = useCssModule();
           @apply scale-50 scale-y-[0.5] rotate-90;
         }
       }
+    }
+  }
+}
+
+:global(.dark) {
+  .range {
+    &__marker {
+      @apply bg-white/[0.1];
     }
   }
 }

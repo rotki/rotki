@@ -10,6 +10,8 @@ const BalancerUnderlyingToken = z.object({
   weight: z.string(),
 });
 
+export type BalancerUnderlyingToken = z.infer<typeof BalancerUnderlyingToken>;
+
 const BalancerBalance = z.object({
   address: z.string(),
   tokens: z.array(BalancerUnderlyingToken),
