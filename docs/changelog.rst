@@ -20,6 +20,10 @@ Changelog
 * :bug:`-` Users will be able to proceed with conflict resolution in the rare case that a duplicate asset appears in conflicts.
 * :bug:`8022` When there are NFTs valued in different assets sorting them by fiat price will show the correct price.
 
+* :bug:`-` Fix the issue where the popup notification breaks the experience when the notification sidebar is already open.
+* :bug:`-` Fixed an issue with the assets updates where conflicts couldn't be resolved for multiple changes in a single asset.
+* :bug:`-` Stakedao bribe claims older than January 2023 will now also be properly decoded.
+
 * :release:`1.33.1 <2024-05-29>`
 * :bug:`-` Fix the issue where airdrops aren't properly filtered by status.
 * :bug:`7791` Killing the rotki processes in Windows should now work fine and no zombie processes should remain. In turn this should also make the auto upgrade work for Windows.

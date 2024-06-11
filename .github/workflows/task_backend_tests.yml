@@ -36,14 +36,28 @@ jobs:
           path: test-caching
           fetch-depth: 0
       - name: Ensure VCR branch is fully rebased
+        env:
+          AUTHOR: ${{ github.event.pull_request.user.login }}
         run: |
           cd $HOME/work/rotki/rotki/test-caching
-          if [ `git rev-parse --verify remotes/origin/$SOURCE_BRANCH 2>/dev/null` ]
-          then
-              [ `git rev-parse remotes/origin/$TARGET_BRANCH` = `git merge-base remotes/origin/$TARGET_BRANCH remotes/origin/$SOURCE_BRANCH` ] &&
-              echo "VCR setup: $SOURCE_BRANCH fully rebased on $TARGET_BRANCH" && exit ||
-              echo "VCR setup: $SOURCE_BRANCH not fully rebased on $TARGET_BRANCH" && exit 1
+          git fetch origin
+          if [[ `git branch --all | grep remotes/origin/$SOURCE_BRANCH` ]]; then
+            echo "Branch $SOURCE_BRANCH exists on origin. Checking it out..."
+            git checkout -b $SOURCE_BRANCH origin/$SOURCE_BRANCH
+          else
+            echo "Branch $SOURCE_BRANCH does not exist on origin. Checking the $AUTHOR's fork..."
+            git remote add author https://github.com/$AUTHOR/test-caching.git
+            git fetch author $SOURCE_BRANCH && git checkout -b $SOURCE_BRANCH author/$SOURCE_BRANCH || exit 0
+
+            if [ "`curl --silent "https://api.github.com/repos/rotki/test-caching/pulls?state=open&head=$AUTHOR:$SOURCE_BRANCH&base=$TARGET_BRANCH" | jq "length"`" == "0" ]; then
+                echo "Found the $SOURCE_BRANCH branch on $AUTHOR's test-caching fork. But no PR found. Aborting."
+                exit 1
+            fi
           fi
+
+          [ `git rev-parse remotes/origin/$TARGET_BRANCH` = `git merge-base remotes/origin/$TARGET_BRANCH $SOURCE_BRANCH` ] &&
+          echo "VCR setup: $SOURCE_BRANCH fully rebased on $TARGET_BRANCH" && exit ||
+          echo "VCR setup: $SOURCE_BRANCH not fully rebased on $TARGET_BRANCH" && exit 1
       - name: Load env
         uses: rotki/action-env@v2
         with:
@@ -100,7 +114,7 @@ jobs:
             COVERAGE_ARGS=''
           else
             COVERAGE_ARGS='--cov=./'
-          fi          
+          fi
 
           export CASSETTES_DIR=$HOME/work/rotki/rotki/test-caching
 

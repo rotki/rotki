@@ -568,7 +568,7 @@ This is telling you that a new request not recorded in the cassette happened and
 Syncing with the cassettes repository
 ------------------------------------------------
 
-When you work on a new branch it is possible you will need to either create a new cassette ogr update an existing one. Let's say you are working on branch ``new_cool_feature`` based out of ``bugfixes``. Then you will need to go to the cassettes repo https://github.com/rotki/test-caching and create a branch with the same name, ``new_cool_feature`` based out of that repo's bugfixes.
+When you work on a new branch it is possible you will need to either create a new cassette or update an existing one. Let's say you are working on branch ``new_cool_feature`` based out of ``bugfixes``. Then you will need to go to the cassettes repo https://github.com/rotki/test-caching and create a branch with the same name, ``new_cool_feature`` based out of that repo's bugfixes. If you don't have the permission to create a new branch in ``rotki/test-caching``, fork the repository, create the branch in your fork with the same name as your branch from the main repo, and create a PR from this branch to rotki/test-caching target branch (bugfixes/develop).
 
 Locally you can work with your rotki branch, and rotki will make sure to pull the proper cassette branch during testing. The logic for this is `here <https://github.com/rotki/rotki/blob/20534a679a0f1bc7951fa21496aaa5eab976ae1b/rotkehlchen/tests/conftest.py#L225>`__. This works fine in the CI and should always pull the proper branch. But it may happen that when it falls back to a branch it falls back to ``develop`` and not to ``bugfixes`` if it runs locally. Since it does not detect the target branch locally (TODO: Can we fix?). To solve that utilize the ``DEFAULT_VCR_BRANCH`` environment variable to run a test locally like this: ``DEFAULT_VCR_BRANCH=bugfixes python pytestgeventwrapper.py -xs --pdb rotkehlchen/tests/unit/test_evm_tx_decoding.py::test_genesis_remove_address``
 
@@ -576,9 +576,7 @@ When you record a new cassette or update a new one all changes will be saved in 
 
 If you are having issues when re-recording a cassette, you can simply delete and re-record from scratch.
 
-After your ``new_cool_feature`` PR is merged on rotki (bugfixes in our example), **you must remember** to do the same in the cassettes repository. So merge the ``new_cool_feature`` to bugfixes and push.
-
-Note: We can probably automate this process a lot better in the CI.
+After your ``new_cool_feature`` PR is merged on rotki (bugfixes in our example), the CI will merge the test-caching branch with the same name or the PR that was created previously.
 
 
 Alternative Linting and Static Analysis Tools

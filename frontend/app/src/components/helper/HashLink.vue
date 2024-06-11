@@ -180,7 +180,7 @@ const { href, onLinkClick } = useLinks(url);
           </RuiButton>
         </template>
 
-        {{ t('common.actions.copy') }}
+        {{ t('common.actions.copy_to_clipboard') }}
       </RuiTooltip>
 
       <RuiTooltip

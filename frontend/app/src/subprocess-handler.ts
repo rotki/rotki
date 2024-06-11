@@ -1,6 +1,6 @@
 /* eslint-disable max-lines */
 
-import { type ChildProcess, spawn } from 'node:child_process';
+import { type ChildProcess, spawn, spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
@@ -569,27 +569,18 @@ export class SubprocessHandler {
       )}" on the rotki-core processes`,
     );
 
-    const taskKill = spawn('taskkill', args);
-
-    return new Promise<void>((resolve, reject) => {
-      taskKill.on('exit', () => {
-        this.logToFile('Call to taskkill exited');
-        if (!restart)
-          app.exit();
-
-        this.waitForTermination(tasks, pids).then(resolve, reject);
-      });
-
-      taskKill.on('error', (err) => {
-        this.logToFile(`Call to taskkill failed:\n\n ${err.toString()}`);
-        if (!restart)
-          app.exit();
-
-        resolve();
-      });
-
-      setTimeout(() => resolve, 15000);
-    });
+    try {
+      spawnSync('taskkill', args);
+      await this.waitForTermination(tasks, pids);
+    }
+    catch (error: any) {
+      this.logToFile(`Call to taskkill failed:\n\n ${error.toString()}`);
+    }
+    finally {
+      this.logToFile('Call to taskkill complete');
+      if (!restart)
+        app.exit();
+    }
   }
 
   private async waitForTermination(tasks: Task[], processes: number[]) {
@@ -598,8 +589,10 @@ export class SubprocessHandler {
     }
 
     const running = stillRunning(tasks);
-    if (running === 0)
-      return this.logToFile('The task killed successfully');
+    if (running === 0) {
+      this.logToFile('The task killed successfully');
+      return;
+    }
 
     for (let i = 0; i < 10; i++) {
       this.logToFile(

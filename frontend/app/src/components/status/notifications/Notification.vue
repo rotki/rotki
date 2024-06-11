@@ -167,22 +167,14 @@ function buttonClicked() {
           {{ date }}
         </div>
       </div>
-      <RuiTooltip
-        :popper="{ placement: 'bottom', offsetDistance: 0 }"
-        :open-delay="400"
+      <RuiButton
+        variant="text"
+        icon
+        class="!p-2"
+        @click="dismiss(notification.id)"
       >
-        <template #activator>
-          <RuiButton
-            variant="text"
-            icon
-            class="!p-2"
-            @click="dismiss(notification.id)"
-          >
-            <RuiIcon name="close-line" />
-          </RuiButton>
-        </template>
-        <span>{{ t('notification.dismiss_tooltip') }}</span>
-      </RuiTooltip>
+        <RuiIcon name="close-line" />
+      </RuiButton>
     </div>
     <div
       class="mt-1 px-2 break-words text-rui-text-secondary text-body-2 leading-2 group"
@@ -243,28 +235,20 @@ function buttonClicked() {
           />
         </template>
       </RuiButton>
-      <RuiTooltip
-        :popper="{ placement: 'bottom', offsetDistance: 0 }"
-        :open-delay="400"
+      <RuiButton
+        color="primary"
+        variant="text"
+        size="sm"
+        @click="copy()"
       >
-        <template #activator>
-          <RuiButton
-            color="primary"
-            variant="text"
-            size="sm"
-            @click="copy()"
-          >
-            {{ t('notification.copy') }}
-            <template #append>
-              <RuiIcon
-                name="file-copy-line"
-                size="16"
-              />
-            </template>
-          </RuiButton>
+        {{ t('common.actions.copy') }}
+        <template #append>
+          <RuiIcon
+            name="file-copy-line"
+            size="16"
+          />
         </template>
-        <span> {{ t('notification.copy_tooltip') }}</span>
-      </RuiTooltip>
+      </RuiButton>
     </div>
   </RuiCard>
 </template>
