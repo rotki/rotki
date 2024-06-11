@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useRotkiTheme } from '@rotki/ui-library-compat';
+
 const { t } = useI18n();
 
 const visibleNotification = ref(createNotification());
@@ -36,7 +38,7 @@ onMounted(() => {
   checkQueue();
 });
 
-const { dark } = useTheme();
+const { isDark } = useRotkiTheme();
 </script>
 
 <template>
@@ -46,7 +48,7 @@ const { dark } = useTheme();
     :timeout="visibleNotification.duration"
     top
     right
-    :light="!dark"
+    :light="!isDark"
     app
     rounded
     width="400px"

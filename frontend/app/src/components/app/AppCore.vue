@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import { Chart, registerables } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
-import { useBreakpoint } from '@rotki/ui-library-compat';
+import { useBreakpoint, useRotkiTheme } from '@rotki/ui-library-compat';
 
 const visibilityStore = useAreaVisibilityStore();
 const { showDrawer, isMini } = storeToRefs(visibilityStore);
 
-const { appBarColor } = useTheme();
+const { isDark } = useRotkiTheme();
 const { isXlAndDown } = useBreakpoint();
 
 const expanded = logicAnd(showDrawer, logicNot(isXlAndDown));
@@ -55,7 +55,7 @@ const shouldShowScrollToTopButton: ComputedRef<boolean> = computed(
       fixed
       clipped-left
       flat
-      :color="appBarColor"
+      :color="isDark ? null : 'white'"
       class="app__app-bar"
     >
       <VAppBarNavIcon

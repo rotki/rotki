@@ -12,6 +12,7 @@ import {
   type TooltipOptions,
 } from 'chart.js';
 import dayjs from 'dayjs';
+import { useRotkiTheme } from '@rotki/ui-library-compat';
 import type { NetValue } from '@rotki/common/lib/statistics';
 import type { ValueOverTime } from '@/types/graphs';
 
@@ -28,7 +29,7 @@ const { t } = useI18n();
 const { chartData } = toRefs(props);
 const { graphZeroBased, showGraphRangeSelector } = storeToRefs(useFrontendSettingsStore());
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-const { dark } = useTheme();
+const { isDark } = useRotkiTheme();
 
 const selectedTimestamp = ref<number>(0);
 const selectedBalance = ref<number>(0);
@@ -438,7 +439,7 @@ onMounted(() => {
   setup();
 });
 
-watch(dark, () => {
+watch(isDark, () => {
   updateChart(true, false);
 });
 
@@ -679,7 +680,7 @@ const css = useCssModule();
           :class="[
             css.range__marker,
             {
-              [css['range__marker--dark']]: dark,
+              [css['range__marker--dark']]: isDark,
             },
           ]"
           :style="rangeMarkerStyle"
@@ -693,7 +694,7 @@ const css = useCssModule();
           >
             <RuiButton
               :class="css.range__marker__limit__button"
-              :color="dark ? 'primary' : undefined"
+              :color="isDark ? 'primary' : undefined"
               elevation="1"
               @mousedown.stop="rangeButtonMouseDown('start', $event)"
             >
@@ -711,7 +712,7 @@ const css = useCssModule();
           >
             <RuiButton
               :class="css.range__marker__limit__button"
-              :color="dark ? 'primary' : undefined"
+              :color="isDark ? 'primary' : undefined"
               elevation="1"
               @mousedown.stop="rangeButtonMouseDown('end', $event)"
             >
