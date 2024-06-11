@@ -274,28 +274,3 @@ onMounted(() => {
     </template>
   </BigDialog>
 </template>
-
-<style module lang="scss">
-.mobile {
-  :global {
-    .v-data-table {
-      &__mobile-row {
-        padding: 12px 16px !important;
-
-        &__header {
-          text-orientation: sideways;
-          writing-mode: vertical-lr;
-        }
-      }
-
-      &__mobile-table-row {
-        td {
-          &:nth-child(2) {
-            background-color: rgba(0, 0, 0, 0.1);
-          }
-        }
-      }
-    }
-  }
-}
-</style>

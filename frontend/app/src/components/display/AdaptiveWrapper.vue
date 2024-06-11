@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useRotkiTheme } from '@rotki/ui-library-compat';
+
 const props = withDefaults(
   defineProps<{
     tag?: string;
@@ -16,7 +18,7 @@ const props = withDefaults(
   },
 );
 
-const { dark } = useTheme();
+const { isDark } = useRotkiTheme();
 
 const { circle, padding } = toRefs(props);
 
@@ -28,7 +30,7 @@ const attrs = useAttrs();
   <Component
     :is="tag"
     class="wrapper flex"
-    :class="{ 'wrapper--inverted': dark }"
+    :class="{ 'wrapper--inverted': isDark }"
     v-bind="attrs"
     :style="{ width, height }"
   >

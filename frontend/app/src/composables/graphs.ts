@@ -1,3 +1,4 @@
+import { useRotkiTheme } from '@rotki/ui-library-compat';
 import type { BigNumber } from '@rotki/common';
 import type { TooltipDisplayOption } from '@rotki/common/lib/settings/graphs';
 import type { TooltipModel } from 'chart.js';
@@ -14,7 +15,8 @@ export function useGraph(canvasId: string) {
     return context;
   };
 
-  const { theme, dark } = useTheme();
+  const { theme } = useTheme();
+  const { isDark } = useRotkiTheme();
 
   const white = '#ffffff';
   const secondaryBlack = '#3f1300';
@@ -39,11 +41,11 @@ export function useGraph(canvasId: string) {
     return areaGradient;
   });
 
-  const secondaryColor = computed(() => (get(dark) ? white : secondaryBlack));
-  const backgroundColor = computed(() => (!get(dark) ? white : secondaryBlack));
+  const secondaryColor = computed(() => (get(isDark) ? white : secondaryBlack));
+  const backgroundColor = computed(() => (!get(isDark) ? white : secondaryBlack));
 
-  const fontColor = computed(() => (get(dark) ? white : 'rgba(0,0,0,.6)'));
-  const gridColor = computed(() => (get(dark) ? '#555' : '#ddd'));
+  const fontColor = computed(() => (get(isDark) ? white : 'rgba(0,0,0,.6)'));
+  const gridColor = computed(() => (get(isDark) ? '#555' : '#ddd'));
 
   return {
     getCanvasCtx,

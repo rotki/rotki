@@ -3,7 +3,6 @@
 import '@mdi/font/css/materialdesignicons.css';
 import Vue from 'vue';
 import Vuetify from 'vuetify';
-import { VDialog } from 'vuetify/lib/components';
 import {
   DARK_ACCENT,
   DARK_ERROR,
@@ -22,9 +21,6 @@ import {
 } from '@/plugins/theme';
 
 Vue.use(Vuetify);
-
-// @ts-expect-error .options is not properly typed
-VDialog.options.props.retainFocus.default = false;
 
 const DARK_GREY = '#1e1e1e';
 

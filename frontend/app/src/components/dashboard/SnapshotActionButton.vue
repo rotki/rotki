@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useRotkiTheme } from '@rotki/ui-library-compat';
 import SnapshotImportDialog from '@/components/dashboard/SnapshotImportDialog.vue';
 import type { Writeable } from '@/types';
 import type { AllBalancePayload } from '@/types/blockchain/accounts';
@@ -19,7 +20,7 @@ const { appSession } = useInterop();
 const { fetchNetValue } = useStatisticsStore();
 const { setMessage } = useMessageStore();
 const { importBalancesSnapshot, uploadBalancesSnapshot } = useSnapshotApi();
-const { dark } = useTheme();
+const { isDark } = useRotkiTheme();
 
 async function refreshAllAndSave() {
   set(visible, false);
@@ -96,7 +97,7 @@ async function importSnapshot() {
     <template #activator="{ on }">
       <MenuTooltipButton
         :tooltip="t('snapshot_action_button.menu_tooltip', premium ? 2 : 1)"
-        :variant="!dark ? 'default' : 'text'"
+        :variant="!isDark ? 'default' : 'text'"
         size="sm"
         custom-color
         v-on="on"
