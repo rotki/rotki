@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { Chart, registerables } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
-import { useBreakpoint, useRotkiTheme } from '@rotki/ui-library-compat';
+import { useBreakpoint } from '@rotki/ui-library-compat';
 
 const visibilityStore = useAreaVisibilityStore();
 const { showDrawer, isMini } = storeToRefs(visibilityStore);
 
-const { isDark } = useRotkiTheme();
 const { isXlAndDown } = useBreakpoint();
 
 const expanded = logicAnd(showDrawer, logicNot(isXlAndDown));
@@ -50,20 +49,22 @@ const shouldShowScrollToTopButton: ComputedRef<boolean> = computed(
     <NotificationPopup />
     <AppDrawer />
 
-    <VAppBar
-      app
-      fixed
-      clipped-left
-      flat
-      :color="isDark ? null : 'white'"
-      class="app__app-bar"
-    >
-      <VAppBarNavIcon
-        class="!text-rui-text-secondary"
-        @click="toggleDrawer()"
-      />
-      <AppIndicators />
-    </VAppBar>
+    <header class="app__app-bar fixed top-0 left-0 w-full bg-white dark:bg-[#1E1E1E] md:h-[64px] h-[56px] border-b dark:border-b-0">
+      <nav class="flex flex-row md:h-[64px] h-[56px] items-center">
+        <div class="mx-2">
+          <RuiButton
+            icon
+            variant="text"
+            class="!text-rui-text-secondary"
+            @click="toggleDrawer()"
+          >
+            <RuiIcon name="menu-line" />
+          </RuiButton>
+        </div>
+        <AppIndicators />
+      </nav>
+    </header>
+
     <AppSidebars />
     <div
       class="app-main"
@@ -124,33 +125,7 @@ const shouldShowScrollToTopButton: ComputedRef<boolean> = computed(
   padding: 0 !important;
 }
 
-.v-app-bar {
-  &::after {
-    height: 1px;
-    display: block;
-    width: 100%;
-    content: '';
-    border-bottom: var(--v-rotki-light-grey-darken1) solid thin;
-  }
-}
-
 .app {
-  &__app-bar {
-    &__button {
-      i {
-        &:focus {
-          color: var(--v-primary-base) !important;
-        }
-      }
-
-      button {
-        &:focus {
-          color: var(--v-primary-base) !important;
-        }
-      }
-    }
-  }
-
   &-main {
     padding-top: 1rem;
     padding-bottom: 4rem;

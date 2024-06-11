@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import {
   RiAccountCircleLine,
   RiAddBoxLine,
@@ -127,6 +128,7 @@ import {
   RiLoopRightLine,
   RiMapPinTimeLine,
   RiMedalLine,
+  RiMenuLine,
   RiMoonLine,
   RiMore2Fill,
   RiNotification3Line,
@@ -393,6 +395,7 @@ export function createRuiPlugin(defaults: Partial<RuiOptions['defaults']>) {
         RiArrowLeftSLine,
         RiArrowRightSLine,
         RiAlarmLine,
+        RiMenuLine,
       ],
     },
     defaults,
