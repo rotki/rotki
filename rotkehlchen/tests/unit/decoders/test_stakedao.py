@@ -11,7 +11,7 @@ from rotkehlchen.chain.ethereum.modules.stakedao.constants import (
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.constants.assets import A_CRV, A_ETH
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
@@ -56,9 +56,10 @@ def test_claim_one(database, ethereum_inquirer, ethereum_accounts):
             asset=A_CRV,
             balance=Balance(amount=FVal(amount_str)),
             location_label=user_address,
-            notes=f'Claimed {amount_str} CRV from StakeDAO veCRV bribes for the period starting at {timestamp_to_date(period, formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
+            notes=f'Claim {amount_str} CRV from StakeDAO veCRV bribes for the period starting at {timestamp_to_date(period, formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
             counterparty=CPT_STAKEDAO,
             address=STAKEDAO_CLAIMER2,
+            product=EvmProduct.BRIBE,
         ),
     ]
     assert events == expected_events
@@ -100,9 +101,10 @@ def test_old_claim(database, ethereum_inquirer, ethereum_accounts):
             asset=Asset('eip155:1/erc20:0x41D5D79431A913C4aE7d69a668ecdfE5fF9DFB68'),
             balance=Balance(amount=FVal(amount_str)),
             location_label=user_address,
-            notes=f'Claimed {amount_str} INV from StakeDAO veCRV bribes for the period starting at {timestamp_to_date(period, formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
+            notes=f'Claim {amount_str} INV from StakeDAO veCRV bribes for the period starting at {timestamp_to_date(period, formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
             counterparty=CPT_STAKEDAO,
             address=STAKEDAO_CLAIMER_OLD,
+            product=EvmProduct.BRIBE,
         ),
     ]
     assert events == expected_events
@@ -147,9 +149,10 @@ def test_claim_multiple(database, ethereum_inquirer, ethereum_accounts):
             asset=A_CRV,
             balance=Balance(amount=FVal(amount1_str)),
             location_label=user_address,
-            notes=f'Claimed {amount1_str} CRV from StakeDAO veCRV bribes for the period starting at {timestamp_to_date(period, formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
+            notes=f'Claim {amount1_str} CRV from StakeDAO veCRV bribes for the period starting at {timestamp_to_date(period, formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
             counterparty=CPT_STAKEDAO,
             address=STAKEDAO_CLAIMER1,
+            product=EvmProduct.BRIBE,
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=330,
@@ -160,9 +163,10 @@ def test_claim_multiple(database, ethereum_inquirer, ethereum_accounts):
             asset=A_CRV,
             balance=Balance(amount=FVal(amount2_str)),
             location_label=user_address,
-            notes=f'Claimed {amount2_str} CRV from StakeDAO veCRV bribes for the period starting at {timestamp_to_date(period, formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
+            notes=f'Claim {amount2_str} CRV from StakeDAO veCRV bribes for the period starting at {timestamp_to_date(period, formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
             counterparty=CPT_STAKEDAO,
             address=STAKEDAO_CLAIMER1,
+            product=EvmProduct.BRIBE,
         ),
     ]
     assert events == expected_events

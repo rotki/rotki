@@ -87,6 +87,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Oneinchv6',
         'OptimismBridge',
         'Paraswap',
+        'Paladin',
         'PickleFinance',
         'Safemultisig',
         'ScrollBridge',
@@ -190,6 +191,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'lido',
         'cctp',
         'gearbox',
+        'paladin',
     }
 
 
