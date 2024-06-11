@@ -929,7 +929,11 @@ class EVMTransactionDecoder(ABC):
                 if action_item.to_event_subtype is not None:
                     transfer.event_subtype = action_item.to_event_subtype
                 if action_item.to_notes is not None:
-                    transfer.notes = action_item.to_notes if action_item.amount_error_tolerance is None else action_item.to_notes.format(amount=transfer.balance.amount)  # noqa: E501
+                    if '{amount}' in action_item.to_notes:
+                        transfer.notes = action_item.to_notes.format(amount=transfer.balance.amount)  # noqa: E501
+                    else:
+                        transfer.notes = action_item.to_notes
+
                 if action_item.to_counterparty is not None:
                     transfer.counterparty = action_item.to_counterparty
                 if action_item.extra_data is not None:
