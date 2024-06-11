@@ -30,6 +30,7 @@ from rotkehlchen.constants.assets import (
     A_LINK,
     A_USD,
     A_USDC,
+    A_WETH_ARB,
 )
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address_to_identifier
@@ -61,6 +62,7 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
     from rotkehlchen.chain.ethereum.manager import EthereumManager
 
 
@@ -619,6 +621,28 @@ def test_find_yearn_vaults_v2_price(inquirer_defi, globaldb):
 
         with globaldb.conn.read_ctx() as cursor:
             result = globaldb.fetch_underlying_tokens(cursor, token.identifier)
+            assert result and result[0].address == underlying_token.resolve_to_evm_token().evm_address  # noqa: E501
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_gearbox_lp_price(inquirer: 'Inquirer', arbitrum_one_manager: 'ArbitrumOneManager'):
+    dwethv3 = EvmToken('eip155:42161/erc20:0x04419d3509f13054f60d253E0c79491d9E683399')
+    sdwethv3 = EvmToken('eip155:42161/erc20:0x6773fF780Dd38175247795545Ee37adD6ab6139a')
+
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'DELETE from underlying_tokens_list WHERE parent_token_entry=?',
+            (sdwethv3.identifier,),
+        )
+    inquirer.inject_evm_managers([(ChainID.ARBITRUM_ONE, arbitrum_one_manager)])
+    for token, underlying_token in ((sdwethv3, A_WETH_ARB), (dwethv3, A_WETH_ARB)):
+        price = inquirer.find_gearbox_price(token)
+        assert price is not None
+
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            result = GlobalDBHandler.fetch_underlying_tokens(cursor, token.identifier)
             assert result and result[0].address == underlying_token.resolve_to_evm_token().evm_address  # noqa: E501
 
 

@@ -12,7 +12,7 @@ from rotkehlchen.chain.evm.decoding.gearbox.constants import (
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.misc import ONE, ZERO
-from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
+from rotkehlchen.errors.misc import BlockchainQueryError, NotERC20Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.cache import (
     globaldb_get_general_cache_keys_and_values_like,
@@ -197,6 +197,56 @@ def ensure_gearbox_tokens_existence(
         pool.lp_tokens = lp_tokens_from_db
         verified_pools.append(pool)
     return verified_pools
+
+
+def ensure_gearbox_lp_underlying_tokens(
+        node_inquirer: 'EvmNodeInquirer',
+        token_identifier: str,
+        lp_contract: 'EvmContract',
+) -> EvmToken | None:
+    """Ensures that the underlying token of a Gearbox liquidity pool (LP) is stored in the global
+    database. If the underlying token is not already saved, it queries the chain to retrieve
+    and save it."""
+    try:
+        remote_underlying_token = lp_contract.call(node_inquirer, 'underlyingToken')
+    except (RemoteError, BlockchainQueryError) as e:
+        log.error(f'Failed to query underlyingToken method in {node_inquirer.chain_name} Gearbox pool {lp_contract.address}. {e!s}')  # noqa: E501
+        return None
+
+    try:
+        underlying_token_address = deserialize_evm_address(remote_underlying_token)
+    except DeserializationError:
+        log.error(f'underlyingToken call of {node_inquirer.chain_name} {lp_contract.address} returned invalid address {remote_underlying_token}')  # noqa: E501
+        return None
+
+    try:  # make sure it's in the global DB
+        underlying_token = get_or_create_evm_token(
+            userdb=node_inquirer.database,
+            evm_address=underlying_token_address,
+            chain_id=node_inquirer.chain_id,
+            encounter=TokenEncounterInfo(
+                description='Detecting Gearbox pool underlying tokens',
+            ),
+        )
+    except NotERC20Conformant as e:
+        log.error(f'Error fetching {node_inquirer.chain_name} token {underlying_token_address} while detecting underlying tokens of {lp_contract.address!s}: {e!s}')  # noqa: E501
+        return None
+
+    # store it in the DB, so next time no need to query chain
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        GlobalDBHandler._add_underlying_tokens(
+            write_cursor=write_cursor,
+            parent_token_identifier=token_identifier,
+            underlying_tokens=[
+                UnderlyingToken(
+                    address=underlying_token_address,
+                    token_kind=EvmTokenKind.ERC20,
+                    weight=ONE,  # all gearbox vaults have single underlying
+                ),
+            ],
+            chain_id=node_inquirer.chain_id,
+        )
+    return underlying_token
 
 
 def get_gearbox_pool_tokens(inquirer: 'EvmNodeInquirer', pool_data: list[str], underlying_token_address: ChecksumEvmAddress) -> set[ChecksumEvmAddress] | None:  # noqa: E501

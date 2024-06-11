@@ -11,6 +11,10 @@ from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
+from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
+    ensure_gearbox_lp_underlying_tokens,
+    read_gearbox_data_from_cache,
+)
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.evm.utils import lp_price_from_uniswaplike_pool_contract
 from rotkehlchen.constants import ONE, ZERO
@@ -60,7 +64,7 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.constants.misc import CURRENCYCONVERTER_API_KEY
 from rotkehlchen.constants.prices import ZERO_PRICE
-from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address_to_identifier
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, MONTH_IN_SECONDS
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.defi import DefiPoolError
@@ -87,6 +91,7 @@ from rotkehlchen.oracles.structures import CurrentPriceOracle
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     CURVE_POOL_PROTOCOL,
+    GEARBOX_PROTOCOL,
     LP_TOKEN_AS_POOL_PROTOCOLS,
     YEARN_VAULTS_V2_PROTOCOL,
     CacheType,
@@ -168,6 +173,8 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
         price = Inquirer().find_curve_pool_price(token)
     elif token.protocol == YEARN_VAULTS_V2_PROTOCOL:
         price = Inquirer().find_yearn_price(token)
+    elif token.protocol == GEARBOX_PROTOCOL:
+        price = Inquirer().find_gearbox_price(token)
 
     if token == A_YV1_ALINK:
         price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_ALINK_V1)
@@ -919,6 +926,73 @@ class Inquirer:
             return None
 
         return (total_assets_value / total_supply) * (10 ** lp_token.get_decimals())
+
+    def find_gearbox_price(self, token: EvmToken) -> Price | None:
+        node_inquirer = self.get_evm_manager(chain_id=token.chain_id).node_inquirer
+        underlying_token = None
+        farming_tokens = {token.farming_pool_token for token in read_gearbox_data_from_cache(token.chain_id)[0].values()}  # noqa: E501
+        if token in farming_tokens:
+            farming_contract = EvmContract(
+                address=token.evm_address,
+                abi=node_inquirer.contracts.abi('GEARBOX_FARMING_POOL'),
+                deployed_block=0,  # not used here
+            )
+            try:
+                lp_token = farming_contract.call(node_inquirer=node_inquirer, method_name='stakingToken')  # noqa: E501
+                lp_token = deserialize_evm_address(lp_token)
+            except (RemoteError, BlockchainQueryError, DeserializationError) as e:
+                log.error(f'Failed to query stakingToken method in {node_inquirer.chain_name} Gearbox Pool {token.evm_address}. {e!s}')  # noqa: E501
+                return None
+        else:
+            lp_token = token.evm_address
+
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            maybe_underlying_tokens = GlobalDBHandler.fetch_underlying_tokens(
+                cursor=cursor,
+                parent_token_identifier=token.identifier,
+            )
+        lp_contract = EvmContract(
+            address=lp_token,
+            abi=node_inquirer.contracts.abi('GEARBOX_LP'),
+            deployed_block=0,  # not used here
+        )
+        # check if the underlying token is in the DB, otherwise query the chain
+        # and store it in the DB and use it
+        if maybe_underlying_tokens is None or len(maybe_underlying_tokens) != 1:
+            if (
+                underlying_token := ensure_gearbox_lp_underlying_tokens(
+                    token_identifier=token.identifier,
+                    node_inquirer=node_inquirer,
+                    lp_contract=lp_contract,
+                )
+            ) is None:
+                log.error(f'Failed to query underlying tokens of {node_inquirer.chain_name} {token.evm_address} Gearbox pool.')  # noqa: E501
+                return None
+        else:  # Use the existing underlying token by converting its address to a Token
+            underlying_token = EvmToken(
+                evm_address_to_identifier(
+                    address=maybe_underlying_tokens[0].address,
+                    chain_id=token.chain_id,
+                    token_type=EvmTokenKind.ERC20,
+                ),
+            )
+
+        try:
+            price_per_share = lp_contract.call(
+                node_inquirer=node_inquirer,
+                method_name='convertToAssets',
+                arguments=[10 ** (decimals := token.get_decimals())],
+            )
+        except (RemoteError, BlockchainQueryError) as e:
+            log.error(f'Failed to query convertToAssets method in {node_inquirer.chain_name} Gearbox pool {lp_token}. {e!s}')  # noqa: E501
+        else:
+            underlying_token_price = self.find_usd_price(underlying_token)
+            if underlying_token_price == ZERO_PRICE:
+                log.error(f'Could not calculate price for {node_inquirer.chain_name} {lp_token} due to inability to fetch price for {underlying_token.identifier}.')  # noqa: E501
+                return None
+            return Price(price_per_share * underlying_token_price / 10 ** decimals)
+
+        return None
 
     def find_yearn_price(
             self,
