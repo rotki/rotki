@@ -41,6 +41,7 @@ PROTOCOLS_WITH_BALANCES = Literal[
     'aave',
     'blur',
     'hop',
+    'gearbox',
 ]
 BalancesType = dict[ChecksumEvmAddress, dict[EvmToken, Balance]]
 BalancesSheetType = dict[ChecksumEvmAddress, BalanceSheet]

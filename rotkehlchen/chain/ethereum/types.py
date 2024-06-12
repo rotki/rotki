@@ -25,4 +25,5 @@ if TYPE_CHECKING:
         'COMPOUND_V3_TOKEN',
         'COMPOUND_V3_REWARDS',
         'GEARBOX_FARMING_POOL',
+        'GEARBOX_STAKING',
     ]

@@ -9,6 +9,10 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_ETHERSCAN_NODE
+from rotkehlchen.chain.arbitrum_one.modules.gearbox.balances import (
+    GearboxBalances as GearboxBalancesArbitrumOne,
+)
+from rotkehlchen.chain.arbitrum_one.modules.gearbox.constants import GEAR_IDENTIFIER_ARB
 from rotkehlchen.chain.arbitrum_one.modules.gmx.balances import GmxBalances
 from rotkehlchen.chain.arbitrum_one.modules.thegraph.balances import (
     ThegraphBalances as ThegraphBalancesArbitrumOne,
@@ -19,6 +23,8 @@ from rotkehlchen.chain.ethereum.modules.blur.constants import BLUR_IDENTIFIER
 from rotkehlchen.chain.ethereum.modules.convex.balances import ConvexBalances
 from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
 from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBalances
+from rotkehlchen.chain.ethereum.modules.gearbox.balances import GearboxBalances
+from rotkehlchen.chain.ethereum.modules.gearbox.constants import GEAR_IDENTIFIER
 from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
@@ -768,3 +774,59 @@ def test_hop_balances_staking(
             amount=reward_amount, usd_value=reward_amount * FVal(1.5),
         ),
     }
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D']])
+def test_gearbox_balances(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_transaction_decoder: 'EthereumTransactionDecoder',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Check that staked balances of Gearbox are properly detected."""
+    tx_hex = deserialize_evm_tx_hash('0x5de7647a4c8f8ca1e5434725dd09b27ce05e41954d72c3f1f4d639c8b7019f4a')  # noqa: E501
+    amount = FVal('260.869836197270890866')
+    get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=ethereum_transaction_decoder.database,
+        tx_hash=tx_hex,
+    )
+    protocol_balances_inquirer = GearboxBalances(
+        database=ethereum_transaction_decoder.database,
+        evm_inquirer=ethereum_inquirer,
+    )
+    protocol_balances = protocol_balances_inquirer.query_balances()
+    user_balance = protocol_balances[ethereum_accounts[0]]
+    assert user_balance.assets[Asset(GEAR_IDENTIFIER)] == Balance(
+        amount=amount,
+        usd_value=amount * FVal(1.5),
+    )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0xc8474089b8A428a32d938f5C28FB7eC8534D6FD1']])
+def test_gearbox_balances_arb(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_transaction_decoder: 'EthereumTransactionDecoder',
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Check that staked balances of Gearbox are properly detected."""
+    tx_hex = deserialize_evm_tx_hash('0xd6abdbf2e57c37e191c5e93b9b99d1c70acdca000b2fd9e8236093a0b359221e')  # noqa: E501
+    amount = FVal('139896.73226582730792446')
+    get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        database=arbitrum_one_transaction_decoder.database,
+        tx_hash=tx_hex,
+    )
+    protocol_balances_inquirer = GearboxBalancesArbitrumOne(
+        database=arbitrum_one_transaction_decoder.database,
+        evm_inquirer=arbitrum_one_inquirer,
+    )
+    protocol_balances = protocol_balances_inquirer.query_balances()
+    user_balance = protocol_balances[arbitrum_one_accounts[0]]
+    assert user_balance.assets[Asset(GEAR_IDENTIFIER_ARB)] == Balance(
+        amount=amount,
+        usd_value=amount * FVal(1.5),
+    )
