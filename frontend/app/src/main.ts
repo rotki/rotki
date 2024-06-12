@@ -4,7 +4,6 @@ import Vue from 'vue';
 import App from '@/App.vue';
 import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import 'typeface-roboto-mono';
-import { vuetify } from '@/plugins/vuetify';
 import { usePremiumApi } from '@/premium/setup-interface';
 import { i18n } from './i18n';
 import { router } from './router';
@@ -65,7 +64,6 @@ new Vue({
     provide('premium', usePremiumApi());
     rui.setupProvide();
   },
-  vuetify,
   router,
   pinia,
   i18n,

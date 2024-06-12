@@ -1,12 +1,9 @@
 <script setup lang="ts">
-import { useRotkiTheme } from '@rotki/ui-library-compat';
-
 const { t } = useI18n();
 
 const visibleNotification = ref(createNotification());
 const notificationStore = useNotificationsStore();
 const { queue } = storeToRefs(notificationStore);
-const css = useCssModule();
 const { displayed } = notificationStore;
 
 async function dismiss(id: number) {
@@ -39,8 +36,6 @@ function checkQueue() {
 
 watch(queue, checkQueue, { deep: true, immediate: true });
 
-const { isDark } = useRotkiTheme();
-
 watch(showNotificationBar, (showNotificationBar) => {
   if (showNotificationBar)
     dismissAll();
@@ -48,16 +43,11 @@ watch(showNotificationBar, (showNotificationBar) => {
 </script>
 
 <template>
-  <VSnackbar
+  <RuiNotification
     v-model="visibleNotification.display"
-    :class="css.popup"
     :timeout="visibleNotification.duration"
-    top
-    right
-    :light="!isDark"
-    app
-    rounded
     width="400px"
+    class="top-[3.5rem]"
     @input="displayed([visibleNotification.id])"
   >
     <Notification
@@ -103,25 +93,5 @@ watch(showNotificationBar, (showNotificationBar) => {
         </RuiTooltip>
       </div>
     </template>
-  </VSnackbar>
+  </RuiNotification>
 </template>
-
-<style module lang="scss">
-.popup {
-  :global {
-    .v-snack {
-      &__wrapper {
-        width: 400px;
-      }
-
-      &__content {
-        padding: 0 !important;
-      }
-
-      &__action {
-        margin-right: 0 !important;
-      }
-    }
-  }
-}
-</style>

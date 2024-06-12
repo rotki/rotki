@@ -61,131 +61,122 @@ onMounted(async () => {
 </script>
 
 <template>
-  <VSnackbar
+  <RuiNotification
     v-if="isPackaged"
     :value="showUpdatePopup"
-    class="update-popup m-4"
     :timeout="-1"
-    light
-    top
-    multi-line
-    vertical
-    right
-    app
-    rounded
+    class="top-[3.5rem]"
     width="380px"
   >
-    <div
-      v-if="!restarting"
-      class="flex items-center gap-4"
-    >
-      <RuiIcon
-        v-if="error"
-        size="40"
-        color="error"
-        name="error-warning-line"
-      />
-      <RuiIcon
-        v-else-if="!downloadReady && !downloading"
-        size="40"
-        color="primary"
-        name="arrow-up-circle-line"
-      />
-      <RuiIcon
-        v-else
-        size="40"
-        color="primary"
-        name="arrow-down-circle-line"
-      />
-      <div class="text-body-1">
-        <span
-          v-if="error"
-          class="text-rui-error"
-        >
-          {{ error }}
-        </span>
-        <span v-else-if="downloading">
-          {{ t('update_popup.download_progress') }}
-        </span>
-        <div v-else-if="!downloadReady">
-          <i18n
-            tag="div"
-            path="update_popup.messages"
-          >
-            <template #releaseNotes>
-              <ExternalLink
-                :text="t('update_popup.release_notes')"
-                :url="externalLinks.releases"
-              />
-            </template>
-          </i18n>
-          <div>{{ t('update_popup.download_nudge') }}</div>
-        </div>
-        <span v-else>{{ t('update_popup.downloaded') }}</span>
-      </div>
-    </div>
-    <div
-      v-else
-      class="flex items-center gap-4"
-    >
-      <RuiProgress
-        color="primary"
-        thickness="2"
-        variant="indeterminate"
-        circular
-      />
-      <div class="text-body-1">
-        {{ t('update_popup.restart') }}
-      </div>
-    </div>
-
-    <RuiProgress
-      v-if="downloading"
-      class="mt-4"
-      color="primary"
-      :value="percentage"
-      show-label
-    />
-
-    <template #action="{ attrs }">
-      <RuiButton
-        v-if="error"
-        variant="text"
-        color="primary"
-        v-bind="attrs"
-        @click="dismiss()"
-      >
-        {{ t('common.actions.dismiss') }}
-      </RuiButton>
+    <div class="p-2">
       <div
-        v-else-if="!downloading && !restarting"
-        class="flex gap-2"
+        v-if="!restarting"
+        class="flex items-center gap-4"
       >
+        <RuiIcon
+          v-if="error"
+          size="40"
+          color="error"
+          name="error-warning-line"
+        />
+        <RuiIcon
+          v-else-if="!downloadReady && !downloading"
+          size="40"
+          color="primary"
+          name="arrow-up-circle-line"
+        />
+        <RuiIcon
+          v-else
+          size="40"
+          color="primary"
+          name="arrow-down-circle-line"
+        />
+        <div class="text-body-1">
+          <span
+            v-if="error"
+            class="text-rui-error"
+          >
+            {{ error }}
+          </span>
+          <span v-else-if="downloading">
+            {{ t('update_popup.download_progress') }}
+          </span>
+          <div v-else-if="!downloadReady">
+            <i18n
+              tag="div"
+              path="update_popup.messages"
+            >
+              <template #releaseNotes>
+                <ExternalLink
+                  :text="t('update_popup.release_notes')"
+                  :url="externalLinks.releases"
+                />
+              </template>
+            </i18n>
+            <div>{{ t('update_popup.download_nudge') }}</div>
+          </div>
+          <span v-else>{{ t('update_popup.downloaded') }}</span>
+        </div>
+      </div>
+      <div
+        v-else
+        class="flex items-center gap-4"
+      >
+        <RuiProgress
+          color="primary"
+          thickness="2"
+          variant="indeterminate"
+          circular
+        />
+        <div class="text-body-1">
+          {{ t('update_popup.restart') }}
+        </div>
+      </div>
+
+      <RuiProgress
+        v-if="downloading"
+        class="mt-4"
+        color="primary"
+        :value="percentage"
+        show-label
+      />
+
+      <div class="flex justify-end">
         <RuiButton
+          v-if="error"
           variant="text"
           color="primary"
-          v-bind="attrs"
           @click="dismiss()"
         >
-          {{ t('common.actions.cancel') }}
+          {{ t('common.actions.dismiss') }}
         </RuiButton>
-        <RuiButton
-          v-if="!downloadReady"
-          color="primary"
-          v-bind="attrs"
-          @click="update()"
+        <div
+          v-else-if="!downloading && !restarting"
+          class="flex gap-2"
         >
-          {{ t('common.actions.update') }}
-        </RuiButton>
-        <RuiButton
-          v-else
-          color="primary"
-          v-bind="attrs"
-          @click="install()"
-        >
-          {{ t('common.actions.install') }}
-        </RuiButton>
+          <RuiButton
+            variant="text"
+            color="primary"
+            @click="dismiss()"
+          >
+            {{ t('common.actions.cancel') }}
+          </RuiButton>
+          <RuiButton
+            v-if="!downloadReady"
+            color="primary"
+            @click="update()"
+          >
+            {{ t('common.actions.update') }}
+          </RuiButton>
+          <RuiButton
+            v-else
+            color="primary"
+            @click="install()"
+          >
+            {{ t('common.actions.install') }}
+          </RuiButton>
+        </div>
       </div>
-    </template>
-  </VSnackbar>
+    </div>
+  </RuiNotification>
 </template>

@@ -9,7 +9,6 @@ module.exports = rotki({
     tsconfigPath: 'tsconfig.json',
   },
   stylistic: true,
-  vuetify: true,
   rotki: {
     overrides: {
       '@rotki/no-deprecated-components': ['warn', { legacy: true }],

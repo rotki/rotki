@@ -7,9 +7,7 @@ const { animationsEnabled } = storeToRefs(useSessionSettingsStore());
 const route = useRoute();
 
 const isDevelopment = checkIfDevelopment();
-const isPlayground = computed(
-  () => isDevelopment && get(route).name === 'playground',
-);
+const isPlayground = computed(() => isDevelopment && get(route).name === 'playground');
 
 const { locale } = useI18nLocale();
 
@@ -32,7 +30,7 @@ const { isDark } = useRotkiTheme();
 </script>
 
 <template>
-  <VApp
+  <div
     v-if="!isPlayground"
     id="rotki"
     :key="adaptiveLanguage"
@@ -41,7 +39,7 @@ const { isDark } = useRotkiTheme();
   >
     <slot />
     <AppPremiumManager />
-  </VApp>
+  </div>
   <DevApp v-else />
 </template>
 
