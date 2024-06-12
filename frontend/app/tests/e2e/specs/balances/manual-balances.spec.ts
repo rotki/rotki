@@ -5,7 +5,6 @@ import {
 import { DashboardPage } from '../../pages/dashboard-page';
 import { GeneralSettingsPage } from '../../pages/general-settings-page';
 import { RotkiApp } from '../../pages/rotki-app';
-import { waitForAsyncQuery } from '../../support/utils';
 import { createUser } from '../../utils/user';
 
 const PRECISION = 0.1;
@@ -40,11 +39,6 @@ describe('balances', () => {
       manualBalancesPage.visibleEntries(i + 1);
       manualBalancesPage.isVisible(i, balance);
     }
-
-    waitForAsyncQuery({
-      method: 'POST',
-      url: '/api/1/assets/prices/latest',
-    });
   });
 
   it('data is reflected in dashboard', () => {
