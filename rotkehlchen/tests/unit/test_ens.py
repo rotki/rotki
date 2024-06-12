@@ -207,7 +207,7 @@ def test_ens_reverse_lookup(ethereum_inquirer):
         'call_contract',
         wraps=ethereum_inquirer.call_contract,
     )
-    # The patch is just to to check that chunking works correctly
+    # The patch is just to check that chunking works correctly
     # We do 2 requests - first without splitting in chunks and in the second one addresses
     # should be split. We confirm it by checking call_count attribute of the call contract patch.
     addrs_in_chunk_patch = patch(
