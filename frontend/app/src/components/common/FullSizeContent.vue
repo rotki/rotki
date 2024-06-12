@@ -1,15 +1,11 @@
 <script setup lang="ts">
-const top = ref(0);
-const proxy = useProxy();
-
-onMounted(() => {
-  const { top: topBound } = proxy.$el.getBoundingClientRect();
-  set(top, topBound);
-});
+const wrapper = ref();
+const { top } = useElementBounding(wrapper);
 </script>
 
 <template>
   <div
+    ref="wrapper"
     class="flex flex-col items-center justify-center text-center p-2"
     :style="`height: calc(100vh - ${top + 92}px);`"
   >
