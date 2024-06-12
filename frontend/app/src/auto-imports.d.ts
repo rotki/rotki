@@ -628,7 +628,6 @@ declare global {
   const usePrivacyMode: typeof import('./composables/privacy')['usePrivacyMode']
   const useProjection: typeof import('@vueuse/math')['useProjection']
   const usePropVModel: typeof import('./utils/model/index')['usePropVModel']
-  const useProxy: typeof import('./composables/common')['useProxy']
   const useQueriedAddressApi: typeof import('./composables/api/session/queried-addresses')['useQueriedAddressApi']
   const useQueriedAddressesStore: typeof import('./store/session/queried-addresses')['useQueriedAddressesStore']
   const useQueryStatus: typeof import('./composables/history/events/query-status/index')['useQueryStatus']
