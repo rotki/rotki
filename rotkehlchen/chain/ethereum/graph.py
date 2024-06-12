@@ -145,6 +145,8 @@ class Graph(ExternalServiceWithApiKey):
                     raise RemoteError(f'{base_msg} because subgraph is not authorized. {error_msg}') from e  # noqa: E501
                 if 'invalid bearer token: invalid auth token' in error_msg:
                     raise RemoteError(f'{base_msg} because the token is not valid. {error_msg}') from e  # noqa: E501
+                if 'malformed API key' in error_msg:
+                    raise RemoteError(f'{base_msg} because the given API key is malformed') from e
 
                 # we retry again
                 retry_base_msg = base_msg + f' with payload {querystr} due to {error_msg}'
