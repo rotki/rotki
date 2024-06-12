@@ -3,7 +3,11 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.ethereum.utils import (
+    token_normalized_value,
+    token_normalized_value_decimals,
+)
+from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     GearboxPoolData,
     query_gearbox_data,
@@ -20,12 +24,21 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.constants.assets import A_WETH, A_WETH_ARB, A_WETH_OPT
 from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-from .constants import CPT_GEARBOX, DEPOSIT, GEARBOX_CPT_DETAILS, WITHDRAW
+from .constants import (
+    CLAIM_GEAR_WITHDRAWAL,
+    CPT_GEARBOX,
+    DEPOSIT,
+    DEPOSIT_GEAR,
+    GEARBOX_CPT_DETAILS,
+    WITHDRAW,
+)
+
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -42,6 +55,7 @@ class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             evm_inquirer: 'EvmNodeInquirer',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
+            staking_contract: ChecksumEvmAddress,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -57,6 +71,7 @@ class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             read_data_from_cache_method=read_gearbox_data_from_cache,
             chain_id=self.evm_inquirer.chain_id,
         )
+        self.staking_contract = staking_contract
 
     @property
     def pools(self) -> dict[ChecksumEvmAddress, GearboxPoolData]:
@@ -211,9 +226,73 @@ class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
 
         return DEFAULT_DECODING_OUTPUT
 
-    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return dict.fromkeys(self.pools, (self._decode_pool_events,))
+    def _decode_stake(self, context: DecoderContext) -> DecodingOutput:
+        user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+        amount = token_normalized_value_decimals(
+            token_amount=hex_or_bytes_to_int(context.tx_log.data[:32]),
+            token_decimals=DEFAULT_TOKEN_DECIMALS,
+        )
 
-    @ staticmethod
+        for event in context.decoded_events:
+            if (
+                event.event_type == HistoryEventType.SPEND and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.balance.amount == amount and
+                event.location_label == user_address
+            ):
+                event.event_type = HistoryEventType.STAKING
+                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.counterparty = CPT_GEARBOX
+                event.product = EvmProduct.STAKING
+                event.notes = f'Stake {amount} GEAR'
+                break
+        else:
+            log.error(f'Could not find matching spend event for {self.evm_inquirer.chain_name} gearbox staking deposit {context.transaction.tx_hash.hex()}')  # noqa: E501
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def _decode_unstake(self, context: DecoderContext) -> DecodingOutput:
+        user_address = hex_or_bytes_to_address(context.tx_log.data[:32])
+        amount = token_normalized_value_decimals(
+            token_amount=hex_or_bytes_to_int(context.tx_log.data[32:64]),
+            token_decimals=DEFAULT_TOKEN_DECIMALS,
+        )
+        for event in context.decoded_events:
+            if (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.balance.amount == amount and
+                event.location_label == user_address
+            ):
+                event.event_type = HistoryEventType.STAKING
+                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.counterparty = CPT_GEARBOX
+                event.product = EvmProduct.STAKING
+                event.notes = f'Unstake {amount} GEAR'
+                break
+        else:
+            log.error(f'Could not find matching receive event for {self.evm_inquirer.chain_name} gearbox unstaking withdrawal {context.transaction.tx_hash.hex()}')  # noqa: E501
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def _decode_staking_events(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] == DEPOSIT_GEAR:
+            return self._decode_stake(context=context)
+
+        if context.tx_log.topics[0] == CLAIM_GEAR_WITHDRAWAL:
+            return self._decode_unstake(context=context)
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
+        return dict.fromkeys(self.pools, (self._decode_pool_events,)) | {self.staking_contract: (self._decode_staking_events,)}  # noqa: E501
+
+    @staticmethod
+    def possible_products() -> dict[str, list[EvmProduct]]:
+        return {
+            CPT_GEARBOX: [EvmProduct.STAKING],
+        }
+
+    @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (GEARBOX_CPT_DETAILS,)

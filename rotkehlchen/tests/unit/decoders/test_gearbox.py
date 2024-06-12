@@ -4,13 +4,14 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.ethereum.modules.gearbox.constants import GEAR_STAKING_CONTRACT
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.gearbox.constants import CPT_GEARBOX
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USDC
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
@@ -441,7 +442,7 @@ def test_gearbox_deposit_usdc_arbitrum(
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
             asset=Asset('eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8'),
-            balance=Balance(amount=FVal(0)),
+            balance=Balance(),
             location_label=arbitrum_one_accounts[0],
             notes=f'Revoke USDC.e spending approval of {arbitrum_one_accounts[0]} by 0xD72e1B9A5FC74b35435f71603a81dAE217c2D863',  # noqa: E501
             tx_hash=tx_hash,
@@ -645,6 +646,122 @@ def test_gearbox_withdraw_optimism_usdc(
             tx_hash=tx_hash,
             counterparty=CPT_GEARBOX,
             address=string_to_evm_address('0x5520dAa93A187f4Ec67344e6D2C4FC9B080B6A35'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D']])
+def test_gearbox_staking(
+        database: 'DBHandler',
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0x5de7647a4c8f8ca1e5434725dd09b27ce05e41954d72c3f1f4d639c8b7019f4a')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas, stake_amount = TimestampMS(1718177819000), '0.0008970313372218', '260.869836197270890866'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=ethereum_accounts[0],
+            notes=f'Burned {gas} ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=509,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:1/erc20:0xBa3335588D9403515223F109EdC4eB7269a9Ab5D'),
+            balance=Balance(amount=FVal(stake_amount)),
+            location_label=ethereum_accounts[0],
+            notes=f'Set GEAR spending approval of {ethereum_accounts[0]} by {GEAR_STAKING_CONTRACT} to {stake_amount}',  # noqa: E501
+            tx_hash=tx_hash,
+            address=GEAR_STAKING_CONTRACT,
+        ), EvmEvent(
+            sequence_index=510,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:1/erc20:0xBa3335588D9403515223F109EdC4eB7269a9Ab5D'),
+            balance=Balance(),
+            location_label=ethereum_accounts[0],
+            notes=f'Revoke GEAR spending approval of {ethereum_accounts[0]} by {GEAR_STAKING_CONTRACT}',  # noqa: E501
+            tx_hash=tx_hash,
+            address=GEAR_STAKING_CONTRACT,
+        ), EvmEvent(
+            sequence_index=511,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=Asset('eip155:1/erc20:0xBa3335588D9403515223F109EdC4eB7269a9Ab5D'),
+            balance=Balance(amount=FVal(stake_amount)),
+            location_label='0x0e414c1c4780df6c09c2f1070990768D44B70b1D',
+            notes=f'Stake {stake_amount} GEAR',
+            tx_hash=tx_hash,
+            counterparty=CPT_GEARBOX,
+            product=EvmProduct.STAKING,
+            address=GEAR_STAKING_CONTRACT,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xe4283e107fB8E96F3175955EC7269afb51ECa6ea']])
+def test_gearbox_unstaking(
+        database: 'DBHandler',
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0xb50badadb71b7c8c4ab2d0f9691931396322b2395da2396bee1ed65755e3882a')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas, stake_amount = TimestampMS(1717241039000), '0.000287410296179888', '1210105.252774990252868034'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=ethereum_accounts[0],
+            notes=f'Burned {gas} ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=308,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=Asset('eip155:1/erc20:0xBa3335588D9403515223F109EdC4eB7269a9Ab5D'),
+            balance=Balance(amount=FVal(stake_amount)),
+            location_label=ethereum_accounts[0],
+            notes=f'Unstake {stake_amount} GEAR',
+            tx_hash=tx_hash,
+            counterparty=CPT_GEARBOX,
+            product=EvmProduct.STAKING,
+            address=GEAR_STAKING_CONTRACT,
         ),
     ]
     assert events == expected_events
