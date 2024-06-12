@@ -4,6 +4,7 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.ethereum.modules.hop.constants import HOP_GOVERNOR
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
@@ -36,9 +37,6 @@ ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_hop_l2_deposit(database, ethereum_inquirer):
-    """Data taken from
-    https://etherscan.io/tx/0xd46640417a686b399b2f2a920b0c58a35095759365cbe7b795bddec34b8c5eee
-    """
     tx_hash = deserialize_evm_tx_hash('0xd46640417a686b399b2f2a920b0c58a35095759365cbe7b795bddec34b8c5eee')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -1089,7 +1087,7 @@ def test_hop_stake(
             location_label=arbitrum_one_accounts[0],
             notes=f'Stake {stake_amount} HOP-LP-ETH in Hop',
             tx_hash=tx_hash,
-            counterparty='hop-protocol',
+            counterparty=CPT_HOP,
             product=EvmProduct.STAKING,
             address=string_to_evm_address('0x755569159598f3702bdD7DFF6233A317C156d3Dd'),
         ), EvmEvent(
@@ -1371,3 +1369,43 @@ def test_hop_unstake_gnosis(
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
+def test_vote_cast(database, ethereum_inquirer):
+    tx_hash = deserialize_evm_tx_hash('0xc6116ef064b0a713eb50cb55a1e76ef947ebdba9cbfba9a71498dacb6b75ba0e')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas = TimestampMS(1671494483000), '0.00186503943913884'
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=ADDY,
+            notes=f'Burned {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=307,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.GOVERNANCE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=ADDY,
+            notes='Voted FOR hop governance proposal https://www.tally.xyz/gov/hop/proposal/114834095316819367752457382978722571068850159829764853513197263236546715801279',
+            counterparty=CPT_HOP,
+            address=HOP_GOVERNOR,
+        )]
+    assert expected_events == events

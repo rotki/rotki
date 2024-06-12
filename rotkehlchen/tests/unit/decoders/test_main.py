@@ -130,7 +130,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'liquity',
         'Locked GNO',
         'shapeshift',
-        'hop-protocol',
+        'hop',
         '1inch',
         'gitcoin',
         'golem',

@@ -1,3 +1,5 @@
+from typing import Final
+
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import (
@@ -21,8 +23,8 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.types import ChecksumEvmAddress
 
-COMPTROLLER_PROXY_ADDRESS = string_to_evm_address('0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B')
-CPT_COMPOUND = 'compound'
+COMPTROLLER_PROXY_ADDRESS: Final = string_to_evm_address('0x3d9819210A31b4961b30EF54bE2aeD79B9c9Cd3B')  # noqa: E501
+CPT_COMPOUND: Final = 'compound'
 CTOKEN_MAPPING: dict[ChecksumEvmAddress, Asset] = {
     string_to_evm_address('0xe65cdB6479BaC1e22340E4E755fAE7E509EcD06c'): A_AAVE,
     string_to_evm_address('0x6C8c6b02E7b2BE14d4fA6022Dfd6d75921D90E4E'): A_BAT,

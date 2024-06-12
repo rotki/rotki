@@ -4,6 +4,8 @@ from rotkehlchen.chain.evm.decoding.hop.structures import HopBridgeEventData
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_ETH_MATIC, A_SNX, A_SUSD, A_USDC, A_USDT
 
+HOP_GOVERNOR: Final = string_to_evm_address('0xed8Bdb5895B8B7f9Fdb3C087628FD8410E853D48')
+
 BRIDGES: Final = {
     string_to_evm_address('0xb8901acB165ed027E32754E0FFe830802919727f'): HopBridgeEventData(
         identifier=A_ETH.identifier,

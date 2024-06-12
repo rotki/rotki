@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`7544` Gearbox protocol events and balances are now decoded and detected on all supported evm chains.
+* :feature:`-` HOP governance events will now be properly decoded.
 * :feature:`7974` Users will now be able to filter manual balances by asset, label and location.
 * :feature:`5103` rotki will now automatically detect tokens along with their balances if the setting has been turned on. Set to true by default.
 * :feature:`7675` Users will now be able to export & import accounting rules.

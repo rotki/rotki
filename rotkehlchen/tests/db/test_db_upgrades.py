@@ -2369,6 +2369,9 @@ def test_upgrade_db_42_to_43(user_data_dir, messages_aggregator):
     with db_v42.conn.read_ctx() as cursor:
         nfts = cursor.execute('SELECT name FROM nfts').fetchall()
         assert nfts == [('yabir.eth',)]
+        # check hop-protocol counterparty is there. If redecoding in upgrade will need to customize
+        assert cursor.execute('SELECT COUNT(*) from evm_events_info WHERE counterparty=?', ('hop-protocol',)).fetchone()[0] == 1  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) from evm_events_info WHERE counterparty=?', ('hop',)).fetchone()[0] == 0  # noqa: E501
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2383,6 +2386,9 @@ def test_upgrade_db_42_to_43(user_data_dir, messages_aggregator):
     with db.conn.read_ctx() as cursor:
         nfts = cursor.execute('SELECT name, usd_price FROM nfts').fetchall()
         assert nfts == [('yabir.eth', 0)]
+        # assert hop-protocol counterparty got renamed
+        assert cursor.execute('SELECT COUNT(*) from evm_events_info WHERE counterparty=?', ('hop-protocol',)).fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) from evm_events_info WHERE counterparty=?', ('hop',)).fetchone()[0] == 1  # noqa: E501
 
 
 def test_latest_upgrade_correctness(user_data_dir):

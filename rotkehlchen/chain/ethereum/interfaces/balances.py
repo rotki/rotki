@@ -40,7 +40,7 @@ PROTOCOLS_WITH_BALANCES = Literal[
     'compound-v3',
     'aave',
     'blur',
-    'hop-protocol',
+    'hop',
 ]
 BalancesType = dict[ChecksumEvmAddress, dict[EvmToken, Balance]]
 BalancesSheetType = dict[ChecksumEvmAddress, BalanceSheet]
