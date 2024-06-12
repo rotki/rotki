@@ -8,7 +8,6 @@
     },
     "types": [
       "node",
-      "vuetify",
       "vue-i18n",
       "vite/client",
       "vite-plugin-vue-layouts/client",

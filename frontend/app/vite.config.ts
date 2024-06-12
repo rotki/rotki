@@ -4,7 +4,6 @@ import process from 'node:process';
 import vue from '@vitejs/plugin-vue2';
 import AutoImport from 'unplugin-auto-import/vite';
 import DefineOptions from 'unplugin-vue-define-options/vite';
-import { VuetifyResolver } from 'unplugin-vue-components/resolvers';
 import Components from 'unplugin-vue-components/vite';
 import { defineConfig } from 'vitest/config';
 import { splitVendorChunkPlugin } from 'vite';
@@ -44,13 +43,6 @@ export default defineConfig({
     server: {
       deps: {
         inline: ['@rotki/ui-library-compat'],
-      },
-    },
-    deps: {
-      optimizer: {
-        web: {
-          include: ['vuetify'],
-        },
       },
     },
     setupFiles: ['tests/unit/setup-files/setup.ts'],
@@ -112,7 +104,7 @@ export default defineConfig({
     Components({
       dts: true,
       include: [/\.vue$/, /\.vue\?vue/],
-      resolvers: [VuetifyResolver(), RuiComponentResolver()],
+      resolvers: [RuiComponentResolver()],
       types: [
         {
           from: 'vue-router',
