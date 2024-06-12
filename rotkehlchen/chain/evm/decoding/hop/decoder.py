@@ -62,7 +62,8 @@ class HopCommonDecoder(DecoderInterface):
             bridges: dict[ChecksumEvmAddress, HopBridgeEventData],
             reward_contracts: set[ChecksumEvmAddress],
     ) -> None:
-        super().__init__(
+        DecoderInterface.__init__(  # forced to use this instead of super
+            self,  # in ordere to "address" the diamond inheritance problem
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,

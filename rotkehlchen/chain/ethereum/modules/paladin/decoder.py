@@ -72,6 +72,12 @@ class PaladinDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
+    @staticmethod
+    def possible_products() -> dict[str, list[EvmProduct]]:
+        return {
+            CPT_PALADIN: [EvmProduct.BRIBE],
+        }
+
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             PALADIN_MERKLE_DISTRIBUTOR_V2: (self._decode_claim_quest,),

@@ -1,6 +1,8 @@
 from typing import TYPE_CHECKING, Any
+
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP, HOP_CPT_DETAILS
 from rotkehlchen.chain.evm.decoding.hop.decoder import HopCommonDecoder
+from rotkehlchen.chain.evm.decoding.interfaces import GovernableDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -12,7 +14,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-from .constants import BRIDGES
+from .constants import BRIDGES, HOP_GOVERNOR
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -22,19 +24,28 @@ if TYPE_CHECKING:
 TRANSFER_TO_L2 = b'\n\x06\x07h\x8c\x86\xec\x17u\xab\xcd\xba\xb7\xb3::5\xa6\xc9\xcd\xe6w\xc9\xbe\x88\x01P\xc21\xcck\x0b'  # noqa: E501
 
 
-class HopDecoder(HopCommonDecoder):
+class HopDecoder(HopCommonDecoder, GovernableDecoderInterface):
     def __init__(
             self,
             ethereum_inquirer: 'EthereumInquirer',
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
-        super().__init__(
+        HopCommonDecoder.__init__(  # using direct constructor calls due to
+            self,  # having diamond inheritance. TODO: Perhaps Governable should be a mixin?
             evm_inquirer=ethereum_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
             bridges=BRIDGES,
             reward_contracts=set(),
+        )
+        GovernableDecoderInterface.__init__(
+            self,
+            evm_inquirer=ethereum_inquirer,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+            protocol=CPT_HOP,
+            proposals_url='https://www.tally.xyz/gov/hop/proposal',
         )
 
     def _decode_send_to_l2(self, context: DecoderContext) -> DecodingOutput:
@@ -69,7 +80,9 @@ class HopDecoder(HopCommonDecoder):
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return dict.fromkeys(set(self.bridges.keys()), (self._decode_send_to_l2,))
+        return dict.fromkeys(set(self.bridges.keys()), (self._decode_send_to_l2,)) | {
+            HOP_GOVERNOR: (self._decode_vote_cast,),
+        }
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:

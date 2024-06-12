@@ -92,6 +92,12 @@ class StakedaoDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
+    @staticmethod
+    def possible_products() -> dict[str, list[EvmProduct]]:
+        return {
+            CPT_STAKEDAO: [EvmProduct.BRIBE],
+        }
+
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             STAKEDAO_CLAIMER1: (self._decode_claim_with_bounty,),
