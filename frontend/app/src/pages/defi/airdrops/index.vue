@@ -10,7 +10,7 @@ import {
 import { TaskType } from '@/types/task-type';
 import AirdropDisplay from '@/components/defi/airdrops/AirdropDisplay.vue';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { DataTableColumn } from '@rotki/ui-library-compat';
+import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library-compat';
 import type { TaskMeta } from '@/types/task';
 
 type Statuses = '' | 'unknown' | 'unclaimed' | 'claimed';
@@ -21,50 +21,47 @@ const { notify } = useNotificationsStore();
 const { fetchAirdrops: fetchAirdropsCaller } = useDefiApi();
 const hideUnknownAlert = useLocalStorage('rotki.airdrops.hide_unknown_alert', false);
 
-const expanded: Ref<Airdrop[]> = ref([]);
-const selectedAccounts: Ref<BlockchainAccount<AddressData>[]> = ref([]);
-const statusFilters: Ref<{ text: string; value: Statuses }[]> = ref([
+const airdrops = ref<Airdrops>({});
+const expanded = ref<Airdrop[]>([]);
+const loading = ref<boolean>(false);
+const status = ref<Statuses>('');
+const pagination = ref<TablePaginationData>();
+const selectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
+const statusFilters = ref<{ text: string; value: Statuses }[]>([
   { text: t('common.all'), value: '' },
   { text: t('common.unknown'), value: 'unknown' },
   { text: t('common.unclaimed'), value: 'unclaimed' },
   { text: t('common.claimed'), value: 'claimed' },
 ]);
-const status: Ref<Statuses> = ref('');
-const loading: Ref<boolean> = ref(false);
 
-const refreshTooltip: ComputedRef<string> = computed(() =>
-  t('helpers.refresh_header.tooltip', {
-    title: t('airdrops.title').toLocaleLowerCase(),
-  }),
-);
-const airdrops: Ref<Airdrops> = ref({});
+const refreshTooltip = computed<string>(() => t('helpers.refresh_header.tooltip', {
+  title: t('airdrops.title').toLocaleLowerCase(),
+}));
 
-const airdropAddresses = computed(() => Object.keys(get(airdrops)));
+const airdropAddresses = computed<string[]>(() => Object.keys(get(airdrops)));
 
-const entries = computed(() => {
+const rows = computed<(Airdrop & { index: number })[]>(() => {
   const addresses = get(selectedAccounts).map(account => getAccountAddress(account));
-  const airdrops = get(airdropList(addresses));
-  return airdrops
-    .filter((airdrop) => {
-      const currentStatus = get(status);
-      switch (currentStatus) {
-        case 'unknown':
-          return !airdrop.hasDecoder;
-        case 'unclaimed':
-          return airdrop.hasDecoder && !airdrop.claimed;
-        case 'claimed':
-          return airdrop.claimed;
-        default:
-          return true;
-      }
-    })
-    .map((value, index) => ({
-      ...value,
-      index,
-    }));
+  const data = filterByAddress(get(airdrops), addresses);
+  return data.filter((airdrop) => {
+    const currentStatus = get(status);
+    switch (currentStatus) {
+      case 'unknown':
+        return !airdrop.hasDecoder;
+      case 'unclaimed':
+        return airdrop.hasDecoder && !airdrop.claimed;
+      case 'claimed':
+        return airdrop.claimed;
+      default:
+        return true;
+    }
+  }).map((value, index) => ({
+    ...value,
+    index,
+  }));
 });
 
-const tableHeaders = computed<DataTableColumn[]>(() => [
+const cols = computed<DataTableColumn[]>(() => [
   {
     label: t('airdrops.headers.source'),
     key: 'source',
@@ -85,47 +82,44 @@ const tableHeaders = computed<DataTableColumn[]>(() => [
   },
 ]);
 
-function airdropList(addresses: string[]): ComputedRef<Airdrop[]> {
-  return computed(() => {
-    const result: Airdrop[] = [];
-    const data = get(airdrops);
-    for (const address in data) {
-      if (addresses.length > 0 && !addresses.includes(address))
-        continue;
+function filterByAddress(data: Airdrops, addresses: string[]): Airdrop[] {
+  const result: Airdrop[] = [];
+  for (const address in data) {
+    if (addresses.length > 0 && !addresses.includes(address))
+      continue;
 
-      const airdrop = data[address];
-      for (const source in airdrop) {
-        const element = airdrop[source];
-        if (source === AIRDROP_POAP) {
-          const details = element as PoapDelivery[];
-          result.push({
-            address,
-            source,
-            details: details.map(({ link, name, event }) => ({
-              amount: bigNumberify('1'),
-              link,
-              name,
-              event,
-              claimed: false,
-            })),
-          });
-        }
-        else {
-          const { amount, asset, link, claimed, hasDecoder } = element as AirdropDetail;
-          result.push({
-            address,
-            amount,
+    const airdrop = data[address];
+    for (const source in airdrop) {
+      const element = airdrop[source];
+      if (source === AIRDROP_POAP) {
+        const details = element as PoapDelivery[];
+        result.push({
+          address,
+          source,
+          details: details.map(({ link, name, event }) => ({
+            amount: bigNumberify('1'),
             link,
-            source,
-            asset,
-            claimed,
-            hasDecoder,
-          });
-        }
+            name,
+            event,
+            claimed: false,
+          })),
+        });
+      }
+      else {
+        const { amount, asset, link, claimed, hasDecoder } = element as AirdropDetail;
+        result.push({
+          address,
+          amount,
+          link,
+          source,
+          asset,
+          claimed,
+          hasDecoder,
+        });
       }
     }
-    return result;
-  });
+  }
+  return result;
 }
 
 async function fetchAirdrops() {
@@ -136,7 +130,7 @@ async function fetchAirdrops() {
       taskId,
       TaskType.DEFI_AIRDROPS,
       {
-        title: t('actions.defi.airdrops.task.title').toString(),
+        title: t('actions.defi.airdrops.task.title'),
       },
     );
     set(airdrops, Airdrops.parse(result));
@@ -145,10 +139,10 @@ async function fetchAirdrops() {
     if (!isTaskCancelled(error)) {
       logger.error(error);
       notify({
-        title: t('actions.defi.airdrops.error.title').toString(),
+        title: t('actions.defi.airdrops.error.title'),
         message: t('actions.defi.airdrops.error.description', {
           error: error.message,
-        }).toString(),
+        }),
         display: true,
       });
     }
@@ -167,11 +161,18 @@ function expand(item: Airdrop) {
 onMounted(async () => {
   await fetchAirdrops();
 });
+
+watch([status, selectedAccounts], () => {
+  set(pagination, { ...get(pagination), page: 1 });
+});
 </script>
 
 <template>
   <TablePageLayout
-    :title="[t('navigation_menu.defi'), t('navigation_menu.defi_sub.airdrops')]"
+    :title="[
+      t('navigation_menu.defi'),
+      t('navigation_menu.defi_sub.airdrops'),
+    ]"
   >
     <template #buttons>
       <RuiTooltip :open-delay="400">
@@ -227,9 +228,10 @@ onMounted(async () => {
 
       <RuiDataTable
         outlined
-        :rows="entries"
-        :cols="tableHeaders"
+        :rows="rows"
+        :cols="cols"
         :loading="loading"
+        :pagination.sync="pagination"
         single-expand
         :expanded.sync="expanded"
         row-attr="index"
