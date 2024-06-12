@@ -74,7 +74,7 @@ function getColor(isDark: boolean, color: string | undefined, isBg: boolean = fa
       :class="{
         'bg-rui-primary text-white': isSelected,
         'bg-rui-primary-lighter text-rui-light-text': isToday && !isSelected,
-        'hover:bg-rui-grey-100': !isToday && !isSelected,
+        'hover:bg-rui-grey-100 dark:hover:bg-rui-grey-800': !isToday && !isSelected,
       }"
     >
       {{ label }}
