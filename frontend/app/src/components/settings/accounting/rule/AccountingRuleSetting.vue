@@ -264,6 +264,47 @@ const importFileDialog: Ref<boolean> = ref(false);
           </template>
           {{ t('accounting_settings.rule.add') }}
         </RuiButton>
+        <RuiMenu
+          :popper="{ placement: 'bottom-end' }"
+          close-on-content-click
+        >
+          <template #activator="{ on }">
+            <RuiButton
+              variant="text"
+              icon
+              size="sm"
+              class="!p-2"
+              v-on="on"
+            >
+              <RuiIcon
+                name="more-2-fill"
+                size="20"
+              />
+            </RuiButton>
+          </template>
+          <div class="py-2">
+            <RuiButton
+              variant="list"
+              :loading="exportFileLoading"
+              @click="exportJSON()"
+            >
+              <template #prepend>
+                <RuiIcon name="file-download-line" />
+              </template>
+              {{ t('accounting_settings.rule.export') }}
+            </RuiButton>
+            <RuiButton
+              variant="list"
+              :loading="importFileLoading"
+              @click="importFileDialog = true"
+            >
+              <template #prepend>
+                <RuiIcon name="file-upload-line" />
+              </template>
+              {{ t('accounting_settings.rule.import') }}
+            </RuiButton>
+          </div>
+        </RuiMenu>
       </div>
     </template>
 
@@ -304,47 +345,6 @@ const importFileDialog: Ref<boolean> = ref(false);
               @update:matches="updateFilter($event)"
             />
           </div>
-          <RuiMenu
-            :popper="{ placement: 'bottom-end' }"
-            close-on-content-click
-          >
-            <template #activator="{ on }">
-              <RuiButton
-                variant="text"
-                icon
-                size="sm"
-                class="!p-2"
-                v-on="on"
-              >
-                <RuiIcon
-                  name="more-2-fill"
-                  size="20"
-                />
-              </RuiButton>
-            </template>
-            <div class="py-2">
-              <RuiButton
-                variant="list"
-                :loading="exportFileLoading"
-                @click="exportJSON()"
-              >
-                <template #prepend>
-                  <RuiIcon name="file-download-line" />
-                </template>
-                {{ t('accounting_settings.rule.export') }}
-              </RuiButton>
-              <RuiButton
-                variant="list"
-                :loading="importFileLoading"
-                @click="importFileDialog = true"
-              >
-                <template #prepend>
-                  <RuiIcon name="file-upload-line" />
-                </template>
-                {{ t('accounting_settings.rule.import') }}
-              </RuiButton>
-            </div>
-          </RuiMenu>
         </div>
       </template>
 
