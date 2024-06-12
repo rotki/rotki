@@ -249,7 +249,7 @@ CREATE TABLE IF NOT EXISTS address_book (
 """
 
 # Similar to the common_asset_details table this table is used for custom assets that the user
-# wants to to track. Also we use the asset identifier to relate this table with the assets table
+# wants to track. Also we use the asset identifier to relate this table with the assets table
 # allowing a cascade on delete. The notes fields allows for adding relevant information about the
 # asset by the user. The type field is a string field that is filled by the user. This allows to
 # createsomething like a label so the user can visually see what kind of assets (s)he has. All the

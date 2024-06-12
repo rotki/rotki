@@ -925,7 +925,7 @@ def test_edit_trades_errors(rotkehlchen_api_server):
         status_code=HTTPStatus.BAD_REQUEST,
     )
     trade['trade_id'] = 'this_id_does_not_exit'
-    # Check that non-existing trade id is is handled
+    # Check that non-existing trade id is handled
     response = requests.patch(
         api_url_for(
             rotkehlchen_api_server,
@@ -937,7 +937,7 @@ def test_edit_trades_errors(rotkehlchen_api_server):
         contained_in_msg='Tried to edit non existing trade id',
         status_code=HTTPStatus.CONFLICT,
     )
-    # Check that invalid trade_id type is is handled
+    # Check that invalid trade_id type is handled
     trade['trade_id'] = 523
     response = requests.patch(
         api_url_for(
@@ -996,7 +996,7 @@ def test_delete_trades(rotkehlchen_api_server_with_exchanges):
 
 def test_delete_trades_trades_errors(rotkehlchen_api_server):
     """Test that errors at the deleting a trade endpoint are handled properly"""
-    # Check that omitting the trade id is is handled
+    # Check that omitting the trade id is handled
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
@@ -1009,7 +1009,7 @@ def test_delete_trades_trades_errors(rotkehlchen_api_server):
         status_code=HTTPStatus.BAD_REQUEST,
     )
 
-    # Check that providing invalid value for trade id is is handled
+    # Check that providing invalid value for trade id is handled
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
@@ -1021,7 +1021,7 @@ def test_delete_trades_trades_errors(rotkehlchen_api_server):
         contained_in_msg='Not a valid string',
         status_code=HTTPStatus.BAD_REQUEST,
     )
-    # Check that providing non existing trade id is is handled
+    # Check that providing non existing trade id is handled
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,

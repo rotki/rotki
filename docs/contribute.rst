@@ -151,7 +151,7 @@ The test also warns about any asset delisted from CoinGecko. In that case, add t
 Get CryptoCompare asset identifier
 ------------------------------------
 
-One important gotcha is to check for CryptoCompare asset prices. Unfortunately you need to to check the page of each asset in CryptoCompare. For example for `$BASED <https://www.cryptocompare.com/coins/based/overview>`__ you would need to check the page and then try to see the api call for USD price to see `if it exists <https://min-api.cryptocompare.com/data/pricehistorical?fsym=$BASED&tsyms=USD&ts=1611915600>`__. If this returns something like:
+One important gotcha is to check for CryptoCompare asset prices. Unfortunately you need to check the page of each asset in CryptoCompare. For example for `$BASED <https://www.cryptocompare.com/coins/based/overview>`__ you would need to check the page and then try to see the api call for USD price to see `if it exists <https://min-api.cryptocompare.com/data/pricehistorical?fsym=$BASED&tsyms=USD&ts=1611915600>`__. If this returns something like:
 
 ::
 
