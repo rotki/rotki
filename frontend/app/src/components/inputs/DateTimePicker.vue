@@ -21,6 +21,7 @@ const props = withDefaults(
     hideDetails?: boolean;
     dateOnly?: boolean;
     inputOnly?: boolean;
+    dense?: boolean;
   }>(),
   {
     label: '',
@@ -35,6 +36,7 @@ const props = withDefaults(
     hideDetails: false,
     dateOnly: false,
     inputOnly: false,
+    dense: false,
   },
 );
 
@@ -341,6 +343,10 @@ function filteredListeners(listeners: any) {
     input: () => {},
   };
 }
+
+defineExpose({
+  valid: computed(() => !get(v$).$invalid),
+});
 </script>
 
 <template>
@@ -356,6 +362,7 @@ function filteredListeners(listeners: any) {
     variant="outlined"
     color="primary"
     :error-messages="toMessages(v$.date)"
+    :dense="dense"
     @focus="focus()"
     v-on="
       // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api

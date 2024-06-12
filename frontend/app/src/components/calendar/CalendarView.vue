@@ -3,7 +3,6 @@ import dayjs, { type Dayjs } from 'dayjs';
 import { RouterAccountsSchema } from '@/types/route';
 import { isBlockchain } from '@/types/blockchain/chains';
 import CalendarGrid from '@/components/calendar/CalendarGrid.vue';
-import CalendarNavigator from '@/components/calendar/CalendarNavigator.vue';
 import type { CalendarEvent, CalendarEventRequestPayload } from '@/types/history/calendar';
 import type { Collection } from '@/types/collection';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
@@ -12,6 +11,7 @@ import type { Writeable } from '@/types';
 const { t } = useI18n();
 
 const selectedDate: Ref<Dayjs> = ref(dayjs());
+const visibleDate: Ref<Dayjs> = ref(dayjs());
 
 const today: Ref<Dayjs> = ref(dayjs());
 const range = ref<[number, number]>([0, 0]);
@@ -84,9 +84,11 @@ onMounted(() => {
   fetchData();
 });
 
+const dateFormat = 'YYYY-MM-DD';
+
 const eventsWithDate = computed(() => get(events).data.map(item => ({
   ...item,
-  date: dayjs(item.timestamp * 1000).format('YYYY-MM-DD'),
+  date: dayjs(item.timestamp * 1000).format(dateFormat),
 })));
 
 function setSelectedDate(day: Dayjs) {
@@ -142,7 +144,20 @@ function deleteEvent() {
 
 setPostSubmitFunc(fetchData);
 
-const selectedDateEvents = computed(() => get(eventsWithDate).filter(item => item.date === get(selectedDate).format('YYYY-MM-DD')));
+const selectedDateEvents = ref<CalendarEvent[]>([]);
+
+watch(selectedDate, (selected) => {
+  set(visibleDate, selected);
+});
+
+watch([selectedDate, eventsWithDate], ([selectedDate, eventsWithDate]) => {
+  const selectedDateFormatted = selectedDate.format(dateFormat);
+  const events = eventsWithDate.filter(item => item.date === selectedDateFormatted);
+  if (events.length === 0 && selectedDateFormatted !== get(visibleDate).format(dateFormat))
+    return;
+
+  set(selectedDateEvents, events);
+});
 
 const route = useRoute();
 const router = useRouter();
@@ -193,22 +208,19 @@ onMounted(async () => {
             />
           </template>
           <div class="flex gap-4">
-            <CalendarNavigator
+            <CalendarMonthNavigator v-model="visibleDate" />
+            <CalendarDateNavigator
               v-model="selectedDate"
+              :visible-date="visibleDate"
+              :today="today"
+              @set-today="setToday()"
             />
-            <RuiButton
-              color="primary"
-              variant="outlined"
-              :disabled="selectedDate.isSame(today, 'day')"
-              @click="setToday()"
-            >
-              {{ t('calendar.today') }}
-            </RuiButton>
           </div>
         </HistoryTableActions>
         <CalendarGrid
           :today="today"
           :selected-date="selectedDate"
+          :visible-date="visibleDate"
           :events-with-date="eventsWithDate"
           @update:selected-date="setSelectedDate($event)"
           @update:range="range = $event"
@@ -244,6 +256,8 @@ onMounted(async () => {
           <CalendarEventList
             v-for="event in selectedDateEvents"
             :key="event.identifier"
+            :selected-date.sync="selectedDate"
+            :visible-date="visibleDate"
             :event="event"
             @edit="edit(event)"
           />

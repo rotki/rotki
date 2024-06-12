@@ -5,6 +5,7 @@ import type { CalendarEvent } from '@/types/history/calendar';
 const props = defineProps<{
   today: Dayjs;
   selectedDate: Dayjs;
+  visibleDate: Dayjs;
   eventsWithDate: (CalendarEvent & { date: string })[];
 }>();
 
@@ -27,17 +28,17 @@ function add() {
   emit('add');
 }
 
-const { today, selectedDate, eventsWithDate } = toRefs(props);
+const { today, selectedDate, visibleDate, eventsWithDate } = toRefs(props);
 
-const month = computed(() => Number(get(selectedDate).format('M')));
-const year = computed(() => Number(get(selectedDate).format('YYYY')));
+const month = computed(() => Number(get(visibleDate).format('M')));
+const year = computed(() => Number(get(visibleDate).format('YYYY')));
 
 function getWeekday(date: string | Dayjs) {
   const dayjsValue = typeof date === 'string' ? dayjs(date) : date;
   return dayjsValue.weekday();
 }
 
-const numberOfDaysInMonth: ComputedRef<number> = computed(() => dayjs(get(selectedDate)).daysInMonth());
+const numberOfDaysInMonth: ComputedRef<number> = computed(() => dayjs(get(visibleDate)).daysInMonth());
 
 const currentMonthDays = computed(() => [...new Array(get(numberOfDaysInMonth))].map((_, index) => ({
   date: dayjs(`${get(year)}-${get(month)}-${index + 1}`),
