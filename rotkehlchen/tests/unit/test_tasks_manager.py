@@ -964,6 +964,7 @@ def test_maybe_create_calendar_reminder(
         ethereum_inquirer: 'EthereumInquirer',
         db_settings: dict[str, Any],
         ens_data: tuple[list['EVMTxHash'], dict[str, Timestamp]],
+        add_subgraph_api_key,  # pylint: disable=unused-argument
 ) -> None:
     """Test that ENS reminders are created at the expiry time of ENS registrations and renewals."""
     ens_tx_hashes, latest_expiry_of_ens = ens_data

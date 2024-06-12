@@ -6,7 +6,11 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.modules.airdrops.decoder import ENS_ADDRESS
-from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
+from rotkehlchen.chain.ethereum.modules.ens.constants import (
+    CPT_ENS,
+    ENS_PUBLIC_RESOLVER_3_ADDRESS,
+    ENS_REGISTRY_WITH_FALLBACK,
+)
 from rotkehlchen.chain.ethereum.modules.ens.decoder import (
     ENS_GOVERNOR,
     ENS_PUBLIC_RESOLVER_2_ADDRESS,
@@ -67,6 +71,19 @@ def test_mint_ens_name(database, ethereum_inquirer, add_subgraph_api_key):  # py
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
+            sequence_index=41,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=ADDY,
+            notes=f'Transfer eth node ownership of subnode hania.eth to {ENS_REGISTRAR_CONTROLLER_1}',  # noqa: E501
+            counterparty=CPT_ENS,
+            address=ENS_REGISTRY_WITH_FALLBACK,
+        ), EvmEvent(
+            tx_hash=tx_hash,
             sequence_index=43,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -80,7 +97,33 @@ def test_mint_ens_name(database, ethereum_inquirer, add_subgraph_api_key):  # py
             address=ENS_REGISTRAR_CONTROLLER_1,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=44,
+            sequence_index=45,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=ADDY,
+            notes=f'Address for hania.eth changed to {ADDY}',
+            counterparty=CPT_ENS,
+            address=ENS_PUBLIC_RESOLVER_2_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=46,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=ADDY,
+            notes=f'Transfer eth node ownership of subnode hania.eth to {ADDY}',
+            counterparty=CPT_ENS,
+            address=ENS_REGISTRY_WITH_FALLBACK,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=47,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
@@ -94,7 +137,7 @@ def test_mint_ens_name(database, ethereum_inquirer, add_subgraph_api_key):  # py
             extra_data={'name': 'hania.eth', 'expires': expires_timestamp},
         ),
     ]
-    assert expected_events == events[0:3]
+    assert expected_events == events[0:6]
     erc721_asset = get_or_create_evm_token(  # TODO: Better way to test than this for ERC721 ...?
         userdb=database,
         evm_address=string_to_evm_address('0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85'),
@@ -102,9 +145,9 @@ def test_mint_ens_name(database, ethereum_inquirer, add_subgraph_api_key):  # py
         token_kind=EvmTokenKind.ERC721,
         evm_inquirer=ethereum_inquirer,
     )
-    assert events[3] == EvmEvent(
+    assert events[6] == EvmEvent(
         tx_hash=tx_hash,
-        sequence_index=45,
+        sequence_index=48,
         timestamp=timestamp,
         location=Location.ETHEREUM,
         event_type=HistoryEventType.TRADE,
@@ -112,7 +155,7 @@ def test_mint_ens_name(database, ethereum_inquirer, add_subgraph_api_key):  # py
         asset=erc721_asset,
         balance=Balance(amount=ONE),
         location_label=ADDY,
-        notes=f'Receive ENS name hania.eth from 0x283Af0B28c62C092C9727F1Ee09c02CA627EB7F5 to {ADDY}',  # noqa: E501
+        notes=f'Receive ENS name hania.eth from {ENS_REGISTRAR_CONTROLLER_1} to {ADDY}',
         counterparty=CPT_ENS,
         address=ENS_REGISTRAR_CONTROLLER_1,
         extra_data={
@@ -178,14 +221,12 @@ def test_text_changed_old_name(database, ethereum_inquirer, ethereum_accounts, a
 def test_set_resolver(database, ethereum_inquirer, ethereum_accounts, add_subgraph_api_key):  # pylint: disable=unused-argument
     tx_hex = deserialize_evm_tx_hash('0xae2cd848ce02c425bc50a8f46f8430eec32234475efb6fcff28315d2791329f6')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         database=database,
         tx_hash=tx_hex,
     )
-    timestamp = TimestampMS(1660047719000)
-    gas_str = '0.001069480808983134'
+    user_address, timestamp, gas_str, ens_old_reverse_registrar = ethereum_accounts[0], TimestampMS(1660047719000), '0.001069480808983134', '0x084b1c3C81545d370f3634392De611CaaBFf8148'  # noqa: E501
 
     expected_events = [EvmEvent(
         tx_hash=evmhash,
@@ -201,6 +242,19 @@ def test_set_resolver(database, ethereum_inquirer, ethereum_accounts, add_subgra
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=evmhash,
+        sequence_index=270,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH,
+        balance=Balance(),
+        location_label=user_address,
+        notes=f'Transfer addr.reverse node ownership of subnode with label hash 0xa5809490c7b97cf8ebf6dd2d9667569d617a4fdcccaf3dd7b4e74fbcdeda8fb0 to {ens_old_reverse_registrar}',  # noqa: E501
+        counterparty=CPT_ENS,
+        address=ENS_REGISTRY_WITH_FALLBACK,
+    ), EvmEvent(
+        tx_hash=evmhash,
         sequence_index=271,
         timestamp=timestamp,
         location=Location.ETHEREUM,
@@ -211,7 +265,7 @@ def test_set_resolver(database, ethereum_inquirer, ethereum_accounts, add_subgra
         location_label=user_address,
         notes='Set ENS address for nebolax.eth',
         counterparty=CPT_ENS,
-        address=string_to_evm_address('0x084b1c3C81545d370f3634392De611CaaBFf8148'),
+        address=ens_old_reverse_registrar,
     )]
     assert events == expected_events
 
@@ -304,6 +358,19 @@ def test_register_v2(database, ethereum_inquirer, ethereum_accounts, add_subgrap
             extra_data={'name': 'ens2qr.eth', 'expires': expires_timestamp},
         ), EvmEvent(
             tx_hash=evmhash,
+            sequence_index=285,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes='Transfer eth node ownership of subnode ens2qr.eth to 0xD4416b13d2b3a9aBae7AcD5D6C2BbDBE25686401',  # noqa: E501
+            counterparty=CPT_ENS,
+            address=ENS_REGISTRY_WITH_FALLBACK,
+        ), EvmEvent(
+            tx_hash=evmhash,
             sequence_index=289,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -315,6 +382,19 @@ def test_register_v2(database, ethereum_inquirer, ethereum_accounts, add_subgrap
             notes='Set ENS address for ens2qr.eth',
             counterparty=CPT_ENS,
             address=ENS_REGISTRAR_CONTROLLER_2,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=291,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes=f'Address for ens2qr.eth changed to {user_address}',
+            counterparty=CPT_ENS,
+            address=ENS_PUBLIC_RESOLVER_3_ADDRESS,
         ),
     ]
     assert events == expected_events
@@ -585,6 +665,19 @@ def test_for_truncated_labelhash(database, ethereum_inquirer, ethereum_accounts,
             address=None,
         ), EvmEvent(
             tx_hash=evmhash,
+            sequence_index=201,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes=f'Transfer eth node ownership of subnode cantillon.eth to {ENS_REGISTRAR_CONTROLLER_1}',  # noqa: E501
+            counterparty=CPT_ENS,
+            address=ENS_REGISTRY_WITH_FALLBACK,
+        ), EvmEvent(
+            tx_hash=evmhash,
             sequence_index=203,
             timestamp=timestamp,
             location=Location.ETHEREUM,
@@ -598,7 +691,33 @@ def test_for_truncated_labelhash(database, ethereum_inquirer, ethereum_accounts,
             address=ENS_REGISTRAR_CONTROLLER_1,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=204,
+            sequence_index=205,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes=f'Address for cantillon.eth changed to {user_address}',
+            counterparty=CPT_ENS,
+            address=ENS_PUBLIC_RESOLVER_2_ADDRESS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=206,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes=f'Transfer eth node ownership of subnode cantillon.eth to {user_address}',
+            counterparty=CPT_ENS,
+            address=ENS_REGISTRY_WITH_FALLBACK,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=207,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
@@ -612,7 +731,7 @@ def test_for_truncated_labelhash(database, ethereum_inquirer, ethereum_accounts,
             extra_data={'name': 'cantillon.eth', 'expires': expires_timestamp},
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=205,
+            sequence_index=208,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.TRADE,
@@ -781,3 +900,93 @@ def test_invalid_ens_name(globaldb: 'GlobalDBHandler'):
             assert cursor.execute(
                 f'SELECT COUNT(*) FROM unique_cache WHERE key LIKE "{cache_key.serialize()}%"',
             ).fetchone()[0] == 0
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
+def test_new_owner(database, ethereum_inquirer, ethereum_accounts, add_subgraph_api_key):  # pylint: disable=unused-argument
+    """Test assigning new owner to a subnode"""
+    tx_hex = deserialize_evm_tx_hash('0x56bb5b09757fadfbb376b207fe5f340df9931f8169b2e852679d57885f9ae1c1')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    timestamp, gas_str = TimestampMS(1669498319000), '0.0004635496'
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_str)),
+            location_label=user_address,
+            notes=f'Burned {gas_str} ETH for gas',
+            counterparty=CPT_GAS,
+            address=None,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=278,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes=f'Transfer eth node ownership of subnode karapetsas.eth to {ADDY}',
+            counterparty=CPT_ENS,
+            address=ENS_REGISTRY_WITH_FALLBACK,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
+def test_address_changed(database, ethereum_inquirer, ethereum_accounts, add_subgraph_api_key):  # pylint: disable=unused-argument
+    """Test address changed for a name"""
+    tx_hex = deserialize_evm_tx_hash('0x67cbfebb9027a004d341b6f57976ba970fae9af8be7f32161a93224cefbb3e83')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    timestamp, gas_str = TimestampMS(1669498439000), '0.000402353718699768'
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_str)),
+            location_label=user_address,
+            notes=f'Burned {gas_str} ETH for gas',
+            counterparty=CPT_GAS,
+            address=None,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=517,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes=f'Address for karapetsas.eth changed to {ADDY}',
+            counterparty=CPT_ENS,
+            address=ENS_PUBLIC_RESOLVER_2_ADDRESS,
+        ),
+    ]
+    assert events == expected_events
