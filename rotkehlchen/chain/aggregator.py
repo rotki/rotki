@@ -16,6 +16,9 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.accounts import BlockchainAccountData, BlockchainAccounts
+from rotkehlchen.chain.arbitrum_one.modules.gearbox.balances import (
+    GearboxBalances as GearboxBalancesArbitrumOne,
+)
 from rotkehlchen.chain.arbitrum_one.modules.gmx.balances import GmxBalances
 from rotkehlchen.chain.arbitrum_one.modules.thegraph.balances import (
     ThegraphBalances as ThegraphBalancesArbitrumOne,
@@ -43,10 +46,14 @@ from rotkehlchen.chain.ethereum.modules.blur.balances import BlurBalances
 from rotkehlchen.chain.ethereum.modules.convex.balances import ConvexBalances
 from rotkehlchen.chain.ethereum.modules.curve.balances import CurveBalances
 from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBalances
+from rotkehlchen.chain.ethereum.modules.gearbox.balances import GearboxBalances
 from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
 from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
+from rotkehlchen.chain.optimism.modules.gearbox.balances import (
+    GearboxBalances as GearboxBalancesOptimism,
+)
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
 from rotkehlchen.chain.substrate.manager import wait_until_a_node_is_available
 from rotkehlchen.chain.substrate.utils import SUBSTRATE_NODE_CONNECTION_TIMEOUT
@@ -197,10 +204,11 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         OctantBalances,
         EigenlayerBalances,
         BlurBalances,
+        GearboxBalances,
     ),
-    ChainID.OPTIMISM: (VelodromeBalances, HopBalances),
+    ChainID.OPTIMISM: (VelodromeBalances, HopBalances, GearboxBalancesOptimism),
     ChainID.BASE: (Compoundv3Balances, AerodromeBalances, HopBalances),
-    ChainID.ARBITRUM_ONE: (Compoundv3Balances, GmxBalances, ThegraphBalancesArbitrumOne, HopBalances),  # noqa: E501
+    ChainID.ARBITRUM_ONE: (Compoundv3Balances, GmxBalances, ThegraphBalancesArbitrumOne, HopBalances, GearboxBalancesArbitrumOne),  # noqa: E501
     ChainID.POLYGON_POS: (Compoundv3Balances, HopBalances),
     ChainID.GNOSIS: (HopBalances,),
     ChainID.SCROLL: (Compoundv3Balances,),
