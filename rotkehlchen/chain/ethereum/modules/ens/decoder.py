@@ -17,7 +17,6 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.errors.api import APIKeyNotConfigured
@@ -31,10 +30,35 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTokenKind, EVMTxHash
-from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address
+from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address, hex_or_bytes_to_str
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
-from .constants import CPT_ENS, ENS_CPT_DETAILS
+from .constants import (
+    ADDR_CHANGED,
+    CONTENT_HASH_CHANGED,
+    CPT_ENS,
+    ENS_BASE_REGISTRAR_IMPLEMENTATION,
+    ENS_CPT_DETAILS,
+    ENS_GOVERNOR,
+    ENS_PUBLIC_RESOLVER_2_ADDRESS,
+    ENS_PUBLIC_RESOLVER_3_ADDRESS,
+    ENS_REGISTRAR_CONTROLLER_1,
+    ENS_REGISTRAR_CONTROLLER_2,
+    ENS_REGISTRY_WITH_FALLBACK,
+    ENS_REVERSE_RESOLVER,
+    NAME_REGISTERED_BASE_COST_AND_PREMIUM,
+    NAME_REGISTERED_BASE_COST_AND_PREMIUM_ABI,
+    NAME_REGISTERED_SINGLE_COST,
+    NAME_REGISTERED_SINGLE_COST_ABI,
+    NAME_RENEWED,
+    NAME_RENEWED_ABI,
+    NEW_OWNER,
+    NEW_RESOLVER,
+    TEXT_CHANGED_KEY_AND_VALUE,
+    TEXT_CHANGED_KEY_AND_VALUE_ABI,
+    TEXT_CHANGED_KEY_ONLY,
+    TEXT_CHANGED_KEY_ONLY_ABI,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -44,29 +68,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-ENS_REGISTRAR_CONTROLLER_1 = string_to_evm_address('0x283Af0B28c62C092C9727F1Ee09c02CA627EB7F5')
-ENS_REGISTRAR_CONTROLLER_2 = string_to_evm_address('0x253553366Da8546fC250F225fe3d25d0C782303b')
-ENS_BASE_REGISTRAR_IMPLEMENTATION = string_to_evm_address('0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85')  # noqa: E501
-ENS_REGISTRY_WITH_FALLBACK = string_to_evm_address('0x00000000000C2E074eC69A0dFb2997BA6C7d2e1e')
-ENS_PUBLIC_RESOLVER_2_ADDRESS = string_to_evm_address('0x4976fb03C32e5B8cfe2b6cCB31c09Ba78EBaBa41')
-ENS_PUBLIC_RESOLVER_3_ADDRESS = string_to_evm_address('0x231b0Ee14048e9dCcD1d247744d114a4EB5E8E63')
-ENS_REVERSE_RESOLVER = string_to_evm_address('0xA2C122BE93b0074270ebeE7f6b7292C7deB45047')
-
-NAME_RENEWED = b'=\xa2L\x02E\x82\x93\x1c\xfa\xf8&}\x8e\xd2M\x13\xa8*\x80h\xd5\xbd3}0\xecE\xce\xa4\xe5\x06\xae'  # noqa: E501
-NAME_RENEWED_ABI = '{"anonymous":false,"inputs":[{"indexed":false,"internalType":"string","name":"name","type":"string"},{"indexed":true,"internalType":"bytes32","name":"label","type":"bytes32"},{"indexed":false,"internalType":"uint256","name":"cost","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"expires","type":"uint256"}],"name":"NameRenewed","type":"event"}'  # noqa: E501
-NEW_RESOLVER = b'3W!\xb0\x18f\xdc#\xfb\xee\x8bk,{\x1e\x14\xd6\xf0\\(\xcd5\xa2\xc94#\x9f\x94\tV\x02\xa0'  # noqa: E501
-NAME_REGISTERED_SINGLE_COST = b'\xcaj\xbb\xe9\xd7\xf1\x14"\xcbl\xa7b\x9f\xbfo\xe9\xef\xb1\xc6!\xf7\x1c\xe8\xf0+\x9f*#\x00\x97@O'  # noqa: E501
-NAME_REGISTERED_SINGLE_COST_ABI = '{"anonymous":false,"inputs":[{"indexed":false,"internalType":"string","name":"name","type":"string"},{"indexed":true,"internalType":"bytes32","name":"label","type":"bytes32"},{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":false,"internalType":"uint256","name":"cost","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"expires","type":"uint256"}],"name":"NameRegistered","type":"event"}'  # noqa: E501
-NAME_REGISTERED_BASE_COST_AND_PREMIUM = b"i\xe3\x7f\x15\x1e\xb9\x8a\ta\x8d\xda\xa8\x0c\x8c\xfa\xf1\xceY\x96\x86|H\x9fE\xb5U\xb4\x12'\x1e\xbf'"  # noqa: E501
-NAME_REGISTERED_BASE_COST_AND_PREMIUM_ABI = '{"anonymous":false,"inputs":[{"indexed":false,"internalType":"string","name":"name","type":"string"},{"indexed":true,"internalType":"bytes32","name":"label","type":"bytes32"},{"indexed":true,"internalType":"address","name":"owner","type":"address"},{"indexed":false,"internalType":"uint256","name":"baseCost","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"premium","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"expires","type":"uint256"}],"name":"NameRegistered","type":"event"}'  # noqa: E501
-TEXT_CHANGED_KEY_ONLY = b'\xd8\xc93K\x1a\x9c/\x9d\xa3B\xa0\xa2\xb3&)\xc1\xa2)\xb6D]\xadx\x94\x7fgKDDJuP'  # noqa: E501
-TEXT_CHANGED_KEY_ONLY_ABI = '{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"node","type":"bytes32"},{"indexed":true,"internalType":"string","name":"indexedKey","type":"string"},{"indexed":false,"internalType":"string","name":"key","type":"string"}],"name":"TextChanged","type":"event"}'  # noqa: E501
-TEXT_CHANGED_KEY_AND_VALUE = b'D\x8b\xc0\x14\xf1Sg&\xcf\x8dT\xff=d\x81\xed<\xbch<%\x91\xca Bt\x00\x9a\xfa\t\xb1\xa1'  # noqa: E501
-TEXT_CHANGED_KEY_AND_VALUE_ABI = '{"anonymous":false,"inputs":[{"indexed":true,"internalType":"bytes32","name":"node","type":"bytes32"},{"indexed":true,"internalType":"string","name":"indexedKey","type":"string"},{"indexed":false,"internalType":"string","name":"key","type":"string"},{"indexed":false,"internalType":"string","name":"value","type":"string"}],"name":"TextChanged","type":"event"}'  # noqa: E501
-CONTENT_HASH_CHANGED = b'\xe3y\xc1bN\xd7\xe7\x14\xcc\t7R\x8a25\x9di\xd5(\x137vS\x13\xdb\xa4\xe0\x81\xb7-ux'  # noqa: E501
-ENS_GOVERNOR = string_to_evm_address('0x323A76393544d5ecca80cd6ef2A560C6a395b7E3')
 
 
 def _save_hash_mappings_get_fullname(name: str, tx_hash: EVMTxHash) -> str:
@@ -121,6 +122,62 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
             database=self.database,
             label=CPT_ENS,
         )
+
+    def _maybe_get_labelhash_name(
+            self,
+            context: DecoderContext,
+            label_hash: str,
+            node: bytes | None = None,
+    ) -> str | None:
+        """Try to get the labelhash full name either from DB cache or the graph"""
+        if not label_hash.startswith('0x'):
+            label_hash = f'0x{label_hash}'
+        found_name = None
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            found_name = globaldb_get_unique_cache_value(cursor=cursor, key_parts=(CacheType.ENS_LABELHASH, label_hash))  # noqa: E501
+
+        if found_name:
+            return found_name
+
+        try:
+            result = self.graph.query(
+                querystr=f'query{{domains(first:1, where:{{labelhash:"{label_hash}"}}){{name}}}}')
+            found_name = result['domains'][0]['name']
+        except (RemoteError, KeyError, IndexError) as e:
+            msg = str(e)
+            if isinstance(e, KeyError):
+                msg = f'Missing key {msg}'
+            log.error(
+                f'Failed to query graph for token ID to ENS name '
+                f'in {context.transaction.tx_hash.hex()} due to {msg} '
+                f'during decoding events. Not adding name to event',
+            )
+        except APIKeyNotConfigured as e:
+            log.warning(
+                f'Not adding name to ENS event in {context.transaction.tx_hash.hex()} since '
+                f'The Graph cannot be queried. {e}',
+            )
+        else:  # succesfully queried the graph. Save in the cache
+            assert found_name is not None, 'should not be None here'
+            if '].addr.reverse' in found_name and node:  # then this node is not a namehash
+                try:  # this kind of result can be returned by the graph query and means we need to do reverse resolution  # noqa: E501
+                    found_name = self.ethereum.contracts.contract(ENS_REVERSE_RESOLVER).call(
+                        node_inquirer=self.ethereum,
+                        method_name='name',
+                        arguments=[node],
+                    )
+                except RemoteError as e:
+                    log.debug(f'Failed to reverse resolve ENS name: {e!s}')
+                    return None
+
+            with GlobalDBHandler().conn.write_ctx() as write_cursor:
+                globaldb_set_unique_cache_value(
+                    write_cursor=write_cursor,
+                    key_parts=(CacheType.ENS_LABELHASH, label_hash),
+                    value=found_name,  # type: ignore  # should not be None here
+                )
+
+        return found_name
 
     def _decode_ens_registrar_event(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] in (
@@ -251,32 +308,11 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
             return DEFAULT_DECODING_OUTPUT
 
         label_hash = '0x{:064x}'.format(transfer_event.extra_data['token_id'])  # type: ignore[index]  # ERC721 transfer always has extra data. This code is to transform the int token id to a 32 bytes hex label hash
-        with GlobalDBHandler().conn.read_ctx() as cursor:
-            found_name = globaldb_get_unique_cache_value(cursor=cursor, key_parts=(CacheType.ENS_LABELHASH, label_hash))  # noqa: E501
-
-        if found_name is None:  # ask the graph
-            try:
-                result = self.graph.query(
-                    querystr=f'query{{domains(first:1, where:{{labelhash:"{label_hash}"}}){{name}}}}')  # noqa: E501
-                name_to_show = result['domains'][0]['name'] + ' '
-            except (RemoteError, KeyError, IndexError) as e:
-                msg = str(e)
-                if isinstance(e, KeyError):
-                    msg = f'Missing key {msg}'
-                log.error(
-                    f'Failed to query graph for token ID to ENS name '
-                    f'in {context.transaction.tx_hash.hex()} due to {msg} '
-                    f'during decoding events. Not adding name to event',
-                )
-                name_to_show = ''
-            except APIKeyNotConfigured as e:
-                name_to_show = ''
-                log.warning(
-                    f'Not adding name to ENS event in {context.transaction.tx_hash.hex()} since '
-                    f'The Graph cannot be queried. {e}',
-                )
+        found_name = self._maybe_get_labelhash_name(context=context, label_hash=label_hash)
+        if found_name is None:
+            name_to_show = ''
         else:
-            name_to_show = f'{found_name}.eth '
+            name_to_show = f'{found_name}.eth ' if not found_name.endswith('.eth') else f'{found_name} '  # noqa: E501
 
         from_text = to_text = ''
         if transfer_event.event_type == HistoryEventType.SPEND:
@@ -298,11 +334,8 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
         transfer_event.notes = f'{verb} ENS name {name_to_show}{from_text}{to_text}'
         return DecodingOutput(event=transfer_event, refresh_balances=False)
 
-    def _decode_ens_registry_with_fallback_event(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_new_resolver(self, context: DecoderContext) -> DecodingOutput:
         """Decode event where address is set for an ENS name."""
-        if context.tx_log.topics[0] != NEW_RESOLVER:
-            return DEFAULT_DECODING_OUTPUT
-
         ens_name = self._get_name_to_show(node=context.tx_log.topics[1], tx_hash=context.transaction.tx_hash)  # noqa: E501
         suffix = ens_name if ens_name is not None else 'an ENS name'
 
@@ -321,6 +354,47 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
             counterparty=CPT_ENS,
             address=context.transaction.to_address,
         ))
+        return DEFAULT_DECODING_OUTPUT
+
+    def _decode_new_owner(self, context: DecoderContext) -> DecodingOutput:
+        if self.base.is_tracked(new_owner := hex_or_bytes_to_address(context.tx_log.data[:32])):
+            associated_address = new_owner
+        elif self.base.is_tracked(context.transaction.from_address):
+            associated_address = context.transaction.from_address
+        else:
+            return DEFAULT_DECODING_OUTPUT
+
+        node_name = self._get_name_to_show(node=(node := context.tx_log.topics[1]), tx_hash=context.transaction.tx_hash)  # noqa: E501
+        label_hash = '0x' + hex_or_bytes_to_str(context.tx_log.topics[2])
+        label_name = self._maybe_get_labelhash_name(context=context, label_hash=label_hash, node=node)  # noqa: E501
+
+        node_str = f'{node_name} node' if node_name else f'node witn nodehash {context.tx_log.topics[1].hex()}'  # noqa: E501
+        if label_name:
+            subnode_str = f'{label_name}.eth' if (not label_name.endswith('.eth') and node_name == 'eth') else label_name  # noqa: E501
+        else:
+            subnode_str = f'with label hash {label_hash}'
+
+        event = self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=associated_address,
+            notes=f'Transfer {node_str} ownership of subnode {subnode_str} to {new_owner}',
+            address=context.tx_log.address,
+            counterparty=CPT_ENS,
+        )
+        return DecodingOutput(event=event)
+
+    def _decode_ens_registry_with_fallback_event(self, context: DecoderContext) -> DecodingOutput:
+        """Decode event where address is set for an ENS name."""
+        if context.tx_log.topics[0] == NEW_RESOLVER:
+            return self._decode_new_resolver(context)
+        elif context.tx_log.topics[0] == NEW_OWNER:
+            return self._decode_new_owner(context)
+
         return DEFAULT_DECODING_OUTPUT
 
     def _get_name_to_show(self, node: bytes, tx_hash: EVMTxHash) -> str | None:
@@ -362,7 +436,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
                             arguments=[node],
                         )
                     except RemoteError as e:
-                        log.debug(f'Failed to reverse resolve ENS name ue to {e!s}')
+                        log.debug(f'Failed to reverse resolve ENS name: {e!s}')
                         return None
 
         elif queried_graph:  # if we successfully asked the graph, save the mapping
@@ -415,6 +489,32 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
         ))
         return DEFAULT_DECODING_OUTPUT
 
+    def _decode_addr_changed(self, context: DecoderContext) -> DecodingOutput:
+
+        if self.base.is_tracked(new_address := hex_or_bytes_to_address(context.tx_log.data[:32])):
+            associated_address = new_address
+        elif self.base.is_tracked(context.transaction.from_address):
+            associated_address = context.transaction.from_address
+        else:
+            return DEFAULT_DECODING_OUTPUT
+
+        node = context.tx_log.topics[1]  # node is a hash of the name used by ens internals
+        name = self._get_name_to_show(node=node, tx_hash=context.transaction.tx_hash)
+        name_str = name or f'name with nodehash {node.hex()}'
+        event = self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=associated_address,
+            notes=f'Address for {name_str} changed to {new_address}',
+            address=context.tx_log.address,
+            counterparty=CPT_ENS,
+        )
+        return DecodingOutput(event=event)
+
     def _decode_ens_public_resolver_events(self, context: DecoderContext) -> DecodingOutput:
         """Decode events that modify the ENS resolver.
 
@@ -423,6 +523,9 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
         """
         if context.tx_log.topics[0] == CONTENT_HASH_CHANGED:
             return self._decode_ens_public_resolver_content_hash(context)
+
+        if context.tx_log.topics[0] == ADDR_CHANGED:
+            return self._decode_addr_changed(context)
 
         # else by now it should only be text attribute changes
         if context.tx_log.topics[0] not in (TEXT_CHANGED_KEY_ONLY, TEXT_CHANGED_KEY_AND_VALUE):

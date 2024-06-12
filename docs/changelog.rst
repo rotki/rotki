@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` ENS transaction events involving new owner for a name/subname and address changing should now be decoded properly.
 * :feature:`7544` Gearbox protocol events and balances are now decoded and detected on all supported evm chains.
 * :feature:`-` HOP governance events will now be properly decoded.
 * :feature:`7974` Users will now be able to filter manual balances by asset, label and location.
