@@ -9,7 +9,7 @@ from PyInstaller.utils.hooks import collect_submodules
 
 from rotkehlchen.constants.misc import GLOBALDB_NAME
 from rotkehlchen.exchanges.constants import SUPPORTED_EXCHANGES
-from rotkehlchen.types import Location
+from rotkehlchen.types import EVM_CHAINS_WITH_TRANSACTIONS, Location
 from rotkehlchen.utils.misc import get_system_spec
 
 """
@@ -58,15 +58,8 @@ for exchange_name in SUPPORTED_EXCHANGES:
         continue
     hiddenimports.append(f'rotkehlchen.exchanges.{exchange_name}')
 
-# TODO: Make this dynamic you dummy
-ethereum_modules = collect_submodules('rotkehlchen.chain.ethereum.modules')
-optimism_modules = collect_submodules('rotkehlchen.chain.optimism.modules')
-polygon_pos_modules = collect_submodules('rotkehlchen.chain.polygon_pos.modules')
-arbitrum_one_modules = collect_submodules('rotkehlchen.chain.arbitrum_one.modules')
-gnosis_modules = collect_submodules('rotkehlchen.chain.gnosis.modules')
-base_modules = collect_submodules('rotkehlchen.chain.base.modules')
-dynamic_modules = ethereum_modules + optimism_modules + polygon_pos_modules + arbitrum_one_modules + gnosis_modules + base_modules
-hiddenimports.extend(dynamic_modules)
+for chain in EVM_CHAINS_WITH_TRANSACTIONS:  # load modules from the evm chains
+    hiddenimports.extend(collect_submodules(f'rotkehlchen.chain.{chain.serialize()}.modules'))
 
 a = Entrypoint(
     'rotkehlchen',
