@@ -115,6 +115,8 @@ const childHeaders = computed<DataTableColumn[]>(() => [
 ]);
 
 const isIgnored = (asset: string) => get(isAssetIgnored(asset));
+
+const css = useCssModule();
 </script>
 
 <template>
@@ -123,7 +125,7 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
       ref="tableRef"
       class="table-inside-dialog"
       :class="{
-        [$style['table--pinned']]: isPinned,
+        [css['table--pinned']]: isPinned,
       }"
       :cols="headers"
       :rows="groupedMissingAcquisitions"

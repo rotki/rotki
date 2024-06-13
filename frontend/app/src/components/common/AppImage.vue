@@ -13,6 +13,7 @@ const props = withDefaults(
     sizes?: string;
     alt?: string;
     contain?: boolean;
+    loading?: boolean;
   }>(),
   {
     width: undefined,
@@ -25,6 +26,7 @@ const props = withDefaults(
     srcset: undefined,
     alt: undefined,
     contain: false,
+    loading: false,
   },
 );
 
@@ -71,7 +73,12 @@ function onLoadStart() {
 
 <template>
   <div :class="css.wrapper">
+    <RuiSkeletonLoader
+      v-if="loading"
+      :style="style"
+    />
     <img
+      v-else
       :alt="alt"
       :class="{ 'object-contain': contain }"
       :style="style"

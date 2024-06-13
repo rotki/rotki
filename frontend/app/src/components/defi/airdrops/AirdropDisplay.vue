@@ -4,7 +4,7 @@ const props = defineProps<{
   iconUrl?: string;
 }>();
 
-const { getAirdropName, getAirdropImageUrl } = useAirdropsMetadata();
+const { getAirdropName, getAirdropImageUrl, loading } = useAirdropsMetadata();
 
 const { source } = toRefs(props);
 
@@ -20,6 +20,7 @@ const image = getAirdropImageUrl(source);
         width="1.5rem"
         height="1.5rem"
         contain
+        :loading="loading"
         max-height="2rem"
         max-width="2rem"
       />
