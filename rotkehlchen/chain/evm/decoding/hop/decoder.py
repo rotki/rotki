@@ -316,6 +316,7 @@ class HopCommonDecoder(DecoderInterface):
             token_decimals=DEFAULT_TOKEN_DECIMALS,
         )
         token_amounts = {x for x in (first_token_amount, second_token_amount) if x != ZERO}
+        out_event1, out_event2, in_event = None, None, None
         for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.SPEND and
@@ -327,6 +328,10 @@ class HopCommonDecoder(DecoderInterface):
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_HOP
                 event.notes = f'Deposit {event.balance.amount} {event.asset.symbol_or_name()} to Hop'  # noqa: E501
+                if out_event1 is None:
+                    out_event1 = event
+                else:
+                    out_event2 = event  # type: ignore # not unreachabla
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
@@ -336,7 +341,12 @@ class HopCommonDecoder(DecoderInterface):
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                 event.counterparty = CPT_HOP
                 event.notes = f'Receive {event.balance.amount} {event.asset.symbol_or_name()} after providing liquidity in Hop'  # noqa: E501
+                in_event = event
 
+        maybe_reshuffle_events(
+            ordered_events=[out_event1, out_event2, in_event],
+            events_list=context.decoded_events,
+        )
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_remove_liquidity(self, context: DecoderContext, lp_amount_raw: int) -> DecodingOutput:  # noqa: E501
@@ -391,6 +401,7 @@ class HopCommonDecoder(DecoderInterface):
         """This function is used to enrich the RemoveLiquidity and RemoveLiquidityOne events
         with proper event types and notes.
         """
+        out_event, in_event1, in_event2 = None, None, None
         for event in decoded_events:
             if (
                 event.event_type == HistoryEventType.SPEND and
@@ -401,6 +412,7 @@ class HopCommonDecoder(DecoderInterface):
                 event.event_subtype = HistoryEventSubType.RETURN_WRAPPED
                 event.counterparty = CPT_HOP
                 event.notes = f'Return {event.balance.amount} {event.asset.symbol_or_name()}'
+                out_event = event
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
@@ -411,7 +423,15 @@ class HopCommonDecoder(DecoderInterface):
                 event.event_subtype = HistoryEventSubType.REMOVE_ASSET
                 event.counterparty = CPT_HOP
                 event.notes = f'Withdraw {event.balance.amount} {event.asset.symbol_or_name()} from Hop'  # noqa: E501
+                if in_event1 is None:
+                    in_event1 = event
+                else:
+                    in_event2 = event  # type: ignore # not unreachabla
 
+        maybe_reshuffle_events(
+            ordered_events=[out_event, in_event1, in_event2],
+            events_list=decoded_events,
+        )
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_saddle_swap(self, context: DecoderContext) -> DecodingOutput:
