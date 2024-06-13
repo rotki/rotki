@@ -173,16 +173,18 @@ watchDebounced(isLoading(Section.PRICES), async (isLoading, wasLoading) => {
             {{ title }}
           </span>
           <div class="grow" />
-          <TagFilter
-            v-model="tags"
-            class="max-w-sm"
-            hide-details
-          />
-          <TableFilter
-            :matchers="matchers"
-            :matches.sync="filters"
-            class="max-w-sm"
-          />
+          <div class="flex flex-col sm:flex-row flex-1 gap-2 min-w-full md:min-w-[40rem]">
+            <TagFilter
+              v-model="tags"
+              class="w-full flex-1"
+              hide-details
+            />
+            <TableFilter
+              class="w-full flex-1"
+              :matchers="matchers"
+              :matches.sync="filters"
+            />
+          </div>
         </div>
       </div>
     </template>
