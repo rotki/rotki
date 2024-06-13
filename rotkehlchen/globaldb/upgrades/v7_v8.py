@@ -107,6 +107,19 @@ def set_unique_asset_collections(write_cursor: 'DBCursor') -> None:
     )
 
 
+@enter_exit_debug_log()
+def _update_scrollscan_contract(cursor: 'DBCursor') -> None:
+    """Update the balance scanner contract in scroll to use the
+    same version as we use in other chains"""
+    cursor.execute(
+        'UPDATE contract_data SET address=? WHERE address=? AND chain_id=534352',
+        (
+            '0xc97EE9490F4e3A3136A513DB38E3C7b47e69303B',
+            '0xAB392016859663Ce1267f8f243f9F2C02d93bad8',
+        ),
+    )
+
+
 @enter_exit_debug_log(name='globaldb v7->v8 upgrade')
 def migrate_to_v8(connection: 'DBConnection') -> None:
     """This globalDB upgrade does the following:
@@ -117,3 +130,4 @@ def migrate_to_v8(connection: 'DBConnection') -> None:
     with connection.write_ctx() as write_cursor:
         fix_detected_spam_tokens(write_cursor)
         set_unique_asset_collections(write_cursor)
+        _update_scrollscan_contract(write_cursor)

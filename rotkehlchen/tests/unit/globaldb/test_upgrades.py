@@ -628,6 +628,10 @@ def test_upgrade_v7_v8(globaldb: GlobalDBHandler):
             'SELECT COUNT(*) from general_cache where key=? AND value=?',
             ('SPAM_ASSET_FALSE_POSITIVE', 'eip155:1/erc20:0xA0b73E1Ff0B80914AB6fe0444E65848C4C34450b'),  # noqa: E501
         ).fetchone()[0] == 0
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM contract_data WHERE address=?',
+            ('0xAB392016859663Ce1267f8f243f9F2C02d93bad8',),
+        ).fetchone()[0] == 1
 
         # check that asset asset_collections table have duplicated entries
         unique_entries = {}
@@ -698,6 +702,15 @@ def test_upgrade_v7_v8(globaldb: GlobalDBHandler):
         assert v7_multiasset_mappings == cursor.execute(
             'SELECT rowid, collection_id, asset FROM multiasset_mappings;',
         ).fetchall()
+
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM contract_data WHERE address=?',
+            ('0xAB392016859663Ce1267f8f243f9F2C02d93bad8',),
+        ).fetchone()[0] == 0
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM contract_data WHERE address=?',
+            ('0xc97EE9490F4e3A3136A513DB38E3C7b47e69303B',),
+        ).fetchone()[0] == 1
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
