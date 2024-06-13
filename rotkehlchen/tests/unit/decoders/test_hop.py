@@ -10,6 +10,7 @@ from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import (
+    A_ARB,
     A_ETH,
     A_USDC,
     A_WETH_ARB,
@@ -1108,6 +1109,64 @@ def test_hop_stake(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D']])
+def test_hop_stake_2(
+        database: 'DBHandler',
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0xe0c1f6f152422784a4e4346d84af7d32fda95eab17da257f3fdc5121f4a6fbc8')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas, stake_amount, approval_amount = TimestampMS(1718269403000), '0.00000199918', '0.005676129314105837', '115792089237316195423570985008687907853269984665640564039457.578331783815534098'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Burned {gas} ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=43,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=Asset('eip155:42161/erc20:0x59745774Ed5EfF903e615F5A2282Cae03484985a'),
+            balance=Balance(amount=FVal(stake_amount)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Stake {stake_amount} HOP-LP-ETH in Hop',
+            tx_hash=tx_hash,
+            counterparty=CPT_HOP,
+            product=EvmProduct.STAKING,
+            address=string_to_evm_address('0x00001fcF29c5Fd7846E4332AfBFaA48701D727f5'),
+        ), EvmEvent(
+            sequence_index=44,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:42161/erc20:0x59745774Ed5EfF903e615F5A2282Cae03484985a'),
+            balance=Balance(amount=FVal(approval_amount)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Set HOP-LP-ETH spending approval of {arbitrum_one_accounts[0]} by 0x00001fcF29c5Fd7846E4332AfBFaA48701D727f5 to {approval_amount}',  # noqa: E501
+            tx_hash=tx_hash,
+            address=string_to_evm_address('0x00001fcF29c5Fd7846E4332AfBFaA48701D727f5'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x73F809c0B3cF18d40463D05Ba4b95067cb51393B']])
 def test_hop_claim_rewards(
         database: 'DBHandler',
@@ -1147,6 +1206,51 @@ def test_hop_claim_rewards(
             tx_hash=tx_hash,
             counterparty=CPT_HOP,
             address=string_to_evm_address('0x755569159598f3702bdD7DFF6233A317C156d3Dd'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0xA252bd92293B0eb9BEB1C2cF72F794F8a3a54348']])
+def test_hop_claim_rewards_2(
+        database: 'DBHandler',
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0x85b7ca62b27f78f59bcb9fd52ab18c05f3f143ff4df00c70d4f9a3edfa5eea19')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas, reward_amount = TimestampMS(1718278937000), '0.00000171746', '1.305947476028639625'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Burned {gas} ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=4,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_ARB,
+            balance=Balance(amount=FVal(reward_amount)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Claim {reward_amount} ARB from Hop',
+            tx_hash=tx_hash,
+            counterparty=CPT_HOP,
+            address=string_to_evm_address('0x00001fcF29c5Fd7846E4332AfBFaA48701D727f5'),
         ),
     ]
     assert events == expected_events

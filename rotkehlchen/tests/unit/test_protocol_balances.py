@@ -35,6 +35,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
 from rotkehlchen.constants.assets import (
     A_AAVE,
+    A_ARB,
     A_CVX,
     A_ETH,
     A_GLM,
@@ -771,6 +772,37 @@ def test_hop_balances_staking(
             amount=lp_amount, usd_value=lp_amount * FVal(1.5),
         ),
         Asset('eip155:42161/erc20:0xc5102fE9359FD9a28f877a67E36B0F050d81a3CC'): Balance(
+            amount=reward_amount, usd_value=reward_amount * FVal(1.5),
+        ),
+    }
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('arbitrum_one_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D']])
+def test_hop_balances_staking_2(
+        arbitrum_one_inquirer: 'ArbitrumOneInquirer',
+        arbitrum_one_transaction_decoder: 'ArbitrumOneTransactionDecoder',
+        arbitrum_one_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Test the balance query for staked hop lp balances. It adds a staking event
+    and then queries the balances for that address."""
+    lp_amount, reward_amount = FVal('0.005676129314105837'), FVal('0.008945843949587174')
+    get_decoded_events_of_transaction(
+        evm_inquirer=arbitrum_one_inquirer,
+        database=arbitrum_one_transaction_decoder.database,
+        tx_hash=deserialize_evm_tx_hash('0xe0c1f6f152422784a4e4346d84af7d32fda95eab17da257f3fdc5121f4a6fbc8'),
+    )
+    balances_inquirer = HopBalances(
+        database=arbitrum_one_transaction_decoder.database,
+        evm_inquirer=arbitrum_one_inquirer,
+    )
+    balances = balances_inquirer.query_balances()
+    assert balances[arbitrum_one_accounts[0]].assets == {
+        Asset('eip155:42161/erc20:0x59745774Ed5EfF903e615F5A2282Cae03484985a'): Balance(
+            amount=lp_amount, usd_value=lp_amount * FVal(1.5),
+        ),
+        A_ARB: Balance(
             amount=reward_amount, usd_value=reward_amount * FVal(1.5),
         ),
     }
