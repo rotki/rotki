@@ -1166,3 +1166,46 @@ def test_aave_unstake(database, ethereum_inquirer: 'EthereumInquirer', ethereum_
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x9C836687964D89B52Ae80E3e941745Ddd67e5222']])
+def test_stake_reward(database, ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
+    """Test that the decoder can decode aave reward claiming"""
+    tx_hash = deserialize_evm_tx_hash('0xc8ed217572a15a81891ad6480a56150d5b2721c9e517564c3e8ead4439cdcb62')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas_fees, amount = TimestampMS(1712099315000), '0.002299167729873168', '0.724507060516081735'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label=ethereum_accounts[0],
+            notes=f'Burned {gas_fees} ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=330,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_AAVE,
+            balance=Balance(amount=FVal(amount)),
+            location_label=ethereum_accounts[0],
+            notes=f'Claim {amount} AAVE from staking',
+            tx_hash=tx_hash,
+            address=STK_AAVE_ADDR,
+            counterparty=CPT_AAVE,
+            product=EvmProduct.STAKING,
+        ),
+    ]
+    assert events == expected_events
