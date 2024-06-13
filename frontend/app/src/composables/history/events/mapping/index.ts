@@ -30,9 +30,48 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     entryTypeMappings: {},
   });
 
+  const { notify } = useNotificationsStore();
+
+  const fetchError = ref<boolean>(true);
+
+  const refresh = async () => {
+    if (get(fetchError)) {
+      try {
+        set(historyEventTypeData, await getTransactionTypeMappings());
+      }
+      catch (error: any) {
+        onFetchError(error);
+      }
+    }
+  };
+
+  const onFetchError = (e: any) => {
+    set(fetchError, true);
+    notify({
+      display: true,
+      title: t('actions.history_events.fetch_mapping.error.title'),
+      message: t('actions.history_events.fetch_mapping.error.description', {
+        message: e.message,
+      }),
+      action: [
+        {
+          label: t('actions.history_events.fetch_mapping.actions.fetch_again'),
+          action: refresh,
+          icon: 'refresh-line',
+        },
+      ],
+    });
+  };
+
   const historyEventTypeData: Ref<HistoryEventTypeData> = asyncComputed<HistoryEventTypeData>(
-    () => getTransactionTypeMappings(),
+    () => {
+      set(fetchError, false);
+      return getTransactionTypeMappings();
+    },
     defaultHistoryEventTypeData(),
+    {
+      onError: onFetchError,
+    },
   );
 
   const historyEventTypeGlobalMapping = useRefMap(
@@ -205,5 +244,6 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     historyEventTypeGlobalMapping,
     accountingEventsTypeData,
     getAccountingEventTypeData,
+    refresh,
   };
 });

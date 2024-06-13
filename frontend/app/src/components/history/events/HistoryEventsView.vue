@@ -612,6 +612,9 @@ onMounted(async () => {
 });
 
 async function refresh(userInitiated = false) {
+  if (userInitiated)
+    startPromise(useHistoryEventMappings().refresh());
+
   set(currentAction, 'query');
   const entryTypesVal = get(entryTypes) || [];
   const disableEvmEvents = entryTypesVal.length > 0 && !entryTypesVal.includes(HistoryEventEntryType.EVM_EVENT);

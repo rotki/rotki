@@ -686,6 +686,15 @@
         "re_decode": "Redecode event",
         "edit": "Edit event",
         "add_rule": "Add missing accounting rule"
+      },
+      "fetch_mapping": {
+        "error": {
+          "title": "History events mapping",
+          "description": "Failed to fetch history events mapping: {message}"
+        },
+        "actions": {
+          "fetch_again": "Fetch again"
+        }
       }
     },
     "history_events_export": {
