@@ -256,6 +256,7 @@ function expand(row: Account) {
     :group="isBtcNetwork ? ['groupId'] : undefined"
     single-expand
     outlined
+    dense
     sticky-header
     v-on="
       // eslint-disable-next-line vue/no-deprecated-dollar-listeners-api

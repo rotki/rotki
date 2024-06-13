@@ -159,7 +159,7 @@ const css = useCssModule();
   }
 
   &.submenu {
-    @apply pl-12 text-sm;
+    @apply pl-12 pr-0 text-sm;
   }
 
   &.mini {

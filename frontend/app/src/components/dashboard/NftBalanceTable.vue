@@ -193,6 +193,7 @@ watch(loading, async (isLoading, wasLoading) => {
           row-attr="id"
           sticky-header
           outlined
+          dense
         >
           <template #item.name="{ row }">
             <NftDetails :identifier="row.id" />
