@@ -2,14 +2,12 @@
 withDefaults(
   defineProps<{
     title?: string;
-    locked?: boolean;
     loading?: boolean;
     protocolIcon?: string;
     bordered?: boolean;
   }>(),
   {
     title: '',
-    locked: false,
     loading: false,
     protocolIcon: '',
     bordered: false,
@@ -30,9 +28,10 @@ withDefaults(
         <AppImage
           v-if="protocolIcon"
           contain
-          alt="Protocol Logo"
+          :alt="title"
           class="icon-bg"
           size="36px"
+          :loading="loading"
           :src="protocolIcon"
         />
       </div>
@@ -41,18 +40,8 @@ withDefaults(
           <CardTitle v-if="title">
             {{ title }}
           </CardTitle>
-          <PremiumLock
-            v-if="locked"
-            class="mx-auto"
-          />
         </div>
-        <span v-if="!locked && loading">
-          <RuiProgress
-            variant="indeterminate"
-            color="primary"
-          />
-        </span>
-        <slot v-else-if="!locked" />
+        <slot />
       </div>
     </div>
   </RuiCard>

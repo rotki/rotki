@@ -37,16 +37,18 @@ const totalInterestOwed = computed(() => {
   return makerVault.totalInterestOwed;
 });
 const dai: string = assetSymbolToIdentifierMap.DAI;
+
+const css = useCssModule();
 </script>
 
 <template>
   <StatCard
     :title="t('loan_liquidation.title')"
-    :class="$style.liquidation"
+    :class="css.liquidation"
   >
     <div
       class="pb-5"
-      :class="$style.upper"
+      :class="css.upper"
     >
       <LoanRow :title="t('loan_liquidation.liquidation_price')">
         <AmountDisplay
@@ -66,7 +68,7 @@ const dai: string = assetSymbolToIdentifierMap.DAI;
     </div>
     <div>
       <span
-        :class="$style.header"
+        :class="css.header"
         class="text-rui-text"
       >
         {{ t('loan_liquidation.liquidation_events') }}

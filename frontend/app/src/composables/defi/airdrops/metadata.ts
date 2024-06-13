@@ -6,6 +6,7 @@ export const useAirdropsMetadata = createSharedComposable(() => {
   const { fetchAirdropsMetadata } = useDefiApi();
 
   const { connected } = toRefs(useMainStore());
+  const loading = ref<boolean>(false);
 
   const metadata: Ref<ProtocolMetadata[]> = asyncComputed<
     ProtocolMetadata[]
@@ -14,7 +15,7 @@ export const useAirdropsMetadata = createSharedComposable(() => {
       return fetchAirdropsMetadata();
 
     return [];
-  }, []);
+  }, [], { evaluating: loading });
 
   const getAirdropData = (
     identifier: MaybeRef<string>,
@@ -38,7 +39,7 @@ export const useAirdropsMetadata = createSharedComposable(() => {
         return data.iconUrl;
 
       const image
-        = data?.icon ?? `${get(identifier)}.svg`;
+        = data?.icon ?? `${transformCase(get(identifier), false)}.svg`;
 
       return `./assets/images/protocols/${image}`;
     });
@@ -46,5 +47,6 @@ export const useAirdropsMetadata = createSharedComposable(() => {
   return {
     getAirdropName,
     getAirdropImageUrl,
+    loading,
   };
 });

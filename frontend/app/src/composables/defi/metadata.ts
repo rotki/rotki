@@ -7,6 +7,8 @@ export const useDefiMetadata = createSharedComposable(() => {
 
   const { connected } = toRefs(useMainStore());
 
+  const loading = ref<boolean>(false);
+
   const metadata: Ref<ProtocolMetadata[]> = asyncComputed<
     ProtocolMetadata[]
   >(() => {
@@ -14,7 +16,7 @@ export const useDefiMetadata = createSharedComposable(() => {
       return fetchDefiMetadata();
 
     return [];
-  }, []);
+  }, [], { evaluating: loading });
 
   const getDefiData = (
     identifier: MaybeRef<string>,
@@ -58,5 +60,6 @@ export const useDefiMetadata = createSharedComposable(() => {
     getDefiName,
     getDefiImage,
     getDefiIdentifierByName,
+    loading,
   };
 });

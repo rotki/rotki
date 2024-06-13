@@ -21,7 +21,7 @@ const assets = computed(() => {
   );
 });
 
-const { getDefiName, getDefiImage } = useDefiMetadata();
+const { getDefiName, getDefiImage, loading } = useDefiMetadata();
 
 const protocol = useRefMap(summary, i => i.protocol);
 const reactiveDecoder = reactify(decodeHtmlEntities);
@@ -44,6 +44,7 @@ const imageUrl = computed(() => {
     :title="name"
     :protocol-icon="imageUrl"
     bordered
+    :loading="loading"
   >
     <div v-if="summary.liabilities">
       <div class="text-subtitle-1 font-bold pb-2 flex flex-row justify-between">
@@ -116,6 +117,7 @@ const imageUrl = computed(() => {
     bordered
     :title="name"
     :protocol-icon="imageUrl"
+    :loading="loading"
   >
     <span
       v-if="summary.tokenInfo"
@@ -157,6 +159,7 @@ const imageUrl = computed(() => {
           <template #custom-header>
             <div class="flex items-center p-4 gap-4">
               <AppImage
+                :loading="loading"
                 :src="imageUrl"
                 size="32px"
                 contain

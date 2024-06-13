@@ -9,16 +9,20 @@ withDefaults(
     tooltipOption: undefined,
   },
 );
+
+const css = useCssModule();
 </script>
 
 <template>
   <div
     v-if="tooltipOption"
     :id="tooltipOption.id"
-    :class="{
-      [$style.tooltip]: true,
-      [$style.tooltip__show]: tooltipOption.visible,
-    }"
+    :class="[
+      css.tooltip,
+      {
+        [css.tooltip__show]: tooltipOption.visible,
+      },
+    ]"
     class="bg-white dark:bg-black"
     :data-align-x="tooltipOption.xAlign"
     :data-align-y="tooltipOption.yAlign"

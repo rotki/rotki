@@ -171,7 +171,6 @@ watch([symbol, identifier], () => {
             contain
             :alt="displayAsset"
             :src="url"
-            loading="lazy"
             :size="size"
             @loadstart="pending = true"
             @load="pending = false"
