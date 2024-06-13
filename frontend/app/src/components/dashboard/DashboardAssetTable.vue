@@ -254,6 +254,7 @@ watch(search, () => setPage(1));
       sticky-header
       single-expand
       outlined
+      dense
       @update:pagination="setTablePagination($event)"
     >
       <template #item.asset="{ row }">

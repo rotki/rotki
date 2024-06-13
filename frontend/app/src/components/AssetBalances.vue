@@ -116,6 +116,7 @@ function expand(item: AssetBalanceWithPrice) {
     row-attr="asset"
     single-expand
     outlined
+    dense
   >
     <template #item.asset="{ row }">
       <AssetDetails

@@ -118,6 +118,7 @@ function expand(item: CustomAsset) {
       single-expand
       sticky-header
       outlined
+      dense
       class="custom-assets-table"
     >
       <template #item.name="{ row }">
