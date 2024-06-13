@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useRotkiTheme } from '@rotki/ui-library-compat';
-
 const DevApp = defineAsyncComponent(() => import('@/DevApp.vue'));
 
 const { animationsEnabled } = storeToRefs(useSessionSettingsStore());
@@ -25,8 +23,6 @@ function setLanguage(language: string) {
 watch(adaptiveLanguage, (language) => {
   setLanguage(language);
 });
-
-const { isDark } = useRotkiTheme();
 </script>
 
 <template>
@@ -34,8 +30,8 @@ const { isDark } = useRotkiTheme();
     v-if="!isPlayground"
     id="rotki"
     :key="adaptiveLanguage"
-    class="app !text-rui-text"
-    :class="{ ['app--animations-disabled']: !animationsEnabled, '!bg-rui-grey-50': !isDark, '!bg-[#121212]': isDark }"
+    class="app !text-rui-text bg-rui-grey-50 dark:bg-[#121212]"
+    :class="{ ['app--animations-disabled']: !animationsEnabled }"
   >
     <slot />
     <AppPremiumManager />

@@ -121,9 +121,7 @@ const shouldShowScrollToTopButton: ComputedRef<boolean> = computed(
 <style scoped lang="scss">
 .app {
   &-main {
-    padding-top: 1rem;
-    padding-bottom: 4rem;
-    width: 100%;
+    @apply pt-6 pb-16 w-full;
     min-height: calc(100vh - 64px);
 
     &.small {
@@ -131,7 +129,7 @@ const shouldShowScrollToTopButton: ComputedRef<boolean> = computed(
     }
 
     &.expanded {
-      padding-left: 300px;
+      @apply pl-[300px];
     }
   }
 }
