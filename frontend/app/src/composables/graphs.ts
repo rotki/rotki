@@ -27,7 +27,7 @@ export function useGraph(canvasId: string) {
 
   const gradient = computed(() => {
     const context = getCanvasCtx();
-    const areaGradient = context.createLinearGradient(0, 0, 0, 200);
+    const areaGradient = context.createLinearGradient(0, 0, 0, context.canvas.height * 0.5 || 300);
     areaGradient.addColorStop(0, get(baseColor));
     areaGradient.addColorStop(1, `${get(fadeColor)}00`);
     return areaGradient;

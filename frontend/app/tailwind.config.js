@@ -8,6 +8,9 @@ module.exports = {
     './src/pages/**/*.vue',
   ],
   theme: {
+    container: {
+      center: true,
+    },
     extend: {},
   },
   // Classes for premium components

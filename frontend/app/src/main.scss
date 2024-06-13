@@ -7,6 +7,9 @@
 html {
   @apply overflow-y-hidden #{!important};
   @apply max-h-screen;
+
+  // Fix the issue where the weird font looks bolder than it is supposed to be.
+  @apply antialiased;
 }
 
 body {
@@ -44,12 +47,6 @@ input {
   }
 }
 
-.v-application {
-  &--wrap {
-    @apply min-h-0 #{!important};
-  }
-}
-
 .skeleton {
   @apply animate-pulse bg-gray-200 dark:bg-gray-800;
 }
@@ -64,4 +61,8 @@ input {
 
 .break-words {
   word-break: break-word;
+}
+
+ul, ol {
+  @apply pl-6;
 }

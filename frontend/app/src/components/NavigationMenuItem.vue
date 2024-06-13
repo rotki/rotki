@@ -25,6 +25,7 @@ withDefaults(
 
 const [DefineImage, ReuseImage] = createReusableTemplate();
 
+const outer = ref<HTMLDivElement>();
 const inner = ref<HTMLDivElement>();
 const { height: innerHeight } = useElementSize(inner);
 const subMenuExpanded: Ref<boolean> = ref(false);
@@ -33,14 +34,21 @@ function expandParent() {
   if (!get(parent))
     return;
 
-  set(subMenuExpanded, !get(subMenuExpanded));
+  const newState = !get(subMenuExpanded);
+  set(subMenuExpanded, newState);
+
+  if (newState) {
+    setTimeout(() => {
+      get(outer)?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 150);
+  }
 }
 
 const css = useCssModule();
 </script>
 
 <template>
-  <div>
+  <div ref="outer">
     <div
       :class="[
         css.wrapper,
