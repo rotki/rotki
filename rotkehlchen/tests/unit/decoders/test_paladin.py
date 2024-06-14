@@ -41,7 +41,6 @@ def test_claim(database, ethereum_inquirer, ethereum_accounts):
             location_label=user_address,
             notes=f'Burned {gas} ETH for gas',
             counterparty=CPT_GAS,
-            address=None,
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=305,
