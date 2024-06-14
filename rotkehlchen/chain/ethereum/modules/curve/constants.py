@@ -1,6 +1,9 @@
 from typing import Final
+
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
+CRV_ADDRESS: Final = string_to_evm_address('0xD533a949740bb3306d119CC777fa900bA034cd52')
+GAUGE_BRIBE_V2: Final = string_to_evm_address('0x7893bbb46613d7a4FbcC31Dab4C9b823FfeE1026')
 
 # Deposit contracts are retrieved from the links below Deposit<pool>:
 # https://curve.readthedocs.io/ref-addresses.html#base-pools

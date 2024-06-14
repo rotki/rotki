@@ -494,7 +494,7 @@ def test_events_mappings(rotkehlchen_api_server_with_exchanges):
     )
     result = assert_proper_sync_response_with_result(response)
     assert result['mappings'][CPT_CONVEX] == [EvmProduct.GAUGE.serialize(), EvmProduct.STAKING.serialize()]  # noqa: E501
-    assert result['mappings'][CPT_CURVE] == [EvmProduct.GAUGE.serialize()]
+    assert result['mappings'][CPT_CURVE] == [EvmProduct.GAUGE.serialize(), EvmProduct.BRIBE.serialize()]  # noqa: E501
     assert result['products'] == [product.serialize() for product in EvmProduct]
 
 
