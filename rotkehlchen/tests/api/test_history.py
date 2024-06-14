@@ -17,6 +17,7 @@ from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import AccountingError
 from rotkehlchen.exchanges.data_structures import Trade
+from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
 from rotkehlchen.fval import FVal
@@ -492,12 +493,11 @@ def test_missing_prices_in_pnl_report(rotkehlchen_api_server):
         db.add_history_event(write_cursor, event)
         rotki.data.db.add_trades(write_cursor, [trade])
 
-    coingecko = PriceHistorian._coingecko
     PriceHistorian._PriceHistorian__instance = None
     price_historian = PriceHistorian(
-        data_directory=MagicMock(spec=Path),
+        data_directory=rotki.data.data_directory,
         cryptocompare=MagicMock(spec=Cryptocompare),
-        coingecko=coingecko,
+        coingecko=Coingecko(),
         defillama=MagicMock(spec=Defillama),
     )
     price_historian.set_oracles_order([HistoricalPriceOracle.COINGECKO])
@@ -508,7 +508,7 @@ def test_missing_prices_in_pnl_report(rotkehlchen_api_server):
         coingecko_api_calls += 1
         return MockResponse(HTTPStatus.TOO_MANY_REQUESTS, '{}')
 
-    coingecko_patch = patch.object(PriceHistorian()._coingecko.session, 'get', side_effect=mock_coingecko_return)  # noqa: E501
+    coingecko_patch = patch.object(price_historian._coingecko.session, 'get', side_effect=mock_coingecko_return)  # noqa: E501
     # create the PNL report
     with coingecko_patch:
         query_api_create_and_get_report(
