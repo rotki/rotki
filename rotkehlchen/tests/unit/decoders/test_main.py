@@ -56,6 +56,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Cowswap',
         'Curve',
         'Diva',
+        'Defisaver',
         'Dxdaomesa',
         'Eas',
         'Eigenlayer',
@@ -192,6 +193,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'cctp',
         'gearbox',
         'paladin',
+        'defisaver',
     }
 
 
