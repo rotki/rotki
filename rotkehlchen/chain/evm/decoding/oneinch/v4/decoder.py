@@ -10,6 +10,7 @@ from rotkehlchen.chain.ethereum.modules.uniswap.v2.constants import (
     SWAP_SIGNATURE as UNISWAP_V2_SWAP_SIGNATURE,
 )
 from rotkehlchen.chain.evm.decoding.oneinch.decoder import OneinchCommonDecoder
+from rotkehlchen.chain.evm.decoding.oneinch.v4.constants import ORDERFILLED_RFQ
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -54,6 +55,7 @@ class Oneinchv3n4DecoderBase(OneinchCommonDecoder, ABC):
                 UNISWAP_V3_SWAP_SIGNATURE,
                 UNISWAP_V2_SWAP_SIGNATURE,  # uniswap v2 is also used by sushiswap
                 BALANCER_V2_SWAP_SIGNATURE,
+                ORDERFILLED_RFQ,
             ],
             counterparty=counterparty,
         )
