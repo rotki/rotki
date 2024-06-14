@@ -1,7 +1,7 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.modules.oneinch.constants import (
     CPT_ONEINCH_V1,
     CPT_ONEINCH_V2,
@@ -236,7 +236,7 @@ def test_1inchv3_swap_for_eth(database, ethereum_inquirer, ethereum_accounts):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x312419eEC9C4632155904D9440dc1EeeafFBb280']])
 def test_1inchv4_swap_on_uniswapv3(database, ethereum_inquirer):
     """
@@ -290,6 +290,60 @@ def test_1inchv4_swap_on_uniswapv3(database, ethereum_inquirer):
             balance=Balance(amount=FVal('2.930675563626228657')),
             location_label=user_address,
             notes=f'Receive 2.930675563626228657 ETH as a result of a {CPT_ONEINCH_V4} swap',
+            address=ONEINCH_V4_ROUTER,
+            counterparty=CPT_ONEINCH_V4,
+        ),
+    ]
+    assert expected_events == events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x456325F2AC7067234dD71E01bebe032B0255e039']])
+def test_1inchv4_orderfilledrfq(database, ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x7e98fc61cdec43a7b886a9d045264bcc9292b2a34f8c466e4270ee6671684b69')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, user_address, gas, amount_out, amount_in = TimestampMS(1683201803000), ethereum_accounts[0], '0.010777074', '1457.408044', '634.912997630527012864'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=user_address,
+            notes=f'Burned {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_USDT,
+            balance=Balance(amount=FVal(amount_out)),
+            location_label=user_address,
+            notes=f'Swap {amount_out} USDT in {CPT_ONEINCH_V4}',
+            address=ONEINCH_V4_ROUTER,
+            counterparty=CPT_ONEINCH_V4,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=EvmToken('eip155:1/erc20:0x6De037ef9aD2725EB40118Bb1702EBb27e4Aeb24'),
+            balance=Balance(amount=FVal(amount_in)),
+            location_label=user_address,
+            notes=f'Receive {amount_in} RNDR as a result of a {CPT_ONEINCH_V4} swap',
             address=ONEINCH_V4_ROUTER,
             counterparty=CPT_ONEINCH_V4,
         ),
@@ -413,8 +467,7 @@ def test_1inchv4_multiple_swaps(database, ethereum_inquirer):
             notes=f'Swap 50000 USH in {CPT_ONEINCH_V4}',
             address=ONEINCH_V4_ROUTER,
             counterparty=CPT_ONEINCH_V4,
-        ),
-        EvmEvent(
+        ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=36,
             timestamp=timestamp,
