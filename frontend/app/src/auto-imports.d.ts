@@ -118,6 +118,7 @@ declare global {
   const getCurrentInstance: typeof import('vue')['getCurrentInstance']
   const getCurrentScope: typeof import('vue')['getCurrentScope']
   const getDateInputISOFormat: typeof import('./utils/date')['getDateInputISOFormat']
+  const getDayNames: typeof import('./utils/date')['getDayNames']
   const getDefaultFrontendLogLevel: typeof import('./utils/logging')['getDefaultFrontendLogLevel']
   const getDefaultLogLevel: typeof import('./utils/logging')['getDefaultLogLevel']
   const getDomain: typeof import('./utils/url')['getDomain']
@@ -890,6 +891,7 @@ declare module 'vue' {
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
     readonly getDateInputISOFormat: UnwrapRef<typeof import('./utils/date')['getDateInputISOFormat']>
+    readonly getDayNames: UnwrapRef<typeof import('./utils/date')['getDayNames']>
     readonly getDefaultFrontendLogLevel: UnwrapRef<typeof import('./utils/logging')['getDefaultFrontendLogLevel']>
     readonly getDefaultLogLevel: UnwrapRef<typeof import('./utils/logging')['getDefaultLogLevel']>
     readonly getDomain: UnwrapRef<typeof import('./utils/url')['getDomain']>
@@ -1642,6 +1644,7 @@ declare module '@vue/runtime-core' {
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
     readonly getDateInputISOFormat: UnwrapRef<typeof import('./utils/date')['getDateInputISOFormat']>
+    readonly getDayNames: UnwrapRef<typeof import('./utils/date')['getDayNames']>
     readonly getDefaultFrontendLogLevel: UnwrapRef<typeof import('./utils/logging')['getDefaultFrontendLogLevel']>
     readonly getDefaultLogLevel: UnwrapRef<typeof import('./utils/logging')['getDefaultLogLevel']>
     readonly getDomain: UnwrapRef<typeof import('./utils/url')['getDomain']>

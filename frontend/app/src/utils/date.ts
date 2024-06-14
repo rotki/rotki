@@ -144,6 +144,16 @@ export function isValidDate(date: string, dateFormat: string): boolean {
   return dayjs(date, dateFormat, true).isValid();
 }
 
+export function getDayNames(locale = 'en') {
+  const format = new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'UTC' });
+  const days = [];
+  for (let day = 1; day <= 7; day++) {
+    const date = new Date(Date.UTC(2022, 0, day + 2)); // +2 because 2022-01-02 is a Sunday
+    days.push(format.format(date));
+  }
+  return days;
+}
+
 export function setupDayjs(): void {
   dayjs.extend(customParseFormat);
   dayjs.extend(utc);
