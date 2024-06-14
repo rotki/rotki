@@ -259,4 +259,26 @@ describe('utils/date', () => {
       expect(isValidDate('01/01/3000', 'DD/MM/YYYY')).toBeTruthy(); // Far future date
     });
   });
+
+  describe('getDayNames', () => {
+    const result = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+    it('works in current timezone', () => {
+      expect(getDayNames('en')).toStrictEqual(result);
+    });
+
+    it('works in New York timezone', () => {
+      // eslint-disable-next-line no-extend-native
+      Date.prototype.getTimezoneOffset = function () {
+        return -240;
+      };
+
+      expect(getDayNames('en')).toStrictEqual(result);
+
+      // eslint-disable-next-line no-extend-native
+      Date.prototype.getTimezoneOffset = function () {
+        return 0;
+      };
+    });
+  });
 });

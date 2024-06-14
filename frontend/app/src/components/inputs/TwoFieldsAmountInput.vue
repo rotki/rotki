@@ -191,23 +191,21 @@ const focused: Ref<boolean> = ref(false);
   @apply absolute right-5 top-14 transform -translate-y-1/2 z-[1];
 }
 
-.theme {
-  &--dark {
-    .wrapper {
-      :deep(label) {
-        @apply border-white/[0.42];
-        @apply bg-rui-grey-800 bg-opacity-40 #{!important};
-      }
-
-      /* stylelint-disable selector-class-pattern,selector-nested-pattern */
-
-      :deep(.input__enabled) {
-        label {
-          @apply bg-transparent #{!important};
-        }
-      }
-      /* stylelint-enable selector-class-pattern,selector-nested-pattern */
+.dark {
+  .wrapper {
+    :deep(label) {
+      @apply border-white/[0.42];
+      @apply bg-rui-grey-800 bg-opacity-40 #{!important};
     }
+
+    /* stylelint-disable selector-class-pattern,selector-nested-pattern */
+
+    :deep(.input__enabled) {
+      label {
+        @apply bg-transparent #{!important};
+      }
+    }
+    /* stylelint-enable selector-class-pattern,selector-nested-pattern */
   }
 }
 </style>
