@@ -4701,16 +4701,9 @@ class RestAPI:
 
         serialized_history_events = []
         headers: dict[str, None] = {}
-        if currency == A_USD:
-            entries = dbevents.get_base_entries_missing_prices(EvmEventFilterQuery.make())
-            query_missing_prices_of_base_entries(
-                database=self.rotkehlchen.data.db,
-                entries_missing_prices=entries,
-            )
         for event in history_events:
-            if currency != A_USD:
-                try:
-                    # ask oracles for the rate in the given timestamp and currency
+            if currency != A_USD or (currency == A_USD and event.balance.usd_value == ZERO):
+                try:  # ask oracles for the price in the given timestamp and currency
                     price = PriceHistorian.query_historical_price(
                         from_asset=event.asset,
                         to_asset=currency,
@@ -4722,14 +4715,13 @@ class RestAPI:
                     # In the case of NoPriceForGivenTimestamp when we got rate limited
                     if e.rate_limited is True:
                         return wrap_in_fail_result(
-                            message='Try again later. Rate limited by the price oracle',
-                            status_code=HTTPStatus.TOO_MANY_REQUESTS,
+                            message='Price query got rate limited for all the oracles. Try again later',  # noqa: E501
+                            status_code=HTTPStatus.BAD_GATEWAY,
                         )
                     fiat_value = ZERO
                 else:
                     fiat_value = event.balance.amount * price
-            else:
-                # if the asset is USD or the value is zero, we don't need to ask for the rate
+            else:  # if the asset is USD we don't need to ask for the price, is already queried
                 fiat_value = event.balance.usd_value
 
             serialized_event = event.serialize_for_csv(fiat_value)

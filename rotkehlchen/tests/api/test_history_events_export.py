@@ -9,7 +9,7 @@ import requests
 from rotkehlchen.accounting.export.csv import FILENAME_HISTORY_EVENTS_CSV
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.tests.utils.api import api_url_for, assert_error_response, assert_proper_response
-from rotkehlchen.tests.utils.history import prepare_rotki_for_history_processing_test, prices
+from rotkehlchen.tests.utils.history import prepare_rotki_for_history_processing_test
 from rotkehlchen.tests.utils.history_base_entry import add_entries
 
 
@@ -81,8 +81,7 @@ def assert_csv_export_response(
 
 
 @pytest.mark.vcr()
-@pytest.mark.parametrize('should_mock_current_price_queries', [False])
-@pytest.mark.parametrize('mocked_price_queries', [prices])
+@pytest.mark.parametrize('should_mock_price_queries', [False])
 def test_history_export_download_csv(
         rotkehlchen_api_server_with_exchanges,
         tmpdir_factory,

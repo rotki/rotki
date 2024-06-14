@@ -5260,6 +5260,9 @@ Exporting History Events
 
 .. http:post:: /api/(version)/history/events/export
 
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
    Doing a POST on this endpoint with the given filter parameters will export a csv with all history events matching the filter to a file in the provided directory. Only the 'directory_path' argument is required. If no filter is used all the events will be exported.
 
    **Example Request**:
@@ -5273,7 +5276,8 @@ Exporting History Events
       {
           "directory_path": "/home",
           "from_timestamp": 1500,
-          "to_timestamp": 999999
+          "to_timestamp": 999999,
+          "async_query": false
       }
 
    .. _history_export_schema_section:
@@ -5298,8 +5302,12 @@ Exporting History Events
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is logged in or failure at event export.
    :statuscode 500: Internal rotki error
+   :statuscode 502: Couldn't fetch prices for all the events due to being rate limited.
 
 .. http:put:: /api/(version)/history/events/export
+
+   .. note::
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
 
    Doing a PUT on this endpoint with the given filter parameters will download a csv with all history events matching the filter. All arguments are optional. If no filter is used all the events will be downloaded.
 
@@ -5315,7 +5323,8 @@ Exporting History Events
 
       {
           "from_timestamp": 1500,
-          "to_timestamp": 999999
+          "to_timestamp": 999999,
+          "async_query": false
       }
 
    :reqjson list[string] order_by_attributes: This is the list of attributes of the transaction by which to order the results.
@@ -5348,6 +5357,7 @@ Exporting History Events
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: No user is logged in or failure at event download.
    :statuscode 500: Internal rotki error
+   :statuscode 502: Couldn't fetch prices for all the events due to being rate limited.
 
 Querying online events
 ============================================

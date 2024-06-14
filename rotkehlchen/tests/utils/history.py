@@ -1087,6 +1087,8 @@ def maybe_mock_historical_price_queries(
 ) -> None:
     """If needed will make sure the historian's price queries are mocked"""
     if not should_mock_price_queries:
+        # ensure that no previous overwrite of the price historian affects the instance
+        historian.__dict__.pop('query_historical_price', None)
         return
 
     if dont_mock_price_for is None:
