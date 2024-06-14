@@ -2,7 +2,8 @@
 Changelog
 =========
 
-* :bug:`8088` Fix bug where the day names are wrong on the calendar page.
+* :bug:`8088` Fix bug where the day names could be wrong on the calendar page.
+* :bug:`-` Some votium bribe claims which were not properly decoded before will be now.
 * :bug:`-` 1inchv4 swaps using the OrderFilledRfq functionality will now be properly decoded
 * :feature:`-` Defisaver automation subscription activation and deactivation events will now be properly decoded.
 * :bug:`-` ENS transaction events involving new owner for a name/subname and address changing should now be decoded properly.
