@@ -1,6 +1,8 @@
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.curve.constants import (
     CPT_CURVE,
@@ -14,7 +16,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.constants.assets import A_CRV, A_ETH
+from rotkehlchen.constants.assets import A_CRV, A_CRV_3CRV, A_ETH
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress
@@ -22,10 +24,12 @@ from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import (
     AAVE_POOLS,
+    CLAIMED,
     CRV_ADDRESS,
     CURVE_DEPOSIT_CONTRACTS,
     CURVE_SWAP_ROUTER,
     DEPOSIT_AND_STAKE_ZAP,
+    FEE_DISTRIBUTOR,
     GAUGE_BRIBE_V2,
     GAUGE_CONTROLLER,
 )
@@ -106,6 +110,31 @@ class CurveDecoder(CurveCommonDecoder):
         )
         return DecodingOutput(event=event, refresh_balances=False)
 
+    def _decode_fee_distribution(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] != CLAIMED:
+            return DEFAULT_DECODING_OUTPUT
+
+        if not self.base.is_tracked(user_address := hex_or_bytes_to_address(context.tx_log.topics[1])):  # noqa: E501
+            return DEFAULT_DECODING_OUTPUT
+
+        raw_amount = hex_or_bytes_to_int(context.tx_log.data[:32])
+        suffix = ''
+        if user_address != context.transaction.from_address:
+            suffix = f' for {user_address}'
+
+        action_item = ActionItem(
+            action='transform',
+            from_event_type=HistoryEventType.RECEIVE,
+            from_event_subtype=HistoryEventSubType.NONE,
+            asset=A_CRV_3CRV,
+            amount=token_normalized_value_decimals(token_amount=raw_amount, token_decimals=DEFAULT_TOKEN_DECIMALS),  # noqa: E501
+            to_event_type=HistoryEventType.RECEIVE,
+            to_event_subtype=HistoryEventSubType.REWARD,
+            to_notes=f'Claim {{amount}} 3CRV as part of curve fees distribution{suffix}',
+            to_counterparty=CPT_CURVE,
+        )
+        return DecodingOutput(action_items=[action_item])
+
     # -- DecoderInterface methods
     @staticmethod
     def possible_products() -> dict[str, list[EvmProduct]]:
@@ -117,4 +146,5 @@ class CurveDecoder(CurveCommonDecoder):
         return super().addresses_to_decoders() | {
             GAUGE_CONTROLLER: (self._decode_curve_gauge_votes,),
             CRV_ADDRESS: (self._decode_gauge_bribe,),
+            FEE_DISTRIBUTOR: (self._decode_fee_distribution,),
         }
