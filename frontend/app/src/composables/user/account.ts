@@ -126,3 +126,9 @@ export function useAutoLogin() {
     autolog,
   };
 }
+
+export const useRestartingStatus = createSharedComposable(() => {
+  const restarting: Ref<boolean> = ref(false);
+
+  return { restarting };
+});

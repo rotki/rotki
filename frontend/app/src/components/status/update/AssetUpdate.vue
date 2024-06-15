@@ -108,7 +108,7 @@ async function updateAssets(resolution?: ConflictResolution) {
   }
 }
 
-const restarting: Ref<boolean> = ref(false);
+const { restarting } = useRestartingStatus();
 
 async function updateComplete() {
   if (get(restarting))

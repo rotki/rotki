@@ -641,6 +641,7 @@ declare global {
   const useReportsApi: typeof import('./composables/api/reports/index')['useReportsApi']
   const useReportsStore: typeof import('./store/reports/index')['useReportsStore']
   const useResizeObserver: typeof import('@vueuse/core')['useResizeObserver']
+  const useRestartingStatus: typeof import('./composables/user/account')['useRestartingStatus']
   const useRound: typeof import('@vueuse/math')['useRound']
   const useRoute: typeof import('vue-router/composables')['useRoute']
   const useRouter: typeof import('vue-router/composables')['useRouter']
@@ -1402,6 +1403,7 @@ declare module 'vue' {
     readonly useReportsApi: UnwrapRef<typeof import('./composables/api/reports/index')['useReportsApi']>
     readonly useReportsStore: UnwrapRef<typeof import('./store/reports/index')['useReportsStore']>
     readonly useResizeObserver: UnwrapRef<typeof import('@vueuse/core')['useResizeObserver']>
+    readonly useRestartingStatus: UnwrapRef<typeof import('./composables/user/account')['useRestartingStatus']>
     readonly useRound: UnwrapRef<typeof import('@vueuse/math')['useRound']>
     readonly useRoute: UnwrapRef<typeof import('vue-router/composables')['useRoute']>
     readonly useRouter: UnwrapRef<typeof import('vue-router/composables')['useRouter']>
@@ -2154,6 +2156,7 @@ declare module '@vue/runtime-core' {
     readonly useReportsApi: UnwrapRef<typeof import('./composables/api/reports/index')['useReportsApi']>
     readonly useReportsStore: UnwrapRef<typeof import('./store/reports/index')['useReportsStore']>
     readonly useResizeObserver: UnwrapRef<typeof import('@vueuse/core')['useResizeObserver']>
+    readonly useRestartingStatus: UnwrapRef<typeof import('./composables/user/account')['useRestartingStatus']>
     readonly useRound: UnwrapRef<typeof import('@vueuse/math')['useRound']>
     readonly useRoute: UnwrapRef<typeof import('vue-router/composables')['useRoute']>
     readonly useRouter: UnwrapRef<typeof import('vue-router/composables')['useRouter']>
