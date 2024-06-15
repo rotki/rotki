@@ -1,3 +1,4 @@
+import { isEqual } from 'lodash-es';
 import { Routes } from '@/router/routes';
 import { router } from '@/router';
 
@@ -5,11 +6,14 @@ export function useAppNavigation() {
   const navigateToUserLogin = async (
     disableNoUserRedirection: boolean = false,
   ) => {
+    const newQuery = disableNoUserRedirection ? { disableNoUserRedirection: '1' } : {};
+    const { path, query } = router.currentRoute;
+    if (path === Routes.USER_LOGIN && isEqual(query, newQuery))
+      return;
+
     await router.push({
       path: Routes.USER_LOGIN,
-      ...(disableNoUserRedirection
-        ? { query: { disableNoUserRedirection: '1' } }
-        : {}),
+      query: newQuery,
     });
   };
 
