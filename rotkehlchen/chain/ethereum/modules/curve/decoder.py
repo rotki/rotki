@@ -1,3 +1,4 @@
+import logging
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -17,10 +18,12 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.constants.assets import A_CRV, A_CRV_3CRV, A_ETH
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import ChecksumEvmAddress, Timestamp
+from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, timestamp_to_date
 
 from .constants import (
     AAVE_POOLS,
@@ -32,12 +35,19 @@ from .constants import (
     FEE_DISTRIBUTOR,
     GAUGE_BRIBE_V2,
     GAUGE_CONTROLLER,
+    VOTING_ESCROW,
+    VOTING_ESCROW_DEPOSIT,
+    VOTING_ESCROW_WITHDRAW,
 )
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.user_messages import MessagesAggregator
+
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
 
 
 class CurveDecoder(CurveCommonDecoder):
@@ -135,6 +145,51 @@ class CurveDecoder(CurveCommonDecoder):
         )
         return DecodingOutput(action_items=[action_item])
 
+    def _decode_voting_escrow(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] == VOTING_ESCROW_DEPOSIT:
+            method = self._decode_voting_escrow_deposit
+        elif context.tx_log.topics[0] == VOTING_ESCROW_WITHDRAW:
+            method = self._decode_voting_escrow_withdraw
+        else:
+            return DEFAULT_DECODING_OUTPUT
+
+        if not self.base.is_tracked(user_address := hex_or_bytes_to_address(context.tx_log.topics[1])):  # noqa: E501
+            return DEFAULT_DECODING_OUTPUT
+
+        raw_amount = hex_or_bytes_to_int(context.tx_log.data[:32])
+        return method(
+            context=context,
+            amount=token_normalized_value_decimals(token_amount=raw_amount, token_decimals=DEFAULT_TOKEN_DECIMALS),  # noqa: E501
+            suffix='' if user_address == context.transaction.from_address else f' for {user_address}',  # noqa: E501
+        )
+
+    def _decode_voting_escrow_deposit(self, context: DecoderContext, amount: FVal, suffix: str) -> DecodingOutput:  # noqa: E501
+        locktime = Timestamp(hex_or_bytes_to_int(context.tx_log.topics[2]))
+        for event in context.decoded_events:
+            if event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.NONE and event.asset == A_CRV and event.balance.amount == amount:  # noqa: E501
+                event.event_type = HistoryEventType.DEPOSIT
+                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                event.counterparty = CPT_CURVE
+                event.notes = f'Lock {amount} CRV in vote escrow until {timestamp_to_date(locktime, formatstr="%d/%m/%Y %H:%M:%S")}{suffix}'  # noqa: E501
+                break
+        else:  # not found
+            log.error(f'CRV vote escrow locking transfer was not found for {context.transaction.tx_hash.hex()}')  # noqa: E501
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def _decode_voting_escrow_withdraw(self, context: DecoderContext, amount: FVal, suffix: str) -> DecodingOutput:  # noqa: E501
+        for event in context.decoded_events:
+            if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == A_CRV and event.balance.amount == amount:  # noqa: E501
+                event.event_type = HistoryEventType.WITHDRAWAL
+                event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                event.counterparty = CPT_CURVE
+                event.notes = f'Withdraw {amount} CRV from vote escrow{suffix}'
+                break
+        else:  # not found
+            log.error(f'CRV vote escrow withdrawal transfer was not found for {context.transaction.tx_hash.hex()}')  # noqa: E501
+
+        return DEFAULT_DECODING_OUTPUT
+
     # -- DecoderInterface methods
     @staticmethod
     def possible_products() -> dict[str, list[EvmProduct]]:
@@ -147,4 +202,5 @@ class CurveDecoder(CurveCommonDecoder):
             GAUGE_CONTROLLER: (self._decode_curve_gauge_votes,),
             CRV_ADDRESS: (self._decode_gauge_bribe,),
             FEE_DISTRIBUTOR: (self._decode_fee_distribution,),
+            VOTING_ESCROW: (self._decode_voting_escrow,),
         }

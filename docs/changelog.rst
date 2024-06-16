@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Curve vote escrow locking and withdrawal events will now be properly decoded on ethereum mainnet.
 * :feature:`-` Curve fee distributor claim events will now be properly decoded on ethereum mainnet.
 * :feature:`7431` Curve events are now decoded on all supported evm chains.
 * :bug:`8088` Fix bug where the day names could be wrong on the calendar page.

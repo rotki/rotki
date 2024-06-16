@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
+from rotkehlchen.chain.ethereum.modules.curve.constants import VOTING_ESCROW
 from rotkehlchen.chain.ethereum.modules.makerdao.cache import ilk_cache_foreach
 from rotkehlchen.chain.evm.tokens import EvmTokensWithDSProxy
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -18,7 +19,7 @@ ETH_TOKEN_EXCEPTIONS = {
     # defi SDK as part of locked CRV in Vote Escrowed CRV. Which is the right way
     # to approach it as there is no way to assign a price to 1 veCRV. It
     # can be 1 CRV locked for 4 years or 4 CRV locked for 1 year etc.
-    string_to_evm_address('0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2'),
+    VOTING_ESCROW,
     # Ignore for now xsushi since is queried by defi SDK. We'll do it for now
     # since the SDK entry might return other tokens from sushi and we don't
     # fully support sushi now.
