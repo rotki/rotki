@@ -81,7 +81,7 @@ class HopDecoder(HopCommonDecoder, GovernableDecoderInterface):
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return dict.fromkeys(set(self.bridges.keys()), (self._decode_send_to_l2,)) | {
-            HOP_GOVERNOR: (self._decode_vote_cast,),
+            HOP_GOVERNOR: (self._decode_governance,),
         }
 
     @staticmethod
