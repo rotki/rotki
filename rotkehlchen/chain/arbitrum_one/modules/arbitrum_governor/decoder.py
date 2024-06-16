@@ -38,7 +38,7 @@ class ArbitrumGovernorDecoder(GovernableDecoderInterface):
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return dict.fromkeys(GOVERNOR_ADDRESSES, (self._decode_vote_cast,))
+        return dict.fromkeys(GOVERNOR_ADDRESSES, (self._decode_governance,))
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:

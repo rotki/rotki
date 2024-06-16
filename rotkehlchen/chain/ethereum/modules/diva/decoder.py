@@ -80,7 +80,7 @@ class DivaDecoder(GovernableDecoderInterface, MerkleClaimDecoderInterface):
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
-            DIVA_GOVERNOR: (self._decode_vote_cast,),
+            DIVA_GOVERNOR: (self._decode_governance,),
             DIVA_ADDRESS: (self._decode_delegation_change,),
             DIVA_AIDROP_CONTRACT: (
                 self._decode_merkle_claim,

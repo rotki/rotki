@@ -566,7 +566,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
-            ENS_GOVERNOR: (self._decode_vote_cast,),
+            ENS_GOVERNOR: (self._decode_governance,),
             ENS_REGISTRAR_CONTROLLER_1: (self._decode_ens_registrar_event,),
             ENS_REGISTRAR_CONTROLLER_2: (self._decode_ens_registrar_event,),
             ENS_BASE_REGISTRAR_IMPLEMENTATION: (self._decode_name_transfer,),

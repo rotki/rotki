@@ -166,9 +166,14 @@ class DecoderInterface(ABC):
 
 VOTE_CAST_WITH_PARAMS: Final = b'\xe2\xba\xbf\xba\xc5\x88\x9ap\x9bc\xbb\x7fY\x8b2N\x08\xbcZO\xb9\xecd\x7f\xb3\xcb\xc9\xec\x07\xeb\x87\x12'  # noqa: E501
 VOTE_CAST: Final = b'\xb8\xe18\x88}\n\xa1;\xabD~\x82\xde\x9d\\\x17w\x04\x1e\xcd!\xca6\xba\x82O\xf1\xe6\xc0}\xdd\xa4'  # noqa: E501
+VOTE_CAST_UNINDEXED: Final = b'\x87xV3\x8e\x13\xf6=\x0c6\x82/\xf0\xefsk\x80\x93L\xd9\x05t\xa3\xa5\xbc\x92b\xc3\x9d!|F'  # noqa: E501
 
-VOTE_CAST_ABI: Final = '{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"voter","type":"address"},{"indexed":false,"internalType":"uint256","name":"proposalId","type":"uint256"},{"indexed":false,"internalType":"uint8","name":"support","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"weight","type":"uint256"},{"indexed":false,"internalType":"string","name":"reason","type":"string"}],"name":"VoteCast","type":"event"}'  # noqa: E501
-VOTE_CAST_WITH_PARAMS_ABI: Final = '{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"voter","type":"address"},{"indexed":false,"internalType":"uint256","name":"proposalId","type":"uint256"},{"indexed":false,"internalType":"uint8","name":"support","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"weight","type":"uint256"},{"indexed":false,"internalType":"string","name":"reason","type":"string"},{"indexed":false,"internalType":"bytes","name":"params","type":"bytes"}],"name":"VoteCastWithParams","type":"event"}'  # noqa: E501
+
+VOTE_CAST_COMMON_ABI: Final = '{"anonymous":false,"inputs":[{"indexed":true,"internalType":"address","name":"voter","type":"address"},{"indexed":false,"internalType":"uint256","name":"proposalId","type":"uint256"},{"indexed":false,"internalType":"uint8","name":"support","type":"uint8"},{"indexed":false,"internalType":"uint256","name":"weight","type":"uint256"},{"indexed":false,"internalType":"string","name":"reason","type":"string"}'  # noqa: E501
+VOTE_CAST_ABI: Final = VOTE_CAST_COMMON_ABI + '],"name":"VoteCast","type":"event"}'
+VOTE_CAST_WITH_PARAMS_ABI: Final = VOTE_CAST_COMMON_ABI + ',{"indexed":false,"internalType":"bytes","name":"params","type":"bytes"}],"name":"VoteCastWithParams","type":"event"}'  # noqa: E501
+GOVERNORALPHA_PROPOSE: Final = b"}\x84\xa6&:\xe0\xd9\x8d3)\xbd{F\xbbN\x8do\x98\xcd5\xa7\xad\xb4\\'L\x8b\x7f\xd5\xeb\xd5\xe0"  # noqa: E501
+GOVERNORALPHA_PROPOSE_ABI: Final = '{"anonymous":false,"inputs":[{"indexed":false,"internalType":"uint256","name":"id","type":"uint256"},{"indexed":false,"internalType":"address","name":"proposer","type":"address"},{"indexed":false,"internalType":"address[]","name":"targets","type":"address[]"},{"indexed":false,"internalType":"uint256[]","name":"values","type":"uint256[]"},{"indexed":false,"internalType":"string[]","name":"signatures","type":"string[]"},{"indexed":false,"internalType":"bytes[]","name":"calldatas","type":"bytes[]"},{"indexed":false,"internalType":"uint256","name":"startBlock","type":"uint256"},{"indexed":false,"internalType":"uint256","name":"endBlock","type":"uint256"},{"indexed":false,"internalType":"string","name":"description","type":"string"}],"name":"ProposalCreated","type":"event"}'  # noqa: E501
 
 
 class MerkleClaimDecoderInterface(DecoderInterface, ABC):
@@ -247,7 +252,7 @@ class MerkleClaimDecoderInterface(DecoderInterface, ABC):
 class GovernableDecoderInterface(DecoderInterface, ABC):
     """Decoders of protocols that have voting in Governance
 
-    Inheriting decoder classes should add the _decode_vote_cast() method
+    Inheriting decoder classes should add the _decode_governance() method
     and match it with the proper address to check for in addresses_to_decoders
     """
     def __init__(  # pylint: disable=super-init-not-called
@@ -266,32 +271,14 @@ class GovernableDecoderInterface(DecoderInterface, ABC):
         self.protocol = protocol
         self.proposals_url = proposals_url
 
-    def _decode_vote_cast(self, context: DecoderContext) -> DecodingOutput:
-        """Decodes a vote cast event"""
-        if context.tx_log.topics[0] == VOTE_CAST:
-            event_abi = VOTE_CAST_ABI
-        elif context.tx_log.topics[0] == VOTE_CAST_WITH_PARAMS:
-            event_abi = VOTE_CAST_WITH_PARAMS_ABI
-        else:
-            return DEFAULT_DECODING_OUTPUT  # for params event is same + params argument. Ignore it
-
-        voter_address = hex_or_bytes_to_address(context.tx_log.topics[1])
-        if not self.base.is_tracked(voter_address):
-            return DEFAULT_DECODING_OUTPUT
-
-        try:
-            _, decoded_data = decode_event_data_abi_str(context.tx_log, event_abi)
-        except DeserializationError as e:
-            log.error(
-                f'Failed to decode vote_cast event ABI at '
-                f'{context.transaction.tx_hash.hex()} due to {e}',
-            )
-            return DEFAULT_DECODING_OUTPUT
-
-        proposal_id, supports, notes_reason = decoded_data[0], decoded_data[1], ''
-        if len(decoded_data[3]) != 0:
-            notes_reason = f' with reasoning: {decoded_data[3]}'
-
+    def _decode_vote_cast_common(
+            self,
+            context: DecoderContext,
+            voter_address: ChecksumEvmAddress,
+            supports: bool,
+            proposal_id: int,
+            notes_reason: str = '',
+    ) -> DecodingOutput:
         notes = f'Voted {"FOR" if supports else "AGAINST"} {self.protocol} governance proposal {self.proposals_url}/{proposal_id}{notes_reason}'  # noqa: E501
         event = self.base.make_event_from_transaction(
             transaction=context.transaction,
@@ -306,6 +293,85 @@ class GovernableDecoderInterface(DecoderInterface, ABC):
             counterparty=self.protocol,
         )
         return DecodingOutput(event=event)
+
+    def _decode_vote_cast(self, context: DecoderContext, abi: str) -> DecodingOutput:
+        if not self.base.is_tracked(voter_address := hex_or_bytes_to_address(context.tx_log.topics[1])):  # noqa: E501
+            return DEFAULT_DECODING_OUTPUT
+
+        try:  # we use decode_event_data_abi_str due to "reason" string being hard to
+            # decode directly. Perhaps if we learn how to and abstract in our own
+            # function manually we can use here and other places
+            _, decoded_data = decode_event_data_abi_str(context.tx_log, abi)
+        except DeserializationError as e:
+            log.error(
+                f'Failed to decode vote_cast event ABI at '
+                f'{context.transaction.tx_hash.hex()} due to {e}',
+            )
+            return DEFAULT_DECODING_OUTPUT
+
+        proposal_id, supports, notes_reason = decoded_data[0], decoded_data[1], ''
+        if len(decoded_data[3]) != 0:
+            notes_reason = f' with reasoning: {decoded_data[3]}'
+
+        return self._decode_vote_cast_common(
+            context=context,
+            voter_address=voter_address,
+            supports=supports,
+            proposal_id=proposal_id,
+            notes_reason=notes_reason,
+        )
+
+    def _decode_vote_cast_unindexed(self, context: DecoderContext) -> DecodingOutput:
+        if not self.base.is_tracked(voter_address := hex_or_bytes_to_address(context.tx_log.data[:32])):  # noqa: E501
+            return DEFAULT_DECODING_OUTPUT
+
+        return self._decode_vote_cast_common(
+            context=context,
+            voter_address=voter_address,
+            supports=bool(hex_or_bytes_to_int(context.tx_log.data[64:96])),
+            proposal_id=hex_or_bytes_to_int(context.tx_log.data[32:64]),
+        )
+
+    def _decode_propose(self, context: DecoderContext, abi: str) -> DecodingOutput:
+        try:  # using decode_event_data_abi_str for same reason as in vote cast
+            _, decoded_data = decode_event_data_abi_str(context.tx_log, abi)
+        except DeserializationError as e:
+            log.error(f'Failed to decode governor alpha event due to {e!s} for {context.transaction.tx_hash.hex()}')  # noqa: E501
+            return DEFAULT_DECODING_OUTPUT
+
+        proposal_id = decoded_data[0]
+        proposal_text = decoded_data[8]
+        notes = f'Create {self.protocol} proposal {proposal_id}. {proposal_text}'
+        event = self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.GOVERNANCE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=context.transaction.from_address,
+            notes=notes,
+            address=context.tx_log.address,
+            counterparty=self.protocol,
+        )
+        return DecodingOutput(event=event)
+
+    def _decode_governance(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] == VOTE_CAST:
+            event_abi = VOTE_CAST_ABI
+            method = self._decode_vote_cast
+        elif context.tx_log.topics[0] == VOTE_CAST_WITH_PARAMS:
+            event_abi = VOTE_CAST_WITH_PARAMS_ABI
+            method = self._decode_vote_cast
+        elif context.tx_log.topics[0] == VOTE_CAST_UNINDEXED:
+            return self._decode_vote_cast_unindexed(context)
+        elif context.tx_log.topics[0] == GOVERNORALPHA_PROPOSE:
+            method = self._decode_propose
+            event_abi = GOVERNORALPHA_PROPOSE_ABI
+        else:
+            return DEFAULT_DECODING_OUTPUT
+
+        return method(context, event_abi)
 
 
 class ReloadableDecoderMixin(ABC):

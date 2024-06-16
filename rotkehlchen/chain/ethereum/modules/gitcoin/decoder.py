@@ -1,8 +1,10 @@
 import logging
 from collections.abc import Callable
+from typing import TYPE_CHECKING, Any
 
+from rotkehlchen.chain.ethereum.modules.gitcoin.constants import GITCOIN_GOVERNOR_ALPHA
 from rotkehlchen.chain.evm.decoding.constants import CPT_GITCOIN, GITCOIN_CPT_DETAILS
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import GovernableDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     FAILED_ENRICHMENT_OUTPUT,
     EnricherContext,
@@ -11,12 +13,32 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.types import ChecksumEvmAddress
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class GitcoinDecoder(DecoderInterface):
+class GitcoinDecoder(GovernableDecoderInterface):
+
+    def __init__(
+            self,
+            evm_inquirer: 'EvmNodeInquirer',
+            base_tools: 'BaseDecoderTools',
+            msg_aggregator: 'MessagesAggregator',
+    ) -> None:
+        super().__init__(
+            evm_inquirer=evm_inquirer,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+            protocol=CPT_GITCOIN,
+            proposals_url='https://www.tally.xyz/gov/gitcoin/proposal',
+        )
 
     def _maybe_enrich_gitcoin_transfers(
             self,
@@ -45,6 +67,9 @@ class GitcoinDecoder(DecoderInterface):
         return TransferEnrichmentOutput(matched_counterparty=CPT_GITCOIN)
 
     # -- DecoderInterface methods
+
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
+        return {GITCOIN_GOVERNOR_ALPHA: (self._decode_governance,)}
 
     def enricher_rules(self) -> list[Callable]:
         return [

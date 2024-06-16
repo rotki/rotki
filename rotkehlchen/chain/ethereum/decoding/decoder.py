@@ -1,9 +1,7 @@
 import logging
 from typing import TYPE_CHECKING
 
-from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
-from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
 from rotkehlchen.chain.evm.constants import MERKLE_CLAIM
 from rotkehlchen.chain.evm.decoding.base import BaseDecoderToolsWithDSProxy
@@ -18,7 +16,6 @@ from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_1INCH, A_ETH, A_GTC
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
-from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
@@ -28,8 +25,6 @@ from .constants import (
     ETHADDRESS_TO_KNOWN_NAME,
     GNOSIS_CHAIN_BRIDGE_RECEIVE,
     GNOSIS_CPT_DETAILS,
-    GOVERNORALPHA_PROPOSE,
-    GOVERNORALPHA_PROPOSE_ABI,
     GTC_CLAIM,
 )
 
@@ -57,7 +52,6 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
             transactions=transactions,
             value_asset=A_ETH.resolve_to_asset_with_oracles(),
             event_rules=[  # rules to try for all tx receipt logs decoding
-                self._maybe_decode_governance,
                 self._maybe_enrich_transfers,
             ],
             misc_counterparties=[
@@ -118,46 +112,6 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
                     event.notes = (
                         f'Bridge {event.balance.amount} {crypto_asset.symbol} from gnosis chain'
                     )
-
-        return DEFAULT_DECODING_OUTPUT
-
-    def _maybe_decode_governance(
-            self,
-            token: EvmToken | None,  # pylint: disable=unused-argument
-            tx_log: EvmTxReceiptLog,
-            transaction: EvmTransaction,
-            decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
-            action_items: list[ActionItem],  # pylint: disable=unused-argument
-            all_logs: list[EvmTxReceiptLog],  # pylint: disable=unused-argument
-    ) -> DecodingOutput:
-        if tx_log.topics[0] == GOVERNORALPHA_PROPOSE:
-            if tx_log.address == '0xDbD27635A534A3d3169Ef0498beB56Fb9c937489':
-                governance_name = 'Gitcoin'
-            else:
-                governance_name = tx_log.address
-
-            try:
-                _, decoded_data = decode_event_data_abi_str(tx_log, GOVERNORALPHA_PROPOSE_ABI)
-            except DeserializationError as e:
-                log.debug(f'Failed to decode governor alpha event due to {e!s}')
-                return DEFAULT_DECODING_OUTPUT
-
-            proposal_id = decoded_data[0]
-            proposal_text = decoded_data[8]
-            notes = f'Create {governance_name} proposal {proposal_id}. {proposal_text}'
-            event = self.base.make_event_from_transaction(
-                transaction=transaction,
-                tx_log=tx_log,
-                event_type=HistoryEventType.INFORMATIONAL,
-                event_subtype=HistoryEventSubType.GOVERNANCE,
-                asset=A_ETH,
-                balance=Balance(),
-                location_label=transaction.from_address,
-                notes=notes,
-                address=tx_log.address,
-                counterparty=governance_name,
-            )
-            return DecodingOutput(event=event)
 
         return DEFAULT_DECODING_OUTPUT
 

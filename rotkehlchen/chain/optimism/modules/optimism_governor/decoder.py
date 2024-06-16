@@ -41,7 +41,7 @@ class OptimismGovernorDecoder(GovernableDecoderInterface):
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
-            GOVERNOR_ADDRESS: (self._decode_vote_cast,),
+            GOVERNOR_ADDRESS: (self._decode_governance,),
         }
 
     @staticmethod
