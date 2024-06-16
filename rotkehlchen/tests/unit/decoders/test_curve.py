@@ -7,7 +7,11 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.base.modules.curve.constants import CURVE_SWAP_ROUTER_NG
-from rotkehlchen.chain.ethereum.modules.curve.constants import FEE_DISTRIBUTOR, GAUGE_BRIBE_V2
+from rotkehlchen.chain.ethereum.modules.curve.constants import (
+    FEE_DISTRIBUTOR,
+    GAUGE_BRIBE_V2,
+    VOTING_ESCROW,
+)
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -46,6 +50,7 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
+from rotkehlchen.utils.misc import timestamp_to_date
 
 
 @pytest.mark.parametrize('ethereum_accounts', [['0x57bF3B0f29E37619623994071C9e12091919675c']])
@@ -2138,6 +2143,90 @@ def test_fee_distributor(ethereum_transaction_decoder, ethereum_accounts):
             notes=f'Claim {amount} 3CRV as part of curve fees distribution',
             counterparty=CPT_CURVE,
             address=FEE_DISTRIBUTOR,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x510B0068C0756bBEFCBaffB6567e467d661291FE']])
+def test_vote_escrow_deposit(ethereum_transaction_decoder, ethereum_accounts):
+    tx_hex = deserialize_evm_tx_hash('0x2675807cf1950b8a8fbd64e1a0fe0ec3b894ba88fbb8e544ddf279aff12c6d55')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
+        database=ethereum_transaction_decoder.database,
+        tx_hash=tx_hex,
+    )
+    user_address, timestamp, gas, amount, locktime = ethereum_accounts[0], TimestampMS(1671946199000), '0.002774219663106188', '128.808146476393839874', Timestamp(1778112000)  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=user_address,
+            notes=f'Burned {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=150,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_CRV,
+            balance=Balance(amount=FVal(amount)),
+            location_label=user_address,
+            notes=f'Lock {amount} CRV in vote escrow until {timestamp_to_date(locktime, formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
+            counterparty=CPT_CURVE,
+            address=VOTING_ESCROW,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x3142A7Cb03dB13419884b275f61f8542C8850174']])
+def test_vote_escrow_withdraw(ethereum_transaction_decoder, ethereum_accounts):
+    tx_hex = deserialize_evm_tx_hash('0x5bae0df2aeedc70f82488e8b19030c39d782cd5f58ca66155a5347320c4349a5')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
+        database=ethereum_transaction_decoder.database,
+        tx_hash=tx_hex,
+    )
+    user_address, timestamp, gas, amount = ethereum_accounts[0], TimestampMS(1671887987000), '0.002702199385335098', '1.872144205854855426'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=user_address,
+            notes=f'Burned {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=220,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_CRV,
+            balance=Balance(amount=FVal(amount)),
+            location_label=user_address,
+            notes=f'Withdraw {amount} CRV from vote escrow',
+            counterparty=CPT_CURVE,
+            address=VOTING_ESCROW,
         ),
     ]
     assert events == expected_events
