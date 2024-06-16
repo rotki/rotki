@@ -39,6 +39,7 @@ class ScrollInquirer(L2WithL1FeesInquirer, UpdatableCacheDataMixin):
             database: 'DBHandler',
             rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
     ) -> None:
+        UpdatableCacheDataMixin.__init__(self, database)
         etherscan = ScrollEtherscan(
             database=database,
             msg_aggregator=database.msg_aggregator,
