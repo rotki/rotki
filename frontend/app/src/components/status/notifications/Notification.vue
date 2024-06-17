@@ -265,7 +265,7 @@ function buttonClicked() {
     @apply bg-gradient-to-b from-transparent to-white absolute bottom-0 w-full;
 
     &-button {
-      @apply w-full bg-gradient-to-b from-transparent to-white;
+      @apply w-full bg-gradient-to-b from-transparent to-white rounded-none;
       background-color: transparent !important;
     }
   }
@@ -302,14 +302,6 @@ function buttonClicked() {
     &:not(.flat) {
       .expand {
         @apply to-[#363636];
-      }
-    }
-
-    &.popup {
-      &:not(.flat) {
-        .expand {
-          @apply to-[#333];
-        }
       }
     }
   }

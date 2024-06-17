@@ -1,9 +1,10 @@
 <script setup lang="ts">
+import { type NotificationPayload, Severity } from '@rotki/common/lib/messages';
 import { TaskType } from '@/types/task-type';
+import { jsonTransformer } from '@/services/axios-tranformers';
 import type { TaskMeta } from '@/types/task';
-import type { ActionStatus } from '@/types/action';
 import type { HistoryEventRequestPayload } from '@/types/history/events';
-import type { Message } from '@rotki/common/lib/messages';
+import type { SemiPartial } from '@rotki/common';
 
 const props = defineProps<{
   filters: HistoryEventRequestPayload;
@@ -15,90 +16,89 @@ const { t } = useI18n();
 
 const { appSession, openDirectory } = useInterop();
 
-const { downloadHistoryEventsCSV, exportHistoryEventsCSV }
+const { exportHistoryEventsCSV }
   = useHistoryEventsApi();
 
-const { setMessage } = useMessageStore();
-const { awaitTask } = useTaskStore();
+const { awaitTask, isTaskRunning } = useTaskStore();
 const { notify } = useNotificationsStore();
 
-function showExportCSVError(description: string) {
-  setMessage({
-    title: t('transactions.events.export.csv_export_error').toString(),
-    description,
-    success: false,
-  });
-}
-
-async function createCsv(path: string): Promise<ActionStatus> {
-  let message: Message;
+async function createCsv(directoryPath?: string): Promise<{ result: boolean | object; message?: string } | null> {
   try {
-    const taskType = TaskType.EXPORT_HISTORY_EVENTS;
-    const { taskId } = await exportHistoryEventsCSV(path, get(filters));
-    const { result } = await awaitTask<boolean, TaskMeta>(
+    const { taskId } = await exportHistoryEventsCSV(get(filters), directoryPath);
+    const { result } = await awaitTask<boolean | object, TaskMeta>(
       taskId,
-      taskType,
+      TaskType.EXPORT_HISTORY_EVENTS,
       {
-        title: t('actions.history_events_export.title').toString(),
+        title: t('actions.history_events_export.title'),
+        transformer: [jsonTransformer],
       },
     );
 
-    message = {
-      title: t('actions.history_events_export.title').toString(),
-      description: result
-        ? t('actions.history_events_export.message.success').toString()
-        : t('actions.history_events_export.message.failure').toString(),
-      success: result,
-    };
-    setMessage(message);
     return {
-      success: true,
+      result,
     };
   }
   catch (error: any) {
-    if (!isTaskCancelled(error)) {
-      const title = t('actions.history_events_export.title').toString();
-      const description = t('actions.history_events_export.message.failure', {
-        message: error.message,
-      }).toString();
+    if (isTaskCancelled(error))
+      return null;
 
-      notify({
-        title,
-        message: description,
-        display: true,
-      });
-    }
     return {
-      success: false,
+      result: false,
       message: error.message,
     };
   }
 }
 
-async function exportCSV() {
-  try {
-    if (appSession) {
-      const directory = await openDirectory(
-        t('common.select_directory').toString(),
-      );
-      if (!directory)
-        return;
+async function exportCSV(): Promise<void> {
+  let message: SemiPartial<NotificationPayload, 'title' | 'message'> | null = null;
 
-      await createCsv(directory);
+  try {
+    let directoryPath;
+    if (appSession) {
+      directoryPath = await openDirectory(t('common.select_directory'));
+      if (!directoryPath)
+        return;
+    }
+
+    const response = await createCsv(directoryPath);
+    if (response === null)
+      return;
+
+    const { result, message: taskMessage } = response;
+
+    if (appSession || !result) {
+      message = {
+        title: t('actions.history_events_export.title'),
+        message: result
+          ? t('actions.history_events_export.message.success')
+          : t('actions.history_events_export.message.failure', {
+            description: taskMessage,
+          }),
+        severity: result ? Severity.INFO : Severity.ERROR,
+        display: true,
+      };
     }
     else {
-      const result = await downloadHistoryEventsCSV(get(filters));
-      if (!result.success) {
-        showExportCSVError(
-          result.message
-          ?? t('transactions.events.export.download_failed').toString(),
-        );
-      }
+      downloadFileByTextContent(
+        JSON.stringify(result, null, 2),
+        'history_events.json',
+        'application/json',
+      );
     }
   }
   catch (error: any) {
-    showExportCSVError(error.message);
+    message = {
+      title: t('actions.history_events_export.title'),
+      message: t('actions.history_events_export.message.failure', {
+        description: error.message,
+      }),
+      severity: Severity.ERROR,
+      display: true,
+    };
   }
+
+  if (message)
+    notify(message);
 }
 
 const { show } = useConfirmStore();
@@ -113,6 +113,8 @@ function showConfirmation() {
     exportCSV,
   );
 }
+
+const taskRunning = isTaskRunning(TaskType.EXPORT_HISTORY_EVENTS);
 </script>
 
 <template>
@@ -120,6 +122,7 @@ function showConfirmation() {
     color="primary"
     variant="outlined"
     class="!py-2"
+    :disabled="taskRunning"
     @click="showConfirmation()"
   >
     <template #prepend>

@@ -25,7 +25,7 @@ import { type HistoryEventProductData, HistoryEventTypeData } from '@/types/hist
 import type { CollectionResponse } from '@/types/collection';
 import type { PendingTask } from '@/types/task';
 import type { ActionResult } from '@rotki/common/lib/data';
-import type { ActionDataEntry, ActionStatus } from '@/types/action';
+import type { ActionDataEntry } from '@/types/action';
 
 export function useHistoryEventsApi() {
   const internalTransactions = async <T>(
@@ -242,10 +242,11 @@ export function useHistoryEventsApi() {
   };
 
   const exportHistoryEventsCSV = async (
-    directoryPath: string,
     filters: HistoryEventRequestPayload,
+    directoryPath?: string,
   ): Promise<PendingTask> => {
-    const response = await api.instance.post<ActionResult<PendingTask>>(
+    const func = directoryPath ? api.instance.post<ActionResult<PendingTask>> : api.instance.put<ActionResult<PendingTask>>;
+    const response = await func(
       '/history/events/export',
       snakeCaseTransformer({
         directoryPath,
@@ -258,37 +259,6 @@ export function useHistoryEventsApi() {
     );
 
     return handleResponse(response);
-  };
-
-  const downloadHistoryEventsCSV = async (
-    filters: HistoryEventRequestPayload,
-  ): Promise<ActionStatus> => {
-    try {
-      const response = await api.instance.put(
-        '/history/events/export',
-        snakeCaseTransformer({
-          asyncQuery: true,
-          ...omit(filters, ['accounts']),
-        }),
-        {
-          responseType: 'blob',
-          validateStatus: validTaskStatus,
-        },
-      );
-
-      if (response.status === 200) {
-        downloadFileByBlobResponse(response, 'history_events.csv');
-        return { success: true };
-      }
-
-      const body = await (response.data as Blob).text();
-      const result: ActionResult<null> = JSON.parse(body);
-
-      return { success: false, message: result.message };
-    }
-    catch (error: any) {
-      return { success: false, message: error.message };
-    }
   };
 
   return {
@@ -308,6 +278,5 @@ export function useHistoryEventsApi() {
     fetchHistoryEvents,
     queryOnlineHistoryEvents,
     exportHistoryEventsCSV,
-    downloadHistoryEventsCSV,
   };
 }

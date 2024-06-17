@@ -557,7 +557,7 @@
     },
     "history_events_export": {
       "message": {
-        "failure": "Fallo en la exportación de eventos de historial",
+        "failure": "Fallo en la exportación de eventos de historial: {description}",
         "success": "Eventos de historial exportados a CSV exitosamente"
       },
       "title": "Exportación de Eventos de Historial"
@@ -3755,9 +3755,7 @@
         }
       },
       "export": {
-        "confirmation_message": "¿Estás seguro de que deseas exportar este documento con los filtros seleccionados aplicados?",
-        "csv_export_error": "Hubo un error al exportar a CSV",
-        "download_failed": "No es posible descargar el archivo CSV"
+        "confirmation_message": "¿Estás seguro de que deseas exportar este documento con los filtros seleccionados aplicados?"
       },
       "form": {
         "amount": {
