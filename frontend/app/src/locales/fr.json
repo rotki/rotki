@@ -665,7 +665,7 @@
     },
     "history_events_export": {
       "message": {
-        "failure": "Échec de l'exportation des événements historiques",
+        "failure": "Échec de l'exportation des événements historiques: {description}",
         "success": "Événements historiques exportés avec succès en CSV"
       },
       "title": "Exportation des événements historiques"
@@ -4170,9 +4170,7 @@
         }
       },
       "export": {
-        "confirmation_message": "Êtes-vous sûr de vouloir exporter ce document avec les filtres sélectionnés appliqués?",
-        "csv_export_error": "Il y a eu une erreur avec l'exportation",
-        "download_failed": "Le téléchargement du CSV n'est pas possible"
+        "confirmation_message": "Êtes-vous sûr de vouloir exporter ce document avec les filtres sélectionnés appliqués?"
       },
       "form": {
         "address": {
