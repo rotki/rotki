@@ -66,3 +66,7 @@ input {
 ul, ol {
   @apply pl-6;
 }
+
+a {
+  @apply cursor-pointer text-rui-blue-800 dark:text-rui-blue-600;
+}
