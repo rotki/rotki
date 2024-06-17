@@ -208,8 +208,8 @@ def _ensure_curve_tokens_existence(
                     )
                     continue
 
-        # finally ensure lp token exists in the globaldb. Since is a token created by curve
-        # it should always be an ERC20
+        # finally ensure lp token and gauge token exists in the globaldb. Since they are created
+        # by curve, they should always be an ERC20
         try:
             get_or_create_evm_token(
                 userdb=evm_inquirer.database,
@@ -228,6 +228,26 @@ def _ensure_curve_tokens_existence(
                 f'due to {e}. Skipping',
             )
             continue
+
+        if pool.gauge_address is not None:
+            try:
+                get_or_create_evm_token(
+                    userdb=evm_inquirer.database,
+                    evm_address=pool.gauge_address,
+                    chain_id=evm_inquirer.chain_id,
+                    evm_inquirer=evm_inquirer,
+                    encounter=TokenEncounterInfo(
+                        description='Querying curve gauges',
+                        should_notify=False,
+                    ),
+                    underlying_tokens=[UnderlyingToken(
+                        address=pool.lp_token_address,
+                        token_kind=EvmTokenKind.ERC20,
+                        weight=ONE,
+                    )],
+                )
+            except NotERC20Conformant:
+                log.warning(f'Curve gauge {pool.gauge_address} is not a valid ERC20 token.')
 
         verified_pools.append(pool)
     return verified_pools

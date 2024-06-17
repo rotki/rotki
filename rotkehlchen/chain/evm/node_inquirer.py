@@ -173,7 +173,7 @@ def _query_web3_get_logs(
     return events
 
 
-class EvmNodeInquirer(ABC):
+class EvmNodeInquirer(ABC, LockableQueryMixIn):
     """Class containing generic functionality for querying evm nodes
 
     The child class must implement the following methods:
@@ -226,6 +226,7 @@ class EvmNodeInquirer(ABC):
         self.contract_info_erc20_cache: LRUCacheWithRemove[ChecksumEvmAddress, dict[str, Any]] = LRUCacheWithRemove(maxsize=1024)  # noqa: E501
         self.contract_info_erc721_cache: LRUCacheWithRemove[ChecksumEvmAddress, dict[str, Any]] = LRUCacheWithRemove(maxsize=512)  # noqa: E501
         self.maybe_connect_to_nodes(when_tracked_accounts=True)
+        LockableQueryMixIn.__init__(self)
 
     def maybe_connect_to_nodes(self, when_tracked_accounts: bool) -> None:
         """Start async connect to the saved nodes for the given evm chain if needed.
@@ -1396,52 +1397,8 @@ class EvmNodeInquirer(ABC):
     def _get_pruned_check_tx_hash(self) -> EVMTxHash:
         """Returns a transaction hash that can used for checking whether a node is pruned."""
 
-    def _additional_receipt_processing(self, tx_receipt: dict[str, Any]) -> None:  # noqa: B027
+    def _additional_receipt_processing(self, tx_receipt: dict[str, Any]) -> None:
         """Performs additional tx_receipt processing where necessary"""
-
-
-class EvmNodeInquirerWithDSProxy(EvmNodeInquirer):
-    def __init__(
-            self,
-            greenlet_manager: GreenletManager,
-            database: 'DBHandler',
-            etherscan: Etherscan,
-            blockchain: SUPPORTED_EVM_CHAINS_TYPE,
-            etherscan_node: WeightedNode,
-            etherscan_node_name: str,
-            contracts: EvmContracts,
-            contract_scan: 'EvmContract',
-            contract_multicall: 'EvmContract',
-            dsproxy_registry: 'EvmContract',
-            native_token: CryptoAsset,
-            rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
-    ) -> None:
-        super().__init__(
-            greenlet_manager=greenlet_manager,
-            database=database,
-            etherscan=etherscan,
-            blockchain=blockchain,
-            etherscan_node=etherscan_node,
-            etherscan_node_name=etherscan_node_name,
-            contracts=contracts,
-            contract_scan=contract_scan,
-            contract_multicall=contract_multicall,
-            rpc_timeout=rpc_timeout,
-            native_token=native_token,
-        )
-        self.proxies_inquirer = EvmProxiesInquirer(
-            node_inquirer=self,
-            dsproxy_registry=dsproxy_registry,
-        )
-
-
-class UpdatableCacheDataMixin(LockableQueryMixIn):
-    def __init__(
-            self,
-            database: 'DBHandler',
-    ) -> None:
-        super().__init__()
-        self.database = database
 
     @protect_with_lock()
     def ensure_cache_data_is_updated(
@@ -1487,7 +1444,42 @@ class UpdatableCacheDataMixin(LockableQueryMixIn):
         return True
 
 
-class DSProxyInquirerWithCacheData(EvmNodeInquirerWithDSProxy, UpdatableCacheDataMixin):
+class EvmNodeInquirerWithDSProxy(EvmNodeInquirer):
+    def __init__(
+            self,
+            greenlet_manager: GreenletManager,
+            database: 'DBHandler',
+            etherscan: Etherscan,
+            blockchain: SUPPORTED_EVM_CHAINS_TYPE,
+            etherscan_node: WeightedNode,
+            etherscan_node_name: str,
+            contracts: EvmContracts,
+            contract_scan: 'EvmContract',
+            contract_multicall: 'EvmContract',
+            dsproxy_registry: 'EvmContract',
+            native_token: CryptoAsset,
+            rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
+    ) -> None:
+        super().__init__(
+            greenlet_manager=greenlet_manager,
+            database=database,
+            etherscan=etherscan,
+            blockchain=blockchain,
+            etherscan_node=etherscan_node,
+            etherscan_node_name=etherscan_node_name,
+            contracts=contracts,
+            contract_scan=contract_scan,
+            contract_multicall=contract_multicall,
+            rpc_timeout=rpc_timeout,
+            native_token=native_token,
+        )
+        self.proxies_inquirer = EvmProxiesInquirer(
+            node_inquirer=self,
+            dsproxy_registry=dsproxy_registry,
+        )
+
+
+class DSProxyInquirerWithCacheData(EvmNodeInquirerWithDSProxy):
     """This is the inquirer that needs to be used by chains with modules (protocols)
     that store data in the cache tables of the globaldb. For example velodrome in
     optimism and curve in ethereum store data in cache tables."""
@@ -1507,7 +1499,6 @@ class DSProxyInquirerWithCacheData(EvmNodeInquirerWithDSProxy, UpdatableCacheDat
             native_token: CryptoAsset,
             rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
     ) -> None:
-        UpdatableCacheDataMixin.__init__(self, database)
         super().__init__(
             greenlet_manager=greenlet_manager,
             database=database,

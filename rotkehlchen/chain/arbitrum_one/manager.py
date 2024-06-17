@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.evm.manager import EvmManager
+from rotkehlchen.chain.evm.manager import CurveManagerMixin, EvmManager
 
 from .accountant import ArbitrumOneAccountingAggregator
 from .decoding.decoder import ArbitrumOneTransactionDecoder
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from .node_inquirer import ArbitrumOneInquirer
 
 
-class ArbitrumOneManager(EvmManager):
+class ArbitrumOneManager(EvmManager, CurveManagerMixin):
 
     def __init__(
             self,

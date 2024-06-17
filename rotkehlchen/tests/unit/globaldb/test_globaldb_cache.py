@@ -308,7 +308,10 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api, globaldb):
 
     future_timestamp = datetime.datetime.now(tz=datetime.UTC) + datetime.timedelta(seconds=WEEK_IN_SECONDS)  # noqa: E501
     with freeze_time(future_timestamp), requests_patch, call_contract_patch:
-        rotkehlchen_instance.chains_aggregator.ethereum.assure_curve_cache_is_queried_and_decoder_updated()
+        rotkehlchen_instance.chains_aggregator.ethereum.assure_curve_cache_is_queried_and_decoder_updated(
+            node_inquirer=ethereum_inquirer,
+            transactions_decoder=rotkehlchen_instance.chains_aggregator.ethereum.transactions_decoder,
+        )
 
     pools, gauges = read_curve_pools_and_gauges(chain_id=ChainID.ETHEREUM)
     for pool in CURVE_EXPECTED_LP_TOKENS_TO_POOLS.values():

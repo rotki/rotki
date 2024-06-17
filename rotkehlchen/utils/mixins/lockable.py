@@ -30,6 +30,7 @@ def protect_with_lock(arguments_matter: bool = False) -> Callable:
     Objects adhering to this MixIn's interface(LockableQueryMixIn) are:
         - all the exchanges
         - the Blockchain object
+        - EvmNodeInquirer
     """
     def _protect_with_lock(f: Callable) -> Callable:
         @wraps(f)

@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.evm.manager import EvmManager
+from rotkehlchen.chain.evm.manager import CurveManagerMixin, EvmManager
 
 from .accountant import PolygonPOSAccountingAggregator
 from .decoding.decoder import PolygonPOSTransactionDecoder
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from .node_inquirer import PolygonPOSInquirer
 
 
-class PolygonPOSManager(EvmManager):
+class PolygonPOSManager(EvmManager, CurveManagerMixin):
 
     def __init__(
             self,

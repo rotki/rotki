@@ -3,7 +3,7 @@ import operator
 from collections.abc import Iterable, Sequence
 from contextlib import suppress
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union, cast, overload
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken, FiatAsset, UnderlyingToken
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
@@ -11,6 +11,7 @@ from rotkehlchen.chain.ethereum.defi.price import handle_defi_price_query
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
+from rotkehlchen.chain.evm.decoding.curve.constants import CURVE_CHAIN_ID_TYPE, CURVE_CHAIN_IDS
 from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     ensure_gearbox_lp_underlying_tokens,
     read_gearbox_data_from_cache,
@@ -107,8 +108,14 @@ from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMi
 from rotkehlchen.utils.network import request_get_dict
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
+    from rotkehlchen.chain.base.manager import BaseManager
+    from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
     from rotkehlchen.chain.evm.manager import EvmManager
+    from rotkehlchen.chain.gnosis.manager import GnosisManager
+    from rotkehlchen.chain.optimism.manager import OptimismManager
+    from rotkehlchen.chain.polygon_pos.manager import PolygonPOSManager
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
     from rotkehlchen.externalapis.defillama import Defillama
@@ -344,8 +351,18 @@ class Inquirer:
         for chain_id, evm_manager in evm_managers:
             instance._evm_managers[chain_id] = evm_manager
 
+    @overload
+    @staticmethod
+    def get_evm_manager(chain_id: CURVE_CHAIN_ID_TYPE) -> 'ArbitrumOneManager | BaseManager | EthereumManager | GnosisManager | OptimismManager | PolygonPOSManager':  # noqa: E501
+        ...
+
+    @overload
     @staticmethod
     def get_evm_manager(chain_id: ChainID) -> 'EvmManager':
+        ...
+
+    @staticmethod
+    def get_evm_manager(chain_id: ChainID | CURVE_CHAIN_ID_TYPE) -> 'EvmManager':
         evm_manager = Inquirer._evm_managers.get(chain_id)
         assert evm_manager is not None, f'evm manager for chain id {chain_id} should have been injected'  # noqa: E501
         return evm_manager
@@ -802,10 +819,7 @@ class Inquirer:
             block_identifier='latest',
         )
 
-    def find_curve_pool_price(
-            self,
-            lp_token: EvmToken,
-    ) -> Price | None:
+    def find_curve_pool_price(self, lp_token: EvmToken) -> Price | None:
         """
         1. Obtain the pool for this token
         2. Obtain total supply of lp tokens
@@ -819,13 +833,18 @@ class Inquirer:
         May raise:
         - RemoteError
         """
-        ethereum = self.get_evm_manager(chain_id=lp_token.chain_id)
-        ethereum.assure_curve_cache_is_queried_and_decoder_updated()  # type:ignore  # ethereum is an EthereumManager here
+        assert lp_token.chain_id in CURVE_CHAIN_IDS, f'{lp_token} is not on a curve supported chain'  # noqa: E501
+        chain_id = cast(CURVE_CHAIN_ID_TYPE, lp_token.chain_id)
+        evm_manager = self.get_evm_manager(chain_id=chain_id)
+        evm_manager.assure_curve_cache_is_queried_and_decoder_updated(
+            node_inquirer=evm_manager.node_inquirer,
+            transactions_decoder=evm_manager.transactions_decoder,
+        )
 
         with GlobalDBHandler().conn.read_ctx() as cursor:
             pool_address_in_cache = globaldb_get_unique_cache_value(
                 cursor=cursor,
-                key_parts=(CacheType.CURVE_POOL_ADDRESS, str(lp_token.chain_id.serialize_for_db()), lp_token.evm_address),  # noqa: E501
+                key_parts=(CacheType.CURVE_POOL_ADDRESS, str(chain_id.serialize_for_db()), lp_token.evm_address),  # noqa: E501
             )
             if pool_address_in_cache is None:
                 return None
@@ -834,7 +853,7 @@ class Inquirer:
             pool_tokens_addresses = read_curve_pool_tokens(
                 cursor=cursor,
                 pool_address=pool_address,
-                chain_id=ChainID.ETHEREUM,
+                chain_id=chain_id,
             )
 
         tokens: list[EvmToken] = []
@@ -844,8 +863,11 @@ class Inquirer:
                 if token_address == ETH_SPECIAL_ADDRESS:
                     tokens.append(self.weth)
                 else:
-                    token_identifier = ethaddress_to_identifier(token_address)
-                    tokens.append(EvmToken(token_identifier))
+                    tokens.append(EvmToken(evm_address_to_identifier(
+                        address=token_address,
+                        chain_id=chain_id,
+                        token_type=EvmTokenKind.ERC20,
+                    )))
         except UnknownAsset:
             return None
 
@@ -864,25 +886,25 @@ class Inquirer:
         # Query total supply of the LP token
         contract = EvmContract(
             address=lp_token.evm_address,
-            abi=ethereum.node_inquirer.contracts.abi('ERC20_TOKEN'),
+            abi=evm_manager.node_inquirer.contracts.abi('ERC20_TOKEN'),
             deployed_block=0,
         )
         total_supply = contract.call(
-            node_inquirer=ethereum.node_inquirer,
+            node_inquirer=evm_manager.node_inquirer,
             method_name='totalSupply',
         )
 
         # Query balances for each token in the pool
         contract = EvmContract(
             address=pool_address,
-            abi=ethereum.node_inquirer.contracts.abi('CURVE_POOL'),
+            abi=evm_manager.node_inquirer.contracts.abi('CURVE_POOL'),
             deployed_block=0,
         )
         calls = [
             (pool_address, contract.encode(method_name='balances', arguments=[i]))
             for i in range(len(tokens))
         ]
-        output = ethereum.node_inquirer.multicall_2(
+        output = evm_manager.node_inquirer.multicall_2(
             require_success=False,
             calls=calls,
         )

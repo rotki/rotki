@@ -94,7 +94,6 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     BTCAddress,
-    ChainID,
     ChecksumEvmAddress,
     ListOfBlockchainAddresses,
     Location,
@@ -423,10 +422,6 @@ class Rotkehlchen:
             database=self.data.db,
         )
 
-        Inquirer().inject_evm_managers([
-            (ChainID.ETHEREUM, ethereum_manager),
-            (ChainID.OPTIMISM, optimism_manager),
-        ])
         uniswap_v2_oracle = UniswapV2Oracle(ethereum_inquirer)
         uniswap_v3_oracle = UniswapV3Oracle(ethereum_inquirer)
         Inquirer().add_defi_oracles(
@@ -457,6 +452,10 @@ class Rotkehlchen:
             beaconchain=self.beaconchain,
             btc_derivation_gap_limit=settings.btc_derivation_gap_limit,
         )
+        Inquirer().inject_evm_managers([
+            (chain.to_chain_id(), self.chains_aggregator.get_chain_manager(chain))
+            for chain in EVM_CHAINS_WITH_TRANSACTIONS
+        ])
 
         self.accountant = Accountant(
             db=self.data.db,
