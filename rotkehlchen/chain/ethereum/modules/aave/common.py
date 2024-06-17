@@ -11,7 +11,6 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 
-
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -74,7 +73,7 @@ def asset_to_atoken(asset: CryptoAsset, version: int) -> EvmToken | None:
         result = cursor.execute(
             'SELECT A.identifier from evm_tokens as A LEFT OUTER JOIN common_asset_details as B '
             'WHERE A.protocol==? AND A.identifier=B.identifier AND B.symbol=?',
-            (protocol, 'a' + asset.symbol),
+            (protocol, 'a' + asset.symbol.upper()),  # upper is needed since sUSD has aSUSD
         ).fetchall()
     if len(result) != 1:
         log.error(f'Could not derive atoken from {asset} since multiple or no results were returned')  # noqa: E501
