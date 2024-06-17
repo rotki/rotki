@@ -2,6 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
@@ -17,7 +18,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecoderContext,
     DecodingOutput,
 )
-from rotkehlchen.constants.assets import A_CRV, A_CRV_3CRV, A_ETH
+from rotkehlchen.constants.assets import A_CRV, A_CRV_3CRV, A_CVX, A_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -31,6 +32,7 @@ from .constants import (
     CRV_ADDRESS,
     CURVE_DEPOSIT_CONTRACTS,
     CURVE_SWAP_ROUTER,
+    CVX_ADDRESS,
     DEPOSIT_AND_STAKE_ZAP,
     FEE_DISTRIBUTOR,
     GAUGE_BRIBE_V2,
@@ -68,8 +70,10 @@ class CurveDecoder(CurveCommonDecoder):
             curve_swap_routers={CURVE_SWAP_ROUTER, CURVE_SWAP_ROUTER_NG},
         )
 
-    def _decode_gauge_bribe(self, context: DecoderContext) -> DecodingOutput:
-        """Back in the day they had bribe directly in the gauge giving CRV. So this is """
+    def _decode_gauge_bribe(self, context: DecoderContext, asset: Asset) -> DecodingOutput:
+        """Back in the day they had bribe directly in the gauge giving tokens without any
+        other logs. So this is checking if there is a transfer from the bribe gauge of any of
+        a predetermined list of tokens"""
         if (
                 context.tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
                 hex_or_bytes_to_address(context.tx_log.topics[1]) == GAUGE_BRIBE_V2 and  # from
@@ -80,9 +84,9 @@ class CurveDecoder(CurveCommonDecoder):
                 action='transform',
                 from_event_type=HistoryEventType.RECEIVE,
                 from_event_subtype=HistoryEventSubType.NONE,
-                asset=A_CRV,
+                asset=asset,
                 to_event_subtype=HistoryEventSubType.REWARD,
-                to_notes=f'Claim {{amount}} CRV as veCRV voting bribe{suffix}',  # amount filled in by action item  # noqa: E501
+                to_notes=f'Claim {{amount}} {asset.resolve_to_asset_with_symbol().symbol} as veCRV voting bribe{suffix}',  # amount filled in by action item  # noqa: E501
                 to_counterparty=CPT_CURVE,
             )
             return DecodingOutput(action_items=[action_item], matched_counterparty=CPT_CURVE)
@@ -200,7 +204,8 @@ class CurveDecoder(CurveCommonDecoder):
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return super().addresses_to_decoders() | {
             GAUGE_CONTROLLER: (self._decode_curve_gauge_votes,),
-            CRV_ADDRESS: (self._decode_gauge_bribe,),
+            CRV_ADDRESS: (self._decode_gauge_bribe, A_CRV),
+            CVX_ADDRESS: (self._decode_gauge_bribe, A_CVX),
             FEE_DISTRIBUTOR: (self._decode_fee_distribution,),
             VOTING_ESCROW: (self._decode_voting_escrow,),
         }

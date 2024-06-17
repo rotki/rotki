@@ -3,6 +3,7 @@ from typing import Final
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
 CRV_ADDRESS: Final = string_to_evm_address('0xD533a949740bb3306d119CC777fa900bA034cd52')
+CVX_ADDRESS: Final = string_to_evm_address('0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B')
 GAUGE_BRIBE_V2: Final = string_to_evm_address('0x7893bbb46613d7a4FbcC31Dab4C9b823FfeE1026')
 FEE_DISTRIBUTOR: Final = string_to_evm_address('0xA464e6DCda8AC41e03616F95f4BC98a13b8922Dc')
 VOTING_ESCROW: Final = string_to_evm_address('0x5f3b5DfEb7B28CDbD7FAba78963EE202a494e2A2')
