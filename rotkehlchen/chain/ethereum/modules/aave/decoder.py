@@ -11,6 +11,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     DecodingOutput,
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
+from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.constants.assets import A_AAVE
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
@@ -19,7 +20,15 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-from .constants import REDEEM_AAVE, REWARDS_CLAIMED, STAKED_AAVE, STK_AAVE_ADDR, STKAAVE_IDENTIFIER
+from .constants import (
+    REDEEM_AAVE,
+    REDEEM_AAVE_OLD,
+    REWARDS_CLAIMED,
+    STAKED_AAVE,
+    STAKED_AAVE_BEHALFOF,
+    STK_AAVE_ADDR,
+    STKAAVE_IDENTIFIER,
+)
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -29,9 +38,9 @@ class AaveDecoder(DecoderInterface):
     """Aave decoder for staking and unstaking events"""
     def _decode_staking_events(self, context: DecoderContext) -> DecodingOutput:
         """Decode aave staking unstaking events"""
-        if context.tx_log.topics[0] == STAKED_AAVE:
+        if context.tx_log.topics[0] in (STAKED_AAVE, STAKED_AAVE_BEHALFOF):
             method = self._decode_stake
-        elif context.tx_log.topics[0] == REDEEM_AAVE:
+        elif context.tx_log.topics[0] in (REDEEM_AAVE, REDEEM_AAVE_OLD):
             method = self._decode_unstake
         elif context.tx_log.topics[0] == REWARDS_CLAIMED:
             method = self._decode_rewards_claim
@@ -84,6 +93,7 @@ class AaveDecoder(DecoderInterface):
             amount: FVal,
             context: DecoderContext,
     ) -> DecodingOutput:
+        out_event, in_event = None, None
         for event in context.decoded_events:
             if (
                     event.event_type == HistoryEventType.SPEND and
@@ -99,6 +109,7 @@ class AaveDecoder(DecoderInterface):
                     event.notes += f' for {to_address}'
                 event.product = EvmProduct.STAKING
                 event.counterparty = CPT_AAVE
+                out_event = event
             elif (
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE and
@@ -109,7 +120,12 @@ class AaveDecoder(DecoderInterface):
                 event.counterparty = CPT_AAVE
                 event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
                 event.notes = f'Receive {event.balance.amount} stkAAVE from staking in Aave'
+                in_event = event
 
+        maybe_reshuffle_events(
+            ordered_events=[out_event, in_event],
+            events_list=context.decoded_events,
+        )
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_unstake(
