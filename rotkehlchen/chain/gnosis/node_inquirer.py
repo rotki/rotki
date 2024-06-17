@@ -5,7 +5,7 @@ from eth_typing import BlockNumber
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.evm.contracts import EvmContracts
-from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, UpdatableCacheDataMixin
+from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_XDAI
 from rotkehlchen.fval import FVal
@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class GnosisInquirer(EvmNodeInquirer, UpdatableCacheDataMixin):
+class GnosisInquirer(EvmNodeInquirer):
 
     def __init__(
             self,
@@ -38,7 +38,6 @@ class GnosisInquirer(EvmNodeInquirer, UpdatableCacheDataMixin):
             database: 'DBHandler',
             rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
     ) -> None:
-        UpdatableCacheDataMixin.__init__(self, database)
         etherscan = GnosisEtherscan(
             database=database,
             msg_aggregator=database.msg_aggregator,

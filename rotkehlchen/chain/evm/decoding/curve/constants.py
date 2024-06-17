@@ -1,4 +1,4 @@
-from typing import Final
+from typing import Final, Literal, get_args
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.types import ChainID
@@ -45,6 +45,15 @@ CURVE_CHAIN_ID = {
     ChainID.GNOSIS: 'xdai',
     ChainID.BASE: 'base',
 }
+CURVE_CHAIN_ID_TYPE = Literal[
+    ChainID.ETHEREUM,
+    ChainID.POLYGON_POS,
+    ChainID.OPTIMISM,
+    ChainID.ARBITRUM_ONE,
+    ChainID.GNOSIS,
+    ChainID.BASE,
+]
+CURVE_CHAIN_IDS: tuple[CURVE_CHAIN_ID_TYPE, ...] = get_args(CURVE_CHAIN_ID_TYPE)
 CURVE_METAREGISTRY_METHODS = [
     'get_pool_name',
     'get_gauge',

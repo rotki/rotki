@@ -6,7 +6,6 @@ from eth_typing import BlockNumber
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.l2_with_l1_fees.node_inquirer import L2WithL1FeesInquirer
-from rotkehlchen.chain.evm.node_inquirer import UpdatableCacheDataMixin
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
@@ -31,7 +30,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class BaseInquirer(L2WithL1FeesInquirer, UpdatableCacheDataMixin):
+class BaseInquirer(L2WithL1FeesInquirer):
 
     def __init__(
             self,
@@ -39,7 +38,6 @@ class BaseInquirer(L2WithL1FeesInquirer, UpdatableCacheDataMixin):
             database: 'DBHandler',
             rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
     ) -> None:
-        UpdatableCacheDataMixin.__init__(self, database)
         etherscan = BaseEtherscan(
             database=database,
             msg_aggregator=database.msg_aggregator,

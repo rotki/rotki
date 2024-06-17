@@ -12,7 +12,10 @@ from freezegun import freeze_time
 from rotkehlchen.assets.asset import Asset, CustomAsset, EvmToken, FiatAsset, UnderlyingToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.chain.evm.decoding.curve.constants import CURVE_CHAIN_ID
 from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
+    CurvePoolData,
+    _query_curve_data_from_api,
     query_curve_data,
     save_curve_data_to_cache,
 )
@@ -52,9 +55,11 @@ from rotkehlchen.tests.conftest import TestEnvironment, requires_env
 from rotkehlchen.tests.utils.constants import A_CNY, A_JPY
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
+    EVM_CHAINS_WITH_TRANSACTIONS,
     VELODROME_POOL_PROTOCOL,
     CacheType,
     ChainID,
+    ChecksumEvmAddress,
     EvmTokenKind,
     Price,
     Timestamp,
@@ -62,8 +67,8 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
 
 
 UNDERLYING_ASSET_PRICES = {
@@ -422,35 +427,62 @@ def test_find_velodrome_v2_lp_token_price(inquirer, optimism_manager):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_find_curve_lp_token_price(inquirer: 'Inquirer', ethereum_manager: 'EthereumManager'):
-    with GlobalDBHandler().conn.write_ctx() as write_cursor:  # querying curve lp token price normally triggers curve cache query. Set all query ts to now, so it does not happen.  # noqa: E501
-        write_cursor.execute('UPDATE general_cache SET last_queried_ts=? WHERE key=?', (ts_now(), 'CURVE_LP_TOKENS1'))  # noqa: E501
+def test_find_curve_lp_token_price(inquirer: 'Inquirer', blockchain: 'ChainsAggregator'):
+    tested_tokens: dict[ChainID, tuple[str, FVal]] = {
+        ChainID.ETHEREUM: ('0xA3D87FffcE63B53E0d54fAa1cc983B7eB0b74A9c', FVal('3584.181065')),
+        # 3CRV-OP-gauge
+        ChainID.OPTIMISM: ('0x4456d13Fc6736e8e8330394c0C622103E06ea419', FVal('1864.150003')),
+        # Curve.fi amDAI/amUSDC/amUSDT (am3CRV)
+        ChainID.POLYGON_POS: ('0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171', FVal('1.129260')),
+        # crvUSDT-gauge
+        ChainID.ARBITRUM_ONE: ('0xB08FEf57bFcc5f7bF0EF69C0c090849d497C8F8A', FVal('2.024704')),
+        # tricrypto
+        ChainID.BASE: ('0x63Eb7846642630456707C3efBb50A03c79B89D81', FVal('1.011604')),
+        # crvusdusdt-gauge
+        ChainID.GNOSIS: ('0xC2EfDbC1a21D82A677380380eB282a963A6A6ada', FVal('0.997286')),
+    }
 
-    inquirer.set_oracles_order([CurrentPriceOracle.DEFILLAMA])
-    ethereum_manager.node_inquirer.ensure_cache_data_is_updated(
-        cache_type=CacheType.CURVE_LP_TOKENS,
-        query_method=query_curve_data,
-        save_method=save_curve_data_to_cache,
-        chain_id=ChainID.ETHEREUM,
-        cache_key_parts=(str(ChainID.ETHEREUM.serialize_for_db()),),
-    )
+    inquirer.inject_evm_managers([
+        (chain.to_chain_id(), blockchain.get_chain_manager(chain))
+        for chain in EVM_CHAINS_WITH_TRANSACTIONS
+    ])
 
-    inquirer.inject_evm_managers([(ChainID.ETHEREUM, ethereum_manager)])
-    for lp_token_address, expected_price in (
-        # Curve.fi ETH/sETH (eCRV)
-        ('0xA3D87FffcE63B53E0d54fAa1cc983B7eB0b74A9c', FVal('3295.243125296')),
-        # Curve.fi Factory Crypto Pool: YFI/ETH (YFIETH-f)
-        ('0x29059568bB40344487d62f7450E78b8E6C74e0e5', FVal('10694.82554545636')),
-        # tryLSD
-        ('0x2570f1bd5d2735314fc102eb12fc1afe9e6e7193', FVal('10811.072574998')),
-        # frax/usdc/dai/usdt
-        ('0xd632f22692fac7611d2aa1c0d552930d43caed3b', FVal('1.0105665')),
+    def mock_query_curve_data_from_api(
+            chain_id: ChainID,
+            existing_pools: list[ChecksumEvmAddress],
+    ) -> list[CurvePoolData]:
+        for pool in _query_curve_data_from_api(
+            chain_id=chain_id,
+            existing_pools=existing_pools,
+        ):
+            if tested_tokens[chain_id][0] in {pool.lp_token_address, pool.gauge_address}:
+                return [pool]
+        return []
+
+    with patch(
+        target='rotkehlchen.chain.evm.decoding.curve.curve_cache._query_curve_data_from_api',
+        new=mock_query_curve_data_from_api,
     ):
-        identifier = ethaddress_to_identifier(string_to_evm_address(lp_token_address))
-        price = inquirer.find_curve_pool_price(EvmToken(identifier))
-        assert price is not None and price.is_close(expected_price)
-        # Check that the protocol is correctly caught by the inquirer
-        assert price == inquirer.find_usd_price(EvmToken(identifier))
+        inquirer.set_oracles_order([CurrentPriceOracle.DEFILLAMA])
+        for chain_id in CURVE_CHAIN_ID:
+            manager = inquirer.get_evm_manager(chain_id)
+            manager.node_inquirer.ensure_cache_data_is_updated(
+                cache_type=CacheType.CURVE_LP_TOKENS,
+                query_method=query_curve_data,
+                save_method=save_curve_data_to_cache,
+                chain_id=manager.node_inquirer.chain_id,
+                cache_key_parts=(str(manager.node_inquirer.chain_id.serialize_for_db()),),
+            )
+
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:  # querying curve lp token price normally triggers curve cache query. Set all query ts to now, so it does not happen.  # noqa: E501
+        write_cursor.execute('UPDATE general_cache SET last_queried_ts=? WHERE key LIKE ?', (ts_now(), 'CURVE_LP_TOKENS%'))  # noqa: E501
+
+    for chain_id, (address, price) in tested_tokens.items():
+        assert inquirer.find_usd_price(EvmToken(evm_address_to_identifier(
+            address=address,
+            chain_id=chain_id,
+            token_type=EvmTokenKind.ERC20,
+        ))).is_close(price)
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

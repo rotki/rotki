@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.evm.manager import EvmManager
+from rotkehlchen.chain.evm.manager import CurveManagerMixin, EvmManager
 
 from .accountant import ScrollAccountingAggregator
 from .decoding.decoder import ScrollTransactionDecoder
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from .node_inquirer import ScrollInquirer
 
 
-class ScrollManager(EvmManager):
+class ScrollManager(EvmManager, CurveManagerMixin):
 
     def __init__(self, node_inquirer: 'ScrollInquirer') -> None:
         transactions = ScrollTransactions(

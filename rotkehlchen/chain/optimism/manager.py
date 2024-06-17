@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.evm.manager import EvmManager
+from rotkehlchen.chain.evm.manager import CurveManagerMixin, EvmManager
 
 from .accountant import OptimismAccountingAggregator
 from .decoding.decoder import OptimismTransactionDecoder
@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from .node_inquirer import OptimismInquirer
 
 
-class OptimismManager(EvmManager):
+class OptimismManager(EvmManager, CurveManagerMixin):
 
     def __init__(
             self,

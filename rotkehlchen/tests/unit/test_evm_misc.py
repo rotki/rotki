@@ -5,9 +5,8 @@ from rotkehlchen.chain.evm.decoding.weth.constants import (
     CHAIN_ID_TO_WETH_MAPPING,
     CHAINS_WITHOUT_NATIVE_ETH,
 )
-from rotkehlchen.chain.evm.node_inquirer import UpdatableCacheDataMixin
 from rotkehlchen.chain.evm.types import asset_id_is_evm_token, string_to_evm_address
-from rotkehlchen.types import EVM_CHAINS_WITH_TRANSACTIONS, SUPPORTED_CHAIN_IDS, ChainID
+from rotkehlchen.types import SUPPORTED_CHAIN_IDS, ChainID
 
 
 def test_asset_id_is_evm_token():
@@ -55,19 +54,3 @@ def test_weth_is_supported():
         set(CHAIN_ID_TO_WETH_MAPPING.keys()) ==
         set(typing.get_args(SUPPORTED_CHAIN_IDS)) - CHAINS_WITHOUT_NATIVE_ETH
     )
-
-
-def test_evminquirer_has_cachable_mixin(blockchain):
-    """
-    Make sure that the UpdatableCacheDataMixin is used in all EVMEnquirers that
-    have decoders. The reason for this is that there can be decoders that make use
-    of the cache and inherit ReloadableCacheDecoderMixin in which case they would
-    try to call ensure_cache_data_is_updated from the inquirer.
-
-    The need to have this test indicates the inheritance hierarchy there is not correct
-    and needs thinking. Issue for this below:
-    https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=67557353
-    """
-    for chain in EVM_CHAINS_WITH_TRANSACTIONS:  # chains that have transactions have decoders
-        inquirer = blockchain.get_chain_manager(chain).node_inquirer
-        assert isinstance(inquirer, UpdatableCacheDataMixin), f'EVM Inquirer of {chain} is not an UpdatableCacheDataMixin'  # noqa: E501

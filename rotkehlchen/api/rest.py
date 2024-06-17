@@ -4577,7 +4577,7 @@ class RestAPI:
             ('aerodrome pools', CacheType.AERODROME_POOL_ADDRESS, query_velodrome_like_data, save_velodrome_data_to_cache, None, base_inquirer),  # noqa: E501
             ('gearbox pools', CacheType.GEARBOX_POOL_ADDRESS, query_gearbox_data, save_gearbox_data_to_cache, ChainID.ETHEREUM, eth_node_inquirer),  # noqa: E501
         ]:
-            if inquirer.ensure_cache_data_is_updated(  # type: ignore[attr-defined]  # all inquirers have ensure_cache_data_is_updated
+            if inquirer.ensure_cache_data_is_updated(
                 cache_type=cache_type,
                 query_method=query_method,
                 save_method=save_method,

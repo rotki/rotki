@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.evm.manager import EvmManager
+from rotkehlchen.chain.evm.manager import CurveManagerMixin, EvmManager
 
 from .accountant import GnosisAccountingAggregator
 from .decoding.decoder import GnosisTransactionDecoder
@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from .node_inquirer import GnosisInquirer
 
 
-class GnosisManager(EvmManager):
+class GnosisManager(EvmManager, CurveManagerMixin):
 
     def __init__(self, node_inquirer: 'GnosisInquirer') -> None:
         transactions = GnosisTransactions(
