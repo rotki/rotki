@@ -230,7 +230,7 @@ class HistoryBaseEntry(AccountingEventMixin, ABC):
 
     def serialize(self) -> dict[str, Any]:
         """Serialize the event alone for api"""
-        return {
+        serialized_data = {
             'identifier': self.identifier,
             'entry_type': self.entry_type.serialize(),
             'event_identifier': self.event_identifier,
@@ -244,6 +244,31 @@ class HistoryBaseEntry(AccountingEventMixin, ABC):
             'location_label': self.location_label,
             'notes': self.notes,
         }
+        if self.location == Location.KRAKEN and not self.notes:
+            if self.event_type == HistoryEventType.TRADE:
+                if self.event_subtype == HistoryEventSubType.SPEND:
+                    serialized_data['notes'] = f'Swap {self.balance.amount} {self.asset.resolve_to_asset_with_symbol().symbol} in Kraken'  # noqa: E501
+                elif self.event_subtype == HistoryEventSubType.RECEIVE:
+                    serialized_data['notes'] = f'Receive {self.balance.amount} {self.asset.resolve_to_asset_with_symbol().symbol} as a result of a Kraken swap'  # noqa: E501
+                elif self.event_subtype == HistoryEventSubType.FEE:
+                    serialized_data['notes'] = f'Spend {self.balance.amount} {self.asset.resolve_to_asset_with_symbol().symbol} as Kraken trading fee'  # noqa: E501
+
+            elif self.event_type == HistoryEventType.STAKING:
+                if self.event_subtype == HistoryEventSubType.REWARD:
+                    serialized_data['notes'] = f'Gain {self.balance.amount} {self.asset.resolve_to_asset_with_symbol().symbol} from Kraken staking'  # noqa: E501
+                elif self.event_subtype == HistoryEventSubType.FEE:
+                    serialized_data['notes'] = f'Spend {self.balance.amount} {self.asset.resolve_to_asset_with_symbol().symbol} as Kraken staking fee'  # noqa: E501
+
+            elif self.event_type == HistoryEventType.WITHDRAWAL:
+                if self.event_subtype == HistoryEventSubType.REMOVE_ASSET:
+                    serialized_data['notes'] = f'Withdraw {self.balance.amount} {self.asset.resolve_to_asset_with_symbol().symbol} from Kraken'  # noqa: E501
+                elif self.event_subtype == HistoryEventSubType.FEE:
+                    serialized_data['notes'] = f'Spend {self.balance.amount} {self.asset.resolve_to_asset_with_symbol().symbol} as Kraken withdrawal fee'  # noqa: E501
+
+            elif self.event_type == HistoryEventType.DEPOSIT and self.event_subtype == HistoryEventSubType.DEPOSIT_ASSET:  # noqa: E501
+                serialized_data['notes'] = f'Deposit {self.balance.amount} {self.asset.resolve_to_asset_with_symbol().symbol} to Kraken'  # noqa: E501
+
+        return serialized_data
 
     def serialize_for_csv(self, fiat_value: FVal) -> dict[str, Any]:
         """Serialize event data for CSV export.
@@ -281,6 +306,8 @@ class HistoryBaseEntry(AccountingEventMixin, ABC):
             result['hidden'] = True
         if grouped_events_num is not None:
             result['grouped_events_num'] = grouped_events_num
+        if result['entry']['notes'] and not self.notes:
+            result['default_notes'] = True
 
         result['event_accounting_rule_status'] = event_accounting_rule_status.serialize()
 
