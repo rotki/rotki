@@ -80,6 +80,7 @@ onMounted(() => {
           :price-of-asset="info.usdPrice"
           fiat-currency="USD"
           :value="info.usdPrice"
+          no-scramble
         />
 
         <RowActions
