@@ -174,6 +174,7 @@ watch([y, selectedTab, selectedNotifications], ([currentY, currSelectedTab, curr
             :key="item.id"
             :initial-appear="initialAppear"
             min-height="120px"
+            class="grow-0 shrink-0"
           >
             <Notification
               :notification="item"
@@ -222,7 +223,7 @@ watch([y, selectedTab, selectedNotifications], ([currentY, currSelectedTab, curr
 }
 
 .content {
-  @apply ps-3.5 pe-2 mt-2 grid grid-cols-1 gap-2;
+  @apply ps-3.5 pe-2 mt-2 flex flex-col gap-2;
   @apply overflow-y-auto #{!important};
 }
 </style>
