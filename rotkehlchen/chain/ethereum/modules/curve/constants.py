@@ -13,6 +13,7 @@ GAUGE_BRIBE_V2_ASSETS: Final = [
     string_to_evm_address('0xD533a949740bb3306d119CC777fa900bA034cd52'),  # CRV
     string_to_evm_address('0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B'),  # CVX
     string_to_evm_address('0xdB25f211AB05b1c97D595516F45794528a807ad8'),  # EURS
+    string_to_evm_address('0x090185f2135308BaD17527004364eBcC2D37e5F6'),  # SPELL
 ]
 
 # Deposit contracts are retrieved from the links below Deposit<pool>:
