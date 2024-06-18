@@ -171,7 +171,7 @@ const rules = {
 const numericAmount = bigNumberifyFromRef(amount);
 const numericUsdValue = bigNumberifyFromRef(usdValue);
 
-const { setValidation, setSubmitFunc, saveHistoryEventHandler } = useHistoryEventsForm();
+const { setValidation, setSubmitFunc, saveHistoryEventHandler, getPayloadNotes } = useHistoryEventsForm();
 
 const v$ = setValidation(
   rules,
@@ -283,6 +283,9 @@ async function save(): Promise<boolean> {
     true,
   );
 
+  const editable = get(editableItem);
+  const usedNotes = getPayloadNotes(get(notes), editable?.notes);
+
   const payload: NewEvmHistoryEventPayload = {
     entryType: HistoryEventEntryType.EVM_EVENT,
     txHash: get(txHash),
@@ -299,16 +302,14 @@ async function save(): Promise<boolean> {
     location: get(location),
     address: get(address) || null,
     locationLabel: get(locationLabel) || null,
-    notes: get(notes) || undefined,
+    notes: usedNotes || undefined,
     counterparty: get(counterparty) || null,
     product: get(product) || null,
     extraData: get(extraData) || null,
   };
 
-  const edit = get(editableItem);
-
   return await saveHistoryEventHandler(
-    edit ? { ...payload, identifier: edit.identifier } : payload,
+    editable ? { ...payload, identifier: editable.identifier } : payload,
     assetPriceForm,
     errorMessages,
     reset,
