@@ -22,7 +22,11 @@ from rotkehlchen.chain.evm.structures import EvmTxReceiptLog, SwapData
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.structures.types import (
+    EventDirection,
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
@@ -179,23 +183,30 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
         Returns a list of pairs (spend_event, receive_event, swap_data)
         which represent the relevant trades.
         """
-        related_transfer_events: dict[tuple[HistoryEventType, Asset, FVal], EvmEvent] = {}
+        related_transfer_events: dict[tuple[EventDirection, Asset, FVal], EvmEvent] = {}
         for event in decoded_events:
             if (
-                event.event_type in (HistoryEventType.SPEND, HistoryEventType.RECEIVE) and
-                event.address == self.settlement_address
+                    (event.event_type in (HistoryEventType.SPEND, HistoryEventType.RECEIVE) or
+                     (event.event_type == HistoryEventType.TRADE and event.event_subtype in (HistoryEventSubType.SPEND, HistoryEventSubType.RECEIVE))  # noqa: E501
+                     ) and
+                    event.address == self.settlement_address
             ):
-                related_transfer_events[(event.event_type, event.asset, event.balance.amount)] = event  # noqa: E501
+                direction = event.maybe_get_direction()
+                if direction is None:
+                    log.error(f'Could not find direction of event {event}. Should never happen')
+                    continue
+
+                related_transfer_events[(direction, event.asset, event.balance.amount)] = event
 
         trades_events: list[tuple[EvmEvent, EvmEvent, EvmEvent | None, SwapData]] = []
         for swap_data in all_swap_data:
-            receive_event = related_transfer_events.get((HistoryEventType.RECEIVE, swap_data.to_asset, swap_data.to_amount))  # noqa: E501
+            receive_event = related_transfer_events.get((EventDirection.IN, swap_data.to_asset, swap_data.to_amount))  # noqa: E501
             if receive_event is None:
                 continue
 
             if swap_data.from_asset != self.native_asset:
                 # If a token is spent, there has to be an event for that.
-                spend_event = related_transfer_events.get((HistoryEventType.SPEND, swap_data.from_asset, swap_data.from_amount + swap_data.fee_amount))  # noqa: E501
+                spend_event = related_transfer_events.get((EventDirection.OUT, swap_data.from_asset, swap_data.from_amount + swap_data.fee_amount))  # noqa: E501
                 if spend_event is None:
                     log.error(
                         f'Could not find a spend event of {swap_data.from_amount} '

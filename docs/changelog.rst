@@ -38,6 +38,7 @@ Changelog
 * :feature:`-` Paladin bribe claiming events should now be properly decoded.
 * :bug:`-` Scroll decoders will now work as expected.
 * :bug:`-` Events claiming veCRV bribes from Gauge Bribe v2 will now be properly decoded.
+* :bug:`-` Complicated cowswap trades that were detected as part of another DEX should now be properly decoded.
 
 * :release:`1.33.1 <2024-05-29>`
 * :bug:`-` Fix the issue where airdrops aren't properly filtered by status.
