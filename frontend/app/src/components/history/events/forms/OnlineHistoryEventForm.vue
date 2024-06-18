@@ -121,7 +121,7 @@ const rules = {
 const numericAmount = bigNumberifyFromRef(amount);
 const numericUsdValue = bigNumberifyFromRef(usdValue);
 
-const { setValidation, setSubmitFunc, saveHistoryEventHandler } = useHistoryEventsForm();
+const { setValidation, setSubmitFunc, saveHistoryEventHandler, getPayloadNotes } = useHistoryEventsForm();
 
 const v$ = setValidation(
   rules,
@@ -217,6 +217,9 @@ async function save(): Promise<boolean> {
     true,
   );
 
+  const editable = get(editableItem);
+  const usedNotes = getPayloadNotes(get(notes), editable?.notes);
+
   const payload: NewOnlineHistoryEventPayload = {
     entryType: HistoryEventEntryType.HISTORY_EVENT,
     eventIdentifier: get(eventIdentifier),
@@ -231,13 +234,11 @@ async function save(): Promise<boolean> {
     },
     location: get(location),
     locationLabel: get(locationLabel) || null,
-    notes: get(notes) || undefined,
+    notes: usedNotes || undefined,
   };
 
-  const edit = get(editableItem);
-
   return await saveHistoryEventHandler(
-    edit ? { ...payload, identifier: edit.identifier } : payload,
+    editable ? { ...payload, identifier: editable.identifier } : payload,
     assetPriceForm,
     errorMessages,
     reset,

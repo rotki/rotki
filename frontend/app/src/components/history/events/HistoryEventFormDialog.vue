@@ -1,9 +1,9 @@
 <script lang="ts" setup>
-import type { HistoryEvent } from '@/types/history/events';
+import type { HistoryEvent, HistoryEventEntry } from '@/types/history/events';
 
 const props = withDefaults(
   defineProps<{
-    editableItem?: HistoryEvent;
+    editableItem?: HistoryEventEntry;
     nextSequence?: string;
     loading?: boolean;
     groupHeader?: HistoryEvent;
@@ -18,7 +18,7 @@ const props = withDefaults(
 
 const { editableItem, groupHeader } = toRefs(props);
 
-const { openDialog, submitting, closeDialog, trySubmit }
+const { openDialog, submitting, closeDialog, trySubmit, defaultNotes }
   = useHistoryEventsForm();
 
 const { t } = useI18n();
@@ -28,6 +28,10 @@ const title: ComputedRef<string> = computed(() =>
     ? t('transactions.events.dialog.edit.title')
     : t('transactions.events.dialog.add.title'),
 );
+
+watchImmediate(editableItem, (editable) => {
+  set(defaultNotes, editable?.defaultNotes);
+});
 </script>
 
 <template>
@@ -44,6 +48,7 @@ const title: ComputedRef<string> = computed(() =>
       :group-header="groupHeader"
       :editable-item="editableItem"
       :next-sequence="nextSequence"
+      :default-notes="defaultNotes"
     />
   </BigDialog>
 </template>

@@ -8,6 +8,14 @@ export const useHistoryEventsForm = createSharedComposable(() => {
   const { setMessage } = useMessageStore();
   const { editHistoryEvent, addHistoryEvent } = useHistoryEvents();
 
+  const defaultNotes: Ref<boolean> = ref(false);
+  const getPayloadNotes = (newNotes?: string | null, oldNotes?: string | null) => {
+    if (!get(defaultNotes) || newNotes !== oldNotes)
+      return newNotes;
+
+    return undefined;
+  };
+
   const saveHistoryEventHandler = async (
     payload: NewHistoryEventPayload | EditHistoryEventPayload,
     assetPriceForm: Ref<InstanceType<typeof HistoryEventAssetPriceForm> | null>,
@@ -48,6 +56,8 @@ export const useHistoryEventsForm = createSharedComposable(() => {
 
   return {
     ...useForm<boolean>(),
+    defaultNotes,
+    getPayloadNotes,
     saveHistoryEventHandler,
   };
 });

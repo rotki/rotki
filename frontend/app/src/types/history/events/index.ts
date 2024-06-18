@@ -261,6 +261,7 @@ export const HistoryEventMeta = EntryMeta.merge(
     hidden: z.boolean().optional(),
     groupedEventsNum: z.number().nullish(),
     eventAccountingRuleStatus: HistoryEventAccountingRuleStatusEnum,
+    defaultNotes: z.boolean().optional(),
   }),
 );
 
