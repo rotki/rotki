@@ -1,7 +1,7 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
@@ -140,6 +140,64 @@ def test_swap_token_to_eth(database, ethereum_inquirer, ethereum_accounts):
             balance=Balance(amount=FVal(fee_amount)),
             location_label=user_address,
             notes=f'Spend {fee_amount} USDT as a cowswap fee',
+            counterparty=CPT_COWSWAP,
+            address=GPV2_SETTLEMENT_ADDRESS,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+def test_swap_token_to_eth_with_other_trade(database, ethereum_inquirer, ethereum_accounts):
+    """This was not decoded properly before since the FLT swap was first detectedd
+    as part of uniswap and then the cowswap decoder was not picking it up. This fixes that"""
+    tx_hex = deserialize_evm_tx_hash('0x31051b28d2b0a0365c2b518778af91180355f130f1fcf2b199faecd256093cc9')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    timestamp, approval, amount_out, amount_in = TimestampMS(1718357603000), '115792089237316195423570985008687907853269984665640564039457.584007913129639935', '5000', '0.861165556733956932'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=EvmToken('eip155:1/erc20:0x236501327e701692a281934230AF0b6BE8Df3353'),
+            balance=Balance(amount=FVal(approval)),
+            location_label=user_address,
+            notes=f'Set FLT spending approval of {user_address} by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110 to {approval}',  # noqa: E501
+            address=string_to_evm_address('0xC92E8bdf79f0507f65a392b0ab4667716BFE0110'),
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=EvmToken('eip155:1/erc20:0x236501327e701692a281934230AF0b6BE8Df3353'),
+            balance=Balance(amount=FVal(amount_out)),
+            location_label=user_address,
+            notes=f'Swap {amount_out} FLT in cowswap',
+            counterparty=CPT_COWSWAP,
+            address=GPV2_SETTLEMENT_ADDRESS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=3,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(amount_in)),
+            location_label=user_address,
+            notes=f'Receive {amount_in} ETH as the result of a swap in cowswap',
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ),
