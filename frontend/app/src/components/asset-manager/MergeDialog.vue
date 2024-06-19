@@ -95,6 +95,13 @@ function input(value: boolean) {
   emit('input', value);
   setTimeout(() => reset(), 100);
 }
+
+const excluded = computed(() => {
+  const source = get(sourceIdentifier);
+  if (!source)
+    return [];
+  return [source];
+});
 </script>
 
 <template>
@@ -137,9 +144,8 @@ function input(value: boolean) {
           :label="t('merge_dialog.target.label')"
           :disabled="pending"
           :asset.sync="target"
-          :excludes="sourceIdentifier ? [sourceIdentifier] : []"
+          :excludes="excluded"
           :hint="target ? t('merge_dialog.target_hint', { identifier: target.identifier }) : ''"
-          persistent-hint
           @focus="clearErrors()"
           @blur="v$.targetIdentifier.$touch()"
         />
@@ -147,6 +153,7 @@ function input(value: boolean) {
 
       <RuiAlert
         v-if="done"
+        class="mt-4"
         type="success"
       >
         {{ t('merge_dialog.done') }}

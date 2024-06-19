@@ -16,7 +16,6 @@ const props = withDefaults(
     disabled?: boolean;
     outlined?: boolean;
     clearable?: boolean;
-    persistentHint?: boolean;
     required?: boolean;
     showIgnored?: boolean;
     hideDetails?: boolean;
@@ -34,7 +33,6 @@ const props = withDefaults(
     disabled: false,
     outlined: false,
     clearable: false,
-    persistentHint: false,
     required: false,
     showIgnored: false,
     hideDetails: false,
