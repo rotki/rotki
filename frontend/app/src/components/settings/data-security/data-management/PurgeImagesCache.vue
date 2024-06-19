@@ -133,6 +133,7 @@ const { status, pending, showConfirmation }
 
     <ActionStatusIndicator
       v-if="status"
+      class="mt-4"
       :status="status"
     />
   </div>

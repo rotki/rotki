@@ -192,6 +192,7 @@ const chainsSelection = useArrayMap(txChains, item => item.id);
 
     <ActionStatusIndicator
       v-if="status"
+      class="mt-4"
       :status="status"
     />
   </div>

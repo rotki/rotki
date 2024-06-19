@@ -84,6 +84,7 @@ const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
 
     <ActionStatusIndicator
       v-if="status"
+      class="mt-4"
       :status="status"
     />
   </div>
