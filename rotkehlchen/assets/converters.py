@@ -447,7 +447,7 @@ def asset_from_htx(htx_name: str) -> AssetWithOracles:
 
     htx_name = htx_name.upper()
     return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
-        exchange=Location.KRAKEN,  # TODO: Change this to HTX once we add the mappings
+        exchange=Location.HTX,
         symbol=htx_name,
         default=htx_name,
     ))

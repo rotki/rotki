@@ -12,7 +12,7 @@ from rotkehlchen.tests.utils.api import (
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 
-NUM_ASSETS_MAPPINGS_V1_32: Final = 1500
+NUM_ASSETS_MAPPINGS_V1_32: Final = 1715
 
 
 def _get_all_location_mappings(rotkehlchen_api_server: 'APIServer') -> Any:
