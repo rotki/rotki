@@ -1,14 +1,18 @@
 
+import warnings as test_warnings
 from unittest.mock import patch
 
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.converters import asset_from_htx
 from rotkehlchen.constants.assets import A_CRV
+from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.exchanges.htx import Htx
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.types import Location
 
 
 def test_accounts(htx_exchange: Htx):
@@ -46,3 +50,24 @@ def test_balances(htx_exchange: Htx):
         Asset('ATOM'): Balance(amount=FVal('1.100000007177861711'), usd_value=FVal('1.6500000107667925665')),  # noqa: E501
         A_CRV: Balance(amount=FVal('0.100000007177861711'), usd_value=FVal('0.1500000107667925665')),  # noqa: E501
     }
+
+
+def test_assets_are_known(htx_exchange: Htx, globaldb):
+    with patch('rotkehlchen.exchanges.htx.Htx._sign_request', return_value={}):
+        tickers = htx_exchange._query('/v2/settings/common/symbols')
+    for ticker in tickers:
+        if ticker['te'] is False:  # skip if trade disabled
+            continue
+        try:
+            asset_from_htx(ticker['bcdn'])
+        except UnknownAsset as e:
+            test_warnings.warn(UserWarning(
+                f'Found unknown asset {e.identifier} in HTX. '
+                f'Support for it has to be added',
+            ))
+        except UnsupportedAsset as e:
+            if globaldb.is_asset_symbol_unsupported(Location.HTX, ticker['bcdn']) is False:
+                test_warnings.warn(UserWarning(
+                    f'Found unsupported asset {e.identifier} in HTX. '
+                    f'Support for it has to be added',
+                ))
