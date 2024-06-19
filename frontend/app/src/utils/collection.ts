@@ -102,5 +102,6 @@ export function defaultOptions<T extends NonNullable<unknown>>(defaultSortBy?: {
     sortDesc: defaultSortBy?.ascending
       ? defaultSortBy?.ascending.map(bool => !bool)
       : [true],
+    singleSort: sortByKey ? !Array.isArray(sortByKey) : false,
   };
 }

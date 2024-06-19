@@ -82,7 +82,7 @@ describe('composables::history/filter-paginate', () => {
           onUpdateFilters,
           extraParams,
           defaultSortBy: {
-            key: 'name',
+            key: ['name'],
             ascending: [true],
           },
         },
@@ -118,7 +118,7 @@ describe('composables::history/filter-paginate', () => {
             onUpdateFilters,
             extraParams,
             defaultSortBy: {
-              key: 'name',
+              key: ['name'],
               ascending: [true],
             },
           },
@@ -146,7 +146,7 @@ describe('composables::history/filter-paginate', () => {
           onUpdateFilters,
           extraParams,
           defaultSortBy: {
-            key: 'name',
+            key: ['name'],
             ascending: [false],
           },
         },

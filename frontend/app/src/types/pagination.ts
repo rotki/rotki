@@ -3,4 +3,5 @@ export interface TablePagination<T> {
   itemsPerPage: number;
   sortBy: (keyof T)[];
   sortDesc: boolean[];
+  singleSort: boolean;
 }

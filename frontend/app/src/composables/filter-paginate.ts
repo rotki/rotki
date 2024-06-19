@@ -42,6 +42,7 @@ export function usePaginationFilters<
   defaultParams?: ComputedRef<Partial<U> | undefined>;
   defaultCollection?: () => S;
   defaultSortBy?: {
+    // If it's an array, then multiple sorts are applied; otherwise, it is a single sort.
     key?: keyof V | (keyof V)[];
     ascending?: boolean[];
   };
@@ -76,6 +77,16 @@ export function usePaginationFilters<
   const sort = computed<DataTableSortData>({
     get() {
       const opts = get(paginationOptions);
+      if (opts.singleSort) {
+        if (opts.sortBy.length === 0)
+          return [];
+
+        return {
+          column: opts.sortBy[0],
+          direction: opts.sortDesc?.[0] ? 'desc' : 'asc',
+        };
+      }
+
       return opts.sortBy.map(((sort, index) => ({
         column: sort,
         direction: opts.sortDesc?.[index] ? 'desc' : 'asc',

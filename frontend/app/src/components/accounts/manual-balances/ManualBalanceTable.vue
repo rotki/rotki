@@ -65,7 +65,7 @@ const {
       tags: get(tags),
     })),
     defaultSortBy: {
-      key: 'usdValue',
+      key: ['usdValue'],
     },
   },
 );

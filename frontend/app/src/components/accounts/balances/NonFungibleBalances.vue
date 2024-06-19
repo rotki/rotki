@@ -94,7 +94,7 @@ const {
   },
   extraParams,
   defaultSortBy: {
-    key: 'usdPrice',
+    key: ['usdPrice'],
     ascending: [false],
   },
 });

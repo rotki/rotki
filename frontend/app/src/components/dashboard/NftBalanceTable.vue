@@ -42,7 +42,7 @@ const {
 >(null, false, useEmptyFilter, fetchNonFungibleBalances, {
   extraParams,
   defaultSortBy: {
-    key: 'usdPrice',
+    key: ['usdPrice'],
     ascending: [false],
   },
 });
