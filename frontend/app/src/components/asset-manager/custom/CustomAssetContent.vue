@@ -69,7 +69,7 @@ const {
   Matcher
 >(null, mainPage, () => useCustomAssetFilter(types), queryAllCustomAssets, {
   defaultSortBy: {
-    key: 'name',
+    key: ['name'],
     ascending: [false],
   },
 });

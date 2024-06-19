@@ -1,13 +1,10 @@
 import flushPromises from 'flush-promises';
-import type { Filters, Matcher } from '@/composables/filters/asset-movement';
+import type { Filters, Matcher } from '@/composables/filters/assets';
 import type { Collection } from '@/types/collection';
-import type {
-  AssetMovement,
-  AssetMovementEntry,
-  AssetMovementRequestPayload,
-} from '@/types/history/asset-movements';
+import type { SupportedAsset } from '@rotki/common/lib/data';
 import type { MaybeRef } from '@vueuse/core';
 import type Vue from 'vue';
+import type { AssetRequestPayload } from '@/types/asset';
 
 vi.mock('vue-router/composables', () => ({
   useRoute: vi.fn().mockReturnValue(
@@ -32,10 +29,10 @@ vi.mock('vue', async () => {
   };
 });
 
-describe('composables::history/filter-paginate', () => {
-  let fetchAssetMovements: (
-    payload: MaybeRef<AssetMovementRequestPayload>
-  ) => Promise<Collection<AssetMovementEntry>>;
+describe('composables::assets/filter-paginate', () => {
+  let fetchAssets: (
+    payload: MaybeRef<AssetRequestPayload>
+  ) => Promise<Collection<SupportedAsset>>;
   const locationOverview: MaybeRef<string | null> = ref('');
   const mainPage: Ref<boolean> = ref(false);
   const router = useRouter();
@@ -43,14 +40,14 @@ describe('composables::history/filter-paginate', () => {
 
   beforeAll(() => {
     setActivePinia(createPinia());
-    fetchAssetMovements = useAssetMovements().fetchAssetMovements;
+    fetchAssets = useAssetManagementApi().queryAllAssets;
   });
 
   afterEach(() => {
     vi.clearAllMocks();
   });
 
-  describe('components::history/trades/DepositsWithdrawalsContent', () => {
+  describe('default', () => {
     set(locationOverview, '');
 
     beforeEach(() => {
@@ -67,24 +64,33 @@ describe('composables::history/filter-paginate', () => {
         applyRouteFilter,
         isLoading,
       } = usePaginationFilters<
-        AssetMovement,
-        AssetMovementRequestPayload,
-        AssetMovementEntry,
-        Collection<AssetMovementEntry>,
+        SupportedAsset,
+        AssetRequestPayload,
+        SupportedAsset,
+        Collection<SupportedAsset>,
         Filters,
         Matcher
       >(
         locationOverview,
         mainPage,
-        useAssetMovementFilters,
-        fetchAssetMovements,
+        useAssetFilter,
+        fetchAssets,
+        {
+          defaultSortBy: {
+            key: 'symbol',
+            ascending: [true],
+          },
+        },
       );
 
       expect(get(userAction)).toBe(true);
       expect(get(isLoading)).toBe(false);
       expect(get(filters)).to.toStrictEqual({});
-      expect(Array.isArray(get(sort))).toBe(true);
-      expect(get(sort)).toHaveLength(1);
+      expect(Array.isArray(get(sort))).toBe(false);
+      expect(get(sort)).toMatchObject({
+        column: 'symbol',
+        direction: 'asc',
+      });
       expect(get(state).data).toHaveLength(0);
       expect(get(state).total).toEqual(0);
 
@@ -93,28 +99,28 @@ describe('composables::history/filter-paginate', () => {
       fetchData().catch(() => {});
       expect(get(isLoading)).toBe(true);
       await flushPromises();
-      expect(get(state).total).toEqual(45);
+      expect(get(state).total).toEqual(210);
     });
 
     it('check the return types', () => {
       const { isLoading, state, filters, matchers } = usePaginationFilters<
-        AssetMovement,
-        AssetMovementRequestPayload,
-        AssetMovementEntry,
-        Collection<AssetMovementEntry>,
+        SupportedAsset,
+        AssetRequestPayload,
+        SupportedAsset,
+        Collection<SupportedAsset>,
         Filters,
         Matcher
       >(
         locationOverview,
         mainPage,
-        useAssetMovementFilters,
-        fetchAssetMovements,
+        useAssetFilter,
+        fetchAssets,
       );
 
       expect(get(isLoading)).toBe(false);
 
-      expectTypeOf(get(state)).toEqualTypeOf<Collection<AssetMovementEntry>>();
-      expectTypeOf(get(state).data).toEqualTypeOf<AssetMovementEntry[]>();
+      expectTypeOf(get(state)).toEqualTypeOf<Collection<SupportedAsset>>();
+      expectTypeOf(get(state).data).toEqualTypeOf<SupportedAsset[]>();
       expectTypeOf(get(state).found).toEqualTypeOf<number>();
       expectTypeOf(get(filters)).toEqualTypeOf<Filters>();
       expectTypeOf(get(matchers)).toEqualTypeOf<Matcher[]>();
@@ -125,17 +131,17 @@ describe('composables::history/filter-paginate', () => {
       const query = { sortBy: ['category'], sortDesc: ['true'] };
 
       const { isLoading, state } = usePaginationFilters<
-        AssetMovement,
-        AssetMovementRequestPayload,
-        AssetMovementEntry,
-        Collection<AssetMovementEntry>,
+        SupportedAsset,
+        AssetRequestPayload,
+        SupportedAsset,
+        Collection<SupportedAsset>,
         Filters,
         Matcher
       >(
         locationOverview,
         mainPage,
-        useAssetMovementFilters,
-        fetchAssetMovements,
+        useAssetFilter,
+        fetchAssets,
       );
 
       await router.push({
@@ -149,14 +155,14 @@ describe('composables::history/filter-paginate', () => {
       await flushPromises();
       expect(get(isLoading)).toBe(false);
 
-      assertType<Collection<AssetMovementEntry>>(get(state));
-      assertType<AssetMovementEntry[]>(get(state).data);
+      assertType<Collection<SupportedAsset>>(get(state));
+      assertType<SupportedAsset[]>(get(state).data);
       assertType<number>(get(state).found);
 
       expect(get(state).data).toHaveLength(10);
-      expect(get(state).found).toEqual(45);
+      expect(get(state).found).toEqual(210);
       expect(get(state).limit).toEqual(-1);
-      expect(get(state).total).toEqual(45);
+      expect(get(state).total).toEqual(210);
     });
   });
 });

@@ -90,6 +90,7 @@ describe('composables::history/filter-paginate', () => {
       expect(get(userAction)).toBe(true);
       expect(get(isLoading)).toBe(false);
       expect(get(filters)).to.toStrictEqual({});
+      expect(Array.isArray(get(sort))).toBe(true);
       expect(get(sort)).toHaveLength(1);
       expect(get(state).data).toHaveLength(0);
       expect(get(state).total).toEqual(0);

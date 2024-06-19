@@ -59,7 +59,7 @@ const {
       blockchain: get(selectedChain),
     })),
     defaultSortBy: {
-      key: 'name',
+      key: ['name'],
       ascending: [true],
     },
   },

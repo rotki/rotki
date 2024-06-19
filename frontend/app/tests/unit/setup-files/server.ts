@@ -12,6 +12,7 @@ import { historyEventProductsHandlers } from './handlers/history-event-products'
 import { infoHandlers } from './handlers/info';
 import { stakingHandlers } from './handlers/staking';
 import { settingsHandlers } from './handlers/settings';
+import { assetsHandlers } from './handlers/assets';
 
 const server = setupServer(
   ...tradesHandlers,
@@ -27,6 +28,7 @@ const server = setupServer(
   ...historyEventProductsHandlers,
   ...stakingHandlers,
   ...settingsHandlers,
+  ...assetsHandlers,
 );
 
 export { server };
