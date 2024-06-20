@@ -1864,10 +1864,7 @@
     "filter": {
       "action": "filter by the action",
       "asset": "filter by the asset",
-      "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
-      "end_date": "filter by the ending date of the period",
-      "location": "filter by the location",
-      "start_date": "filter by the starting date of the period"
+      "location": "filter by the location"
     }
   },
   "deposits_withdrawals": {

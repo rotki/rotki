@@ -52,10 +52,10 @@ const matchers = computed<Matcher[]>(
     {
       key: Eth2StakingFilterKeys.START,
       keyValue: Eth2StakingFilterValueKeys.START,
-      description: t('closed_trades.filter.start_date'),
+      description: t('common.filter.start_date'),
       string: true,
       suggestions: () => [],
-      hint: t('closed_trades.filter.date_hint', {
+      hint: t('common.filter.date_hint', {
         format: getDateInputISOFormat(get(dateInputFormat)),
       }),
       validate: dateValidator(dateInputFormat),
@@ -65,10 +65,10 @@ const matchers = computed<Matcher[]>(
     {
       key: Eth2StakingFilterKeys.END,
       keyValue: Eth2StakingFilterValueKeys.END,
-      description: t('closed_trades.filter.end_date'),
+      description: t('common.filter.end_date'),
       string: true,
       suggestions: () => [],
-      hint: t('closed_trades.filter.date_hint', {
+      hint: t('common.filter.date_hint', {
         format: getDateInputISOFormat(get(dateInputFormat)),
       }),
       validate: dateValidator(dateInputFormat),
