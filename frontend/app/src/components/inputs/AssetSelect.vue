@@ -221,7 +221,7 @@ watch(visibleAssets, () => {
         />
         <AssetDetailsBase
           v-else
-          class="py-0"
+          class="py-0 pl-1"
           :asset="item"
         />
       </template>
