@@ -90,16 +90,15 @@ const visibleAssets = computed<AssetInfoWithId[]>(() => {
   return uniqueObjects<AssetInfoWithId>(filtered, item => item.identifier);
 });
 
-function blur() {
-  useTimeoutFn(() => {
-    set(search, '');
-  }, 200);
-}
-
 async function searchAssets(keyword: string, signal: AbortSignal): Promise<void> {
   set(loading, true);
   try {
-    set(assets, await assetSearch(keyword, 50, get(includeNfts), signal));
+    const fetchedAssets = await assetSearch(keyword, 50, get(includeNfts), signal);
+    if (get(value))
+      await retainSelectedValueInOptions(fetchedAssets);
+    else
+      set(assets, fetchedAssets);
+
     pending = null;
     set(loading, false);
   }
@@ -146,25 +145,26 @@ watchDebounced(
   },
 );
 
-async function checkValue() {
-  const val = get(value);
-  if (!val)
-    return;
-
+async function retainSelectedValueInOptions(newAssets: (AssetInfoWithId | NftAsset)[]) {
   try {
+    const val = get(value);
     const mapping = await assetMapping([val]);
-    set(assets, [
-      ...get(assets),
-      {
-        identifier: val,
-        ...mapping.assets[transformCase(val, true)],
-      },
-    ]);
+    set(assets, [...newAssets, {
+      identifier: val,
+      ...mapping.assets[transformCase(val, true)],
+    }]);
   }
   catch (error_: any) {
     set(loading, false);
     set(error, error_.message);
   }
+}
+
+async function checkValue() {
+  if (!get(value))
+    return;
+
+  await retainSelectedValueInOptions(get(assets));
 }
 
 onMounted(async () => {
@@ -188,6 +188,7 @@ watch(visibleAssets, () => {
     :disabled="disabled"
     :options="visibleAssets"
     class="asset-select w-full [&_.group]:py-1.5"
+    menu-class="!min-w-full"
     :hint="hint"
     :label="label"
     :clearable="clearable"
@@ -209,7 +210,6 @@ watch(visibleAssets, () => {
       $listeners
     "
     @input="input($event)"
-    @blur="blur()"
   >
     <template #selection="{ item }">
       <template v-if="item && item.identifier">

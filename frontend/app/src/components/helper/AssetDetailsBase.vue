@@ -75,9 +75,7 @@ const loading: ComputedRef<boolean> = computed(() =>
       <AppImage
         v-if="asset.imageUrl"
         contain
-        height="26px"
-        width="26px"
-        max-width="26px"
+        size="26px"
         :src="asset.imageUrl"
       />
       <AssetIcon

@@ -5,28 +5,36 @@ export class AssetsManagerPage {
     RotkiApp.navigateTo('asset-manager', submenu);
   }
 
-  ignoredAssets() {
+  openStatusFilter() {
     cy.get('[data-cy=status-filter]').scrollIntoView();
     cy.get('[data-cy=status-filter]').should('be.visible');
     cy.get('[data-cy=status-filter]').click();
+    cy.get('[data-cy=asset-filter-menu]').should('exist');
+  }
+
+  closeStatusFilter() {
+    cy.get('[data-cy=status-filter]').click();
+    cy.get('[data-cy=asset-filter-menu]').should('not.exist');
+  }
+
+  ignoredAssets() {
+    this.openStatusFilter();
     return cy
       .get('[data-cy=asset-filter-show_only]')
       .invoke('text')
       .then((text) => {
-        cy.get('[data-cy=status-filter]').click();
+        this.closeStatusFilter();
         cy.wrap(text.replace(/[^\d.]/g, ''));
       });
   }
 
   ignoredAssetCount(number: number) {
-    cy.get('[data-cy=status-filter]').click();
-    cy.get('[data-cy=asset-filter-menu]').should('exist');
+    this.openStatusFilter();
     cy.get('[data-cy=asset-filter-show_only]').should(
       'include.text',
       number.toString(),
     );
-    cy.get('[data-cy=status-filter]').click();
-    cy.get('[data-cy=asset-filter-menu]').should('not.exist');
+    this.closeStatusFilter();
   }
 
   visibleEntries(visible: number) {
@@ -74,13 +82,10 @@ export class AssetsManagerPage {
   }
 
   selectShowAll(): void {
-    cy.get('[data-cy=status-filter]').scrollIntoView();
-    cy.get('[data-cy=status-filter]').click();
-    cy.get('[data-cy=asset-filter-menu]').should('exist');
+    this.openStatusFilter();
     cy.get('[data-cy=asset-filter-none]').scrollIntoView();
     cy.get('[data-cy=asset-filter-none]').click();
-    cy.get('[data-cy=status-filter]').trigger('click');
-    cy.get('[data-cy=asset-filter-menu]').should('not.exist');
+    this.closeStatusFilter();
   }
 
   removeIgnoredAsset(asset: string) {

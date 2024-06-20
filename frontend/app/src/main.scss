@@ -70,3 +70,7 @@ ul, ol {
 a {
   @apply cursor-pointer text-rui-blue-800 dark:text-rui-blue-600;
 }
+
+.text-truncate {
+  @apply whitespace-nowrap overflow-hidden text-ellipsis #{!important};
+}
