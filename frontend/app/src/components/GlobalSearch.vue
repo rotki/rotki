@@ -56,21 +56,21 @@ function getItemText(item: SearchItemWithoutValue): string {
 }
 
 function filterItems(items: SearchItemWithoutValue[], keyword: string): SearchItemWithoutValue[] {
+  const splittedKeyword = keyword.split(' ');
   return items
     .filter((item) => {
       let matchedPoints = 0;
-      for (const word of keyword.trim().split(' ')) {
+      for (const word of splittedKeyword) {
         const indexOf = getItemText(item).toLowerCase().indexOf(word);
-        if (indexOf > -1)
+        if (indexOf > -1) {
           matchedPoints++;
-
-        if (indexOf === 0)
-          matchedPoints += 0.5;
+          if (indexOf === 0)
+            matchedPoints += 0.5;
+        }
       }
       item.matchedPoints = matchedPoints;
       return matchedPoints > 0;
-    })
-    .sort((a, b) => (b.matchedPoints ?? 0) - (a.matchedPoints ?? 0));
+    });
 }
 
 function getRoutes(keyword: string): SearchItemWithoutValue[] {
@@ -323,16 +323,20 @@ watchDebounced(
       return;
     }
 
-    const search = keyword.toLocaleLowerCase();
+    const search = keyword.toLocaleLowerCase().trim();
+
+    const staticData = [
+      ...getRoutes(search),
+      ...getExchanges(search),
+      ...getActions(search),
+      ...getLocations(search),
+    ].sort((a, b) => (b.matchedPoints ?? 0) - (a.matchedPoints ?? 0));
 
     set(
       visibleItems,
       [
-        ...getRoutes(search),
-        ...getExchanges(search),
-        ...getActions(search),
+        ...staticData,
         ...(await getAssets(search)),
-        ...getLocations(search),
       ].map((item, index) => ({
         ...item,
         value: index,
@@ -363,11 +367,11 @@ watch(open, (open) => {
   });
 });
 
-async function change(index: number) {
+function change(index: number) {
   const item: SearchItem = get(visibleItems)[index];
   if (item) {
-    if (item.route)
-      await router.push(item.route);
+    if (item.route && router.currentRoute.fullPath !== item.route)
+      startPromise(router.push(item.route));
 
     item?.action?.();
     set(open, false);
