@@ -16,6 +16,7 @@ from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.types import (
     AERODROME_POOL_PROTOCOL,
     CURVE_POOL_PROTOCOL,
+    GEARBOX_PROTOCOL,
     PICKLE_JAR_PROTOCOL,
     SPAM_PROTOCOL,
     VELODROME_POOL_PROTOCOL,
@@ -42,6 +43,7 @@ IGNORED_PROTOCOLS: Final = {
     PICKLE_JAR_PROTOCOL,
     SPAM_PROTOCOL,
     CPT_AAVE_V3,
+    GEARBOX_PROTOCOL,
 }
 
 
@@ -233,6 +235,24 @@ def test_update_consistency_with_packaged_db(
                 continue
 
             underlying_assets[parent_identifier].add(underlying_identifier)
+
+    # skip the assets that have underlying assets that are ignored
+    updated_assets = {
+        identifier: updated_assets[identifier]
+        for identifier in updated_assets
+        if all(
+            underlying_asset not in ignored_identifiers
+            for underlying_asset in updated_underlying_assets[identifier]
+        )
+    }
+    packaged_assets = {
+        identifier: packaged_assets[identifier]
+        for identifier in packaged_assets
+        if all(
+            underlying_asset not in ignored_identifiers
+            for underlying_asset in packaged_underlying_assets[identifier]
+        )
+    }
 
     # find all the assets that are present in asset updates but not in packaged DB
     missing_in_packaged_db.extend([

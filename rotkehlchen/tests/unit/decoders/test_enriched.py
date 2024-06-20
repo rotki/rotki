@@ -14,6 +14,7 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.types import (
     ChainID,
     EvmTransaction,
@@ -75,13 +76,14 @@ def test_1inch_claim(database, ethereum_inquirer, eth_transactions):
     )
 
     dbevmtx = DBEvmTx(database)
-    with database.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
     decoder = EthereumTransactionDecoder(
         database=database,
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
+    with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        decoder.reload_data(cursor)
     events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
     timestamp = TimestampMS(1646375440000)
@@ -188,13 +190,14 @@ def test_gnosis_chain_bridge(database, ethereum_inquirer, eth_transactions):
     )
 
     dbevmtx = DBEvmTx(database)
-    with database.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
     decoder = EthereumTransactionDecoder(
         database=database,
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
+    with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        decoder.reload_data(cursor)
     events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
     expected_events = [
@@ -282,13 +285,14 @@ def test_gitcoin_claim(database, ethereum_inquirer, eth_transactions):
     )
 
     dbevmtx = DBEvmTx(database)
-    with database.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
     decoder = EthereumTransactionDecoder(
         database=database,
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
+    with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        decoder.reload_data(cursor)
     events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     assert len(events) == 2
     expected_events = [

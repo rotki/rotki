@@ -16,6 +16,7 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChainID,
@@ -391,8 +392,9 @@ def test_makerdao_sai_close_cdp(ethereum_transaction_decoder):
         ],
     )
     dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
-    with dbevmtx.db.user_write() as cursor:
+    with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        ethereum_transaction_decoder.reload_data(cursor)
     events, _ = ethereum_transaction_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,
@@ -1052,8 +1054,9 @@ def test_makerdao_sai_collateral_removal(ethereum_transaction_decoder):
         ],
     )
     dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
-    with dbevmtx.db.user_write() as cursor:
+    with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        ethereum_transaction_decoder.reload_data(cursor)
     events, _ = ethereum_transaction_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,
@@ -1154,8 +1157,9 @@ def test_makerdao_sai_underlying_collateral_removal(ethereum_transaction_decoder
         ],
     )
     dbevmtx = DBEvmTx(ethereum_transaction_decoder.database)
-    with dbevmtx.db.user_write() as cursor:
+    with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        ethereum_transaction_decoder.reload_data(cursor)
     events, _ = ethereum_transaction_decoder._decode_transaction(
         transaction=transaction,
         tx_receipt=receipt,

@@ -1,6 +1,6 @@
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Literal
 
 from rotkehlchen.assets.utils import set_token_protocol_if_missing
 from rotkehlchen.chain.ethereum.modules.uniswap.v2.constants import SWAP_SIGNATURE as SWAP_V1
@@ -75,12 +75,15 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
         )
         self.counterparty = counterparty
         self.pool_token_protocol = pool_token_protocol
-        self.protocol_addresses = routers.union(self.pools)  # (velo/aero)drome addresses that appear on decoded events  # noqa: E501
+        self.protocol_addresses = routers  # protocol_addresses are updated with pools in post_cache_update_callback  # noqa: E501
 
     @property
     def pools(self) -> set[ChecksumEvmAddress]:
         assert isinstance(self.cache_data[0], set), f'{self.counterparty} Decoder cache_data[0] is not a set'  # noqa: E501
         return self.cache_data[0]
+
+    def post_cache_update_callback(self) -> None:
+        self.protocol_addresses.update(self.pools)
 
     def _decode_add_liquidity_events(
             self,
@@ -247,8 +250,3 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
                     event.notes = f'Receive {event.balance.amount} {crypto_asset.symbol} rewards from {gauge_address} {self.counterparty} gauge'  # noqa: E501
 
         return DecodingOutput(refresh_balances=found_event_modifying_balances)
-
-    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        mapping: dict[ChecksumEvmAddress, tuple[Any, ...]] = dict.fromkeys(self.pools, (self._decode_pool_events,))  # noqa: E501
-        mapping.update(dict.fromkeys(self.gauges, (self._decode_gauge_events,)))
-        return mapping

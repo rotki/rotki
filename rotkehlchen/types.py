@@ -1070,7 +1070,6 @@ class CacheType(Enum):
     YEARN_VAULTS = auto()  # get yearn vaults information
     MAKERDAO_VAULT_ILK = auto()  # ilk(collateral type) to info (underlying_asset, join address)
     CURVE_GAUGE_ADDRESS = auto()  # get gauge address by pool address
-    CURVE_POOL_UNDERLYING_TOKENS = auto()  # get underlying tokens by pool address
     VELODROME_POOL_ADDRESS = auto()  # get pool address information
     VELODROME_GAUGE_ADDRESS = auto()  # get gauge address by pool address
     AERODROME_POOL_ADDRESS = auto()  # get pool address information
@@ -1119,7 +1118,6 @@ UNIQUE_CACHE_KEYS: tuple[UniqueCacheType, ...] = typing.get_args(UniqueCacheType
 GeneralCacheType = Literal[
     CacheType.CURVE_LP_TOKENS,
     CacheType.CURVE_POOL_TOKENS,
-    CacheType.CURVE_POOL_UNDERLYING_TOKENS,
     CacheType.VELODROME_POOL_ADDRESS,
     CacheType.VELODROME_GAUGE_ADDRESS,
     CacheType.AERODROME_POOL_ADDRESS,

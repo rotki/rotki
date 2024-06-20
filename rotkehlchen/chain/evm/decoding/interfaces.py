@@ -437,14 +437,15 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, ABC):
         self.save_data_to_cache_method = save_data_to_cache_method
         self.read_data_from_cache_method = read_data_from_cache_method
         self.chain_id = chain_id
-        if self.chain_id is None:
-            self.cache_data = self.read_data_from_cache_method()
-        else:
-            self.cache_data = self.read_data_from_cache_method(chain_id)
+        self.cache_data: tuple[dict[ChecksumEvmAddress, Any] | set[ChecksumEvmAddress], ...] = ()
 
     @abstractmethod
     def _cache_mapping_methods(self) -> tuple[Callable, ...]:
         """Methods used to decode cache data"""
+
+    def post_cache_update_callback(self) -> None:
+        """Called whenever the cache is updated. Can be overwritten by subclasses to trigger a
+        logic whenever the cache is updated."""
 
     def reload_data(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]] | None:
         """Make sure cache_data is recently queried from the remote source,
@@ -465,15 +466,21 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, ABC):
             new_cache_data = self.read_data_from_cache_method()
         else:
             new_cache_data = self.read_data_from_cache_method(self.chain_id)
+
         cache_diff = [  # get the new items for the different information stored in the cache
             (new_data.keys() if isinstance(new_data, dict) else new_data) -
             (data.keys() if isinstance(data, dict) else data)
-            for data, new_data in zip(self.cache_data, new_cache_data, strict=True)
-        ]  # strict=True guaranteed due to number of caches always the same
+            for data, new_data in zip(self.cache_data, new_cache_data, strict=True)  # strict=True guaranteed due to number of caches always the same  # noqa: E501
+        ] if len(self.cache_data) > 0 else [  # if self.cache_data is empty, the diff is only from new_cache_data  # noqa: E501
+            (new_data.keys() if isinstance(new_data, dict) else new_data)
+            for new_data in new_cache_data
+        ]
+
         if sum(len(x) for x in cache_diff) == 0:
             return None
 
         self.cache_data = new_cache_data
+        self.post_cache_update_callback()
         new_decoding_mapping: dict[ChecksumEvmAddress, tuple[Any, ...]] = {}
         # pair each new address in each cache container to the method decoding its logic
         for data_diff, method in zip(cache_diff, self._cache_mapping_methods(), strict=True):  # size should be correct if inheriting decoder is implemented properly  # noqa: E501

@@ -219,7 +219,6 @@ LLAMA_NODE = WeightedNode(
 
 
 @pytest.mark.vcr()
-@pytest.mark.parametrize('polygon_pos_manager_connect_at_start', [[LLAMA_NODE]])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
 def test_native_token_balance(blockchain, polygon_pos_accounts):
     """
@@ -227,9 +226,11 @@ def test_native_token_balance(blockchain, polygon_pos_accounts):
     We test it by requesting a Polygon POS balance and checking MATIC balance.
     """
     address = polygon_pos_accounts[0]
+    sorted_call_order = sorted(blockchain.polygon_pos.node_inquirer.default_call_order())
 
     def mock_default_call_order(skip_etherscan: bool = False):  # pylint: disable=unused-argument
-        return [LLAMA_NODE]  # Keep only one node to remove randomness, and thus make it vcr'able
+        # return sorted_call_order to remove randomness, and thus make it vcr'able
+        return sorted_call_order
 
     with patch.object(
         blockchain.polygon_pos.node_inquirer,
@@ -244,19 +245,19 @@ def test_native_token_balance(blockchain, polygon_pos_accounts):
         balances = blockchain.balances.polygon_pos[address].assets
         assert balances == {
             A_POLYGON_POS_MATIC: Balance(
-                amount=FVal('14.625551850495690815'),
-                usd_value=FVal('21.9383277757435362225'),
+                amount=FVal('8.206486866125895549'),
+                usd_value=FVal('12.3097302991888433235'),
             ),
-            Asset('eip155:137/erc20:0x625E7708f30cA75bfd92586e17077590C60eb4cD'): Balance(  # aPolUSDC  # noqa: E501
-                amount=FVal('20.299941'),
-                usd_value=FVal('30.4499115'),
+            Asset('eip155:137/erc20:0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359'): Balance(  # USDC  # noqa: E501
+                amount=FVal('10.045085'),
+                usd_value=FVal('15.0676275'),
             ),
             Asset('eip155:137/erc20:0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619'): Balance(  # WETH
-                amount=FVal('0.010320301779068381'),
-                usd_value=FVal('0.0154804526686025715'),
+                amount=FVal('0.007712106620416874'),
+                usd_value=FVal('0.0115681599306253110'),
             ),
             Asset('eip155:137/erc20:0xc2132D05D31c914a87C6611C10748AEb04B58e8F'): Balance(  # USDT
-                amount=FVal('0.076457'),
-                usd_value=FVal('0.1146855'),
+                amount=FVal('0.074222'),
+                usd_value=FVal('0.1113330'),
             ),
         }

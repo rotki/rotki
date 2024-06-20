@@ -18,6 +18,7 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     UNISWAP_PROTOCOL,
@@ -141,13 +142,14 @@ def test_uniswap_v2_swap(database, ethereum_inquirer, eth_transactions):
     )
 
     dbevmtx = DBEvmTx(database)
-    with database.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
     decoder = EthereumTransactionDecoder(
         database=database,
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
+    with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        decoder.reload_data(cursor)
     events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 3
@@ -273,9 +275,10 @@ def test_uniswap_v2_swap_eth_returned(database, ethereum_inquirer, eth_transacti
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    with database.user_write() as cursor:
+    with database.user_write() as cursor, patch_decoder_reload_data():
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         dbevmtx.add_evm_internal_transactions(cursor, [internal_tx], relevant_address=ADDY_1)
+        decoder.reload_data(cursor)
     events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     timestamp = TimestampMS(1646375440000)
     assert len(events) == 4
@@ -495,8 +498,9 @@ def test_uniswap_v2_add_liquidity(database, ethereum_inquirer, eth_transactions)
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    with database.user_write() as cursor:
+    with database.user_write() as cursor, patch_decoder_reload_data():
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        decoder.reload_data(cursor)
     events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 4
@@ -919,8 +923,9 @@ def test_uniswap_v2_swap_events_order(
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    with database.user_write() as cursor:
+    with database.user_write() as cursor, patch_decoder_reload_data():
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        decoder.reload_data(cursor)
 
     events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [

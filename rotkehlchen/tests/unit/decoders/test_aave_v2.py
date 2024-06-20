@@ -18,6 +18,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.aave import A_ADAI_V1, A_AETH_V1
+from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChainID,
@@ -490,13 +491,14 @@ def test_aave_v2_deposit(database, ethereum_inquirer, eth_transactions):
         ],
     )
     dbevmtx = DBEvmTx(database)
-    with dbevmtx.db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
     decoder = EthereumTransactionDecoder(
         database=database,
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
+    with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        decoder.reload_data(cursor)
     events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
