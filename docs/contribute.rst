@@ -847,8 +847,8 @@ select edit (2).
 
 There you will be given the option to **Add custom device**. Use the following settings:
 
-- **Resolution**: 1280x894
-- **DPR**: 1.3
+- **Resolution**: 1600x900
+- **DPR**: 1
 
 In the user agent make sure that **Desktop** is selected. Then proceed to save the entry.
 
