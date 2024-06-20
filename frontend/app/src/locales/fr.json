@@ -1595,6 +1595,11 @@
     "details": "Détails",
     "events": "Événements",
     "here": "ici",
+    "filter": {
+      "date_hint": "format {format} HH:mm:ss (les secondes sont facultatives)",
+      "end_date": "filtrer par la date de fin de la période",
+      "start_date": "filtrer par la date de début de la période"
+    },
     "ignored_in_accounting": "Ignoré dans la comptabilité",
     "location": "Emplacement",
     "multi_chain": "Multi Chaîne",
@@ -2066,10 +2071,7 @@
     "filter": {
       "action": "filtrer par l'action",
       "asset": "filtrer par l'actif",
-      "date_hint": "format {format} HH:mm:ss (les secondes sont facultatives)",
-      "end_date": "filtrer par la date de fin de la période",
-      "location": "filtrer par l'emplacement",
-      "start_date": "filtrer par la date de début de la période"
+      "location": "filtrer par l'emplacement"
     }
   },
   "deposits_withdrawals": {

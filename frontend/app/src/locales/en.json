@@ -1721,6 +1721,11 @@
     "description": "Description",
     "details": "Details",
     "events": "Events",
+    "filter": {
+      "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
+      "end_date": "filter by the ending date of the period",
+      "start_date": "filter by the starting date of the period"
+    },
     "here": "here",
     "ignored_in_accounting": "Ignored in Accounting",
     "label": "Label",
@@ -2202,10 +2207,7 @@
     "filter": {
       "action": "filter by the action",
       "asset": "filter by the asset",
-      "date_hint": "format {format} HH:mm:ss (time/seconds are optional)",
-      "end_date": "filter by the ending date of the period",
-      "location": "filter by the location",
-      "start_date": "filter by the starting date of the period"
+      "location": "filter by the location"
     }
   },
   "deposits_withdrawals": {

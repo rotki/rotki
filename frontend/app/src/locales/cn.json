@@ -1442,6 +1442,11 @@
     "details": "细节",
     "events": "事件",
     "here": "这儿",
+    "filter": {
+      "date_hint": "format {format} HH:mm:ss(时间/秒可选)",
+      "end_date": "按期间结束日期筛选",
+      "start_date": "按期间的开始日期过滤"
+    },
     "ignored_in_accounting": "在会计中忽略",
     "location": "位置",
     "multi_chain": "多链",
@@ -1901,10 +1906,7 @@
     "filter": {
       "action": "按动作过滤",
       "asset": "按资产过滤",
-      "date_hint": "format {format} HH:mm:ss(时间/秒可选)",
-      "end_date": "按期间结束日期筛选",
-      "location": "按位置过滤",
-      "start_date": "按期间的开始日期过滤"
+      "location": "按位置过滤"
     }
   },
   "deposits_withdrawals": {

@@ -64,9 +64,9 @@ export function useAssetMovementFilters(): FilterSchema<Filters, Matcher> {
     {
       key: AssetMovementFilterKeys.START,
       keyValue: AssetMovementFilterValueKeys.START,
-      description: t('deposit_withdrawals.filter.start_date'),
+      description: t('common.filter.start_date'),
       string: true,
-      hint: t('deposit_withdrawals.filter.date_hint', {
+      hint: t('common.filter.date_hint', {
         format: getDateInputISOFormat(get(dateInputFormat)),
       }),
       suggestions: () => [],
@@ -77,8 +77,8 @@ export function useAssetMovementFilters(): FilterSchema<Filters, Matcher> {
     {
       key: AssetMovementFilterKeys.END,
       keyValue: AssetMovementFilterValueKeys.END,
-      description: t('deposit_withdrawals.filter.end_date'),
-      hint: t('deposit_withdrawals.filter.date_hint', {
+      description: t('common.filter.end_date'),
+      hint: t('common.filter.date_hint', {
         format: getDateInputISOFormat(get(dateInputFormat)),
       }),
       string: true,
