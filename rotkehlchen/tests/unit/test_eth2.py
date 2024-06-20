@@ -14,19 +14,17 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     ValidatorDailyStats,
     ValidatorDetails,
 )
-from rotkehlchen.chain.ethereum.modules.eth2.utils import (
-    DAY_AFTER_ETH2_GENESIS,
-    scrape_validator_daily_stats,
-)
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.timing import DAY_IN_SECONDS, HOUR_IN_SECONDS
+from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import (
     EthBlockEvent,
@@ -47,6 +45,7 @@ from rotkehlchen.types import (
     TimestampMS,
     deserialize_evm_tx_hash,
 )
+from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
@@ -148,33 +147,39 @@ def test_get_validators_to_query_for_stats(database):
     assert db.get_validators_to_query_for_stats(now) == [(2, 0, None)]
 
 
-DAILY_STATS_RE = re.compile(r'https://beaconcha.in/validator/(\d+)/stats')
+DAILY_STATS_RE = re.compile(r'https://beaconcha.in/api/v1/validator/stats/(\d+)')
 
 
-def mock_scrape_validator_daily_stats(network_mocking: bool):
+def mock_query_validator_daily_stats(beaconchain: 'BeaconChain', network_mocking: bool):
 
-    def mock_scrape(url, **kwargs):  # pylint: disable=unused-argument
+    def mock_query(url, **kwargs):  # pylint: disable=unused-argument
         match = DAILY_STATS_RE.search(url)
         if match is None:
             raise AssertionError(f'Unexpected validator stats query in test: {url}')
 
         validator_index = int(match.group(1))
         root_path = Path(__file__).resolve().parent.parent.parent
-        file_path = root_path / 'tests' / 'data' / 'mocks' / 'test_eth2' / 'validator_daily_stats' / f'{validator_index}.html'  # noqa: E501
+        file_path = root_path / 'tests' / 'data' / 'mocks' / 'test_eth2' / 'validator_daily_stats' / f'{validator_index}.json'  # noqa: E501
         return MockResponse(200, file_path.read_text(encoding='utf8'))
 
-    return patch(
-        'rotkehlchen.chain.ethereum.modules.eth2.utils.requests.get',
-        side_effect=mock_scrape if network_mocking else requests.get,
+    return patch.object(
+        beaconchain.session,
+        'get',
+        new=mock_query if network_mocking else requests.get,
     )
 
 
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
-def test_validator_daily_stats(network_mocking, price_historian):  # pylint: disable=unused-argument
+def test_validator_daily_stats(
+        network_mocking,
+        price_historian,
+        database,
+        messages_aggregator,
+):  # pylint: disable=unused-argument
     validator_index = 33710
-
-    with mock_scrape_validator_daily_stats(network_mocking):
-        stats = scrape_validator_daily_stats(
+    beaconchain = BeaconChain(database, messages_aggregator)
+    with mock_query_validator_daily_stats(beaconchain, network_mocking):
+        stats = beaconchain.query_validator_daily_stats(
             validator_index=validator_index,
             last_known_timestamp=0,
             exit_ts=None,
@@ -183,88 +188,84 @@ def test_validator_daily_stats(network_mocking, price_historian):  # pylint: dis
     assert len(stats) >= 81
     expected_stats = [ValidatorDailyStats(
         validator_index=validator_index,
-        timestamp=1607126400,    # 2020/12/05
+        timestamp=1607212823,    # 2020/12/06
         pnl=ZERO,
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        timestamp=1607212800,    # 2020/12/06
+        timestamp=1607299223,    # 2020/12/07
         pnl=ZERO,
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        timestamp=1607299200,    # 2020/12/07
+        timestamp=1607385623,  # 2020/12/08
         pnl=ZERO,
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        timestamp=1607385600,  # 2020/12/08
+        timestamp=1607472023,  # 2020/12/09
         pnl=ZERO,
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        timestamp=1607472000,  # 2020/12/09
+        timestamp=1607558423,  # 2020/12/10
         pnl=ZERO,
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        timestamp=1607558400,  # 2020/12/10
+        timestamp=1607644823,  # 2020/12/11
         pnl=ZERO,
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        timestamp=1607644800,  # 2020/12/11
+        timestamp=1607731223,  # 2020/12/12
         pnl=ZERO,
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        timestamp=1607731200,  # 2020/12/12
+        timestamp=1607817623,  # 2020/12/13
         pnl=ZERO,
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        timestamp=1607817600,  # 2020/12/13
+        timestamp=1607904023,  # 2020/12/14
         pnl=ZERO,
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        timestamp=1607904000,  # 2020/12/14
-        pnl=ZERO,
+        timestamp=1607990423,  # 2020/12/15
+        pnl=FVal('0.011901184'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        timestamp=1607990400,  # 2020/12/15
-        pnl=FVal('0.0119'),
+        timestamp=1608076823,  # 2020/12/16
+        pnl=FVal('0.013122458'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        timestamp=1608076800,  # 2020/12/16
-        pnl=FVal('0.01318'),
+        timestamp=1608163223,  # 2020/12/17
+        pnl=FVal('-0.000114942'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        timestamp=1608163200,  # 2020/12/17
-        pnl=FVal('-0.00006'),
+        timestamp=1608249623,  # 2020/12/18
+        pnl=FVal('0.01280657'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        timestamp=1608249600,  # 2020/12/18
-        pnl=FVal('0.01286'),
+        timestamp=1608336023,  # 2020/12/19
+        pnl=FVal('0.01261697'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        timestamp=1608336000,  # 2020/12/19
-        pnl=FVal('0.01267'),
+        timestamp=1608422423,  # 2020/12/20
+        pnl=FVal('0.014366383'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        timestamp=1608422400,  # 2020/12/20
-        pnl=FVal('0.01442'),
+        timestamp=1608508823,  # 2020/12/21
+        pnl=FVal('0.012315232'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        timestamp=1608508800,  # 2020/12/21
-        pnl=FVal('0.01237'),
+        timestamp=1608595223,  # 2020/12/22
+        pnl=FVal('0.012076577'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        timestamp=1608595200,  # 2020/12/22
-        pnl=FVal('0.01213'),
+        timestamp=1608681623,  # 2020/12/23
+        pnl=FVal('0.011941107'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        timestamp=1608681600,  # 2020/12/23
-        pnl=FVal('0.012'),
+        timestamp=1608768023,  # 2020/12/24
+        pnl=FVal('0.011885565'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        timestamp=1608768000,  # 2020/12/24
-        pnl=FVal('0.01194'),
-    ), ValidatorDailyStats(
-        validator_index=validator_index,
-        timestamp=1608854400,  # 2020/12/25
-        pnl=FVal('0.01174'),
+        timestamp=1608854423,  # 2020/12/25
+        pnl=FVal('0.011691997'),
     )]
     stats.reverse()
     assert stats[:len(expected_stats)] == expected_stats
@@ -277,10 +278,16 @@ def test_validator_daily_stats(network_mocking, price_historian):  # pylint: dis
 
 
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
-def test_validator_daily_stats_with_last_known_timestamp(network_mocking, price_historian):  # pylint: disable=unused-argument
+def test_validator_daily_stats_with_last_known_timestamp(
+        network_mocking,
+        price_historian,
+        database,
+        messages_aggregator,
+):  # pylint: disable=unused-argument
     validator_index = 33710
-    with mock_scrape_validator_daily_stats(network_mocking):
-        stats = scrape_validator_daily_stats(
+    beaconchain = BeaconChain(database, messages_aggregator)
+    with mock_query_validator_daily_stats(beaconchain, network_mocking):
+        stats = beaconchain.query_validator_daily_stats(
             validator_index=validator_index,
             last_known_timestamp=1613520000,
             exit_ts=None,
@@ -289,28 +296,32 @@ def test_validator_daily_stats_with_last_known_timestamp(network_mocking, price_
     assert len(stats) >= 6
     expected_stats = [ValidatorDailyStats(
         validator_index=validator_index,
-        timestamp=1613606400,    # 2021/02/18
-        pnl=FVal('0.00784'),
+        timestamp=1613520023,    # 2021/02/17
+        pnl=FVal('0.007824513'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        timestamp=1613692800,    # 2021/02/19
-        pnl=FVal('0.00683'),
+        timestamp=1613606423,    # 2021/02/18
+        pnl=FVal('0.007801811'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        timestamp=1613779200,    # 2021/02/20
-        pnl=FVal('0.00798'),
+        timestamp=1613692823,    # 2021/02/19
+        pnl=FVal('0.006798106'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        timestamp=1613865600,    # 2021/02/21
-        pnl=FVal('0.01114'),
+        timestamp=1613779223,    # 2021/02/20
+        pnl=FVal('0.007945406'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        timestamp=1613952000,    # 2021/02/22
-        pnl=FVal('0.00782'),
+        timestamp=1613865623,    # 2021/02/21
+        pnl=FVal('0.011105614'),
     ), ValidatorDailyStats(
         validator_index=validator_index,
-        timestamp=1614038400,    # 2021/02/23
-        pnl=FVal('0.00772'),
+        timestamp=1613952023,    # 2021/02/22
+        pnl=FVal('0.007780681'),
+    ), ValidatorDailyStats(
+        validator_index=validator_index,
+        timestamp=1614038423,    # 2021/02/23
+        pnl=FVal('0.007687101'),
     )]
 
     stats.reverse()
@@ -335,7 +346,10 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             ),
         ])
 
-    with mock_scrape_validator_daily_stats(network_mocking) as stats_call:
+    with (
+        mock_query_validator_daily_stats(eth2.beacon_inquirer.beaconchain, network_mocking),
+        patch('rotkehlchen.chain.ethereum.modules.eth2.beacon.BeaconInquirer.query_validator_daily_stats', wraps=eth2.beacon_inquirer.query_validator_daily_stats) as stats_call,  # noqa: E501
+    ):
         filter_query = Eth2DailyStatsFilterQuery.make(
             validator_indices=[validator_index],
             from_ts=Timestamp(1613606300),
@@ -353,28 +367,28 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
         assert filter_total_found == 6
         expected_stats = [ValidatorDailyStats(
             validator_index=validator_index,
-            timestamp=1613606400,    # 2021/02/18
-            pnl=FVal('0.00784'),
+            timestamp=1613606423,    # 2021/02/18
+            pnl=FVal('0.007801811'),
         ), ValidatorDailyStats(
             validator_index=validator_index,
-            timestamp=1613692800,    # 2021/02/19
-            pnl=FVal('0.00683'),
+            timestamp=1613692823,    # 2021/02/19
+            pnl=FVal('0.006798106'),
         ), ValidatorDailyStats(
             validator_index=validator_index,
-            timestamp=1613779200,    # 2021/02/20
-            pnl=FVal('0.00798'),
+            timestamp=1613779223,    # 2021/02/20
+            pnl=FVal('0.007945406'),
         ), ValidatorDailyStats(
             validator_index=validator_index,
-            timestamp=1613865600,    # 2021/02/21
-            pnl=FVal('0.01114'),
+            timestamp=1613865623,    # 2021/02/21
+            pnl=FVal('0.011105614'),
         ), ValidatorDailyStats(
             validator_index=validator_index,
-            timestamp=1613952000,    # 2021/02/22
-            pnl=FVal('0.00782'),
+            timestamp=1613952023,    # 2021/02/22
+            pnl=FVal('0.007780681'),
         ), ValidatorDailyStats(
             validator_index=validator_index,
-            timestamp=1614038400,    # 2021/02/23
-            pnl=FVal('0.00772'),
+            timestamp=1614038423,    # 2021/02/23
+            pnl=FVal('0.007687101'),
         )]
         assert stats == expected_stats
         assert sum_pnl == sum(x.pnl for x in expected_stats)
@@ -412,15 +426,17 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
 def test_validator_daily_stats_with_genesis_event(
         network_mocking: bool,
         price_historian: 'PriceHistorian',  # pylint: disable=unused-argument
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
 ) -> None:
     """
     Test that if profit returned by beaconchain on genesis is > 32 ETH the app
     handles it correctly.
     """
     validator_index = 999
-
-    with mock_scrape_validator_daily_stats(network_mocking):
-        stats = scrape_validator_daily_stats(
+    beaconchain = BeaconChain(database, messages_aggregator)
+    with mock_query_validator_daily_stats(beaconchain, network_mocking):
+        stats = beaconchain.query_validator_daily_stats(
             validator_index=validator_index,
             last_known_timestamp=Timestamp(0),
             exit_ts=None,
@@ -428,12 +444,12 @@ def test_validator_daily_stats_with_genesis_event(
     assert stats == [
         ValidatorDailyStats(
             validator_index=999,
-            timestamp=DAY_AFTER_ETH2_GENESIS,
-            pnl=FVal('0.01201'),
+            timestamp=Timestamp(1606780823),  # day after eth2 genesis
+            pnl=FVal('0.012007402'),
             ownership_percentage=ONE,
         ), ValidatorDailyStats(
             validator_index=999,
-            timestamp=Timestamp(1606694400),
+            timestamp=Timestamp(1606694423),
             pnl=ZERO,
             ownership_percentage=ONE,
         ),
@@ -442,16 +458,53 @@ def test_validator_daily_stats_with_genesis_event(
 
 @pytest.mark.skipif('CI' in os.environ, reason='do not run this in CI as it spams')
 @pytest.mark.parametrize('default_mock_price_value', [FVal(1.55)])
-def test_scrape_genesis_validator_stats_all(price_historian):  # pylint: disable=unused-argument
+def test_query_genesis_validator_stats_all(
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
+        price_historian,
+):  # pylint: disable=unused-argument
     """A test to see that the scraper of daily stats goes to the very first day of
     genesis for old validators despite UI actually showing pages"""
-    stats = scrape_validator_daily_stats(
+    beaconchain = BeaconChain(database, messages_aggregator)
+    stats = beaconchain.query_validator_daily_stats(
         validator_index=1,
         last_known_timestamp=Timestamp(0),
         exit_ts=None,
     )
     assert len(stats) >= 861
-    assert stats[-1].timestamp == 1606694400
+    assert stats[-1].timestamp == 1606694423
+
+
+@pytest.mark.freeze_time('2024-06-20 19:55:00 GMT')
+@pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+def test_querying_daily_stats_twice(
+        database: DBHandler,
+        messages_aggregator: MessagesAggregator,
+        price_historian: 'PriceHistorian',
+        eth2: 'Eth2',
+):  # pylint: disable=unused-argument
+    """Test that querying the daily stats twice doesn't trigger a network
+    request the second time"""
+    eth2.add_validator(validator_index=1118010, public_key=None, ownership_proportion=ONE)
+    with eth2.database.conn.cursor() as cursor:
+        stats = eth2.get_validator_daily_stats(
+            cursor=cursor,
+            filter_query=Eth2DailyStatsFilterQuery.make(),
+            only_cache=False,
+        )
+        assert len(stats) > 100
+
+        with patch(
+            'rotkehlchen.chain.ethereum.modules.eth2.beacon.BeaconInquirer.query_validator_daily_stats',
+            wraps=eth2.beacon_inquirer.query_validator_daily_stats,
+        ) as patched_query:
+            stats = eth2.get_validator_daily_stats(
+                cursor=cursor,
+                filter_query=Eth2DailyStatsFilterQuery.make(),
+                only_cache=False,
+            )
+            assert patched_query.call_count == 0
 
 
 @pytest.mark.parametrize('eth2_mock_data', [{

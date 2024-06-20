@@ -20,12 +20,12 @@ from rotkehlchen.serialization.deserialize import (
     deserialize_int,
     deserialize_str,
 )
-from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey
+from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, Timestamp
 from rotkehlchen.utils.misc import from_gwei
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 from .constants import BEACONCHAIN_MAX_EPOCH, DEFAULT_VALIDATOR_CHUNK_SIZE
-from .structures import ValidatorDetails, ValidatorID
+from .structures import ValidatorDailyStats, ValidatorDetails, ValidatorID
 from .utils import calculate_query_chunks, epoch_to_timestamp
 
 if TYPE_CHECKING:
@@ -249,3 +249,19 @@ class BeaconInquirer:
         and withdrawal address setting as part of https://github.com/rotki/rotki/issues/6816
         """
         return self.beaconchain.get_eth1_address_validators(address)
+
+    def query_validator_daily_stats(
+            self,
+            validator_index: int,
+            last_known_timestamp: Timestamp,
+            exit_ts: Timestamp | None,
+    ) -> list[ValidatorDailyStats]:
+        """
+        May raise:
+        - RemoteError if we can't query beaconcha.in or if the data is not in the expected format
+        """
+        return self.beaconchain.query_validator_daily_stats(
+            validator_index=validator_index,
+            last_known_timestamp=last_known_timestamp,
+            exit_ts=exit_ts,
+        )

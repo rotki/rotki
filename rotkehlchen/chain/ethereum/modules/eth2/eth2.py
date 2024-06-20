@@ -46,7 +46,7 @@ from .structures import (
     ValidatorDetailsWithStatus,
     ValidatorID,
 )
-from .utils import create_profit_filter_queries, scrape_validator_daily_stats
+from .utils import create_profit_filter_queries
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -352,7 +352,7 @@ class Eth2(EthereumModule):
 
         for validator_index, last_ts, exit_ts in result:
             self._maybe_backoff_beaconchain(now=now)
-            new_stats = scrape_validator_daily_stats(
+            new_stats = self.beacon_inquirer.query_validator_daily_stats(
                 validator_index=validator_index,
                 last_known_timestamp=last_ts,
                 exit_ts=exit_ts,
