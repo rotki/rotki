@@ -139,7 +139,7 @@ class EigenlayerBalances(ProtocolWithBalance):
 
                 owner_mapping[eigenpod] = owner
 
-        eth_price = Inquirer.find_usd_price(A_ETH)  # now query all eigenpod balances an dadd it
+        eth_price = Inquirer.find_usd_price(A_ETH)  # now query all eigenpod balances and add it
         for eigenpod_address, amount in self.evm_inquirer.get_multi_balance(accounts=list(owner_mapping.keys())).items():  # noqa: E501
             if amount > ZERO:
                 balances[owner_mapping[eigenpod_address]].assets[A_ETH] += Balance(

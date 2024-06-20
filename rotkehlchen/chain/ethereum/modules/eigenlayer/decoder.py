@@ -2,7 +2,10 @@ import logging
 from typing import Any
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.assets.asset import AssetWithSymbol
+from rotkehlchen.assets.utils import TokenEncounterInfo
 from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
+    BEACON_ETH_STRATEGY,
     CPT_EIGENLAYER,
     DELAYED_WITHDRAWALS_CLAIMED,
     DELAYED_WITHDRAWALS_CREATED,
@@ -15,12 +18,17 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     EIGENPOD_DELAYED_WITHDRAWAL_ROUTER,
     EIGENPOD_MANAGER,
     FULL_WITHDRAWAL_REDEEMED,
+    OPERATOR_SHARES_DECREASED,
     OPERATOR_SHARES_INCREASED,
     PARTIAL_WITHDRAWAL_REDEEMED,
     POD_DEPLOYED,
     POD_SHARES_UPDATED,
+    STRATEGY_ABI,
     WITHDRAWAL_COMPLETE_TOPIC,
+    WITHDRAWAL_QUEUED,
 )
+from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.clique.decoder import CliqueAirdropDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -30,17 +38,34 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address, hex_or_bytes_to_int, pairwise
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
 class EigenlayerDecoder(CliqueAirdropDecoderInterface):
+    """
+    Some info to remember.
+
+    Operators can forcibly undelegate stakers. Any undelegation, whether initiated by a staker
+    or their operator, will also queue a withdrawal. That means that if a user was
+    forcibly undelegated then we won't see the event since the transaction won't be queried.
+
+    For users like this they would need to add the transaction hash manually and
+    associate it with their address.
+
+    Eigenlayer folks also said we could get them with loq querying of this event.
+    /// @notice Emitted when @param staker undelegates from @param operator.
+    event StakerUndelegated(address indexed staker, address indexed operator);
+
+    That event is in DelegationManager.
+    """
 
     def _decode_deposit(self, context: DecoderContext) -> DecodingOutput:
         depositor = hex_or_bytes_to_address(context.tx_log.data[0:32])
@@ -183,15 +208,15 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
         )
         return DecodingOutput(event=event)
 
-    def decode_delayed_withdrawals(self, context: DecoderContext) -> DecodingOutput:
+    def decode_eigenpod_delayed_withdrawals(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == DELAYED_WITHDRAWALS_CREATED:
-            return self.decode_delayed_withdrawals_created(context)
+            return self.decode_eigenpod_delayed_withdrawals_created(context)
         elif context.tx_log.topics[0] == DELAYED_WITHDRAWALS_CLAIMED:
-            return self.decode_delayed_withdrawals_claimed(context)
+            return self.decode_eigenpod_delayed_withdrawals_claimed(context)
 
         return DEFAULT_DECODING_OUTPUT
 
-    def decode_delayed_withdrawals_created(self, context: DecoderContext) -> DecodingOutput:
+    def decode_eigenpod_delayed_withdrawals_created(self, context: DecoderContext) -> DecodingOutput:  # noqa: E501
         pod_owner = hex_or_bytes_to_address(context.tx_log.data[0:32])
         recipient = hex_or_bytes_to_address(context.tx_log.data[32:64])
         if not self.base.any_tracked([pod_owner, recipient]):
@@ -222,7 +247,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
         )
         return DecodingOutput(event=event)
 
-    def decode_delayed_withdrawals_claimed(self, context: DecoderContext) -> DecodingOutput:
+    def decode_eigenpod_delayed_withdrawals_claimed(self, context: DecoderContext) -> DecodingOutput:  # noqa: E501
         if not self.base.is_tracked(recipient := hex_or_bytes_to_address(context.tx_log.data[0:32])):  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
@@ -246,16 +271,114 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
 
         return DEFAULT_DECODING_OUTPUT
 
+    def _decode_withdrawal_queued(self, context: DecoderContext) -> DecodingOutput:
+        """Creates and adds a queued withdrawal for each withdrawal in the event"""
+        contract = self.evm_inquirer.contracts.contract(EIGENLAYER_DELEGATION)
+        _, log_data = contract.decode_event(tx_log=context.tx_log, event_name='WithdrawalQueued', argument_names=('withdrawalRoot', 'withdrawal'))  # noqa: E501
+        if not self.base.any_tracked([staker := log_data[1][0], withdrawer := log_data[1][2]]):
+            return DEFAULT_DECODING_OUTPUT
+
+        location_label = withdrawer if self.base.is_tracked(withdrawer) else staker
+
+        strategies = log_data[1][5]
+        shares_entries = log_data[1][6]
+        if len(strategies) != len(shares_entries):  # should not happen according to contracts
+            log.error(f'When decoding eigenlayer WithdrawalQueued len(strategies) != len(shares) for {context.transaction.tx_hash.hex()}')  # noqa: E501
+            return DEFAULT_DECODING_OUTPUT
+
+        suffix = f' for {withdrawer}' if withdrawer != context.transaction.from_address else ''
+        underlying_tokens, underlying_amounts = self._get_strategy_token_amount(
+            strategies=strategies,
+            shares_entries=shares_entries,
+        )
+        for underlying_token, underlying_amount in zip(underlying_tokens, underlying_amounts, strict=False):  # noqa: E501
+            event = self.base.make_event_next_index(
+                tx_hash=context.transaction.tx_hash,
+                timestamp=context.transaction.timestamp,
+                event_type=HistoryEventType.INFORMATIONAL,
+                event_subtype=HistoryEventSubType.REMOVE_ASSET,
+                asset=underlying_token,
+                balance=Balance(),
+                location_label=location_label,
+                notes=f'Queue withdrawal of {underlying_amount} {underlying_token.symbol} from Eigenlayer{suffix}',  # noqa: E501
+                counterparty=CPT_EIGENLAYER,
+                address=context.tx_log.address,
+                extra_data={'amount': str(underlying_amount), 'withdrawal_root': '0x' + log_data[0].hex()},  # noqa: E501
+            )
+            context.decoded_events.append(event)
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def _get_strategy_token_amount(
+            self,
+            strategies: list[ChecksumEvmAddress],
+            shares_entries: list[int],
+    ) -> tuple[list[AssetWithSymbol], list[FVal]]:
+        """Queries the chain for the strategy address to get the undlerlying token
+        and how much of the undlerying an amount of shares is.
+
+        The given lists have to be the same size
+        """
+        underlying_tokens: list[AssetWithSymbol] = []
+        underlying_amounts, calls = [], []
+        beacon_eth_idx = -1
+        for idx, (strategy, shares) in enumerate(zip(strategies, shares_entries, strict=False)):
+            if strategy == BEACON_ETH_STRATEGY:  # special address, not a contract:
+                beacon_eth_idx = idx
+                continue
+
+            contract = EvmContract(
+                address=strategy,
+                abi=STRATEGY_ABI,
+                deployed_block=0,  # does not matter
+            )
+            calls.extend([
+                (contract.address, contract.encode(method_name='underlyingToken')),
+                (contract.address, contract.encode(method_name='sharesToUnderlyingView', arguments=[shares])),  # noqa: E501
+
+            ])
+
+        output = self.evm_inquirer.multicall(calls=calls)
+        for raw_address, raw_amount in pairwise(output):
+            underlying_tokens.append(underlying_token := self.base.get_or_create_evm_token(
+                address=hex_or_bytes_to_address(raw_address),
+                encounter=TokenEncounterInfo(
+                    description='Eigenlayer strategy token',
+                    should_notify=False,
+                ),
+            ))
+            underlying_amounts.append(token_normalized_value(
+                token_amount=hex_or_bytes_to_int(raw_amount),
+                token=underlying_token,
+            ))
+
+        if beacon_eth_idx != -1:  # it's just ETH. Insert at same position
+            underlying_tokens.insert(beacon_eth_idx + 1, A_ETH.resolve_to_asset_with_symbol())
+            underlying_amounts.insert(beacon_eth_idx + 1, from_wei(shares_entries[beacon_eth_idx]))
+
+        return underlying_tokens, underlying_amounts
+
     def decode_delegation(self, context: DecoderContext) -> DecodingOutput:
-        if context.tx_log.topics[0] != OPERATOR_SHARES_INCREASED:
+        """Decode events that delegate shares increase or decrease of an asset to an operator"""
+        if context.tx_log.topics[0] == OPERATOR_SHARES_INCREASED:
+            verb, preposition = 'Delegate', 'to'
+        elif context.tx_log.topics[0] == OPERATOR_SHARES_DECREASED:
+            verb, preposition = 'Undelegate', 'from'
+        elif context.tx_log.topics[0] == WITHDRAWAL_QUEUED:
+            return self. _decode_withdrawal_queued(context)
+        else:
             return DEFAULT_DECODING_OUTPUT
 
         if not self.base.is_tracked(staker := hex_or_bytes_to_address(context.tx_log.data[0:32])):
             return DEFAULT_DECODING_OUTPUT
 
+        underlying_tokens, underlying_amounts = self._get_strategy_token_amount(
+            strategies=[hex_or_bytes_to_address(context.tx_log.data[32:64])],
+            shares_entries=[hex_or_bytes_to_int(context.tx_log.data[64:96])],
+        )
         operator = hex_or_bytes_to_address(context.tx_log.topics[1])
-        shares = hex_or_bytes_to_int(context.tx_log.data[64:96])
-        notes = f'Delegate {from_wei(shares)} restaked ETH to {operator}'
+
+        notes = f'{verb} {underlying_amounts[0]} restaked {underlying_tokens[0].symbol} {preposition} {operator}'  # noqa: E501
         if context.transaction.from_address != staker:
             notes += f' for {staker}'
         event = self.base.make_event_next_index(
@@ -263,13 +386,15 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
             timestamp=context.transaction.timestamp,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
-            asset=A_ETH,
+            asset=underlying_tokens[0],
             balance=Balance(),
             location_label=staker,
             notes=notes,
             counterparty=CPT_EIGENLAYER,
             address=context.tx_log.address,
+            extra_data={'amount': str(underlying_amounts[0])},
         )
+
         return DecodingOutput(event=event)
 
     # -- DecoderInterface methods
@@ -279,7 +404,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
             EIGENLAYER_STRATEGY_MANAGER: (self.decode_event,),
             EIGENLAYER_AIRDROP_DISTRIBUTOR: (self.decode_airdrop,),
             EIGENPOD_MANAGER: (self.decode_eigenpod_manager_events,),
-            EIGENPOD_DELAYED_WITHDRAWAL_ROUTER: (self.decode_delayed_withdrawals,),
+            EIGENPOD_DELAYED_WITHDRAWAL_ROUTER: (self.decode_eigenpod_delayed_withdrawals,),
             EIGENLAYER_DELEGATION: (self.decode_delegation,),
         }
 
