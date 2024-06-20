@@ -117,6 +117,8 @@ class EvmContract(NamedTuple):
 
         Perhaps we can have a faster version of this method where instead of name
         and argument names we just give the index of event abi in the list if we know it
+
+        TODO: Look at this method too as the more standard way: https://web3py.readthedocs.io/en/stable/web3.contract.html#web3.contract.ContractEvents.myEvent
         """
         contract = WEB3.eth.contract(address=self.address, abi=self.abi)
         event_abi = contract._find_matching_event_abi(

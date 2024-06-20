@@ -14,7 +14,7 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.assets import A_ETH, A_STETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
@@ -347,6 +347,60 @@ def test_create_delayed_withdrawals(database, ethereum_inquirer, ethereum_accoun
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x02855536652F67cB936851D94c793Fb3Ba27F9bb']])
+def test_lst_create_delayed_withdrawals(database, ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x8c006f764e9264cd150b2583ba72205bb4575ace76ed3afa83689227e9fe461b')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    user_address, timestamp, gas_amount, amount = ethereum_accounts[0], TimestampMS(1718731823000), '0.001066996197578511', '0.501457627266872814'  # noqa: E501
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas_amount)),
+        location_label=user_address,
+        notes=f'Burned {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_STETH,
+        balance=Balance(),
+        location_label=user_address,
+        notes=f'Undelegate {amount} restaked stETH from 0x4d7C3fc856AB52753B91A6c9213aDF013309dD25',  # noqa: E501
+        counterparty=CPT_EIGENLAYER,
+        address=EIGENLAYER_DELEGATION,
+        extra_data={'amount': amount},
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=2,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.REMOVE_ASSET,
+        asset=A_STETH,
+        balance=Balance(),
+        location_label=user_address,
+        notes=f'Queue withdrawal of {amount} stETH from Eigenlayer',
+        counterparty=CPT_EIGENLAYER,
+        address=EIGENLAYER_DELEGATION,
+        extra_data={'amount': amount, 'withdrawal_root': '0xaa5e010334aa81720474f3625f04109a378cab05e6e6b8c9bcecc2dffab2fb7f'},  # noqa: E501
+    )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xCd2bCdE423F36E1B81a25168D5373f908546c9BE', '0xf17606D3FFbd5B07454542146a74712Eb797Ac0a']])  # noqa: E501
 def test_claim_delayed_withdrawals(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xc5d38c05567f5a4d51e686225dfc461ddf177eefa7c531822656b2ed9560ab12')  # noqa: E501
@@ -422,6 +476,7 @@ def test_native_restake_delegate(database, ethereum_inquirer, ethereum_accounts)
             notes=f'Delegate {eth_restaked} restaked ETH to 0x5dCdf02a7188257b7c37dD3158756dA9Ccd4A9Cb for {ethereum_accounts[0]}',  # noqa: E501
             counterparty=CPT_EIGENLAYER,
             address=EIGENLAYER_DELEGATION,
+            extra_data={'amount': '160'},
         ), EvmEvent(
             tx_hash=tx_hash,
             sequence_index=1,

@@ -64,7 +64,7 @@ class DecodingOutput:
     """
     Output of decoding functions
 
-    - event can be returned if the decodeing method has generated a new event and it needs to be
+    - event can be returned if the decoding method has generated a new event and it needs to be
     added to the list of other decoded events.
     - action_items is a list of actions to be performed later automatically or to be passed
     in further decoding methods.
