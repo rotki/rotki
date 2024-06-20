@@ -43,7 +43,7 @@ def ts_ms_to_sec(ts: TimestampMS) -> Timestamp:
 
 def create_timestamp(datestr: str, formatstr: str) -> Timestamp:
     """
-    Connvert datestr to unix timestamp (int) depending on the given formatstr.
+    Convert datestr to unix timestamp (int) depending on the given formatstr.
     Example format str: '%Y-%m-%d %H:%M:%S. More details here:
     https://docs.python.org/3/library/datetime.html#strftime-strptime-behavior
 
