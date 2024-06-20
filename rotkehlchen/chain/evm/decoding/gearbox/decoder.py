@@ -285,7 +285,7 @@ class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
         return DEFAULT_DECODING_OUTPUT
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return dict.fromkeys(self.pools, (self._decode_pool_events,)) | {self.staking_contract: (self._decode_staking_events,)}  # noqa: E501
+        return {self.staking_contract: (self._decode_staking_events,)}
 
     @staticmethod
     def possible_products() -> dict[str, list[EvmProduct]]:

@@ -17,7 +17,7 @@ from rotkehlchen.db.updates import RotkiDataUpdater, UpdateType
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.tests.api.test_location_asset_mappings import NUM_ASSETS_MAPPINGS_V1_32
+from rotkehlchen.tests.api.test_location_asset_mappings import NUM_ASSETS_MAPPINGS_V1_34
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
@@ -632,7 +632,7 @@ def test_accounting_rules_updates(data_updater: RotkiDataUpdater) -> None:
 
 def _check_location_asset_mappings(cursor: 'DBCursor', after_upgrade: bool) -> None:
     """Auxiliary function to check the db values before and after the upgrade"""
-    assert cursor.execute('SELECT COUNT(*) FROM location_asset_mappings').fetchone()[0] == NUM_ASSETS_MAPPINGS_V1_32  # noqa: E501
+    assert cursor.execute('SELECT COUNT(*) FROM location_asset_mappings').fetchone()[0] == NUM_ASSETS_MAPPINGS_V1_34  # noqa: E501
 
     for addition, is_present_count in zip(
         LOCATION_ASSET_MAPPINGS_DATA['location_asset_mappings']['additions'],
@@ -685,7 +685,7 @@ def test_location_asset_mappings_updates(
 
 def _check_location_unsupported_assets(cursor: 'DBCursor', after_upgrade: bool) -> None:
     """Auxiliary function to check the db values before and after the upgrade"""
-    assert cursor.execute('SELECT COUNT(*) FROM location_asset_mappings').fetchone()[0] == NUM_ASSETS_MAPPINGS_V1_32  # noqa: E501
+    assert cursor.execute('SELECT COUNT(*) FROM location_asset_mappings').fetchone()[0] == NUM_ASSETS_MAPPINGS_V1_34  # noqa: E501
 
     for operation, expected_count in (
         ('insert', lambda symbol: 0 if after_upgrade is False and symbol == 'OJ' else 1),

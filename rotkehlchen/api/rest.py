@@ -4562,6 +4562,7 @@ class RestAPI:
         base_inquirer = self.rotkehlchen.chains_aggregator.base.node_inquirer
         arbitrum_inquirer = self.rotkehlchen.chains_aggregator.arbitrum_one.node_inquirer
         gnosis_inquirer = self.rotkehlchen.chains_aggregator.gnosis.node_inquirer
+        polygon_inquirer = self.rotkehlchen.chains_aggregator.polygon_pos.node_inquirer
         for (cache, cache_type, query_method, save_method, chain_id, inquirer) in [
             ('curve pools', CacheType.CURVE_LP_TOKENS, query_curve_data, save_curve_data_to_cache, chain_id, node_inquirer)  # noqa: E501
             for chain_id, node_inquirer in (
@@ -4570,6 +4571,7 @@ class RestAPI:
                 (ChainID.ARBITRUM_ONE, arbitrum_inquirer),
                 (ChainID.BASE, base_inquirer),
                 (ChainID.GNOSIS, gnosis_inquirer),
+                (ChainID.POLYGON_POS, polygon_inquirer),
             )
         ] + [
             ('convex pools', CacheType.CONVEX_POOL_ADDRESS, query_convex_data, save_convex_data_to_cache, None, eth_node_inquirer),  # noqa: E501

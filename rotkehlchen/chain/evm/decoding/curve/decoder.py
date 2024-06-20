@@ -694,10 +694,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
         return {CPT_CURVE: [EvmProduct.GAUGE]}
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        mapping: dict[ChecksumEvmAddress, tuple[Any, ...]] = dict.fromkeys(self.pools, (self._decode_pool_events,))  # noqa: E501
-        mapping.update(dict.fromkeys(self.gauges, (self._decode_gauge_events,)))
-        mapping.update(dict.fromkeys(self.curve_swap_routers, (self._decode_pool_events,)))
-        return mapping
+        return dict.fromkeys(self.curve_swap_routers, (self._decode_pool_events,))
 
     def enricher_rules(self) -> list[Callable]:
         return [self._maybe_enrich_curve_transfers]

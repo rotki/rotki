@@ -398,7 +398,11 @@ def test_get_asset_with_symbol(globaldb):
         cryptocompare='',
         coingecko='renbtc',
         protocol=None,
-    )]
+    ),
+        EvmToken('eip155:10/erc20:0x85f6583762Bc76d775eAB9A7456db344f12409F7'),
+        EvmToken('eip155:137/erc20:0x8117214C361098915E6ec1a108dEF4e63F3C9ee5'),
+        EvmToken('eip155:42161/erc20:0xDBf31dF14B66535aF65AaC99C32e9eA844e14501'),
+    ]
     for x in itertools.product(('ReNbTc', 'renbtc', 'RENBTC', 'rEnBTc'), (None, AssetType.EVM_TOKEN)):  # noqa: E501
         assert globaldb.get_assets_with_symbol(*x) == expected_renbtc
 

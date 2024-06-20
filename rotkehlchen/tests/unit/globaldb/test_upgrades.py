@@ -10,6 +10,7 @@ from eth_utils.address import to_checksum_address
 from freezegun import freeze_time
 
 from rotkehlchen.assets.types import AssetType
+from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 from rotkehlchen.db.utils import table_exists
@@ -646,6 +647,28 @@ def test_upgrade_v7_v8(globaldb: GlobalDBHandler):
             'SELECT rowid, collection_id, asset FROM multiasset_mappings;',
         ).fetchall()
 
+        cached_lp_tokens = set(cursor.execute('SELECT value FROM general_cache WHERE key LIKE "CURVE_LP_TOKENS%"').fetchall())  # noqa: E501
+        cached_pool_tokens = set(cursor.execute('SELECT value FROM general_cache WHERE key LIKE "CURVE_POOL_TOKENS%"').fetchall())  # noqa: E501
+        cached_underlying_tokens = set(cursor.execute('SELECT value FROM general_cache WHERE key LIKE "CURVE_POOL_UNDERLYING_TOKENS%"').fetchall())  # noqa: E501
+        cached_gauges = set(cursor.execute('SELECT value FROM unique_cache WHERE key LIKE "CURVE_GAUGE_ADDRESS%"').fetchall())  # noqa: E501
+        cached_pools = set(cursor.execute('SELECT value FROM unique_cache WHERE key LIKE "CURVE_POOL_ADDRESS%"').fetchall())  # noqa: E501
+
+        assert len(cached_lp_tokens) == 973
+        assert len(cached_pool_tokens) == 555
+        assert len(cached_underlying_tokens) == 202
+        assert len(cached_gauges) == 536
+        assert len(cached_pools) == 973
+
+        # cache with new keys doesn't exist yet
+        assert cursor.execute('SELECT COUNT(*) FROM general_cache WHERE key LIKE "CURVE_LP_TOKENS1%"').fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) FROM general_cache WHERE key LIKE "CURVE_POOL_TOKENS1%"').fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) FROM unique_cache WHERE key LIKE "CURVE_GAUGE_ADDRESS1%"').fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) FROM unique_cache WHERE key LIKE "CURVE_POOL_ADDRESS1%"').fetchone()[0] == 0  # noqa: E501
+
+        # before update, the cache is not eligible to refresh, because last_queried_ts is ts_now()
+        cursor.execute('UPDATE general_cache SET last_queried_ts=? WHERE key LIKE ?', (ts_now(), 'CURVE_LP_TOKENS%'))  # noqa: E501
+        assert should_update_protocol_cache(CacheType.CURVE_LP_TOKENS) is False
+
     assert unique_entries['Wormhole Token', 'W'] == 263
     assert unique_entries['TokenFi', 'TOKEN'] == 264
     assert unique_entries['HTX', 'HTX'] == 265
@@ -711,6 +734,24 @@ def test_upgrade_v7_v8(globaldb: GlobalDBHandler):
             'SELECT COUNT(*) FROM contract_data WHERE address=?',
             ('0xc97EE9490F4e3A3136A513DB38E3C7b47e69303B',),
         ).fetchone()[0] == 1
+
+        # previous keys were deleted
+        assert cursor.execute('SELECT COUNT(*) FROM general_cache WHERE key LIKE "CURVE_LP_TOKENS0x%"').fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) FROM general_cache WHERE key LIKE "CURVE_POOL_TOKENS0x%"').fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) FROM unique_cache WHERE key LIKE "CURVE_GAUGE_ADDRESS0x%"').fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute('SELECT COUNT(*) FROM unique_cache WHERE key LIKE "CURVE_POOL_ADDRESS0x%"').fetchone()[0] == 0  # noqa: E501
+
+        # values are same as in v7 with key containing the chain id
+        assert set(cursor.execute('SELECT value FROM general_cache WHERE key LIKE "CURVE_LP_TOKENS1%"').fetchall()) == cached_lp_tokens  # noqa: E501
+        assert set(cursor.execute('SELECT value FROM general_cache WHERE key LIKE "CURVE_POOL_TOKENS1%"').fetchall()) == cached_pool_tokens  # noqa: E501
+        assert set(cursor.execute('SELECT value FROM unique_cache WHERE key LIKE "CURVE_GAUGE_ADDRESS1%"').fetchall()) == cached_gauges  # noqa: E501
+        assert set(cursor.execute('SELECT value FROM unique_cache WHERE key LIKE "CURVE_POOL_ADDRESS1%"').fetchall()) == cached_pools  # noqa: E501
+
+        # CURVE_POOL_UNDERLYING_TOKENS should be deleted
+        assert cursor.execute('SELECT COUNT(*) FROM general_cache WHERE key LIKE "CURVE_POOL_UNDERLYING_TOKENS%"').fetchone()[0] == 0  # noqa: E501
+
+        # ensure that now curve cache should be eligible to update
+        assert should_update_protocol_cache(CacheType.CURVE_LP_TOKENS, '1') is True
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])

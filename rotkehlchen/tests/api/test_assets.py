@@ -696,7 +696,7 @@ def test_search_assets(rotkehlchen_api_server):
         },
     )
     result = assert_proper_sync_response_with_result(response)
-    assert len(result) == 4
+    assert len(result) == 5
     assert any(entry['name'] == 'Ethereum' for entry in result)
     for entry in result:
         assert entry['symbol'] == 'ETH'
@@ -724,7 +724,7 @@ def test_search_assets(rotkehlchen_api_server):
         },
     )
     result = assert_proper_sync_response_with_result(response)
-    assert len(result) == 4
+    assert len(result) == 5
     assert any(entry['name'] == 'Ethereum' for entry in result)
     for entry in result:
         assert entry['symbol'] == 'ETH'
@@ -735,6 +735,8 @@ def test_search_assets(rotkehlchen_api_server):
             assert entry['evm_chain'] == 'optimism'
         elif entry['identifier'].startswith('eip155:8453'):
             assert entry['evm_chain'] == 'base'
+        elif entry['identifier'].startswith('eip155:137'):
+            assert entry['evm_chain'] == 'polygon_pos'
         else:
             assert 'evm_chain' not in entry
     assert_asset_result_order(data=result, is_ascending=True, order_field='name')
@@ -780,6 +782,7 @@ def test_search_assets(rotkehlchen_api_server):
         'binance',
         'base',
         'scroll',
+        'gnosis',
     }
 
     # check that using evm_chain filter works.

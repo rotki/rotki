@@ -18,6 +18,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryEventSubType, HistoryEventType
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.tests.fixtures.messages import MockedWsMessage
+from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChainID,
@@ -50,13 +51,6 @@ def test_booster_deposit(
         tx_hash=evmhash,
     )
     mocked_notifier = database.msg_aggregator.rotki_notifier
-    assert mocked_notifier.pop_message() == MockedWsMessage(
-        message_type=WSMessageType.NEW_EVM_TOKEN_DETECTED,
-        data={
-            'token_identifier': 'eip155:1/erc20:0x182B723a58739a9c974cFDB385ceaDb237453c28',  # stETH  # noqa: E501
-            'seen_tx_hash': tx_hex,
-        },
-    )
     assert mocked_notifier.pop_message() == MockedWsMessage(
         message_type=WSMessageType.NEW_EVM_TOKEN_DETECTED,
         data={
@@ -249,13 +243,15 @@ def test_cvxcrv_get_reward(database, ethereum_inquirer, eth_transactions):
         ],
     )
     dbevmtx = DBEvmTx(database)
-    with dbevmtx.db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
     decoder = EthereumTransactionDecoder(
         database=database,
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
+    with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        decoder.reload_data(cursor)
+
     events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     timestamp = TimestampMS(1655675488000)
     expected_events = [
@@ -492,14 +488,15 @@ def test_cvx_stake(database, ethereum_inquirer, eth_transactions):
         ],
     )
     dbevmtx = DBEvmTx(database)
-    with dbevmtx.db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
     decoder = EthereumTransactionDecoder(
         database=database,
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
-
     )
+    with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        decoder.reload_data(cursor)
+
     events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
@@ -640,14 +637,15 @@ def test_cvx_get_reward(database, ethereum_inquirer, eth_transactions):
         ],
     )
     dbevmtx = DBEvmTx(database)
-    with dbevmtx.db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
     decoder = EthereumTransactionDecoder(
         database=database,
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
-
     )
+    with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        decoder.reload_data(cursor)
+
     events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
@@ -733,14 +731,15 @@ def test_cvx_withdraw(database, ethereum_inquirer, eth_transactions):
         ],
     )
     dbevmtx = DBEvmTx(database)
-    with dbevmtx.db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
     decoder = EthereumTransactionDecoder(
         database=database,
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
-
     )
+    with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        decoder.reload_data(cursor)
+
     events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
@@ -817,14 +816,15 @@ def test_claimzap_abracadabras(database, ethereum_inquirer, eth_transactions):
         ],
     )
     dbevmtx = DBEvmTx(database)
-    with dbevmtx.db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
     decoder = EthereumTransactionDecoder(
         database=database,
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
-
     )
+    with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        decoder.reload_data(cursor)
+
     events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
@@ -911,13 +911,15 @@ def test_claimzap_cvx_locker(database, ethereum_inquirer, eth_transactions):
         ],
     )
     dbevmtx = DBEvmTx(database)
-    with dbevmtx.db.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
     decoder = EthereumTransactionDecoder(
         database=database,
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
+    with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        decoder.reload_data(cursor)
+
     events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(

@@ -5,6 +5,7 @@ import pytest
 from rotkehlchen.chain.ethereum.defi.zerionsdk import KNOWN_ZERION_PROTOCOL_NAMES, ZerionSDK
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE, wait_until_all_nodes_connected
+from rotkehlchen.types import ChainID
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -15,9 +16,9 @@ from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE, wait_until_all_nod
     'USDT': FVal('1'),
 }])
 def test_query_all_protocol_balances_for_account(
-        ethereum_inquirer,
+        ethereum_manager,
         function_scope_messages_aggregator,
-        inquirer,  # pylint: disable=unused-argument
+        inquirer,
         ethereum_manager_connect_at_start,
         database,
 ):
@@ -32,9 +33,10 @@ def test_query_all_protocol_balances_for_account(
     """
     wait_until_all_nodes_connected(
         connect_at_start=ethereum_manager_connect_at_start,
-        evm_inquirer=ethereum_inquirer,
+        evm_inquirer=ethereum_manager.node_inquirer,
     )
-    zerion = ZerionSDK(ethereum_inquirer, function_scope_messages_aggregator, database)
+    inquirer.inject_evm_managers(((ChainID.ETHEREUM, ethereum_manager),))
+    zerion = ZerionSDK(ethereum_manager.node_inquirer, function_scope_messages_aggregator, database)  # noqa: E501
     balances = zerion.all_balances_for_account('0xf753beFE986e8Be8EBE7598C9d2b6297D9DD6662')
 
     if len(balances) == 0:

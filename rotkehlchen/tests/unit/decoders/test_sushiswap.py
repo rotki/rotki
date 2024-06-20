@@ -16,6 +16,7 @@ from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.types import (
     SUSHISWAP_PROTOCOL,
     ChainID,
@@ -97,13 +98,14 @@ def test_sushiswap_single_swap(database, ethereum_inquirer, eth_transactions):
     )
 
     dbevmtx = DBEvmTx(database)
-    with database.user_write() as cursor:
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
     decoder = EthereumTransactionDecoder(
         database=database,
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
+    with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
+        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        decoder.reload_data(cursor)
     events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     expected_events = [
@@ -460,8 +462,9 @@ def test_sushiswap_v2_add_liquidity(database, ethereum_inquirer, eth_transaction
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    with database.user_write() as cursor:
+    with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+        decoder.reload_data(cursor)
     events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     lp_token_identifier = evm_address_to_identifier(

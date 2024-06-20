@@ -120,14 +120,31 @@ def _update_scrollscan_contract(cursor: 'DBCursor') -> None:
     )
 
 
+@enter_exit_debug_log()
+def _rename_curve_tokens_cache_keys(write_cursor: 'DBCursor') -> None:
+    """Rename curve cache keys to include chain id and set their last_queried_ts to 0,
+    so that other chains are queried again at the time of decoding the events. Adding only 1
+    as chain_id because at the time of this upgrade only ethereum tokens are present in the cache.
+    """
+    write_cursor.execute('UPDATE general_cache SET key=replace(key, "CURVE_LP_TOKENS", "CURVE_LP_TOKENS1"), last_queried_ts=0')  # noqa: E501
+    write_cursor.execute('UPDATE general_cache SET key=replace(key, "CURVE_POOL_TOKENS", "CURVE_POOL_TOKENS1"), last_queried_ts=0')  # noqa: E501
+    write_cursor.execute('UPDATE unique_cache SET key=replace(key, "CURVE_GAUGE_ADDRESS", "CURVE_GAUGE_ADDRESS1"), last_queried_ts=0')  # noqa: E501
+    write_cursor.execute('UPDATE unique_cache SET key=replace(key, "CURVE_POOL_ADDRESS", "CURVE_POOL_ADDRESS1"), last_queried_ts=0')  # noqa: E501
+    # remove CURVE_POOL_UNDERLYING_TOKENS because they are no longer needed
+    write_cursor.execute('DELETE FROM general_cache WHERE key LIKE "CURVE_POOL_UNDERLYING_TOKENS%"')  # noqa: E501
+
+
 @enter_exit_debug_log(name='globaldb v7->v8 upgrade')
 def migrate_to_v8(connection: 'DBConnection') -> None:
     """This globalDB upgrade does the following:
     - Fix autodetected spam assets by mistake
     - Adds UNIQUE constraint in asset_collections table.
+    - Update balance scanner contract in scroll as the same version as in other chains
+    - Rename the keys of curve cache to include chain_id
 
     This upgrade takes place in v1.34.0"""
     with connection.write_ctx() as write_cursor:
         fix_detected_spam_tokens(write_cursor)
         set_unique_asset_collections(write_cursor)
         _update_scrollscan_contract(write_cursor)
+        _rename_curve_tokens_cache_keys(write_cursor)

@@ -300,13 +300,6 @@ def save_curve_data_to_cache(
                 key_parts=(CacheType.CURVE_POOL_TOKENS, chain_id_str, pool.pool_address, str(idx)),
                 values=[coin],
             )
-        if pool.underlying_coins is not None:
-            for idx, underlying_coin in enumerate(pool.underlying_coins):
-                globaldb_set_general_cache_values(
-                    write_cursor=write_cursor,
-                    key_parts=(CacheType.CURVE_POOL_UNDERLYING_TOKENS, chain_id_str, pool.pool_address, str(idx)),  # noqa: E501
-                    values=[underlying_coin],
-                )
         if pool.gauge_address is not None:
             globaldb_set_unique_cache_value(
                 write_cursor=write_cursor,

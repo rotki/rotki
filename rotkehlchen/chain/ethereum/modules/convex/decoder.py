@@ -279,16 +279,14 @@ class ConvexDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
         }
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        decoder_mappings: dict[ChecksumEvmAddress, tuple[Callable, ...]] = {
+        decoder_mappings = {
             BOOSTER: (self._decode_pool_events,),
             CVX_LOCKER: (self._decode_pool_events,),
             CVX_LOCKER_V2: (self._decode_pool_events,),
             CVX_REWARDS: (self._decode_pool_events,),
             CVXCRV_REWARDS: (self._decode_pool_events,),
         }
-        pools = dict.fromkeys(self.pools, (self._decode_pool_events,))
         virtual_rewards = dict.fromkeys(CONVEX_VIRTUAL_REWARDS, (self._decode_pool_events,))
-        decoder_mappings.update(pools)
         decoder_mappings.update(virtual_rewards)
         return decoder_mappings
 
