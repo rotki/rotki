@@ -182,6 +182,22 @@ function confirmFieldMessage({ target, mustInclude, messageContains }: FieldMess
     cy.get('@message').should('include.text', messageContains);
 }
 
+function scrollElemToTop(target: string) {
+  cy.get(target).then(($el) => {
+    // Get the element's offset from the top of the page
+    const offset = $el.offset();
+
+    // Scroll to the position of the element
+    if (offset !== undefined) {
+      cy.get('body').then(($body) => {
+        $body[0].scrollTo(0, offset.top);
+      });
+    }
+
+    cy.wrap($el).should('be.visible', { timeout: 1000 });
+  });
+}
+
 Cypress.Commands.add('logout', logout);
 Cypress.Commands.add('updateAssets', updateAssets);
 Cypress.Commands.add('disableModules', disableModules);
@@ -190,3 +206,4 @@ Cypress.Commands.add('addExternalTrade', addExternalTrade);
 Cypress.Commands.add('addEtherscanKey', addEtherscanKey);
 Cypress.Commands.add('assertNoRunningTasks', assertNoRunningTasks);
 Cypress.Commands.add('confirmFieldMessage', confirmFieldMessage);
+Cypress.Commands.add('scrollElemToTop', scrollElemToTop);

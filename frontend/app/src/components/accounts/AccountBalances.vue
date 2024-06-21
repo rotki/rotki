@@ -86,11 +86,7 @@ const refreshDisabled = logicOr(isSectionLoading, detectingTokens);
 </script>
 
 <template>
-  <RuiCard
-    :id="`blockchain-balances-${loopring ? 'LRC' : blockchain}`"
-    data-cy="account-balances"
-    :data-location="blockchain"
-  >
+  <RuiCard>
     <template #header>
       <div class="flex flex-row items-center gap-2">
         <SummaryCardRefreshMenu

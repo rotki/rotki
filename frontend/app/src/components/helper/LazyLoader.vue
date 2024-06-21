@@ -43,7 +43,7 @@ const css = useCssModule();
 
 const minHeightUsed = computed(() => {
   const heightVal = get(height);
-  if (heightVal !== 'max-content')
+  if (heightVal !== 'max-content' || get(usedAppear))
     return 'auto';
   return get(minHeight);
 });
