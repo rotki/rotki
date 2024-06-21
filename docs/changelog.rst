@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`3971` Show the total collateral ratio in the Liquity Trove section.
 * :feature:`2323` Add support for Huobi exchange.
 * :feature:`-` Curve vote escrow locking and withdrawal events will now be properly decoded on ethereum mainnet.
 * :feature:`-` Curve fee distributor claim events will now be properly decoded on ethereum mainnet.

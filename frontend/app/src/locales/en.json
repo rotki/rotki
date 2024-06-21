@@ -3186,6 +3186,7 @@
     "ratio": "Collateralization Ratio",
     "stable_apr": "Stable APR",
     "title": "Collateral",
+    "total_collateral_ratio": "Total Collateral Ratio",
     "variable_apr": "Variable APR",
     "watchers": {
       "add": "Add collateralization ratio watcher",

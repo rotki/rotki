@@ -1,5 +1,5 @@
 import {
-  LiquityBalances,
+  LiquityBalancesWithCollateralInfo,
   LiquityPoolDetails,
   LiquityStakingDetails,
   LiquityStatistics,
@@ -11,7 +11,8 @@ import type { TaskMeta } from '@/types/task';
 import type { OnError } from '@/types/fetch';
 
 export const useLiquityStore = defineStore('defi/liquity', () => {
-  const balances: Ref<LiquityBalances> = ref({});
+  const defaultBalances = () => ({ balances: {}, totalCollateralRatio: null });
+  const balances: Ref<LiquityBalancesWithCollateralInfo> = ref(defaultBalances());
   const staking: Ref<LiquityStakingDetails> = ref({});
   const stakingPools: Ref<LiquityPoolDetails> = ref({});
   const statistics: Ref<LiquityStatistics | null> = ref(null);
@@ -83,7 +84,7 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
           section: Section.DEFI_LIQUITY_BALANCES,
           meta,
           query: async () => await fetchLiquityBalances(),
-          parser: result => LiquityBalances.parse(result),
+          parser: result => LiquityBalancesWithCollateralInfo.parse(result),
           onError,
         },
         state: {
@@ -177,7 +178,7 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
   const reset = (): void => {
     const { resetStatus } = useStatusUpdater(Section.DEFI_LIQUITY_BALANCES);
 
-    set(balances, {});
+    set(balances, defaultBalances());
     set(staking, {});
     set(statistics, null);
 

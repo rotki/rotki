@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { externalLinks } from '@/data/external-links';
 import type { AssetBalance, BigNumber } from '@rotki/common';
 
 withDefaults(
@@ -10,6 +11,8 @@ withDefaults(
     ratio: null,
   },
 );
+
+const { balances } = storeToRefs(useLiquityStore());
 
 const { t } = useI18n();
 </script>
@@ -38,6 +41,32 @@ const { t } = useI18n();
       <PercentageDisplay
         v-if="ratio"
         :value="ratio.toFormat(2)"
+      />
+    </LoanRow>
+    <LoanRow
+      v-if="balances.totalCollateralRatio"
+    >
+      <template #title>
+        <div class="flex items-center gap-1">
+          {{ t('loan_collateral.total_collateral_ratio') }}
+          <ExternalLink
+            :url="externalLinks.liquityTotalCollateralRatioDoc"
+            custom
+          >
+            <RuiButton
+              icon
+              variant="text"
+              size="sm"
+              class="-my-1"
+            >
+              <RuiIcon name="question-line" />
+            </RuiButton>
+          </ExternalLink>
+        </div>
+      </template>
+      <PercentageDisplay
+        v-if="balances.totalCollateralRatio"
+        :value="balances.totalCollateralRatio.toFormat(2)"
       />
     </LoanRow>
   </StatCard>
