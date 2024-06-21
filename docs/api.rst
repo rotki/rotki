@@ -654,6 +654,7 @@ Getting or modifying settings
    :resjson int oracle_penalty_threshold_count: The number of failures after which an oracle is penalized. Default is 5.
    :resjson int oracle_penalty_duration: The duration in seconds for which an oracle is penalized. Default is 1800.
    :resjson bool auto_create_calendar_reminders: A boolean denoting whether reminders are created automatically for calendar entries based on the decoded history events. Default is ``true``.
+   :resjson bool query_daily_stats_from_beaconchain: A boolean denoting whether we are allowed to query beaconchain for daily stats. Default is ``true``.
 
    :statuscode 200: Querying of settings was successful
    :statuscode 409: There is no logged in user

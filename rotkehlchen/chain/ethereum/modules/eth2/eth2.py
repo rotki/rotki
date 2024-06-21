@@ -18,6 +18,7 @@ from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.api import PremiumPermissionError
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -429,16 +430,19 @@ class Eth2(EthereumModule):
             filter_query: 'Eth2DailyStatsFilterQuery',
             only_cache: bool,
     ) -> tuple[list[ValidatorDailyStats], int, FVal]:
-        """Gets the daily stats eth2 validators depending on the given filter.
+        """Gets the daily stats eth2 validators depending on the given filter. We only
+        query new information if `query_daily_stats_from_beaconchain` is set to True.
 
-        This won't detect new validators
-
-        Will query for new validator daily stats if only_cache is False.
+        This won't detect new validators. Will query for new validator if only_cache is False and
+        `query_daily_stats_from_beaconchain` is True.
 
         May raise:
         - RemoteError due to problems with beaconcha.in
         """
-        if only_cache is False:
+        if (
+            only_cache is False and
+            CachedSettings().get_entry('query_daily_stats_from_beaconchain') is True
+        ):
             self._query_services_for_validator_daily_stats(to_ts=filter_query.to_ts)
 
         dbeth2 = DBEth2(self.database)

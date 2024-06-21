@@ -24,6 +24,7 @@ from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.settings import ModifiableDBSettings
 from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import (
@@ -419,6 +420,19 @@ def test_validator_daily_stats_with_db_interaction(  # pylint: disable=unused-ar
             )
         last_stat = stats[-1]
         assert last_stat.pnl == expected_stats[-1].pnl * proportion
+
+        # change setting to not query beaconchain and check that it worked correctly
+        with database.user_write() as cursor:
+            database.set_settings(cursor, ModifiableDBSettings(
+                query_daily_stats_from_beaconchain=False,
+            ))
+            stats, filter_total_found, sum_pnl = eth2.get_validator_daily_stats(
+                cursor=cursor,
+                filter_query=filter_query,
+                only_cache=False,
+            )
+
+        assert stats_call.call_count == 1  # the time queried before
         # TODO: The new sum_pnl here is not changing as ownership proportion is not taken into account here  # noqa: E501
 
 

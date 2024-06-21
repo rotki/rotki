@@ -1271,12 +1271,11 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         if eth2 is None:
             raise ModuleInactive('Cant query eth2 daily stats details since eth2 module is not active')  # noqa: E501
         with self.database.conn.read_ctx() as cursor:
-            daily_stats, total_found, sum_pnl = eth2.get_validator_daily_stats(
+            return eth2.get_validator_daily_stats(
                 cursor=cursor,
                 filter_query=filter_query,
                 only_cache=only_cache,
             )
-            return daily_stats, total_found, sum_pnl
 
     @protect_with_lock()
     @cache_response_timewise()

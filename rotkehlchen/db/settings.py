@@ -60,6 +60,7 @@ DEFAULT_ORACLE_PENALTY_THRESHOLD_COUNT = 5
 DEFAULT_ORACLE_PENALTY_DURATION = 1800
 DEFAULT_AUTO_DELETE_CALENDAR_ENTRIES = True
 DEFAULT_AUTO_CREATE_CALENDAR_REMINDERS = True
+DEFAULT_QUERY_DAILY_STATS_FROM_BEACONCHAIN = True
 
 JSON_KEYS = (
     'current_price_oracles',
@@ -84,6 +85,7 @@ BOOLEAN_KEYS = (
     'infer_zero_timed_balances',
     'auto_delete_calendar_entries',
     'auto_create_calendar_reminders',
+    'query_daily_stats_from_beaconchain',
 )
 INTEGER_KEYS = (
     'version',
@@ -150,6 +152,7 @@ CachedDBSettingsFieldNames = Literal[
     'oracle_penalty_duration',
     'auto_delete_calendar_entries',
     'auto_create_calendar_reminders',
+    'query_daily_stats_from_beaconchain',
 ]
 
 DBSettingsFieldTypes = (
@@ -210,6 +213,7 @@ class DBSettings:
     oracle_penalty_duration: int = DEFAULT_ORACLE_PENALTY_DURATION
     auto_delete_calendar_entries: bool = DEFAULT_AUTO_DELETE_CALENDAR_ENTRIES
     auto_create_calendar_reminders: bool = DEFAULT_AUTO_CREATE_CALENDAR_REMINDERS
+    query_daily_stats_from_beaconchain: bool = DEFAULT_QUERY_DAILY_STATS_FROM_BEACONCHAIN
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}
@@ -268,6 +272,7 @@ class ModifiableDBSettings(NamedTuple):
     oracle_penalty_duration: int | None = None
     auto_delete_calendar_entries: bool | None = None
     auto_create_calendar_reminders: bool | None = None
+    query_daily_stats_from_beaconchain: bool | None = None
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}

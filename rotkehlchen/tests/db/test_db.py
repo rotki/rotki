@@ -57,6 +57,7 @@ from rotkehlchen.db.settings import (
     DEFAULT_ORACLE_PENALTY_THRESHOLD_COUNT,
     DEFAULT_PNL_CSV_HAVE_SUMMARY,
     DEFAULT_PNL_CSV_WITH_FORMULAS,
+    DEFAULT_QUERY_DAILY_STATS_FROM_BEACONCHAIN,
     DEFAULT_QUERY_RETRY_LIMIT,
     DEFAULT_READ_TIMEOUT,
     DEFAULT_SSF_GRAPH_MULTIPLIER,
@@ -518,6 +519,7 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         'oracle_penalty_duration': DEFAULT_ORACLE_PENALTY_DURATION,
         'auto_delete_calendar_entries': DEFAULT_AUTO_DELETE_CALENDAR_ENTRIES,
         'auto_create_calendar_reminders': DEFAULT_AUTO_CREATE_CALENDAR_REMINDERS,
+        'query_daily_stats_from_beaconchain': DEFAULT_QUERY_DAILY_STATS_FROM_BEACONCHAIN,
     }
     assert len(expected_dict) == len(dataclasses.fields(DBSettings)), 'One or more settings are missing'  # noqa: E501
 

@@ -206,7 +206,7 @@ def test_set_settings(rotkehlchen_api_server):
         elif setting == 'address_name_priority':
             value = ['hardcoded_mappings', 'ethereum_tokens']
         else:
-            raise AssertionError(f'Unexpected settting {setting} encountered')
+            raise AssertionError(f'Unexpected setting {setting} encountered')
 
         new_settings[setting] = value
 
