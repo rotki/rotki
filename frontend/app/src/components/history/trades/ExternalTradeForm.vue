@@ -305,11 +305,11 @@ onMounted(setEditMode);
       :error-messages="errorMessages.timestamp"
     />
 
-    <div class="grid md:grid-cols-3 gap-x-4 gap-y-2">
+    <div class="grid md:grid-cols-4 gap-x-4 gap-y-2">
       <div data-cy="type">
         <RuiRadioGroup
           v-model="type"
-          class="pt-2"
+          class="pt-3"
           color="primary"
           hide-details
           inline
@@ -329,7 +329,7 @@ onMounted(setEditMode);
         </RuiRadioGroup>
       </div>
       <div
-        class="col-span-2 flex flex-col md:flex-row md:items-start gap-x-4 pt-4"
+        class="col-span-3 flex flex-col md:flex-row md:items-start gap-x-4 pt-4"
       >
         <AssetSelect
           v-model="base"

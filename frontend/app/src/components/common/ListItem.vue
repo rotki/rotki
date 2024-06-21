@@ -49,7 +49,7 @@ const css = useCssModule();
     <div
       v-if="slots.avatar"
       :class="avatarSizeClasses"
-      class="flex items-center justify-center avatar"
+      class="flex items-center justify-center avatar shrink-0"
     >
       <slot
         v-if="!loading"
@@ -77,7 +77,7 @@ const css = useCssModule();
             </slot>
           </div>
           <div
-            class="text-rui-text-secondary text-caption whitespace-nowrap text-truncate"
+            class="text-rui-text-secondary text-caption text-truncate"
             :title="subtitle"
             data-cy="list-subtitle"
           >
