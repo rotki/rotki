@@ -20,6 +20,7 @@ from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount
 from rotkehlchen.types import ChecksumEvmAddress, Price
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.misc import from_wei
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
@@ -100,7 +101,7 @@ class Liquity(HasDSProxy):
             log.error(f'Failed to query liquity contract for protocol collateral ratio: {e}')
             return None
 
-        return FVal(total_collateral_ratio * 100)
+        return from_wei(FVal(total_collateral_ratio) * 100)
 
     def get_positions(
             self,
