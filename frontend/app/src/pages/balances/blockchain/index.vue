@@ -94,13 +94,17 @@ onMounted(async () => {
         </template>
 
         <AccountDialog v-model="account" />
-        <AssetBalances
+        <LazyLoader
+          initial-appear
           data-cy="blockchain-asset-balances"
-          :loading="isBlockchainLoading"
-          :title="t('blockchain_balances.per_asset.title')"
-          :balances="blockchainAssets"
-          sticky-header
-        />
+        >
+          <AssetBalances
+            :loading="isBlockchainLoading"
+            :title="t('blockchain_balances.per_asset.title')"
+            :balances="blockchainAssets"
+            sticky-header
+          />
+        </LazyLoader>
       </RuiCard>
 
       <div>
@@ -108,23 +112,34 @@ onMounted(async () => {
       </div>
 
       <template v-for="chain in supportedChains">
-        <AccountBalances
+        <LazyLoader
           v-if="accounts[chain.id] && accounts[chain.id].length > 0 || busy[chain.id].value"
+          :id="`blockchain-balances-${chain.id}`"
           :key="chain.id"
-          :title="getTitle(chain.id)"
-          :blockchain="chain.id"
-          :balances="accounts[chain.id]"
-          @edit-account="editAccount($event)"
-        />
+          data-cy="account-balances"
+          :data-location="chain.id"
+          min-height="360px"
+        >
+          <AccountBalances
+            :title="getTitle(chain.id)"
+            :blockchain="chain.id"
+            :balances="accounts[chain.id]"
+            @edit-account="editAccount($event)"
+          />
+        </LazyLoader>
       </template>
 
-      <AccountBalances
-        v-if="loopringAccounts.length > 0"
-        loopring
-        :title="t('blockchain_balances.balances.common', { chain: 'Loopring' })"
-        :blockchain="Blockchain.ETH"
-        :balances="loopringAccounts"
-      />
+      <LazyLoader
+        id="blockchain-balances-LRC"
+      >
+        <AccountBalances
+          v-if="loopringAccounts.length > 0"
+          loopring
+          :title="t('blockchain_balances.balances.common', { chain: 'Loopring' })"
+          :blockchain="Blockchain.ETH"
+          :balances="loopringAccounts"
+        />
+      </LazyLoader>
     </div>
   </TablePageLayout>
 </template>

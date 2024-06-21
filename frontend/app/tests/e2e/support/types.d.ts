@@ -29,6 +29,7 @@ declare global {
       addExternalTrade: (trade: ExternalTrade) => Chainable;
       addEtherscanKey: (key: string) => Chainable;
       assertNoRunningTasks: () => Chainable;
+      scrollElemToTop: (target: string) => void;
     }
   }
 }

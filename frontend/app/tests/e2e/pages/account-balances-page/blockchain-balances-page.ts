@@ -62,6 +62,7 @@ export class BlockchainBalancesPage {
   isEntryVisible(position: number, balance: FixtureBlockchainBalance) {
     // account balances card section for particular blockchain type should be visible
     // sometime the table need long time to be loaded
+    cy.scrollElemToTop(`#blockchain-balances-${balance.blockchain}`);
     cy.get(`[data-cy=account-table][data-location=${balance.blockchain}]`, {
       timeout: 120000,
     }).as('blockchain-section');
@@ -112,7 +113,7 @@ export class BlockchainBalancesPage {
       },
     ).should('not.exist');
 
-    cy.get('[data-cy=account-table]').each($element =>
+    cy.get('[data-cy=account-balances]').each($element =>
       this.updateTableBalance($element, balances),
     );
 
@@ -140,14 +141,19 @@ export class BlockchainBalancesPage {
     $element: JQuery<HTMLElement>,
     balances: Map<string, BigNumber>,
   ) {
-    const blockchain = $element.attr('data-location');
+    const id = $element.attr('id');
+    if (!id)
+      return;
+
+    cy.scrollElemToTop(`#${id}`);
+    const blockchain = $element.find('[data-cy=account-table]').attr('data-location');
 
     if (!blockchain) {
       cy.log('missing blockchain');
       return true;
     }
 
-    cy.wrap($element.find('> div > table')).as(`${blockchain}-table`);
+    cy.wrap($element.find('div > table')).as(`${blockchain}-table`);
     cy.get(`@${blockchain}-table`).scrollIntoView();
     cy.get(`@${blockchain}-table`)
       .find('> tbody > tr > td div[role=progressbar]', {
@@ -169,6 +175,7 @@ export class BlockchainBalancesPage {
     position: number,
     label: string,
   ) {
+    cy.scrollElemToTop(`#blockchain-balances-${balance.blockchain}`);
     cy.get(`[data-cy=account-table][data-location=${balance.blockchain}] tbody`)
       .find('tr')
       .eq(position + (this.isGrouped(balance) ? 0 : 1))
@@ -189,6 +196,7 @@ export class BlockchainBalancesPage {
   }
 
   deleteBalance(balance: FixtureBlockchainBalance, position: number) {
+    cy.scrollElemToTop(`#blockchain-balances-${balance.blockchain}`);
     cy.get(`[data-cy=account-table][data-location=${balance.blockchain}] tbody`)
       .find('tr')
       .eq(position + (this.isGrouped(balance) ? 0 : 1))
