@@ -35,6 +35,7 @@ Changelog
 * :bug:`-` Stakedao bribe claims older than January 2023 will now also be properly decoded.
 * :bug:`-` Compound finance COMP claim cases that were not decoded correctly should now appear fine.
 * :bug:`-` Fix an issue where some tokens weren't properly detected in scroll.
+* :bug:`-` Balances will get updated properly when removing a validator.
 * :feature:`-` Paladin bribe claiming events should now be properly decoded.
 * :bug:`-` Scroll decoders will now work as expected.
 * :bug:`-` Events claiming veCRV bribes from Gauge Bribe v2 will now be properly decoded.

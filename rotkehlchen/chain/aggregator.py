@@ -1393,23 +1393,18 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             ownership_proportion=ownership_proportion,
         )
         self.flush_eth2_cache()
-        self.flush_cache('query_balances')
-        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN)
-        self.flush_cache('query_balances', blockchain=None, ignore_cache=False)
-        self.flush_cache('query_balances', blockchain=None, ignore_cache=True)
-        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=False)  # noqa: E501
-        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=True)  # noqa: E501
 
     def delete_eth2_validators(self, validator_indices: list[int]) -> None:
         """May raise:
         - ModuleInactive if eth2 module is not activated
         - InputError if the validator is not found in the DB
         """
-        self.flush_eth2_cache()
         eth2 = self.get_module('eth2')
         if eth2 is None:
             raise ModuleInactive('Cant delete eth2 validator since eth2 module is not active')
-        return DBEth2(self.database).delete_validators(validator_indices)
+
+        DBEth2(self.database).delete_validators(validator_indices)
+        self.flush_eth2_cache()
 
     @cache_response_timewise()
     def get_loopring_balances(self) -> dict[CryptoAsset, Balance]:
@@ -1709,10 +1704,17 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             yield self.get_evm_manager(chain_id)
 
     def flush_eth2_cache(self) -> None:
+        """Flush cache for logic related to validators. We do this after modifying the list of
+        validators since it affects the balances and stats"""
         self.flush_cache('get_eth2_staking_details')
         self.flush_cache('refresh_eth2_get_daily_stats')
         self.flush_cache('get_eth2_daily_stats')
         self.flush_cache('query_eth2_balances')
+        self.flush_cache('query_balances')
+        self.flush_cache('query_balances', blockchain=None, ignore_cache=False)
+        self.flush_cache('query_balances', blockchain=None, ignore_cache=True)
+        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=False)  # noqa: E501
+        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=True)  # noqa: E501
 
     def get_all_counterparties(self) -> set['CounterpartyDetails']:
         """
