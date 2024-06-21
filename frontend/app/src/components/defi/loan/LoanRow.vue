@@ -13,7 +13,9 @@ withDefaults(defineProps<{ title?: string; medium?: boolean }>(), {
     }"
   >
     <div>
-      {{ title }}
+      <slot name="title">
+        {{ title }}
+      </slot>
     </div>
     <div>
       <slot />

@@ -116,7 +116,7 @@ export function useDefiLending() {
     }
 
     if (showAll || protocols.includes(DefiProtocol.LIQUITY)) {
-      const balances = get(liquityBalances);
+      const { balances } = get(liquityBalances);
       const balanceAddress = Object.keys(balances);
 
       loans.push(
@@ -265,7 +265,7 @@ export function useDefiLending() {
       return {
         owner,
         protocol: loan.protocol,
-        balance: get(liquityBalances)[owner],
+        balance: get(liquityBalances).balances[owner],
       } satisfies LiquityLoan;
     }
 
@@ -323,7 +323,7 @@ export function useDefiLending() {
     }
 
     if (showAll || protocols.includes(DefiProtocol.LIQUITY)) {
-      const balances = get(liquityBalances);
+      const { balances } = get(liquityBalances);
       for (const address in balances) {
         const balance = balances[address];
         const { collateral, debt } = balance;

@@ -16,6 +16,13 @@ export const LiquityBalances = z.record(LiquityBalance);
 
 export type LiquityBalances = z.infer<typeof LiquityBalances>;
 
+export const LiquityBalancesWithCollateralInfo = z.object({
+  balances: LiquityBalances,
+  totalCollateralRatio: NumericString.nullable(),
+});
+
+export type LiquityBalancesWithCollateralInfo = z.infer<typeof LiquityBalancesWithCollateralInfo>;
+
 export const LiquityStakingDetailEntry = z.object({
   ethRewards: AssetBalance,
   lusdRewards: AssetBalance,
