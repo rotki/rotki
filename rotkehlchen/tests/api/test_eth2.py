@@ -1243,3 +1243,42 @@ def test_get_validators(rotkehlchen_api_server):
     )
     result = assert_proper_sync_response_with_result(response)
     assert result['entries'] == [validator3_data]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.parametrize('ethereum_modules', [['eth2']])
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_balances_get_deleted_when_removing_validator(rotkehlchen_api_server):
+    """Test that removing a validator correctly resets the balance caches"""
+    response = requests.put(  # add a validator
+        api_url_for(
+            rotkehlchen_api_server,
+            'eth2validatorsresource',
+        ), json={'validator_index': 10000},
+    )
+    assert_proper_sync_response_with_result(response)
+
+    response = requests.get(api_url_for(  # query eth2 balances
+        rotkehlchen_api_server,
+        'named_blockchain_balances_resource',
+        blockchain='ETH2',
+    ), json={'async_query': False})
+    result = assert_proper_sync_response_with_result(response)
+    assert FVal(result['totals']['assets']['ETH2']['amount']) >= FVal(32)
+
+    response = requests.delete(  # delete validator
+        api_url_for(
+            rotkehlchen_api_server,
+            'eth2validatorsresource',
+        ), json={'validators': [10000]},
+    )
+    assert_simple_ok_response(response)
+
+    response = requests.get(api_url_for(  # query balances again
+        rotkehlchen_api_server,
+        'named_blockchain_balances_resource',
+        blockchain='ETH2',
+    ), json={'async_query': False})
+    result = assert_proper_sync_response_with_result(response)
+    assert len(result['totals']['assets']) == 0  # no assets in balances
