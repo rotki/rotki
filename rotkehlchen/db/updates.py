@@ -334,7 +334,8 @@ class RotkiDataUpdater:
                 entries=entries_to_add,
             )
 
-    def update_location_asset_mappings(self, data: dict[str, list[dict[str, Any]]], version: int) -> None:  # noqa: E501
+    @staticmethod
+    def update_location_asset_mappings(data: dict[str, list[dict[str, Any]]], version: int) -> None:  # noqa: E501
         """Applies location asset mappings updates in the global DB"""
         log.info(f'Applying update for location asset mappings to v{version}')
         for update_function, entry_type, raw_data_key in (
