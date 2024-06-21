@@ -7428,6 +7428,7 @@ Getting Liquity balances
                   "active": true,
                   "trove_id": 148
                }
+	    },
             "total_collateral_ratio": "279754357977226400"
           },
           "message": ""
@@ -7435,7 +7436,7 @@ Getting Liquity balances
 
    :resjson object result: A mapping of all accounts that currently have Liquity positions to ``trove`` information.
    :resjson object balances:  A mapping of all accounts that currently have Liquity positions to ``trove`` information.
-   :resjson integer total_collateral_ratio: Optional. Information about the Total Collateral Ratio in the protocol.
+   :resjson integer total_collateral_ratio: Information about the Total Collateral Ratio in the protocol. Can be null in case of an error.
 
    :statuscode 200: Liquity balances successfully queried.
    :statuscode 401: User is not logged in.
