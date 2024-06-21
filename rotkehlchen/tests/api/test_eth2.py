@@ -15,7 +15,6 @@ from rotkehlchen.chain.ethereum.modules.eth2.structures import (
     ValidatorDetailsWithStatus,
     ValidatorStatus,
 )
-from rotkehlchen.chain.ethereum.modules.eth2.utils import scrape_validator_daily_stats
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
@@ -86,7 +85,7 @@ def _prepare_clean_validators(rotkehlchen_api_server):
     allow_playback_repeats=True,
     match_on=['beaconchain_matcher'],
 )
-@pytest.mark.freeze_time('2024-02-11 15:05:00 GMT')
+@pytest.mark.freeze_time('2024-06-20 18:18:00 GMT')
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
@@ -115,7 +114,7 @@ def test_eth2_daily_stats(rotkehlchen_api_server):
     assert full_sum_pnl.is_close(calculated_sum_pnl)
 
     # filter by validator index
-    validator1_and_3_stats = 345
+    validator1_and_3_stats = 466
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -141,7 +140,7 @@ def test_eth2_daily_stats(rotkehlchen_api_server):
     assert len(result['entries']) == validator_2_stats
 
     # filter by status
-    validator_3_stats = 311
+    validator_3_stats = 303
     response = requests.post(
         api_url_for(
             rotkehlchen_api_server,
@@ -210,17 +209,12 @@ def test_eth2_daily_stats(rotkehlchen_api_server):
             assert time == next_page_times[idx]
     assert full_sum_pnl > calculated_sum_pnl
 
-    # query all stats, again without cache and make sure no external queries happen
-    # since last time they were queried was recent
-    with patch('rotkehlchen.chain.ethereum.modules.eth2.utils.scrape_validator_daily_stats', wraps=scrape_validator_daily_stats) as scraper:  # noqa: E501
-        response = requests.post(
-            api_url_for(
-                rotkehlchen_api_server,
-                'eth2dailystatsresource',
-            ), json={'only_cache': False},
-        )
-        assert scraper.call_count == 0
-
+    response = requests.post(
+        api_url_for(
+            rotkehlchen_api_server,
+            'eth2dailystatsresource',
+        ), json={'only_cache': False},
+    )
     result = assert_proper_sync_response_with_result(response)
     total_stats = len(result['entries'])
     assert total_stats == result['entries_total']

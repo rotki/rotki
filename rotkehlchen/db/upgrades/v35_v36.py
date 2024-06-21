@@ -2,10 +2,7 @@ import json
 import logging
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.ethereum.modules.eth2.utils import (
-    DAY_AFTER_ETH2_GENESIS,
-    INITIAL_ETH_DEPOSIT,
-)
+from rotkehlchen.chain.ethereum.modules.eth2.utils import INITIAL_ETH_DEPOSIT
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
@@ -542,14 +539,14 @@ def _fix_eth2_pnl_genesis(write_cursor: 'DBCursor') -> None:
     fixed_values = []
     write_cursor.execute(
         'SELECT validator_index, pnl FROM eth2_daily_staking_details WHERE timestamp=?',
-        (DAY_AFTER_ETH2_GENESIS,),
+        (1606780800,),  # day after eth2 genesis, as seen during the old scraping
     )
 
     for (validator_index, pnl_str) in write_cursor:
         pnl = FVal(pnl_str)
         if pnl > ONE:
             pnl -= INITIAL_ETH_DEPOSIT
-            fixed_values.append((str(pnl), validator_index, DAY_AFTER_ETH2_GENESIS))
+            fixed_values.append((str(pnl), validator_index, 1606780800))
 
     if len(fixed_values) != 0:
         write_cursor.executemany(
