@@ -24,7 +24,8 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     POD_DEPLOYED,
     POD_SHARES_UPDATED,
     STRATEGY_ABI,
-    WITHDRAWAL_COMPLETE_TOPIC,
+    STRATEGY_WITHDRAWAL_COMPLETE_TOPIC,
+    WITHDRAWAL_COMPLETED,
     WITHDRAWAL_QUEUED,
 )
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
@@ -38,12 +39,20 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
+from rotkehlchen.db.filtering import EvmEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address, hex_or_bytes_to_int, pairwise
+from rotkehlchen.types import ChecksumEvmAddress, Location
+from rotkehlchen.utils.misc import (
+    from_wei,
+    hex_or_bytes_to_address,
+    hex_or_bytes_to_int,
+    hex_or_bytes_to_str,
+    pairwise,
+)
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -129,7 +138,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
     def decode_event(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == DEPOSIT_TOPIC:
             return self._decode_deposit(context)
-        elif context.tx_log.topics[0] == WITHDRAWAL_COMPLETE_TOPIC:
+        elif context.tx_log.topics[0] == STRATEGY_WITHDRAWAL_COMPLETE_TOPIC:
             return self._decode_withdrawal(context)
 
         return DEFAULT_DECODING_OUTPUT
@@ -271,6 +280,92 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
 
         return DEFAULT_DECODING_OUTPUT
 
+    def _decode_withdrawal_completed(self, context: DecoderContext) -> DecodingOutput:
+        """Processes a withdrawal completed event.
+
+        What we do is try to find the previous withdrawal queued event and
+        get the withdrawal information from it. Then set it as processed
+        so that balance detection of in-flight tokens is adjusted.
+
+        There is some events for which a token transfer does not have to happen such as:
+        https://etherscan.io/tx/0xb1a78588e1e43a44814a3620c93afea0cf289a17986c377b6d8eaa6675a0a62e
+        The issue is probably due to the strategy being for Eigen which at that moment
+        was not transferrable.
+        """
+        db_filter = EvmEventFilterQuery.make(
+            counterparties=[CPT_EIGENLAYER],
+            location=Location.from_chain_id(self.evm_inquirer.chain_id),
+            to_ts=context.transaction.timestamp,
+            event_types=[HistoryEventType.INFORMATIONAL],
+            event_subtypes=[HistoryEventSubType.REMOVE_ASSET],
+        )
+        dbevents = DBHistoryEvents(self.base.database)
+        with self.base.database.conn.read_ctx() as cursor:
+            events = dbevents.get_history_events(
+                cursor=cursor,
+                filter_query=db_filter,
+                has_premium=True,
+            )
+
+        withdrawal_root = '0x' + hex_or_bytes_to_str(context.tx_log.data)
+        for withdrawal_event in events:  # iterate and find the withdrawal event
+            if withdrawal_event.extra_data and withdrawal_event.extra_data.get('withdrawal_root', '') == withdrawal_root and not withdrawal_event.extra_data.get('completed', False):  # noqa: E501
+                new_event = self.base.make_event_next_index(
+                    tx_hash=context.transaction.tx_hash,
+                    timestamp=context.transaction.timestamp,
+                    event_type=HistoryEventType.INFORMATIONAL,
+                    event_subtype=HistoryEventSubType.NONE,
+                    asset=withdrawal_event.asset,
+                    balance=Balance(),
+                    location_label=context.transaction.from_address,
+                    notes=f'Complete eigenlayer withdrawal of {withdrawal_event.asset.resolve_to_asset_with_symbol().symbol}',  # noqa: E501
+                    counterparty=CPT_EIGENLAYER,
+                    address=context.tx_log.address,
+                )
+                with self.base.database.user_write() as write_cursor:
+                    dbevents.edit_event_extra_data(  # set withdrawal event as completed
+                        write_cursor=write_cursor,
+                        event=withdrawal_event,
+                        extra_data=withdrawal_event.extra_data | {'completed': True},
+                    )
+
+                for event in context.decoded_events:  # and now match the transfer
+                    if (
+                            event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and  # noqa: E501
+                            event.asset == withdrawal_event.asset and
+                            event.address == withdrawal_event.extra_data.get('strategy')  # strategy sends it  # noqa: E501
+                    ):  # not checking amount as it can differ due to rebasing in some assets
+                        event.event_type = HistoryEventType.WITHDRAWAL
+                        event.event_subtype = HistoryEventSubType.REMOVE_ASSET
+                        event.counterparty = CPT_EIGENLAYER
+                        event.notes = f'Withdraw {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from Eigenlayer'  # noqa: E501
+                        break
+
+                else:  # could not find the transfer, withdrawn as shares and not tokens
+                    # https://github.com/Layr-Labs/eigenlayer-contracts/blob/dc3abf5d2a2689a98993c69e962d5d8b299e3fec/docs/core/DelegationManager.md#completequeuedwithdrawal
+                    # https://github.com/Layr-Labs/eigenlayer-contracts/tree/dc3abf5d2a2689a98993c69e962d5d8b299e3fec/docs#completing-a-withdrawal-as-tokens
+                    new_event.notes += ' as shares'  # type: ignore  # notes is not none
+
+                break  # completed the finding event logic
+
+        else:  # not found. Perhaps transaction and event not pulled for some reason?
+            log.debug(f'When decoding eigenlayer WithdrawalCompleted could not find corresponding Withdrawal queued: {context.transaction.tx_hash.hex()}')  # noqa: E501
+
+            new_event = self.base.make_event_next_index(  # so let's just keep minimal info
+                tx_hash=context.transaction.tx_hash,
+                timestamp=context.transaction.timestamp,
+                event_type=HistoryEventType.INFORMATIONAL,
+                event_subtype=HistoryEventSubType.NONE,
+                asset=A_ETH,
+                balance=Balance(),
+                location_label=context.transaction.from_address,
+                notes=f'Complete eigenlayer withdrawal {withdrawal_root}',
+                counterparty=CPT_EIGENLAYER,
+                address=context.tx_log.address,
+            )
+
+        return DecodingOutput(event=new_event)
+
     def _decode_withdrawal_queued(self, context: DecoderContext) -> DecodingOutput:
         """Creates and adds a queued withdrawal for each withdrawal in the event"""
         contract = self.evm_inquirer.contracts.contract(EIGENLAYER_DELEGATION)
@@ -291,7 +386,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
             strategies=strategies,
             shares_entries=shares_entries,
         )
-        for underlying_token, underlying_amount in zip(underlying_tokens, underlying_amounts, strict=False):  # noqa: E501
+        for idx, (underlying_token, underlying_amount) in enumerate(zip(underlying_tokens, underlying_amounts, strict=False)):  # noqa: E501
             event = self.base.make_event_next_index(
                 tx_hash=context.transaction.tx_hash,
                 timestamp=context.transaction.timestamp,
@@ -303,7 +398,11 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
                 notes=f'Queue withdrawal of {underlying_amount} {underlying_token.symbol} from Eigenlayer{suffix}',  # noqa: E501
                 counterparty=CPT_EIGENLAYER,
                 address=context.tx_log.address,
-                extra_data={'amount': str(underlying_amount), 'withdrawal_root': '0x' + log_data[0].hex()},  # noqa: E501
+                extra_data={
+                    'amount': str(underlying_amount),
+                    'withdrawal_root': '0x' + log_data[0].hex(),
+                    'strategy': strategies[idx],
+                },
             )
             context.decoded_events.append(event)
 
@@ -366,6 +465,8 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
             verb, preposition = 'Undelegate', 'from'
         elif context.tx_log.topics[0] == WITHDRAWAL_QUEUED:
             return self. _decode_withdrawal_queued(context)
+        elif context.tx_log.topics[0] == WITHDRAWAL_COMPLETED:
+            return self. _decode_withdrawal_completed(context)
         else:
             return DEFAULT_DECODING_OUTPUT
 

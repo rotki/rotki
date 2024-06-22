@@ -1,4 +1,5 @@
 import copy
+import json
 import logging
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Literal, Optional, overload
@@ -762,3 +763,17 @@ class DBHistoryEvents:
         )
         result = [x[0] for x in cursor]
         return result
+
+    def edit_event_extra_data(self, write_cursor: 'DBCursor', event: EvmEvent, extra_data: dict[str, Any]) -> None:  # noqa: E501
+        """Edit an event's extra data in the DB and save it. Does not turn it into
+        a customized event. This is meant to be used programmatically.
+
+        The given event should be one pulled from the DB, which means the identifier
+        field should be populated.
+        """
+        assert event.identifier is not None, 'event should have identifier populated'
+        write_cursor.execute(
+            'UPDATE evm_events_info SET extra_data=? WHERE identifier=?',
+            (json.dumps(extra_data), event.identifier),
+        )
+        event.extra_data = extra_data
