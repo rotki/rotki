@@ -2,6 +2,7 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBalances
 from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     CPT_EIGENLAYER,
     EIGEN_TOKEN_ID,
@@ -350,7 +351,7 @@ def test_create_delayed_withdrawals(database, ethereum_inquirer, ethereum_accoun
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x02855536652F67cB936851D94c793Fb3Ba27F9bb']])
-def test_lst_create_delayed_withdrawals(database, ethereum_inquirer, ethereum_accounts):
+def test_lst_create_delayed_withdrawals(database, ethereum_inquirer, ethereum_accounts, inquirer):  # pylint: disable=unused-argument
     tx_hash = deserialize_evm_tx_hash('0x8c006f764e9264cd150b2583ba72205bb4575ace76ed3afa83689227e9fe461b')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -399,16 +400,28 @@ def test_lst_create_delayed_withdrawals(database, ethereum_inquirer, ethereum_ac
         address=EIGENLAYER_DELEGATION,
         extra_data={
             'amount': amount,
+            'withdrawer': user_address,
             'withdrawal_root': '0xaa5e010334aa81720474f3625f04109a378cab05e6e6b8c9bcecc2dffab2fb7f',  # noqa: E501
             'strategy': '0x93c4b944D05dfe6df7645A86cd2206016c51564D',
         },
     )]
     assert events == expected_events
 
+    # Also check that the balances are seen by the balance inquirer
+    balances_inquirer = EigenlayerBalances(
+        database=database,
+        evm_inquirer=ethereum_inquirer,
+    )
+    balances = balances_inquirer.query_balances()
+    assert balances[ethereum_accounts[0]].assets[A_STETH.resolve_to_evm_token()] == Balance(
+        amount=FVal(amount),
+        usd_value=FVal('0.7521864409003092210'),
+    )
+
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x6Ee701145E1F44C9AA9fc8889F80863198838145']])
-def test_lst_complete_delayed_withdrawals(database, ethereum_inquirer, ethereum_accounts):
+def test_lst_complete_delayed_withdrawals(database, ethereum_inquirer, ethereum_accounts, inquirer):  # pylint: disable=unused-argument  # noqa: E501
     queue_tx_hash = deserialize_evm_tx_hash('0xeab48010e80d50b7d35fd43a886448ffca1e798b641baf7c8877fc04075d972b')  # noqa: E501
     get_decoded_events_of_transaction(  # just decode the events of the withdrawal queuing
         evm_inquirer=ethereum_inquirer,
@@ -422,6 +435,7 @@ def test_lst_complete_delayed_withdrawals(database, ethereum_inquirer, ethereum_
         tx_hash=tx_hash,
     )
     user_address, timestamp, gas_amount, amount, cbeth_strategy = ethereum_accounts[0], TimestampMS(1718879927000), '0.000880395253730733', '0.108703837292797063', string_to_evm_address('0x54945180dB7943c0ed0FEE7EdaB2Bd24620256bc')  # noqa: E501
+    cbeth = Asset('eip155:1/erc20:0xBe9895146f7AF43049ca1c1AE358B0541Ea49704')
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
         sequence_index=0,
@@ -441,7 +455,7 @@ def test_lst_complete_delayed_withdrawals(database, ethereum_inquirer, ethereum_
         location=Location.ETHEREUM,
         event_type=HistoryEventType.INFORMATIONAL,
         event_subtype=HistoryEventSubType.NONE,
-        asset=Asset('eip155:1/erc20:0xBe9895146f7AF43049ca1c1AE358B0541Ea49704'),
+        asset=cbeth,
         balance=Balance(),
         location_label=user_address,
         notes='Complete eigenlayer withdrawal of cbETH',
@@ -454,7 +468,7 @@ def test_lst_complete_delayed_withdrawals(database, ethereum_inquirer, ethereum_
         location=Location.ETHEREUM,
         event_type=HistoryEventType.WITHDRAWAL,
         event_subtype=HistoryEventSubType.REMOVE_ASSET,
-        asset=Asset('eip155:1/erc20:0xBe9895146f7AF43049ca1c1AE358B0541Ea49704'),
+        asset=cbeth,
         balance=Balance(amount=FVal(amount)),
         location_label=user_address,
         notes=f'Withdraw {amount} cbETH from Eigenlayer',
@@ -480,7 +494,17 @@ def test_lst_complete_delayed_withdrawals(database, ethereum_inquirer, ethereum_
         'completed': True,
         'strategy': cbeth_strategy,
         'withdrawal_root': '0x095056ecfcb92d7b60f2e917be58aad008068ba9e34d882eea9eebf65ce81f77',
+        'withdrawer': user_address,
     }
+
+    # Finally check that the balances of this withdrawal are not seen by the balance inquirer
+    # since we have completed the withdrawal and marked the event as such
+    balances_inquirer = EigenlayerBalances(
+        database=database,
+        evm_inquirer=ethereum_inquirer,
+    )
+    balances = balances_inquirer.query_balances()
+    assert balances[ethereum_accounts[0]].assets[cbeth] == Balance()
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

@@ -11,6 +11,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
@@ -27,7 +28,6 @@ from .constants import (
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
-    from rotkehlchen.fval import FVal
 
 
 UNDERLYING_BALANCES_ABI: Final = [{'inputs': [], 'name': 'underlyingToken', 'outputs': [{'internalType': 'contract IERC20', 'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [{'internalType': 'address', 'name': 'user', 'type': 'address'}], 'name': 'userUnderlyingView', 'outputs': [{'internalType': 'uint256', 'name': '', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
@@ -121,6 +121,37 @@ class EigenlayerBalances(ProtocolWithBalance):
 
         return balances
 
+    def _query_token_pending_withdrawals(self, balances: 'BalancesSheetType') -> 'BalancesSheetType':  # noqa: E501
+        """Query any balances that are being withdrawn from Eigenlayer and are on the fly"""
+        addresses_with_withdrawals = self.addresses_with_activity(
+            event_types={(HistoryEventType.INFORMATIONAL, HistoryEventSubType.REMOVE_ASSET)},
+        )
+
+        for address, event_list in addresses_with_withdrawals.items():
+            for event in event_list:
+                if event.extra_data is None:
+                    log.error(f'Unexpected eigenlayer withdrawal queueing event {event}. Missing extra data. Skipping')  # noqa: E501
+                    continue
+
+                if event.extra_data.get('completed', False):
+                    continue
+
+                if (withdrawer := event.extra_data.get('withdrawer')) is None:
+                    log.error(f'Unexpected eigenlayer withdrawal queueing event {event}. Missing withdrawer from extra data. Using event sender instead.')  # noqa: E501
+                    withdrawer = address
+
+                if (str_amount := event.extra_data.get('amount')) is None:
+                    log.error(f'Unexpected eigenlayer withdrawal queueing event {event}. Missing amount from extra data. Skipping.')  # noqa: E501
+                    continue
+
+                token_price = Inquirer.find_usd_price(event.asset)
+                balances[withdrawer].assets[event.asset] += Balance(
+                    amount=(amount := FVal(str_amount)),
+                    usd_value=token_price * amount,
+                )
+
+        return balances
+
     def _query_eigenpod_balances(self, balances: 'BalancesSheetType') -> 'BalancesSheetType':
         """Queries the balance of ETH in the eigenpod and in the Delayed Withdrawal router"""
         if len(eigenpod_data := self.addresses_with_activity(
@@ -180,7 +211,8 @@ class EigenlayerBalances(ProtocolWithBalance):
     def query_balances(self) -> 'BalancesSheetType':
         """
         Query underlying balances for deposits in eigenlayer. Also for eigenpod
-        owners and funds deposited in eigenpods.
+        owners and funds deposited in eigenpods. Also for any pending withdrawals
+        of LSTs or other tokens.
 
         May raise:
         - RemoteError: Querying price of the deposited token
@@ -188,4 +220,5 @@ class EigenlayerBalances(ProtocolWithBalance):
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         balances = self._query_lst_deposits(balances)
         balances = self._query_eigenpod_balances(balances)
+        balances = self._query_token_pending_withdrawals(balances)
         return balances
