@@ -289,8 +289,9 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
 
         There is some events for which a token transfer does not have to happen such as:
         https://etherscan.io/tx/0xb1a78588e1e43a44814a3620c93afea0cf289a17986c377b6d8eaa6675a0a62e
-        The issue is probably due to the strategy being for Eigen which at that moment
-        was not transferrable.
+        That is because the user has the choice to either withdraw tokens as tokens
+        and into their wallet, or as shares and keep them into eigenlayer to redeposit
+        to some other operator.
         """
         db_filter = EvmEventFilterQuery.make(
             counterparties=[CPT_EIGENLAYER],
@@ -400,6 +401,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
                 address=context.tx_log.address,
                 extra_data={
                     'amount': str(underlying_amount),
+                    'withdrawer': withdrawer,
                     'withdrawal_root': '0x' + log_data[0].hex(),
                     'strategy': strategies[idx],
                 },
