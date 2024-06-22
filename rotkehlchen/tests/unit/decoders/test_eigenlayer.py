@@ -16,6 +16,8 @@ from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_STETH
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.db.filtering import EvmEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -395,9 +397,90 @@ def test_lst_create_delayed_withdrawals(database, ethereum_inquirer, ethereum_ac
         notes=f'Queue withdrawal of {amount} stETH from Eigenlayer',
         counterparty=CPT_EIGENLAYER,
         address=EIGENLAYER_DELEGATION,
-        extra_data={'amount': amount, 'withdrawal_root': '0xaa5e010334aa81720474f3625f04109a378cab05e6e6b8c9bcecc2dffab2fb7f'},  # noqa: E501
+        extra_data={
+            'amount': amount,
+            'withdrawal_root': '0xaa5e010334aa81720474f3625f04109a378cab05e6e6b8c9bcecc2dffab2fb7f',  # noqa: E501
+            'strategy': '0x93c4b944D05dfe6df7645A86cd2206016c51564D',
+        },
     )]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x6Ee701145E1F44C9AA9fc8889F80863198838145']])
+def test_lst_complete_delayed_withdrawals(database, ethereum_inquirer, ethereum_accounts):
+    queue_tx_hash = deserialize_evm_tx_hash('0xeab48010e80d50b7d35fd43a886448ffca1e798b641baf7c8877fc04075d972b')  # noqa: E501
+    get_decoded_events_of_transaction(  # just decode the events of the withdrawal queuing
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=queue_tx_hash,
+    )  # and now get the actual withdrawal complete transaction a week later
+    tx_hash = deserialize_evm_tx_hash('0x2c9a7caf78126fdfe43760dedbf3648c6a3255ee17a7bc312372dba26e16132b')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    user_address, timestamp, gas_amount, amount, cbeth_strategy = ethereum_accounts[0], TimestampMS(1718879927000), '0.000880395253730733', '0.108703837292797063', string_to_evm_address('0x54945180dB7943c0ed0FEE7EdaB2Bd24620256bc')  # noqa: E501
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas_amount)),
+        location_label=user_address,
+        notes=f'Burned {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=1,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.INFORMATIONAL,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=Asset('eip155:1/erc20:0xBe9895146f7AF43049ca1c1AE358B0541Ea49704'),
+        balance=Balance(),
+        location_label=user_address,
+        notes='Complete eigenlayer withdrawal of cbETH',
+        counterparty=CPT_EIGENLAYER,
+        address=EIGENLAYER_DELEGATION,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=581,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.WITHDRAWAL,
+        event_subtype=HistoryEventSubType.REMOVE_ASSET,
+        asset=Asset('eip155:1/erc20:0xBe9895146f7AF43049ca1c1AE358B0541Ea49704'),
+        balance=Balance(amount=FVal(amount)),
+        location_label=user_address,
+        notes=f'Withdraw {amount} cbETH from Eigenlayer',
+        counterparty=CPT_EIGENLAYER,
+        address=cbeth_strategy,
+    )]
+    assert events == expected_events
+
+    # also let's get the queueing event and see it has been marked as completed
+    dbevents = DBHistoryEvents(database)
+    with database.conn.read_ctx() as cursor:
+        filter_query = EvmEventFilterQuery.make(
+            tx_hashes=[queue_tx_hash],
+            event_subtypes=[HistoryEventSubType.REMOVE_ASSET],
+        )
+        events = dbevents.get_history_events(
+            cursor=cursor,
+            filter_query=filter_query,
+            has_premium=True,
+        )
+    assert events[0].extra_data == {
+        'amount': amount,
+        'completed': True,
+        'strategy': cbeth_strategy,
+        'withdrawal_root': '0x095056ecfcb92d7b60f2e917be58aad008068ba9e34d882eea9eebf65ce81f77',
+    }
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
