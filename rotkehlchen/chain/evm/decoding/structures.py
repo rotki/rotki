@@ -27,6 +27,7 @@ class ActionItem:
     to_notes: str | None = None
     to_counterparty: str | None = None
     to_address: ChecksumEvmAddress | None = None
+    to_location_label: str | None = None
     extra_data: dict | None = None
     # Optional event data that pairs it with the event of the action item
     # Contains a tuple with the paired event and whether it's an out event (True) or in event

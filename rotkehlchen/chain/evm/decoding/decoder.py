@@ -943,6 +943,8 @@ class EVMTransactionDecoder(ABC):
                     transfer.extra_data = action_item.extra_data
                 if action_item.to_address is not None:
                     transfer.address = action_item.to_address
+                if action_item.to_location_label is not None:
+                    transfer.location_label = action_item.to_location_label
 
                 if action_item.paired_events_data is not None:
                     # If there is a paired event to this, take care of the order
