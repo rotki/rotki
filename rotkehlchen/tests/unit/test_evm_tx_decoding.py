@@ -4,6 +4,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.chain.ethereum.modules.gitcoin.constants import GITCOIN_GRANTS_OLD1
 from rotkehlchen.chain.evm.constants import GENESIS_HASH
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
@@ -160,10 +161,10 @@ def test_tx_decode(ethereum_transaction_decoder, database):
                         location_label=addr1,
                         asset=A_SAI,
                         balance=Balance(amount=1),
-                        notes=f'Set SAI spending approval of {addr1} by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE to 1',  # noqa: E501
+                        notes=f'Set SAI spending approval of {addr1} by {GITCOIN_GRANTS_OLD1} to 1',  # noqa: E501
                         event_type=HistoryEventType.INFORMATIONAL,
                         event_subtype=HistoryEventSubType.APPROVE,
-                        address='0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE',
+                        address=GITCOIN_GRANTS_OLD1,
                     ))
 
             assert decode_mock.call_count == len(transactions)

@@ -3,6 +3,7 @@ from collections.abc import Sequence
 from typing import Any
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.chain.ethereum.modules.gitcoin.constants import GITCOIN_GRANTS_OLD1
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
@@ -81,9 +82,9 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
         asset=A_DAI,
         balance=Balance(amount=FVal('1.542'), usd_value=FVal('1.675')),
         location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
-        notes='Set DAI spending approval of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE to 1',  # noqa: E501
+        notes=f'Set DAI spending approval of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 by {GITCOIN_GRANTS_OLD1} to 1',  # noqa: E501
         event_subtype=HistoryEventSubType.APPROVE,
-        address=string_to_evm_address('0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE'),
+        address=GITCOIN_GRANTS_OLD1,
     ), EvmEvent(
         tx_hash=deserialize_evm_tx_hash('0x64f1982504ab714037467fdd45d3ecf5a6356361403fc97dd325101d8c038c4e'),
         sequence_index=163,
@@ -93,9 +94,9 @@ def predefined_events_to_insert() -> list['HistoryBaseEntry']:
         asset=A_USDT,
         balance=Balance(amount=FVal('1.542'), usd_value=FVal('1.675')),
         location_label='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
-        notes='Set USDT spending approval of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 by 0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE to 1',  # noqa: E501
+        notes=f'Set USDT spending approval of 0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12 by {GITCOIN_GRANTS_OLD1} to 1',  # noqa: E501
         event_subtype=HistoryEventSubType.APPROVE,
-        address=string_to_evm_address('0xdf869FAD6dB91f437B59F1EdEFab319493D4C4cE'),
+        address=GITCOIN_GRANTS_OLD1,
     ), EvmEvent(
         tx_hash=deserialize_evm_tx_hash('0xf32e81dbaae8a763cad17bc96b77c7d9e8c59cc31ed4378b8109ce4b301adbbc'),
         sequence_index=2,
