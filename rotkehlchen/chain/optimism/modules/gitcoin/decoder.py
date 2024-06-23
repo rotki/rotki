@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 
-from rotkehlchen.chain.evm.decoding.gitcoin.decoder import GitcoinV2CommonDecoder
+from rotkehlchen.chain.evm.decoding.gitcoinv2.decoder import GitcoinV2CommonDecoder
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
 if TYPE_CHECKING:
