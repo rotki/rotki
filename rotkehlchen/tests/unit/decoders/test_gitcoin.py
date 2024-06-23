@@ -5,7 +5,7 @@ from rotkehlchen.chain.ethereum.modules.gitcoin.constants import GITCOIN_GOVERNO
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS, CPT_GITCOIN
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_SAI
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_POLYGON_POS_MATIC, A_SAI
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -147,6 +147,33 @@ def test_bulkcheckout_send_token(database, ethereum_inquirer, ethereum_accounts)
             address=dst2,
         ),
     ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('polygon_pos_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_polygon_bulkcheckout_receive_matic(database, polygon_pos_inquirer, polygon_pos_accounts):
+    tx_hash = deserialize_evm_tx_hash('0xe2d9464020f45ea2a69c93156976c1323a16e390550e0fe9af749e88e234e06b')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=polygon_pos_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, user_address, amount, donor = TimestampMS(1667285686000), polygon_pos_accounts[0], '2', '0x6e08E6e2D0deeb294fd53e9708f53b0fBedc06d5'  # noqa: E501
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.POLYGON_POS,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.DONATE,
+        asset=A_POLYGON_POS_MATIC,
+        balance=Balance(amount=FVal(amount)),
+        location_label=user_address,
+        notes=f'Receive donation of {amount} MATIC from {donor} via gitcoin',
+        counterparty=CPT_GITCOIN,
+        address=donor,
+    )]
     assert events == expected_events
 
 

@@ -263,7 +263,8 @@ class GovernableDecoderInterface(DecoderInterface, ABC):
             protocol: str,
             proposals_url: str,
     ) -> None:
-        super().__init__(
+        DecoderInterface.__init__(
+            self,
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,

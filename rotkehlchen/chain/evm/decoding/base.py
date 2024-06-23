@@ -8,7 +8,6 @@ from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import OUTGOING_EVENT_TYPES
 from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
@@ -333,10 +332,11 @@ class BaseDecoderTools:
     def get_or_create_evm_asset(self, address: ChecksumEvmAddress) -> CryptoAsset:
         """A version of get_create_evm_token to be called from the decoders
 
-        Also checks for special cases like the special ETH address used in some protocols
+        Also checks for special cases like the special ETH (or MATIC etc)
+        address used in some protocols
         """
         if address == ETH_SPECIAL_ADDRESS:
-            return A_ETH.resolve_to_crypto_asset()
+            return self.evm_inquirer.native_token
         return self.get_or_create_evm_token(address)
 
 
