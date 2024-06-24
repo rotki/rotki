@@ -304,18 +304,16 @@ class HopCommonDecoder(DecoderInterface):
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_add_liquidity(self, context: DecoderContext) -> DecodingOutput:
-        if not self.base.is_tracked(user_address := hex_or_bytes_to_address(context.tx_log.topics[1])):  # noqa: E501
+        if (
+            liquidity_data := self._decode_common_liquidity(
+                context=context,
+                first_token_raw=context.tx_log.data[160:192],
+                second_token_raw=context.tx_log.data[192:224],
+            )
+        ) is None:
             return DEFAULT_DECODING_OUTPUT
 
-        first_token_amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data[160:192]),
-            token_decimals=DEFAULT_TOKEN_DECIMALS,
-        )
-        second_token_amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data[192:224]),
-            token_decimals=DEFAULT_TOKEN_DECIMALS,
-        )
-        token_amounts = {x for x in (first_token_amount, second_token_amount) if x != ZERO}
+        user_address, token_amounts = liquidity_data
         out_event1, out_event2, in_event = None, None, None
         for event in context.decoded_events:
             if (
@@ -354,7 +352,13 @@ class HopCommonDecoder(DecoderInterface):
         RemoveLiquidity is emitted when both sides of the liquidity pool are withdrawn,
         whereas RemoveLiquidityOne is emitted when only one side of the liquidity pool
         is withdrawn."""
-        if (liquidity_data := self._decode_common_liquidity(context)) is None:
+        if (
+            liquidity_data := self._decode_common_liquidity(
+                context=context,
+                first_token_raw=context.tx_log.data[96:128],
+                second_token_raw=context.tx_log.data[128:160],
+            )
+        ) is None:
             return DEFAULT_DECODING_OUTPUT
 
         user_address, token_amounts = liquidity_data
@@ -369,7 +373,7 @@ class HopCommonDecoder(DecoderInterface):
             token_amounts=token_amounts,
         )
 
-    def _decode_common_liquidity(self, context: DecoderContext) -> tuple['ChecksumEvmAddress', set[FVal]] | None:  # noqa: E501
+    def _decode_common_liquidity(self, context: DecoderContext, first_token_raw: bytes, second_token_raw: bytes) -> tuple['ChecksumEvmAddress', set[FVal]] | None:  # noqa: E501
         """This function is used to decode the common resources of RemoveLiquidity and
         RemoveLiquidityOne events."""
         if not self.base.is_tracked(user_address := hex_or_bytes_to_address(context.tx_log.topics[1])):  # noqa: E501
@@ -379,11 +383,11 @@ class HopCommonDecoder(DecoderInterface):
             return None
 
         first_token_amount = self._get_bridge_asset_amount(
-            amount_raw=hex_or_bytes_to_int(context.tx_log.data[96:128]),
+            amount_raw=hex_or_bytes_to_int(first_token_raw),
             identifier=swap_asset_id,
         )
         second_token_amount = self._get_bridge_asset_amount(
-            amount_raw=hex_or_bytes_to_int(context.tx_log.data[128:160]),
+            amount_raw=hex_or_bytes_to_int(second_token_raw),
             identifier=swap_asset_id,
         )
         # Filtering out zero amounts to not clash with any other events

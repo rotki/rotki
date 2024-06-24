@@ -1513,3 +1513,73 @@ def test_vote_cast(database, ethereum_inquirer):
             address=HOP_GOVERNOR,
         )]
     assert expected_events == events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_hop_add_liquidity_optimism_usdc(
+        database: 'DBHandler',
+        optimism_inquirer: 'BaseInquirer',
+        optimism_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0x891d2b68a1ecc36b1c14943ddaece1ee50d0d895ca20b9ad61640aa531b8755e')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas, lp_amount, lp_token_amount, approval_amount = TimestampMS(1670628821000), '0.00006011384375604', '11208.995146', '10843.63570237678072025', '115792089237316195423570985008687907853269984665640564039457584007901920.644789'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=optimism_accounts[0],
+            notes=f'Burned {gas} ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
+            balance=Balance(amount=FVal(approval_amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Set USDC.e spending approval of {optimism_accounts[0]} by 0x3c0FFAca566fCcfD9Cc95139FEF6CBA143795963 to {approval_amount}',  # noqa: E501
+            tx_hash=tx_hash,
+            address=string_to_evm_address('0x3c0FFAca566fCcfD9Cc95139FEF6CBA143795963'),
+        ), EvmEvent(
+            sequence_index=3,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
+            balance=Balance(amount=FVal(lp_amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Deposit {lp_amount} USDC.e to Hop',
+            tx_hash=tx_hash,
+            counterparty=CPT_HOP,
+            address=string_to_evm_address('0x3c0FFAca566fCcfD9Cc95139FEF6CBA143795963'),
+        ), EvmEvent(
+            sequence_index=4,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:10/erc20:0x2e17b8193566345a2Dd467183526dEdc42d2d5A8'),
+            balance=Balance(amount=FVal(lp_token_amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Receive {lp_token_amount} HOP-LP-USDC after providing liquidity in Hop',
+            tx_hash=tx_hash,
+            counterparty=CPT_HOP,
+            address=ZERO_ADDRESS,
+        ),
+    ]
+    assert events == expected_events
