@@ -400,11 +400,17 @@ def process_airdrop_with_api_data(
             response = requests.get(
                 url=airdrop_data.api_url.format(address=address),
                 timeout=timeout_tuple,
+                headers={  # headers added by yabir. Without them eigen flags as bot the requests
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:127.0) Gecko/20100101 Firefox/127.0',  # noqa: E501
+                    'Accept-Encoding': 'gzip, deflate, br, zstd',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',  # noqa: E501
+                },
             )
             data: dict[str, Any] = response.json()
         except requests.exceptions.RequestException as e:
             log.error(
-                f'Failed to query {protocol_name} airdrop API for address {address} due to {e}',
+                f'Failed to query {protocol_name} airdrop API for address {address} due to {e}. '
+                f'{response.text=}',
             )
             continue
 
