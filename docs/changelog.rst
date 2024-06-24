@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2323` Add support for Huobi exchange.
 * :feature:`-` Curve vote escrow locking and withdrawal events will now be properly decoded on ethereum mainnet.
 * :feature:`-` Curve fee distributor claim events will now be properly decoded on ethereum mainnet.
 * :feature:`7431` Curve events and balances are now decoded and detected on all supported evm chains.

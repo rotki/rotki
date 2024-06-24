@@ -4,31 +4,64 @@ import hashlib
 import hmac
 import logging
 import urllib.parse
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final, Literal
 
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_htx
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.asset import UnknownAsset, UnprocessableTradePair
 from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface, ExchangeQueryBalances
+from rotkehlchen.history.deserialization import deserialize_price
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.serialization.deserialize import deserialize_asset_amount
-from rotkehlchen.types import ApiKey, ApiSecret, Location, Timestamp
+from rotkehlchen.serialization.deserialize import (
+    deserialize_asset_amount,
+    deserialize_fee,
+    deserialize_timestamp_from_intms,
+)
+from rotkehlchen.types import (
+    ApiKey,
+    ApiSecret,
+    AssetMovementCategory,
+    Fee,
+    Location,
+    Timestamp,
+    TimestampMS,
+    TradeType,
+)
+from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.history.events.structures.base import HistoryEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+PAGINATION_LIMIT: Final = 500
+
+
+def remove_fee_currency(symbol: str, fee_currency: str) -> str:
+    """
+    Removes the 'fee-currency' value from the 'symbol' if it appears at the beginning or
+    the end of the 'symbol'.
+    """
+    if symbol.startswith(fee_currency):
+        symbol = symbol[len(fee_currency):]
+    elif symbol.endswith(fee_currency):
+        symbol = symbol[:-len(fee_currency)]
+
+    return symbol.strip()
 
 
 class Htx(ExchangeInterface):
@@ -91,9 +124,9 @@ class Htx(ExchangeInterface):
         new_params['Signature'] = base64.b64encode(dig).decode()
         return new_params
 
-    def _query(self, absolute_path: str) -> Any:
+    def _query(self, absolute_path: str, options: dict[str, Any] | None = None) -> Any:
         url = f'https://api.huobi.pro{absolute_path}'
-        signed_payload = self._sign_request(url=url, params={})
+        signed_payload = self._sign_request(url=url, params=options or {})
         try:
             response = self.session.get(
                 url=url,
@@ -102,15 +135,15 @@ class Htx(ExchangeInterface):
             )
             res_body = response.json()
         except requests.RequestException as e:
-            log.error(f'Failed to query HTX api. Exception: {e}, URL: {url}')
+            log.error(f'Failed to query HTX api. Exception: {e} {options}, URL: {url}')
             raise RemoteError(f'Failed to query HTX for {url}. Check log for more details') from e
 
         if res_body.get('status') != 'ok':
-            log.error(f'Error response from HTX. URL: {url}, Response: {response.text}')
+            log.error(f'Error response from HTX. URL: {url} {options}, Response: {response.text}')
             raise RemoteError(f'Failed to query HTX for {url}. Check log for more details')
 
         if (body := res_body.get('data')) is None:
-            log.error(f'HTX endpoint missing data attribute. URL: {url}, Response: {response.text}')  # noqa: E501
+            log.error(f'HTX endpoint missing data attribute. URL: {url} {options}, Response: {response.text}')  # noqa: E501
             raise RemoteError(f'Failed to query HTX for {url}. Check log for more details')
 
         return body
@@ -188,24 +221,242 @@ class Htx(ExchangeInterface):
 
         return returned_balances, ''
 
+    def _paginated_query(
+            self,
+            endpoint: Literal['/v1/query/deposit-withdraw'],
+            options: dict[str, Any],
+            start_ts: Timestamp,
+    ) -> list[dict[str, Any]]:
+        """
+        Query endpoints that can return paginated data. At the moment this is used for asset
+        movements. For asset movements we use cursor pagination since for any time range
+        the api will return a valid response and we don't know when to stop querying until
+        we find a lower created-at than the start_ts(starting timestamp). The cursor pagination
+        uses the id of the last object in the last query to return the results of the next page.
+
+        May raise:
+        - RemoteError: if the network request fails
+        """
+        result = []
+        # copy since we are modifying the dict and could affect other queries using
+        # the same options
+        query_options = options.copy()
+        while len(output := self._query(absolute_path=endpoint, options=options)) != 0:
+            result.extend(output)
+            try:
+                query_options['from'] = output[-1]['id'] + 1  # from is inclusive, so we want after
+                created_at = output[-1]['created-at']  # the results are in descending order
+            except KeyError as e:
+                log.error(f'Missing expected keys {e!s} while iterating for HTX deposits and withdrawals')  # noqa: E501
+                break
+
+            if len(output) < PAGINATION_LIMIT or created_at < start_ts:
+                break
+
+        return result
+
+    def _query_deposits_withdrawals(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+            query_for: Literal['deposit', 'withdraw'],
+    ) -> list[AssetMovement]:
+        """
+        Process deposits/withdrawals from HTX. If any asset is unknown or we fail to
+        deserialize an entry the error is logged and we skip the entry.
+
+        This logic processes all entries returned by the API, discarding those that do not fall
+        within the range start_ts <= timestamp <= end_ts. Additionally, it does not terminate the
+        querying process until it encounters an created_at value that is lower than the start_ts.
+        """
+        log.debug(f'querying HTX deposits/withdrawals with {start_ts=}-{end_ts=}')
+        try:
+            raw_data = self._paginated_query(
+                endpoint='/v1/query/deposit-withdraw',
+                options={
+                    'type': query_for,
+                    'size': PAGINATION_LIMIT,
+                    'direct': 'next',  # sorted by descending order
+                },
+                start_ts=start_ts,
+            )
+        except RemoteError as e:
+            log.error(f'Failed to query HTX api for deposits and withdrawals due to {e!s}')
+            return []
+
+        movements = []
+        category = AssetMovementCategory.DEPOSIT if query_for == 'deposit' else AssetMovementCategory.WITHDRAWAL  # noqa: E501
+        for movement in raw_data:
+            if (timestamp_raw := movement.get('created-at')) is not None:
+                timestamp = ts_ms_to_sec(TimestampMS(int(timestamp_raw)))
+                if not start_ts <= timestamp <= end_ts:
+                    continue  # skip if is not in range, could come from last page
+            else:
+                log.error(f'Could not find timestamp for HTX movement {movement}. Skipping...')
+                continue
+
+            try:
+                coin = asset_from_htx(movement['currency'])
+                movements.append(AssetMovement(
+                    timestamp=timestamp,
+                    location=Location.HTX,
+                    category=category,
+                    address=movement['address'],
+                    transaction_id=movement['tx-hash'],
+                    asset=coin,
+                    amount=deserialize_asset_amount(movement['amount']),
+                    fee_asset=coin,
+                    fee=deserialize_fee(movement.get('fee', '0')),
+                    link=str(movement['id']),
+                ))
+            except (DeserializationError, KeyError) as e:
+                msg = str(e)
+                if isinstance(e, KeyError):
+                    msg = f'Missing key {msg}'
+
+                log.error(f'{e} when reading movement for HTX deposit {movement}. Skipping...')
+                continue
+            except UnknownAsset:
+                log.error(f'Could not read assets from trade pair {movement["currency"]}. Skipping...')  # noqa: E501
+                continue
+
+        return movements
+
     def query_online_deposits_withdrawals(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> list[AssetMovement]:
-        """Query deposits and withdrawals sequentially"""
-        return []  # TODO: Implement this in another PR
+        """Query deposits and withdrawals sequentially
+
+        This method sequentially queries for 'deposit' and 'withdrawal' types. Each type
+        must be specified explicitly, as the underlying API call requires a 'type' parameter
+        to distinguish between deposits and withdrawals. If the 'type' is not provided or is
+        invalid, the API does not return any results and raises an error indicating that a
+        required 'type' argument is missing.
+        """
+        new_movements = self._query_deposits_withdrawals(
+            start_ts=start_ts,
+            end_ts=end_ts,
+            query_for='deposit',
+        )
+        new_movements.extend(
+            self._query_deposits_withdrawals(
+                start_ts=start_ts,
+                end_ts=end_ts,
+                query_for='withdraw',
+            ),
+        )
+        return new_movements
 
     def query_online_margin_history(
             self,
-            start_ts: Timestamp,  # pylint: disable=unused-argument
+            start_ts: Timestamp,
             end_ts: Timestamp,
-    ) -> list[MarginPosition]:
-        return []  # TODO: Implement this in another PR
+    ) -> list['MarginPosition']:
+        return []  # noop for htx
+
+    def query_online_income_loss_expense(
+            self,
+            start_ts: Timestamp,
+            end_ts: Timestamp,
+    ) -> list['HistoryEvent']:
+        return []  # noop for htx
 
     def query_online_trade_history(
             self,
             start_ts: Timestamp,
             end_ts: Timestamp,
     ) -> tuple[list[Trade], tuple[Timestamp, Timestamp]]:
-        return [], (start_ts, end_ts)  # TODO: Implement this in another PR
+        """
+        Query trades from HTX in the spot category.
+        The API is limited to query trades up to 120 days into the past. We can query time ranges
+        but we don't know when to stop querying into the past. What this function does is iterate
+        over the 120 days period moving the queried frame in the maximum allowed time span, that is
+        48 hours:
+        [end ts, end ts - 48h] -> [end ts - 48h, end ts - 96h] -> ... [end ts - n*48h, start ts]
+
+        Since we have a clear limit to stop querying what we do is use the start-time/end-time keys
+        to filter the data that we need.
+
+        https://huobiapi.github.io/docs/spot/v1/en/#search-match-results
+        """
+        new_trades: list[Trade] = []
+        upper_ts, lower_ts = end_ts, Timestamp(end_ts - DAY_IN_SECONDS * 2)
+        earliest_query_start_ts = Timestamp((ts_now() - DAY_IN_SECONDS * 120) + (15 * 60))  # margin of 15 minutes to not raise an error if the bound is reached while querying # noqa: E501
+
+        if end_ts <= earliest_query_start_ts:  # 0... start_ts ... end_ts ... earliest_query_start
+            return [], (start_ts, end_ts)  # entire query out of range. Bail
+
+        if start_ts < earliest_query_start_ts:  # 0 ... start_ts ...  earliest_query_start ... end_ts  # noqa: E501
+            start_ts = Timestamp(earliest_query_start_ts)
+
+        while True:
+            raw_data = self._query(
+                absolute_path='/v1/order/matchresults',
+                options={
+                    'start-time': str(ts_sec_to_ms(lower_ts)),
+                    'end-time': str(ts_sec_to_ms(upper_ts)),
+                    'size': PAGINATION_LIMIT,
+                },
+            )
+            for raw_trade in raw_data:
+                try:
+                    symbol, fee_currency = raw_trade['symbol'], raw_trade['fee-currency']
+                    trade_type = TradeType.deserialize(raw_trade['type'].split('-')[0])
+                    if trade_type not in (TradeType.BUY, TradeType.SELL):
+                        raise DeserializationError
+
+                    # On the API page, it's mentioned transaction fee of buy order is based on
+                    # base currency, transaction fee of sell order is based on quote currency
+                    # https://huobiapi.github.io/docs/spot/v1/en/#search-match-results
+                    base_asset, quote_asset = asset_from_htx(fee_currency), asset_from_htx(
+                        remove_fee_currency(symbol=symbol, fee_currency=fee_currency),
+                    )
+                    fee_asset = base_asset
+                    if trade_type == TradeType.SELL:
+                        base_asset, quote_asset = quote_asset, base_asset
+                        fee_asset = quote_asset
+                except (UnknownAsset, DeserializationError) as e:
+                    log.error(f'Could not read assets from HTX trade {raw_trade} due to {e!s}')
+                    continue
+
+                except UnprocessableTradePair as e:
+                    log.error(f'Could not process base and quote assets from HTX trade {raw_trade} due to {e!s}')  # noqa: E501
+                    continue
+
+                except KeyError as e:
+                    log.error(f'Key `{e!s}` missing from HTX trade {raw_trade}')
+                    continue
+
+                try:
+                    trade = Trade(
+                        timestamp=deserialize_timestamp_from_intms(raw_trade['created-at']),
+                        location=Location.HTX,
+                        base_asset=base_asset,
+                        quote_asset=quote_asset,
+                        trade_type=trade_type,
+                        fee_currency=fee_asset,
+                        amount=deserialize_asset_amount(raw_trade['filled-amount']),
+                        rate=deserialize_price(raw_trade['price']),
+                        fee=deserialize_fee(raw_trade['filled-fees']) if raw_trade['filled-fees'] else Fee(ZERO),  # noqa: E501
+                        link=str(raw_trade['id']),
+                    )
+                except DeserializationError as e:
+                    log.error(f'{e} when reading rate for HTX trade {raw_trade}')
+                except KeyError as e:
+                    log.error(
+                        f'Failed to deserialize HTX trade {raw_trade} due to missing key {e}. '
+                        'Skipping...',
+                    )
+                else:
+                    new_trades.append(trade)
+
+            upper_ts = Timestamp(upper_ts - DAY_IN_SECONDS * 2)
+            lower_ts = Timestamp(lower_ts - DAY_IN_SECONDS * 2)
+            if upper_ts <= start_ts:
+                break
+
+            lower_ts = max(lower_ts, start_ts)  # don't query more than we need in last iteration
+
+        return new_trades, (start_ts, end_ts)

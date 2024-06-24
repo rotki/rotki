@@ -203,7 +203,7 @@ def deserialize_timestamp_from_intms(time: int) -> Timestamp:
     """
     if not isinstance(time, int):
         raise DeserializationError(
-            f'Failed to deserialize a timestamp entry from a {type(time)} entry in binance',
+            f'Failed to deserialize a timestamp entry from a {type(time)} entry',
         )
 
     return Timestamp(int(time / 1000))
