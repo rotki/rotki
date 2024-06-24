@@ -11,6 +11,7 @@ from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import (
     A_ETH,
+    A_OP,
     A_POLYGON_POS_MATIC,
     A_USDC,
     A_USDT,
@@ -834,6 +835,48 @@ def test_non_aave_tx(database, ethereum_inquirer, ethereum_accounts) -> None:
             notes=f'Successfully executed safe transaction 0x69e95bb0e8452641e165a7cf2f2fa83afb5dc6a6a576bd6e0bc36094df5cc27c for multisig {multisig}',  # noqa: E501
             counterparty=CPT_SAFE_MULTISIG,
             address=string_to_evm_address(multisig),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_claim_incentives_reward(database, optimism_inquirer, optimism_accounts) -> None:
+    """Test that claim rewards for incentives works"""
+    tx_hash = deserialize_evm_tx_hash('0xa2860ca34ea7558240c44f3d0895a9cf832bd0dd952b2b27d3ae34ba6d45697c')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas, user, amount = TimestampMS(1666883965000), '0.000198192753532852', optimism_accounts[0], '558.228460248737908186'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=user,
+            notes=f'Burned {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=15,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_OP,
+            balance=Balance(amount=FVal(amount)),
+            location_label=user,
+            notes=f'Claim {amount} OP from Aave incentives',
+            counterparty=CPT_AAVE_V3,
+            address=string_to_evm_address('0x2501c477D0A35545a387Aa4A3EEe4292A9a8B3F0'),
         ),
     ]
     assert events == expected_events
