@@ -39,5 +39,3 @@ package-lock.json
 components.d.ts
 .e2e
 .contract
-
-src/data/external-links.js

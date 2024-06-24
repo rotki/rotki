@@ -89,6 +89,7 @@ describe('settings:frontend', () => {
             enableAliasNames: true,
             blockchainRefreshButtonBehaviour:
               BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
+            shouldRefreshValidatorDailyStats: false,
             savedFilters: {},
           }),
         ),
@@ -170,6 +171,7 @@ describe('settings:frontend', () => {
       enableAliasNames: true,
       blockchainRefreshButtonBehaviour:
         BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
+      shouldRefreshValidatorDailyStats: false,
       savedFilters: {},
     };
 

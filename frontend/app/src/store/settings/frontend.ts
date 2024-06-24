@@ -126,6 +126,8 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   );
   const blockchainRefreshButtonBehaviour: ComputedRef<BlockchainRefreshButtonBehaviour>
     = computed(() => settings.blockchainRefreshButtonBehaviour);
+  const shouldRefreshValidatorDailyStats: ComputedRef<boolean>
+      = computed(() => settings.shouldRefreshValidatorDailyStats);
 
   const savedFilters: ComputedRef<{
     [key in SavedFilterLocation]?: BaseSuggestion[][];
@@ -269,6 +271,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     versionUpdateCheckFrequency,
     enableAliasNames,
     blockchainRefreshButtonBehaviour,
+    shouldRefreshValidatorDailyStats,
     savedFilters,
     // return settings on development for state persistence
     ...(checkIfDevelopment() ? { settings } : {}),
