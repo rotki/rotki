@@ -1,10 +1,11 @@
 import logging
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.aave.common import Commonv2v3Decoder
+from rotkehlchen.chain.evm.decoding.structures import DEFAULT_DECODING_OUTPUT, DecodingOutput
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -13,7 +14,7 @@ from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from ..constants import CPT_AAVE_V3
-from .constants import BORROW, BURN, DEPOSIT, REPAY
+from .constants import BORROW, BURN, DEPOSIT, REPAY, REWARDS_CLAIMED
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -34,6 +35,7 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
             pool_address: 'ChecksumEvmAddress',
             eth_gateways: 'tuple[ChecksumEvmAddress, ...]',
             treasury: 'ChecksumEvmAddress',
+            incentives: 'ChecksumEvmAddress',
     ):
         Commonv2v3Decoder.__init__(
             self,
@@ -49,6 +51,7 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
             msg_aggregator=msg_aggregator,
         )
         self.treasury = treasury
+        self.incentives = incentives
 
     def decode_liquidation(self, context: 'DecoderContext') -> None:
         """
@@ -100,6 +103,63 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
                 event.event_subtype = HistoryEventSubType.FEE
                 event.notes = f'Spend {event.balance.amount} {asset.symbol} as an {self.label} fee'
                 event.counterparty = CPT_AAVE_V3
+
+    def _decode_incentives(self, context: 'DecoderContext') -> DecodingOutput:
+        if context.tx_log.topics[0] != REWARDS_CLAIMED:
+            return DEFAULT_DECODING_OUTPUT
+
+        user_tracked = self.base.is_tracked(user := hex_or_bytes_to_address(context.tx_log.topics[1]))  # noqa: E501
+        to_tracked = self.base.is_tracked(to_address := hex_or_bytes_to_address(context.tx_log.topics[3]))  # noqa: E501
+        claimer_tracked = self.base.is_tracked(claimer := hex_or_bytes_to_address(context.tx_log.data[0:32]))  # noqa: E501
+
+        if not user_tracked and not to_tracked and not claimer_tracked:
+            return DEFAULT_DECODING_OUTPUT
+
+        reward_token = self.base.get_or_create_evm_token(
+            address=hex_or_bytes_to_address(context.tx_log.topics[2]),
+        )
+        amount = asset_normalized_value(
+            amount=hex_or_bytes_to_int(context.tx_log.data[32:64]),
+            asset=reward_token,
+        )
+
+        for event in context.decoded_events:
+            if (
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.asset == reward_token and
+                    event.balance.amount == amount
+            ):
+                event.event_subtype = HistoryEventSubType.REWARD
+                event.counterparty = CPT_AAVE_V3
+                event.notes = f'Claim {amount} {reward_token.resolve_to_asset_with_symbol().symbol}'  # noqa: E501
+
+                if not to_tracked:
+                    event.notes += f' for {to_address}'
+                    event.location_label = claimer
+                    if user != to_address:
+                        event.notes += f' on behalf of {user}'
+
+                else:
+                    event.location_label = to_address
+
+                event.notes += ' from Aave incentives'
+
+                break
+
+        else:
+            log.error(
+                f'Failed to find the aave incentive reward transfer for {self.evm_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}.',  # noqa: E501
+            )
+
+        return DEFAULT_DECODING_OUTPUT
+
+    # DecoderInterface methods
+
+    def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
+        return super().addresses_to_decoders() | {
+            self.incentives: (self._decode_incentives,),
+        }
 
     @staticmethod  # DecoderInterface method
     def counterparties() -> tuple[CounterpartyDetails, ...]:

@@ -2,8 +2,7 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.aave.v3.constants import POOL_ADDRESS
 from rotkehlchen.chain.evm.decoding.aave.v3.decoder import Aavev3CommonDecoder
-
-from .constants import AAVE_TREASURY, ETH_GATEWAYS
+from rotkehlchen.chain.evm.types import string_to_evm_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
@@ -24,6 +23,7 @@ class Aavev3Decoder(Aavev3CommonDecoder):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
             pool_address=POOL_ADDRESS,
-            eth_gateways=ETH_GATEWAYS,
-            treasury=AAVE_TREASURY,
+            eth_gateways=(string_to_evm_address('0xecD4bd3121F9FD604ffaC631bF6d41ec12f1fafb'),),
+            treasury=string_to_evm_address('0x053D55f9B5AF8694c503EB288a1B7E552f590710'),
+            incentives=string_to_evm_address('0x929EC64c34a17401F460460D4B9390518E5B473e'),
         )
