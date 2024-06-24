@@ -2268,6 +2268,12 @@
       "withdrawal": "Withdrawal Address",
       "hint": "Switch the filtering and display mode between ETH staking validators and ETH1 Addresses",
       "key": "Validator"
+    },
+    "setting": {
+      "refresh_validator_daily_stats_on_load": {
+        "hint": "Disable this setting to avoid getting rate limited. Rotki will only show cached data.",
+        "title": "Sync daily stats data from beaconcha.in by default."
+      }
     }
   },
   "eth2_validator_filter": {
@@ -3744,6 +3750,7 @@
         "title": "Daily"
       },
       "daily_stats": "Daily Stats",
+      "daily_stats_refresh": "Get latest data from beaconcha.in",
       "earned": "Earned",
       "headers": {
         "income": "Income",

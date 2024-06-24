@@ -29,7 +29,14 @@ const selection = ref<EthStakingFilter>({
 
 const total = ref<BigNumber>(Zero);
 
-const lastRefresh = useSessionStorage('rotki.staking.last_refresh', 0);
+const { username } = storeToRefs(useSessionAuthStore());
+
+function createLastRefreshStorage(username: string): Ref<number> {
+  return useSessionStorage(`rotki.staking.last_refresh.${username}`, 0);
+}
+
+const lastRefresh = createLastRefreshStorage(get(username));
+const { shouldRefreshValidatorDailyStats } = storeToRefs(useFrontendSettingsStore());
 
 const {
   performance,
@@ -75,6 +82,9 @@ const premium = usePremium();
 const { t } = useI18n();
 
 function shouldRefreshDailyStats() {
+  if (!get(shouldRefreshValidatorDailyStats))
+    return false;
+
   const threshold = dayjs().subtract(1, 'hour').unix();
   return get(lastRefresh) < threshold;
 }
@@ -150,6 +160,11 @@ onBeforeMount(async () => {
 
   await fetchValidatorsWithFilter();
 });
+
+function forceRefreshStats() {
+  startPromise(refreshStats(true));
+  set(lastRefresh, dayjs().unix());
+}
 </script>
 
 <template>
@@ -188,6 +203,7 @@ onBeforeMount(async () => {
             </template>
             {{ t('premium_components.staking.refresh') }}
           </RuiTooltip>
+          <EthStakingPageSettingMenu />
         </div>
       </template>
 
@@ -200,8 +216,10 @@ onBeforeMount(async () => {
         :performance-loading="performanceLoading"
         :performance-pagination.sync="performancePagination"
         :stats="dailyStats"
+        :stats-refreshing="statsRefreshing"
         :stats-loading="dailyStatsLoading"
         :stats-pagination.sync="pagination"
+        @refresh-stats="forceRefreshStats()"
       >
         <template #selection>
           <EthValidatorFilter

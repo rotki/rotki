@@ -48,6 +48,7 @@ import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
 import LpPoolHeader from '@/components/display/defi/LpPoolHeader.vue';
 import RowAppend from '@/components/helper/RowAppend.vue';
 import UniswapPoolAssetBalance from '@/components/defi/uniswap/UniswapPoolAssetBalance.vue';
+import RefreshButton from '@/components/helper/RefreshButton.vue';
 
 function ruiRegister(): void {
   Vue.component('RuiAlert', RuiAlert);
@@ -121,6 +122,8 @@ export function registerComponents(): void {
   Vue.component('RowAppend', RowAppend);
   // Version 25 - 1.32
   Vue.component('UniswapPoolAssetBalance', UniswapPoolAssetBalance);
+  // Version 26 - 1.34
+  Vue.component('RefreshButton', RefreshButton);
   ruiRegister();
   logger.info('Components registered');
 }

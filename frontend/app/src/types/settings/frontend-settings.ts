@@ -185,6 +185,7 @@ export const FrontendSettings = z.object({
     BlockchainRefreshButtonBehaviourEnum.default(
       BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
     ),
+  shouldRefreshValidatorDailyStats: z.boolean().default(false),
   savedFilters: z
     .record(SavedFilterLocationEnum, z.array(z.array(BaseSuggestion)))
     .default({})
