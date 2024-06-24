@@ -957,8 +957,9 @@ def test_claimzap_cvx_locker(database, ethereum_inquirer, eth_transactions):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_CONVEX]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x983488580460155d43B6b82096eE17C640A7DCac']])
-def test_convex_claim_pending_rewards(database, ethereum_inquirer, ethereum_accounts):
+def test_convex_claim_pending_rewards(database, ethereum_inquirer, ethereum_accounts, load_global_caches):  # noqa: E501
     """
     Tests a transaction that collects pending rewards but also compounds the pending CRV
     in the pool. In this case the user is rewarded for performing this action.
@@ -969,6 +970,7 @@ def test_convex_claim_pending_rewards(database, ethereum_inquirer, ethereum_acco
         evm_inquirer=ethereum_inquirer,
         database=database,
         tx_hash=evmhash,
+        load_global_caches=load_global_caches,
     )
     timestamp = TimestampMS(1683871727000)
     expected_events = [

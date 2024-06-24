@@ -17,6 +17,7 @@ from rotkehlchen.globaldb.upgrades.manager import UPGRADES_LIST
 from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.tests.utils.database import mock_db_schema_sanity_check
+from rotkehlchen.tests.utils.decoders import patch_decoder_reload_data
 from rotkehlchen.tests.utils.globaldb import patch_for_globaldb_upgrade_to
 from rotkehlchen.types import Price, Timestamp
 
@@ -74,6 +75,12 @@ def fixture_remove_global_assets() -> list[str]:
     return []
 
 
+@pytest.fixture(name='load_global_caches')
+def fixture_load_global_caches() -> list[str]:
+    """A list of counterparties of the decoders for which the global cache should be loaded."""
+    return []
+
+
 def create_globaldb(
         data_directory,
         sql_vm_instructions_cb,
@@ -100,6 +107,7 @@ def _initialize_fixture_globaldb(
         run_globaldb_migrations,
         empty_global_addressbook,
         remove_global_assets,
+        load_global_caches,
 ) -> GlobalDBHandler:
     # clean the previous resolver memory cache, as it
     # may have cached results from a discarded database
@@ -132,6 +140,7 @@ def _initialize_fixture_globaldb(
             stack.enter_context(mock_db_schema_sanity_check())
             patch_for_globaldb_upgrade_to(stack, target_globaldb_version)
 
+        stack.enter_context(patch_decoder_reload_data(load_global_caches))
         globaldb = create_globaldb(new_data_dir, sql_vm_instructions_cb)
 
     if empty_global_addressbook is True:
@@ -160,6 +169,7 @@ def fixture_globaldb(
         run_globaldb_migrations,
         empty_global_addressbook,
         remove_global_assets,
+        load_global_caches,
 ):
     globaldb = _initialize_fixture_globaldb(
         custom_globaldb=custom_globaldb,
@@ -172,6 +182,7 @@ def fixture_globaldb(
         run_globaldb_migrations=run_globaldb_migrations,
         empty_global_addressbook=empty_global_addressbook,
         remove_global_assets=remove_global_assets,
+        load_global_caches=load_global_caches,
     )
     yield globaldb
 

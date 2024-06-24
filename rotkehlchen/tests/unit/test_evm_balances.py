@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_VELODROME
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
@@ -16,10 +17,12 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0x78C13393Aee675DD7ED07ce992210750D1F5dB88']])
 def test_optimism_balances(
         rotkehlchen_instance: 'Rotkehlchen',
         optimism_accounts: list[ChecksumEvmAddress],
+        load_global_caches: list[str],
 ):
     """
     Tests the balance of an account that has an asset both in wallet and staked in a gauge.
@@ -39,6 +42,7 @@ def test_optimism_balances(
         evm_inquirer=optimism_inquirer,
         database=user_database,
         tx_hash=tx_hex,
+        load_global_caches=load_global_caches,
     )
     blockchain_result = rotkehlchen_instance.chains_aggregator.query_balances(
         blockchain=SupportedBlockchain.OPTIMISM,

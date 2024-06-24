@@ -24,17 +24,20 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3630220f243288E3EAC4C5676fC191CFf5756431']])
 def test_gearbox_deposit(
         database: 'DBHandler',
         ethereum_inquirer: 'EthereumInquirer',
         ethereum_accounts: list['ChecksumEvmAddress'],
+        load_global_caches: list[str],
 ):
     tx_hash = deserialize_evm_tx_hash('0x04e3bcebf71873a5de1c4d9b40f1c97631a3958ef0d8d743a1a1b4d50361855d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         database=database,
         tx_hash=tx_hash,
+        load_global_caches=load_global_caches,
     )
     timestamp, gas, deposit_amount, lp_token_amount = TimestampMS(1716770963000), '0.0006562535', '156164.834098036387706577', '151038.694912640397702932'  # noqa: E501
     expected_events = [
@@ -82,17 +85,20 @@ def test_gearbox_deposit(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('ethereum_accounts', [['0xb99a2c4C1C4F1fc27150681B740396F6CE1cBcF5']])
 def test_gearbox_deposit_usdc(
         database: 'DBHandler',
         ethereum_inquirer: 'EthereumInquirer',
         ethereum_accounts: list['ChecksumEvmAddress'],
+        load_global_caches: list[str],
 ):
     tx_hash = deserialize_evm_tx_hash('0x92d178bbe5152cad47029b0c130450848ee46084e72addd09ba955631af1325b')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         database=database,
         tx_hash=tx_hash,
+        load_global_caches=load_global_caches,
     )
     timestamp, gas, deposit_amount, lp_token_amount = TimestampMS(1716899027000), '0.004946659515956316', '6500000', '6147276.510091'  # noqa: E501
     expected_events = [
@@ -152,17 +158,20 @@ def test_gearbox_deposit_usdc(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9167B9d55BA7E7D6163bAAa97C099dfE3d1D9420']])
 def test_gearbox_withdraw(
         database: 'DBHandler',
         ethereum_inquirer: 'EthereumInquirer',
         ethereum_accounts: list['ChecksumEvmAddress'],
+        load_global_caches: list[str],
 ):
     tx_hash = deserialize_evm_tx_hash('0xb286e618ec2e5961c696df1855006dea0343fb635c7f199621f8592db342dfba')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         database=database,
         tx_hash=tx_hash,
+        load_global_caches=load_global_caches,
     )
     timestamp, gas, lp_amount, withdrawn = TimestampMS(1716739091000), '0.002506078391975991', '29394.203983328624199078', '30388.281725016794033508'  # noqa: E501
     expected_events = [
@@ -210,17 +219,20 @@ def test_gearbox_withdraw(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D']])
 def test_gearbox_deposit_arbitrum(
         database: 'DBHandler',
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
         arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        load_global_caches: list[str],
 ):
     tx_hash = deserialize_evm_tx_hash('0x00db27b8c09c9ec4478f27da7e40b90afbb577cfb4822536eab5a52dcae321e6')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         database=database,
         tx_hash=tx_hash,
+        load_global_caches=load_global_caches,
     )
     timestamp, gas, deposit_amount, lp_token_amount = TimestampMS(1716815867000), '0.00000249681', '0.001', '0.00098428586189406'  # noqa: E501
     expected_events = [
@@ -268,17 +280,20 @@ def test_gearbox_deposit_arbitrum(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D']])
 def test_gearbox_deposit_arbitrum_lp(
         database: 'DBHandler',
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
         arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        load_global_caches: list[str],
 ):
     tx_hash = deserialize_evm_tx_hash('0x7dbb02839dab23bc87ed6f4f5899fc77986c576e6fedf16cfbd9751fbe09e2eb')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         database=database,
         tx_hash=tx_hash,
+        load_global_caches=load_global_caches,
     )
     timestamp, gas, deposit_amount, lp_token_amount = TimestampMS(1716899425000), '0.0000022431', '0.001', '0.000984005521495659'  # noqa: E501
     expected_events = [
@@ -326,17 +341,20 @@ def test_gearbox_deposit_arbitrum_lp(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x3a212d3d7504dC4A39E21C731d0E80b114A2108b']])
 def test_gearbox_withdraw_arbitrum(
         database: 'DBHandler',
         arbitrum_one_inquirer: 'EthereumInquirer',
         arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        load_global_caches: list[str],
 ):
     tx_hash = deserialize_evm_tx_hash('0x9b3f388e53c6b0f2eb12c323aebb05d47e27f6d9f511bd1176ed826a351c6c06')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         database=database,
         tx_hash=tx_hash,
+        load_global_caches=load_global_caches,
     )
     timestamp, gas, lp_amount, withdrawn = TimestampMS(1717435594000), '0.00000250989', '0.7', '0.712544409227268693'  # noqa: E501
     expected_events = [
@@ -384,17 +402,20 @@ def test_gearbox_withdraw_arbitrum(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x7b007E8c0f77B50bEC8009f0e97F523DBa6FE506']])
 def test_gearbox_deposit_usdc_arbitrum(
         database: 'DBHandler',
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
         arbitrum_one_accounts: list['ChecksumEvmAddress'],
+        load_global_caches: list[str],
 ):
     tx_hash = deserialize_evm_tx_hash('0xc7a3b95862eba49a86b8eefe81837ea141037feda8c0da236d9c3adb370fdfb3')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         database=database,
         tx_hash=tx_hash,
+        load_global_caches=load_global_caches,
     )
     timestamp, gas, deposit_amount, lp_token_amount, approval_amount = TimestampMS(1717508317000), '0.00000368093', '125.164428', '121.463529', '125.164428'  # noqa: E501
     expected_events = [
@@ -466,17 +487,20 @@ def test_gearbox_deposit_usdc_arbitrum(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('optimism_accounts', [['0xb8150a1B6945e75D05769D685b127b41E6335Bbc']])
 def test_gearbox_deposit_optimism(
         database: 'DBHandler',
         optimism_inquirer: 'OptimismInquirer',
         optimism_accounts: list['ChecksumEvmAddress'],
+        load_global_caches: list[str],
 ):
     tx_hash = deserialize_evm_tx_hash('0x1dc1803865e909909bf20a82b0d88b476bcac13c7a0efa57c531baa06b0cb27e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_inquirer,
         database=database,
         tx_hash=tx_hash,
+        load_global_caches=load_global_caches,
     )
     timestamp, gas, deposit_amount, lp_token_amount = TimestampMS(1714433685000), '0.000010672234173866', '0.1', '0.099957406908026936'  # noqa: E501
     expected_events = [
@@ -524,17 +548,20 @@ def test_gearbox_deposit_optimism(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('optimism_accounts', [['0xb8150a1B6945e75D05769D685b127b41E6335Bbc']])
 def test_gearbox_deposit_usdc_optimism(
         database: 'DBHandler',
         optimism_inquirer: 'OptimismInquirer',
         optimism_accounts: list['ChecksumEvmAddress'],
+        load_global_caches: list[str],
 ):
     tx_hash = deserialize_evm_tx_hash('0x25baef6edb2fae8fde18b7ee49dbba94bdaa500db1388cc5b22bdb4ba953d7b4')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_inquirer,
         database=database,
         tx_hash=tx_hash,
+        load_global_caches=load_global_caches,
     )
     timestamp, gas, deposit_amount, approval_amount = TimestampMS(1714434001000), '0.000011648221611152', '300', '394.3605'  # noqa: E501
     expected_events = [
@@ -594,17 +621,20 @@ def test_gearbox_deposit_usdc_optimism(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('optimism_accounts', [['0x42ccF4f456D7c7fEBF274242CACcD74AAa0a53d7']])
 def test_gearbox_withdraw_optimism_usdc(
         database: 'DBHandler',
         optimism_inquirer: 'OptimismInquirer',
         optimism_accounts: list['ChecksumEvmAddress'],
+        load_global_caches: list[str],
 ):
     tx_hash = deserialize_evm_tx_hash('0x03569fa219dd445c120a38eb294a21feee8da7f0e1d3b6aed1d87a3ca519b16d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_inquirer,
         database=database,
         tx_hash=tx_hash,
+        load_global_caches=load_global_caches,
     )
     timestamp, gas, lp_amount = TimestampMS(1712552439000), '0.000001104938540339', '50'
     expected_events = [

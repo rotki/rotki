@@ -303,8 +303,9 @@ def fixture_ethereum_transaction_decoder(
         database,
         ethereum_inquirer,
         eth_transactions,
+        load_global_caches,
 ):
-    with patch_decoder_reload_data():
+    with patch_decoder_reload_data(load_global_caches):
         yield EthereumTransactionDecoder(
             database=database,
             ethereum_inquirer=ethereum_inquirer,
@@ -390,8 +391,13 @@ def fixture_base_transactions(database, base_inquirer):
 
 
 @pytest.fixture(name='optimism_transaction_decoder')
-def fixture_optimism_transaction_decoder(database, optimism_inquirer, optimism_transactions):
-    with patch_decoder_reload_data():
+def fixture_optimism_transaction_decoder(
+        database,
+        optimism_inquirer,
+        optimism_transactions,
+        load_global_caches,
+):
+    with patch_decoder_reload_data(load_global_caches):
         yield OptimismTransactionDecoder(
             database=database,
             optimism_inquirer=optimism_inquirer,
@@ -400,8 +406,13 @@ def fixture_optimism_transaction_decoder(database, optimism_inquirer, optimism_t
 
 
 @pytest.fixture(name='base_transaction_decoder')
-def fixture_base_transaction_decoder(database, base_inquirer, base_transactions):
-    with patch_decoder_reload_data():
+def fixture_base_transaction_decoder(
+        database,
+        base_inquirer,
+        base_transactions,
+        load_global_caches,
+):
+    with patch_decoder_reload_data(load_global_caches):
         yield BaseTransactionDecoder(
             database=database,
             base_inquirer=base_inquirer,
@@ -414,8 +425,9 @@ def fixture_arbitrum_one_transaction_decoder(
         database,
         arbitrum_one_inquirer,
         arbitrum_one_transactions,
+        load_global_caches,
 ):
-    with patch_decoder_reload_data():
+    with patch_decoder_reload_data(load_global_caches):
         yield ArbitrumOneTransactionDecoder(
             database=database,
             arbitrum_inquirer=arbitrum_one_inquirer,

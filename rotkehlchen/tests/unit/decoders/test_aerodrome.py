@@ -50,14 +50,16 @@ WETH_BASE = Asset(evm_address_to_identifier(
 
 
 @pytest.mark.vcr()
+@pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
 @pytest.mark.parametrize('base_accounts', [['0x514c4BA193c698100DdC998F17F24bDF59c7b6fB']])
-def test_add_liquidity(base_transaction_decoder, base_accounts):
+def test_add_liquidity(base_transaction_decoder, base_accounts, load_global_caches):
     evmhash = deserialize_evm_tx_hash('0xb71a1339c700a110d61655387d422bb982252a3b55de7f571ced3b9f00d9beee')  # noqa: E501
     user_address = base_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_transaction_decoder.evm_inquirer,
         database=base_transaction_decoder.database,
         tx_hash=evmhash,
+        load_global_caches=load_global_caches,
     )
     timestamp = TimestampMS(1706708913000)
     gas_amount, deposited_wsteth, deposited_weth, received_amount = '0.000071386738065118', '2.595314266724358628', '2.99450075155017638', '2.787544746858080184'  # noqa: E501
@@ -136,14 +138,16 @@ def test_add_liquidity(base_transaction_decoder, base_accounts):
 
 
 @pytest.mark.vcr()
+@pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
 @pytest.mark.parametrize('base_accounts', [['0x514c4BA193c698100DdC998F17F24bDF59c7b6fB']])
-def test_stake_lp_token_to_gauge(base_accounts, base_transaction_decoder):
+def test_stake_lp_token_to_gauge(base_accounts, base_transaction_decoder, load_global_caches):
     evmhash = deserialize_evm_tx_hash('0x9a0cd1ab0b8e5dbf2718b1c87dad239f7f3a9ed8ff2e07643922b190f80ae898 ')  # noqa: E501
     user_address = base_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_transaction_decoder.evm_inquirer,
         database=base_transaction_decoder.database,
         tx_hash=evmhash,
+        load_global_caches=load_global_caches,
     )
     pool_token = Asset('eip155:8453/erc20:0xA6385c73961dd9C58db2EF0c4EB98cE4B60651e8')
     timestamp = TimestampMS(1706708947000)
@@ -194,14 +198,16 @@ def test_stake_lp_token_to_gauge(base_accounts, base_transaction_decoder):
 
 
 @pytest.mark.vcr()
+@pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
 @pytest.mark.parametrize('base_accounts', [['0x61D90de4fa8cfbBD7A7650Ae01A39fD1B1863503']])
-def test_remove_liquidity(base_accounts, base_transaction_decoder):
+def test_remove_liquidity(base_accounts, base_transaction_decoder, load_global_caches):
     evmhash = deserialize_evm_tx_hash('0x847ed0b6bd3f1b030cc84eee74c2c238dd93e0b689c87d44bce7f3591173ef0d')  # noqa: E501
     user_address = base_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_transaction_decoder.evm_inquirer,
         database=base_transaction_decoder.database,
         tx_hash=evmhash,
+        load_global_caches=load_global_caches,
     )
     timestamp = TimestampMS(1706789989000)
     gas_amount, lp_amount, aero_amount, usdbc_amount = '0.000088467182445046', '0.000053130643452706', '190.426331639958037231', '15.035115'  # noqa: E501

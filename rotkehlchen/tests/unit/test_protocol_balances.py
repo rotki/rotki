@@ -29,7 +29,9 @@ from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
+from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
+from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_VELODROME
 from rotkehlchen.chain.evm.tokens import TokenBalancesType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
@@ -76,11 +78,13 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0xb24cE065a3A9bbCCED4B74b6F4435b852286396d']])
 def test_curve_balances(
         ethereum_inquirer: 'EthereumInquirer',
         ethereum_transaction_decoder: 'EthereumTransactionDecoder',
         ethereum_accounts: list[ChecksumEvmAddress],
+        load_global_caches: list[str],
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
 ) -> None:
     database = ethereum_transaction_decoder.database
@@ -89,6 +93,7 @@ def test_curve_balances(
         evm_inquirer=ethereum_inquirer,
         database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
+        load_global_caches=load_global_caches,
     )
     curve_balances_inquirer = CurveBalances(
         database=database,
@@ -200,11 +205,13 @@ def test_convex_staking_balances_without_gauges(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0x78C13393Aee675DD7ED07ce992210750D1F5dB88']])
 def test_velodrome_v2_staking_balances(
         optimism_inquirer: 'OptimismInquirer',
         optimism_transaction_decoder: 'OptimismTransactionDecoder',
         optimism_accounts: list[ChecksumEvmAddress],
+        load_global_caches: list[str],
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
 ) -> None:
     """Check that balances of velodrome v2 gauges are properly queried."""
@@ -214,6 +221,7 @@ def test_velodrome_v2_staking_balances(
         evm_inquirer=optimism_inquirer,
         database=optimism_transaction_decoder.database,
         tx_hash=tx_hex,
+        load_global_caches=load_global_caches,
     )
     balances_inquirer = VelodromeBalances(
         database=database,
