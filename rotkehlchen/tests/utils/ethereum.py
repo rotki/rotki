@@ -351,6 +351,7 @@ def get_decoded_events_of_transaction(
         tx_hash: EVMTxHash,
         transactions: EvmTransactions | None = None,
         relevant_address: ChecksumAddress | None = None,
+        load_global_caches: list[str] | None = None,
 ) -> tuple[list['EvmEvent'], EVMTransactionDecoder]:
     """A convenience function to ask get transaction, receipt and decoded event for a tx_hash
 
@@ -388,6 +389,6 @@ def get_decoded_events_of_transaction(
             )
 
     transactions.get_or_query_transaction_receipt(tx_hash=tx_hash)
-    with patch_decoder_reload_data():
+    with patch_decoder_reload_data(load_global_caches):
         result = decoder.decode_transaction_hashes(ignore_cache=True, tx_hashes=[tx_hash])
     return result, decoder

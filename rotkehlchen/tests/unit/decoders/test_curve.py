@@ -53,6 +53,7 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import timestamp_to_date
 
 
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x57bF3B0f29E37619623994071C9e12091919675c']])
 def test_curve_deposit(database, ethereum_transaction_decoder):
     """Data for deposit taken from
@@ -196,6 +197,7 @@ def test_curve_deposit(database, ethereum_transaction_decoder):
     assert events == expected_events
 
 
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x767B35b9F06F6e28e5ed05eE7C27bDf992eba5d2']])
 def test_curve_deposit_eth(database, ethereum_transaction_decoder):
     """Data for deposit taken from
@@ -352,6 +354,7 @@ def test_curve_deposit_eth(database, ethereum_transaction_decoder):
     assert events == expected_events
 
 
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0xDf9f0AE722A3919fE7f9cC8805773ef142007Ca6']])
 def test_curve_remove_liquidity(
@@ -486,6 +489,7 @@ def test_curve_remove_liquidity(
     assert expected_events == events
 
 
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0xa8005630caE7b7d2AFADD38FD3B3040d13cbE2BC']])
 def test_curve_remove_liquidity_with_internal(database, ethereum_transaction_decoder):
     """Data for deposit taken from
@@ -604,6 +608,7 @@ def test_curve_remove_liquidity_with_internal(database, ethereum_transaction_dec
     assert expected_events == events
 
 
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x2fac74A3a04B031F240923621a578724C40678af']])
 def test_curve_remove_imbalanced(database, ethereum_transaction_decoder):
     """Data for deposit taken from
@@ -775,8 +780,9 @@ def test_curve_remove_imbalanced(database, ethereum_transaction_decoder):
 
 
 @pytest.mark.vcr()
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x6Bb553FFC5716782051f51b564Bb149D9946f0d2']])
-def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts):
+def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):  # noqa: E501
     """Check the case for a pool where multiple deposit events appear in the transaction"""
     tx_hex = deserialize_evm_tx_hash('0xe954a396a02ebbea45a1d206c9918f717c55509c8138fccc63155d0262ef4dc4 ')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
@@ -785,6 +791,7 @@ def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
         database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
+        load_global_caches=load_global_caches,
     )
     expected_events = [
         EvmEvent(
@@ -876,12 +883,14 @@ def test_gauge_vote(ethereum_accounts, ethereum_transaction_decoder) -> None:
 
 
 @pytest.mark.vcr()
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0xd289986c25Ae3f4644949e25bC369e9d8e0caeaD']])
 def test_gauge_deposit(
         ethereum_accounts,
         database,
         ethereum_transaction_decoder,
+        load_global_caches,
 ) -> None:
     tx_hex = deserialize_evm_tx_hash('0x5ae70d68241d85feac65c90e4546154e232dba9fecad9036bcec10082acc9d46')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
@@ -890,6 +899,7 @@ def test_gauge_deposit(
         evm_inquirer=cast(EthereumInquirer, ethereum_transaction_decoder.evm_inquirer),
         database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
+        load_global_caches=load_global_caches,
     )
     mocked_notifier = database.msg_aggregator.rotki_notifier
     message = mocked_notifier.pop_message()
@@ -933,8 +943,9 @@ def test_gauge_deposit(
 
 
 @pytest.mark.vcr()
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0xd80DF837766C8Edb6f11Bf7fD35703f87F2a31fB']])
-def test_gauge_withdraw(ethereum_transaction_decoder, ethereum_accounts):
+def test_gauge_withdraw(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):
     tx_hex = deserialize_evm_tx_hash('0x055fc6cafcdae6b367d934e9385816f89153314c5abc5d3659a65778c90342d2')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = ethereum_accounts[0]
@@ -942,6 +953,7 @@ def test_gauge_withdraw(ethereum_transaction_decoder, ethereum_accounts):
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
         database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
+        load_global_caches=load_global_caches,
     )
     expected_events = [
         EvmEvent(
@@ -977,8 +989,9 @@ def test_gauge_withdraw(ethereum_transaction_decoder, ethereum_accounts):
 
 
 @pytest.mark.vcr()
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0E9Fed33f6a202146a615De0FA1985adFb461467']])
-def test_gauge_claim_rewards(ethereum_transaction_decoder, ethereum_accounts):
+def test_gauge_claim_rewards(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):
     tx_hex = deserialize_evm_tx_hash('0xe01bc48ddb3df6eb721c122c5ddaea705b771bfb8db407e3a96ae9bab6584453')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = ethereum_accounts[0]
@@ -986,6 +999,7 @@ def test_gauge_claim_rewards(ethereum_transaction_decoder, ethereum_accounts):
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
         database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
+        load_global_caches=load_global_caches,
     )
     expected_events = [
         EvmEvent(
@@ -1020,8 +1034,9 @@ def test_gauge_claim_rewards(ethereum_transaction_decoder, ethereum_accounts):
 
 
 @pytest.mark.vcr()
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0xA8d7Fb04877C3FBf175DE76FA3D2fa66c770537F']])
-def test_curve_trade_token_to_token(ethereum_transaction_decoder, ethereum_accounts):
+def test_curve_trade_token_to_token(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):  # noqa: E501
     """Test that trading token to token in curve is decoded correctly"""
     tx_hex = deserialize_evm_tx_hash('0xaa176ce742d62b663656572f8cc53d63d6c00cd2c3adde32293e4028a5e0693c ')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
@@ -1030,6 +1045,7 @@ def test_curve_trade_token_to_token(ethereum_transaction_decoder, ethereum_accou
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
         database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
+        load_global_caches=load_global_caches,
     )
     expected_events = [
         EvmEvent(
@@ -1077,16 +1093,18 @@ def test_curve_trade_token_to_token(ethereum_transaction_decoder, ethereum_accou
 
 
 @pytest.mark.vcr()
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x8a1B73A88E1854Dd3EeBEe4354Bd4DbA23861E3A']])
-def test_curve_trade_eth_to_token(ethereum_transaction_decoder, ethereum_accounts):
+def test_curve_trade_eth_to_token(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):  # noqa: E501
     """Test that trading eth to token in curve is decoded correctly"""
-    tx_hex = deserialize_evm_tx_hash('0x34d6674d8d46b8a6c546b04b4c748b82d42a688f562fe80a8d02e9180a684d09 ')  # noqa: E501
+    tx_hex = deserialize_evm_tx_hash('0x34d6674d8d46b8a6c546b04b4c748b82d42a688f562fe80a8d02e9180a684d09')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
         database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
+        load_global_caches=load_global_caches,
     )
     expected_events = [
         EvmEvent(
@@ -1134,8 +1152,9 @@ def test_curve_trade_eth_to_token(ethereum_transaction_decoder, ethereum_account
 
 
 @pytest.mark.vcr()
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x38abab9766e0b27d2912718a884292b8E7eb2803']])
-def test_curve_trade_exchange_underlying(ethereum_transaction_decoder, ethereum_accounts):
+def test_curve_trade_exchange_underlying(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):  # noqa: E501
     """Test that if exchange_underlying is happening the trade is decoded correctly"""
     tx_hex = deserialize_evm_tx_hash('0xed73e8717c9b2571a9cd7c0563e013c569e757920a050b1120ff1e6f5f3d3b8f ')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
@@ -1144,6 +1163,7 @@ def test_curve_trade_exchange_underlying(ethereum_transaction_decoder, ethereum_
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
         database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
+        load_global_caches=load_global_caches,
     )
     expected_events = [
         EvmEvent(
@@ -1248,8 +1268,9 @@ def test_curve_swap_router(ethereum_transaction_decoder, ethereum_accounts):
 
 
 @pytest.mark.vcr()
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0xdE206bC0Fde2eF5C8BB6A1d552a64F82A2407Be4']])
-def test_curve_usdn_add_liquidity(ethereum_transaction_decoder, ethereum_accounts):
+def test_curve_usdn_add_liquidity(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):  # noqa: E501
     """Check that adding liquidity to a curve pool using the USDN contract is properly decoded."""
     tx_hex = deserialize_evm_tx_hash('0x6c28df56ae4a7f784577273f72402a9b6640024327ee952fdde72c9cfdf08da5')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
@@ -1258,6 +1279,7 @@ def test_curve_usdn_add_liquidity(ethereum_transaction_decoder, ethereum_account
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
         database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
+        load_global_caches=load_global_caches,
     )
     timestamp = TimestampMS(Timestamp(1674470159000))
     expected_events = [
@@ -1306,8 +1328,9 @@ def test_curve_usdn_add_liquidity(ethereum_transaction_decoder, ethereum_account
 
 
 @pytest.mark.vcr()
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x6d84264A7bD2Cffa4A117BA2350403b3A9866949']])
-def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts):
+def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):  # noqa: E501
     """Check that removing liquidity from a curve pool using the USDN contract is properly decoded."""  # noqa: E501
     tx_hex = deserialize_evm_tx_hash('0x4d77fba437b9dee6679dbb0f238b123f01b7b1bdd41bf46e35b00ce016cf8ab2')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
@@ -1316,6 +1339,7 @@ def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_acco
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
         database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
+        load_global_caches=load_global_caches,
     )
     timestamp = TimestampMS(Timestamp(1676708639000))
     expected_events = [
@@ -1403,8 +1427,9 @@ def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_acco
 
 
 @pytest.mark.vcr()
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0xcbE942516AE7687d80a5fF94F8f9A203Be800713']])
-def test_3pool_add_liquidity(ethereum_transaction_decoder, ethereum_accounts):
+def test_3pool_add_liquidity(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):
     """Check that adding liquidity to a curve pool using the 3Pool zap contract is properly decoded."""  # noqa: E501
     tx_hex = deserialize_evm_tx_hash('0xf7c6764b832069785eeee22a078f4cb3c92149c25eb0bdc6bba36ebd1598c255')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
@@ -1413,6 +1438,7 @@ def test_3pool_add_liquidity(ethereum_transaction_decoder, ethereum_accounts):
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
         database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
+        load_global_caches=load_global_caches,
     )
     timestamp = TimestampMS(1680503171000)
     expected_events = [
@@ -1461,8 +1487,9 @@ def test_3pool_add_liquidity(ethereum_transaction_decoder, ethereum_accounts):
 
 
 @pytest.mark.vcr()
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0xC7BFb2ED20D14407C78cc1FC4a4Abe39f1964964']])
-def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts):
+def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):  # noqa: E501
     """Check that removing liquidity from a curve pool using the 3Pool zap contract is properly decoded."""  # noqa: E501
     tx_hex = deserialize_evm_tx_hash('0xbf4a445d0452e2f1e046c3ab3d10018c801e2acae89051c98332e9264f36d7f7')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
@@ -1471,6 +1498,7 @@ def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts)
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
         database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
+        load_global_caches=load_global_caches,
     )
     timestamp = TimestampMS(1680390095000)
     expected_events = [
@@ -1558,8 +1586,9 @@ def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts)
 
 
 @pytest.mark.vcr()
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x60b0f1919cf4ee46d1A8D63428276512814de570']])
-def test_remove_from_aave_pool(ethereum_transaction_decoder, ethereum_accounts):
+def test_remove_from_aave_pool(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):  # noqa: E501
     """
     Test that if liquidity is removed from a pool with a(aave) tokens,
     the events are decoded correctly.
@@ -1571,6 +1600,7 @@ def test_remove_from_aave_pool(ethereum_transaction_decoder, ethereum_accounts):
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
         database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
+        load_global_caches=load_global_caches,
     )
     expected_events = [
         EvmEvent(
@@ -1619,8 +1649,9 @@ def test_remove_from_aave_pool(ethereum_transaction_decoder, ethereum_accounts):
 
 
 @pytest.mark.vcr()
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0550bED1C94AFBd468aa739852632D7e9b4c2F86']])
-def test_deposit_via_zap_in_metapool(ethereum_transaction_decoder, ethereum_accounts):
+def test_deposit_via_zap_in_metapool(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):  # noqa: E501
     """
     Test that deposits via a zap to a metapool (when there are 2 AddLiquidity events emitted)
     are decoded correctly.
@@ -1632,6 +1663,7 @@ def test_deposit_via_zap_in_metapool(ethereum_transaction_decoder, ethereum_acco
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
         database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
+        load_global_caches=load_global_caches,
     )
     expected_events = [
         EvmEvent(
@@ -1693,8 +1725,9 @@ def test_deposit_via_zap_in_metapool(ethereum_transaction_decoder, ethereum_acco
 
 
 @pytest.mark.vcr()
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0xd381e358d6b4E176559D3D76109985ED83259aEC']])
-def test_no_zap_event(ethereum_transaction_decoder, ethereum_accounts):
+def test_no_zap_event(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):
     """
     Checks that if a curve zap is used, but there is no zap-specific event emitted (only event from
     the used pool is emitted), transaction is still decoded correctly.
@@ -1706,6 +1739,7 @@ def test_no_zap_event(ethereum_transaction_decoder, ethereum_accounts):
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
         database=ethereum_transaction_decoder.database,
         tx_hash=evmhash,
+        load_global_caches=load_global_caches,
     )
     expected_events = [
         EvmEvent(
@@ -1796,13 +1830,15 @@ def test_gauge_bribe_v2(ethereum_transaction_decoder, ethereum_accounts):
 
 
 @pytest.mark.vcr()
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x1c362DFE864a4c4b3311eC97bf0b8320CB0a4952']])
-def test_curve_deposit_polygon(database, polygon_pos_inquirer, polygon_pos_accounts):
+def test_curve_deposit_polygon(database, polygon_pos_inquirer, polygon_pos_accounts, load_global_caches):  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x6cb9d7ceb55a1063c17b58cb643e699525ca6037e711c34283cf0f3d6e81716e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
         database=database,
         tx_hash=tx_hash,
+        load_global_caches=load_global_caches,
     )
     timestamp, pool_address, deposit_amount, approve_amount, received_amount, gas_fees = TimestampMS(1718015936000), string_to_evm_address('0x445FE580eF8d70FF569aB36e80c647af338db351'), '2.12', '0.88', '1.87538744644899407', '0.0127938000149261'  # noqa: E501
     expected_events = [
@@ -1863,8 +1899,9 @@ def test_curve_deposit_polygon(database, polygon_pos_inquirer, polygon_pos_accou
 
 
 @pytest.mark.vcr()
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('optimism_accounts', [['0x1CD90D091C5c13Bb7e7612a90485C6F38B826Fdd']])
-def test_gauge_deposit_optimism(database, optimism_inquirer, optimism_accounts):
+def test_gauge_deposit_optimism(database, optimism_inquirer, optimism_accounts, load_global_caches):  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x271f5ee9fddc8e2a2df4187f70b6192acb42661a7d35e934fa68d8778b196c71')  # noqa: E501
     timestamp, gauge_address, deposit_amount, gas_fees = TimestampMS(1718022201000), string_to_evm_address('0xB280fab4817C54796F9E6147aa1ad0198CFEfb41'), '218.705051991330164886', '0.000020026564634882'  # noqa: E501
     get_or_create_evm_token(  # gauge token should already exist in db by reloading cache tokens
@@ -1879,6 +1916,7 @@ def test_gauge_deposit_optimism(database, optimism_inquirer, optimism_accounts):
         evm_inquirer=optimism_inquirer,
         database=database,
         tx_hash=tx_hash,
+        load_global_caches=load_global_caches,
     )
     expected_events = [
         EvmEvent(
@@ -1926,8 +1964,9 @@ def test_gauge_deposit_optimism(database, optimism_inquirer, optimism_accounts):
 
 
 @pytest.mark.vcr()
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('gnosis_accounts', [['0xD4f9FE0039Da59e6DDb21bbb6E84e0C9e83D73eD']])
-def test_gauge_withdraw_gnosis(database, gnosis_inquirer, gnosis_accounts):
+def test_gauge_withdraw_gnosis(database, gnosis_inquirer, gnosis_accounts, load_global_caches):
     tx_hash = deserialize_evm_tx_hash('0x29d1b4a219dfb19562a3915191e6bcc64652ff072daf56216e40267408860474')  # noqa: E501
     timestamp, gauge_address, withdraw_amount, gas_fees = TimestampMS(1717896445000), string_to_evm_address('0x05cd911eE9B60C28FCEE4ea03Cc5670637D955B1'), '19576.247352101772081083', '0.000196106001764954'  # noqa: E501
     get_or_create_evm_token(  # gauge token should already exist in db by reloading cache tokens
@@ -1942,6 +1981,7 @@ def test_gauge_withdraw_gnosis(database, gnosis_inquirer, gnosis_accounts):
         evm_inquirer=gnosis_inquirer,
         database=database,
         tx_hash=tx_hash,
+        load_global_caches=load_global_caches,
     )
     expected_events = [
         EvmEvent(
@@ -2044,13 +2084,15 @@ def test_curve_swap_router_base(database, base_inquirer, base_accounts):
 
 
 @pytest.mark.vcr()
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x8800AcEDF5571F35675CF8Aa1E3C16C7A8da0088']])
-def test_deposit_via_zap_arbitrum(database, arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_deposit_via_zap_arbitrum(database, arbitrum_one_inquirer, arbitrum_one_accounts, load_global_caches):  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x5a72b9be1302cc4b9e1d79e61134b0b7f225b3a4aa723c27c557a672c29791ce')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         database=database,
         tx_hash=tx_hash,
+        load_global_caches=load_global_caches,
     )
     timestamp, pool_address, approve_amount, deposit_amount, receive_amount, gas_fees = TimestampMS(1718104329000), string_to_evm_address('0x73aF1150F265419Ef8a5DB41908B700C32D49135'), '115792089237316195423570985008687907853269984665640564039457584007877854.731259', '10000', '10003.6614101799549838', '0.0000058597'  # noqa: E501
     arbitrum_usdt = Asset('eip155:42161/erc20:0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9')

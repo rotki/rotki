@@ -477,11 +477,11 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, ABC):
             for new_data in new_cache_data
         ]
 
+        self.cache_data = new_cache_data
+        self.post_cache_update_callback()
         if sum(len(x) for x in cache_diff) == 0:
             return None
 
-        self.cache_data = new_cache_data
-        self.post_cache_update_callback()
         new_decoding_mapping: dict[ChecksumEvmAddress, tuple[Any, ...]] = {}
         # pair each new address in each cache container to the method decoding its logic
         for data_diff, method in zip(cache_diff, self._cache_mapping_methods(), strict=True):  # size should be correct if inheriting decoder is implemented properly  # noqa: E501
