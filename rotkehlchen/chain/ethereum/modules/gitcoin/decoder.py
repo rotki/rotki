@@ -3,21 +3,30 @@ from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.ethereum.modules.gitcoin.constants import (
+    FUNDS_CLAIMED,
+    GITCOIN_GC15_MATCHING,
     GITCOIN_GOVERNOR_ALPHA,
     GITCOIN_GRANTS_OLD1,
 )
+from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GITCOIN
 from rotkehlchen.chain.evm.decoding.gitcoin.decoder import GitcoinOldCommonDecoder
 from rotkehlchen.chain.evm.decoding.interfaces import GovernableDecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
+    DEFAULT_DECODING_OUTPUT,
     FAILED_ENRICHMENT_OUTPUT,
+    DecoderContext,
+    DecodingOutput,
     EnricherContext,
     TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants.assets import A_DAI
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -79,11 +88,44 @@ class GitcoinDecoder(GovernableDecoderInterface, GitcoinOldCommonDecoder):
         context.event.counterparty = CPT_GITCOIN
         return TransferEnrichmentOutput(matched_counterparty=CPT_GITCOIN)
 
+    def _decode_matching_claim(self, context: DecoderContext, name: str) -> DecodingOutput:
+        if context.tx_log.topics[0] != FUNDS_CLAIMED:
+            return DEFAULT_DECODING_OUTPUT
+
+        if not self.base.is_tracked(claimee := hex_or_bytes_to_address(context.tx_log.topics[1])):
+            return DEFAULT_DECODING_OUTPUT
+
+        amount = token_normalized_value_decimals(
+            token_amount=hex_or_bytes_to_int(context.tx_log.topics[2]),
+            token_decimals=DEFAULT_TOKEN_DECIMALS,  # it's always DAI here, so 18
+        )
+        for event in context.decoded_events:
+            if (
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.asset == A_DAI and
+                    event.balance.amount == amount and
+                    event.location_label == claimee
+            ):
+                event.event_subtype = HistoryEventSubType.DONATE
+                event.counterparty = CPT_GITCOIN
+                event.notes = f'Claim {amount} DAI as matching funds payout for gitcoin {name}'
+                break
+
+        else:
+            log.error(
+                f'Failed to find the gitcoin matching receive transfer for {self.evm_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}.',  # noqa: E501
+            )
+
+        return DEFAULT_DECODING_OUTPUT
+
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             GITCOIN_GOVERNOR_ALPHA: (self._decode_governance,),
+            GITCOIN_GC15_MATCHING: (self._decode_matching_claim, 'round 15'),
+
         } | super().addresses_to_decoders()
 
     def enricher_rules(self) -> list[Callable]:

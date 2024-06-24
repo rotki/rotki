@@ -1,7 +1,10 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.chain.ethereum.modules.gitcoin.constants import GITCOIN_GOVERNOR_ALPHA
+from rotkehlchen.chain.ethereum.modules.gitcoin.constants import (
+    GITCOIN_GC15_MATCHING,
+    GITCOIN_GOVERNOR_ALPHA,
+)
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS, CPT_GITCOIN
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
@@ -214,6 +217,47 @@ def test_gitcoin_vote_cast(database, ethereum_inquirer):
             notes='Voted FOR gitcoin governance proposal https://www.tally.xyz/gov/gitcoin/proposal/31',
             counterparty=CPT_GITCOIN,
             address=GITCOIN_GOVERNOR_ALPHA,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xB1b3751834646fb999EDd18CA62C69663071cF43']])
+def test_gitcoin_gr15_matching_claim(database, ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0xc7ba01598f7fee42bb3923af95355d676ad38ec0aebdcdf49eaf7cb74d2150b2')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas, user, amount = TimestampMS(1666139015000), '0.00118573107792279', ethereum_accounts[0], '1719.1187865411025'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=user,
+            notes=f'Burned {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=83,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.DONATE,
+            asset=A_DAI,
+            balance=Balance(FVal(amount)),
+            location_label=user,
+            notes=f'Claim {amount} DAI as matching funds payout for gitcoin round 15',
+            counterparty=CPT_GITCOIN,
+            address=GITCOIN_GC15_MATCHING,
         ),
     ]
     assert events == expected_events
