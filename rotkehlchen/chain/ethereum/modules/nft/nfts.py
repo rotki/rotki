@@ -248,6 +248,8 @@ class Nfts(EthereumModule, CacheableMixIn, LockableQueryMixIn):
                 if uniswap_v3_lp is not None:
                     db_data.append((nft.token_identifier, nft.name, str(uniswap_v3_lp.user_balance.usd_value), 'USD', False, address, True, nft.image_url, collection_name))  # noqa: E501
                 else:
+                    if collection_name == 'Uniswap V3 Positions':  # a uniswap v3 collection but is not detected in the balances... it is an exited position  # noqa: E501
+                        continue
                     db_data.append((nft.token_identifier, nft.name, str(nft.price_in_asset), nft.price_asset.identifier, False, address, False, nft.image_url, collection_name))  # noqa: E501
 
         # Update DB cache

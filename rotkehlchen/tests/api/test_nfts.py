@@ -218,7 +218,7 @@ def test_nft_balances_and_prices(rotkehlchen_api_server):
         'nftsbalanceresource',
     ), json={'async_query': False, 'ignore_cache': True})
     result_ignored_cache = assert_proper_sync_response_with_result(response)
-    assert result_ignored_cache['entries_found'] == 6
+    assert result_ignored_cache['entries_found'] == 5
     for nft_balance in result_ignored_cache['entries']:
         if nft_balance['id'] == NFT_ID_FOR_TEST_ACC4:
             assert nft_balance['name'] == 'yabir.eth'
@@ -281,8 +281,8 @@ def test_nft_balances_and_prices(rotkehlchen_api_server):
         'offset': 2,
     })
     result = assert_proper_sync_response_with_result(response)
-    assert result['entries_found'] == 6
-    assert result['entries_total'] == 6
+    assert result['entries_found'] == 5
+    assert result['entries_total'] == 5
 
     # ignore an nft
     response = requests.put(
@@ -307,14 +307,13 @@ def test_nft_balances_and_prices(rotkehlchen_api_server):
     assert result_with_cache == result_ignored_cache
 
     # Check that filtering ignored nfts works
-    assert result_with_cache['entries_found'] == 6
-    assert result_with_cache['entries_total'] == 6
+    assert result_with_cache['entries_found'] == 5
+    assert result_with_cache['entries_total'] == 5
     assert {entry['id'] for entry in result_with_cache['entries']} == {
         NFT_ID_FOR_TEST_ACC4,
         NFT_ID_FOR_TEST_ACC4_2,
         NFT_ID_FOR_TEST_ACC5,
         NFT_ID_FOR_TEST_ACC6_1,
-        NFT_ID_FOR_TEST_ACC6_2,
         NFT_ID_FOR_TEST_ACC6_3,
     }
 
@@ -333,7 +332,7 @@ def test_nft_balances_and_prices(rotkehlchen_api_server):
 
     # Check that the response is correct
     assert result_with_cache['entries_found'] == 3
-    assert result_with_cache['entries_total'] == 6
+    assert result_with_cache['entries_total'] == 5
     expected_nfts_without_ignored = {NFT_ID_FOR_TEST_ACC5, NFT_ID_FOR_TEST_ACC6_1, NFT_ID_FOR_TEST_ACC6_3}  # noqa: E501
     assert {entry['id'] for entry in result_with_cache['entries']} == expected_nfts_without_ignored
     response = requests.get(api_url_for(
@@ -341,12 +340,11 @@ def test_nft_balances_and_prices(rotkehlchen_api_server):
         'nftsbalanceresource',
     ), json={'async_query': False, 'ignore_cache': False, 'ignored_assets_handling': 'show only'})
     result = assert_proper_sync_response_with_result(response)
-    assert result['entries_found'] == 3
-    assert result['entries_total'] == 6
+    assert result['entries_found'] == 2
+    assert result['entries_total'] == 5
     assert {entry['id'] for entry in result['entries']} == {
         NFT_ID_FOR_TEST_ACC4,
         NFT_ID_FOR_TEST_ACC4_2,
-        NFT_ID_FOR_TEST_ACC6_2,
     }
 
     response = requests.post(api_url_for(
@@ -886,3 +884,22 @@ def test_customized_queried_addresses(rotkehlchen_api_server):
     )
     result = assert_proper_sync_response_with_result(response)
     assert len(result['entries']) == 1 and result['entries'][0]['name'] == TEST_NFT_NEBOLAX_ETH.name  # noqa: E501
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xF73e7772113Cf4a6a8749dF5e4e32b27B449B85D']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('ethereum_modules', [['nfts', 'uniswap']])
+def test_uniswap_v3_exited_positions(rotkehlchen_api_server):
+    """Test for https://github.com/rotki/rotki/issues/8137
+    Ensure that positions that have been exited in uniswap v3 don't end up in the nft balances
+    """
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'nftsbalanceresource',
+    ), json={
+        'ignore_cache': True,
+        'lps_handling': NftLpHandling.ALL_NFTS.serialize(),
+    })
+    result = assert_proper_sync_response_with_result(response)
+    assert all(entry['collection_name'] != 'Uniswap V3 Positions' for entry in result['entries'])
