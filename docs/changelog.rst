@@ -37,6 +37,7 @@ Changelog
 * :bug:`-` Fix an issue where some tokens weren't properly detected in scroll.
 * :bug:`-` Balances will get updated properly when removing a validator.
 * :feature:`-` Paladin bribe claiming events should now be properly decoded.
+* :bug:`8137` Uniswap V3 NFTs for positions that have been exited won't appear in the NFTs balances.
 * :bug:`-` Scroll decoders will now work as expected.
 * :bug:`-` Events claiming veCRV bribes from Gauge Bribe v2 will now be properly decoded.
 * :bug:`-` Complicated cowswap trades that were detected as part of another DEX should now be properly decoded.
