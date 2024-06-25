@@ -48,8 +48,11 @@ const { navigateToDetails } = useAssetPageNavigation(eventAsset);
         milliseconds
       />
     </div>
-    <template v-else>
+    <div
+      v-else
+      class="text-truncate"
+    >
       {{ symbol }}
-    </template>
+    </div>
   </div>
 </template>

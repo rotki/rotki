@@ -2405,19 +2405,15 @@
     }
   },
   "file_upload": {
-    "change_file": "Changer de fichier",
     "date_input_format": {
       "hint": "Utilisez ce format si le format de date dans votre fichier est : {format}",
       "placeholder": "Saisir le format de date personnalisé",
       "switch_label": "Utiliser le format de date personnalisé pour analyser votre fichier"
     },
-    "drop_area": "Déposez le fichier ou",
     "import_complete": "L'importation a été effectuée avec succès.",
     "loading": "Chargement",
     "many_files_selected": "Un seul fichier doit être sélectionné",
     "only_files": "Seuls les fichiers {fileFilter} sont autorisés",
-    "select_file": "Sélectionner un fichier",
-    "selected_file": "Fichier sélectionné : {name}",
     "task": {
       "title": "Importation d'un fichier csv pour la source : {source}"
     }

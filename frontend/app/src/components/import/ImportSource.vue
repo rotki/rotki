@@ -150,7 +150,7 @@ const slots = useSlots();
         :loading="loading"
         :uploaded="uploaded"
         :source="source"
-        :error-message="errorMessage"
+        :error-message.sync="errorMessage"
         @update:uploaded="uploaded = $event"
       />
       <RuiSwitch

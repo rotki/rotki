@@ -2211,19 +2211,15 @@
     }
   },
   "file_upload": {
-    "change_file": "更改文件",
     "date_input_format": {
       "hint": "如果文件中的日期格式为：{format}，请使用此选项",
       "placeholder": "输入自定义日期格式",
       "switch_label": "使用自定义日期格式来解析你的文件"
     },
-    "drop_area": "放下文件或",
     "import_complete": "导入成功完成。",
     "loading": "加载中",
     "many_files_selected": "必须选择一个文件",
     "only_files": "只允许 {fileFilter} 个文件",
-    "select_file": "选择文件",
-    "selected_file": "选择的文件：{name}",
     "task": {
       "title": "正在为来源导入 csv:{source}"
     }

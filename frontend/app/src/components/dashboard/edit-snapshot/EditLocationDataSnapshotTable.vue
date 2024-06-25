@@ -204,7 +204,7 @@ function showDeleteConfirmation(item: IndexedLocationDataSnapshot) {
   <div>
     <RuiDataTable
       ref="tableRef"
-      class="table-inside-dialog"
+      class="table-inside-dialog !max-h-[calc(100vh-26.25rem]"
       :cols="tableHeaders"
       :rows="data"
       :sort.sync="sort"
