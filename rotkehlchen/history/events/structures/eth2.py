@@ -210,7 +210,7 @@ class EthWithdrawalEvent(EthStakingEvent):
     ) -> int:
         profit_amount = self.balance.amount
         if self.balance.amount >= 32:
-            profit_amount = 32 - self.balance.amount
+            profit_amount = self.balance.amount - 32
 
         # TODO: This is hacky and does not cover edge case where people mistakenly
         # double deposited for a validator. We can and should combine deposit and
