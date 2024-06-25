@@ -400,7 +400,7 @@ function confirmDelete() {
     </div>
     <RuiDataTable
       ref="tableRef"
-      class="table-inside-dialog !max-h-[26.25rem]"
+      class="table-inside-dialog !max-h-[calc(100vh-26.25rem]"
       :cols="tableHeaders"
       :rows="filteredData"
       :scroller="tableRef?.$el"

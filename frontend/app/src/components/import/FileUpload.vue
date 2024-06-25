@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { size } from '../../utils/data';
 import type { ImportSourceType } from '@/types/upload-types';
 
 const props = withDefaults(
@@ -28,36 +29,41 @@ const { source, fileFilter, uploaded, errorMessage } = toRefs(props);
 
 const file = useSimpleVModel(props, emit);
 
+const wrapper = ref<HTMLDivElement>();
+
 const error = ref('');
-const active = ref(false);
 const select = ref<HTMLInputElement>();
-const { count, inc, dec, reset } = useCounter(0, { min: 0 });
 const { t } = useI18n();
 
-function onDrop(event: DragEvent) {
-  event.preventDefault();
-  set(active, false);
-  if (!event.dataTransfer?.files?.length)
+function isValidFile(file: File, acceptString: string) {
+  // Extract the file extension
+  const fileName = file.name;
+  const fileExtension = fileName.substring(fileName.lastIndexOf('.')).toLowerCase();
+
+  // Extract the file MIME type
+  const fileType = file.type;
+
+  // Parse the accept string
+  const acceptTypes = acceptString.split(',').map(type => type.trim().toLowerCase());
+
+  // Check if the file extension or MIME type matches any of the accepted types
+  for (const type of acceptTypes) {
+    if (type === fileExtension || type === fileType || (type === 'image/*' && fileType.startsWith('image/')))
+      return true;
+  }
+  return false;
+}
+
+function onDrop(files: File[] | null) {
+  if (!files || files.length === 0)
     return;
 
-  if (get(source) !== 'icon')
-    check(event.dataTransfer.files);
-  else
-    selected(event.dataTransfer.files[0]);
+  check(files);
 }
 
-function onEnter(event: DragEvent) {
-  event.preventDefault();
-  inc();
-  set(active, true);
-}
-
-function onLeave(event: DragEvent) {
-  event.preventDefault();
-  dec();
-  if (get(count) === 0)
-    set(active, false);
-}
+const { isOverDropZone } = useDropZone(wrapper, {
+  onDrop,
+});
 
 function onSelect(event: Event) {
   const target = event.target as HTMLInputElement;
@@ -70,11 +76,32 @@ function onSelect(event: Event) {
     selected(target.files[0]);
 }
 
+function clearTimeoutHandler(timeout: Ref<NodeJS.Timeout | undefined>) {
+  const timeoutVal = get(timeout);
+  if (timeoutVal) {
+    clearTimeout(timeoutVal);
+    set(timeout, undefined);
+  }
+}
+
+const errorTimeout = ref<NodeJS.Timeout>();
+const uploadedTimeout = ref<NodeJS.Timeout>();
+
 function onError(message: string) {
-  set(error, message);
-  reset();
-  set(active, false);
+  if (!message) {
+    clearError();
+    return;
+  }
+
+  clearTimeoutHandler(errorTimeout);
+  clearTimeoutHandler(uploadedTimeout);
+
   removeFile();
+  set(error, message);
+  const timeout = setTimeout(() => {
+    clearError();
+  }, 4000);
+  set(errorTimeout, timeout);
 }
 
 function clearError() {
@@ -90,29 +117,30 @@ function removeFile() {
   set(file, null);
 }
 
-function check(files: FileList) {
-  if (get(error) || get(uploaded))
-    return;
-
+function check(files: File[] | FileList) {
   if (files.length !== 1) {
-    onError(t('file_upload.many_files_selected').toString());
+    onError(t('file_upload.many_files_selected'));
     return;
   }
 
-  if (!files[0].name.endsWith(get(fileFilter))) {
+  const filter = get(fileFilter);
+
+  if (!isValidFile(files[0], filter)) {
     onError(
       t('file_upload.only_files', {
-        fileFilter: get(fileFilter),
-      }).toString(),
+        fileFilter: filter,
+      }),
     );
     return;
   }
 
-  set(file, files[0]);
+  selected(files[0]);
 }
 
 function selected(selected: File | null) {
   set(file, selected);
+  updateUploaded(false);
+  clearError();
 }
 
 function updateUploaded(value: boolean) {
@@ -124,13 +152,19 @@ function clickSelect() {
 }
 
 watch(uploaded, (uploaded) => {
+  clearTimeoutHandler(errorTimeout);
+  clearTimeoutHandler(uploadedTimeout);
+
   if (!uploaded)
     return;
 
-  set(file, null);
-  setTimeout(() => {
+  removeFile();
+
+  const timeout = setTimeout(() => {
     updateUploaded(false);
   }, 4000);
+
+  set(uploadedTimeout, timeout);
 });
 
 watch(errorMessage, message => onError(message));
@@ -138,112 +172,134 @@ watch(errorMessage, message => onError(message));
 defineExpose({
   removeFile,
 });
+
+function formatFileFilter(fileFilter: string) {
+  return fileFilter.split(',').map((item) => {
+    let text = item.trim();
+    if (text.startsWith('.'))
+      text = text.slice(1);
+
+    return text;
+  }).join(', ');
+}
 </script>
 
 <template>
   <div class="flex flex-row overflow-hidden">
     <div
-      class="p-4 border border-default rounded-md w-full"
-      :class="{ 'border-primary': active }"
-      @dragover.prevent
-      @drop="onDrop($event)"
-      @dragenter="onEnter($event)"
-      @dragleave="onLeave($event)"
+      ref="wrapper"
+      class="p-4 border border-rui-grey-300 dark:border-rui-grey-800 rounded-md w-full relative border-dashed transition"
+      :class="{
+        '!border-rui-primary bg-rui-primary/[0.08]': isOverDropZone,
+        '!border-rui-error !border-solid bg-rui-error/[0.08]': error,
+        '!border-rui-success !border-solid bg-rui-success/[0.08]': uploaded,
+      }"
     >
-      <div class="flex flex-col items-center justify-center">
-        <template v-if="error">
-          <RuiButton
-            type="button"
-            variant="text"
-            class="self-end"
-            icon
-            @click="clearError()"
-          >
-            <RuiIcon name="close-line" />
-          </RuiButton>
-          <RuiIcon
-            size="48"
-            name="error-warning-line"
-            color="error"
-          />
-          <span class="text-rui-error mt-2">{{ error }}</span>
-        </template>
-
-        <template v-else-if="loading">
-          <RuiProgress
-            circular
-            variant="indeterminate"
-            color="primary"
-            size="24"
-          />
-
-          <div class="pt-4">
-            {{ t('file_upload.loading') }}
+      <div
+        class="flex flex-col items-center justify-center"
+        :class="{
+          'opacity-0': loading,
+        }"
+      >
+        <div class="h-10 bg-rui-primary/[0.12] rounded-full flex items-center justify-center">
+          <div class="w-10 h-10 flex items-center justify-center">
+            <RuiIcon
+              name="file-upload-line"
+              color="primary"
+            />
           </div>
-        </template>
-
-        <template v-else-if="!uploaded">
-          <RuiIcon
-            name="file-upload-line"
-            color="primary"
-          />
-          <input
-            ref="select"
-            type="file"
-            :accept="fileFilter"
-            hidden
-            @change="onSelect($event)"
-          />
-          <div
-            class="flex flex-col mt-2 text-center justify-center text-caption text-rui-text-secondary w-full"
-          >
-            <template v-if="file">
-              <i18n
-                path="file_upload.selected_file"
-                tag="div"
-              >
-                <template #name>
-                  <div class="font-bold text-truncate">
-                    {{ file.name }}
-                  </div>
-                </template>
-              </i18n>
+          <FadeTransition>
+            <div
+              v-if="file"
+              key="file"
+              class="flex items-center gap-2 ml-1"
+            >
+              <div>
+                <div class="text-subtitle-1 !text-sm !leading-5">
+                  {{ file.name }}
+                </div>
+                <div class="text-rui-text-secondary text-xs !leading-3">
+                  {{ size(file.size) }}
+                </div>
+              </div>
               <RuiButton
                 type="button"
-                class="mt-2"
-                color="primary"
-                variant="outlined"
-                @click="clickSelect()"
+                variant="text"
+                icon
+                @click="removeFile()"
               >
-                {{ t('file_upload.change_file') }}
+                <RuiIcon
+                  name="close-line"
+                  size="16"
+                />
               </RuiButton>
-            </template>
-            <template v-else>
-              {{ t('file_upload.drop_area') }}
-              <div class="h-5" />
-              <RuiButton
-                type="button"
-                class="mt-2"
-                color="primary"
-                variant="outlined"
-                @click="clickSelect()"
-              >
-                {{ t('file_upload.select_file') }}
-              </RuiButton>
-            </template>
-          </div>
-        </template>
+            </div>
+          </FadeTransition>
+        </div>
 
-        <template v-else>
-          <SuccessDisplay
-            success
-            size="24"
-          />
-          <div
-            class="mt-2"
-            v-text="t('file_upload.import_complete')"
-          />
-        </template>
+        <div class="font-bold text-subtitle-1 pt-4">
+          <i18n
+            path="file_upload.drag_and_drop"
+            tag="div"
+            class="flex justify-center"
+          >
+            <template #button>
+              <RuiButton
+                variant="text"
+                class="!py-0 px-0.5 -ml-0.5 underline !text-base"
+                color="primary"
+                @click="clickSelect()"
+              >
+                {{ file ? t('file_upload.replace_file') : t('file_upload.click_to_upload') }}
+              </RuiButton>
+            </template>
+          </i18n>
+
+          <div class="text-body-2 text-center font-normal">
+            <div
+              v-if="uploaded"
+              class="text-rui-success"
+            >
+              {{ t('file_upload.import_complete') }}
+            </div>
+            <div
+              v-else-if="error"
+              class="text-rui-error"
+            >
+              {{ error }}
+            </div>
+            <div
+              v-else
+              class="uppercase text-rui-text-secondary"
+            >
+              {{ formatFileFilter(fileFilter) }}
+            </div>
+          </div>
+        </div>
+
+        <input
+          ref="select"
+          type="file"
+          :accept="fileFilter"
+          hidden
+          @change="onSelect($event)"
+        />
+      </div>
+
+      <div
+        v-if="loading"
+        class="flex flex-col items-center justify-center absolute h-full w-full top-0 left-0"
+      >
+        <RuiProgress
+          circular
+          variant="indeterminate"
+          color="primary"
+          size="24"
+        />
+
+        <div class="pt-4">
+          {{ t('file_upload.loading') }}
+        </div>
       </div>
     </div>
   </div>

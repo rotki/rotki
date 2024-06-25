@@ -2153,19 +2153,15 @@
     }
   },
   "file_upload": {
-    "change_file": "Change file",
     "date_input_format": {
       "hint": "Use this if date format in your file is: {format}",
       "placeholder": "Input custom date format",
       "switch_label": "Use custom date format to parsing your file"
     },
-    "drop_area": "Drop the file or",
     "import_complete": "Import was completed successfully.",
     "loading": "Loading",
-    "many_files_selected": "One one file must be selected",
+    "many_files_selected": "Only one file must be selected",
     "only_files": "Only {fileFilter} files are allowed",
-    "select_file": "Select file",
-    "selected_file": "Selected file: {name}",
     "task": {
       "title": "Importing csv for source: {source}"
     }
