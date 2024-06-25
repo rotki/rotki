@@ -6,6 +6,7 @@ from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.curve.constants import (
+    CPT_CURVE,
     CURVE_ADDRESS_PROVIDER,
     CURVE_API_URL,
     CURVE_CHAIN_ID,
@@ -13,6 +14,10 @@ from rotkehlchen.chain.evm.decoding.curve.constants import (
     IGNORED_CURVE_POOLS,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.utils import (
+    maybe_notify_cache_query_status,
+    maybe_notify_new_pools_status,
+)
 from rotkehlchen.constants import ONE
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.errors.misc import (
@@ -40,6 +45,7 @@ from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
     EvmTokenKind,
+    Timestamp,
 )
 from rotkehlchen.utils.network import request_get_dict
 
@@ -47,6 +53,7 @@ if TYPE_CHECKING:
     from gevent import DBCursor
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -102,6 +109,7 @@ def read_curve_pools_and_gauges(chain_id: ChainID) -> tuple[dict[ChecksumEvmAddr
 def _ensure_curve_tokens_existence(
         evm_inquirer: 'EvmNodeInquirer',
         all_pools: list[CurvePoolData],
+        msg_aggregator: 'MessagesAggregator',
 ) -> list[CurvePoolData]:
     """This function receives data about curve pools and ensures that lp tokens and pool coins
     exist in rotki's database.
@@ -109,8 +117,17 @@ def _ensure_curve_tokens_existence(
     Since is possible that a pool has an invalid token we keep a mapping of the valid ones
     and return it.
     """
-    verified_pools = []
-    for pool in all_pools:
+    verified_pools, last_notified_ts, all_pools_length = [], Timestamp(0), len(all_pools)
+    for idx, pool in enumerate(all_pools):
+        last_notified_ts = maybe_notify_cache_query_status(
+            msg_aggregator=msg_aggregator,
+            last_notified_ts=last_notified_ts,
+            protocol=CPT_CURVE,
+            chain=evm_inquirer.chain_id,
+            processed=idx + 1,
+            total=all_pools_length,
+        )
+
         # Ensure pool coins exist in the globaldb.
         # We have to create underlying tokens only if pool utilizes them.
         if pool.underlying_coins is None or pool.underlying_coins == pool.coins:
@@ -318,8 +335,7 @@ def _query_curve_data_from_api(
     May raise:
     - RemoteError if failed to query curve api
     """
-    all_api_pools = []
-    api_url = CURVE_API_URL.format(curve_blockchain_id=CURVE_CHAIN_ID[chain_id])
+    all_api_pools, api_url = [], CURVE_API_URL.format(curve_blockchain_id=CURVE_CHAIN_ID[chain_id])
     log.debug(f'Querying curve api {api_url}')
     response_json = request_get_dict(api_url)
     if response_json['success'] is False:
@@ -364,6 +380,7 @@ def _query_curve_data_from_api(
 def _query_curve_data_from_chain(
         evm_inquirer: 'EvmNodeInquirer',
         existing_pools: list[ChecksumEvmAddress],
+        msg_aggregator: 'MessagesAggregator',
 ) -> list[CurvePoolData] | None:
     """
     Query all curve information(lp tokens, pools, gagues, pool coins) from metaregistry.
@@ -388,8 +405,17 @@ def _query_curve_data_from_chain(
         deployed_block=0,  # deployment_block is not used and the contract is dynamic
     )
     pool_count = metaregistry.call(node_inquirer=evm_inquirer, method_name='pool_count')
-    new_pools = []
+    new_pools: list[CurvePoolData] = []
+    last_notified_ts = Timestamp(0)
     for pool_index in range(pool_count):
+        last_notified_ts = maybe_notify_new_pools_status(
+            msg_aggregator=msg_aggregator,
+            last_notified_ts=last_notified_ts,
+            protocol=CPT_CURVE,
+            chain=evm_inquirer.chain_id,
+            get_new_pools_count=lambda: len(new_pools),
+        )
+
         raw_address = metaregistry.call(
             node_inquirer=evm_inquirer,
             method_name='pool_list',
@@ -453,6 +479,7 @@ def _query_curve_data_from_chain(
 def query_curve_data(
         inquirer: 'EvmNodeInquirer',
         cache_type: Literal[CacheType.CURVE_LP_TOKENS],
+        msg_aggregator: 'MessagesAggregator',
 ) -> list[CurvePoolData] | None:
     """Query curve lp tokens, curve pools and curve gauges.
     First tries to find data via curve api and if fails to do so, queries the chain (metaregistry).
@@ -481,6 +508,7 @@ def query_curve_data(
             pools_data = _query_curve_data_from_chain(
                 evm_inquirer=inquirer,
                 existing_pools=existing_pools,
+                msg_aggregator=msg_aggregator,
             )
         except RemoteError as err:
             log.error(f'Could not query chain for curve pools due to: {err}')
@@ -492,6 +520,7 @@ def query_curve_data(
     verified_pools = _ensure_curve_tokens_existence(
         evm_inquirer=inquirer,
         all_pools=pools_data,
+        msg_aggregator=msg_aggregator,
     )
     return verified_pools
 
@@ -501,8 +530,7 @@ def get_lp_and_gauge_token_addresses(
         chain_id: ChainID,
 ) -> set['ChecksumEvmAddress']:
     """Reads the db to get the lp and gauge token addresses for the given pool address"""
-    addresses = set()
-    chain_id_str = str(chain_id.serialize_for_db())
+    addresses, chain_id_str = set(), str(chain_id.serialize_for_db())
     with GlobalDBHandler().conn.read_ctx() as cursor:
         if (key := cursor.execute(
             'SELECT key FROM unique_cache WHERE value = ?',

@@ -1,12 +1,13 @@
 import datetime
 import json
 from contextlib import suppress
-from unittest.mock import patch
+from unittest.mock import _Call, call, patch
 
 import pytest
 import requests
 from freezegun import freeze_time
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
     query_convex_data,
@@ -14,11 +15,20 @@ from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
     save_convex_data_to_cache,
 )
 from rotkehlchen.chain.evm.decoding.curve.constants import (
+    CPT_CURVE,
     CURVE_ADDRESS_PROVIDER,
     CURVE_API_URL,
     CURVE_CHAIN_ID,
 )
 from rotkehlchen.chain.evm.decoding.curve.curve_cache import read_curve_pools_and_gauges
+from rotkehlchen.chain.evm.decoding.gearbox.constants import CPT_GEARBOX
+from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
+    get_gearbox_pool_tokens,
+    query_gearbox_data,
+    read_gearbox_data_from_cache,
+    save_gearbox_data_to_cache,
+)
+from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_VELODROME
 from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     query_velodrome_like_data,
     read_velodrome_pools_and_gauges_from_cache,
@@ -127,6 +137,20 @@ VELODROME_SOME_EXPECTED_ASSETS = [
     'eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607',
 ]
 
+GEARBOX_SOME_EXPECTED_POOLS = {
+    string_to_evm_address('0xda00000035fef4082F78dEF6A8903bee419FbF8E'),
+    string_to_evm_address('0xda00010eDA646913F273E10E7A5d1F659242757d'),
+    string_to_evm_address('0xda0002859B2d05F66a753d8241fCDE8623f26F4f'),
+    string_to_evm_address('0x1DC0F3359a254f876B37906cFC1000A35Ce2d717'),
+}
+
+GEARBOX_SOME_EXPECTED_ASSETS = [
+    'eip155:1/erc20:0xda00000035fef4082F78dEF6A8903bee419FbF8E',
+    'eip155:1/erc20:0xc411dB5f5Eb3f7d552F9B8454B2D74097ccdE6E3',
+    'eip155:1/erc20:0xe753260F1955e8678DCeA8887759e07aa57E8c54',
+    'eip155:1/erc20:0xda00010eDA646913F273E10E7A5d1F659242757d',
+]
+
 VELODROME_SOME_EXPECTED_ADDRESBOOK_ENTRIES = [
     AddressbookEntry(
         address=string_to_evm_address('0x904f14F9ED81d0b0a40D8169B28592aac5687158'),
@@ -166,6 +190,19 @@ def address_in_addressbook(address, cursor):
     return cursor.execute('SELECT address FROM address_book WHERE address=?', (address,)).fetchone() is not None  # noqa: E501
 
 
+def make_call_object(protocol: str, chain: ChainID, processed: int, total: int) -> _Call:
+    """Create a call object for the given protocol, chain, processed and total."""
+    return call(
+        message_type=WSMessageType.PROTOCOL_CACHE_UPDATES,
+        data={
+            'protocol': protocol,
+            'chain': chain,
+            'processed': processed,
+            'total': total,
+        },
+    )
+
+
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_velodrome_cache(optimism_inquirer):
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
@@ -184,17 +221,21 @@ def test_velodrome_cache(optimism_inquirer):
     assert not any(entry in addressbook_entries for entry in VELODROME_SOME_EXPECTED_ADDRESBOOK_ENTRIES)  # noqa: E501
     assert not any((identifier,) in asset_identifiers for identifier in VELODROME_SOME_EXPECTED_ASSETS)  # noqa: E501
 
-    optimism_inquirer.ensure_cache_data_is_updated(
-        cache_type=CacheType.VELODROME_POOL_ADDRESS,
-        query_method=query_velodrome_like_data,
-        save_method=save_velodrome_data_to_cache,
-    )  # populates cache, addressbook and assets tables
+    notify_patch = patch.object(optimism_inquirer.database.msg_aggregator, 'add_message')
+    with notify_patch as mock_notify:
+        optimism_inquirer.ensure_cache_data_is_updated(
+            cache_type=CacheType.VELODROME_POOL_ADDRESS,
+            query_method=query_velodrome_like_data,
+            save_method=save_velodrome_data_to_cache,
+        )  # populates cache, addressbook and assets tables
     pools, gauges = read_velodrome_pools_and_gauges_from_cache()
     assert pools >= VELODROME_SOME_EXPECTED_POOLS
     assert gauges >= VELODROME_SOME_EXPECTED_GAUGES
     addressbook_entries, asset_identifiers = get_velodrome_addressbook_and_asset_identifiers(optimism_inquirer)  # noqa: E501
     assert all(entry in addressbook_entries for entry in VELODROME_SOME_EXPECTED_ADDRESBOOK_ENTRIES)  # noqa: E501
     assert all((identifier,) in asset_identifiers for identifier in VELODROME_SOME_EXPECTED_ASSETS)
+
+    assert mock_notify.call_args_list == [make_call_object(CPT_VELODROME, ChainID.OPTIMISM, 0, 0)]
 
 
 @pytest.mark.vcr()
@@ -305,9 +346,10 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api, globaldb):
         return MockResponse(status_code=200, text=json.dumps(response_json))
 
     requests_patch = patch('requests.get', side_effect=mock_requests_get)
+    notify_patch = patch.object(ethereum_inquirer.database.msg_aggregator, 'add_message')
 
     future_timestamp = datetime.datetime.now(tz=datetime.UTC) + datetime.timedelta(seconds=WEEK_IN_SECONDS)  # noqa: E501
-    with freeze_time(future_timestamp), requests_patch, call_contract_patch:
+    with freeze_time(future_timestamp), requests_patch, call_contract_patch, notify_patch as mock_notify:  # noqa: E501
         rotkehlchen_instance.chains_aggregator.ethereum.assure_curve_cache_is_queried_and_decoder_updated(
             node_inquirer=ethereum_inquirer,
             transactions_decoder=rotkehlchen_instance.chains_aggregator.ethereum.transactions_decoder,
@@ -332,3 +374,53 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api, globaldb):
     expected_addresses = CURVE_EXPECTED_ADDRESBOOK_ENTRIES_FROM_API if use_curve_api else CURVE_EXPECTED_ADDRESBOOK_ENTRIES_FROM_CHAIN  # noqa: E501
     for entry in expected_addresses:
         assert address_in_addressbook(entry.address, global_cursor)
+
+    assert mock_notify.call_args_list == [
+        make_call_object(CPT_CURVE, ChainID.ETHEREUM, processed=1, total=2),
+        make_call_object(CPT_CURVE, ChainID.ETHEREUM, processed=1, total=2),
+    ] if use_curve_api else [
+        make_call_object(CPT_CURVE, ChainID.ETHEREUM, processed=0, total=0),
+        make_call_object(CPT_CURVE, ChainID.ETHEREUM, processed=1, total=2),
+        make_call_object(CPT_CURVE, ChainID.ETHEREUM, processed=0, total=0),
+        make_call_object(CPT_CURVE, ChainID.ETHEREUM, processed=1, total=2),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+def test_gearbox_cache(ethereum_inquirer):
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        # make sure that gearbox cache is clear of expected pools and gauges
+        for pool in GEARBOX_SOME_EXPECTED_POOLS:
+            write_cursor.execute(f'DELETE FROM general_cache WHERE value LIKE "%{pool}%"')
+            write_cursor.execute(f'DELETE FROM address_book WHERE address="{pool}"')
+
+        for asset in GEARBOX_SOME_EXPECTED_ASSETS:
+            write_cursor.execute(f'DELETE FROM assets WHERE identifier LIKE "%{asset}%"')
+
+    pools, = read_gearbox_data_from_cache(ChainID.ETHEREUM)
+    assert not pools.keys() & GEARBOX_SOME_EXPECTED_POOLS
+
+    def mock_gearbox_pool_tokens(*args, **kwargs):
+        if (tokens := get_gearbox_pool_tokens(*args, **kwargs)) is None:
+            return None
+        return sorted(tokens)  # sorted for determinism in VCR
+
+    notify_patch = patch.object(ethereum_inquirer.database.msg_aggregator, 'add_message')
+    get_gearbox_pool_tokens_patch = patch(
+        target='rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache.get_gearbox_pool_tokens',
+        new=mock_gearbox_pool_tokens,
+    )
+    with get_gearbox_pool_tokens_patch, notify_patch as mock_notify:
+        ethereum_inquirer.ensure_cache_data_is_updated(
+            cache_type=CacheType.GEARBOX_POOL_ADDRESS,
+            query_method=query_gearbox_data,
+            save_method=save_gearbox_data_to_cache,
+            chain_id=ChainID.ETHEREUM,
+        )  # populates cache, addressbook and assets tables
+    pools, = read_gearbox_data_from_cache(ChainID.ETHEREUM)
+    assert pools.keys() >= GEARBOX_SOME_EXPECTED_POOLS
+
+    assert mock_notify.call_args_list == [
+        make_call_object(CPT_GEARBOX, ChainID.ETHEREUM, processed=0, total=0),
+        make_call_object(CPT_GEARBOX, ChainID.ETHEREUM, processed=1, total=5),
+    ]

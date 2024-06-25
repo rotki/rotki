@@ -43,18 +43,19 @@ CACHE_QUERY_METHOD_TYPE = (
         [
             'OptimismInquirer | BaseInquirer',
             Literal[CacheType.VELODROME_POOL_ADDRESS, CacheType.AERODROME_POOL_ADDRESS],
+            'MessagesAggregator',
         ],
         list['VelodromePoolData'] | None] |
     Callable[
-        ['EthereumInquirer', Literal[CacheType.CURVE_LP_TOKENS]],
+        ['EthereumInquirer', Literal[CacheType.CURVE_LP_TOKENS], 'MessagesAggregator'],
         list | None,
     ] |
     Callable[
-        ['EthereumInquirer', Literal[CacheType.CONVEX_POOL_ADDRESS]],
+        ['EthereumInquirer', Literal[CacheType.CONVEX_POOL_ADDRESS], 'MessagesAggregator'],
         list | None,
     ] |
     Callable[
-        ['EthereumInquirer', Literal[CacheType.GEARBOX_POOL_ADDRESS]],
+        ['EthereumInquirer', Literal[CacheType.GEARBOX_POOL_ADDRESS], 'MessagesAggregator'],
         list | None,
     ]
 )

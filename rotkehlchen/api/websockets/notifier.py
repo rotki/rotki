@@ -10,6 +10,7 @@ from geventwebsocket.exceptions import WebSocketError
 from geventwebsocket.websocket import WebSocket
 
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.serialize import process_result
 
 if TYPE_CHECKING:
     from rotkehlchen.api.websockets.typedefs import WSMessageType
@@ -74,7 +75,7 @@ class RotkiNotifier:
         A callback to run on message success and a callback to run on message
         failure can be optionally provided.
         """
-        message_data = {'type': str(message_type), 'data': to_send_data}
+        message_data = process_result({'type': message_type, 'data': to_send_data})
         try:
             message = json.dumps(message_data)
         except TypeError as e:
