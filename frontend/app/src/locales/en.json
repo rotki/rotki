@@ -2067,7 +2067,8 @@
       },
       "error": "Clear the cache for {source} failed: {message}",
       "label": {
-        "general_cache": "General cache (Curve, MakerDAO, Yearn)"
+        "general_cache": "General cache (Curve, MakerDAO, Yearn, Velodrome, Aerodrome, and Gearbox)",
+        "general_cache_short": "General cache (Curve, MakerDAO, etc.)"
       },
       "select_cache": "Select cache to refresh",
       "subtitle": "Allows you to refresh data cached by rotki",

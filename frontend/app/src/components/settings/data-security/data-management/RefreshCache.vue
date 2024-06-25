@@ -7,6 +7,7 @@ const refreshable = [
   {
     id: RefreshableCache.GENERAL_CACHE,
     text: t('data_management.refresh_cache.label.general_cache'),
+    shortText: t('data_management.refresh_cache.label.general_cache_short'),
   },
 ];
 
@@ -60,7 +61,11 @@ const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
         text-attr="text"
         key-attr="id"
         :disabled="pending"
-      />
+      >
+        <template #selection="{ item }">
+          <div>{{ item.shortText || item.text }}</div>
+        </template>
+      </RuiAutoComplete>
 
       <RuiTooltip
         :popper="{ placement: 'top' }"

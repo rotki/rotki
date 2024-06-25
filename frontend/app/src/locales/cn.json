@@ -1769,7 +1769,8 @@
       },
       "error": "清除 {source} 的缓存失败：{message}",
       "label": {
-        "general_cache": "通用缓存 (Curve, MakerDAO, Yearn)"
+        "general_cache": "通用缓存 (Curve, MakerDAO, Yearn, Velodrome, Aerodrome, 和 Gearbox)",
+        "general_cache_short": "通用缓存 (Curve, MakerDAO, 等等)"
       },
       "select_cache": "选择要刷新的缓存",
       "subtitle": "允许您刷新 rotki 缓存的数据",
