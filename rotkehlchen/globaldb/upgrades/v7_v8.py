@@ -134,6 +134,20 @@ def _rename_curve_tokens_cache_keys(write_cursor: 'DBCursor') -> None:
     write_cursor.execute('DELETE FROM general_cache WHERE key LIKE "CURVE_POOL_UNDERLYING_TOKENS%"')  # noqa: E501
 
 
+@enter_exit_debug_log()
+def _update_contracts_abis(write_cursor: 'DBCursor') -> None:
+    """Make the abi of contracts unique in the globaldb"""
+    write_cursor.executescript('PRAGMA foreign_keys = OFF;')
+    update_table_schema(
+        write_cursor=write_cursor,
+        table_name='contract_abi',
+        schema="""id INTEGER NOT NULL PRIMARY KEY,
+            value TEXT NOT NULL UNIQUE,
+            name TEXT""",
+    )
+    write_cursor.executescript('PRAGMA foreign_keys = ON;')
+
+
 @enter_exit_debug_log(name='globaldb v7->v8 upgrade')
 def migrate_to_v8(connection: 'DBConnection') -> None:
     """This globalDB upgrade does the following:
@@ -148,3 +162,4 @@ def migrate_to_v8(connection: 'DBConnection') -> None:
         set_unique_asset_collections(write_cursor)
         _update_scrollscan_contract(write_cursor)
         _rename_curve_tokens_cache_keys(write_cursor)
+        _update_contracts_abis(write_cursor)

@@ -288,7 +288,7 @@ CREATE TABLE IF NOT EXISTS unique_cache (
 DB_CREATE_CONTRACT_ABI = """
 CREATE TABLE IF NOT EXISTS contract_abi (
     id INTEGER NOT NULL PRIMARY KEY,
-    value TEXT NOT NULL,
+    value TEXT NOT NULL UNIQUE,
     name TEXT
 );
 """

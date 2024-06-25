@@ -753,6 +753,14 @@ def test_upgrade_v7_v8(globaldb: GlobalDBHandler):
         # ensure that now curve cache should be eligible to update
         assert should_update_protocol_cache(CacheType.CURVE_LP_TOKENS, '1') is True
 
+    with (
+        pytest.raises(IntegrityError),
+        globaldb.conn.write_ctx() as write_cursor,
+    ):
+        write_cursor.execute(
+            'INSERT INTO contract_abi(id, value, name) SELECT 100, value, "yabir" FROM contract_abi WHERE id=1',  # noqa: E501
+        )  # test that raises unique error when trying to copy an existing abi
+
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [2])
