@@ -1429,7 +1429,11 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         ):
             return False
 
-        new_data = query_method(inquirer=self, cache_type=cache_type)
+        new_data = query_method(
+            inquirer=self,
+            cache_type=cache_type,
+            msg_aggregator=self.database.msg_aggregator,
+        )
         if new_data is None:
             return False
         with GlobalDBHandler().conn.write_ctx() as write_cursor:

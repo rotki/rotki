@@ -12,7 +12,6 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import YEARN_VAULTS_V2_PROTOCOL, ChecksumEvmAddress
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 
 from .constants import BLOCKS_PER_YEAR
@@ -23,6 +22,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.premium.premium import Premium
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -35,7 +35,7 @@ class YearnVaultsV2(EthereumModule):
             ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
             premium: 'Premium | None',  # pylint: disable=unused-argument
-            msg_aggregator: MessagesAggregator,
+            msg_aggregator: 'MessagesAggregator',
     ) -> None:
         self.ethereum = ethereum_inquirer
         self.database = database

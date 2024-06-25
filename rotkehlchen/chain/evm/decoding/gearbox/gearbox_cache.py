@@ -11,6 +11,10 @@ from rotkehlchen.chain.evm.decoding.gearbox.constants import (
     CPT_GEARBOX,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.utils import (
+    maybe_notify_cache_query_status,
+    maybe_notify_new_pools_status,
+)
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.errors.misc import BlockchainQueryError, NotERC20Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -24,12 +28,13 @@ from rotkehlchen.globaldb.cache import (
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
-from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress, EvmTokenKind
+from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress, EvmTokenKind, Timestamp
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -157,11 +162,21 @@ def register_token(evm_inquirer: 'EvmNodeInquirer', token_address: str, pool: Ge
 def ensure_gearbox_tokens_existence(
         evm_inquirer: 'EvmNodeInquirer',
         all_pools: list[GearboxPoolData],
+        msg_aggregator: 'MessagesAggregator',
 ) -> list[GearboxPoolData]:
     """This function receives data about gearbox pools and ensures that lp tokens and pool coins
     exist in rotki's database."""
-    verified_pools = []
-    for pool in all_pools:
+    verified_pools, all_pools_length, last_notified_ts = [], len(all_pools), Timestamp(0)
+    for idx, pool in enumerate(all_pools):
+        last_notified_ts = maybe_notify_cache_query_status(
+            msg_aggregator=msg_aggregator,
+            last_notified_ts=last_notified_ts,
+            protocol=CPT_GEARBOX,
+            chain=evm_inquirer.chain_id,
+            processed=idx + 1,
+            total=all_pools_length,
+        )
+
         # Ensure pool coins and underlying tokens exist in the globaldb.
         if pool.underlying_token is not None:
             try:
@@ -267,6 +282,7 @@ def get_gearbox_pool_tokens(inquirer: 'EvmNodeInquirer', pool_data: list[str], u
 def query_gearbox_data_from_chain(
         evm_inquirer: 'EvmNodeInquirer',
         existing_pools: set[ChecksumEvmAddress],
+        msg_aggregator: 'MessagesAggregator',
 ) -> list[GearboxPoolData] | None:
     """
     Query all Gearbox information(lp tokens, pools, lp coins) from data compressor.
@@ -277,8 +293,17 @@ def query_gearbox_data_from_chain(
     pools_data = evm_inquirer.contracts.contract(
         CHAIN_ID_TO_DATA_COMPRESSOR[evm_inquirer.chain_id],
     ).call(node_inquirer=evm_inquirer, method_name='getPoolsV3List')
-    new_pools = []
+    new_pools: list[GearboxPoolData] = []
+    last_notified_ts = Timestamp(0)
     for pool_data in pools_data:
+        last_notified_ts = maybe_notify_new_pools_status(
+            msg_aggregator=msg_aggregator,
+            last_notified_ts=last_notified_ts,
+            protocol=CPT_GEARBOX,
+            chain=evm_inquirer.chain_id,
+            get_new_pools_count=lambda: len(new_pools),
+        )
+
         try:
             pool_address = deserialize_evm_address(pool_data[0])
         except DeserializationError:
@@ -336,6 +361,7 @@ def query_gearbox_data_from_chain(
 def query_gearbox_data(
         inquirer: 'EvmNodeInquirer',
         cache_type: Literal[CacheType.GEARBOX_POOL_ADDRESS],
+        msg_aggregator: 'MessagesAggregator',
 ) -> list[GearboxPoolData] | None:
     """
     Queries chain for all gearbox rewards pools and returns a list of the mappings not cached
@@ -351,6 +377,7 @@ def query_gearbox_data(
         if (pools_data := query_gearbox_data_from_chain(
             evm_inquirer=inquirer,
             existing_pools=existing_pools,
+            msg_aggregator=msg_aggregator,
         )) is None:
             return None
     except RemoteError as err:
@@ -360,5 +387,6 @@ def query_gearbox_data(
     verified_pools = ensure_gearbox_tokens_existence(
         evm_inquirer=inquirer,
         all_pools=pools_data,
+        msg_aggregator=msg_aggregator,
     )
     return verified_pools

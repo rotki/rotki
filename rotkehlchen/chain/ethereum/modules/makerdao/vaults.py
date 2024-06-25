@@ -24,7 +24,6 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChecksumEvmAddress, EVMTxHash, Timestamp
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import address_to_bytes32, hexstr_to_int, shift_num_right_by, ts_now
 
 from .cache import collateral_type_to_join_contract, collateral_type_to_underlying_asset
@@ -33,6 +32,7 @@ from .constants import MAKERDAO_REQUERY_PERIOD, WAD
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -143,7 +143,7 @@ class MakerdaoVaults(HasDSProxy):
             ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
             premium: Premium | None,
-            msg_aggregator: MessagesAggregator,
+            msg_aggregator: 'MessagesAggregator',
     ) -> None:
 
         super().__init__(

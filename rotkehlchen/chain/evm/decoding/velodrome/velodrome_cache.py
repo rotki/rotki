@@ -3,7 +3,12 @@ from typing import TYPE_CHECKING, Literal, NamedTuple
 
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.utils import (
+    maybe_notify_cache_query_status,
+    maybe_notify_new_pools_status,
+)
 from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.misc import InputError, NotERC20Conformant, RemoteError
@@ -23,12 +28,14 @@ from rotkehlchen.types import (
     CacheType,
     ChainID,
     ChecksumEvmAddress,
+    Timestamp,
 )
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.optimism.manager import OptimismInquirer
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -148,6 +155,7 @@ def read_aerodrome_pools_and_gauges_from_cache() -> tuple[set[ChecksumEvmAddress
 def query_velodrome_data_from_chain_and_maybe_create_tokens(
         inquirer: 'OptimismInquirer | BaseInquirer',
         existing_pools: list[ChecksumEvmAddress],
+        msg_aggregator: 'MessagesAggregator',
 ) -> list[VelodromePoolData] | None:
     """
     Queries velodrome data from chain from the Velodrome Finance LP Sugar v2 contract.
@@ -164,15 +172,24 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
     if inquirer.chain_id == ChainID.OPTIMISM:
         data_contract = inquirer.contracts.contract(VELODROME_SUGAR_V2_CONTRACT)
         protocol = VELODROME_POOL_PROTOCOL
+        counterparty = CPT_VELODROME
     else:
         data_contract = inquirer.contracts.contract(AERODROME_SUGAR_V2_CONTRACT)
         protocol = AERODROME_POOL_PROTOCOL
+        counterparty = CPT_AERODROME
 
-    pool_data = []
-    offset = 0
-    limit = 200
+    pool_data: list[dict] = []
     pool_data_chunk: list[dict] = []
+    offset, limit, last_notified_ts = 0, 200, Timestamp(0)
     while len(pool_data_chunk) == limit or (len(pool_data_chunk) == 0 and offset == 0):
+        last_notified_ts = maybe_notify_new_pools_status(
+            msg_aggregator=msg_aggregator,
+            last_notified_ts=last_notified_ts,
+            protocol=counterparty,
+            chain=inquirer.chain_id,
+            get_new_pools_count=lambda: len(pool_data),
+        )
+
         pool_data_chunk = data_contract.call(
             node_inquirer=inquirer,
             method_name='all',
@@ -183,8 +200,17 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
 
     deserialized_pools = []
     # first gather all pool data, and prepare a multicall for token information
-    addresses = []
-    for pool in pool_data:
+    addresses, all_pools_length = [], len(pool_data)
+    for idx, pool in enumerate(pool_data):
+        last_notified_ts = maybe_notify_cache_query_status(
+            msg_aggregator=msg_aggregator,
+            last_notified_ts=last_notified_ts,
+            protocol=counterparty,
+            chain=inquirer.chain_id,
+            processed=idx + 1,
+            total=all_pools_length,
+        )
+
         try:
             pool_address = deserialize_evm_address(pool[0])
         except DeserializationError as e:
@@ -248,6 +274,7 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
 def query_velodrome_like_data(
         inquirer: 'OptimismInquirer | BaseInquirer',
         cache_type: Literal[CacheType.VELODROME_POOL_ADDRESS, CacheType.AERODROME_POOL_ADDRESS],
+        msg_aggregator: 'MessagesAggregator',
 ) -> list[VelodromePoolData] | None:
     """
     Queries velodrome pools and tokens.
@@ -263,6 +290,7 @@ def query_velodrome_like_data(
         pools_data = query_velodrome_data_from_chain_and_maybe_create_tokens(
             inquirer=inquirer,
             existing_pools=existing_pools,
+            msg_aggregator=msg_aggregator,
         )
     except RemoteError as err:
         log.error(f'Could not query chain for velodrome pools due to: {err}')

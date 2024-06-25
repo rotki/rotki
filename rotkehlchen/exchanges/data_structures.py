@@ -33,10 +33,10 @@ from rotkehlchen.types import (
     TradePair,
     TradeType,
 )
-from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
+    from rotkehlchen.user_messages import MessagesAggregator
 
 
 logger = logging.getLogger(__name__)
@@ -740,7 +740,7 @@ def trades_from_dictlist(
         start_ts: Timestamp,
         end_ts: Timestamp,
         location: str,
-        msg_aggregator: MessagesAggregator,
+        msg_aggregator: 'MessagesAggregator',
 ) -> list[Trade]:
     """ Gets a list of dict trades, most probably read from the json files and
     a time period. Returns it as a list of the Trade tuples that are inside the time period

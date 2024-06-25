@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.serialization.serialize import process_result
 
 if TYPE_CHECKING:
     from rotkehlchen.api.websockets.notifier import RotkiNotifier
@@ -76,7 +77,7 @@ class MessagesAggregator:
         `wait_on_send` is used to determine if the message should be sent asynchronously
         by spawning a greenlet or if it should just do it synchronously.
         """
-        fallback_msg = json.dumps({'type': str(message_type), 'data': data})  # kind of silly to repeat it here. Same code in broadcast  # noqa: E501
+        fallback_msg = json.dumps(process_result({'type': message_type, 'data': data}))  # kind of silly to repeat it here. Same code in broadcast  # noqa: E501
 
         if self.rotki_notifier is not None:
             self.rotki_notifier.broadcast(

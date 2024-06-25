@@ -17,7 +17,6 @@ from rotkehlchen.globaldb.manual_price_oracles import ManualPriceOracle
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Price, Timestamp
-from rotkehlchen.user_messages import MessagesAggregator
 
 from .types import HistoricalPriceOracle, HistoricalPriceOracleInstance
 
@@ -25,6 +24,7 @@ if TYPE_CHECKING:
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
     from rotkehlchen.externalapis.defillama import Defillama
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -56,7 +56,7 @@ def query_usd_price_zero_if_error(
         asset: Asset,
         time: Timestamp,
         location: str,
-        msg_aggregator: MessagesAggregator,
+        msg_aggregator: 'MessagesAggregator',
 ) -> Price:
     try:
         usd_price = PriceHistorian().query_historical_price(

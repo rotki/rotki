@@ -19,7 +19,6 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount
 from rotkehlchen.types import ChecksumEvmAddress, Price
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei
 
 if TYPE_CHECKING:
@@ -27,6 +26,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.contracts import EvmContract
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.user_messages import MessagesAggregator
 
 MIN_COLL_RATE = '1.1'
 
@@ -74,7 +74,7 @@ class Liquity(HasDSProxy):
             ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
             premium: Premium | None,
-            msg_aggregator: MessagesAggregator,
+            msg_aggregator: 'MessagesAggregator',
     ) -> None:
         super().__init__(
             ethereum_inquirer=ethereum_inquirer,

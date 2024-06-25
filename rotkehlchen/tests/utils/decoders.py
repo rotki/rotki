@@ -15,6 +15,8 @@ def patch_decoder_reload_data(load_global_caches: list[str] | None = None) -> Ex
             new=lambda *args, **kwargs: False,
         ))
 
+        # patch_general and patch_unique are booleans to indicate if we want to patch
+        # globaldb_get_general_cache_values and/or unique globaldb_get_unique_cache_value
         for counterparties, path, patch_general, patch_unique in (  # patch to not load cache from DB by default  # noqa: E501
             ({CPT_CONVEX}, 'rotkehlchen.chain.ethereum.modules.convex.convex_cache', True, True),
             ({CPT_CURVE}, 'rotkehlchen.chain.evm.decoding.curve.curve_cache', True, True),

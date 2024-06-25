@@ -347,3 +347,24 @@ When a reminder for a calendar event is processed we emit a message with the fol
 
 
 - ``data``: Contains the information of the calendar event, that is: identifier, name, description, timestamp, address, blockchain, counterparty and color.
+
+
+Protocol cache updates
+============================
+
+Whenever a protocol cache is being updated for protocols like Curve, Convex, Gearbox, [Velo/Aero]drome, etc., Messages are emitted every 5 seconds to notify the progress of it.
+
+::
+
+    {
+        "data": {
+            "protocol":"curve",
+            "chain":"ethereum",
+            "processed": 324,
+            "total":3042,
+        },
+        "type":"protocol_cache_updates"
+    }
+
+
+- ``data``: Contains the information of the progress of the process of updating the cache, that is: protocol, chain, processed, and total.

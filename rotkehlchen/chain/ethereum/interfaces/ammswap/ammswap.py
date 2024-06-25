@@ -35,11 +35,11 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
 from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, Timestamp
-from rotkehlchen.user_messages import MessagesAggregator
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.user_messages import MessagesAggregator
 
 
 logger = logging.getLogger(__name__)
@@ -64,7 +64,7 @@ class AMMSwapPlatform:
             ethereum_inquirer: 'EthereumInquirer',
             database: 'DBHandler',
             premium: Premium | None,
-            msg_aggregator: MessagesAggregator,
+            msg_aggregator: 'MessagesAggregator',
     ) -> None:
         self.counterparties = counterparties
         self.ethereum = ethereum_inquirer

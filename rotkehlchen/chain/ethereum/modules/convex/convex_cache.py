@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -131,6 +132,7 @@ def query_convex_data_from_chain(
 def query_convex_data(
         inquirer: 'EthereumInquirer',
         cache_type: Literal[CacheType.CONVEX_POOL_ADDRESS],
+        msg_aggregator: 'MessagesAggregator',  # pylint: disable=unused-argument  # argument is unused to keep the interface consistent with the other functions because they all are called similarly in ensure_cache_data_is_updated and refresh_general_cache
 ) -> list[ConvexPoolData] | None:
     """
     Queries chain for all convex rewards pools and returns a list of the mappings not cached

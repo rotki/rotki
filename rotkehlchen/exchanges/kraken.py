@@ -66,7 +66,6 @@ from rotkehlchen.types import (
     TimestampMS,
     TradeType,
 )
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import pairwise, ts_ms_to_sec, ts_now
 from rotkehlchen.utils.mixins.cacheable import cache_response_timewise
 from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
@@ -77,6 +76,7 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset, AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.user_messages import MessagesAggregator
 
 
 logger = logging.getLogger(__name__)
@@ -183,7 +183,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             api_key: ApiKey,
             secret: ApiSecret,
             database: 'DBHandler',
-            msg_aggregator: MessagesAggregator,
+            msg_aggregator: 'MessagesAggregator',
             kraken_account_type: KrakenAccountType | None = None,
     ):
         super().__init__(

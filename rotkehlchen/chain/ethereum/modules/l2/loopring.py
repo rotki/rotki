@@ -127,7 +127,6 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_int_from_str
 from rotkehlchen.types import ChecksumEvmAddress, ExternalService
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
@@ -135,6 +134,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.premium.premium import Premium
+    from rotkehlchen.user_messages import MessagesAggregator
 
 
 logger = logging.getLogger(__name__)
@@ -154,7 +154,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
     def __init__(
             self,
             database: 'DBHandler',
-            msg_aggregator: MessagesAggregator,
+            msg_aggregator: 'MessagesAggregator',
             ethereum_inquirer: 'EthereumInquirer',  # pylint: disable=unused-argument
             premium: Optional['Premium'],  # pylint: disable=unused-argument
     ) -> None:

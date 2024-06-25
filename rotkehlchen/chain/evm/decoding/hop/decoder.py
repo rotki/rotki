@@ -380,6 +380,10 @@ class HopCommonDecoder(DecoderInterface):
             return None
 
         if (swap_asset_id := self.swaps_to_asset.get(context.tx_log.address)) is None:
+            log.error(
+                f'Could not find asset for the saddle swap address while decoding '
+                f'{context.transaction.tx_hash.hex()} in chain {self.evm_inquirer.chain_id}.',
+            )
             return None
 
         first_token_amount = self._get_bridge_asset_amount(
