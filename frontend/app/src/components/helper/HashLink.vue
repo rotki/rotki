@@ -76,7 +76,16 @@ const aliasName = computed<string | null>(() => {
   if (!name)
     return null;
 
-  return truncateAddress(name, 10);
+  return name;
+});
+
+const truncatedAliasName = computed<string | null>(() => {
+  const alias = get(aliasName);
+
+  if (!alias)
+    return alias;
+
+  return truncateAddress(alias, 10);
 });
 
 const displayText = computed<string>(() => {
@@ -148,12 +157,18 @@ const { href, onLinkClick } = useLinks(url);
       >
         <template #activator>
           <span :class="{ blur: !shouldShowAmount }">
-            <template v-if="aliasName">{{ aliasName }}</template>
+            <template v-if="truncatedAliasName">{{ truncatedAliasName }}</template>
             <template v-else>
               {{ truncateAddress(displayText, truncateLength) }}
             </template>
           </span>
         </template>
+        <div
+          v-if="aliasName && aliasName !== truncatedAliasName"
+          class="font-bold"
+        >
+          {{ aliasName }}
+        </div>
         {{ displayText }}
       </RuiTooltip>
     </template>
