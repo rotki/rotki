@@ -2,9 +2,11 @@ import datetime
 import json
 from copy import deepcopy
 from http import HTTPStatus
+from io import BytesIO, StringIO
 from pathlib import Path
 from unittest.mock import Mock, patch
 
+import polars as pl
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -42,8 +44,8 @@ TEST_POAP1 = string_to_evm_address('0x043e2a6047e50710e0f5189DBA7623C4A183F871')
 NOT_CSV_WEBPAGE = {
     'airdrops': {
         'test': {
-            'csv_path': 'notavalidpath/yabirgb',
-            'csv_hash': 'd39fdc7913b4cbafc90cd0458c9e88656e951d9c216a9f4c0e973b7e7c6f1882',
+            'file_path': 'notavalidpath/yabirgb',
+            'file_hash': 'd39fdc7913b4cbafc90cd0458c9e88656e951d9c216a9f4c0e973b7e7c6f1882',
             'asset_identifier': 'eip155:1/erc20:0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984',
             'url': 'https://github.com',
             'name': 'Yabirgb',
@@ -53,24 +55,24 @@ NOT_CSV_WEBPAGE = {
 }
 MOCK_AIRDROP_INDEX = {'airdrops': {
     'uniswap': {
-        'csv_path': 'airdrops/uniswap.csv',
-        'csv_hash': '87c81b0070d4a19ab87fd631b79247293031412706ec5414a859899572470ddf',
+        'file_path': 'airdrops/uniswap.parquet',
+        'file_hash': '87c81b0070d4a19ab87fd631b79247293031412706ec5414a859899572470ddf',
         'asset_identifier': 'eip155:1/erc20:0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984',
         'url': 'https://app.uniswap.org/',
         'name': 'Uniswap',
         'icon': 'uniswap.svg',
     },
     '1inch': {
-        'csv_path': 'airdrops/1inch.csv',
-        'csv_hash': '7f8a67b1fe7c2019bcac956777d306dd372ebe5bc2a9cd920129884170562108',
+        'file_path': 'airdrops/1inch.parquet',
+        'file_hash': '7f8a67b1fe7c2019bcac956777d306dd372ebe5bc2a9cd920129884170562108',
         'asset_identifier': 'eip155:1/erc20:0x111111111117dC0aa78b770fA6A738034120C302',
         'url': 'https://1inch.exchange/',
         'name': '1inch',
         'icon': '1inch.svg',
     },
     'grain': {
-        'csv_path': 'airdrops/grain_iou.csv',
-        'csv_hash': 'dff6b525931ac7ad321efd8efc419370a9d7a222e92b1aad7a985b7e61248121',
+        'file_path': 'airdrops/grain_iou.parquet',
+        'file_hash': 'dff6b525931ac7ad321efd8efc419370a9d7a222e92b1aad7a985b7e61248121',
         'asset_identifier': 'eip155:1/erc20:0x6589fe1271A0F29346796C6bAf0cdF619e25e58e',
         'url': 'https://claim.harvest.finance/',
         'name': 'Grain',
@@ -78,32 +80,32 @@ MOCK_AIRDROP_INDEX = {'airdrops': {
         'icon_path': 'airdrops/icons/grain.svg',
     },
     'shapeshift': {
-        'csv_path': 'airdrops/shapeshift.csv',
-        'csv_hash': '97b599c62af4391a19c17b47bd020733801e28a443443ad7e1602c647c9ebfe2',
+        'file_path': 'airdrops/shapeshift.parquet',
+        'file_hash': '97b599c62af4391a19c17b47bd020733801e28a443443ad7e1602c647c9ebfe2',
         'asset_identifier': 'eip155:1/erc20:0xc770EEfAd204B5180dF6a14Ee197D99d808ee52d',
         'url': 'https://shapeshift.com/shapeshift-decentralize-airdrop',
         'name': 'ShapeShift',
         'icon': 'shapeshift.svg',
     },
     'cow_gnosis': {
-        'csv_path': 'airdrops/cow_gnosis.csv',
-        'csv_hash': 'f7fea2a5806c67a27c15bb4e05c3fd6c0c1ab51f5bd2a23c29852fa2f95a7db3',
+        'file_path': 'airdrops/cow_gnosis.parquet',
+        'file_hash': 'f7fea2a5806c67a27c15bb4e05c3fd6c0c1ab51f5bd2a23c29852fa2f95a7db3',
         'asset_identifier': 'eip155:100/erc20:0xc20C9C13E853fc64d054b73fF21d3636B2d97eaB',
         'url': 'https://cowswap.exchange/#/claim',
         'name': 'COW (gnosis chain)',
         'icon': 'cow.svg',
     },
     'diva': {
-        'csv_path': 'airdrops/diva.csv',
-        'csv_hash': '50cf9f2bb2f769ae20dc699809b8bdca5f48ce695c792223ad93f8681ab8d0fc',
+        'file_path': 'airdrops/diva.parquet',
+        'file_hash': '50cf9f2bb2f769ae20dc699809b8bdca5f48ce695c792223ad93f8681ab8d0fc',
         'asset_identifier': 'eip155:1/erc20:0xBFAbdE619ed5C4311811cF422562709710DB587d',
         'url': 'https://claim.diva.community/',
         'name': 'DIVA',
         'icon': 'diva.svg',
     },
     'shutter': {
-        'csv_path': 'airdrops/shutter.csv',
-        'csv_hash': 'd4427f41181803df49901241ec89ed6a235b8b67cc4ef5cfdef1515dc84704d1',
+        'file_path': 'airdrops/shutter.parquet',
+        'file_hash': 'd4427f41181803df49901241ec89ed6a235b8b67cc4ef5cfdef1515dc84704d1',
         'asset_identifier': 'eip155:1/erc20:0xe485E2f1bab389C08721B291f6b59780feC83Fd7',
         'url': 'https://claim.shutter.network/',
         'name': 'SHU',
@@ -111,16 +113,16 @@ MOCK_AIRDROP_INDEX = {'airdrops': {
         'cutoff_time': 1721000000,
     },
     'invalid': {
-        'csv_path': 'airdrops/invalid.csv',
-        'csv_hash': 'a426abd9f7af3ec3138fe393e4735129a5884786b7bbda8de30002c134951aec',
+        'file_path': 'airdrops/invalid.parquet',
+        'file_hash': 'a426abd9f7af3ec3138fe393e4735129a5884786b7bbda8de30002c134951aec',
         'asset_identifier': 'eip155:1/erc20:0xe485E2f1bab389C08721B291f6b59780feC83Fd7',
         'url': 'https://claim.invalid.community/',
         'name': 'INVALID',
         'icon': 'invalid.svg',
     },
     'degen2_season1': {
-        'csv_path': 'airdrops/degen2_season1.csv',
-        'csv_hash': '708ae1fcbe33a11a91fd05e1e7c4fa2d514b65cb1f8d3e4ce3556e7bdd8af2f5',
+        'file_path': 'airdrops/degen2_season1.parquet',
+        'file_hash': '708ae1fcbe33a11a91fd05e1e7c4fa2d514b65cb1f8d3e4ce3556e7bdd8af2f5',
         'asset_identifier': 'eip155:8453/erc20:0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed',
         'url': 'https://www.degen.tips/airdrop2/season1',
         'name': 'DEGEN',
@@ -168,7 +170,7 @@ def _mock_airdrop_list(url: str, timeout: int = 0, headers: dict | None = None):
         mock_response.json = lambda: NOT_CSV_WEBPAGE
         return mock_response
     else:  # when CSV is queried, return invalid payload
-        mock_response.text = mock_response.content = '<>invalid CSV<>'
+        mock_response.text = mock_response.content = b'<>invalid CSV<>'
         return mock_response
 
 
@@ -199,7 +201,6 @@ def test_check_airdrops(
         globaldb,
         new_asset_data,
         data_dir,
-        messages_aggregator,
 ):
     # create airdrop claim events to test the claimed attribute
     tolerance_for_amount_check = FVal('0.1')
@@ -243,30 +244,28 @@ def test_check_airdrops(
         is checked in the rotki/data repo."""
         mock_response = Mock()
         if update_airdrop_index is True:
-            mock_airdrop_index['airdrops']['diva']['csv_hash'] = 'updated_hash'
+            mock_airdrop_index['airdrops']['diva']['file_hash'] = 'updated_hash'
             mock_airdrop_index['poap_airdrops']['aave_v2_pioneers'][3] = 'updated_hash'
             mock_response.headers = {'ETag': 'updated_etag'}
         url_to_data_map = {
             AIRDROPS_INDEX: mock_airdrop_index,
-            f'{AIRDROPS_REPO_BASE}/airdrops/uniswap.csv':
+            f'{AIRDROPS_REPO_BASE}/airdrops/uniswap.parquet':
                 f'address,uni,is_lp,is_user,is_socks\n{TEST_ADDR1},400,False,True,False\n{TEST_ADDR2},400.050642,True,True,False\n',
-            f'{AIRDROPS_REPO_BASE}/airdrops/1inch.csv':
+            f'{AIRDROPS_REPO_BASE}/airdrops/1inch.parquet':
                 f'address,tokens\n{TEST_ADDR1},630.374421472277638654\n',
-            f'{AIRDROPS_REPO_BASE}/airdrops/shapeshift.csv':
+            f'{AIRDROPS_REPO_BASE}/airdrops/shapeshift.parquet':
                 f'address,tokens\n{TEST_ADDR1},200\n',
-            f'{AIRDROPS_REPO_BASE}/airdrops/cow_gnosis.csv':
+            f'{AIRDROPS_REPO_BASE}/airdrops/cow_gnosis.parquet':
                 f'address,tokens\n{TEST_ADDR1},99807039723201809834\n',
-            f'{AIRDROPS_REPO_BASE}/airdrops/diva.csv':
+            f'{AIRDROPS_REPO_BASE}/airdrops/diva.parquet':
                 f'address,tokens\n{TEST_ADDR1},84000\n',
-            f'{AIRDROPS_REPO_BASE}/airdrops/grain_iou.csv':
+            f'{AIRDROPS_REPO_BASE}/airdrops/grain_iou.parquet':
                 f'address,tokens\n{TEST_ADDR2},16301717650649890035791\n',
-            f'{AIRDROPS_REPO_BASE}/airdrops/shutter.csv':
+            f'{AIRDROPS_REPO_BASE}/airdrops/shutter.parquet':
                 f'address,tokens\n{TEST_ADDR2},394857.029384576349787465\n',
-            f'{AIRDROPS_REPO_BASE}/airdrops/invalid.csv':
-                f'address,tokens\n{TEST_ADDR2},123\n{TEST_ADDR2},123\n\n',  # will be skipped because last row is empty  # noqa: E501
             f'{AIRDROPS_REPO_BASE}/airdrops/poap/poap_aave_v2_pioneers.json':
                 f'{{"{TEST_POAP1}": [\n566\n]}}',
-            f'{AIRDROPS_REPO_BASE}/airdrops/degen2_season1.csv':
+            f'{AIRDROPS_REPO_BASE}/airdrops/degen2_season1.parquet':
                 f'address,tokens\n{TEST_ADDR2},394857.029384576349787465\n',
         }
         if url == AIRDROPS_INDEX:
@@ -280,6 +279,12 @@ def test_check_airdrops(
                 mock_response.text = """{"queryId":"1714651721784","status":"Complete","data":{"pipelines":{"tokenQualified":0}}}"""  # noqa: E501
             mock_response.json = lambda: json.loads(mock_response.text)
             mock_response.status_code = HTTPStatus.OK
+        elif '.parquet' in url:
+            mock_response.text = url_to_data_map.get(url, 'address,tokens\n')  # Return the data from the dictionary or just a header if 'url' is not found  # noqa: E501
+            parquet_file = BytesIO()
+            pl.read_csv(StringIO(mock_response.text), infer_schema_length=0).write_parquet(parquet_file)  # noqa: E501
+            parquet_file.seek(0)
+            mock_response.content = parquet_file.read()
         else:
             mock_response.text = url_to_data_map.get(url, 'address,tokens\n')  # Return the data from the dictionary or just a header if 'url' is not found  # noqa: E501
             assert isinstance(mock_response.text, str)
@@ -306,7 +311,7 @@ def test_check_airdrops(
     # one CSV is already present with invalid content, but no cached hash in DB
     csv_dir = data_dir / APPDIR_NAME / AIRDROPSDIR_NAME
     csv_dir.mkdir(parents=True, exist_ok=True)
-    Path(csv_dir / 'shapeshift.csv').write_text('invalid,csv\n', encoding='utf8')
+    Path(csv_dir / 'shapeshift.parquet').write_text('invalid,csv\n', encoding='utf8')
 
     # testing just on the cutoff time of shutter
     freezer.move_to(datetime.datetime.fromtimestamp(1721000000, tz=datetime.UTC))
@@ -321,7 +326,6 @@ def test_check_airdrops(
                 (new_asset_identifier,),
             ).fetchone()[0] == 0  # asset not present before
         data = check_airdrops(
-            msg_aggregator=messages_aggregator,
             addresses=ethereum_accounts + [TEST_ADDR1, TEST_ADDR2, TEST_POAP1],
             database=database,
             data_dir=data_dir,
@@ -341,11 +345,11 @@ def test_check_airdrops(
             'SELECT COUNT(*) FROM unique_cache WHERE key LIKE ?', ('AIRDROPS_HASH%',),
         ).fetchone()[0] == 11
         assert cursor.execute(
-            'SELECT value FROM unique_cache WHERE key=?', ('AIRDROPS_HASHdiva.csv',),
-        ).fetchone()[0] == MOCK_AIRDROP_INDEX['airdrops']['diva']['csv_hash']
+            'SELECT value FROM unique_cache WHERE key=?', ('AIRDROPS_HASHdiva.parquet',),
+        ).fetchone()[0] == MOCK_AIRDROP_INDEX['airdrops']['diva']['file_hash']
 
     # invalid CSV is also, updated
-    assert (csv_dir / 'shapeshift.csv').read_text(encoding='utf8') == f'address,tokens\n{TEST_ADDR1},200\n'  # noqa: E501
+    assert pl.read_parquet(csv_dir / 'shapeshift.parquet').rows() == [(TEST_ADDR1, '200')]
 
     # verify new asset's presence and details
     new_found_asset = AssetResolver.resolve_asset(new_asset_identifier).resolve_to_crypto_asset()
@@ -371,7 +375,6 @@ def test_check_airdrops(
         'claimed': False,
         'has_decoder': True,
     }
-    assert messages_aggregator.warnings[0] == 'Skipping airdrop CSV for invalid because it contains an invalid row: []'  # noqa: E501
 
     assert len(data[TEST_ADDR2]) == 5
     assert data[TEST_ADDR2]['uniswap'] == {
@@ -430,7 +433,6 @@ def test_check_airdrops(
         patch('rotkehlchen.chain.ethereum.airdrops.requests.get', side_effect=update_mock_requests_get) as mock_get,  # noqa: E501
     ):
         data = check_airdrops(
-            msg_aggregator=messages_aggregator,
             addresses=[TEST_ADDR2],
             database=database,
             data_dir=data_dir,
@@ -442,13 +444,13 @@ def test_check_airdrops(
     # new CSV hashes are saved in the DB
     with globaldb.conn.read_ctx() as cursor:
         assert cursor.execute(
-            'SELECT value FROM unique_cache WHERE key=?', ('AIRDROPS_HASHdiva.csv',),
+            'SELECT value FROM unique_cache WHERE key=?', ('AIRDROPS_HASHdiva.parquet',),
         ).fetchone()[0] == 'updated_hash'
 
     # Test cache file and row is created
     for protocol_name, data in MOCK_AIRDROP_INDEX['airdrops'].items():
-        if 'csv_path' in data:
-            assert (data_dir / APPDIR_NAME / AIRDROPSDIR_NAME / f'{protocol_name}.csv').is_file()
+        if 'file_path' in data:
+            assert (data_dir / APPDIR_NAME / AIRDROPSDIR_NAME / f'{protocol_name}.parquet').is_file()  # noqa: E501
     for protocol_name in MOCK_AIRDROP_INDEX['poap_airdrops']:
         assert (data_dir / APPDIR_NAME / AIRDROPSPOAPDIR_NAME / f'{protocol_name}.json').is_file()
     with GlobalDBHandler().conn.read_ctx() as cursor:
@@ -459,13 +461,12 @@ def test_check_airdrops(
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_airdrop_fail(database, data_dir, messages_aggregator):
+def test_airdrop_fail(database, data_dir):
     with (
         patch('rotkehlchen.chain.ethereum.airdrops.requests.get', side_effect=_mock_airdrop_list),
         pytest.raises(RemoteError),
     ):
         check_airdrops(
-            msg_aggregator=messages_aggregator,
             addresses=[TEST_ADDR1],
             database=database,
             data_dir=data_dir,

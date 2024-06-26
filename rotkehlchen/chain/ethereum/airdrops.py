@@ -1,13 +1,13 @@
-import csv
 import logging
 from collections import defaultdict
-from collections.abc import Callable, Iterator, Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
 from pathlib import Path
 from typing import Any, Final, NamedTuple, cast
 
+import polars as pl
 import requests
 from requests import Response
 
@@ -33,7 +33,6 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_int
 from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress, FValWithTolerance, Timestamp
-from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import is_production
 from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
 
@@ -42,7 +41,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 SMALLEST_AIRDROP_SIZE: Final = 20900
 AIRDROPS_REPO_BASE: Final = f'https://raw.githubusercontent.com/rotki/data/{"main" if is_production() else "develop"}'  # noqa: E501
-AIRDROPS_INDEX: Final = f'{AIRDROPS_REPO_BASE}/airdrops/index_v2.json'
+AIRDROPS_INDEX: Final = f'{AIRDROPS_REPO_BASE}/airdrops/index_v3.json'
 ETAG_CACHE_KEY: Final = 'ETag'
 JSON_PATH_SEPARATOR_API_AIRDROPS: Final = '/'
 
@@ -65,10 +64,10 @@ class Airdrop:
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, kw_only=True)  # noqa: E501
-class CSVAirdrop(Airdrop):
-    """Airdrops that provide CSV files and we can use to query claimable amounts"""
-    csv_path: str
-    csv_hash: str
+class AirdropFileMetadata(Airdrop):
+    """Airdrops that provide files and we can use to query claimable amounts"""
+    file_path: str
+    file_hash: str
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, kw_only=True)  # noqa: E501
@@ -149,12 +148,12 @@ def _parse_airdrops(database: 'DBHandler', airdrops_data: dict[str, Any]) -> dic
 
             # combining the base data repo url for main/develop with the path to the icon in that repo  # noqa: E501
             icon_url = f"{AIRDROPS_REPO_BASE}/{airdrop_data['icon_path']}" if 'icon_path' in airdrop_data else None  # noqa: E501
-            if 'csv_path' in airdrop_data:
-                new_airdrop: Airdrop = CSVAirdrop(
+            if 'file_path' in airdrop_data:
+                new_airdrop: Airdrop = AirdropFileMetadata(
                     asset=crypto_asset,
-                    # combining the base data repo url for main/develop with the path to the CSV in that repo  # noqa: E501
-                    csv_path=f"{AIRDROPS_REPO_BASE}/{airdrop_data['csv_path']}",
-                    csv_hash=airdrop_data['csv_hash'],
+                    # combining the base data repo url for main/develop with the path to the file in that repo  # noqa: E501
+                    file_path=f"{AIRDROPS_REPO_BASE}/{airdrop_data['file_path']}",
+                    file_hash=airdrop_data['file_hash'],
                     url=airdrop_data['url'],
                     name=airdrop_data['name'],
                     icon=airdrop_data['icon'],
@@ -175,7 +174,7 @@ def _parse_airdrops(database: 'DBHandler', airdrops_data: dict[str, Any]) -> dic
                     has_decoder=airdrop_data.get('has_decoder', True),
                 )
             else:
-                log.error(f'Invalid CSV airdrop format found {airdrop_data}. Skipping')
+                log.error(f'Invalid airdrop format found {airdrop_data}. Skipping')
                 continue
 
             airdrops[protocol_name] = new_airdrop
@@ -251,13 +250,14 @@ def _maybe_get_updated_file(
     filename = data_dir / f'{name}'
 
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        if (existing_csv_hash := globaldb_get_unique_cache_value(
+        if (existing_airdrop_hash := globaldb_get_unique_cache_value(
             cursor=cursor,
             key_parts=(CacheType.AIRDROPS_HASH, name),
         )) != file_hash:
             log.info(
                 f'Found a new {name} airdrop file hash: {file_hash}. '
-                f'Removing the old file with hash: {existing_csv_hash}, and downloading new one.',
+                f'Removing the old file with hash: {existing_airdrop_hash}, '
+                'and downloading new one.',
             )
             filename.unlink(missing_ok=True)
 
@@ -266,7 +266,7 @@ def _maybe_get_updated_file(
         try:
             response = requests.get(url=remote_url, timeout=(30, 100))  # a large read timeout is necessary because the queried data is quite large  # noqa: E501
         except requests.exceptions.RequestException as e:
-            raise RemoteError(f'Airdrops CSV request failed due to {e!s}') from e
+            raise RemoteError(f'Airdrops file request failed due to {e!s}') from e
         process_response(response, filename)
 
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
@@ -279,41 +279,30 @@ def _maybe_get_updated_file(
     return filename
 
 
-def get_airdrop_data(airdrop_data: CSVAirdrop, name: str, data_dir: Path) -> Iterator[list[str]]:
-    """Yields the rows from airdrop's CSV file after downloading it locally for the first time.
-    If a new CSV is found in the index, it will be downloaded again to update the local CSV file
-    and yield new data."""
+def get_airdrop_data(airdrop_data: AirdropFileMetadata, name: str, data_dir: Path) -> pl.LazyFrame:
+    """Returns the airdrop's file after downloading it locally for the first time.
+    If a new file is found in the index, it will be downloaded again to update the local copy
+    and return new data."""
     airdrops_dir = data_dir / APPDIR_NAME / AIRDROPSDIR_NAME
 
-    def _process_csv(response: Response, filename: Path) -> None:
+    def _process_parquet(response: Response, filename: Path) -> None:
+        filename.write_bytes(response.content)
         try:
-            if (
-                not csv.Sniffer().has_header(response.text) or
-                len(response.content) < SMALLEST_AIRDROP_SIZE
-            ):
-                raise csv.Error
-
-            filename.write_text(response.text, encoding='utf8')
-
-        except csv.Error as e:
-            log.debug(f'airdrop file {filename} contains invalid data {response.text}')
-            raise RemoteError(
-                f'File {filename} contains invalid data. Check logs.',
-            ) from e
+            pl.scan_parquet(filename).select(pl.selectors.by_index(0, 1)).first().collect()
+        except pl.PolarsError as e:
+            filename.unlink()
+            log.error(f'Deleted invalid parquet file {filename} due to {e}')
+            raise RemoteError(f'Invalid parquet file for {name}. Removing it.') from e
 
     filename = _maybe_get_updated_file(
         data_dir=airdrops_dir,
-        file_hash=airdrop_data.csv_hash,
-        name=f'{name}.csv',
-        remote_url=airdrop_data.csv_path,
-        process_response=_process_csv,
+        file_hash=airdrop_data.file_hash,
+        name=f'{name}.parquet',
+        remote_url=airdrop_data.file_path,
+        process_response=_process_parquet,
     )
 
-    # Verify the CSV file
-    with open(filename, encoding='utf8') as csvfile:
-        iterator = csv.reader(csvfile)
-        next(iterator)  # skip header
-        yield from iterator
+    return pl.scan_parquet(filename)
 
 
 def get_poap_airdrop_data(airdrop_data: list[str], name: str, data_dir: Path) -> dict[str, Any]:
@@ -473,15 +462,14 @@ def process_airdrop_with_api_data(
     return temp_airdrop_tuples, found_data
 
 
-def _process_csv_airdrop(
-        msg_aggregator: MessagesAggregator,
+def _process_airdrop_file(
         addresses: Sequence[ChecksumEvmAddress],
         data_dir: Path,
-        airdrop_data: CSVAirdrop,
+        airdrop_data: AirdropFileMetadata,
         protocol_name: str,
         tolerance_for_amount_check: FVal,
 ) -> tuple[list[AirdropClaimEventQueryParams], dict[ChecksumEvmAddress, dict]]:
-    """Process csv to find the addresses that have a claimable amount.
+    """Process airdrop file to find the addresses that have a claimable amount.
 
     It returns a list of `AirdropClaimEventQueryParams` used to filter the history
     events with the expected amount received and the combination of types and a mapping
@@ -500,13 +488,15 @@ def _process_csv_airdrop(
     # temporarily store this protocol's data here
     temp_found_data: dict[ChecksumEvmAddress, dict] = defaultdict(lambda: defaultdict(dict))
     temp_airdrop_tuples = []
-    for row in get_airdrop_data(airdrop_data, protocol_name, data_dir):
-        if len(row) < 2:
-            msg_aggregator.add_warning(f'Skipping airdrop CSV for {protocol_name} because it contains an invalid row: {row}')  # noqa: E501
-            break
-        addr, amount, *_ = row
-        # not doing to_checksum_address() here since the file addresses are checksummed
-        # and doing to_checksum_address() so many times hits performance
+    airdrop_lazy_dataframe = get_airdrop_data(airdrop_data, protocol_name, data_dir)
+
+    for (address, amount_raw) in (
+        airdrop_lazy_dataframe.filter(
+            pl.selectors.by_index(0).is_in(addresses),
+        ).select(
+            pl.selectors.by_index(0, 1),  # select only first two columns (addr, amount)
+        ).collect().rows()
+    ):
         if protocol_name in {
             'cornichon',
             'tornado',
@@ -516,9 +506,12 @@ def _process_csv_airdrop(
             'cow_mainnet',
             'cow_gnosis',
         }:
-            amount = token_normalized_value_decimals(int(amount), 18)  # type: ignore
-        if addr in addresses:
-            addr = string_to_evm_address(addr)
+            amount = token_normalized_value_decimals(int(amount_raw), 18)
+        else:
+            amount = amount_raw
+
+        if address in addresses:
+            addr = string_to_evm_address(address)
             temp_found_data[addr][protocol_name] = {
                 'amount': str(amount),
                 'asset': airdrop_data.asset,
@@ -546,14 +539,10 @@ def _process_csv_airdrop(
                     ),
                 ),
             )
-    else:  # if all rows are valid, return the information
-        return temp_airdrop_tuples, temp_found_data
-
-    return [], {}
+    return temp_airdrop_tuples, temp_found_data
 
 
 def check_airdrops(
-        msg_aggregator: MessagesAggregator,
         addresses: Sequence[ChecksumEvmAddress],
         database: DBHandler,
         data_dir: Path,
@@ -569,9 +558,8 @@ def check_airdrops(
     airdrops, poap_airdrops = fetch_airdrops_metadata(database=database)
 
     for protocol_name, airdrop_data in airdrops.items():
-        if isinstance(airdrop_data, CSVAirdrop):
-            temp_airdrop_tuples, temp_found_data = _process_csv_airdrop(
-                msg_aggregator=msg_aggregator,
+        if isinstance(airdrop_data, AirdropFileMetadata):
+            temp_airdrop_tuples, temp_found_data = _process_airdrop_file(
                 addresses=addresses,
                 data_dir=data_dir,
                 airdrop_data=airdrop_data,

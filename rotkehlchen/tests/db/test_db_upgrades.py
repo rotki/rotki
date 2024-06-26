@@ -9,7 +9,11 @@ import pytest
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.chain.evm.accounting.structures import TxEventSettings
-from rotkehlchen.constants.misc import DEFAULT_SQL_VM_INSTRUCTIONS_CB
+from rotkehlchen.constants.misc import (
+    AIRDROPSDIR_NAME,
+    APPDIR_NAME,
+    DEFAULT_SQL_VM_INSTRUCTIONS_CB,
+)
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.checks import sanity_check_impl
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
@@ -2357,7 +2361,7 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_upgrade_db_42_to_43(user_data_dir, messages_aggregator):
+def test_upgrade_db_42_to_43(user_data_dir, messages_aggregator, data_dir):
     """Test upgrading the DB from version 42 to version 43"""
     _use_prepared_db(user_data_dir, 'v42_rotkehlchen.db')
     db_v42 = _init_db_with_target_version(
@@ -2376,6 +2380,18 @@ def test_upgrade_db_42_to_43(user_data_dir, messages_aggregator):
             'INSERT INTO user_credentials VALUES (?, ?, ?, ?, ?)',
             ('coinbasepro', Location.COINBASEPRO.serialize_for_db(), 'api_key', 'api_secret', 'passphrase'),  # noqa: E501
         ).rowcount == 1
+
+    # create csv files that will be deleted in the db upgrade and a parquet one to keep
+    airdrops_dir = data_dir / APPDIR_NAME / AIRDROPSDIR_NAME
+    airdrops_dir.mkdir(parents=True)
+    uniswap_path = airdrops_dir / 'uniswap.csv'
+    zk_path = airdrops_dir / 'zk.csv'
+    zk_parquet_path = airdrops_dir / 'zk.parquet'
+    uniswap_path.touch()
+    zk_path.touch()
+    zk_parquet_path.touch()
+    assert uniswap_path.exists() is True
+    assert zk_path.exists() is True
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2400,6 +2416,10 @@ def test_upgrade_db_42_to_43(user_data_dir, messages_aggregator):
             'SELECT COUNT(*) FROM user_credentials WHERE location=?',
             (Location.COINBASEPRO.serialize_for_db(),),
         ).fetchone()[0] == 0
+
+    assert uniswap_path.exists() is False
+    assert zk_path.exists() is False
+    assert zk_parquet_path.exists() is True
 
 
 def test_latest_upgrade_correctness(user_data_dir):

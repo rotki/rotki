@@ -2413,8 +2413,7 @@ def test_liquidity_withdrawal(database, gnosis_inquirer, gnosis_accounts, load_g
     """Test that a withdrawal in the case of pools that have underlying pools
     is correctly decoded"""
     tx_hash = deserialize_evm_tx_hash('0x7645bfeb43a1ccacd3f8eb29c496823bd73586498ff7b79be5a3a48145f1c4b4')  # noqa: E501
-    timestamp, pool_address, gas_fees, removed_amount = TimestampMS(1719046465000), string_to_evm_address('0x0CA1C1eC4EBf3CC67a9f545fF90a3795b318cA4a'), '0.000813878', '1656.600276747801451581'  # noqa: E501
-    returned_amount = '850'
+    timestamp, pool_address, gas_fees, removed_amount, returned_amount = TimestampMS(1719046465000), string_to_evm_address('0x0CA1C1eC4EBf3CC67a9f545fF90a3795b318cA4a'), '0.000813878', '1656.600276747801451581', '850'  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
         database=database,

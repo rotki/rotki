@@ -2337,7 +2337,6 @@ class RestAPI:
     def get_ethereum_airdrops(self) -> dict[str, Any]:
         try:
             data = check_airdrops(
-                msg_aggregator=self.rotkehlchen.msg_aggregator,
                 addresses=self.rotkehlchen.chains_aggregator.accounts.eth,
                 database=self.rotkehlchen.data.db,
                 data_dir=self.rotkehlchen.data.data_directory,
