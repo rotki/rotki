@@ -86,6 +86,7 @@ from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     query_gearbox_data,
     save_gearbox_data_to_cache,
 )
+from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     query_velodrome_like_data,
     save_velodrome_data_to_cache,
@@ -182,6 +183,7 @@ from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.utils import query_binance_exchange_pairs
 from rotkehlchen.externalapis.github import Github
+from rotkehlchen.externalapis.monerium import init_monerium
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.assets_management import export_assets_from_file, import_assets_from_file
 from rotkehlchen.globaldb.cache import (
@@ -2820,12 +2822,18 @@ class RestAPI:
             }
 
         try:
-            chain_manager.transactions_decoder.decode_transaction_hashes(
+            events = chain_manager.transactions_decoder.decode_transaction_hashes(
                 tx_hashes=[tx_hash],
                 send_ws_notifications=True,
                 ignore_cache=True,  # always redecode from here
                 delete_customized=True,  # also delete customized events from here
             )
+            if (
+                any(event.counterparty == CPT_MONERIUM for event in events) and
+                (monerium := init_monerium(self.rotkehlchen.data.db)) is not None
+            ):
+                monerium.get_and_process_orders(tx_hash=tx_hash)
+
             # Trigger the task to query the missing prices for the decoded events
             events_filter = EvmEventFilterQuery.make(
                 tx_hashes=[tx_hash],  # always same hash

@@ -2,15 +2,19 @@ from unittest.mock import patch
 
 import gevent
 import pytest
+import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.constants.assets import A_ETH_EURE
-from rotkehlchen.db.filtering import EvmEventFilterQuery
+from rotkehlchen.constants.misc import ONE
+from rotkehlchen.db.filtering import EvmEventFilterQuery, HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ExternalService, Location, TimestampMS, deserialize_evm_tx_hash
 
@@ -192,3 +196,61 @@ def test_bridge_via_monerium(task_manager, database, monerium_credentials):  # p
             has_premium=True,
         )
     assert new_events == [gnosis_event, eth_event]
+
+
+@pytest.mark.parametrize('default_mock_price_value', [ONE])
+def test_query_info_on_redecode_request(rotkehlchen_api_server: APIServer):
+    """Test that triggering a re-decode for a monerium transaction updates correctly the notes"""
+    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
+    dbevents = DBHistoryEvents(database)
+    amount_str = '1500'
+    gnosishash = deserialize_evm_tx_hash(val='0x10d953610921f39d9d20722082077e03ec8db8d9c75e4b301d0d552119fd0354')  # noqa: E501
+    gnosis_user_address = '0xbCCeE6Ff2bCAfA95300D222D316A29140c4746da'
+    gnosis_event = EvmEvent(
+        tx_hash=gnosishash,
+        sequence_index=113,
+        timestamp=TimestampMS(1701765059000),
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=A_ETH_EURE,
+        balance=Balance(amount=FVal(amount_str)),
+        location_label=gnosis_user_address,
+        notes=f'Burn {amount_str} EURe',
+        counterparty=CPT_MONERIUM,
+    )
+    with database.user_write() as write_cursor:
+        write_cursor.execute(  # not using the fixture since it has issues with the api
+            'INSERT OR REPLACE INTO external_service_credentials(name, api_key, api_secret) '
+            'VALUES(?, ?, ?)',
+            (ExternalService.MONERIUM.name.lower(), 'mockuser', 'mockpassword'),
+        )
+
+    def add_event(*args, **kwargs):  # pylint: disable=unused-argument
+        with database.user_write() as write_cursor:
+            dbevents.add_history_events(write_cursor=write_cursor, history=[gnosis_event])
+        return [gnosis_event]
+
+    response_txt = '[{"id":"YYYY","profile":"PP","accountId":"PP","address":"0xbCCeE6Ff2bCAfA95300D222D316A29140c4746da","kind":"redeem","amount":"2353.57","currency":"eur","totalFee":"0","fees":[],"counterpart":{"details":{"name":"Yabir Benchakhtir","country":"ES","lastName":"Benchakhtir","firstName":"Yabir"},"identifier":{"iban":"ESXX KKKK OOOO IIII KKKK LLLL","standard":"iban"}},"memo":"Venta inversion","supportingDocumentId":"","chain":"gnosis","network":"mainnet","txHashes":["0x10d953610921f39d9d20722082077e03ec8db8d9c75e4b301d0d552119fd0354"],"meta":{"state":"processed","placedBy":"ii","placedAt":"2024-04-19T13:45:00.287212Z","processedAt":"2024-04-19T13:45:00.287212Z","approvedAt":"2024-04-19T13:45:00.287212Z","confirmedAt":"2024-04-19T13:45:00.287212Z","receivedAmount":"2353.57","sentAmount":"2353.57"}}]'  # noqa: E501
+    with (
+        patch('requests.Session.get', side_effect=lambda *args, **kwargs: MockResponse(200, response_txt)),  # noqa: E501
+        patch('rotkehlchen.chain.evm.decoding.decoder.EVMTransactionDecoder.decode_transaction_hashes', new=add_event),  # noqa: E501
+        patch('rotkehlchen.chain.evm.transactions.EvmTransactions.get_or_query_transaction_receipt', return_value=None),  # noqa: E501
+    ):
+        response = requests.put(
+            api_url_for(
+                rotkehlchen_api_server,
+                'evmtransactionsresource',
+            ),
+            json={'evm_chain': 'gnosis', 'tx_hash': gnosishash.hex()},  # pylint: disable=no-member
+        )
+        assert_proper_response(response)
+
+    with database.conn.read_ctx() as cursor:
+        events = dbevents.get_history_events(
+            cursor=cursor,
+            filter_query=HistoryEventFilterQuery.make(),
+            has_premium=True,
+        )
+
+    assert events[0].notes == 'Send 2353.57 EURe via bank transfer to Yabir Benchakhtir (ESXX KKKK OOOO IIII KKKK LLLL) with memo "Venta inversion"'  # noqa: E501
