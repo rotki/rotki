@@ -1,5 +1,6 @@
 import dayjs from 'dayjs';
 import { find, toArray } from 'lodash-es';
+import { AxiosError } from 'axios';
 import { TaskType } from '@/types/task-type';
 import {
   BackendCancelledTaskError,
@@ -11,34 +12,10 @@ import {
 } from '@/types/task';
 import type { ActionResult } from '@rotki/common/lib/data';
 
-function unlockTask(lockedTasks: Ref<number[]>, taskId: number): number[] {
-  const locked = [...get(lockedTasks)];
-  const idIndex = locked.indexOf(taskId);
-  locked.splice(idIndex, 1);
-  return locked;
-}
-
-type ErrorHandler = (
-  task: Task<TaskMeta>,
-  message?: string
-) => ActionResult<unknown>;
-
 const USER_CANCELLED_TASK = 'task_cancelled_by_user';
+const TIMEOUT_THRESHOLD = 3;
 
-function useError(): { error: ErrorHandler } {
-  const { t } = useI18n();
-  const error: ErrorHandler = (task, error) => ({
-    result: {},
-    message: t('task_manager.error', {
-      taskId: task.id,
-      title: task.meta.title,
-      error,
-    }),
-  });
-  return {
-    error,
-  };
-}
+type ErrorHandler = (task: Task<TaskMeta>, message?: string) => ActionResult<unknown>;
 
 interface TaskResponse<R, M extends TaskMeta> {
   result: R;
@@ -50,15 +27,35 @@ interface TaskActionResult<T> extends ActionResult<T> {
   error?: any;
 }
 
+function unlockTask(lockedTasks: Ref<number[]>, taskId: number): number[] {
+  const locked = [...get(lockedTasks)];
+  const idIndex = locked.indexOf(taskId);
+  locked.splice(idIndex, 1);
+  return locked;
+}
+
+function useError(): { error: ErrorHandler } {
+  const { t } = useI18n();
+  const error: ErrorHandler = (task, error) => ({
+    result: {},
+    message: t('task_manager.error', {
+      taskId: task.id,
+      title: task.meta.title,
+      error,
+    }),
+  });
+  return { error };
+}
+
 export const useTaskStore = defineStore('tasks', () => {
   const locked = ref<number[]>([]);
   const tasks = ref<TaskMap<TaskMeta>>({});
   const unknownTasks = ref<Record<number, number>>({});
+  const timeouts = ref<Record<number, number>>({});
   const handlers: Record<string, (result: ActionResult<any>, meta: any) => void> = {};
   let isRunning = false;
 
   const { error } = useError();
-
   const api = useTaskApi();
 
   const registerHandler = <R, M extends TaskMeta>(
@@ -90,9 +87,8 @@ export const useTaskStore = defineStore('tasks', () => {
   };
 
   const remove = (taskId: number): void => {
-    const remainingTasks = { ...get(tasks) };
-    delete remainingTasks[taskId];
-    set(tasks, remainingTasks);
+    set(tasks, removeKey(get(tasks), taskId));
+    set(timeouts, removeKey(get(timeouts), taskId));
     unlock(taskId);
   };
 
@@ -159,15 +155,11 @@ export const useTaskStore = defineStore('tasks', () => {
 
     const handler = handlers[task.type] ?? handlers[`${task.type}-${task.id}`];
 
-    if (handler) {
+    if (handler)
       handler(result, task.meta);
       /* c8 ignore next 5 */
-    }
-    else {
-      logger.warn(
-          `missing handler for ${TaskType[task.type]} with id ${task.id}`,
-      );
-    }
+    else
+      logger.warn(`missing handler for ${TaskType[task.type]} with id ${task.id}`);
 
     remove(task.id);
   };
@@ -212,50 +204,37 @@ export const useTaskStore = defineStore('tasks', () => {
     addTask(id, type, meta);
 
     return new Promise<TaskResponse<R, M>>((resolve, reject) => {
-      registerHandler<R, M>(
-        type,
-        (actionResult, meta) => {
-          unregisterHandler(type, id.toString());
-          const { result, message } = actionResult;
+      registerHandler<R, M>(type, (actionResult, meta) => {
+        unregisterHandler(type, id.toString());
+        const { result, message } = actionResult;
 
-          if (actionResult.error) {
-            reject(actionResult.error);
-          }
-          else if (result === null) {
-            let errorMessage: string;
-            if (message) {
-              if (message === USER_CANCELLED_TASK) {
-                let msg = 'Request cancelled';
-                if (checkIfDevelopment() && !import.meta.env.VITE_TEST)
-                  msg += ` ::dev_only_msg_part:: task_id: ${id}, task_type: ${TaskType[type]}`;
+        if (actionResult.error) {
+          reject(actionResult.error);
+        }
+        else if (result === null) {
+          let errorMessage: string;
+          if (message) {
+            if (message === USER_CANCELLED_TASK) {
+              const msg = 'Request cancelled';
+              if (checkIfDevelopment() && !import.meta.env.VITE_TEST)
+                logger.debug(`${msg} -> task_id: ${id}, task_type: ${TaskType[type]}`);
 
-                logger.debug(msg);
-                reject(new UserCancelledTaskError(msg));
-                return;
-              }
-              errorMessage = message;
-              /* c8 ignore next 5 */
-              if (checkIfDevelopment() && !import.meta.env.VITE_TEST) {
-                errorMessage += `::dev_only_msg_part:: task_id: ${id}, task_type: ${
-                  TaskType[type]
-                }, meta: ${JSON.stringify(meta)}`;
-              }
-              reject(new Error(errorMessage));
+              reject(new UserCancelledTaskError(msg));
+              return;
             }
-            else {
-              reject(
-                new BackendCancelledTaskError(
-                  `Backend cancelled task_id: ${id}, task_type: ${TaskType[type]}`,
-                ),
-              );
-            }
+            errorMessage = message;
+            reject(new Error(errorMessage));
           }
           else {
-            resolve({ result, meta, message });
+            reject(
+              new BackendCancelledTaskError(`Backend cancelled task_id: ${id}, task_type: ${TaskType[type]}`),
+            );
           }
-        },
-        nonUnique ? id.toString() : undefined,
-      );
+        }
+        else {
+          resolve({ result, meta, message });
+        }
+      }, nonUnique ? id.toString() : undefined);
     });
   };
 
@@ -289,13 +268,25 @@ export const useTaskStore = defineStore('tasks', () => {
       handleResult(result, task);
     }
     catch (error_: any) {
-      logger.error('Task handling failed', error_);
       if (error_ instanceof TaskNotFoundError) {
         remove(task.id);
         handleResult(error(task, error_.message), task);
       }
       else {
-        handleResult({ message: error_.message, result: null, error: error_ }, task);
+        if (error_ instanceof AxiosError && error_.code === 'ECONNABORTED' && error_.message.includes('timeout')) {
+          const totalTimeouts = (get(timeouts)[task.id] ?? 0) + 1;
+          if (totalTimeouts >= TIMEOUT_THRESHOLD) {
+            remove(task.id);
+            handleResult({ message: error_.message, result: null, error: error_ }, task);
+          }
+          else {
+            set(timeouts, { ...get(timeouts), [task.id]: totalTimeouts });
+          }
+        }
+        else {
+          remove(task.id);
+          handleResult({ message: error_.message, result: null, error: error_ }, task);
+        }
       }
     }
     unlock(task.id);
@@ -312,9 +303,7 @@ export const useTaskStore = defineStore('tasks', () => {
     if (ids.length === 0)
       return;
 
-    logger.warn(
-      `the following task ids were not known to the frontend ${ids.join(', ')}`,
-    );
+    logger.warn(`the following task ids were not known to the frontend ${ids.join(', ')}`);
 
     for (const id of ids) {
       await api.queryTaskResult(id);
