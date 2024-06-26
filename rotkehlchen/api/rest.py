@@ -4621,6 +4621,7 @@ class RestAPI:
                     'identifier': identifier,
                     'name': airdrop.name,
                     'icon': airdrop.icon,
+                    'cutoff_time': airdrop.cutoff_time,
                 })
                 if airdrop.icon_url is not None:
                     result[-1]['icon_url'] = airdrop.icon_url
