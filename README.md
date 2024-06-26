@@ -39,7 +39,7 @@
   <a href="#contribute">Contributing</a>
   <br/>
   <a href="https://rotki.readthedocs.io/en/latest/" target="_blank">📖 Docs</a> •
-  <a href="https://rotki.com/checkout/plan" target="_blank">💻 Pro version</a>
+  <a href="https://rotki.com/products" target="_blank">💻 Pro version</a>
 </p>
 
 ---
