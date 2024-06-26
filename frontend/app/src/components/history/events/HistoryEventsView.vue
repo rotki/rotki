@@ -538,7 +538,7 @@ const querying = not(
 
 const shouldFetchEventsRegularly = logicOr(querying, refreshing);
 
-const loading = refThrottled(
+const loading = refDebounced(
   logicOr(isEventsGroupHeaderLoading, isEventsLoading),
   300,
 );

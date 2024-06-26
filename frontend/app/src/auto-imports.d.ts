@@ -255,6 +255,7 @@ declare global {
   const refIsTruthy: typeof import('./composables/ref')['refIsTruthy']
   const refThrottled: typeof import('@vueuse/core')['refThrottled']
   const refWithControl: typeof import('@vueuse/core')['refWithControl']
+  const removeKey: typeof import('./utils/data')['removeKey']
   const removeTags: typeof import('./utils/tags')['removeTags']
   const removeZeroAssets: typeof import('./utils/balances')['removeZeroAssets']
   const resetState: typeof import('./store/plugins')['resetState']
@@ -1027,6 +1028,7 @@ declare module 'vue' {
     readonly refIsTruthy: UnwrapRef<typeof import('./composables/ref')['refIsTruthy']>
     readonly refThrottled: UnwrapRef<typeof import('@vueuse/core')['refThrottled']>
     readonly refWithControl: UnwrapRef<typeof import('@vueuse/core')['refWithControl']>
+    readonly removeKey: UnwrapRef<typeof import('./utils/data')['removeKey']>
     readonly removeTags: UnwrapRef<typeof import('./utils/tags')['removeTags']>
     readonly removeZeroAssets: UnwrapRef<typeof import('./utils/balances')['removeZeroAssets']>
     readonly resetState: UnwrapRef<typeof import('./store/plugins')['resetState']>
@@ -1781,6 +1783,7 @@ declare module '@vue/runtime-core' {
     readonly refIsTruthy: UnwrapRef<typeof import('./composables/ref')['refIsTruthy']>
     readonly refThrottled: UnwrapRef<typeof import('@vueuse/core')['refThrottled']>
     readonly refWithControl: UnwrapRef<typeof import('@vueuse/core')['refWithControl']>
+    readonly removeKey: UnwrapRef<typeof import('./utils/data')['removeKey']>
     readonly removeTags: UnwrapRef<typeof import('./utils/tags')['removeTags']>
     readonly removeZeroAssets: UnwrapRef<typeof import('./utils/balances')['removeZeroAssets']>
     readonly resetState: UnwrapRef<typeof import('./store/plugins')['resetState']>

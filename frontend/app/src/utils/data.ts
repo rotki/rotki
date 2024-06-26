@@ -92,3 +92,14 @@ export function toRem(value?: number | string): string | undefined {
 
   return `${value}rem`;
 }
+
+/**
+ * Returns a copy of the record without the key in it.
+ * @param record The record
+ * @param key The key to remove
+ */
+export function removeKey<K extends string | number | symbol, V>(record: Record<K, V>, key: K): Record<K, V> {
+  const copy = { ...record };
+  delete copy[key];
+  return copy;
+}
