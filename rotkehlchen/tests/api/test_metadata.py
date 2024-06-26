@@ -18,7 +18,7 @@ def test_metadata_endpoint(rotkehlchen_api_server: 'APIServer') -> None:
         api_url_for(rotkehlchen_api_server, 'airdropsmetadataresource'),
     )
     airdrops_result = assert_proper_sync_response_with_result(airdrops_response)
-    assert len(airdrops_result) == 22
+    assert len(airdrops_result) == 26
     for res in airdrops_result:
         assert 'identifier' in res and isinstance(res['identifier'], str)
         assert 'name' in res and isinstance(res['name'], str)
