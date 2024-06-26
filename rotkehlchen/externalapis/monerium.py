@@ -12,7 +12,7 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import Location, deserialize_evm_tx_hash
+from rotkehlchen.types import EVMTxHash, Location, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import set_user_agent, ts_now
 from rotkehlchen.utils.serialization import jsonloads_list
 
@@ -40,13 +40,19 @@ class Monerium:
     def _query(
             self,
             endpoint: Literal['orders'],
+            params: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         """Query a monerium API endpoint with basic authenication"""
         querystr = 'https://api.monerium.app/' + endpoint
         log.debug(f'Querying monerium API  {querystr}')
         timeout = CachedSettings().get_timeout_tuple()
         try:
-            response = self.session.get(querystr, timeout=timeout, auth=(self.user, self.password))
+            response = self.session.get(
+                url=querystr,
+                params=params,
+                timeout=timeout,
+                auth=(self.user, self.password),
+            )
         except requests.exceptions.RequestException as e:
             raise RemoteError(f'Querying {querystr} failed due to {e!s}') from e
 
@@ -66,7 +72,7 @@ class Monerium:
 
         return json_ret
 
-    def get_and_process_orders(self) -> None:
+    def get_and_process_orders(self, tx_hash: EVMTxHash | None = None) -> None:
         """Gets all monerium orders and processes them
 
         Find all on-chain transactions that match those orders and enrich them appropriately.
@@ -93,7 +99,10 @@ class Monerium:
                 (DBCacheStatic.LAST_MONERIUM_QUERY_TS.value, str(ts_now())),
             )
 
-        orders = self._query(endpoint='orders')
+        orders = self._query(
+            endpoint='orders',
+            params={'txHash': tx_hash.hex()} if tx_hash is not None else None,
+        )
         dbevents = DBHistoryEvents(self.database)
         for order in orders:  # orders are returned latest first
             log.debug(f'Processing monerium order {order}')
@@ -185,3 +194,16 @@ class Monerium:
             bindings.append(events[0].identifier)
             with self.database.user_write() as write_cursor:
                 write_cursor.execute(querystr, bindings)
+
+
+def init_monerium(database: 'DBHandler') -> Monerium | None:
+    """Create a monerium instance using the provided database"""
+    with database.conn.read_ctx() as cursor:
+        result = cursor.execute(
+            'SELECT api_key, api_secret FROM external_service_credentials WHERE name=?',
+            ('monerium',),
+        ).fetchone()
+        if result is None:
+            return None
+
+    return Monerium(database=database, user=result[0], password=result[1])

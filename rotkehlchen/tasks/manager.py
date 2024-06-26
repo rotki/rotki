@@ -40,7 +40,7 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.externalapis.monerium import Monerium
+from rotkehlchen.externalapis.monerium import init_monerium
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import EventDirection
@@ -860,15 +860,9 @@ class TaskManager:
         if should_run_periodic_task(self.database, DBCacheStatic.LAST_MONERIUM_QUERY_TS, HOUR_IN_SECONDS) is False:  # noqa: E501
             return None
 
-        with self.database.conn.read_ctx() as cursor:
-            result = cursor.execute(
-                'SELECT api_key, api_secret FROM external_service_credentials WHERE name=?',
-                ('monerium',),
-            ).fetchone()
-            if result is None:
-                return None
+        if (monerium := init_monerium(self.database)) is None:
+            return None
 
-        monerium = Monerium(database=self.database, user=result[0], password=result[1])
         return [self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name='Query monerium',
