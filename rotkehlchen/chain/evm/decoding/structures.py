@@ -22,6 +22,7 @@ class ActionItem:
     asset: 'Asset'
     amount: Optional['FVal'] = None
     location_label: str | None = None
+    address: ChecksumEvmAddress | None = None
     to_event_type: Optional['HistoryEventType'] = None
     to_event_subtype: Optional['HistoryEventSubType'] = None
     to_notes: str | None = None
@@ -29,8 +30,10 @@ class ActionItem:
     to_address: ChecksumEvmAddress | None = None
     to_location_label: str | None = None
     extra_data: dict | None = None
-    # Optional event data that pairs it with the event of the action item
+    # Optional events data that pairs them with the event of the action item
     # Contains a tuple with the paired event and whether it's an out event (True) or in event
+    # This is a way to control the order of the action item generated event relative
+    # to the paired events.
     paired_events_data: tuple[Sequence['EvmEvent'], bool] | None = None
     # Error tolerance that can be used for protocols having rounding errors. Such as with stETH (https://github.com/lidofinance/lido-dao/issues/442)
     # In those cases the notes should also be formatted to have an amount as format string since at

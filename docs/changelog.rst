@@ -45,6 +45,7 @@ Changelog
 * :bug:`-` Events claiming veCRV bribes from Gauge Bribe v2 will now be properly decoded.
 * :bug:`-` Complicated cowswap trades that were detected as part of another DEX should now be properly decoded.
 * :bug:`-` Some old gitcoin bulkcheckout and claim matching funds events that were not decoded properly, will now appear correctly.
+* :feature:`-` Properly decode all drips v1 transactions in ethereum mainnet and Polygon.
 
 * :release:`1.33.1 <2024-05-29>`
 * :bug:`-` Fix the issue where airdrops aren't properly filtered by status.
