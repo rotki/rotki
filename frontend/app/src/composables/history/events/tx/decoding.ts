@@ -2,6 +2,7 @@ import { TaskType } from '@/types/task-type';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { Section } from '@/types/status';
 import {
+  type ChainAndTxHash,
   type EvmChainAndTxHash,
   TransactionChainType,
 } from '@/types/history/events';
@@ -205,12 +206,14 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     const chain = getChain(transaction.evmChain);
     const type = isEvmLikeChains(chain) ? TransactionChainType.EVMLIKE : TransactionChainType.EVM;
 
+    const newPayload: ChainAndTxHash | EvmChainAndTxHash = {
+      ...(type === TransactionChainType.EVM ? { evmChain: chain } : { chain }),
+      txHash: transaction.txHash,
+    };
+
     try {
       const taskType = TaskType.TRANSACTIONS_DECODING;
-      const { taskId } = await pullAndRecodeTransactionRequest({
-        ...transaction,
-        ...(type === TransactionChainType.EVMLIKE ? { evmChain: chain } : {}),
-      }, type);
+      const { taskId } = await pullAndRecodeTransactionRequest(newPayload, type);
 
       const taskMeta = {
         title: t('actions.transactions_redecode.task.title'),
