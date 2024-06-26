@@ -2,14 +2,13 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.gitcoin.constants import (
     FUNDS_CLAIMED,
-    GITCOIN_GC15_MATCHING,
     GITCOIN_GOVERNOR_ALPHA,
     GITCOIN_GRANTS_OLD1,
 )
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
-from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import CPT_GITCOIN
 from rotkehlchen.chain.evm.decoding.gitcoin.decoder import GitcoinOldCommonDecoder
 from rotkehlchen.chain.evm.decoding.interfaces import GovernableDecoderInterface
@@ -22,7 +21,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_DAI
+from rotkehlchen.constants.assets import A_DAI, A_GRT
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
@@ -88,28 +87,35 @@ class GitcoinDecoder(GovernableDecoderInterface, GitcoinOldCommonDecoder):
         context.event.counterparty = CPT_GITCOIN
         return TransferEnrichmentOutput(matched_counterparty=CPT_GITCOIN)
 
-    def _decode_matching_claim(self, context: DecoderContext, name: str) -> DecodingOutput:
+    def _decode_matching_claim(self, context: DecoderContext, name: str, asset: Asset) -> DecodingOutput:  # noqa: E501
+        """Decode the matching funds claim based on the given name and asset. We need
+        to provide the name and the asset as this is based per contract and does not change.
+
+        For the token we could query it but the name we can't. Still since it's hard
+        coded per contract and we have a hard coded list it's best to not ask the chain
+        and do an extra network query since this is immutable."""
         if context.tx_log.topics[0] != FUNDS_CLAIMED:
             return DEFAULT_DECODING_OUTPUT
 
         if not self.base.is_tracked(claimee := hex_or_bytes_to_address(context.tx_log.topics[1])):
             return DEFAULT_DECODING_OUTPUT
 
-        amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.topics[2]),
-            token_decimals=DEFAULT_TOKEN_DECIMALS,  # it's always DAI here, so 18
+        asset = asset.resolve_to_crypto_asset()
+        amount = asset_normalized_value(
+            amount=hex_or_bytes_to_int(context.tx_log.topics[2]),
+            asset=asset,
         )
         for event in context.decoded_events:
             if (
                     event.event_type == HistoryEventType.RECEIVE and
                     event.event_subtype == HistoryEventSubType.NONE and
-                    event.asset == A_DAI and
+                    event.asset == asset and
                     event.balance.amount == amount and
                     event.location_label == claimee
             ):
                 event.event_subtype = HistoryEventSubType.DONATE
                 event.counterparty = CPT_GITCOIN
-                event.notes = f'Claim {amount} DAI as matching funds payout for gitcoin {name}'
+                event.notes = f'Claim {amount} {asset.symbol} as matching funds payout for gitcoin {name}'  # noqa: E501
                 break
 
         else:
@@ -124,7 +130,12 @@ class GitcoinDecoder(GovernableDecoderInterface, GitcoinOldCommonDecoder):
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             GITCOIN_GOVERNOR_ALPHA: (self._decode_governance,),
-            GITCOIN_GC15_MATCHING: (self._decode_matching_claim, 'round 15'),
+        } | {
+            address: (self._decode_matching_claim, name, asset) for address, name, asset in [
+                (string_to_evm_address('0xC8AcA0b50F3Ca9A0cBe413d8a110a7aab7d4C1aE'), 'grants 15 main round', A_DAI),  # noqa: E501
+                (string_to_evm_address('0x2878883dD4345C7b35c13FefC5096dd400814D91'), 'grants 14 main round', A_DAI),  # noqa: E501
+                (string_to_evm_address('0xa640830aFAa6455E198eDa49E085C4C377789ddd'), 'grants 14 graph protocol round', A_GRT),  # noqa: E501
+            ]
 
         } | super().addresses_to_decoders()
 

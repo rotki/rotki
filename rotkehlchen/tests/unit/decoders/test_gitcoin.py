@@ -1,10 +1,7 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.chain.ethereum.modules.gitcoin.constants import (
-    GITCOIN_GC15_MATCHING,
-    GITCOIN_GOVERNOR_ALPHA,
-)
+from rotkehlchen.chain.ethereum.modules.gitcoin.constants import GITCOIN_GOVERNOR_ALPHA
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS, CPT_GITCOIN
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
@@ -255,9 +252,9 @@ def test_gitcoin_gr15_matching_claim(database, ethereum_inquirer, ethereum_accou
             asset=A_DAI,
             balance=Balance(FVal(amount)),
             location_label=user,
-            notes=f'Claim {amount} DAI as matching funds payout for gitcoin round 15',
+            notes=f'Claim {amount} DAI as matching funds payout for gitcoin grants 15 main round',
             counterparty=CPT_GITCOIN,
-            address=GITCOIN_GC15_MATCHING,
+            address=string_to_evm_address('0xC8AcA0b50F3Ca9A0cBe413d8a110a7aab7d4C1aE'),
         ),
     ]
     assert events == expected_events
