@@ -1,3 +1,4 @@
+import { snakeCase } from 'lodash-es';
 import type { EntryMeta, EntryWithMeta } from '@/types/history/meta';
 import type { EvmChainAndTxHash } from '@/types/history/events';
 import type { Collection } from '@/types/collection';
@@ -39,7 +40,7 @@ export function toEvmChainAndTxHash({
   txHash?: string;
 }): EvmChainAndTxHash {
   return {
-    evmChain: location,
+    evmChain: snakeCase(location),
     txHash: txHash || '',
   };
 }
