@@ -10,6 +10,7 @@ import {
 } from '@/services/utils';
 import {
   type AddTransactionHashPayload,
+  type ChainAndTxHash,
   type EditHistoryEventPayload,
   type EvmChainAndTxHash,
   HistoryEventDetail,
@@ -69,7 +70,7 @@ export function useHistoryEventsApi() {
   };
 
   const pullAndRecodeTransactionRequest = async (
-    payload: EvmChainAndTxHash,
+    payload: ChainAndTxHash | EvmChainAndTxHash,
     type: TransactionChainType = TransactionChainType.EVM,
   ): Promise<PendingTask> => {
     const response = await api.instance.put<ActionResult<PendingTask>>(
