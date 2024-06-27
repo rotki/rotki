@@ -545,7 +545,6 @@ const loading = refDebounced(
 
 const processing = logicOr(
   isTransactionsLoading,
-  loading,
   querying,
   refreshing,
 );
@@ -611,9 +610,13 @@ onMounted(async () => {
   await refresh();
 });
 
+const historyEventMappings = useHistoryEventMappings();
+
 async function refresh(userInitiated = false) {
   if (userInitiated)
-    startPromise(useHistoryEventMappings().refresh());
+    startPromise(historyEventMappings.refresh());
+  else
+    startPromise(fetchDataAndLocations());
 
   set(currentAction, 'query');
   const entryTypesVal = get(entryTypes) || [];
@@ -853,7 +856,7 @@ watchImmediate(route, async (route) => {
             :expanded="eventsData"
             :cols="tableHeaders"
             :rows="eventsData"
-            :loading="isEventsGroupHeaderLoading"
+            :loading="loading"
             :pagination.sync="pagination"
             :pagination-modifiers="{ external: true }"
             :sort.sync="sort"
