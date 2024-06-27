@@ -446,6 +446,7 @@ def process_airdrop_with_api_data(
             'asset': airdrop_data.asset,
             'link': airdrop_data.url,
             'claimed': False,
+            'cutoff_time': airdrop_data.cutoff_time,
             'has_decoder': airdrop_data.has_decoder,
         }
         _enrich_user_airdrop_data(
@@ -486,9 +487,6 @@ def _process_csv_airdrop(
     with information about the asset for the airdrop, the amount, deadlines and other
     relevant details.
     """
-    if airdrop_data.cutoff_time is not None and current_time > airdrop_data.cutoff_time:
-        log.debug(f'Skipping {protocol_name} airdrop since it is not claimable after {airdrop_data.cutoff_time}')  # noqa: E501
-        return [], {}
 
     # In the shutter airdrop the claim of the vested SHU is decoded as informational/none
     if protocol_name == 'shutter':
@@ -525,6 +523,7 @@ def _process_csv_airdrop(
                 'asset': airdrop_data.asset,
                 'link': airdrop_data.url,
                 'claimed': False,
+                'cutoff_time': airdrop_data.cutoff_time,
                 'has_decoder': airdrop_data.has_decoder,
             }
             _enrich_user_airdrop_data(
