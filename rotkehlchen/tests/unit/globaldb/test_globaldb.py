@@ -268,7 +268,6 @@ def test_get_asset_with_symbol(globaldb):
     # both categories of assets
     asset_data = globaldb.get_assets_with_symbol('KEY')
     bihukey_address = string_to_evm_address('0x4Cd988AfBad37289BAAf53C13e98E2BD46aAEa8c')
-    aave_address = string_to_evm_address('0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9')
     renbtc_address = string_to_evm_address('0xEB4C2781e4ebA804CE9a9803C67d0893436bB27D')
     expected_assets = {
         selfkey_asset,
@@ -301,59 +300,15 @@ def test_get_asset_with_symbol(globaldb):
     # only non-ethereum token
     assert globaldb.get_assets_with_symbol('BIDR') == [bidr_asset]
     # only ethereum token
-    expected_assets = [EvmToken.initialize(
-        name='Aave Token',
-        symbol='AAVE',
-        started=1600970788,
-        forked=None,
-        swapped_for=None,
-        address=aave_address,
-        chain_id=ChainID.ETHEREUM,
-        token_kind=EvmTokenKind.ERC20,
-        decimals=18,
-        cryptocompare=None,
-        coingecko='aave',
-        protocol=None,
-    ), EvmToken.initialize(
-        name='Aave (PoS)',
-        symbol='AAVE',
-        started=None,
-        forked=None,
-        swapped_for=None,
-        address='0xD6DF932A45C0f255f85145f286eA0b292B21C90B',
-        chain_id=ChainID.POLYGON_POS,
-        token_kind=EvmTokenKind.ERC20,
-        decimals=18,
-        cryptocompare='',
-        coingecko='aave',
-        protocol=None,
-    ), EvmToken.initialize(
-        name='Binance-Peg Aave Token',
-        symbol='AAVE',
-        started=Timestamp(1611903498),
-        forked=None,
-        swapped_for=None,
-        address='0xfb6115445Bff7b52FeB98650C87f44907E58f802',
-        chain_id=ChainID.BINANCE,
-        token_kind=EvmTokenKind.ERC20,
-        decimals=18,
-        cryptocompare='',
-        coingecko='aave',
-        protocol=None,
-    ), EvmToken.initialize(
-        name='Aave Token symbol',
-        symbol='AAVE',
-        started=Timestamp(1696951135),
-        forked=None,
-        swapped_for=None,
-        address='0x79379C0E09a41d7978f883a56246290eE9a8c4d3',
-        chain_id=ChainID.SCROLL,
-        token_kind=EvmTokenKind.ERC20,
-        decimals=18,
-        cryptocompare='aave',
-        coingecko='aave',
-        protocol=None,
-    )]
+    expected_assets = [
+        Asset('eip155:1/erc20:0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9').resolve_to_evm_token(),
+        Asset('eip155:137/erc20:0xD6DF932A45C0f255f85145f286eA0b292B21C90B').resolve_to_evm_token(),
+        Asset('eip155:56/erc20:0xfb6115445Bff7b52FeB98650C87f44907E58f802').resolve_to_evm_token(),
+        Asset('eip155:534352/erc20:0x79379C0E09a41d7978f883a56246290eE9a8c4d3').resolve_to_evm_token(),
+        Asset('eip155:42161/erc20:0xba5DdD1f9d7F570dc94a51479a000E3BCE967196').resolve_to_evm_token(),
+        Asset('eip155:10/erc20:0x76FB31fb4af56892A25e32cFC43De717950c9278').resolve_to_evm_token(),
+        Asset('eip155:250/erc20:0x6a07A792ab2965C72a5B8088d3a069A7aC3a993B').resolve_to_evm_token(),
+    ]
     assert globaldb.get_assets_with_symbol('AAVE') == expected_assets
     # finally non existing asset
     assert globaldb.get_assets_with_symbol('DASDSADSDSDSAD') == []

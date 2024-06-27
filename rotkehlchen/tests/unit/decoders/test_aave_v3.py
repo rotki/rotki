@@ -23,6 +23,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.unit.decoders.test_paraswap import A_POLYGON_POS_USDC
+from rotkehlchen.tests.unit.decoders.test_zerox import A_POLYGON_POS_USDT
 from rotkehlchen.tests.utils.constants import A_OPTIMISM_USDT
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
@@ -54,7 +55,20 @@ def test_aave_v3_enable_collateral(database, ethereum_inquirer, ethereum_account
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=183,
+            sequence_index=186,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_USDT,
+            balance=Balance(),
+            location_label=ethereum_accounts[0],
+            notes='Enable USDT as collateral on AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=string_to_evm_address('0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=187,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
@@ -67,7 +81,7 @@ def test_aave_v3_enable_collateral(database, ethereum_inquirer, ethereum_account
             address=string_to_evm_address('0x23878914EFE38d27C4D67Ab83ed1b93A74D4086a'),
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=184,
+            sequence_index=188,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -78,19 +92,6 @@ def test_aave_v3_enable_collateral(database, ethereum_inquirer, ethereum_account
             notes=f'Receive {deposit_amount} aEthUSDT from AAVE v3',
             counterparty=CPT_AAVE_V3,
             address=ZERO_ADDRESS,
-        ), EvmEvent(
-            tx_hash=tx_hash,
-            sequence_index=186,
-            timestamp=timestamp,
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.NONE,
-            asset=A_USDT,
-            balance=Balance(),
-            location_label=ethereum_accounts[0],
-            notes='Enable USDT as collateral on AAVE v3',
-            counterparty=CPT_AAVE_V3,
-            address=string_to_evm_address('0x87870Bca3F3fD6335C3F4ce8392D69350B4fA4E2'),
         ),
     ]
     assert events == expected_events
@@ -190,7 +191,7 @@ def test_aave_v3_deposit(database, ethereum_inquirer, ethereum_accounts) -> None
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=219,
+            sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
@@ -203,7 +204,7 @@ def test_aave_v3_deposit(database, ethereum_inquirer, ethereum_accounts) -> None
             address=string_to_evm_address('0x9A44fd41566876A39655f74971a3A6eA0a17a454'),
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=220,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -300,7 +301,7 @@ def test_aave_v3_borrow(database, ethereum_inquirer, ethereum_accounts) -> None:
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=217,
+            sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -313,7 +314,7 @@ def test_aave_v3_borrow(database, ethereum_inquirer, ethereum_accounts) -> None:
             address=ZERO_ADDRESS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=221,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -355,7 +356,7 @@ def test_aave_v3_repay(database, ethereum_inquirer, ethereum_accounts) -> None:
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=158,
+            sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
@@ -368,7 +369,7 @@ def test_aave_v3_repay(database, ethereum_inquirer, ethereum_accounts) -> None:
             address=ZERO_ADDRESS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=161,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
@@ -480,7 +481,20 @@ def test_aave_v3_enable_collateral_polygon(database, polygon_pos_inquirer, polyg
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=571,
+            sequence_index=574,
+            timestamp=timestamp,
+            location=Location.POLYGON_POS,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_POLYGON_POS_USDC,
+            balance=Balance(),
+            location_label=polygon_pos_accounts[0],
+            notes='Enable USDC as collateral on AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=POOL_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=575,
             timestamp=timestamp,
             location=Location.POLYGON_POS,
             event_type=HistoryEventType.DEPOSIT,
@@ -493,7 +507,7 @@ def test_aave_v3_enable_collateral_polygon(database, polygon_pos_inquirer, polyg
             address=string_to_evm_address('0xA4D94019934D8333Ef880ABFFbF2FDd611C762BD'),
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=572,
+            sequence_index=576,
             timestamp=timestamp,
             location=Location.POLYGON_POS,
             event_type=HistoryEventType.RECEIVE,
@@ -504,19 +518,6 @@ def test_aave_v3_enable_collateral_polygon(database, polygon_pos_inquirer, polyg
             notes=f'Receive {deposit_amount} aPolUSDCn from AAVE v3',
             counterparty=CPT_AAVE_V3,
             address=ZERO_ADDRESS,
-        ), EvmEvent(
-            tx_hash=tx_hash,
-            sequence_index=574,
-            timestamp=timestamp,
-            location=Location.POLYGON_POS,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.NONE,
-            asset=A_POLYGON_POS_USDC,
-            balance=Balance(),
-            location_label=polygon_pos_accounts[0],
-            notes='Enable USDC as collateral on AAVE v3',
-            counterparty=CPT_AAVE_V3,
-            address=POOL_ADDRESS,
         ),
     ]
     assert events == expected_events
@@ -603,7 +604,7 @@ def test_aave_v3_borrow_base(database, base_inquirer, base_accounts) -> None:
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=178,
+            sequence_index=1,
             timestamp=timestamp,
             location=Location.BASE,
             event_type=HistoryEventType.RECEIVE,
@@ -616,7 +617,7 @@ def test_aave_v3_borrow_base(database, base_inquirer, base_accounts) -> None:
             address=ZERO_ADDRESS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=181,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.BASE,
             event_type=HistoryEventType.RECEIVE,
@@ -713,7 +714,7 @@ def test_aave_v3_borrow_optimism(database, optimism_inquirer, optimism_accounts)
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=7,
+            sequence_index=1,
             timestamp=timestamp,
             location=Location.OPTIMISM,
             event_type=HistoryEventType.RECEIVE,
@@ -726,7 +727,7 @@ def test_aave_v3_borrow_optimism(database, optimism_inquirer, optimism_accounts)
             address=ZERO_ADDRESS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=10,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.OPTIMISM,
             event_type=HistoryEventType.RECEIVE,
@@ -768,7 +769,7 @@ def test_aave_v3_repay_scroll(database, scroll_inquirer, scroll_accounts) -> Non
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=66,
+            sequence_index=1,
             timestamp=timestamp,
             location=Location.SCROLL,
             event_type=HistoryEventType.SPEND,
@@ -781,7 +782,7 @@ def test_aave_v3_repay_scroll(database, scroll_inquirer, scroll_accounts) -> Non
             address=ZERO_ADDRESS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=69,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.SCROLL,
             event_type=HistoryEventType.SPEND,
@@ -877,6 +878,85 @@ def test_claim_incentives_reward(database, optimism_inquirer, optimism_accounts)
             notes=f'Claim {amount} OP from Aave incentives',
             counterparty=CPT_AAVE_V3,
             address=string_to_evm_address('0x2501c477D0A35545a387Aa4A3EEe4292A9a8B3F0'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('polygon_pos_accounts', [['0xfe46dCeb5d586DA13aBAA571613e20f5a61fa62e']])
+def test_aave_v3_events_with_approval(database, polygon_pos_inquirer, polygon_pos_accounts) -> None:  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0x0aaca18a7e0ee29a247bd9bfab3b081acf469833105a9204251c5a4969a5fc29')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=polygon_pos_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, deposit_amount, approval_amount, gas_fees = TimestampMS(1718134876000), '72.227367', '115792089237316195423570985008687907853269984665640564039457584007903019.443007', '0.006703085584530904'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.POLYGON_POS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_POLYGON_POS_MATIC,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label=polygon_pos_accounts[0],
+            notes=f'Burned {gas_fees} MATIC for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=142,
+            timestamp=timestamp,
+            location=Location.POLYGON_POS,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=A_POLYGON_POS_USDT,
+            balance=Balance(amount=FVal(approval_amount)),
+            location_label=polygon_pos_accounts[0],
+            notes=f'Set USDT spending approval of {polygon_pos_accounts[0]} by 0x794a61358D6845594F94dc1DB02A252b5b4814aD to {approval_amount}',  # noqa: E501
+            tx_hash=tx_hash,
+            address=string_to_evm_address('0x794a61358D6845594F94dc1DB02A252b5b4814aD'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=145,
+            timestamp=timestamp,
+            location=Location.POLYGON_POS,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_POLYGON_POS_USDT,
+            balance=Balance(),
+            location_label=polygon_pos_accounts[0],
+            notes='Enable USDT as collateral on AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=string_to_evm_address('0x794a61358D6845594F94dc1DB02A252b5b4814aD'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=146,
+            timestamp=timestamp,
+            location=Location.POLYGON_POS,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_POLYGON_POS_USDT,
+            balance=Balance(amount=FVal(deposit_amount)),
+            location_label=polygon_pos_accounts[0],
+            notes=f'Deposit {deposit_amount} USDT into AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=string_to_evm_address('0x6ab707Aca953eDAeFBc4fD23bA73294241490620'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=147,
+            timestamp=timestamp,
+            location=Location.POLYGON_POS,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=EvmToken('eip155:137/erc20:0x6ab707Aca953eDAeFBc4fD23bA73294241490620'),  # aPolUSDT  # noqa: E501
+            balance=Balance(amount=FVal(deposit_amount)),
+            location_label=polygon_pos_accounts[0],
+            notes=f'Receive {deposit_amount} aPolUSDT from AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=ZERO_ADDRESS,
         ),
     ]
     assert events == expected_events
