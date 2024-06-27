@@ -1,6 +1,7 @@
 import random
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
+from unittest.mock import patch
 
 import pytest
 import requests
@@ -12,6 +13,7 @@ from rotkehlchen.constants.assets import A_ETH, A_SUSHI, A_USDT
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.history.events.structures.evm_event import SUB_SWAPS_DETAILS, EvmEvent
@@ -526,6 +528,26 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
                 query_filter=HistoryEventFilterQuery.make(exclude_ignored_assets=exclude_ignored),
                 entries_limit=limit,
             ) == (total, found)
+
+    # test query an event with an unknown asset
+    def mock_check_asset_existence(identifier: str, query_packaged_db: bool = True):
+        raise UnknownAsset(identifier)
+
+    with patch(
+        target='rotkehlchen.assets.asset.AssetResolver.check_existence',
+        new=mock_check_asset_existence,
+    ):
+        response = requests.post(
+            api_url_for(
+                rotkehlchen_api_server,
+                'historyeventresource',
+            ),
+        )
+    assert_proper_sync_response_with_result(response)
+    assert rotkehlchen_api_server.rest_api.rotkehlchen.msg_aggregator.consume_errors() == [
+        'Could not deserialize one or more history event(s). '
+        'Try redecoding the event(s) or check the logs for more details.',
+    ]
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

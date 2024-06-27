@@ -462,6 +462,7 @@ class DBHistoryEvents:
         output: list[HistoryBaseEntry] | list[tuple[int, HistoryBaseEntry]] = []
         type_idx = 1 if group_by_event_ids else 0
         data_start_idx = type_idx + 1
+        failed_to_deserialize = False
         for entry in cursor:
             entry_type = HistoryBaseEntryType(entry[type_idx])
             try:
@@ -500,16 +501,23 @@ class DBHistoryEvents:
                     deserialized_event = EthDepositEvent.deserialize_from_db(data)
 
                 else:
-                    data = entry[data_start_idx:HISTORY_BASE_ENTRY_LENGTH + 1]
-                    deserialized_event = HistoryEvent.deserialize_from_db(entry[data_start_idx:])
+                    data = entry[data_start_idx:]
+                    deserialized_event = HistoryEvent.deserialize_from_db(data)
             except (DeserializationError, UnknownAsset) as e:
-                log.debug(f'Failed to deserialize history event {entry} due to {e!s}')
+                log.error(f'Failed to deserialize history event {entry} due to {e!s}')
+                failed_to_deserialize = True
                 continue
 
             if group_by_event_ids is True:
                 output.append((entry[0], deserialized_event))  # type: ignore
             else:
                 output.append(deserialized_event)  # type: ignore
+
+        if failed_to_deserialize:
+            self.db.msg_aggregator.add_error(
+                'Could not deserialize one or more history event(s). '
+                'Try redecoding the event(s) or check the logs for more details.',
+            )
 
         return output
 
