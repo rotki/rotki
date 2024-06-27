@@ -25,9 +25,20 @@ export const useHistoryStore = defineStore('history', () => {
   };
 
   const setProtocolCacheStatus = (data: ProtocolCacheUpdatesData) => {
+    const old = get(protocolCacheUpdateStatus);
+    const filtered: Record<string, ProtocolCacheUpdatesData> = {};
+    const currentKey = `${data.chain}#${data.protocol}`;
+    for (const key in old) {
+      if (key !== currentKey) {
+        filtered[key] = {
+          ...old[key],
+          processed: old[key].total,
+        };
+      }
+    }
     set(protocolCacheUpdateStatus, {
-      ...get(protocolCacheUpdateStatus),
-      [`${data.chain}#${data.protocol}`]: data,
+      [currentKey]: data,
+      ...filtered,
     });
   };
 

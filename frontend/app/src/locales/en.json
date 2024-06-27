@@ -4639,7 +4639,7 @@
         "title": "Refresh protocol cache"
       },
       "no_ongoing": "No ongoing refresh happening.",
-      "outdated_data": "Outdated data",
+      "outdated_data": "Outdated pools",
       "refreshing": "Refreshing protocol cache",
       "title": "Protocol cache updates status",
       "pools_refreshed": "{processed} / {total} pools refreshed"

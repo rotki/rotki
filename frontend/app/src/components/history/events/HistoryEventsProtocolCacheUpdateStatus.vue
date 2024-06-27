@@ -115,7 +115,7 @@ function showConfirmation() {
       {{ t('transactions.protocol_cache_updates.no_ongoing') }}
     </div>
     <div
-      v-else-if="total > 0"
+      v-else-if="protocolCacheStatus.length > 0"
       :class="css.content"
     >
       <DefineProgress #default="{ data }">
@@ -165,10 +165,10 @@ function showConfirmation() {
               :src="row.protocolInfo.image"
               :alt="row.protocolInfo.name"
               contain
-              size="32px"
-              class="icon-bg"
+              size="24px"
+              class="icon-bg mt-1"
             />
-            <div class="text-rui-text-secondary">
+            <div class="text-rui-text-secondary mt-1">
               {{ toCapitalCase(row.protocolInfo.name) }}
             </div>
           </div>
