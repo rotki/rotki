@@ -46,7 +46,7 @@ const rows = computed<(Airdrop & { index: number })[]>(() => {
   const data = filterByAddress(get(airdrops), addresses);
   return data.filter((airdrop) => {
     const currentStatus = get(status);
-    const currentTime = Date.now()/1000
+    const currentTime = Date.now() / 1000;
     switch (currentStatus) {
       case 'unknown':
         return !airdrop.hasDecoder;
@@ -274,9 +274,10 @@ watch([status, selectedAccounts], () => {
             v-else
             :color="claimed ? 'success' : 'grey'"
             size="sm"
-          > {{ claimed
+          >
+            {{ claimed
               ? t('common.claimed')
-              : cutoffTime !== 'undefined' && cutoffTime !== null && cutoffTime < Date.now()/1000
+              : cutoffTime !== 'undefined' && cutoffTime !== null && cutoffTime < Date.now() / 1000
                 ? t('common.missed')
                 : t('common.unclaimed') }}
           </RuiChip>
