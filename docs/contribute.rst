@@ -986,3 +986,5 @@ Working with the frontend
 While working with the frontend code and type errors in the code will be displayed inside the page.
 To make clicking the errors open in your editor or IDE you need to set the `LAUNCH_EDITOR <https://github.com/yyx990803/launch-editor#supported-editors>`_
 environment variable in your system.
+
+To enable the Vue Dev Tools during development in the electron app you need to set `ENABLE_DEV_TOOLS=true` in `.env.development.local`.

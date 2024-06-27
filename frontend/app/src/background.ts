@@ -50,25 +50,30 @@ async function onActivate(): Promise<void> {
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
+async function installDevTools() {
+  // Install Vue Devtools
+  try {
+    // Vite 4.x and cjs module (figure out if there is a better solution)
+    const { VUEJS_DEVTOOLS, default: tools } = await import('electron-devtools-installer');
+    if ('default' in tools && typeof tools.default === 'function')
+      await tools.default(VUEJS_DEVTOOLS);
+    else if (typeof tools === 'function')
+      await tools(VUEJS_DEVTOOLS);
+    else
+      console.error('something is wrong with devtools installer');
+  }
+  catch (error: any) {
+    console.error('Vue Devtools failed to install:', error.toString());
+  }
+}
+
 // Some APIs can only be used after this event occurs.
 async function onReady(): Promise<void> {
   if (isDevelopment) {
-    // Install Vue Devtools
-    try {
-      // Vite 4.x and cjs module (figure out if there is a better solution)
-      const { VUEJS_DEVTOOLS, default: tools } = await import(
-        'electron-devtools-installer'
-      );
-      if ('default' in tools && typeof tools.default === 'function')
-        await tools.default(VUEJS_DEVTOOLS);
-      else if (typeof tools === 'function')
-        await tools(VUEJS_DEVTOOLS);
-      else
-        console.error('something is wrong with devtools installer');
-    }
-    catch (error: any) {
-      console.error('Vue Devtools failed to install:', error.toString());
-    }
+    if (process.env.ENABLE_DEV_TOOLS)
+      await installDevTools();
+    else
+      console.warn('To enable Vue dev tools set ENABLE_DEV_TOOLS in .env.development.local');
   }
 
   const getWindow = () => {
@@ -220,7 +225,8 @@ async function createWindow(): Promise<BrowserWindow> {
     pyHandler.setCorsURL(import.meta.env.VITE_DEV_SERVER_URL as string);
     // Load the url of the dev server if in development mode
     await win.loadURL(import.meta.env.VITE_DEV_SERVER_URL as string);
-    win.webContents.openDevTools();
+    if (process.env.ENABLE_DEV_TOOLS)
+      win.webContents.openDevTools();
   }
   else {
     createProtocol('app');
