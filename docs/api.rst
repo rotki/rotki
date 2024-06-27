@@ -8674,6 +8674,7 @@ Querying ethereum airdrops
                      "asset": "eip155:1/erc20:0x111111111117dC0aa78b770fA6A738034120C302",
                      "link": "https://app.uniswap.org/",
                      "claimed": false,
+                     "cutoff_time": null,
                      "has_decoder": true
                   }
             },
@@ -8683,6 +8684,7 @@ Querying ethereum airdrops
                      "asset": "eip155:1/erc20:0x111111111117dC0aa78b770fA6A738034120C302",
                      "link": "https://1inch.exchange/",
                      "claimed": false,
+                     "cutoff_time": null,
                      "has_decoder": false
                   },
                   "uniswap": {
@@ -8690,6 +8692,7 @@ Querying ethereum airdrops
                      "asset": "eip155:1/erc20:0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
                      "link": "https://app.uniswap.org/",
                      "claimed": true,
+                     "cutoff_time": null,
                      "icon_url": "https://raw.githubusercontent.com/rotki/data/main/airdrops/icons/uniswap.svg",
                      "has_decoder": true
                   }
