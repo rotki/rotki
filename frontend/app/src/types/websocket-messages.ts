@@ -153,6 +153,14 @@ export type AccountingRuleConflictData = z.infer<
   typeof AccountingRuleConflictData
 >;
 
+export const ProtocolCacheUpdatesData = EvmUnDecodedTransactionsData.extend({
+  protocol: z.string(),
+});
+
+export type ProtocolCacheUpdatesData = z.infer<
+    typeof ProtocolCacheUpdatesData
+>;
+
 export const SocketMessageType = {
   LEGACY: 'legacy',
   BALANCES_SNAPSHOT_ERROR: 'balance_snapshot_error',
@@ -169,6 +177,7 @@ export const SocketMessageType = {
   DB_UPLOAD_RESULT: 'database_upload_result',
   ACCOUNTING_RULE_CONFLICT: 'accounting_rule_conflict',
   CALENDAR_REMINDER: 'calendar_reminder',
+  PROTOCOL_CACHE_UPDATES: 'protocol_cache_updates',
 } as const;
 
 export type SocketMessageType =
@@ -249,6 +258,11 @@ const CalendarReminderMessage = z.object({
   data: CalendarEventPayload,
 });
 
+const ProtocolCacheUpdatesMessage = z.object({
+  type: z.literal(SocketMessageType.PROTOCOL_CACHE_UPDATES),
+  data: ProtocolCacheUpdatesData,
+});
+
 export const WebsocketMessage = z.union([
   UnknownWebsocketMessage,
   LegacyWebsocketMessage,
@@ -265,6 +279,7 @@ export const WebsocketMessage = z.union([
   DbUploadResultMessage,
   AccountingRuleConflictMessage,
   CalendarReminderMessage,
+  ProtocolCacheUpdatesMessage,
 ]);
 
 export type WebsocketMessage = z.infer<typeof WebsocketMessage>;

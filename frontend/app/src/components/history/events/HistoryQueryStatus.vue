@@ -113,6 +113,9 @@ function resetQueryStatus() {
         <template #activator>
           <RuiButton
             variant="text"
+            icon
+            size="sm"
+            class="!p-2"
             @click="emit('show-decode-details')"
           >
             <template #append>

@@ -28,7 +28,7 @@ const css = useCssModule();
 </script>
 
 <template>
-  <RuiDialog width="1200">
+  <RuiDialog max-width="1200">
     <template #activator="{ on }">
       <RuiTooltip
         :popper="{ placement: 'top' }"

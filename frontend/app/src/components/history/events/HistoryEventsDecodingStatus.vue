@@ -64,7 +64,7 @@ const total = computed<number>(() =>
 
 const [DefineProgress, ReuseProgress] = createReusableTemplate<{
   data: {
-    evmChain: string;
+    chain: string;
     total: number;
     processed: number;
   };
@@ -132,7 +132,7 @@ onMounted(() => refresh());
         :cols="headers"
         :rows="decodingStatus"
         dense
-        row-attr="evmChain"
+        row-attr="chain"
         striped
         outlined
       >
