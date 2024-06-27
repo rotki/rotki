@@ -517,7 +517,7 @@ def test_aave_v2_deposit(database, ethereum_inquirer, eth_transactions):
             extra_data=None,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=419,
+            sequence_index=1,
             timestamp=0,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
@@ -532,7 +532,7 @@ def test_aave_v2_deposit(database, ethereum_inquirer, eth_transactions):
             address=string_to_evm_address('0x030bA81f1c18d280636F32af80b9AAd02Cf0854e'),
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=420,
+            sequence_index=2,
             timestamp=0,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -655,7 +655,7 @@ def test_aave_v2_borrow(database, ethereum_inquirer, ethereum_accounts):
             extra_data=None,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=307,
+            sequence_index=1,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -669,7 +669,7 @@ def test_aave_v2_borrow(database, ethereum_inquirer, ethereum_accounts):
             address=ZERO_ADDRESS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=310,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -777,7 +777,7 @@ def test_aave_v2_repay(database, ethereum_inquirer, eth_transactions):
             extra_data=None,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=153,
+            sequence_index=1,
             timestamp=0,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
@@ -792,7 +792,7 @@ def test_aave_v2_repay(database, ethereum_inquirer, eth_transactions):
             address=ZERO_ADDRESS,
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=156,
+            sequence_index=2,
             timestamp=0,
             location=Location.ETHEREUM,
             event_type=HistoryEventType.SPEND,
@@ -943,7 +943,22 @@ def test_aave_v2_supply_ether(database, ethereum_inquirer, ethereum_accounts):
             extra_data=None,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=1,
+            sequence_index=182,
+            timestamp=TimestampMS(1646516157000),
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
+            balance=Balance(amount=ZERO),
+            location_label=ethereum_accounts[0],
+            notes='Enable WETH as collateral on AAVE v2',
+            counterparty=CPT_AAVE_V2,
+            identifier=None,
+            extra_data=None,
+            address=string_to_evm_address('0xcc9a0B7c43DC2a5F023Bb9b738E45B0Ef6B06E04'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=183,
             timestamp=TimestampMS(1646516157000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.DEPOSIT,
@@ -958,7 +973,7 @@ def test_aave_v2_supply_ether(database, ethereum_inquirer, ethereum_accounts):
             address=string_to_evm_address('0xcc9a0B7c43DC2a5F023Bb9b738E45B0Ef6B06E04'),
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=180,
+            sequence_index=184,
             timestamp=TimestampMS(1646516157000),
             location=Location.ETHEREUM,
             event_type=HistoryEventType.RECEIVE,
@@ -971,21 +986,6 @@ def test_aave_v2_supply_ether(database, ethereum_inquirer, ethereum_accounts):
             identifier=None,
             extra_data=None,
             address=ZERO_ADDRESS,
-        ), EvmEvent(
-            tx_hash=tx_hash,
-            sequence_index=182,
-            timestamp=TimestampMS(1646516157000),
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.INFORMATIONAL,
-            event_subtype=HistoryEventSubType.NONE,
-            asset=EvmToken('eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
-            balance=Balance(amount=ZERO),
-            location_label=ethereum_accounts[0],
-            notes='Enable WETH as collateral on AAVE v2',
-            counterparty=CPT_AAVE_V2,
-            identifier=None,
-            extra_data=None,
-            address=string_to_evm_address('0xcc9a0B7c43DC2a5F023Bb9b738E45B0Ef6B06E04'),
         ),
     ]
     assert events == expected_events
@@ -1017,7 +1017,7 @@ def test_aave_v2_borrow_polygon(database, polygon_pos_inquirer, polygon_pos_acco
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=430,
+            sequence_index=1,
             timestamp=timestamp,
             location=Location.POLYGON_POS,
             event_type=HistoryEventType.RECEIVE,
@@ -1030,7 +1030,7 @@ def test_aave_v2_borrow_polygon(database, polygon_pos_inquirer, polygon_pos_acco
             address=ZERO_ADDRESS,
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=433,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.POLYGON_POS,
             event_type=HistoryEventType.RECEIVE,
