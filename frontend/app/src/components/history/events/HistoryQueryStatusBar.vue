@@ -2,18 +2,13 @@
 defineProps<{
   colspan: number;
   finished: boolean;
-  decoding: boolean;
-  total: number;
 }>();
 
 const emit = defineEmits<{ (e: 'reset'): void }>();
 </script>
 
 <template>
-  <tr
-    v-if="total > 0 || decoding"
-    class="!bg-black/[0.04] dark:!bg-white/[0.04]"
-  >
+  <tr class="!bg-black/[0.04] dark:!bg-white/[0.04]">
     <td
       :colspan="colspan"
       class="px-4"

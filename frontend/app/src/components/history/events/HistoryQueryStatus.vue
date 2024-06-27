@@ -77,9 +77,8 @@ function resetQueryStatus() {
 
 <template>
   <HistoryQueryStatusBar
+    v-if="loading || decoding || items.length > 0"
     :colspan="colspan"
-    :total="items.length"
-    :decoding="!isQuery"
     :finished="isQuery ? !loading : !decoding"
     @reset="resetQueryStatus()"
   >
