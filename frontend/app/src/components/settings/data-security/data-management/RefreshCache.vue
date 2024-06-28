@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { RefreshableCache } from '@/types/session/purge';
+import { TaskType } from '@/types/task-type';
 
 const { t } = useI18n();
 
@@ -14,6 +15,10 @@ const refreshable = [
 const source: Ref<RefreshableCache> = ref(RefreshableCache.GENERAL_CACHE);
 
 const { refreshGeneralCache } = useSessionPurge();
+const { protocolCacheStatus } = storeToRefs(useHistoryStore());
+
+const { isTaskRunning } = useTaskStore();
+const taskRunning = isTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
 
 async function refreshSource(source: RefreshableCache) {
   if (source === RefreshableCache.GENERAL_CACHE)
@@ -38,6 +43,27 @@ const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
     }),
   }),
 );
+
+const { getChainName } = useSupportedChains();
+
+const hint: ComputedRef<string> = computed(() => {
+  if (!get(taskRunning))
+    return '';
+
+  const status = get(protocolCacheStatus);
+  if (status.length === 0)
+    return '';
+
+  const data = status[0];
+
+  return t('transactions.protocol_cache_updates.hint', {
+    ...data,
+    protocol: toCapitalCase(data.protocol),
+    chain: get(getChainName(data.chain)),
+  });
+});
+
+const loading = logicOr(pending, taskRunning);
 </script>
 
 <template>
@@ -60,7 +86,8 @@ const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
         :options="refreshable"
         text-attr="text"
         key-attr="id"
-        :disabled="pending"
+        :disabled="loading"
+        :hint="hint"
       >
         <template #selection="{ item }">
           <div>{{ item.shortText || item.text }}</div>
@@ -76,8 +103,8 @@ const { status, pending, showConfirmation } = useCacheClear<RefreshableCache>(
           <RuiButton
             variant="text"
             icon
-            :disabled="!source || pending"
-            :loading="pending"
+            :disabled="!source || loading"
+            :loading="loading"
             @click="showConfirmation(source)"
           >
             <RuiIcon name="restart-line" />

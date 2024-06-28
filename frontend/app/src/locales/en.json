@@ -4638,6 +4638,7 @@
         "message": "Are you sure you want to refresh protocol cache (Curve, MakerDAO, Yearn, Velodrome, Aerodrome, and Gearbox)",
         "title": "Refresh protocol cache"
       },
+      "hint": "Refreshing {protocol} cache on {chain} ({processed}/{total})",
       "no_ongoing": "No ongoing refresh happening.",
       "outdated_data": "Outdated pools",
       "refreshing": "Refreshing protocol cache",
