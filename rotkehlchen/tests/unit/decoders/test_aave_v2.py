@@ -32,6 +32,7 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
 ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
@@ -1333,6 +1334,90 @@ def test_stake_reward(database, ethereum_inquirer: 'EthereumInquirer', ethereum_
             address=STK_AAVE_ADDR,
             counterparty=CPT_AAVE,
             product=EvmProduct.STAKING,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x6Cf9AA65EBaD7028536E353393630e2340ca6049']])
+def test_stake_reward_from_incentives(database, ethereum_inquirer: 'EthereumInquirer', ethereum_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
+    """Test that the decoder can decode aave staking reward claiming in the old way ~2022
+    which takes it from the aave incentives"""
+    tx_hash = deserialize_evm_tx_hash('0x376c51a492f3f309c408b00278fbb77e54adcbb883f9e0fc190c5478fc153bbf')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas_fees, amount = TimestampMS(1649141661000), '0.03959433', '14.159467670600490614'
+    expected_events = [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label=ethereum_accounts[0],
+            notes=f'Burned {gas_fees} ETH for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=67,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:1/erc20:0x4da27a545c0c5B758a6BA100e3a049001de870f5'),
+            balance=Balance(amount=FVal(amount)),
+            location_label=ethereum_accounts[0],
+            notes=f'Claim {amount} stkAAVE from Aave incentives',
+            tx_hash=tx_hash,
+            address=string_to_evm_address('0xd784927Ff2f95ba542BfC824c8a8a98F3495f6b5'),
+            counterparty=CPT_AAVE_V2,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('polygon_pos_accounts', [['0x9131C96c791A5aAd3dF4F8C85Acc755a8dD487Ed']])
+def test_polygon_incentives(database, polygon_pos_inquirer: 'PolygonPOSInquirer', polygon_pos_accounts: list['ChecksumEvmAddress']) -> None:  # noqa: E501
+    tx_hash = deserialize_evm_tx_hash('0x6ebaa1502335caa7aa9b6589169885d0361e96bab9ed3b1264308a716d6524c3')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=polygon_pos_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, user, gas_fees, amount = TimestampMS(1677815446000), polygon_pos_accounts[0], '0.010600028218383051', '2.703388364402691276'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.POLYGON_POS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_POLYGON_POS_MATIC,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label=user,
+            notes=f'Burned {gas_fees} MATIC for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=199,
+            timestamp=timestamp,
+            location=Location.POLYGON_POS,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:137/erc20:0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270'),
+            balance=Balance(amount=FVal(amount)),
+            location_label=user,
+            notes=f'Claim {amount} WMATIC from Aave incentives',
+            tx_hash=tx_hash,
+            address=string_to_evm_address('0x357D51124f59836DeD84c8a1730D72B749d8BC23'),
+            counterparty=CPT_AAVE_V2,
         ),
     ]
     assert events == expected_events

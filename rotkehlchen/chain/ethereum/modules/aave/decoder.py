@@ -81,8 +81,10 @@ class AaveDecoder(DecoderInterface):
                 event.product = EvmProduct.STAKING
                 event.counterparty = CPT_AAVE
                 event.address = STK_AAVE_ADDR
+                break
 
-        log.error(f'Aave stake receive was not found for {context.transaction.tx_hash.hex()}')
+        else:
+            log.error(f'Aave stake receive was not found for {context.transaction.tx_hash.hex()}')
 
         return DEFAULT_DECODING_OUTPUT
 
