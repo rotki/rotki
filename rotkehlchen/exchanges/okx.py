@@ -82,7 +82,7 @@ class Okx(ExchangeInterface):
         if credentials.api_key is not None:
             self.session.headers.update({'OK-ACCESS-KEY': self.api_key})
         if credentials.passphrase is not None:
-            self.session.headers.update({'OK-ACCESS-PASSPHRASE': self.passphrase})
+            self.session.headers.update({'OK-ACCESS-PASSPHRASE': credentials.passphrase})
         return changed
 
     def _generate_signature(
