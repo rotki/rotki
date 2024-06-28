@@ -33,12 +33,15 @@ const { show } = useConfirmStore();
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
+const { exchangeRate } = useBalancePricesStore();
+
 function setPriceForm() {
+  const toAsset = get(currencySymbol);
   setOpenDialog(true);
   set(customPrice, {
     fromAsset: get(identifier),
-    toAsset: get(currencySymbol),
-    price: get(info).usdPrice.toFixed(),
+    toAsset,
+    price: get(info).usdPrice.multipliedBy(get(exchangeRate(toAsset)) ?? One).toFixed(),
   });
 }
 

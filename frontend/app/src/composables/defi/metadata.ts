@@ -36,15 +36,14 @@ export const useDefiMetadata = createSharedComposable(() => {
 
   const getDefiName = (identifier: MaybeRef<string>): ComputedRef<string> =>
     useValueOrDefault(
-      useRefMap(getDefiData(identifier), i => i?.name),
+      useRefMap(getDefiData(identifier), i => i?.name && decodeHtmlEntities(i?.name)),
       identifier,
     );
 
-  const getDefiImage = (identifier: MaybeRef<string>): ComputedRef<string> =>
-    useValueOrDefault(
-      useRefMap(getDefiData(identifier), i => i?.icon),
-      computed(() => `${get(identifier)}.svg`),
-    );
+  const getDefiImage = (identifier: MaybeRef<string>): ComputedRef<string> => computed(() => {
+    const imageName = get(getDefiData(identifier))?.icon || `${get(identifier)}.svg`;
+    return `./assets/images/protocols/${imageName}`;
+  });
 
   const getDefiIdentifierByName = (
     name: MaybeRef<string>,

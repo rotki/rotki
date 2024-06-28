@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { toCapitalCase } from '@/utils/text';
 import { TaskType } from '@/types/task-type';
 import type { DataTableColumn } from '@rotki/ui-library-compat';
 
@@ -55,7 +54,7 @@ const dataWithInfo = computed(() => get(protocolCacheStatus).map((item) => {
     ...item,
     key: `${item.chain}#${item.protocol}`,
     protocolInfo: {
-      image: get(metadataLoading) ? null : `./assets/images/protocols/${protocolImage}`,
+      icon: get(metadataLoading) ? null : protocolImage,
       name: protocolName,
     },
   };
@@ -159,19 +158,11 @@ function showConfirmation() {
           <LocationDisplay :identifier="row.chain" />
         </template>
         <template #item.protocol="{ row }">
-          <div class="flex flex-col items-center">
-            <AppImage
-              :loading="!row.protocolInfo.image"
-              :src="row.protocolInfo.image"
-              :alt="row.protocolInfo.name"
-              contain
-              size="24px"
-              class="icon-bg mt-1"
-            />
-            <div class="text-rui-text-secondary mt-1">
-              {{ toCapitalCase(row.protocolInfo.name) }}
-            </div>
-          </div>
+          <DefiIcon
+            :loading="!row.protocolInfo.icon"
+            :item="row.protocolInfo"
+            vertical
+          />
         </template>
         <template #item.number="{ row }">
           {{ row.total - row.processed }}
@@ -207,7 +198,7 @@ function showConfirmation() {
 
     <template #footer>
       <div class="grow" />
-      <RuiTooltip>
+      <RuiTooltip tooltip-class="max-w-[20rem]">
         <template #activator>
           <RuiButton
             color="error"

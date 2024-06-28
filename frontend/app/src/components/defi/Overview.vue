@@ -24,18 +24,8 @@ const assets = computed(() => {
 const { getDefiName, getDefiImage, loading } = useDefiMetadata();
 
 const protocol = useRefMap(summary, i => i.protocol);
-const reactiveDecoder = reactify(decodeHtmlEntities);
-
-const name = reactiveDecoder(getDefiName(protocol));
-const image = getDefiImage(protocol);
-
-const imageUrl = computed(() => {
-  const imageVal = get(image);
-  if (!imageVal)
-    return '';
-
-  return `./assets/images/protocols/${imageVal}`;
-});
+const name = getDefiName(protocol);
+const imageUrl = getDefiImage(protocol);
 </script>
 
 <template>
