@@ -386,6 +386,9 @@ class EvmTransaction:
     def identifier(self) -> str:
         return str(self.chain_id.value) + self.tx_hash.hex()
 
+    def __str__(self) -> str:
+        return f'{self.tx_hash.hex()} at {self.chain_id}'
+
 
 class EvmInternalTransaction(NamedTuple):
     """Represent an internal EVM transaction"""

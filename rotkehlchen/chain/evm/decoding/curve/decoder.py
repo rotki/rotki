@@ -10,6 +10,7 @@ from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V1, CPT_AAVE_
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
 from rotkehlchen.chain.evm.decoding.curve.constants import (
     ADD_LIQUIDITY_EVENTS,
+    ADD_LIQUIDITY_IN_DEPOSIT_AND_STAKE,
     CPT_CURVE,
     EXCHANGE_MULTIPLE,
     EXCHANGE_NG,
@@ -44,12 +45,14 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import NotERC20Conformant, NotERC721Conformant
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTransaction
+from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTokenKind, EvmTransaction
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
@@ -317,18 +320,34 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                 receive_event = event
             elif (  # deposit give asset
                 event.event_type == HistoryEventType.SPEND and
-                event.event_subtype == HistoryEventSubType.NONE and
-                (
-                    event.location_label == user_or_contract_address or
-                    user_or_contract_address in self.curve_deposit_contracts
-                ) and
-                tx_log.address in self.pools
+                event.event_subtype == HistoryEventSubType.NONE
             ):
-                event.event_type = HistoryEventType.DEPOSIT
-                event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
-                event.counterparty = CPT_CURVE
-                event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} in curve pool {tx_log.address}'  # noqa: E501
-                deposit_events.append(event)
+                if (
+                    (
+                        event.location_label == user_or_contract_address or
+                        user_or_contract_address in self.curve_deposit_contracts
+                    ) and
+                    tx_log.address in self.pools
+                ):
+                    event.event_type = HistoryEventType.DEPOSIT
+                    event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                    event.counterparty = CPT_CURVE
+                    event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} in curve pool {tx_log.address}'  # noqa: E501
+                    deposit_events.append(event)
+                else:
+                    # when depositing in a gauge with deposit and stake
+                    # we need to check if there is a transfer targeting the same contract address
+                    # (should not be the user address) and if so save the address of the pool
+                    # example: https://gnosisscan.io/tx/0xcbeaaee59405d5f7fd456dc510f1b841cc1329cd9624255ce64c894ac6643bd7  # noqa: E501
+                    for _log in all_logs:
+                        if (
+                            _log.topics[0] == ERC20_OR_ERC721_TRANSFER and
+                            hex_or_bytes_to_address(_log.topics[1]) == ZERO_ADDRESS and
+                            hex_or_bytes_to_address(_log.topics[2]) == user_or_contract_address and
+                            _log.log_index < tx_log.log_index
+                        ):
+                            event.extra_data = {'address_pool_tokens_received': _log.address}
+                            break
             elif (
                 event.event_type == HistoryEventType.DEPOSIT and
                 event.event_subtype == HistoryEventSubType.DEPOSIT_ASSET and
@@ -523,6 +542,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                 event.notes = f'Swap {event.balance.amount} {crypto_asset.symbol} in curve'
                 event.counterparty = CPT_CURVE
                 spend_event = event
+                event.extra_data = None
             elif (
                 event.location_label == receiver_address and
                 event.event_type == HistoryEventType.RECEIVE and
@@ -534,6 +554,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                 event.notes = f'Receive {event.balance.amount} {crypto_asset.symbol} as the result of a swap in curve'  # noqa: E501
                 event.counterparty = CPT_CURVE
                 receive_event = event
+                event.extra_data = None
 
         if spend_event is not None and receive_event is not None:
             # Just to make sure that spend and receive events are consecutive
@@ -544,6 +565,73 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                 f'{context.transaction.tx_hash.hex()}. Probably some aggregator was used and '
                 f'decoding needs to happen in the aggregator-specific decoder.',
             )
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def _decode_deposit_and_stake(self, context: DecoderContext) -> DecodingOutput:
+        """
+        Enrich the transfer for deposit and stake to save the amount of gauge tokens
+        received. We need to match against transfers manually because they are not
+        made from the user address but an intermediate contract
+        """
+        if (pool_addresses := self.pools.get(context.tx_log.address)) is None:
+            log.error(
+                f'Curve pool for {self.evm_inquirer.chain_name} {context.tx_log.address} '
+                f'not present in cache at {context.transaction.tx_hash.hex()}. Skipping',
+            )
+            return DEFAULT_DECODING_OUTPUT
+
+        provider = hex_or_bytes_to_address(context.tx_log.topics[1])
+        deposited_amounts = [
+            deposited_amount
+            for deposit_amount in [context.tx_log.data[i:i + 32] for i in range(len(pool_addresses))]  # noqa: E501
+            if (deposited_amount := hex_or_bytes_to_int(deposit_amount)) != 0
+        ]
+        pool_assets = [
+            Asset(evm_address_to_identifier(
+                address=address,
+                chain_id=self.evm_inquirer.chain_id,
+                token_type=EvmTokenKind.ERC20,
+            )) if address != ETH_SPECIAL_ADDRESS else A_ETH for address in pool_addresses
+        ]
+
+        gauge_tokens = None
+        for event in context.decoded_events:
+            if event.asset not in pool_assets:
+                continue
+
+            # The context.tx_log is a deposit event from curve. We deposit an underlying token
+            # of the pool (for example EURE) and we get an amount of the pool token. The problem
+            # is that the event log doesn't contain the amount of the LP received and it is needed
+            # later when decoding the gauge events since the amounts that we compare with are
+            # different. The next for loop iterates over the logs to find the transfer that follows
+            # the current log entry and extract from there the amount of LP tokens obtained after
+            # the deposit.
+            for tx_log in context.all_logs:
+                if (
+                    tx_log.log_index > context.tx_log.log_index and
+                    tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
+                    hex_or_bytes_to_address(tx_log.topics[1]) == provider
+                ):
+                    gauge_tokens = hex_or_bytes_to_int(tx_log.data[0:32])
+                    break
+            else:
+                log.error(f'Could not find transfer of gauge tokens in {context.transaction}. Skipping...')  # noqa: E501
+                continue
+
+            # add the amount of gauge_tokens obtained, to the event's extra_data
+            for deposit_amount in deposited_amounts:
+                if event.balance.amount == asset_normalized_value(
+                    amount=deposit_amount,
+                    asset=event.asset.resolve_to_crypto_asset(),
+                ):
+                    event.event_type = HistoryEventType.DEPOSIT
+                    event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
+                    event.counterparty = CPT_CURVE
+                    event.extra_data = {'gauge_tokens': gauge_tokens}
+                    break
+            else:
+                log.error(f'Could not find event depositing any of {deposited_amounts} in {context.transaction}. Continuing')  # noqa: E501
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -568,6 +656,8 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                 decoded_events=context.decoded_events,
                 user_or_contract_address=user_or_contract_address,
             )
+        if context.tx_log.topics[0] == ADD_LIQUIDITY_IN_DEPOSIT_AND_STAKE:
+            return self._decode_deposit_and_stake(context=context)
 
         if context.tx_log.topics[0] in (
             TOKEN_EXCHANGE,
@@ -589,6 +679,15 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
         raw_amount = hex_or_bytes_to_int(context.tx_log.data)
         found_event_modifying_balances = False
         gauge_event = None
+        # get pool tokens for this gauge
+        lp_and_gauge_token_addresses = get_lp_and_gauge_token_addresses(
+            pool_address=context.tx_log.address,
+            chain_id=self.evm_inquirer.chain_id,
+        )
+        pool_tokens = []
+        for address in lp_and_gauge_token_addresses:
+            pool_tokens += self.pools.get(address, [])
+
         # if gauge token is None, that means the gauge is an old one, without any token
         if (gauge_token := self._read_curve_asset(
             asset_address=gauge_address,
@@ -600,15 +699,30 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                 gauge_token = None
 
         for event in context.decoded_events:
-            if (
+            if (  # first check against common conditions for gauge deposits
                 event.location_label == provider and
-                event.address == gauge_address and
+                (event.address == gauge_address or event.address in self.curve_deposit_contracts) and  # noqa: E501
                 event.asset.is_evm_token() and
-                event.balance.amount == asset_normalized_value(
-                    amount=raw_amount,
-                    asset=(evm_asset := event.asset.resolve_to_evm_token()),
+                (
+                    (  # case of staking using deposit_and_stake
+                        event.extra_data is not None and
+                        (
+                            (
+                                (gauge_amount := event.extra_data.get('gauge_tokens')) is not None and  # user sends tokens of the pool # noqa: E501
+                                gauge_amount == raw_amount
+                            ) or (
+                                (pool_token_address := event.extra_data.get('address_pool_tokens_received')) is not None and  # case of underlying pools like 3crv in eure-3crv. The user sends USDC but the gauge received 3crv # noqa: E501
+                                pool_token_address in pool_tokens
+                            )
+                        )
+                    ) or
+                    event.balance.amount == asset_normalized_value(  # direct deposit in the gauge
+                        amount=raw_amount,
+                        asset=(evm_asset := event.asset.resolve_to_evm_token()),
+                    )
                 )
             ):
+                evm_asset = event.asset.resolve_to_evm_token()
                 event.counterparty = CPT_CURVE
                 event.product = EvmProduct.GAUGE
                 found_event_modifying_balances = True
@@ -619,6 +733,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                     event.notes = f'Deposit {event.balance.amount} {evm_asset.symbol} into {gauge_address} curve gauge'  # noqa: E501
                     from_event_type = HistoryEventType.RECEIVE
                     pair_subtype = HistoryEventSubType.RECEIVE_WRAPPED
+                    event.extra_data = None
                     pair_note = 'Receive {{amount}} {symbol} after depositing in {address} curve gauge'  # noqa: E501
                 else:  # Withdraw
                     event.event_type = HistoryEventType.WITHDRAWAL
@@ -626,6 +741,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                     event.notes = f'Withdraw {event.balance.amount} {evm_asset.symbol} from {gauge_address} curve gauge'  # noqa: E501
                     from_event_type = HistoryEventType.SPEND
                     pair_subtype = HistoryEventSubType.RETURN_WRAPPED
+                    event.extra_data = None
                     pair_note = 'Return {{amount}} {symbol} after withdrawing from {address} curve gauge'  # noqa: E501
 
         # `pair_note` is formatted twice, first below with `symbol` and `address`. `amount` is left
@@ -639,7 +755,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
             to_notes=pair_note.format(
                 symbol=gauge_token.symbol,
                 address=gauge_address,
-            ),  # amount set at actionitem process
+            ),  # amount set at action item process
             to_counterparty=CPT_CURVE,
             paired_events_data=((gauge_event,), from_event_type == HistoryEventType.RECEIVE),
         )]
