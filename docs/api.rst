@@ -8674,6 +8674,7 @@ Querying ethereum airdrops
                      "asset": "eip155:1/erc20:0x111111111117dC0aa78b770fA6A738034120C302",
                      "link": "https://app.uniswap.org/",
                      "claimed": false,
+                     "cutoff_time": 1719697503,
                      "has_decoder": true
                   }
             },

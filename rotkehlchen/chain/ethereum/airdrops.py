@@ -34,7 +34,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_int
 from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress, FValWithTolerance, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import is_production, ts_now
+from rotkehlchen.utils.misc import is_production
 from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
 
 logger = logging.getLogger(__name__)
@@ -53,7 +53,7 @@ class Airdrop:
 
     This contains the definition of the Airdrop class, which is used to represent
     individual airdrops along with their associated data, such as URL, token address,
-    website URL, name, and icon filename.
+    website URL, name, cutoff_time and icon filename.
     """
     asset: CryptoAsset
     url: str
@@ -448,6 +448,9 @@ def process_airdrop_with_api_data(
             'claimed': False,
             'has_decoder': airdrop_data.has_decoder,
         }
+        if airdrop_data.cutoff_time is not None:
+            found_data[address][protocol_name]['cutoff_time'] = airdrop_data.cutoff_time
+
         _enrich_user_airdrop_data(
             user_data=found_data[address],
             protocol_name=protocol_name,
@@ -477,7 +480,6 @@ def _process_csv_airdrop(
         airdrop_data: CSVAirdrop,
         protocol_name: str,
         tolerance_for_amount_check: FVal,
-        current_time: Timestamp,
 ) -> tuple[list[AirdropClaimEventQueryParams], dict[ChecksumEvmAddress, dict]]:
     """Process csv to find the addresses that have a claimable amount.
 
@@ -486,9 +488,6 @@ def _process_csv_airdrop(
     with information about the asset for the airdrop, the amount, deadlines and other
     relevant details.
     """
-    if airdrop_data.cutoff_time is not None and current_time > airdrop_data.cutoff_time:
-        log.debug(f'Skipping {protocol_name} airdrop since it is not claimable after {airdrop_data.cutoff_time}')  # noqa: E501
-        return [], {}
 
     # In the shutter airdrop the claim of the vested SHU is decoded as informational/none
     if protocol_name == 'shutter':
@@ -527,6 +526,9 @@ def _process_csv_airdrop(
                 'claimed': False,
                 'has_decoder': airdrop_data.has_decoder,
             }
+            if airdrop_data.cutoff_time is not None:
+                temp_found_data[addr][protocol_name]['cutoff_time'] = airdrop_data.cutoff_time
+
             _enrich_user_airdrop_data(
                 user_data=temp_found_data[addr],
                 protocol_name=protocol_name,
@@ -564,7 +566,6 @@ def check_airdrops(
     """
     found_data: dict[ChecksumEvmAddress, dict] = defaultdict(lambda: defaultdict(dict))
     airdrop_tuples = []
-    current_time = ts_now()
     airdrops, poap_airdrops = fetch_airdrops_metadata(database=database)
 
     for protocol_name, airdrop_data in airdrops.items():
@@ -576,7 +577,6 @@ def check_airdrops(
                 airdrop_data=airdrop_data,
                 protocol_name=protocol_name,
                 tolerance_for_amount_check=tolerance_for_amount_check,
-                current_time=current_time,
             )
         else:  # airdrop with api metadata AirdropAPIData
             temp_airdrop_tuples, temp_found_data = process_airdrop_with_api_data(
