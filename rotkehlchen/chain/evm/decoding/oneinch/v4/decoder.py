@@ -10,6 +10,7 @@ from rotkehlchen.chain.ethereum.modules.uniswap.v2.constants import (
     SWAP_SIGNATURE as UNISWAP_V2_SWAP_SIGNATURE,
 )
 from rotkehlchen.chain.evm.decoding.curve.constants import TOKEN_EXCHANGE
+from rotkehlchen.chain.evm.decoding.kyber.constants import KYBER_AGGREGATOR_SWAPPED
 from rotkehlchen.chain.evm.decoding.oneinch.decoder import OneinchCommonDecoder
 from rotkehlchen.chain.evm.decoding.oneinch.v4.constants import ORDERFILLED_RFQ
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -58,6 +59,7 @@ class Oneinchv3n4DecoderBase(OneinchCommonDecoder, ABC):
                 BALANCER_V2_SWAP_SIGNATURE,
                 ORDERFILLED_RFQ,
                 TOKEN_EXCHANGE,  # curve is also used by 1inch
+                KYBER_AGGREGATOR_SWAPPED,
             ],
             counterparty=counterparty,
         )
