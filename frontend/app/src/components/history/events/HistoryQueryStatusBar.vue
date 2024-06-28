@@ -22,6 +22,7 @@ const emit = defineEmits<{ (e: 'reset'): void }>();
               thickness="2"
               variant="indeterminate"
               circular
+              color="primary"
             />
 
             <SuccessDisplay

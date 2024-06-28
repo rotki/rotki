@@ -17,6 +17,7 @@ import {
   type MissingApiKey,
   type NewDetectedToken,
   type PremiumStatusUpdateData,
+  type ProtocolCacheUpdatesData,
   SocketMessageType,
   WebsocketMessage,
 } from '@/types/websocket-messages';
@@ -39,7 +40,7 @@ export function useMessageHandling() {
   const { t } = useI18n();
   const { consumeMessages } = useSessionApi();
   const { uploadStatus, uploadStatusAlreadyHandled } = useSync();
-  const { setUndecodedTransactionsStatus } = useHistoryStore();
+  const { setUndecodedTransactionsStatus, setProtocolCacheStatus } = useHistoryStore();
   let isRunning = false;
 
   const handleSnapshotError = (data: BalanceSnapshotError): Notification => ({
@@ -56,6 +57,12 @@ export function useMessageHandling() {
     data: EvmUnDecodedTransactionsData,
   ): void => {
     setUndecodedTransactionsStatus(data);
+  };
+
+  const handleProtocolCacheUpdates = (
+    data: ProtocolCacheUpdatesData,
+  ): void => {
+    setProtocolCacheStatus(data);
   };
 
   const handleHistoryEventsStatus = (data: HistoryEventsQueryData): void => {
@@ -334,6 +341,9 @@ export function useMessageHandling() {
     }
     else if (type === SocketMessageType.CALENDAR_REMINDER) {
       notifications.push(handleCalendarReminder(message.data));
+    }
+    else if (type === SocketMessageType.PROTOCOL_CACHE_UPDATES) {
+      handleProtocolCacheUpdates(message.data);
     }
     else {
       logger.warn(`Unsupported socket message received: '${type}'`);

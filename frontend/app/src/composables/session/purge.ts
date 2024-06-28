@@ -41,7 +41,9 @@ export function useSessionPurge() {
   const { t } = useI18n();
   const { notify } = useNotificationsStore();
 
+  const { resetProtocolCacheUpdatesStatus } = useHistoryStore();
   const refreshGeneralCache = async () => {
+    resetProtocolCacheUpdatesStatus();
     const taskType = TaskType.REFRESH_GENERAL_CACHE;
     const { taskId } = await refreshGeneralCacheTask();
     try {

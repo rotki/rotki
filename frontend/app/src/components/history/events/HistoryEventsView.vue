@@ -265,6 +265,7 @@ const { data } = getCollectionData<HistoryEventEntry>(eventsHeader);
 const isEventsLoading: Ref<boolean> = ref(false);
 const decodingStatusDialogPersistent: Ref<boolean> = ref(false);
 const decodingStatusDialogOpen: Ref<boolean> = ref(false);
+const protocolCacheStatusDialogOpen: Ref<boolean> = ref(false);
 const currentAction: Ref<'decode' | 'query'> = ref('query');
 const route = useRoute();
 
@@ -520,6 +521,7 @@ watch(
 const { isLoading: isSectionLoading } = useStatusStore();
 const sectionLoading = isSectionLoading(Section.HISTORY_EVENT);
 const eventTaskLoading = isTaskRunning(TaskType.TRANSACTIONS_DECODING);
+const protocolCacheUpdatesLoading = isTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
 const onlineHistoryEventsLoading = isTaskRunning(TaskType.QUERY_ONLINE_EVENTS);
 const isTransactionsLoading = isTaskRunning(TaskType.TX);
 
@@ -530,6 +532,7 @@ const refreshing = logicOr(
   sectionLoading,
   eventTaskLoading,
   onlineHistoryEventsLoading,
+  protocolCacheUpdatesLoading,
 );
 
 const querying = not(
@@ -713,7 +716,7 @@ watchImmediate(route, async (route) => {
       >
         <template #activator="{ on }">
           <RuiBadge
-            :value="eventTaskLoading"
+            :value="eventTaskLoading || protocolCacheUpdatesLoading"
             color="primary"
             dot
             placement="top"
@@ -750,6 +753,25 @@ watchImmediate(route, async (route) => {
                 </RuiBadge>
               </template>
               {{ t('transactions.events_decoding.title') }}
+            </RuiButton>
+
+            <RuiButton
+              variant="list"
+              @click="protocolCacheStatusDialogOpen = true"
+            >
+              <template #prepend>
+                <RuiBadge
+                  :value="protocolCacheUpdatesLoading"
+                  color="primary"
+                  dot
+                  placement="top"
+                  offset-y="4"
+                  offset-x="-4"
+                >
+                  <RuiIcon name="list-settings-line" />
+                </RuiBadge>
+              </template>
+              {{ t('transactions.protocol_cache_updates.title') }}
             </RuiButton>
           </template>
 
@@ -991,6 +1013,24 @@ watchImmediate(route, async (route) => {
           <RuiIcon name="close-line" />
         </RuiButton>
       </HistoryEventsDecodingStatus>
+    </RuiDialog>
+
+    <RuiDialog
+      v-model="protocolCacheStatusDialogOpen"
+      max-width="600"
+    >
+      <HistoryEventsProtocolCacheUpdateStatus
+        v-if="protocolCacheStatusDialogOpen"
+        :refreshing="refreshing"
+      >
+        <RuiButton
+          variant="text"
+          icon
+          @click="protocolCacheStatusDialogOpen = false"
+        >
+          <RuiIcon name="close-line" />
+        </RuiButton>
+      </HistoryEventsProtocolCacheUpdateStatus>
     </RuiDialog>
   </TablePageLayout>
 </template>
