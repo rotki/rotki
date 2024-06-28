@@ -132,7 +132,7 @@ const Type = DashboardTableType;
               :is-loading="isManualBalancesLoading"
               can-refresh
               :navigates-to="Routes.ACCOUNTS_BALANCES_MANUAL"
-              @refresh="fetchManualBalances()"
+              @refresh="fetchManualBalances(true)"
             >
               <SummaryCardCreateButton
                 v-if="manualBalanceByLocation.length === 0"
