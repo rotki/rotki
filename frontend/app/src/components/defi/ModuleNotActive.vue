@@ -6,8 +6,6 @@ defineProps<{
   modules: Module[];
 }>();
 
-const top = ref(0);
-
 function name(module: string): string {
   const data = SUPPORTED_MODULES.find(value => value.identifier === module);
   return data?.name ?? '';
@@ -18,19 +16,15 @@ function icon(module: Module): string {
   return data?.icon ?? '';
 }
 
-onMounted(() => {
-  const currentInstance = getCurrentInstance();
-  assert(currentInstance);
-  const $el = currentInstance.proxy.$el;
-  const { top: topPoint } = $el.getBoundingClientRect();
-  set(top, topPoint);
-});
-
 const { t } = useI18n();
+
+const wrapper = ref();
+const { top } = useElementBounding(wrapper);
 </script>
 
 <template>
   <div
+    ref="wrapper"
     :style="`height: calc(100vh - ${top + 100}px);`"
     class="flex flex-col items-center justify-center"
   >
