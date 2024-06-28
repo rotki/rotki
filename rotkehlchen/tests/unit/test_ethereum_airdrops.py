@@ -394,6 +394,7 @@ def test_check_airdrops(
         'asset': A_SHU,
         'link': 'https://claim.shutter.network/',
         'claimed': False,
+        'cutoff_time': 1721000000,
         'has_decoder': True,
     }
     assert data[TEST_ADDR2]['degen2_season1'] == {
@@ -419,23 +420,6 @@ def test_check_airdrops(
         'link': 'https://poap.delivery/aave-v2-pioneers',
         'name': 'AAVE V2 Pioneers',
     }]
-
-    # after cutoff time of shutter
-    freezer.move_to(datetime.datetime.fromtimestamp(1721000001, tz=datetime.UTC))
-    with (
-        patch('rotkehlchen.chain.ethereum.airdrops.SMALLEST_AIRDROP_SIZE', 1),
-        patch('rotkehlchen.chain.ethereum.airdrops.requests.get', side_effect=mock_requests_get) as mock_get,  # noqa: E501
-    ):
-        data = check_airdrops(
-            msg_aggregator=messages_aggregator,
-            addresses=[TEST_ADDR2],
-            database=database,
-            data_dir=data_dir,
-            tolerance_for_amount_check=tolerance_for_amount_check,
-        )
-        assert mock_get.call_count == 2
-    assert len(data[TEST_ADDR2]) == 4
-    assert 'shutter' not in data[TEST_ADDR2]
 
     def update_mock_requests_get(url: str, timeout: int = 0, headers: dict | None = None):  # pylint: disable=unused-argument
         return _prepare_mock_response(url, update_airdrop_index=True)

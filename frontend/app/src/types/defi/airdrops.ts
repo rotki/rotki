@@ -20,6 +20,7 @@ const Airdrop = z.object({
   asset: z.string().optional(),
   claimed: z.boolean().optional(),
   details: z.array(PoapDeliveryDetails).optional(),
+  cutoffTime: z.number().nullable().optional(),
   hasDecoder: z.boolean().optional(),
 });
 
@@ -29,6 +30,7 @@ const AirdropDetail = z.object({
   amount: NumericString,
   asset: z.string(),
   claimed: z.boolean(),
+  cutoffTime: z.number().nullable(),
   hasDecoder: z.boolean().optional(),
   link: z.string(),
 });

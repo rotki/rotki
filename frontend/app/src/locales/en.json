@@ -1730,6 +1730,7 @@
     "ignored_in_accounting": "Ignored in Accounting",
     "label": "Label",
     "location": "Location",
+    "missed": "Missed",
     "multi_chain": "Multi Chain",
     "name": "Name",
     "never": "Never",

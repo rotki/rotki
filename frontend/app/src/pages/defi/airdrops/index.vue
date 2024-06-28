@@ -13,7 +13,7 @@ import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts
 import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library-compat';
 import type { TaskMeta } from '@/types/task';
 
-type Statuses = '' | 'unknown' | 'unclaimed' | 'claimed';
+type Statuses = '' | 'unknown' | 'unclaimed' | 'claimed' | 'missed';
 const ETH = Blockchain.ETH;
 const { t } = useI18n();
 const { awaitTask } = useTaskStore();
@@ -32,6 +32,7 @@ const statusFilters = ref<{ text: string; value: Statuses }[]>([
   { text: t('common.unknown'), value: 'unknown' },
   { text: t('common.unclaimed'), value: 'unclaimed' },
   { text: t('common.claimed'), value: 'claimed' },
+  { text: t('common.missed'), value: 'missed' },
 ]);
 
 const refreshTooltip = computed<string>(() => t('helpers.refresh_header.tooltip', {
@@ -45,9 +46,12 @@ const rows = computed<(Airdrop & { index: number })[]>(() => {
   const data = filterByAddress(get(airdrops), addresses);
   return data.filter((airdrop) => {
     const currentStatus = get(status);
+    const currentTime = Date.now() / 1000;
     switch (currentStatus) {
       case 'unknown':
         return !airdrop.hasDecoder;
+      case 'missed':
+        return airdrop.hasDecoder && !airdrop.claimed && typeof airdrop.cutoffTime !== 'undefined' && airdrop.cutoffTime !== null && airdrop.cutoffTime < currentTime;
       case 'unclaimed':
         return airdrop.hasDecoder && !airdrop.claimed;
       case 'claimed':
@@ -106,7 +110,7 @@ function filterByAddress(data: Airdrops, addresses: string[]): Airdrop[] {
         });
       }
       else {
-        const { amount, asset, link, claimed, hasDecoder } = element as AirdropDetail;
+        const { amount, asset, link, claimed, cutoffTime, hasDecoder } = element as AirdropDetail;
         result.push({
           address,
           amount,
@@ -114,6 +118,7 @@ function filterByAddress(data: Airdrops, addresses: string[]): Airdrop[] {
           source,
           asset,
           claimed,
+          cutoffTime,
           hasDecoder,
         });
       }
@@ -247,7 +252,7 @@ watch([status, selectedAccounts], () => {
           />
           <span v-else>{{ row.details.length }}</span>
         </template>
-        <template #item.claimed="{ row: { claimed, hasDecoder } }">
+        <template #item.claimed="{ row: { claimed, cutoffTime, hasDecoder } }">
           <RuiTooltip
             v-if="!hasDecoder"
             :popper="{ placement: 'top' }"
@@ -270,7 +275,11 @@ watch([status, selectedAccounts], () => {
             :color="claimed ? 'success' : 'grey'"
             size="sm"
           >
-            {{ claimed ? t('common.claimed') : t('common.unclaimed') }}
+            {{ claimed
+              ? t('common.claimed')
+              : cutoffTime !== 'undefined' && cutoffTime !== null && cutoffTime < Date.now() / 1000
+                ? t('common.missed')
+                : t('common.unclaimed') }}
           </RuiChip>
         </template>
         <template #item.source="{ row }">
