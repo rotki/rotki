@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` Editing the passphrase for OKX exchange will now work properly.
+* :feature:`8193` Coinbasepro support is removed since the exchanges no longer exist.
 * :bug:`-` Deposit events in Aave will now show in the correct order.
 * :feature:`3971` Show the total collateral ratio in the Liquity Trove section.
 * :feature:`2323` Add support for Huobi exchange.

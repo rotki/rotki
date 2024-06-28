@@ -193,19 +193,19 @@ def test_setup_exchange(rotkehlchen_api_server):
     ]
 
     # Check that giving a passphrase is fine
-    data = {'location': 'coinbasepro', 'name': 'my_coinbasepro', 'api_key': api_key, 'api_secret': api_secret, 'passphrase': 'sdf'}  # noqa: E501
-    with mock_validate_api_key_success(Location.COINBASEPRO):
+    data = {'location': 'kucoin', 'name': 'my_kucoin', 'api_key': api_key, 'api_secret': api_secret, 'passphrase': 'sdf'}  # noqa: E501
+    with mock_validate_api_key_success(Location.KUCOIN):
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'exchangesresource'), json=data,
         )
     assert_simple_ok_response(response)
-    # and check that coinbasepro is now registered
+    # and check that kucoin is now registered
     response = requests.get(api_url_for(rotkehlchen_api_server, 'exchangesresource'))
     result = assert_proper_sync_response_with_result(response)
     assert result == [
         {'location': 'kraken', 'name': 'my_kraken', KRAKEN_ACCOUNT_TYPE_KEY: 'starter'},
         {'location': 'kraken', 'name': 'my_other_kraken', KRAKEN_ACCOUNT_TYPE_KEY: 'starter'},
-        {'location': 'coinbasepro', 'name': 'my_coinbasepro'},
+        {'location': 'kucoin', 'name': 'my_kucoin'},
     ]
 
 
@@ -1172,16 +1172,16 @@ def test_edit_exchange_account(rotkehlchen_api_server_with_exchanges: 'APIServer
     )
 
 
-@pytest.mark.parametrize('added_exchanges', [(Location.COINBASEPRO, Location.KUCOIN)])
+@pytest.mark.parametrize('added_exchanges', [(Location.OKX, Location.KUCOIN)])
 def test_edit_exchange_account_passphrase(rotkehlchen_api_server_with_exchanges):
     server = rotkehlchen_api_server_with_exchanges
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
-    coinbasepro = try_get_first_exchange(rotki.exchange_manager, Location.COINBASEPRO)
+    okx = try_get_first_exchange(rotki.exchange_manager, Location.OKX)
     kucoin = try_get_first_exchange(rotki.exchange_manager, Location.KUCOIN)
     assert kucoin.name == 'kucoin'
     assert kucoin.api_passphrase == '123'
-    assert coinbasepro.name == 'coinbasepro'
-    assert coinbasepro.session.headers['CB-ACCESS-PASSPHRASE'] == '123'
+    assert okx.name == 'okx'
+    assert okx.session.headers['OK-ACCESS-PASSPHRASE'] == 'Rotki123!'
 
     # change both passphrase and name -- kucoin
     data = {'name': 'kucoin', 'location': 'kucoin', 'new_name': 'my_kucoin', 'passphrase': '$123$'}
@@ -1193,15 +1193,15 @@ def test_edit_exchange_account_passphrase(rotkehlchen_api_server_with_exchanges)
     assert kucoin.name == 'my_kucoin'
     assert kucoin.api_passphrase == '$123$'
 
-    # change only passphrase -- coinbasepro
-    data = {'name': 'coinbasepro', 'location': 'coinbasepro', 'passphrase': '$321$'}
-    with mock_validate_api_key_success(Location.COINBASEPRO):
+    # change only passphrase -- okx
+    data = {'name': 'okx', 'location': 'okx', 'passphrase': '$321$'}
+    with mock_validate_api_key_success(Location.OKX):
         response = requests.patch(api_url_for(server, 'exchangesresource'), json=data)
     result = assert_proper_sync_response_with_result(response)
     assert result is True
-    coinbasepro = try_get_first_exchange(rotki.exchange_manager, Location.COINBASEPRO)
-    assert coinbasepro.name == 'coinbasepro'
-    assert coinbasepro.session.headers['CB-ACCESS-PASSPHRASE'] == '$321$'
+    okx = try_get_first_exchange(rotki.exchange_manager, Location.OKX)
+    assert okx.name == 'okx'
+    assert okx.session.headers['OK-ACCESS-PASSPHRASE'] == '$321$'
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])

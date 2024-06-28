@@ -36,18 +36,30 @@ def _add_new_supported_locations(write_cursor: 'DBCursor') -> None:
     )
 
 
+@enter_exit_debug_log()
+def _remove_coinbasepro_credentials(write_cursor: 'DBCursor') -> None:
+    write_cursor.execute(
+        'DELETE FROM user_credentials WHERE location=?;',
+        (Location.COINBASEPRO.serialize_for_db(),),
+    )
+
+
 @enter_exit_debug_log(name='UserDB v42->v43 upgrade')
 def upgrade_v42_to_v43(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v42 to v43. This was in v1.34 release.
 
     - add usd_price to the nfts table
     - change hop protocol counterparty value
+    - add new supported location: HTX
+    - remove coinbasepro credentials
     """
-    progress_handler.set_total_steps(3)
+    progress_handler.set_total_steps(4)
     with db.user_write() as write_cursor:
         _add_usd_price_nft_table(write_cursor)
         progress_handler.new_step()
         _change_hop_counterparty_value(write_cursor)
         progress_handler.new_step()
         _add_new_supported_locations(write_cursor)
+        progress_handler.new_step()
+        _remove_coinbasepro_credentials(write_cursor)
         progress_handler.new_step()

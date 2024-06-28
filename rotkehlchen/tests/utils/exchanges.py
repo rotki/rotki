@@ -18,7 +18,6 @@ from rotkehlchen.exchanges.bitpanda import Bitpanda
 from rotkehlchen.exchanges.bitstamp import Bitstamp
 from rotkehlchen.exchanges.bybit import Bybit
 from rotkehlchen.exchanges.coinbase import Coinbase
-from rotkehlchen.exchanges.coinbasepro import Coinbasepro
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.exchanges.gemini import Gemini
@@ -696,22 +695,6 @@ def create_test_bitstamp(
         database=database,
         msg_aggregator=msg_aggregator,
     )
-
-
-def create_test_coinbasepro(
-        database: DBHandler,
-        msg_aggregator: MessagesAggregator,
-        passphrase: str,
-) -> Coinbasepro:
-    coinbasepro = Coinbasepro(
-        name='coinbasepro',
-        api_key=make_api_key(),
-        secret=make_api_secret(),
-        database=database,
-        msg_aggregator=msg_aggregator,
-        passphrase=passphrase,
-    )
-    return coinbasepro
 
 
 # This function is dynamically used in rotkehlchen_api_server_with_exchanges

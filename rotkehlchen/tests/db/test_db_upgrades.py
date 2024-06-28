@@ -2372,6 +2372,10 @@ def test_upgrade_db_42_to_43(user_data_dir, messages_aggregator):
         # check hop-protocol counterparty is there. If redecoding in upgrade will need to customize
         assert cursor.execute('SELECT COUNT(*) from evm_events_info WHERE counterparty=?', ('hop-protocol',)).fetchone()[0] == 1  # noqa: E501
         assert cursor.execute('SELECT COUNT(*) from evm_events_info WHERE counterparty=?', ('hop',)).fetchone()[0] == 0  # noqa: E501
+        assert cursor.execute(
+            'INSERT INTO user_credentials VALUES (?, ?, ?, ?, ?)',
+            ('coinbasepro', Location.COINBASEPRO.serialize_for_db(), 'api_key', 'api_secret', 'passphrase'),  # noqa: E501
+        ).rowcount == 1
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2392,6 +2396,10 @@ def test_upgrade_db_42_to_43(user_data_dir, messages_aggregator):
 
         cursor.execute('SELECT seq FROM location WHERE location=?', 'p')
         assert cursor.fetchone() == (Location.HTX.value,)
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM user_credentials WHERE location=?',
+            (Location.COINBASEPRO.serialize_for_db(),),
+        ).fetchone()[0] == 0
 
 
 def test_latest_upgrade_correctness(user_data_dir):
