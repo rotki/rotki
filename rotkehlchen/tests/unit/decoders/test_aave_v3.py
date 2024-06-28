@@ -877,7 +877,7 @@ def test_claim_incentives_reward(database, optimism_inquirer, optimism_accounts)
             location_label=user,
             notes=f'Claim {amount} OP from Aave incentives',
             counterparty=CPT_AAVE_V3,
-            address=string_to_evm_address('0x2501c477D0A35545a387Aa4A3EEe4292A9a8B3F0'),
+            address=string_to_evm_address('0x929EC64c34a17401F460460D4B9390518E5B473e'),
         ),
     ]
     assert events == expected_events

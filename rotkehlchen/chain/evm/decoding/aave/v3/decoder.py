@@ -108,51 +108,13 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
         if context.tx_log.topics[0] != REWARDS_CLAIMED:
             return DEFAULT_DECODING_OUTPUT
 
-        user_tracked = self.base.is_tracked(user := hex_or_bytes_to_address(context.tx_log.topics[1]))  # noqa: E501
-        to_tracked = self.base.is_tracked(to_address := hex_or_bytes_to_address(context.tx_log.topics[3]))  # noqa: E501
-        claimer_tracked = self.base.is_tracked(claimer := hex_or_bytes_to_address(context.tx_log.data[0:32]))  # noqa: E501
-
-        if not user_tracked and not to_tracked and not claimer_tracked:
-            return DEFAULT_DECODING_OUTPUT
-
-        reward_token = self.base.get_or_create_evm_token(
-            address=hex_or_bytes_to_address(context.tx_log.topics[2]),
+        return self._decode_incentives_common(
+            context=context,
+            to_idx=3,
+            claimer_raw=context.tx_log.data[0:32],
+            reward_token_address_32bytes=context.tx_log.topics[2],
+            amount_raw=context.tx_log.data[32:64],
         )
-        amount = asset_normalized_value(
-            amount=hex_or_bytes_to_int(context.tx_log.data[32:64]),
-            asset=reward_token,
-        )
-
-        for event in context.decoded_events:
-            if (
-                    event.event_type == HistoryEventType.RECEIVE and
-                    event.event_subtype == HistoryEventSubType.NONE and
-                    event.asset == reward_token and
-                    event.balance.amount == amount
-            ):
-                event.event_subtype = HistoryEventSubType.REWARD
-                event.counterparty = CPT_AAVE_V3
-                event.notes = f'Claim {amount} {reward_token.resolve_to_asset_with_symbol().symbol}'  # noqa: E501
-
-                if not to_tracked:
-                    event.notes += f' for {to_address}'
-                    event.location_label = claimer
-                    if user != to_address:
-                        event.notes += f' on behalf of {user}'
-
-                else:
-                    event.location_label = to_address
-
-                event.notes += ' from Aave incentives'
-
-                break
-
-        else:
-            log.error(
-                f'Failed to find the aave incentive reward transfer for {self.evm_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}.',  # noqa: E501
-            )
-
-        return DEFAULT_DECODING_OUTPUT
 
     # DecoderInterface methods
 
