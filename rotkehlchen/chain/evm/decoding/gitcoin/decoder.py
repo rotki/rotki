@@ -3,7 +3,11 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
-from rotkehlchen.chain.evm.decoding.constants import CPT_GITCOIN, GITCOIN_CPT_DETAILS
+from rotkehlchen.chain.evm.decoding.constants import (
+    CPT_GITCOIN,
+    FUNDS_CLAIMED,
+    GITCOIN_CPT_DETAILS,
+)
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -17,10 +21,9 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-from .constants import DONATION_SENT, FUNDS_CLAIMED
+from .constants import DONATION_SENT
 
 if TYPE_CHECKING:
-
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
@@ -38,7 +41,6 @@ class GitcoinOldCommonDecoder(DecoderInterface):
             msg_aggregator: 'MessagesAggregator',
             bulkcheckout_address: ChecksumEvmAddress | None = None,
             matching_contracts: list[tuple[ChecksumEvmAddress, str, Asset]] | None = None,
-            matching_contracts2: list[tuple[ChecksumEvmAddress, str, Asset]] | None = None,
     ) -> None:
         """
         - bulkcheckout address is the bulk checkout address for the network
@@ -54,7 +56,6 @@ class GitcoinOldCommonDecoder(DecoderInterface):
         )
         self.bulkcheckout_address = bulkcheckout_address
         self.matching_contracts = matching_contracts
-        self.matching_contracts2 = matching_contracts2
 
     def _decode_bulkcheckout(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] != DONATION_SENT:
@@ -174,26 +175,16 @@ class GitcoinOldCommonDecoder(DecoderInterface):
         """The normal case seen in mainnet. Example transaction:
         https://etherscan.io/tx/0xc7ba01598f7fee42bb3923af95355d676ad38ec0aebdcdf49eaf7cb74d2150b2
         """
-        return self._decode_matching_claim_common(
-            context=context,
-            name=name,
-            asset=asset,
-            claimee_raw=context.tx_log.topics[1],
-            amount_raw=context.tx_log.topics[2],
-        )
+        if context.tx_log.topics[0] == FUNDS_CLAIMED:
+            return self._decode_matching_claim_common(
+                context=context,
+                name=name,
+                asset=asset,
+                claimee_raw=context.tx_log.topics[1],
+                amount_raw=context.tx_log.topics[2],
+            )
 
-    def _decode_matching_claim_voteoptonindex(self, context: DecoderContext, name: str, asset: Asset) -> DecodingOutput:  # noqa: E501
-        """
-        Decode matching funds claimed with different event structure:
-        https://arbiscan.io/tx/0x5236f217873582446398c9b427a80a669be90b8a17fb5ed842f8d5d2925f3e7f#eventlog
-        """
-        return self._decode_matching_claim_common(
-            context=context,
-            name=name,
-            asset=asset,
-            claimee_raw=context.tx_log.topics[2],
-            amount_raw=context.tx_log.data,
-        )
+        return DEFAULT_DECODING_OUTPUT
 
     # -- DecoderInterface methods
 
@@ -207,11 +198,6 @@ class GitcoinOldCommonDecoder(DecoderInterface):
         if self.matching_contracts:
             mapping |= {
                 address: (self._decode_matching_claim, name, asset) for address, name, asset in self.matching_contracts  # noqa: E501
-            }
-
-        if self.matching_contracts2:
-            mapping |= {
-                address: (self._decode_matching_claim_voteoptonindex, name, asset) for address, name, asset in self.matching_contracts2  # noqa: E501
             }
 
         return mapping

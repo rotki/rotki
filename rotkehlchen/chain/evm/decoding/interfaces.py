@@ -4,8 +4,12 @@ from collections.abc import Callable, Mapping
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
-from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
+from rotkehlchen.chain.ethereum.utils import (
+    asset_normalized_value,
+    token_normalized_value_decimals,
+)
 from rotkehlchen.chain.evm.constants import MERKLE_CLAIM
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
@@ -517,3 +521,59 @@ class ReloadablePoolsAndGaugesDecoderMixin(ReloadableCacheDecoderMixin, ABC):
 
     def _cache_mapping_methods(self) -> tuple[Callable, ...]:
         return (self._decode_pool_events, self._decode_gauge_events)
+
+
+class CommonGrantsDecoderMixin(DecoderInterface, ABC):
+    """Abstracting some common functionality of grants decoders. Specifically
+    gitcoin cgrants and CLRfund"""
+
+    def _decode_matching_claim_common(
+            self,
+            context: DecoderContext,
+            name: str,
+            asset: Asset,
+            claimee_raw: bytes,
+            amount_raw: bytes,
+            counterparty: str,
+    ) -> DecodingOutput:
+        """Decode the matching funds claim based on the given name and asset. We need
+        to provide the name and the asset as this is based per contract and does not change.
+
+        For the token we could query it but the name we can't. Still since it's hard
+        coded per contract and we have a hard coded list it's best to not ask the chain
+        and do an extra network query since this is immutable.
+
+        The caller should confirm that the topic[0] matces FUNDS_CLAIMED
+        """
+        if context.tx_log.topics[0] != b'\xa4\xebP\x10;\x05\x91\xfe\xb0\xbc\x91?G\x9d\x92\xaf^\xb7\xea3\xe8\xc3\x97\xb4\x9b\xabR\xcej\xf2l\xb5':  # FundsClaimed # noqa: E501
+            return DEFAULT_DECODING_OUTPUT
+
+        if not self.base.any_tracked([claimee := hex_or_bytes_to_address(claimee_raw), context.transaction.from_address]):  # noqa: E501
+            return DEFAULT_DECODING_OUTPUT
+
+        asset = asset.resolve_to_crypto_asset()
+        amount = asset_normalized_value(
+            amount=hex_or_bytes_to_int(amount_raw),
+            asset=asset,
+        )
+        for event in context.decoded_events:
+            if (
+                    event.event_type == HistoryEventType.RECEIVE and
+                    event.event_subtype == HistoryEventSubType.NONE and
+                    event.asset == asset and
+                    event.balance.amount == amount and
+                    event.location_label == claimee
+            ):
+                event.event_subtype = HistoryEventSubType.DONATE
+                event.counterparty = counterparty
+                event.notes = f'Claim {amount} {asset.symbol} as matching funds payout of {counterparty} {name}'  # noqa: E501
+                if context.transaction.from_address != claimee:
+                    event.notes += f' for {claimee}'
+                break
+
+        else:
+            log.error(
+                f'Failed to find the {counterparty} matching receive transfer for {self.evm_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}.',  # noqa: E501
+            )
+
+        return DEFAULT_DECODING_OUTPUT

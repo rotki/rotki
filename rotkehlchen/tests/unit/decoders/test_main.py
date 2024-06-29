@@ -39,7 +39,7 @@ ADDRESS_WITHOUT_GENESIS_TX = '0x4bBa290826C253BD854121346c370a9886d1bC26'
 
 
 def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransactionDecoder):
-    """Make sure that all decoders we have created are detected and initialized"""
+    """Make sure that all decoders we have created for ethereum are detected and initialized"""
     assert set(ethereum_transaction_decoder.decoders.keys()) == {
         'Aave',
         'Aavev1',

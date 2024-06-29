@@ -5,6 +5,8 @@ from typing import TYPE_CHECKING
 import pytest
 import requests
 
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_EUR, A_USD
 from rotkehlchen.fval import FVal
@@ -18,7 +20,7 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_response_with_result,
     assert_proper_sync_response_with_result,
 )
-from rotkehlchen.types import ChecksumEvmAddress, Price
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, Price
 from rotkehlchen.utils.misc import timestamp_to_date
 
 if TYPE_CHECKING:
@@ -88,12 +90,37 @@ def test_get_current_assets_price_in_btc(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_add_manual_latest_price(rotkehlchen_api_server):
     """Check that addition of manual current prices work fine."""
-    GlobalDBHandler.add_manual_latest_price(
-        from_asset=A_ETH,
-        to_asset=A_EUR,
-        price=Price(FVal(100)),
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    get_or_create_evm_token(  # create a specific token in base
+        userdb=rotki.data.db,
+        evm_address='0xe66E3A37C3274Ac24FE8590f7D84A2427194DC17',
+        chain_id=ChainID.BASE,
+    )
+    response = requests.put(  # add a latest price for it
+        api_url_for(
+            rotkehlchen_api_server,
+            'latestassetspriceresource',
+        ),
+        json={
+            'from_asset': 'eip155:8453/erc20:0xe66E3A37C3274Ac24FE8590f7D84A2427194DC17',
+            'to_asset': A_ETH.identifier,
+            'price': '42',
+        },
+    )  # make sure it's there
+    assert GlobalDBHandler.get_manual_current_price(Asset('eip155:8453/erc20:0xe66E3A37C3274Ac24FE8590f7D84A2427194DC17')) == (A_ETH, Price(FVal(42)))  # noqa: E501
+    response = requests.put(  # now
+        api_url_for(
+            rotkehlchen_api_server,
+            'latestassetspriceresource',
+        ),
+        json={
+            'from_asset': A_ETH.identifier,
+            'to_asset': A_EUR.identifier,
+            'price': '100',
+        },
     )
     response = requests.post(
         api_url_for(
