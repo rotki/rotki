@@ -73,13 +73,13 @@ class ClrfundCommonDecoder(CommonGrantsDecoderMixin):
                 counterparty=CPT_CLRFUND,
             )
         elif context.tx_log.topics[0] == b"\x16\xa9\xaa9\xafI\xf1i\x91\x1e\x97sG\x97Q\x98\xc5\x03R_r@\xd6\x89*bo\x02'd/\xce":  # Voted  # noqa: E501
-            return self._decode_voted(context)
+            return self._decode_voted(context=context, name=name)
         elif context.tx_log.topics[0] == b'M\x15MJ\xae!k\xedm\t&\xdbw\xc0\r\xf2\xb5|k[\xa4\xee\xe0Wu\xde \xfa\xce\xde:{':  # Contribution  # noqa: E501
-            return self._decode_contribution(context=context, asset=asset.resolve_to_crypto_asset())  # noqa: E501
+            return self._decode_contribution(context=context, asset=asset.resolve_to_crypto_asset(), name=name)  # noqa: E501
 
         return DEFAULT_DECODING_OUTPUT
 
-    def _decode_voted(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_voted(self, context: DecoderContext, name: str) -> DecodingOutput:
         if not self.base.any_tracked([user := hex_or_bytes_to_address(context.tx_log.topics[1]), context.transaction.from_address]):  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
@@ -91,13 +91,13 @@ class ClrfundCommonDecoder(CommonGrantsDecoderMixin):
             asset=A_ETH,
             balance=Balance(),
             location_label=user,
-            notes='Vote in Clrfund',
+            notes=f'Vote in Clrfund {name}',
             counterparty=CPT_CLRFUND,
             address=context.tx_log.address,
         )
         return DecodingOutput(event=new_event)
 
-    def _decode_contribution(self, context: DecoderContext, asset: CryptoAsset) -> DecodingOutput:
+    def _decode_contribution(self, context: DecoderContext, asset: CryptoAsset, name: str) -> DecodingOutput:  # noqa: E501
         if not self.base.any_tracked([sender := hex_or_bytes_to_address(context.tx_log.topics[1]), context.transaction.from_address]):  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
@@ -117,7 +117,7 @@ class ClrfundCommonDecoder(CommonGrantsDecoderMixin):
                 event.event_subtype = HistoryEventSubType.DONATE
                 event.counterparty = CPT_CLRFUND
                 event.address = context.tx_log.address
-                event.notes = f'Donate {amount} {asset.symbol} via Clrfund'
+                event.notes = f'Donate {amount} {asset.symbol} to Clrfund {name}'
                 break
 
         else:  # not found
@@ -125,7 +125,7 @@ class ClrfundCommonDecoder(CommonGrantsDecoderMixin):
 
         return DEFAULT_DECODING_OUTPUT
 
-    def _decode_recipient_registry(self, context: DecoderContext) -> DecodingOutput:
+    def _decode_recipient_registry(self, context: DecoderContext, name: str) -> DecodingOutput:
         if context.tx_log.topics[0] != b'\xbbJ\xd3\x18\xe5\x17\x03W\xf8\xe7\xd2]\xee\xfe\\\xf0+\xc8\x18,\xbb\x95`\x0c"\xa1\x10Yx\xa8\xf1\xb8':  # RequestSubmitted # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
@@ -144,7 +144,7 @@ class ClrfundCommonDecoder(CommonGrantsDecoderMixin):
         except json.JSONDecodeError as e:
             log.error(f'Failed to decode json from clrfund data: {decoded_data[1]} due to {e!s}')
 
-        notes = f'Apply to clrfund for {jsondata.get("name", "a project")}'
+        notes = f'Apply to clrfund {name} with {jsondata.get("name", "a project")}'
         for event in context.decoded_events:  # find the payment to the contract for applying
             if (
                     event.event_type == HistoryEventType.SPEND and
@@ -179,7 +179,7 @@ class ClrfundCommonDecoder(CommonGrantsDecoderMixin):
         mappings: dict[ChecksumEvmAddress, tuple[Any, ...]] = {}
         for funding_address, recipient_registry_address, name, asset in self.rounds_data:
             mappings[funding_address] = (self._decode_funding_round_events, name, asset)
-            mappings[recipient_registry_address] = (self._decode_recipient_registry,)
+            mappings[recipient_registry_address] = (self._decode_recipient_registry, name)
 
         return mappings
 
