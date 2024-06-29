@@ -15,7 +15,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
     TransferEnrichmentOutput,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_DAI, A_GRT
+from rotkehlchen.constants.assets import A_DAI, A_GRT, A_UNI
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
@@ -55,6 +55,7 @@ class GitcoinDecoder(GovernableDecoderInterface, GitcoinOldCommonDecoder):
                 (string_to_evm_address('0xC8AcA0b50F3Ca9A0cBe413d8a110a7aab7d4C1aE'), 'grants 15 main round', A_DAI),  # noqa: E501
                 (string_to_evm_address('0x2878883dD4345C7b35c13FefC5096dd400814D91'), 'grants 14 main round', A_DAI),  # noqa: E501
                 (string_to_evm_address('0xa640830aFAa6455E198eDa49E085C4C377789ddd'), 'grants 14 graph protocol round', A_GRT),  # noqa: E501
+                (string_to_evm_address('0x0019863771b57FBA997cF6602CB2dD572A43e977'), 'grants 13 uniswap round', A_UNI),  # noqa: E501
             ],
         )
 

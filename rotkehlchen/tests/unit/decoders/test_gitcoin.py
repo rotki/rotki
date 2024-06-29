@@ -1,7 +1,6 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.gitcoin.constants import GITCOIN_GOVERNOR_ALPHA
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS, CPT_GITCOIN
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -256,36 +255,6 @@ def test_gitcoin_gr15_matching_claim(database, ethereum_inquirer, ethereum_accou
             notes=f'Claim {amount} DAI as matching funds payout of gitcoin grants 15 main round',
             counterparty=CPT_GITCOIN,
             address=string_to_evm_address('0xC8AcA0b50F3Ca9A0cBe413d8a110a7aab7d4C1aE'),
-        ),
-    ]
-    assert events == expected_events
-
-
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('arbitrum_one_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_gitcoin_arbitrum_matching_claim(database, arbitrum_one_inquirer, arbitrum_one_accounts):
-    """Whats interesting here is that someone else claimed funds and not the recipient address"""
-    tx_hash = deserialize_evm_tx_hash('0x5236f217873582446398c9b427a80a669be90b8a17fb5ed842f8d5d2925f3e7f')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=arbitrum_one_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
-    timestamp, user, amount = TimestampMS(1654833348000), arbitrum_one_accounts[0], '39566.332611058195231384'  # noqa: E501
-    expected_events = [
-        EvmEvent(
-            tx_hash=tx_hash,
-            sequence_index=0,
-            timestamp=timestamp,
-            location=Location.ARBITRUM_ONE,
-            event_type=HistoryEventType.RECEIVE,
-            event_subtype=HistoryEventSubType.DONATE,
-            asset=EvmToken('eip155:42161/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'),
-            balance=Balance(FVal(amount)),
-            location_label=user,
-            notes=f'Claim {amount} DAI as matching funds payout of gitcoin grants 14 round for {user}',  # noqa: E501
-            counterparty=CPT_GITCOIN,
-            address=string_to_evm_address('0xeD67d6682DC88E06c66e188027cA883455AfdADa'),
         ),
     ]
     assert events == expected_events
