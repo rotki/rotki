@@ -2,6 +2,7 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.gitcoin.constants import (
     GITCOIN_GOVERNOR_ALPHA,
     GITCOIN_GRANTS_OLD1,
@@ -37,6 +38,8 @@ class GitcoinDecoder(GovernableDecoderInterface, GitcoinOldCommonDecoder):
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
     ) -> None:
+        """Some of the merkle payouts can be seen here:
+        https://github.com/thelostone-mc/merkle_payouts"""
         GovernableDecoderInterface.__init__(
             self,
             evm_inquirer=evm_inquirer,
@@ -56,6 +59,15 @@ class GitcoinDecoder(GovernableDecoderInterface, GitcoinOldCommonDecoder):
                 (string_to_evm_address('0x2878883dD4345C7b35c13FefC5096dd400814D91'), 'grants 14 main round', A_DAI),  # noqa: E501
                 (string_to_evm_address('0xa640830aFAa6455E198eDa49E085C4C377789ddd'), 'grants 14 graph protocol round', A_GRT),  # noqa: E501
                 (string_to_evm_address('0x0019863771b57FBA997cF6602CB2dD572A43e977'), 'grants 13 uniswap round', A_UNI),  # noqa: E501
+                (string_to_evm_address('0xF63FD0739cB68651eFbD06BCcb23F1A1623D5520'), 'grants 13 main round', A_DAI),  # noqa: E501
+                (string_to_evm_address('0x868CBca73915f842A70cD9584D80a57DB5E690C1'), 'grants 13 Olympus Dao round', EvmToken('eip155:1/erc20:0x0ab87046fBb341D058F17CBC4c1133F25a20a52f')),  # gOHM token # noqa: E501
+                (string_to_evm_address('0x22fDA1F97F2fD078F4609AaF74914ddf436de8e8'), 'grants 14 Unlock protocol round', EvmToken('eip155:1/erc20:0x90DE74265a416e1393A450752175AED98fe11517')),  # UDT token # noqa: E501
+                (string_to_evm_address('0x62a5A2E85619c0922B32243165B9BAAB27Bc7E63'), 'grants 14 Mask network round', EvmToken('eip155:1/erc20:0x69af81e73A73B40adF4f3d4223Cd9b1ECE623074')),  # Mask network token # noqa: E501
+                (string_to_evm_address('0xeFc138E4e0Fdcd7C9E616cC3E5c356C3ce23B1f2'), 'grants 14 Aurora round', EvmToken('eip155:1/erc20:0xAaAAAA20D9E0e2461697782ef11675f668207961')),  # Aura token # noqa: E501
+                (string_to_evm_address('0xf52Bc0cCD2C6174dbB962bc4e71a97F965FcaFC8'), 'grants 15 Forta round', EvmToken('eip155:1/erc20:0x41545f8b9472D758bB669ed8EaEEEcD7a9C4Ec29')),  # FORT token # noqa: E501
+                (string_to_evm_address('0xb40FF1af8E4894884cf060daC15D73385460a99B'), 'grants 15 Aurora round', EvmToken('eip155:1/erc20:0xAaAAAA20D9E0e2461697782ef11675f668207961')),  # Aura token # noqa: E501
+                (string_to_evm_address('0x36BAdAd9D2509Ac373f98b936f6d6748dB82F160'), 'grants 15 Mark network round', EvmToken('eip155:1/erc20:0x69af81e73A73B40adF4f3d4223Cd9b1ECE623074')),  # Mask network token # noqa: E501
+                (string_to_evm_address('0x302b9286E831Ee6fEB9387978CFB4342c86Ef225'), 'grants 15 Unlock protocol round', EvmToken('eip155:1/erc20:0x90DE74265a416e1393A450752175AED98fe11517')),  # UDT token # noqa: E501
             ],
         )
 
