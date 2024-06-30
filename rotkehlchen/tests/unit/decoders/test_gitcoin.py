@@ -258,3 +258,86 @@ def test_gitcoin_gr15_matching_claim(database, ethereum_inquirer, ethereum_accou
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xd31b671F1a398B519222FdAba5aB5464B9F2a3Fa']])
+def test_gitcoin_payout_claimed_matching_gr12(database, ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x5acb6ddac6b72fc6ff45e6a387cf8316c1478dfbaff513918c4cc8731858b362')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas, user, amount = TimestampMS(1643262544000), '0.00327700462232052', ethereum_accounts[0], '793.606553162524960498'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=user,
+            notes=f'Burned {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=239,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.DONATE,
+            asset=A_DAI,
+            balance=Balance(FVal(amount)),
+            location_label=user,
+            notes=f'Claim {amount} DAI as matching funds payout of gitcoin grants 12 main round',
+            counterparty=CPT_GITCOIN,
+            address=string_to_evm_address('0xAB8d71d59827dcc90fEDc5DDb97f87eFfB1B1A5B'),
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x28BE0996b15149aA011C84f09cE3389cbC719Fa6']])
+def test_gitcoin_payout_claimed_matching_gr11(database, ethereum_inquirer, ethereum_accounts):
+    """Test of the PayoutClaimed event with both recipiend and amount in data (non-indexed args)"""
+    tx_hash = deserialize_evm_tx_hash('0x3a069b8cef0d25068fbd2ae4e46ddd552451ed1bbe3737fbaaca05eeb87d9425')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas, user, amount = TimestampMS(1648056902000), '0.00206346594437105', ethereum_accounts[0], '2618.692525999999816121'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=user,
+            notes=f'Burned {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=60,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.DONATE,
+            asset=A_DAI,
+            balance=Balance(FVal(amount)),
+            location_label=user,
+            notes=f'Claim {amount} DAI as matching funds payout of gitcoin grants 11 main round',
+            counterparty=CPT_GITCOIN,
+            address=string_to_evm_address('0x0EbD2E2130b73107d0C45fF2E16c93E7e2e10e3a'),
+        ),
+    ]
+    assert events == expected_events

@@ -543,11 +543,8 @@ class CommonGrantsDecoderMixin(DecoderInterface, ABC):
         coded per contract and we have a hard coded list it's best to not ask the chain
         and do an extra network query since this is immutable.
 
-        The caller should confirm that the topic[0] matces FUNDS_CLAIMED
+        The caller should confirm that the topic[0] matces the required topic hash.
         """
-        if context.tx_log.topics[0] != b'\xa4\xebP\x10;\x05\x91\xfe\xb0\xbc\x91?G\x9d\x92\xaf^\xb7\xea3\xe8\xc3\x97\xb4\x9b\xabR\xcej\xf2l\xb5':  # FundsClaimed # noqa: E501
-            return DEFAULT_DECODING_OUTPUT
-
         if not self.base.any_tracked([claimee := hex_or_bytes_to_address(claimee_raw), context.transaction.from_address]):  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
