@@ -1,3 +1,4 @@
+import json
 from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -10,6 +11,8 @@ import pytest
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.constants.misc import GLOBALDIR_NAME, ONE
+from rotkehlchen.db.constants import UpdateType
+from rotkehlchen.db.updates import RotkiDataUpdater
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.updates import AssetsUpdater
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
@@ -23,10 +26,12 @@ from rotkehlchen.types import (
     YEARN_VAULTS_V1_PROTOCOL,
     YEARN_VAULTS_V2_PROTOCOL,
     ChainID,
+    Location,
     Timestamp,
 )
 
 if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.types import ChecksumEvmAddress
     from rotkehlchen.user_messages import MessagesAggregator
@@ -79,7 +84,7 @@ class DBToken:
         }
 
 
-def test_update_consistency_with_packaged_db(
+def test_asset_updates_consistency_with_packaged_db(
         tmpdir_factory: 'pytest.TempdirFactory',
         messages_aggregator: 'MessagesAggregator',
 ):
@@ -371,3 +376,89 @@ def test_oracle_ids_in_asset_collections(globaldb: 'GlobalDBHandler'):
 
     if len(mismatches) > 0:
         pytest.fail('\n'.join(mismatches))
+
+
+def test_remote_updates_consistency_with_packaged_db(
+        tmpdir_factory: 'pytest.TempdirFactory',
+        messages_aggregator: 'MessagesAggregator',
+        database: 'DBHandler',
+):
+    """Test that the remote updates are consistent with the packaged db for:
+    - Location asset mappings
+    - Location unsupported assets"""
+    temp_data_dir = Path(tmpdir_factory.mktemp(GLOBALDIR_NAME))
+    (old_db_dir := temp_data_dir / GLOBALDIR_NAME).mkdir(parents=True, exist_ok=True)
+    request.urlretrieve(  # location_asset_mappings and location_unsupported_assets were added since v1.33.0  # noqa: E501
+        url='https://github.com/rotki/rotki/raw/v1.33.0/rotkehlchen/data/global.db',
+        filename=old_db_dir / 'global.db',
+    )
+
+    globaldb = create_globaldb(data_directory=temp_data_dir, sql_vm_instructions_cb=0)
+    rotki_updater = RotkiDataUpdater(msg_aggregator=messages_aggregator, user_db=database)
+    rotki_updater.check_for_updates(updates=[
+        UpdateType.LOCATION_ASSET_MAPPINGS,
+        UpdateType.LOCATION_UNSUPPORTED_ASSETS,
+    ])
+
+    with (
+        globaldb.conn.read_ctx() as old_db_cursor,
+        globaldb.packaged_db_conn().read_ctx() as packaged_db_cursor,
+    ):
+        (
+            (updated_location_asset_mappings, updated_location_unsupported_assets),
+            (packaged_location_asset_mappings, packaged_location_unsupported_assets),
+        ) = (
+            (
+                {
+                    (location, symbol): identifier
+                    for location, symbol, identifier in cursor.execute(
+                        'SELECT location, exchange_symbol, local_id FROM location_asset_mappings',
+                    )
+                }, set(cursor.execute(
+                    'SELECT location, exchange_symbol FROM location_unsupported_assets',
+                ).fetchall()),
+            )
+            for cursor in (old_db_cursor, packaged_db_cursor)
+        )
+
+    # find all the location_asset_mappings that are present in remote updates but not in packaged db  # noqa: E501
+    missing_in_packaged_db = [
+        f"INSERT INTO location_asset_mappings(local_id, location, exchange_symbol) VALUES('{identifier}', '{location}', '{symbol}');"  # noqa: E501
+        for (location, symbol), identifier in updated_location_asset_mappings.items()
+        if (location, symbol) not in packaged_location_asset_mappings
+    ]
+
+    # find all the location_asset_mappings that are present in packaged db but not in remote updates  # noqa: E501
+    missing_in_remote_updates = [
+        {
+            'asset': identifier,
+            'location': None if location is None else Location.deserialize_from_db(location).serialize(),  # noqa: E501
+            'location_symbol': symbol,
+        }
+        for (location, symbol), identifier in packaged_location_asset_mappings.items()
+        if (location, symbol) not in updated_location_asset_mappings
+    ]
+
+    # find all the location_unsupported_assets that are present in remote updates but not in packaged db  # noqa: E501
+    missing_in_packaged_db.extend([
+        f"INSERT INTO location_unsupported_assets(location, exchange_symbol) VALUES('{location}', '{symbol}');"  # noqa: E501
+        for location, symbol in updated_location_unsupported_assets
+        if (location, symbol) not in packaged_location_unsupported_assets
+    ])
+
+    # find all the location_unsupported_assets that are present in packaged db but not in remote updates  # noqa: E501
+    missing_unsupported_assets = defaultdict(list)
+    for location, symbol in packaged_location_unsupported_assets:
+        if (location, symbol) not in updated_location_unsupported_assets:
+            missing_unsupported_assets[Location.deserialize_from_db(location).serialize()].append(symbol)
+
+    if len(missing_unsupported_assets) > 0:
+        missing_in_remote_updates.append(missing_unsupported_assets)
+
+    if len(missing_in_packaged_db) > 0:
+        # warning here instead of failing because we generally keep adding remote updates without
+        # adding them in packaged db and add all of them together right before releasing.
+        warn('Found entries that are missing in packaged db:\n' + '\n'.join(missing_in_packaged_db))  # noqa: E501
+
+    if len(missing_in_remote_updates) > 0:
+        pytest.fail('Found entries that are missing in remote updates:\n' + json.dumps(missing_in_remote_updates, indent=4))  # noqa: E501
