@@ -1,5 +1,10 @@
 """Tool to pull an assets database from Github, and apply updates to it"""
+import json
+from typing import Any
+
 from gevent import monkey
+
+from rotkehlchen.globaldb.updates import AssetsUpdater
 
 monkey.patch_all()  # isort:skip
 
@@ -12,13 +17,17 @@ from tempfile import TemporaryDirectory
 import requests
 
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
+from rotkehlchen.db.constants import UpdateType
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.db.updates import RotkiDataUpdater
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.globaldb.updates import AssetsUpdater
 from rotkehlchen.logging import TRACE, add_logging_level
 from rotkehlchen.user_messages import MessagesAggregator
+from rotkehlchen.utils.network import query_file
 
 add_logging_level('TRACE', TRACE)
+DATA_UPDATES_URL = 'https://raw.githubusercontent.com/rotki/data/{branch}/updates/{data}/v{version}.json'
 
 
 def parse_args() -> argparse.Namespace:
@@ -82,6 +91,60 @@ def get_remote_global_db(directory: Path, version: int, branch: str) -> Path:
     return dbpath
 
 
+def _retrieve_data_files(
+        infojson: dict[str, Any],
+) -> dict[int, dict[UpdateType, Any]]:
+    """
+    Query the assets update repository to retrieve the pending updates before trying to
+    apply them. It returns a dict that maps each version to their update files.
+
+    May raise:
+    - RemoteError if there is a problem querying github
+    """
+    updates = {}
+    data_files = ['location_asset_mappings']
+    # type ignore since due to check_for_updates we know last_remote_checked_version exists
+    for key in data_files:
+        try:
+            latest_version = infojson[key]['latest']
+        except KeyError as e:
+            print(
+                f'Remote info.json for {key} did not contain '
+                f'key "{e!s}". Skipping update.',
+            )
+            continue
+
+        for version in range(1, latest_version + 1):
+            data_url = DATA_UPDATES_URL.format(branch='develop', data=key, version=latest_version)
+            data_file = query_file(url=data_url, is_json=True)
+            updates[version] = {
+                UpdateType.LOCATION_ASSET_MAPPINGS: data_file,
+            }
+
+    return updates
+
+
+def get_remote_info_json() -> dict[str, Any]:
+    """Retrieve remote file with information for different updates
+
+    May raise RemoteError if anything is wrong contacting github
+    """
+    url = 'https://raw.githubusercontent.com/rotki/data/develop/updates/info.json'
+    try:
+        response = requests.get(url=url, timeout=CachedSettings().get_timeout_tuple())
+    except requests.exceptions.RequestException as e:
+        raise RemoteError(f'Failed to query {url} during assets update: {e!s}') from e
+
+    try:
+        json_data = response.json()
+    except json.decoder.JSONDecodeError as e:
+        raise RemoteError(
+            f'Could not parse update info from {url} as json: {response.text}',
+        ) from e
+
+    return json_data
+
+
 def main() -> None:
     args = parse_args()
     target_directory = Path.cwd() if args.target_directory is None else args.target_directory
@@ -108,6 +171,18 @@ def main() -> None:
             up_to_version=args.target_version,
             conflicts=None,
         )
+
+        # Add location asset mappings
+        infojson = get_remote_info_json()
+        updates = _retrieve_data_files(
+            infojson=infojson,
+        )
+        for version, _updates in updates.items():
+            updated_data = _updates.get(UpdateType.LOCATION_ASSET_MAPPINGS)
+            if updated_data is None:
+                print('Remote update invalid')
+                continue  # perhaps broken file? Skipping
+            RotkiDataUpdater.update_location_asset_mappings(updated_data, version)
     if conflicts is not None:
         print('There were conflicts during the update. Bailing.')
         sys.exit(1)
