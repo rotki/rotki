@@ -32,12 +32,18 @@ LOCATION_DETAILS: dict = {
         'image': 'binance.svg',
     },
     Location.BITFINEX: {'image': 'bitfinex.svg'},
-    Location.BITCOINDE: {'image': 'btcde.svg'},
+    Location.BITCOINDE: {
+        'label': 'Bitcoin.de',
+        'image': 'btcde.svg',
+    },
     Location.ICONOMI: {'image': 'iconomi.svg'},
     Location.KUCOIN: {'image': 'kucoin.svg'},
     Location.BALANCER: {'image': 'balancer.svg'},
     Location.LOOPRING: {'image': 'loopring.svg'},
-    Location.FTX: {'image': 'ftx.svg'},
+    Location.FTX: {
+        'label': 'FTX',
+        'image': 'ftx.svg',
+    },
     Location.NEXO: {'image': 'nexo.svg'},
     Location.BLOCKFI: {'image': 'blockfi.svg'},
     Location.INDEPENDENTRESERVE: {
@@ -54,7 +60,10 @@ LOCATION_DETAILS: dict = {
         'label': 'FTX US',
         'image': 'ftxus.svg',
     },
-    Location.OKX: {'image': 'okx.svg'},
+    Location.OKX: {
+        'label': 'OKX',
+        'image': 'okx.svg',
+    },
     Location.ETHEREUM: {'image': 'ethereum.svg'},
     Location.OPTIMISM: {'image': 'optimism.svg'},
     Location.POLYGON_POS: {'image': 'polygon_pos.svg'},
@@ -64,7 +73,10 @@ LOCATION_DETAILS: dict = {
     Location.SCROLL: {'image': 'scroll.svg'},
     Location.WOO: {'image': 'woo.svg'},
     Location.BYBIT: {'image': 'bybit.svg'},
-    Location.HTX: {'image': 'htx.svg'},
+    Location.HTX: {
+        'label': 'HTX',
+        'image': 'htx.svg',
+    },
     Location.ZKSYNC_LITE: {'image': 'zksync_lite.svg'},
 }
 for key, value in LOCATION_DETAILS.items():
