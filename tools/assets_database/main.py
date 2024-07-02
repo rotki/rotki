@@ -1,123 +1,94 @@
-"""Tool to pull an assets database from Github, and apply updates to it"""
+"""
+Tool to create a globaldb with the assets and/or remote updates from the assets and data repo.
+
+Usage:
+python -m tools.assets_database.main <args>
+
+Args:
+    --start-db-version <int>
+    --start-db-hash <string>
+    --start-db-path <string>
+    --target-version <int>
+    --assets-branch <string>
+    --target-directory <string>
+    --update-mode <string>
+    --help
+
+- Use one of `--start-db-version`, `--start-db-hash` or `--start-db-path` to specify the starting DB.
+- Use `--target-version` to specify the version until which assets update should be applied.
+- Use `--assets-branch` to specify the branch to pull the asset DB from.
+- Use `--target-directory` to specify the directory to write the file in. Default is current directory.
+- Use `--update-mode` to specify the update mode to use. "assets" will apply only the assets updates, "remote" will apply only remote data updates, "all" will apply both.
+"""  # noqa: E501
 from gevent import monkey
 
 monkey.patch_all()  # isort:skip
 
-import argparse
-import shutil
-import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-import requests
-
-from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
-from rotkehlchen.db.settings import CachedSettings
-from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.db.constants import UpdateType
+from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.updates import RotkiDataUpdater
 from rotkehlchen.globaldb.updates import AssetsUpdater
-from rotkehlchen.logging import TRACE, add_logging_level
 from rotkehlchen.user_messages import MessagesAggregator
 
-add_logging_level('TRACE', TRACE)
+from .utils import clean_folder, parse_args, prepare_globaldb
 
 
-def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(
-        prog='assets_database_tool',
-        description=(
-            'A tool to easily create an updated DB version, instead of running '
-            'rotki with an old clean DB and pulling upgrades manually'
-        ),
-    )
-    p.add_argument(
-        '--start-db',
-        type=int,
-        help='The starting DB version',
-        required=True,
-    )
-    p.add_argument(
-        '--target-version',
-        type=int,
-        default=None,
-        help='The version until which to update',
-    )
-    p.add_argument(
-        '--assets-branch',
-        type=str,
-        default='develop',
-        help='The branch to pull the asset DB from',
-    )
-    p.add_argument(
-        '--target-directory',
-        type=str,
-        help='The directory to write the file in. Default is current directory',
-    )
-    return p.parse_args()
+def populate_db_with_assets():
+    """Populate the globaldb created in target_directory with the updates in the remote assets repo
+    """
+    print('Applying updates...')
+    msg_aggregator = MessagesAggregator()
+    assets_updater = AssetsUpdater(msg_aggregator=msg_aggregator)
+
+    if (conflicts := assets_updater.perform_update(
+        up_to_version=parse_args().target_version,
+        conflicts=None,
+    )) is not None:
+        assert assets_updater.perform_update(
+            up_to_version=None,
+            conflicts={
+                Asset(conflict['identifier']): 'remote'
+                for conflict in conflicts
+            },
+        ) is None, 'Could not resolve all conflicts during assets upgrade using "remote" data'
 
 
-def get_remote_global_db(directory: Path, version: int, branch: str) -> Path:
-    try:
-        url = f'https://github.com/rotki/assets/raw/{branch}/databases/v{version}_global.db'
-        response = requests.get(url=url, timeout=CachedSettings().get_timeout_tuple())
-    except requests.exceptions.RequestException:
-        print(f'Couldnt download v{version} global.db from github')
-        sys.exit(1)
-
-    if response.status_code != 200:
-        print(f'Couldnt download v{version} global.db from github, got {response.status_code} status code')  # noqa: E501
-        sys.exit(1)
-
-    total_bytes = 0
-    dbpath = directory / GLOBALDB_NAME
-    chunk_size = 4096
-    print(f'Downloading v{version} globaldb from the remote...')
-    with open(dbpath, 'wb') as f:
-        for chunk in response.iter_content(chunk_size=chunk_size):
-            if chunk:
-                total_bytes += chunk_size
-                print(f'Downloaded {total_bytes * 1025} KB...')
-                f.write(chunk)
-    print('Download complete!')
-
-    return dbpath
+def populate_location_mappings():
+    """Apply remote updates to query mappings for assets"""
+    msg_aggregator = MessagesAggregator()
+    with TemporaryDirectory() as tmp_dir:
+        rotki_updater = RotkiDataUpdater(
+            msg_aggregator=msg_aggregator,
+            user_db=DBHandler(
+                user_data_dir=Path(tmp_dir),
+                password='123',
+                msg_aggregator=msg_aggregator,
+                initial_settings=None,
+                sql_vm_instructions_cb=0,
+                resume_from_backup=False,
+            ),
+        )
+        print('Applying remote updates...')
+        rotki_updater.check_for_updates(updates=[
+            UpdateType.LOCATION_ASSET_MAPPINGS,
+            UpdateType.LOCATION_UNSUPPORTED_ASSETS,
+        ])
 
 
 def main() -> None:
     args = parse_args()
-    target_directory = Path.cwd() if args.target_directory is None else args.target_directory
-    target_directory = Path(target_directory)
-    if not target_directory.is_dir():
-        print(f'Given directory {target_directory} not a valid directory')
-        sys.exit(1)
-    # The way global db works it needs to be under a directory called 'global'
-    target_global_dir = target_directory / GLOBALDIR_NAME
-    target_global_dir.mkdir(parents=True, exist_ok=True)
-    get_remote_global_db(
-        directory=target_global_dir,
-        version=args.start_db,
-        branch=args.assets_branch,
-    )
-    print('Applying updates...')
-    msg_aggregator = MessagesAggregator()
-    # We need a user db since the spam assets get synced during user unlock and
-    # they touch both the global and the user DB at the same time
-    with TemporaryDirectory():
-        globaldb = GlobalDBHandler(data_dir=target_directory, sql_vm_instructions_cb=0)
-        assets_updater = AssetsUpdater(msg_aggregator=msg_aggregator)
-        conflicts = assets_updater.perform_update(
-            up_to_version=args.target_version,
-            conflicts=None,
-        )
-    if conflicts is not None:
-        print('There were conflicts during the update. Bailing.')
-        sys.exit(1)
+    globaldb, target_directory = prepare_globaldb(args)
 
-    globaldb.conn.execute('PRAGMA journal_mode=DELETE')
-    # Due to the way globaldb initializes we have two of them. Clean up the extra one
-    print('Cleaning up...')
-    (target_directory / GLOBALDIR_NAME / GLOBALDB_NAME).rename(target_directory / GLOBALDB_NAME)
-    shutil.rmtree(target_directory / GLOBALDIR_NAME)
-    print('Done!')
+    if args.update_mode in {'assets', 'all'}:
+        populate_db_with_assets()
+    if args.update_mode in {'remote', 'all'}:
+        populate_location_mappings()
+
+    clean_folder(globaldb, target_directory)
 
 
 if __name__ == '__main__':
