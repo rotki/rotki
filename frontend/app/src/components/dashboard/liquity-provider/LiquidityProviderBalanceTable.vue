@@ -159,7 +159,7 @@ const getAssets = (assets: XswapAsset[]) => assets.map(({ asset }) => asset);
 </script>
 
 <template>
-  <DashboardExpandableTable v-if="balances.length > 0 || loading">
+  <DashboardExpandableTable v-if="balances.length > 0">
     <template #title>
       <RefreshButton
         :loading="loading"
