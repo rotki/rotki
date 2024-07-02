@@ -143,4 +143,4 @@ class OmniDecoder(CliqueAirdropDecoderInterface):
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
-        return (CounterpartyDetails(identifier=CPT_OMNI, label='Omni', image='diva.svg'),)
+        return (CounterpartyDetails(identifier=CPT_OMNI, label='Omni', image='omni.svg'),)

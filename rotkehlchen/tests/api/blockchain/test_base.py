@@ -402,6 +402,7 @@ def _add_blockchain_accounts_test_start(
     return all_eth_accounts, eth_balances, token_balances
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('query_balances_before_first_modification', [True, False])
@@ -412,7 +413,6 @@ def test_add_blockchain_accounts(  # hard to VCR, the order of requests is not a
         query_balances_before_first_modification,
 ):
     """Test that the endpoint adding blockchain accounts works properly"""
-
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     all_eth_accounts, eth_balances, token_balances = _add_blockchain_accounts_test_start(

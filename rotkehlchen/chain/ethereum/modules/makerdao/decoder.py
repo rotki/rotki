@@ -595,15 +595,15 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
         return (
             CounterpartyDetails(
                 identifier=CPT_VAULT,
-                label=MAKERDAO_LABEL,
+                label=f'{MAKERDAO_LABEL} vault',
                 image=MAKERDAO_ICON,
             ), CounterpartyDetails(
                 identifier=CPT_DSR,
-                label=MAKERDAO_LABEL,
+                label=f'{MAKERDAO_LABEL} DSR',
                 image=MAKERDAO_ICON,
             ), CounterpartyDetails(
                 identifier=CPT_MAKERDAO_MIGRATION,
-                label=MAKERDAO_LABEL,
+                label=f'{MAKERDAO_LABEL} migration',
                 image=MAKERDAO_ICON,
             ), SDAI_CPT_DETAILS,
         )
