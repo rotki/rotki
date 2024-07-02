@@ -285,6 +285,8 @@ function showResetConfirmation() {
     reset,
   );
 }
+
+const [CreateLabel, ReuseLabel] = createReusableTemplate<{ item: string }>();
 </script>
 
 <template>
@@ -312,6 +314,15 @@ function showResetConfirmation() {
     </div>
 
     <div class="flex flex-col gap-4">
+      <CreateLabel #default="{ item }">
+        <div class="flex items-center gap-3">
+          <RuiIcon
+            class="text-rui-text-secondary"
+            :name="icon(item)"
+          />
+          <span class="capitalize"> {{ item }} </span>
+        </div>
+      </CreateLabel>
       <RuiTextField
         v-model="userDataDirectory"
         data-cy="user-data-directory-input"
@@ -378,28 +389,14 @@ function showResetConfirmation() {
             ? t('backend_settings.config_file_disabled')
             : undefined
         "
-        key-attr="identifier"
-        text-attr="label"
         variant="outlined"
       >
-        <template #item.prepend="{ item }">
-          <RuiIcon
-            class="text-rui-text-secondary"
-            :name="icon(item.identifier)"
-          />
-        </template>
         <template #item="{ item }">
-          <span class="capitalize"> {{ item.identifier.toLocaleLowerCase() }} </span>
+          <ReuseLabel :item="item" />
         </template>
 
         <template #selection="{ item }">
-          <div class="flex items-center gap-4">
-            <RuiIcon
-              class="text-rui-text-secondary"
-              :name="icon(item.identifier)"
-            />
-            <span class="capitalize"> {{ item.identifier.toLocaleLowerCase() }} </span>
-          </div>
+          <ReuseLabel :item="item" />
         </template>
       </RuiMenuSelect>
     </div>
