@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
+import { toHumanReadable } from '@/utils/text';
 
 const props = defineProps<{
   counterparty: string;
@@ -31,7 +32,7 @@ const imagePath = '/assets/images/protocols/';
       />
     </div>
     <div class="uppercase text-sm">
-      {{ data.label }}
+      {{ toHumanReadable(data.label, 'sentence') }}
     </div>
   </div>
 </template>

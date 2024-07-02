@@ -71,6 +71,7 @@ export const useLocationStore = defineStore('locations', () => {
   });
 
   return {
+    allLocations,
     tradeLocations,
     fetchAllTradeLocations,
     allExchanges,
