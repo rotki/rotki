@@ -1390,6 +1390,7 @@ def test_decoding_missing_transactions(
     assert outcome['result']['decoded_tx_number'] == {}
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDR1, TEST_ADDR2]])
 def test_count_transactions_missing_decoding(rotkehlchen_api_server: 'APIServer') -> None:
