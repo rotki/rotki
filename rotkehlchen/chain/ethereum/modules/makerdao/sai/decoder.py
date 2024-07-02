@@ -503,6 +503,6 @@ class MakerdaosaiDecoder(DecoderInterface):
     def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (CounterpartyDetails(
             identifier=CPT_SAI,
-            label=MAKERDAO_LABEL,
+            label=f'{MAKERDAO_LABEL} SAI',
             image=MAKERDAO_ICON,
         ),)
