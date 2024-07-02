@@ -19,7 +19,6 @@ const emit = defineEmits<{
 
 const { value: modelValue } = toRefs(props);
 
-const allEvmChains = ref(true);
 const address = ref<InstanceType<typeof AddressInput>>();
 const selectedModules = ref<Module[]>([]);
 
@@ -116,13 +115,30 @@ const addresses = computed<string[]>({
   },
 });
 
+const allEvmChains = computed<boolean>({
+  get() {
+    const model = get(modelValue);
+    if (model.mode !== 'edit')
+      return model.evm ?? false;
+
+    return false;
+  },
+  set(evm) {
+    const model = get(modelValue);
+    if (model.mode === 'edit')
+      return;
+
+    updateVModel({ ...model, evm });
+  },
+});
+
 const showEvmCheck = computed<boolean>(() => {
   const model = get(modelValue);
   return get(isEvm(model.chain)) && model.mode !== 'edit';
 });
 
 function onAllEvmChainsUpdate(allChains: boolean) {
-  return set(allEvmChains, allChains);
+  set(allEvmChains, allChains);
 }
 
 function validate(): Promise<boolean> {

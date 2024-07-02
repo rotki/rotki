@@ -12,11 +12,14 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'input', value: XpubManage): void;
+  (e: 'update:error-messages', value: ValidationErrors): void;
 }>();
 
 const { value: modelValue } = toRefs(props);
 
 const input = ref<InstanceType<typeof XpubInput>>();
+
+const errors = useKebabVModel(props, 'errorMessages', emit);
 
 function updateVModel(value: XpubManage) {
   emit('input', value);
@@ -86,7 +89,7 @@ defineExpose({
     <XpubInput
       ref="input"
       :disabled="loading || value.mode === 'edit'"
-      :error-messages="errorMessages"
+      :error-messages.sync="errors"
       :xpub.sync="xpub"
       :blockchain="value.chain"
     />
