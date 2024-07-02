@@ -18,12 +18,15 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:validator', validator: Eth2Validator | null): void;
+  (e: 'update:error-messages', value: ValidationErrors): void;
 }>();
 
 const { validator, errorMessages } = toRefs(props);
 const validatorIndex = ref('');
 const publicKey = ref('');
 const ownershipPercentage = ref<string>();
+
+const errors = useKebabVModel(props, 'errorMessages', emit);
 
 function updateProperties() {
   const validatorVal = get(validator);
@@ -65,7 +68,7 @@ const v$ = useVuelidate(
   {
     $autoDirty: true,
     $stopPropagation: true,
-    $externalResults: errorMessages,
+    $externalResults: errors,
   },
 );
 

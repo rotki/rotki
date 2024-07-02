@@ -57,6 +57,7 @@ export function createNewBlockchainAccount(): AccountManageAdd {
     mode: 'add',
     type: 'account',
     chain: Blockchain.ETH,
+    evm: true,
     data: [
       {
         address: '',

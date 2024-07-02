@@ -24,6 +24,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'input', value: AccountManageState): void;
+  (e: 'update:error-messages', value: ValidationErrors): void;
 }>();
 
 const inputMode = ref<InputMode>(InputMode.MANUAL_ADD);
@@ -37,6 +38,9 @@ const form = ref<
 
 const model = useSimpleVModel(props, emit);
 const chain = useSimplePropVModel(props, 'chain', emit);
+const errors = useKebabVModel(props, 'errorMessages', emit);
+
+const { isEvm } = useSupportedChains();
 
 async function validate(): Promise<boolean> {
   const selectedForm = get(form);
@@ -74,8 +78,12 @@ watch(chain, (chain) => {
     } satisfies StakingValidatorManage);
   }
   else {
+    const account = createNewBlockchainAccount();
+    if (!get(isEvm(chain)))
+      delete account.evm;
+
     set(model, {
-      ...createNewBlockchainAccount(),
+      ...account,
       chain,
     });
   }
@@ -100,8 +108,12 @@ watch(inputMode, (mode) => {
     } satisfies XpubManage);
   }
   else {
+    const account = createNewBlockchainAccount();
+    if (!get(isEvm(chain)))
+      delete account.evm;
+
     set(model, {
-      ...createNewBlockchainAccount(),
+      ...account,
       chain: get(chain),
     });
   }
@@ -141,7 +153,7 @@ defineExpose({
       ref="form"
       v-model="model"
       :loading="loading"
-      :error-messages="errorMessages"
+      :error-messages.sync="errors"
     />
 
     <XpubAccountForm
@@ -149,7 +161,7 @@ defineExpose({
       ref="form"
       v-model="model"
       :loading="loading"
-      :error-messages="errorMessages"
+      :error-messages.sync="errors"
     />
 
     <AddressAccountForm
@@ -157,7 +169,7 @@ defineExpose({
       ref="form"
       v-model="model"
       :loading="loading"
-      :error-messages="errorMessages"
+      :error-messages.sync="errors"
     >
       <template #selector="{ disabled, attrs, on }">
         <AllEvmChainsSelector

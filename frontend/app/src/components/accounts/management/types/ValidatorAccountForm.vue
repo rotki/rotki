@@ -11,11 +11,13 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'input', value: StakingValidatorManage): void;
+  (e: 'update:error-messages', value: ValidationErrors): void;
 }>();
 
 const input = ref<InstanceType<typeof Eth2Input>>();
 
 const validator = useSimplePropVModel(props, 'data', emit);
+const errors = useKebabVModel(props, 'errorMessages', emit);
 
 function validate(): Promise<boolean> {
   assert(isDefined(input));
@@ -32,6 +34,6 @@ defineExpose({
     ref="input"
     :validator.sync="validator"
     :disabled="loading || value.mode === 'edit'"
-    :error-messages="errorMessages"
+    :error-messages.sync="errors"
   />
 </template>

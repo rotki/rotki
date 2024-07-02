@@ -19,6 +19,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{
   (e: 'update:xpub', xpub: XpubPayload | undefined): void;
+  (e: 'update:error-messages', value: ValidationErrors): void;
 }>();
 
 const { t } = useI18n();
@@ -29,6 +30,8 @@ const xpubKey = ref('');
 const derivationPath = ref('');
 const xpubKeyPrefix = ref<XpubPrefix>(XpubPrefix.XPUB);
 const advanced = ref(false);
+
+const errors = useKebabVModel(props, 'errorMessages', emit);
 
 function updateXpub(event?: XpubPayload) {
   emit('update:xpub', event);
@@ -88,7 +91,7 @@ const v$ = useVuelidate(
   {
     $autoDirty: true,
     $stopPropagation: true,
-    $externalResults: errorMessages,
+    $externalResults: errors,
   },
 );
 
