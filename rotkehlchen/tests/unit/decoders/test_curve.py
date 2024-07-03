@@ -2404,3 +2404,63 @@ def test_gauge_deposit_and_stake_multiple(database, gnosis_inquirer, gnosis_acco
             address=ZERO_ADDRESS,
         ),
     ]
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
+@pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+def test_liquidity_withdrawal(database, gnosis_inquirer, gnosis_accounts, load_global_caches):
+    """Test that a withdrawal in the case of pools that have underlying pools
+    is correctly decoded"""
+    tx_hash = deserialize_evm_tx_hash('0x7645bfeb43a1ccacd3f8eb29c496823bd73586498ff7b79be5a3a48145f1c4b4')  # noqa: E501
+    timestamp, pool_address, gas_fees, removed_amount = TimestampMS(1719046465000), string_to_evm_address('0x0CA1C1eC4EBf3CC67a9f545fF90a3795b318cA4a'), '0.000813878', '1656.600276747801451581'  # noqa: E501
+    returned_amount = '850'
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+        load_global_caches=load_global_caches,
+    )
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_XDAI,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label=gnosis_accounts[0],
+            notes=f'Burned {gas_fees} XDAI for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset(f'eip155:100/erc20:{pool_address}'),
+            balance=Balance(amount=FVal(returned_amount)),
+            location_label=gnosis_accounts[0],
+            notes=f'Return {returned_amount} crvEUReUSD',
+            counterparty=CPT_CURVE,
+            address=string_to_evm_address('0xE3FFF29d4DC930EBb787FeCd49Ee5963DADf60b6'),
+            extra_data={'withdrawal_events_num': 1},
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=Asset('eip155:100/erc20:0xcB444e90D8198415266c6a2724b7900fb12FC56E'),
+            balance=Balance(amount=FVal(removed_amount)),
+            location_label=gnosis_accounts[0],
+            notes=f'Remove {removed_amount} EURe from 0x056C6C5e684CeC248635eD86033378Cc444459B0 curve pool',  # noqa: E501
+            counterparty=CPT_CURVE,
+            address=string_to_evm_address('0xE3FFF29d4DC930EBb787FeCd49Ee5963DADf60b6'),
+        ),
+    ]
+    assert events == expected_events
