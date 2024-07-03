@@ -33,9 +33,9 @@ Then you can click **Continue** button.
    :alt: Enable premium sync
    :align: center
 
-You have to provide a username and a password:
+You have to provide a profile name and a password:
 
-  - **Username**: it is just an identifier for your database. This is the local user. It **doesn't** need to match any previous username or the username of your premium subscription at `rotki.com <https://rotki.com/>`__ .
+  - **Profile Name**: it is just an identifier for your database. This is the local user. It **doesn't** need to match any previous username or the username of your premium subscription at `rotki.com <https://rotki.com/>`__ .
   - **Password**: :red:`Do not forget this password`. It is used to encrypt all your local files.
 
 For a completely new account, premium API key and secret can be added either using the prompt provided or using :ref:`set-up-rotki-premium`
