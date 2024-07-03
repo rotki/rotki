@@ -164,7 +164,8 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                 (
                     user_or_contract_address == event.location_label or
                     user_or_contract_address in self.curve_deposit_contracts or
-                    tx_log.topics[0] in REMOVE_LIQUIDITY_IMBALANCE
+                    tx_log.topics[0] in REMOVE_LIQUIDITY_IMBALANCE or
+                    user_or_contract_address == hex_or_bytes_to_address(tx_log.topics[1])
                 )
             ):
                 event.event_type = HistoryEventType.SPEND
@@ -243,7 +244,10 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
         if return_event is not None and len(withdrawn_assets) > 0:
             return_event.extra_data = {'withdrawal_events_num': len(withdrawn_assets)}
             # for deposit zap contracts, this is handled using an action item
-            if user_or_contract_address in self.curve_deposit_contracts:
+            if (
+                user_or_contract_address in self.curve_deposit_contracts or
+                self.base.is_tracked(user_or_contract_address) is False
+            ):
                 action_items = [ActionItem(
                     action='transform',
                     from_event_type=HistoryEventType.RECEIVE,
