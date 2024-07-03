@@ -1728,6 +1728,7 @@
     },
     "here": "here",
     "ignored_in_accounting": "Ignored in Accounting",
+    "important_notice": "Important notice:",
     "label": "Label",
     "location": "Location",
     "missed": "Missed",
@@ -2175,10 +2176,12 @@
     }
   },
   "decentralized_overview": {
+    "deprecated_warning": "This view is deprecated and does not show all supported protocols. Account and dashboard tokens should include all detected protocol tokens.",
     "empty_subtitle": "Please add at least one ETH account that has DeFi balances",
     "empty_title": "No DeFi overview can be shown",
     "loading": "Please wait while your defi balances are getting loaded...",
     "title": "Defi Overview"
+
   },
   "defi_overview": {
     "multiple_assets": "Multiple assets"
@@ -3027,7 +3030,6 @@
     "note": "Important notes for importing data from {0}'s CSV exports.",
     "notice": "Those platforms could change their format in a backwards incompatible way quite often. As such this import may stop working. If that happens {link} and we will see what we can do.",
     "notice_link": "open an issue with rotki",
-    "notice_warning": "Important notice:",
     "select_source": {
       "title": "Select source"
     },

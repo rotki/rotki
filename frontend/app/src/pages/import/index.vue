@@ -13,9 +13,8 @@ const { t } = useI18n();
     </template>
 
     <RuiAlert
-      variant="outlined"
       type="warning"
-      :title="t('import_data.notice_warning')"
+      :title="t('common.important_notice')"
     >
       <i18n
         tag="span"

@@ -1601,6 +1601,7 @@
       "start_date": "filtrer par la date de début de la période"
     },
     "ignored_in_accounting": "Ignoré dans la comptabilité",
+    "important_notice": "Remarque importante :",
     "location": "Emplacement",
     "multi_chain": "Multi Chaîne",
     "name": "Nom",
@@ -2856,7 +2857,6 @@
     "note": "Notes importantes pour l'importation de données à partir des exports CSV de {0}.",
     "notice": "Ces plates-formes peuvent modifier leur format de manière incompatible de manière rétroactive assez souvent. Par conséquent, cet import peut cesser de fonctionner. Si cela se produit, {link} et nous verrons ce que nous pouvons faire.",
     "notice_link": "ouvrez un problème avec rotki",
-    "notice_warning": "Remarque importante :",
     "select_source": {
       "title": "Sélectionner la source"
     },
