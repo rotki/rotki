@@ -112,6 +112,13 @@ onMounted(async () => {
       {{ t('decentralized_overview.empty_subtitle') }}
     </NoDataScreen>
     <template v-else>
+      <RuiAlert
+        type="warning"
+        :title="t('common.important_notice')"
+      >
+        {{ t('decentralized_overview.deprecated_warning') }}
+      </RuiAlert>
+
       <div
         class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4"
       >

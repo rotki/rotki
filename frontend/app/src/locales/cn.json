@@ -1448,6 +1448,7 @@
       "start_date": "按期间的开始日期过滤"
     },
     "ignored_in_accounting": "在会计中忽略",
+    "important_notice": "重要通知:",
     "location": "位置",
     "multi_chain": "多链",
     "name": "姓名",
@@ -2625,7 +2626,6 @@
     "note": "从 {0} 的 CSV 导出中导入数据的重要注意事项。",
     "notice": "这些平台可能会经常以向后不兼容的方式更改其格式。 因此，此导入可能会停止工作。 如果发生这种情况{link}，我们将看看我们能做些什么。",
     "notice_link": "用 rotki 打开一个问题",
-    "notice_warning": "重要通知:",
     "select_source": {
       "title": "选择来源"
     },
