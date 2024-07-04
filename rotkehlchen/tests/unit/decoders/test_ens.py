@@ -5,6 +5,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.airdrops.decoder import ENS_ADDRESS
 from rotkehlchen.chain.ethereum.modules.ens.constants import (
     CPT_ENS,
@@ -882,6 +883,7 @@ def test_claim_airdrop(database, ethereum_inquirer, ethereum_accounts, add_subgr
             notes=f'Claim {claimed_amount} ENS from ens airdrop',
             counterparty=CPT_ENS,
             address=ENS_ADDRESS,
+            extra_data={AIRDROP_IDENTIFIER_KEY: 'ens'},
         ),
     ]
     assert events == expected_events

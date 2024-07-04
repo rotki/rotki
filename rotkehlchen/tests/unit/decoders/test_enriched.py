@@ -2,6 +2,7 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.decoding.constants import CPT_GNOSIS_CHAIN
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.airdrops.constants import CPT_ONEINCH
@@ -120,6 +121,7 @@ def test_1inch_claim(database, ethereum_inquirer, eth_transactions):
             notes='Claim 609.397099685988397871 1INCH from the 1INCH airdrop',
             counterparty=CPT_ONEINCH,
             address=string_to_evm_address('0xE295aD71242373C37C5FdA7B57F26f9eA1088AFe'),
+            extra_data={AIRDROP_IDENTIFIER_KEY: '1inch'},
         ),
     ]
     assert events == expected_events
@@ -324,6 +326,7 @@ def test_gitcoin_claim(database, ethereum_inquirer, eth_transactions):
             notes='Claim 271.5872 GTC from the GTC airdrop',
             counterparty=None,
             address=string_to_evm_address('0xDE3e5a990bCE7fC60a6f017e7c4a95fc4939299E'),
+            extra_data={AIRDROP_IDENTIFIER_KEY: 'gitcoin'},
         ),
     ]
     assert events == expected_events

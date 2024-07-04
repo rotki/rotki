@@ -1,6 +1,7 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
@@ -53,6 +54,7 @@ def test_optimism_airdrop_claim(database, optimism_inquirer):
             notes='Claim 827.759804739626467328 OP from the optimism airdrop',
             counterparty=CPT_OPTIMISM,
             address=string_to_evm_address('0xFeDFAF1A10335448b7FA0268F56D2B44DBD357de'),
+            extra_data={AIRDROP_IDENTIFIER_KEY: 'optimism_1'},
         )]
     assert expected_events == events
 

@@ -1,3 +1,4 @@
+import json
 import logging
 from collections import defaultdict
 from collections.abc import Callable, Sequence
@@ -43,6 +44,7 @@ AIRDROPS_REPO_BASE: Final = f'https://raw.githubusercontent.com/rotki/data/{"mai
 AIRDROPS_INDEX: Final = f'{AIRDROPS_REPO_BASE}/airdrops/index_v3.json'
 ETAG_CACHE_KEY: Final = 'ETag'
 JSON_PATH_SEPARATOR_API_AIRDROPS: Final = '/'
+AIRDROP_IDENTIFIER_KEY: Final = 'airdrop_identifier'
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False, kw_only=True)  # noqa: E501
@@ -80,6 +82,7 @@ class AirdropAPIData(Airdrop):
 
 class AirdropClaimEventQueryParams(NamedTuple):
     """Params used in the SQL query to detect as claimed an airdrop"""
+    protocol: str
     event_type: HistoryEventType
     event_subtype: HistoryEventSubType
     location_label: ChecksumEvmAddress
@@ -333,7 +336,7 @@ def get_poap_airdrop_data(airdrop_data: list[str], name: str, data_dir: Path) ->
 def calculate_claimed_airdrops(
         airdrop_data: Sequence[AirdropClaimEventQueryParams],
         database: DBHandler,
-) -> Sequence[tuple[ChecksumEvmAddress, str, FVal]]:
+) -> Sequence[tuple[ChecksumEvmAddress, str]]:
     """Calculates which of the given airdrops have been claimed.
     It does so by checking if there is a claim history event in the database
     that matches the airdrop data (address, asset and amount). It returns a list
@@ -341,29 +344,54 @@ def calculate_claimed_airdrops(
     if len(airdrop_data) == 0:
         return []
 
-    query_parts, bindings = [], []
-    for airdrop_info in airdrop_data:
-        amount = airdrop_info.tolerance.value
-        half_range = airdrop_info.tolerance.tolerance / 2
-        query_parts.append('(events.type=? AND events.subtype=? AND events.location_label=? AND events.asset=? AND CAST(events.amount AS REAL) BETWEEN ? AND ?)')  # noqa: E501
-        bindings.extend(
-            [
-                airdrop_info.event_type.serialize(),
-                airdrop_info.event_subtype.serialize(),
-                airdrop_info.location_label,
-                airdrop_info.asset.serialize(),
-                str(amount - half_range),
-                str(amount + half_range),
-            ],
-        )
-
-    query_part = ' OR '.join(query_parts)
+    claimed_events = []
     with database.conn.read_ctx() as cursor:
-        return cursor.execute(
-            'SELECT events.location_label, events.asset, events.amount '
-            f'FROM history_events AS events WHERE {query_part}',
-            tuple(bindings),
-        ).fetchall()
+        for airdrop_info in airdrop_data:
+            amount = airdrop_info.tolerance.value
+            half_range = airdrop_info.tolerance.tolerance / 2
+
+            for address, db_extra_data, in cursor.execute(
+                'SELECT events.location_label,evm_events.extra_data FROM history_events '
+                'AS events LEFT JOIN evm_events_info AS evm_events ON '
+                'events.identifier=evm_events.identifier WHERE(events.type=? AND events.subtype=? '
+                'AND events.location_label=? AND events.asset=? AND CAST(events.amount AS REAL) '
+                'BETWEEN ? AND ?);',
+                (
+                    airdrop_info.event_type.serialize(),
+                    airdrop_info.event_subtype.serialize(),
+                    airdrop_info.location_label,
+                    airdrop_info.asset.serialize(),
+                    str(amount - half_range),
+                    str(amount + half_range),
+                ),
+            ):
+                if db_extra_data is None:
+                    log.warning(
+                        f'Found no extra_data for an airdrop claim event of {airdrop_info.asset!s}'
+                        f' for address {address!s} in the DB. Skipping airdrop claim check.',
+                    )
+                    continue
+
+                try:
+                    extra_data = json.loads(db_extra_data)
+                except json.JSONDecodeError as e:
+                    log.error(
+                        f'Failed to read extra_data when reading EvmEvent entry '
+                        f'{db_extra_data} from the DB due to {e!s}. Skipping airdrop claim check.',
+                    )
+
+                if AIRDROP_IDENTIFIER_KEY not in extra_data:
+                    log.warning(
+                        f'"{AIRDROP_IDENTIFIER_KEY}" not found in the extra_data for an airdrop '
+                        f'claim event of {airdrop_info.asset!s} for address {address!s} in the DB.'
+                        'Skipping airdrop claim check.',
+                    )
+                    continue
+
+                if airdrop_info.protocol == extra_data[AIRDROP_IDENTIFIER_KEY]:
+                    claimed_events.append((address, airdrop_info.protocol))
+
+    return claimed_events
 
 
 def process_airdrop_with_api_data(
@@ -447,6 +475,7 @@ def process_airdrop_with_api_data(
 
         temp_airdrop_tuples.append(
             AirdropClaimEventQueryParams(
+                protocol=protocol_name,
                 event_type=HistoryEventType.RECEIVE,
                 event_subtype=HistoryEventSubType.AIRDROP,
                 location_label=address,
@@ -528,6 +557,7 @@ def _process_airdrop_file(
             )
             temp_airdrop_tuples.append(
                 AirdropClaimEventQueryParams(
+                    protocol=protocol_name,
                     event_type=claim_event_type,
                     event_subtype=claim_event_subtype,
                     location_label=addr,
@@ -577,13 +607,12 @@ def check_airdrops(
         for temp_addr, data in temp_found_data.items():
             found_data[temp_addr].update(data)
 
-    asset_to_protocol = {item.asset.identifier: protocol for protocol, item in airdrops.items()}
     claim_events_tuple = calculate_claimed_airdrops(
         airdrop_data=airdrop_tuples,
         database=database,
     )
     for event_tuple in claim_events_tuple:
-        found_data[event_tuple[0]][asset_to_protocol[event_tuple[1]]]['claimed'] = True
+        found_data[event_tuple[0]][event_tuple[1]]['claimed'] = True
 
     for protocol_name, poap_airdrop_data in poap_airdrops.items():
         data_dict = get_poap_airdrop_data(poap_airdrop_data, protocol_name, data_dir)

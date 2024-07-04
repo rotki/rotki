@@ -1,6 +1,7 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.shutter.constants import (
     CPT_SHUTTER,
     SHUTTER_AIDROP_CONTRACT,
@@ -52,6 +53,7 @@ def test_airdrop_claim(database, ethereum_inquirer, ethereum_accounts):
             notes=f'Claim {claimed_amount} SHU from shutter airdrop into the vesting contract: 0x22714964e6b9F17798A9e1AD3f2BAb87279876FC',  # noqa: E501
             counterparty=CPT_SHUTTER,
             address=SHUTTER_AIDROP_CONTRACT,
+            extra_data={AIRDROP_IDENTIFIER_KEY: 'shutter'},
         ),
     ]
     assert events == expected_events

@@ -13,6 +13,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.ethereum.airdrops import (
+    AIRDROP_IDENTIFIER_KEY,
     AIRDROPS_INDEX,
     AIRDROPS_REPO_BASE,
     ETAG_CACHE_KEY,
@@ -128,7 +129,24 @@ MOCK_AIRDROP_INDEX = {'airdrops': {
         'name': 'DEGEN',
         'icon': 'degen.svg',
         'icon_path': 'airdrops/icons/degen.svg',
-        'has_decoder': False,
+        'new_asset_data': {
+            'asset_type': 'EVM_TOKEN',
+            'address': '0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed',
+            'name': 'Degen',
+            'symbol': 'DEGEN',
+            'chain_id': 8453,
+            'decimals': 18,
+        },
+    },
+    'degen2_season3': {
+        'file_path': 'airdrops/degen2_season3.parquet',
+        'file_hash': '7b3ee9fd6bebfe5a640c40ba4effe29ce5f0bd1e05c9222fb25f1859f9af0a6f',
+        'asset_identifier': 'eip155:8453/erc20:0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed',
+        'url': 'https://www.degen.tips/airdrop2/season3',
+        'name': 'DEGEN',
+        'icon': 'degen.svg',
+        'icon_path': 'airdrops/icons/degen.svg',
+        'cutoff_time': 1716940800,
         'new_asset_data': {
             'asset_type': 'EVM_TOKEN',
             'address': '0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed',
@@ -215,6 +233,7 @@ def test_check_airdrops(
             asset=A_UNI,
             balance=Balance(amount=FVal('400') + tolerance_for_amount_check * FVal('0.25')),  # inside tolerance  # noqa: E501
             location_label=string_to_evm_address(TEST_ADDR1),
+            extra_data={AIRDROP_IDENTIFIER_KEY: 'uniswap'},
         ), EvmEvent(
             tx_hash=make_evm_tx_hash(),
             sequence_index=0,
@@ -225,6 +244,18 @@ def test_check_airdrops(
             asset=A_1INCH,
             balance=Balance(amount=FVal('630.374421472277638654') + tolerance_for_amount_check * FVal('2')),  # outside tolerance  # noqa: E501
             location_label=string_to_evm_address(TEST_ADDR1),
+            extra_data={AIRDROP_IDENTIFIER_KEY: '1inch'},
+        ), EvmEvent(
+            tx_hash=make_evm_tx_hash(),
+            sequence_index=0,
+            timestamp=TimestampMS(1594500575000),
+            location=Location.BASE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.AIRDROP,
+            asset=Asset('eip155:8453/erc20:0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed'),
+            balance=Balance(amount=FVal('394857.029384576349787465')),
+            location_label=string_to_evm_address(TEST_ADDR2),
+            extra_data={AIRDROP_IDENTIFIER_KEY: 'degen2_season1'},
         ),
     ]
     MOCK_AIRDROP_INDEX['airdrops']['shutter']['new_asset_data'] = new_asset_data
@@ -266,6 +297,8 @@ def test_check_airdrops(
             f'{AIRDROPS_REPO_BASE}/airdrops/poap/poap_aave_v2_pioneers.json':
                 f'{{"{TEST_POAP1}": [\n566\n]}}',
             f'{AIRDROPS_REPO_BASE}/airdrops/degen2_season1.parquet':
+                f'address,tokens\n{TEST_ADDR2},394857.029384576349787465\n',
+            f'{AIRDROPS_REPO_BASE}/airdrops/degen2_season3.parquet':
                 f'address,tokens\n{TEST_ADDR2},394857.029384576349787465\n',
         }
         if url == AIRDROPS_INDEX:
@@ -342,7 +375,7 @@ def test_check_airdrops(
     with globaldb.conn.read_ctx() as cursor:
         assert cursor.execute(
             'SELECT COUNT(*) FROM unique_cache WHERE key LIKE ?', ('AIRDROPS_HASH%',),
-        ).fetchone()[0] == 11
+        ).fetchone()[0] == 12
         assert cursor.execute(
             'SELECT value FROM unique_cache WHERE key=?', ('AIRDROPS_HASHdiva.parquet',),
         ).fetchone()[0] == MOCK_AIRDROP_INDEX['airdrops']['diva']['file_hash']
@@ -375,7 +408,7 @@ def test_check_airdrops(
         'has_decoder': True,
     }
 
-    assert len(data[TEST_ADDR2]) == 5
+    assert len(data[TEST_ADDR2]) == 6
     assert data[TEST_ADDR2]['uniswap'] == {
         'amount': '400.050642',
         'asset': A_UNI,
@@ -403,8 +436,17 @@ def test_check_airdrops(
         'amount': '394857.029384576349787465',
         'asset': Asset('eip155:8453/erc20:0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed'),
         'link': 'https://www.degen.tips/airdrop2/season1',
+        'claimed': True,
+        'has_decoder': True,
+        'icon_url': 'https://raw.githubusercontent.com/rotki/data/develop/airdrops/icons/degen.svg',
+    }
+    assert data[TEST_ADDR2]['degen2_season3'] == {
+        'amount': '394857.029384576349787465',
+        'asset': Asset('eip155:8453/erc20:0x4ed4E862860beD51a9570b96d89aF5E1B0Efefed'),
+        'link': 'https://www.degen.tips/airdrop2/season3',
         'claimed': False,
-        'has_decoder': False,
+        'has_decoder': True,
+        'cutoff_time': 1716940800,
         'icon_url': 'https://raw.githubusercontent.com/rotki/data/develop/airdrops/icons/degen.svg',
     }
     assert data[TEST_ADDR2]['eigen'] == {

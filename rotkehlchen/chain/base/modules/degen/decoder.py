@@ -24,6 +24,7 @@ class DegenDecoder(MerkleClaimDecoderInterface):
                 DEGEN_TOKEN_ID,  # token id
                 18,  # token decimals
                 'DEGEN from Degen airdrop 2',  # notes suffix
+                'degen2_season1',
             ),
             CLAIM_AIRDROP_3_CONTRACT: (
                 self._decode_indexed_merkle_claim,
@@ -31,6 +32,7 @@ class DegenDecoder(MerkleClaimDecoderInterface):
                 DEGEN_TOKEN_ID,  # token id
                 18,  # token decimals
                 'DEGEN from Degen airdrop 3',  # notes suffix
+                'degen2_season3',
             ),
         }
 

@@ -4,6 +4,7 @@ from typing import Any
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.assets.utils import TokenEncounterInfo
+from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     BEACON_ETH_STRATEGY,
     CPT_EIGENLAYER,
@@ -160,6 +161,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
                 event.event_subtype = HistoryEventSubType.AIRDROP
                 event.counterparty = CPT_EIGENLAYER
                 event.notes = notes
+                event.extra_data = {AIRDROP_IDENTIFIER_KEY: 'eigen_s1_phase1'}
                 break
         else:
             log.error(f'Could not match eigenlayer airdrop receive event in {context.transaction.tx_hash.hex()}')  # noqa: E501

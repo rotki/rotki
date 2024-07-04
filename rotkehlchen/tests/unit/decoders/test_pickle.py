@@ -2,6 +2,7 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.pickle_finance.constants import (
     CORN_TOKEN_ID,
     CORNICHON_CLAIM,
@@ -176,5 +177,6 @@ def test_claim_cornichon(database, ethereum_inquirer, ethereum_accounts):
             notes=f'Claim {amount_str} CORN from the pickle finance hack compensation airdrop',
             counterparty=CPT_PICKLE,
             address=CORNICHON_CLAIM,
+            extra_data={AIRDROP_IDENTIFIER_KEY: 'cornichon'},
         )]
     assert events == expected_events

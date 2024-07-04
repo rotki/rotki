@@ -40,6 +40,7 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
                 self.op_token.identifier,  # token id
                 18,  # token decimals
                 'OP from the optimism airdrop',  # notes suffix
+                'optimism_1',
             ),
         }
 

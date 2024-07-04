@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Final, Literal, overload
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi_str
+from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.utils import (
     asset_normalized_value,
     token_normalized_value_decimals,
@@ -185,6 +186,7 @@ class MerkleClaimDecoderInterface(DecoderInterface, ABC):
             notes_suffix: str,
             claiming_address: ChecksumEvmAddress,
             claimed_amount: FVal,
+            airdrop_identifiers: str,
     ) -> DecodingOutput:
         for event in context.decoded_events:
             if (
@@ -198,6 +200,7 @@ class MerkleClaimDecoderInterface(DecoderInterface, ABC):
                 event.counterparty = counterparty
                 event.notes = f'Claim {claimed_amount} {notes_suffix}'
                 event.address = context.tx_log.address
+                event.extra_data = {AIRDROP_IDENTIFIER_KEY: airdrop_identifiers}
                 break
         else:
             log.error(f'Could not find transfer event for {counterparty} airdrop claim {context.transaction.tx_hash.hex()}')  # noqa: E501
@@ -211,6 +214,7 @@ class MerkleClaimDecoderInterface(DecoderInterface, ABC):
             token_id: str,
             token_decimals: int,
             notes_suffix: str,
+            airdrop_identifier: str,
     ) -> DecodingOutput:
         """This decodes all merkledrop claims but with indexed topic arguments"""
         if context.tx_log.topics[0] != MERKLE_CLAIM:
@@ -223,7 +227,7 @@ class MerkleClaimDecoderInterface(DecoderInterface, ABC):
             token_amount=hex_or_bytes_to_int(context.tx_log.topics[3]),
             token_decimals=token_decimals,
         )
-        return self._maybe_enrich_claim_transfer(context, counterparty, token_id, notes_suffix, claiming_address, claimed_amount)  # noqa: E501
+        return self._maybe_enrich_claim_transfer(context, counterparty, token_id, notes_suffix, claiming_address, claimed_amount, airdrop_identifier)  # noqa: E501
 
     def _decode_merkle_claim(
             self,
@@ -232,6 +236,7 @@ class MerkleClaimDecoderInterface(DecoderInterface, ABC):
             token_id: str,
             token_decimals: int,
             notes_suffix: str,
+            airdrop_identifier: str,
     ) -> DecodingOutput:
         """This decodes all merkledrop claims that fit the same event log format"""
         if context.tx_log.topics[0] != MERKLE_CLAIM:
@@ -244,7 +249,7 @@ class MerkleClaimDecoderInterface(DecoderInterface, ABC):
             token_amount=hex_or_bytes_to_int(context.tx_log.data[64:96]),
             token_decimals=token_decimals,
         )
-        return self._maybe_enrich_claim_transfer(context, counterparty, token_id, notes_suffix, claiming_address, claimed_amount)  # noqa: E501
+        return self._maybe_enrich_claim_transfer(context, counterparty, token_id, notes_suffix, claiming_address, claimed_amount, airdrop_identifier)  # noqa: E501
 
 
 class GovernableDecoderInterface(DecoderInterface, ABC):

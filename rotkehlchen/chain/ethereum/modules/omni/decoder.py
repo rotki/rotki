@@ -3,6 +3,7 @@ from typing import Any
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.decoding.clique.decoder import CliqueAirdropDecoderInterface
 from rotkehlchen.chain.evm.decoding.constants import STAKED
@@ -46,6 +47,7 @@ class OmniDecoder(CliqueAirdropDecoderInterface):
                 event.event_subtype = HistoryEventSubType.AIRDROP
                 event.counterparty = CPT_OMNI
                 event.notes = notes
+                event.extra_data = {AIRDROP_IDENTIFIER_KEY: 'omni'}
                 transfer_found = True
             elif (
                 event.event_type == HistoryEventType.SPEND and
@@ -68,6 +70,7 @@ class OmniDecoder(CliqueAirdropDecoderInterface):
                 notes=notes,
                 counterparty=CPT_OMNI,
                 address=OMNI_AIDROP_CONTRACT,
+                extra_data={AIRDROP_IDENTIFIER_KEY: 'omni'},
             )
             for event in context.decoded_events:  # find the stake event and assure comes after
                 if (

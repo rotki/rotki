@@ -2,6 +2,7 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.omni.constants import (
     CPT_OMNI,
     OMNI_AIDROP_CONTRACT,
@@ -67,6 +68,7 @@ def test_claim(database, ethereum_inquirer, ethereum_accounts):
             notes='Claim 14.411451809999998976 OMNI from the Omni genesis airdrop',
             counterparty=CPT_OMNI,
             address=OMNI_AIDROP_CONTRACT,
+            extra_data={AIRDROP_IDENTIFIER_KEY: 'omni'},
         ),
     ]
     assert events == expected_events
@@ -176,6 +178,7 @@ def test_claim_and_stake(database, ethereum_inquirer, ethereum_accounts):
             notes=f'Claim {omni_str} OMNI from the Omni genesis airdrop',
             counterparty=CPT_OMNI,
             address=OMNI_AIDROP_CONTRACT,
+            extra_data={AIRDROP_IDENTIFIER_KEY: 'omni'},
         ), EvmEvent(
             tx_hash=evmhash,
             sequence_index=3,

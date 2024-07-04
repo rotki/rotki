@@ -163,6 +163,7 @@ class PickleFinanceDecoder(MerkleClaimDecoderInterface):
                 CORN_TOKEN_ID,  # token id
                 18,  # token decimals
                 'CORN from the pickle finance hack compensation airdrop',  # notes suffix
+                'cornichon',
             ),
         }
 

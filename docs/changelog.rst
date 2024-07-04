@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Claimed and unclaimed airdrops of the same asset will now show properly.
 * :bug:`-` Editing the passphrase for OKX exchange will now work properly.
 * :feature:`8193` Coinbasepro support is removed since the exchanges no longer exist.
 * :feature:`8071` Airdrops can now be filtered by a new status: missed. Meaning airdrops for which the user was eligible, the cutoff time has expired and no claim event is seen.

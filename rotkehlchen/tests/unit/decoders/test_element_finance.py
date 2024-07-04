@@ -1,6 +1,7 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.airdrops.constants import CPT_ELEMENT_FINANCE
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -53,6 +54,7 @@ def test_claim_airdrop(database, ethereum_inquirer):
             notes='Claim 613.8986657935664 ELFI from element-finance airdrop and delegate it to 0x7BAFC0D5c5892f2041FD9F2415A7611042218e22',  # noqa: E501
             counterparty=CPT_ELEMENT_FINANCE,
             address=string_to_evm_address('0x5ae69B714859A3C15281e0a227D9B8C82F03b966'),
+            extra_data={AIRDROP_IDENTIFIER_KEY: 'elfi'},
         ),
     ]
     assert events == expected_events

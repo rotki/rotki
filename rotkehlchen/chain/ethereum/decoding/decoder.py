@@ -2,6 +2,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.constants import CPT_KRAKEN
 from rotkehlchen.chain.evm.constants import MERKLE_CLAIM
 from rotkehlchen.chain.evm.decoding.base import BaseDecoderToolsWithDSProxy
@@ -84,6 +85,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
                 if event.asset == A_GTC and event.event_type == HistoryEventType.RECEIVE:
                     event.event_subtype = HistoryEventSubType.AIRDROP
                     event.notes = f'Claim {event.balance.amount} GTC from the GTC airdrop'
+                    event.extra_data = {AIRDROP_IDENTIFIER_KEY: 'gitcoin'}
             return DEFAULT_DECODING_OUTPUT
 
         if tx_log.topics[0] == MERKLE_CLAIM and tx_log.address == '0xE295aD71242373C37C5FdA7B57F26f9eA1088AFe':  # noqa: E501
@@ -91,6 +93,7 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
                 if event.asset == A_1INCH and event.event_type == HistoryEventType.RECEIVE:
                     event.event_subtype = HistoryEventSubType.AIRDROP
                     event.notes = f'Claim {event.balance.amount} 1INCH from the 1INCH airdrop'
+                    event.extra_data = {AIRDROP_IDENTIFIER_KEY: '1inch'}
             return DEFAULT_DECODING_OUTPUT
 
         if tx_log.topics[0] == GNOSIS_CHAIN_BRIDGE_RECEIVE and tx_log.address == '0x88ad09518695c6c3712AC10a214bE5109a655671':  # noqa: E501

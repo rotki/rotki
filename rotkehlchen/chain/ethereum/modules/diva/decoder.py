@@ -88,6 +88,7 @@ class DivaDecoder(GovernableDecoderInterface, MerkleClaimDecoderInterface):
                 self.diva.identifier,  # token id
                 18,  # token decimals
                 'DIVA from the DIVA airdrop',  # notes suffix
+                'diva',
             ),
         }
 

@@ -2,6 +2,7 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
@@ -720,6 +721,7 @@ def test_ethereum_claim_airdrop(database, ethereum_inquirer, ethereum_accounts):
             tx_hash=tx_hash,
             counterparty=CPT_COWSWAP,
             address=ZERO_ADDRESS,
+            extra_data={AIRDROP_IDENTIFIER_KEY: 'cow_mainnet'},
         ),
     ]
 
@@ -762,6 +764,7 @@ def test_gnosis_claim_airdrop(database, gnosis_inquirer, gnosis_accounts):
             tx_hash=tx_hash,
             counterparty=CPT_COWSWAP,
             address=ZERO_ADDRESS,
+            extra_data={AIRDROP_IDENTIFIER_KEY: 'cow_gnosis'},
         ),
     ]
 
