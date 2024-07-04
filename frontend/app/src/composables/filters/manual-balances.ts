@@ -1,5 +1,6 @@
 import z from 'zod';
 import { type MatchedKeyword, type SearchMatcher, assetDeserializer, assetSuggestions } from '@/types/filtering';
+import type { MaybeRef } from '@vueuse/core';
 import type { FilterSchema } from '@/composables/filter-paginate';
 
 enum ManualBalanceFilterKeys {
@@ -18,12 +19,11 @@ export type Matcher = SearchMatcher<ManualBalanceFilterKeys, ManualBalanceFilter
 
 export type Filters = MatchedKeyword<ManualBalanceFilterValueKeys>;
 
-export function useManualBalanceFilter(): FilterSchema<Filters, Matcher> {
+export function useManualBalanceFilter(locations: MaybeRef<string[]>): FilterSchema<Filters, Matcher> {
   const filters = ref<Filters>({});
 
   const { t } = useI18n();
   const { assetSearch, assetInfo } = useAssetInfoRetrieval();
-  const { associatedLocations } = storeToRefs(useHistoryStore());
 
   const matchers = computed<Matcher[]>(() => [
     {
@@ -31,8 +31,8 @@ export function useManualBalanceFilter(): FilterSchema<Filters, Matcher> {
       keyValue: ManualBalanceFilterValueKeys.LOCATION,
       description: t('common.location'),
       string: true,
-      suggestions: () => get(associatedLocations),
-      validate: location => get(associatedLocations).includes(location),
+      suggestions: () => get(locations),
+      validate: location => get(locations).includes(location),
     },
     {
       key: ManualBalanceFilterKeys.LABEL,

@@ -36,9 +36,13 @@ const {
   deleteManualBalance,
 } = store;
 const { isLoading } = useStatusStore();
-const { fetchAssociatedLocations } = useHistoryStore();
 
 const dataSource = computed(() => props.type === 'liabilities' ? get(manualLiabilities) : get(manualBalances));
+
+const locations = computed(() => [
+  ...get(manualBalances).map(item => item.location),
+  ...get(manualLiabilities).map(item => item.location),
+].filter(uniqueStrings));
 
 const {
   isLoading: loading,
@@ -58,7 +62,7 @@ const {
 >(
   null,
   false,
-  () => useManualBalanceFilter(),
+  () => useManualBalanceFilter(locations),
   payload => props.type === 'liabilities' ? fetchLiabilities(payload) : fetchBalances(payload),
   {
     extraParams: computed(() => ({
@@ -73,7 +77,6 @@ const {
 async function refresh() {
   set(refreshing, true);
   await fetchManualBalances(true);
-  await fetchAssociatedLocations();
   set(refreshing, false);
 }
 
