@@ -316,7 +316,6 @@ def test_check_airdrops(
     # testing just on the cutoff time of shutter
     freezer.move_to(datetime.datetime.fromtimestamp(1721000000, tz=datetime.UTC))
     with (
-        patch('rotkehlchen.chain.ethereum.airdrops.SMALLEST_AIRDROP_SIZE', 1),
         patch('rotkehlchen.chain.ethereum.airdrops.requests.get', side_effect=mock_requests_get),
         patch('rotkehlchen.globaldb.handler.GlobalDBHandler.packaged_db_conn', side_effect=lambda: GlobalDBHandler().conn),  # not using packaged DB to ensure that new tokens are created  # noqa: E501
     ):
@@ -429,7 +428,6 @@ def test_check_airdrops(
 
     freezer.move_to(datetime.datetime.fromtimestamp(1721000001 + 12 * HOUR_IN_SECONDS, tz=datetime.UTC))  # noqa: E501
     with (
-        patch('rotkehlchen.chain.ethereum.airdrops.SMALLEST_AIRDROP_SIZE', 1),
         patch('rotkehlchen.chain.ethereum.airdrops.requests.get', side_effect=update_mock_requests_get) as mock_get,  # noqa: E501
     ):
         data = check_airdrops(

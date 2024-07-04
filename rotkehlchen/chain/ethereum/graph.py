@@ -29,7 +29,6 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 GRAPH_QUERY_LIMIT: Final = 1000
-GRAPH_QUERY_SKIP_LIMIT: Final = 5000
 RE_MULTIPLE_WHITESPACE: Final = re.compile(r'\s+')
 RETRY_BACKOFF_FACTOR: Final = 0.2
 THEGRAPH_BASE_URL: Final = 'https://gateway-arbitrum.network.thegraph.com/api/'
