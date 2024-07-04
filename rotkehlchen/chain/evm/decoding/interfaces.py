@@ -70,13 +70,6 @@ SAVE_CACHE_DATA_METHOD_TYPE = Callable[
     ['DBCursor', 'DBHandler', list],
     None,
 ]
-CACHE_READ_DATA_METHOD_TYPE = Callable[
-    [],
-    tuple[dict[ChecksumEvmAddress, Any] | set[ChecksumEvmAddress], ...],
-] | Callable[
-    [ChainID],
-    tuple[dict[ChecksumEvmAddress, Any] | set[ChecksumEvmAddress], ...],
-]
 
 
 class DecoderInterface(ABC):

@@ -11,9 +11,6 @@ from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import ChecksumEvmAddress, Price
 
-# TODO: improve the prefixes annotation and amend their usage in balancer.py
-POOL_MAX_NUMBER_TOKENS = 8
-
 
 class BalancerV1EventTypes(Enum):
     JOIN = auto()

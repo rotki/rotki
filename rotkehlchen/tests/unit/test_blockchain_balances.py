@@ -6,8 +6,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.balances import BlockchainBalances
-from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
-from rotkehlchen.constants import ONE
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_LQTY, A_LUSD, A_POLYGON_POS_MATIC
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, make_evm_address
@@ -204,18 +203,6 @@ def test_protocol_balances(blockchain: 'ChainsAggregator') -> None:
         ),
     }
     assert ETH_ADDRESS2 not in blockchain.balances.eth
-
-
-LLAMA_NODE = WeightedNode(
-    node_info=NodeName(
-        name='DefiLlama',
-        endpoint='https://polygon.llamarpc.com',
-        owned=False,
-        blockchain=SupportedBlockchain.POLYGON_POS,
-    ),
-    active=True,
-    weight=ONE,
-)
 
 
 @pytest.mark.vcr()

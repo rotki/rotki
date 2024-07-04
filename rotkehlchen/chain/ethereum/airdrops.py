@@ -39,7 +39,6 @@ from rotkehlchen.utils.serialization import jsonloads_dict, rlk_jsondumps
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
-SMALLEST_AIRDROP_SIZE: Final = 20900
 AIRDROPS_REPO_BASE: Final = f'https://raw.githubusercontent.com/rotki/data/{"main" if is_production() else "develop"}'  # noqa: E501
 AIRDROPS_INDEX: Final = f'{AIRDROPS_REPO_BASE}/airdrops/index_v3.json'
 ETAG_CACHE_KEY: Final = 'ETag'
