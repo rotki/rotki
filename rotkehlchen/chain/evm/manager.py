@@ -85,4 +85,4 @@ class CurveManagerMixin:
             ) from e
         new_mappings = curve_decoder.reload_data()  # type: ignore  # we know type here
         if new_mappings:
-            transactions_decoder.rules.address_mappings.update(new_mappings)  # type: ignore[has-type]  # rules are of type DecodingRules here
+            transactions_decoder.rules.address_mappings.update(new_mappings)

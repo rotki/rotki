@@ -2,6 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.diva.decoder import DELEGATE_CHANGED
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
@@ -84,6 +85,7 @@ class ShutterDecoder(DecoderInterface):
             notes=f'Claim {amount} SHU from shutter airdrop into the vesting contract: {vesting_contract_address}',  # noqa: E501
             counterparty=CPT_SHUTTER,
             address=context.transaction.to_address,
+            extra_data={AIRDROP_IDENTIFIER_KEY: 'shutter'},
         ))
 
     def _decode_delegation_change(self, context: DecoderContext) -> DecodingOutput:

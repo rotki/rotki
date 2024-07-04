@@ -1,6 +1,7 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.diva.constants import CPT_DIVA
 from rotkehlchen.chain.ethereum.modules.diva.decoder import DIVA_GOVERNOR
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -93,6 +94,7 @@ def test_diva_claim(database, ethereum_inquirer, ethereum_accounts):
             notes='Claim 12000 DIVA from the DIVA airdrop',
             counterparty=CPT_DIVA,
             address=string_to_evm_address('0x777E2B2Cc7980A6bAC92910B95269895EEf0d2E8'),
+            extra_data={AIRDROP_IDENTIFIER_KEY: 'diva'},
         ),
         EvmEvent(
             tx_hash=evmhash,

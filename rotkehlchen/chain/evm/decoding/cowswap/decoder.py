@@ -1,7 +1,7 @@
 import abc
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Final, Optional
+from typing import TYPE_CHECKING, Any, Final, Literal, Optional
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
@@ -368,6 +368,7 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
     def _decode_normal_claim(self, context: DecoderContext) -> DecodingOutput:
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[128:160])
         amount = asset_normalized_value(amount=raw_amount, asset=self.vcow_token)
+        airdrop_identifier: Literal['cow_mainnet', 'cow_gnosis'] = 'cow_mainnet' if self.evm_inquirer.chain_id == ChainID.ETHEREUM else 'cow_gnosis'  # noqa: E501
         for event in context.decoded_events:
             if match_airdrop_claim(
                 event,
@@ -375,6 +376,7 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
                 amount=amount,
                 asset=self.vcow_token,
                 counterparty=CPT_COWSWAP,
+                airdrop_identifier=airdrop_identifier,
             ):
                 break
 

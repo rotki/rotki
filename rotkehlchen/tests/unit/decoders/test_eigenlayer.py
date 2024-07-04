@@ -2,6 +2,7 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBalances
 from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     CPT_EIGENLAYER,
@@ -159,6 +160,7 @@ def test_airdrop_claim(database, ethereum_inquirer, ethereum_accounts):
         notes='Claim 110 EIGEN from the Eigenlayer airdrop',
         counterparty=CPT_EIGENLAYER,
         address=EIGENLAYER_AIRDROP_DISTRIBUTOR,
+        extra_data={AIRDROP_IDENTIFIER_KEY: 'eigen_s1_phase1'},
     )]
     assert events == expected_events
 

@@ -2,6 +2,7 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.harvest_finance.constants import (
     CPT_HARVEST_FINANCE,
     GRAIN_TOKEN_ID,
@@ -53,5 +54,6 @@ def test_claim_grain(database, ethereum_inquirer, ethereum_accounts):
             notes=f'Claim {amount_str} GRAIN from the harvest finance hack compensation airdrop',
             counterparty=CPT_HARVEST_FINANCE,
             address=HARVEST_GRAIN_CLAIM,
+            extra_data={AIRDROP_IDENTIFIER_KEY: 'grain'},
         )]
     assert events == expected_events

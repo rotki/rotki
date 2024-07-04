@@ -2,6 +2,7 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.airdrops.constants import CPT_UNISWAP
 from rotkehlchen.chain.ethereum.modules.airdrops.decoder import UNISWAP_DISTRIBUTOR
@@ -1097,6 +1098,7 @@ def test_claim_airdrop(database, ethereum_inquirer, ethereum_accounts):
             notes=f'Claim {claimed_amount} UNI from the uniswap airdrop',
             counterparty=CPT_UNISWAP,
             address=UNISWAP_DISTRIBUTOR,
+            extra_data={AIRDROP_IDENTIFIER_KEY: 'uniswap'},
         ),
     ]
     assert events == expected_events

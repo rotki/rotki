@@ -10,6 +10,7 @@ from rotkehlchen.chain.base.modules.degen.constants import (
     CPT_DEGEN,
     DEGEN_TOKEN_ID,
 )
+from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.constants.assets import A_ETH
@@ -62,6 +63,7 @@ def test_claim_airdrop_2(
             counterparty=CPT_DEGEN,
             address=CLAIM_AIRDROP_2_CONTRACT,
             notes=f'Claim {claimed_amount} DEGEN from Degen airdrop 2',
+            extra_data={AIRDROP_IDENTIFIER_KEY: 'degen2_season1'},
         ),
     ]
     assert events == expected_events
@@ -107,6 +109,7 @@ def test_claim_airdrop_3(
             counterparty=CPT_DEGEN,
             address=CLAIM_AIRDROP_3_CONTRACT,
             notes=f'Claim {claimed_amount} DEGEN from Degen airdrop 3',
+            extra_data={AIRDROP_IDENTIFIER_KEY: 'degen2_season3'},
         ),
     ]
     assert events == expected_events

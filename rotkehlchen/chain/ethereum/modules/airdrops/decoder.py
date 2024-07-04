@@ -2,6 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Final, Literal
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.convex.constants import CONVEX_CPT_DETAILS, CPT_CONVEX
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS, ENS_CPT_DETAILS
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
@@ -124,6 +125,7 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
                 amount=amount,
                 asset=A_FOX,
                 counterparty=CPT_SHAPESHIFT,
+                airdrop_identifier='shapeshift',
             ):
                 break
 
@@ -146,6 +148,7 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
                 amount=amount,
                 asset=A_BADGER,
                 counterparty=CPT_BADGER,
+                airdrop_identifier='badger',
             ):
                 break
 
@@ -193,6 +196,7 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
                 asset=airdrop_asset,
                 counterparty=counterparty,
                 notes=notes,
+                airdrop_identifier=airdrop,
             ):
                 break
 
@@ -239,6 +243,7 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
                     notes=f'Claim {amount} ELFI from element-finance airdrop and {delegate_str}',
                     counterparty=CPT_ELEMENT_FINANCE,
                     address=context.transaction.to_address,
+                    extra_data={AIRDROP_IDENTIFIER_KEY: 'elfi'},
                 )
                 return DecodingOutput(event=event)
 
@@ -266,6 +271,7 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
                     to_event_subtype=HistoryEventSubType.AIRDROP,
                     to_counterparty=CPT_ENS,
                     to_notes=f'Claim {amount} ENS from {CPT_ENS} airdrop',
+                    extra_data={AIRDROP_IDENTIFIER_KEY: 'ens'},
                 ),
             ],
         )
@@ -280,6 +286,7 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
                 A_UNI.identifier,  # token id
                 18,  # token decimals
                 'UNI from the uniswap airdrop',  # notes suffix
+                'uniswap',
             ),
             BADGERHUNT: (self._decode_badger_claim,),
             ONEINCH: (
@@ -288,6 +295,7 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
                 A_1INCH.identifier,  # token id
                 18,  # token decimals
                 '1inch from the 1inch airdrop',  # notes suffix
+                '1inch',
             ),
             FPIS: (self._decode_fpis_claim, 'fpis'),
             CONVEX: (self._decode_fpis_claim, 'convex'),

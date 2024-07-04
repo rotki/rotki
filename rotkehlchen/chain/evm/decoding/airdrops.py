@@ -1,5 +1,6 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Literal
 
+from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 
 if TYPE_CHECKING:
@@ -15,6 +16,7 @@ def match_airdrop_claim(
         amount: 'FVal',
         asset: 'Asset',
         counterparty: str,
+        airdrop_identifier: Literal['shapeshift', 'badger', 'cow_mainnet', 'cow_gnosis', 'convex', 'fpis'],  # noqa: E501
         notes: str | None = None,
 ) -> bool:
     """It matches a transfer event to an airdrop claim, changes the required fields
@@ -25,4 +27,5 @@ def match_airdrop_claim(
     event.event_subtype = HistoryEventSubType.AIRDROP
     event.counterparty = counterparty
     event.notes = f'Claim {amount} {asset.symbol_or_name()} from {counterparty} airdrop' if notes is None else notes  # noqa: E501
+    event.extra_data = {AIRDROP_IDENTIFIER_KEY: airdrop_identifier}
     return True

@@ -25,6 +25,7 @@ class HarvestFinanceDecoder(MerkleClaimDecoderInterface):
                 GRAIN_TOKEN_ID,  # token id
                 18,  # token decimals
                 'GRAIN from the harvest finance hack compensation airdrop',  # notes suffix
+                'grain',
             ),
         }
 
