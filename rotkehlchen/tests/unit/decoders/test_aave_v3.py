@@ -960,3 +960,269 @@ def test_aave_v3_events_with_approval(database, polygon_pos_inquirer, polygon_po
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('scroll_accounts', [['0x76111D2841b41B15e6F07fBae4796a82438D9c90']])
+def test_aave_v3_withdraw_eth(database, scroll_inquirer, scroll_accounts) -> None:
+    """Test that withdrawing ETH from Aave gets decoded properly"""
+    tx_hash = deserialize_evm_tx_hash('0x65cd06fd54a10052c3d9084d14d28c06e2bb328b1ec39730fab9284cb529d068')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=scroll_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gained_amount, withdrawn_amount, gas_fees = TimestampMS(1716738746000), '0.000000021776581852', '0.010000021776581852', '0.000058164147479909'  # noqa: E501
+    weth_gateway = string_to_evm_address('0xFF75A4B698E3Ec95E608ac0f22A03B8368E05F5D')
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.SCROLL,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label=scroll_accounts[0],
+            notes=f'Burned {gas_fees} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=58,
+            timestamp=timestamp,
+            location=Location.SCROLL,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=EvmToken('eip155:534352/erc20:0xf301805bE1Df81102C957f6d4Ce29d2B8c056B2a'),
+            balance=Balance(amount=FVal('115792089237316195423570985008687907853269984665640564039457.574007891353058083')),
+            location_label=scroll_accounts[0],
+            notes='Set aScrWETH spending approval of 0x76111D2841b41B15e6F07fBae4796a82438D9c90 by 0xFF75A4B698E3Ec95E608ac0f22A03B8368E05F5D to 115792089237316195423570985008687907853269984665640564039457.574007891353058083',  # noqa: E501
+            counterparty=None,
+            address=weth_gateway,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=59,
+            timestamp=timestamp,
+            location=Location.SCROLL,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=EvmToken('eip155:534352/erc20:0xf301805bE1Df81102C957f6d4Ce29d2B8c056B2a'),
+            balance=Balance(amount=FVal(gained_amount)),
+            location_label=scroll_accounts[0],
+            notes=f'Receive {gained_amount} aScrWETH from AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=62,
+            timestamp=timestamp,
+            location=Location.SCROLL,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=EvmToken('eip155:534352/erc20:0x5300000000000000000000000000000000000004'),
+            balance=Balance(),
+            location_label=scroll_accounts[0],
+            notes='Disable WETH as collateral on AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=weth_gateway,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=63,
+            timestamp=timestamp,
+            location=Location.SCROLL,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=EvmToken('eip155:534352/erc20:0xf301805bE1Df81102C957f6d4Ce29d2B8c056B2a'),
+            balance=Balance(amount=FVal(withdrawn_amount)),
+            location_label=scroll_accounts[0],
+            notes=f'Return {withdrawn_amount} aScrWETH to AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=weth_gateway,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=64,
+            timestamp=timestamp,
+            location=Location.SCROLL,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(withdrawn_amount)),
+            location_label=scroll_accounts[0],
+            notes=f'Withdraw {withdrawn_amount} ETH from AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=weth_gateway,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('polygon_pos_accounts', [['0x2013b74bdbd2Adf3eBF39E5112a9f794144Aeb15']])
+def test_aave_v3_withdraw_matic(database, polygon_pos_inquirer, polygon_pos_accounts) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x301885bdc8998d0e6d5c0064b3b92f5ee34f81ebbd14ca2b796579981ff8df31')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=polygon_pos_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gained_amount, withdrawn_amount, gas_fees, gateway_address, approval_amount = TimestampMS(1720447017000), '0.94342753415979831', '4000', '0.013616476612010713', string_to_evm_address('0xC1E320966c485ebF2A0A2A6d3c0Dc860A156eB1B'), FVal('115792089237316195423570985008687907853269984665640564032456.584007913129639935')  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.POLYGON_POS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_POLYGON_POS_MATIC,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label=polygon_pos_accounts[0],
+            notes=f'Burned {gas_fees} MATIC for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=1223,
+            timestamp=timestamp,
+            location=Location.POLYGON_POS,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:137/erc20:0x6d80113e533a2C0fe82EaBD35f1875DcEA89Ea97'),
+            balance=Balance(amount=FVal(approval_amount)),
+            location_label=polygon_pos_accounts[0],
+            notes=f'Set aPolWMATIC spending approval of {polygon_pos_accounts[0]} by 0xC1E320966c485ebF2A0A2A6d3c0Dc860A156eB1B to {approval_amount}',  # noqa: E501
+            tx_hash=tx_hash,
+            address=gateway_address,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1224,
+            timestamp=timestamp,
+            location=Location.POLYGON_POS,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:137/erc20:0x6d80113e533a2C0fe82EaBD35f1875DcEA89Ea97'),
+            balance=Balance(FVal(gained_amount)),
+            location_label=polygon_pos_accounts[0],
+            notes=f'Receive {gained_amount} aPolWMATIC from AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1225,
+            timestamp=timestamp,
+            location=Location.POLYGON_POS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset('eip155:137/erc20:0x6d80113e533a2C0fe82EaBD35f1875DcEA89Ea97'),
+            balance=Balance(amount=FVal(withdrawn_amount)),
+            location_label=polygon_pos_accounts[0],
+            notes=f'Return {withdrawn_amount} aPolWMATIC to AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=gateway_address,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1226,
+            timestamp=timestamp,
+            location=Location.POLYGON_POS,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_POLYGON_POS_MATIC,  # aPolUSDT
+            balance=Balance(amount=FVal(withdrawn_amount)),
+            location_label=polygon_pos_accounts[0],
+            notes=f'Withdraw {withdrawn_amount} MATIC from AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=gateway_address,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('gnosis_accounts', [['0x44ddBB35CfeBbafE98e402970517b33d8e925eB3']])
+def test_aave_v3_withdraw_xdai(database, gnosis_inquirer, gnosis_accounts) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x0154ef3042e93a632d654c86bff99f7d452681dba72f4f773806c9c26470f678')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gained_amount, withdrawn_amount, gas_fees, gateway_address, approval_amount, returned_amount = TimestampMS(1720459795000), '0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000076355892637370336', '5.076355892637370336', '0.0008300288', string_to_evm_address('0xfE76366A986B72c3f2923e05E6ba07b7de5401e4'), FVal('0.0000000000000000000000115792089237316195423570985008687907853269984665640564039452507652020492269599'), '0.0000000000000000000000000000000000000000000000000000000000000000000000000000000005076355892637370336'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_XDAI,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label=gnosis_accounts[0],
+            notes=f'Burned {gas_fees} XDAI for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:100/erc20:0xd0Dd6cEF72143E22cCED4867eb0d5F2328715533'),
+            balance=Balance(amount=FVal(approval_amount)),
+            location_label=gnosis_accounts[0],
+            notes=f'Set aGnoWXDAI spending approval of {gnosis_accounts[0]} by 0xfE76366A986B72c3f2923e05E6ba07b7de5401e4 to {approval_amount}',  # noqa: E501
+            tx_hash=tx_hash,
+            address=gateway_address,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=3,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=Asset('eip155:100/erc20:0xd0Dd6cEF72143E22cCED4867eb0d5F2328715533'),
+            balance=Balance(FVal(gained_amount)),
+            location_label=gnosis_accounts[0],
+            notes=f'Receive {gained_amount} aGnoWXDAI from AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            sequence_index=6,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=Asset('eip155:100/erc20:0xe91D153E0b41518A2Ce8Dd3D7944Fa863463a97d'),
+            balance=Balance(),
+            location_label=gnosis_accounts[0],
+            notes='Disable WXDAI as collateral on AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            tx_hash=tx_hash,
+            address=gateway_address,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=7,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=Asset('eip155:100/erc20:0xd0Dd6cEF72143E22cCED4867eb0d5F2328715533'),
+            balance=Balance(amount=FVal(returned_amount)),  # TODO: This is a bug and should be withdrawn_amount but the decimals need to be edited in the assets repo. OJ is on that  # noqa: E501
+            location_label=gnosis_accounts[0],
+            notes=f'Return {returned_amount} aGnoWXDAI to AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=gateway_address,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=8,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_XDAI,  # aPolUSDT
+            balance=Balance(amount=FVal(withdrawn_amount)),
+            location_label=gnosis_accounts[0],
+            notes=f'Withdraw {withdrawn_amount} XDAI from AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=gateway_address,
+        ),
+    ]
+    assert events == expected_events

@@ -25,7 +25,7 @@ class Aavev2CommonDecoder(Commonv2v3Decoder):
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             pool_address: 'ChecksumEvmAddress',
-            eth_gateways: 'tuple[ChecksumEvmAddress, ...]',
+            native_gateways: 'tuple[ChecksumEvmAddress, ...]',
             incentives: 'ChecksumEvmAddress',
             incentives_reward_token: 'ChecksumEvmAddress',
     ):
@@ -37,7 +37,7 @@ class Aavev2CommonDecoder(Commonv2v3Decoder):
             deposit_signature=DEPOSIT,
             borrow_signature=BORROW,
             repay_signature=REPAY,
-            eth_gateways=eth_gateways,
+            native_gateways=native_gateways,
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
