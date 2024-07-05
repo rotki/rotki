@@ -4366,6 +4366,9 @@
       "reset_customized_events": "Reset customized events",
       "delete_transaction": "Delete transaction & events"
     },
+    "cache_refresh": {
+      "refreshing": "Refreshing protocol cache data"
+    },
     "dialog": {
       "add_tx": "Add transaction by tx hash",
       "delete": {
@@ -4633,20 +4636,13 @@
     },
     "ignore": "Ignore events in Accounting",
     "protocol_cache_updates": {
-      "button": {
-        "general_cache": "Refresh protocol cache (Curve, MakerDAO, etc.)",
-        "general_cache_tooltip": "Refresh protocol cache (Curve, MakerDAO, Yearn, Velodrome, Aerodrome, and Gearbox)"
-      },
-      "confirmation": {
-        "message": "Are you sure you want to refresh protocol cache (Curve, MakerDAO, Yearn, Velodrome, Aerodrome, and Gearbox)",
-        "title": "Refresh protocol cache"
-      },
       "hint": "Refreshing {protocol} cache on {chain} ({processed}/{total})",
       "no_ongoing": "No ongoing refresh happening.",
       "outdated_data": "Outdated pools",
       "refreshing": "Refreshing protocol cache",
       "title": "Protocol cache updates status",
-      "pools_refreshed": "{processed} / {total} pools refreshed"
+      "pools_refreshed": "{processed} / {total} pools refreshed",
+      "protocol_pools_refreshed": "{processed} / {total} {protocol} pools refreshed"
     },
     "query_status": {
       "date_range": "Querying {status} for {address} between {start} and {end}",

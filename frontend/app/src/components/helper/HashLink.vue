@@ -145,6 +145,7 @@ const { href, onLinkClick } = useLinks(url);
     <template v-if="!linkOnly && !buttons">
       <span
         v-if="fullAddress"
+        class="font-mono"
         :class="{ blur: !shouldShowAmount }"
       >
         {{ displayText }}

@@ -19,6 +19,7 @@ const { protocolCacheStatus } = storeToRefs(useHistoryStore());
 
 const { isTaskRunning } = useTaskStore();
 const taskRunning = isTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
+const eventTaskLoading = isTaskRunning(TaskType.TRANSACTIONS_DECODING);
 
 async function refreshSource(source: RefreshableCache) {
   if (source === RefreshableCache.GENERAL_CACHE)
@@ -63,7 +64,7 @@ const hint: ComputedRef<string> = computed(() => {
   });
 });
 
-const loading = logicOr(pending, taskRunning);
+const loading = logicOr(pending, taskRunning, eventTaskLoading);
 </script>
 
 <template>

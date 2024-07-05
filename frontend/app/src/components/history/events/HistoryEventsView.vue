@@ -716,7 +716,7 @@ watchImmediate(route, async (route) => {
       >
         <template #activator="{ on }">
           <RuiBadge
-            :value="eventTaskLoading || protocolCacheUpdatesLoading"
+            :value="eventTaskLoading"
             color="primary"
             dot
             placement="top"
@@ -753,25 +753,6 @@ watchImmediate(route, async (route) => {
                 </RuiBadge>
               </template>
               {{ t('transactions.events_decoding.title') }}
-            </RuiButton>
-
-            <RuiButton
-              variant="list"
-              @click="protocolCacheStatusDialogOpen = true"
-            >
-              <template #prepend>
-                <RuiBadge
-                  :value="protocolCacheUpdatesLoading"
-                  color="primary"
-                  dot
-                  placement="top"
-                  offset-y="4"
-                  offset-x="-4"
-                >
-                  <RuiIcon name="list-settings-line" />
-                </RuiBadge>
-              </template>
-              {{ t('transactions.protocol_cache_updates.title') }}
             </RuiButton>
           </template>
 
@@ -960,6 +941,7 @@ watchImmediate(route, async (route) => {
                 :loading="processing"
                 :current-action.sync="currentAction"
                 @show-decode-details="decodingStatusDialogOpen = true"
+                @show-protocol-refresh-details="protocolCacheStatusDialogOpen = true"
               />
               <UpgradeRow
                 v-if="showUpgradeRow"
