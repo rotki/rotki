@@ -2370,10 +2370,15 @@ def test_upgrade_db_42_to_43(user_data_dir, messages_aggregator, data_dir):
         msg_aggregator=messages_aggregator,
         resume_from_backup=False,
     )
+    test_address = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'
     with db_v42.conn.read_ctx() as cursor:
         nfts = cursor.execute('SELECT name FROM nfts').fetchall()
         assert nfts == [('yabir.eth',)]
-        # check hop-protocol counterparty is there. If redecoding in upgrade will need to customize
+        assert cursor.execute(
+            'SELECT location from history_events WHERE location_label=?',
+            (test_address,),
+        ).fetchall() == [(Location.ZKSYNC_LITE.serialize_for_db(),), (Location.POLYGON_POS.serialize_for_db(),)]  # noqa: E501
+        # check hop-protocol counterparty is there
         assert cursor.execute('SELECT COUNT(*) from evm_events_info WHERE counterparty=?', ('hop-protocol',)).fetchone()[0] == 1  # noqa: E501
         assert cursor.execute('SELECT COUNT(*) from evm_events_info WHERE counterparty=?', ('hop',)).fetchone()[0] == 0  # noqa: E501
         assert cursor.execute(
@@ -2407,6 +2412,10 @@ def test_upgrade_db_42_to_43(user_data_dir, messages_aggregator, data_dir):
         nfts = cursor.execute('SELECT name, usd_price FROM nfts').fetchall()
         assert nfts == [('yabir.eth', 0)]
         # assert hop-protocol counterparty got renamed
+        assert cursor.execute(
+            'SELECT location from history_events WHERE location_label=?',
+            (test_address,),
+        ).fetchall() == [(Location.ZKSYNC_LITE.serialize_for_db(),)]
         assert cursor.execute('SELECT COUNT(*) from evm_events_info WHERE counterparty=?', ('hop-protocol',)).fetchone()[0] == 0  # noqa: E501
         assert cursor.execute('SELECT COUNT(*) from evm_events_info WHERE counterparty=?', ('hop',)).fetchone()[0] == 1  # noqa: E501
 
