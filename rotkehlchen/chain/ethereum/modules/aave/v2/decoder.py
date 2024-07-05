@@ -24,7 +24,7 @@ class Aavev2Decoder(Aavev2CommonDecoder):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
             pool_address=POOL_ADDRESS,
-            eth_gateways=ETH_GATEWAYS,
+            native_gateways=ETH_GATEWAYS,
             incentives=string_to_evm_address('0xd784927Ff2f95ba542BfC824c8a8a98F3495f6b5'),
             incentives_reward_token=string_to_evm_address('0x4da27a545c0c5B758a6BA100e3a049001de870f5'),  # stkAAVE  # noqa: E501
         )
