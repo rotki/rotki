@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { TaskType } from '@/types/task-type';
 import type {
   EvmTransactionQueryData,
   EvmUnDecodedTransactionsData,
@@ -29,6 +30,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   (e: 'show-decode-details'): void;
+  (e: 'show-protocol-refresh-details'): void;
   (e: 'update:current-action', value: 'decode' | 'query'): void;
 }>();
 const { onlyChains, locations, currentAction } = toRefs(props);
@@ -48,7 +50,10 @@ const {
   resetQueryStatus: resetEventsQueryStatus,
 } = useEventsQueryStatus(locations);
 
-const { resetUndecodedTransactionsStatus } = useHistoryStore();
+const historyStore = useHistoryStore();
+const { resetUndecodedTransactionsStatus } = historyStore;
+
+const { receivingProtocolCacheStatus, protocolCacheStatus } = storeToRefs(historyStore);
 
 const items = computed(() => [...get(transactions), ...get(events)]);
 const isQuery = computed(() => get(currentAction) === 'query');
@@ -73,18 +78,24 @@ function resetQueryStatus() {
   resetUndecodedTransactionsStatus();
   emit('update:current-action', 'query');
 }
+
+const { isTaskRunning } = useTaskStore();
+const refreshProtocolCacheTaskRunning = isTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
 </script>
 
 <template>
   <HistoryQueryStatusBar
-    v-if="loading || decoding || items.length > 0"
+    v-if="loading || decoding || receivingProtocolCacheStatus || items.length > 0"
     :colspan="colspan"
-    :finished="isQuery ? !loading : !decoding"
+    :finished="isQuery ? !loading : (!receivingProtocolCacheStatus && !decoding)"
     @reset="resetQueryStatus()"
   >
     <template #current>
+      <EventsCacheRefreshStatusCurrent
+        v-if="refreshProtocolCacheTaskRunning"
+      />
       <HistoryQueryStatusCurrent
-        v-if="isQuery"
+        v-else-if="isQuery"
         :finished="!loading"
       />
       <EventsDecodingStatusCurrent
@@ -95,12 +106,13 @@ function resetQueryStatus() {
 
     <template #dialog>
       <HistoryQueryStatusDialog
-        v-if="isQuery"
+        v-if="isQuery && !refreshProtocolCacheTaskRunning"
         :only-chains="onlyChains"
         :locations="locations"
         :events="events"
         :transactions="transactions"
         :decoding-status="decodingStatus"
+        :protocol-cache-status="protocolCacheStatus"
         :get-key="getItemKey"
         :is-item-finished="isItemQueryFinished"
       />
@@ -116,7 +128,7 @@ function resetQueryStatus() {
             icon
             size="sm"
             class="!p-2"
-            @click="emit('show-decode-details')"
+            @click="refreshProtocolCacheTaskRunning ? emit('show-protocol-refresh-details') : emit('show-decode-details')"
           >
             <template #append>
               <RuiIcon name="information-line" />

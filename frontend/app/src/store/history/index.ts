@@ -1,3 +1,4 @@
+import { TaskType } from '@/types/task-type';
 import type { EvmUnDecodedTransactionsData, ProtocolCacheUpdatesData } from '@/types/websocket-messages';
 
 export const useHistoryStore = defineStore('history', () => {
@@ -5,12 +6,15 @@ export const useHistoryStore = defineStore('history', () => {
   const undecodedTransactionsStatus = ref<Record<string, EvmUnDecodedTransactionsData>>({});
   const protocolCacheUpdateStatus = ref<Record<string, ProtocolCacheUpdatesData>>({});
 
+  const receivingProtocolCacheStatus = ref<boolean>(false);
+
   const decodingStatus = computed<EvmUnDecodedTransactionsData[]>(() => Object.values(get(undecodedTransactionsStatus))
     .filter(status => status.total > 0));
 
   const protocolCacheStatus = computed<ProtocolCacheUpdatesData[]>(() => Object.values(get(protocolCacheUpdateStatus)).filter(status => status.total > 0));
 
   const setUndecodedTransactionsStatus = (data: EvmUnDecodedTransactionsData) => {
+    set(receivingProtocolCacheStatus, false);
     set(undecodedTransactionsStatus, {
       ...get(undecodedTransactionsStatus),
       [data.chain]: data,
@@ -24,7 +28,18 @@ export const useHistoryStore = defineStore('history', () => {
     });
   };
 
+  const { isTaskRunning } = useTaskStore();
+  const refreshProtocolCacheTaskRunning = isTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
+
+  watch(refreshProtocolCacheTaskRunning, (curr, prev) => {
+    if (!curr && prev) {
+      set(receivingProtocolCacheStatus, false);
+      resetProtocolCacheUpdatesStatus();
+    }
+  });
+
   const setProtocolCacheStatus = (data: ProtocolCacheUpdatesData) => {
+    set(receivingProtocolCacheStatus, true);
     const old = get(protocolCacheUpdateStatus);
     const filtered: Record<string, ProtocolCacheUpdatesData> = {};
     const currentKey = `${data.chain}#${data.protocol}`;
@@ -76,6 +91,7 @@ export const useHistoryStore = defineStore('history', () => {
     decodingStatus,
     protocolCacheStatus,
     undecodedTransactionsStatus,
+    receivingProtocolCacheStatus,
     setUndecodedTransactionsStatus,
     getUndecodedTransactionStatus,
     updateUndecodedTransactionsStatus,

@@ -9,8 +9,7 @@ defineProps<{
 const css = useCssModule();
 
 const historyStore = useHistoryStore();
-const { protocolCacheStatus } = storeToRefs(historyStore);
-const { resetProtocolCacheUpdatesStatus } = historyStore;
+const { protocolCacheStatus, receivingProtocolCacheStatus } = storeToRefs(historyStore);
 
 const { isTaskRunning } = useTaskStore();
 const taskRunning = isTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
@@ -71,25 +70,6 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
     processed: number;
   };
 }>();
-
-watch(taskRunning, (curr, prev) => {
-  if (!curr && prev)
-    resetProtocolCacheUpdatesStatus();
-});
-
-const { refreshGeneralCache } = useSessionPurge();
-
-const { show } = useConfirmStore();
-
-function showConfirmation() {
-  return show(
-    {
-      title: t('transactions.protocol_cache_updates.confirmation.title'),
-      message: t('transactions.protocol_cache_updates.confirmation.message'),
-    },
-    refreshGeneralCache,
-  );
-}
 </script>
 
 <template>
@@ -104,7 +84,7 @@ function showConfirmation() {
     </template>
 
     <div
-      v-if="!taskRunning"
+      v-if="!receivingProtocolCacheStatus"
       class="mb-4 flex items-center gap-4"
     >
       <SuccessDisplay
@@ -195,22 +175,6 @@ function showConfirmation() {
       />
       {{ t('transactions.protocol_cache_updates.refreshing') }}
     </div>
-
-    <template #footer>
-      <div class="grow" />
-      <RuiTooltip tooltip-class="max-w-[20rem]">
-        <template #activator>
-          <RuiButton
-            color="error"
-            :disabled="refreshing || taskRunning"
-            @click="showConfirmation()"
-          >
-            {{ t('transactions.protocol_cache_updates.button.general_cache') }}
-          </RuiButton>
-        </template>
-        {{ t('transactions.protocol_cache_updates.button.general_cache_tooltip') }}
-      </RuiTooltip>
-    </template>
   </RuiCard>
 </template>
 
