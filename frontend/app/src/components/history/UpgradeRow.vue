@@ -74,7 +74,7 @@ const { t } = useI18n();
           {{ entriesFoundTotal ? entriesFoundTotal : total }}
         </template>
         <template #limit>
-          {{ found ? found : limit }}
+          {{ found !== undefined ? found : limit }}
         </template>
         <template #label>
           {{ label }}
