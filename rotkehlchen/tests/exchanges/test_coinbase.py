@@ -487,7 +487,7 @@ def test_coinbase_query_income_loss_expense(
     with patch.object(coinbase.session, 'get', side_effect=mock_normal_coinbase_query):
         events = coinbase.query_income_loss_expense(
             start_ts=0,
-            end_ts=1611426233,
+            end_ts=1612439233,
             only_cache=False,
         )
 
@@ -495,7 +495,7 @@ def test_coinbase_query_income_loss_expense(
     errors = coinbase.msg_aggregator.consume_errors()
     assert len(warnings) == 0
     assert len(errors) == 0
-    assert len(events) == 2
+    assert len(events) == 3
     expected_events = [
         HistoryEvent(
             identifier=1,
@@ -519,6 +519,17 @@ def test_coinbase_query_income_loss_expense(
             asset=asset_from_coinbase('ALGO'),
             balance=Balance(amount=FVal('0.000076'), usd_value=ZERO),
             notes='Received 0.000076 ALGO ($0.00) as inflation_reward',
+        ), HistoryEvent(
+            identifier=3,
+            event_identifier='CBE_id6',
+            sequence_index=0,
+            timestamp=TimestampMS(1611512633000),
+            location=Location.COINBASE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=asset_from_coinbase('SOL'),
+            balance=Balance(amount=FVal('0.025412'), usd_value=ZERO),
+            notes='',
         ),
     ]
     assert expected_events == events

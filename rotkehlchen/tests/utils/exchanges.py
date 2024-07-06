@@ -1146,8 +1146,18 @@ TRANSACTIONS_RESPONSE = """{
  "resource_path": "/v2/accounts/accountid-1/transactions/txid-2",
  "status": "completed",
  "type": "sell",
- "updated_at": "2021-12-08T01:18:26Z"}
-]}"""  # noqa: E501
+ "updated_at": "2021-12-08T01:18:26Z"
+},{
+ "amount": {"amount": "0.025412", "currency": "SOL"},
+ "created_at": "2021-01-24T18:23:53Z",
+ "updated_at": "2021-01-24T18:23:53Z",
+ "id": "id6",
+ "native_amount": {"amount": "0.31", "currency": "EUR"},
+ "resource": "transaction",
+ "resource_path": "/v2/accounts/accountid-1/transactions/id6",
+ "status": "completed",
+ "type": "staking_reward"
+}]}"""  # noqa: E501
 
 
 def mock_normal_coinbase_query(url, **kwargs):  # pylint: disable=unused-argument
