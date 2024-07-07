@@ -7,6 +7,22 @@ export const truncationPoints: Record<string, number> = {
   '2xl': 40,
 };
 
+export function findAddressKnownPrefix(address: string) {
+  const truncatePrefixExceptions = [
+    '0x',
+    'xpub',
+  ];
+
+  let knownPrefix = '';
+  for (const prefix of truncatePrefixExceptions) {
+    if (address.startsWith(prefix)) {
+      knownPrefix = prefix;
+      break;
+    }
+  }
+  return knownPrefix;
+}
+
 /**
  * Truncates blockchain hashes (addresses / txs) retaining `truncLength+2` characters
  * from the beginning and `truncLength` characters from the end of the string.
@@ -15,11 +31,8 @@ export const truncationPoints: Record<string, number> = {
  * @returns truncated address
  */
 export function truncateAddress(address: string, truncLength = 4): string {
-  const startPadding = address.startsWith('0x')
-    ? 2
-    : address.startsWith('xpub')
-      ? 4
-      : 0;
+  const knownPrefix = findAddressKnownPrefix(address);
+  const startPadding = knownPrefix.length;
 
   const length = address.length;
 

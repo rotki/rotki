@@ -24,7 +24,7 @@ const { t } = useI18n();
 
 const { items } = toRefs(props);
 const { name: breakpoint, isXs } = useBreakpoint();
-const { shouldShowAmount } = storeToRefs(useSessionSettingsStore());
+const { scrambleHex, shouldShowAmount } = useScramble();
 
 const xpub: ComputedRef<BlockchainAccountWithBalance<XpubData>> = computed(() => {
   const account = get(items).filter(isAccountWithBalanceXpub).find(item => item.groupHeader);
@@ -37,7 +37,7 @@ const label = computed<string | undefined>(() => get(xpub).label);
 const xpubTags = computed<string[] | undefined>(() => get(xpub).tags);
 
 const displayXpub = computed<string>(() =>
-  truncateAddress(get(xpub).data.xpub, truncationPoints[get(breakpoint)] ?? 4),
+  scrambleHex(truncateAddress(get(xpub).data.xpub, truncationPoints[get(breakpoint)] ?? 4)),
 );
 
 const amountSum = computed<BigNumber>(() =>
@@ -58,11 +58,9 @@ const usdSum = computed<BigNumber>(() => balanceUsdValueSum(get(items)));
   <Fragment v-else>
     <td
       colspan="2"
-      :class="{
-        '!p-2': !isXs,
-      }"
+      class="!p-2"
     >
-      <div class="pl-9">
+      <div class="pl-10">
         <span class="text-subtitle-2">{{ label }}</span>
       </div>
       <div class="flex items-center gap-2 -my-2 text-sm">
@@ -83,10 +81,10 @@ const usdSum = computed<BigNumber>(() => balanceUsdValueSum(get(items)));
           />
         </RuiButton>
 
-        <span class="font-medium">
+        <div class="font-medium">
           {{ t('account_group_header.xpub') }}
-        </span>
-        <span :class="{ blur: !shouldShowAmount }">
+        </div>
+        <div :class="{ blur: !shouldShowAmount }">
           <RuiTooltip
             :popper="{ placement: 'top' }"
             :open-delay="400"
@@ -96,7 +94,7 @@ const usdSum = computed<BigNumber>(() => balanceUsdValueSum(get(items)));
             </template>
             {{ xpub.data.xpub }}
           </RuiTooltip>
-        </span>
+        </div>
         <CopyButton
           :value="xpub.data.xpub"
           :tooltip="t('account_group_header.copy_tooltip')"
@@ -109,18 +107,20 @@ const usdSum = computed<BigNumber>(() => balanceUsdValueSum(get(items)));
           </template>
           {{ t('account_group_header.addresses', { count: items.length }) }}
         </RuiTooltip>
-        <span
-          v-if="xpub.data.derivationPath"
-          :class="{ blur: !shouldShowAmount }"
-        >
-          <span class="font-medium">
-            {{ t('account_group_header.derivation_path') }}:
-          </span>
-          {{ xpub.data.derivationPath }}
+      </div>
+      <div
+        v-if="xpub.data.derivationPath"
+        class="text-sm ml-10"
+        :class="{ blur: !shouldShowAmount }"
+      >
+        <span class="font-medium">
+          {{ t('account_group_header.derivation_path') }}:
         </span>
+        {{ xpub.data.derivationPath }}
       </div>
       <TagDisplay
-        wrapper-class="ml-9"
+        small
+        wrapper-class="ml-10"
         :tags="xpubTags"
       />
     </td>

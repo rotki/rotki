@@ -4,6 +4,7 @@ import {
   type EthValidatorFilter,
 } from '@rotki/common/lib/staking/eth2';
 import { type Nullable, onlyIfTruthy } from '@rotki/common';
+import { objectOmit } from '@vueuse/shared';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import {
@@ -14,7 +15,6 @@ import {
   validWithSessionAndExternalService,
   validWithSessionStatus,
 } from '@/services/utils';
-import { type BtcChains, isBtcChain } from '@/types/blockchain/chains';
 import {
   type AccountPayload,
   BitcoinAccounts,
@@ -24,6 +24,7 @@ import {
   type GeneralAccountData,
   type XpubAccountPayload,
 } from '@/types/blockchain/accounts';
+import { type BtcChains, isBtcChain } from '@/types/blockchain/chains';
 import type { ActionResult } from '@rotki/common/lib/data';
 import type { Eth2Validator } from '@/types/balances';
 import type { PendingTask } from '@/types/task';
@@ -66,8 +67,8 @@ export function useBlockchainAccountsApi() {
     const url = !Array.isArray(pay)
       ? `/blockchains/${chain}/xpub`
       : `/blockchains/${chain}/accounts`;
-    const payload = (Array.isArray(pay)) ? { accounts: pay } : pay;
-    return performAsyncQuery(url, nonEmptyProperties(payload));
+    const payload = (Array.isArray(pay)) ? { accounts: pay } : { ...objectOmit(pay, ['xpub']), ...pay.xpub };
+    return performAsyncQuery(url, nonEmptyProperties(payload, true));
   };
 
   const removeBlockchainAccount = async (

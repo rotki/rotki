@@ -271,16 +271,18 @@ export function useBlockchains() {
     const registeredAddresses: string[] = [];
     const failedPayload: AccountPayload[] = [];
 
-    const singleAddition = filteredPayload.length === 1;
-    const addSingleAddress = async (data: AccountPayload): Promise<void> => {
+    const singleAddition = filteredPayload.length === 1 || isXpub;
+    const addSingleAddress = async (data: AccountPayload | XpubAccountPayload): Promise<void> => {
+      const isXpub = 'xpub' in data;
       try {
-        const address = await addAccount(chain, [data]);
+        const address = await addAccount(chain, isXpub ? data : [data]);
         if (address || isXpub)
           registeredAddresses.push(address);
       }
       catch (error: any) {
         logger.error(error.message);
-        failedPayload.push(data);
+        if (!isXpub)
+          failedPayload.push(data);
         // if there is only a single account do normal form validation
         if (singleAddition)
           throw error;
@@ -288,7 +290,7 @@ export function useBlockchains() {
     };
 
     if (singleAddition)
-      await addSingleAddress(filteredPayload[0]);
+      await addSingleAddress(isXpub ? data : filteredPayload[0]);
     else
       await Promise.allSettled(filteredPayload.map(addSingleAddress));
 
