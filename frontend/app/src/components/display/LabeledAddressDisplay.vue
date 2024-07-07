@@ -178,7 +178,7 @@ const truncatedAliasName = computed<string>(() => {
 
 <style module lang="scss">
 .labeled-address-display {
-  @apply w-full hover:cursor-default;
+  @apply w-full hover:cursor-default max-w-[500px];
   @apply bg-rui-grey-100 #{!important};
 
   > span {

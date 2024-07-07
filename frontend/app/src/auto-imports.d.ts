@@ -103,6 +103,7 @@ declare global {
   const fetchDataAsync: typeof import('./utils/fetch-async')['fetchDataAsync']
   const filterAddresses: typeof import('./utils/addresses')['filterAddresses']
   const filterAddressesFromWords: typeof import('./utils/history/index')['filterAddressesFromWords']
+  const findAddressKnownPrefix: typeof import('./utils/truncate')['findAddressKnownPrefix']
   const generateRandomScrambleMultiplier: typeof import('./utils/session')['generateRandomScrambleMultiplier']
   const get: typeof import('@vueuse/shared')['get']
   const getAccountAddress: typeof import('./utils/blockchain/accounts/index')['getAccountAddress']
@@ -879,6 +880,7 @@ declare module 'vue' {
     readonly fetchDataAsync: UnwrapRef<typeof import('./utils/fetch-async')['fetchDataAsync']>
     readonly filterAddresses: UnwrapRef<typeof import('./utils/addresses')['filterAddresses']>
     readonly filterAddressesFromWords: UnwrapRef<typeof import('./utils/history/index')['filterAddressesFromWords']>
+    readonly findAddressKnownPrefix: UnwrapRef<typeof import('./utils/truncate')['findAddressKnownPrefix']>
     readonly generateRandomScrambleMultiplier: UnwrapRef<typeof import('./utils/session')['generateRandomScrambleMultiplier']>
     readonly get: UnwrapRef<typeof import('@vueuse/shared')['get']>
     readonly getAccountAddress: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getAccountAddress']>
@@ -1634,6 +1636,7 @@ declare module '@vue/runtime-core' {
     readonly fetchDataAsync: UnwrapRef<typeof import('./utils/fetch-async')['fetchDataAsync']>
     readonly filterAddresses: UnwrapRef<typeof import('./utils/addresses')['filterAddresses']>
     readonly filterAddressesFromWords: UnwrapRef<typeof import('./utils/history/index')['filterAddressesFromWords']>
+    readonly findAddressKnownPrefix: UnwrapRef<typeof import('./utils/truncate')['findAddressKnownPrefix']>
     readonly generateRandomScrambleMultiplier: UnwrapRef<typeof import('./utils/session')['generateRandomScrambleMultiplier']>
     readonly get: UnwrapRef<typeof import('@vueuse/shared')['get']>
     readonly getAccountAddress: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getAccountAddress']>

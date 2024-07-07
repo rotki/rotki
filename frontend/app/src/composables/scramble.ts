@@ -14,15 +14,17 @@ export function useScramble() {
     if (!get(scrambleData))
       return hex;
 
-    const isEth = hex.startsWith('0x');
     let multiplier = +get(scrambleMultiplier);
     if (multiplier < 1)
       multiplier += 1;
 
-    const trimmedHex = isEth ? hex.slice(2).toUpperCase() : hex;
+    const knownPrefix = findAddressKnownPrefix(hex);
+
+    const trimmedHex = knownPrefix ? hex.slice(knownPrefix.length).toUpperCase() : hex;
+    const isEth = hex.startsWith('0x');
 
     return (
-      (isEth ? '0x' : '')
+      knownPrefix
       + trimmedHex
         .split('')
         .map((char, charIndex) => {
