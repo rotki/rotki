@@ -93,7 +93,7 @@ def test_vote_cast(database, arbitrum_one_inquirer, arbitrum_one_accounts):
             asset=A_ETH,
             balance=Balance(amount=ZERO),
             location_label=user_address,
-            notes='Voted FOR arbitrum_one governance proposal https://www.tally.xyz/gov/arbitrum/proposal/28300903567340237987946172947371304329455149918972967618773111648600015289785',
+            notes='Vote FOR arbitrum_one governance proposal https://www.tally.xyz/gov/arbitrum/proposal/28300903567340237987946172947371304329455149918972967618773111648600015289785',
             counterparty=CPT_ARBITRUM_ONE,
             address=GOVERNOR_ADDRESSES[0],
         )]
@@ -132,7 +132,7 @@ def test_vote_cast_2(database, arbitrum_one_inquirer, arbitrum_one_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(0)),
             location_label=arbitrum_one_accounts[0],
-            notes='Voted FOR arbitrum_one governance proposal https://www.tally.xyz/gov/arbitrum/proposal/42524710257895482033293584464762477376427316183960646909542733545381165923770',
+            notes='Vote FOR arbitrum_one governance proposal https://www.tally.xyz/gov/arbitrum/proposal/42524710257895482033293584464762477376427316183960646909542733545381165923770',
             tx_hash=tx_hash,
             counterparty=CPT_ARBITRUM_ONE,
             address=GOVERNOR_ADDRESSES[3],
@@ -173,7 +173,7 @@ def test_vote_cast_treasury(database, arbitrum_one_inquirer, arbitrum_one_accoun
             asset=A_ETH,
             balance=Balance(amount=FVal(0)),
             location_label=arbitrum_one_accounts[0],
-            notes="Voted AGAINST arbitrum_one governance proposal https://www.tally.xyz/gov/arbitrum/proposal/53472400873981607449547539050199074000442490831067826984987297151333310022877 with reasoning: IMO games or arbitrum is a path that is interesting but the amounts are big and I'm not sure how they adjust to the industry. This is giving a lot of money and might be the wrong path where games that no one enjoy get developed and then nothing happens after it. How the money will be spent is described but I believe the amounts are more than what is needed for such a program",  # noqa: E501
+            notes="Vote AGAINST arbitrum_one governance proposal https://www.tally.xyz/gov/arbitrum/proposal/53472400873981607449547539050199074000442490831067826984987297151333310022877 with reasoning: IMO games or arbitrum is a path that is interesting but the amounts are big and I'm not sure how they adjust to the industry. This is giving a lot of money and might be the wrong path where games that no one enjoy get developed and then nothing happens after it. How the money will be spent is described but I believe the amounts are more than what is needed for such a program",  # noqa: E501
             tx_hash=tx_hash,
             counterparty=CPT_ARBITRUM_ONE,
             address=GOVERNOR_ADDRESSES[1],

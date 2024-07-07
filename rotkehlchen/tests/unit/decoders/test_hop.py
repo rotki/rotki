@@ -1508,7 +1508,7 @@ def test_vote_cast(database, ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(),
             location_label=ADDY,
-            notes='Voted FOR hop governance proposal https://www.tally.xyz/gov/hop/proposal/114834095316819367752457382978722571068850159829764853513197263236546715801279',
+            notes='Vote FOR hop governance proposal https://www.tally.xyz/gov/hop/proposal/114834095316819367752457382978722571068850159829764853513197263236546715801279',
             counterparty=CPT_HOP,
             address=HOP_GOVERNOR,
         )]

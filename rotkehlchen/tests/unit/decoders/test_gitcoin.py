@@ -211,7 +211,7 @@ def test_gitcoin_vote_cast(database, ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(),
             location_label=ADDY,
-            notes='Voted FOR gitcoin governance proposal https://www.tally.xyz/gov/gitcoin/proposal/31',
+            notes='Vote FOR gitcoin governance proposal https://www.tally.xyz/gov/gitcoin/proposal/31',
             counterparty=CPT_GITCOIN,
             address=GITCOIN_GOVERNOR_ALPHA,
         ),

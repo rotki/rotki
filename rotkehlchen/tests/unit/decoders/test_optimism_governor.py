@@ -45,7 +45,7 @@ def test_vote_cast(database, optimism_inquirer, optimism_accounts):
             asset=Asset('ETH'),
             balance=Balance(),
             location_label=user_address,
-            notes='Voted FOR optimism governance proposal https://vote.optimism.io/proposals/51738314696473345172141808043782330430064117614433447104828853768775712054864',
+            notes='Vote FOR optimism governance proposal https://vote.optimism.io/proposals/51738314696473345172141808043782330430064117614433447104828853768775712054864',
             counterparty=CPT_OPTIMISM,
             address=GOVERNOR_ADDRESS,
         ),
@@ -88,7 +88,7 @@ def test_vote_cast_with_params(database, optimism_inquirer, optimism_accounts):
             asset=Asset('ETH'),
             balance=Balance(),
             location_label=user_address,
-            notes='Voted AGAINST optimism governance proposal https://vote.optimism.io/proposals/16633367863894036056841722161407059007904922838583677995599242776177398115322',
+            notes='Vote AGAINST optimism governance proposal https://vote.optimism.io/proposals/16633367863894036056841722161407059007904922838583677995599242776177398115322',
             counterparty=CPT_OPTIMISM,
             address=GOVERNOR_ADDRESS,
         ),
@@ -130,7 +130,7 @@ def test_vote_cast_with_reason(database, optimism_inquirer, optimism_accounts):
             asset=Asset('ETH'),
             balance=Balance(),
             location_label=user_address,
-            notes='Voted AGAINST optimism governance proposal https://vote.optimism.io/proposals/10572947036210533292634221606922807092762967787561796032397523909369599512554 with reasoning: https://shorturl.at/abHS4',  # noqa: E501
+            notes='Vote AGAINST optimism governance proposal https://vote.optimism.io/proposals/10572947036210533292634221606922807092762967787561796032397523909369599512554 with reasoning: https://shorturl.at/abHS4',  # noqa: E501
             counterparty=CPT_OPTIMISM,
             address=GOVERNOR_ADDRESS,
         ),
