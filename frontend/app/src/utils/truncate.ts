@@ -1,12 +1,12 @@
 import { XpubPrefix } from '@/utils/xpub';
 
 export const truncationPoints: Record<string, number> = {
-  'xs': 3,
+  'xs': 4,
   'sm': 6,
   'md': 10,
   'lg': 20,
-  'xl': 30,
-  '2xl': 40,
+  'xl': 20,
+  '2xl': 30,
 };
 
 export function findAddressKnownPrefix(address: string) {

@@ -84,10 +84,14 @@ const usdSum = computed<BigNumber>(() => balanceUsdValueSum(get(items)));
         <div class="font-medium">
           {{ t('account_group_header.xpub') }}
         </div>
-        <div :class="{ blur: !shouldShowAmount }">
+        <div
+          class="[&_*]:font-mono"
+          :class="{ blur: !shouldShowAmount }"
+        >
           <RuiTooltip
             :popper="{ placement: 'top' }"
             :open-delay="400"
+            tooltip-class="[&_*]:font-mono"
           >
             <template #activator>
               {{ displayXpub }}
@@ -116,7 +120,9 @@ const usdSum = computed<BigNumber>(() => balanceUsdValueSum(get(items)));
         <span class="font-medium">
           {{ t('account_group_header.derivation_path') }}:
         </span>
-        {{ xpub.data.derivationPath }}
+        <span class="font-mono">
+          {{ xpub.data.derivationPath }}
+        </span>
       </div>
       <TagDisplay
         small

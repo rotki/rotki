@@ -96,6 +96,7 @@ function handleMoreClick() {
   <div :class="{ 'pl-[3.125rem]': hasIgnoredEvent }">
     <DefineTable #default="{ data }">
       <HistoryEventsListTable
+        :event-group="eventGroup"
         :events="data"
         :total="events.length"
         :loading="loading"
