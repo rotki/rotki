@@ -1,6 +1,7 @@
 import logging
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Mapping
+from enum import StrEnum, auto
 from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -252,6 +253,12 @@ class MerkleClaimDecoderInterface(DecoderInterface, ABC):
         return self._maybe_enrich_claim_transfer(context, counterparty, token_id, notes_suffix, claiming_address, claimed_amount, airdrop_identifier)  # noqa: E501
 
 
+class VoteChoice(StrEnum):
+    FOR = auto()
+    AGAINST = auto()
+    ABSTAIN = auto()
+
+
 class GovernableDecoderInterface(DecoderInterface, ABC):
     """Decoders of protocols that have voting in Governance
 
@@ -279,11 +286,11 @@ class GovernableDecoderInterface(DecoderInterface, ABC):
             self,
             context: DecoderContext,
             voter_address: ChecksumEvmAddress,
-            supports: bool,
+            vote_choice: VoteChoice,
             proposal_id: int,
             notes_reason: str = '',
     ) -> DecodingOutput:
-        notes = f'Voted {"FOR" if supports else "AGAINST"} {self.protocol} governance proposal {self.proposals_url}/{proposal_id}{notes_reason}'  # noqa: E501
+        notes = f'Vote {vote_choice.upper()} {"in " if vote_choice == VoteChoice.ABSTAIN else ""}{self.protocol} governance proposal {self.proposals_url}/{proposal_id}{notes_reason}'  # noqa: E501
         event = self.base.make_event_from_transaction(
             transaction=context.transaction,
             tx_log=context.tx_log,
@@ -297,6 +304,15 @@ class GovernableDecoderInterface(DecoderInterface, ABC):
             counterparty=self.protocol,
         )
         return DecodingOutput(event=event)
+
+    @staticmethod
+    def _decode_raw_vote(vote_raw: int) -> VoteChoice:
+        if vote_raw == 0:
+            return VoteChoice.AGAINST
+        elif vote_raw == 1:
+            return VoteChoice.FOR
+        else:
+            return VoteChoice.ABSTAIN
 
     def _decode_vote_cast(self, context: DecoderContext, abi: str) -> DecodingOutput:
         if not self.base.is_tracked(voter_address := hex_or_bytes_to_address(context.tx_log.topics[1])):  # noqa: E501
@@ -313,14 +329,14 @@ class GovernableDecoderInterface(DecoderInterface, ABC):
             )
             return DEFAULT_DECODING_OUTPUT
 
-        proposal_id, supports, notes_reason = decoded_data[0], decoded_data[1], ''
+        proposal_id, vote_raw, notes_reason = decoded_data[0], decoded_data[1], ''
         if len(decoded_data[3]) != 0:
             notes_reason = f' with reasoning: {decoded_data[3]}'
 
         return self._decode_vote_cast_common(
             context=context,
             voter_address=voter_address,
-            supports=supports,
+            vote_choice=self._decode_raw_vote(vote_raw),
             proposal_id=proposal_id,
             notes_reason=notes_reason,
         )
@@ -332,7 +348,7 @@ class GovernableDecoderInterface(DecoderInterface, ABC):
         return self._decode_vote_cast_common(
             context=context,
             voter_address=voter_address,
-            supports=bool(hex_or_bytes_to_int(context.tx_log.data[64:96])),
+            vote_choice=self._decode_raw_vote(hex_or_bytes_to_int(context.tx_log.data[64:96])),
             proposal_id=hex_or_bytes_to_int(context.tx_log.data[32:64]),
         )
 

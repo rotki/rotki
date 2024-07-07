@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` Coinbase staking reward events should now be shown.
+* :bug:`-` Governance abstain votes will now be properly decoded.
 * :bug:`-` Claimed and unclaimed airdrops of the same asset will now show properly.
 * :bug:`-` Editing the passphrase for OKX exchange will now work properly.
 * :feature:`8193` Coinbasepro support is removed since the exchanges no longer exist.

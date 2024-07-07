@@ -790,7 +790,53 @@ def test_vote_cast(database, ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(),
             location_label=user_address,
-            notes='Voted FOR ens governance proposal https://www.tally.xyz/gov/ens/proposal/10686228418271748393758532071249002330319730525037728746406757788787068261444',
+            notes='Vote FOR ens governance proposal https://www.tally.xyz/gov/ens/proposal/10686228418271748393758532071249002330319730525037728746406757788787068261444',
+            counterparty=CPT_ENS,
+            address=ENS_GOVERNOR,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
+def test_vote_cast_abstain(database, ethereum_inquirer, ethereum_accounts):
+    """Test voting for ENS (or any) governance as abstain"""
+    tx_hex = deserialize_evm_tx_hash('0xc16e94a93480fd499373283ee973b34d18525c3b67ea81b248530d8158944ff2')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    timestamp = TimestampMS(1720220639000)
+    gas_str = '0.000255411223579504'
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_str)),
+            location_label=user_address,
+            notes=f'Burned {gas_str} ETH for gas',
+            counterparty=CPT_GAS,
+            address=None,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=205,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.GOVERNANCE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes='Vote ABSTAIN in ens governance proposal https://www.tally.xyz/gov/ens/proposal/107992041043258996427224563090014372885335179099580585497266204203463156791290 with reasoning: https://discuss.ens.domains/t/ep-5-12-roles-modifier-v2-migration-updates-to-endowment-permissions/19173/8?u=lefterisjp',  # noqa: E501
             counterparty=CPT_ENS,
             address=ENS_GOVERNOR,
         ),
