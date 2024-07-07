@@ -11,6 +11,9 @@ module.exports = {
     container: {
       center: true,
     },
+    fontFamily: {
+      mono: ['Roboto Mono'],
+    },
     extend: {},
   },
   // Classes for premium components

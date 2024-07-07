@@ -15,6 +15,7 @@ interface DeleteEvent {
 const props = withDefaults(
   defineProps<{
     events: HistoryEventEntry[];
+    eventGroup: HistoryEventEntry;
     loading?: boolean;
     total?: number;
   }>(),
@@ -61,6 +62,8 @@ function getEventNoteAttrs(event: HistoryEventEntry) {
 
   if ('blockNumber' in event)
     data.blockNumber = event.blockNumber;
+  else if ('blockNumber' in props.eventGroup)
+    data.blockNumber = props.eventGroup.blockNumber;
 
   if ('counterparty' in event && event.counterparty)
     data.counterparty = event.counterparty;
