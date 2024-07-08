@@ -12,7 +12,7 @@ const props = defineProps<{
 }>();
 
 const { account } = toRefs(props);
-const { scrambleData, shouldShowAmount, scrambleHex, scrambleIdentifier } = useScramble();
+const { scrambleData, shouldShowAmount, scrambleAddress, scrambleIdentifier } = useScramble();
 const { addressNameSelector, ensNameSelector } = useAddressesNamesStore();
 const css = useCssModule();
 const { t } = useI18n();
@@ -64,7 +64,7 @@ const ensName = computed<string | null>(() => {
 
 const { isXs, name } = useBreakpoint();
 
-const address = computed<string>(() => scrambleHex(get(accountAddress)));
+const address = computed<string>(() => scrambleAddress(get(accountAddress)));
 
 const truncationLength = computed<number>(() => {
   let truncationPoint = truncationPoints[get(name)];

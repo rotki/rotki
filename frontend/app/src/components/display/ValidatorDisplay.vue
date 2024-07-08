@@ -17,7 +17,7 @@ const length = computed(() => (get(horizontal) ? 4 : 10));
 
 const { t } = useI18n();
 
-const { scrambleIdentifier, scrambleHex, shouldShowAmount } = useScramble();
+const { scrambleIdentifier, scrambleAddress, shouldShowAmount } = useScramble();
 </script>
 
 <template>
@@ -28,7 +28,7 @@ const { scrambleIdentifier, scrambleHex, shouldShowAmount } = useScramble();
     }"
   >
     <div class="font-medium text-truncate text-rui-text">
-      {{ truncateAddress(scrambleHex(validator.publicKey), length) }}
+      {{ truncateAddress(scrambleAddress(validator.publicKey), length) }}
     </div>
     <div>
       <span

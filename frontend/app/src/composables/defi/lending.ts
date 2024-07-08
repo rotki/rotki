@@ -47,7 +47,7 @@ export function useDefiLending() {
   const { balances: liquityBalances } = storeToRefs(liquityStore);
 
   const { setStatus, fetchDisabled } = useStatusUpdater(Section.DEFI_LENDING);
-  const { scrambleHex, scrambleIdentifier } = useScramble();
+  const { scrambleAddress, scrambleIdentifier } = useScramble();
 
   const { yearnVaultsAssets } = yearnStore;
 
@@ -78,7 +78,7 @@ export function useDefiLending() {
 
         for (const asset of assets) {
           const symbol = get(assetInfo(asset))?.symbol ?? asset;
-          const formattedAddress = truncateAddress(scrambleHex(address), 6);
+          const formattedAddress = truncateAddress(scrambleAddress(address), 6);
 
           loans.push({
             identifier: `${symbol} - ${address}`,
@@ -102,7 +102,7 @@ export function useDefiLending() {
 
         for (const asset of assets) {
           const symbol = get(assetInfo(asset))?.symbol ?? asset;
-          const formattedAddress = truncateAddress(scrambleHex(address), 6);
+          const formattedAddress = truncateAddress(scrambleAddress(address), 6);
 
           loans.push({
             identifier: `${symbol} - ${address}`,
@@ -123,7 +123,7 @@ export function useDefiLending() {
         ...balanceAddress.filter(uniqueStrings).map((address) => {
           const troveId = balances[address] ? balances[address].troveId : 0;
           const formattedTroveId = scrambleIdentifier(troveId);
-          const formattedAddress = truncateAddress(scrambleHex(address), 6);
+          const formattedAddress = truncateAddress(scrambleAddress(address), 6);
 
           return {
             identifier: `Trove ${troveId} - ${address}`,

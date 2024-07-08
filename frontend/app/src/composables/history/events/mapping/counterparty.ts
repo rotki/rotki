@@ -10,7 +10,7 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
       ActionDataEntry[]
   >(() => getHistoryEventCounterpartiesData(), []);
 
-  const { scrambleData, scrambleHex } = useScramble();
+  const { scrambleData, scrambleAddress } = useScramble();
 
   const getEventCounterpartyData = (
     event: MaybeRef<{ counterparty: string | null; address?: string | null }>,
@@ -52,7 +52,7 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
       return null;
 
     const counterpartyAddress = get(scrambleData)
-      ? scrambleHex(usedLabel)
+      ? scrambleAddress(usedLabel)
       : usedLabel;
 
     return {
