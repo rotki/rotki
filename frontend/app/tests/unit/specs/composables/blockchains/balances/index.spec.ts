@@ -1,6 +1,8 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { computed } from 'vue';
 import { Section } from '@/types/status';
+import { useBlockchainStore } from '@/store/blockchain';
+import { createAccount } from '@/utils/blockchain/accounts';
 import type { EvmChainInfo, SupportedChains } from '@/types/api/chains';
 
 vi.mock('@/store/blockchain/balances/eth', () => ({
@@ -69,6 +71,7 @@ describe('composables::blockchain/balances/index', () => {
   setActivePinia(createPinia());
   let api: ReturnType<typeof useBlockchainBalancesApi> = useBlockchainBalancesApi();
   let blockchainBalances: ReturnType<typeof useBlockchainBalances> = useBlockchainBalances();
+  const blockchainStore: ReturnType<typeof useBlockchainStore> = useBlockchainStore();
 
   beforeEach(() => {
     api = useBlockchainBalancesApi();
@@ -78,6 +81,20 @@ describe('composables::blockchain/balances/index', () => {
 
   describe('fetchBlockchainBalances', () => {
     it('all supported blockchains', async () => {
+      // won't call if no account
+      await blockchainBalances.fetchBlockchainBalances();
+
+      expect(api.queryBlockchainBalances).toHaveBeenCalledTimes(0);
+      expect(api.queryBlockchainBalances).not.toHaveBeenCalledWith(false, 'eth');
+
+      // call if there's account
+      blockchainStore.updateAccounts(Blockchain.ETH, [
+        createAccount(
+          { address: '0x49ff149D649769033d43783E7456F626862CD160', label: null, tags: null },
+          { nativeAsset: 'ETH', chain: Blockchain.ETH },
+        ),
+      ]);
+
       await blockchainBalances.fetchBlockchainBalances();
 
       expect(api.queryBlockchainBalances).toHaveBeenCalledTimes(1);

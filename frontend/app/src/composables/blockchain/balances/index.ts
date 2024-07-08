@@ -16,7 +16,9 @@ export function useBlockchainBalances() {
   const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
   const { queryBlockchainBalances } = useBlockchainBalancesApi();
-  const { updateBalances, updateAccounts } = useBlockchainStore();
+  const blockchainStore = useBlockchainStore();
+  const { accounts } = storeToRefs(blockchainStore);
+  const { updateBalances, updateAccounts } = blockchainStore;
   const { getChainName, supportedChains } = useSupportedChains();
   const { t } = useI18n();
   const { setStatus, resetStatus, isFirstLoad } = useStatusUpdater(Section.BLOCKCHAIN);
@@ -31,34 +33,48 @@ export function useBlockchainBalances() {
     try {
       setStatus(isFirstLoad() ? Status.LOADING : Status.REFRESHING, { subsection: blockchain });
 
-      const { taskId } = await queryBlockchainBalances(ignoreCache, blockchain);
-      const taskType = TaskType.QUERY_BLOCKCHAIN_BALANCES;
-      const { result } = await awaitTask<
-        BlockchainBalances,
-        BlockchainMetadata
-      >(
-        taskId,
-        taskType,
-        {
-          blockchain,
-          title: t('actions.balances.blockchain.task.title', {
-            chain: get(getChainName(blockchain)),
-          }),
-        },
-        true,
-      );
-      const parsedBalances: BlockchainBalances = BlockchainBalances.parse(result);
-      const perAccount = parsedBalances.perAccount[blockchain];
+      const account = get(accounts)[blockchain];
 
-      if (isBtcBalances(perAccount)) {
-        const totals = parsedBalances.totals;
-        updateBalances(
-          blockchain,
-          convertBtcBalances(blockchain, totals, perAccount),
+      if (account && account.length > 0) {
+        const { taskId } = await queryBlockchainBalances(ignoreCache, blockchain);
+        const taskType = TaskType.QUERY_BLOCKCHAIN_BALANCES;
+        const { result } = await awaitTask<
+            BlockchainBalances,
+            BlockchainMetadata
+        >(
+          taskId,
+          taskType,
+          {
+            blockchain,
+            title: t('actions.balances.blockchain.task.title', {
+              chain: get(getChainName(blockchain)),
+            }),
+          },
+          true,
         );
+        const parsedBalances: BlockchainBalances = BlockchainBalances.parse(result);
+        const perAccount = parsedBalances.perAccount[blockchain];
+
+        if (isBtcBalances(perAccount)) {
+          const totals = parsedBalances.totals;
+          updateBalances(
+            blockchain,
+            convertBtcBalances(blockchain, totals, perAccount),
+          );
+        }
+        else {
+          updateBalances(blockchain, parsedBalances);
+        }
       }
       else {
-        updateBalances(blockchain, parsedBalances);
+        const emptyData: BlockchainBalances = {
+          perAccount: {},
+          totals: {
+            assets: {},
+            liabilities: {},
+          },
+        };
+        updateBalances(blockchain, emptyData);
       }
 
       setStatus(Status.LOADED, { subsection: blockchain });
