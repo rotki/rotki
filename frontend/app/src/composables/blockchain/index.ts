@@ -58,7 +58,6 @@ export function useBlockchains() {
   ): Promise<void> => {
     const chains = blockchain ? [blockchain] : get(supportedChains).map(chain => chain.id);
     await awaitParallelExecution(chains, chain => chain, fetch, 2);
-    await Promise.allSettled(chains.map(fetch));
 
     const namesPayload: AddressBookSimplePayload[] = [];
 
