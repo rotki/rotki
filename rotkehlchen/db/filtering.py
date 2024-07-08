@@ -1495,6 +1495,8 @@ class AddressbookFilterQuery(DBFilterQuery):
 
 
 class AssetsFilterQuery(DBFilterQuery):
+    ignored_assets_handling: IgnoredAssetsHandling = IgnoredAssetsHandling.NONE
+
     @classmethod
     def make(
             cls: type['AssetsFilterQuery'],
@@ -1526,6 +1528,7 @@ class AssetsFilterQuery(DBFilterQuery):
             order_by_rules=order_by_rules,
             order_by_case_sensitive=False,
         )
+        filter_query.ignored_assets_handling = ignored_assets_handling
         filters: list[DBFilter] = []
         if name is not None:
             filters.append(DBSubStringFilter(
@@ -1572,12 +1575,6 @@ class AssetsFilterQuery(DBFilterQuery):
                 select_value='asset_id',
                 select_table='user_owned_assets',
                 select_condition=None,
-            ))
-        if ignored_assets_handling is not IgnoredAssetsHandling.NONE:
-            filters.append(DBIgnoredAssetsFilter(
-                and_op=True,
-                asset_key=identifier_column_name,
-                operator=ignored_assets_handling.operator(),
             ))
         if chain_id is not None:
             filters.append(DBEqualsFilter(
@@ -1815,6 +1812,7 @@ class LevenshteinFilterQuery(MultiTableFilterQuery):
     Is used for querying both assets and nfts.
     """
     substring_search: str
+    ignored_assets_handling: IgnoredAssetsHandling = IgnoredAssetsHandling.NONE
 
     @classmethod
     def make(
@@ -1829,6 +1827,7 @@ class LevenshteinFilterQuery(MultiTableFilterQuery):
             filters=[],
             substring_search=substring_search,
         )
+        filter_query.ignored_assets_handling = ignored_assets_handling
         filters: list[tuple[DBFilter, str]] = []  # filter + table name for which to use it.
 
         name_filter = DBSubStringFilter(
@@ -1868,14 +1867,6 @@ class LevenshteinFilterQuery(MultiTableFilterQuery):
                 value=chain_id.serialize_for_db(),
             )
             filters.append((new_filter, 'assets'))
-
-        if ignored_assets_handling is not IgnoredAssetsHandling.NONE:
-            ignored_assets_filter = DBIgnoredAssetsFilter(
-                and_op=True,
-                asset_key='assets.identifier',
-                operator=ignored_assets_handling.operator(),
-            )
-            filters.append((ignored_assets_filter, 'assets'))
 
         filter_query.filters = filters
         return filter_query

@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Adding a manual price of a newly added asset will now get saved, and will not disappear after restart.
 * :bug:`-` Coinbase staking reward events should now be shown.
 * :bug:`-` Governance abstain votes will now be properly decoded.
 * :bug:`-` Claimed and unclaimed airdrops of the same asset will now show properly.

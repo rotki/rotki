@@ -65,20 +65,20 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 _ALL_ASSETS_TABLES_JOINS = """
-FROM {dbprefix}assets LEFT JOIN {dbprefix}common_asset_details on {dbprefix}assets.identifier={dbprefix}common_asset_details.identifier
-LEFT JOIN {dbprefix}evm_tokens ON evm_tokens.identifier=assets.identifier
-LEFT JOIN {dbprefix}custom_assets ON custom_assets.identifier=assets.identifier
-"""  # noqa: E501
+FROM assets LEFT JOIN common_asset_details on assets.identifier=common_asset_details.identifier
+LEFT JOIN evm_tokens ON evm_tokens.identifier=assets.identifier
+LEFT JOIN custom_assets ON custom_assets.identifier=assets.identifier
+"""
 
 
 ALL_ASSETS_TABLES_QUERY = """
-SELECT {dbprefix}assets.identifier, name, symbol, chain, assets.type, custom_assets.type """ + _ALL_ASSETS_TABLES_JOINS  # noqa: E501
+SELECT assets.identifier, name, symbol, chain, assets.type, custom_assets.type """ + _ALL_ASSETS_TABLES_JOINS  # noqa: E501
 
 
 ALL_ASSETS_TABLES_QUERY_WITH_COLLECTIONS = (
-    'SELECT {dbprefix}assets.identifier, assets.name, common_asset_details.symbol, chain, assets.type, custom_assets.type, collection_id, asset_collections.name, asset_collections.symbol, protocol' +  # noqa: E501
+    'SELECT assets.identifier, assets.name, common_asset_details.symbol, chain, assets.type, custom_assets.type, collection_id, asset_collections.name, asset_collections.symbol, protocol' +  # noqa: E501
     _ALL_ASSETS_TABLES_JOINS +
-    'LEFT JOIN {dbprefix}multiasset_mappings ON {dbprefix}assets.identifier={dbprefix}multiasset_mappings.asset LEFT JOIN {dbprefix}asset_collections ON {dbprefix}multiasset_mappings.collection_id={dbprefix}asset_collections.id'  # noqa: E501
+    'LEFT JOIN multiasset_mappings ON assets.identifier=multiasset_mappings.asset LEFT JOIN asset_collections ON multiasset_mappings.collection_id=asset_collections.id'  # noqa: E501
 )
 
 
@@ -365,10 +365,10 @@ class GlobalDBHandler:
         SELECT A.identifier AS identifier, A.type, B.address, B.decimals, A.name, C.symbol,
         C.started, C.forked, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol, B.chain,
         B.token_kind, D.notes, D.type AS custom_asset_type FROM
-        globaldb.assets as A
-        LEFT JOIN globaldb.common_asset_details AS C ON C.identifier = A.identifier
-        LEFT JOIN globaldb.evm_tokens as B ON B.identifier = A.identifier
-        LEFT JOIN globaldb.custom_assets as D ON D.identifier = A.identifier
+        assets as A
+        LEFT JOIN common_asset_details AS C ON C.identifier = A.identifier
+        LEFT JOIN evm_tokens as B ON B.identifier = A.identifier
+        LEFT JOIN custom_assets as D ON D.identifier = A.identifier
         """
         query = f'SELECT * FROM ({parent_query}) {prepared_filter_query}'
         # Get the identifier of the EVM tokens in the filter and query the underlying tokens where
@@ -381,71 +381,69 @@ class GlobalDBHandler:
         # filtered from the frontend where we set a limit in the number of results that goes
         # in the range from 10 to 100 and this guarantees that the size of the subquery is small.
         underlying_tokens_query = (
-            f'SELECT parent_token_entry, address, token_kind, weight FROM globaldb.underlying_tokens_list '  # noqa: E501
-            f'LEFT JOIN globaldb.evm_tokens ON globaldb.underlying_tokens_list.identifier=evm_tokens.identifier '  # noqa: E501
+            f'SELECT parent_token_entry, address, token_kind, weight FROM underlying_tokens_list '
+            f'LEFT JOIN evm_tokens ON underlying_tokens_list.identifier=evm_tokens.identifier '
             f'WHERE parent_token_entry IN (SELECT identifier FROM ({query}))'
         )
-
+        should_skip = filter_query.ignored_assets_handling.get_should_skip_handler()
         with userdb.conn.read_ctx() as cursor:
-            globaldb = GlobalDBHandler()
-            globaldb._wal_checkpoint()
-            cursor.execute(
-                f'ATTACH DATABASE "{globaldb.filepath()!s}" AS globaldb KEY "";',
-            )
-            try:
-                # get all underlying tokens
-                for entry in cursor.execute(underlying_tokens_query, bindings):
-                    underlying_tokens[entry[0]].append(UnderlyingToken.deserialize_from_db((entry[1], entry[2], entry[3])).serialize())  # noqa: E501
+            ignored_assets = userdb.get_ignored_asset_ids(cursor)
 
-                cursor.execute(query, bindings)
-                for entry in cursor:
-                    asset_type = AssetType.deserialize_from_db(entry[1])
-                    data = {
-                        'identifier': entry[0],
-                        'asset_type': str(asset_type),
-                        'name': entry[4],
-                    }
-                    # for evm tokens and crypto assets
-                    common_data = {
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            # get all underlying tokens
+            for entry in cursor.execute(underlying_tokens_query, bindings):
+                underlying_tokens[entry[0]].append(UnderlyingToken.deserialize_from_db((entry[1], entry[2], entry[3])).serialize())  # noqa: E501
+
+            cursor.execute(query, bindings)
+            for entry in cursor:
+                if should_skip(entry[0], ignored_assets):
+                    continue
+
+                asset_type = AssetType.deserialize_from_db(entry[1])
+                data = {
+                    'identifier': entry[0],
+                    'asset_type': str(asset_type),
+                    'name': entry[4],
+                }
+                # for evm tokens and crypto assets
+                common_data = {
+                    'symbol': entry[5],
+                    'started': entry[6],
+                    'swapped_for': entry[8],
+                    'forked': entry[7],
+                    'cryptocompare': entry[10],
+                    'coingecko': entry[9],
+                }
+                if asset_type == AssetType.FIAT:
+                    data.update({
                         'symbol': entry[5],
                         'started': entry[6],
-                        'swapped_for': entry[8],
-                        'forked': entry[7],
-                        'cryptocompare': entry[10],
-                        'coingecko': entry[9],
-                    }
-                    if asset_type == AssetType.FIAT:
-                        data.update({
-                            'symbol': entry[5],
-                            'started': entry[6],
-                        })
-                    elif asset_type == AssetType.EVM_TOKEN:
-                        data.update({
-                            'address': entry[2],
-                            'evm_chain': ChainID.deserialize_from_db(entry[12]).to_name(),
-                            'token_kind': EvmTokenKind.deserialize_from_db(entry[13]).serialize(),
-                            'decimals': entry[3],
-                            'underlying_tokens': underlying_tokens.get(entry[0], None),
-                            'protocol': entry[11],
-                        })
-                        data.update(common_data)
-                    elif AssetType.is_crypto_asset(asset_type):
-                        data.update(common_data)
-                    elif asset_type == AssetType.CUSTOM_ASSET:
-                        data.update({
-                            'notes': entry[14],
-                            'custom_asset_type': entry[15],
-                        })
-                    else:
-                        raise NotImplementedError(f'Unsupported AssetType {asset_type} found in the DB. Should never happen')  # noqa: E501
-                    assets_info.append(data)
+                    })
+                elif asset_type == AssetType.EVM_TOKEN:
+                    data.update({
+                        'address': entry[2],
+                        'evm_chain': ChainID.deserialize_from_db(entry[12]).to_name(),
+                        'token_kind': EvmTokenKind.deserialize_from_db(entry[13]).serialize(),
+                        'decimals': entry[3],
+                        'underlying_tokens': underlying_tokens.get(entry[0], None),
+                        'protocol': entry[11],
+                    })
+                    data.update(common_data)
+                elif AssetType.is_crypto_asset(asset_type):
+                    data.update(common_data)
+                elif asset_type == AssetType.CUSTOM_ASSET:
+                    data.update({
+                        'notes': entry[14],
+                        'custom_asset_type': entry[15],
+                    })
+                else:
+                    raise NotImplementedError(f'Unsupported AssetType {asset_type} found in the DB. Should never happen')  # noqa: E501
+                assets_info.append(data)
 
-                # get `entries_found`
-                query, bindings = filter_query.prepare(with_pagination=False)
-                total_found_query = f'SELECT COUNT(*) FROM ({parent_query}) ' + query
-                entries_found = cursor.execute(total_found_query, bindings).fetchone()[0]
-            finally:
-                cursor.execute('DETACH DATABASE globaldb;')
+            # get `entries_found`
+            query, bindings = filter_query.prepare(with_pagination=False)
+            total_found_query = f'SELECT COUNT(*) FROM ({parent_query}) ' + query
+            entries_found = cursor.execute(total_found_query, bindings).fetchone()[0]
 
         return assets_info, entries_found
 
@@ -461,7 +459,7 @@ class GlobalDBHandler:
         identifiers_query = f'assets.identifier IN ({",".join("?" * len(identifiers))})'
         with GlobalDBHandler().conn.read_ctx() as cursor:
             cursor.execute(
-                ALL_ASSETS_TABLES_QUERY_WITH_COLLECTIONS.format(dbprefix='') +
+                ALL_ASSETS_TABLES_QUERY_WITH_COLLECTIONS +
                 ' WHERE ' + identifiers_query,
                 tuple(identifiers),
             )
@@ -487,51 +485,47 @@ class GlobalDBHandler:
         return result, asset_collections
 
     @staticmethod
-    def search_assets(
-            filter_query: 'AssetsFilterQuery',
-            db: 'DBHandler',
-    ) -> list[dict[str, Any]]:
+    def search_assets(filter_query: 'AssetsFilterQuery', db: 'DBHandler') -> list[dict[str, Any]]:
         """Returns a list of asset details that match the search query provided."""
         search_result = []
-        globaldb = GlobalDBHandler()
-        query, bindings = filter_query.prepare()
-        query = ALL_ASSETS_TABLES_QUERY.format(dbprefix='globaldb.') + query
-        resolved_eth = A_ETH.resolve_to_crypto_asset()
-        globaldb._wal_checkpoint()
+        should_skip = filter_query.ignored_assets_handling.get_should_skip_handler()
         with db.conn.read_ctx() as cursor:
             treat_eth2_as_eth = db.get_settings(cursor).treat_eth2_as_eth
-            cursor.execute(
-                f'ATTACH DATABASE "{globaldb.filepath()!s}" AS globaldb KEY "";',
-            )
-            try:
-                cursor.execute(query, bindings)
-                found_eth = False
-                for entry in cursor:
-                    if treat_eth2_as_eth is True and entry[0] in (A_ETH.identifier, A_ETH2.identifier):  # noqa: E501
-                        if found_eth is False:
-                            search_result.append({
-                                'identifier': resolved_eth.identifier,
-                                'name': resolved_eth.name,
-                                'symbol': resolved_eth.symbol,
-                                'is_custom_asset': False,
-                            })
-                            found_eth = True
-                        continue
+            ignored_assets = db.get_ignored_asset_ids(cursor)
 
-                    entry_info = {
-                        'identifier': entry[0],
-                        'name': entry[1],
-                        'symbol': entry[2],
-                        'is_custom_asset': AssetType.deserialize_from_db(entry[4]) == AssetType.CUSTOM_ASSET,  # noqa: E501
-                    }
-                    if entry[3] is not None:
-                        entry_info['evm_chain'] = ChainID.deserialize_from_db(entry[3]).to_name()
-                    if entry[5] is not None:
-                        entry_info['custom_asset_type'] = entry[5]
+        query, bindings = filter_query.prepare(without_ignored_asset_filter=True)
+        query = ALL_ASSETS_TABLES_QUERY + query
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            cursor.execute(query, bindings)
+            found_eth = False
+            for entry in cursor:
+                if should_skip(entry[0], ignored_assets):
+                    continue
 
-                    search_result.append(entry_info)
-            finally:
-                cursor.execute('DETACH DATABASE globaldb;')
+                if treat_eth2_as_eth is True and entry[0] in (A_ETH.identifier, A_ETH2.identifier):
+                    if found_eth is False:
+                        search_result.append({
+                            'identifier': 'ETH',
+                            'name': 'Ethereum',
+                            'symbol': 'ETH',
+                            'is_custom_asset': False,
+                        })
+                        found_eth = True
+                    continue
+
+                entry_info = {
+                    'identifier': entry[0],
+                    'name': entry[1],
+                    'symbol': entry[2],
+                    'is_custom_asset': AssetType.deserialize_from_db(entry[4]) == AssetType.CUSTOM_ASSET,  # noqa: E501
+                }
+                if entry[3] is not None:
+                    entry_info['evm_chain'] = ChainID.deserialize_from_db(entry[3]).to_name()
+                if entry[5] is not None:
+                    entry_info['custom_asset_type'] = entry[5]
+
+                search_result.append(entry_info)
+
         return search_result
 
     @overload

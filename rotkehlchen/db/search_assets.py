@@ -45,61 +45,58 @@ def _search_only_nfts_levenstein(
 
 
 def _search_only_assets_levenstein(
-        cursor: 'DBCursor',
-        db: 'DBHandler',
+        userdb_cursor: 'DBCursor',
+        userdb: 'DBHandler',
         filter_query: 'LevenshteinFilterQuery',
 ) -> list[tuple[int, dict[str, Any]]]:
     search_result: list[tuple[int, dict[str, Any]]] = []
-    resolved_eth = A_ETH.resolve_to_crypto_asset()
-    globaldb = GlobalDBHandler()
-    treat_eth2_as_eth = db.get_settings(cursor).treat_eth2_as_eth
-    globaldb.conn.execute('PRAGMA wal_checkpoint;')  # needed to have up to date information when attaching  # noqa: E501
-    with db.conn.critical_section():  # needed due to ATTACH. Must not context switch out of this
-        cursor.execute(
-            f'ATTACH DATABASE "{globaldb.filepath()!s}" AS globaldb KEY "";',
-        )
-        try:
-            query, bindings = filter_query.prepare('assets')
-            query = ALL_ASSETS_TABLES_QUERY.format(dbprefix='globaldb.') + query
-            cursor.execute(query, bindings)
-            found_eth = False
-            for entry in cursor:
-                lev_dist_min = 100
-                if entry[1] is not None:
-                    lev_dist_min = min(
-                        lev_dist_min,
-                        levenshtein(filter_query.substring_search, entry[1].casefold()),
-                    )
-                if entry[2] is not None:
-                    lev_dist_min = min(
-                        lev_dist_min,
-                        levenshtein(filter_query.substring_search, entry[2].casefold()),
-                    )
-                if treat_eth2_as_eth is True and entry[0] in (A_ETH.identifier, A_ETH2.identifier):
-                    if found_eth is False:
-                        search_result.append((lev_dist_min, {
-                            'identifier': resolved_eth.identifier,
-                            'name': resolved_eth.name,
-                            'symbol': resolved_eth.symbol,
-                            'asset_type': AssetType.OWN_CHAIN.serialize(),
-                        }))
-                        found_eth = True
-                    continue
+    should_skip = filter_query.ignored_assets_handling.get_should_skip_handler()
+    treat_eth2_as_eth = userdb.get_settings(userdb_cursor).treat_eth2_as_eth
+    ignored_assets = userdb.get_ignored_asset_ids(userdb_cursor)
 
-                entry_info = {
-                    'identifier': entry[0],
-                    'name': entry[1],
-                    'symbol': entry[2],
-                    'asset_type': AssetType.deserialize_from_db(entry[4]).serialize(),
-                }
-                if entry[3] is not None:
-                    entry_info['evm_chain'] = ChainID.deserialize_from_db(entry[3]).to_name()
-                if entry[5] is not None:
-                    entry_info['custom_asset_type'] = entry[5]
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        query, bindings = filter_query.prepare('assets')
+        query = ALL_ASSETS_TABLES_QUERY + query
+        cursor.execute(query, bindings)
+        found_eth = False
+        for entry in cursor:
+            if should_skip(entry[0], ignored_assets):
+                continue
 
-                search_result.append((lev_dist_min, entry_info))
-        finally:
-            cursor.execute('DETACH globaldb;')
+            lev_dist_min = 100
+            if entry[1] is not None:
+                lev_dist_min = min(
+                    lev_dist_min,
+                    levenshtein(filter_query.substring_search, entry[1].casefold()),
+                )
+            if entry[2] is not None:
+                lev_dist_min = min(
+                    lev_dist_min,
+                    levenshtein(filter_query.substring_search, entry[2].casefold()),
+                )
+            if treat_eth2_as_eth is True and entry[0] in (A_ETH.identifier, A_ETH2.identifier):
+                if found_eth is False:
+                    search_result.append((lev_dist_min, {
+                        'identifier': 'ETH',
+                        'name': 'Ethereum',
+                        'symbol': 'ETH',
+                        'asset_type': AssetType.OWN_CHAIN.serialize(),
+                    }))
+                    found_eth = True
+                continue
+
+            entry_info = {
+                'identifier': entry[0],
+                'name': entry[1],
+                'symbol': entry[2],
+                'asset_type': AssetType.deserialize_from_db(entry[4]).serialize(),
+            }
+            if entry[3] is not None:
+                entry_info['evm_chain'] = ChainID.deserialize_from_db(entry[3]).to_name()
+            if entry[5] is not None:
+                entry_info['custom_asset_type'] = entry[5]
+
+            search_result.append((lev_dist_min, entry_info))
 
     return search_result
 
@@ -114,8 +111,8 @@ def search_assets_levenshtein(
     search_result = []
     with db.conn.read_ctx() as cursor:
         search_result = _search_only_assets_levenstein(
-            cursor=cursor,
-            db=db,
+            userdb_cursor=cursor,
+            userdb=db,
             filter_query=filter_query,
         )
         if search_nfts is True:
