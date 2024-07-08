@@ -47,7 +47,7 @@ const { t } = useI18n();
 const { copy } = useClipboard();
 
 const { text, baseUrl, chain, evmChain, type, disableScramble, hideAliasName, location } = toRefs(props);
-const { scrambleData, shouldShowAmount, scrambleHex, scrambleIdentifier } = useScramble();
+const { scrambleData, shouldShowAmount, scrambleAddress, scrambleIdentifier } = useScramble();
 
 const { explorers } = storeToRefs(useFrontendSettingsStore());
 const { getChain, getChainInfoByName } = useSupportedChains();
@@ -98,7 +98,7 @@ const displayText = computed<string>(() => {
   if (linkType === 'block' || consistOfNumbers(linkText))
     return scrambleIdentifier(linkText);
 
-  return scrambleHex(linkText);
+  return scrambleAddress(linkText);
 });
 
 const base = computed<string>(() => {

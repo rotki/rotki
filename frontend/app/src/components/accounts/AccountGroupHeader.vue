@@ -24,7 +24,7 @@ const { t } = useI18n();
 
 const { items } = toRefs(props);
 const { name: breakpoint, isXs } = useBreakpoint();
-const { scrambleHex, shouldShowAmount } = useScramble();
+const { scrambleAddress, shouldShowAmount } = useScramble();
 
 const xpub: ComputedRef<BlockchainAccountWithBalance<XpubData>> = computed(() => {
   const account = get(items).filter(isAccountWithBalanceXpub).find(item => item.groupHeader);
@@ -37,7 +37,7 @@ const label = computed<string | undefined>(() => get(xpub).label);
 const xpubTags = computed<string[] | undefined>(() => get(xpub).tags);
 
 const displayXpub = computed<string>(() =>
-  scrambleHex(truncateAddress(get(xpub).data.xpub, truncationPoints[get(breakpoint)] ?? 4)),
+  scrambleAddress(truncateAddress(get(xpub).data.xpub, truncationPoints[get(breakpoint)] ?? 4)),
 );
 
 const amountSum = computed<BigNumber>(() =>

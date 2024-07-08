@@ -10,22 +10,22 @@ export function useScramble() {
 
   const scrambleData = logicOr(scrambleSetting, logicNot(shouldShowAmount));
 
-  const scrambleHex = (hex: string): string => {
+  const scrambleAddress = (address: string): string => {
     if (!get(scrambleData))
-      return hex;
+      return address;
 
     let multiplier = +get(scrambleMultiplier);
     if (multiplier < 1)
       multiplier += 1;
 
-    const knownPrefix = findAddressKnownPrefix(hex);
+    const knownPrefix = findAddressKnownPrefix(address);
 
-    const trimmedHex = knownPrefix ? hex.slice(knownPrefix.length).toUpperCase() : hex;
-    const isEth = hex.startsWith('0x');
+    const trimmedAddress = knownPrefix ? address.slice(knownPrefix.length).toUpperCase() : address;
+    const isHex = address.startsWith('0x');
 
     return (
       knownPrefix
-      + trimmedHex
+      + trimmedAddress
         .split('')
         .map((char, charIndex) => {
           const index = alphaNumerics.indexOf(char);
@@ -34,7 +34,7 @@ export function useScramble() {
 
           return alphaNumerics.charAt(
             Math.floor(index * (multiplier + charIndex))
-            % (isEth ? 16 : alphaNumerics.length),
+            % (isHex ? 16 : alphaNumerics.length),
           );
         })
         .join('')
@@ -86,7 +86,7 @@ export function useScramble() {
     shouldShowAmount,
     scrambleInteger,
     scrambleIdentifier,
-    scrambleHex,
+    scrambleAddress,
     scrambleTimestamp,
   };
 }

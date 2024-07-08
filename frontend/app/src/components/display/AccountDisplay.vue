@@ -20,12 +20,12 @@ const props = withDefaults(
 );
 
 const { account, useAliasName } = toRefs(props);
-const { scrambleData, shouldShowAmount, scrambleHex } = useScramble();
+const { scrambleData, shouldShowAmount, scrambleAddress } = useScramble();
 const { addressNameSelector } = useAddressesNamesStore();
 
 const address = computed<string>(() => {
   const address = get(account).address;
-  return scrambleHex(address);
+  return scrambleAddress(address);
 });
 
 const aliasName = computed<string | null>(() => {
