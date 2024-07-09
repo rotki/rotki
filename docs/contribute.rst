@@ -407,9 +407,10 @@ To add a new airdrop in the DeFi/Airdrops section, go to the `data repo here <ht
 Adding Token Airdrops with a CSV
 --------------------------------
 
-- Add the CSV in the ``airdrops/`` directory, with its path provided in its index entry.
-    - The CSV's header should have first column as ``address`` and second column as ``amount``.
-    - The amounts should be normalised according to their decimals.
+- The CSV's header should have first column as ``address`` and second column as ``amount``.
+- The amounts should be normalised according to their decimals.
+- Create a Parquet file from the CSV using ``python scripts/csv_to_parquet.py <path_to_csv>`` and remove the CSV.
+- Move the Parquet file in the ``airdrops/`` directory, with its path provided in its index entry.
 
 Adding Token Airdrops with an API
 ---------------------------------
