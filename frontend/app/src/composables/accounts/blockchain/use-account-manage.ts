@@ -20,10 +20,6 @@ export interface StakingValidatorManage extends AccountManageMode {
   chain: Blockchain.ETH2;
   type: 'validator';
   data: Eth2Validator;
-  /**
-   * The original account ownership percentage, needed when editing the account.
-   */
-  ownershipPercentage?: number;
 }
 
 export interface AccountManageAdd extends AccountManageMode {
@@ -221,7 +217,6 @@ export function useAccountManage() {
         assert(payload.ownershipPercentage);
         updateEthStakingOwnership(
           payload.publicKey,
-          bigNumberify(state?.ownershipPercentage ?? 100),
           bigNumberify(payload.ownershipPercentage),
         );
         startPromise(fetchAccounts(Blockchain.ETH2));
