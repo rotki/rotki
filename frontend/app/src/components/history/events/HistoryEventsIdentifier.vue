@@ -80,7 +80,7 @@ const { is2xlAndUp } = useBreakpoint();
 
 <style lang="scss" module>
 .wrapper {
-  @apply bg-rui-grey-300 py-0.5 pr-1 pl-2 rounded-full m-0.5;
+  @apply bg-rui-grey-300 pr-1 pl-2 rounded-full m-0.5;
 }
 
 :global(.dark) {

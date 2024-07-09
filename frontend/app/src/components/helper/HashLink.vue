@@ -133,7 +133,7 @@ const { href, onLinkClick } = useLinks(url);
 </script>
 
 <template>
-  <div class="flex flex-row shrink items-center gap-1 text-xs">
+  <div class="flex flex-row shrink items-center gap-1 text-xs [&_*]:font-mono [&_*]:leading-6">
     <template v-if="showIcon && !linkOnly && type === 'address'">
       <EnsAvatar
         :address="displayText"
@@ -145,7 +145,6 @@ const { href, onLinkClick } = useLinks(url);
     <template v-if="!linkOnly && !buttons">
       <span
         v-if="fullAddress"
-        class="font-mono"
         :class="{ blur: !shouldShowAmount }"
       >
         {{ displayText }}
@@ -158,10 +157,7 @@ const { href, onLinkClick } = useLinks(url);
         tooltip-class="[&_*]:font-mono"
       >
         <template #activator>
-          <div
-            :class="{ blur: !shouldShowAmount }"
-            class="font-mono leading-6"
-          >
+          <div :class="{ blur: !shouldShowAmount }">
             <template v-if="truncatedAliasName">
               {{ truncatedAliasName }}
             </template>
