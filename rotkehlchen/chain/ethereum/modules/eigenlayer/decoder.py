@@ -12,7 +12,8 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     DELAYED_WITHDRAWALS_CREATED,
     DEPOSIT_TOPIC,
     EIGEN_TOKEN_ID,
-    EIGENLAYER_AIRDROP_DISTRIBUTOR,
+    EIGENLAYER_AIRDROP_S1_PHASE1_DISTRIBUTOR,
+    EIGENLAYER_AIRDROP_S1_PHASE2_DISTRIBUTOR,
     EIGENLAYER_CPT_DETAILS,
     EIGENLAYER_DELEGATION,
     EIGENLAYER_STRATEGY_MANAGER,
@@ -144,12 +145,12 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
 
         return DEFAULT_DECODING_OUTPUT
 
-    def decode_airdrop(self, context: DecoderContext) -> DecodingOutput:
+    def decode_airdrop(self, context: DecoderContext, airdrop_identifier: str, note_suffix: str) -> DecodingOutput:  # noqa: E501
         if not (decode_result := self._decode_claim(context)):
             return DEFAULT_DECODING_OUTPUT
 
         claiming_address, claimed_amount = decode_result
-        notes = f'Claim {claimed_amount} EIGEN from the Eigenlayer airdrop'
+        notes = f'Claim {claimed_amount} EIGEN from the Eigenlayer airdrop {note_suffix}'
         for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.RECEIVE and
@@ -161,7 +162,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
                 event.event_subtype = HistoryEventSubType.AIRDROP
                 event.counterparty = CPT_EIGENLAYER
                 event.notes = notes
-                event.extra_data = {AIRDROP_IDENTIFIER_KEY: 'eigen_s1_phase1'}
+                event.extra_data = {AIRDROP_IDENTIFIER_KEY: airdrop_identifier}
                 break
         else:
             log.error(f'Could not match eigenlayer airdrop receive event in {context.transaction.tx_hash.hex()}')  # noqa: E501
@@ -507,7 +508,8 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
             EIGENLAYER_STRATEGY_MANAGER: (self.decode_event,),
-            EIGENLAYER_AIRDROP_DISTRIBUTOR: (self.decode_airdrop,),
+            EIGENLAYER_AIRDROP_S1_PHASE1_DISTRIBUTOR: (self.decode_airdrop, 'eigen_s1_phase1', 'season 1 phase 1'),  # noqa: E501
+            EIGENLAYER_AIRDROP_S1_PHASE2_DISTRIBUTOR: (self.decode_airdrop, 'eigen_s1_phase2', 'season 1 phase 2'),  # noqa: E501
             EIGENPOD_MANAGER: (self.decode_eigenpod_manager_events,),
             EIGENPOD_DELAYED_WITHDRAWAL_ROUTER: (self.decode_eigenpod_delayed_withdrawals,),
             EIGENLAYER_DELEGATION: (self.decode_delegation,),

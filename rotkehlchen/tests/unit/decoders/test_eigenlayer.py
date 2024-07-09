@@ -7,7 +7,8 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBal
 from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     CPT_EIGENLAYER,
     EIGEN_TOKEN_ID,
-    EIGENLAYER_AIRDROP_DISTRIBUTOR,
+    EIGENLAYER_AIRDROP_S1_PHASE1_DISTRIBUTOR,
+    EIGENLAYER_AIRDROP_S1_PHASE2_DISTRIBUTOR,
     EIGENLAYER_DELEGATION,
     EIGENLAYER_STRATEGY_MANAGER,
     EIGENPOD_DELAYED_WITHDRAWAL_ROUTER,
@@ -127,7 +128,7 @@ def test_withdraw(database, ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xabe8430e3f0BeCa32915dA84E530f81A01379953']])
-def test_airdrop_claim(database, ethereum_inquirer, ethereum_accounts):
+def test_airdrop_claim_s1_phase1(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x0a72c7bf0fe1808035f8df466a70453f29c6b57d0bec46913d993a19ef72265c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -157,10 +158,50 @@ def test_airdrop_claim(database, ethereum_inquirer, ethereum_accounts):
         asset=Asset(EIGEN_TOKEN_ID),
         balance=Balance(amount=FVal(claim_amount)),
         location_label=ethereum_accounts[0],
-        notes='Claim 110 EIGEN from the Eigenlayer airdrop',
+        notes='Claim 110 EIGEN from the Eigenlayer airdrop season 1 phase 1',
         counterparty=CPT_EIGENLAYER,
-        address=EIGENLAYER_AIRDROP_DISTRIBUTOR,
+        address=EIGENLAYER_AIRDROP_S1_PHASE1_DISTRIBUTOR,
         extra_data={AIRDROP_IDENTIFIER_KEY: 'eigen_s1_phase1'},
+    )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xf6d3d6B6cee9991900Bf53261e1bb213A3d54Fec']])
+def test_airdrop_claim_s1_phase2(database, ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x7896ca761e9e2fd53dbec28c946d5dbc2e0802a3700641d26d61bc79afaac1a5')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas_amount, claim_amount = TimestampMS(1720527731000), '0.000428532817567424', '110'
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas_amount)),
+        location_label=ethereum_accounts[0],
+        notes=f'Burned {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=752,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.AIRDROP,
+        asset=Asset(EIGEN_TOKEN_ID),
+        balance=Balance(amount=FVal(claim_amount)),
+        location_label=ethereum_accounts[0],
+        notes='Claim 110 EIGEN from the Eigenlayer airdrop season 1 phase 2',
+        counterparty=CPT_EIGENLAYER,
+        address=EIGENLAYER_AIRDROP_S1_PHASE2_DISTRIBUTOR,
+        extra_data={AIRDROP_IDENTIFIER_KEY: 'eigen_s1_phase2'},
     )]
     assert events == expected_events
 

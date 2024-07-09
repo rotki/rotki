@@ -14,7 +14,8 @@ if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 
 
-OPTIMISM_AIRDROP = string_to_evm_address('0xFeDFAF1A10335448b7FA0268F56D2B44DBD357de')
+OPTIMISM_AIRDROP_1 = string_to_evm_address('0xFeDFAF1A10335448b7FA0268F56D2B44DBD357de')
+OPTIMISM_AIRDROP_4 = string_to_evm_address('0xFb4D5A94b516DF77Fbdbcf3CfeB262baAF7D4dB7')
 
 
 class AirdropsDecoder(MerkleClaimDecoderInterface):
@@ -34,14 +35,18 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
-            OPTIMISM_AIRDROP: (
+            distributor_address: (
                 self._decode_merkle_claim,
                 CPT_OPTIMISM,  # counterparty
                 self.op_token.identifier,  # token id
                 18,  # token decimals
-                'OP from the optimism airdrop',  # notes suffix
-                'optimism_1',
-            ),
+                f'OP from the optimism airdrop {note_suffix}',  # notes suffix
+                airdrop_identifier,
+            )
+            for airdrop_identifier, distributor_address, note_suffix in (
+                ('optimism_1', OPTIMISM_AIRDROP_1, '1'),
+                ('optimism_4', OPTIMISM_AIRDROP_4, '4'),
+            )
         }
 
     @staticmethod
