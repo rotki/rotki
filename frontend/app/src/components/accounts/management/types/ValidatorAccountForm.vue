@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import Eth2Input from '@/components/accounts/blockchain/Eth2Input.vue';
+import { TaskType } from '@/types/task-type';
 import type { StakingValidatorManage } from '@/composables/accounts/blockchain/use-account-manage';
 import type { ValidationErrors } from '@/types/api/errors';
 
@@ -27,13 +28,17 @@ function validate(): Promise<boolean> {
 defineExpose({
   validate,
 });
+
+const { isTaskRunning } = useTaskStore();
+const taskRunning = isTaskRunning(TaskType.ADD_ETH2_VALIDATOR);
 </script>
 
 <template>
   <Eth2Input
     ref="input"
     :validator.sync="validator"
-    :disabled="loading || value.mode === 'edit'"
+    :edit-mode="value.mode === 'edit'"
+    :disabled="loading || taskRunning"
     :error-messages.sync="errors"
   />
 </template>

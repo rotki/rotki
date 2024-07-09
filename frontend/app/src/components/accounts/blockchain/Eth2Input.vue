@@ -13,6 +13,7 @@ import type { ValidationErrors } from '@/types/api/errors';
 const props = defineProps<{
   validator: Eth2Validator | null;
   disabled: boolean;
+  editMode: boolean;
   errorMessages: ValidationErrors;
 }>();
 
@@ -110,7 +111,7 @@ defineExpose({
         v-model="validatorIndex"
         variant="outlined"
         color="primary"
-        :disabled="disabled"
+        :disabled="disabled || editMode"
         :label="t('common.validator_index')"
         :error-messages="toMessages(v$.validatorIndex)"
         @blur="v$.validatorIndex.$touch()"
@@ -124,7 +125,7 @@ defineExpose({
         class="grow"
         variant="outlined"
         color="primary"
-        :disabled="disabled"
+        :disabled="disabled || editMode"
         :label="t('eth2_input.public_key')"
         :error-messages="toMessages(v$.publicKey)"
         @blur="v$.publicKey.$touch()"
@@ -136,6 +137,7 @@ defineExpose({
         v-model="ownershipPercentage"
         variant="outlined"
         placeholder="100"
+        :disabled="disabled"
         :label="t('eth2_input.ownership_percentage')"
         :hint="t('eth2_input.ownership.hint')"
         :error-messages="toMessages(v$.ownershipPercentage)"
