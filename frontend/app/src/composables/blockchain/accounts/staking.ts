@@ -3,6 +3,7 @@ import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { TaskType } from '@/types/task-type';
 import { Section } from '@/types/status';
 import { Module } from '@/types/modules';
+import type { BlockchainAccount, ValidatorData } from '@/types/blockchain/accounts';
 import type { AssetBalances, Eth2Validator } from '@/types/balances';
 import type { ActionStatus } from '@/types/action';
 import type { TaskMeta } from '@/types/task';
@@ -158,14 +159,18 @@ export function useEthStaking() {
    * Adjusts the balances for an ethereum staking validator based on the percentage of ownership.
    *
    * @param publicKey the validator's public key is used to identify the balance
-   * @param oldOwnershipPercentage the ownership of the validator before the edit
    * @param newOwnershipPercentage the ownership percentage of the validator after the edit
    */
   const updateEthStakingOwnership = (
     publicKey: string,
-    oldOwnershipPercentage: BigNumber,
     newOwnershipPercentage: BigNumber,
   ): void => {
+    const isValidator = (x: BlockchainAccount): x is BlockchainAccount<ValidatorData> => 'index' in x.data;
+    const validators = [...getAccounts(Blockchain.ETH2).filter(isValidator)];
+    const validatorIndex = validators.findIndex(validator => validator.data.publicKey === publicKey);
+    const [validator] = validators.splice(validatorIndex, 1);
+    const oldOwnershipPercentage = bigNumberify(validator.data.ownershipPercentage || 100);
+
     const { eth2 } = get(balances);
     if (!eth2[publicKey])
       return;
