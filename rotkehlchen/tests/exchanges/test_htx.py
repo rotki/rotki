@@ -156,6 +156,7 @@ def test_deposit_withdrawals(htx_exchange: Htx) -> None:
     assert movements == expected_movements
 
 
+@pytest.mark.freeze_time('2024-03-12 00:00:00 GMT')
 def test_trades(htx_exchange: Htx) -> None:
     mock_fn = htx_account_mock(calls={
         '/v1/order/matchresults': [
