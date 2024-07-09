@@ -133,7 +133,7 @@ const { href, onLinkClick } = useLinks(url);
 </script>
 
 <template>
-  <div class="flex flex-row shrink items-center gap-1 text-sm">
+  <div class="flex flex-row shrink items-center gap-1 text-xs">
     <template v-if="showIcon && !linkOnly && type === 'address'">
       <EnsAvatar
         :address="displayText"

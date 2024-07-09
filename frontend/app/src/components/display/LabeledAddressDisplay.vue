@@ -73,7 +73,7 @@ const labelDisplayed = computed(() => {
   return get(address);
 });
 
-const CH = 7.81;
+const CH = 7.21;
 const truncatedLabelDisplayed = computed(() => {
   const label = get(labelDisplayed);
   const characterLength = label.length;
@@ -123,7 +123,7 @@ const truncatedLabelDisplayed = computed(() => {
 
           <div
             ref="displayedLabel"
-            class="flex-1 font-mono overflow-hidden"
+            class="flex-1 font-mono overflow-hidden text-xs"
             :class="{ blur: !shouldShowAmount }"
           >
             {{ truncatedLabelDisplayed }}
