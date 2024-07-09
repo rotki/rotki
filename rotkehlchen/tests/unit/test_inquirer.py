@@ -626,6 +626,7 @@ def test_punishing_of_oracles_works(inquirer):
             assert inquirer._coingecko.is_penalized() is False
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_yearn_vaults_v2_price(inquirer_defi, globaldb):

@@ -97,6 +97,7 @@ def test_add_same_evm_account_for_multiple_chains(rotkehlchen_api_server):
         assert FVal(total_token['usd_value']) >= ZERO
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_deleting_ens_account_works(rotkehlchen_api_server):
