@@ -131,7 +131,10 @@ onMounted(() => refresh());
             thickness="2"
             size="20"
             color="primary"
-            :value="(data.processed / (data.total || 1)) * 100"
+            :value="
+              data.protocolCacheRefreshStatus
+                ? (data.protocolCacheRefreshStatus.processed / (data.protocolCacheRefreshStatus.total || 1)) * 100
+                : (data.processed / (data.total || 1)) * 100"
           />
           <i18n
             v-if="!data.protocolCacheRefreshStatus"
