@@ -363,6 +363,7 @@ class Commonv2v3Decoder(DecoderInterface):
                     token,
                 )
                 break
+
         else:  # not found, so just stop here
             return
 
@@ -378,6 +379,7 @@ class Commonv2v3Decoder(DecoderInterface):
                 event.notes = f'Receive {event.balance.amount} {resolved_asset.symbol} from {self.label}'  # noqa: E501
                 event.counterparty = self.counterparty
                 break
+
         else:
             log.error(f'Did not find expected AAVE mint event in {context.transaction}. Continuing')  # noqa: E501
 
