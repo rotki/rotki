@@ -67,6 +67,7 @@ class GnosisTransactions(EvmTransactions):
             argument_filters={'receiver': addresses[0]} if len(addresses) == 1 else {},
             from_block=from_block,
             to_block='latest',
+            call_order=self.evm_inquirer.default_call_order(),
         )
 
         expected_topics = ['0x000000000000000000000000' + x.lower()[2:] for x in addresses]
