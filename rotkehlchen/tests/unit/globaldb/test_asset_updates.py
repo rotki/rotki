@@ -5,6 +5,7 @@ from unittest.mock import patch
 import pytest
 import requests
 
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BTC, A_ETH
@@ -510,8 +511,19 @@ def test_asset_update(
 
 def test_conflict_updates(assets_updater: AssetsUpdater, globaldb: GlobalDBHandler):
     """Test that the logic doesn't add duplicates for assets that were inserted twice
-    in the globaldb assets updates
+    in the globaldb assets updates. Also test a bug in asset updates where the foreign key entries
+    are removed when an asset update conflict is resolved through 'remote' option.
     """
+    with globaldb.conn.write_ctx() as write_cursor:
+        assert write_cursor.execute(
+            'SELECT COUNT(*) FROM underlying_tokens_list WHERE parent_token_entry=?;',
+            ('eip155:42161/erc20:0xA5EDBDD9646f8dFF606d7448e414884C7d905dCA',),
+        ).fetchone()[0] == 1
+        assert write_cursor.execute(
+            'SELECT COUNT(*) FROM multiasset_mappings WHERE asset=?;',
+            ('eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',),
+        ).fetchone()[0] == 1
+
     update_1 = """INSERT INTO assets(identifier, name, type) VALUES("eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8", "Bridged USDC", "C"); INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES("eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8", "A", 42161, "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8", 6, ""); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8", "USDC.e", "usd-coin", "USDC", NULL, 1623868379, NULL);
 *"""  # noqa: E501
     update_2 = """INSERT INTO assets(identifier, name, type) VALUES("eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8", "Bridged USDC", "C"); INSERT INTO evm_tokens(identifier, token_kind, chain, address, decimals, protocol) VALUES("eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8", "A", 42161, "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8", 6, NULL); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8", "USDC.e", "usd-coin-ethereum-bridged", "USDC", NULL, 1623868379, NULL);
@@ -540,3 +552,23 @@ def test_conflict_updates(assets_updater: AssetsUpdater, globaldb: GlobalDBHandl
     assert conflicts is not None
     assert len(conflicts) == 1
     assert conflicts[0]['remote'] == {'name': 'Bridged USDC', 'symbol': 'USDC.e', 'asset_type': 'evm token', 'started': 1623868379, 'forked': None, 'swapped_for': None, 'address': '0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8', 'token_kind': 'erc20', 'decimals': 6, 'cryptocompare': 'USDC', 'coingecko': 'usd-coin-ethereum-bridged', 'protocol': None, 'evm_chain': 'arbitrum_one'}  # noqa: E501
+
+    # resolve with all the remote updates and check if the multiasset and underlying_asset mappings still exists  # noqa: E501
+    with update_patch:
+        assets_updater.perform_update(
+            up_to_version=2,
+            conflicts={
+                Asset(conflict['identifier']): 'remote'
+                for conflict in conflicts
+            },
+        )
+    assert cursor.execute('SELECT value FROM settings WHERE name="assets_version"').fetchone()[0] == '2'  # noqa: E501
+    with globaldb.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM underlying_tokens_list WHERE parent_token_entry=?;',
+            ('eip155:42161/erc20:0xA5EDBDD9646f8dFF606d7448e414884C7d905dCA',),
+        ).fetchone()[0] == 1
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM multiasset_mappings WHERE asset=?;',
+            ('eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',),
+        ).fetchone()[0] == 1

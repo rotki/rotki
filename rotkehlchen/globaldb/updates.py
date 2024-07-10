@@ -93,13 +93,37 @@ def _force_remote_asset(cursor: DBCursor, local_asset: Asset, full_insert: str) 
 
     May raise an sqlite3 error if something fails.
     """
+    # we get the multiasset and underlying asset mappings before removing the asset because
+    # these mappings get deleted when the asset is removed because of foreign key relation
+    multiasset_mappings = cursor.execute(  # get its multiasset mappings
+        'SELECT collection_id, asset FROM multiasset_mappings WHERE asset=?;',
+        (local_asset.identifier,),
+    ).fetchall()
+    underlying_assets = cursor.execute(  # get its underlying_assets mappings
+        'SELECT parent_token_entry, weight, identifier FROM underlying_tokens_list '
+        'WHERE identifier=? OR parent_token_entry=?;',
+        (local_asset.identifier, local_asset.identifier),
+    ).fetchall()
     cursor.execute(
         'DELETE FROM assets WHERE identifier=?;',
         (local_asset.identifier,),
     )
     # Insert new entry. Since identifiers are the same, no foreign key constrains should break
     executeall(cursor, full_insert)
-    AssetResolver().clean_memory_cache(local_asset.identifier.lower())
+
+    # now add the old mappings back into the db
+    if len(multiasset_mappings) > 0:
+        cursor.executemany(  # add the old multiasset mappings
+            'INSERT INTO multiasset_mappings (collection_id, asset) VALUES (?, ?);',
+            multiasset_mappings,
+        )
+    if len(underlying_assets) > 0:
+        cursor.executemany(  # add the old underlying assets
+            'INSERT INTO underlying_tokens_list (parent_token_entry, weight, identifier) '
+            'VALUES (?, ?, ?);',
+            underlying_assets,
+        )
+    AssetResolver.clean_memory_cache(local_asset.identifier.lower())
 
 
 class ParsedAssetData(NamedTuple):

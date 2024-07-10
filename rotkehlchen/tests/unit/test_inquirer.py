@@ -437,11 +437,11 @@ def test_find_curve_lp_token_price(inquirer: 'Inquirer', blockchain: 'ChainsAggr
         # Curve.fi amDAI/amUSDC/amUSDT (am3CRV)
         ChainID.POLYGON_POS: ('0xE7a24EF0C5e95Ffb0f6684b813A78F2a3AD7D171', FVal('1.129260')),
         # crvUSDT-gauge
-        ChainID.ARBITRUM_ONE: ('0xB08FEf57bFcc5f7bF0EF69C0c090849d497C8F8A', FVal('2.024704')),
+        ChainID.ARBITRUM_ONE: ('0xB08FEf57bFcc5f7bF0EF69C0c090849d497C8F8A', FVal('2.025168')),
         # tricrypto
         ChainID.BASE: ('0x63Eb7846642630456707C3efBb50A03c79B89D81', FVal('1.011604')),
         # crvusdusdt-gauge
-        ChainID.GNOSIS: ('0xC2EfDbC1a21D82A677380380eB282a963A6A6ada', FVal('0.997286')),
+        ChainID.GNOSIS: ('0xC2EfDbC1a21D82A677380380eB282a963A6A6ada', FVal('0.997623')),
     }
 
     inquirer.inject_evm_managers([

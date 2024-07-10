@@ -125,7 +125,7 @@ def test_coverage_of_kraken_balances():
         'ALGO.S': Asset('ALGO'),
         'DOT.P': A_DOT,
         'MINA.S': Asset('MINA'),
-        'TRX.S': strethaddress_to_identifier('0xf230b790E05390FC8295F4d3F60332c93BEd42e2'),
+        'TRX.S': strethaddress_to_identifier('0x50327c6c5a14DCaDE707ABad2E27eB517df87AB5'),
         'LUNA.S': strethaddress_to_identifier('0xd2877702675e6cEb975b4A1dFf9fb7BAF4C91ea9'),
         'SCRT.S': Asset('SCRT'),
         'MATIC.S': strethaddress_to_identifier('0x7D1AfA7B718fb893dB30A3aBc0Cfc608AaCfeBB0'),

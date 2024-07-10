@@ -1145,7 +1145,7 @@ def test_aave_v3_withdraw_xdai(database, gnosis_inquirer, gnosis_accounts) -> No
         database=database,
         tx_hash=tx_hash,
     )
-    timestamp, gained_amount, withdrawn_amount, gas_fees, gateway_address, approval_amount, returned_amount = TimestampMS(1720459795000), '0.0000000000000000000000000000000000000000000000000000000000000000000000000000000000076355892637370336', '5.076355892637370336', '0.0008300288', string_to_evm_address('0xfE76366A986B72c3f2923e05E6ba07b7de5401e4'), FVal('0.0000000000000000000000115792089237316195423570985008687907853269984665640564039452507652020492269599'), '0.0000000000000000000000000000000000000000000000000000000000000000000000000000000005076355892637370336'  # noqa: E501
+    timestamp, gained_amount, withdrawn_amount, gas_fees, gateway_address, approval_amount = TimestampMS(1720459795000), '0.076355892637370336', '5.076355892637370336', '0.0008300288', string_to_evm_address('0xfE76366A986B72c3f2923e05E6ba07b7de5401e4'), FVal('115792089237316195423570985008687907853269984665640564039452.507652020492269599')  # noqa: E501
     expected_events = [
         EvmEvent(
             tx_hash=tx_hash,
@@ -1205,9 +1205,9 @@ def test_aave_v3_withdraw_xdai(database, gnosis_inquirer, gnosis_accounts) -> No
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=Asset('eip155:100/erc20:0xd0Dd6cEF72143E22cCED4867eb0d5F2328715533'),
-            balance=Balance(amount=FVal(returned_amount)),  # TODO: This is a bug and should be withdrawn_amount but the decimals need to be edited in the assets repo. OJ is on that  # noqa: E501
+            balance=Balance(amount=FVal(withdrawn_amount)),
             location_label=gnosis_accounts[0],
-            notes=f'Return {returned_amount} aGnoWXDAI to AAVE v3',
+            notes=f'Return {withdrawn_amount} aGnoWXDAI to AAVE v3',
             counterparty=CPT_AAVE_V3,
             address=gateway_address,
         ), EvmEvent(
