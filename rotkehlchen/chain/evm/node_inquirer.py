@@ -427,7 +427,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             try:
                 if connectivity_check:
                     try:
-                        network_id = int(web3.net.version)
+                        network_id = int(web3.net.version, 0)  # version can be in hex too. base 0 triggers the prefix check  # noqa: E501
                     except requests.exceptions.RequestException as e:
                         msg = (
                             f'Connected to node {node} at endpoint {rpc_endpoint} but'
