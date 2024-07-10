@@ -91,7 +91,7 @@ onMounted(() => {
       </SettingsOption>
     </div>
     <SettingsOption
-      #default="{ update }"
+      #default="{ updateImmediate }"
       setting="versionUpdateCheckFrequency"
       frontend-setting
       :transform="switchTransform"
@@ -102,7 +102,7 @@ onMounted(() => {
         class="mt-4"
         :label="t('general_settings.labels.version_update_check_enabled')"
         color="primary"
-        @input="callIfValid($event, update)"
+        @input="callIfValid($event, updateImmediate)"
       />
     </SettingsOption>
   </div>

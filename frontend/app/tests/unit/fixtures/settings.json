@@ -63,7 +63,8 @@
     "last_data_upload_ts": 0,
     "autoDeleteCalendarEntries": true,
     "autoCreateCalendarReminders": true,
-    "askUserUponSizeDiscrepancy": true
+    "askUserUponSizeDiscrepancy": true,
+    "autoDetectTokens": true
   },
   "message": ""
 }

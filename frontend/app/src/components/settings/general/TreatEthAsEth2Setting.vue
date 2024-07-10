@@ -11,7 +11,7 @@ const { t } = useI18n();
 
 <template>
   <SettingsOption
-    #default="{ error, success, update }"
+    #default="{ error, success, updateImmediate }"
     setting="treatEth2AsEth"
     :error-message="t('general_settings.validation.treat_eth2_as_eth.error')"
   >
@@ -22,7 +22,7 @@ const { t } = useI18n();
       :label="t('general_settings.labels.treat_eth2_as_eth')"
       :success-messages="success"
       :error-messages="error"
-      @input="update($event)"
+      @input="updateImmediate($event)"
     />
   </SettingsOption>
 </template>

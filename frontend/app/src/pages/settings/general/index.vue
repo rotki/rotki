@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import AutoDetectTokensSetting from '@/components/settings/general/AutoDetectTokensSetting.vue';
+
 const amountExample = bigNumberify(123456.789);
 const { t } = useI18n();
 </script>
@@ -15,6 +17,7 @@ const { t } = useI18n();
         <LanguageSetting />
         <VersionUpdateFrequencySetting />
         <BalanceSaveFrequencySetting />
+        <AutoDetectTokensSetting />
         <DateDisplayFormatSetting />
         <DateInputFormatSetting />
         <DisplayDateInLocaltimeSetting />

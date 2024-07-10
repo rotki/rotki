@@ -89,6 +89,8 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
 
   const askUserUponSizeDiscrepancy: ComputedRef<boolean> = computed(() => settings.askUserUponSizeDiscrepancy);
 
+  const autoDetectTokens: ComputedRef<boolean> = computed(() => settings.autoDetectTokens);
+
   const currencySymbol: ComputedRef<SupportedCurrency> = computed(() => {
     const currency = get(mainCurrency);
     return currency.tickerSymbol;
@@ -130,6 +132,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     autoDeleteCalendarEntries,
     autoCreateCalendarReminders,
     askUserUponSizeDiscrepancy,
+    autoDetectTokens,
     // return settings on development for state persistence
     ...(checkIfDevelopment() ? { settings } : {}),
     update,

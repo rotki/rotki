@@ -60,6 +60,7 @@ const GeneralSettings = z.object({
   autoDeleteCalendarEntries: z.boolean(),
   autoCreateCalendarReminders: z.boolean(),
   askUserUponSizeDiscrepancy: z.boolean(),
+  autoDetectTokens: z.boolean(),
 });
 
 export type GeneralSettings = z.infer<typeof GeneralSettings>;
@@ -166,6 +167,7 @@ function getGeneralSettings(settings: UserSettings): GeneralSettings {
     autoDeleteCalendarEntries: settings.autoDeleteCalendarEntries,
     autoCreateCalendarReminders: settings.autoCreateCalendarReminders,
     askUserUponSizeDiscrepancy: settings.askUserUponSizeDiscrepancy,
+    autoDetectTokens: settings.autoDetectTokens,
   };
 }
 

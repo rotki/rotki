@@ -13,7 +13,7 @@ const { t } = useI18n();
 
 <template>
   <SettingsOption
-    #default="{ error, success, update }"
+    #default="{ error, success, updateImmediate }"
     setting="displayDateInLocaltime"
     :error-message="
       t('general_settings.validation.display_date_in_localtime.error')
@@ -26,7 +26,7 @@ const { t } = useI18n();
       :label="t('general_settings.labels.display_date_in_localtime')"
       :success-messages="success"
       :error-messages="error"
-      @input="update($event)"
+      @input="updateImmediate($event)"
     />
   </SettingsOption>
 </template>

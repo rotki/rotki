@@ -85,7 +85,7 @@ onMounted(() => {
         </SettingsOption>
       </div>
       <SettingsOption
-        #default="{ update }"
+        #default="{ updateImmediate }"
         setting="refreshPeriod"
         frontend-setting
         :transform="transformSwitch"
@@ -97,7 +97,7 @@ onMounted(() => {
           class="mt-4"
           :label="t('frontend_settings.label.refresh_enabled')"
           color="primary"
-          @input="update($event)"
+          @input="updateImmediate($event)"
         />
       </SettingsOption>
     </div>
