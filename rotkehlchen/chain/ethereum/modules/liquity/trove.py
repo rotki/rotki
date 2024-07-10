@@ -94,7 +94,7 @@ class Liquity(HasDSProxy):
             total_collateral_ratio = self.trove_manager_contract.call(
                 node_inquirer=self.ethereum,
                 method_name='getTCR',
-                arguments=[FVal(eth_price * 10**18).to_int(True)],
+                arguments=[FVal(eth_price * 10**18).to_int(exact=False)],
             )
 
         except RemoteError as e:
