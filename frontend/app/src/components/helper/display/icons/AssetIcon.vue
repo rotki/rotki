@@ -88,13 +88,7 @@ const tooltip = computed(() => {
   };
 });
 
-const url = computed<string>(() => {
-  const id = get(mappedIdentifier);
-  if (get(symbol) === 'WETH')
-    return `./assets/images/protocols/weth.svg`;
-
-  return getAssetImageUrl(id);
-});
+const url = reactify(getAssetImageUrl)(mappedIdentifier);
 
 const chainIconSize = computed(
   () => `${(Number.parseInt(get(size)) * 50) / 100}px`,
