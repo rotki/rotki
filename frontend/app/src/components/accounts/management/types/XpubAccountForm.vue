@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { objectOmit } from '@vueuse/core';
 import XpubInput from '@/components/accounts/blockchain/XpubInput.vue';
 import type { ValidationErrors } from '@/types/api/errors';
 import type { XpubPayload } from '@/types/blockchain/accounts';
@@ -64,11 +65,12 @@ const label = computed<string>({
   },
   set(label: string) {
     const model = get(modelValue);
+    const labelData = label ? { label } : {};
     updateVModel({
       ...model,
       data: {
-        ...model.data,
-        ...(label ? { label } : {}),
+        ...objectOmit(model.data, ['label']),
+        ...labelData,
       },
     });
   },

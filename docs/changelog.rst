@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` Adding xpubs with derivation paths that include hardened nodes will not give an error anymore.
+* :bug:`-` Xpub keys without any addresses will now show properly in the accounts bitcoin accounts table.
 * :bug:`-` Adding a manual price of a newly added asset will now get saved, and will not disappear after restart.
 * :bug:`-` Coinbase staking reward events should now be shown.
 * :bug:`-` Governance abstain votes will now be properly decoded.

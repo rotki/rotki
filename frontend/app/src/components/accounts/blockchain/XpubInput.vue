@@ -104,13 +104,14 @@ watch(errorMessages, (errors) => {
     get(v$).$validate();
 });
 
-watch(xpub, (xpub) => {
-  set(xpubKey, xpub?.xpub);
+watchImmediate(xpub, (xpub) => {
+  set(xpubKey, xpub?.xpub || '');
   const prefix = getPrefix(xpub?.xpubType);
   if (prefix !== XpubPrefix.XPUB)
     set(xpubKeyPrefix, prefix);
 
-  set(derivationPath, xpub?.derivationPath);
+  if (get(derivationPath).replace(/'/g, '').replace(/\/$/, '') !== xpub?.derivationPath)
+    set(derivationPath, xpub?.derivationPath);
 });
 
 watch(blockchain, () => {
@@ -125,21 +126,11 @@ watch([xpubKeyPrefix, xpubKey, derivationPath], ([prefix, xpub, path]) => {
   if (xpub) {
     payload = {
       xpub: xpub.trim(),
-      derivationPath: path ?? undefined,
+      derivationPath: path?.replace(/'/g, '').replace(/\/$/, '') ?? undefined,
       xpubType: getKeyType(prefix as XpubPrefix),
     };
   }
   updateXpub(payload);
-});
-
-onMounted(() => {
-  const payload = get(xpub);
-  set(xpubKey, payload?.xpub || '');
-  const prefix = getPrefix(payload?.xpubType);
-  if (prefix !== XpubPrefix.XPUB)
-    set(xpubKeyPrefix, prefix);
-
-  set(derivationPath, payload?.derivationPath);
 });
 
 defineExpose({
@@ -148,7 +139,7 @@ defineExpose({
 </script>
 
 <template>
-  <div class="mt-2">
+  <div class="mt-2 flex flex-col gap-4">
     <div class="flex gap-4">
       <RuiMenuSelect
         v-model="xpubKeyPrefix"

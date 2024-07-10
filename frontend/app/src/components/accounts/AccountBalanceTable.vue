@@ -120,6 +120,15 @@ const rows = computed<Account[]>(() => get(balances).filter(({ groupHeader, tags
   };
 }));
 
+const emptyGroups = computed<Account[]>(() => {
+  const data = get(balances);
+  const groupIds = data.filter(item => !item.groupHeader).map(item => item.groupId).filter(uniqueStrings);
+  return data.filter(item => item.groupHeader && !groupIds.includes(item.groupId)).map(item => ({
+    ...item,
+    identifier: getAccountId(item),
+  }));
+});
+
 const total = computed<Balance>(() => {
   const rowsVal = get(rows);
   const amount = bigNumberSum(rowsVal.map(({ amount }) => amount));
@@ -378,7 +387,25 @@ function expand(row: Account) {
       />
     </template>
     <template
-      v-if="isEth2"
+      v-if="emptyGroups.length > 0"
+      #body.prepend
+    >
+      <tr
+        v-for="group in emptyGroups"
+        :key="group.identifier"
+      >
+        <AccountGroupHeader
+          :group="group.identifier"
+          :items="[group]"
+          :expanded="false"
+          :loading="loading"
+          @delete="emit('delete-xpub', $event)"
+          @edit="editClick($event)"
+        />
+      </tr>
+    </template>
+    <template
+      v-else-if="isEth2"
       #body.prepend="{ colspan }"
     >
       <Eth2ValidatorLimitRow :colspan="colspan" />
