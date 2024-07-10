@@ -5,11 +5,11 @@ import { handleResponse, validStatus } from '@/services/utils';
 import { type EvmRpcNode, EvmRpcNodeList } from '@/types/settings/rpc';
 import type { ActionResult } from '@rotki/common/lib/data';
 
-export function useEvmNodesApi(chain: Blockchain = Blockchain.ETH) {
-  const url = `/blockchains/${chain}/nodes`;
+export function useEvmNodesApi(chain: Ref<Blockchain> = ref(Blockchain.ETH)) {
+  const url = computed<string>(() => `/blockchains/${get(chain)}/nodes`);
 
   const fetchEvmNodes = async (): Promise<EvmRpcNodeList> => {
-    const response = await api.instance.get<ActionResult<EvmRpcNodeList>>(url);
+    const response = await api.instance.get<ActionResult<EvmRpcNodeList>>(get(url));
     return EvmRpcNodeList.parse(handleResponse(response));
   };
 
@@ -17,7 +17,7 @@ export function useEvmNodesApi(chain: Blockchain = Blockchain.ETH) {
     node: Omit<EvmRpcNode, 'identifier'>,
   ): Promise<boolean> => {
     const response = await api.instance.put<ActionResult<boolean>>(
-      url,
+      get(url),
       snakeCaseTransformer(node),
       {
         validateStatus: validStatus,
@@ -28,7 +28,7 @@ export function useEvmNodesApi(chain: Blockchain = Blockchain.ETH) {
 
   const editEvmNode = async (node: EvmRpcNode): Promise<boolean> => {
     const response = await api.instance.patch<ActionResult<boolean>>(
-      url,
+      get(url),
       snakeCaseTransformer(node),
       {
         validateStatus: validStatus,
@@ -38,7 +38,7 @@ export function useEvmNodesApi(chain: Blockchain = Blockchain.ETH) {
   };
 
   const deleteEvmNode = async (identifier: number): Promise<boolean> => {
-    const response = await api.instance.delete<ActionResult<boolean>>(url, {
+    const response = await api.instance.delete<ActionResult<boolean>>(get(url), {
       data: snakeCaseTransformer({ identifier }),
       validateStatus: validStatus,
     });

@@ -491,7 +491,6 @@ declare global {
   const useEventsQueryStatus: typeof import('./composables/history/events/query-status/events-query-status')['useEventsQueryStatus']
   const useEventsQueryStatusStore: typeof import('./store/history/query-status/events-query-status')['useEventsQueryStatusStore']
   const useEvmNodesApi: typeof import('./composables/api/settings/evm-nodes-api')['useEvmNodesApi']
-  const useEvmRpcNodeForm: typeof import('./composables/settings/general/rpc/form')['useEvmRpcNodeForm']
   const useExchangeApi: typeof import('./composables/api/balances/exchanges')['useExchangeApi']
   const useExchangeApiKeysForm: typeof import('./composables/settings/api-keys/exchanges/form')['useExchangeApiKeysForm']
   const useExchangeBalancesStore: typeof import('./store/balances/exchanges')['useExchangeBalancesStore']
@@ -869,7 +868,6 @@ declare module 'vue' {
     readonly defineComponent: UnwrapRef<typeof import('vue')['defineComponent']>
     readonly defineStore: UnwrapRef<typeof import('pinia')['defineStore']>
     readonly deleteBackendUrl: UnwrapRef<typeof import('./utils/account-management')['deleteBackendUrl']>
-    readonly disposeEvmRpcNodeComposables: UnwrapRef<typeof import('./composables/settings/general/rpc/form')['disposeEvmRpcNodeComposables']>
     readonly downloadFileByBlobResponse: UnwrapRef<typeof import('./utils/download')['downloadFileByBlobResponse']>
     readonly downloadFileByTextContent: UnwrapRef<typeof import('./utils/download')['downloadFileByTextContent']>
     readonly downloadFileByUrl: UnwrapRef<typeof import('./utils/download')['downloadFileByUrl']>
@@ -1258,7 +1256,6 @@ declare module 'vue' {
     readonly useEventsQueryStatus: UnwrapRef<typeof import('./composables/history/events/query-status/events-query-status')['useEventsQueryStatus']>
     readonly useEventsQueryStatusStore: UnwrapRef<typeof import('./store/history/query-status/events-query-status')['useEventsQueryStatusStore']>
     readonly useEvmNodesApi: UnwrapRef<typeof import('./composables/api/settings/evm-nodes-api')['useEvmNodesApi']>
-    readonly useEvmRpcNodeForm: UnwrapRef<typeof import('./composables/settings/general/rpc/form')['useEvmRpcNodeForm']>
     readonly useExchangeApi: UnwrapRef<typeof import('./composables/api/balances/exchanges')['useExchangeApi']>
     readonly useExchangeApiKeysForm: UnwrapRef<typeof import('./composables/settings/api-keys/exchanges/form')['useExchangeApiKeysForm']>
     readonly useExchangeBalancesStore: UnwrapRef<typeof import('./store/balances/exchanges')['useExchangeBalancesStore']>
@@ -1625,7 +1622,6 @@ declare module '@vue/runtime-core' {
     readonly defineComponent: UnwrapRef<typeof import('vue')['defineComponent']>
     readonly defineStore: UnwrapRef<typeof import('pinia')['defineStore']>
     readonly deleteBackendUrl: UnwrapRef<typeof import('./utils/account-management')['deleteBackendUrl']>
-    readonly disposeEvmRpcNodeComposables: UnwrapRef<typeof import('./composables/settings/general/rpc/form')['disposeEvmRpcNodeComposables']>
     readonly downloadFileByBlobResponse: UnwrapRef<typeof import('./utils/download')['downloadFileByBlobResponse']>
     readonly downloadFileByTextContent: UnwrapRef<typeof import('./utils/download')['downloadFileByTextContent']>
     readonly downloadFileByUrl: UnwrapRef<typeof import('./utils/download')['downloadFileByUrl']>
@@ -2014,7 +2010,6 @@ declare module '@vue/runtime-core' {
     readonly useEventsQueryStatus: UnwrapRef<typeof import('./composables/history/events/query-status/events-query-status')['useEventsQueryStatus']>
     readonly useEventsQueryStatusStore: UnwrapRef<typeof import('./store/history/query-status/events-query-status')['useEventsQueryStatusStore']>
     readonly useEvmNodesApi: UnwrapRef<typeof import('./composables/api/settings/evm-nodes-api')['useEvmNodesApi']>
-    readonly useEvmRpcNodeForm: UnwrapRef<typeof import('./composables/settings/general/rpc/form')['useEvmRpcNodeForm']>
     readonly useExchangeApi: UnwrapRef<typeof import('./composables/api/balances/exchanges')['useExchangeApi']>
     readonly useExchangeApiKeysForm: UnwrapRef<typeof import('./composables/settings/api-keys/exchanges/form')['useExchangeApiKeysForm']>
     readonly useExchangeBalancesStore: UnwrapRef<typeof import('./store/balances/exchanges')['useExchangeBalancesStore']>
