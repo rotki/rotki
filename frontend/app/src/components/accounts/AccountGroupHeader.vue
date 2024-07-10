@@ -44,6 +44,8 @@ const amountSum = computed<BigNumber>(() =>
   bigNumberSum(get(items).map(({ amount }) => amount)),
 );
 
+const totalAddresses = computed(() => get(items).filter(item => !item.groupHeader).length);
+
 const usdSum = computed<BigNumber>(() => balanceUsdValueSum(get(items)));
 </script>
 
@@ -60,12 +62,9 @@ const usdSum = computed<BigNumber>(() => balanceUsdValueSum(get(items)));
       colspan="2"
       class="!p-2"
     >
-      <div class="pl-10">
-        <span class="text-subtitle-2">{{ label }}</span>
-      </div>
-      <div class="flex items-center gap-2 -my-2 text-sm">
+      <div class="flex items-center gap-4">
         <RuiButton
-          :disabled="items.length === 0"
+          :disabled="totalAddresses === 0"
           variant="text"
           size="sm"
           icon
@@ -80,55 +79,60 @@ const usdSum = computed<BigNumber>(() => balanceUsdValueSum(get(items)));
             name="arrow-down-s-line"
           />
         </RuiButton>
-
-        <div class="font-medium">
-          {{ t('account_group_header.xpub') }}
-        </div>
-        <div
-          class="[&_*]:font-mono"
-          :class="{ blur: !shouldShowAmount }"
-        >
-          <RuiTooltip
-            :popper="{ placement: 'top' }"
-            :open-delay="400"
-            tooltip-class="[&_*]:font-mono"
+        <div>
+          <div class="text-subtitle-2">
+            {{ label }}
+          </div>
+          <div class="flex items-center gap-2 -my-2 text-sm">
+            <div class="font-medium">
+              {{ t('account_group_header.xpub') }}
+            </div>
+            <div
+              class="[&_*]:font-mono"
+              :class="{ blur: !shouldShowAmount }"
+            >
+              <RuiTooltip
+                :popper="{ placement: 'top' }"
+                :open-delay="400"
+                tooltip-class="[&_*]:font-mono"
+              >
+                <template #activator>
+                  {{ displayXpub }}
+                </template>
+                {{ xpub.data.xpub }}
+              </RuiTooltip>
+            </div>
+            <CopyButton
+              :value="xpub.data.xpub"
+              :tooltip="t('account_group_header.copy_tooltip')"
+            />
+            <RuiTooltip>
+              <template #activator>
+                <RuiChip size="sm">
+                  {{ totalAddresses }}
+                </RuiChip>
+              </template>
+              {{ t('account_group_header.addresses', { count: totalAddresses }) }}
+            </RuiTooltip>
+          </div>
+          <div
+            v-if="xpub.data.derivationPath"
+            class="text-sm"
+            :class="{ blur: !shouldShowAmount }"
           >
-            <template #activator>
-              {{ displayXpub }}
-            </template>
-            {{ xpub.data.xpub }}
-          </RuiTooltip>
+            <span class="font-medium">
+              {{ t('account_group_header.derivation_path') }}:
+            </span>
+            <span class="font-mono">
+              {{ xpub.data.derivationPath }}
+            </span>
+          </div>
+          <TagDisplay
+            small
+            :tags="xpubTags"
+          />
         </div>
-        <CopyButton
-          :value="xpub.data.xpub"
-          :tooltip="t('account_group_header.copy_tooltip')"
-        />
-        <RuiTooltip>
-          <template #activator>
-            <RuiChip size="sm">
-              {{ items.length }}
-            </RuiChip>
-          </template>
-          {{ t('account_group_header.addresses', { count: items.length }) }}
-        </RuiTooltip>
       </div>
-      <div
-        v-if="xpub.data.derivationPath"
-        class="text-sm ml-10"
-        :class="{ blur: !shouldShowAmount }"
-      >
-        <span class="font-medium">
-          {{ t('account_group_header.derivation_path') }}:
-        </span>
-        <span class="font-mono">
-          {{ xpub.data.derivationPath }}
-        </span>
-      </div>
-      <TagDisplay
-        small
-        wrapper-class="ml-10"
-        :tags="xpubTags"
-      />
     </td>
     <td class="text-end px-4">
       <AmountDisplay
