@@ -35,6 +35,7 @@ export function defaultGeneralSettings(mainCurrency: Currency): GeneralSettings 
     autoDeleteCalendarEntries: true,
     autoCreateCalendarReminders: true,
     askUserUponSizeDiscrepancy: true,
+    autoDetectTokens: true,
   };
 }
 
