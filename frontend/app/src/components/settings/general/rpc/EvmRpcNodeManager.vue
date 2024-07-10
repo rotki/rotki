@@ -3,6 +3,7 @@ import { camelCase } from 'lodash-es';
 import {
   type EvmRpcNode,
   type EvmRpcNodeList,
+  type EvmRpcNodeManageState,
   getPlaceholderNode,
 } from '@/types/settings/rpc';
 import type { Blockchain } from '@rotki/common/lib/blockchain';
@@ -16,17 +17,13 @@ const { t } = useI18n();
 const { chain } = toRefs(props);
 
 const nodes = ref<EvmRpcNodeList>([]);
-const editMode = ref(false);
-const selectedNode = ref<EvmRpcNode>(getPlaceholderNode(get(chain)));
+const state = ref<EvmRpcNodeManageState>();
 
 const { notify } = useNotificationsStore();
 const { setMessage } = useMessageStore();
 
-const { setOpenDialog, closeDialog, setPostSubmitFunc }
-  = useEvmRpcNodeForm(chain);
-
 const { connectedNodes } = storeToRefs(usePeriodicStore());
-const api = useEvmNodesApi(get(chain));
+const api = useEvmNodesApi(chain);
 const { getEvmChainName, getChainName } = useSupportedChains();
 
 const chainName = computed(() => get(getChainName(chain)));
@@ -45,25 +42,18 @@ async function loadNodes(): Promise<void> {
   }
 }
 
-onMounted(async () => {
-  await loadNodes();
-});
-
-function resetForm() {
-  closeDialog();
-  set(selectedNode, getPlaceholderNode(get(chain)));
-  set(editMode, false);
+function editRpcNode(node: EvmRpcNode) {
+  set(state, {
+    mode: 'edit',
+    node,
+  });
 }
 
-setPostSubmitFunc(async () => {
-  await loadNodes();
-  resetForm();
-});
-
-function edit(item: EvmRpcNode) {
-  setOpenDialog(true);
-  set(selectedNode, item);
-  set(editMode, true);
+function addNewRpcNode() {
+  set(state, {
+    mode: 'add',
+    node: getPlaceholderNode(get(chain)),
+  });
 }
 
 async function deleteNode(node: EvmRpcNode) {
@@ -130,8 +120,8 @@ function showDeleteConfirmation(item: EvmRpcNode) {
   );
 }
 
-onUnmounted(() => {
-  disposeEvmRpcNodeComposables();
+onMounted(async () => {
+  await loadNodes();
 });
 </script>
 
@@ -251,7 +241,7 @@ onUnmounted(() => {
               :delete-tooltip="t('evm_rpc_node_manager.delete_tooltip')"
               :delete-disabled="isEtherscan(item)"
               :edit-tooltip="t('evm_rpc_node_manager.edit_tooltip')"
-              @edit-click="edit(item)"
+              @edit-click="editRpcNode(item)"
               @delete-click="showDeleteConfirmation(item)"
             />
           </div>
@@ -259,12 +249,8 @@ onUnmounted(() => {
       </div>
 
       <EvmRpcNodeFormDialog
-        v-model="selectedNode"
-        :chain="chain"
-        :chain-name="chainName"
-        :edit-mode="editMode"
-        :is-etherscan="editMode && isEtherscan(selectedNode)"
-        @reset="resetForm()"
+        v-model="state"
+        @complete="loadNodes()"
       />
     </RuiCard>
 
@@ -272,7 +258,7 @@ onUnmounted(() => {
       class="mt-8"
       color="primary"
       data-cy="add-node"
-      @click="setOpenDialog(true)"
+      @click="addNewRpcNode()"
     >
       {{ t('evm_rpc_node_manager.add_button') }}
     </RuiButton>

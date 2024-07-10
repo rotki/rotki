@@ -1,58 +1,133 @@
 <script setup lang="ts">
-import type { Blockchain } from '@rotki/common/lib/blockchain';
-import type { EvmRpcNode } from '@/types/settings/rpc';
+import { omit } from 'lodash-es';
+import { Blockchain } from '@rotki/common/lib/blockchain';
+import { ApiValidationError } from '@/types/api/errors';
+import { isBlockchain } from '@/types/blockchain/chains';
+import EvmRpcNodeForm from '@/components/settings/general/rpc/EvmRpcNodeForm.vue';
+import type { EvmRpcNodeManageState } from '@/types/settings/rpc';
 
 const props = defineProps<{
-  value: EvmRpcNode;
-  chain: Blockchain;
-  chainName: string;
-  isEtherscan: boolean;
-  editMode: boolean;
+  value: EvmRpcNodeManageState | undefined;
 }>();
 
 const emit = defineEmits<{
-  (e: 'input', newInput: Partial<EvmRpcNode>): void;
-  (e: 'reset'): void;
+  (e: 'input', value: EvmRpcNodeManageState | undefined): void;
+  (e: 'complete'): void;
 }>();
 
-const { editMode, chainName, chain } = toRefs(props);
-
 function resetForm() {
-  emit('reset');
+  emit('input', undefined);
 }
-
-const { openDialog, submitting, trySubmit } = useEvmRpcNodeForm(chain);
 
 const { t } = useI18n();
 
+const model = useSimpleVModel(props, emit);
+const errorMessages = ref<Record<string, string[] | string>>({});
+const submitting = ref<boolean>(false);
+const form = ref<InstanceType<typeof EvmRpcNodeForm>>();
+
+const { getChainName } = useSupportedChains();
+
+const chain = computed<Blockchain>(() => {
+  const blockchain = get(model)?.node.blockchain;
+  if (!blockchain || !isBlockchain(blockchain))
+    return Blockchain.ETH;
+
+  return blockchain;
+});
+
+const chainName = computed(() => {
+  const chain = props.value?.node.blockchain;
+  return chain ? get(getChainName(get(chain))) : '';
+});
+
 const dialogTitle = computed(() => {
-  if (get(editMode)) {
+  const state = get(model);
+  if (state?.mode === 'edit') {
     return t('evm_rpc_node_manager.edit_dialog.title', {
-      chain: get(chainName),
+      chain: state?.node.blockchain,
     });
   }
-  return t('evm_rpc_node_manager.add_dialog.title', { chain: get(chainName) });
+  return t('evm_rpc_node_manager.add_dialog.title', { chain: state?.node.blockchain });
 });
+
+const api = useEvmNodesApi(chain);
+const { setMessage } = useMessageStore();
+
+async function save() {
+  if (!await get(form)?.validate())
+    return;
+
+  const state = get(model);
+  assert(state);
+
+  const editing = state.mode === 'edit';
+  const node = state.node;
+
+  set(submitting, true);
+  try {
+    if (editing)
+      await api.editEvmNode(node);
+    else
+      await api.addEvmNode(omit(node, 'identifier'));
+    resetForm();
+    emit('complete');
+  }
+  catch (error: any) {
+    const chainProp = get(chainName);
+    const errorTitle = editing
+      ? t('evm_rpc_node_manager.edit_error.title', { chain: chainProp })
+      : t('evm_rpc_node_manager.add_error.title', { chain: chainProp });
+
+    if (error instanceof ApiValidationError) {
+      const messages = error.errors;
+
+      set(errorMessages, messages);
+
+      const keys = Object.keys(messages);
+      const knownKeys = Object.keys(node);
+      const unknownKeys = keys.filter(key => !knownKeys.includes(key));
+
+      if (unknownKeys.length > 0) {
+        setMessage({
+          title: errorTitle,
+          description: unknownKeys
+            .map(key => `${key}: ${messages[key]}`)
+            .join(', '),
+          success: false,
+        });
+      }
+    }
+    else {
+      setMessage({
+        title: errorTitle,
+        description: error.message,
+        success: false,
+      });
+    }
+  }
+  finally {
+    set(submitting, false);
+  }
+}
 </script>
 
 <template>
   <BigDialog
-    :display="openDialog"
+    :display="!!value"
     :title="dialogTitle"
     :primary-action="t('common.actions.save')"
     :secondary-action="t('common.actions.cancel')"
     :loading="submitting"
     :retain-focus="false"
-    @confirm="trySubmit()"
+    @confirm="save()"
     @cancel="resetForm()"
   >
     <EvmRpcNodeForm
-      :value="value"
-      :chain="chain"
-      :chain-name="chainName"
-      :edit-mode="editMode"
-      :is-etherscan="isEtherscan"
-      @input="emit('input', $event)"
+      v-if="model"
+      ref="form"
+      v-model="model"
+      :error-messages.sync="errorMessages"
     />
   </BigDialog>
 </template>
