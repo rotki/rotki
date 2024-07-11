@@ -157,7 +157,7 @@ watch([y, selectedTab, selectedNotifications], ([currentY, currSelectedTab, curr
                 :key="item"
                 size="sm"
                 class="!min-w-0"
-                :tab-value="item"
+                :value="item"
               >
                 {{ tabCategoriesLabel[item] }}
               </RuiTab>
