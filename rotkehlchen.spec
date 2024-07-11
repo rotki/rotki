@@ -59,7 +59,7 @@ for exchange_name in SUPPORTED_EXCHANGES:
     hiddenimports.append(f'rotkehlchen.exchanges.{exchange_name}')
 
 for chain in EVM_CHAINS_WITH_TRANSACTIONS:  # load modules from the evm chains
-    hiddenimports.extend(collect_submodules(f'rotkehlchen.chain.{chain.serialize()}.modules'))
+    hiddenimports.extend(collect_submodules(f'rotkehlchen.chain.{chain.name.lower()}.modules'))
 
 a = Entrypoint(
     'rotkehlchen',
