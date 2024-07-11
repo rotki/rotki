@@ -49,6 +49,7 @@ const { t } = useI18n();
     :open-delay="400"
     :disabled="!truncate"
     class="flex items-center flex-nowrap"
+    tooltip-class="[&_*]:font-mono"
   >
     <template #activator>
       <div
@@ -87,7 +88,7 @@ const { t } = useI18n();
 
       <div
         :class="{ blur: !shouldShowAmount }"
-        class="text-no-wrap"
+        class="text-no-wrap [&_*]:font-mono text-xs"
       >
         <div v-if="aliasName">
           {{ aliasName }}
