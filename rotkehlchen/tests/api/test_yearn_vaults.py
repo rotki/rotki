@@ -48,6 +48,7 @@ def test_query_yearn_vault_balances(rotkehlchen_api_server):
         assert FVal(vault['underlying_value']['usd_value']) > ZERO
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_V2_ACC2]])
 @pytest.mark.parametrize('ethereum_modules', [['yearn_vaults_v2']])
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])

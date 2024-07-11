@@ -12,6 +12,7 @@ from freezegun import freeze_time
 from rotkehlchen.assets.asset import Asset, CustomAsset, EvmToken, FiatAsset, UnderlyingToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.decoding.curve.constants import CURVE_CHAIN_ID
 from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
     CurvePoolData,
@@ -19,7 +20,7 @@ from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
     query_curve_data,
     save_curve_data_to_cache,
 )
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import NodeName, string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_1INCH,
@@ -62,6 +63,7 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EvmTokenKind,
     Price,
+    SupportedBlockchain,
     Timestamp,
 )
 from rotkehlchen.utils.misc import ts_now
@@ -764,3 +766,20 @@ def test_usd_price(inquirer: Inquirer, globaldb: GlobalDBHandler):
     ):
         price = inquirer.find_usd_price(token)
         assert price != ZERO
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('network_mocking', [False])
+def test_connect_rpc_with_hex_chainid(ethereum_inquirer: EthereumInquirer):
+    """Test that connecting to an RPC that returns the chain id as an hex value
+    instead of an integer works correcly
+    """
+    success, msg = ethereum_inquirer.attempt_connect(
+        node=NodeName(
+            name='reth',
+            endpoint='https://eth.merkle.io',
+            owned=True,
+            blockchain=SupportedBlockchain.ETHEREUM,
+        ),
+    )
+    assert success is True and msg == ''

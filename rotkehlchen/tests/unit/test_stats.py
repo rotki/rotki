@@ -108,7 +108,7 @@ def test_compound_events_stats(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [TEST_ACCOUNTS])
-def test_liquity_tcr(ethereum_inquirer: 'EthereumInquirer'):
+def test_liquity_tcr_non_exact_int(ethereum_inquirer: 'EthereumInquirer'):
     liquity = Liquity(
         ethereum_inquirer=ethereum_inquirer,
         database=ethereum_inquirer.database,
