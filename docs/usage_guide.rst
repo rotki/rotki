@@ -9,36 +9,39 @@ Rotki Usage Guide
 Introduction
 *************
 
-In this section we are going to see how to use various parts of the rotki application.
+In this section, we are going to see how to use various parts of the rotki application.
 
 
 First time sign-up
 ====================
 
-When you start rotki you are greeted with a sign-in/signup prompt. Rotki is a local app and the user will exist only in your local system. The account used in `rotki.com <https://rotki.com/>`__ doesn't exist locally and is used only to manage your payments for the premium subscription.
+When you start rotki, you'll see a sign-in/signup prompt. Rotki is a local app, so your account only exists on your local system. Your account on `rotki.com <https://rotki.com/>`__ doesn't exist locally and is only for managing premium subscription payments.
 
 .. image:: images/rotki_login_screen.png
    :alt: Creating a new account
    :align: center
 
 
-For creating a local account press **Create Account**. If you already have a premium subscription, you can choose to associate this local account with your premium subscription via the use of api keys.
+To create a local account, press **Create Account**. If you already have a premium subscription, you can link this local account with your premium subscription using the API keys.
 
-If you want to restore an account using premium sync during the account creation, then you can **Enable premium**,
-and enable **Restore synced database** (:ref:`restore_backup_premium`), insert your **API Key** and the **secret** here. Api key and secret can be found in your account page at `rotki.com <https://rotki.com/>`__ .
+To restore an account with premium sync during account creation:
 
-Then you can click **Continue** button.
+1. **Enable premium**.
+2. Enable **Restore synced database**.
+3. Enter your **API Key** and **Secret** (found on your account page at `rotki.com <https://rotki.com/>`__).
+
+Then click **Continue**.
 
 .. image:: images/rotki_create_account_enable_sync.png
    :alt: Enable premium sync
    :align: center
 
-You have to provide a profile name and a password:
+Next, provide a profile name and a password:
 
-  - **Profile Name**: it is just an identifier for your database. This is the local user. It **doesn't** need to match any previous username or the username of your premium subscription at `rotki.com <https://rotki.com/>`__ .
+  - **Profile Name**: An identifier for your local database. It **doesn’t** need to match any previous username or your premium subscription username on `rotki.com <https://rotki.com/>`__ .
   - **Password**: :red:`Do not forget this password`. It is used to encrypt all your local files.
 
-For a completely new account, premium API key and secret can be added either using the prompt provided or using :ref:`set-up-rotki-premium`
+For a completely new account, you can add the premium API key and secret using the prompt provided or using :ref:`set-up-rotki-premium`
 after logging in with the new account.
 
 .. image:: images/rotki_create_account.png
@@ -53,24 +56,40 @@ All accounts are created in the rotki directory, see the section :ref:`rotki_dat
 Create a new account that restores a backed up database (premium user only)
 =============================================================================
 
-You may need to move the rotki database to a new device, for example after your old one was destroyed and left no backups. Normally you can do that manually, so long as you keep backups (which is something you should always do!). But as a premium user, you can restore the encrypted database that is backed up at the `rotki.com <https://rotki.com/>`__ server.
-To do that you must follow the instructions described in the previous section, add the **API key/secret** and :red:`use the same password` that you were using for the local user of that database. If the password is not the same, opening the database will fail. Do not use the password of your `rotki.com <https://rotki.com/>`__ account here.
+If you need to move the rotki database to a new device, for example after your old one was destroyed and left no backups. Normally you can do that manually, so long as you keep backups (which is something you should always do!). But as a premium user, you can also restore the encrypted database that is backed up at the `rotki.com <https://rotki.com/>`__ server.
+
+Steps to Restore:
+
+1. **Follow Instructions**: Refer to the instructions in the previous section.
+2. **API Key/Secret**: Add your API key/secret.
+3. **Password**: Use the same password as your local user database. Do not use your `rotki.com <https://rotki.com/>`__ account password.
+
+.. warning::
+    If the password is not the same, the database won't open.
 
 .. image:: images/rotki_premium_signup_failed.png
    :alt: Sign-up with existing premium subscription using a wrong password
    :align: center
 
-See the section :ref:`sync-data-with-rotki-server` to know more about how the premium subscription will behave with multiple accounts/devices and how to sync your data with rotki Server (this option is disabled by default).
+Refer to the :ref:`sync-data-with-rotki-server` section to understand how the premium subscription works with multiple devices and how to sync your data with the rotki server. Syncing is disabled by default.
 
-Keep in mind that syncing only involves the user database, and not the global database. The global database keeps all assets data, global addressook for names and historical prices. It is highly recommended to also manually move it. It is located in the :ref:`rotki_data_directory`.
+**Important Consideration:**
 
-Another alternative instead of moving the entire global DB is to use the :ref:`export-import-user-assets` function.
+- **User Database vs. Global Database**: Syncing only involves the user database, not the global database.
+- **Global Database**: Contains all assets data, global address book for names, and historical prices. It’s recommended to manually move this database as well. It is located in the :ref:`rotki_data_directory`.
+
+Alternatively, you can use the :ref:`export-import-user-assets` function instead of moving the entire global database.
 
 
 Use an account from a different installation
 =============================================
 
-If you want to move your data to another system or want to restore it then you will need to do some manual steps. First identify the :ref:`rotki_data_directory` in both the source and the destination system. Then move the entire data directory from the source system to the destination system and make sure that the same rotki version is used in both systems.
+To move your data to another system or restore it:
+
+1. Identify the :ref:`rotki_data_directory` on both the source and destination systems.
+2. Move the entire data directory from the source system to the destination system.
+3. Ensure both systems use the same version of rotki.
+
 
 Sign-in
 =========
@@ -111,7 +130,10 @@ Bear in mind that in case of using multiple accounts/devices with the data sync 
    :alt: Replace local database with remote backup
    :align: center
 
-You can manually move the global DB that contains the assets from one system to the other too. Find the :ref:`rotki_data_directory` in the source system. Assuming it's linux it will be :file:`~/.local/share/rotki/data`. The global db is then :file:`~/.local/share/rotki/data/global/global.db`. Manually move it to the equivalent location in the new system.
+You can also manually move the global database containing assets from one system to another:
+
+1. Locate the :ref:`rotki_data_directory` on the source system.
+2. The global database is located at ``/global/global.db`` under the data directory above. Move it to the equivalent location on the new system.
 
 .. image:: images/rotki_premium_manual_db_sync.png
    :alt: Manual DB sync
@@ -191,6 +213,11 @@ Balance data saving frequency
 
 Set how often (in hours) the data of all balances will be saved. This data is used to calculate statistics and other historical data to show to the user.
 
+Auto detect tokens
+^^^^^^^^^^^^^^^^^^
+
+Enable a periodic task that automatically detects tokens and refreshes balances by checking the history events.
+
 Date display format
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -262,9 +289,9 @@ This setting modifies the rounding mechanism choosing from ``Round up``, ``Round
 RPC node setting
 ^^^^^^^^^^^^^^^^
 
-This setting allows you to modify the nodes that will be queried to interact with the blockchains. We provide a list of public nodes but sometimes they are not available or are overloaded. You can see either a green or a red icon near each node that shows its connection status. This is why it is a good idea to have more nodes just in case and to have the possibility to customize the priority with which they are queried.
-When making queries we always give preference to your own nodes if you have any and then add a small list of randomly selected open nodes in case they are needed. If you don't have your own node then the open nodes are always selected. The weight of the node sets the probability
-of picking it and is represented by a percentage. From that list it is also possible to mark them as active or inactive by using the toggle button.
+This setting allows you to modify the nodes queried to interact with blockchains. We provide a list of public nodes, but they may be unavailable or overloaded at times. Each node has a green or red icon indicating its connection status. To ensure reliability, you can add more nodes and customize their query priority.
+
+When making queries, we prioritize your own nodes if available and supplement with a few randomly selected public nodes. If you don’t have your own node, public nodes are always used. The probability of selecting a node is determined by its weight, represented as a percentage. You can also mark nodes as active or inactive using the toggle button.
 
 .. image:: images/rotki_nodes_management.png
    :alt: Customizing the app's connection to EVM nodes
@@ -732,6 +759,7 @@ Currently supported exchanges are:
 - OKX
 - Woo
 - Bybit
+- HTX
 
 To do so you have to go to your exchange and create an API key (see the section :ref:`api-key-permissions`).
 
@@ -785,9 +813,8 @@ When inputting the API key for Kraken, you need to specify the type of your Krak
 Binance / Binance US
 -----------------------------
 
-Binance API is engineered in a way that makes it really slow to query information for trades since every possible market pair has to be queried. This process can also fail since many requests have to be made to binance servers and rate limits may apply.
-To avoid having to query all existing trade pairs, it is possible to select what markets should be queried. This will considerably increase the speed as the amount of queries to binance will be reduced to only the markets you specify.
-To select which markets you want to query edit your binance exchange instance
+To improve the speed of querying trade information using the Binance API, you can specify which market pairs to query instead of querying all possible pairs. This reduces the number of requests made to Binance servers, avoiding potential rate limits and failures. To select specific markets, edit your Binance exchange instance configuration.
+
 
 .. image:: images/exchanges_edit_binance.png
    :alt: Edit binance in the exchanges section
@@ -820,7 +847,7 @@ At the moment there is no compulsory API key. But if you don't use your own node
 Loopring balances
 -----------------
 
-To have your loopring balances detected you will need an API Key from loopring. To get one visit `https://loopring.io/#/layer2/security <https://loopring.io/#/layer2/security>`_ and unlock your account. In the list of options you need to click in **Export Account**
+To have your loopring balances detected you will need an API Key from loopring. To get one visit `https://loopring.io/#/layer2/security <https://loopring.io/#/layer2/security>`_ and unlock your account. In the list of options you need to click in **Export Account**.
 
 .. image:: images/get_loopring_keys.png
    :alt: Get loopring keys
@@ -1009,19 +1036,6 @@ To manage Accounts & Balances (Blockchain Balances, Exchange Balances, and Manua
    :align: center
 
 
-Adding Manual Balances
-==================================
-
-With rotki you can also add balances/accounts for any type of asset and location that may not be supported at the moment. For example real estate, equity holdings or holdings in a not yet supported blockchain or exchange.
-
-To add or modify a manually tracked balance navigate to the :menuselection:`Manual Balances` sub-page and click the "Add Manual Balance" button on the top right.
-There choose the asset from the dropdown menu, input a unique label for the account, decorate it with any number of tags and choose an amount and location.
-
-.. image:: images/sc_manually_tracked_balances.png
-   :alt: The manually tracked balances
-   :align: center
-
-
 Adding and Removing Blockchain Accounts
 ============================================
 
@@ -1125,6 +1139,21 @@ You can check all of the asset balances that you have in each connected exchange
    :align: center
 
 
+Adding Manual Balances
+==================================
+
+With rotki you can also add balances/accounts for any type of asset and location that may not be supported at the moment. For example real estate, equity holdings or holdings in a not yet supported blockchain or exchange.
+
+To add or modify a manually tracked balance navigate to the :menuselection:`Manual Balances` sub-page and click the "Add Manual Balance" button on the top right.
+There choose the asset from the dropdown menu, input a unique label for the account, decorate it with any number of tags and choose an amount and location.
+
+You can also filter the manual balances by `location`, `name` or `asset`.
+
+.. image:: images/sc_manually_tracked_balances.png
+   :alt: The manually tracked balances
+   :align: center
+
+
 Adding/Editing Labels and tags
 ==============================
 
@@ -1188,13 +1217,13 @@ More details here `<https://medium.com/@alxlpsc/critical-privacy-vulnerability-g
    :alt: NFT Image Render Settings Toggle
    :align: center
 
-the configuration menu:
+The configuration menu:
 
 .. image:: images/sc_nf_image_render_settings.png
    :alt: NFT Image Render Settings
    :align: center
 
-highlight details:
+Highlight details:
 
 1. Link to blog post about image rendering and privacy.
 2. Option to allow all NFT images to be rendered.
