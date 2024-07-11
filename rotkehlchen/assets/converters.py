@@ -453,6 +453,20 @@ def asset_from_htx(htx_name: str) -> AssetWithOracles:
     ))
 
 
+def asset_from_bitcoinde(bitcoinde: str) -> AssetWithOracles:
+    """May raise:
+    - DeserializationError
+    - UnsupportedAsset
+    - UnknownAsset
+    """
+    bitcoinde = bitcoinde.upper()
+    return symbol_to_asset_or_token(GlobalDBHandler.get_assetid_from_exchange_name(
+        exchange=Location.BITCOINDE,
+        symbol=bitcoinde,
+        default=bitcoinde,
+    ))
+
+
 LOCATION_TO_ASSET_MAPPING: dict[Location, Callable[[str], AssetWithOracles]] = {
     Location.BINANCE: asset_from_binance,
     Location.CRYPTOCOM: asset_from_cryptocom,
@@ -469,5 +483,6 @@ LOCATION_TO_ASSET_MAPPING: dict[Location, Callable[[str], AssetWithOracles]] = {
     Location.OKX: asset_from_okx,
     Location.WOO: asset_from_woo,
     Location.HTX: asset_from_htx,
+    Location.BITCOINDE: asset_from_bitcoinde,
     Location.EXTERNAL: asset_from_common_identifier,
 }

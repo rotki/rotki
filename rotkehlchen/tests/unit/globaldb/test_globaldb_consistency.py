@@ -9,7 +9,6 @@ from warnings import warn
 import pytest
 
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.constants.misc import GLOBALDIR_NAME, ONE
 from rotkehlchen.db.constants import UpdateType
 from rotkehlchen.db.updates import RotkiDataUpdater
@@ -47,7 +46,6 @@ IGNORED_PROTOCOLS: Final = {
     AERODROME_POOL_PROTOCOL,
     PICKLE_JAR_PROTOCOL,
     SPAM_PROTOCOL,
-    CPT_AAVE_V3,
     GEARBOX_PROTOCOL,
 }
 
@@ -107,7 +105,7 @@ def test_asset_updates_consistency_with_packaged_db(
         globaldb.packaged_db_conn().read_ctx() as packaged_db_cursor,
     ):
         assert old_db_cursor.execute('SELECT value FROM settings WHERE name="assets_version"').fetchone()[0] == '15'  # noqa: E501
-        assert packaged_db_cursor.execute('SELECT value FROM settings WHERE name="assets_version"').fetchone()[0] == '24'  # noqa: E501
+        assert packaged_db_cursor.execute('SELECT value FROM settings WHERE name="assets_version"').fetchone()[0] == '26'  # noqa: E501
 
     assets_updater = AssetsUpdater(msg_aggregator=messages_aggregator)
     if (conflicts := assets_updater.perform_update(
