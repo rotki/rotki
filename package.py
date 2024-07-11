@@ -216,7 +216,7 @@ class Environment:
         :returns: The backends os specific filename suffix.
         """
         if self.is_mac():
-            return 'macos'
+            return f"macos-{'x64' if self.is_x86_64() else 'arm64'}"
         if self.is_linux():
             return 'linux'
         if self.is_windows():
@@ -506,7 +506,7 @@ class MacPackaging:
         """
         backend_directory = self.__storage.backend_directory
         os.chdir(backend_directory)
-        zip_filename = f'{BACKEND_PREFIX}-{self.__environment.rotki_version}-macos.zip'
+        zip_filename = f'{BACKEND_PREFIX}-{self.__environment.rotki_version}-{self.__environment.backend_suffix()}.zip'  # noqa: E501
         ret_code = subprocess.call(
             f'zip -vr "{zip_filename}" {BACKEND_PREFIX}/ -x "*.DS_Store"',
             shell=True,

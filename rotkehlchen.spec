@@ -45,9 +45,13 @@ def Entrypoint(dist, group, name, scripts=None, pathex=None, hiddenimports=None,
 # We don't need Tk and friends
 sys.modules['FixTk'] = None
 
+if (platform_name := platform.system().lower()) == 'darwin':
+    platform_name = f"macos-{'arm64' if platform.machine() == 'arm64' else 'x64'}"
+
 executable_name = 'rotki-core-{}-{}'.format(
     get_system_spec()['rotkehlchen'],
-    'macos' if platform.system() == 'Darwin' else platform.system().lower())
+    platform_name,
+)
 
 hiddenimports = ['cytoolz.utils', 'cytoolz._signatures']
 # Since the exchanges are loaded dynamically and some of them may not be detected
