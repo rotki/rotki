@@ -249,6 +249,13 @@ jobs:
           IDENTITY: ${{ secrets.IDENTITY }}
           APPLEID: ${{ secrets.APPLEID }}
           APPLEIDPASS: ${{ secrets.APPLEIDPASS }}
+      - name: Append architecture to latest-mac.yml
+        run: mv dist/latest-mac.yml dist/latest-mac-${{ matrix.os.arch }}.yml
+      - name: upload latest-mac.yml
+        uses: actions/upload-artifact@v4
+        with:
+          name: latest-mac-${{ matrix.os.arch }}
+          path: dist/latest-mac-*.yml
       - name: Upload to release
         uses: rotki/action-gh-release@v2
         with:
@@ -257,7 +264,38 @@ jobs:
           draft: true
           files: |
             dist/*.sha512
-            dist/rotki-core-*-macos.zip
+            dist/rotki-core-*-macos-*.zip
+
+  macos_updater:
+    name: Merge latest-mac.yml
+    needs: macos
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: 'frontend/.nvmrc'
+      - name: download latest-mac.yml artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: latest-mac
+          pattern: latest-mac-*
+          merge-multiple: true
+      - name: Merge latest-mac.yml
+        run: |
+          npm i js-yaml consola --prefix ./.github/scripts         
+          node ./.github/scripts/merge-latest.mjs latest-mac/latest-mac-x86_64.yml latest-mac/latest-mac-arm64.yml latest-mac.yml
+      - name: Upload to release
+        uses: rotki/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_VERSION }}
+          name: Rotki ${{ env.RELEASE_VERSION }} -
+          draft: true
+          files: latest-mac.yml
 
   windows:
     name: 'Build windows binary'
