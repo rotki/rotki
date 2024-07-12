@@ -915,22 +915,22 @@
     },
     "transactions_redecode": {
       "error": {
-        "description": "Échec de la récupération des événements à partir des transactions : {error}",
-        "title": "Récupération des événements à partir des transactions"
+        "description": "Échec du décodage des événements des transactions : {error}",
+        "title": "Décodage des événements des transactions"
       },
       "task": {
-        "description": "Récupération des événements des transactions",
-        "title": "Récupération des événements des transactions Evm"
+        "description": "Décodage des événements des transactions : {tx} ({chain})",
+        "title": "Décodage des événements de transaction"
       }
     },
-    "transactions_redecode_missing": {
+    "transactions_redecode_by_chain": {
       "error": {
-        "description": "Échec de la récupération des événements manquants des transactions pour la chaîne {chain} : {error}",
-        "title": "Récupération des événements manquants des transactions"
+        "description": "Échec du décodage des événements de {chaîne} : {error}",
+        "title": "Décodage des événements des transactions"
       },
       "task": {
-        "description": "Récupération des événements de transactions pour la chaîne {chain}",
-        "title": "Récupération des événements manquants des transactions Evm"
+        "description": "Décodage des transactions pour les événements {chaîne}",
+        "title": "Décodage des événements de transaction"
       }
     },
     "unignore": {

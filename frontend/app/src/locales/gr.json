@@ -794,22 +794,22 @@
     },
     "transactions_redecode": {
       "error": {
-        "description": "Failed to retrieve events from transactions: {error}",
-        "title": "Retrieving events from transactions"
+        "description": "Απέτυχε η αποκωδικοποίηση συμβάντων από συναλλαγές: {error}",
+        "title": "Αποκωδικοποίηση γεγονότων από συναλλαγές"
       },
       "task": {
-        "description": "Retrieving transactions events",
-        "title": "Evm Transactions Events Retrieval"
+        "description": "Αποκωδικοποίηση συμβάντων συναλλαγών για συναλλαγές: {tx} ({chain})",
+        "title": "Αποκωδικοποίηση συμβάντων συναλλαγής"
       }
     },
-    "transactions_redecode_missing": {
+    "transactions_redecode_by_chain": {
       "error": {
-        "description": "Failed to retrieve missing events from transactions for {chain} chain: {error}",
-        "title": "Retrieving missing events from transactions"
+        "description": "Απέτυχε η αποκωδικοποίηση των συμβάντων {chain}: {error}",
+        "title": "Αποκωδικοποίηση γεγονότων από συναλλαγές"
       },
       "task": {
-        "description": "Retrieving transactions events for {chain} chain",
-        "title": "Evm Transaction Missing Events Retrieval"
+        "description": "Αποκωδικοποίηση συναλλαγών για γεγονότα {chain}",
+        "title": "Αποκωδικοποίηση συμβάντων συναλλαγής"
       }
     },
     "unignore": {
