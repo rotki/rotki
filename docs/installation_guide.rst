@@ -66,6 +66,20 @@ any other text editor and make sure that the hash there matches the one generate
    - **OSX**: In the "Get Info" window, the copyright should read "Rotki Solutions GmbH".
 
 
+It is also possible to verify the integrity of a binary and obtain the workflow that created it using GitHub attestations. You can find more information `at Github docs <https://cli.github.com/manual/gh_attestation_verify>`_
+This is how it looks like::
+
+
+    $ gh attestation verify ~/Downloads/rotki134.dmg --repo rotki/rotki   
+    Loaded digest sha256:12bb7aa1cf8d5b568f925e7c772b946a29efaf66ae030026a1f113da528c8e39 for file:///Users/yabirgb/Downloads/rotki134.dmg
+    Loaded 1 attestation from GitHub API
+    ✓ Verification succeeded!
+
+    sha256:12bb7aa1cf8d5b568f925e7c772b946a29efaf66ae030026a1f113da528c8e39 was attested by:
+    REPO         PREDICATE_TYPE                  WORKFLOW                                              
+    rotki/rotki  https://slsa.dev/provenance/v1  .github/workflows/rotki_release.yaml@refs/tags/v1.34.0
+
+
 Linux
 ==========
 
