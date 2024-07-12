@@ -276,7 +276,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
                 # as transfer between accounts to avoid double counting
                 event.event_type = HistoryEventType.TRANSFER
                 event.event_subtype = HistoryEventSubType.NONE
-                event.notes = f'Claim {event.balance.amount} ETH from Eigenlayer delayed withdrawals'  # noqa: E501
+                event.notes = f'Withdraw {event.balance.amount} ETH from Eigenlayer delayed withdrawals'  # noqa: E501
                 event.counterparty = CPT_EIGENLAYER
 
         log.error(f'Did not find matching eigenlayer ETH transfer for delayed withdrawal claim in {context.transaction.tx_hash.hex()}. Skipping')  # noqa: E501
