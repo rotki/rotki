@@ -44,7 +44,6 @@ Changelog
 * :bug:`-` Users will be able to proceed with conflict resolution in the rare case that a duplicate asset appears in conflicts.
 * :bug:`8022` When there are NFTs valued in different assets sorting them by fiat price will show the correct price.
 * :bug:`-` Fix the issue where the popup notification breaks the experience when the notification sidebar is already open.
-* :bug:`-` Fixed an issue with the assets updates where conflicts couldn't be resolved for multiple changes in a single asset.
 * :bug:`-` Stakedao bribe claims older than January 2023 will now also be properly decoded.
 * :bug:`-` Compound finance COMP claim cases that were not decoded correctly should now appear fine.
 * :bug:`-` Fix an issue where some tokens weren't properly detected in scroll.
