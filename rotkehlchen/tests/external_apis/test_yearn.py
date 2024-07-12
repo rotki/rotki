@@ -18,6 +18,7 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import YEARN_VAULTS_V2_PROTOCOL, CacheType, ChainID, Timestamp
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('globaldb_upgrades', [[]])
 @pytest.mark.parametrize('run_globaldb_migrations', [False])
 @pytest.mark.parametrize('custom_globaldb', ['v4_global_before_migration1.db'])

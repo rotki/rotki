@@ -56,6 +56,7 @@ def test_get_balances_module_not_activated(
     )
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[LP_HOLDER_ADDRESS]])
 @pytest.mark.parametrize('ethereum_modules', [['uniswap']])
 @pytest.mark.parametrize('network_mocking', [False])

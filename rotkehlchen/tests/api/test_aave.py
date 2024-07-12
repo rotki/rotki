@@ -155,6 +155,7 @@ def test_query_aave_balances(rotkehlchen_api_server: APIServer) -> None:
     }
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[AAVE_BALANCESV1_TEST_ACC]])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_dsr']])
 def test_query_aave_balances_module_not_activated(
