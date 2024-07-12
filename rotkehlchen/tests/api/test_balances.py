@@ -680,6 +680,7 @@ def test_balances_caching_mixup(
 
     This tests for the problem seen where the bitcoin balances being empty and
     queried first returned an empty result for the ethereum balances.
+    Note: It is hard to VCR
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     setup = setup_balances(

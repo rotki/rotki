@@ -564,6 +564,7 @@ def test_query_historical_dsr(
     assert_dsr_history_result_is_correct(outcome, setup)
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDRESS_1]])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_dsr']])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
