@@ -11,6 +11,11 @@ concurrency:
 env:
   PYTHON_MACOS: 11
 
+permissions:
+  id-token: write
+  attestations: write
+  contents: write
+
 jobs:
   create_draft:
     name: Create Draft
@@ -158,6 +163,14 @@ jobs:
           files: |
             dist/*.sha512
             dist/rotki-core-*-linux
+      - uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: |
+            dist/rotki-core-*-linux
+            dist/*.deb
+            dist/*.AppImage
+            dist/*.tar.xz
+            
 
   macos:
     name: 'Build macOS binary ${{ matrix.os.arch }}'
@@ -265,6 +278,11 @@ jobs:
           files: |
             dist/*.sha512
             dist/rotki-core-*-macos-*.zip
+      - uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: |
+            dist/*.zip
+            dist/*.dmg
 
   macos_updater:
     name: Merge latest-mac.yml
@@ -371,6 +389,9 @@ jobs:
           files: |
             dist/*.sha512
             dist/rotki-core-*-windows.exe
+      - uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: dist/*.exe
 
   docker:
     name: 'Build docker images'
@@ -395,12 +416,13 @@ jobs:
         run: echo "version=${GITHUB_REF#refs/*/}" >> $GITHUB_OUTPUT
       - name: Build and push
         id: docker_build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
           platforms: linux/amd64,linux/arm64
           push: true
+          provenance: mode=max
           tags: |
             ${{ github.repository }}:${{ steps.rotki_version.outputs.version }}
           build-args: |
