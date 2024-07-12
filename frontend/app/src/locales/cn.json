@@ -791,22 +791,22 @@
     },
     "transactions_redecode": {
       "error": {
-        "description": "无法从交易中检索事件：{error}",
-        "title": "从交易中检索事件"
+        "description": "解码事务事件失败： {error}",
+        "title": "解码来自事务的事件"
       },
       "task": {
-        "description": "检索交易事件",
-        "title": "Evm 交易事件检索"
+        "description": "为事务的事务事件解码： {tx} ({chain})",
+        "title": "解码事务事件"
       }
     },
-    "transactions_redecode_missing": {
+    "transactions_redecode_by_chain": {
       "error": {
-        "description": "从 {chain} 链中的事务中检索缺失事件失败： {error}",
-        "title": "从交易中检索丢失的事件"
+        "description": "解码 {chain} 事件失败： {error}",
+        "title": "从事务中解码事件"
       },
       "task": {
-        "description": "读取 {chain} 链的交易事件",
-        "title": "Evm 事务丢失事件检索"
+        "description": "为 {chain} 事件解码事务",
+        "title": "解码交易事件"
       }
     },
     "unignore": {

@@ -112,9 +112,9 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       const { taskId } = await decodeTransactions([chain], type, ignoreCache);
 
       const taskMeta = {
-        title: t('actions.transactions_redecode_missing.task.title'),
+        title: t('actions.transactions_redecode_by_chain.task.title'),
         description: t(
-          'actions.transactions_redecode_missing.task.description',
+          'actions.transactions_redecode_by_chain.task.description',
           { chain: get(getChainName(chain)) },
         ),
         chain,
@@ -128,9 +128,9 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
       if (!isTaskCancelled(error)) {
         logger.error(error);
         notify({
-          title: t('actions.transactions_redecode_missing.error.title'),
+          title: t('actions.transactions_redecode_by_chain.error.title'),
           message: t(
-            'actions.transactions_redecode_missing.error.description',
+            'actions.transactions_redecode_by_chain.error.description',
             {
               error,
               chain: get(getChainName(chain)),
@@ -217,7 +217,10 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
 
       const taskMeta = {
         title: t('actions.transactions_redecode.task.title'),
-        description: t('actions.transactions_redecode.task.description'),
+        description: t('actions.transactions_redecode.task.description', {
+          tx: transaction.txHash,
+          chain,
+        }),
         tx: transaction,
       };
 

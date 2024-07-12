@@ -798,22 +798,22 @@
     },
     "transactions_redecode": {
       "error": {
-        "description": "Failed to retrieve events from transactions: {error}",
-        "title": "Retrieving events from transactions"
+        "description": "Fallo al decodificar eventos de transacciones: {error}",
+        "title": "Descodificando eventos de transacciones"
       },
       "task": {
-        "description": "Retrieving transactions events",
-        "title": "Evm Transactions Events Retrieval"
+        "description": "Decodificación de eventos de transacciones para transacciones: {tx} ({cadena})",
+        "title": "Descodificación de eventos de transacción"
       }
     },
-    "transactions_redecode_missing": {
+    "transactions_redecode_by_chain": {
       "error": {
-        "description": "Failed to retrieve missing events from transactions for {chain} chain: {error}",
-        "title": "Retrieving missing events from transactions"
+        "description": "Falló la decodificación de eventos de {cadena}: {error}",
+        "title": "Descodificando eventos de transacciones"
       },
       "task": {
-        "description": "Retrieving transactions events for {chain} chain",
-        "title": "Evm Transaction Missing Events Retrieval"
+        "description": "Descodificación de transacciones para eventos de {cadena}",
+        "title": "Decodificación de eventos de transacción"
       }
     },
     "unignore": {
