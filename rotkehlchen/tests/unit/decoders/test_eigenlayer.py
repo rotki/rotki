@@ -582,7 +582,7 @@ def test_claim_delayed_withdrawals(database, ethereum_inquirer, ethereum_account
         asset=A_ETH,
         balance=Balance(amount=FVal(withdrawal_amount)),
         location_label=safe_address,
-        notes=f'Claim {withdrawal_amount} ETH from Eigenlayer delayed withdrawals',
+        notes=f'Withdraw {withdrawal_amount} ETH from Eigenlayer delayed withdrawals',
         counterparty=CPT_EIGENLAYER,
         address=EIGENPOD_DELAYED_WITHDRAWAL_ROUTER,
     ), EvmEvent(
