@@ -143,7 +143,7 @@ class CctpCommonDecoder(DecoderInterface):
 
     # -- DecoderInterface methods
 
-    @ staticmethod
+    @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (CCTP_CPT_DETAILS,)
 
