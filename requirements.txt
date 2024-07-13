@@ -2,7 +2,7 @@ gevent==24.2.1
 greenlet==3.0.3
 gevent-websocket==0.10.1  # like the below is abandoned
 wsaccel==0.6.6  # recommended for acceleration of gevent-websocket. But abandoned.
-web3==6.19.0
+web3==6.20.0
 content-hash==2.0.0
 rotki-pysqlcipher3==2024.1.2
 requests==2.31.0
