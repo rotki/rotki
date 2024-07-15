@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`8263` Fixes manual pagination not working.
+
 * :release:`1.34.0 <2024-07-12>`
 * :bug:`-` Adding xpubs with derivation paths that include hardened nodes will not give an error anymore.
 * :bug:`-` Xpub keys without any addresses will now show properly in the accounts bitcoin accounts table.
