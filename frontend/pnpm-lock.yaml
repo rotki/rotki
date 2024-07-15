@@ -189,6 +189,9 @@ importers:
       '@vue/test-utils':
         specifier: 2.4.6
         version: 2.4.6
+      '@vue/tsconfig':
+        specifier: 0.5.1
+        version: 0.5.1
       ajv:
         specifier: 8.16.0
         version: 8.16.0
@@ -2084,6 +2087,9 @@ packages:
 
   '@vue/test-utils@2.4.6':
     resolution: {integrity: sha512-FMxEjOpYNYiFe0GkaHsnJPXFHxQ6m4t8vI/ElPGpMWxZKpmRvQ33OIrvRXemy6yha03RxhOlQuy+gZMC3CQSow==}
+
+  '@vue/tsconfig@0.5.1':
+    resolution: {integrity: sha512-VcZK7MvpjuTPx2w6blwnwZAu5/LgBUtejFOi3pPGQFXQN5Ela03FUtd2Qtg4yWGGissVL0dr6Ro1LfOFh+PCuQ==}
 
   '@vuelidate/core@2.0.3':
     resolution: {integrity: sha512-AN6l7KF7+mEfyWG0doT96z+47ljwPpZfi9/JrNMkOGLFv27XVZvKzRLXlmDPQjPl/wOB1GNnHuc54jlCLRNqGA==}
@@ -8948,6 +8954,8 @@ snapshots:
     dependencies:
       js-beautify: 1.15.1
       vue-component-type-helpers: 2.0.26
+
+  '@vue/tsconfig@0.5.1': {}
 
   '@vuelidate/core@2.0.3(vue@3.4.31(typescript@5.5.3))':
     dependencies:

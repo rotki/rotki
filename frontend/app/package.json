@@ -82,6 +82,7 @@
     "@vitest/coverage-v8": "2.0.2",
     "@vitest/ui": "2.0.2",
     "@vue/test-utils": "2.4.6",
+    "@vue/tsconfig": "0.5.1",
     "ajv": "8.16.0",
     "autoprefixer": "10.4.19",
     "cross-env": "7.0.3",
