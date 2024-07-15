@@ -808,7 +808,7 @@ watchImmediate(route, async (route) => {
             </div>
           </TableStatusFilter>
           <TableFilter
-            class="min-w-[20rem]"
+            class="min-w-[24rem]"
             :matches.sync="filters"
             :matchers="matchers"
             :location="SavedFilterLocation.HISTORY_EVENTS"
@@ -827,7 +827,7 @@ watchImmediate(route, async (route) => {
         <HistoryEventsExport :filters="pageParams" />
         <BlockchainAccountSelector
           v-if="!useExternalAccountFilter"
-          class="min-w-[15rem] max-w-[20rem]"
+          class="w-[18rem]"
           :value="accounts"
           :chains="txChainIds"
           dense
