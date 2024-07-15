@@ -2,7 +2,8 @@ import logging
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.ethereum.utils import (
     token_normalized_value,
     token_normalized_value_decimals,
@@ -22,12 +23,18 @@ from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.cache import (
+    globaldb_get_unique_cache_value,
+    globaldb_set_unique_cache_value,
+)
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, ChecksumEvmAddress
+from rotkehlchen.types import HOP_PROTOCOL_LP, CacheType, ChainID, ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import (
@@ -106,6 +113,36 @@ class HopCommonDecoder(DecoderInterface):
             target_str = f'at address {recipient} '
 
         return f'Bridge {amount} {asset.symbol_or_name()} {chain_label}{target_str}via Hop protocol'  # noqa: E501
+
+    def _process_hop_lp_token(self, lp_token: EvmToken, pool_address: ChecksumEvmAddress) -> None:
+        """Save the protocol value of the LP token and cache its pool address."""
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            # Save the protocol value of the lp token if needed
+            if lp_token.protocol is None:
+                write_cursor.execute(
+                    'UPDATE evm_tokens SET protocol = ? WHERE identifier = ?;',
+                    (HOP_PROTOCOL_LP, lp_token.identifier),
+                )
+                AssetResolver.clean_memory_cache(lp_token.identifier)
+
+            # Cache the pool address if needed
+            if globaldb_get_unique_cache_value(
+                cursor=write_cursor,
+                key_parts=(
+                    CacheType.HOP_POOL_ADDRESS,
+                    str(lp_token.chain_id.value),
+                    lp_token.evm_address,
+                ),
+            ) is None:
+                globaldb_set_unique_cache_value(
+                    write_cursor=write_cursor,
+                    key_parts=(
+                        CacheType.HOP_POOL_ADDRESS,
+                        str(lp_token.chain_id.value),
+                        lp_token.evm_address,
+                    ),
+                    value=pool_address,
+                )
 
     def _decode_withdrawal_bonded(self, context: DecoderContext) -> DecodingOutput:
         """This function is used to decode the WithdrawalBonded events on Hop protocol."""
@@ -340,6 +377,13 @@ class HopCommonDecoder(DecoderInterface):
                 event.counterparty = CPT_HOP
                 event.notes = f'Receive {event.balance.amount} {event.asset.symbol_or_name()} after providing liquidity in Hop'  # noqa: E501
                 in_event = event
+                try:
+                    self._process_hop_lp_token(
+                        lp_token=event.asset.resolve_to_evm_token(),
+                        pool_address=context.tx_log.address,
+                    )
+                except (WrongAssetType, UnknownAsset) as e:
+                    log.error(f'Could not resolve {event.asset!s} in {self.evm_inquirer.chain_name} while decoding AddLiquidity in Hop: {e!s}')  # noqa: E501
 
         maybe_reshuffle_events(
             ordered_events=[out_event1, out_event2, in_event],

@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.modules.hop.constants import HOP_GOVERNOR
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -19,18 +19,30 @@ from rotkehlchen.constants.assets import (
     A_XDAI,
 )
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.cache import globaldb_get_unique_cache_value
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    HOP_PROTOCOL_LP,
+    CacheType,
+    ChecksumEvmAddress,
+    Location,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
+    from rotkehlchen.chain.base.manager import BaseManager
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
     from rotkehlchen.chain.polygon_pos.node_inquirer import PolygonPOSInquirer
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.inquirer import Inquirer
 
 ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 
@@ -662,9 +674,12 @@ def test_hop_eth_bridge_arbitrum_custom_recipient(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('base_accounts', [['0xAE70bC0Cbe03ceF2a14eCA507a2863441C6Df7A1']])
 def test_hop_add_liquidity(
         database: 'DBHandler',
+        inquirer: 'Inquirer',
+        base_manager: 'BaseManager',
         base_inquirer: 'BaseInquirer',
         base_accounts: list['ChecksumEvmAddress'],
 ):
@@ -717,6 +732,19 @@ def test_hop_add_liquidity(
         ),
     ]
     assert events == expected_events
+    assert EvmToken('eip155:8453/erc20:0xe9605BEc1c5C3E81F974F80b8dA9fBEFF4845d4D').protocol == HOP_PROTOCOL_LP  # noqa: E501
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        assert globaldb_get_unique_cache_value(
+            cursor=cursor,
+            key_parts=(
+                CacheType.HOP_POOL_ADDRESS,
+                '8453',
+                '0xe9605BEc1c5C3E81F974F80b8dA9fBEFF4845d4D',
+            ),
+        ) == '0x0ce6c85cF43553DE10FC56cecA0aef6Ff0DD444d'
+
+    inquirer.inject_evm_managers([(base_inquirer.chain_id, base_manager)])
+    assert inquirer.find_usd_price(Asset('eip155:8453/erc20:0xe9605BEc1c5C3E81F974F80b8dA9fBEFF4845d4D')).is_close(3718.147646)  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -1051,13 +1079,21 @@ def test_hop_remove_liquidity_usdc_gnosis(
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D']])
 def test_hop_stake(
         database: 'DBHandler',
+        inquirer: 'Inquirer',
+        arbitrum_one_manager: 'ArbitrumOneManager',
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
         arbitrum_one_accounts: list['ChecksumEvmAddress'],
 ):
     tx_hash = deserialize_evm_tx_hash('0x6329984b82cb85903fee9fef61fb77cdf848ff6344056156da2e66676ad91473')  # noqa: E501
+    get_decoded_events_of_transaction(  # decode the deposit tx to process the LP token
+        evm_inquirer=arbitrum_one_inquirer,
+        database=database,
+        tx_hash=deserialize_evm_tx_hash('0x52ab27e8f15148c0f41df0114429321d2a1e9411f2ea2fe7c8fb9c663bc09ecb'),
+    )
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
         database=database,
@@ -1106,6 +1142,8 @@ def test_hop_stake(
         ),
     ]
     assert events == expected_events
+    inquirer.inject_evm_managers([(arbitrum_one_inquirer.chain_id, arbitrum_one_manager)])
+    assert inquirer.find_usd_price(Asset('eip155:42161/erc20:0x59745774Ed5EfF903e615F5A2282Cae03484985a')).is_close(3672.623084)  # noqa: E501
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
