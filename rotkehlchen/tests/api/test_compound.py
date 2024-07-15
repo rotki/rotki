@@ -28,6 +28,7 @@ from rotkehlchen.types import ChecksumEvmAddress, Price, deserialize_evm_tx_hash
 TEST_ACC1 = '0x2bddEd18E2CA464355091266B7616956944ee7eE'
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
 @pytest.mark.parametrize('ethereum_modules', [['compound']])
 def test_query_compound_balances(
@@ -201,6 +202,7 @@ def test_query_compound_v3_balances(
     }
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC1]])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_dsr']])
 def test_query_compound_balances_module_not_activated(

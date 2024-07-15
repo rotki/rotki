@@ -125,6 +125,7 @@ def test_get_transaction_receipt(
         ])
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
 def test_get_transaction_by_hash(ethereum_inquirer, call_order, ethereum_manager_connect_at_start):
     wait_until_all_nodes_connected(
@@ -201,6 +202,7 @@ def test_call_contract(ethereum_inquirer, ethereum_manager_connect_at_start):
     assert result >= 0
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
 def test_get_logs(ethereum_inquirer, call_order, ethereum_manager_connect_at_start):
     wait_until_all_nodes_connected(
@@ -249,6 +251,7 @@ def test_get_logs(ethereum_inquirer, call_order, ethereum_manager_connect_at_sta
     )
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize(*ETHEREUM_TEST_PARAMETERS)
 def test_get_log_and_receipt_etherscan_bad_tx_index(
         ethereum_inquirer,
@@ -328,7 +331,7 @@ def test_get_blocknumber_by_time_etherscan(ethereum_inquirer):
     _test_get_blocknumber_by_time(ethereum_inquirer)
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize(*ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED)
 def test_ethereum_nodes_prune_and_archive_status(
         ethereum_inquirer,

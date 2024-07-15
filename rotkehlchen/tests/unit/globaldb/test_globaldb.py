@@ -1179,6 +1179,7 @@ def test_get_assets_missing_information_by_symbol(globaldb):
     assert assets[0].name == 'Test token'
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_for_spam_tokens(database: 'DBHandler', ethereum_inquirer: EthereumInquirer) -> None:
     """Test different cases of spam assets that we already know"""
     assert check_if_spam_token(symbol='USDC', name='USD-SWAP˳COM') is True  # test for unicode symbols that might resemble dots  # noqa: E501

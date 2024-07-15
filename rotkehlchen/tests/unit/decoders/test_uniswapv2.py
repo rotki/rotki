@@ -227,7 +227,7 @@ def test_uniswap_v2_swap_with_approval(database, ethereum_inquirer, ethereum_acc
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_2]])
 def test_uniswap_v2_add_liquidity(database, ethereum_inquirer):
-    """This checks that adding liquidity to Uniswap V2 pool is decoded properly."""
+    """This checks that adding liquidity to a Uniswap V2 pool is decoded properly."""
     tx_hash = deserialize_evm_tx_hash('0x1bab8a89a6a3f8cb127cfaf7cd58809201a4e230d0a05f9e067674749605959e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
