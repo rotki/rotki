@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`8261` Windows users will no longer be greeted with an unhandled exception dialog when closing the application.
 * :bug:`8263` Fixes manual pagination not working.
 
 * :release:`1.34.0 <2024-07-12>`
