@@ -200,6 +200,8 @@ watchDebounced(isLoading(Section.PRICES), async (isLoading, wasLoading) => {
       :rows="state.data"
       :sort.sync="sort"
       :pagination.sync="pagination"
+      :pagination-modifiers="{ external: true }"
+      :sort-modifiers="{ external: true }"
       :item-class="getRowClass"
       class="manual-balances-list"
     >
