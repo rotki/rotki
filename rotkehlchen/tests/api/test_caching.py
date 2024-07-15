@@ -113,7 +113,7 @@ def test_icons_and_avatars_cache_deletion(rotkehlchen_api_server):
     assert response.headers['Content-Type'] == 'image/png'
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 def test_general_cache_refresh(rotkehlchen_api_server: 'APIServer'):
     """Tests that refreshing the general cache works as expected"""
     with ExitStack() as stack:

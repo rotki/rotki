@@ -779,7 +779,7 @@ def test_curve_remove_imbalanced(database, ethereum_transaction_decoder):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x6Bb553FFC5716782051f51b564Bb149D9946f0d2']])
 def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):  # noqa: E501
@@ -838,7 +838,7 @@ def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x66215D23B8A247C80c2D1B7beF4BefC2AB384bCE']])
 def test_gauge_vote(ethereum_accounts, ethereum_transaction_decoder) -> None:
     tx_hex = deserialize_evm_tx_hash('0xf67308b01613b3f75a71f2a3cea198acc063c987f17be4aaf5505a1ad70751ef')  # noqa: E501
@@ -882,7 +882,7 @@ def test_gauge_vote(ethereum_accounts, ethereum_transaction_decoder) -> None:
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0xd289986c25Ae3f4644949e25bC369e9d8e0caeaD']])
@@ -942,7 +942,7 @@ def test_gauge_deposit(
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0xd80DF837766C8Edb6f11Bf7fD35703f87F2a31fB']])
 def test_gauge_withdraw(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):
@@ -988,7 +988,7 @@ def test_gauge_withdraw(ethereum_transaction_decoder, ethereum_accounts, load_gl
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0E9Fed33f6a202146a615De0FA1985adFb461467']])
 def test_gauge_claim_rewards(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):
@@ -1033,7 +1033,7 @@ def test_gauge_claim_rewards(ethereum_transaction_decoder, ethereum_accounts, lo
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0xA8d7Fb04877C3FBf175DE76FA3D2fa66c770537F']])
 def test_curve_trade_token_to_token(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):  # noqa: E501
@@ -1092,7 +1092,7 @@ def test_curve_trade_token_to_token(ethereum_transaction_decoder, ethereum_accou
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x8a1B73A88E1854Dd3EeBEe4354Bd4DbA23861E3A']])
 def test_curve_trade_eth_to_token(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):  # noqa: E501
@@ -1151,7 +1151,7 @@ def test_curve_trade_eth_to_token(ethereum_transaction_decoder, ethereum_account
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x38abab9766e0b27d2912718a884292b8E7eb2803']])
 def test_curve_trade_exchange_underlying(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):  # noqa: E501
@@ -1210,7 +1210,7 @@ def test_curve_trade_exchange_underlying(ethereum_transaction_decoder, ethereum_
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x3Da232a0c0A5C59918D7B5fF77bf1c8Fc93aeE1B']])
 def test_curve_swap_router(ethereum_transaction_decoder, ethereum_accounts):
     """Test that transactions made via curve swap router are decoded correctly"""
@@ -1267,7 +1267,7 @@ def test_curve_swap_router(ethereum_transaction_decoder, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0xdE206bC0Fde2eF5C8BB6A1d552a64F82A2407Be4']])
 def test_curve_usdn_add_liquidity(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):  # noqa: E501
@@ -1327,7 +1327,7 @@ def test_curve_usdn_add_liquidity(ethereum_transaction_decoder, ethereum_account
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x6d84264A7bD2Cffa4A117BA2350403b3A9866949']])
 def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):  # noqa: E501
@@ -1426,7 +1426,7 @@ def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_acco
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0xcbE942516AE7687d80a5fF94F8f9A203Be800713']])
 def test_3pool_add_liquidity(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):
@@ -1486,7 +1486,7 @@ def test_3pool_add_liquidity(ethereum_transaction_decoder, ethereum_accounts, lo
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0xC7BFb2ED20D14407C78cc1FC4a4Abe39f1964964']])
 def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):  # noqa: E501
@@ -1585,7 +1585,7 @@ def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts,
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x60b0f1919cf4ee46d1A8D63428276512814de570']])
 def test_remove_from_aave_pool(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):  # noqa: E501
@@ -1648,7 +1648,7 @@ def test_remove_from_aave_pool(ethereum_transaction_decoder, ethereum_accounts, 
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0550bED1C94AFBd468aa739852632D7e9b4c2F86']])
 def test_deposit_via_zap_in_metapool(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):  # noqa: E501
@@ -1724,7 +1724,7 @@ def test_deposit_via_zap_in_metapool(ethereum_transaction_decoder, ethereum_acco
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('ethereum_accounts', [['0xd381e358d6b4E176559D3D76109985ED83259aEC']])
 def test_no_zap_event(ethereum_transaction_decoder, ethereum_accounts, load_global_caches):
@@ -1829,7 +1829,7 @@ def test_gauge_bribe_v2(ethereum_transaction_decoder, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x1c362DFE864a4c4b3311eC97bf0b8320CB0a4952']])
 def test_curve_deposit_polygon(database, polygon_pos_inquirer, polygon_pos_accounts, load_global_caches):  # noqa: E501
@@ -1898,7 +1898,7 @@ def test_curve_deposit_polygon(database, polygon_pos_inquirer, polygon_pos_accou
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('optimism_accounts', [['0x1CD90D091C5c13Bb7e7612a90485C6F38B826Fdd']])
 def test_gauge_deposit_optimism(database, optimism_inquirer, optimism_accounts, load_global_caches):  # noqa: E501
@@ -1963,7 +1963,7 @@ def test_gauge_deposit_optimism(database, optimism_inquirer, optimism_accounts, 
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('gnosis_accounts', [['0xD4f9FE0039Da59e6DDb21bbb6E84e0C9e83D73eD']])
 def test_gauge_withdraw_gnosis(database, gnosis_inquirer, gnosis_accounts, load_global_caches):
@@ -2028,7 +2028,7 @@ def test_gauge_withdraw_gnosis(database, gnosis_inquirer, gnosis_accounts, load_
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('base_accounts', [['0x4113a3CB9004E193E9906131B632e280F5f9B61e']])
 def test_curve_swap_router_base(database, base_inquirer, base_accounts):
     """Test that transactions made via the new curve swap router are decoded correctly"""
@@ -2083,7 +2083,7 @@ def test_curve_swap_router_base(database, base_inquirer, base_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x8800AcEDF5571F35675CF8Aa1E3C16C7A8da0088']])
 def test_deposit_via_zap_arbitrum(database, arbitrum_one_inquirer, arbitrum_one_accounts, load_global_caches):  # noqa: E501
@@ -2279,7 +2279,7 @@ def test_vote_escrow_withdraw(ethereum_transaction_decoder, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_gauge_deposit_and_stake(database, gnosis_inquirer, gnosis_accounts, load_global_caches):
@@ -2335,7 +2335,7 @@ def test_gauge_deposit_and_stake(database, gnosis_inquirer, gnosis_accounts, loa
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_gauge_deposit_and_stake_multiple(database, gnosis_inquirer, gnosis_accounts, load_global_caches):  # noqa: E501
@@ -2406,7 +2406,7 @@ def test_gauge_deposit_and_stake_multiple(database, gnosis_inquirer, gnosis_acco
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_liquidity_withdrawal(database, gnosis_inquirer, gnosis_accounts, load_global_caches):

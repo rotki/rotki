@@ -328,7 +328,7 @@ def test_get_blocknumber_by_time_etherscan(ethereum_inquirer):
     _test_get_blocknumber_by_time(ethereum_inquirer)
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize(*ETHEREUM_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED)
 def test_ethereum_nodes_prune_and_archive_status(
         ethereum_inquirer,

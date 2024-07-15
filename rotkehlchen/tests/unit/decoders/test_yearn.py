@@ -485,7 +485,7 @@ def test_withdraw_yearn_v1(database, ethereum_inquirer, eth_transactions):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8']])
 def test_deposit_yearn_full_amount(database, ethereum_inquirer, ethereum_accounts):
     """

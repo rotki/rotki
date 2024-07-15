@@ -190,7 +190,7 @@ def test_balancer_v1_exit(database, ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x549C0421c69Be943A2A60e76B19b4A801682cBD3']])
 def test_deposit_with_excess_tokens(database, ethereum_inquirer, ethereum_accounts):
     """Verify that when a refund is made for a deposit in balancer v1 this is properly decoded"""

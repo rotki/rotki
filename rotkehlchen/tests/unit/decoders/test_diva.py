@@ -14,7 +14,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_diva_delegate(database, ethereum_inquirer, ethereum_accounts):
     tx_hex = deserialize_evm_tx_hash('0x806081bcc60a40db22bae2c1729f240f48de4b73e76b673fc4767bcee4f1c704')  # noqa: E501
@@ -56,7 +56,7 @@ def test_diva_delegate(database, ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_diva_claim(database, ethereum_inquirer, ethereum_accounts):
     tx_hex = deserialize_evm_tx_hash('0xc66dd53da9837e5197f95d32065807706a118dc2ff326a5e3bf8844b8ee261c2')  # noqa: E501
@@ -113,7 +113,7 @@ def test_diva_claim(database, ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 def test_vote_cast(database, ethereum_inquirer, ethereum_accounts):
     """Test voting for DIVA governance"""

@@ -132,7 +132,7 @@ def test_nft_query(rotkehlchen_api_server, start_with_valid_premium):
 
 
 @requires_env([TestEnvironment.NIGHTLY, TestEnvironment.NFTS])
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])
@@ -176,7 +176,7 @@ def test_nft_query_after_account_add(rotkehlchen_api_server):
 
 
 @requires_env([TestEnvironment.NIGHTLY, TestEnvironment.NFTS])
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ACC2, TEST_ACC3]])
 @pytest.mark.parametrize('start_with_valid_premium', [True])
 @pytest.mark.parametrize('ethereum_modules', [['nfts']])

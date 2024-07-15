@@ -26,7 +26,7 @@ ADDY_2 = string_to_evm_address('0x1F14bE60172b40dAc0aD9cD72F6f0f2C245992e8')
 ADDY_3 = string_to_evm_address('0x3D6a724247c4B133C3b279558e90EdD0c5d25751')
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_1]])
 def test_sushiswap_single_swap(database, ethereum_inquirer):
     tx_hash = deserialize_evm_tx_hash('0xbfe3c8a13c325a32736beb34ea170053cdbbd1740a9c3ceca52060906b7f87bd')  # noqa: E501
@@ -93,7 +93,7 @@ def test_sushiswap_single_swap(database, ethereum_inquirer):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_2]])
 def test_sushiswap_v2_remove_liquidity(database, ethereum_inquirer):
     """This checks that removing liquidity to Sushiswap V2 pool is decoded properly"""
@@ -163,7 +163,7 @@ def test_sushiswap_v2_remove_liquidity(database, ethereum_inquirer):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_3]])
 def test_sushiswap_v2_add_liquidity(database, ethereum_inquirer):
     """This checks that adding liquidity to Sushiswap V2 pool is decoded properly"""

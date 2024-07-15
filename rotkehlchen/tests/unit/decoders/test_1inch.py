@@ -37,7 +37,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_1inchv1_swap(database, ethereum_inquirer):
     """Data taken from
@@ -108,7 +108,7 @@ def test_1inchv1_swap(database, ethereum_inquirer):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_1inchv2_swap_for_eth(database, ethereum_inquirer):
     """
@@ -180,7 +180,7 @@ def test_1inchv2_swap_for_eth(database, ethereum_inquirer):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_1inchv3_swap_for_eth(database, ethereum_inquirer, ethereum_accounts):
     """Test an 1inchv3 swap for ETH."""
@@ -351,7 +351,7 @@ def test_1inchv4_orderfilledrfq(database, ethereum_inquirer, ethereum_accounts):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xF92940216a808378bfFD05f444B7bF71d5A193Cd']])
 def test_1inchv4_swap_on_sushiswap(database, ethereum_inquirer):
     """
@@ -412,7 +412,7 @@ def test_1inchv4_swap_on_sushiswap(database, ethereum_inquirer):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x201b5Abfd44A8F9b75F0fE1BaE74CDaC7675E54B']])
 def test_1inchv4_multiple_swaps(database, ethereum_inquirer):
     """
@@ -485,7 +485,7 @@ def test_1inchv4_multiple_swaps(database, ethereum_inquirer):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xcA74F404E0C7bfA35B13B511097df966D5a65597']])
 def test_1inchv4_weth_eth_swap(database, ethereum_inquirer):
     """
@@ -546,7 +546,7 @@ def test_1inchv4_weth_eth_swap(database, ethereum_inquirer):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xdCB02829F91533Ab757b1B0e8B595D7c950AfBb8']])
 def test_1inchv4_eth_weth_swap(database, ethereum_inquirer):
     """
@@ -607,7 +607,7 @@ def test_1inchv4_eth_weth_swap(database, ethereum_inquirer):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_1inch_swap_polygon(database, polygon_pos_inquirer, polygon_pos_accounts):
     """Data taken from
@@ -734,7 +734,7 @@ def test_1inch_gnosis_v5_swap(database, gnosis_inquirer, gnosis_accounts):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('optimism_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
 def test_1inch_velodrome(database, optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0x3cb68ee7dae76c0ca6466e3a593b32144d25eabb27c1ba416c83f154627d84d8')  # noqa: E501
@@ -789,7 +789,7 @@ def test_1inch_velodrome(database, optimism_inquirer, optimism_accounts):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xC5d494aa0CBabD7871af0Ef122fB410Fa25c3379']])
 def test_half_decoded_1inch_v5_swap(database, ethereum_inquirer, ethereum_accounts):
     """

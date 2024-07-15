@@ -15,7 +15,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
 def test_deposit_erc20(database, ethereum_inquirer, ethereum_accounts):
     """Data is taken from
@@ -58,7 +58,7 @@ def test_deposit_erc20(database, ethereum_inquirer, ethereum_accounts):
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x18C22c88146B24a2c96E65c82666d976A4ba5a94']])
 def test_deposit_eth(database, ethereum_inquirer, ethereum_accounts):
     """Data is taken from
@@ -101,7 +101,7 @@ def test_deposit_eth(database, ethereum_inquirer, ethereum_accounts):
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('optimism_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
 def test_receive_erc20_on_optimism_legacy(database, optimism_inquirer, optimism_accounts):
     """Legacy bridge deposit to optimism. Where l1fee exists in receipt data"""
@@ -130,7 +130,7 @@ def test_receive_erc20_on_optimism_legacy(database, optimism_inquirer, optimism_
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_receive_erc20_on_optimism(database, optimism_inquirer, optimism_accounts):
     """Newer bridge deposit to optimism. Where l1fee is 0 and missing from receipt data"""
@@ -159,7 +159,7 @@ def test_receive_erc20_on_optimism(database, optimism_inquirer, optimism_account
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('optimism_accounts', [['0xfc399B17D1Ddf01a518DcaeE557ef776bf288f63']])
 def test_receive_eth_on_optimism(database, optimism_inquirer, optimism_accounts):
     """Data is taken from
@@ -190,7 +190,7 @@ def test_receive_eth_on_optimism(database, optimism_inquirer, optimism_accounts)
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('optimism_accounts', [['0x261FD12AF4c4bAbb30F44c1B0FE20a718A39b04C']])
 def test_withdraw_erc20(database, optimism_inquirer, optimism_accounts):
     """Data is taken from
@@ -233,7 +233,7 @@ def test_withdraw_erc20(database, optimism_inquirer, optimism_accounts):
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('optimism_accounts', [['0xE232E72983E329757F02292322296f5B96dAfC8F']])
 def test_withdraw_eth(database, optimism_inquirer, optimism_accounts):
     """Data is taken from
@@ -276,7 +276,7 @@ def test_withdraw_eth(database, optimism_inquirer, optimism_accounts):
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x261FD12AF4c4bAbb30F44c1B0FE20a718A39b04C']])
 def test_claim_erc20_on_ethereum(database, ethereum_inquirer, ethereum_accounts):
     """Data is taken from
@@ -319,7 +319,7 @@ def test_claim_erc20_on_ethereum(database, ethereum_inquirer, ethereum_accounts)
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xE232E72983E329757F02292322296f5B96dAfC8F']])
 def test_claim_eth_on_ethereum(database, ethereum_inquirer, ethereum_accounts):
     """Data is taken from
@@ -362,7 +362,7 @@ def test_claim_eth_on_ethereum(database, ethereum_inquirer, ethereum_accounts):
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xC02ad7b9a9121fc849196E844DC869D2250DF3A6']])
 def test_prove_withdrawal(database, ethereum_inquirer, ethereum_accounts):
     """Test that withdrawal proving of the 2-step withdrawal is recognized properly

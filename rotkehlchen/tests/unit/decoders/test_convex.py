@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[string_to_evm_address('0xC960338B529e0353F570f62093Fd362B8FB55f0B')]])  # noqa: E501
 def test_booster_deposit(
@@ -101,7 +101,7 @@ def test_booster_deposit(
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[string_to_evm_address('0x53913A03a065f685097f8E8f40284D58016bB0F9')]])  # noqa: E501
 def test_booster_withdraw(database, ethereum_inquirer, ethereum_accounts):
     tx_hex = '0x79fcbafa4367e0563d3e614f774c5e4257c4e41f124ae8288980a310e2b2b547'
@@ -319,7 +319,7 @@ def test_cvxcrv_get_reward(database, ethereum_inquirer, eth_transactions):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[string_to_evm_address('0xe81FC42336c9314A9Be1EDB3F50eA9e275C93df3')]])  # noqa: E501
 def test_cvxcrv_withdraw(database, ethereum_inquirer, ethereum_accounts):
     tx_hex = '0x0a804804cc62f615b72dff55e8c245d9b69aa8f8ed3de549101ae128a4ae432b'
@@ -367,7 +367,7 @@ def test_cvxcrv_withdraw(database, ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[string_to_evm_address('0x2AcEcBF2Ee5BFc8eed599D58835EE9A7c45F3E2c')]])  # noqa: E501
 def test_cvxcrv_stake(database, ethereum_inquirer, ethereum_accounts):
     tx_hex = '0x3cc0b25887e2f0dac7f86fabd81aaafb1e041e84dbe8167885073c443320ad5f'

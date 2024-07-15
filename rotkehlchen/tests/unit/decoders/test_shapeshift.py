@@ -12,7 +12,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x3800966F67ccBA1976F69D006374204fba56d240']])
 def test_airdrop_claim(database, ethereum_inquirer, ethereum_accounts):
     tx_hex = deserialize_evm_tx_hash('0x6635d1e12fed1a95019a53e6f6495c586891bf7b41bccfc5838f9b1703a9c20c')  # noqa: E501

@@ -192,7 +192,7 @@ def _mock_airdrop_list(url: str, timeout: int = 0, headers: dict | None = None):
         return mock_response
 
 
-@pytest.mark.freeze_time()
+@pytest.mark.freeze_time
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('new_asset_data', [{

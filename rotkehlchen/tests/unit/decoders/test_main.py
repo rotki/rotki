@@ -796,7 +796,7 @@ def test_maybe_reshuffle_events():
     )
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[
     '0xA1E4380A3B1f749673E270229993eE55F35663b4',
     '0x756F45E3FA69347A9A973A725E3C98bC4db0b5a0',
@@ -858,7 +858,7 @@ def test_genesis_transaction(database, ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDRESS_WITHOUT_GENESIS_TX]])
 def test_genesis_transaction_no_address(database, ethereum_inquirer):
@@ -875,7 +875,7 @@ def test_genesis_transaction_no_address(database, ethereum_inquirer):
         )
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_phising_zero_transfers(database, ethereum_inquirer):
     """Checks that zero transfer phishing transactions are marked as ignored."""

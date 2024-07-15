@@ -12,7 +12,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('optimism_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 def test_vote_cast(database, optimism_inquirer, optimism_accounts):
     evmhash = deserialize_evm_tx_hash('0xeb9fb7b5047a30c4bb7e68343c6657ba4b0f0bcaf3d64972dcc01ccc3c10608b')  # noqa: E501
@@ -52,7 +52,7 @@ def test_vote_cast(database, optimism_inquirer, optimism_accounts):
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('optimism_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 def test_vote_cast_with_params(database, optimism_inquirer, optimism_accounts):
     """Data is taken from
@@ -95,7 +95,7 @@ def test_vote_cast_with_params(database, optimism_inquirer, optimism_accounts):
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('optimism_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 def test_vote_cast_with_reason(database, optimism_inquirer, optimism_accounts):
     evmhash = deserialize_evm_tx_hash('0xced69de2a81814554b9f69a19240737f0728f94bd67d94c73f960d24f99343bd')  # noqa: E501

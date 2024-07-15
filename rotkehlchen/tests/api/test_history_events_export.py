@@ -80,7 +80,7 @@ def assert_csv_export_response(
         assert count == expected_count
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('should_mock_price_queries', [False])
 def test_history_export_download_csv(
         rotkehlchen_api_server_with_exchanges,

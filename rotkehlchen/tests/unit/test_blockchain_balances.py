@@ -205,7 +205,7 @@ def test_protocol_balances(blockchain: 'ChainsAggregator') -> None:
     assert ETH_ADDRESS2 not in blockchain.balances.eth
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
 def test_native_token_balance(blockchain, polygon_pos_accounts):
     """

@@ -15,7 +15,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x692C673814eDB9Fe6DB2a6F4227F40524240Cbec']])
 def test_matic_to_pol_migration(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x6c30b202e7223ea93b9d1c898d7012b699d14bec5434e8839fc290858718f6a2')  # noqa: E501

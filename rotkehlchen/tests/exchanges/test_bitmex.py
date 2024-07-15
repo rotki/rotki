@@ -185,7 +185,7 @@ def test_bitmex_api_withdrawals_deposit_unexpected_data(sandbox_bitmex):
     query_bitmex_and_test(given_input, expected_warnings_num=0, expected_errors_num=1)
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 def test_bitmex_margin_history(sandbox_bitmex):
     result = sandbox_bitmex.query_margin_history(
         start_ts=1536492800,

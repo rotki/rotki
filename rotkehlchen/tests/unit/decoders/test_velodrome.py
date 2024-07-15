@@ -43,7 +43,7 @@ VELO_V1_TOKEN = evm_address_to_identifier(
 )
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0x78C13393Aee675DD7ED07ce992210750D1F5dB88']])
 def test_add_liquidity_v2(optimism_transaction_decoder, optimism_accounts, load_global_caches):
@@ -130,7 +130,7 @@ def test_add_liquidity_v2(optimism_transaction_decoder, optimism_accounts, load_
     assert EvmToken(WETH_OP_LP_TOKEN).protocol == VELODROME_POOL_PROTOCOL
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0xE1343a4b5e64d47B0c0f208d05Fb4B5973443818']])
 def test_add_liquidity_v1(optimism_transaction_decoder, optimism_accounts, load_global_caches):
@@ -207,7 +207,7 @@ def test_add_liquidity_v1(optimism_transaction_decoder, optimism_accounts, load_
     assert EvmToken(lp_token_identifier).protocol == VELODROME_POOL_PROTOCOL
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0x78C13393Aee675DD7ED07ce992210750D1F5dB88']])
 def test_remove_liquidity_v2(optimism_transaction_decoder, optimism_accounts, load_global_caches):
@@ -300,7 +300,7 @@ def test_remove_liquidity_v2(optimism_transaction_decoder, optimism_accounts, lo
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0xe435BEbA6DEE3D6F99392ab9568777EB8165719d']])
 def test_remove_liquidity_v1(optimism_transaction_decoder, optimism_accounts, load_global_caches):
@@ -387,7 +387,7 @@ def test_remove_liquidity_v1(optimism_transaction_decoder, optimism_accounts, lo
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0x78C13393Aee675DD7ED07ce992210750D1F5dB88']])
 def test_swap_eth_to_token_v2(optimism_accounts, optimism_transaction_decoder, load_global_caches):
@@ -445,7 +445,7 @@ def test_swap_eth_to_token_v2(optimism_accounts, optimism_transaction_decoder, l
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0xB1D34002ee676516787fd8CDb9C549a415F68aA8']])
 def test_swap_eth_to_token_v1(optimism_accounts, optimism_transaction_decoder, load_global_caches):
@@ -503,7 +503,7 @@ def test_swap_eth_to_token_v1(optimism_accounts, optimism_transaction_decoder, l
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0x2359497cc3F8F11A80d775715367d5CB3D0fD274']])
 def test_swap_token_to_eth_v2(optimism_accounts, optimism_transaction_decoder, load_global_caches):
@@ -573,7 +573,7 @@ def test_swap_token_to_eth_v2(optimism_accounts, optimism_transaction_decoder, l
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0xeEf53a1f4eb3846f33C3E549D6FDF130fa4f8b27']])
 def test_swap_token_to_eth_v1(optimism_accounts, optimism_transaction_decoder, load_global_caches):
@@ -631,7 +631,7 @@ def test_swap_token_to_eth_v1(optimism_accounts, optimism_transaction_decoder, l
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0x78C13393Aee675DD7ED07ce992210750D1F5dB88']])
 def test_swap_tokens_v2(optimism_accounts, optimism_transaction_decoder, load_global_caches):
@@ -701,7 +701,7 @@ def test_swap_tokens_v2(optimism_accounts, optimism_transaction_decoder, load_gl
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0xC6d5Ad3C4002A1b48d87b83939698660516ae142']])
 def test_swap_tokens_v1(optimism_accounts, optimism_transaction_decoder, load_global_caches):
@@ -759,7 +759,7 @@ def test_swap_tokens_v1(optimism_accounts, optimism_transaction_decoder, load_gl
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0x78C13393Aee675DD7ED07ce992210750D1F5dB88']])
 def test_stake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_decoder, load_global_caches):  # noqa: E501
@@ -825,7 +825,7 @@ def test_stake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_deco
     assert EvmToken(WETH_OP_LP_TOKEN).protocol == VELODROME_POOL_PROTOCOL
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0x78C13393Aee675DD7ED07ce992210750D1F5dB88']])
 def test_unstake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_decoder, load_global_caches):  # noqa: E501
@@ -871,7 +871,7 @@ def test_unstake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_de
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
 @pytest.mark.parametrize('optimism_accounts', [['0xf9AEb52bB4eF74E1987dd295E4Df326d41D0d0fF']])
 def test_get_reward_from_gauge_v2(optimism_accounts, optimism_transaction_decoder, load_global_caches):  # noqa: E501

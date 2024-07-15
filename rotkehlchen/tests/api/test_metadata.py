@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 def test_metadata_endpoint(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that all the endpoints that query mappings or metadata from the backend work fine"""
     airdrops_response = requests.get(

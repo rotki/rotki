@@ -650,7 +650,6 @@ def test_trade_from_kraken_unexpected_data(kraken):
 
     def query_kraken_and_test(input_trades, expected_warnings_num, expected_errors_num):
         # delete kraken history entries so they get requeried
-        cursor = kraken.history_events_db.db.conn.cursor()
         with kraken.history_events_db.db.user_write() as cursor:
             location = Location.KRAKEN
             cursor.execute(

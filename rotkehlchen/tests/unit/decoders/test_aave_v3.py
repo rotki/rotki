@@ -29,7 +29,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x93a208b0d7007f5733ea23F65bACF101Be8aC6cD']])
 def test_aave_v3_enable_collateral(database, ethereum_inquirer, ethereum_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x867d09a777ca7c5cbccd281d197ffbed327b5a8f07153483e94f75d4e1d04413')  # noqa: E501
@@ -97,7 +97,7 @@ def test_aave_v3_enable_collateral(database, ethereum_inquirer, ethereum_account
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x203b2E862C57fbAc813c05c46B6e1242844724A2']])
 def test_aave_v3_disable_collateral(database, ethereum_inquirer, ethereum_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x1f7614ba2425f3345d02bf1518c81ab3aa46e888553b409f3c9a360259bc7988')  # noqa: E501
@@ -165,7 +165,7 @@ def test_aave_v3_disable_collateral(database, ethereum_inquirer, ethereum_accoun
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x08c14B32C8A48894E4b933090EBcC9CE33B21135']])
 def test_aave_v3_deposit(database, ethereum_inquirer, ethereum_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x062bb6b01d4ac5fabd7b7783965d22589d289e44bb0227bb2fc0adaad7eb563b')  # noqa: E501
@@ -220,7 +220,7 @@ def test_aave_v3_deposit(database, ethereum_inquirer, ethereum_accounts) -> None
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xabE9e5d199E1E411098181b6a5Ab9f5f65d91389']])
 def test_aave_v3_withdraw(database, ethereum_inquirer, ethereum_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0xf184c285dab9ea6c72d18025c65202e3d9e5ec3181209a6cbedf88dfd4c8283f')  # noqa: E501
@@ -275,7 +275,7 @@ def test_aave_v3_withdraw(database, ethereum_inquirer, ethereum_accounts) -> Non
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x08c14B32C8A48894E4b933090EBcC9CE33B21135']])
 def test_aave_v3_borrow(database, ethereum_inquirer, ethereum_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x44367976e841cde459d84aec984d5fae4466b2978b1d71c9cd916bb79792ee20')  # noqa: E501
@@ -330,7 +330,7 @@ def test_aave_v3_borrow(database, ethereum_inquirer, ethereum_accounts) -> None:
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x9CBF099ff424979439dFBa03F00B5961784c06ce']])
 def test_aave_v3_repay(database, ethereum_inquirer, ethereum_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x440dddaad9f8d9c6d99777494640520854cca8dd102fb557f1654f5746da5f7e')  # noqa: E501
@@ -385,7 +385,7 @@ def test_aave_v3_repay(database, ethereum_inquirer, ethereum_accounts) -> None:
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x7420fA58bA44E1141d5E9ADB6903BE549f7cE0b5']])
 def test_aave_v3_liquidation(database, ethereum_inquirer, ethereum_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0xc1a03e87f1c0446ddd5a77f7eb906831c72618a921a1f6f9f430f612edca0531')  # noqa: E501
@@ -455,7 +455,7 @@ def test_aave_v3_liquidation(database, ethereum_inquirer, ethereum_accounts) -> 
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xA55EaD17fa903b1218dc6a79c47b54C9370E20AB']])
 def test_aave_v3_enable_collateral_polygon(database, polygon_pos_inquirer, polygon_pos_accounts) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x8002f1a3044bcdec645d512713724f09551c18a14c67509417c83961b230294b')  # noqa: E501
@@ -523,7 +523,7 @@ def test_aave_v3_enable_collateral_polygon(database, polygon_pos_inquirer, polyg
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x645C22593c232Ae78a7eCbaC93b38cbaC535ef12']])
 def test_aave_v3_withdraw_arbitrum_one(database, arbitrum_one_inquirer, arbitrum_one_accounts) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x09d5e6da511fb88e8a7db6f1209542610a9d3873048e405b88c7a766d7210d6f')  # noqa: E501
@@ -578,7 +578,7 @@ def test_aave_v3_withdraw_arbitrum_one(database, arbitrum_one_inquirer, arbitrum
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('base_accounts', [['0xaafc3e3C8B4fD93584256E6D49a9C364648E66cE']])
 def test_aave_v3_borrow_base(database, base_inquirer, base_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x92b6fef0623a3f56daa651968819f2e5b7a982037c19fed2166e4c00ba4d6350')  # noqa: E501
@@ -633,7 +633,7 @@ def test_aave_v3_borrow_base(database, base_inquirer, base_accounts) -> None:
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('gnosis_accounts', [['0x91ed7A7fd3072885c1ec905C932717Df6A8aE2cA']])
 def test_aave_v3_withdraw_gnosis(database, gnosis_inquirer, gnosis_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x1f3cae37be928563d154c534c98f41eefe9201eb3d0129c99c1ecb51f83e5596')  # noqa: E501
@@ -688,7 +688,7 @@ def test_aave_v3_withdraw_gnosis(database, gnosis_inquirer, gnosis_accounts) -> 
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('optimism_accounts', [['0xdbD5D31B7f48adC13A0aB0c591F7e3D4f9642e69']])
 def test_aave_v3_borrow_optimism(database, optimism_inquirer, optimism_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0xb043a7f28cccd6cb0392db47cea4607f8cf3b91b6510669a0a62588b66eb7fcf')  # noqa: E501
@@ -743,7 +743,7 @@ def test_aave_v3_borrow_optimism(database, optimism_inquirer, optimism_accounts)
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('scroll_accounts', [['0x3E6B4598E5bfeEc911f344E546C9EbFe4A00d770']])
 def test_aave_v3_repay_scroll(database, scroll_inquirer, scroll_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x66010f353be60adaa004f839d37cecd22c35c580060eeaffb9a28ebe169e1692')  # noqa: E501
@@ -798,7 +798,7 @@ def test_aave_v3_repay_scroll(database, scroll_inquirer, scroll_accounts) -> Non
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x35E0091D67B5e213db857F605c2047cA29A8800d']])
 def test_non_aave_tx(database, ethereum_inquirer, ethereum_accounts) -> None:
     """Test that the non-aave transactions happened through flash loans are not decoded
@@ -883,7 +883,7 @@ def test_claim_incentives_reward(database, optimism_inquirer, optimism_accounts)
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xfe46dCeb5d586DA13aBAA571613e20f5a61fa62e']])
 def test_aave_v3_events_with_approval(database, polygon_pos_inquirer, polygon_pos_accounts) -> None:  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x0aaca18a7e0ee29a247bd9bfab3b081acf469833105a9204251c5a4969a5fc29')  # noqa: E501
@@ -962,7 +962,7 @@ def test_aave_v3_events_with_approval(database, polygon_pos_inquirer, polygon_po
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('scroll_accounts', [['0x76111D2841b41B15e6F07fBae4796a82438D9c90']])
 def test_aave_v3_withdraw_eth(database, scroll_inquirer, scroll_accounts) -> None:
     """Test that withdrawing ETH from Aave gets decoded properly"""
@@ -1057,7 +1057,7 @@ def test_aave_v3_withdraw_eth(database, scroll_inquirer, scroll_accounts) -> Non
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x2013b74bdbd2Adf3eBF39E5112a9f794144Aeb15']])
 def test_aave_v3_withdraw_matic(database, polygon_pos_inquirer, polygon_pos_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x301885bdc8998d0e6d5c0064b3b92f5ee34f81ebbd14ca2b796579981ff8df31')  # noqa: E501
@@ -1136,7 +1136,7 @@ def test_aave_v3_withdraw_matic(database, polygon_pos_inquirer, polygon_pos_acco
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('gnosis_accounts', [['0x44ddBB35CfeBbafE98e402970517b33d8e925eB3']])
 def test_aave_v3_withdraw_xdai(database, gnosis_inquirer, gnosis_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x0154ef3042e93a632d654c86bff99f7d452681dba72f4f773806c9c26470f678')  # noqa: E501

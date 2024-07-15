@@ -13,7 +13,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Eth2PubKey, Location, TimestampMS, deserialize_evm_tx_hash
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xc66962Ff943449C90b457856D448Aa19D60CB033']])
 def test_deposit(database, ethereum_inquirer, ethereum_accounts):
     """Test a simple beacon chain deposit contract"""
@@ -56,7 +56,7 @@ def test_deposit(database, ethereum_inquirer, ethereum_accounts):
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x3e5fd0244e13d82fC230f3Fc610bcd76b3c8217C']])
 def test_multiple_deposits(database, ethereum_inquirer, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash('0x819fe4a07894cf044f5d8c63e5c1e2294e068d05bf91d9cfc3e7ae3e60528ae5')  # noqa: E501
@@ -124,7 +124,7 @@ def test_multiple_deposits(database, ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xfeF0E7635281eF8E3B705e9C5B86e1d3B0eAb397', '0xFbcE5F52fc21296AE42EE000dFdFdC7FecAaA2fD']])  # noqa: E501
 def test_deposit_with_anonymous_event(database, ethereum_inquirer, ethereum_accounts):
     """As seen here: https://twitter.com/LefterisJP/status/1671515625397669889

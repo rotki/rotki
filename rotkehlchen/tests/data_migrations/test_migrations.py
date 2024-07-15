@@ -147,8 +147,7 @@ def detect_accounts_migration_check(
     assert set(accounts.eth) == set(current_evm_accounts)
     assert set(rotki.chains_aggregator.accounts.eth) == set(current_evm_accounts)
     chain_to_added_address = []
-    for chain in expected_detected_addresses_per_chain:
-        chain_addresses = expected_detected_addresses_per_chain[chain]
+    for chain, chain_addresses in expected_detected_addresses_per_chain.items():
         assert set(getattr(accounts, chain.get_key())) == set(chain_addresses)
         assert set(getattr(rotki.chains_aggregator.accounts, chain.get_key())) == set(chain_addresses)  # noqa: E501
         chain_to_added_address.extend(

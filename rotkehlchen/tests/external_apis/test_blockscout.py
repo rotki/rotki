@@ -16,7 +16,7 @@ def fixture_blockscout(database, messages_aggregator):
     return Blockscout(database=database, msg_aggregator=messages_aggregator)
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 def test_query_withdrawals(blockscout, database):
     """Test the querying logic of eth withdrawal for blockscout"""
     address = '0xE12799BC799fc024db69E118fD2A6eA293DBFF7d'

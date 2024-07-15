@@ -12,7 +12,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('optimism_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 def test_attest_optimism(database, optimism_inquirer, optimism_accounts):
     tx_hex = deserialize_evm_tx_hash('0xf843f6d09e8dec2ee2d1b5fdeade9a9744857f598cf593b6c259166c32dfd05a')  # noqa: E501

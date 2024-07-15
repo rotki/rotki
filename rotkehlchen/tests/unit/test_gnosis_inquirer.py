@@ -3,7 +3,7 @@ import pytest
 from rotkehlchen.tests.utils.gnosis import GNOSIS_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize(*GNOSIS_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED)
 @pytest.mark.parametrize('gnosis_accounts', [['0xCace5b3c29211740E595850E80478416eE77cA21']])  # to connect to nodes  # noqa: E501
 def test_gnosis_nodes_prune_and_archive_status(gnosis_manager_connect_at_start, gnosis_inquirer):

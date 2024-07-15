@@ -133,7 +133,7 @@ def test_withdrawals(eth2: 'Eth2', database, ethereum_accounts, query_method):
     assert account1_events == 47
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.freeze_time('2023-04-24 21:00:00 GMT')
 def test_block_production(eth2: 'Eth2', database):
@@ -275,7 +275,7 @@ def test_block_production(eth2: 'Eth2', database):
     )]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.freeze_time('2023-11-19 16:30:00 GMT')
 def test_withdrawals_detect_exit(eth2: 'Eth2', database):

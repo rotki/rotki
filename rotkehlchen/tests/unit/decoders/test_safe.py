@@ -13,7 +13,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [
     [
         '0x6C65fB326e7734Ba5508b5d043718288b43b9ed9',
@@ -64,7 +64,7 @@ def test_added_owner(database, ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [
     [
         '0xafCD4572408b322adA9890253a7A42A9Fa4C2E40',
@@ -115,7 +115,7 @@ def test_removed_owner(database, ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [
     [
         '0xa0DD8E6c5440a424cD19f5Ec30F8fa485E814247',
@@ -165,7 +165,7 @@ def test_changed_threshold(database, ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 def test_execution_success(database, ethereum_inquirer, ethereum_accounts):
     """
@@ -213,7 +213,7 @@ def test_execution_success(database, ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x0Cec743b8CE4Ef8802cAc0e5df18a180ed8402A7']])
 def test_execution_failure(database, ethereum_inquirer, ethereum_accounts):
     """
@@ -261,7 +261,7 @@ def test_execution_failure(database, ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x96399Ddb62d833029fbEf774d1FE044AF33E98Ef']])
 def test_safe_creation(database, ethereum_inquirer, ethereum_accounts):
     """Test that creation of new safes is tracked"""
@@ -306,7 +306,7 @@ def test_safe_creation(database, ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])  # yabir.eth  # noqa: E501
 def test_safe_spam(database, polygon_pos_inquirer, polygon_pos_accounts):
     """Test that a safe transaction if from an unrelated account, does not appear in events"""

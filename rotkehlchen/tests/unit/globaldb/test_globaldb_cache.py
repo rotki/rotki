@@ -238,7 +238,7 @@ def test_velodrome_cache(optimism_inquirer):
     assert mock_notify.call_args_list == [make_call_object(CPT_VELODROME, ChainID.OPTIMISM, 0, 0)]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 def test_convex_cache(ethereum_inquirer):
     """Test convex pools querying and caching mechanism"""
     convex_expected_pools = {  # some expected pools

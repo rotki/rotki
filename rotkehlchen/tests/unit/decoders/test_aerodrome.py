@@ -49,7 +49,7 @@ WETH_BASE = Asset(evm_address_to_identifier(
 ))
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
 @pytest.mark.parametrize('base_accounts', [['0x514c4BA193c698100DdC998F17F24bDF59c7b6fB']])
 def test_add_liquidity(base_transaction_decoder, base_accounts, load_global_caches):
@@ -137,7 +137,7 @@ def test_add_liquidity(base_transaction_decoder, base_accounts, load_global_cach
     assert EvmToken(pool_token.identifier).protocol == AERODROME_POOL_PROTOCOL
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
 @pytest.mark.parametrize('base_accounts', [['0x514c4BA193c698100DdC998F17F24bDF59c7b6fB']])
 def test_stake_lp_token_to_gauge(base_accounts, base_transaction_decoder, load_global_caches):
@@ -197,7 +197,7 @@ def test_stake_lp_token_to_gauge(base_accounts, base_transaction_decoder, load_g
     assert EvmToken(pool_token.identifier).protocol == AERODROME_POOL_PROTOCOL
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_AERODROME]])
 @pytest.mark.parametrize('base_accounts', [['0x61D90de4fa8cfbBD7A7650Ae01A39fD1B1863503']])
 def test_remove_liquidity(base_accounts, base_transaction_decoder, load_global_caches):

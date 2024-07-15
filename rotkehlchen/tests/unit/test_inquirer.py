@@ -212,7 +212,7 @@ def test_parsing_forex_cache_works(
     assert inquirer._query_fiat_pair(A_EUR, A_JPY)[0] == price
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_fallback_to_coingecko(inquirer: Inquirer):
@@ -391,7 +391,7 @@ def test_price_underlying_tokens(inquirer, globaldb):
     assert price == FVal(67)
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_uniswap_v2_lp_token_price(inquirer, ethereum_manager, globaldb):
@@ -409,7 +409,7 @@ def test_find_uniswap_v2_lp_token_price(inquirer, ethereum_manager, globaldb):
     assert price is not None
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_find_velodrome_v2_lp_token_price(inquirer, optimism_manager):
@@ -694,7 +694,7 @@ def test_find_protocol_price_falllback_to_oracle(inquirer_defi):
     assert price is not None and price != ZERO
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_cache_is_hit_for_collection(inquirer: Inquirer):
     """Test that the price for a collection is saved to cache and not query for every asset"""

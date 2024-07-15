@@ -53,7 +53,7 @@ def fixture_initialize_mock_rotki_notifier() -> bool:
     return False
 
 
-@pytest.fixture()
+@pytest.fixture
 def function_scope_messages_aggregator(function_scope_initialize_mock_rotki_notifier):
     msg_aggregator = MessagesAggregator()
     if function_scope_initialize_mock_rotki_notifier is True:

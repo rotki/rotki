@@ -63,8 +63,7 @@ class HopBalances(ProtocolWithBalance):
                     staked_contracts[event.address].add(user_address)
 
         hop_abi = self.evm_inquirer.contracts.abi('HOP_STAKING')
-        for contract_address in staked_contracts:
-            addresses = staked_contracts[contract_address]
+        for contract_address, addresses in staked_contracts.items():
             staking_contract = EvmContract(
                 address=contract_address,
                 abi=hop_abi,
