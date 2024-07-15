@@ -50,6 +50,7 @@ def test_query_all_protocol_balances_for_account(
     assert len(warnings) == 0
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_protocol_names_are_known(
         ethereum_inquirer,
         function_scope_messages_aggregator,

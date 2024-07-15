@@ -119,7 +119,7 @@ def test_last_queried_ts(tokens, freezer):
     """
     Checks that after detecting evm tokens last_queried_timestamp is updated and there
     are no duplicates.
-    Note: It is hard to VCR
+    Note: It is hard to VCR because https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=70915550
     """
     # We don't need to query the chain here, so mock tokens list
     evm_tokens_patch = patch(
