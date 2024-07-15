@@ -4,3 +4,4 @@ app/cypress/
 dist
 .e2e
 .prettierrc
+app/tsconfig.tsbuildinfo
