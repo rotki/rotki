@@ -585,7 +585,7 @@ def fixture_rotkehlchen_api_server(
     api_server.stop()
 
 
-@pytest.fixture()
+@pytest.fixture
 def rotkehlchen_instance(
         uninitialized_rotkehlchen,
         start_with_logged_in_user,
@@ -673,7 +673,7 @@ def rotkehlchen_instance(
     return uninitialized_rotkehlchen
 
 
-@pytest.fixture()
+@pytest.fixture
 def rotkehlchen_api_server_with_exchanges(
         rotkehlchen_api_server,
         added_exchanges,

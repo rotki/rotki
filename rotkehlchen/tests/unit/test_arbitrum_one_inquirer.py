@@ -5,7 +5,7 @@ from rotkehlchen.tests.utils.arbitrum_one import (
 )
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize(*ARBITRUM_ONE_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED)
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xCace5b3c29211740E595850E80478416eE77cA21']])  # to connect to nodes  # noqa: E501
 def test_arbitrum_one_nodes_prune_and_archive_status(

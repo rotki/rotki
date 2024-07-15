@@ -12,7 +12,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xB04a6DB13942b6d4416AbeC5A8327866375c17a4']])
 def test_ygov_stake(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x1c596eb9189d124418d5bd060cb702acf20be8f7b18220fbec9b94a99b95c1d3')  # noqa: E501
@@ -56,7 +56,7 @@ def test_ygov_stake(database, ethereum_inquirer, ethereum_accounts):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xA7499Aa6464c078EeB940da2fc95C6aCd010c3Cc']])
 def test_ygov_get_reward(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x9063899641457daf68518b7017a4df30a79a0630224528aee0f2c483db76fc58')  # noqa: E501
@@ -100,7 +100,7 @@ def test_ygov_get_reward(database, ethereum_inquirer, ethereum_accounts):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x3AA33a58BFD82EA119E36b8886BC7E36E6F7Aa29']])
 def test_ygov_exit(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x42787b2b175d7f09401c3fd68c92f78982de2deef2214196261a31258c68006b')  # noqa: E501

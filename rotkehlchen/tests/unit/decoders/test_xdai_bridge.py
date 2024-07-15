@@ -15,7 +15,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x4c1a316De360E08817eB88dD31A0E7305005fB65']])
 def test_bridge_dai_from_ethereum(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xe17f61edb9fe278720679ecfd5498f75082e38bf4779e5e6403a551f5084ee23')  # noqa: E501
@@ -57,7 +57,7 @@ def test_bridge_dai_from_ethereum(database, ethereum_inquirer, ethereum_accounts
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xfF025244b556F0CD4617FBfE67F7986D7292A3E4']])
 def test_bridge_dai_from_ethereum_nolog(database, ethereum_inquirer, ethereum_accounts):
     """Test the case where a simple transfer to the bridge is recognized as a bridging event"""
@@ -100,7 +100,7 @@ def test_bridge_dai_from_ethereum_nolog(database, ethereum_inquirer, ethereum_ac
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x07AD02e0C1FA0b09fC945ff197E18e9C256838c6']])
 def test_withdraw_dai_to_ethereum(database, ethereum_inquirer, ethereum_accounts):
     user_address = ethereum_accounts[0]
@@ -142,7 +142,7 @@ def test_withdraw_dai_to_ethereum(database, ethereum_inquirer, ethereum_accounts
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('gnosis_accounts', [['0x07AD02e0C1FA0b09fC945ff197E18e9C256838c6']])
 def test_withdraw_dai_from_gnosis(database, gnosis_inquirer, gnosis_accounts):
     user_address = gnosis_accounts[0]
@@ -184,7 +184,7 @@ def test_withdraw_dai_from_gnosis(database, gnosis_inquirer, gnosis_accounts):
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('gnosis_accounts', [['0x7DA9A33d15413F499299687cC9d81DE84684E28E']])
 def test_deposit_dai_to_gnosis(database, gnosis_inquirer, gnosis_accounts):
     user_address = gnosis_accounts[0]

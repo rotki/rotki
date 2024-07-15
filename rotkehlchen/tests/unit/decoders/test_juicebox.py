@@ -14,7 +14,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
 def test_donation(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash(
@@ -85,7 +85,7 @@ def test_donation(database, ethereum_inquirer, ethereum_accounts):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x15b850a67A6ceDd218e368f1Cab11403f45a42f4']])
 def test_fund_raising(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash(

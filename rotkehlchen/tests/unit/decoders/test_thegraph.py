@@ -26,7 +26,7 @@ ADDY_USER_2_ARB = string_to_evm_address('0xec9342111098f8b4A293cD8033746d6f8E9e9
 ADDY_USER_3_ARB = string_to_evm_address('0xBe79986821637afD1406BF9278DA55cf9085cF8f')
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_USER]])
 def test_thegraph_delegate(database, ethereum_inquirer):
     tx_hash = deserialize_evm_tx_hash('0x6ed3377db652151fb8e4794dd994a921a2d029ad317bd3f2a2916af239490fec')  # noqa: E501
@@ -98,7 +98,7 @@ def test_thegraph_delegate(database, ethereum_inquirer):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_ROTKI]])
 def test_thegraph_contract_deposit_gas(database, ethereum_inquirer):
     tx_hash = deserialize_evm_tx_hash('0xf254ac1bbfbf07ca21042edd3ff78dad7c3158c8218598b5359b6e415e0977b7')  # noqa: E501
@@ -142,7 +142,7 @@ def test_thegraph_contract_deposit_gas(database, ethereum_inquirer):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_ROTKI]])
 def test_thegraph_contract_transfer_approval(database, ethereum_inquirer):
     tx_hash = deserialize_evm_tx_hash('0xbb8280cc9ca9de1d33e573a4381d88525a214fc45f84415129face03125ba22f')  # noqa: E501
@@ -184,7 +184,7 @@ def test_thegraph_contract_transfer_approval(database, ethereum_inquirer):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_ROTKI]])
 def test_thegraph_contract_delegation_transferred_to_l2_vested(database, ethereum_inquirer):
     tx_hash = deserialize_evm_tx_hash('0x48321bb00e5c5b67f080991864606dbc493051d20712735a579d7ae31eca3d78')  # noqa: E501
@@ -234,7 +234,7 @@ def test_thegraph_contract_delegation_transferred_to_l2_vested(database, ethereu
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_USER_2, ADDY_ROTKI]])
 def test_thegraph_contract_delegation_transferred_to_l2(database, ethereum_inquirer):
     tx_hash = deserialize_evm_tx_hash('0xed80711e4cb9c428790f0d9b51f79473bf5253d5d03c04d958d411e7fa34a92e')  # noqa: E501
@@ -294,7 +294,7 @@ def test_thegraph_contract_delegation_transferred_to_l2(database, ethereum_inqui
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_USER]])
 def test_thegraph_undelegate(database, ethereum_inquirer):
     tx_hash = deserialize_evm_tx_hash('0x5ca5244868d9c0d8c30a1cad0feaf137bd28acd9c3f669a09a3a199fd75ad25a')  # noqa: E501
@@ -337,7 +337,7 @@ def test_thegraph_undelegate(database, ethereum_inquirer):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_USER]])
 def test_thegraph_delegated_withdrawn(database, ethereum_inquirer):
     tx_hash = deserialize_evm_tx_hash('0x49307751de5ba4cf98fccbdd1ab8387fd60a7ce120800212c216bf0a6a04acfa')  # noqa: E501
@@ -380,7 +380,7 @@ def test_thegraph_delegated_withdrawn(database, ethereum_inquirer):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [[ADDY_USER_1_ARB]])
 def test_thegraph_delegate_arbitrum_one(database, arbitrum_one_inquirer):
     tx_hash = deserialize_evm_tx_hash('0x3c846f305330969fb0ddb87c5ae411b4e9692f451a7ff3237b6f71020030c7d1')  # noqa: E501
@@ -451,7 +451,7 @@ def test_thegraph_delegate_arbitrum_one(database, arbitrum_one_inquirer):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [[ADDY_USER_2_ARB]])
 def test_thegraph_undelegate_arbitrum_one(database, arbitrum_one_inquirer):
     tx_hash = deserialize_evm_tx_hash('0xc66ea685db10809b1765e8381175ada7b021b5a40f57572e220a8b94235c1f72')  # noqa: E501
@@ -509,7 +509,7 @@ def test_thegraph_undelegate_arbitrum_one(database, arbitrum_one_inquirer):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [[ADDY_USER_3_ARB]])
 def test_thegraph_delegated_withdrawn_arbitrum_one(database, arbitrum_one_inquirer):
     tx_hash = deserialize_evm_tx_hash('0xd6847bc02b65891118caaa8a2882cf5db6e0938c909db112e4fa6930929d8c39')  # noqa: E501

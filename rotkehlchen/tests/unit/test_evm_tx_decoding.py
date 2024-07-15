@@ -233,7 +233,7 @@ def test_query_and_decode_transactions_works_with_different_chains(
     assert len(hashes) == 1
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[
     '0x756F45E3FA69347A9A973A725E3C98bC4db0b5a0',
     '0x9328D55ccb3FCe531f199382339f0E576ee840A3',

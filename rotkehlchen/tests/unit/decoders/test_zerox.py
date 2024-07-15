@@ -42,7 +42,7 @@ A_PENDLE: Final = Asset(strethaddress_to_identifier('0x808507121B80c02388fAd1472
 A_BULL: Final = Asset('eip155:137/erc20:0x9f95e17b2668AFE01F8fbD157068b0a4405Cc08D')
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xaE84961b9FA7412fEAEf209fD8f50C4F8Ef4D8fD']])
 def test_sell_to_uniswap(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xb9827174e182a1b8df3507d13c5cedccdc974c4edd5d66f59355f7e9758b9006')  # noqa: E501
@@ -95,7 +95,7 @@ def test_sell_to_uniswap(database, ethereum_inquirer, ethereum_accounts):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xc2aAd9386835C90deC9d669e35c128461E6102CA']])
 def test_sell_eth_for_token_to_uniswap_v3(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x5b7719016f7d7d3d8ed9d4d86afd0e0079551d0a7795f70f01764ce5eaa44478')  # noqa: E501
@@ -148,7 +148,7 @@ def test_sell_eth_for_token_to_uniswap_v3(database, ethereum_inquirer, ethereum_
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xed288d0261421C7cf36a56f23297cD5F4635A089']])
 def test_sell_token_for_eth_to_uniswap_v3(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x68416e19252c678cdf67ae9b7adff742d78f95cea3c3f0582d3dc930340e5bdf')  # noqa: E501
@@ -201,7 +201,7 @@ def test_sell_token_for_eth_to_uniswap_v3(database, ethereum_inquirer, ethereum_
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xCCD54C835d7199ceEE2AedA4722C69eeeA6E606D']])
 def test_sell_token_for_token_to_uniswap_v3(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x6efe8a18de9ca3183bdb319be445f1b0b9041c0e8208fa04a58ee276b54574dd')  # noqa: E501
@@ -254,7 +254,7 @@ def test_sell_token_for_token_to_uniswap_v3(database, ethereum_inquirer, ethereu
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xddb143606305559e6b69843c1f53f2689D2aB605']])
 def test_multiplex_batch_sell_eth_for_token(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xa151bc4f1c69591598386eaa65761cefd706cbfe0a1a340d8856dbfe2c3bd8c5')  # noqa: E501
@@ -307,7 +307,7 @@ def test_multiplex_batch_sell_eth_for_token(database, ethereum_inquirer, ethereu
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xdf0093104D66509B35411815d7b29c40C16c9578']])
 def test_multiplex_batch_sell_token_for_eth(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xf9b40a3bbbd92fe72099cff45564e099782fc9b0b4bd40c2d87484b43735b3b1')  # noqa: E501
@@ -360,7 +360,7 @@ def test_multiplex_batch_sell_token_for_eth(database, ethereum_inquirer, ethereu
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xF6a17316821eD254EC0DFa270c6F9f0D3317f706']])
 def test_multiplex_batch_sell_token_for_token(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x0f422be6e6904700181c3effb0600a8ed7e1616e70e6587d383b29290d6a7c1d')  # noqa: E501
@@ -413,7 +413,7 @@ def test_multiplex_batch_sell_token_for_token(database, ethereum_inquirer, ether
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xA5a81a7Bf4A737dAbCd8a4C5fc2A36598c1943bF']])
 def test_multiplex_multihop_sell_token_for_token(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xceccb105d312df00105eca2560b8da4cd0e791bb0f0da4cebeb17ca46abf2ce4')  # noqa: E501
@@ -466,7 +466,7 @@ def test_multiplex_multihop_sell_token_for_token(database, ethereum_inquirer, et
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x773E123A1F1d5495a8Eaf4556a9f4e8aFDd9989C']])
 def test_0x415565b0_eth_to_token(database, ethereum_inquirer, ethereum_accounts):
     """Test ETH to Token swaps done through 0x415565b0 method ID via the 0x protocol router contract."""  # noqa: E501
@@ -520,7 +520,7 @@ def test_0x415565b0_eth_to_token(database, ethereum_inquirer, ethereum_accounts)
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x61Ead4d3e373332c2099e2DC63F916Dbe99f4B0c']])
 def test_0x415565b0_token_to_eth(database, ethereum_inquirer, ethereum_accounts):
     """Test Token to ETH swaps done through 0x415565b0 method ID via the 0x protocol router contract."""  # noqa: E501
@@ -574,7 +574,7 @@ def test_0x415565b0_token_to_eth(database, ethereum_inquirer, ethereum_accounts)
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x85A28E964FCF12E0a6db44B3432794B08aD2426d']])
 def test_0x415565b0_token_to_token(database, ethereum_inquirer, ethereum_accounts):
     """Test Token to Token swaps done through 0x415565b0 method ID via the 0x protocol router contract."""  # noqa: E501
@@ -628,7 +628,7 @@ def test_0x415565b0_token_to_token(database, ethereum_inquirer, ethereum_account
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xE4BeF064c912BC95C404850019909efe8D357716']])
 def test_execute_meta_transaction_v2(database, ethereum_inquirer, ethereum_accounts):
     """Test meta transaction swaps done via the 0x protocol router contract."""
@@ -683,7 +683,7 @@ def test_execute_meta_transaction_v2(database, ethereum_inquirer, ethereum_accou
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x3951970BA92CBFff00496e8C5Ebd675cEB614773']])
 def test_execute_meta_transaction_v2_multiplex(database, ethereum_inquirer, ethereum_accounts):
     """Test meta transaction multiplex swaps done via the 0x protocol router contract."""
@@ -738,7 +738,7 @@ def test_execute_meta_transaction_v2_multiplex(database, ethereum_inquirer, ethe
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x2dcd7947973cb5CBf20e3dBF0663F566D1De9CdA']])
 def test_execute_meta_transaction_v2_flash(database, ethereum_inquirer, ethereum_accounts):
     """Test meta transaction swaps done via the 0x protocol using its flash contract."""
@@ -793,7 +793,7 @@ def test_execute_meta_transaction_v2_flash(database, ethereum_inquirer, ethereum
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x701D5a3344C98765b36014A8a71941f499A2Bc75']])
 def test_swap_on_polygon_pos(database, polygon_pos_inquirer, polygon_pos_accounts):
     tx_hash = deserialize_evm_tx_hash('0x8e7c52d519d1ca0d1dfd8c8c21a2d2c34574e2bdada0ae7faafd49c1ddb8e8a6')  # noqa: E501
@@ -846,7 +846,7 @@ def test_swap_on_polygon_pos(database, polygon_pos_inquirer, polygon_pos_account
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xf06cc31757760CC9B8235C868ED90789f9c1E883']])
 def test_swap_arbitrum_one(database, arbitrum_one_inquirer, arbitrum_one_accounts):
     tx_hash = deserialize_evm_tx_hash('0x355c18ab70fb5d17098b6bc8fd527ce00f0b25c8220d6fe29522a1fb64b711bc')  # noqa: E501
@@ -900,7 +900,7 @@ def test_swap_arbitrum_one(database, arbitrum_one_inquirer, arbitrum_one_account
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('optimism_accounts', [['0x4Ea754349AcE5303c82f0d1D491041e042f2ad22']])
 def test_swap_optimism(database, optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0x6b2b2d8c0cf2e27bb9e6c8309fd9887a066f9b72139acfe13d7ca5c29ae6c0ff')  # noqa: E501
@@ -954,7 +954,7 @@ def test_swap_optimism(database, optimism_inquirer, optimism_accounts):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('base_accounts', [['0xF68D2BfCecd7895BBa05a7451Dd09A1749026454']])
 def test_swap_base(database, base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0x4a5eb8fac7ef1d6637ff1d54e67791e4a5a49effb141f30e5af90f5aba5d48a5')  # noqa: E501
@@ -1008,7 +1008,7 @@ def test_swap_base(database, base_inquirer, base_accounts):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xA26B29a299c65D0F63A8568BA5663028347f5571']])
 def test_swap_on_pancakeswap(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xcfb3b1587bb4d24a06d0f543493098ab285ae3763a489911da5bbea99bcb3499')  # noqa: E501
@@ -1061,7 +1061,7 @@ def test_swap_on_pancakeswap(database, ethereum_inquirer, ethereum_accounts):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x74882149e6a43b8E69cAC6Aef92D753e96054B78']])
 def test_swap_on_curve(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x12d794e7ced93da02978aa9b46b59f27ceab49724fdb1b0c39963792af68fdf0')  # noqa: E501
@@ -1114,7 +1114,7 @@ def test_swap_on_curve(database, ethereum_inquirer, ethereum_accounts):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xfD1F67fDbA4F0C1952861345237463b39228F1C6']])
 def test_swap_on_sushiswap(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x802f7d1c4b2f1b7ef48e5c3af92a3a166a91624b89e736f85b90df3dd7ce9d73')  # noqa: E501
@@ -1167,7 +1167,7 @@ def test_swap_on_sushiswap(database, ethereum_inquirer, ethereum_accounts):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xb3Dd5Cdb7F73acD1177c96409412e0b326E9C457']])
 def test_swap_on_quickswap(database, polygon_pos_inquirer, polygon_pos_accounts):
     tx_hash = deserialize_evm_tx_hash('0x7b1bef89b8890e060787924a279e040ce8d50aedd35337747af6d56024ce269e')  # noqa: E501

@@ -34,7 +34,7 @@ A_OPTIMISM_USDC = Asset('eip155:10/erc20:0x0b2C639c533813f4Aa9D7837CAf62653d097F
 A_POLYGON_USDC = Asset('eip155:137/erc20:0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174')
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x7e6Ee5d52825B3A3d9C500E7B8b0a2BAa1c91545']])
 def test_metamask_swap_token_to_eth(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash(
@@ -115,7 +115,7 @@ def test_metamask_swap_token_to_eth(database, ethereum_inquirer, ethereum_accoun
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x4bc63637428B1cb65E646d6CF3216A4B4C84f446']])
 def test_metamask_swap_eth_to_token(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash(
@@ -184,7 +184,7 @@ def test_metamask_swap_eth_to_token(database, ethereum_inquirer, ethereum_accoun
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x4E2A6f9F27AC0B4bd4E1729640e06888F432030C']])
 def test_metamask_swap_usdt_to_token(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash(
@@ -253,7 +253,7 @@ def test_metamask_swap_usdt_to_token(database, ethereum_inquirer, ethereum_accou
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xDe0A989c715C594Eadc98a1b97a9aa65d3cECb48']])
 def test_metamask_swap_token_to_usdc(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash(
@@ -322,7 +322,7 @@ def test_metamask_swap_token_to_usdc(database, ethereum_inquirer, ethereum_accou
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x94c3951a05df16b2e744937574778fFeb10a51b2']])
 def test_metamask_swap_token_to_token(database, ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash(
@@ -403,7 +403,7 @@ def test_metamask_swap_token_to_token(database, ethereum_inquirer, ethereum_acco
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x517725Caf62Fca000C0ea950497116933f813E38']])
 def test_metamask_swap_arbitrum(database, arbitrum_one_inquirer, arbitrum_one_accounts):
     tx_hash = deserialize_evm_tx_hash(
@@ -472,7 +472,7 @@ def test_metamask_swap_arbitrum(database, arbitrum_one_inquirer, arbitrum_one_ac
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('optimism_accounts', [['0xc29067833665820b3505953a87F8265C9f1A517b']])
 def test_metamask_swap_optimism(database, optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash(
@@ -541,7 +541,7 @@ def test_metamask_swap_optimism(database, optimism_inquirer, optimism_accounts):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xB12897740478eeC7B86b9eBf14245cDAcBBa4F2f']])
 def test_metamask_swap_polygon(database, polygon_pos_inquirer, polygon_pos_accounts):
     tx_hash = deserialize_evm_tx_hash(

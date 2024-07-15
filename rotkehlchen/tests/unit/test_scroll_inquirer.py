@@ -8,7 +8,7 @@ from rotkehlchen.tests.utils.scroll import (
 )
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize(*SCROLL_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED)
 @pytest.mark.parametrize('scroll_accounts', [['0xCace5b3c29211740E595850E80478416eE77cA21']])  # to connect to nodes  # noqa: E501
 def test_scroll_nodes_prune_and_archive_status(

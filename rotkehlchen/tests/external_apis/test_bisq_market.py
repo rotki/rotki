@@ -8,7 +8,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.bisq_market import get_bisq_market_price
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 def test_market_request():
     """Test that we can query bisq for market prices"""
     price_in_btc = get_bisq_market_price(A_BSQ.resolve_to_crypto_asset())

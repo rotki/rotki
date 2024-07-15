@@ -26,7 +26,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xfa8666aE51F5b136596248d9411b03AC9040fff0']])
 def test_deposit_eth_from_ethereum_to_scroll(database, ethereum_inquirer, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash('0x1d924e2f2f63cf5a2d78ceaa6289658cf4743e968d23f78064d55c7428f78b60')  # noqa: E501
@@ -81,7 +81,7 @@ def test_deposit_eth_from_ethereum_to_scroll(database, ethereum_inquirer, ethere
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('scroll_accounts', [['0xfa8666aE51F5b136596248d9411b03AC9040fff0']])
 def test_receive_eth_on_scroll(database, scroll_inquirer, scroll_accounts):
     evmhash = deserialize_evm_tx_hash('0xd47e37dc8acb08b86bd90214d1df15549305e6d5fe126b97ff3b66a1b814b801')  # noqa: E501
@@ -111,7 +111,7 @@ def test_receive_eth_on_scroll(database, scroll_inquirer, scroll_accounts):
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('scroll_accounts', [['0xEa72f0d67045b2cffbFB18E56744799f9F860CB7']])
 def test_withdraw_eth_from_scroll_to_ethereum(database, scroll_inquirer, scroll_accounts):
     evmhash = deserialize_evm_tx_hash('0x87c44e16cf62a8aa8e56b9677e6c400041b6731a5c24f9b8ca2deb6e00202a42')  # noqa: E501
@@ -153,7 +153,7 @@ def test_withdraw_eth_from_scroll_to_ethereum(database, scroll_inquirer, scroll_
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xEa72f0d67045b2cffbFB18E56744799f9F860CB7']])
 def test_receive_eth_on_ethereum(database, ethereum_inquirer, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash('0xed4d0ddc99b88caa07d5d15faf376abade6cc06eaf6a28dce47eac66695503c4')  # noqa: E501
@@ -195,7 +195,7 @@ def test_receive_eth_on_ethereum(database, ethereum_inquirer, ethereum_accounts)
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xD297a2E732537f9fFb2Da53816FC84c7A50a11C2']])
 def test_deposit_erc20_from_ethereum_to_scroll(database, ethereum_inquirer, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash('0xd80e6894bce182c2976bb9fa64e162f1757a087057b00638b43fe0c5154cf1a6')  # noqa: E501
@@ -250,7 +250,7 @@ def test_deposit_erc20_from_ethereum_to_scroll(database, ethereum_inquirer, ethe
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('scroll_accounts', [['0xD297a2E732537f9fFb2Da53816FC84c7A50a11C2']])
 def test_receive_erc20_on_scroll(database, scroll_inquirer, scroll_accounts):
     evmhash = deserialize_evm_tx_hash('0x630cd85723676d993f4afdd9f182cd2468444748eb7b1c6c0c8cc1db0d925c15')  # noqa: E501
@@ -280,7 +280,7 @@ def test_receive_erc20_on_scroll(database, scroll_inquirer, scroll_accounts):
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('scroll_accounts', [['0x182A0c65bCB008adAaE404e30A813c9797BD717c']])
 def test_withdraw_erc20_from_scroll_to_ethereum(database, scroll_inquirer, scroll_accounts, caplog):  # noqa: E501
     """Test that USDT withdrawals from scroll to L1 work fine"""
@@ -326,7 +326,7 @@ def test_withdraw_erc20_from_scroll_to_ethereum(database, scroll_inquirer, scrol
     assert '_decode_eth_withdraw_event failed due to Invalid ethereum address' not in caplog.text
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('scroll_accounts', [['0xa6145DFB72ADBd7D018c30f611bde7D943EE2E17']])
 def test_withdraw_usdc_from_scroll_to_ethereum(database, scroll_inquirer, scroll_accounts):
     """
@@ -372,7 +372,7 @@ def test_withdraw_usdc_from_scroll_to_ethereum(database, scroll_inquirer, scroll
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x59ceD3eeB1cb01AfE92ADbC994D1CE78310E668E']])
 def test_receive_erc20_on_ethereum(database, ethereum_inquirer, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash('0xbe6e98db62ee719922c7d01b0b623e16c8ee162a2bf9143603f11eba3e3dd474')  # noqa: E501

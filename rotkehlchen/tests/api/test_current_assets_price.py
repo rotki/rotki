@@ -308,7 +308,7 @@ def test_remove_manual_current_price(rotkehlchen_api_server):
     assert (A_BTC, A_ETH) not in Inquirer()._cached_current_price
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_manual_current_prices_loop(inquirer: 'Inquirer'):
     """Check that if we got a loop of manual current prices
@@ -342,7 +342,7 @@ def test_manual_current_prices_loop(inquirer: 'Inquirer'):
     assert 'from ETH(Ethereum) to EUR(Euro) since your manual latest' in warnings[0]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ignore_mocked_prices_for', ['ETH'])
 def test_inquirer_oracles_does_not_affect_manual_price(inquirer):
     """Checks that change of oracles order does not affect manual current price usage.

@@ -97,7 +97,7 @@ def check_cc_result(result: list, forward: bool):
 
 
 @pytest.mark.skip('They are updating their systems & cleaning inactive pairs. Check again soon')
-@pytest.mark.freeze_time()
+@pytest.mark.freeze_time
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_cryptocompare_histohour_data_going_forward(database, freezer):
     """Test that the cryptocompare histohour data retrieval works properly
@@ -141,7 +141,7 @@ def test_cryptocompare_histohour_data_going_forward(database, freezer):
 
 
 @pytest.mark.skip('They are updating their systems & cleaning inactive pairs. Check again soon')
-@pytest.mark.freeze_time()
+@pytest.mark.freeze_time
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_cryptocompare_histohour_data_going_backward(database, freezer):
     """Test that the cryptocompare histohour data retrieval works properly

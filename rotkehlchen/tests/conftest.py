@@ -104,7 +104,7 @@ if sys.platform == 'darwin':
         with suppress(AttributeError):
             delattr(request.config._tmpdirhandler, '_basetemp')
 
-    @pytest.fixture()
+    @pytest.fixture
     def tmpdir(request, tmpdir_factory):
         """Return a temporary directory path object
         which is unique to each test function invocation,

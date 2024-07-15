@@ -19,7 +19,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x9ba961989Dd6609Ed091f512bE947118c40F2291']])
 def test_deposit_eth_borrow_lusd(database, ethereum_inquirer, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash('0xdb9a541a4af7d5d46d7ea5fe4a2a752dcb731d64d052f86f630e97362063602c')  # noqa: E501
@@ -86,7 +86,7 @@ def test_deposit_eth_borrow_lusd(database, ethereum_inquirer, ethereum_accounts)
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x648E180e246741363639B1496762763dd25649db']])
 def test_payback_lusd(database, ethereum_inquirer, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash('0x40bb08427a3b99fb9896cf14858d82d361a6e7a8fb7dd6d2000511ac3dca5707')  # noqa: E501
@@ -127,7 +127,7 @@ def test_payback_lusd(database, ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x648E180e246741363639B1496762763dd25649db']])
 def test_remove_eth(database, ethereum_inquirer, ethereum_accounts):
     tx_hex = deserialize_evm_tx_hash('0x6be5312c21855c3cc324b5b6ce9f9f65dbd488e270e84ac5e6fb96c74d83fe4e')  # noqa: E501
@@ -169,7 +169,7 @@ def test_remove_eth(database, ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xF04E6f2D27ED324917AD2098F96f5d4ac52e1684']])
 def test_stability_pool_deposit(database, ethereum_inquirer, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash('0x1277cb6c2c8e151fe90118cdd738e46f894e18de04ab6af33d567e91597f322b')  # noqa: E501
@@ -223,7 +223,7 @@ def test_stability_pool_deposit(database, ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xF03639047f75204d00c9314611C2b24570db4405']])
 def test_stability_pool_collect_rewards(database, ethereum_inquirer, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash('0xad077faf7976504615561ac7fd9fdddc934180f3237f216851136d2327d71196')  # noqa: E501
@@ -290,7 +290,7 @@ def test_stability_pool_collect_rewards(database, ethereum_inquirer, ethereum_ac
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x1b63708eafa610DFa81c6DB4A257570D78a6dF1c']])
 def test_increase_lqty_staking(database, ethereum_inquirer, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash('0x4e2bbc53a75fbbc954fc305f7adf68be1fa3b1416c941b0350719cc484c9d8fb')  # noqa: E501
@@ -358,7 +358,7 @@ def test_increase_lqty_staking(database, ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x58D9A499AC82D74b08b3Cb76E69d8f32e1395746']])
 def test_remove_liquity_staking(database, ethereum_inquirer, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash('0x028397f0409042da26890ec27eb36d617e326c3ce476d823f181419bdd0ad860')  # noqa: E501
@@ -700,7 +700,7 @@ def test_ds_proxy_liquity_staking(database, ethereum_inquirer, ethereum_accounts
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xF35da7a42d92c7919172195aA7BC7a0d43eC866c']])
 def test_ds_proxy_borrow_lusd(database, ethereum_inquirer, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash('0xa7404dc759fdef08fde6dbb227d6c55276861853d274c9a739236488a123f794')  # noqa: E501

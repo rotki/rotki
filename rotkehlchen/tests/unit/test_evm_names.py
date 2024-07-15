@@ -116,7 +116,7 @@ def test_uses_sources_only_when_needed(evm_address, database: 'DBHandler'):
     assert names == [], 'No names should have been returned since the blockchain was None'
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @freeze_time('2023-05-12')  # freezing time just to make sure comparisons of timestamps won't fail
 def test_download_ens_avatar(ethereum_inquirer, opensea):
     """

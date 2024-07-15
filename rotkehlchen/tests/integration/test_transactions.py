@@ -55,7 +55,7 @@ def test_get_transaction_receipt(
     assert results[0] == transactions[0]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
 @pytest.mark.parametrize('ethereum_accounts', [[ETH_ADDRESS1, ETH_ADDRESS2, ETH_ADDRESS3]])
 def test_get_or_create_transaction(ethereum_accounts, eth_transactions, database):

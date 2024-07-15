@@ -57,8 +57,8 @@ def test_db_persistence_after_search():
     - Add a manual price for the custom asset
     - Crash the application
     - Check that the manual price is still in the global database"""
-    rotki_process = subprocess.Popen(
-        [  # noqa: S607,S603  # is only used to execute rotki code here
+    rotki_process = subprocess.Popen(  # noqa: S603
+        [  # noqa: S607  # is only used to execute rotki code here
             'python',
             '-m'
             'rotkehlchen.tests.utils.crash_test',

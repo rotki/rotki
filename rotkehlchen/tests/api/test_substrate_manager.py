@@ -6,7 +6,7 @@ from rotkehlchen.tests.utils.api import api_url_for, assert_proper_sync_response
 from rotkehlchen.tests.utils.substrate import KUSAMA_TEST_RPC_ENDPOINT
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.freeze_time('2023-10-12 09:00:00 GMT')
 def test_set_unset_own_rpc_endpoint(rotkehlchen_api_server):
     """Test that successfully setting/unsetting an own node (via `ksm_rpc_endpoint` setting)

@@ -39,7 +39,7 @@ ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 ADDY2 = '0x5727c0481b90a129554395937612d8b9301D6c7b'
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_aave_deposit_v1(database, ethereum_inquirer):
     """Data taken from
@@ -110,7 +110,7 @@ def test_aave_deposit_v1(database, ethereum_inquirer):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_aave_withdraw_v1(database, ethereum_inquirer):
     """Data taken from
@@ -182,7 +182,7 @@ def test_aave_withdraw_v1(database, ethereum_inquirer):
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY2]])
 def test_aave_eth_withdraw_v1(database, ethereum_inquirer):
     """Data taken from
@@ -811,7 +811,7 @@ def test_aave_v2_repay(database, ethereum_inquirer, eth_transactions):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x1dB64086b4cdA94884E4FC296799a512dfc564CA']])
 def test_aave_v2_liquidation(
         database: 'DBHandler',
@@ -862,7 +862,7 @@ def test_aave_v2_liquidation(
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x8ca7ED9b02ec1E8bEee868a32495Ed5b157eeE08']])
 def test_aave_v1_liquidation(
         database: 'DBHandler',
@@ -914,7 +914,7 @@ def test_aave_v1_liquidation(
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xe903fEed7c1098Ba92E4b7092ca77bBc48503d90']])
 def test_aave_v2_supply_ether(database, ethereum_inquirer, ethereum_accounts):
     """
@@ -992,7 +992,7 @@ def test_aave_v2_supply_ether(database, ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x572f60c0b887203324149D9C308574BcF2dfaD82']])
 def test_aave_v2_borrow_polygon(database, polygon_pos_inquirer, polygon_pos_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x2c2777e24bc8a59171e33d54c2a87d846fc23e7f21a32b99d22397e64429b39c')  # noqa: E501

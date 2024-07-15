@@ -122,7 +122,7 @@ def _init_database(
     return db
 
 
-@pytest.fixture()
+@pytest.fixture
 def database(
         globaldb,  # pylint: disable=unused-argument  # needed for init_database
         user_data_dir,

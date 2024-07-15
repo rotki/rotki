@@ -19,7 +19,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x22E798f9440F563B92AAE24E94C75DfA499e3d3E']])
 def test_swap_in_gmx(database, arbitrum_one_inquirer, arbitrum_one_accounts):
     evmhash = deserialize_evm_tx_hash('0x5969392c45eaf7e6e3453e2405afb23eb2424e8e4ba2d14e38943fdcdab55d5f')  # noqa: E501
@@ -89,7 +89,7 @@ def test_swap_in_gmx(database, arbitrum_one_inquirer, arbitrum_one_accounts):
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x0C0e6d63A7933e1C2dE16E1d5E61dB1cA802BF51']])
 def test_long_in_gmx(database, arbitrum_one_inquirer, arbitrum_one_accounts):
     evmhash = deserialize_evm_tx_hash('0x99eed649e7845813353b29dba0ac248dc328253051a778ca895a0a6c34092798')  # noqa: E501
@@ -145,7 +145,7 @@ def test_long_in_gmx(database, arbitrum_one_inquirer, arbitrum_one_accounts):
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x3D4d8A52D5717b09CA1e1980393d244Ac258C6AA']])
 def test_decrease_short_in_gmx(database, arbitrum_one_inquirer, arbitrum_one_accounts):
     evmhash = deserialize_evm_tx_hash('0xa3dd437d57689479db67ce685c4b70ee9bdbfbcc53f99fc343f73c89edaafe7a')  # noqa: E501
@@ -190,7 +190,7 @@ def test_decrease_short_in_gmx(database, arbitrum_one_inquirer, arbitrum_one_acc
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xB5E10681aA81cd65D74912015220999044b9520C']])
 def test_stake_gmx(database, arbitrum_one_inquirer, arbitrum_one_accounts):
     evmhash = deserialize_evm_tx_hash('0x682aa15cb8d49021ae5b12c89f6d0138387c4819b1a31b80f67b70aac55d199c')  # noqa: E501

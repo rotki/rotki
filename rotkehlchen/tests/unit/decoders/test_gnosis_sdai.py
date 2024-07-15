@@ -19,7 +19,7 @@ A_GNOSIS_SDAI = evm_address_to_identifier(
 )
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('gnosis_accounts', [['0x78E87757861185Ec5e8C0EF6BF0C69Fa7832df6C']])
 def test_deposit_xdai_to_sdai(database, gnosis_inquirer, gnosis_accounts):
     user_address = gnosis_accounts[0]
@@ -76,7 +76,7 @@ def test_deposit_xdai_to_sdai(database, gnosis_inquirer, gnosis_accounts):
     assert actual_events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('gnosis_accounts', [['0x4fFAD6ac852c0Af0AA301376F4C5Dea3a928b120']])
 def test_withdraw_xdai_from_sdai(database, gnosis_inquirer, gnosis_accounts):
     user_address = gnosis_accounts[0]
@@ -135,7 +135,7 @@ def test_withdraw_xdai_from_sdai(database, gnosis_inquirer, gnosis_accounts):
     assert actual_events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('gnosis_accounts', [['0x5938852FE18Ad6963322FB98D1fDDA5c24DD8a0E']])
 def test_deposit_wxdai_to_sdai(database, gnosis_inquirer, gnosis_accounts):
     user_address = gnosis_accounts[0]
@@ -192,7 +192,7 @@ def test_deposit_wxdai_to_sdai(database, gnosis_inquirer, gnosis_accounts):
     assert actual_events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('gnosis_accounts', [['0x23727b54163F63CffdD8B7769e0eCb13Df253b4e']])
 def test_withdraw_wxdai_from_sdai(database, gnosis_inquirer, gnosis_accounts):
     user_address = gnosis_accounts[0]

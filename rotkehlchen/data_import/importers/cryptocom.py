@@ -443,7 +443,7 @@ class CryptocomImporter(BaseExchangeImporter):
 
         # Compute investments profit
         if len(investments_withdrawals) != 0:
-            for asset in investments_withdrawals:
+            for asset, withdrawals in investments_withdrawals.items():
                 asset_object = asset_from_cryptocom(asset)
                 if asset not in investments_deposits:
                     log.error(
@@ -453,7 +453,7 @@ class CryptocomImporter(BaseExchangeImporter):
                     continue
                 # Sort by date in ascending order
                 withdrawals_rows = sorted(
-                    investments_withdrawals[asset],
+                    withdrawals,
                     key=lambda x: deserialize_timestamp_from_date(
                         date=x['Timestamp (UTC)'],
                         formatstr=timestamp_format,

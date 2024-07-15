@@ -23,7 +23,7 @@ from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deseria
 DEGEN_TOKEN: Final = Asset(DEGEN_TOKEN_ID)
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('base_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_claim_airdrop_2(
         base_accounts: list[ChecksumEvmAddress],

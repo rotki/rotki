@@ -11,7 +11,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x7277F7849966426d345D8F6B9AFD1d3d89183083']])
 def test_zksync_lite_legacy_deposit(database, ethereum_inquirer, ethereum_accounts):
     """
@@ -60,7 +60,7 @@ def test_zksync_lite_legacy_deposit(database, ethereum_inquirer, ethereum_accoun
     assert expected_events == events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x7277F7849966426d345D8F6B9AFD1d3d89183083']])
 def test_zksync_lite_deposit(database, ethereum_inquirer, ethereum_accounts):
     """Test a transaction with the Deposit event"""

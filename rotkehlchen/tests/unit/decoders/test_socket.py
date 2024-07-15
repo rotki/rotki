@@ -12,7 +12,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('optimism_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_optimism_to_arb_bridge(database, optimism_inquirer, optimism_accounts):
     evmhash = deserialize_evm_tx_hash('0xe8c9cffe2a2bbccf81cf8dd34f9b89c01b00ae3f0ff74eab089de96f4624165c')  # noqa: E501
@@ -54,7 +54,7 @@ def test_optimism_to_arb_bridge(database, optimism_inquirer, optimism_accounts):
     ]
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_bridge_eth(database, arbitrum_one_inquirer, arbitrum_one_accounts):
     evmhash = deserialize_evm_tx_hash('0xb1e29bebca0300ff02ee478dfa6c0c2197169761e1c0dcc87418c53a6530d3a5')  # noqa: E501

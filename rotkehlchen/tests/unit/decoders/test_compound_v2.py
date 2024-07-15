@@ -152,7 +152,7 @@ def test_compound_ether_withdraw(database, ethereum_inquirer):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY2]])
 def test_compound_deposit_with_comp_claim(
         database,
@@ -227,7 +227,7 @@ def test_compound_deposit_with_comp_claim(
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY3]])
 def test_compound_multiple_comp_claim(database, ethereum_inquirer):
     """Test that a transaction with multiple comp claims decodes all of them as rewards
@@ -323,7 +323,7 @@ def test_compound_multiple_comp_claim(database, ethereum_inquirer):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xB8cCf257d32b134ffecb902e5Bef3042841B8A4A']])
 def test_compound_comp_claim_last_transfer(database, ethereum_inquirer, ethereum_accounts):
     """

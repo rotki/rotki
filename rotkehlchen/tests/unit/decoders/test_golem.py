@@ -12,7 +12,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xf264267DCaFC1539900bc96006879701fA053259']])
 def test_gnt_glm_migration(database, ethereum_inquirer, ethereum_accounts):
     tx_hex = deserialize_evm_tx_hash('0x86baa45e4ab48d1db26df82da1a6f654fe96f1254ace5883b6397d7f55eb11a4')  # noqa: E501

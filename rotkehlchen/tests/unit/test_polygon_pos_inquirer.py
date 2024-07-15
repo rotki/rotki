@@ -6,7 +6,7 @@ from rotkehlchen.tests.utils.polygon_pos import (
 )
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize(*POLYGON_POS_NODES_PARAMETERS_WITH_PRUNED_AND_NOT_ARCHIVED)
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xCace5b3c29211740E595850E80478416eE77cA21']])  # to connect to nodes  # noqa: E501
 def test_polygon_pos_nodes_prune_and_archive_status(

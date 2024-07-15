@@ -45,7 +45,7 @@ if TYPE_CHECKING:
 ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_mint_ens_name(database, ethereum_inquirer, add_subgraph_api_key):  # pylint: disable=unused-argument
     tx_hash = deserialize_evm_tx_hash('0x74e72600c6cd5a1f0170a3ca38ecbf7d59edeb8ceb48adab2ed9b85d12cc2b99')  # noqa: E501
@@ -271,7 +271,7 @@ def test_set_resolver(database, ethereum_inquirer, ethereum_accounts, add_subgra
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xbc2E9Df6281a8e853121dc52dBc8BCc8bBE3ed0e']])
 def test_set_attribute_v2(database, ethereum_inquirer, ethereum_accounts, add_subgraph_api_key):  # pylint: disable=unused-argument
     """Test that setting ens text attribute using public resolver deployed in March 2023 works"""
@@ -315,7 +315,7 @@ def test_set_attribute_v2(database, ethereum_inquirer, ethereum_accounts, add_su
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xA3B9E4b2C18eFB1C767542e8eb9419B840881467']])
 def test_register_v2(database, ethereum_inquirer, ethereum_accounts, add_subgraph_api_key):  # pylint: disable=unused-argument
     """Test that registering an ens name using eth registar deployed in March 2023 works"""
@@ -401,7 +401,7 @@ def test_register_v2(database, ethereum_inquirer, ethereum_accounts, add_subgrap
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xA01f6D0985389a8E106D3158A9441aC21EAC8D8c']])
 def test_renewal_with_refund_old_controller(database, ethereum_inquirer, ethereum_accounts, add_subgraph_api_key):  # pylint: disable=unused-argument  # noqa: E501
     """
@@ -451,7 +451,7 @@ def test_renewal_with_refund_old_controller(database, ethereum_inquirer, ethereu
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_renewal_with_refund_new_controller(database, ethereum_inquirer, ethereum_accounts):
     """
@@ -501,7 +501,7 @@ def test_renewal_with_refund_new_controller(database, ethereum_inquirer, ethereu
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x7277F7849966426d345D8F6B9AFD1d3d89183083']])
 def test_content_hash_changed(database, ethereum_inquirer, ethereum_accounts, add_subgraph_api_key):  # pylint: disable=unused-argument  # noqa: E501
     """Test that transactions changing the content hash of an ENS are properly decoded"""
@@ -546,7 +546,7 @@ def test_content_hash_changed(database, ethereum_inquirer, ethereum_accounts, ad
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize(('action', 'ethereum_accounts'), [
     ('Transfer', ['0x4bBa290826C253BD854121346c370a9886d1bC26', '0x34207C538E39F2600FE672bB84A90efF190ae4C7']),  # noqa: E501
     ('Send', ['0x4bBa290826C253BD854121346c370a9886d1bC26']),
@@ -625,7 +625,7 @@ def test_transfer_ens_name(database, ethereum_inquirer, action, ethereum_account
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x5f0eb172CaA67d45865AAd955FA77654Da33196F']])
 def test_for_truncated_labelhash(database, ethereum_inquirer, ethereum_accounts, add_subgraph_api_key):  # pylint: disable=unused-argument  # noqa: E501
     """Test for https://github.com/rotki/rotki/issues/6597 where some labelhashes
@@ -752,7 +752,7 @@ def test_for_truncated_labelhash(database, ethereum_inquirer, ethereum_accounts,
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_vote_cast(database, ethereum_inquirer, ethereum_accounts):
     """Test voting for ENS governance"""
@@ -798,7 +798,7 @@ def test_vote_cast(database, ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_vote_cast_abstain(database, ethereum_inquirer, ethereum_accounts):
     """Test voting for ENS (or any) governance as abstain"""
@@ -844,7 +844,7 @@ def test_vote_cast_abstain(database, ethereum_inquirer, ethereum_accounts):
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_set_attribute_for_non_primary_name(database, ethereum_inquirer, ethereum_accounts, add_subgraph_api_key):  # pylint: disable=unused-argument  # noqa: E501
     """Test that setting ens text attribute for a name that is controlle by but not
@@ -890,7 +890,7 @@ def test_set_attribute_for_non_primary_name(database, ethereum_inquirer, ethereu
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xF5d90Ac6747CB3352F05BF61f48b991ACeaE28eB']])
 def test_claim_airdrop(database, ethereum_inquirer, ethereum_accounts, add_subgraph_api_key):  # pylint: disable=unused-argument
     tx_hex = deserialize_evm_tx_hash('0xb892797f63943dbf75e9e8a86515e9a4a964dcb6930dad10e93b526a2a648e6d')  # noqa: E501
@@ -950,7 +950,7 @@ def test_invalid_ens_name(globaldb: 'GlobalDBHandler'):
             ).fetchone()[0] == 0
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_new_owner(database, ethereum_inquirer, ethereum_accounts, add_subgraph_api_key):  # pylint: disable=unused-argument
     """Test assigning new owner to a subnode"""
@@ -995,7 +995,7 @@ def test_new_owner(database, ethereum_inquirer, ethereum_accounts, add_subgraph_
     assert events == expected_events
 
 
-@pytest.mark.vcr()
+@pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
 def test_address_changed(database, ethereum_inquirer, ethereum_accounts, add_subgraph_api_key):  # pylint: disable=unused-argument
     """Test address changed for a name"""
