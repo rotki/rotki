@@ -312,11 +312,12 @@ export class SubprocessHandler {
       this._port = undefined;
     };
 
-    this.onChildExit = (code: number, signal: any) => {
-      this.logToFile(
-        `rotki-core exited with signal: ${signal} (Code: ${code})`,
-      );
-      if (code !== 0) {
+    this.onChildExit = (code: number | null, signal: any): void => {
+      this.logToFile(`rotki-core exited with signal: ${signal} (Code: ${code})`);
+      /**
+       * On win32 we can also get a null code on SIGTERM
+       */
+      if (!(code === 0 || code === null)) {
         // Notify the main window every 2 seconds until it acks the notification
         handler.setFailureNotification(
           window,
@@ -419,12 +420,21 @@ export class SubprocessHandler {
     window: Electron.BrowserWindow | null,
     backendOutput: string | Error,
     code: BackendCode,
-  ) {
+  ): void {
     if (this.rpcFailureNotifier)
       clearInterval(this.rpcFailureNotifier);
 
     this.rpcFailureNotifier = setInterval(() => {
-      window?.webContents.send('failed', backendOutput, code);
+      /**
+       * There is a possibility that the window has been already disposed and this
+       * will result in an exception. In that case, we just catch and clear the notifier
+       */
+      try {
+        window?.webContents.send('failed', backendOutput, code);
+      }
+      catch {
+        clearInterval(this.rpcFailureNotifier);
+      }
     }, 2000);
   }
 
