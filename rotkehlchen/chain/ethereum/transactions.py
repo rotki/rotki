@@ -81,6 +81,7 @@ class EthereumTransactions(EvmTransactions):
                 argument_filters={'l2Delegator': address},
                 from_block=from_block,
                 to_block=to_block,
+                call_order=self.evm_inquirer.default_call_order(),
             )
 
             if len(events) == 0:

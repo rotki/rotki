@@ -312,6 +312,7 @@ class MakerdaoVaults(HasDSProxy):
                 event_name='LogNote',
                 argument_filters=argument_filters,
                 from_block=gemjoin.deployed_block,
+                call_order=self.ethereum.default_call_order(),
             )
         except EventNotInABI:
             # for now let's ignore any non-gemjoin abis. The join adapters can unfortunately
