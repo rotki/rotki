@@ -13,7 +13,7 @@
     "build:preview": "pnpm run build:app && vite preview",
     "preview": "vite preview",
     "cypress:open": "cypress open",
-    "cypress:run": "cypress run --headed",
+    "cypress:run": "cypress run --headless",
     "electron:build": "pnpm run build && pnpm run electron:package",
     "electron:package": "electron-builder build --config .electron-builder.config.js --publish onTag",
     "electron:serve": "node scripts/serve.js",
