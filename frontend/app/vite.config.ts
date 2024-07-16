@@ -11,7 +11,6 @@ import { VitePWA } from 'vite-plugin-pwa';
 import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite';
 import Layouts from 'vite-plugin-vue-layouts';
 import vueDevTools from 'vite-plugin-vue-devtools';
-import checker from 'vite-plugin-checker';
 import { RuiComponentResolver } from './src/plugins/rui/component-resolver';
 
 const PACKAGE_ROOT = __dirname;
@@ -65,9 +64,11 @@ export default defineConfig({
   plugins: [
     splitVendorChunkPlugin(),
     vue(),
-    checker({
-      vueTsc: !(process.env.CI || process.env.VITE_TEST || process.env.VITEST),
-    }),
+    // checker({
+    //   vueTsc: !(process.env.CI || process.env.VITE_TEST || process.env.VITEST),
+    // }),
+    // vue-tsc messes generics with typescript 5.5.x and checker does not work with 5.4.x
+    // wait until the generics issue is fixed to re-enable
     AutoImport({
       include: [
         /\.[jt]sx?$/, // .ts, .tsx, .js, .jsx
