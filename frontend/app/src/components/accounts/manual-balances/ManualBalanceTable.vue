@@ -188,8 +188,8 @@ watchDebounced(
       </div>
     </template>
     <RuiDataTable
-      v-model:sort="sort"
-      v-model:pagination="pagination"
+      v-model:sort.external="sort"
+      v-model:pagination.external="pagination"
       outlined
       dense
       :loading="loading"
