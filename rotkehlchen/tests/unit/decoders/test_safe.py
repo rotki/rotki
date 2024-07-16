@@ -1,7 +1,8 @@
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.chain.ethereum.modules.safe.constants import CPT_SAFE, SAFE_VESTING
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -334,6 +335,65 @@ def test_safe_spam(database, polygon_pos_inquirer, polygon_pos_accounts):
             location_label=user_address,
             notes=f'Receive {amount_str} QI from {spam_contract} to {user_address}',
             address=spam_contract,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0x4a24fe31b4D7215e7643f738058130054f9b3F3A',
+    '0xF2961617C402404A4BB0Cd3d83992b5B4C8090eE',
+]])
+def test_safe_vesting_claim(database, ethereum_inquirer, ethereum_accounts):
+    tx_hex = deserialize_evm_tx_hash('0xc831d94b43be533e83562da9bc10b38b4bab6ce6046c3a9baf76c5359634625a')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    user_address, multisig_address, timestamp, gas, amount = ethereum_accounts[0], ethereum_accounts[1], TimestampMS(1717404395000), '0.00123180896602807', '20549.221611721611721612'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=user_address,
+            notes=f'Burned {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes=f'Successfully executed safe transaction 0x4abbfbca46ad4a4099ae7896cfd9e4a4c3ef604236d55efd58a0314e1bfcf0eb for multisig {multisig_address}',  # noqa: E501
+            counterparty=CPT_SAFE_MULTISIG,
+            address=multisig_address,
+        ), EvmEvent(
+
+            tx_hash=evmhash,
+            sequence_index=270,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=EvmToken('eip155:1/erc20:0x5aFE3855358E112B5647B952709E6165e1c1eEEe'),
+            balance=Balance(FVal(amount)),
+            location_label=multisig_address,
+            notes=f'Claim {amount} SAFE from vesting',
+            counterparty=CPT_SAFE,
+            address=SAFE_VESTING,
         ),
     ]
     assert events == expected_events
