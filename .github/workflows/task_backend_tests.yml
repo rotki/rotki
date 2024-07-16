@@ -36,6 +36,7 @@ jobs:
           path: test-caching
           fetch-depth: 0
       - name: Ensure VCR branch is fully rebased
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
         env:
           AUTHOR: ${{ github.event.pull_request.user.login }}
         run: |
