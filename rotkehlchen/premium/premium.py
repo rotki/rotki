@@ -468,7 +468,7 @@ class Premium:
         there is an error returned by the server
         - Raises PremiumAuthenticationError if the given key is rejected by the Rotkehlchen server
         """
-        data = self.sign('statistics_rendererv2', version=10)
+        data = self.sign('statistics_rendererv2', version=11)
 
         try:
             response = self.session.get(
