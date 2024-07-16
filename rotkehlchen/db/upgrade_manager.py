@@ -27,6 +27,7 @@ from rotkehlchen.db.upgrades.v39_v40 import upgrade_v39_to_v40
 from rotkehlchen.db.upgrades.v40_v41 import upgrade_v40_to_v41
 from rotkehlchen.db.upgrades.v41_v42 import upgrade_v41_to_v42
 from rotkehlchen.db.upgrades.v42_v43 import upgrade_v42_to_v43
+from rotkehlchen.db.upgrades.v43_v44 import upgrade_v43_to_v44
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.interfaces import ProgressUpdater
@@ -110,6 +111,10 @@ UPGRADES_LIST = [
     UpgradeRecord(
         from_version=42,
         function=upgrade_v42_to_v43,
+    ),
+    UpgradeRecord(
+        from_version=43,
+        function=upgrade_v43_to_v44,
     ),
 ]
 
