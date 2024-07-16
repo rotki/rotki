@@ -34,6 +34,7 @@ declare global {
   const assert: typeof import('./utils/assertions')['assert']
   const assetSum: typeof import('./utils/calculation')['assetSum']
   const asyncComputed: typeof import('@vueuse/core')['asyncComputed']
+  const attemptPolyfillResizeObserver: typeof import('./utils/cypress')['attemptPolyfillResizeObserver']
   const autoResetRef: typeof import('@vueuse/core')['autoResetRef']
   const awaitParallelExecution: typeof import('./utils/await-parallel-execution')['awaitParallelExecution']
   const backoff: typeof import('./utils/backoff')['backoff']
@@ -811,6 +812,7 @@ declare module 'vue' {
     readonly assert: UnwrapRef<typeof import('./utils/assertions')['assert']>
     readonly assetSum: UnwrapRef<typeof import('./utils/calculation')['assetSum']>
     readonly asyncComputed: UnwrapRef<typeof import('@vueuse/core')['asyncComputed']>
+    readonly attemptPolyfillResizeObserver: UnwrapRef<typeof import('./utils/cypress')['attemptPolyfillResizeObserver']>
     readonly autoResetRef: UnwrapRef<typeof import('@vueuse/core')['autoResetRef']>
     readonly awaitParallelExecution: UnwrapRef<typeof import('./utils/await-parallel-execution')['awaitParallelExecution']>
     readonly backoff: UnwrapRef<typeof import('./utils/backoff')['backoff']>
@@ -1565,6 +1567,7 @@ declare module '@vue/runtime-core' {
     readonly assert: UnwrapRef<typeof import('./utils/assertions')['assert']>
     readonly assetSum: UnwrapRef<typeof import('./utils/calculation')['assetSum']>
     readonly asyncComputed: UnwrapRef<typeof import('@vueuse/core')['asyncComputed']>
+    readonly attemptPolyfillResizeObserver: UnwrapRef<typeof import('./utils/cypress')['attemptPolyfillResizeObserver']>
     readonly autoResetRef: UnwrapRef<typeof import('@vueuse/core')['autoResetRef']>
     readonly awaitParallelExecution: UnwrapRef<typeof import('./utils/await-parallel-execution')['awaitParallelExecution']>
     readonly backoff: UnwrapRef<typeof import('./utils/backoff')['backoff']>
