@@ -490,6 +490,7 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
         assert set(accounts.eth) == {api_addies[1]}
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_evm_address_async(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that doing async validation for the evm addresses endpoints works"""

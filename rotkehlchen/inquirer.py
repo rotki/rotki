@@ -93,6 +93,7 @@ from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     CURVE_POOL_PROTOCOL,
     GEARBOX_PROTOCOL,
+    HOP_PROTOCOL_LP,
     LP_TOKEN_AS_POOL_PROTOCOLS,
     YEARN_VAULTS_V2_PROTOCOL,
     CacheType,
@@ -182,6 +183,8 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
         price = Inquirer().find_yearn_price(token)
     elif token.protocol == GEARBOX_PROTOCOL:
         price = Inquirer().find_gearbox_price(token)
+    elif token.protocol == HOP_PROTOCOL_LP:
+        price = Inquirer().find_hop_lp_price(token)
 
     if token == A_YV1_ALINK:
         price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_ALINK_V1)
@@ -1093,6 +1096,51 @@ class Inquirer:
             return Price(price_per_share * underlying_token_price / 10 ** token.get_decimals())
 
         return None
+
+    def find_hop_lp_price(self, lp_token: EvmToken) -> Price | None:
+        """Returns the price of a hop lp token fetched from the pool contract"""
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            if (amm_address := globaldb_get_unique_cache_value(
+                cursor=cursor,
+                key_parts=(
+                    CacheType.HOP_POOL_ADDRESS,
+                    str(lp_token.chain_id.value),
+                    lp_token.evm_address,
+                ),
+            )) is None:
+                log.error(
+                    f'Could not find the pool address of Hop LP token {lp_token.evm_address!s} on '
+                    f'{lp_token.chain_id!s}. Skipping its price query',
+                )
+                return ZERO_PRICE
+
+        # Query virtual price from the pool contract
+        evm_manager = self.get_evm_manager(chain_id=lp_token.chain_id)
+        contract = EvmContract(
+            address=string_to_evm_address(amm_address),
+            abi=evm_manager.node_inquirer.contracts.abi('HOP_POOL'),
+            deployed_block=0,
+        )
+        try:
+            # return price of pool_token * virtual price of lp_token
+            return self.find_usd_price(Asset(evm_address_to_identifier(
+                address=deserialize_evm_address(contract.call(
+                    node_inquirer=evm_manager.node_inquirer,
+                    method_name='getToken',
+                    arguments=[0],
+                )),
+                chain_id=lp_token.chain_id,
+                token_type=EvmTokenKind.ERC20,
+            ))) * FVal(contract.call(
+                node_inquirer=evm_manager.node_inquirer,
+                method_name='getVirtualPrice',
+            )) / 10 ** lp_token.get_decimals()
+        except DeserializationError as e:
+            log.error(f'Failed to deserialize Hop pool token address of {amm_address!s} in {evm_manager.node_inquirer.chain_name!s}. {e!s}')  # noqa: E501
+            return ZERO_PRICE
+        except RemoteError as e:
+            log.error(f'Failed to query virtual price of Hop lp token {lp_token.evm_address!s} in {evm_manager.node_inquirer.chain_name!s}. {e!s}')  # noqa: E501
+            return ZERO_PRICE
 
     @staticmethod
     def get_fiat_usd_exchange_rates(currencies: Iterable[FiatAsset]) -> dict[FiatAsset, Price]:
