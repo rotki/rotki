@@ -56,18 +56,12 @@ NFT_DB_READ_TUPLE = tuple[
 ]
 
 
-def _deserialize_nft_price(
-        last_price: str | None,
-        last_price_asset: str | None,
-) -> tuple[FVal, Asset, FVal]:
+def _deserialize_nft_price(last_price: str, last_price_asset: str) -> tuple[FVal, Asset, FVal]:
     """Deserialize last price and last price asset from a DB entry
-    TODO: Both last_price and last_price_asset are optional in the current DB schema
-    but they are not used as such and should not be. We need to change the schema.
     """
     price_in_asset = deserialize_fval_or_zero(value=last_price, name='price_in_asset', location='nft_tuple')  # noqa: E501
-    price_asset = Asset(last_price_asset)  # type: ignore  # due to the asset schema problem
     # find_usd_price should be fast here since in most cases price should be cached
-    usd_price = price_in_asset * Inquirer.find_usd_price(price_asset)
+    usd_price = price_in_asset * Inquirer.find_usd_price(price_asset := Asset(last_price_asset))
     return price_in_asset, price_asset, usd_price
 
 

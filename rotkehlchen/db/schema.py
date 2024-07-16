@@ -634,8 +634,8 @@ DB_CREATE_NFTS = """
 CREATE TABLE IF NOT EXISTS nfts (
     identifier TEXT NOT NULL PRIMARY KEY,
     name TEXT,
-    last_price TEXT,
-    last_price_asset TEXT,
+    last_price TEXT NOT NULL,
+    last_price_asset TEXT NOT NULL,
     manual_price INTEGER NOT NULL CHECK (manual_price IN (0, 1)),
     owner_address TEXT,
     blockchain TEXT GENERATED ALWAYS AS ('ETH') VIRTUAL,

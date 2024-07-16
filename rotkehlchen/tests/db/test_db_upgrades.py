@@ -2431,6 +2431,45 @@ def test_upgrade_db_42_to_43(user_data_dir, messages_aggregator, data_dir):
     assert zk_parquet_path.exists() is True
 
 
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+def test_upgrade_db_43_to_44(user_data_dir, messages_aggregator):
+    """Test upgrading the DB from version 43 to version 44"""
+    _use_prepared_db(user_data_dir, 'v43_rotkehlchen.db')
+    db_v43 = _init_db_with_target_version(
+        target_version=43,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+    with db_v43.conn.read_ctx() as cursor:
+        assert cursor.execute(  # we have one entry with null values and two with the details
+            'SELECT identifier, last_price, last_price_asset FROM nfts',
+        ).fetchall() == [
+            ('_nft_0xfd9d8036f899ed5a9fd8cac7968e5f24d3db2a64_1_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '0', 'ETH'),  # noqa: E501
+            ('_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041', '0.00053', 'ETH'),  # noqa: E501
+            ('_nft_sdfdsfsdf_1_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', None, None),
+        ]
+
+    # Execute upgrade
+    db = _init_db_with_target_version(
+        target_version=44,
+        user_data_dir=user_data_dir,
+        msg_aggregator=messages_aggregator,
+        resume_from_backup=False,
+    )
+    assert messages_aggregator.consume_errors() == []
+    assert messages_aggregator.consume_warnings() == []
+
+    with db.conn.read_ctx() as cursor:
+        assert cursor.execute(  # we have one entry with null values and two with the details
+            'SELECT identifier, last_price, last_price_asset FROM nfts',
+        ).fetchall() == [
+            ('_nft_0xfd9d8036f899ed5a9fd8cac7968e5f24d3db2a64_1_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '0', 'ETH'),  # noqa: E501
+            ('_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041', '0.00053', 'ETH'),  # noqa: E501
+            ('_nft_sdfdsfsdf_1_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '0', 'ETH'),
+        ]
+
+
 def test_latest_upgrade_correctness(user_data_dir):
     """
     This is a test that we can only do for the last upgrade.
@@ -2441,7 +2480,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     this is just to reminds us not to forget to add create table statements.
     """
     msg_aggregator = MessagesAggregator()
-    base_database = 'v42_rotkehlchen.db'
+    base_database = 'v43_rotkehlchen.db'
     _use_prepared_db(user_data_dir, base_database)
     last_db = _init_db_with_target_version(
         target_version=43,
@@ -2459,7 +2498,7 @@ def test_latest_upgrade_correctness(user_data_dir):
 
     # Execute upgrade
     db = _init_db_with_target_version(
-        target_version=43,
+        target_version=44,
         user_data_dir=user_data_dir,
         msg_aggregator=msg_aggregator,
         resume_from_backup=False,
@@ -2481,7 +2520,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     result = cursor.execute('SELECT name FROM sqlite_master WHERE type="view"')
     views_after_creation = {x[0] for x in result}
 
-    assert cursor.execute('SELECT value FROM settings WHERE name="version"').fetchone()[0] == '43'
+    assert cursor.execute('SELECT value FROM settings WHERE name="version"').fetchone()[0] == '44'
     removed_tables = set()
     removed_views = set()
     missing_tables = tables_before - tables_after_upgrade

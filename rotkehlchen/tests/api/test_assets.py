@@ -987,9 +987,9 @@ def test_search_nfts_with_levenshtein(rotkehlchen_api_server):
     with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as cursor:
         cursor.execute('INSERT INTO assets VALUES (?)', ('my-nft-identifier',))
         cursor.execute(
-            'INSERT INTO nfts(identifier, name, collection_name, manual_price, is_lp) '
-            'VALUES (?, ?, ?, ?, ?)',
-            ('my-nft-identifier', 'super-duper-nft', 'Bitcoin smth', False, False),
+            'INSERT INTO nfts(identifier, name, collection_name, manual_price, is_lp, '
+            'last_price, last_price_asset) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            ('my-nft-identifier', 'super-duper-nft', 'Bitcoin smth', False, False, 0, 'ETH'),
         )
 
     # check that searching by nft name works
