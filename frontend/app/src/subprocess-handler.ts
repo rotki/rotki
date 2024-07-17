@@ -26,7 +26,8 @@ function streamToString(ioStream: stream.Readable, log: (msg: string) => void, l
   const onData = (chunk: any): void => {
     if (typeof chunk === 'string')
       stringChunks.push(chunk);
-    else bufferChunks.push(chunk);
+    else
+      bufferChunks.push(chunk);
   };
 
   const onEnd = (): void => {
@@ -294,7 +295,10 @@ export class SubprocessHandler {
 
     this.onChildExit = (code: number, signal: any) => {
       this.logToFile(`rotki-core exited with signal: ${signal} (Code: ${code})`);
-      if (code !== 0) {
+      /**
+         * On win32 we can also get a null code on SIGTERM
+         */
+      if (!(code === 0 || code === null)) {
         // Notify the main window every 2 seconds until it acks the notification
         handler.setFailureNotification(window, this.backendOutput, BackendCode.TERMINATED);
       }
@@ -381,12 +385,21 @@ export class SubprocessHandler {
     window: Electron.BrowserWindow | null,
     backendOutput: string | Error,
     code: BackendCode,
-  ) {
+  ): void {
     if (this.rpcFailureNotifier)
       clearInterval(this.rpcFailureNotifier);
 
     this.rpcFailureNotifier = setInterval(() => {
-      window?.webContents.send('failed', backendOutput, code);
+      /**
+       * There is a possibility that the window has been already disposed and this
+       * will result in an exception. In that case, we just catch and clear the notifier
+       */
+      try {
+        window?.webContents.send('failed', backendOutput, code);
+      }
+      catch {
+        clearInterval(this.rpcFailureNotifier);
+      }
     }, 2000);
   }
 

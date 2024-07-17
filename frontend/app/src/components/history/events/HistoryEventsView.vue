@@ -764,7 +764,7 @@ watchImmediate(route, async (route) => {
           </TableStatusFilter>
           <TableFilter
             v-model:matches="filters"
-            class="min-w-[20rem]"
+            class="min-w-[24rem]"
             :matchers="matchers"
             :location="SavedFilterLocation.HISTORY_EVENTS"
           />
@@ -782,7 +782,7 @@ watchImmediate(route, async (route) => {
         <HistoryEventsExport :filters="pageParams" />
         <BlockchainAccountSelector
           v-if="!useExternalAccountFilter"
-          class="min-w-[15rem] max-w-[20rem]"
+          class="w-[18rem]"
           :model-value="accounts"
           :chains="txChainIds"
           dense

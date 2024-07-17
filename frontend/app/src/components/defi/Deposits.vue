@@ -175,6 +175,13 @@ const refreshTooltip = computed<string>(() =>
       v-else
       class="flex flex-col gap-4"
     >
+      <RuiAlert
+        type="warning"
+        :title="t('common.important_notice')"
+        class="mb-2"
+      >
+        {{ t('decentralized_overview.deprecated_warning') }}
+      </RuiAlert>
       <DepositTotals
         :loading="historyLoading"
         :effective-interest-rate="effectiveInterestRate"

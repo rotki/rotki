@@ -103,31 +103,35 @@ onMounted(async () => {
         {{ t('decentralized_overview.loading') }}
       </template>
     </ProgressScreen>
-    <NoDataScreen v-else-if="currentOverview.length === 0">
-      <template #title>
-        {{ t('decentralized_overview.empty_title') }}
-      </template>
-      {{ t('decentralized_overview.empty_subtitle') }}
-    </NoDataScreen>
     <template v-else>
-      <RuiAlert
-        type="warning"
-        :title="t('common.important_notice')"
-      >
-        {{ t('decentralized_overview.deprecated_warning') }}
-      </RuiAlert>
+      <div>
+        <RuiAlert
+          type="warning"
+          :title="t('common.important_notice')"
+          class="mb-6"
+        >
+          {{ t('decentralized_overview.deprecated_warning') }}
+        </RuiAlert>
+        <NoDataScreen v-if="currentOverview.length === 0">
+          <template #title>
+            {{ t('decentralized_overview.empty_title') }}
+          </template>
+          {{ t('decentralized_overview.empty_subtitle') }}
+        </NoDataScreen>
+        <template v-else>
+          <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
+            <Overview
+              v-for="summary in visibleData"
+              :key="summary.protocol"
+              :summary="summary"
+            />
+          </div>
 
-      <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4">
-        <Overview
-          v-for="summary in visibleData"
-          :key="summary.protocol"
-          :summary="summary"
-        />
+          <RuiCard v-if="currentOverview.length > visibleData.length">
+            <RuiTablePagination v-model="paginationData" />
+          </RuiCard>
+        </template>
       </div>
-
-      <RuiCard v-if="currentOverview.length > visibleData.length">
-        <RuiTablePagination v-model="paginationData" />
-      </RuiCard>
     </template>
   </TablePageLayout>
 </template>

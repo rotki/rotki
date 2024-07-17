@@ -3758,7 +3758,7 @@
           "title": "Cannot Delete Event"
         },
         "reset": {
-          "message": "Are you sure you want to reset these events. This action will delete all customized events, and re-decode them.",
+          "message": "Είστε σίγουροι ότι θέλετε να επαναφέρετε τα συμβάντα αυτής της συναλλαγής; Αυτή η ενέργεια θα διαγράψει όλα τα προσαρμοσμένα συμβάντα αυτής της συναλλαγής και θα τα αποκωδικοποιήσει εκ νέου.",
           "title": "Reset events"
         }
       },

@@ -85,8 +85,8 @@ const cols = computed<DataTableColumn<ManualBalanceWithPrice>[]>(() => [
     label: t('common.location'),
     key: 'location',
     align: 'center',
-    width: '120px',
-    cellClass: 'py-2',
+    class: 'w-[120px]',
+    cellClass: 'py-2 w-[120px]',
   },
   {
     label: t('common.label'),
@@ -97,7 +97,7 @@ const cols = computed<DataTableColumn<ManualBalanceWithPrice>[]>(() => [
     label: t('common.asset'),
     key: 'asset',
     sortable: true,
-    width: '200',
+    class: 'w-[12rem] xl:w-[16rem] 2xl:w-[20rem]',
   },
   {
     label: t('common.price_in_symbol', {
@@ -125,7 +125,8 @@ const cols = computed<DataTableColumn<ManualBalanceWithPrice>[]>(() => [
     label: t('common.actions_text'),
     key: 'actions',
     align: 'end',
-    width: '50',
+    class: 'w-[120px]',
+    cellClass: 'w-[120px]',
   },
 ]);
 
@@ -197,11 +198,12 @@ watchDebounced(
       row-attr="label"
       :rows="state.data"
       :item-class="getRowClass"
-      class="manual-balances-list"
+      class="manual-balances-list lg:[&_table]:w-full"
     >
       <template #item.label="{ row }">
         <div
-          class="font-medium !pb-0"
+          class="font-medium !pb-0 text-truncate min-w-[8rem] max-w-[16rem]"
+          :title="row.label"
           data-cy="label"
           :class="{
             'pt-0': !row.tags,
@@ -218,6 +220,7 @@ watchDebounced(
       </template>
       <template #item.asset="{ row }">
         <AssetDetails
+          class="[&>div]:max-w-[12rem] xl:[&>div]:max-w-[16rem] 2xl:[&>div]:max-w-[20rem]"
           opens-details
           :asset="row.asset"
         />

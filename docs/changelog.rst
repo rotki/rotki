@@ -4,6 +4,10 @@ Changelog
 
 * :feature:`-` Transactions claiming SAFE tokens from vesting will now be properly decoded.
 
+* :bug:`8262` Prices of HOP LP tokens will now properly show up for all pools.
+* :bug:`8261` Windows users will no longer be greeted with an unhandled exception dialog when closing the application.
+* :bug:`8263` Fixes manual pagination not working.
+
 * :release:`1.34.0 <2024-07-12>`
 * :bug:`-` Adding xpubs with derivation paths that include hardened nodes will not give an error anymore.
 * :bug:`-` Xpub keys without any addresses will now show properly in the accounts bitcoin accounts table.
