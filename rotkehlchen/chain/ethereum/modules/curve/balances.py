@@ -13,8 +13,10 @@ if TYPE_CHECKING:
 
 class CurveBalances(ProtocolWithGauges):
     """
-    Query balances in Curve gauges.
+    Query balances in legacy Curve gauges.
     LP tokens are already queried by the normal token detection.
+
+    Note: The new curve gauges don't require this class, because they mint a liquid token in return
     """
 
     def __init__(self, database: DBHandler, evm_inquirer: 'EvmNodeInquirer'):
