@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Windows backend restart will no longer hang when users update their assets.
 * :bug:`8262` Prices of HOP LP tokens will now properly show up for all pools.
 * :bug:`8261` Windows users will no longer be greeted with an unhandled exception dialog when closing the application.
 * :bug:`8263` Fixes manual pagination not working.
