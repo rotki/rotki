@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`-` Transactions claiming SAFE tokens from vesting will now be properly decoded.
+* :feature:`-` Transactions locking, unlocking and withdrawing SAFE tokens will now be properly decoded. Also any locked SAFE tokens will be automatically detected and their balance counted.
 
 * :bug:`8262` Prices of HOP LP tokens will now properly show up for all pools.
 * :bug:`8261` Windows users will no longer be greeted with an unhandled exception dialog when closing the application.

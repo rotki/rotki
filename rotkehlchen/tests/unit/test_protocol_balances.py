@@ -26,6 +26,8 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBal
 from rotkehlchen.chain.ethereum.modules.gearbox.balances import GearboxBalances
 from rotkehlchen.chain.ethereum.modules.gearbox.constants import GEAR_IDENTIFIER
 from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
+from rotkehlchen.chain.ethereum.modules.safe.balances import SafeBalances
+from rotkehlchen.chain.ethereum.modules.safe.constants import SAFE_TOKEN_ID
 from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
@@ -867,6 +869,34 @@ def test_gearbox_balances_arb(
     protocol_balances = protocol_balances_inquirer.query_balances()
     user_balance = protocol_balances[arbitrum_one_accounts[0]]
     assert user_balance.assets[Asset(GEAR_IDENTIFIER_ARB)] == Balance(
+        amount=amount,
+        usd_value=amount * FVal(1.5),
+    )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xA76C44d0adD77F9403715D8B6F47AD4e6515EC8c']])
+def test_safe_locked(
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_transaction_decoder: 'EthereumTransactionDecoder',
+        ethereum_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Check that locked SAFE balances are properly detected."""
+    tx_hex = deserialize_evm_tx_hash('0xad3d976ae02cf82f109cc2d2f3e8f2f10df6a00a4825e3f04cf0e1b7e68a06b8')  # noqa: E501
+    amount = FVal('11515.763372')
+    get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=ethereum_transaction_decoder.database,
+        tx_hash=tx_hex,
+    )
+    protocol_balances_inquirer = SafeBalances(
+        database=ethereum_transaction_decoder.database,
+        evm_inquirer=ethereum_inquirer,
+    )
+    protocol_balances = protocol_balances_inquirer.query_balances()
+    user_balance = protocol_balances[ethereum_accounts[0]]
+    assert user_balance.assets[Asset(SAFE_TOKEN_ID)] == Balance(
         amount=amount,
         usd_value=amount * FVal(1.5),
     )
