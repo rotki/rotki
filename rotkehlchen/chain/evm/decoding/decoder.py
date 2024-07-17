@@ -935,7 +935,10 @@ class EVMTransactionDecoder(ABC):
                     if '{symbol}' in action_item.to_notes:
                         format_kwargs['symbol'] = found_token.symbol
 
-                    transfer.notes = action_item.to_notes.format(**format_kwargs)
+                    if len(format_kwargs) != 0:
+                        transfer.notes = action_item.to_notes.format(**format_kwargs)
+                    else:  # needed since notes may contain {} and not need formatting (eg. Safe{Pass})  # noqa: E501
+                        transfer.notes = action_item.to_notes
 
                 if action_item.to_counterparty is not None:
                     transfer.counterparty = action_item.to_counterparty

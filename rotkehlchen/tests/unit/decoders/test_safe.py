@@ -2,7 +2,7 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.chain.ethereum.modules.safe.constants import CPT_SAFE, SAFE_VESTING
+from rotkehlchen.chain.ethereum.modules.safe.constants import CPT_SAFE, SAFE_LOCKING, SAFE_VESTING
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -394,6 +394,205 @@ def test_safe_vesting_claim(database, ethereum_inquirer, ethereum_accounts):
             notes=f'Claim {amount} SAFE from vesting',
             counterparty=CPT_SAFE,
             address=SAFE_VESTING,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0x663aD41156a9B2Da7Ead2edC6494E102c9b36184',
+    '0xA76C44d0adD77F9403715D8B6F47AD4e6515EC8c',
+]])
+def test_safe_lock(database, ethereum_inquirer, ethereum_accounts):
+    tx_hex = deserialize_evm_tx_hash('0xad3d976ae02cf82f109cc2d2f3e8f2f10df6a00a4825e3f04cf0e1b7e68a06b8')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    user_address, multisig_address, timestamp, gas, amount = ethereum_accounts[0], ethereum_accounts[1], TimestampMS(1719926867000), '0.00072087801264352', '5115.763372'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=user_address,
+            notes=f'Burned {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes=f'Successfully executed safe transaction 0x4aed5d3d1e4a41a5dec570127ff5bba82d40214ce4fc6f65767ee3c2ac17aaca for multisig {multisig_address}',  # noqa: E501
+            counterparty=CPT_SAFE_MULTISIG,
+            address=multisig_address,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=157,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=EvmToken('eip155:1/erc20:0x5aFE3855358E112B5647B952709E6165e1c1eEEe'),
+            balance=Balance(FVal(amount)),
+            location_label=multisig_address,
+            notes=f'Set SAFE spending approval of {multisig_address} by {SAFE_LOCKING} to {amount}',  # noqa: E501
+            address=SAFE_LOCKING,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=158,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=EvmToken('eip155:1/erc20:0x5aFE3855358E112B5647B952709E6165e1c1eEEe'),
+            balance=Balance(),
+            location_label=multisig_address,
+            notes=f'Revoke SAFE spending approval of {multisig_address} by {SAFE_LOCKING}',
+            address=SAFE_LOCKING,
+        ), EvmEvent(
+
+            tx_hash=evmhash,
+            sequence_index=159,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=EvmToken('eip155:1/erc20:0x5aFE3855358E112B5647B952709E6165e1c1eEEe'),
+            balance=Balance(FVal(amount)),
+            location_label=multisig_address,
+            notes=f'Lock {amount} SAFE for Safe{{Pass}}',
+            counterparty=CPT_SAFE,
+            address=SAFE_LOCKING,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0xdfDA7181EB27A69d897E82cF96C5BcbdC3c059B0',
+    '0x51C40354119dd14C02d8ab24ed72C12D29f8cdA4',
+]])
+def test_safe_unlock(database, ethereum_inquirer, ethereum_accounts):
+    tx_hex = deserialize_evm_tx_hash('0x51d4c06ff00be729fe5bc79215253e45e65ce4c8531cd249633c6e76754c89d0')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    user_address, multisig_address, timestamp, gas, amount = ethereum_accounts[0], ethereum_accounts[1], TimestampMS(1721101211000), '0.0003433', '1026.126150242296748346'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=user_address,
+            notes=f'Burned {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes=f'Successfully executed safe transaction 0x3b6ade06b3f4dd85a4056813f6c418a6780fa675a69c728fad28e88a7726c9dd for multisig {multisig_address}',  # noqa: E501
+            counterparty=CPT_SAFE_MULTISIG,
+            address=multisig_address,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=560,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=EvmToken('eip155:1/erc20:0x5aFE3855358E112B5647B952709E6165e1c1eEEe'),
+            balance=Balance(FVal(amount)),
+            location_label=multisig_address,
+            notes=f'Start unlock of {amount} SAFE from Safe{{Pass}}',
+            counterparty=CPT_SAFE,
+            address=SAFE_LOCKING,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0xf901C093edC3AB68c796eD29253E8EAf3349663f',
+    '0xd90c2DC41d97c62585841A8b6E0d500A5217B9Ab',
+]])
+def test_safe_withdraw_unlocked(database, ethereum_inquirer, ethereum_accounts):
+    tx_hex = deserialize_evm_tx_hash('0x9520c7e117225afc930d1092bf35c17e6726c6564ed4e757eeb6a3c29d10304b')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=tx_hex,
+    )
+    user_address, multisig_address, timestamp, gas, amount = ethereum_accounts[0], ethereum_accounts[1], TimestampMS(1721130791000), '0.00095328952396285', '2404.451820314008697626'  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=user_address,
+            notes=f'Burned {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes=f'Successfully executed safe transaction 0x1f5ea0fb049fabccf49f2a9e8ccd8ae95db0d32727d5c62ea329b0381a51a698 for multisig {multisig_address}',  # noqa: E501
+            counterparty=CPT_SAFE_MULTISIG,
+            address=multisig_address,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=146,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=EvmToken('eip155:1/erc20:0x5aFE3855358E112B5647B952709E6165e1c1eEEe'),
+            balance=Balance(FVal(amount)),
+            location_label=multisig_address,
+            notes=f'Withdraw {amount} SAFE from Safe{{Pass}} locking',
+            counterparty=CPT_SAFE,
+            address=SAFE_LOCKING,
         ),
     ]
     assert events == expected_events
