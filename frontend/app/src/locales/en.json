@@ -2181,7 +2181,6 @@
     "empty_title": "No DeFi overview can be shown",
     "loading": "Please wait while your defi balances are getting loaded...",
     "title": "Defi Overview"
-
   },
   "defi_overview": {
     "multiple_assets": "Multiple assets"
@@ -4401,7 +4400,7 @@
           "title": "Cannot Delete Event"
         },
         "reset": {
-          "message": "Are you sure you want to reset these events. This action will delete all customized events, and re-decode them.",
+          "message": "Are you sure you want to reset this transaction's events? This action will delete all the customized events of this transaction and re-decode them.",
           "title": "Reset events"
         }
       },
