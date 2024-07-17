@@ -39,7 +39,6 @@ const css = useCssModule();
           :loading="loading"
           :disabled="disabled"
           :tooltip="tooltip"
-          v-bind="attrs"
           @refresh="refresh()"
         />
         <RuiButton
@@ -48,6 +47,7 @@ const css = useCssModule();
           icon
           variant="text"
           size="sm"
+          v-bind="attrs"
         >
           <RuiIcon
             size="16"
