@@ -372,7 +372,7 @@ export class SubprocessHandler {
       await this.terminateWindowsProcesses(restart);
 
     if (client)
-      await this.terminateBackend(client);
+      this.terminateBackend(client);
 
     this.exiting = false;
   }
@@ -382,31 +382,21 @@ export class SubprocessHandler {
     this.backendOutput = `${this.backendOutput} ${msg.toString()}`;
   }
 
-  private terminateBackend = (client: ChildProcess) =>
-    new Promise<void>((resolve, reject) => {
-      if (!client.pid) {
-        this.logToFile(
-          'subprocess was already terminated (no process id pid found)',
-        );
-        this.childProcess = undefined;
-        this._port = undefined;
-        resolve();
-        return;
+  private terminateBackend = (client: ChildProcess): void => {
+    if (!client.pid) {
+      this.logToFile('subprocess was already terminated (no process id pid found)');
+    }
+    else {
+      if (!client.exitCode) {
+        this.logToFile(`attempting to kill process: ${client.pid}`);
+        const success = client.kill();
+        this.logToFile(`The Python sub-process was terminated successfully (${client.killed}) (${success})`);
       }
+    }
 
-      client.once('exit', () => {
-        this.logToFile(
-          `The Python sub-process was terminated successfully (${client.killed})`,
-        );
-        resolve();
-        this.childProcess = undefined;
-        this._port = undefined;
-      });
-      client.once('error', (e) => {
-        reject(e);
-      });
-      client.kill();
-    });
+    this.childProcess = undefined;
+    this._port = undefined;
+  };
 
   private guessPackaged() {
     const path = SubprocessHandler.packagedBackendPath();
