@@ -81,6 +81,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Polygon',
         'Safe',
         'Octant',
+        'Odosv2',
         'Omni',
         'Oneinchv1',
         'Oneinchv2',
@@ -198,6 +199,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'gearbox',
         'paladin',
         'defisaver',
+        'odos-v2',
     }
 
 

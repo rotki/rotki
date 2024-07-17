@@ -198,7 +198,7 @@ DEFI_PROTOCOLS_TO_SKIP_LIABILITIES = {
 CHAIN_TO_BALANCE_PROTOCOLS = {
     ChainID.ETHEREUM: (
         Compoundv3Balances,
-        CurveBalances,
+        CurveBalances,  # only needed in ethereum, because other chains have new gauge contracts
         ConvexBalances,
         ThegraphBalances,
         OctantBalances,
@@ -1094,9 +1094,9 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
     def _query_protocols_with_balance(self, chain_id: CHAIN_IDS_WITH_BALANCE_PROTOCOLS) -> None:
         """
         Query for balances of protocols in which tokens can be locked without returning a liquid
-        version of the locked token. For example staking tokens in a curve gauge. This balance
+        version of the locked token. For example staking tokens in an old curve gauge. This balance
         needs to be added to the total balance of the account. Examples of such protocols are
-        Curve, Convex and Velodrome.
+        Legacy Curve guages in ethereum, Convex and Velodrome.
         """
         chain: SUPPORTED_EVM_CHAINS_TYPE = ChainID.to_blockchain(chain_id)  # type: ignore[assignment]  # CHAIN_IDS_WITH_BALANCE_PROTOCOLS only contains SUPPORTED_EVM_CHAINS_TYPE
         inquirer = self.get_chain_manager(chain).node_inquirer

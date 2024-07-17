@@ -559,9 +559,9 @@ class EvmTransactions(ABC):  # noqa: B024
     def get_and_ensure_internal_txns_of_parent_in_db(
             self,
             tx_hash: 'EVMTxHash',
-            from_address: 'ChecksumEvmAddress',
             to_address: 'ChecksumEvmAddress',
             user_address: 'ChecksumEvmAddress',
+            from_address: 'ChecksumEvmAddress | None' = None,
     ) -> list[EvmInternalTransaction]:
         """Queries the internal transactions of a parent tx_hash, saves them in the DB and returns
         them. `to_address` and `user_address` are used to check if they have been queried before,
