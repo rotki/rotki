@@ -925,11 +925,11 @@
     },
     "transactions_redecode_by_chain": {
       "error": {
-        "description": "Échec du décodage des événements de {chaîne} : {error}",
+        "description": "Échec du décodage des événements de {chain} : {error}",
         "title": "Décodage des événements des transactions"
       },
       "task": {
-        "description": "Décodage des transactions pour les événements {chaîne}",
+        "description": "Décodage des transactions pour les événements {chain}",
         "title": "Décodage des événements de transaction"
       }
     },
@@ -4155,7 +4155,7 @@
           "title": "Impossible de Supprimer Événement"
         },
         "reset": {
-          "message": "Êtes-vous sûr de vouloir réinitialiser ces événements. Cette action supprimera tous les événements personnalisés, et les re-codera.",
+          "message": "Êtes-vous sûr de vouloir réinitialiser les événements de cette transaction ? Cette action supprimera tous les événements personnalisés de cette transaction et les redécodera.",
           "title": "Réinitialiser événements"
         }
       },

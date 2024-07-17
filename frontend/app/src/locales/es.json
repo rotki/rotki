@@ -3735,7 +3735,7 @@
           "title": "Cannot Delete Event"
         },
         "reset": {
-          "message": "Are you sure you want to reset these events. This action will delete all customized events, and re-decode them.",
+          "message": "¿Está seguro de que desea restablecer los eventos de esta transacción? Esta acción borrará todos los eventos personalizados de esta transacción y los volverá a decodificar.",
           "title": "Reset events"
         }
       },
