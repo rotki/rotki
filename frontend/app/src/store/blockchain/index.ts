@@ -1,6 +1,6 @@
 import { camelCase, isEmpty } from 'lodash-es';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { type MaybeRef, objectOmit } from '@vueuse/core';
+import { type MaybeRef, objectOmit, objectPick } from '@vueuse/core';
 import {
   aggregateTotals,
   createAccountWithBalance,
@@ -20,8 +20,8 @@ import type {
   BlockchainAccountRequestPayload,
   BlockchainAccountWithBalance,
   DeleteBlockchainAccountParams,
+  EthereumValidator,
   Totals,
-  ValidatorData,
 } from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
 import type { BlockchainTotal } from '@/types/blockchain';
@@ -57,8 +57,8 @@ export const useBlockchainStore = defineStore('blockchain', () => {
   const aggregatedLiabilities = computed<AssetBalances>(() => aggregateTotals(get(liabilities)));
 
   const groups = computed<BlockchainAccountGroupWithBalance[]>(() => {
-    const accountData = get(accounts);
-    const balanceData = get(balances);
+    const accountData = objectOmit(get(accounts), [Blockchain.ETH2]);
+    const balanceData = objectOmit(get(balances), [Blockchain.ETH2]);
 
     const nonGroupAccounts = Object.values(accountData).flatMap(accounts => accounts.filter(account => !account.groupId));
     const nonGroupAccountAddresses = nonGroupAccounts.map(account => getAccountAddress(account));
@@ -139,9 +139,12 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     return Object.fromEntries(entries);
   });
 
-  const ethStakingValidators = computed<BlockchainAccountWithBalance<ValidatorData>[]>(() => {
+  const ethStakingValidators = computed<EthereumValidator[]>(() => {
     const validatorAccounts = get(blockchainAccounts)[Blockchain.ETH2] ?? [];
-    return validatorAccounts.filter(isAccountWithBalanceValidator);
+    return validatorAccounts.filter(isAccountWithBalanceValidator).map(validator => ({
+      ...objectPick(validator, ['usdValue', 'amount']),
+      ...validator.data,
+    }));
   });
 
   const blockchainTotals = computed<BlockchainTotal[]>(() =>

@@ -125,9 +125,7 @@ export function useEthStaking() {
 
   const deleteEth2Validators = async (validators: string[]): Promise<boolean> => {
     try {
-      const pendingRemoval = get(ethStakingValidators)
-        .map(({ data }) => data)
-        .filter(account => validators.includes(account.publicKey));
+      const pendingRemoval = get(ethStakingValidators).filter(account => validators.includes(account.publicKey));
       const success = await deleteEth2ValidatorsCaller(pendingRemoval);
       if (success) {
         const remainingValidators = getAccounts(Blockchain.ETH2).filter(

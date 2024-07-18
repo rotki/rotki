@@ -1475,6 +1475,7 @@
   },
   "blockchain_balances": {
     "accounts": "Accounts",
+    "validators": "Ethereum Validators",
     "add_account": "Add Account",
     "evm_detection": {
       "title": "Detect EVM accounts",
@@ -1724,6 +1725,7 @@
     "of": "of",
     "optional": "Optional",
     "or": "or",
+    "ownership": "Ownership",
     "price": "Price",
     "price_in_symbol": "Price in {symbol}",
     "priority": "Priority",

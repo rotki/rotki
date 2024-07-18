@@ -112,7 +112,7 @@ function setTotal(validators?: Eth2Validators['entries']) {
   const publicKeys = validators?.map((validator: Eth2ValidatorEntry) => validator.publicKey);
   const stakingValidators = get(ethStakingValidators);
   const selectedValidators = publicKeys
-    ? stakingValidators.filter(validator => publicKeys.includes(validator.data.publicKey))
+    ? stakingValidators.filter(validator => publicKeys.includes(validator.publicKey))
     : stakingValidators;
   const totalStakedAmount = selectedValidators.reduce((sum, item) => sum.plus(item.amount), Zero);
   set(total, totalStakedAmount);

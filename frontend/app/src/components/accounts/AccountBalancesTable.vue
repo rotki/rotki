@@ -161,7 +161,10 @@ function showTokenDetection(row: DataRow): boolean {
 }
 
 function confirmDelete(item?: DataRow) {
-  showConfirmation(item ? [item] : get(selectedRows), () => {
+  showConfirmation({
+    type: 'accounts',
+    data: item ? [item] : get(selectedRows),
+  }, () => {
     set(selection, []);
     emit('refresh');
   });
@@ -185,16 +188,14 @@ defineExpose({
     v-model="selectedIds"
     v-bind="$attrs"
     v-model:expanded="expanded"
-    v-model:sort="sort"
-    v-model:pagination="pagination"
+    v-model:sort.external="sort"
+    v-model:pagination.external="pagination"
     :cols="cols"
     :rows="rows"
     :loading="group && isAnyLoading"
     row-attr="id"
-    :sort-modifiers="{ external: true }"
     :empty="{ description: t('data_table.no_data') }"
     :loading-text="t('account_balances.data_table.loading')"
-    :pagination-modifiers="{ external: true }"
     data-cy="account-table"
     single-expand
     outlined

@@ -2,6 +2,7 @@ import type { Account } from '@rotki/common/lib/account';
 import type {
   BlockchainAccountBalance,
   DeleteXpubParams,
+  EthereumValidator,
 } from '@/types/blockchain/accounts';
 
 export function useAccountDelete() {
@@ -10,6 +11,10 @@ export function useAccountDelete() {
   const { refreshAccounts } = useBlockchains();
   const { t } = useI18n();
   const { show } = useConfirmStore();
+
+  async function deleteValidators(payload: EthereumValidator[]): Promise<void> {
+    await deleteEth2Validators(payload.map(validator => validator.publicKey));
+  }
 
   async function deleteAccount(payload: BlockchainAccountBalance[]): Promise<void> {
     if (payload.length === 0)
@@ -80,7 +85,13 @@ export function useAccountDelete() {
     startPromise(refreshAccounts(chains.length === 1 ? chains[0] : undefined));
   }
 
-  function showConfirmation(payload: BlockchainAccountBalance[], onComplete: () => void) {
+  function showConfirmation(payload: {
+    type: 'accounts';
+    data: BlockchainAccountBalance[];
+  } | {
+    type: 'validators';
+    data: EthereumValidator[];
+  }, onComplete?: () => void) {
     const message: string = Array.isArray(payload)
       ? t('account_balances.confirm_delete.description_address', {
         count: payload.length,
@@ -94,8 +105,12 @@ export function useAccountDelete() {
         message,
       },
       async () => {
-        await deleteAccount(payload);
-        onComplete();
+        if (payload.type === 'accounts')
+          await deleteAccount(payload.data);
+        else
+          await deleteValidators(payload.data);
+
+        onComplete?.();
       },
     );
   }
