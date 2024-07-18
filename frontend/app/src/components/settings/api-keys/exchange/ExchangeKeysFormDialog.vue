@@ -1,19 +1,17 @@
 <script setup lang="ts">
 import type { ExchangePayload } from '@/types/exchanges';
 
-const props = defineProps<{
+defineProps<{
   editMode: boolean;
-  modelValue: ExchangePayload;
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:model-value', value: ExchangePayload): void;
   (e: 'reset'): void;
 }>();
 
 const { t } = useI18n();
 
-const model = useSimpleVModel(props, emit);
+const model = defineModel<ExchangePayload>({ required: true });
 
 const { openDialog, submitting, trySubmit } = useExchangeApiKeysForm();
 

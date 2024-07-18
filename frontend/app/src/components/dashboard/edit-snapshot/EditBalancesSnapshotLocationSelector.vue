@@ -1,26 +1,20 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
 
-const props = withDefaults(
+withDefaults(
   defineProps<{
-    modelValue?: string;
     locations?: string[];
     previewLocationBalance?: Record<string, BigNumber> | null;
     optionalShowExisting?: boolean;
   }>(),
   {
-    modelValue: '',
     locations: () => [],
     previewLocationBalance: null,
     optionalShowExisting: false,
   },
 );
 
-const emit = defineEmits<{
-  (e: 'update:model-value', location: string): void;
-}>();
-
-const model = useSimpleVModel(props, emit);
+const model = defineModel<string>({ required: false, default: '' });
 
 const { t } = useI18n();
 

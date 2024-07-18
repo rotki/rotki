@@ -9,12 +9,10 @@ import type { AccountManage } from '@/composables/accounts/blockchain/use-accoun
 const props = defineProps<{
   modelValue: AccountManage;
   loading: boolean;
-  errorMessages: ValidationErrors;
 }>();
 
 const emit = defineEmits<{
   (e: 'update:model-value', value: AccountManage): void;
-  (e: 'update:error-messages', value: ValidationErrors): void;
 }>();
 
 const { modelValue } = toRefs(props);
@@ -24,7 +22,7 @@ const selectedModules = ref<Module[]>([]);
 
 const { isEvm } = useSupportedChains();
 
-const errors = useKebabVModel(props, 'errorMessages', emit);
+const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const editMode = computed(() => props.modelValue.mode === 'edit');
 
 function updateVModel(value: AccountManage): void {

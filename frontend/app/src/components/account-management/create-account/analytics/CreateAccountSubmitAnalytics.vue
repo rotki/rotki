@@ -1,16 +1,11 @@
 <script lang="ts" setup>
-const props = defineProps<{
+defineProps<{
   loading: boolean;
-  submitUsageAnalytics: boolean;
-}>();
-
-const emit = defineEmits<{
-  (e: 'update:submit-usage-analytics', value: boolean): void;
 }>();
 
 const { t } = useI18n();
 
-const usageAnalytics = useKebabVModel(props, 'submitUsageAnalytics', emit);
+const usageAnalytics = defineModel<boolean>('submitUsageAnalytics', { required: true });
 </script>
 
 <template>

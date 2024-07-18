@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 const props = withDefaults(
   defineProps<{
-    modelValue: boolean;
     balanceFile?: File;
     locationFile?: File;
     loading?: boolean;
@@ -14,14 +13,13 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'update:model-value', value: boolean): void;
   (e: 'import'): boolean;
   (e: 'update:balance-file', file?: File): void;
   (e: 'update:location-file', file?: File): void;
 }>();
 
 const { t } = useI18n();
-const visible = useSimpleVModel(props, emit);
+const model = defineModel<boolean>({ required: true });
 
 const balanceFile = computed<File | undefined>({
   get() {
@@ -46,7 +44,7 @@ const complete = logicAnd(balanceFile, locationFile);
 
 <template>
   <RuiDialog
-    v-model="visible"
+    v-model="model"
     max-width="600"
     :persistent="persistent"
   >
@@ -104,7 +102,7 @@ const complete = logicAnd(balanceFile, locationFile);
         <RuiButton
           color="primary"
           variant="text"
-          @click="visible = false"
+          @click="model = false"
         >
           {{ t('common.actions.cancel') }}
         </RuiButton>

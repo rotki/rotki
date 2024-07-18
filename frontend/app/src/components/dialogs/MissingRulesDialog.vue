@@ -4,7 +4,6 @@ import type { EvmChainAndTxHash, HistoryEventEntry } from '@/types/history/event
 
 const props = withDefaults(
   defineProps<{
-    modelValue: boolean;
     event: HistoryEventEntry;
   }>(),
   {
@@ -16,14 +15,13 @@ const emit = defineEmits<{
   (e: 're-decode', data: EvmChainAndTxHash): void;
   (e: 'edit', event?: HistoryEventEntry): void;
   (e: 'add-rule', data: Pick<AccountingRuleEntry, 'eventType' | 'eventSubtype' | 'counterparty'>): void;
-  (e: 'update:model-value', value: boolean): void;
 }>();
 
 const { t } = useI18n();
 
 const { event } = toRefs(props);
 
-const model = useSimpleVModel(props, emit);
+const model = defineModel<boolean>({ required: true });
 
 const isEvm = computed(() => {
   const entry = get(event);
@@ -77,7 +75,7 @@ function onAddRule() {
 }
 
 function close() {
-  emit('update:model-value', false);
+  set(model, false);
 }
 </script>
 

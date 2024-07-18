@@ -4,7 +4,6 @@ import type { ImportSourceType } from '@/types/upload-types';
 
 const props = withDefaults(
   defineProps<{
-    modelValue?: File;
     source: ImportSourceType;
     loading?: boolean;
     fileFilter?: string;
@@ -20,13 +19,12 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'update:model-value', file?: File): void;
   (e: 'update:uploaded', uploaded: boolean): void;
   (e: 'update:error-message', message: string): void;
 }>();
 const { source, fileFilter, uploaded, errorMessage } = toRefs(props);
 
-const file = useSimpleVModel(props, emit);
+const file = defineModel<File | undefined>({ required: false });
 
 const wrapper = ref<HTMLDivElement>();
 

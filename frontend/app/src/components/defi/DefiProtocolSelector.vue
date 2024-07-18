@@ -7,20 +7,14 @@ defineOptions({
 
 const props = withDefaults(
   defineProps<{
-    modelValue?: DefiProtocol | null;
     liabilities?: boolean;
   }>(),
   {
-    value: null,
     liabilities: false,
   },
 );
 
-const emit = defineEmits<{
-  (e: 'update:model-value', protocol: DefiProtocol | null): void;
-}>();
-
-const model = useSimpleVModel(props, emit);
+const model = defineModel<DefiProtocol | undefined>({ required: false });
 
 const dual = [DefiProtocol.AAVE, DefiProtocol.COMPOUND];
 const borrowing = [DefiProtocol.MAKERDAO_VAULTS, DefiProtocol.LIQUITY];

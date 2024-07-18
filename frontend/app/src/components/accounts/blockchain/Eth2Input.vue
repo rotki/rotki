@@ -11,20 +11,18 @@ const props = defineProps<{
   validator: Eth2Validator | null;
   disabled: boolean;
   editMode: boolean;
-  errorMessages: ValidationErrors;
 }>();
 
 const emit = defineEmits<{
   (e: 'update:validator', validator: Eth2Validator | null): void;
-  (e: 'update:error-messages', value: ValidationErrors): void;
 }>();
 
-const { validator, errorMessages } = toRefs(props);
+const { validator } = toRefs(props);
 const validatorIndex = ref('');
 const publicKey = ref('');
 const ownershipPercentage = ref<string>();
 
-const errors = useKebabVModel(props, 'errorMessages', emit);
+const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 
 function updateProperties() {
   const validatorVal = get(validator);
@@ -72,7 +70,7 @@ function validate(): Promise<boolean> {
   return get(v$).$validate();
 }
 
-watch(errorMessages, (errors) => {
+watch(errors, (errors) => {
   if (!isEmpty(errors))
     get(v$).$validate();
 });

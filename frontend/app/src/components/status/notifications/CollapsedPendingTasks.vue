@@ -1,16 +1,10 @@
 <script setup lang="ts">
-const props = defineProps<{
-  modelValue: boolean;
+defineProps<{
   count: number;
 }>();
-
-const emit = defineEmits<{
-  (e: 'update:model-value', value: boolean): void;
-}>();
+const model = defineModel<boolean>({ required: true });
 
 const { t } = useI18n();
-
-const model = useSimpleVModel(props, emit);
 </script>
 
 <template>

@@ -6,11 +6,7 @@ import type { AssetInfoWithId } from '@/types/asset';
 
 type Errors = Partial<Record<'targetIdentifier' | 'sourceIdentifier', string[]>>;
 
-const props = defineProps<{ modelValue: boolean }>();
-
-const emit = defineEmits<{ (e: 'update:model-value', value: boolean): void }>();
-
-const display = useSimpleVModel(props, emit);
+const display = defineModel<boolean>({ required: true });
 
 const done = ref(false);
 const errorMessages = ref<Errors>({});
@@ -84,7 +80,7 @@ async function merge() {
 }
 
 function input(value: boolean) {
-  emit('update:model-value', value);
+  set(display, value);
   setTimeout(() => reset(), 100);
 }
 

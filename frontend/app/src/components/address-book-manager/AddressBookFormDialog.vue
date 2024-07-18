@@ -1,23 +1,20 @@
 <script setup lang="ts">
 import type { AddressBookPayload } from '@/types/eth-names';
 
-const props = defineProps<{
-  modelValue: AddressBookPayload;
-  enableForAllChains: boolean;
+defineProps<{
   editMode: boolean;
   errorMessages: { address?: string[]; name?: string[] };
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:model-value', value: AddressBookPayload): void;
-  (e: 'update:enable-for-all-chains', enable: boolean): void;
   (e: 'reset'): void;
 }>();
 
 const { openDialog, submitting, trySubmit } = useAddressBookForm();
 
-const model = useSimpleVModel(props, emit);
-const enabledForAllChains = useKebabVModel(props, 'enableForAllChains', emit);
+const model = defineModel<AddressBookPayload>({ required: true });
+
+const enabledForAllChains = defineModel<boolean>('enableForAllChains', { required: true });
 
 function resetForm() {
   emit('reset');

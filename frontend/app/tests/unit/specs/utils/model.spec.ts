@@ -72,17 +72,6 @@ describe('model utilities', () => {
     expect(emit).toHaveBeenCalledWith('update:model-value', 'test');
   });
 
-  it('useKebabVModel emits kebab-case events', () => {
-    const props = {
-      modelValue: '1',
-    };
-
-    const emit = vi.fn();
-    const model = useKebabVModel(props, 'modelValue', emit);
-    set(model, '2');
-    expect(emit).toHaveBeenCalledWith('update:model-value', '2');
-  });
-
   it('properly map computed property to parent ref', () => {
     const objRef = ref({
       title: 'title',

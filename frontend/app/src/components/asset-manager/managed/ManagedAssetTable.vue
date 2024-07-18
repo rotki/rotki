@@ -7,21 +7,17 @@ import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@r
 import type { SupportedAsset } from '@rotki/common/lib/data';
 import type { ActionStatus } from '@/types/action';
 
+interface IgnoredFilter {
+  onlyShowOwned: boolean;
+  onlyShowWhitelisted: boolean;
+  ignoredAssetsHandling: IgnoredAssetsHandlingType;
+}
 const props = withDefaults(
   defineProps<{
     collection: Collection<SupportedAsset>;
     matchers: Matcher[];
-    filters: Filters;
-    pagination: TablePaginationData;
-    sort: DataTableSortData<SupportedAsset>;
     expanded: SupportedAsset[];
     ignoredAssets: string[];
-    ignoredFilter: {
-      onlyShowOwned: boolean;
-      onlyShowWhitelisted: boolean;
-      ignoredAssetsHandling: IgnoredAssetsHandlingType;
-    };
-
     loading?: boolean;
   }>(),
   { loading: false },
@@ -31,27 +27,17 @@ const emit = defineEmits<{
   (e: 'refresh'): void;
   (e: 'edit', asset: SupportedAsset): void;
   (e: 'delete-asset', asset: SupportedAsset): void;
-  (e: 'update:filters', filters: Filters): void;
   (e: 'update:expanded', expandedAssets: SupportedAsset[]): void;
-  (e: 'update:pagination', pagination: TablePaginationData): void;
-  (e: 'update:sort', sort: DataTableSortData<SupportedAsset>): void;
-  (
-    e: 'update:ignored-filter',
-    value: {
-      onlyShowOwned: boolean;
-      onlyShowWhitelisted: boolean;
-      ignoredAssetsHandling: IgnoredAssetsHandlingType;
-    },
-  ): void;
 }>();
 
 const { collection } = toRefs(props);
 
 const { t } = useI18n();
 
-const paginationModel = useVModel(props, 'pagination', emit);
-const sortModel = useVModel(props, 'sort', emit);
+const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
+const sortModel = defineModel<DataTableSortData<SupportedAsset>>('sort', { required: true });
 const selected = defineModel<string[]>('selected', { required: true });
+const filtersModel = defineModel<Filters>('filters', { required: true });
 
 const cols = computed<DataTableColumn<SupportedAsset>[]>(() => [
   {
@@ -95,13 +81,11 @@ const cols = computed<DataTableColumn<SupportedAsset>[]>(() => [
 const edit = (asset: SupportedAsset) => emit('edit', asset);
 const deleteAsset = (asset: SupportedAsset) => emit('delete-asset', asset);
 
-const updateFilter = (filters: Filters) => emit('update:filters', filters);
-
 function updateExpanded(expandedAssets: SupportedAsset[]) {
   return emit('update:expanded', expandedAssets);
 }
 
-const ignoredFilter = useKebabVModel(props, 'ignoredFilter', emit);
+const ignoredFilter = defineModel<IgnoredFilter>('ignoredFilter', { required: true });
 
 const disabledIgnoreActions = computed(() => {
   const { ignoredAssetsHandling } = get(ignoredFilter);
@@ -145,7 +129,7 @@ async function toggleIgnoreAsset(identifier: string) {
     await unignoreAsset(identifier);
   else await ignoreAsset(identifier);
 
-  if (props.ignoredFilter.ignoredAssetsHandling !== 'none')
+  if (get(ignoredFilter).ignoredAssetsHandling !== 'none')
     emit('refresh');
 }
 
@@ -198,7 +182,7 @@ async function massIgnore(ignored: boolean) {
 
   if (status.success) {
     set(selected, []);
-    if (props.ignoredFilter.ignoredAssetsHandling !== 'none')
+    if (get(ignoredFilter).ignoredAssetsHandling !== 'none')
       emit('refresh');
   }
 }
@@ -259,9 +243,8 @@ const disabledRows = computed(() => {
 
       <div class="w-full md:w-[25rem]">
         <TableFilter
-          :matches="filters"
+          v-model:matches="filtersModel"
           :matchers="matchers"
-          @update:matches="updateFilter($event)"
         />
       </div>
     </div>

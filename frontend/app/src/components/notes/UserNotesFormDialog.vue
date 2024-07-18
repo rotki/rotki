@@ -1,17 +1,15 @@
 <script setup lang="ts">
 import type { UserNote } from '@/types/notes';
 
-const props = defineProps<{
-  modelValue: Partial<UserNote>;
+defineProps<{
   editMode: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:model-value', newInput: Partial<UserNote>): void;
   (e: 'reset'): void;
 }>();
 
-const model = useVModel(props, 'modelValue', emit);
+const model = defineModel<Partial<UserNote>>({ required: true });
 
 function resetForm() {
   emit('reset');

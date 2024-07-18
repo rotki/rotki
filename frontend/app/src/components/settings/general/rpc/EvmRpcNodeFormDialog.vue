@@ -6,22 +6,18 @@ import { isBlockchain } from '@/types/blockchain/chains';
 import EvmRpcNodeForm from '@/components/settings/general/rpc/EvmRpcNodeForm.vue';
 import type { EvmRpcNodeManageState } from '@/types/settings/rpc';
 
-const props = defineProps<{
-  modelValue: EvmRpcNodeManageState | undefined;
-}>();
-
 const emit = defineEmits<{
-  (e: 'update:model-value', value: EvmRpcNodeManageState | undefined): void;
   (e: 'complete'): void;
 }>();
 
+const model = defineModel<EvmRpcNodeManageState | undefined>({ required: true });
+
 function resetForm() {
-  emit('update:model-value', undefined);
+  set(model, undefined);
 }
 
 const { t } = useI18n();
 
-const model = useSimpleVModel(props, emit);
 const errorMessages = ref<Record<string, string[] | string>>({});
 const submitting = ref<boolean>(false);
 const form = ref<InstanceType<typeof EvmRpcNodeForm>>();
@@ -37,7 +33,7 @@ const chain = computed<Blockchain>(() => {
 });
 
 const chainName = computed(() => {
-  const chain = props.modelValue?.node.blockchain;
+  const chain = get(model)?.node.blockchain;
   return chain ? get(getChainName(get(chain))) : '';
 });
 

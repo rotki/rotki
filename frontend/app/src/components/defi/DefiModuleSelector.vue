@@ -7,20 +7,14 @@ defineOptions({
 
 const props = withDefaults(
   defineProps<{
-    modelValue?: string;
     items?: Module[];
   }>(),
   {
-    modelValue: '',
     items: () => [],
   },
 );
 
-const emit = defineEmits<{
-  (e: 'update:model-value', value: string): void;
-}>();
-
-const model = useSimpleVModel(props, emit);
+const model = defineModel<string>({ required: false });
 
 const modules = computed<SupportedModule[]>(() => {
   const items = props.items;

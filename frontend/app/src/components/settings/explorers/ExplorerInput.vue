@@ -7,18 +7,13 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = defineProps<{
-  modelValue: string;
-}>();
-
 const emit = defineEmits<{
-  (e: 'update:model-value', value: string): void;
   (e: 'save-data', value?: string): void;
 }>();
 
 const { t } = useI18n();
 
-const url = useSimpleVModel(props, emit);
+const url = defineModel<string>({ required: true });
 
 function saveData(value?: string) {
   emit('save-data', value);
