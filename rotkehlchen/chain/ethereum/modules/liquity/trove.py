@@ -3,7 +3,6 @@ from collections import defaultdict
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, NamedTuple, TypedDict, cast
 
-from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance, BalanceSheet
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
@@ -82,7 +81,6 @@ class Liquity(HasDSProxy):
             premium=premium,
             msg_aggregator=msg_aggregator,
         )
-        self.history_lock = Semaphore()
         self.trove_manager_contract = self.ethereum.contracts.contract(string_to_evm_address('0xA39739EF8b0231DbFA0DcdA07d7e29faAbCf4bb2'))  # noqa: E501
         self.stability_pool_contract = self.ethereum.contracts.contract(string_to_evm_address('0x66017D22b0f8556afDd19FC67041899Eb65a21bb'))  # noqa: E501
         self.staking_contract = self.ethereum.contracts.contract(string_to_evm_address('0x4f9Fbb3f1E99B56e0Fe2892e623Ed36A76Fc605d'))  # noqa: E501

@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING
 
-from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
@@ -40,7 +39,6 @@ class YearnVaultsV2(EthereumModule):
         self.ethereum = ethereum_inquirer
         self.database = database
         self.msg_aggregator = msg_aggregator
-        self.history_lock = Semaphore()
 
     def _calculate_vault_roi_and_pps(self, vault: EvmToken) -> tuple[FVal | None, int]:
         """

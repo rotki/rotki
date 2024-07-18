@@ -187,12 +187,6 @@ class TimestampRangeSchema(Schema):
     to_timestamp = TimestampField(load_default=ts_now)
 
 
-class AsyncHistoricalQuerySchema(AsyncQueryArgumentSchema, TimestampRangeSchema):
-    """A schema for getters that have 2 arguments.
-    One to enable async querying and another to force reset DB data by querying everything again"""
-    reset_db_data = fields.Boolean(load_default=False)
-
-
 class BalanceSchema(Schema):
     amount = AmountField(required=True)
     usd_value = AmountField(required=True)
@@ -1060,10 +1054,6 @@ class TradeSchema(Schema):
 
         if data['rate'] == ZERO:
             raise ValidationError('A zero rate is not allowed', field_name='rate')
-
-
-class IntegerIdentifierListSchema(Schema):
-    identifiers = DelimitedOrNormalList(fields.Integer(required=True), required=True)
 
 
 class IntegerIdentifierSchema(Schema):
@@ -2572,10 +2562,6 @@ class ManualPriceDeleteSchema(Schema):
     from_asset = AssetField(expected_type=Asset, required=True)
     to_asset = AssetField(expected_type=Asset, required=True)
     timestamp = TimestampField(required=True)
-
-
-class AvalancheTransactionQuerySchema(TimestampRangeSchema, AsyncQueryArgumentSchema):
-    address = EvmAddressField(required=True)
 
 
 class SingleFileSchema(Schema):

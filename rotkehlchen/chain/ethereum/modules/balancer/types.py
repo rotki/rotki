@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Any, NamedTuple
 
-from eth_typing.evm import ChecksumAddress
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
@@ -55,7 +54,6 @@ class BalancerPoolBalance:
 AddressToPoolBalances = dict[ChecksumEvmAddress, list[BalancerPoolBalance]]
 DDAddressToPoolBalances = defaultdict[ChecksumEvmAddress, list[BalancerPoolBalance]]
 TokenToPrices = dict[ChecksumEvmAddress, Price]
-PoolAddrToTokenAddrToIndex = dict[EvmToken, dict[ChecksumAddress, int]]
 
 
 class ProtocolBalance(NamedTuple):

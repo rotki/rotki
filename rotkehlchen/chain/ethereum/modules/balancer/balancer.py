@@ -2,7 +2,6 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING
 
-from gevent.lock import Semaphore
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.graph import (
@@ -50,7 +49,6 @@ class Balancer(EthereumModule):
         self.database = database
         self.premium = premium
         self.msg_aggregator = msg_aggregator
-        self.trades_lock = Semaphore()
         try:
             # If both fail, let's take the safest approach and consider the module unusable
             self.graph = Graph(

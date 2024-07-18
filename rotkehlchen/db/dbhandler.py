@@ -1100,9 +1100,6 @@ class DBHandler:
             (name, str(start_ts), str(end_ts)),
         )
 
-    def update_used_block_query_range(self, write_cursor: 'DBCursor', name: str, from_block: int, to_block: int) -> None:  # noqa: E501
-        self.update_used_query_range(write_cursor, name, from_block, to_block)  # type: ignore
-
     def get_last_balance_save_time(self, cursor: 'DBCursor') -> Timestamp:
         cursor.execute(
             'SELECT MAX(timestamp) from timed_location_data',
