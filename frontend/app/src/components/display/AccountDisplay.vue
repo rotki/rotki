@@ -46,7 +46,7 @@ const { t } = useI18n();
     :popper="{ placement: 'top' }"
     :open-delay="400"
     :disabled="!truncate"
-    class="flex items-center flex-nowrap"
+    class="flex items-center flex-nowrap gap-2"
     tooltip-class="[&_*]:font-mono"
   >
     <template #activator>
