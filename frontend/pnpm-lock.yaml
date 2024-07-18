@@ -91,6 +91,9 @@ importers:
       chartjs-plugin-zoom:
         specifier: 2.0.0
         version: 2.0.0(chart.js@4.4.3)
+      consola:
+        specifier: 3.2.3
+        version: 3.2.3
       dayjs:
         specifier: 1.11.11
         version: 1.11.11
@@ -106,9 +109,6 @@ importers:
       lodash-es:
         specifier: 4.17.21
         version: 4.17.21
-      loglevel:
-        specifier: 1.9.1
-        version: 1.9.1
       pinia:
         specifier: 2.1.7
         version: 2.1.7(typescript@5.4.5)(vue@3.4.32(typescript@5.4.5))
@@ -359,12 +359,12 @@ importers:
       '@types/node':
         specifier: 20.14.11
         version: 20.14.11
+      consola:
+        specifier: 3.2.3
+        version: 3.2.3
       dotenv:
         specifier: 16.4.5
         version: 16.4.5
-      loglevel:
-        specifier: 1.9.1
-        version: 1.9.1
       nodemon:
         specifier: 3.1.4
         version: 3.1.4
@@ -2794,6 +2794,10 @@ packages:
   config-file-ts@0.2.6:
     resolution: {integrity: sha512-6boGVaglwblBgJqGyxm4+xCmEGcWgnWHSWHY5jad58awQhB6gftq0G8HbzU39YqCIYHMLAiL1yjwiZ36m/CL8w==}
 
+  consola@3.2.3:
+    resolution: {integrity: sha512-I5qxpzLv+sJhTVEoLYNcTW+bThDCPsit0vLNKShZx6rLtpilNpmmeTPaeqJb9ZE9dV3DGaeby6Vuhrw38WjeyQ==}
+    engines: {node: ^14.18.0 || >=16.10.0}
+
   content-disposition@0.5.4:
     resolution: {integrity: sha512-FveZTNuGw04cxlAiWbzi6zTAL/lhehaWbTtgluJh4/E95DqMwTmha3KZN1aAWA8cFIhHzMZUvLevkw5Rqk+tSQ==}
     engines: {node: '>= 0.6'}
@@ -4629,10 +4633,6 @@ packages:
   log-update@6.0.0:
     resolution: {integrity: sha512-niTvB4gqvtof056rRIrTZvjNYE4rCUzO6X/X+kYjd7WFxXeJ0NwEFnRxX6ehkvv3jTwrXnNdtAak5XYZuIyPFw==}
     engines: {node: '>=18'}
-
-  loglevel@1.9.1:
-    resolution: {integrity: sha512-hP3I3kCrDIMuRwAwHltphhDM1r8i55H33GgqjXbrisuJhF4kRhW1dNuxsRklp4bXl8DSdLaNLuiL4A/LWRfxvg==}
-    engines: {node: '>= 0.6.0'}
 
   loupe@3.1.1:
     resolution: {integrity: sha512-edNu/8D5MKVfGVFRhFf8aAxiTM6Wumfz5XsaatSxlD3w4R1d/WEKUTydCdPGbl9K7QG/Ca3GnDV2sIKIpXRQcw==}
@@ -9836,6 +9836,8 @@ snapshots:
       glob: 10.4.5
       typescript: 5.4.5
 
+  consola@3.2.3: {}
+
   content-disposition@0.5.4:
     dependencies:
       safe-buffer: 5.2.1
@@ -11964,8 +11966,6 @@ snapshots:
       slice-ansi: 7.1.0
       strip-ansi: 7.1.0
       wrap-ansi: 9.0.0
-
-  loglevel@1.9.1: {}
 
   loupe@3.1.1:
     dependencies:
