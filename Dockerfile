@@ -1,5 +1,5 @@
 # build stage
-FROM --platform=$BUILDPLATFORM node:20-buster as frontend-build-stage
+FROM --platform=$BUILDPLATFORM node:20-buster AS frontend-build-stage
 
 ARG BUILDARCH
 ENV COREPACK_ENABLE_STRICT=0
@@ -10,7 +10,7 @@ RUN if [ "$BUILDARCH" != "amd64" ]; then apt-get update && apt-get install -y bu
 RUN npm install -g pnpm@9 && pnpm install --frozen-lockfile
 RUN pnpm run docker:build
 
-FROM python:3.11-buster as backend-build-stage
+FROM python:3.11-buster AS backend-build-stage
 
 ARG TARGETARCH
 ARG ROTKI_VERSION
@@ -45,7 +45,7 @@ RUN sed "s/fallback_version.*/fallback_version = \"$PACKAGE_FALLBACK_VERSION\"/"
     python -c "import sys;from rotkehlchen.db.misc import detect_sqlcipher_version; version = detect_sqlcipher_version();sys.exit(0) if version == 4 else sys.exit(1)" && \
     PYTHONOPTIMIZE=2 pyinstaller --noconfirm --clean --distpath /tmp/dist rotkehlchen.spec
 
-FROM nginx:1.25 as runtime
+FROM nginx:1.25 AS runtime
 
 LABEL maintainer="Rotki Solutions GmbH <info@rotki.com>"
 
