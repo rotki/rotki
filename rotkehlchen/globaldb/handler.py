@@ -240,23 +240,6 @@ class GlobalDBHandler:
         if self._packaged_db_conn is not None:
             self._packaged_db_conn.close()
 
-    def _wal_checkpoint(self) -> None:
-        """
-        Commit wal file. If database is locked we ignore it. This is needed when attaching
-        databases and we want to have up to date information. It can happen that if two tasks
-        are spawned in a short time and both of them try to commit the WAL one of them finds
-        the database locked. This doesn't prevent any query later from executing.
-
-        https://www.sqlite.org/pragma.html#pragma_wal_checkpoint
-        """
-        try:
-            self.conn.execute('PRAGMA wal_checkpoint(PASSIVE);')
-        except sqlite3.OperationalError as e:
-            if 'database table is locked' in (err := str(e)):
-                log.warning(f'Could not commit globaldb wal file. Ignoring. {err}')
-            else:
-                raise
-
     @staticmethod
     def packaged_db_conn() -> DBConnection:
         """Return a DBConnection instance for the packaged global db."""

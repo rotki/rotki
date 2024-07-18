@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Any, NamedTuple
 
-from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
@@ -75,11 +74,9 @@ from rotkehlchen.constants.misc import EXP18
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.price import query_usd_price_zero_if_error
-from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium
-from rotkehlchen.types import YEARN_VAULTS_V2_PROTOCOL, ChecksumEvmAddress, Price, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.interfaces import EthereumModule
 
 from .constants import BLOCKS_PER_YEAR
@@ -115,36 +112,6 @@ class YearnVaultBalance(NamedTuple):
         return result
 
 
-def get_usd_price_zero_if_error(
-        asset: CryptoAsset,
-        time: Timestamp,
-        location: str,
-        msg_aggregator: 'MessagesAggregator',
-) -> Price:
-    """A special version of query_usd_price_zero_if_error using current price instead
-    of historical token price for some assets.
-
-    Since these assets are not supported by our price oracles we derive current
-    price from the chain but without an archive node can't query old prices.
-
-    TODO: MAke an issue about this
-    This can be solved when we have an archive node.
-    """
-    inquirer = Inquirer()
-    if (
-        asset.identifier in inquirer.special_tokens or
-        (isinstance(asset, EvmToken) and asset.protocol == YEARN_VAULTS_V2_PROTOCOL)
-    ):
-        return inquirer.find_usd_price(asset)
-
-    return query_usd_price_zero_if_error(
-        asset=asset,
-        time=time,
-        location=location,
-        msg_aggregator=msg_aggregator,
-    )
-
-
 class YearnVaults(EthereumModule):
 
     def __init__(
@@ -157,7 +124,6 @@ class YearnVaults(EthereumModule):
         self.ethereum = ethereum_inquirer
         self.database = database
         self.msg_aggregator = msg_aggregator
-        self.history_lock = Semaphore()
         self.yearn_vaults = {
             'yyDAI+yUSDC+yUSDT+yTUSD': YearnVault(
                 name='YCRV Vault',

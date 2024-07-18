@@ -75,7 +75,6 @@ class Aave(EthereumModule):
         self.database = database
         self.msg_aggregator = msg_aggregator
         self.premium = premium
-        self.history_lock = Semaphore()
         self.balances_lock = Semaphore()
         self.counterparties = [CPT_AAVE_V1, CPT_AAVE_V2]
         self.v3_data_provider = self.ethereum.contracts.contract(AAVE_V3_DATA_PROVIDER)

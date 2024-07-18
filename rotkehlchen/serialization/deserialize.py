@@ -222,22 +222,6 @@ def deserialize_fval(
     return result
 
 
-def deserialize_optional_to_fval(
-        value: AcceptableFValInitInput | None,
-        name: str,
-        location: str,
-) -> FVal:
-    """
-    Deserializes an FVal from a field that was optional and if None raises DeserializationError
-    """
-    if value is None:
-        raise DeserializationError(
-            f'Failed to deserialize value entry for {name} during {location} since null was given',
-        )
-
-    return deserialize_fval(value=value, name=name, location=location)
-
-
 def deserialize_optional_to_optional_fval(
         value: AcceptableFValInitInput | None,
         name: str,

@@ -7,7 +7,6 @@ from .types import string_to_evm_address
 
 DEFAULT_TOKEN_DECIMALS: Final = 18
 
-MAX_BLOCKTIME_CACHE: Final = 250  # 55 mins with 13 secs avg block time
 ZERO_ADDRESS: Final = string_to_evm_address('0x0000000000000000000000000000000000000000')
 ETH_SPECIAL_ADDRESS: Final = string_to_evm_address('0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE')
 ZERO_32_BYTES_HEX: Final = '0x' + '0' * 64
