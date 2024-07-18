@@ -49,6 +49,7 @@ class HistoryEventType(SerializableEnumNameMixin):
     MIGRATE = auto()
     RENEW = auto()
     DEPLOY = auto()
+    FAIL = auto()
 
 
 class HistoryEventSubType(SerializableEnumNameMixin):
@@ -155,6 +156,7 @@ class EventCategory(Enum):
     UNSTAKE = 36, EventDirection.IN
     ATTEST = 37, EventDirection.NEUTRAL
     STAKE_EXIT = 38, EventDirection.IN
+    FAIL = 39, EventDirection.OUT
 
     @property
     def direction(self) -> EventDirection:

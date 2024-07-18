@@ -57,7 +57,7 @@ def _update_nft_table(write_cursor: 'DBCursor') -> None:
 
 @enter_exit_debug_log(name='UserDB v43->v44 upgrade')
 def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
-    """Upgrades the DB from v42 to v43. This was in v1.34 release.
+    """Upgrades the DB from v42 to v43. This was in v1.35 release.
 
     - add usd_price to the nfts table
     """
