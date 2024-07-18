@@ -393,7 +393,7 @@ def test_get_all_asset_data_specific_ids(globaldb):
         chain_id=None,
         token_kind=None,
         decimals=None,
-        cryptocompare=None,
+        cryptocompare='BTC',
         coingecko='bitcoin',
         protocol=None,
     )
@@ -409,7 +409,7 @@ def test_get_all_asset_data_specific_ids(globaldb):
         chain_id=None,
         token_kind=None,
         decimals=None,
-        cryptocompare=None,
+        cryptocompare='ETH',
         coingecko='ethereum',
         protocol=None,
     )

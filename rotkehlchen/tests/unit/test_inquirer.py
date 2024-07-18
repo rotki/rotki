@@ -783,3 +783,19 @@ def test_connect_rpc_with_hex_chainid(ethereum_inquirer: EthereumInquirer):
         ),
     )
     assert success is True and msg == ''
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_fake_symbol_doesnt_query_cc(inquirer: 'Inquirer'):
+    """Test that a token that has the symbol of another token (like USDC) doesn't trigger
+    a price query"""
+    inquirer.set_oracles_order(oracles=[CurrentPriceOracle.CRYPTOCOMPARE])
+    token = EvmToken.initialize(
+        address=string_to_evm_address('0x9fca10428566808CC9175412491dF4681cF39cE4'),
+        chain_id=ChainID.GNOSIS,
+        token_kind=EvmTokenKind.ERC20,
+        name='Fake USDC',
+        symbol='USDC',
+        decimals=18,
+    )
+    assert inquirer.find_usd_price(token) == ZERO
