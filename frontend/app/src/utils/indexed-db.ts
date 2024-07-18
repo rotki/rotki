@@ -1,13 +1,19 @@
-import * as logger from 'loglevel';
+import { type ConsolaInstance, LogLevels, createConsola } from 'consola';
 
 const ROWLIMIT = 50000;
 
 export class IndexedDb {
+  private logger: ConsolaInstance;
+
   constructor(
     private dbName: string,
     private dbVersion: number,
     private store: string,
-  ) {}
+  ) {
+    this.logger = createConsola({
+      level: LogLevels.error,
+    });
+  }
 
   get db(): Promise<IDBDatabase> {
     return new Promise((resolve, reject) => {
@@ -68,7 +74,7 @@ export class IndexedDb {
       request.onerror = (e: any): void => callback?.(e.target.error);
     }
     catch (error: any) {
-      logger.getLogger('console-only').log(error);
+      this.logger.error(error);
     }
   }
 
@@ -90,7 +96,7 @@ export class IndexedDb {
       request.onerror = (e: any): void => callback(e.target.error);
     }
     catch (error: any) {
-      logger.getLogger('console-only').log(error);
+      this.logger.error(error);
     }
   }
 }

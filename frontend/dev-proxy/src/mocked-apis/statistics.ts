@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import logger from 'loglevel';
+import consola from 'consola';
 import type { Application } from 'express';
 
 export function statistics(server: Application, componentsDir: string): void {
@@ -22,7 +22,7 @@ export function statistics(server: Application, componentsDir: string): void {
     if (latestFile)
       result = fs.readFileSync(latestFile, 'utf8');
 
-    logger.info(`Serving renderer from ${latestFile}`);
+    consola.info(`Serving renderer from ${latestFile}`);
 
     res.jsonp({
       result,

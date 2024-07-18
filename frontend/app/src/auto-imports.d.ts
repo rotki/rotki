@@ -201,6 +201,7 @@ declare global {
   const lastLogin: typeof import('./utils/account-management')['lastLogin']
   const loadUserOptions: typeof import('./composables/backend')['loadUserOptions']
   const logger: typeof import('./utils/logging')['logger']
+  const loggerWithTag: typeof import('./utils/logging')['loggerWithTag']
   const logicAnd: typeof import('@vueuse/math')['logicAnd']
   const logicNot: typeof import('@vueuse/math')['logicNot']
   const logicOr: typeof import('@vueuse/math')['logicOr']
@@ -979,6 +980,7 @@ declare module 'vue' {
     readonly lastLogin: UnwrapRef<typeof import('./utils/account-management')['lastLogin']>
     readonly loadUserOptions: UnwrapRef<typeof import('./composables/backend')['loadUserOptions']>
     readonly logger: UnwrapRef<typeof import('./utils/logging')['logger']>
+    readonly loggerWithTag: UnwrapRef<typeof import('./utils/logging')['loggerWithTag']>
     readonly logicAnd: UnwrapRef<typeof import('@vueuse/math')['logicAnd']>
     readonly logicNot: UnwrapRef<typeof import('@vueuse/math')['logicNot']>
     readonly logicOr: UnwrapRef<typeof import('@vueuse/math')['logicOr']>
@@ -1727,6 +1729,7 @@ declare module '@vue/runtime-core' {
     readonly lastLogin: UnwrapRef<typeof import('./utils/account-management')['lastLogin']>
     readonly loadUserOptions: UnwrapRef<typeof import('./composables/backend')['loadUserOptions']>
     readonly logger: UnwrapRef<typeof import('./utils/logging')['logger']>
+    readonly loggerWithTag: UnwrapRef<typeof import('./utils/logging')['loggerWithTag']>
     readonly logicAnd: UnwrapRef<typeof import('@vueuse/math')['logicAnd']>
     readonly logicNot: UnwrapRef<typeof import('@vueuse/math')['logicNot']>
     readonly logicOr: UnwrapRef<typeof import('@vueuse/math')['logicOr']>

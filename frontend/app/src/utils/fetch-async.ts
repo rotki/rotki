@@ -1,5 +1,4 @@
 import { Severity } from '@rotki/common/lib/messages';
-import * as logger from 'loglevel';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import type { TaskMeta } from '@/types/task';

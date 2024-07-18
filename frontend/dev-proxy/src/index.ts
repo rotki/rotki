@@ -5,12 +5,12 @@ import { Buffer } from 'node:buffer';
 import { json, urlencoded } from 'body-parser';
 import express, { type Request, type Response } from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
-import logger from 'loglevel';
+import consola, { LogLevels } from 'consola';
 import { statistics } from './mocked-apis/statistics';
 import { enableCors } from './setup';
 import type * as http from 'node:http';
 
-logger.setDefaultLevel('debug');
+consola.level = LogLevels.debug;
 
 const server = express();
 
@@ -21,26 +21,26 @@ const componentsDir = process.env.PREMIUM_COMPONENT_DIR;
 enableCors(server);
 
 if (componentsDir && fs.existsSync(componentsDir) && fs.statSync(componentsDir).isDirectory()) {
-  logger.info('Enabling statistics renderer support');
+  consola.info('Enabling statistics renderer support');
   statistics(server, componentsDir);
 }
 else {
-  logger.warn('PREMIUM_COMPONENT_DIR was not a valid directory, disabling statistics renderer support.');
+  consola.warn('PREMIUM_COMPONENT_DIR was not a valid directory, disabling statistics renderer support.');
 }
 
 let mockedAsyncCalls: { [url: string]: any } = {};
 if (fs.existsSync('async-mock.json')) {
   try {
-    logger.info('Loading mock data from async-mock.json');
+    consola.info('Loading mock data from async-mock.json');
     const buffer = fs.readFileSync('async-mock.json');
     mockedAsyncCalls = JSON.parse(buffer.toString());
   }
   catch (error) {
-    logger.error(error);
+    consola.error(error);
   }
 }
 else {
-  logger.info('async-mock.json doesnt exist. No async_query mocking is enabled');
+  consola.info('async-mock.json doesnt exist. No async_query mocking is enabled');
 }
 
 function manipulateResponse(res: Response, callback: (original: any) => any) {
@@ -60,7 +60,7 @@ function manipulateResponse(res: Response, callback: (original: any) => any) {
       return true;
     }
     catch (error: any) {
-      logger.error(error);
+      consola.error(error);
       return false;
     }
   };
@@ -84,7 +84,7 @@ setInterval(() => {
   const pending = mockAsync.pending;
   const completed = mockAsync.completed;
   if (pending.length > 0)
-    logger.log(`detected ${pending.length} pending tasks: ${pending.toString()}`);
+    consola.log(`detected ${pending.length} pending tasks: ${pending.toString()}`);
 
   while (pending.length > 0) {
     const task = pending.pop();
@@ -93,7 +93,7 @@ setInterval(() => {
   }
 
   if (completed.length > 0)
-    logger.log(`detected ${completed.length} completed tasks: ${completed.toString()}`);
+    consola.log(`detected ${completed.length} completed tasks: ${completed.toString()}`);
 }, 8000);
 
 function createResult(result: unknown): Record<string, unknown> {
@@ -145,7 +145,7 @@ function handleTaskRequest(url: string, tasks: string, res: Response) {
     }
   }
   catch (error) {
-    logger.error(error);
+    consola.error(error);
   }
 }
 
@@ -307,7 +307,7 @@ function onProxyRes(proxyRes: http.IncomingMessage, req: Request, res: Response)
   }
 
   if (handled)
-    logger.info('Handled request:', req.method, req.url);
+    consola.info('Handled request:', req.method, req.url);
 }
 
 server.use(urlencoded({ extended: true }));
@@ -322,5 +322,5 @@ server.use(
 );
 
 server.listen(port, () => {
-  logger.log(`Proxy server is running at http://127.0.0.1:${port}`);
+  consola.log(`Proxy server is running at http://127.0.0.1:${port}`);
 });

@@ -1,4 +1,3 @@
-import logger from 'loglevel';
 import { READ_ONLY_TAGS, type Tag, type Tags } from '@/types/tags';
 import type { ActionStatus } from '@/types/action';
 
