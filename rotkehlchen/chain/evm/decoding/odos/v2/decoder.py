@@ -111,7 +111,7 @@ class Odosv2DecoderBase(DecoderInterface):
                 router_holding_amount[asset] -= asset_normalized_value(amount=hex_or_bytes_to_int(tx_log.data), asset=asset)  # noqa: E501
 
         if self.native_currency.identifier in output_tokens:
-            try:
+            try:  # download (if not there) and find all native token transfers from/to the router
                 internal_native_ins = self.evm_txns.get_and_ensure_internal_txns_of_parent_in_db(
                     tx_hash=context.transaction.tx_hash,
                     to_address=self.router_address,

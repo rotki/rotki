@@ -1096,7 +1096,7 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         Query for balances of protocols in which tokens can be locked without returning a liquid
         version of the locked token. For example staking tokens in an old curve gauge. This balance
         needs to be added to the total balance of the account. Examples of such protocols are
-        Legacy Curve guages in ethereum, Convex and Velodrome.
+        Legacy Curve gauges in ethereum, Convex and Velodrome.
         """
         chain: SUPPORTED_EVM_CHAINS_TYPE = ChainID.to_blockchain(chain_id)  # type: ignore[assignment]  # CHAIN_IDS_WITH_BALANCE_PROTOCOLS only contains SUPPORTED_EVM_CHAINS_TYPE
         inquirer = self.get_chain_manager(chain).node_inquirer
