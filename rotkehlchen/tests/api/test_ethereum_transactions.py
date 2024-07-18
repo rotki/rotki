@@ -1441,7 +1441,6 @@ def test_count_transactions_missing_decoding(rotkehlchen_api_server: 'APIServer'
                     log_index=438,
                     data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000003b9deec6'),
                     address=string_to_evm_address('0xEaDD9B69F96140283F9fF75DA5FD33bcF54E6296'),
-                    removed=False,
                     topics=[
                         hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
                         hexstring_to_bytes('0x000000000000000000000000442068f934be670adab81242c87144a851d56d16'),

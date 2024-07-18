@@ -425,7 +425,6 @@ def test_uniswap_v2_swap_events_order(
                 log_index=31,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000001405cc9cdb5ccd5f5'),
                 address=string_to_evm_address('0xa3BeD4E1c75D00fa6f4E5E6922DB7261B5E9AcD2'),
-                removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
                     hexstring_to_bytes('0x00000000000000000000000043e141534d718D72552De1B606a5FCBc72256cD7'),
@@ -435,7 +434,6 @@ def test_uniswap_v2_swap_events_order(
                 log_index=32,
                 data=hexstring_to_bytes('0xfffffffffffffffffffffffffffffffffffffffffffffffebfa336324a332a0a'),
                 address=string_to_evm_address('0xa3BeD4E1c75D00fa6f4E5E6922DB7261B5E9AcD2'),
-                removed=False,
                 topics=[
                     hexstring_to_bytes('0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925'),
                     hexstring_to_bytes('0x00000000000000000000000043e141534d718D72552De1B606a5FCBc72256cD7'),
@@ -445,7 +443,6 @@ def test_uniswap_v2_swap_events_order(
                 log_index=33,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000002476b12c1292c7a'),
                 address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
-                removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
                     hexstring_to_bytes('0x0000000000000000000000000d0d65e7a7db277d3e0f5e1676325e75f3340455'),
@@ -455,7 +452,6 @@ def test_uniswap_v2_swap_events_order(
                 log_index=34,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000085458f584469791bd7960000000000000000000000000000000000000000000000f36cd1acc023153ced'),
                 address=string_to_evm_address('0x0d0d65E7A7dB277d3E0F5E1676325E75f3340455'),
-                removed=False,
                 topics=[
                     hexstring_to_bytes('0x1c411e9a96e071241c2f21f7726b17ae89e3cab4c78be50e062b03a9fffbbad1'),
                 ],
@@ -463,7 +459,6 @@ def test_uniswap_v2_swap_events_order(
                 log_index=35,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000001405cc9cdb5ccd5f50000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002476b12c1292c7a'),
                 address=string_to_evm_address('0x0d0d65E7A7dB277d3E0F5E1676325E75f3340455'),
-                removed=False,
                 topics=[
                     hexstring_to_bytes('0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822'),
                     hexstring_to_bytes('0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d'),
@@ -473,7 +468,6 @@ def test_uniswap_v2_swap_events_order(
                 log_index=36,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000026068b3a890000000000000000000000000000000000000000000000074f0bf96ef2478fa7ad'),
                 address=string_to_evm_address('0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc'),
-                removed=False,
                 topics=[
                     hexstring_to_bytes('0x1c411e9a96e071241c2f21f7726b17ae89e3cab4c78be50e062b03a9fffbbad1'),
                 ],
@@ -481,7 +475,6 @@ def test_uniswap_v2_swap_events_order(
                 log_index=37,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000000000000006beed50000000000000000000000000000000000000000000000000014bed67222b2ba'),
                 address=string_to_evm_address('0xB4e16d0168e52d35CaCD2c6185b44281Ec28C9Dc'),
-                removed=False,
                 topics=[
                     hexstring_to_bytes('0xdccd412f0b1252819cb1fd330b93224ca42612892bb3f4f789976e6d81936496'),
                     hexstring_to_bytes('0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d'),
@@ -491,7 +484,6 @@ def test_uniswap_v2_swap_events_order(
                 log_index=38,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000032c190329a9b16bef'),
                 address=string_to_evm_address('0x6B175474E89094C44Da98b954EedeAC495271d0F'),
-                removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
                     hexstring_to_bytes('0x000000000000000000000000a478c2975ab1ea89e8196811f51a7b7ade33eb11'),
@@ -501,7 +493,6 @@ def test_uniswap_v2_swap_events_order(
                 log_index=39,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000997f8a78f8b20f05afd018000000000000000000000000000000000000000000006df1960f8fb9530fad8a'),
                 address=string_to_evm_address('0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11'),
-                removed=False,
                 topics=[
                     hexstring_to_bytes('0x1c411e9a96e071241c2f21f7726b17ae89e3cab4c78be50e062b03a9fffbbad1'),
                 ],
@@ -509,7 +500,6 @@ def test_uniswap_v2_swap_events_order(
                 log_index=40,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000002476b12c1292c7a0000000000000000000000000000000000000000000000032c190329a9b16bef0000000000000000000000000000000000000000000000000000000000000000'),
                 address=string_to_evm_address('0xA478c2975Ab1Ea89e8196811F51A7B7Ade33eB11'),
-                removed=False,
                 topics=[
                     hexstring_to_bytes('0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822'),
                     hexstring_to_bytes('0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d'),

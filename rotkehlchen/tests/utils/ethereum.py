@@ -196,7 +196,6 @@ def txreceipt_to_data(receipt: EvmTxReceipt) -> dict[str, Any]:
         log_data = {
             'logIndex': log_entry.log_index,
             'address': log_entry.address,
-            'removed': log_entry.removed,
             'data': '0x' + log_entry.data.hex(),
             'topics': [],
         }
@@ -263,7 +262,6 @@ def setup_ethereum_transactions_test(
                 log_index=295,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000008ac7230489e80000'),
                 address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
-                removed=False,
                 topics=[
                     hexstring_to_bytes('0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c'),
                     hexstring_to_bytes('0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d'),
@@ -272,7 +270,6 @@ def setup_ethereum_transactions_test(
                 log_index=296,
                 data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000008ac7230489e80000'),
                 address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
-                removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
                     hexstring_to_bytes('0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d'),
@@ -282,7 +279,6 @@ def setup_ethereum_transactions_test(
                 log_index=297,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000036ba1d53baeeda5ed20'),
                 address=string_to_evm_address('0x2a3bFF78B79A009976EeA096a51A948a3dC00e34'),
-                removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
                     hexstring_to_bytes('0x000000000000000000000000caa004418eb42cdf00cb057b7c9e28f0ffd840a5'),
@@ -292,13 +288,11 @@ def setup_ethereum_transactions_test(
                 log_index=298,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000007b6ea033189ba7d047e30000000000000000000000000000000000000000000000140bc8194dd0f5e4be'),
                 address=string_to_evm_address('0xcaA004418eB42cdf00cB057b7C9E28f0FfD840a5'),
-                removed=False,
                 topics=[hexstring_to_bytes('0x1c411e9a96e071241c2f21f7726b17ae89e3cab4c78be50e062b03a9fffbbad1')],
             ), EvmTxReceiptLog(
                 log_index=299,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000008ac7230489e8000000000000000000000000000000000000000000000000036ba1d53baeeda5ed200000000000000000000000000000000000000000000000000000000000000000'),
                 address=string_to_evm_address('0xcaA004418eB42cdf00cB057b7C9E28f0FfD840a5'),
-                removed=False,
                 topics=[
                     hexstring_to_bytes('0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822'),
                     hexstring_to_bytes('0x0000000000000000000000007a250d5630b4cf539739df2c5dacb4c659f2488d'),
@@ -318,7 +312,6 @@ def setup_ethereum_transactions_test(
                 log_index=438,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000003b9deec6'),
                 address=string_to_evm_address('0xEaDD9B69F96140283F9fF75DA5FD33bcF54E6296'),
-                removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
                     hexstring_to_bytes('0x000000000000000000000000442068f934be670adab81242c87144a851d56d16'),
