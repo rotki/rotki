@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { uniqBy } from 'lodash-es';
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { objectOmit } from '@vueuse/shared';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 type AccountWithAddressData = BlockchainAccount<AddressData>;
@@ -197,78 +198,78 @@ function input(nextValue: null | AccountWithAddressData | AccountWithAddressData
 }
 
 const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
+const attrs = useAttrs();
 </script>
 
 <template>
-  <div>
-    <DefineAutocomplete>
-      <RuiAutoComplete
-        :model-value="internalValue"
-        :options="displayedAccounts"
-        :filter="filter"
-        auto-select-first
-        :loading="loading"
-        :disabled="loading"
-        :hide-details="!showDetails"
-        hide-selected
-        :hide-no-data="!hideOnEmptyUsable"
-        :chips="multiple"
-        :item-height="40"
-        clearable
-        :dense="dense"
-        :variant="outlined ? 'outlined' : 'default'"
-        :outlined="outlined"
-        :hint="customHint"
-        key-attr="key"
-        :label="label || t('blockchain_account_selector.default_label')"
-        class="blockchain-account-selector"
-        :error-messages="errorMessages"
-        v-bind="$attrs"
-        :no-data-text="t('blockchain_account_selector.no_data')"
-        return-object
-        @update:model-value="input($event)"
-      >
-        <template #selection="{ item }">
+  <DefineAutocomplete>
+    <RuiAutoComplete
+      :model-value="internalValue"
+      :options="displayedAccounts"
+      :filter="filter"
+      auto-select-first
+      :loading="loading"
+      :disabled="loading"
+      :hide-details="!showDetails"
+      hide-selected
+      :hide-no-data="!hideOnEmptyUsable"
+      :chips="multiple"
+      :item-height="40"
+      clearable
+      :dense="dense"
+      :variant="outlined ? 'outlined' : 'default'"
+      :outlined="outlined"
+      :hint="customHint"
+      key-attr="key"
+      :label="label || t('blockchain_account_selector.default_label')"
+      class="blockchain-account-selector"
+      :error-messages="errorMessages"
+      v-bind="objectOmit(attrs, ['class'])"
+      :no-data-text="t('blockchain_account_selector.no_data')"
+      return-object
+      @update:model-value="input($event)"
+    >
+      <template #selection="{ item }">
+        <AccountDisplay
+          :account="item"
+          :hide-chain-icon="hideChainIcon"
+        />
+      </template>
+      <template #item="{ item }">
+        <div class="grow py-1">
           <AccountDisplay
             :account="item"
             :hide-chain-icon="hideChainIcon"
           />
-        </template>
-        <template #item="{ item }">
-          <div class="grow py-1">
-            <AccountDisplay
-              :account="item"
-              :hide-chain-icon="hideChainIcon"
-            />
-            <TagDisplay
-              :class="hideChainIcon ? 'pl-8' : 'pl-[3.75rem]'"
-              :tags="item.tags"
-              small
-            />
-          </div>
-        </template>
-      </RuiAutoComplete>
-    </DefineAutocomplete>
+          <TagDisplay
+            :class="hideChainIcon ? 'pl-8' : 'pl-[3.75rem]'"
+            :tags="item.tags"
+            small
+          />
+        </div>
+      </template>
+    </RuiAutoComplete>
+  </DefineAutocomplete>
 
-    <div
-      v-if="!hint"
-      class="bg-white dark:bg-[#1E1E1E]"
-    >
-      <ReuseAutocomplete />
-    </div>
-    <RuiCard
-      v-else
-      variant="outlined"
-      v-bind="$attrs"
-    >
-      <ReuseAutocomplete />
-      <div
-        v-if="hint"
-        class="text-body-2 text-rui-text-secondary p-2"
-      >
-        {{ t('blockchain_account_selector.hint', { hintText }) }}
-        <slot />
-      </div>
-    </RuiCard>
+  <div
+    v-if="!hint"
+    class="bg-white dark:bg-[#1E1E1E]"
+    :class="attrs.class"
+  >
+    <ReuseAutocomplete />
   </div>
+  <RuiCard
+    v-else
+    variant="outlined"
+    :class="attrs.class"
+  >
+    <ReuseAutocomplete />
+    <div
+      v-if="hint"
+      class="text-body-2 text-rui-text-secondary p-2"
+    >
+      {{ t('blockchain_account_selector.hint', { hintText }) }}
+      <slot />
+    </div>
+  </RuiCard>
 </template>
