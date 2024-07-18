@@ -4,9 +4,12 @@ import {
   createNewBlockchainAccount,
 } from '@/composables/accounts/blockchain/use-account-manage';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
+import EthStakingValidators from '@/components/accounts/EthStakingValidators.vue';
+import { Module } from '@/types/modules';
 
 const account = ref<AccountManageState>();
 const balances = ref<InstanceType<typeof AccountBalances>>();
+const tab = ref(0);
 
 const { t } = useI18n();
 
@@ -15,6 +18,9 @@ const route = useRoute();
 
 const { blockchainAssets } = useBlockchainAggregatedBalances();
 const { isBlockchainLoading } = useAccountLoading();
+const { isModuleEnabled } = useModules();
+
+const isEth2Enabled = isModuleEnabled(Module.ETH2);
 
 function refresh() {
   if (isDefined(balances))
@@ -69,7 +75,33 @@ onMounted(async () => {
         />
       </RuiCard>
 
+      <div v-if="isEth2Enabled">
+        <RuiTabs
+          v-model="tab"
+          color="primary"
+        >
+          <RuiTab>
+            {{ t('blockchain_balances.accounts') }}
+          </RuiTab>
+          <RuiTab>
+            {{ t('blockchain_balances.validators') }}
+          </RuiTab>
+        </RuiTabs>
+
+        <RuiTabItems :model-value="tab">
+          <RuiTabItem>
+            <AccountBalances
+              ref="balances"
+              @edit="account = $event"
+            />
+          </RuiTabItem>
+          <RuiTabItem>
+            <EthStakingValidators @edit="account = $event" />
+          </RuiTabItem>
+        </RuiTabItems>
+      </div>
       <AccountBalances
+        v-else
         ref="balances"
         @edit="account = $event"
       />

@@ -59,6 +59,8 @@ export interface BlockchainAccountWithBalance<T extends BlockchainAccountData = 
   readonly usdValue: BigNumber;
 }
 
+export type EthereumValidator = ValidatorData & Balance;
+
 export interface BlockchainAccountGroupWithBalance<T extends BlockchainAccountData = BlockchainAccountData> extends Omit<BlockchainAccount<T>, 'groupHeader' | 'groupId' | 'nativeAsset' | 'chain' | 'virtual'>, AccountExpansion {
   readonly type: 'group';
   readonly amount?: BigNumber;

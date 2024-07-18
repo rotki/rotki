@@ -107,7 +107,7 @@ export function useEth2DailyStats() {
     return {
       ...objectOmit(dailyStats, ['entries']),
       entries: dailyStats.entries.map((stat) => {
-        const ownershipPercentage = validators.find(({ data }) => data.index === stat.validatorIndex)?.data
+        const ownershipPercentage = validators.find(({ index }) => index === stat.validatorIndex)
           ?.ownershipPercentage;
         return {
           ...stat,

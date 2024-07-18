@@ -46,7 +46,7 @@ watch(accounts, accounts => updateAccounts(accounts));
   <ValidatorFilterInput
     v-else
     :model-value="modelValue.validators"
-    :items="ethStakingValidators.map(({ data }) => data)"
+    :items="ethStakingValidators"
     @update:model-value="updateValidators($event)"
   />
 </template>
