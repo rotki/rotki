@@ -311,7 +311,6 @@ def test_simple_erc20_transfer(
                 log_index=73,
                 data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000000243de35'),
                 address=tether_address,
-                removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
                     hexstring_to_bytes('0x0000000000000000000000004bba290826c253bd854121346c370a9886d1bc26'),

@@ -2446,9 +2446,11 @@ def test_upgrade_db_43_to_44(user_data_dir, messages_aggregator):
             'SELECT identifier, last_price, last_price_asset FROM nfts',
         ).fetchall() == [
             ('_nft_0xfd9d8036f899ed5a9fd8cac7968e5f24d3db2a64_1_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '0', 'ETH'),  # noqa: E501
-            ('_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041', '0.00053', 'ETH'),  # noqa: E501
+            ('_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041', '0.00059', 'ETH'),  # noqa: E501
             ('_nft_sdfdsfsdf_1_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', None, None),
         ]
+
+        old_receipt_logs = cursor.execute('SELECT * from evmtx_receipt_logs').fetchall()
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2465,9 +2467,11 @@ def test_upgrade_db_43_to_44(user_data_dir, messages_aggregator):
             'SELECT identifier, last_price, last_price_asset FROM nfts',
         ).fetchall() == [
             ('_nft_0xfd9d8036f899ed5a9fd8cac7968e5f24d3db2a64_1_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '0', 'ETH'),  # noqa: E501
-            ('_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041', '0.00053', 'ETH'),  # noqa: E501
+            ('_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041', '0.00059', 'ETH'),  # noqa: E501
             ('_nft_sdfdsfsdf_1_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '0', 'ETH'),
         ]
+        new_receipt_logs = cursor.execute('SELECT * from evmtx_receipt_logs').fetchall()
+        assert new_receipt_logs == [(x[0], x[1], x[2], x[3], x[4]) for x in old_receipt_logs]
 
 
 def test_latest_upgrade_correctness(user_data_dir):

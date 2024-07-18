@@ -429,7 +429,6 @@ CREATE TABLE IF NOT EXISTS evmtx_receipt_logs (
     log_index INTEGER NOT NULL,
     data BLOB NOT NULL,
     address TEXT NOT NULL,
-    removed INTEGER NOT NULL CHECK (removed IN (0, 1)),
     FOREIGN KEY(tx_id) REFERENCES evmtx_receipts(tx_id) ON DELETE CASCADE ON UPDATE CASCADE,
     UNIQUE(tx_id, log_index)
 );

@@ -373,14 +373,13 @@ class DBEvmTx:
 
         for log_entry in data['logs']:
             write_cursor.execute(
-                'INSERT INTO evmtx_receipt_logs (tx_id, log_index, data, address, removed) '
-                'VALUES(? ,? ,? ,? ,?)',
+                'INSERT INTO evmtx_receipt_logs (tx_id, log_index, data, address) '
+                'VALUES(? ,? ,? ,?)',
                 (
                     tx_id,
                     log_entry['logIndex'],
                     hexstring_to_bytes(log_entry['data']),
                     deserialize_evm_address(log_entry['address']),
-                    int(log_entry['removed']),
                 ),
             )
             log_id = write_cursor.lastrowid
@@ -429,7 +428,7 @@ class DBEvmTx:
         )
 
         cursor.execute(
-            'SELECT identifier, log_index, data, address, removed from evmtx_receipt_logs WHERE tx_id=?',  # noqa: E501
+            'SELECT identifier, log_index, data, address from evmtx_receipt_logs WHERE tx_id=?',
             (tx_id,))
         with self.db.conn.read_ctx() as other_cursor:
             for result in cursor:
@@ -437,7 +436,6 @@ class DBEvmTx:
                     log_index=result[1],
                     data=result[2],
                     address=result[3],
-                    removed=bool(result[4]),  # works since value is either 0 or 1
                 )
                 other_cursor.execute(
                     'SELECT topic from evmtx_receipt_log_topics '

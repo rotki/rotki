@@ -55,13 +55,25 @@ def _update_nft_table(write_cursor: 'DBCursor') -> None:
     write_cursor.execute('ALTER TABLE nfts_new RENAME TO nfts')
 
 
+@enter_exit_debug_log()
+def _remove_log_removed_column(write_cursor: 'DBCursor') -> None:
+    write_cursor.execute(
+        'ALTER TABLE evmtx_receipt_logs DROP COLUMN removed;',
+    )
+
+
 @enter_exit_debug_log(name='UserDB v43->v44 upgrade')
 def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v42 to v43. This was in v1.35 release.
 
     - add usd_price to the nfts table
     """
-    progress_handler.set_total_steps(1)
+    progress_handler.set_total_steps(3)
     with db.user_write() as write_cursor:
         _update_nft_table(write_cursor)
         progress_handler.new_step()
+        _remove_log_removed_column(write_cursor)
+        progress_handler.new_step()
+
+    db.conn.execute('VACUUM;')
+    progress_handler.new_step()

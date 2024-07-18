@@ -287,7 +287,6 @@ def test_aave_v2_enable_collateral(database, ethereum_inquirer, eth_transactions
                 log_index=251,
                 data=hexstring_to_bytes('0x'),
                 address=string_to_evm_address('0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9'),
-                removed=False,
                 topics=[
                     hexstring_to_bytes('0x00058a56ea94653cdf4f152d227ace22d4c00ad99e2a43f58cb7d9e3feb295f2'),
                     hexstring_to_bytes('0x000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'),
@@ -374,7 +373,6 @@ def test_aave_v2_disable_collateral(database, ethereum_inquirer, eth_transaction
                 log_index=24,
                 data=hexstring_to_bytes('0x'),
                 address=string_to_evm_address('0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9'),
-                removed=False,
                 topics=[
                     hexstring_to_bytes('0x44c58d81365b66dd4b1a7f36c25aa97b8c71c361ee4937adc1a00000227db5dd'),
                     hexstring_to_bytes('0x000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'),
@@ -461,7 +459,6 @@ def test_aave_v2_deposit(database, ethereum_inquirer, eth_transactions):
                 log_index=418,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000005150ae84a8cdf00000'),
                 address=string_to_evm_address('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'),
-                removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
                     hexstring_to_bytes('0x0000000000000000000000002715273613632226985186221669179813245119'),
@@ -471,7 +468,6 @@ def test_aave_v2_deposit(database, ethereum_inquirer, eth_transactions):
                 log_index=419,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000005150ae84a8cdf00000'),
                 address=string_to_evm_address('0x030bA81f1c18d280636F32af80b9AAd02Cf0854e'),
-                removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
                     hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000000'),
@@ -481,7 +477,6 @@ def test_aave_v2_deposit(database, ethereum_inquirer, eth_transactions):
                 log_index=421,
                 data=hexstring_to_bytes('0x000000000000000000000000271527361363222698518622166917981324511900000000000000000000000000000000000000000000005150ae84a8cdf00000'),
                 address=string_to_evm_address('0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9'),
-                removed=False,
                 topics=[
                     hexstring_to_bytes('0xde6857219544bb5b7746f48ed30be6386fefc61b2f864cacf559893bf50fd951'),
                     hexstring_to_bytes('0x000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'),
@@ -722,7 +717,6 @@ def test_aave_v2_repay(database, ethereum_inquirer, eth_transactions):
                 log_index=152,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000010f13944fcc61b82177'),
                 address=string_to_evm_address('0x267EB8Cf715455517F9BD5834AeAE3CeA1EBdbD8'),
-                removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
                     hexstring_to_bytes('0x00000000000000000000000000000000000cd56832ce5dfbcbff02e7ec639bc9'),
@@ -732,7 +726,6 @@ def test_aave_v2_repay(database, ethereum_inquirer, eth_transactions):
                 log_index=155,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000010f13944fcc61b82177'),
                 address=string_to_evm_address('0xC011a73ee8576Fb46F5E1c5751cA3B9Fe0af2a6F'),
-                removed=False,
                 topics=[
                     hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
                     hexstring_to_bytes('0x00000000000000000000000000000000000cd56832ce5dfbcbff02e7ec639bc9'),
@@ -742,7 +735,6 @@ def test_aave_v2_repay(database, ethereum_inquirer, eth_transactions):
                 log_index=156,
                 data=hexstring_to_bytes('0x00000000000000000000000000000000000000000000010f13944fcc61b82177'),
                 address=string_to_evm_address('0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9'),
-                removed=False,
                 topics=[
                     hexstring_to_bytes('0x4cdde6e09bb755c9a5589ebaec640bbfedff1362d4b255ebf8339782b9942faa'),
                     hexstring_to_bytes('0x000000000000000000000000c011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f'),

@@ -12,7 +12,6 @@ class EvmTxReceiptLog:
     log_index: int
     data: bytes
     address: ChecksumEvmAddress
-    removed: bool
     topics: list[bytes] = dataclasses.field(default_factory=list)
 
 
