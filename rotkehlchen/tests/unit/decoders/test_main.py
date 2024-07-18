@@ -930,3 +930,30 @@ def test_error_at_decoder_initialization(database, ethereum_inquirer, eth_transa
 
     assert len(warnings) == 0
     assert errors == ['Failed at initialization of ethereum Lockedgno decoder due to non conformant token']  # noqa: E501
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
+def test_failed_transaction(database, ethereum_inquirer, ethereum_accounts):
+    """Checks that a failed transaction is understood as failed"""
+    tx_hex = deserialize_evm_tx_hash('0xfbfd35db096d0acb26a988895841d786baafe08f6cf55265338e0b5db58350ee')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=evmhash,
+    )
+    gas = '0.00056954114283532'
+    assert events == [EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=0,
+        timestamp=TimestampMS(1659633427000),
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.FAIL,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas)),
+        location_label=ethereum_accounts[0],
+        notes=f'Burned {gas} ETH for gas of a failed transaction',
+        counterparty=CPT_GAS,
+    )]

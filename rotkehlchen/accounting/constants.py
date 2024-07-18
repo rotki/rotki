@@ -80,6 +80,8 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
     }, HistoryEventType.MIGRATE: {
         HistoryEventSubType.SPEND: EventCategory.MIGRATE_OUT,
         HistoryEventSubType.RECEIVE: EventCategory.MIGRATE_IN,
+    }, HistoryEventType.FAIL: {
+        HistoryEventSubType.FEE: EventCategory.FAIL,
     },
 }
 
@@ -186,7 +188,11 @@ EVENT_CATEGORY_DETAILS = {
     )}, EventCategory.FEE: {
         DEFAULT: EventCategoryDetails(label='fee', icon='cash-line'),
         CPT_GAS: EventCategoryDetails(label='gas fee', icon='fire-line'),
-    }, EventCategory.MEV_REWARD: {DEFAULT: EventCategoryDetails(
+    }, EventCategory.FAIL: {DEFAULT: EventCategoryDetails(
+        label='Failed',
+        icon='close-circle-line',
+        color='error',
+    )}, EventCategory.MEV_REWARD: {DEFAULT: EventCategoryDetails(
         label='mev',
         icon='medal-line',
     )}, EventCategory.CREATE_BLOCK: {DEFAULT: EventCategoryDetails(

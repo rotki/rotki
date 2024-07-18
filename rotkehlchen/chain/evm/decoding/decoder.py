@@ -803,15 +803,22 @@ class EVMTransactionDecoder(ABC):
             event_type, _, location_label, _, _, _ = direction_result
             if event_type in OUTGOING_EVENT_TYPES:
                 eth_burned_as_gas = self._calculate_gas_burned(tx)
+                notes = f'Burned {eth_burned_as_gas} {self.value_asset.symbol} for gas'
+                event_type = HistoryEventType.SPEND
+
+                if tx_receipt.status is False:
+                    notes += ' of a failed transaction'
+                    event_type = HistoryEventType.FAIL
+
                 events.append(self.base.make_event_next_index(
                     tx_hash=tx.tx_hash,
                     timestamp=tx.timestamp,
-                    event_type=HistoryEventType.SPEND,
+                    event_type=event_type,
                     event_subtype=HistoryEventSubType.FEE,
                     asset=self.value_asset,
                     balance=Balance(amount=eth_burned_as_gas),
                     location_label=location_label,
-                    notes=f'Burned {eth_burned_as_gas} {self.value_asset.symbol} for gas',
+                    notes=notes,
                     counterparty=CPT_GAS,
                 ))
 
