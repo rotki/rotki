@@ -3240,7 +3240,9 @@ Get asset identifiers mappings
               "name": "0xBitcoin",
               "symbol": "0xBTC",
               "asset_type": "evm token",
-              "collection_id": "0"
+              "collection_id": "0",
+              "coingecko": "oxbitcoin",
+              "cryptocompare": "0XBTC"
             },
             "DCR": {
               "name": "Decred",
@@ -3277,6 +3279,8 @@ Get asset identifiers mappings
    :resjson string symbol: Symbol of the asset. Will only exist for non-nft assets.
    :resjson int chain_id: This value might not be included in all the results. Chain id of the chain where the asset is located if the asset is an EVM token.
    :resjson string custom_asset_type: This value might not be included in all the results. It represents the custom asset type for a custom asset.
+   :resjson string coingecko: This value might not be included in all the results. It is the coingecko identifier for the asset.
+   :resjson string cryptocompare: This value might not be included in all the results. It is the cryptocompare identifier for the asset.
    :resjson string collection_name: Only included for NFTs. May be null if nft has no collection. If it does then this is its name.
    :resjson string image_url: Only included for NFTs. May be null if nft has no image. If it does this is a url to the image.
    :statuscode 200: Assets successfully queried.
