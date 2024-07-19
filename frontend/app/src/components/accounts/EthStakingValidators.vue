@@ -12,14 +12,12 @@ const emit = defineEmits<{
   (e: 'edit', value: StakingValidatorManage): void;
 }>();
 
-const selection = ref<number[]>([]);
-
 const { t } = useI18n();
 
 const { ethStakingValidators: rows } = storeToRefs(useBlockchainStore());
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { showConfirmation } = useAccountDelete();
-const { fetchEthStakingValidators } = useEthStaking()
+const { fetchEthStakingValidators } = useEthStaking();
 
 const cols = computed<DataTableColumn<EthereumValidator>[]>(() => {
   const currency = { symbol: get(currencySymbol) };
@@ -112,7 +110,7 @@ function getOwnershipPercentage(row: EthereumValidator): string {
 }
 
 async function refresh() {
- await fetchEthStakingValidators();
+  await fetchEthStakingValidators();
 }
 
 function confirmDelete(item: EthereumValidator) {
@@ -128,10 +126,10 @@ function confirmDelete(item: EthereumValidator) {
     <template #header>
       <div class="flex flex-row items-center gap-2">
         <RefreshButton
-            :disabled="loading"
-            :loading="loading"
-            :tooltip="t('account_balances.refresh_tooltip')"
-            @refresh="refresh()"
+          :disabled="loading"
+          :loading="loading"
+          :tooltip="t('account_balances.refresh_tooltip')"
+          @refresh="refresh()"
         />
         <CardTitle class="ml-2">
           {{ t('blockchain_balances.validators') }}

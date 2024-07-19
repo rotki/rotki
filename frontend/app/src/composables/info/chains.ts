@@ -153,6 +153,12 @@ export const useSupportedChains = createSharedComposable(() => {
     return toHumanReadable(item.id);
   });
 
+  const getChainType = (chain: string): string | undefined => {
+    const allChains = get(supportedChains);
+    const match = allChains.find(entry => entry.id === chain);
+    return match?.type;
+  };
+
   return {
     allEvmChains,
     supportedChains,
@@ -169,6 +175,7 @@ export const useSupportedChains = createSharedComposable(() => {
     getChainInfoByName,
     getChainName,
     getChainImageUrl,
+    getChainType,
     isEvm,
     supportsTransactions,
     isEvmLikeChains,

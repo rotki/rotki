@@ -3,6 +3,7 @@ import { some } from 'lodash-es';
 import { TaskType } from '@/types/task-type';
 import { Section } from '@/types/status';
 import { getAccountAddress, getAccountId, getGroupId } from '@/utils/blockchain/accounts';
+import type { TableRowKey } from '@/composables/filter-paginate';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 import type { Collection } from '@/types/collection';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
@@ -122,6 +123,13 @@ const cols = computed<DataTableColumn<DataRow>[]>(() => {
   return headers;
 });
 
+const groupBy = computed<TableRowKey<T>[] | undefined>(() => {
+  if (!props.group)
+    return undefined;
+
+  return ['category' as TableRowKey<T>];
+});
+
 const accountOperation = logicOr(
   isTaskRunning(TaskType.ADD_ACCOUNT),
   isTaskRunning(TaskType.REMOVE_ACCOUNT),
@@ -199,6 +207,7 @@ defineExpose({
     data-cy="account-table"
     single-expand
     outlined
+    :group="groupBy"
     sticky-header
     dense
   >
@@ -292,6 +301,11 @@ defineExpose({
     </template>
     <template #body.prepend="{ colspan }">
       <Eth2ValidatorLimitRow :colspan="colspan" />
+    </template>
+    <template #group.header.content="{ header }">
+      <span class="font-medium">
+        {{ t('account_balances.data_table.group', { type: header.group.category }) }}
+      </span>
     </template>
   </RuiDataTable>
 </template>

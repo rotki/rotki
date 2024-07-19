@@ -40,6 +40,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
   }>();
 
   const { addressNameSelector } = useAddressesNamesStore();
+  const { getChainType } = useSupportedChains();
 
   const addresses = computed<Record<string, string[]>>(() => {
     const accountData = get(accounts);
@@ -92,6 +93,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
       return {
         type: 'group',
         data: accountsForAddress.length === 1 ? accountsForAddress[0].data : { type: 'address', address },
+        category: getChainType(chains[0]),
         usdValue,
         amount,
         nativeAsset,
@@ -121,6 +123,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
           ...balance,
           type: 'group',
           chains: [account.chain],
+          category: getChainType(account.chain),
           expansion: groupAccounts.length > 0 ? 'accounts' : undefined,
         } satisfies BlockchainAccountGroupWithBalance;
       });
