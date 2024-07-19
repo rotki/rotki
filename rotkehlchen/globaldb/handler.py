@@ -76,7 +76,7 @@ SELECT assets.identifier, name, symbol, chain, assets.type, custom_assets.type "
 
 
 ALL_ASSETS_TABLES_QUERY_WITH_COLLECTIONS = (
-    'SELECT assets.identifier, assets.name, common_asset_details.symbol, chain, assets.type, custom_assets.type, collection_id, asset_collections.name, asset_collections.symbol, protocol' +  # noqa: E501
+    'SELECT assets.identifier, assets.name, common_asset_details.symbol, chain, assets.type, custom_assets.type, collection_id, asset_collections.name, asset_collections.symbol, protocol, common_asset_details.coingecko, common_asset_details.cryptocompare' +  # noqa: E501
     _ALL_ASSETS_TABLES_JOINS +
     'LEFT JOIN multiasset_mappings ON assets.identifier=multiasset_mappings.asset LEFT JOIN asset_collections ON multiasset_mappings.collection_id=asset_collections.id'  # noqa: E501
 )
@@ -482,6 +482,10 @@ class GlobalDBHandler:
                         }
                 if entry[9] == SPAM_PROTOCOL:
                     result[entry[0]].update({'is_spam': True})
+                if entry[10] is not None:
+                    result[entry[0]].update({'coingecko': entry[10]})
+                if entry[11] is not None:
+                    result[entry[0]].update({'cryptocompare': entry[11]})
         return result, asset_collections
 
     @staticmethod

@@ -13,7 +13,7 @@ from rotkehlchen.assets.asset import CryptoAsset, CustomAsset
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
-from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR, A_SAI, A_USD, A_USDC
+from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR, A_OP, A_SAI, A_USD, A_USDC
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.db.custom_assets import DBCustomAssets
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -555,7 +555,7 @@ def test_get_all_assets(rotkehlchen_api_server):
 
 def test_get_assets_mappings(rotkehlchen_api_server):
     """Test that providing a list of asset identifiers, the appropriate assets mappings are returned."""  # noqa: E501
-    queried_assets = ('BTC', 'TRY', 'EUR', A_DAI.identifier)
+    queried_assets = ('BTC', 'TRY', 'EUR', A_DAI.identifier, A_OP.identifier)
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         set_token_spam_protocol(
             write_cursor=write_cursor,
@@ -591,6 +591,14 @@ def test_get_assets_mappings(rotkehlchen_api_server):
             assert details['asset_type'] != 'custom asset'
             assert details['collection_id'] == '23'
             assert details['is_spam'] is True
+            assert details['coingecko'] == 'dai'
+            assert 'cryptocompare' not in details
+        elif identifier == A_OP.identifier:
+            assert details['evm_chain'] == 'optimism'
+            assert 'custom_asset_type' not in details
+            assert details['asset_type'] != 'custom asset'
+            assert details['coingecko'] == 'optimism'
+            assert details['cryptocompare'] == 'OP'
         elif identifier == custom_asset_id:
             assert details['custom_asset_type'] == 'random'
             assert details['asset_type'] == 'custom asset'
