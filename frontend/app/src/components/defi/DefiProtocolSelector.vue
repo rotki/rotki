@@ -14,7 +14,7 @@ const props = withDefaults(
   },
 );
 
-const model = defineModel<DefiProtocol | undefined>({ required: false });
+const model = defineModel<DefiProtocol | undefined>({ required: true });
 
 const dual = [DefiProtocol.AAVE, DefiProtocol.COMPOUND];
 const borrowing = [DefiProtocol.MAKERDAO_VAULTS, DefiProtocol.LIQUITY];

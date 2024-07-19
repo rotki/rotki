@@ -7,7 +7,7 @@ defineProps<{
 }>();
 
 const selection = ref<string>();
-const protocol = ref<DefiProtocol | undefined>();
+const protocol = ref<DefiProtocol>();
 const defiLending = useDefiLending();
 const route = useRoute();
 const { t } = useI18n();

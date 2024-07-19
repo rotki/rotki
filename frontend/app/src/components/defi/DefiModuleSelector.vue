@@ -14,7 +14,7 @@ const props = withDefaults(
   },
 );
 
-const model = defineModel<string>({ required: false });
+const model = defineModel<string>({ required: true });
 
 const modules = computed<SupportedModule[]>(() => {
   const items = props.items;

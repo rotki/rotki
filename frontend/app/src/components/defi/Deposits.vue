@@ -16,7 +16,7 @@ const modules: Module[] = [Module.AAVE, Module.COMPOUND, Module.YEARN, Module.YE
 const chains = [Blockchain.ETH];
 
 const selectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
-const protocol = ref<DefiProtocol | undefined>();
+const protocol = ref<DefiProtocol>();
 const premium = usePremium();
 const route = useRoute();
 const { shouldShowLoadingScreen, isLoading } = useStatusStore();

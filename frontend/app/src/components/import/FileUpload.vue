@@ -24,7 +24,7 @@ const emit = defineEmits<{
 }>();
 const { source, fileFilter, uploaded, errorMessage } = toRefs(props);
 
-const file = defineModel<File | undefined>({ required: false });
+const file = defineModel<File | undefined>({ required: true });
 
 const wrapper = ref<HTMLDivElement>();
 

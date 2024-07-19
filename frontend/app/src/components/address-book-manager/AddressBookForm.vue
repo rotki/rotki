@@ -25,7 +25,7 @@ const address = useSimplePropVModel(props, 'address', emit);
 const location = useSimplePropVModel(props, 'location', emit);
 const chain = useSimplePropVModel(props, 'blockchain', emit);
 const blockchain = nullDefined(chain);
-const enabledForAllChains = defineModel<boolean>('enableForAllChains', { required: false, default: false });
+const enabledForAllChains = defineModel<boolean>('enableForAllChains', { required: true, default: false });
 
 const { addresses } = useBlockchainStore();
 const addressesNamesStore = useAddressesNamesStore();

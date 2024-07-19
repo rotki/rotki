@@ -9,7 +9,7 @@ withDefaults(
   },
 );
 
-const model = defineModel<string>({ required: false, default: '' });
+const model = defineModel<string>({ required: true, default: '' });
 
 const { allExchanges, exchangesWithKey } = storeToRefs(useLocationStore());
 </script>

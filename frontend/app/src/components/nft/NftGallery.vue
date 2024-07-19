@@ -55,7 +55,7 @@ watchImmediate(firstLimit, () => {
 });
 
 const selectedAccounts = ref<BlockchainAccount<AddressData>[]>([]);
-const selectedCollection = ref<string | undefined>(undefined);
+const selectedCollection = ref<string>();
 const premium = usePremium();
 
 watch([firstLimit, selectedAccounts, selectedCollection], () => {
