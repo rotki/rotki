@@ -27,6 +27,8 @@ export const externalLinks = {
     addingAnExchange: `${USAGE_GUIDE_URL}#adding-an-exchange`,
     theGraphApiKey: `${USAGE_GUIDE_URL}#the-graph-api-key`,
   },
+  coingeckoAsset: `https://www.coingecko.com/en/coins/$symbol`,
+  cryptocompareAsset: `https://www.cryptocompare.com/coins/$symbol/overview`,
   contribute: CONTRIBUTE_URL,
   contributeSection: {
     coingecko: `${CONTRIBUTE_URL}#get-coingecko-asset-identifier`,
