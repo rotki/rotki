@@ -291,7 +291,7 @@ def get_airdrop_data(airdrop_data: AirdropFileMetadata, name: str, data_dir: Pat
         filename.write_bytes(response.content)
         try:
             pl.scan_parquet(filename).select(pl.selectors.by_index(0, 1)).first().collect()
-        except pl.PolarsError as e:
+        except pl.exceptions.PolarsError as e:
             filename.unlink()
             log.error(f'Deleted invalid parquet file {filename} due to {e}')
             raise RemoteError(f'Invalid parquet file for {name}. Removing it.') from e
