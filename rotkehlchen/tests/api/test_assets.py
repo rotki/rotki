@@ -304,7 +304,7 @@ def test_get_all_assets(rotkehlchen_api_server):
         },
     )
     result = assert_proper_sync_response_with_result(response)
-    assert len(result['entries']) <= 20
+    assert len(result['entries']) == 20
     assert 'entries_found' in result
     assert 'entries_total' in result
     assert 'entries_limit' in result
@@ -327,7 +327,7 @@ def test_get_all_assets(rotkehlchen_api_server):
         },
     )
     result = assert_proper_sync_response_with_result(response)
-    assert len(result['entries']) <= 50
+    assert len(result['entries']) == 50
     assert 'entries_found' in result
     assert 'entries_total' in result
     assert 'entries_limit' in result
@@ -362,7 +362,7 @@ def test_get_all_assets(rotkehlchen_api_server):
         },
     )
     result = assert_proper_sync_response_with_result(response)
-    assert len(result['entries']) <= 20
+    assert len(result['entries']) == 20
     assert 'entries_found' in result
     assert 'entries_total' in result
     assert 'entries_limit' in result
@@ -441,7 +441,7 @@ def test_get_all_assets(rotkehlchen_api_server):
         },
     )
     result = assert_proper_sync_response_with_result(response)
-    assert 50 >= len(result['entries']) > 2
+    assert 50 == len(result['entries']) > 2
     for entry in result['entries']:
         assert 'uniswap' in entry['name'].casefold()
         assert 'UNI' in entry['symbol']

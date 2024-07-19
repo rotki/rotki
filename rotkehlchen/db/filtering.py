@@ -89,11 +89,11 @@ class DBFilterOrder(NamedTuple):
 
 
 class DBFilterPagination(NamedTuple):
-    limit: int
-    offset: int
+    limit: int | None
+    offset: int | None
 
     def prepare(self) -> str:
-        return f'LIMIT {self.limit} OFFSET {self.offset}'
+        return f'LIMIT {self.limit or -1}' + (f' OFFSET {self.offset}' if self.offset else '')
 
 
 class DBFilterGroupBy(NamedTuple):
