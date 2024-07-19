@@ -25,7 +25,7 @@ py-machineid==0.5.1
 more-itertools==10.2.0  # for peekable iterators
 regex==2024.5.15  # used for unicode information in detection of spam tokens
 eth-abi==5.1.0
-polars==0.20.31
+polars-lts-cpu==1.2.1
 
 # For the rest api
 flask-cors==4.0.1

@@ -6,6 +6,7 @@ Changelog
 * :bug:`8262` Prices of HOP LP tokens will now properly show up for all pools.
 * :bug:`8261` Windows users will no longer be greeted with an unhandled exception dialog when closing the application.
 * :bug:`8263` Fixes manual pagination not working.
+* :bug:`-` Replaced the dependency that was causing issues to start the app to users with CPUs not supporting AVX.
 
 * :release:`1.34.0 <2024-07-12>`
 * :bug:`-` Adding xpubs with derivation paths that include hardened nodes will not give an error anymore.
