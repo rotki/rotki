@@ -32,14 +32,15 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
-YEARN_OLD_API = 'https://api.yexporter.io/v1/chains/1/vaults/all'
+YEARN_OLD_API = 'https://api.yexporter.io/v1/chains/1/vaults/all'  # contains v1 and some of the v2 vaults  # noqa: E501
+YDEMON_API = 'https://ydaemon.yearn.fi/1/vaults/all'  # contains v2 and v3 vaults
 
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def _maybe_reset_yearn_cache_timestamp(data: dict[str, Any] | None) -> bool:
+def _maybe_reset_yearn_cache_timestamp(data: list[dict[str, Any]] | None) -> bool:
     """Get the number of vaults processed in the last execution of this function.
     If it was the same number of vaults this response has then we don't need to take
     action since vaults are not removed from their API response.
@@ -72,6 +73,54 @@ def _maybe_reset_yearn_cache_timestamp(data: dict[str, Any] | None) -> bool:
     return False  # will continue
 
 
+def _merge_data_yearn_vaults() -> tuple[list[dict[str, Any]] | None, str | None]:
+    """At the moment of writing this logic ydemon doesn't support yearn v1 so we
+    need to aggregate the information from two different apis and remove duplicates.
+    """
+    msg = None
+    data: list[dict[str, Any]] = []
+    timeout_tuple = CachedSettings().get_timeout_tuple()
+    for api_url in (YEARN_OLD_API, YDEMON_API):
+        try:
+            response = requests.get(api_url, timeout=timeout_tuple)
+        except requests.exceptions.RequestException as e:
+            msg = f'Failed to obtain yearn vault information. {e!s}'
+
+        if response.status_code in (HTTPStatus.NOT_FOUND, HTTPStatus.SERVICE_UNAVAILABLE):
+            msg = 'Failed to obtain a response from the yearn API'
+        else:
+            try:
+                new_data = response.json()
+            except (DeserializationError, JSONDecodeError) as e:
+                msg = f"Failed to deserialize data from yearn's old api. {e!s}"
+            else:
+                if not isinstance(new_data, list):
+                    msg = f'Unexpected format from yearn vaults response. Expected a list, got {data}'  # noqa: E501
+                else:
+                    data.extend(response.json())
+
+        if msg is not None:
+            return None, msg
+
+    deduplicated_data, vaults_seen = [], set()
+    for vault in data:
+        if (vault_address := vault.get('address')) is None:
+            log.error(f'Unexpected vault schema in yearn api for {vault}. Skipping')
+            continue
+
+        if (version := vault.get('version')) is not None and version.startswith('3.'):
+            log.debug(f'Skipping yearn v3 vault {vault.get("address")}')
+            continue  # skip v3 vaults until we add them #7540
+
+        if vault_address in vaults_seen:
+            continue
+
+        vaults_seen.add(vault_address)
+        deduplicated_data.append(vault)
+
+    return deduplicated_data, None
+
+
 def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -> None:
     """Query yearn API and ensure that all the tokens exist locally. If they exist but the protocol
     is not the correct one, then the asset will be edited.
@@ -79,23 +128,7 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
     May raise:
     - RemoteError
     """
-    msg, data = None, None
-    try:
-        response = requests.get(YEARN_OLD_API, timeout=CachedSettings().get_timeout_tuple())
-    except requests.exceptions.RequestException as e:
-        msg = f'Failed to obtain yearn vault information. {e!s}'
-
-    if response.status_code in (HTTPStatus.NOT_FOUND, HTTPStatus.SERVICE_UNAVAILABLE):
-        msg = 'Failed to obtain a response from the yearn API'
-    else:
-        try:
-            data = response.json()
-        except (DeserializationError, JSONDecodeError) as e:
-            msg = f"Failed to deserialize data from yearn's old api. {e!s}"
-        else:
-            if not isinstance(data, list):
-                msg = f'Unexpected format from yearn vaults response. Expected a list, got {data}'
-
+    data, msg = _merge_data_yearn_vaults()
     should_stop = _maybe_reset_yearn_cache_timestamp(data=data)
     if should_stop:
         if msg is not None:  # we raise a remote error but thanks to timestamp reset won't get in here again  # noqa: E501
@@ -111,7 +144,7 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
 
         if vault['type'] == 'v1':
             vault_type = YEARN_VAULTS_V1_PROTOCOL
-        elif vault['type'] == 'v2':
+        elif vault['type'] == 'v2' or vault['version'].startswith('0.'):  # version '0.x.x' happens in ydemon and is always a v2 vault  # noqa: E501
             vault_type = YEARN_VAULTS_V2_PROTOCOL
         else:
             log.error(f'Found yearn token with unknown version {vault}. Skipping...')
@@ -129,7 +162,7 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
                 f'Failed to store token information for yearn {vault_type} vault due to '
                 f'{msg}. Vault: {vault}. Skipping...',
             )
-            continue
+            block_timestamp = None  # ydemon api doesn't provide this information
 
         try:
             underlying_token = get_or_create_evm_token(
@@ -168,9 +201,10 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
         # before this logic existed or executed.
         if vault_token.protocol != vault_type:
             log.debug(f'Editing yearn asset {vault_token}')
-            # we have to use setattr since vault_token is frozen
-            object.__setattr__(vault_token, 'protocol', vault_type)
-            GlobalDBHandler.edit_evm_token(vault_token)
+            GlobalDBHandler.set_token_protocol_if_missing(
+                token=vault_token,
+                new_protocol=vault_type,
+            )
 
     # Store in the globaldb cache the number of vaults processed from this call to the API
     with GlobalDBHandler().conn.write_ctx() as write_cursor:

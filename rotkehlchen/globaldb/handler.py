@@ -17,6 +17,7 @@ from rotkehlchen.assets.asset import (
     Nft,
     UnderlyingToken,
 )
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
@@ -978,7 +979,7 @@ class GlobalDBHandler:
 
         May raise InputError if there is an error during updating
 
-        Returns the token's rotki identifier
+        Returns the token's rotki identifier and clears the cache of the asset resolver
         """
         try:
             with GlobalDBHandler().conn.write_ctx() as write_cursor:
@@ -1033,7 +1034,7 @@ class GlobalDBHandler:
                         chain_id=entry.chain_id,
                     )
 
-                rotki_id = GlobalDBHandler().get_evm_token_identifier(write_cursor, entry.evm_address, entry.chain_id)  # noqa: E501
+                rotki_id = GlobalDBHandler.get_evm_token_identifier(write_cursor, entry.evm_address, entry.chain_id)  # noqa: E501
                 if rotki_id is None:
                     raise InputError(
                         f'Unexpected DB state. EVM token {entry.evm_address} at chain '
@@ -1047,7 +1048,22 @@ class GlobalDBHandler:
                 f'due to a constraint being hit. Make sure the new values are valid ',
             ) from e
 
+        AssetResolver.clean_memory_cache(entry.identifier)
         return rotki_id
+
+    @staticmethod
+    def set_token_protocol_if_missing(token: EvmToken, new_protocol: str) -> None:
+        """Update the protocol of the evm token and clean the resolver cache"""
+        if token.protocol == new_protocol:
+            return
+
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            write_cursor.execute(
+                'UPDATE evm_tokens SET protocol = ? WHERE identifier = ?;',
+                (new_protocol, token.identifier),
+            )
+
+        AssetResolver.clean_memory_cache(token.identifier)
 
     @staticmethod
     def delete_evm_token(

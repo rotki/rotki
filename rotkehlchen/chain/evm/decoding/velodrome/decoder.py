@@ -2,7 +2,6 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Literal
 
-from rotkehlchen.assets.utils import set_token_protocol_if_missing
 from rotkehlchen.chain.ethereum.modules.uniswap.v2.constants import SWAP_SIGNATURE as SWAP_V1
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -29,6 +28,7 @@ from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     query_velodrome_like_data,
     save_velodrome_data_to_cache,
 )
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -118,9 +118,9 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
                 event.counterparty = self.counterparty
                 event.notes = f'Receive {event.balance.amount} {crypto_asset.symbol} after depositing in {self.counterparty} pool {tx_log.address}'  # noqa: E501
                 event.product = EvmProduct.POOL
-                set_token_protocol_if_missing(
-                    evm_token=event.asset.resolve_to_evm_token(),
-                    protocol=self.pool_token_protocol,
+                GlobalDBHandler.set_token_protocol_if_missing(
+                    token=event.asset.resolve_to_evm_token(),
+                    new_protocol=self.pool_token_protocol,
                 )
 
         return DEFAULT_DECODING_OUTPUT
@@ -239,7 +239,10 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
                     event.event_type = HistoryEventType.DEPOSIT
                     event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                     event.notes = f'Deposit {event.balance.amount} {crypto_asset.symbol} into {gauge_address} {self.counterparty} gauge'  # noqa: E501
-                    set_token_protocol_if_missing(event.asset.resolve_to_evm_token(), self.pool_token_protocol)  # noqa: E501
+                    GlobalDBHandler.set_token_protocol_if_missing(
+                        token=event.asset.resolve_to_evm_token(),
+                        new_protocol=self.pool_token_protocol,
+                    )
                 elif context.tx_log.topics[0] == GAUGE_WITHDRAW_V2:
                     event.event_type = HistoryEventType.WITHDRAWAL
                     event.event_subtype = HistoryEventSubType.REMOVE_ASSET
