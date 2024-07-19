@@ -303,6 +303,9 @@ importers:
       vitest:
         specifier: 2.0.3
         version: 2.0.3(@types/node@20.14.11)(@vitest/ui@2.0.3)(jsdom@24.1.0)(sass@1.77.8)(terser@5.31.2)
+      vue-component-type-helpers:
+        specifier: 2.0.26
+        version: 2.0.26
       vue-i18n-extract:
         specifier: 2.0.7
         version: 2.0.7

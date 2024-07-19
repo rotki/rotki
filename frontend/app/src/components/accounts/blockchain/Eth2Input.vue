@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { onlyIfTruthy } from '@rotki/common';
 import { helpers, requiredUnless } from '@vuelidate/validators';
 import { isEmpty } from 'lodash-es';
 import useVuelidate from '@vuelidate/core';
@@ -7,29 +6,16 @@ import { toMessages } from '@/utils/validation';
 import type { Eth2Validator } from '@/types/balances';
 import type { ValidationErrors } from '@/types/api/errors';
 
-const props = defineProps<{
-  validator: Eth2Validator | null;
+defineProps<{
   disabled: boolean;
   editMode: boolean;
 }>();
 
-const emit = defineEmits<{
-  (e: 'update:validator', validator: Eth2Validator | null): void;
-}>();
-
-const { validator } = toRefs(props);
-const validatorIndex = ref('');
-const publicKey = ref('');
-const ownershipPercentage = ref<string>();
-
-const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
-
-function updateProperties() {
-  const validatorVal = get(validator);
-  set(validatorIndex, validatorVal?.validatorIndex ?? '');
-  set(publicKey, validatorVal?.publicKey ?? '');
-  set(ownershipPercentage, validatorVal?.ownershipPercentage ?? '');
-}
+const modelValue = defineModel<Eth2Validator>('validator', { required: true });
+const errorMessages = defineModel<ValidationErrors>('errorMessages', { required: true });
+const validatorIndex = refOptional(useRefPropVModel(modelValue, 'validatorIndex'), '');
+const publicKey = refOptional(useRefPropVModel(modelValue, 'publicKey'), '');
+const ownershipPercentage = refOptional(useRefPropVModel(modelValue, 'ownershipPercentage'), '');
 
 const { t } = useI18n();
 
@@ -62,7 +48,7 @@ const v$ = useVuelidate(
   {
     $autoDirty: true,
     $stopPropagation: true,
-    $externalResults: errors,
+    $externalResults: errorMessages,
   },
 );
 
@@ -70,23 +56,9 @@ function validate(): Promise<boolean> {
   return get(v$).$validate();
 }
 
-watch(errors, (errors) => {
+watch(errorMessages, (errors) => {
   if (!isEmpty(errors))
     get(v$).$validate();
-});
-
-watchImmediate(validator, updateProperties);
-
-watch([validatorIndex, publicKey, ownershipPercentage], ([validatorIndex, publicKey, ownershipPercentage]) => {
-  const validator: Eth2Validator | null
-    = validatorIndex || publicKey
-      ? {
-          validatorIndex: onlyIfTruthy(validatorIndex)?.trim(),
-          publicKey: onlyIfTruthy(publicKey)?.trim(),
-          ownershipPercentage: onlyIfTruthy(ownershipPercentage)?.trim(),
-        }
-      : null;
-  emit('update:validator', validator);
 });
 
 defineExpose({
@@ -98,7 +70,7 @@ defineExpose({
   <div class="grid gap-4 grid-cols-3 mt-3">
     <div class="col-span-3 md:col-span-1">
       <RuiTextField
-        v-model="validatorIndex"
+        v-model.trim="validatorIndex"
         variant="outlined"
         color="primary"
         :disabled="disabled || editMode"
@@ -111,7 +83,7 @@ defineExpose({
     <div class="col-span-3 md:col-span-2 flex gap-4">
       <span class="mt-4">{{ t('common.or') }}</span>
       <RuiTextField
-        v-model="publicKey"
+        v-model.trim="publicKey"
         class="grow"
         variant="outlined"
         color="primary"
@@ -123,8 +95,8 @@ defineExpose({
     </div>
 
     <div class="col-span-3 md:col-span-1">
-      <AmountInput
-        v-model="ownershipPercentage"
+      <RuiTextField
+        v-model.trim="ownershipPercentage"
         variant="outlined"
         placeholder="100"
         :disabled="disabled"
@@ -136,7 +108,7 @@ defineExpose({
         <template #append>
           {{ t('percentage_display.symbol') }}
         </template>
-      </AmountInput>
+      </RuiTextField>
     </div>
   </div>
 </template>
