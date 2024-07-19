@@ -2,6 +2,7 @@
 import { AssetAmountAndValueOverTime } from '@/premium/premium';
 import { Routes } from '@/router/routes';
 import { EVM_TOKEN } from '@/types/asset';
+import { externalLinks } from '@/data/external-links';
 import type { RouteLocationRaw } from 'vue-router';
 import type { AssetBalanceWithPrice } from '@rotki/common';
 
@@ -102,6 +103,11 @@ async function toggleSpam() {
 
   refetchAssetInfo(id);
 }
+
+const {
+  coingeckoAsset,
+  cryptocompareAsset,
+} = externalLinks;
 </script>
 
 <template>
@@ -137,16 +143,59 @@ async function toggleSpam() {
           </span>
         </div>
 
-        <HashLink
-          v-if="address"
-          :chain="chain"
-          type="address"
-          :text="address"
-          link-only
-          size="18"
-          :show-icon="false"
-        />
+        <div class="flex items-center gap-2 ml-4">
+          <HashLink
+            v-if="address"
+            :chain="chain"
+            type="address"
+            :text="address"
+            link-only
+            size="18"
+            class="[&_a]:!p-2.5"
+            :show-icon="false"
+          />
 
+          <template
+            v-if="asset"
+          >
+            <ExternalLink
+              v-if="asset.coingecko"
+              custom
+              :url="coingeckoAsset.replace('$symbol', asset.coingecko)"
+            >
+              <RuiButton
+                size="sm"
+                icon
+              >
+                <template #prepend>
+                  <AppImage
+                    size="30px"
+                    src="./assets/images/oracles/coingecko.svg"
+                  />
+                </template>
+              </RuiButton>
+            </ExternalLink>
+            <ExternalLink
+              v-if="asset.cryptocompare"
+              custom
+              :url="cryptocompareAsset.replace('$symbol', asset.cryptocompare)"
+            >
+              <RuiButton
+                size="sm"
+                icon
+              >
+                <template #prepend>
+                  <AppImage
+                    size="30px"
+                    src="./assets/images/oracles/cryptocompare.png"
+                  />
+                </template>
+              </RuiButton>
+            </ExternalLink>
+          </template>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
         <RuiButton
           v-if="!isCollectionParent"
           icon
@@ -155,8 +204,7 @@ async function toggleSpam() {
         >
           <RuiIcon name="pencil-line" />
         </RuiButton>
-      </div>
-      <div class="flex items-center gap-2">
+
         <div class="text-body-2 mr-4">
           {{ t('assets.ignore') }}
         </div>

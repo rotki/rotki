@@ -61,6 +61,8 @@ export const AssetInfo = z.object({
   collectionName: z.string().nullish(),
   imageUrl: z.string().nullish(),
   isSpam: z.boolean().optional(),
+  coingecko: z.string().optional(),
+  cryptocompare: z.string().optional(),
 });
 
 export const AssetInfoWithTransformer = AssetInfo.transform(data => ({

@@ -9,6 +9,9 @@ async function processDynamicUrl(url: string): Promise<string> {
     // Format dynamic URL and replace with valid value.
     return url.replace('v$version', tag_name);
   }
+  else if (url.includes('$symbol')) {
+    return url.replace('$symbol', 'btc');
+  }
 
   return url;
 }
