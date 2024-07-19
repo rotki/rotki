@@ -65,7 +65,7 @@ export function createNewBlockchainAccount(): AccountManageAdd {
 
 export function editBlockchainAccount(account: BlockchainAccountWithBalance): AccountManageState {
   if ('publicKey' in account.data) {
-    const { ownershipPercentage, publicKey, index } = account.data;
+    const { ownershipPercentage = '100', publicKey, index } = account.data;
     return {
       mode: 'edit',
       type: 'validator',

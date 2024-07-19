@@ -37,6 +37,17 @@ export function nullDefined<T>(comp: WritableComputedRef<T | null>): WritableCom
   });
 }
 
+export function refOptional<T>(comp: WritableComputedRef<T | undefined>, defaultValue: T): WritableComputedRef<T> {
+  return computed<T>({
+    get() {
+      return get(comp) ?? defaultValue;
+    },
+    set(value?: T) {
+      set(comp, value ?? undefined);
+    },
+  });
+}
+
 export function useSimpleVModel<T, P extends { modelValue: T }, Name extends string>(
   props: P,
   emit?: (name: Name, ...args: any[]) => void,

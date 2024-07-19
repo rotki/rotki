@@ -260,6 +260,7 @@ declare global {
   const refDebounced: typeof import('@vueuse/core')['refDebounced']
   const refDefault: typeof import('@vueuse/core')['refDefault']
   const refIsTruthy: typeof import('./composables/ref')['refIsTruthy']
+  const refOptional: typeof import('./utils/model/index')['refOptional']
   const refThrottled: typeof import('@vueuse/core')['refThrottled']
   const refWithControl: typeof import('@vueuse/core')['refWithControl']
   const removeKey: typeof import('./utils/data')['removeKey']
@@ -1042,6 +1043,7 @@ declare module 'vue' {
     readonly refDebounced: UnwrapRef<typeof import('@vueuse/core')['refDebounced']>
     readonly refDefault: UnwrapRef<typeof import('@vueuse/core')['refDefault']>
     readonly refIsTruthy: UnwrapRef<typeof import('./composables/ref')['refIsTruthy']>
+    readonly refOptional: UnwrapRef<typeof import('./utils/model/index')['refOptional']>
     readonly refThrottled: UnwrapRef<typeof import('@vueuse/core')['refThrottled']>
     readonly refWithControl: UnwrapRef<typeof import('@vueuse/core')['refWithControl']>
     readonly removeKey: UnwrapRef<typeof import('./utils/data')['removeKey']>
@@ -1793,6 +1795,7 @@ declare module '@vue/runtime-core' {
     readonly refDebounced: UnwrapRef<typeof import('@vueuse/core')['refDebounced']>
     readonly refDefault: UnwrapRef<typeof import('@vueuse/core')['refDefault']>
     readonly refIsTruthy: UnwrapRef<typeof import('./composables/ref')['refIsTruthy']>
+    readonly refOptional: UnwrapRef<typeof import('./utils/model/index')['refOptional']>
     readonly refThrottled: UnwrapRef<typeof import('@vueuse/core')['refThrottled']>
     readonly refWithControl: UnwrapRef<typeof import('@vueuse/core')['refWithControl']>
     readonly removeKey: UnwrapRef<typeof import('./utils/data')['removeKey']>

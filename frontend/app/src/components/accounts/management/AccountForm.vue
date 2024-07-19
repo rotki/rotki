@@ -16,13 +16,8 @@ import { isBtcChain } from '@/types/blockchain/chains';
 import { XpubKeyType } from '@/types/blockchain/accounts';
 import type { ValidationErrors } from '@/types/api/errors';
 
-const props = defineProps<{
-  modelValue: AccountManageState;
+defineProps<{
   loading: boolean;
-}>();
-
-const emit = defineEmits<{
-  (e: 'update:model-value', value: AccountManageState): void;
 }>();
 
 const inputMode = ref<InputMode>(InputMode.MANUAL_ADD);
@@ -34,9 +29,9 @@ const form = ref<
   | InstanceType<typeof XpubAccountForm>
 >();
 
-const model = useSimpleVModel(props, emit);
-const chain = useSimplePropVModel(props, 'chain', emit);
+const modelValue = defineModel<AccountManageState>({ required: true });
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
+const chain = useRefPropVModel(modelValue, 'chain');
 
 const { isEvm } = useSupportedChains();
 
@@ -59,16 +54,19 @@ async function importAccounts(): Promise<AccountManageAdd | null | false> {
   return await selectedForm.importAccounts();
 }
 
-watchImmediate(model, (model) => {
-  if (model.type !== 'xpub')
-    return;
-
-  set(inputMode, InputMode.XPUB_ADD);
+watch(modelValue, (modelValue) => {
+  if ('xpub' in modelValue.data && modelValue.mode === 'edit')
+    set(inputMode, InputMode.XPUB_ADD);
+}, {
+  immediate: true,
 });
 
 watch(chain, (chain) => {
+  if (get(modelValue).mode === 'edit')
+    return;
+
   if (chain === Blockchain.ETH2) {
-    set(model, {
+    set(modelValue, {
       mode: 'add',
       type: 'validator',
       chain: Blockchain.ETH2,
@@ -80,7 +78,7 @@ watch(chain, (chain) => {
     if (!get(isEvm(chain)))
       delete account.evm;
 
-    set(model, {
+    set(modelValue, {
       ...account,
       chain,
     });
@@ -88,10 +86,13 @@ watch(chain, (chain) => {
 });
 
 watch(inputMode, (mode) => {
+  if (get(modelValue).mode === 'edit')
+    return;
+
   if (mode === InputMode.XPUB_ADD) {
     const selectedChain = get(chain);
     assert(isBtcChain(selectedChain));
-    set(model, {
+    set(modelValue, {
       mode: 'add',
       type: 'xpub',
       chain: selectedChain,
@@ -110,7 +111,7 @@ watch(inputMode, (mode) => {
     if (!get(isEvm(chain)))
       delete account.evm;
 
-    set(model, {
+    set(modelValue, {
       ...account,
       chain: get(chain),
     });
@@ -128,11 +129,11 @@ defineExpose({
     <AccountSelector
       v-model:input-mode="inputMode"
       v-model:chain="chain"
-      :edit-mode="model.mode === 'edit'"
+      :edit-mode="modelValue.mode === 'edit'"
     />
 
     <MetamaskAccountForm
-      v-if="model.type === 'account' && inputMode === InputMode.METAMASK_IMPORT"
+      v-if="modelValue.type === 'account' && inputMode === InputMode.METAMASK_IMPORT"
       ref="form"
       :chain="chain"
       :loading="loading"
@@ -146,17 +147,17 @@ defineExpose({
     </MetamaskAccountForm>
 
     <ValidatorAccountForm
-      v-else-if="model.type === 'validator'"
+      v-else-if="modelValue.type === 'validator'"
       ref="form"
-      v-model="model"
+      v-model="modelValue"
       v-model:error-messages="errors"
       :loading="loading"
     />
 
     <XpubAccountForm
-      v-else-if="model.type === 'xpub'"
+      v-else-if="modelValue.type === 'xpub'"
       ref="form"
-      v-model="model"
+      v-model="modelValue"
       v-model:error-messages="errors"
       :loading="loading"
     />
@@ -164,7 +165,7 @@ defineExpose({
     <AddressAccountForm
       v-else
       ref="form"
-      v-model="model"
+      v-model="modelValue"
       v-model:error-messages="errors"
       :loading="loading"
     >
