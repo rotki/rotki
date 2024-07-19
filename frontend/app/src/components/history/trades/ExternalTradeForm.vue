@@ -351,7 +351,7 @@ onMounted(setEditMode);
       />
       <div
         v-if="shouldRenderSummary"
-        class="flex items-center gap-2 text-caption text-rui-success -mt-5 -mb-5 ml-3"
+        class="flex items-center gap-1 text-caption text-rui-success -mt-5 -mb-5 ml-3"
       >
         <RuiIcon
           size="16"

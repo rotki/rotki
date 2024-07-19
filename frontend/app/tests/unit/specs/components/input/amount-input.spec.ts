@@ -40,8 +40,8 @@ describe('amountInput.vue', () => {
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe('100,000');
 
-    expect(wrapper.emitted()).toHaveProperty('update:model-value');
-    expect(wrapper.emitted('update:model-value')[0]).toEqual(['100000']);
+    expect(wrapper.emitted()).toHaveProperty('update:modelValue');
+    expect(wrapper.emitted('update:modelValue').at(-1)).toEqual(['100000']);
   });
 
   it('should use prop value', async () => {
@@ -88,8 +88,8 @@ describe('amountInput.vue', () => {
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe('500.000,123');
 
-    expect(wrapper.emitted()).toHaveProperty('update:model-value');
-    expect(wrapper.emitted('update:model-value')[3]).toEqual(['500000.123']);
+    expect(wrapper.emitted()).toHaveProperty('update:modelValue');
+    expect(wrapper.emitted('update:modelValue').at(-1)).toEqual(['500000.123']);
   });
 
   it('should emit correct value', async () => {
@@ -101,21 +101,21 @@ describe('amountInput.vue', () => {
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe('100,000');
 
-    expect(wrapper.emitted()).toHaveProperty('update:model-value');
-    expect(wrapper.emitted('update:model-value')[0]).toEqual(['100000']);
+    expect(wrapper.emitted()).toHaveProperty('update:modelValue');
+    expect(wrapper.emitted('update:modelValue').at(-1)).toEqual(['100000']);
 
     await wrapper.find('input').setValue('');
     await nextTick();
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe('');
 
-    expect(wrapper.emitted('update:model-value')[1]).toEqual(['']);
+    expect(wrapper.emitted('update:modelValue').at(-1)).toEqual(['']);
 
     await wrapper.find('input').setValue('5555abcde');
     await nextTick();
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe('5,555');
 
-    expect(wrapper.emitted('update:model-value')[2]).toEqual(['5555']);
+    expect(wrapper.emitted('update:modelValue').at(-1)).toEqual(['5555']);
   });
 });

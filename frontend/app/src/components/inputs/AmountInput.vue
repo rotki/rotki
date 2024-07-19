@@ -8,21 +8,17 @@ defineOptions({
 const props = withDefaults(
   defineProps<{
     integer?: boolean;
-    modelValue?: string;
     hideDetails?: boolean;
   }>(),
   {
     integer: false,
-    modelValue: '',
     hideDetails: false,
   },
 );
 
-const emit = defineEmits<{
-  (e: 'update:model-value', value: string): void;
-}>();
+const model = defineModel<string>({ required: true });
 
-const { integer, modelValue } = toRefs(props);
+const { integer } = toRefs(props);
 const { thousandSeparator, decimalSeparator } = storeToRefs(useFrontendSettingsStore());
 
 const textInput = ref<any>(null);
@@ -42,12 +38,13 @@ onMounted(() => {
 
   newImask.on('accept', () => {
     const mask = get(imask);
-    const value = mask?.value || '';
-    set(currentValue, value);
-    emit('update:model-value', mask?.unmaskedValue || '');
+    if (mask) {
+      set(currentValue, mask?.value || '');
+      set(model, mask?.unmaskedValue || '');
+    }
   });
 
-  const propValue = get(modelValue);
+  const propValue = get(model);
   if (propValue) {
     newImask.unmaskedValue = propValue;
     set(currentValue, newImask.value);
@@ -56,7 +53,7 @@ onMounted(() => {
   set(imask, newImask);
 });
 
-watch(modelValue, (value) => {
+watch(model, (value) => {
   const imaskVal = get(imask);
   if (imaskVal) {
     imaskVal.unmaskedValue = value;
