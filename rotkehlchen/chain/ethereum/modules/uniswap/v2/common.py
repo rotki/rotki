@@ -10,7 +10,6 @@ from rotkehlchen.assets.utils import (
     TokenEncounterInfo,
     edit_token_and_clean_cache,
     get_or_create_evm_token,
-    set_token_protocol_if_missing,
 )
 from rotkehlchen.chain.ethereum.modules.constants import AMM_ASSETS_SYMBOLS
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, generate_address_via_create2
@@ -32,6 +31,7 @@ from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import NotERC20Conformant
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
@@ -330,7 +330,10 @@ def decode_uniswap_like_deposit_and_withdrawals(
             event.counterparty = counterparty
             event.event_subtype = HistoryEventSubType.RECEIVE_WRAPPED
             event.notes = f'Receive {event.balance.amount} {resolved_asset.symbol} from {counterparty} pool'  # noqa: E501
-            set_token_protocol_if_missing(event.asset.resolve_to_evm_token(), UNISWAP_PROTOCOL if resolved_asset.symbol.startswith('UNI-V2') else SUSHISWAP_PROTOCOL)  # noqa: E501
+            GlobalDBHandler.set_token_protocol_if_missing(
+                token=event.asset.resolve_to_evm_token(),
+                new_protocol=UNISWAP_PROTOCOL if resolved_asset.symbol.startswith('UNI-V2') else SUSHISWAP_PROTOCOL,  # noqa: E501
+            )
         elif (
             resolved_asset == pool_token and
             event.event_type == HistoryEventType.SPEND and
