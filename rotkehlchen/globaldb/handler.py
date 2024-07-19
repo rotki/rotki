@@ -2,7 +2,6 @@ import logging
 import os
 import shutil
 import sqlite3
-from collections import defaultdict
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional, cast, overload
 
@@ -358,8 +357,12 @@ class GlobalDBHandler:
         May raise:
         - DeserializationError
         """
-        assets_info = []
-        underlying_tokens: dict[str, list[dict[str, str]]] = defaultdict(list)
+        assets_info, limit = {}, None
+        if filter_query.pagination is not None and filter_query.pagination.limit is not None:
+            # we don't apply limit yet, but after skipping the ignored assets below
+            limit = filter_query.pagination.limit
+            filter_query.pagination = filter_query.pagination._replace(limit=None)
+
         prepared_filter_query, bindings = filter_query.prepare()
         parent_query = """
         SELECT A.identifier AS identifier, A.type, B.address, B.decimals, A.name, C.symbol,
@@ -371,29 +374,11 @@ class GlobalDBHandler:
         LEFT JOIN custom_assets as D ON D.identifier = A.identifier
         """
         query = f'SELECT * FROM ({parent_query}) {prepared_filter_query}'
-        # Get the identifier of the EVM tokens in the filter and query the underlying tokens where
-        # parent_token_entry is in that set of identifiers. We need to join with evm_tokens since
-        # the address column is present there. @yabirgb tested using JOIN instead of a subquery
-        # and the query increased in complexity since we need to join more tables and the test
-        # showed that the query using joins is slower than this one with the subquery.
-        # test with subquery took on average 1.17 seconds and with joins 1.53 seconds.
-        # The point that prevents this query from being really slow is that the subquery comes
-        # filtered from the frontend where we set a limit in the number of results that goes
-        # in the range from 10 to 100 and this guarantees that the size of the subquery is small.
-        underlying_tokens_query = (
-            f'SELECT parent_token_entry, address, token_kind, weight FROM underlying_tokens_list '
-            f'LEFT JOIN evm_tokens ON underlying_tokens_list.identifier=evm_tokens.identifier '
-            f'WHERE parent_token_entry IN (SELECT identifier FROM ({query}))'
-        )
         should_skip = filter_query.ignored_assets_handling.get_should_skip_handler()
         with userdb.conn.read_ctx() as cursor:
             ignored_assets = userdb.get_ignored_asset_ids(cursor)
 
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            # get all underlying tokens
-            for entry in cursor.execute(underlying_tokens_query, bindings):
-                underlying_tokens[entry[0]].append(UnderlyingToken.deserialize_from_db((entry[1], entry[2], entry[3])).serialize())  # noqa: E501
-
             cursor.execute(query, bindings)
             for entry in cursor:
                 if should_skip(entry[0], ignored_assets):
@@ -425,7 +410,7 @@ class GlobalDBHandler:
                         'evm_chain': ChainID.deserialize_from_db(entry[12]).to_name(),
                         'token_kind': EvmTokenKind.deserialize_from_db(entry[13]).serialize(),
                         'decimals': entry[3],
-                        'underlying_tokens': underlying_tokens.get(entry[0], None),
+                        'underlying_tokens': None,
                         'protocol': entry[11],
                     })
                     data.update(common_data)
@@ -438,14 +423,40 @@ class GlobalDBHandler:
                     })
                 else:
                     raise NotImplementedError(f'Unsupported AssetType {asset_type} found in the DB. Should never happen')  # noqa: E501
-                assets_info.append(data)
+                assets_info[data['identifier']] = data
+                if limit is not None and len(assets_info) >= limit:
+                    break
+
+            # Get the identifier of the EVM tokens in the filter and query the underlying tokens
+            # where parent_token_entry is in that set of identifiers. We need to join with
+            # evm_tokens since the address column is present there. There are 3 methods to filter:
+            # 1. Use JOIN and apply the same filters with them.
+            # 2. Use a subquery to get identifiers of assets and filter using IN.
+            # 3. Directly pass the set of identifiers instead of a subquery and filter using IN.
+            # @yabirgb tested 1 and 2, where 1 took on average 1.53 seconds and 2 took 1.17 seconds
+            # 2nd is faster and 3rd is fastest because there the frontend limit the number of
+            # results before hand, in the range from 10 to 100 and this guarantees that the size of
+            # the query is small.
+            underlying_tokens_query = (
+                f'SELECT parent_token_entry, address, token_kind, weight FROM '
+                f'underlying_tokens_list LEFT JOIN evm_tokens ON '
+                f'underlying_tokens_list.identifier=evm_tokens.identifier '
+                f'WHERE parent_token_entry IN ({",".join(["?"] * len(assets_info))})'
+            )
+            # populate all underlying tokens
+            for entry in cursor.execute(underlying_tokens_query, list(assets_info.keys())):
+                if assets_info[entry[0]]['underlying_tokens'] is None:
+                    assets_info[entry[0]]['underlying_tokens'] = []
+                assets_info[entry[0]]['underlying_tokens'].append(
+                    UnderlyingToken.deserialize_from_db((entry[1], entry[2], entry[3])).serialize(),  # noqa: E501
+                )
 
             # get `entries_found`
             query, bindings = filter_query.prepare(with_pagination=False)
             total_found_query = f'SELECT COUNT(*) FROM ({parent_query}) ' + query
             entries_found = cursor.execute(total_found_query, bindings).fetchone()[0]
 
-        return assets_info, entries_found
+        return list(assets_info.values()), entries_found
 
     @staticmethod
     def get_assets_mappings(identifiers: list[str]) -> tuple[dict[str, dict], dict[str, dict[str, str]]]:  # noqa: E501
