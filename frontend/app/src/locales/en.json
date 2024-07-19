@@ -33,7 +33,8 @@
       "title": "Account delete"
     },
     "data_table": {
-      "loading": "Please wait while rotki queries the blockchain..."
+      "loading": "Please wait while rotki queries the blockchain...",
+      "group": "{type} accounts"
     },
     "delete_tooltip": "Delete selected account(s)",
     "detect_tokens": {

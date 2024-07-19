@@ -65,7 +65,7 @@ export class BlockchainBalancesPage {
 
     cy.get('@blockchain-section')
       .find('tbody')
-      .find('tr')
+      .find('tr[class^="_tr_"]:not(tr[class*="_group_"]')
       .eq(position)
       .as('row');
 
@@ -94,7 +94,7 @@ export class BlockchainBalancesPage {
 
     cy.get('[data-cy=account-table]')
       .find('tbody')
-      .find('tr')
+      .find('tr[class^="_tr_"]:not(tr[class*="_group_"]')
       .each((row) => {
         const usdValue = row.find('td').eq(5).find('[data-cy="display-amount"]').text();
         const asset = row.find('td').eq(4).find('[data-cy="display-currency"]').text();
@@ -129,7 +129,7 @@ export class BlockchainBalancesPage {
     label: string,
   ): void {
     cy.get(`[data-cy=account-table] tbody`)
-      .find('tr')
+      .find('tr[class^="_tr_"]:not(tr[class*="_group_"]')
       .eq(position)
       .find('button[data-cy="row-edit"]')
       .click();
@@ -145,12 +145,12 @@ export class BlockchainBalancesPage {
 
   deleteBalance(position: number): void {
     cy.get(`[data-cy=account-table] tbody`)
-      .find('tr')
+      .find('tr[class^="_tr_"]:not(tr[class*="_group_"]')
       .eq(position)
       .find('[data-cy="labeled-address-display"]')
       .invoke('text').then((label) => {
         cy.get(`[data-cy=account-table] tbody`)
-          .find('tr')
+          .find('tr[class^="_tr_"]:not(tr[class*="_group_"]')
           .eq(position)
           .find('button[data-cy="row-delete"]')
           .click();
@@ -167,7 +167,7 @@ export class BlockchainBalancesPage {
           .should('not.exist');
 
         cy.get(`[data-cy=account-table] tbody`)
-          .find('tr')
+          .find('tr[class^="_tr_"]:not(tr[class*="_group_"]')
           .find('[data-cy="labeled-address-display"]')
           .invoke('text')
           .should('not.contain', label);
