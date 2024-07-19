@@ -1,4 +1,3 @@
-\
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { helpers, required } from '@vuelidate/validators';
@@ -12,26 +11,24 @@ import type { XpubPayload } from '@/types/blockchain/accounts';
 
 const props = defineProps<{
   disabled: boolean;
-  errorMessages: ValidationErrors;
   xpub: XpubPayload | undefined;
   blockchain: BtcChains;
 }>();
 
 const emit = defineEmits<{
   (e: 'update:xpub', xpub: XpubPayload | undefined): void;
-  (e: 'update:error-messages', value: ValidationErrors): void;
 }>();
+
+const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 
 const { t } = useI18n();
 
-const { xpub, disabled, blockchain, errorMessages } = toRefs(props);
+const { xpub, disabled, blockchain } = toRefs(props);
 
 const xpubKey = ref('');
 const derivationPath = ref('');
 const xpubKeyPrefix = ref<XpubPrefix>(XpubPrefix.XPUB);
 const advanced = ref(false);
-
-const errors = useKebabVModel(props, 'errorMessages', emit);
 
 function updateXpub(event?: XpubPayload) {
   emit('update:xpub', event);
@@ -94,7 +91,7 @@ function validate(): Promise<boolean> {
   return get(v$).$validate();
 }
 
-watch(errorMessages, (errors) => {
+watch(errors, (errors) => {
   if (!isEmpty(errors))
     get(v$).$validate();
 });

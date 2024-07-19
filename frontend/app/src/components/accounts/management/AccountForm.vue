@@ -19,12 +19,10 @@ import type { ValidationErrors } from '@/types/api/errors';
 const props = defineProps<{
   modelValue: AccountManageState;
   loading: boolean;
-  errorMessages: ValidationErrors;
 }>();
 
 const emit = defineEmits<{
   (e: 'update:model-value', value: AccountManageState): void;
-  (e: 'update:error-messages', value: ValidationErrors): void;
 }>();
 
 const inputMode = ref<InputMode>(InputMode.MANUAL_ADD);
@@ -38,7 +36,7 @@ const form = ref<
 
 const model = useSimpleVModel(props, emit);
 const chain = useSimplePropVModel(props, 'chain', emit);
-const errors = useKebabVModel(props, 'errorMessages', emit);
+const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 
 const { isEvm } = useSupportedChains();
 

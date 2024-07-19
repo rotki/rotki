@@ -1,11 +1,7 @@
 <script setup lang="ts">
 import { displayDateFormatter } from '@/data/date-formatter';
 
-const props = defineProps<{ modelValue: boolean }>();
-
-const emit = defineEmits<{ (e: 'update:model-value', value: boolean): void }>();
-
-const display = useSimpleVModel(props, emit);
+const model = defineModel<boolean>({ required: true });
 
 const formatter = displayDateFormatter;
 const directives: string[] = displayDateFormatter.directives;
@@ -51,7 +47,7 @@ function description(directive: string): string {
 
 <template>
   <RuiDialog
-    v-model="display"
+    v-model="model"
     max-width="500"
   >
     <RuiCard>
@@ -88,7 +84,7 @@ function description(directive: string): string {
         <div class="grow" />
         <RuiButton
           color="primary"
-          @click="display = false"
+          @click="model = false"
         >
           {{ t('common.actions.close') }}
         </RuiButton>

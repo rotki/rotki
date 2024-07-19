@@ -1,22 +1,7 @@
 <script setup lang="ts">
 import { contextColors } from '@rotki/ui-library';
 
-const props = withDefaults(
-  defineProps<{
-    modelValue?: string;
-  }>(),
-  {
-    modelValue: '',
-  },
-);
-
-const emit = defineEmits<{
-  (e: 'update:model-value', value: string): void;
-}>();
-
-const vModel = useSimpleVModel(props, emit);
-
-const { modelValue } = toRefs(props);
+const model = defineModel<string | undefined>({ required: true });
 
 const contextColorsInHex: string[] = contextColors
   .map((item) => {
@@ -29,10 +14,14 @@ const contextColorsInHex: string[] = contextColors
   })
   .filter(item => !!item);
 
-watchImmediate(modelValue, (value) => {
+watchImmediate(model, (value) => {
   if (!value && contextColorsInHex.length > 0)
-    emit('update:model-value', contextColorsInHex[0]);
+    updateModel(contextColorsInHex[0]);
 });
+
+function updateModel(newValue: string) {
+  set(model, newValue);
+}
 </script>
 
 <template>
@@ -58,10 +47,10 @@ watchImmediate(modelValue, (value) => {
           :style="{
             backgroundColor: `#${color}`,
           }"
-          @click="emit('update:model-value', color)"
+          @click="updateModel(color)"
         />
       </div>
-      <RuiColorPicker v-model="vModel" />
+      <RuiColorPicker v-model="model" />
     </RuiMenu>
   </div>
 </template>

@@ -4,22 +4,17 @@ import type { TradeLocationData } from '@/types/history/trade/location';
 
 const props = withDefaults(
   defineProps<{
-    modelValue?: string;
     items?: string[];
     excludes?: string[];
   }>(),
   {
-    value: '',
     items: () => [],
     excludes: () => [],
   },
 );
 
-const emit = defineEmits<{
-  (e: 'update:model-value', value: string): void;
-}>();
+const model = defineModel<string>({ required: true, default: '' });
 
-const model = useSimpleVModel(props, emit);
 const rootAttrs = useAttrs();
 
 const { items, excludes } = toRefs(props);

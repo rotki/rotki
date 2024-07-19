@@ -1,19 +1,12 @@
 <script setup lang="ts">
-const props = defineProps<{
-  label: string;
-  tags: string[];
+defineProps<{
   disabled: boolean;
 }>();
 
-const emit = defineEmits<{
-  (e: 'update:label', label: string): void;
-  (e: 'update:tags', tags: string[]): void;
-}>();
+const labelModel = defineModel<string>('label', { required: true });
+const tagsModel = defineModel<string[]>('tags', { required: true });
 
 const { t } = useI18n();
-
-const labelModel = useVModel(props, 'label', emit);
-const tagsModel = useVModel(props, 'tags', emit);
 </script>
 
 <template>

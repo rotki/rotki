@@ -5,20 +5,14 @@ import type { Message } from '@rotki/common/lib/messages';
 
 const props = withDefaults(
   defineProps<{
-    modelValue?: boolean;
     timestamp?: number;
     balance?: number;
   }>(),
   {
-    modelValue: false,
     timestamp: 0,
     balance: 0,
   },
 );
-
-const emit = defineEmits<{
-  (e: 'update:model-value', visible: boolean): void;
-}>();
 
 const { t } = useI18n();
 
@@ -26,7 +20,8 @@ const { timestamp, balance } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const editMode = ref<boolean>(false);
-const display = useSimpleVModel(props, emit);
+const display = defineModel<boolean>({ required: true, default: false });
+
 const { setMessage } = useMessageStore();
 const snapshotApi = useSnapshotApi();
 const { appSession, openDirectory } = useInterop();

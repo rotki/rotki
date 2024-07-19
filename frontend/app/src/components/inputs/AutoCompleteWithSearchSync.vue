@@ -4,15 +4,10 @@ defineOptions({
 });
 
 const props = defineProps<{
-  modelValue: string;
   items: string[];
 }>();
 
-const emit = defineEmits<{
-  (e: 'update:model-value', value: string): void;
-}>();
-
-const model = useSimpleVModel(props, emit);
+const model = defineModel<string>({ required: true });
 
 const { items } = toRefs(props);
 

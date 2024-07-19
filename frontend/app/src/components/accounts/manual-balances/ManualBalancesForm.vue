@@ -4,22 +4,22 @@ import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
 import ManualBalancesPriceForm from '@/components/accounts/manual-balances/ManualBalancesPriceForm.vue';
 import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
+import type { ValidationErrors } from '@/types/api/errors';
 
 const props = defineProps<{
   modelValue: RawManualBalance | ManualBalance;
-  errorMessages: Record<string, string[]>;
   submitting: boolean;
 }>();
 
 const emit = defineEmits<{
   (e: 'update:model-value', value: RawManualBalance | ManualBalance): void;
-  (e: 'update:error-messages', value: Record<string, string[]>): void;
 }>();
 
 const { t } = useI18n();
 
 const priceForm = ref<InstanceType<typeof ManualBalancesPriceForm>>();
 
+const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const asset = useSimplePropVModel(props, 'asset', emit);
 const label = useSimplePropVModel(props, 'label', emit);
 const balanceType = useSimplePropVModel(props, 'balanceType', emit);
@@ -48,8 +48,6 @@ const amount = computed({
     });
   },
 });
-
-const errors = useKebabVModel(props, 'errorMessages', emit);
 
 const { manualLabels } = useManualBalancesStore();
 

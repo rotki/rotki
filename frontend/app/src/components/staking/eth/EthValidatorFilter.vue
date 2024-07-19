@@ -1,22 +1,12 @@
 <script setup lang="ts">
 import type { EthStakingCombinedFilter, EthStakingFilter, EthStakingFilterType } from '@rotki/common/lib/staking/eth2';
 
-const props = defineProps<{
-  modelValue: EthStakingFilter;
-  filter: EthStakingCombinedFilter | undefined;
-}>();
-
-const emit = defineEmits<{
-  (e: 'update:model-value', value: EthStakingFilter): void;
-  (e: 'update:filter', value?: EthStakingCombinedFilter): void;
-}>();
+const filterModel = defineModel<EthStakingCombinedFilter | undefined>('filter', { required: true });
+const model = defineModel<EthStakingFilter>({ required: true });
 
 const filterType = ref<EthStakingFilterType>('validator');
-const filterModel = useVModel(props, 'filter', emit);
 
-const model = useSimpleVModel(props, emit);
-
-watch(filterType, type => emit('update:model-value', type === 'validator' ? { validators: [] } : { accounts: [] }));
+watch(filterType, type => set(model, type === 'validator' ? { validators: [] } : { accounts: [] }));
 
 const { t } = useI18n();
 </script>

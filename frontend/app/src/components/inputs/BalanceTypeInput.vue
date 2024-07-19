@@ -5,17 +5,9 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = defineProps<{
-  modelValue: BalanceType;
-}>();
-
-const emit = defineEmits<{
-  (e: 'update:model-value', value: BalanceType): void;
-}>();
+const model = defineModel<BalanceType>({ required: true });
 
 const { t } = useI18n();
-
-const model = useSimpleVModel(props, emit);
 
 const balanceTypes = computed(() => [
   {

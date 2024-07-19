@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { uniqBy } from 'lodash-es';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { objectOmit } from '@vueuse/shared';
+import { getNonRootAttrs, getRootAttrs } from '@/utils/attrs';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
 type AccountWithAddressData = BlockchainAccount<AddressData>;
@@ -224,7 +224,7 @@ const attrs = useAttrs();
       :label="label || t('blockchain_account_selector.default_label')"
       class="blockchain-account-selector"
       :error-messages="errorMessages"
-      v-bind="objectOmit(attrs, ['class'])"
+      v-bind="getNonRootAttrs(attrs)"
       :no-data-text="t('blockchain_account_selector.no_data')"
       return-object
       @update:model-value="input($event)"
@@ -254,14 +254,14 @@ const attrs = useAttrs();
   <div
     v-if="!hint"
     class="bg-white dark:bg-[#1E1E1E]"
-    :class="attrs.class"
+    v-bind="getRootAttrs(attrs)"
   >
     <ReuseAutocomplete />
   </div>
   <RuiCard
     v-else
     variant="outlined"
-    :class="attrs.class"
+    v-bind="getRootAttrs(attrs)"
   >
     <ReuseAutocomplete />
     <div

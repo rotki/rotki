@@ -1,28 +1,22 @@
 <script lang="ts" setup>
-const props = withDefaults(
+withDefaults(
   defineProps<{
-    modelValue?: string | null;
     dense?: boolean;
     showWithKeyOnly?: boolean;
   }>(),
   {
-    modelValue: null,
     showWithKeyOnly: false,
   },
 );
 
-const emit = defineEmits<{
-  (e: 'update:model-value', value: string): void;
-}>();
-
-const vModel = useSimpleVModel(props, emit);
+const model = defineModel<string>({ required: true, default: '' });
 
 const { allExchanges, exchangesWithKey } = storeToRefs(useLocationStore());
 </script>
 
 <template>
   <RuiAutoComplete
-    v-model="vModel"
+    v-model="model"
     variant="outlined"
     v-bind="$attrs"
     :options="showWithKeyOnly ? exchangesWithKey : allExchanges"

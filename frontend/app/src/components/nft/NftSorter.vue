@@ -1,11 +1,9 @@
 <script setup lang="ts">
 const props = defineProps<{
-  sortBy: string;
   sortDesc: boolean;
 }>();
 
 const emit = defineEmits<{
-  (e: 'update:sort-by', sortBy: string): void;
   (e: 'update:sort-desc', sortDesc: boolean): void;
 }>();
 
@@ -15,7 +13,7 @@ function toggleSortDesc() {
   emit('update:sort-desc', !get(sortDescending));
 }
 
-const sortByModel = useKebabVModel(props, 'sortBy', emit);
+const sortByModel = defineModel<string>('sortBy', { required: true });
 
 const { t } = useI18n();
 

@@ -8,19 +8,17 @@ import type { XpubManage } from '@/composables/accounts/blockchain/use-account-m
 const props = defineProps<{
   modelValue: XpubManage;
   loading: boolean;
-  errorMessages: ValidationErrors;
 }>();
 
 const emit = defineEmits<{
   (e: 'update:model-value', value: XpubManage): void;
-  (e: 'update:error-messages', value: ValidationErrors): void;
 }>();
 
 const { modelValue } = toRefs(props);
 
 const input = ref<InstanceType<typeof XpubInput>>();
 
-const errors = useKebabVModel(props, 'errorMessages', emit);
+const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 
 function updateVModel(value: XpubManage) {
   emit('update:model-value', value);

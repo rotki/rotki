@@ -3,21 +3,20 @@ import { between, required, requiredIf } from '@vuelidate/validators';
 import { isEmpty } from 'lodash-es';
 import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
+import type { ValidationErrors } from '@/types/api/errors';
 import type { EvmRpcNodeManageState } from '@/types/settings/rpc';
 
 const props = defineProps<{
   modelValue: EvmRpcNodeManageState;
-  errorMessages: Record<string, string[] | string>;
 }>();
 
 const emit = defineEmits<{
   (e: 'update:model-value', value: EvmRpcNodeManageState): void;
-  (e: 'update:error-messages', value: Record<string, string[] | string>): void;
 }>();
 
 const { t } = useI18n();
 
-const errors = useKebabVModel(props, 'errorMessages', emit);
+const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const node = useSimplePropVModel(props, 'node', emit);
 const owned = useRefPropVModel(node, 'owned');
 const name = useRefPropVModel(node, 'name');

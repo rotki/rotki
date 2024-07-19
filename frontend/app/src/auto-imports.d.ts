@@ -130,11 +130,14 @@ declare global {
   const getGroupId: typeof import('./utils/blockchain/accounts/index')['getGroupId']
   const getKeyType: typeof import('./utils/xpub')['getKeyType']
   const getMetamaskAddresses: typeof import('./utils/metamask')['getMetamaskAddresses']
+  const getNonRootAttrs: typeof import('./utils/attrs')['getNonRootAttrs']
   const getPlaceholderRule: typeof import('./utils/settings')['getPlaceholderRule']
   const getPoolProfit: typeof import('./utils/defi/xswap')['getPoolProfit']
   const getPools: typeof import('./utils/defi/xswap')['getPools']
   const getPrefix: typeof import('./utils/xpub')['getPrefix']
   const getProtocolAddresses: typeof import('./utils/addresses')['getProtocolAddresses']
+  const getRootAttrs: typeof import('./utils/attrs')['getRootAttrs']
+  const getRootKeys: typeof import('./utils/attrs')['getRootKeys']
   const getServiceRegisterUrl: typeof import('./utils/url')['getServiceRegisterUrl']
   const getSortItems: typeof import('./utils/assets')['getSortItems']
   const getTags: typeof import('./utils/tags')['getTags']
@@ -911,11 +914,14 @@ declare module 'vue' {
     readonly getGroupId: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getGroupId']>
     readonly getKeyType: UnwrapRef<typeof import('./utils/xpub')['getKeyType']>
     readonly getMetamaskAddresses: UnwrapRef<typeof import('./utils/metamask')['getMetamaskAddresses']>
+    readonly getNonRootAttrs: UnwrapRef<typeof import('./utils/attrs')['getNonRootAttrs']>
     readonly getPlaceholderRule: UnwrapRef<typeof import('./utils/settings')['getPlaceholderRule']>
     readonly getPoolProfit: UnwrapRef<typeof import('./utils/defi/xswap')['getPoolProfit']>
     readonly getPools: UnwrapRef<typeof import('./utils/defi/xswap')['getPools']>
     readonly getPrefix: UnwrapRef<typeof import('./utils/xpub')['getPrefix']>
     readonly getProtocolAddresses: UnwrapRef<typeof import('./utils/addresses')['getProtocolAddresses']>
+    readonly getRootAttrs: UnwrapRef<typeof import('./utils/attrs')['getRootAttrs']>
+    readonly getRootKeys: UnwrapRef<typeof import('./utils/attrs')['getRootKeys']>
     readonly getServiceRegisterUrl: UnwrapRef<typeof import('./utils/url')['getServiceRegisterUrl']>
     readonly getSortItems: UnwrapRef<typeof import('./utils/assets')['getSortItems']>
     readonly getTags: UnwrapRef<typeof import('./utils/tags')['getTags']>
@@ -1319,7 +1325,6 @@ declare module 'vue' {
     readonly useInterval: UnwrapRef<typeof import('@vueuse/core')['useInterval']>
     readonly useIntervalFn: UnwrapRef<typeof import('@vueuse/core')['useIntervalFn']>
     readonly useItemCache: UnwrapRef<typeof import('./composables/item-cache')['useItemCache']>
-    readonly useKebabVModel: UnwrapRef<typeof import('./utils/model/index')['useKebabVModel']>
     readonly useKeyModifier: UnwrapRef<typeof import('@vueuse/core')['useKeyModifier']>
     readonly useKrakenApi: UnwrapRef<typeof import('./composables/api/staking/kraken')['useKrakenApi']>
     readonly useKrakenStakingEventTypes: UnwrapRef<typeof import('./composables/staking/kraken-events')['useKrakenStakingEventTypes']>
@@ -1660,11 +1665,14 @@ declare module '@vue/runtime-core' {
     readonly getGroupId: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getGroupId']>
     readonly getKeyType: UnwrapRef<typeof import('./utils/xpub')['getKeyType']>
     readonly getMetamaskAddresses: UnwrapRef<typeof import('./utils/metamask')['getMetamaskAddresses']>
+    readonly getNonRootAttrs: UnwrapRef<typeof import('./utils/attrs')['getNonRootAttrs']>
     readonly getPlaceholderRule: UnwrapRef<typeof import('./utils/settings')['getPlaceholderRule']>
     readonly getPoolProfit: UnwrapRef<typeof import('./utils/defi/xswap')['getPoolProfit']>
     readonly getPools: UnwrapRef<typeof import('./utils/defi/xswap')['getPools']>
     readonly getPrefix: UnwrapRef<typeof import('./utils/xpub')['getPrefix']>
     readonly getProtocolAddresses: UnwrapRef<typeof import('./utils/addresses')['getProtocolAddresses']>
+    readonly getRootAttrs: UnwrapRef<typeof import('./utils/attrs')['getRootAttrs']>
+    readonly getRootKeys: UnwrapRef<typeof import('./utils/attrs')['getRootKeys']>
     readonly getServiceRegisterUrl: UnwrapRef<typeof import('./utils/url')['getServiceRegisterUrl']>
     readonly getSortItems: UnwrapRef<typeof import('./utils/assets')['getSortItems']>
     readonly getTags: UnwrapRef<typeof import('./utils/tags')['getTags']>
@@ -2068,7 +2076,6 @@ declare module '@vue/runtime-core' {
     readonly useInterval: UnwrapRef<typeof import('@vueuse/core')['useInterval']>
     readonly useIntervalFn: UnwrapRef<typeof import('@vueuse/core')['useIntervalFn']>
     readonly useItemCache: UnwrapRef<typeof import('./composables/item-cache')['useItemCache']>
-    readonly useKebabVModel: UnwrapRef<typeof import('./utils/model/index')['useKebabVModel']>
     readonly useKeyModifier: UnwrapRef<typeof import('@vueuse/core')['useKeyModifier']>
     readonly useKrakenApi: UnwrapRef<typeof import('./composables/api/staking/kraken')['useKrakenApi']>
     readonly useKrakenStakingEventTypes: UnwrapRef<typeof import('./composables/staking/kraken-events')['useKrakenStakingEventTypes']>

@@ -6,22 +6,15 @@ import { toMessages } from '@/utils/validation';
 import type { SelectOptions } from '@/types/common';
 import type { AddressBookLocation, AddressBookPayload } from '@/types/eth-names';
 
-const props = withDefaults(
-  defineProps<{
-    modelValue: AddressBookPayload;
-    edit: boolean;
-    enableForAllChains?: boolean;
-    errorMessages: { address?: string[]; name?: string[] };
-  }>(),
-  {
-    enableForAllChains: false,
-  },
-);
+const props = defineProps<{
+  modelValue: AddressBookPayload;
+  edit: boolean;
+  errorMessages: { address?: string[]; name?: string[] };
+}>();
 
 const emit = defineEmits<{
   (e: 'update:model-value', value: AddressBookPayload): void;
   (e: 'valid', valid: boolean): void;
-  (e: 'update:enable-for-all-chains', enable: boolean): void;
 }>();
 
 const { t } = useI18n();
@@ -32,7 +25,7 @@ const address = useSimplePropVModel(props, 'address', emit);
 const location = useSimplePropVModel(props, 'location', emit);
 const chain = useSimplePropVModel(props, 'blockchain', emit);
 const blockchain = nullDefined(chain);
-const enabledForAllChains = useKebabVModel(props, 'enableForAllChains', emit);
+const enabledForAllChains = defineModel<boolean>('enableForAllChains', { required: true, default: false });
 
 const { addresses } = useBlockchainStore();
 const addressesNamesStore = useAddressesNamesStore();
@@ -92,11 +85,10 @@ onMounted(fetchNames);
 </script>
 
 <template>
-  <form>
+  <form class="flex flex-col gap-4">
     <RuiMenuSelect
       v-model="location"
       :label="t('common.location')"
-      class="mb-6"
       :options="locations"
       :disabled="edit"
       key-attr="key"
