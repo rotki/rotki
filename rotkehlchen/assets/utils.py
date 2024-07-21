@@ -7,7 +7,6 @@ import regex
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken, UnderlyingToken
-from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.assets import (
     A_ETH,
@@ -168,7 +167,6 @@ def edit_token_and_clean_cache(
 
     # clean the cache if we need to update the token
     if updated_fields is True:
-        AssetResolver.clean_memory_cache(evm_token.identifier)
         GlobalDBHandler.edit_evm_token(evm_token)
 
 
@@ -337,19 +335,6 @@ def get_or_create_evm_token(
                         userdb.add_to_ignored_assets(write_cursor=write_cursor, asset=evm_token)
 
     return evm_token
-
-
-def set_token_protocol_if_missing(evm_token: EvmToken, protocol: str) -> None:
-    """
-    Check if the provided token has the expected protocol and if the protocol is not the expected
-    update the token and update it in the database.
-    """
-    if evm_token.protocol == protocol:
-        return
-
-    object.__setattr__(evm_token, 'protocol', protocol)  # since is a frozen dataclass
-    AssetResolver.clean_memory_cache(evm_token.identifier)
-    GlobalDBHandler.edit_evm_token(evm_token)
 
 
 def get_crypto_asset_by_symbol(

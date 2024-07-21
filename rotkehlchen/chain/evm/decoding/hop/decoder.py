@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
-from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.ethereum.utils import (
     token_normalized_value,
     token_normalized_value_decimals,
@@ -116,16 +115,12 @@ class HopCommonDecoder(DecoderInterface):
 
     def _process_hop_lp_token(self, lp_token: EvmToken, pool_address: ChecksumEvmAddress) -> None:
         """Save the protocol value of the LP token and cache its pool address."""
+        GlobalDBHandler.set_token_protocol_if_missing(
+            token=lp_token,
+            new_protocol=HOP_PROTOCOL_LP,
+        )
+        # Cache the pool address if needed
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            # Save the protocol value of the lp token if needed
-            if lp_token.protocol is None:
-                write_cursor.execute(
-                    'UPDATE evm_tokens SET protocol = ? WHERE identifier = ?;',
-                    (HOP_PROTOCOL_LP, lp_token.identifier),
-                )
-                AssetResolver.clean_memory_cache(lp_token.identifier)
-
-            # Cache the pool address if needed
             if globaldb_get_unique_cache_value(
                 cursor=write_cursor,
                 key_parts=(
