@@ -243,7 +243,7 @@ class EVMTransactionDecoder(ABC):
                     (new_address_to_decoders, rules.address_mappings, 'address_mappings'),
                     (new_address_to_counterparties, rules.addresses_to_counterparties, 'address_to_counterparties'),  # noqa: E501
             ):
-                self.assert_keys_are_unique(new_struct=new_struct, main_struct=main_struct, class_name=class_name, type_name=type_name)  # type: ignore  # not sure why it happens. Bug? # noqa: E501
+                self.assert_keys_are_unique(new_struct=new_struct, main_struct=main_struct, class_name=class_name, type_name=type_name)  # noqa: E501
 
         rules.address_mappings.update(new_address_to_decoders)
         rules.event_rules.extend(self.decoders[class_name].decoding_rules())
@@ -923,7 +923,7 @@ class EVMTransactionDecoder(ABC):
                     (action_item.location_label is None or action_item.location_label == transfer.location_label)  # noqa: E501
             ):
                 if action_item.action == 'skip':
-                    action_items.pop(idx)
+                    action_items.pop(idx)  # noqa: B909  # mutation is fine since we exit after
                     return DEFAULT_DECODING_OUTPUT
                 if action_item.action == 'skip & keep':
                     # the action item is skipped but kept in the list of action items. Is used

@@ -382,8 +382,8 @@ class DBHistoryEvents:
         ...
 
     @overload
-    def get_history_events(  # type: ignore  # cant match since EthDepositEvent is EvmEvent
-            self,  # no idea how to properly type this situation with overloads here
+    def get_history_events(
+            self,
             cursor: 'DBCursor',
             filter_query: EthDepositEventFilterQuery,
             has_premium: bool,
@@ -392,8 +392,8 @@ class DBHistoryEvents:
         ...
 
     @overload
-    def get_history_events(  # type: ignore  # cant match since EthDepositEvent is EvmEvent
-            self,  # no idea how to properly type this situation with overloads here
+    def get_history_events(
+            self,
             cursor: 'DBCursor',
             filter_query: EthDepositEventFilterQuery,
             has_premium: bool,
