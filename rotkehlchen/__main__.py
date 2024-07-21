@@ -19,7 +19,7 @@ def main() -> None:
         print(f'ERROR at initialization: {e!s}')
         sys.exit(1)
     except SystemExit as e:
-        if e.code is None or e.code == 0 or e.code == 2:
+        if e.code is None or e.code in (0, 2):
             # exit_code 2 is for invalid arguments
             exit_code = 0 if e.code is None else e.code
             sys.exit(exit_code)

@@ -539,7 +539,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                 event.event_type == HistoryEventType.SPEND and
                 raw_sold_amount is not None and
                 event.balance.amount == asset_normalized_value(amount=raw_sold_amount, asset=crypto_asset) and  # noqa: E501
-                (sold_asset is None or event.asset == self.native_currency or event.asset == sold_asset)  # noqa: E501
+                (sold_asset is None or event.asset in (self.native_currency, sold_asset))
             ):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.SPEND
@@ -551,7 +551,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                 event.location_label == receiver_address and
                 event.event_type == HistoryEventType.RECEIVE and
                 event.balance.amount == asset_normalized_value(amount=raw_bought_amount, asset=crypto_asset) and  # noqa: E501
-                (bought_asset is None or event.asset == self.native_currency or event.asset == bought_asset)  # noqa: E501
+                (bought_asset is None or event.asset in (self.native_currency, bought_asset))
             ):
                 event.event_type = HistoryEventType.TRADE
                 event.event_subtype = HistoryEventSubType.RECEIVE

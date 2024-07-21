@@ -1218,10 +1218,10 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                     (DEFI_PROTOCOLS_TO_SKIP_ASSETS, 'Asset'),
                     (DEFI_PROTOCOLS_TO_SKIP_LIABILITIES, 'Debt'),
             ):
-                skip_list = skip_mapping.get(entry.protocol.name, None)  # type: ignore
+                skip_list: Literal[True] | list[str] | None = skip_mapping.get(entry.protocol.name, None)  # type: ignore  # noqa: E501
                 double_entry = (
                     entry.balance_type == balance_type and
-                    skip_list and
+                    skip_list is not None and
                     (skip_list is True or entry.base_balance.token_symbol in skip_list)
                 )
                 if double_entry:

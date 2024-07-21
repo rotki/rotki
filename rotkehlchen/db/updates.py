@@ -351,11 +351,11 @@ class RotkiDataUpdater:
                         raw_entry['asset'] = Asset(asset_id)
                     if (raw_location := raw_entry.get('location')) is not None:
                         raw_entry['location'] = Location.deserialize(raw_location)
-                    entries.append(entry_type.deserialize(raw_entry))  # type: ignore[attr-defined]  # deserialize is defined in both
+                    entries.append(entry_type.deserialize(raw_entry))
                 except DeserializationError as e:
                     log.error(f'Could not deserialize {entry_type.__name__} {raw_entry!s}: {e!s}')
 
-            update_function(entries=entries, skip_errors=True)  # type: ignore[operator]  # update_function is known
+            update_function(entries=entries, skip_errors=True)  # type: ignore  # entries/update function type varies
 
     def update_location_unsupported_assets(self, data: dict[str, dict[str, list[str]]], version: int) -> None:  # noqa: E501
         """Applies location unsupported assets updates in the global DB"""

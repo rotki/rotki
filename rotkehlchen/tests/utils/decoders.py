@@ -7,7 +7,7 @@ from rotkehlchen.chain.evm.decoding.gearbox.constants import CPT_GEARBOX
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_AERODROME, CPT_VELODROME
 
 
-def patch_decoder_reload_data(load_global_caches: list[str] | None = None) -> ExitStack:  # type: ignore[return]  # stack is returned at the end
+def patch_decoder_reload_data(load_global_caches: list[str] | None = None) -> ExitStack:
     """Patch to avoid reloading on-chain data at each decoding"""
     with ExitStack() as stack:
         stack.enter_context(patch(  # patch to not refresh cache by not downloading new data

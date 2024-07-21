@@ -523,8 +523,9 @@ class RestAPI:
                             'message': '',
                         }
                         # Also remove the greenlet from the api tasks
-                        self.rotkehlchen.api_task_greenlets.pop(idx)
+                        self.rotkehlchen.api_task_greenlets.pop(idx)  # mutation is fine since we get out of the loop right here # noqa: B909, E501
                         return api_response(result=result_dict, status_code=HTTPStatus.OK)
+
                     # else task is still pending and the greenlet is running
                     result_dict = {
                         'result': {'status': 'pending', 'outcome': None},
