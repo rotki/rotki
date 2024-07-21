@@ -328,7 +328,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
                 'evm_chain': 'ethereum',
                 'token_kind': 'erc20',
                 'decimals': 18,
-                'cryptocompare': None,
+                'cryptocompare': 'DAI',
                 'coingecko': 'dai',
                 'protocol': None,
             },

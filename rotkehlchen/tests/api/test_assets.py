@@ -592,7 +592,7 @@ def test_get_assets_mappings(rotkehlchen_api_server):
             assert details['collection_id'] == '23'
             assert details['is_spam'] is True
             assert details['coingecko'] == 'dai'
-            assert 'cryptocompare' not in details
+            assert details['cryptocompare'] == 'DAI'
         elif identifier == A_OP.identifier:
             assert details['evm_chain'] == 'optimism'
             assert 'custom_asset_type' not in details
