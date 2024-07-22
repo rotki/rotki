@@ -359,7 +359,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
                 'address': None,
                 'token_kind': None,
                 'decimals': None,
-                'cryptocompare': None,
+                'cryptocompare': 'DASH',
                 'coingecko': 'dash',
                 'protocol': None,
             },
@@ -470,7 +470,7 @@ INSERT INTO assets(identifier, name, type) VALUES("eip155:1/erc20:0x1B175474E890
         assert dash.forked is None
         assert dash.swapped_for is None
         assert dash.coingecko == 'dash'
-        assert dash.cryptocompare is None
+        assert dash.cryptocompare == 'DASH'
         assert cursor.execute('SELECT COUNT(*) from common_asset_details WHERE identifier="DASH";').fetchone()[0] == 1  # noqa: E501
         assert cursor.execute('SELECT COUNT(*) from assets WHERE identifier="DASH";').fetchone()[0] == 1  # noqa: E501
 

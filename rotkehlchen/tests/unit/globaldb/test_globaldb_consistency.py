@@ -9,6 +9,7 @@ from warnings import warn
 import pytest
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.types import AssetType
 from rotkehlchen.constants.misc import GLOBALDIR_NAME, ONE
 from rotkehlchen.db.constants import UpdateType
 from rotkehlchen.db.updates import RotkiDataUpdater
@@ -38,6 +39,7 @@ if TYPE_CHECKING:
 ASSET_COLLECTION_UPDATE: Final = 'INSERT INTO asset_collections(id, name, symbol) VALUES ({collection}, "{name}", "{symbol}");'  # noqa: E501
 ASSET_MAPPING: Final = 'INSERT INTO multiasset_mappings(collection_id, asset) VALUES ({collection}, "{id}");'  # noqa: E501
 ASSET_UPDATE: Final = "[('{address}', Chain.{chain_name}, '{coingecko}', '{cryptocompare}', {field_updates}, '{protocol}', {underlying_token_addresses})],"  # noqa: E501
+NON_EVM_ASSET_INSERT = 'INSERT INTO assets(identifier, name, type) VALUES("{identifier}", "{name}", "{type}"); INSERT INTO common_asset_details(identifier, symbol, coingecko, cryptocompare, forked, started, swapped_for) VALUES("{identifier}", "{symbol}", "{coingecko}", "{cryptocompare}", {forked}, {started}, {swapped_for});'  # noqa: E501
 IGNORED_PROTOCOLS: Final = {
     CURVE_POOL_PROTOCOL,
     YEARN_VAULTS_V1_PROTOCOL,
@@ -53,6 +55,7 @@ IGNORED_PROTOCOLS: Final = {
 @dataclass(init=True, repr=False, eq=False, order=False, unsafe_hash=False, frozen=False)
 class DBToken:
     address: 'ChecksumEvmAddress'
+    type: str
     chain: int
     token_kind: str
     name: str
@@ -120,6 +123,7 @@ def test_asset_updates_consistency_with_packaged_db(
             },
         ) is None
 
+    evm_type_db = AssetType.EVM_TOKEN.serialize_for_db()
     with (
         globaldb.conn.read_ctx() as old_db_cursor,
         globaldb.packaged_db_conn().read_ctx() as packaged_db_cursor,
@@ -143,24 +147,28 @@ def test_asset_updates_consistency_with_packaged_db(
                 {
                     identifier: DBToken(
                         address=address,
+                        type=asset_type,
                         chain=chain,
                         token_kind=token_kind,
                         decimals=decimals,
                         name=name,
                         symbol=symbol,
                         started=started,
+                        forked=forked,
                         swapped_for=swapped_for,
                         coingecko=coingecko,
                         cryptocompare=cryptocompare,
                         protocol=protocol,
                     )
-                    for (identifier, address, chain, token_kind, decimals, name, symbol, started, swapped_for, coingecko, cryptocompare, protocol)  # noqa: E501
+                    for (identifier, asset_type, address, decimals, name, symbol, started, forked, swapped_for, coingecko, cryptocompare, protocol, chain, token_kind)  # noqa: E501
                     in cursor.execute(
-                        'SELECT A.identifier, B.address, B.chain, B.token_kind, B.decimals, '
-                        'C.name, A.symbol, A.started, A.swapped_for, A.coingecko, '
-                        'A.cryptocompare, B.protocol FROM evm_tokens AS B JOIN '
-                        'common_asset_details AS A ON B.identifier = A.identifier '
-                        'JOIN assets AS C on C.identifier=A.identifier',
+                        f"""
+                        SELECT A.identifier, A.type, B.address, B.decimals, A.name, C.symbol, C.started, null, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol, B.chain, B.token_kind FROM assets as A JOIN evm_tokens as B
+                        ON B.identifier = A.identifier JOIN common_asset_details AS C ON C.identifier = B.identifier WHERE A.type = '{evm_type_db}'
+                        UNION ALL
+                        SELECT A.identifier, A.type, null, null, A.name, B.symbol,  B.started, B.forked, B.swapped_for, B.coingecko, B.cryptocompare, null, null, null from assets as A JOIN common_asset_details as B
+                        ON B.identifier = A.identifier WHERE A.type != '{evm_type_db}';
+                        """,  # noqa: E501
                     )
                     if identifier not in ignored_identifiers
                 }, cursor.execute(
@@ -267,18 +275,31 @@ def test_asset_updates_consistency_with_packaged_db(
     # find all the assets that are present in packaged DB but not in asset updates
     for identifier in packaged_assets:
         if identifier not in updated_assets:
-            missing_in_updates.append(ASSET_UPDATE.format(
-                address=packaged_assets[identifier].address,
-                chain_name=ChainID.deserialize(packaged_assets[identifier].chain).name,
-                coingecko=packaged_assets[identifier].coingecko,
-                cryptocompare=packaged_assets[identifier].cryptocompare,
-                field_updates={},
-                protocol=packaged_assets[identifier].protocol,
-                underlying_token_addresses=[
-                    packaged_assets[identifier].address
-                    for identifier in packaged_underlying_assets[identifier]
-                ],
-            ))
+            if packaged_assets[identifier].type == evm_type_db:
+                missing_in_updates.append(ASSET_UPDATE.format(
+                    address=packaged_assets[identifier].address,
+                    chain_name=ChainID.deserialize(packaged_assets[identifier].chain).name,
+                    coingecko=packaged_assets[identifier].coingecko,
+                    cryptocompare=packaged_assets[identifier].cryptocompare,
+                    field_updates={},
+                    protocol=packaged_assets[identifier].protocol,
+                    underlying_token_addresses=[
+                        packaged_assets[identifier].address
+                        for identifier in packaged_underlying_assets[identifier]
+                    ],
+                ))
+            else:
+                missing_in_updates.append(NON_EVM_ASSET_INSERT.format(
+                    identifier=identifier,
+                    name=packaged_assets[identifier].name,
+                    type=packaged_assets[identifier].type,
+                    symbol=packaged_assets[identifier].symbol,
+                    coingecko=packaged_assets[identifier].coingecko,
+                    cryptocompare=packaged_assets[identifier].cryptocompare,
+                    forked='NULL' if packaged_assets[identifier].forked is None else f"'{packaged_assets[identifier].forked}'",  # noqa: E501
+                    started='NULL' if packaged_assets[identifier].started is None else packaged_assets[identifier].started,  # noqa: E501
+                    swapped_for='NULL' if packaged_assets[identifier].swapped_for is None else f"'{packaged_assets[identifier].swapped_for}'",  # noqa: E501
+                ) + '\n*')
             continue
 
         for assets in (updated_assets, packaged_assets):
@@ -314,15 +335,40 @@ def test_asset_updates_consistency_with_packaged_db(
                     ]
 
             if len(updates) > 0:
-                missing_in_updates.append(ASSET_UPDATE.format(
-                    address=fields_to_update['address'],
-                    chain_name=ChainID.deserialize(fields_to_update['chain']).name,
-                    coingecko=fields_to_update['coingecko'],
-                    cryptocompare=fields_to_update['cryptocompare'],
-                    field_updates=dict(updates),
-                    protocol=fields_to_update['protocol'],
-                    underlying_token_addresses=fields_to_update['underlying_tokens'],
-                ))
+                if packaged_assets[identifier].type == evm_type_db:
+                    missing_in_updates.append(ASSET_UPDATE.format(
+                        address=fields_to_update['address'],
+                        chain_name=ChainID.deserialize(fields_to_update['chain']).name,
+                        coingecko=fields_to_update['coingecko'],
+                        cryptocompare=fields_to_update['cryptocompare'],
+                        field_updates=dict(updates),
+                        protocol=fields_to_update['protocol'],
+                        underlying_token_addresses=fields_to_update['underlying_tokens'],
+                    ))
+                else:
+                    # log SQL query to update it
+                    missing_in_updates.extend([
+                        '; '.join([
+                            f'UPDATE {table_name} SET ' + ', '.join([
+                                field + ' = ' + (
+                                    '{value}' if field in {'forked', 'started', 'swapped_for'} else "'{value}'"  # noqa: E501
+                                ).format(value=value)
+                                for field, value in fields.items()
+                            ]) + f" WHERE identifier = '{identifier}';"
+                            for table_name, fields in updates.items()
+                        ]),
+                        NON_EVM_ASSET_INSERT.format(  # and its insert query
+                            identifier=identifier,
+                            name=packaged_assets[identifier].name,
+                            type=packaged_assets[identifier].type,
+                            symbol=packaged_assets[identifier].symbol,
+                            coingecko=packaged_assets[identifier].coingecko,
+                            cryptocompare=packaged_assets[identifier].cryptocompare,
+                            forked='NULL' if packaged_assets[identifier].forked is None else f"'{packaged_assets[identifier].forked}'",  # noqa: E501
+                            started='NULL' if packaged_assets[identifier].started is None else packaged_assets[identifier].started,  # noqa: E501
+                            swapped_for='NULL' if packaged_assets[identifier].swapped_for is None else f"'{packaged_assets[identifier].swapped_for}'",  # noqa: E501
+                        ),
+                    ])
 
     missing_in_updates = [
         str(update).replace('None', '')
@@ -333,7 +379,7 @@ def test_asset_updates_consistency_with_packaged_db(
         warn('\n'.join(missing_in_packaged_db))
 
     if missing_in_updates != []:
-        pytest.fail('\n'.join(missing_in_updates))
+        pytest.fail('Found entries that are missing in remote updates:\n' + '\n'.join(missing_in_updates))  # noqa: E501
 
 
 def test_oracle_ids_in_asset_collections(globaldb: 'GlobalDBHandler'):
@@ -373,7 +419,7 @@ def test_oracle_ids_in_asset_collections(globaldb: 'GlobalDBHandler'):
                         group_id_to_oracle_ids[group_id][oracle] = assets[identifier][oracle]
 
     if len(mismatches) > 0:
-        pytest.fail('\n'.join(mismatches))
+        pytest.fail('oracle IDs do not match:\n' + '\n'.join(mismatches))
 
 
 def test_remote_updates_consistency_with_packaged_db(
