@@ -3,6 +3,7 @@ import type { MaybeRef } from '@vueuse/core';
 import type { Collection } from '@/types/collection';
 import type { NonFungibleBalance, NonFungibleBalancesRequestPayload } from '@/types/nfbalances';
 import type { LocationQuery } from '@/types/route';
+import type Vue from 'vue';
 
 vi.mock('vue-router', () => {
   const route = ref({
@@ -20,7 +21,7 @@ vi.mock('vue-router', () => {
 });
 
 vi.mock('vue', async () => {
-  const mod = await vi.importActual<Vue>('vue');
+  const mod = await vi.importActual<typeof Vue>('vue');
 
   return {
     ...mod,

@@ -1,4 +1,4 @@
-import { type Wrapper, mount } from '@vue/test-utils';
+import { type VueWrapper, mount } from '@vue/test-utils';
 import { promiseTimeout } from '@vueuse/core';
 import flushPromises from 'flush-promises';
 import { ApiValidationError } from '@/types/api/errors';
@@ -41,7 +41,7 @@ vi.mock('@/composables/api/settings/settings-api', async () => {
 });
 
 describe('evmChainsToIgnoreSettings.vue', () => {
-  let wrapper: Wrapper<any>;
+  let wrapper: VueWrapper<InstanceType<typeof EvmChainsToIgnoreSettings>>;
 
   function createWrapper() {
     const pinia = createPinia();

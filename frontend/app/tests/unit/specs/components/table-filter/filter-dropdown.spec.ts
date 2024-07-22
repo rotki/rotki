@@ -44,6 +44,7 @@ describe('table-filter/FilterDropdown.vue', () => {
     const props = {
       matchers,
       selectedSuggestion: 1,
+      keyword: '',
     };
 
     wrapper = createWrapper({ props });
@@ -72,6 +73,7 @@ describe('table-filter/FilterDropdown.vue', () => {
     const props = {
       matchers,
       selectedSuggestion: 0,
+      keyword: '',
     };
 
     const wrapper = createWrapper({ props });
@@ -112,6 +114,7 @@ describe('table-filter/FilterDropdown.vue', () => {
     const props = {
       matchers,
       selectedSuggestion: 0,
+      keyword: '',
     };
 
     const wrapper = createWrapper({ props });

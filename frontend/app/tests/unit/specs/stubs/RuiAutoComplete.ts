@@ -1,11 +1,13 @@
-export const RuiAutoCompleteStub = {
+import { defineComponent } from 'vue';
+
+export const RuiAutoCompleteStub = defineComponent({
   template: `
     <div :data-cy="dataCy" :disabled="disabled" v-bind="$attrs">
       <div>
         <input :value="modelValue" class="input-value" type="text" @input="$emit('update:model-value', $event.value)">
       </div>
       <div class="selections">
-        <span v-for="item in options">
+        <span v-for="item in options" :key="item[keyProp]">
           {{ item[keyProp] ?? item }}
         </span>
       </div>
@@ -15,15 +17,14 @@ export const RuiAutoCompleteStub = {
     </div>
   `,
   props: {
-    modelValue: { type: [String, Array<string>] },
-    successMessages: { type: [String, Array<string>], default: () => [] },
-    errorMessages: { type: [String, Array<string>], default: () => [] },
-    options: { type: Array<any> },
-    keyProp: { type: String },
+    modelValue: { type: [String, Array] as PropType<string | string[]> },
+    successMessages: { type: [String, Array] as PropType<string | string[]>, default: () => [] },
+    errorMessages: { type: [String, Array] as PropType<string | string[]>, default: () => [] },
+    options: { type: Array as PropType<any[]>, default: () => [] },
+    keyProp: { type: String, default: '' },
     dataCy: { type: String, default: '' },
     disabled: { type: Boolean, default: false },
   },
-  inheritAttrs: false,
   computed: {
     message(): string {
       const m: string | string[] = this.successMessages;
@@ -34,4 +35,4 @@ export const RuiAutoCompleteStub = {
       return Array.isArray(m) ? m[0] : m;
     },
   },
-};
+});

@@ -21,7 +21,7 @@ vi.mock('vue-router', () => {
 });
 
 vi.mock('vue', async () => {
-  const mod = await vi.importActual<Vue>('vue');
+  const mod = await vi.importActual<typeof Vue>('vue');
 
   return {
     ...mod,

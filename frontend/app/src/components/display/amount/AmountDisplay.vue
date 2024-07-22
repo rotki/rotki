@@ -2,7 +2,7 @@
 import { BigNumber } from '@rotki/common';
 import { or } from '@vueuse/math';
 import { displayAmountFormatter } from '@/data/amount-formatter';
-import { CURRENCY_USD, type Currency, useCurrencies } from '@/types/currencies';
+import { CURRENCY_USD, type Currency, type ShownCurrency, useCurrencies } from '@/types/currencies';
 import type { RoundingMode } from '@/types/settings/frontend-settings';
 
 const props = withDefaults(
@@ -52,9 +52,6 @@ const props = withDefaults(
     xl: false,
   },
 );
-const CurrencyType = ['none', 'ticker', 'symbol', 'name'] as const;
-
-type ShownCurrency = (typeof CurrencyType)[number];
 
 const {
   amount,

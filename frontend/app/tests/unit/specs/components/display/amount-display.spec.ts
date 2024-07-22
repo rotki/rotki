@@ -1,7 +1,7 @@
 import { BigNumber } from '@rotki/common';
 import { type VueWrapper, mount } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
-import { useCurrencies } from '@/types/currencies';
+import { type ShownCurrency, useCurrencies } from '@/types/currencies';
 import { CurrencyLocation } from '@/types/currency-location';
 import { FrontendSettings } from '@/types/settings/frontend-settings';
 import AmountDisplay from '@/components/display/amount/AmountDisplay.vue';
@@ -21,7 +21,7 @@ describe('amountDisplay.vue', () => {
       integer?: boolean;
       forceCurrency?: boolean;
       pnl?: boolean;
-      showCurrency?: string;
+      showCurrency?: ShownCurrency;
       asset?: string;
       priceAsset?: string;
       priceOfAsset?: BigNumber;

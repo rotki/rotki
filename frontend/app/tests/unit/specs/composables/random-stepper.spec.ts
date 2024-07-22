@@ -7,7 +7,7 @@ describe('composables::random-stepper', () => {
     setActivePinia(pinia);
 
     vi.mock('vue', async () => {
-      const mod = await vi.importActual<Vue>('vue');
+      const mod = await vi.importActual<typeof Vue>('vue');
 
       return {
         ...mod,

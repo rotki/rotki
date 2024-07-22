@@ -199,7 +199,7 @@ describe('evmEventForm.vue', () => {
     expect(spans).toHaveLength(keysFromGlobalMappings.length);
 
     for (let i = 0; i < keysFromGlobalMappings.length; i++)
-      expect(keysFromGlobalMappings.includes(spans.at(i).text())).toBeTruthy();
+      expect(keysFromGlobalMappings.includes(spans.at(i)!.text())).toBeTruthy();
   });
 
   it('should show product options, based on selected counterparty', async () => {
@@ -231,6 +231,6 @@ describe('evmEventForm.vue', () => {
     const spans = wrapper.findAll('[data-cy=product] .selections span');
     expect(spans).toHaveLength(products.length);
 
-    for (let i = 0; i < products.length; i++) expect(products.includes(spans.at(i).text())).toBeTruthy();
+    for (let i = 0; i < products.length; i++) expect(products.includes(spans.at(i)!.text())).toBeTruthy();
   });
 });
