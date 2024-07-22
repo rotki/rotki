@@ -5,6 +5,7 @@ import vue from '@vitejs/plugin-vue';
 import AutoImport from 'unplugin-auto-import/vite';
 import Components from 'unplugin-vue-components/vite';
 import { defineConfig } from 'vitest/config';
+import checker from 'vite-plugin-checker';
 import { splitVendorChunkPlugin } from 'vite';
 import istanbul from 'vite-plugin-istanbul';
 import { VitePWA } from 'vite-plugin-pwa';
@@ -64,11 +65,9 @@ export default defineConfig({
   plugins: [
     splitVendorChunkPlugin(),
     vue(),
-    // checker({
-    //   vueTsc: !(process.env.CI || process.env.VITE_TEST || process.env.VITEST),
-    // }),
-    // vue-tsc messes generics with typescript 5.5.x and checker does not work with 5.4.x
-    // wait until the generics issue is fixed to re-enable
+    checker({
+      vueTsc: !(process.env.CI || process.env.VITE_TEST || process.env.VITEST),
+    }),
     AutoImport({
       include: [
         /\.[jt]sx?$/, // .ts, .tsx, .js, .jsx

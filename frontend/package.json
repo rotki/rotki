@@ -41,12 +41,12 @@
     "dotenv": "16.4.5",
     "eslint": "9.7.0",
     "eslint-plugin-cypress": "3.3.0",
-    "husky": "9.1.0",
-    "jsdom": "24.1.0",
+    "husky": "9.1.1",
+    "jsdom": "24.1.1",
     "lint-staged": "15.2.7",
     "rimraf": "6.0.1",
     "semver": "7.6.3",
-    "typescript": "5.4.5"
+    "typescript": "5.5.3"
   },
   "engines": {
     "node": ">=20 <21",

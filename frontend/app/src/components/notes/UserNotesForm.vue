@@ -3,24 +3,18 @@ import { helpers, required } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
 import type { UserNote } from '@/types/notes';
 
-const props = defineProps<{
-  modelValue: Partial<UserNote>;
-}>();
-
-const emit = defineEmits<{
-  (e: 'update:model-value', newInput: Partial<UserNote>): void;
-}>();
+const modelValue = defineModel<Partial<UserNote>>({ required: true });
 
 const { t } = useI18n();
 
-const title = useSimplePropVModel(props, 'title', emit);
-const content = useSimplePropVModel(props, 'content', emit);
+const title = useRefPropVModel(modelValue, 'title');
+const content = refOptional(useRefPropVModel(modelValue, 'content'), '');
 
 const { setValidation } = useUserNotesForm();
 
 const rules = {
   content: {
-    required: helpers.withMessage(t('notes_menu.rules.content.non_empty').toString(), required),
+    required: helpers.withMessage(t('notes_menu.rules.content.non_empty'), required),
   },
 };
 

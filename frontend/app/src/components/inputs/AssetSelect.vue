@@ -48,7 +48,7 @@ const emit = defineEmits<{ (e: 'update:asset', value?: AssetInfoWithId | NftAsse
 const { items, showIgnored, excludes, errorMessages, includeNfts } = toRefs(props);
 const { isAssetIgnored } = useIgnoredAssetsStore();
 
-const modelValue = defineModel<string>({ required: true });
+const modelValue = defineModel<string | undefined>({ required: true });
 
 const search = ref<string>('');
 const assets = ref<(AssetInfoWithId | NftAsset)[]>([]);
@@ -147,6 +147,7 @@ watchDebounced(
 async function retainSelectedValueInOptions(newAssets: (AssetInfoWithId | NftAsset)[]) {
   try {
     const val = get(modelValue);
+    assert(val);
     const mapping = await assetMapping([val]);
     set(assets, [
       ...newAssets,
