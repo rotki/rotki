@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { helpers, required, requiredIf } from '@vuelidate/validators';
+import { objectOmit } from '@vueuse/core';
 import { toMessages } from '@/utils/validation';
 import type { CexMapping } from '@/types/asset';
 
@@ -23,9 +24,19 @@ const emptyMapping: () => CexMapping = () => ({
 });
 
 const formData = ref<CexMapping>(emptyMapping());
-const location = useRefPropVModel(formData, 'location');
 const asset = useRefPropVModel(formData, 'asset');
 const locationSymbol = useRefPropVModel(formData, 'locationSymbol');
+const location = computed<string>({
+  get() {
+    return get(formData, 'location') ?? '';
+  },
+  set(value?: string) {
+    set(formData, {
+      ...objectOmit(get(formData), ['location']),
+      location: value ?? null,
+    });
+  },
+});
 
 const forAllExchanges = ref<boolean>(false);
 
@@ -50,18 +61,18 @@ const { setValidation, setSubmitFunc } = useCexMappingForm();
 const rules = {
   location: {
     required: helpers.withMessage(
-      t('asset_management.cex_mapping.form.location_non_empty').toString(),
+      t('asset_management.cex_mapping.form.location_non_empty'),
       requiredIf(logicNot(forAllExchanges)),
     ),
   },
   locationSymbol: {
     required: helpers.withMessage(
-      t('asset_management.cex_mapping.form.location_symbol_non_empty').toString(),
+      t('asset_management.cex_mapping.form.location_symbol_non_empty'),
       required,
     ),
   },
   asset: {
-    required: helpers.withMessage(t('asset_management.cex_mapping.form.asset_non_empty').toString(), required),
+    required: helpers.withMessage(t('asset_management.cex_mapping.form.asset_non_empty'), required),
   },
 };
 

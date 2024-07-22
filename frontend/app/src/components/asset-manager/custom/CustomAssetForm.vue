@@ -44,9 +44,9 @@ const { t } = useI18n();
 const name = useRefPropVModel(formData, 'name');
 const customAssetType = useRefPropVModel(formData, 'customAssetType');
 
-const note = computed({
+const note = computed<string>({
   get() {
-    return get(formData).notes ?? undefined;
+    return get(formData).notes ?? '';
   },
   set(value?: string) {
     input({ notes: value ?? null });
@@ -55,10 +55,10 @@ const note = computed({
 
 const rules = {
   name: {
-    required: helpers.withMessage(t('asset_form.name_non_empty').toString(), required),
+    required: helpers.withMessage(t('asset_form.name_non_empty'), required),
   },
   type: {
-    required: helpers.withMessage(t('asset_form.type_non_empty').toString(), required),
+    required: helpers.withMessage(t('asset_form.type_non_empty'), required),
   },
 };
 

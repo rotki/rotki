@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { required } from '@vuelidate/validators';
 import { omit } from 'lodash-es';
+import { objectOmit } from '@vueuse/core';
 import { type AccountingRuleEntry, AccountingTreatment } from '@/types/settings/accounting';
 import { toMessages } from '@/utils/validation';
 import { ApiValidationError } from '@/types/api/errors';
@@ -17,6 +18,18 @@ const props = withDefaults(
 const { editableItem } = toRefs(props);
 
 const state = ref<AccountingRuleEntry>(getPlaceholderRule());
+
+const counterparty = computed<string>({
+  get() {
+    return get(state).counterparty ?? '';
+  },
+  set(value?: string) {
+    set(state, {
+      ...objectOmit(get(state), ['counterparty']),
+      counterparty: value ?? null,
+    });
+  },
+});
 
 const externalServerValidation = () => true;
 
@@ -116,7 +129,7 @@ const accountingTreatments = Object.values(AccountingTreatment).map(identifier =
     />
 
     <CounterpartyInput
-      v-model="state.counterparty"
+      v-model="counterparty"
       class="md:w-1/2"
       :label="t('common.counterparty')"
       :error-messages="toMessages(v$.counterparty)"
