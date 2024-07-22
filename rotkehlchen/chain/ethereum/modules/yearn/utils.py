@@ -74,7 +74,7 @@ def _maybe_reset_yearn_cache_timestamp(data: list[dict[str, Any]] | None) -> boo
 
 
 def _merge_data_yearn_vaults() -> tuple[list[dict[str, Any]] | None, str | None]:
-    """At the moment of writing this logic ydemon doesn't support yearn v1 so we
+    """At the moment of writing the logic of ydemon doesn't support yearn v1 so we
     need to aggregate the information from two different apis and remove duplicates.
     """
     msg = None
@@ -160,7 +160,7 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
 
             log.error(
                 f'Failed to store token information for yearn {vault_type} vault due to '
-                f'{msg}. Vault: {vault}. Skipping...',
+                f'{msg}. Vault: {vault}. Continuing without vault start timestamp.',
             )
             block_timestamp = None  # ydemon api doesn't provide this information
 
