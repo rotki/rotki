@@ -3,7 +3,7 @@ describe('awaitParallelExecution', () => {
     await expect(
       awaitParallelExecution<{ id: string }>(
         [],
-        id => id,
+        id => id.id,
         () => Promise.resolve(),
       ),
     ).resolves.toBeUndefined();
@@ -15,9 +15,9 @@ describe('awaitParallelExecution', () => {
     await expect(
       awaitParallelExecution<{ id: string }>(
         Array.from({ length: items }, (_, i) => ({
-          id: i + 1,
+          id: (i + 1).toString(),
         })),
-        id => id,
+        id => id.id,
         item => p1(item.id),
       ),
     ).resolves.toBeUndefined();

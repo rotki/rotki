@@ -89,7 +89,7 @@ describe('dateTimePicker.vue', () => {
     await nextTick();
     expect(wrapper.find('.text-rui-error').exists()).toBeFalsy();
     expect(wrapper.emitted()).toHaveProperty('update:model-value');
-    expect(wrapper.emitted('update:model-value')[0]).toEqual(['12/12/2021 12:12:12.333']);
+    expect(wrapper.emitted('update:model-value')![0]).toEqual(['12/12/2021 12:12:12.333']);
   });
 
   it('should show trim value when the length of the input exceed the max length allowed', async () => {
@@ -150,7 +150,7 @@ describe('dateTimePicker.vue', () => {
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe('01/01/2023 01:01:01');
     expect(wrapper.emitted()).toHaveProperty('update:model-value');
-    expect(wrapper.emitted('update:model-value')[0]).toEqual(['01/01/2023 01:01:01']);
+    expect(wrapper.emitted('update:model-value')![0]).toEqual(['01/01/2023 01:01:01']);
   });
 
   it('should work with format YYYY-MM-DD', async () => {
@@ -170,7 +170,7 @@ describe('dateTimePicker.vue', () => {
     await nextTick();
 
     expect(wrapper.emitted()).toHaveProperty('update:model-value');
-    expect(wrapper.emitted('update:model-value')[1]).toEqual(['06/06/2023 12:12:12']);
+    expect(wrapper.emitted('update:model-value')![1]).toEqual(['06/06/2023 12:12:12']);
   });
 
   describe('should adjust the timezone', () => {
@@ -195,7 +195,7 @@ describe('dateTimePicker.vue', () => {
       await nextTick();
 
       expect(wrapper.emitted()).toHaveProperty('update:model-value');
-      expect(wrapper.emitted('update:model-value')[2]).toEqual(['12/12/2021 16:59:12']);
+      expect(wrapper.emitted('update:model-value')![2]).toEqual(['12/12/2021 16:59:12']);
     });
 
     it('should not allow future datetime', async () => {
@@ -248,7 +248,7 @@ describe('dateTimePicker.vue', () => {
 
       expect((wrapper.find('input').element as HTMLInputElement).value).toBe('01/01/2023 06:05:05');
       expect(wrapper.emitted()).toHaveProperty('update:model-value');
-      expect(wrapper.emitted('update:model-value')[0]).toEqual(['01/01/2023 05:05:05']);
+      expect(wrapper.emitted('update:model-value')![0]).toEqual(['01/01/2023 05:05:05']);
     });
   });
 });

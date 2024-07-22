@@ -1,4 +1,4 @@
-import { type ComponentMountingOptions, mount } from '@vue/test-utils';
+import { type ComponentMountingOptions, type VueWrapper, mount } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';
 import TagInput from '@/components/inputs/TagInput.vue';
 import { createCustomPinia } from '../../../utils/create-pinia';
@@ -74,7 +74,7 @@ describe('tagInput.vue', () => {
 
     const emitted: string[] = ['tag1'];
     expect(wrapper.emitted()).toHaveProperty('update:modelValue');
-    expect(wrapper.emitted('update:modelValue')[0]).toEqual([emitted]);
+    expect(wrapper.emitted('update:modelValue')![0]).toEqual([emitted]);
 
     await nextTick();
 
@@ -108,7 +108,7 @@ describe('tagInput.vue', () => {
 
     const emitted: string[] = [];
     expect(wrapper.emitted()).toHaveProperty('update:modelValue');
-    expect(wrapper.emitted('update:modelValue')[1]).toEqual([emitted]);
+    expect(wrapper.emitted('update:modelValue')![1]).toEqual([emitted]);
 
     await vi.delay();
 

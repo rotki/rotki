@@ -4,6 +4,8 @@ import PrioritizedList from '@/components/helper/PrioritizedList.vue';
 import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
 import { PrioritizedListData } from '@/types/settings/prioritized-list-data';
 import '../../../i18n';
+import { AddressNamePriority } from '@/types/settings/address-name-priorities';
+import type { PrioritizedListId } from '@/types/settings/prioritized-list-id';
 
 describe('prioritizedList.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof PrioritizedList>>;
@@ -18,7 +20,7 @@ describe('prioritizedList.vue', () => {
 
   const emittedInputEventItems = (): string[] => {
     expect(wrapper.emitted()['update:model-value'].length).toBe(1);
-    const emitted = wrapper.emitted()['update:model-value'][0];
+    const emitted = wrapper.emitted()['update:model-value'][0] as string[][];
     return emitted[0];
   };
 
@@ -35,15 +37,19 @@ describe('prioritizedList.vue', () => {
   };
 
   beforeEach(() => {
-    const allItems = new PrioritizedListData([
-      { identifier: 'value1' },
-      { identifier: 'value2' },
-      { identifier: 'value3' },
-      { identifier: 'value4' },
+    const allItems = new PrioritizedListData<PrioritizedListId>([
+      { identifier: AddressNamePriority.BLOCKCHAIN_ACCOUNT },
+      { identifier: AddressNamePriority.ENS_NAMES },
+      { identifier: AddressNamePriority.ETHEREUM_TOKENS },
+      { identifier: AddressNamePriority.GLOBAL_ADDRESSBOOK },
     ]);
     wrapper = createWrapper({
       props: {
-        modelValue: ['value1', 'value2', 'value3'],
+        modelValue: [
+          AddressNamePriority.BLOCKCHAIN_ACCOUNT,
+          AddressNamePriority.ENS_NAMES,
+          AddressNamePriority.ETHEREUM_TOKENS,
+        ],
         allItems,
         itemDataName: 'item data',
         disableAdd: false,
@@ -63,35 +69,35 @@ describe('prioritizedList.vue', () => {
   it('show all three items in correct order', () => {
     const elements = wrapper.findAllComponents(PrioritizedListEntry);
     expect(elements.length).toBe(3);
-    expect(entryOrderOf(elements)).toStrictEqual(['value1', 'value2', 'value3']);
+    expect(entryOrderOf(elements)).toStrictEqual([AddressNamePriority.BLOCKCHAIN_ACCOUNT, AddressNamePriority.ENS_NAMES, AddressNamePriority.ETHEREUM_TOKENS]);
   });
 
   it('show "first up" and "last down" buttons disabled', () => {
-    const firstUp = wrapper.find('#move-up-value1');
-    expect(firstUp.element.disabled).toBe(true);
-    const lastDown = wrapper.find('#move-down-value3');
-    expect(lastDown.element.disabled).toBe(true);
+    const firstUp = wrapper.find('#move-up-blockchain_account').element as HTMLInputElement;
+    expect(firstUp.disabled).toBe(true);
+    const lastDown = wrapper.find('#move-down-ethereum_tokens').element as HTMLInputElement;
+    expect(lastDown.disabled).toBe(true);
   });
 
   it('move entry up', async () => {
-    const button = wrapper.find('#move-up-value2');
+    const button = wrapper.find('#move-up-ens_names');
     expect(button.exists()).toBe(true);
     await button.trigger('click');
-    expect(emittedInputEventItems()).toStrictEqual(['value2', 'value1', 'value3']);
+    expect(emittedInputEventItems()).toStrictEqual([AddressNamePriority.ENS_NAMES, AddressNamePriority.BLOCKCHAIN_ACCOUNT, AddressNamePriority.ETHEREUM_TOKENS]);
   });
 
   it('move entry down', async () => {
-    const button = wrapper.find('#move-down-value2');
+    const button = wrapper.find('#move-down-ens_names');
     expect(button.exists()).toBe(true);
     await button.trigger('click');
-    expect(emittedInputEventItems()).toStrictEqual(['value1', 'value3', 'value2']);
+    expect(emittedInputEventItems()).toStrictEqual([AddressNamePriority.BLOCKCHAIN_ACCOUNT, AddressNamePriority.ETHEREUM_TOKENS, AddressNamePriority.ENS_NAMES]);
   });
 
   it('delete entry', async () => {
-    const button = wrapper.find('#delete-value2');
+    const button = wrapper.find('#delete-ens_names');
     expect(button.exists()).toBe(true);
     await button.trigger('click');
 
-    expect(emittedInputEventItems()).toStrictEqual(['value1', 'value3']);
+    expect(emittedInputEventItems()).toStrictEqual([AddressNamePriority.BLOCKCHAIN_ACCOUNT, AddressNamePriority.ETHEREUM_TOKENS]);
   });
 });

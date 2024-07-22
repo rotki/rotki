@@ -16,7 +16,7 @@ vi.mock('@/composables/assets/retrieval', () => ({
 
 describe('table-filter/SuggestedItem.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof SuggestedItem>>;
-  const createWrapper = (props: { suggestion?: Suggestion; chip?: boolean }) =>
+  const createWrapper = (props: { suggestion: Suggestion; chip?: boolean }) =>
     mount(SuggestedItem, {
       props: {
         ...props,

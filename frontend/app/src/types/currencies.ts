@@ -106,3 +106,7 @@ export const useCurrencies = createSharedComposable(() => {
     findCurrency,
   };
 });
+
+const CurrencyType = ['none', 'ticker', 'symbol', 'name'] as const;
+
+export type ShownCurrency = (typeof CurrencyType)[number];
