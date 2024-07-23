@@ -511,7 +511,10 @@ def test_migration_14(
 @pytest.mark.parametrize('data_migration_version', [14])
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [True])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-@pytest.mark.parametrize('base_accounts', [['0xAE70bC0Cbe03ceF2a14eCA507a2863441C6Df7A1']])
+@pytest.mark.parametrize('base_accounts', [[
+    '0xAE70bC0Cbe03ceF2a14eCA507a2863441C6Df7A1',
+    '0xC960338B529e0353F570f62093Fd362B8FB55f0B',
+]])
 def test_migration_15(rotkehlchen_api_server: 'APIServer', inquirer: 'Inquirer') -> None:
     """Test migration 15
 
@@ -521,32 +524,54 @@ def test_migration_15(rotkehlchen_api_server: 'APIServer', inquirer: 'Inquirer')
     inquirer.inject_evm_managers([(ChainID.BASE, base_manager)])
 
     # check Hop LP token price before migration
-    test_hop_lp = get_or_create_evm_token(
+    test_hop_lp_1 = get_or_create_evm_token(
+        userdb=rotki.data.db,
+        evm_address=string_to_evm_address('0xbBA837dFFB3eCf4638D200F11B8c691eA641AdCb'),
+        chain_id=ChainID.ARBITRUM_ONE,
+        token_kind=EvmTokenKind.ERC20,
+    )
+    test_hop_lp_2 = get_or_create_evm_token(
         userdb=rotki.data.db,
         evm_address=string_to_evm_address('0xe9605BEc1c5C3E81F974F80b8dA9fBEFF4845d4D'),
         chain_id=ChainID.BASE,
         token_kind=EvmTokenKind.ERC20,
     )
-    assert test_hop_lp.protocol is None
-    assert inquirer.find_usd_price(test_hop_lp) == ZERO_PRICE
+    assert test_hop_lp_2.protocol is None
+    assert inquirer.find_usd_price(test_hop_lp_2) == ZERO_PRICE
 
     with rotki.data.db.conn.write_ctx() as write_cursor:
-        DBHistoryEvents(rotki.data.db).add_history_event(
+        DBHistoryEvents(rotki.data.db).add_history_events(
             write_cursor=write_cursor,
-            event=EvmEvent(
-                sequence_index=2,
-                timestamp=TimestampMS(1714582939000),
-                location=Location.BASE,
-                event_type=HistoryEventType.RECEIVE,
-                event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
-                asset=test_hop_lp,
-                balance=Balance(amount=FVal('0.023220146656543904')),
-                location_label='0xAE70bC0Cbe03ceF2a14eCA507a2863441C6Df7A1',
-                notes='Receive 0.023220146656543904 HOP-LP-ETH after providing liquidity in Hop',
-                tx_hash=deserialize_evm_tx_hash('0xa50286f6288ca13452a490d766aaf969d20cce7035b514423a7b1432fd329cc5'),
-                counterparty=CPT_HOP,
-                address=ZERO_ADDRESS,
-            ),
+            history=[
+                EvmEvent(
+                    sequence_index=2,
+                    timestamp=TimestampMS(1714582939000),
+                    location=Location.ARBITRUM_ONE,
+                    event_type=HistoryEventType.RECEIVE,
+                    event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+                    asset=test_hop_lp_1,
+                    balance=Balance(amount=FVal('0.023220146656543904')),
+                    location_label='0xC960338B529e0353F570f62093Fd362B8FB55f0B',
+                    notes='Receive 0.023220146656543904 HOP-LP-rETH after providing liquidity in Hop',  # noqa: E501
+                    tx_hash=deserialize_evm_tx_hash('0x2ab0135c1c200cf5095bd107c9e8c0d712b2a14374cc328848256d896d6e4685'),
+                    counterparty=CPT_HOP,
+                    address=ZERO_ADDRESS,
+                ),
+                EvmEvent(
+                    sequence_index=2,
+                    timestamp=TimestampMS(1714582939000),
+                    location=Location.BASE,
+                    event_type=HistoryEventType.RECEIVE,
+                    event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+                    asset=test_hop_lp_2,
+                    balance=Balance(amount=FVal('0.023220146656543904')),
+                    location_label='0xAE70bC0Cbe03ceF2a14eCA507a2863441C6Df7A1',
+                    notes='Receive 0.023220146656543904 HOP-LP-ETH after providing liquidity in Hop',  # noqa: E501
+                    tx_hash=deserialize_evm_tx_hash('0xa50286f6288ca13452a490d766aaf969d20cce7035b514423a7b1432fd329cc5'),
+                    counterparty=CPT_HOP,
+                    address=ZERO_ADDRESS,
+                ),
+            ],
         )
     with patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
@@ -555,7 +580,7 @@ def test_migration_15(rotkehlchen_api_server: 'APIServer', inquirer: 'Inquirer')
         DataMigrationManager(rotki).maybe_migrate_data()
 
     # Hop LP token price before migration
-    assert inquirer.find_usd_price(test_hop_lp).is_close(3730.637706)
+    assert inquirer.find_usd_price(test_hop_lp_2).is_close(3803.566408)
 
 
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
