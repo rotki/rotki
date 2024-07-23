@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.34.1 <2024-07-23>`
 * :bug:`-` Assets section will now show correct number of assets on any page when excluding ignored assets.
 * :bug:`-` Windows backend restart will no longer hang when users update their assets.
 * :bug:`8262` Prices of HOP LP tokens will now properly show up for all pools.
