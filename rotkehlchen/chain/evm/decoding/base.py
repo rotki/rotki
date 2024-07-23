@@ -5,9 +5,10 @@ from typing import TYPE_CHECKING, Any, Optional, Union
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
-from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
+from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS, ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import OUTGOING_EVENT_TYPES
 from rotkehlchen.constants import ONE, ZERO
+from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
@@ -22,7 +23,7 @@ if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.assets.utils import TokenEncounterInfo
 
-from rotkehlchen.chain.ethereum.utils import token_normalized_value
+from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EvmTokenKind, EvmTransaction, EVMTxHash, Location
@@ -338,6 +339,29 @@ class BaseDecoderTools:
         if address == ETH_SPECIAL_ADDRESS:
             return self.evm_inquirer.native_token
         return self.get_or_create_evm_token(address)
+
+    def resolve_tokens_data(
+            self,
+            token_addresses: list['ChecksumEvmAddress'],
+            token_amounts: list[int],
+    ) -> dict[str, FVal]:
+        """Returns the resolved evm tokens or native currency and their amounts"""
+        resolved_result: dict[str, FVal] = {}
+        for token_address, token_amount in zip(token_addresses, token_amounts, strict=True):
+            if token_address == ZERO_ADDRESS:
+                asset = self.evm_inquirer.native_token
+            else:
+                asset = get_or_create_evm_token(
+                    userdb=self.database,
+                    evm_inquirer=self.evm_inquirer,
+                    evm_address=token_address,
+                    chain_id=self.evm_inquirer.chain_id,
+                    token_kind=EvmTokenKind.ERC20,
+                )
+
+            resolved_result[asset.identifier] = asset_normalized_value(amount=token_amount, asset=asset)  # noqa: E501
+
+        return resolved_result
 
 
 class BaseDecoderToolsWithDSProxy(BaseDecoderTools):
