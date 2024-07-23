@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`7629` Rotki will now decode all the swap events done via Odos v1 and v2.
 * :feature:`4457` Rotki will show links to CoinGecko and CryptoCompare on the asset detail page if they exist.
 * :feature:`8101` Failed transactions will now be displayed as failed and not just show "burned gas" event only.
 * :feature:`-` Transactions claiming SAFE tokens from vesting will now be properly decoded.
