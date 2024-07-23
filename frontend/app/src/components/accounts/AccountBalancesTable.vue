@@ -302,10 +302,23 @@ defineExpose({
     <template #body.prepend="{ colspan }">
       <Eth2ValidatorLimitRow :colspan="colspan" />
     </template>
-    <template #group.header.content="{ header }">
-      <span class="font-medium">
+    <template #group.header="{ header, isOpen, toggle, colspan }">
+      <td class="py-1 px-2">
+        <RuiButton
+          icon
+          variant="text"
+          size="sm"
+          @click="toggle()"
+        >
+          <RuiIcon :name="isOpen ? 'arrow-up-s-line' : 'arrow-down-s-line' " />
+        </RuiButton>
+      </td>
+      <td
+        class="font-medium"
+        :colspan="colspan - 1"
+      >
         {{ t('account_balances.data_table.group', { type: header.group.category }) }}
-      </span>
+      </td>
     </template>
   </RuiDataTable>
 </template>
