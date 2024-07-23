@@ -6,6 +6,12 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.utils import get_or_create_evm_token
+from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
+from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.scroll.constants import SCROLL_ETHERSCAN_NODE
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH
@@ -17,18 +23,26 @@ from rotkehlchen.data_migrations.manager import (
 )
 from rotkehlchen.db.constants import UpdateType
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.icons import IconManager
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
 from rotkehlchen.tests.utils.exchanges import check_saved_events_for_exchange
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
+    HOP_PROTOCOL_LP,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
+    ChainID,
     ChecksumEvmAddress,
+    EvmTokenKind,
     Location,
     SupportedBlockchain,
+    TimestampMS,
     TradeType,
+    deserialize_evm_tx_hash,
 )
 
 if TYPE_CHECKING:
@@ -490,6 +504,50 @@ def test_migration_14(
         rotkehlchen_api_server=rotkehlchen_api_server,
         websocket_connection=websocket_connection,
     )
+
+
+@pytest.mark.parametrize('data_migration_version', [14])
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [True])
+def test_migration_15(rotkehlchen_api_server) -> None:
+    """Test migration 15
+
+    - Test that Hop LP tokens' protocol is set after the migration."""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    migration_patch = patch(
+        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
+        new=[MIGRATION_LIST[8]],
+    )
+    # check Hop LP token protocol before migration
+    test_hop_lp = get_or_create_evm_token(
+        userdb=rotki.data.db,
+        evm_address=string_to_evm_address('0xe9605BEc1c5C3E81F974F80b8dA9fBEFF4845d4D'),
+        chain_id=ChainID.BASE,
+        token_kind=EvmTokenKind.ERC20,
+    )
+    assert test_hop_lp.protocol is None
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        DBHistoryEvents(rotki.data.db).add_history_event(
+            write_cursor=write_cursor,
+            event=EvmEvent(
+                sequence_index=2,
+                timestamp=TimestampMS(1714582939000),
+                location=Location.BASE,
+                event_type=HistoryEventType.RECEIVE,
+                event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+                asset=test_hop_lp,
+                balance=Balance(amount=FVal('0.023220146656543904')),
+                location_label='0xAE70bC0Cbe03ceF2a14eCA507a2863441C6Df7A1',
+                notes='Receive 0.023220146656543904 HOP-LP-ETH after providing liquidity in Hop',
+                tx_hash=deserialize_evm_tx_hash('0xa50286f6288ca13452a490d766aaf969d20cce7035b514423a7b1432fd329cc5'),
+                counterparty=CPT_HOP,
+                address=ZERO_ADDRESS,
+            ),
+        )
+    with migration_patch:
+        DataMigrationManager(rotki).maybe_migrate_data()
+
+    # Hop LP token protocol before migration
+    assert EvmToken('eip155:8453/erc20:0xe9605BEc1c5C3E81F974F80b8dA9fBEFF4845d4D').protocol == HOP_PROTOCOL_LP  # noqa: E501
 
 
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
