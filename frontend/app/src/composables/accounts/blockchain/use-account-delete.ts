@@ -92,9 +92,9 @@ export function useAccountDelete() {
     type: 'validators';
     data: EthereumValidator[];
   }, onComplete?: () => void) {
-    const message: string = Array.isArray(payload)
+    const message: string = Array.isArray(payload.data)
       ? t('account_balances.confirm_delete.description_address', {
-        count: payload.length,
+        count: payload.data.length,
       })
       : t('account_balances.confirm_delete.description_xpub', {
         address: payload,
