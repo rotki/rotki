@@ -88,6 +88,7 @@ const headers = computed<DataTableColumn<AssetWithPrice>[]>(() => [
   <RuiCard
     :no-padding="flat"
     :variant="flat ? 'flat' : 'outlined'"
+    class="!rounded-xl my-2"
   >
     <template
       v-if="!flat && title"

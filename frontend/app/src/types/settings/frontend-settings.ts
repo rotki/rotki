@@ -147,6 +147,7 @@ export const FrontendSettings = z.object({
     BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
   ),
   shouldRefreshValidatorDailyStats: z.boolean().default(false),
+  unifyAccountsTable: z.boolean().default(false),
   savedFilters: z
     .record(SavedFilterLocationEnum, z.array(z.array(BaseSuggestion)))
     .default({})

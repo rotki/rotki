@@ -66,6 +66,9 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const shouldRefreshValidatorDailyStats = computed<boolean>(
     () => settings.shouldRefreshValidatorDailyStats,
   );
+  const unifyAccountsTable = computed<boolean>(
+    () => settings.unifyAccountsTable,
+  );
 
   const savedFilters = computed<{
     [key in SavedFilterLocation]?: BaseSuggestion[][];
@@ -203,6 +206,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     enableAliasNames,
     blockchainRefreshButtonBehaviour,
     shouldRefreshValidatorDailyStats,
+    unifyAccountsTable,
     savedFilters,
     // return settings on development for state persistence
     ...(checkIfDevelopment() ? { settings } : {}),

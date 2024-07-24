@@ -78,6 +78,7 @@ describe('types/user', () => {
       enableAliasNames: true,
       blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
       shouldRefreshValidatorDailyStats: false,
+      unifyAccountsTable: false,
       savedFilters: {},
     };
 

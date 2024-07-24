@@ -29,9 +29,7 @@ describe('accountBalances.vue', () => {
     setActivePinia(pinia);
     wrapper = mount(AccountBalances, {
       props: {
-        blockchain: Blockchain.ETH,
-        balances: [],
-        title: 'ETH balances',
+        category: 'evm',
       },
       global: {
         provide: libraryDefaults,

@@ -4,6 +4,7 @@ import { AccountExternalFilterSchema, type Filters, type Matcher } from '@/compo
 import { getAccountAddress, getGroupId } from '@/utils/blockchain/accounts';
 import AccountBalancesTable from '@/components/accounts/AccountBalancesTable.vue';
 import AccountGroupDetails from '@/components/accounts/AccountGroupDetails.vue';
+import { toSentenceCase } from '@/utils/text';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 import type { Collection } from '@/types/collection';
 import type {
@@ -12,10 +13,15 @@ import type {
 } from '@/types/blockchain/accounts';
 import type { ComponentExposed } from 'vue-component-type-helpers';
 
+const props = defineProps<{
+  category: string;
+}>();
+
 const emit = defineEmits<{
   (e: 'edit', account: AccountManageState): void;
 }>();
 
+const { category } = toRefs(props);
 const { t } = useI18n();
 
 const visibleTags = ref<string[]>([]);
@@ -49,6 +55,7 @@ const {
   {
     extraParams: computed(() => ({
       tags: get(visibleTags),
+      ...(category.value !== 'all' ? { category: get(category) } : {}),
     })),
     onUpdateFilters(query) {
       const externalFilterSchema = AccountExternalFilterSchema.parse(query);
@@ -87,6 +94,8 @@ defineExpose({
     await get(detailsTable).refresh();
   },
 });
+
+const isEvm = computed(() => get(category) === 'evm');
 </script>
 
 <template>
@@ -100,19 +109,24 @@ defineExpose({
           :tooltip="t('account_balances.refresh_tooltip')"
           @refresh="refreshClick()"
         >
-          <template #refreshMenu>
+          <template
+            v-if="isEvm"
+            #refreshMenu
+          >
             <BlockchainBalanceRefreshBehaviourMenu />
           </template>
         </SummaryCardRefreshMenu>
         <CardTitle class="ml-2">
-          {{ t('blockchain_balances.accounts') }}
+          {{ t('account_balances.data_table.group', { type: isEvm ? 'EVM' : toSentenceCase(category) }) }}
         </CardTitle>
       </div>
     </template>
 
-    <div class="flex flex-col md:flex-row md:items-center gap-2">
-      <div class="flex items-center gap-2">
-        <!-- disabled temporarily kept because it's easy to reactivate -->
+    <div class="flex flex-col md:flex-row md:items-center gap-4 flex-wrap">
+      <div
+        class="flex items-center gap-2 flex-1"
+        :class="{ 'hidden lg:block': !(selection || isEvm) }"
+      >
         <RuiTooltip
           v-if="selection"
           :popper="{ placement: 'top' }"
@@ -135,33 +149,34 @@ defineExpose({
           {{ t('account_balances.delete_tooltip') }}
         </RuiTooltip>
 
-        <RuiTooltip
-          :popper="{ placement: 'top' }"
-          :open-delay="400"
-        >
-          <template #activator>
-            <RuiButton
-              class="ml-2"
-              variant="outlined"
-              color="primary"
-              :loading="isDetectingTokens"
-              :disabled="refreshDisabled"
-              @click="handleBlockchainRefresh(undefined, true)"
-            >
-              <template #prepend>
-                <RuiIcon name="refresh-line" />
-              </template>
+        <template v-if="isEvm">
+          <RuiTooltip
+            :popper="{ placement: 'top' }"
+            :open-delay="400"
+          >
+            <template #activator>
+              <RuiButton
+                class="py-2"
+                variant="outlined"
+                color="primary"
+                :loading="isDetectingTokens"
+                :disabled="refreshDisabled"
+                @click="handleBlockchainRefresh(undefined, true)"
+              >
+                <template #prepend>
+                  <RuiIcon name="refresh-line" />
+                </template>
 
-              {{ t('account_balances.detect_tokens.tooltip.redetect') }}
-            </RuiButton>
-          </template>
-          {{ t('account_balances.detect_tokens.tooltip.redetect_all') }}
-        </RuiTooltip>
+                {{ t('account_balances.detect_tokens.tooltip.redetect') }}
+              </RuiButton>
+            </template>
+            {{ t('account_balances.detect_tokens.tooltip.redetect_all') }}
+          </RuiTooltip>
 
-        <DetectEvmAccounts />
+          <DetectEvmAccounts />
+        </template>
       </div>
-      <div class="grow" />
-      <div class="flex items-center gap-4 ">
+      <div class="flex items-center gap-2 flex-wrap">
         <TagFilter
           v-model="visibleTags"
           class="w-[20rem] max-w-[30rem]"
@@ -170,7 +185,7 @@ defineExpose({
         <TableFilter
           v-model:matches="filters"
           :matchers="matchers"
-          class="w-[25rem] max-w-[30rem]"
+          class="max-w-[calc(100vw-11rem)] w-[25rem] lg:max-w-[30rem]"
           :location="SavedFilterLocation.BLOCKCHAIN_ACCOUNTS"
         />
       </div>
@@ -184,6 +199,7 @@ defineExpose({
       class="mt-4"
       group
       :accounts="accounts"
+      :show-group-label="category === 'all'"
       @edit="emit('edit', $event)"
       @refresh="fetchData()"
     >

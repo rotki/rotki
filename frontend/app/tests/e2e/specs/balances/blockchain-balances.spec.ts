@@ -49,10 +49,11 @@ describe('blockchain balances', () => {
   });
 
   it('add a BTC account and view the account balance', () => {
+    blockchainBalancesPage.openTab('bitcoin');
     cy.get('[data-cy="add-blockchain-balance"]').should('be.visible');
     cy.get('[data-cy="add-blockchain-balance"]').click();
     blockchainBalancesPage.addBalance(blockchainBalances[1]);
-    blockchainBalancesPage.isEntryVisible(1, blockchainBalances[1]);
+    blockchainBalancesPage.isEntryVisible(0, blockchainBalances[1]);
   });
 
   it('data is reflected in dashboard', () => {
@@ -109,9 +110,11 @@ describe('blockchain balances', () => {
     blockchainBalancesPage.visit();
 
     // Delete ETH entry
+    blockchainBalancesPage.openTab('evm');
     blockchainBalancesPage.deleteBalance(0);
 
     // Delete BTC entry
+    blockchainBalancesPage.openTab('bitcoin');
     blockchainBalancesPage.deleteBalance(0);
   });
 });

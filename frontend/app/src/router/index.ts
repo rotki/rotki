@@ -50,11 +50,20 @@ const routes = setupLayouts([
       },
       {
         path: Routes.ACCOUNTS_BALANCES_BLOCKCHAIN,
-        name: 'accounts-balances-blockchain',
-        component: async () => await import('../pages/balances/blockchain/index.vue'),
-        meta: {
-          noteLocation: NoteLocation.ACCOUNTS_BALANCES_BLOCKCHAIN,
-        },
+        children: [
+          {
+            path: Routes.ACCOUNTS_BALANCES_BLOCKCHAIN_TAB,
+            name: 'accounts-balances-blockchain',
+            component: async () => await import('../pages/balances/blockchain/index.vue'),
+            meta: {
+              canNavigateBack: true,
+              noteLocation: NoteLocation.ACCOUNTS_BALANCES_BLOCKCHAIN,
+            },
+            props: (route: RouteLocationNormalized) => ({
+              tab: route.params.tab ?? null,
+            }),
+          },
+        ],
       },
       {
         path: Routes.ACCOUNTS_BALANCES_EXCHANGE,
@@ -434,12 +443,12 @@ export const router = createRouter({
 
       return { el: to.hash };
     }
-    else if (savedPosition) {
+    else if (savedPosition && !(savedPosition.left === 0 && savedPosition.left === 0)) {
       document.body.scrollTo(savedPosition.left, savedPosition.top);
       return savedPosition;
     }
 
-    if (from.path !== to.path) {
+    if (from.path !== to.path && !to.query.keepScrollPosition) {
       document.body.scrollTo(0, 0);
       return { top: 0, left: 0 };
     }

@@ -6,6 +6,7 @@ export const Routes: Record<string, string> = {
   USER_CREATE: '/user/create',
   ACCOUNTS_BALANCES: '/accounts-balances',
   ACCOUNTS_BALANCES_BLOCKCHAIN: '/accounts-balances/blockchain-balances',
+  ACCOUNTS_BALANCES_BLOCKCHAIN_TAB: '/accounts-balances/blockchain-balances/:tab*',
   ACCOUNTS_BALANCES_EXCHANGE: '/accounts-balances/exchange-balances',
   ACCOUNTS_BALANCES_MANUAL: '/accounts-balances/manual-balances',
   ACCOUNTS_BALANCES_NON_FUNGIBLE: '/accounts-balances/nonfungible',

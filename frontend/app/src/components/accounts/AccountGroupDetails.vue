@@ -52,7 +52,7 @@ defineExpose({
 </script>
 
 <template>
-  <div class="bg-white dark:bg-[#1E1E1E]">
+  <div class="bg-white dark:bg-[#1E1E1E] rounded-xl my-2">
     <AccountBalancesTable
       v-model:pagination="pagination"
       v-model:sort="sort"
