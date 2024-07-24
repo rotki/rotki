@@ -95,7 +95,7 @@ selfkey_asset_data = AssetData(
     chain_id=ChainID.ETHEREUM,
     token_kind=EvmTokenKind.ERC20,
     decimals=18,
-    cryptocompare=None,
+    cryptocompare='KEY',
     coingecko='selfkey',
     protocol=None,
 )

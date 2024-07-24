@@ -16,6 +16,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from .constants import CPT_OCTANT, OCTANT_DEPOSITS
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
 logger = logging.getLogger(__name__)
@@ -27,10 +28,12 @@ class OctantBalances(ProtocolWithBalance):
             self,
             database: DBHandler,
             evm_inquirer: 'EthereumInquirer',
+            tx_decoder: 'EthereumTransactionDecoder',
     ):
         super().__init__(
             database=database,
             evm_inquirer=evm_inquirer,
+            tx_decoder=tx_decoder,
             counterparty=CPT_OCTANT,
             deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},
         )

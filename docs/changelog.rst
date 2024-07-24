@@ -6,6 +6,9 @@ Changelog
 * :feature:`8101` Failed transactions will now be displayed as failed and not just show "burned gas" event only.
 * :feature:`-` Transactions claiming SAFE tokens from vesting will now be properly decoded.
 * :feature:`-` Transactions locking, unlocking and withdrawing SAFE tokens will now be properly decoded. Also any locked SAFE tokens will be automatically detected and their balance counted.
+
+* :release:`1.34.1 <2024-07-24>`
+* :bug:`-` Eigenlayer LST pending withdrawals that have been completed should no longer count as user balance.
 * :bug:`-` Assets section will now show correct number of assets on any page when excluding ignored assets.
 * :bug:`-` Windows backend restart will no longer hang when users update their assets.
 * :bug:`8262` Prices of HOP LP tokens will now properly show up for all pools.

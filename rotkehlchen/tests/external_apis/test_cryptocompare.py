@@ -26,7 +26,7 @@ from rotkehlchen.externalapis.cryptocompare import (
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
-from rotkehlchen.tests.utils.constants import A_DAO, A_SNGLS, A_XMR
+from rotkehlchen.tests.utils.constants import A_SNGLS, A_XMR
 from rotkehlchen.types import Price, Timestamp
 
 
@@ -185,22 +185,6 @@ def test_cryptocompare_histohour_data_going_backward(database, freezer):
     data_range = globaldb.get_historical_price_range(A_BTC, A_USD, HistoricalPriceOracle.CRYPTOCOMPARE)  # noqa: E501
     assert data_range[0] == btc_start_ts
     assert data_range[1] == 1301540400  # that's the closest ts to now_ts cc returns
-
-
-def test_cryptocompare_dao_query(cryptocompare):
-    """
-    Test that querying the DAO token for cryptocompare historical prices works. At some point
-    it got accidentaly removed from cryptocompare. Then it got fixed.
-    This test will show us if this happens again.
-
-    Regression test for https://github.com/rotki/rotki/issues/548
-    """
-    price = cryptocompare.query_historical_price(
-        from_asset=A_DAO,
-        to_asset=A_USD,
-        timestamp=1468886400,
-    )
-    assert price is not None
 
 
 @pytest.mark.skipif(

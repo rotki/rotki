@@ -20,6 +20,7 @@ from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind
 from .constants import CPT_COMPOUND_V3
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
@@ -34,10 +35,16 @@ class CompoundArguments(NamedTuple):
 
 
 class Compoundv3Balances(ProtocolWithBalance):
-    def __init__(self, database: 'DBHandler', evm_inquirer: 'EvmNodeInquirer'):
+    def __init__(
+            self,
+            database: 'DBHandler',
+            evm_inquirer: 'EvmNodeInquirer',
+            tx_decoder: 'EVMTransactionDecoder',
+    ):
         super().__init__(
             database=database,
             evm_inquirer=evm_inquirer,
+            tx_decoder=tx_decoder,
             counterparty=CPT_COMPOUND_V3,
             deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},
         )

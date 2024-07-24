@@ -40,6 +40,7 @@ class BaseTransactionDecoder(L2WithL1FeesTransactionDecoder):
             ),
             dbevmtx_class=DBL2WithL1FeesTx,
         )
+        self.evm_inquirer: BaseInquirer  # re-affirm type
 
     # -- methods that need to be implemented by child classes --
 

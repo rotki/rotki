@@ -538,6 +538,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                     requests.exceptions.RequestException,
                     BlockchainQueryError,
                     Web3Exception,
+                    TypeError,  # happened at the web3 level calling `apply_result_formatters` when the RPC node returned `None` in the response's result # noqa: E501
                     ValueError,  # not removing yet due to possibility of raising from missing trie error  # noqa: E501
             ) as e:
                 log.warning(f'Failed to query {node_info} for {method!s} due to {e!s}')
