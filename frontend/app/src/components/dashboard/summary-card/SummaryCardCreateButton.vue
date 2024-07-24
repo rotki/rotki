@@ -1,5 +1,11 @@
 <script setup lang="ts">
-defineProps<{ to: string }>();
+import type { RouteLocationRaw } from 'vue-router';
+
+const props = defineProps<{ to: RouteLocationRaw }>();
+
+const router = useRouter();
+
+const href = computed(() => router.resolve(props.to).href);
 </script>
 
 <template>
@@ -7,7 +13,7 @@ defineProps<{ to: string }>();
     <RuiButton
       variant="text"
       color="primary"
-      :href="to"
+      :href="href"
       tag="a"
       class="py-2 w-full"
     >

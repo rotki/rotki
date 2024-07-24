@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { AssetAmountAndValueOverTime } from '@/premium/premium';
-import { Routes } from '@/router/routes';
 import { EVM_TOKEN } from '@/types/asset';
 import { externalLinks } from '@/data/external-links';
+import { NoteLocation } from '@/types/notes';
 import type { RouteLocationRaw } from 'vue-router';
 import type { AssetBalanceWithPrice } from '@rotki/common';
 
@@ -13,6 +13,14 @@ defineOptions({
 const props = defineProps<{
   identifier: string;
 }>();
+
+definePage({
+  meta: {
+    canNavigateBack: true,
+    noteLocation: NoteLocation.ASSETS,
+  },
+  props: true,
+});
 
 const { identifier } = toRefs(props);
 const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
@@ -75,7 +83,7 @@ const collectionId = computed<number | undefined>(() => {
 });
 
 const editRoute = computed<RouteLocationRaw>(() => ({
-  path: get(isCustomAsset) ? Routes.ASSET_MANAGER_CUSTOM : Routes.ASSET_MANAGER_MANAGED,
+  path: get(isCustomAsset) ? '/asset-manager/custom' : '/asset-manager/managed',
   query: {
     id: get(identifier),
   },

@@ -1,6 +1,6 @@
 import { type VueWrapper, mount } from '@vue/test-utils';
 import flushPromises from 'flush-promises/index';
-import PremiumSettings from '@/pages/settings/api-keys/premium/index.vue';
+import PremiumSettings from '@/pages/api-keys/premium/index.vue';
 
 vi.mock('@/composables/electron-interop', () => {
   const mockInterop = {

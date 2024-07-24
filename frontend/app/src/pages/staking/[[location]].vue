@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Routes } from '@/router/routes';
+import { NoteLocation } from '@/types/notes';
 
 type NavType = 'eth2' | 'liquity' | 'kraken';
 
@@ -10,8 +10,15 @@ interface StakingInfo {
 }
 
 const props = defineProps<{
-  location: [NavType] | '';
+  location: NavType | '';
 }>();
+
+definePage({
+  meta: {
+    noteLocation: NoteLocation.STAKING,
+  },
+  props: true,
+});
 
 const imageSize = '64px';
 
@@ -27,7 +34,7 @@ const lastLocation = useLocalStorage('rotki.staking.last_location', '');
 
 const location = computed({
   get() {
-    return Array.isArray(props.location) ? props.location[0] : undefined;
+    return props.location ? props.location : undefined;
   },
   set(value?: NavType) {
     set(lastLocation, value);
@@ -65,7 +72,10 @@ watchImmediate(lastLocation, async (location) => {
     return;
 
   await nextTick(() => {
-    router.push(Routes.STAKING.replace(':location*', location));
+    router.push({
+      name: '/staking/[[location]]',
+      params: { location },
+    });
   });
 });
 </script>
@@ -135,7 +145,12 @@ watchImmediate(lastLocation, async (location) => {
               :open-delay="400"
             >
               <template #activator>
-                <InternalLink :to="Routes.STAKING.replace(':location*', item.id)">
+                <InternalLink
+                  :to="{
+                    path: '/staking',
+                    query: { location: item.id },
+                  }"
+                >
                   <AppImage
                     :size="imageSize"
                     contain

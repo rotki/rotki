@@ -6,7 +6,7 @@ import {
 import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import EthStakingValidators from '@/components/accounts/EthStakingValidators.vue';
 import { Module } from '@/types/modules';
-import { Routes } from '@/router/routes';
+import { NoteLocation } from '@/types/notes';
 import type { RouteLocationRaw } from 'vue-router';
 
 const props = defineProps<{
@@ -14,6 +14,15 @@ const props = defineProps<{
 }>();
 
 const { tab: propsTab } = toRefs(props);
+
+definePage({
+  name: 'accounts-balances-blockchain',
+  meta: {
+    canNavigateBack: true,
+    noteLocation: NoteLocation.ACCOUNTS_BALANCES_BLOCKCHAIN,
+  },
+  props: true,
+});
 
 const account = ref<AccountManageState>();
 const balances = ref<InstanceType<typeof AccountBalances>>();
@@ -72,7 +81,10 @@ watchImmediate(propsTab, (propsTab) => {
 
 function getTabLink(category: string): RouteLocationRaw {
   return {
-    path: Routes.ACCOUNTS_BALANCES_BLOCKCHAIN_TAB.replace(':tab*', category),
+    name: 'accounts-balances-blockchain',
+    params: {
+      tab: category,
+    },
     query: {
       keepScrollPosition: 'true',
     },

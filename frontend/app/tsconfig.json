@@ -12,6 +12,7 @@
       "vue-i18n",
       "vite/client",
       "vite-plugin-vue-layouts/client",
+      "unplugin-vue-router/client",
       "@intlify/unplugin-vue-i18n/messages"
     ],
     "verbatimModuleSyntax": false
@@ -21,7 +22,8 @@
     "src/**/*.d.ts",
     "src/**/*.tsx",
     "src/**/*.vue",
-    "components.d.ts"
+    "components.d.ts",
+    "typed-router.d.ts"
   ],
   "exclude": ["node_modules/**", "**/.*"],
   "vueCompilerOptions": {

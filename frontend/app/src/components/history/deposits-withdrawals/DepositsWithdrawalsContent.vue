@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Routes } from '@/router/routes';
 import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { SavedFilterLocation } from '@/types/filtering';
@@ -154,8 +153,6 @@ function getItemClass(item: AssetMovementEntry) {
   return item.ignoredInAccounting ? 'opacity-50' : '';
 }
 
-const pageRoute = Routes.HISTORY_DEPOSITS_WITHDRAWALS;
-
 onMounted(async () => {
   await fetchData();
   await refreshAssetMovements();
@@ -198,7 +195,7 @@ watch(loading, async (isLoading, wasLoading) => {
         #header
       >
         <CardTitle>
-          <NavigatorLink :to="{ path: pageRoute }">
+          <NavigatorLink :to="{ path: '/history/deposits-withdrawals' }">
             {{ t('deposits_withdrawals.title') }}
           </NavigatorLink>
         </CardTitle>

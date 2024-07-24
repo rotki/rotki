@@ -39,7 +39,7 @@ const sort = ref<DataTableSortData<PnLItem>>({
   direction: 'asc',
 });
 
-const route = useRoute();
+const route = useRoute('/reports/[id]');
 const { getChain } = useSupportedChains();
 
 const tableHeaders = computed<DataTableColumn<PnLItem>[]>(() => [

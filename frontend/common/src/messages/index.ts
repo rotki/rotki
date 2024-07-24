@@ -1,4 +1,4 @@
-import type { SemiPartial } from '../index';
+import type { Awaitable, SemiPartial } from '../index';
 
 export enum Severity {
   WARNING = 'warning',
@@ -34,7 +34,7 @@ export interface Message {
 
 export interface NotificationAction {
   readonly label: string;
-  readonly action: () => void;
+  readonly action: Awaitable;
   readonly icon?: string;
   readonly persist?: boolean;
 }

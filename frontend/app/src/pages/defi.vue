@@ -1,4 +1,12 @@
 <script setup lang="ts">
+import { NoteLocation } from '@/types/notes';
+
+definePage({
+  meta: {
+    noteLocation: NoteLocation.DEFI,
+  },
+  redirect: '/defi/overview',
+});
 const { defiSetupDone } = storeToRefs(useFrontendSettingsStore());
 
 const defi = useDefiStore();

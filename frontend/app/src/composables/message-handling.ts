@@ -22,7 +22,6 @@ import {
 } from '@/types/websocket-messages';
 import { camelCaseTransformer } from '@/services/axios-tranformers';
 import { Routes } from '@/router/routes';
-import { router } from '@/router';
 import { externalLinks } from '@/data/external-links';
 import type { Blockchain } from '@rotki/common/lib/blockchain';
 import type { CalendarEventPayload } from '@/types/history/calendar';
@@ -40,6 +39,7 @@ export function useMessageHandling() {
   const { consumeMessages } = useSessionApi();
   const { uploadStatus, uploadStatusAlreadyHandled } = useSync();
   const { setUndecodedTransactionsStatus, setProtocolCacheStatus } = useHistoryStore();
+  const router = useRouter();
   let isRunning = false;
 
   const handleSnapshotError = (data: BalanceSnapshotError): Notification => ({
@@ -127,7 +127,7 @@ export function useMessageHandling() {
       priority: Priority.ACTION,
       action: {
         label: t('notification_messages.new_detected_token.action'),
-        action: () => router.push(Routes.ASSET_MANAGER_NEWLY_DETECTED),
+        action: async () => await router.push(Routes.ASSET_MANAGER_NEWLY_DETECTED),
       },
       group: NotificationGroup.NEW_DETECTED_TOKENS,
       groupCount: count,
@@ -144,7 +144,7 @@ export function useMessageHandling() {
     if (route) {
       actions.push({
         label: t('notification_messages.missing_api_key.action'),
-        action: () => router.push(route),
+        action: async () => await router.push(route),
         persist: true,
       });
     }
@@ -195,19 +195,18 @@ export function useMessageHandling() {
 
     return {
       title: t('notification_messages.accounting_rule_conflict.title'),
-      message: t('notification_messages.accounting_rule_conflict.message', {
-        conflicts: numOfConflicts,
-      }),
+      message: t('notification_messages.accounting_rule_conflict.message', { conflicts: numOfConflicts }),
       display: true,
       severity: Severity.WARNING,
       priority: Priority.ACTION,
       action: {
         label: t('notification_messages.accounting_rule_conflict.action'),
-        action: () =>
-          router.push({
-            path: Routes.SETTINGS_ACCOUNTING,
+        action: async () => {
+          await router.push({
+            path: '/settings/accounting',
             query: { resolveConflicts: 'true' },
-          }),
+          });
+        },
       },
     };
   };
@@ -246,9 +245,9 @@ export function useMessageHandling() {
       action: {
         label: t('notification_messages.reminder.open_calendar'),
         persist: true,
-        action: () => {
-          router.push({
-            path: Routes.CALENDAR,
+        action: async () => {
+          await router.push({
+            path: '/calendar',
             query: { timestamp: timestamp.toString() },
           });
         },

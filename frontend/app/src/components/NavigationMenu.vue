@@ -134,7 +134,7 @@ const navItems: MenuItem[] = [
     type: 'item',
     class: 'staking',
     ...Routes.STAKING,
-    route: Routes.STAKING.route.split(':')[0],
+    route: Routes.STAKING.route,
   },
   {
     type: 'item',

@@ -7,6 +7,8 @@ import Components from 'unplugin-vue-components/vite';
 import { defineConfig } from 'vitest/config';
 import checker from 'vite-plugin-checker';
 import { splitVendorChunkPlugin } from 'vite';
+import VueRouter from 'unplugin-vue-router/vite';
+import { VueRouterAutoImports } from 'unplugin-vue-router';
 import istanbul from 'vite-plugin-istanbul';
 import { VitePWA } from 'vite-plugin-pwa';
 import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite';
@@ -64,6 +66,9 @@ export default defineConfig({
   },
   plugins: [
     splitVendorChunkPlugin(),
+    VueRouter({
+      importMode: 'async',
+    }),
     vue(),
     checker({
       vueTsc: !(process.env.CI || process.env.VITE_TEST || process.env.VITEST),
@@ -81,7 +86,7 @@ export default defineConfig({
         '@vueuse/math',
         'pinia',
         { '@vueuse/shared': ['get', 'set'] },
-        'vue-router',
+        VueRouterAutoImports,
         {
           'vue-i18n': ['useI18n'],
         },

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { NoteLocation } from '@/types/notes';
+
 defineOptions({
   name: 'LocationBreakdown',
 });
@@ -6,6 +8,14 @@ defineOptions({
 const props = defineProps<{
   identifier: string;
 }>();
+
+definePage({
+  meta: {
+    canNavigateBack: true,
+    noteLocation: NoteLocation.LOCATIONS,
+  },
+  props: true,
+});
 
 const { identifier } = toRefs(props);
 const { locationData } = useLocations();

@@ -61,7 +61,7 @@ const { darkModeEnabled } = useDarkMode();
           {{ username }}
         </div>
         <RuiDivider />
-        <RouterLink to="/settings/general">
+        <RouterLink :to="{ path: '/settings' }">
           <RuiButton
             key="settings"
             variant="list"

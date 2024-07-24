@@ -6,6 +6,13 @@ const props = withDefaults(
   { identifier: null },
 );
 
+definePage({
+  name: 'asset-manager-custom',
+  props: to => ({
+    identifier: to.query.id ?? null,
+  }),
+});
+
 const { identifier } = toRefs(props);
 </script>
 

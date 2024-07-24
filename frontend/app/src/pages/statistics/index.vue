@@ -1,5 +1,13 @@
 <script setup lang="ts">
 import { PremiumStatistics } from '@/premium/premium';
+import { NoteLocation } from '@/types/notes';
+
+definePage({
+  name: 'statistics',
+  meta: {
+    noteLocation: NoteLocation.STATISTICS,
+  },
+});
 
 const premium = usePremium();
 const { t } = useI18n();

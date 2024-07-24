@@ -2,6 +2,11 @@
 import { useAppRoutes } from '@/router/routes';
 import type { TabContent } from '@/types/tabs';
 
+definePage({
+  name: 'asset-manager-more',
+  redirect: '/asset-manager/more/cex-mapping',
+});
+
 const { appRoutes } = useAppRoutes();
 
 const tabs = computed<TabContent[]>(() => {

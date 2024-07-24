@@ -10,7 +10,7 @@ export function useAppNavigation() {
       return;
 
     await router.push({
-      path: Routes.USER_LOGIN,
+      path: '/user/login',
       query: newQuery,
     });
   };

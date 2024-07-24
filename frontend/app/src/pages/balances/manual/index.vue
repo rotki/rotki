@@ -2,7 +2,15 @@
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { BalanceType } from '@/types/balances';
 import ManualBalancesForm from '@/components/accounts/manual-balances/ManualBalancesForm.vue';
+import { NoteLocation } from '@/types/notes';
 import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
+
+definePage({
+  name: 'accounts-balances-manual',
+  meta: {
+    noteLocation: NoteLocation.ACCOUNTS_BALANCES_MANUAL,
+  },
+});
 
 const balance = ref<ManualBalance | RawManualBalance>();
 const loading = ref(false);

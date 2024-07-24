@@ -1,5 +1,12 @@
 <script setup lang="ts">
 import AutoDetectTokensSetting from '@/components/settings/general/AutoDetectTokensSetting.vue';
+import { NoteLocation } from '@/types/notes';
+
+definePage({
+  meta: {
+    noteLocation: NoteLocation.SETTINGS_GENERAL,
+  },
+});
 
 const amountExample = bigNumberify(123456.789);
 const { t } = useI18n();
