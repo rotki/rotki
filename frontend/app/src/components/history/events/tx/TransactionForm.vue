@@ -18,12 +18,12 @@ function reset() {
 
 const rules = {
   txHash: {
-    required: helpers.withMessage(t('transactions.form.tx_hash.validation.non_empty').toString(), required),
-    isValidTxHash: helpers.withMessage(t('transactions.form.tx_hash.validation.valid').toString(), isValidTxHash),
+    required: helpers.withMessage(t('transactions.form.tx_hash.validation.non_empty'), required),
+    isValidTxHash: helpers.withMessage(t('transactions.form.tx_hash.validation.valid'), isValidTxHash),
   },
   associatedAddress: {
     required: helpers.withMessage(
-      t('transactions.form.account.validation.non_empty').toString(),
+      t('transactions.form.account.validation.non_empty'),
       (accounts: BlockchainAccount<AddressData>[]) => accounts.length > 0,
     ),
   },

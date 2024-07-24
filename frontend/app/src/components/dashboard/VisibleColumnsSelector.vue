@@ -17,13 +17,13 @@ const { group, groupLabel } = toRefs(props);
 const availableColumns = computed(() => [
   {
     value: TableColumn.PERCENTAGE_OF_TOTAL_NET_VALUE,
-    text: t('dashboard_asset_table.headers.percentage_of_total_net_value').toString(),
+    text: t('dashboard_asset_table.headers.percentage_of_total_net_value'),
   },
   {
     value: TableColumn.PERCENTAGE_OF_TOTAL_CURRENT_GROUP,
     text: t('dashboard_asset_table.headers.percentage_of_total_current_group', {
       group: get(groupLabel) || get(group),
-    }).toString(),
+    }),
   },
 ]);
 

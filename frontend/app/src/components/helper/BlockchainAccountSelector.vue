@@ -128,7 +128,7 @@ const selectableAccounts = computed<AccountWithAddressData[]>(() => {
 });
 
 const hintText = computed(() => {
-  const all = t('blockchain_account_selector.all').toString();
+  const all = t('blockchain_account_selector.all');
   const selection = props.modelValue;
   if (Array.isArray(selection))
     return selection.length > 0 ? selection.length.toString() : all;

@@ -26,8 +26,8 @@ const isDownload = computed<boolean>(() => get(syncAction) === SYNC_DOWNLOAD);
 const textChoice = computed<number>(() => (get(syncAction) === SYNC_UPLOAD ? 1 : 2));
 const message = computed<string>(() =>
   get(syncAction) === SYNC_UPLOAD
-    ? t('sync_indicator.upload_confirmation.message_upload').toString()
-    : t('sync_indicator.upload_confirmation.message_download').toString(),
+    ? t('sync_indicator.upload_confirmation.message_upload')
+    : t('sync_indicator.upload_confirmation.message_download'),
 );
 
 const { resume, pause, counter } = useInterval(600, {

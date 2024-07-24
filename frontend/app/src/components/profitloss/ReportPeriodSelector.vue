@@ -87,7 +87,7 @@ const periods = computed(() => {
 const subPeriods = [
   {
     id: Quarter.ALL,
-    name: t('generate.sub_period.all').toString(),
+    name: t('generate.sub_period.all'),
   },
   {
     id: Quarter.Q1,

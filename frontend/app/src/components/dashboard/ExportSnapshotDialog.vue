@@ -60,10 +60,10 @@ async function exportSnapshotCSV() {
       });
 
       message = {
-        title: t('dashboard.snapshot.download.message.title').toString(),
+        title: t('dashboard.snapshot.download.message.title'),
         description: success
-          ? t('dashboard.snapshot.download.message.success').toString()
-          : t('dashboard.snapshot.download.message.failure').toString(),
+          ? t('dashboard.snapshot.download.message.success')
+          : t('dashboard.snapshot.download.message.failure'),
         success,
       };
 
@@ -75,7 +75,7 @@ async function exportSnapshotCSV() {
   }
   catch (error: any) {
     message = {
-      title: t('dashboard.snapshot.download.message.title').toString(),
+      title: t('dashboard.snapshot.download.message.title'),
       description: error.message,
       success: false,
     };
@@ -102,10 +102,10 @@ async function deleteSnapshot() {
     });
 
     message = {
-      title: t('dashboard.snapshot.delete.message.title').toString(),
+      title: t('dashboard.snapshot.delete.message.title'),
       description: success
-        ? t('dashboard.snapshot.delete.message.success').toString()
-        : t('dashboard.snapshot.delete.message.failure').toString(),
+        ? t('dashboard.snapshot.delete.message.success')
+        : t('dashboard.snapshot.delete.message.failure'),
       success,
     };
 
@@ -114,7 +114,7 @@ async function deleteSnapshot() {
   }
   catch (error: any) {
     message = {
-      title: t('dashboard.snapshot.download.message.title').toString(),
+      title: t('dashboard.snapshot.download.message.title'),
       description: error.message,
       success: false,
     };

@@ -20,10 +20,10 @@ const { t } = useI18n();
 
 const rules = {
   sourceIdentifier: {
-    required: helpers.withMessage(t('merge_dialog.source.non_empty').toString(), required),
+    required: helpers.withMessage(t('merge_dialog.source.non_empty'), required),
   },
   targetIdentifier: {
-    required: helpers.withMessage(t('merge_dialog.target.non_empty').toString(), required),
+    required: helpers.withMessage(t('merge_dialog.target.non_empty'), required),
   },
 };
 

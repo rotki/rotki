@@ -184,7 +184,7 @@ onBeforeMount(async () => {
     setMessage({
       description: t('asset_form.types.error', {
         message: error.message,
-      }).toString(),
+      }),
     });
   }
 });
@@ -267,13 +267,13 @@ function handleError(
   if ('underlyingTokens' in message) {
     const messages = getUnderlyingTokenErrors(message.underlyingTokens);
     setMessage({
-      title: t('asset_form.underlying_tokens').toString(),
+      title: t('asset_form.underlying_tokens'),
       description: messages.join(','),
     });
   }
   else {
     setMessage({
-      title: t('asset_form.underlying_tokens').toString(),
+      title: t('asset_form.underlying_tokens'),
       description: message._schema[0],
     });
   }

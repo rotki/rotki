@@ -23,11 +23,11 @@ const { appSession } = useInterop();
 const rules = {
   dateInputFormat: {
     required: helpers.withMessage(
-      t('general_settings.date_display.validation.empty').toString(),
+      t('general_settings.date_display.validation.empty'),
       requiredIf(refIsTruthy(dateInputFormat)),
     ),
     validDate: helpers.withMessage(
-      t('general_settings.date_display.validation.invalid').toString(),
+      t('general_settings.date_display.validation.invalid'),
       (v: string | null): boolean => v === null || displayDateFormatter.containsValidDirectives(v),
     ),
   },
@@ -61,7 +61,7 @@ async function uploadPackaged(file: string) {
     const { taskId } = await importDataFrom(sourceVal, file, get(dateInputFormat) || null);
 
     const taskMeta = {
-      title: t('file_upload.task.title', { source: sourceVal }).toString(),
+      title: t('file_upload.task.title', { source: sourceVal }),
       source: sourceVal,
     };
 

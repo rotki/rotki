@@ -41,16 +41,16 @@ const { t } = useI18n();
 
 const rules = {
   fromAsset: {
-    required: helpers.withMessage(t('price_form.from_non_empty').toString(), required),
+    required: helpers.withMessage(t('price_form.from_non_empty'), required),
   },
   toAsset: {
-    required: helpers.withMessage(t('price_form.to_non_empty').toString(), required),
+    required: helpers.withMessage(t('price_form.to_non_empty'), required),
   },
   price: {
-    required: helpers.withMessage(t('price_form.price_non_empty').toString(), required),
+    required: helpers.withMessage(t('price_form.price_non_empty'), required),
   },
   date: {
-    required: helpers.withMessage(t('price_form.date_non_empty').toString(), required),
+    required: helpers.withMessage(t('price_form.date_non_empty'), required),
   },
 };
 

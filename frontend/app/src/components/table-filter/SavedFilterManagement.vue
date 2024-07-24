@@ -62,7 +62,7 @@ async function addToSavedFilter() {
   }
   else {
     setMessage({
-      title: t('table_filter.saved_filters.saving.title').toString(),
+      title: t('table_filter.saved_filters.saving.title'),
       description: status.message,
       success: false,
     });

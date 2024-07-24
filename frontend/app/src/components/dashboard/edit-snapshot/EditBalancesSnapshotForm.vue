@@ -102,19 +102,19 @@ watch(assetType, (assetType) => {
 
 const rules = {
   category: {
-    required: helpers.withMessage(t('dashboard.snapshot.edit.dialog.balances.rules.category').toString(), required),
+    required: helpers.withMessage(t('dashboard.snapshot.edit.dialog.balances.rules.category'), required),
   },
   assetIdentifier: {
-    required: helpers.withMessage(t('dashboard.snapshot.edit.dialog.balances.rules.asset').toString(), required),
+    required: helpers.withMessage(t('dashboard.snapshot.edit.dialog.balances.rules.asset'), required),
   },
   amount: {
-    required: helpers.withMessage(t('dashboard.snapshot.edit.dialog.balances.rules.amount').toString(), required),
+    required: helpers.withMessage(t('dashboard.snapshot.edit.dialog.balances.rules.amount'), required),
   },
   price: {
-    required: helpers.withMessage(t('dashboard.snapshot.edit.dialog.balances.rules.price').toString(), required),
+    required: helpers.withMessage(t('dashboard.snapshot.edit.dialog.balances.rules.price'), required),
   },
   usdValue: {
-    required: helpers.withMessage(t('dashboard.snapshot.edit.dialog.balances.rules.value').toString(), required),
+    required: helpers.withMessage(t('dashboard.snapshot.edit.dialog.balances.rules.value'), required),
   },
 };
 

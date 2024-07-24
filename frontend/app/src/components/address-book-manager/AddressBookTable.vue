@@ -71,7 +71,7 @@ function addressBookDeletion(location: Ref<AddressBookLocation>) {
           chain: blockchain || t('common.multi_chain'),
           address,
           message: error.message,
-        }).toString(),
+        }),
         category: NotificationCategory.DEFAULT,
         display: true,
         severity: Severity.ERROR,

@@ -64,10 +64,10 @@ const { t } = useI18n();
 
 const rules = {
   start: {
-    required: helpers.withMessage(t('generate.validation.empty_start_date').toString(), requiredIf(custom)),
+    required: helpers.withMessage(t('generate.validation.empty_start_date'), requiredIf(custom)),
   },
   end: {
-    required: helpers.withMessage(t('generate.validation.empty_end_date').toString(), requiredIf(custom)),
+    required: helpers.withMessage(t('generate.validation.empty_end_date'), requiredIf(custom)),
   },
 };
 

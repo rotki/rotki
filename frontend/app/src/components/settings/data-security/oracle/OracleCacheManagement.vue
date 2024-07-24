@@ -95,13 +95,13 @@ async function clearCache(entry: OracleCacheMeta) {
     await load();
   }
   catch (error: any) {
-    const title = t('oracle_cache_management.notification.title').toString();
+    const title = t('oracle_cache_management.notification.title');
 
     const message = t('oracle_cache_management.clear_error', {
       fromAsset: get(assetSymbol(fromAsset)),
       toAsset: get(assetSymbol(toAsset)),
       error: error.message,
-    }).toString();
+    });
 
     notify({
       title,
@@ -141,7 +141,7 @@ async function fetchPrices() {
       source,
       error: status.message,
     });
-  const title = t('oracle_cache_management.notification.title').toString();
+  const title = t('oracle_cache_management.notification.title');
 
   notify({
     title,
@@ -169,7 +169,7 @@ function showDeleteConfirmation(entry: OracleCacheMeta) {
         selection: get(selection),
         fromAsset: deleteFromAsset,
         toAsset: deleteToAsset,
-      }).toString(),
+      }),
     },
     () => clearCache(entry),
   );

@@ -95,8 +95,8 @@ const stepperContents = computed<
       key: 'missingAcquisitions',
       title: t('profit_loss_report.actionable.missing_acquisitions.title', {
         total: missingAcquisitionsLength,
-      }).toString(),
-      hint: t('profit_loss_report.actionable.missing_acquisitions.hint').toString(),
+      }),
+      hint: t('profit_loss_report.actionable.missing_acquisitions.hint'),
       selector: ReportMissingAcquisitions,
       items: get(actionableItems).missingAcquisitions,
     });
@@ -108,8 +108,8 @@ const stepperContents = computed<
       key: 'missingPrices',
       title: t('profit_loss_report.actionable.missing_prices.title', {
         total: missingPricesLength,
-      }).toString(),
-      hint: t('profit_loss_report.actionable.missing_prices.hint').toString(),
+      }),
+      hint: t('profit_loss_report.actionable.missing_prices.hint'),
       selector: ReportMissingPrices,
       items: get(actionableItems).missingPrices,
     });
