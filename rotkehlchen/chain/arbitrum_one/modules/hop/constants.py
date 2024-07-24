@@ -37,6 +37,8 @@ BRIDGES: Final = {
     ),
 }
 
+# Contracts from https://github.com/hop-protocol/hop/blob/92b1fb24f672c102e9fe557a2b8c2aa808a24e80/packages/frontend/src/config/addresses.ts  # noqa: E501
+# There is no on chain registry or api to check against it so they need to be manually updated
 REWARD_CONTRACTS: Final = {
     string_to_evm_address('0xb0CabFE930642AD3E7DECdc741884d8C3F7EbC70'),  # HOP (USDC.e)
     string_to_evm_address('0x9Dd8685463285aD5a94D2c128bda3c5e8a6173c8'),  # HOP (USDT)

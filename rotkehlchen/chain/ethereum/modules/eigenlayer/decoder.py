@@ -325,6 +325,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
                     notes=f'Complete eigenlayer withdrawal of {withdrawal_event.asset.resolve_to_asset_with_symbol().symbol}',  # noqa: E501
                     counterparty=CPT_EIGENLAYER,
                     address=context.tx_log.address,
+                    extra_data={'matched': True},
                 )
                 with self.base.database.user_write() as write_cursor:
                     dbevents.edit_event_extra_data(  # set withdrawal event as completed
@@ -352,7 +353,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
 
                 break  # completed the finding event logic
 
-        else:  # not found. Perhaps transaction and event not pulled for some reason?
+        else:  # not found. Perhaps transaction and event not pulled or timing issue. Is rechecked from time to time when doing balance queries.  # noqa: E501
             log.debug(f'When decoding eigenlayer WithdrawalCompleted could not find corresponding Withdrawal queued: {context.transaction.tx_hash.hex()}')  # noqa: E501
 
             new_event = self.base.make_event_next_index(  # so let's just keep minimal info

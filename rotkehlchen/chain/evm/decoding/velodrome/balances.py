@@ -8,9 +8,10 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress
 
-
 if TYPE_CHECKING:
+    from rotkehlchen.chain.base.decoding.decoder import BaseTransactionDecoder
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
+    from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
 
@@ -25,11 +26,13 @@ class VelodromeLikeBalances(ProtocolWithGauges):
             self,
             database: DBHandler,
             evm_inquirer: 'OptimismInquirer | BaseInquirer',
+            tx_decoder: 'OptimismTransactionDecoder | BaseTransactionDecoder',
             counterparty: PROTOCOLS_WITH_BALANCES,
     ):
         super().__init__(
             database=database,
             evm_inquirer=evm_inquirer,
+            tx_decoder=tx_decoder,
             counterparty=counterparty,
             deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},
             gauge_deposit_event_types={(HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET)},  # noqa: E501

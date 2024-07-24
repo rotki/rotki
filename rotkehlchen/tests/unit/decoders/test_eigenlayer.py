@@ -396,7 +396,7 @@ def test_create_delayed_withdrawals(database, ethereum_inquirer, ethereum_accoun
 @pytest.mark.parametrize('ethereum_accounts', [['0x02855536652F67cB936851D94c793Fb3Ba27F9bb']])
 def test_lst_create_delayed_withdrawals(database, ethereum_inquirer, ethereum_accounts, inquirer):  # pylint: disable=unused-argument
     tx_hash = deserialize_evm_tx_hash('0x8c006f764e9264cd150b2583ba72205bb4575ace76ed3afa83689227e9fe461b')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
+    events, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         database=database,
         tx_hash=tx_hash,
@@ -454,6 +454,7 @@ def test_lst_create_delayed_withdrawals(database, ethereum_inquirer, ethereum_ac
     balances_inquirer = EigenlayerBalances(
         database=database,
         evm_inquirer=ethereum_inquirer,
+        tx_decoder=tx_decoder,
     )
     balances = balances_inquirer.query_balances()
     assert balances[ethereum_accounts[0]].assets[A_STETH.resolve_to_evm_token()] == Balance(
@@ -472,7 +473,7 @@ def test_lst_complete_delayed_withdrawals(database, ethereum_inquirer, ethereum_
         tx_hash=queue_tx_hash,
     )  # and now get the actual withdrawal complete transaction a week later
     tx_hash = deserialize_evm_tx_hash('0x2c9a7caf78126fdfe43760dedbf3648c6a3255ee17a7bc312372dba26e16132b')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
+    events, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         database=database,
         tx_hash=tx_hash,
@@ -504,6 +505,7 @@ def test_lst_complete_delayed_withdrawals(database, ethereum_inquirer, ethereum_
         notes='Complete eigenlayer withdrawal of cbETH',
         counterparty=CPT_EIGENLAYER,
         address=EIGENLAYER_DELEGATION,
+        extra_data={'matched': True},
     ), EvmEvent(
         tx_hash=tx_hash,
         sequence_index=581,
@@ -545,6 +547,7 @@ def test_lst_complete_delayed_withdrawals(database, ethereum_inquirer, ethereum_
     balances_inquirer = EigenlayerBalances(
         database=database,
         evm_inquirer=ethereum_inquirer,
+        tx_decoder=tx_decoder,
     )
     balances = balances_inquirer.query_balances()
     assert balances[ethereum_accounts[0]].assets[cbeth] == Balance()
