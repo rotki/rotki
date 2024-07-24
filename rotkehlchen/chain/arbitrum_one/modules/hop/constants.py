@@ -45,4 +45,6 @@ REWARD_CONTRACTS: Final = {
     string_to_evm_address('0x00001fcF29c5Fd7846E4332AfBFaA48701D727f5'),  # ARB (ETH)
     string_to_evm_address('0x3D4cAD734B464Ed6EdCF6254C2A3e5fA5D449b32'),  # RPL (rETH)
     string_to_evm_address('0x4e9840f3C1ff368a10731D15c11516b9Fe7E1898'),  # HOP (MAGIC)
+    string_to_evm_address('0xB8f90e115499082747Ba5DA94732863b12cB1F25'),  # ARB (USDT)
+    string_to_evm_address('0xBB9D66F7a7744C11550079045A177090E0015364'),  # ARB (DAI)
 }
