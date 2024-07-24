@@ -18,11 +18,13 @@ const props = withDefaults(
     selection?: boolean;
     group?: boolean;
     loading?: boolean;
+    showGroupLabel?: boolean;
   }>(),
   {
     loading: false,
     group: false,
     selection: false,
+    showGroupLabel: false,
   },
 );
 
@@ -70,16 +72,20 @@ const rows = computed<DataRow[]>(() => {
 
 const selectedRows = computed<DataRow[]>(() => get(rows).filter(row => get(selection).includes(row.id)));
 
+const anyExpansion = computed(() => get(rows).some(item => item.expansion));
+
 const cols = computed<DataTableColumn<DataRow>[]>(() => {
   const currency = { symbol: get(currencySymbol) };
   const headers: DataTableColumn<T>[] = [
-    {
-      label: '',
-      key: 'expand',
-      sortable: false,
-      class: 'w-16',
-      cellClass: '!py-0 w-16',
-    },
+    ...(get(anyExpansion)
+      ? [{
+          label: '',
+          key: 'expand',
+          sortable: false,
+          class: '!py-0 !pr-0',
+          cellClass: '!py-0 !pr-0',
+        }]
+      : []),
     {
       label: t('common.account'),
       key: 'label',
@@ -124,7 +130,7 @@ const cols = computed<DataTableColumn<DataRow>[]>(() => {
 });
 
 const groupBy = computed<TableRowKey<T>[] | undefined>(() => {
-  if (!props.group)
+  if (!props.group || !props.showGroupLabel)
     return undefined;
 
   return ['category' as TableRowKey<T>];
@@ -223,6 +229,7 @@ defineExpose({
     <template #item.tags="{ row }">
       <TagDisplay
         :tags="row.tags"
+        class="!mt-0"
         small
       />
     </template>
@@ -269,8 +276,8 @@ defineExpose({
     >
       <RowAppend
         :label="t('common.total')"
-        :left-patch-colspan="1"
-        :label-colspan="group ? 4 : 3"
+        :left-patch-colspan="anyExpansion ? 1 : 0"
+        :label-colspan="4"
         :is-mobile="false"
         class-name="[&>td]:p-4 text-sm"
       >
@@ -314,10 +321,11 @@ defineExpose({
         </RuiButton>
       </td>
       <td
+        v-if="header.group.category"
         class="font-medium"
         :colspan="colspan - 1"
       >
-        {{ t('account_balances.data_table.group', { type: header.group.category }) }}
+        {{ t('account_balances.data_table.group', { type: header.group.category === 'evm' ? 'EVM' : toSentenceCase(header.group.category) }) }}
       </td>
     </template>
   </RuiDataTable>

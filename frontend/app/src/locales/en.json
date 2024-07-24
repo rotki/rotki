@@ -1475,7 +1475,6 @@
     "no_data": "No more usable addresses"
   },
   "blockchain_balances": {
-    "accounts": "Accounts",
     "validators": "Ethereum Validators",
     "add_account": "Add Account",
     "evm_detection": {
@@ -1496,7 +1495,8 @@
     "per_asset": {
       "title": "Blockchain Balances per Asset"
     },
-    "title": "Blockchain Balances per asset"
+    "title": "Blockchain Balances per asset",
+    "unify_accounts_table": "Unify accounts table"
   },
   "borrowing": {
     "header": "Collateralized Loans",

@@ -19,6 +19,11 @@ export class BlockchainBalancesPage {
     cy.assertNoRunningTasks();
   }
 
+  openTab(tab: string) {
+    cy.get(`[data-cy=${tab}-tab]`).scrollIntoView();
+    cy.get(`[data-cy=${tab}-tab]`).click();
+  }
+
   addBalance(balance: FixtureBlockchainBalance) {
     cy.get('[data-cy=bottom-dialog]').should('be.visible');
     cy.get('[data-cy="blockchain-balance-form"]').should('be.visible');
@@ -87,22 +92,23 @@ export class BlockchainBalancesPage {
 
   private getBalances() {
     const balances: Map<string, BigNumber> = new Map();
+    const categories = ['evm', 'bitcoin', 'substrate'];
 
-    cy.get('[data-cy=blockchain-asset-balances] > tbody > [class*=_tr__empty]', {
-      timeout: 300000,
-    }).should('not.exist');
+    categories.forEach((category) => {
+      this.openTab(category);
 
-    cy.get('[data-cy=account-table]')
-      .find('tbody')
-      .find('tr[class^="_tr_"]:not(tr[class*="_group_"]')
-      .each((row) => {
-        const usdValue = row.find('td').eq(5).find('[data-cy="display-amount"]').text();
-        const asset = row.find('td').eq(4).find('[data-cy="display-currency"]').text();
-        if (!usdValue)
-          return;
+      cy.get('[data-cy=account-table]')
+        .find('tbody')
+        .find('tr[class^="_tr_"]:not(tr[class*="_group_"]')
+        .each((row) => {
+          const usdValue = row.find('td').eq(5).find('[data-cy="display-amount"]').text();
+          const asset = row.find('td').eq(4).find('[data-cy="display-currency"]').text();
+          if (!usdValue)
+            return;
 
-        updateLocationBalance(usdValue, balances, asset.trim().toLowerCase());
-      });
+          updateLocationBalance(usdValue, balances, asset.trim().toLowerCase());
+        });
+    });
 
     return cy.wrap(balances);
   }

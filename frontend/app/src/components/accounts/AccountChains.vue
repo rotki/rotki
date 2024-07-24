@@ -5,17 +5,29 @@ const props = defineProps<{ row: Row }>();
 
 const chains = computed<string[]>(() => {
   const row = props.row;
-  return 'chains' in row ? row.chains : [row.chain];
+  return 'chains' in row ? [...row.chains].reverse() : [row.chain];
 });
+
+const { getChainName } = useSupportedChains();
 </script>
 
 <template>
-  <div class="flex">
+  <div class="flex flex-row-reverse justify-end pl-2">
     <template
       v-for="chain in chains"
       :key="chain"
     >
-      <ChainIcon :chain="chain" />
+      <RuiTooltip :close-delay="0">
+        <template #activator>
+          <div class="rounded-full w-8 h-8 bg-rui-grey-300 dark:bg-white flex items-center justify-center border-2 border-white dark:border-rui-grey-300 -ml-2 relative z-[0] hover:z-[1]">
+            <ChainIcon
+              :chain="chain"
+              size="1"
+            />
+          </div>
+        </template>
+        {{ getChainName(chain) }}
+      </RuiTooltip>
     </template>
   </div>
 </template>

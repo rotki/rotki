@@ -29,6 +29,12 @@ const cols = computed<DataTableColumn<EthereumValidator>[]>(() => {
       cellClass: 'py-0',
     },
     {
+      label: t('eth2_input.public_key'),
+      key: 'publicKey',
+      sortable: true,
+      cellClass: 'py-0',
+    },
+    {
       label: t('common.status'),
       key: 'status',
       sortable: true,
@@ -152,6 +158,15 @@ function confirmDelete(item: EthereumValidator) {
           type="address"
           :show-icon="false"
           :text="row.index.toString()"
+        />
+      </template>
+      <template #item.publicKey="{ row }">
+        <HashLink
+          class="my-2"
+          chain="eth2"
+          type="address"
+          :show-icon="false"
+          :text="row.publicKey.toString()"
         />
       </template>
       <template #item.status="{ row }">

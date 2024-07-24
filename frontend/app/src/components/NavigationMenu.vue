@@ -224,6 +224,12 @@ const navItems: MenuItem[] = [
     ...Routes.CALENDAR,
   },
 ];
+
+const route = useRoute();
+
+function isRouteMatch(path: string) {
+  return route.path.startsWith(path);
+}
 </script>
 
 <template>
@@ -248,7 +254,7 @@ const navItems: MenuItem[] = [
               :text="navItem.text"
               :icon="navItem.icon"
               :image="navItem.image"
-              :active="isActive"
+              :active="isActive || isRouteMatch(navItem.route)"
               :icon-component="navItem.component"
             />
           </a>
@@ -287,7 +293,7 @@ const navItems: MenuItem[] = [
                         :icon="subNavItem.icon"
                         :image="subNavItem.image"
                         :icon-component="subNavItem.component"
-                        :active="isActive"
+                        :active="isActive || isRouteMatch(subNavItem.route)"
                         sub-menu
                       />
                     </a>

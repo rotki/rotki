@@ -16,6 +16,7 @@ const { t } = useI18n();
   >
     <template #activator>
       <RuiButton
+        class="py-2"
         color="primary"
         :loading="isEvmAccountsDetecting"
         :disabled="isEvmAccountsDetecting"

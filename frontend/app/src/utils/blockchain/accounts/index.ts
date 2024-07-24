@@ -61,7 +61,7 @@ function includes(value: string, search: string): boolean {
 
 function filterAccount<T extends BlockchainAccountBalance>(
   account: T,
-  filters: { tags?: string[]; label?: string; address?: string; chain?: string[] },
+  filters: { tags?: string[]; label?: string; address?: string; chain?: string[]; category?: string },
   resolvers: { getLabel: (address: string, chain?: string) => string | null },
 ): boolean {
   const chains = account.type === 'group' ? account.chains : [account.chain];
@@ -71,6 +71,7 @@ function filterAccount<T extends BlockchainAccountBalance>(
     address: addressFilter,
     chain: chainFilter,
     label: labelFilter,
+    category: categoryFilter,
   } = filters;
 
   const matches: { name: keyof typeof filters; matches: boolean }[] = [];
@@ -90,6 +91,9 @@ function filterAccount<T extends BlockchainAccountBalance>(
 
   if (tagFilter && tagFilter.length > 0)
     matches.push({ name: 'tags', matches: account.tags?.some(tag => tagFilter.includes(tag)) ?? false });
+
+  if (categoryFilter)
+    matches.push({ name: 'category', matches: account.category === categoryFilter });
 
   return matches.length > 0 && matches.every(match => match.matches);
 }
@@ -115,12 +119,14 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
     label,
     address,
     chain,
+    category,
   } = params;
 
   const hasFilter = isFilterEnabled(tags)
     || isFilterEnabled(label)
     || isFilterEnabled(address)
-    || isFilterEnabled(chain);
+    || isFilterEnabled(chain)
+    || isFilterEnabled(category);
 
   const nonNull = <T extends BlockchainAccountBalance>(x: T | null): x is T => x !== null;
 
@@ -131,6 +137,7 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
       label,
       address,
       chain,
+      category,
     }, { getLabel })).map((account) => {
       /**
        * Second stage filtering for groups. Let's say that we have a group that has a tag `Public`
