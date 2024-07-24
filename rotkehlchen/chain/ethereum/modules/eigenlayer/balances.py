@@ -10,14 +10,15 @@ from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import from_wei
+from rotkehlchen.types import ChecksumEvmAddress, Location
+from rotkehlchen.utils.misc import from_wei, ts_now
 
 from .constants import (
     CPT_EIGENLAYER,
@@ -27,6 +28,7 @@ from .constants import (
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
+    from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
 
@@ -77,10 +79,12 @@ class EigenlayerBalances(ProtocolWithBalance):
             self,
             database: DBHandler,
             evm_inquirer: 'EthereumInquirer',
+            tx_decoder: 'EthereumTransactionDecoder',
     ):
         super().__init__(
             database=database,
             evm_inquirer=evm_inquirer,
+            tx_decoder=tx_decoder,
             counterparty=CPT_EIGENLAYER,
             deposit_event_types={(HistoryEventType.STAKING, HistoryEventSubType.DEPOSIT_ASSET)},
         )
@@ -123,10 +127,39 @@ class EigenlayerBalances(ProtocolWithBalance):
 
     def _query_token_pending_withdrawals(self, balances: 'BalancesSheetType') -> 'BalancesSheetType':  # noqa: E501
         """Query any balances that are being withdrawn from Eigenlayer and are on the fly"""
+        # First find if there is any completed withdrawals unmatched,
+        # as that would lead to double counting of balances
+        db_filter = EvmEventFilterQuery.make(
+            counterparties=[CPT_EIGENLAYER],
+            location=Location.ETHEREUM,
+            to_ts=ts_now(),
+            event_types=[HistoryEventType.INFORMATIONAL],
+            event_subtypes=[HistoryEventSubType.NONE],
+        )
+        with self.event_db.db.conn.read_ctx() as cursor:
+            completed_withdrawal_events = self.event_db.get_history_events(
+                cursor=cursor,
+                filter_query=db_filter,
+                has_premium=True,
+            )
+
+        for completed_withdrawal in completed_withdrawal_events:
+            if not completed_withdrawal.notes or 'Complete eigenlayer withdrawal' not in completed_withdrawal.notes:  # noqa: E501
+                continue  # not a completed withdrawal. Dirty way but we use INFORMATIONAL/NONE for multiple things in eigenlayer. TODO: Maybe improve this?  # noqa: E501
+
+            if completed_withdrawal.extra_data and completed_withdrawal.extra_data.get('matched', False):  # noqa: E501
+                continue
+
+            # here we are with a completed withdrawal that has not been matched, so redecode to try and match  # noqa: E501
+            self.tx_decoder.decode_transaction_hashes(
+                tx_hashes=[completed_withdrawal.tx_hash],
+                ignore_cache=True,
+            )
+
+        # proceed with the counting of all pending withdrawals as balances
         addresses_with_withdrawals = self.addresses_with_activity(
             event_types={(HistoryEventType.INFORMATIONAL, HistoryEventSubType.REMOVE_ASSET)},
         )
-
         for address, event_list in addresses_with_withdrawals.items():
             for event in event_list:
                 if event.extra_data is None:

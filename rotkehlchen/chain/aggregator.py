@@ -1098,13 +1098,14 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         needs to be added to the total balance of the account. Examples of such protocols are
         Curve, Convex and Velodrome.
         """
-        chain: SUPPORTED_EVM_CHAINS_TYPE = ChainID.to_blockchain(chain_id)  # type: ignore[assignment]  # CHAIN_IDS_WITH_BALANCE_PROTOCOLS only contains SUPPORTED_EVM_CHAINS_TYPE
-        inquirer = self.get_chain_manager(chain).node_inquirer
+        chain: SUPPORTED_EVM_CHAINS_TYPE = ChainID.to_blockchain(chain_id)  # type: ignore  # CHAIN_IDS_WITH_BALANCE_PROTOCOLS only contains SUPPORTED_EVM_CHAINS_TYPE
+        chain_manager = self.get_evm_manager(chain_id)
         existing_balances: defaultdict[ChecksumEvmAddress, BalanceSheet] = self.balances.get(chain)
         for protocol in CHAIN_TO_BALANCE_PROTOCOLS[chain_id]:
             protocol_with_balance: ProtocolWithBalance = protocol(
                 database=self.database,
-                evm_inquirer=inquirer,
+                evm_inquirer=chain_manager.node_inquirer,
+                tx_decoder=chain_manager.transactions_decoder,
             )
             try:
                 protocol_balances = protocol_with_balance.query_balances()
