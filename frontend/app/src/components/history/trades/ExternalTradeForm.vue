@@ -46,29 +46,29 @@ const quoteSymbol = assetSymbol(quote);
 
 const rules = {
   baseAsset: {
-    required: helpers.withMessage(t('external_trade_form.validation.non_empty_base').toString(), required),
+    required: helpers.withMessage(t('external_trade_form.validation.non_empty_base'), required),
   },
   quoteAsset: {
-    required: helpers.withMessage(t('external_trade_form.validation.non_empty_quote').toString(), required),
+    required: helpers.withMessage(t('external_trade_form.validation.non_empty_quote'), required),
   },
   amount: {
-    required: helpers.withMessage(t('external_trade_form.validation.non_empty_amount').toString(), required),
+    required: helpers.withMessage(t('external_trade_form.validation.non_empty_amount'), required),
   },
   rate: {
-    required: helpers.withMessage(t('external_trade_form.validation.non_empty_rate').toString(), required),
+    required: helpers.withMessage(t('external_trade_form.validation.non_empty_rate'), required),
   },
   quoteAmount: {
-    required: helpers.withMessage(t('external_trade_form.validation.non_empty_quote_amount').toString(), required),
+    required: helpers.withMessage(t('external_trade_form.validation.non_empty_quote_amount'), required),
   },
   fee: {
     required: helpers.withMessage(
-      t('external_trade_form.validation.non_empty_fee').toString(),
+      t('external_trade_form.validation.non_empty_fee'),
       requiredIf(refIsTruthy(feeCurrency)),
     ),
   },
   feeCurrency: {
     required: helpers.withMessage(
-      t('external_trade_form.validation.non_empty_fee_currency').toString(),
+      t('external_trade_form.validation.non_empty_fee_currency'),
       requiredIf(refIsTruthy(fee)),
     ),
   },
@@ -99,7 +99,7 @@ function triggerFeeValidator() {
 }
 
 const quoteHint = computed<string>(() =>
-  get(type) === 'buy' ? t('external_trade_form.buy_quote').toString() : t('external_trade_form.sell_quote').toString(),
+  get(type) === 'buy' ? t('external_trade_form.buy_quote') : t('external_trade_form.sell_quote'),
 );
 
 const shouldRenderSummary = computed<boolean>(
@@ -221,7 +221,7 @@ async function fetchPrice() {
   }
   else if (!get(rate)) {
     set(errorMessages, {
-      rate: [t('external_trade_form.rate_not_found').toString()],
+      rate: [t('external_trade_form.rate_not_found')],
     });
     await get(v$).rate.$validate();
     useTimeoutFn(() => {

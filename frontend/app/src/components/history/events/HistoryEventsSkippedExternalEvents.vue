@@ -56,7 +56,7 @@ const { setMessage } = useMessageStore();
 
 function showExportCSVError(description: string) {
   setMessage({
-    title: t('transactions.events.skipped.csv_export_error').toString(),
+    title: t('transactions.events.skipped.csv_export_error'),
     description,
     success: false,
   });
@@ -67,16 +67,16 @@ async function createCsv(path: string): Promise<void> {
   try {
     const success = await exportSkippedEventsCSV(path);
     message = {
-      title: t('actions.online_events.skipped.csv_export.title').toString(),
+      title: t('actions.online_events.skipped.csv_export.title'),
       description: success
-        ? t('actions.online_events.skipped.csv_export.message.success').toString()
-        : t('actions.online_events.skipped.csv_export.message.failure').toString(),
+        ? t('actions.online_events.skipped.csv_export.message.success')
+        : t('actions.online_events.skipped.csv_export.message.failure'),
       success,
     };
   }
   catch (error: any) {
     message = {
-      title: t('actions.online_events.skipped.csv_export.title').toString(),
+      title: t('actions.online_events.skipped.csv_export.title'),
       description: error.message,
       success: false,
     };
@@ -87,7 +87,7 @@ async function createCsv(path: string): Promise<void> {
 async function exportCSV() {
   try {
     if (appSession) {
-      const directory = await openDirectory(t('common.select_directory').toString());
+      const directory = await openDirectory(t('common.select_directory'));
       if (!directory)
         return;
 
@@ -96,7 +96,7 @@ async function exportCSV() {
     else {
       const result = await downloadSkippedEventsCSV();
       if (!result.success)
-        showExportCSVError(result.message ?? t('transactions.events.skipped.download_failed').toString());
+        showExportCSVError(result.message ?? t('transactions.events.skipped.download_failed'));
     }
   }
   catch (error: any) {
@@ -137,7 +137,7 @@ async function reProcessSkippedEvents() {
   catch (error: any) {
     logger.error(error);
     message = {
-      title: t('transactions.events.skipped.reprocess.failed.title').toString(),
+      title: t('transactions.events.skipped.reprocess.failed.title'),
       description: error.message,
       success: false,
     };

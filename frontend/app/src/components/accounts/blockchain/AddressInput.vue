@@ -79,13 +79,13 @@ onMounted(() => setAddress(get(addresses)));
 const rules = {
   address: {
     required: helpers.withMessage(
-      t('account_form.validation.address_non_empty').toString(),
+      t('account_form.validation.address_non_empty'),
       requiredIf(logicNot(multiple)),
     ),
   },
   userAddresses: {
     required: helpers.withMessage(
-      t('account_form.validation.address_non_empty').toString(),
+      t('account_form.validation.address_non_empty'),
       requiredIf(logicAnd(multiple)),
     ),
   },

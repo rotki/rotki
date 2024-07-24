@@ -38,7 +38,7 @@ const { t } = useI18n();
 
 const rules = {
   price: {
-    required: helpers.withMessage(t('price_form.price_non_empty').toString(), required),
+    required: helpers.withMessage(t('price_form.price_non_empty'), required),
   },
 };
 

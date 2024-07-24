@@ -35,7 +35,7 @@ async function restoreAssets(resetType: ResetType) {
   }
   else {
     const { message } = result;
-    const title = t('asset_update.restore.title').toString();
+    const title = t('asset_update.restore.title');
     if (message.includes('There are assets that can not'))
       showDoubleConfirmation(resetType);
 

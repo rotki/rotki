@@ -11,12 +11,12 @@ const { t } = useI18n();
 
 const rules = {
   queryPeriod: {
-    required: helpers.withMessage(t('frontend_settings.validation.periodic_query.non_empty').toString(), required),
+    required: helpers.withMessage(t('frontend_settings.validation.periodic_query.non_empty'), required),
     between: helpers.withMessage(
       t('frontend_settings.validation.periodic_query.invalid_period', {
         start: minQueryPeriod,
         end: maxQueryPeriod,
-      }).toString(),
+      }),
       between(minQueryPeriod, maxQueryPeriod),
     ),
   },
