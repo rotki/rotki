@@ -38,8 +38,8 @@ def fixture_use_clean_caching_directory():
 
 
 @pytest.fixture(name='data_dir')
-def fixture_data_dir(use_clean_caching_directory, tmpdir_factory) -> Path:
-    """The tests data dir is peristent so that we can cache global DB.
+def fixture_data_dir(use_clean_caching_directory, tmpdir_factory, worker_id) -> Path:
+    """The tests data dir is persistent so that we can cache global DB.
     Adjusted from old code. Not sure if it makes sense to keep. Could also just
     force clean caching directory everywhere"""
     if use_clean_caching_directory:
@@ -49,6 +49,11 @@ def fixture_data_dir(use_clean_caching_directory, tmpdir_factory) -> Path:
         data_directory = Path.home() / '.cache' / '.rotkehlchen-test-dir'
     else:
         data_directory = default_data_directory().parent / 'test_data'
+
+    if worker_id != 'master':
+        # when running the test in parallel use a path based in the worker id to avoid
+        # conflicts between workers
+        data_directory /= worker_id
 
     data_directory.mkdir(parents=True, exist_ok=True)
     # But always reset users
