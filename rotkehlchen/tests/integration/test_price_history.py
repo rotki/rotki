@@ -19,7 +19,7 @@ HISTORICAL_PRICE_ORACLES = [
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 @pytest.mark.parametrize('should_mock_price_queries', [False])
 @pytest.mark.parametrize('historical_price_oracles_order', [HISTORICAL_PRICE_ORACLES])
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['api_key'])
 def test_price_queries(price_historian, database):
     """Test some historical price queries. Make sure that we test some
     assets not in cryptocompare but in coigecko so the backup mechanism triggers and works"""
