@@ -65,7 +65,7 @@ onMounted(async () => {
     v-if="isPackaged"
     :value="showUpdatePopup"
     :timeout="-1"
-    class="top-[3.5rem]"
+    class="top-[3.5rem] text-rui-text"
     width="380px"
   >
     <div class="p-2">
@@ -141,7 +141,7 @@ onMounted(async () => {
         show-label
       />
 
-      <div class="flex justify-end">
+      <div class="flex justify-end mt-4">
         <RuiButton
           v-if="error"
           variant="text"
