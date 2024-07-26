@@ -4,9 +4,12 @@ import { TaskType } from '@/types/task-type';
 import { Section } from '@/types/status';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';
 import HashLink from '@/components/helper/HashLink.vue';
+import { SavedFilterLocation } from '@/types/filtering';
+import type { Collection } from '@/types/collection';
+import type { Filters, Matcher } from '@/composables/filters/eth-validator';
 import type { StakingValidatorManage } from '@/composables/accounts/blockchain/use-account-manage';
 import type { ContextColorsType, DataTableColumn } from '@rotki/ui-library';
-import type { EthereumValidator } from '@/types/blockchain/accounts';
+import type { EthereumValidator, EthereumValidatorRequestPayload } from '@/types/blockchain/accounts';
 
 const emit = defineEmits<{
   (e: 'edit', value: StakingValidatorManage): void;
@@ -14,10 +17,36 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const { ethStakingValidators: rows } = storeToRefs(useBlockchainStore());
+const { fetchValidators } = useBlockchainStore();
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { showConfirmation } = useAccountDelete();
 const { fetchEthStakingValidators } = useEthStaking();
+
+const {
+  filters,
+  matchers,
+  state: rows,
+  fetchData,
+  pagination,
+  sort,
+} = usePaginationFilters<
+  EthereumValidator,
+  EthereumValidatorRequestPayload,
+  EthereumValidator,
+  Collection<EthereumValidator>,
+  Filters,
+  Matcher
+>(
+  null,
+  true,
+  () => useEthValidatorAccountFilter(t),
+  fetchValidators,
+  {
+    defaultSortBy: {
+      key: 'index',
+    },
+  },
+);
 
 const cols = computed<DataTableColumn<EthereumValidator>[]>(() => {
   const currency = { symbol: get(currencySymbol) };
@@ -25,6 +54,12 @@ const cols = computed<DataTableColumn<EthereumValidator>[]>(() => {
     {
       label: t('common.validator_index'),
       key: 'index',
+      sortable: true,
+      cellClass: 'py-0',
+    },
+    {
+      label: t('eth2_input.public_key'),
+      key: 'publicKey',
       sortable: true,
       cellClass: 'py-0',
     },
@@ -111,6 +146,7 @@ function getOwnershipPercentage(row: EthereumValidator): string {
 
 async function refresh() {
   await fetchEthStakingValidators();
+  await fetchData();
 }
 
 function confirmDelete(item: EthereumValidator) {
@@ -119,6 +155,10 @@ function confirmDelete(item: EthereumValidator) {
     data: [item],
   });
 }
+
+onMounted(async () => {
+  await fetchData();
+});
 </script>
 
 <template>
@@ -136,12 +176,26 @@ function confirmDelete(item: EthereumValidator) {
         </CardTitle>
       </div>
     </template>
+    <div class="flex w-full">
+      <div class="grow" />
+      <div>
+        <TableFilter
+          v-model:matches="filters"
+          :matchers="matchers"
+          class="max-w-[calc(100vw-11rem)] w-[25rem] lg:max-w-[30rem]"
+          :location="SavedFilterLocation.ETH_VALIDATORS"
+        />
+      </div>
+    </div>
     <RuiDataTable
+      v-model:sort.external="sort"
+      v-model:pagination.external="pagination"
+      class="mt-4"
       dense
       row-attr="index"
       outlined
       :cols="cols"
-      :rows="rows"
+      :rows="rows.data"
       sticky-header
       :empty="{ description: t('data_table.no_data') }"
     >
@@ -152,6 +206,15 @@ function confirmDelete(item: EthereumValidator) {
           type="address"
           :show-icon="false"
           :text="row.index.toString()"
+        />
+      </template>
+      <template #item.publicKey="{ row }">
+        <HashLink
+          class="my-2"
+          chain="eth2"
+          type="address"
+          :show-icon="false"
+          :text="row.publicKey.toString()"
         />
       </template>
       <template #item.status="{ row }">

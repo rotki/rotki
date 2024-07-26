@@ -153,6 +153,7 @@ declare global {
   const hasTokens: typeof import('./utils/blockchain/accounts/index')['hasTokens']
   const hexToRgbPoints: typeof import('./utils/color')['hexToRgbPoints']
   const ignorableWatch: typeof import('@vueuse/core')['ignorableWatch']
+  const includes: typeof import('./utils/blockchain/accounts/common')['includes']
   const inject: typeof import('vue')['inject']
   const injectLocal: typeof import('@vueuse/core')['injectLocal']
   const invertColor: typeof import('./utils/color')['invertColor']
@@ -171,6 +172,7 @@ declare global {
   const isEvmEventRef: typeof import('./utils/history/events')['isEvmEventRef']
   const isEvmEventType: typeof import('./utils/history/events')['isEvmEventType']
   const isEvmIdentifier: typeof import('./utils/assets')['isEvmIdentifier']
+  const isFilterEnabled: typeof import('./utils/blockchain/accounts/common')['isFilterEnabled']
   const isMetaMaskSupported: typeof import('./utils/metamask')['isMetaMaskSupported']
   const isMissingAccountingRule: typeof import('./utils/history/events')['isMissingAccountingRule']
   const isNft: typeof import('./utils/nft')['isNft']
@@ -285,6 +287,8 @@ declare global {
   const size: typeof import('./utils/data')['size']
   const sortAndFilterAccounts: typeof import('./utils/blockchain/accounts/index')['sortAndFilterAccounts']
   const sortAndFilterManualBalance: typeof import('./utils/balances/manual/manual-balances')['sortAndFilterManualBalance']
+  const sortAndFilterValidators: typeof import('./utils/blockchain/accounts/validator')['sortAndFilterValidators']
+  const sortBy: typeof import('./utils/blockchain/accounts/common')['sortBy']
   const sortDesc: typeof import('./utils/bignumbers')['sortDesc']
   const splitSearch: typeof import('./utils/search')['splitSearch']
   const startPromise: typeof import('./utils/index')['startPromise']
@@ -482,6 +486,7 @@ declare global {
   const useEth2DailyStats: typeof import('./composables/staking/eth2/daily-stats')['useEth2DailyStats']
   const useEth2Staking: typeof import('./composables/staking/eth2/eth2')['useEth2Staking']
   const useEthStaking: typeof import('./composables/blockchain/accounts/staking')['useEthStaking']
+  const useEthValidatorAccountFilter: typeof import('./composables/filters/eth-validator')['useEthValidatorAccountFilter']
   const useEventBus: typeof import('@vueuse/core')['useEventBus']
   const useEventListener: typeof import('@vueuse/core')['useEventListener']
   const useEventSource: typeof import('@vueuse/core')['useEventSource']
@@ -928,6 +933,7 @@ declare module 'vue' {
     readonly hasTokens: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['hasTokens']>
     readonly hexToRgbPoints: UnwrapRef<typeof import('./utils/color')['hexToRgbPoints']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
+    readonly includes: UnwrapRef<typeof import('./utils/blockchain/accounts/common')['includes']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>
     readonly invertColor: UnwrapRef<typeof import('./utils/color')['invertColor']>
@@ -946,6 +952,7 @@ declare module 'vue' {
     readonly isEvmEventRef: UnwrapRef<typeof import('./utils/history/events')['isEvmEventRef']>
     readonly isEvmEventType: UnwrapRef<typeof import('./utils/history/events')['isEvmEventType']>
     readonly isEvmIdentifier: UnwrapRef<typeof import('./utils/assets')['isEvmIdentifier']>
+    readonly isFilterEnabled: UnwrapRef<typeof import('./utils/blockchain/accounts/common')['isFilterEnabled']>
     readonly isMetaMaskSupported: UnwrapRef<typeof import('./utils/metamask')['isMetaMaskSupported']>
     readonly isMissingAccountingRule: UnwrapRef<typeof import('./utils/history/events')['isMissingAccountingRule']>
     readonly isNft: UnwrapRef<typeof import('./utils/nft')['isNft']>
@@ -1060,6 +1067,8 @@ declare module 'vue' {
     readonly size: UnwrapRef<typeof import('./utils/data')['size']>
     readonly sortAndFilterAccounts: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['sortAndFilterAccounts']>
     readonly sortAndFilterManualBalance: UnwrapRef<typeof import('./utils/balances/manual/manual-balances')['sortAndFilterManualBalance']>
+    readonly sortAndFilterValidators: UnwrapRef<typeof import('./utils/blockchain/accounts/validator')['sortAndFilterValidators']>
+    readonly sortBy: UnwrapRef<typeof import('./utils/blockchain/accounts/common')['sortBy']>
     readonly sortDesc: UnwrapRef<typeof import('./utils/bignumbers')['sortDesc']>
     readonly splitSearch: UnwrapRef<typeof import('./utils/search')['splitSearch']>
     readonly startPromise: UnwrapRef<typeof import('./utils/index')['startPromise']>
@@ -1257,6 +1266,7 @@ declare module 'vue' {
     readonly useEth2DailyStats: UnwrapRef<typeof import('./composables/staking/eth2/daily-stats')['useEth2DailyStats']>
     readonly useEth2Staking: UnwrapRef<typeof import('./composables/staking/eth2/eth2')['useEth2Staking']>
     readonly useEthStaking: UnwrapRef<typeof import('./composables/blockchain/accounts/staking')['useEthStaking']>
+    readonly useEthValidatorAccountFilter: UnwrapRef<typeof import('./composables/filters/eth-validator')['useEthValidatorAccountFilter']>
     readonly useEventBus: UnwrapRef<typeof import('@vueuse/core')['useEventBus']>
     readonly useEventListener: UnwrapRef<typeof import('@vueuse/core')['useEventListener']>
     readonly useEventSource: UnwrapRef<typeof import('@vueuse/core')['useEventSource']>
@@ -1681,6 +1691,7 @@ declare module '@vue/runtime-core' {
     readonly hasTokens: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['hasTokens']>
     readonly hexToRgbPoints: UnwrapRef<typeof import('./utils/color')['hexToRgbPoints']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
+    readonly includes: UnwrapRef<typeof import('./utils/blockchain/accounts/common')['includes']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>
     readonly invertColor: UnwrapRef<typeof import('./utils/color')['invertColor']>
@@ -1699,6 +1710,7 @@ declare module '@vue/runtime-core' {
     readonly isEvmEventRef: UnwrapRef<typeof import('./utils/history/events')['isEvmEventRef']>
     readonly isEvmEventType: UnwrapRef<typeof import('./utils/history/events')['isEvmEventType']>
     readonly isEvmIdentifier: UnwrapRef<typeof import('./utils/assets')['isEvmIdentifier']>
+    readonly isFilterEnabled: UnwrapRef<typeof import('./utils/blockchain/accounts/common')['isFilterEnabled']>
     readonly isMetaMaskSupported: UnwrapRef<typeof import('./utils/metamask')['isMetaMaskSupported']>
     readonly isMissingAccountingRule: UnwrapRef<typeof import('./utils/history/events')['isMissingAccountingRule']>
     readonly isNft: UnwrapRef<typeof import('./utils/nft')['isNft']>
@@ -1813,6 +1825,8 @@ declare module '@vue/runtime-core' {
     readonly size: UnwrapRef<typeof import('./utils/data')['size']>
     readonly sortAndFilterAccounts: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['sortAndFilterAccounts']>
     readonly sortAndFilterManualBalance: UnwrapRef<typeof import('./utils/balances/manual/manual-balances')['sortAndFilterManualBalance']>
+    readonly sortAndFilterValidators: UnwrapRef<typeof import('./utils/blockchain/accounts/validator')['sortAndFilterValidators']>
+    readonly sortBy: UnwrapRef<typeof import('./utils/blockchain/accounts/common')['sortBy']>
     readonly sortDesc: UnwrapRef<typeof import('./utils/bignumbers')['sortDesc']>
     readonly splitSearch: UnwrapRef<typeof import('./utils/search')['splitSearch']>
     readonly startPromise: UnwrapRef<typeof import('./utils/index')['startPromise']>
@@ -2010,6 +2024,7 @@ declare module '@vue/runtime-core' {
     readonly useEth2DailyStats: UnwrapRef<typeof import('./composables/staking/eth2/daily-stats')['useEth2DailyStats']>
     readonly useEth2Staking: UnwrapRef<typeof import('./composables/staking/eth2/eth2')['useEth2Staking']>
     readonly useEthStaking: UnwrapRef<typeof import('./composables/blockchain/accounts/staking')['useEthStaking']>
+    readonly useEthValidatorAccountFilter: UnwrapRef<typeof import('./composables/filters/eth-validator')['useEthValidatorAccountFilter']>
     readonly useEventBus: UnwrapRef<typeof import('@vueuse/core')['useEventBus']>
     readonly useEventListener: UnwrapRef<typeof import('@vueuse/core')['useEventListener']>
     readonly useEventSource: UnwrapRef<typeof import('@vueuse/core')['useEventSource']>

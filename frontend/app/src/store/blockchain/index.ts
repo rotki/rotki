@@ -9,20 +9,8 @@ import {
   getAccountLabel,
   hasTokens,
 } from '@/utils/blockchain/accounts';
+import type { Accounts, AssetBreakdown, Balances, BlockchainAccount, BlockchainAccountGroupRequestPayload, BlockchainAccountGroupWithBalance, BlockchainAccountRequestPayload, BlockchainAccountWithBalance, DeleteBlockchainAccountParams, EthereumValidator, EthereumValidatorRequestPayload, Totals } from '@/types/blockchain/accounts';
 import type { AssetBalance, Balance, BigNumber } from '@rotki/common';
-import type {
-  Accounts,
-  AssetBreakdown,
-  Balances,
-  BlockchainAccount,
-  BlockchainAccountGroupRequestPayload,
-  BlockchainAccountGroupWithBalance,
-  BlockchainAccountRequestPayload,
-  BlockchainAccountWithBalance,
-  DeleteBlockchainAccountParams,
-  EthereumValidator,
-  Totals,
-} from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
 import type { BlockchainTotal } from '@/types/blockchain';
 import type { AssetBalances } from '@/types/balances';
@@ -332,6 +320,17 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     }));
   });
 
+  const fetchValidators = async (
+    payload: MaybeRef<EthereumValidatorRequestPayload>,
+  ): Promise<Collection<EthereumValidator>> => await new Promise(
+    (resolve) => {
+      resolve(sortAndFilterValidators(
+        get(ethStakingValidators),
+        get(payload),
+      ));
+    },
+  );
+
   return {
     accounts,
     addresses,
@@ -360,6 +359,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     updatePrices,
     removeAccounts,
     removeTag,
+    fetchValidators,
   };
 });
 

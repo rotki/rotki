@@ -62,6 +62,12 @@ export interface BlockchainAccountWithBalance<T extends BlockchainAccountData = 
 
 export type EthereumValidator = ValidatorData & Balance;
 
+export interface EthereumValidatorRequestPayload extends PaginationRequestPayload<EthereumValidator> {
+  readonly index?: string[];
+  readonly publicKey?: string[];
+  readonly status?: string[];
+}
+
 export interface BlockchainAccountGroupWithBalance<T extends BlockchainAccountData = BlockchainAccountData> extends Omit<BlockchainAccount<T>, 'groupHeader' | 'groupId' | 'nativeAsset' | 'chain' | 'virtual'>, AccountExpansion {
   readonly type: 'group';
   readonly category?: string;
