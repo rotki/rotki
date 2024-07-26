@@ -163,13 +163,6 @@ class GoogleService:
             body={'requests': requests},
         ).execute()
 
-    def get_cell_range(self, sheet_id: str, range_name: str) -> list[list[str]]:
-        result = self.sheets_service.spreadsheets().values().get(  # pylint: disable=no-member
-            spreadsheetId=sheet_id,
-            range=range_name,
-        ).execute()
-        return result.get('values', [])
-
     def get_cell_ranges(self, sheet_id: str, range_names: list[str]) -> list[dict[str, Any]]:
         result = self.sheets_service.spreadsheets().values().batchGet(  # pylint: disable=no-member
             spreadsheetId=sheet_id,

@@ -514,9 +514,6 @@ class MockKraken(Kraken):
         dir_path = Path(__file__).resolve().parent.parent
         return jsonloads_dict((dir_path / 'data' / filename).read_text(encoding='utf8'))
 
-    def online_api_query(self, method: str, req: dict | None = None) -> dict:
-        return super().api_query(method, req)
-
     def api_query(self, method: str, req: dict | None = None) -> dict:
         # Pretty ugly ... mock a kraken remote eror
         if self.remote_errors:
