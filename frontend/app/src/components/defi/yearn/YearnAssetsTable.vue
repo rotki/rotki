@@ -83,13 +83,12 @@ const vaults = computed<VaultAssets[]>(() => {
     </template>
 
     <RuiDataTable
+      v-model:sort="sortBy"
       :cols="columns"
       :rows="vaults"
       row-attr="vaultToken"
       outlined
-      :sort="sortBy"
       :loading="loading"
-      @update:sort="sortBy = $event"
     >
       <template #item.version="{ row }">
         {{ row.version }}

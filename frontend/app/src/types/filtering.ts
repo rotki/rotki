@@ -79,6 +79,7 @@ export enum SavedFilterLocation {
   HISTORY_DEPOSITS_WITHDRAWALS = 'historyDepositsWithdrawals',
   HISTORY_EVENTS = 'historyEvents',
   BLOCKCHAIN_ACCOUNTS = 'blockchainAccounts',
+  ETH_VALIDATORS = 'ethValidators',
 }
 
 export function assetSuggestions(assetSearch: (keyword: string, limit: number) => Promise<AssetsWithId>) {

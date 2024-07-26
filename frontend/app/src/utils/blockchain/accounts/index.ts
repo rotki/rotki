@@ -1,6 +1,5 @@
 import { camelCase, isEmpty } from 'lodash-es';
 import { type MaybeRef, objectOmit } from '@vueuse/core';
-import { sum } from '@/utils/balances';
 import type {
   BlockchainAssetBalances,
   BlockchainBalances,
@@ -34,29 +33,6 @@ export function isAccountWithBalanceValidator(
   account: BlockchainAccountWithBalance,
 ): account is BlockchainAccountWithBalance<ValidatorData> {
   return 'publicKey' in account.data;
-}
-
-const sortOptions: Intl.CollatorOptions = { sensitivity: 'accent', usage: 'sort' };
-
-function sortBy(a: any, b: any, asc: boolean): number {
-  const [aValue, bValue] = asc ? [a, b] : [b, a];
-
-  if (!isNaN(aValue) && !isNaN(bValue))
-    return Number(aValue) - Number(bValue);
-
-  return `${aValue}`.localeCompare(
-      `${bValue}`,
-      undefined,
-      sortOptions,
-  );
-}
-
-function isFilterEnabled(filter?: string[] | string): boolean {
-  return Array.isArray(filter) ? filter.length > 0 : !!filter;
-}
-
-function includes(value: string, search: string): boolean {
-  return value.toLocaleLowerCase().includes(search.toLocaleLowerCase());
 }
 
 function filterAccount<T extends BlockchainAccountBalance>(
