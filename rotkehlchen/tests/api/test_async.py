@@ -9,6 +9,7 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_ok_async_response,
+    assert_proper_async_response_with_result,
     assert_proper_response,
     assert_proper_sync_response_with_result,
     assert_simple_ok_response,
@@ -123,16 +124,16 @@ def test_query_async_task_that_died(rotkehlchen_api_server_with_exchanges):
     # now check that there is a task
     response = requests.get(api_url_for(server, 'asynctasksresource'))
     result = assert_proper_sync_response_with_result(response)
-    assert result == {'completed': [task_id], 'pending': []}
+    assert (result['completed'] == [0]) ^ (result['pending'] == [0])
 
     while True:
         # and now query for the task result and assert on it
         response = requests.get(
             api_url_for(server, 'specific_async_tasks_resource', task_id=task_id),
         )
-        result = assert_proper_sync_response_with_result(response)
+        result = assert_proper_async_response_with_result(response)
         if result['status'] == 'pending':
-            # context switch so that the greenlet to query balances can operate
+            # wait so that the thread to query balances can operate
             gevent.sleep(1)
         elif result['status'] == 'completed':
             break

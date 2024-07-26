@@ -349,6 +349,10 @@ class Inquirer:
         return Inquirer.__instance
 
     @staticmethod
+    def destroy():
+        Inquirer.__instance = None
+
+    @staticmethod
     def inject_evm_managers(evm_managers: Sequence[tuple[ChainID, 'EvmManager']]) -> None:
         instance = Inquirer()
         for chain_id, evm_manager in evm_managers:

@@ -239,7 +239,7 @@ def test_check_premium_status(rotkehlchen_api_server, username):
     and verifies that after the task was scheduled the users premium is deactivated.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    gevent.killall(rotki.api_task_greenlets)
+    gevent.killall(rotki.api_task_results)
     task_manager = rotki.task_manager
     task_manager.potential_tasks = [task_manager._maybe_check_premium_status]
     task_manager.last_premium_status_check = ts_now() - 3601
@@ -486,7 +486,7 @@ def test_maybe_kill_running_tx_query_tasks(rotkehlchen_api_server, ethereum_acco
 
     Also test that if called two times without a schedule() in between, no KeyErrors happen.
     These used to happen before a fix was introduced since the killed greenlet
-    was not removed from the tx_query_task_greenlets and/or api_task_greenlets.
+    was not removed from the tx_query_task_greenlets and/or api_task_results.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     address = ethereum_accounts[0]

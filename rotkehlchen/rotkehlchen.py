@@ -7,7 +7,6 @@ import os
 import time
 from collections import defaultdict
 from pathlib import Path
-from types import FunctionType
 from typing import TYPE_CHECKING, Any, Literal, Optional, cast, overload
 
 import gevent
@@ -64,6 +63,7 @@ from rotkehlchen.errors.misc import (
     InputError,
     RemoteError,
     SystemPermissionError,
+    ThreadKilledError,
 )
 from rotkehlchen.exchanges.manager import ExchangeManager
 from rotkehlchen.externalapis.beaconchain.service import BeaconChain
@@ -152,6 +152,8 @@ class Rotkehlchen:
             )
         self.main_loop_spawned = False
         self.api_task_greenlets: list[gevent.Greenlet] = []
+        self.api_task_threads: dict[int, gevent.event.AsyncResult] = {}
+        self.task_metadata: dict[int, dict[str, Any]] = {}
         self.msg_aggregator = MessagesAggregator()
         self.greenlet_manager = GreenletManager(msg_aggregator=self.msg_aggregator)
         self.rotki_notifier = RotkiNotifier()
@@ -201,25 +203,23 @@ class Rotkehlchen:
             blockchain: SupportedBlockchain,
             addresses: list[ChecksumEvmAddress],
     ) -> None:
-        """Checks for running greenlets related to transactions query for the given
-        addresses and kills them if they exist"""
+        """Checks for running threads related to transactions query for the given
+        addresses and kills them if they exist.
+        Note: We don't use .cancel() to kill the threads because they are not supported
+        https://www.gevent.org/_modules/gevent/event.html#AsyncResult.cancel"""
         assert self.task_manager is not None, 'task manager should have been initialized at this point'  # noqa: E501
 
         for address in addresses:
             account_tuple = (address, blockchain.to_chain_id())
-            for greenlet in self.api_task_greenlets:
-                is_evm_tx_greenlet = (
-                    greenlet.dead is False and
-                    len(greenlet.args) >= 1 and
-                    isinstance(greenlet.args[0], FunctionType) and
-                    greenlet.args[0].__qualname__ == 'RestAPI.refresh_evm_transactions'
-                )
+            for task_id, async_result in self.api_task_threads.items():
                 if (
-                        is_evm_tx_greenlet and
-                        greenlet.kwargs.get('only_cache', False) is False and
-                        account_tuple in greenlet.kwargs['filter_query'].accounts
+                        (metadata := self.task_metadata.get(task_id)) is not None and
+                        metadata['name'] == 'RestAPI.refresh_evm_transactions' and
+                        metadata['kwargs'].get('only_cache', False) is False and
+                        account_tuple in metadata['kwargs']['filter_query'].accounts
                 ):
-                    greenlet.kill(exception=GreenletKilledError('Killed due to request for evm address removal'))  # noqa: E501
+                    async_result.set_exception(exception=ThreadKilledError('Killed due to request for evm address removal'))  # noqa: E501
+                    self.task_metadata.pop(task_id)
 
             tx_query_task_greenlets = self.task_manager.running_greenlets.get(self.task_manager._maybe_query_evm_transactions, [])  # noqa: E501
             for greenlet in tx_query_task_greenlets:

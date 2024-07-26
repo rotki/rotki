@@ -2,7 +2,7 @@ from unittest.mock import patch
 
 import requests
 
-from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response
+from rotkehlchen.tests.utils.api import api_url_for, assert_proper_response_with_result, wait_for_async_task
 
 
 def test_async_task_death_traceback(rotkehlchen_api_server, caplog):
@@ -17,7 +17,8 @@ def test_async_task_death_traceback(rotkehlchen_api_server, caplog):
             json={'async_query': True, 'currencies': ['ETH']},
         )
 
-    assert_proper_response(response)
+    result = assert_proper_response_with_result(response, rotkehlchen_api_server)
+    wait_for_async_task(rotkehlchen_api_server, result['task_id'])
     assert ' Greenlet for task 0 dies with exception: Boom' in caplog.text
     assert "Exception Name: <class 'ValueError'>" in caplog.text
     assert 'Exception Info: Boom' in caplog.text

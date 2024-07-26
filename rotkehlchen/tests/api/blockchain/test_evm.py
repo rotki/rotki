@@ -459,9 +459,9 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
                 },
             )
             assert_ok_async_response(response)
-            api_task_greenlets = rotkehlchen_api_server.rest_api.rotkehlchen.api_task_greenlets
-            assert len(api_task_greenlets) == idx + 1  # the transactions fetching greenlets
-            assert not api_task_greenlets[idx].dead
+            api_task_results = rotkehlchen_api_server.rest_api.rotkehlchen.api_task_results
+            assert len(api_task_results) == idx + 1  # the transactions fetching greenlets
+            assert not api_task_results[idx].ready()
 
     # now delete one address from api task and 1 from periodic task manager and see it's immediate
     with gevent.Timeout(5):
@@ -478,11 +478,11 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
             assert_proper_response(response)
 
     # Check that the 1 api greenlet and 1 task manager greenlet got killed
-    assert len(api_task_greenlets) == 2
-    assert api_task_greenlets[0].dead
+    assert len(api_task_results) == 2
+    assert api_task_results[0].ready()
     assert len(task_manager.running_greenlets) == 1
     assert task_manager.running_greenlets[task_manager._maybe_query_evm_transactions][0].dead
-    assert not api_task_greenlets[1].dead, 'The other address api greenlet should still run'
+    assert not api_task_results[1].ready(), 'The other address api greenlet should still run'
 
     # retrieve ethereum accounts from the DB and see they are deleted
     with rotki.data.db.conn.read_ctx() as cursor:

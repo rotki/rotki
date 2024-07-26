@@ -7,6 +7,7 @@ import tempfile
 import traceback
 from collections import defaultdict
 from collections.abc import Callable, Sequence
+from contextlib import suppress
 from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal, Optional, get_args, overload
@@ -176,6 +177,7 @@ from rotkehlchen.errors.misc import (
     RemoteError,
     SystemPermissionError,
     TagConstraintError,
+    ThreadKilledError,
 )
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
@@ -335,7 +337,7 @@ def make_response_from_dict(response_data: dict[str, Any]) -> Response:
     )
 
 
-def async_api_call() -> Callable:
+def async_api_call(track_metadata: bool = False, use_main_thread: bool = False) -> Callable:
     """
     This is a decorator that should be used with endpoints that can be called asynchronously.
     It reads `async_query` argument from the wrapped function to determine whether to call
@@ -351,6 +353,8 @@ def async_api_call() -> Callable:
             if async_query is True:
                 return rest_api._query_async(
                     command=func,
+                    use_main_thread=use_main_thread,
+                    track_metadata=track_metadata,
                     **kwargs,
                 )
 
@@ -403,56 +407,99 @@ class RestAPI:
             self.task_results[task_id] = result
 
     def _handle_killed_greenlets(self, greenlet: gevent.Greenlet) -> None:
-        if not greenlet.exception:
+        self._handle_killed_tasks(
+            task_id=greenlet.task_id,
+            exc_info=greenlet.exc_info,
+            exception=greenlet.exception,
+        )
+
+    def _handle_killed_tasks(
+            self,
+            task_id: int,
+            exc_info: list,
+            exception: BaseException | None,
+    ) -> None:
+        if not exception:
             log.warning('handle_killed_greenlets without an exception')
             return
 
-        try:
-            task_id = greenlet.task_id
-            task_str = f'Greenlet for task {task_id}'
-        except AttributeError:
-            task_id = None
-            task_str = 'Main greenlet'
-
-        if isinstance(greenlet.exception, GreenletKilledError):
+        task_str = f'Greenlet for task {task_id}'
+        if isinstance(exception, GreenletKilledError):
             log.debug(
                 f'Greenlet for task id {task_id} with name {task_str} was killed. '
-                f'{greenlet.exception!s}',
+                f'{exception!s}',
             )
             # Setting empty message to signify that the death of the greenlet is expected.
             self._write_task_result(task_id, {'result': None, 'message': ''})
             return
 
         log.error(
-            f'{task_str} dies with exception: {greenlet.exception}.\n'
-            f'Exception Name: {greenlet.exc_info[0]}\n'
-            f'Exception Info: {greenlet.exc_info[1]}\n'
-            f'Traceback:\n {"".join(traceback.format_tb(greenlet.exc_info[2]))}',
+            f'{task_str} dies with exception: {exception}.\n'
+            f'Exception Name: {exc_info[0]}\n'
+            f'Exception Info: {exc_info[1]}\n'
+            f'Traceback:\n {"".join(traceback.format_tb(exc_info[2]))}',
         )
         # also write an error for the task result if it's not the main greenlet
         if task_id is not None:
             result = {
                 'result': None,
-                'message': f'The backend query task died unexpectedly: {greenlet.exception!s}',
+                'message': f'The backend query task died unexpectedly: {exception!s}',
             }
             self._write_task_result(task_id, result)
 
-    def _do_query_async(self, command: Callable, task_id: int, **kwargs: Any) -> None:
+    def _do_query_async(
+            self,
+            command: Callable,
+            task_id: int,
+            is_main_thread: bool,
+            **kwargs: Any,
+    ) -> None:
         log.debug(f'Async task with task id {task_id} started')
-        result = command(self, **kwargs)
-        self._write_task_result(task_id, result)
+        try:
+            self._write_task_result(task_id, command(self, **kwargs))
+        except BaseException as e:
+            if is_main_thread is False:  # main threads are handled by .link_exception below
+                self._handle_killed_tasks(
+                    task_id=task_id,
+                    exc_info=[e.__class__, e, e.__traceback__],
+                    exception=e,
+                )
 
-    def _query_async(self, command: Callable, **kwargs: Any) -> Response:
+    def _query_async(
+            self,
+            command: Callable,
+            use_main_thread: bool = False,
+            track_metadata: bool = False,
+            **kwargs: Any,
+    ) -> Response:
         task_id = self._new_task_id()
-        greenlet = gevent.spawn(
-            self._do_query_async,
-            command,
-            task_id,
-            **kwargs,
-        )
-        greenlet.task_id = task_id
-        greenlet.link_exception(self._handle_killed_greenlets)
-        self.rotkehlchen.api_task_greenlets.append(greenlet)
+        if track_metadata is True:
+            self.rotkehlchen.task_metadata[task_id] = {
+                'name': command.__qualname__,
+                'kwargs': kwargs,
+            }
+
+        if use_main_thread:
+            greenlet = gevent.spawn(
+                self._do_query_async,
+                command,
+                task_id,
+                is_main_thread=True,
+                **kwargs,
+            )
+            greenlet.task_id = task_id
+            greenlet.link_exception(self._handle_killed_greenlets)
+            self.rotkehlchen.api_task_greenlets.append(greenlet)
+        else:
+            thread = gevent.get_hub().threadpool.spawn(
+                self._do_query_async,
+                command,
+                task_id,
+                is_main_thread=False,
+                **kwargs,
+            )
+            self.rotkehlchen.api_task_threads[task_id] = thread
+
         return api_response(_wrap_in_ok_result({'task_id': task_id}), status_code=HTTPStatus.OK)
 
     # - Public functions not exposed via the rest api
@@ -460,8 +507,12 @@ class RestAPI:
         self.rotkehlchen.shutdown()
         log.debug('Waiting for greenlets')
         gevent.wait(self.waited_greenlets)
-        log.debug('Waited for greenlets. Killing all other greenlets')
+        log.debug('Waited for greenlets. Killing all other greenlets/threads')
         gevent.killall(self.rotkehlchen.api_task_greenlets)
+        for thread in self.rotkehlchen.api_task_threads.values():
+            with suppress(gevent.Timeout):
+                thread.get_nowait()
+
         log.debug('Shutdown completed')
         logging.shutdown()
         self.stop_event.set()
@@ -497,64 +548,93 @@ class RestAPI:
                 else:
                     pending.append(task_id)
 
+            for result_task_id in self.rotkehlchen.api_task_threads:
+                if result_task_id in self.task_results:
+                    completed.append(result_task_id)
+                else:
+                    pending.append(result_task_id)
+
             result = _wrap_in_ok_result({'pending': pending, 'completed': completed})
             return api_response(result=result, status_code=HTTPStatus.OK)
 
         with self.task_lock:
-            for idx, greenlet in enumerate(self.rotkehlchen.api_task_greenlets):
-                if greenlet.task_id == task_id:
-                    if task_id in self.task_results:
-                        # Task has completed and we just got the outcome
-                        function_response = self.task_results.pop(int(task_id), None)
-                        # The result of the original request
-                        result = function_response['result']
-                        # The message of the original request
-                        message = function_response['message']
-                        status_code = function_response.get('status_code')
-                        ret = {'result': result, 'message': message}
-                        returned_task_result = {
-                            'status': 'completed',
-                            'outcome': process_result(ret),
-                        }
-                        if status_code:
-                            returned_task_result['status_code'] = status_code
-                        result_dict = {
-                            'result': returned_task_result,
-                            'message': '',
-                        }
-                        # Also remove the greenlet from the api tasks
-                        self.rotkehlchen.api_task_greenlets.pop(idx)  # mutation is fine since we get out of the loop right here # noqa: B909, E501
-                        return api_response(result=result_dict, status_code=HTTPStatus.OK)
+            task_idx, is_pending = None, False
+            if self.rotkehlchen.api_task_threads.get(task_id) is not None:
+                if task_id in self.task_results:
+                    task_idx = task_id
+                    pop_task = lambda task_id: self.rotkehlchen.api_task_threads.pop(task_id)
+                else:
+                    is_pending = True
 
-                    # else task is still pending and the greenlet is running
-                    result_dict = {
+            if task_idx is None:
+                for idx, greenlet in enumerate(self.rotkehlchen.api_task_greenlets):
+                    if greenlet.task_id == task_id:
+                        if task_id in self.task_results:
+                            task_idx = idx
+                            pop_task = lambda idx: self.rotkehlchen.api_task_greenlets.pop(idx)
+                        else:
+                            is_pending = True
+
+            if is_pending is True:
+                return api_response(
+                    result={
                         'result': {'status': 'pending', 'outcome': None},
                         'message': f'The task with id {task_id} is still pending',
-                    }
-                    return api_response(result=result_dict, status_code=HTTPStatus.OK)
+                    },
+                    status_code=HTTPStatus.OK,
+                )
 
-        # The task has not been found
-        result_dict = {
-            'result': {'status': 'not-found', 'outcome': None},
-            'message': f'No task with id {task_id} found',
-        }
-        return api_response(result=result_dict, status_code=HTTPStatus.NOT_FOUND)
+            if task_idx is None:
+                return api_response(
+                    result={
+                        'result': {'status': 'not-found', 'outcome': None},
+                        'message': f'No task with id {task_id} found',
+                    },
+                    status_code=HTTPStatus.NOT_FOUND,
+                )
+
+            # Task has completed and we just got the outcome
+            function_response = self.task_results.pop(int(task_id), None)
+            # The result of the original request
+            result = function_response['result']
+            # The message of the original request
+            message = function_response['message']
+            status_code = function_response.get('status_code')
+            ret = {'result': result, 'message': message}
+            returned_task_result = {
+                'status': 'completed',
+                'outcome': process_result(ret),
+            }
+            if status_code:
+                returned_task_result['status_code'] = status_code
+            result_dict = {
+                'result': returned_task_result,
+                'message': '',
+            }
+            pop_task(task_idx)  # Also remove the thread from the api tasks
+            return api_response(result=result_dict, status_code=HTTPStatus.OK)
 
     def delete_async_task(self, task_id: int) -> Response:
         """Tries to find and cancel the async task with the given task id"""
         with self.task_lock:
-            for idx, greenlet in enumerate(self.rotkehlchen.api_task_greenlets):  # noqa: B007 # var used right after loop
-                if (
-                        greenlet.dead is False and
-                        getattr(greenlet, 'task_id', None) == task_id
-                ):
+            if (thread := self.rotkehlchen.api_task_threads.get(task_id)) is not None:
+                if thread.ready() is False:
                     log.debug(f'Killing api task greenlet with {task_id=}')
-                    greenlet.kill(exception=GreenletKilledError('Killed due to api request'))
-                    break
-            else:  # greenlet not found
-                return api_response(wrap_in_fail_result(f'Did not cancel task with id {task_id} because it could not be found'), status_code=HTTPStatus.NOT_FOUND)  # noqa: E501
+                    thread.set_exception(exception=ThreadKilledError('Killed due to api request'))
+                self.rotkehlchen.api_task_threads.pop(task_id)  # also pop from threads
+            else:
+                for idx, greenlet in enumerate(self.rotkehlchen.api_task_greenlets):  # var used right after loop
+                    if (
+                            greenlet.dead is False and
+                            getattr(greenlet, 'task_id', None) == task_id
+                    ):
+                        log.debug(f'Killing api task greenlet with {task_id=}')
+                        greenlet.kill(exception=GreenletKilledError('Killed due to api request'))
+                        break
+                    self.rotkehlchen.api_task_greenlets.pop(idx)  # also pop from greenlets
+                else:  # greenlet not found
+                    return api_response(wrap_in_fail_result(f'Did not cancel task with id {task_id} because it could not be found'), status_code=HTTPStatus.NOT_FOUND)  # noqa: E501
 
-        self.rotkehlchen.api_task_greenlets.pop(idx)  # also pop from greenlets
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     @async_api_call()
@@ -771,7 +851,7 @@ class RestAPI:
 
         return api_response(_wrap_in_ok_result(result), status_code=HTTPStatus.OK)
 
-    @async_api_call()
+    @async_api_call(use_main_thread=True)
     def query_blockchain_balances(
             self,
             blockchain: SupportedBlockchain | None,
@@ -1160,7 +1240,7 @@ class RestAPI:
         }
 
     @login_lock()
-    @async_api_call()
+    @async_api_call(use_main_thread=True)
     def user_login(
             self,
             name: str,
@@ -1240,6 +1320,10 @@ class RestAPI:
         # 2. Have an intricate stop() notification system for each greenlet, but
         #   that is going to get complicated fast.
         gevent.killall(self.rotkehlchen.api_task_greenlets)
+        for thread in self.rotkehlchen.api_task_threads.values():
+            with suppress(gevent.Timeout):
+                thread.get_nowait()
+
         with self.task_lock:
             self.task_results = {}
         self.rotkehlchen.logout()
@@ -2466,7 +2550,7 @@ class RestAPI:
             query_specific_balances_before=None,
         )
 
-    @async_api_call()
+    @async_api_call(use_main_thread=True)
     def get_makerdao_vaults(self) -> dict[str, Any]:
         return self._eth_module_query(
             module_name='makerdao_vaults',
@@ -2474,7 +2558,7 @@ class RestAPI:
             query_specific_balances_before=None,
         )
 
-    @async_api_call()
+    @async_api_call(use_main_thread=True)
     def get_makerdao_vault_details(self) -> dict[str, Any]:
         return self._eth_module_query(
             module_name='makerdao_vaults',
@@ -2763,7 +2847,7 @@ class RestAPI:
 
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    @async_api_call()
+    @async_api_call(track_metadata=True)
     def refresh_evm_transactions(
             self,
             filter_query: EvmTransactionsFilterQuery,
