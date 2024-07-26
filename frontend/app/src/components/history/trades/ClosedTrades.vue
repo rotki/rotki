@@ -333,7 +333,7 @@ watch(loading, async (isLoading, wasLoading) => {
         #header
       >
         <CardTitle>
-          <NavigatorLink :to="{ path: pageRoute }">
+          <NavigatorLink :to="pageRoute">
             {{ t('closed_trades.title') }}
           </NavigatorLink>
         </CardTitle>

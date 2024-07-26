@@ -1,15 +1,17 @@
 <script setup lang="ts">
+import type { RouteLocationRaw } from 'vue-router';
+
 withDefaults(
   defineProps<{
     name: string;
     isLoading?: boolean;
     canRefresh?: boolean;
-    navigatesTo?: string;
+    navigatesTo?: RouteLocationRaw;
   }>(),
   {
     isLoading: false,
     canRefresh: false,
-    navigatesTo: '',
+    navigatesTo: undefined,
   },
 );
 
@@ -35,7 +37,7 @@ const slots = useSlots();
       <CardTitle class="capitalize flex-nowrap flex justify-between gap-2 pb-2 px-6">
         <NavigatorLink
           :enabled="!!navigatesTo"
-          :to="{ path: navigatesTo }"
+          :to="navigatesTo"
           tag="div"
           class="text-clip truncate"
           :title="t('summary_card.title', { name })"

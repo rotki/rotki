@@ -5,7 +5,7 @@ const props = withDefaults(
   defineProps<{
     tag?: string;
     enabled?: boolean;
-    to: RouteLocationRaw;
+    to: RouteLocationRaw | undefined;
   }>(),
   {
     tag: 'span',
@@ -17,18 +17,16 @@ const { enabled, to } = toRefs(props);
 const router = useRouter();
 
 async function navigate() {
-  if (get(enabled))
+  if (get(enabled) && isDefined(to))
     await router.push(get(to));
 }
-
-const attrs = useAttrs();
 </script>
 
 <template>
   <Component
     :is="tag"
     :class="{ 'cursor-pointer': enabled }"
-    v-bind="attrs"
+    v-bind="$attrs"
     @click="navigate()"
   >
     <slot />

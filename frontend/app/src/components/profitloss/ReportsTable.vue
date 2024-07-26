@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { Routes } from '@/router/routes';
 import { calculateTotalProfitLoss } from '@/utils/report';
 import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
 import type { Report } from '@/types/reports';
+import type { RouteLocationRaw } from 'vue-router';
 
 const expanded = ref<Report[]>([]);
 const reportStore = useReportsStore();
@@ -60,9 +60,13 @@ const showUpgradeMessage = computed(
   () => get(reports).entriesLimit > 0 && get(reports).entriesLimit < get(reports).entriesFound,
 );
 
-function getReportUrl(identifier: number) {
-  const url = Routes.PROFIT_LOSS_REPORT;
-  return url.replace(':id', identifier.toString());
+function getReportUrl(identifier: number): RouteLocationRaw {
+  return {
+    name: '/reports/[id]',
+    params: {
+      id: identifier.toString(),
+    },
+  };
 }
 
 const latestReport = (reportId: number) => get(isLatestReport(reportId));

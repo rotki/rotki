@@ -1,10 +1,11 @@
-import { Routes } from '@/router/routes';
-
 export function useAssetPageNavigation(asset: Ref<string>) {
   const router = useRouter();
-  const navigateToDetails = async () => {
+  const navigateToDetails = async (): Promise<void> => {
     await router.push({
-      path: Routes.ASSETS.replace(':identifier', encodeURIComponent(get(asset))),
+      name: '/assets/[identifier]',
+      params: {
+        identifier: encodeURIComponent(get(asset)),
+      },
     });
   };
 

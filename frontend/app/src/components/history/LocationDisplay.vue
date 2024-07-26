@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Routes } from '@/router/routes';
+import type { RouteLocationRaw } from 'vue-router';
 
 const props = withDefaults(
   defineProps<{
@@ -22,21 +22,26 @@ const { identifier, detailPath } = toRefs(props);
 const { locationData } = useLocations();
 const location = locationData(identifier);
 
-const route = computed<{ path: string }>(() => {
+const route = computed<RouteLocationRaw>(() => {
   const details = get(detailPath);
   const tradeLocation = get(location);
-  let path: string;
-  if (details)
-    path = details;
-  else if (tradeLocation?.detailPath)
-    path = tradeLocation.detailPath;
-  else if (tradeLocation)
-    path = Routes.LOCATIONS.replace(':identifier', tradeLocation.identifier);
-  else path = '';
-
-  return {
-    path,
-  };
+  if (details) {
+    return { path: details };
+  }
+  else if (tradeLocation?.detailPath) {
+    return { path: tradeLocation.detailPath };
+  }
+  else if (tradeLocation) {
+    return {
+      name: '/locations/[identifier]',
+      params: {
+        identifier: tradeLocation.identifier,
+      },
+    };
+  }
+  else {
+    return { path: '' };
+  }
 });
 </script>
 
