@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { Routes } from '@/router/routes';
 import type { StyleValue } from 'vue';
 import type { NftAsset } from '@/types/nfts';
 
@@ -38,17 +37,20 @@ const router = useRouter();
 async function navigate() {
   if (!get(opensDetails))
     return;
-
-  const id = encodeURIComponent(get(asset).identifier);
   const collectionParent = get(isCollectionParent);
 
   await router.push({
-    path: Routes.ASSETS.replace(':identifier', id),
-    query: !collectionParent
+    name: '/assets/[identifier]',
+    params: {
+      identifier: encodeURIComponent(get(asset).identifier),
+    },
+    ...(!collectionParent
       ? {}
       : {
-          collectionParent: 'true',
-        },
+          query: {
+            collectionParent: 'true',
+          },
+        }),
   });
 }
 

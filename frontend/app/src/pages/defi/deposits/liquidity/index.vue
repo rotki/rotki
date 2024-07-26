@@ -16,8 +16,8 @@ const props = defineProps<{
 const imageSize = '64px';
 
 const pages = {
-  uniswap_v2: defineAsyncComponent(() => import('@/pages/defi/deposits/liquidity/uniswap_v2/index.vue')),
-  uniswap_v3: defineAsyncComponent(() => import('@/pages/defi/deposits/liquidity/uniswap_v3/index.vue')),
+  uniswap_v2: defineAsyncComponent(() => import('@/pages/defi/deposits/liquidity/uniswap-v2/index.vue')),
+  uniswap_v3: defineAsyncComponent(() => import('@/pages/defi/deposits/liquidity/uniswap-v3/index.vue')),
   balancer: defineAsyncComponent(() => import('@/pages/defi/deposits/liquidity/balancer/index.vue')),
   sushiswap: defineAsyncComponent(() => import('@/pages/defi/deposits/liquidity/sushiswap/index.vue')),
 };

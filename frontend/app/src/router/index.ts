@@ -224,6 +224,7 @@ const routes = setupLayouts([
       },
       {
         path: Routes.PROFIT_LOSS_REPORT,
+        name: '/reports/[id]',
         component: async () => await import('../pages/reports/[id].vue'),
         meta: {
           canNavigateBack: true,
@@ -272,12 +273,12 @@ const routes = setupLayouts([
           {
             path: Routes.ASSET_MANAGER_NEWLY_DETECTED,
             name: 'asset-manager-newly-detected',
-            component: async () => await import('../pages/asset-manager/newly-detected/index.vue'),
+            component: async () => await import('../pages/asset-manager/more/newly-detected/index.vue'),
           },
           {
             path: Routes.ASSET_MANAGER_CEX_MAPPING,
             name: 'asset-manager-cex-mapping',
-            component: async () => await import('../pages/asset-manager/cex-mapping/index.vue'),
+            component: async () => await import('../pages/asset-manager/more/cex-mapping/index.vue'),
           },
         ],
       },
@@ -389,6 +390,7 @@ const routes = setupLayouts([
     ],
   },
   {
+    name: '/assets/[identifier]',
     path: Routes.ASSETS,
     component: async () => await import('../pages/assets/[identifier].vue'),
     meta: {
@@ -399,6 +401,7 @@ const routes = setupLayouts([
   },
   {
     path: Routes.LOCATIONS,
+    name: '/locations/[identifier]',
     component: async () => await import('../pages/locations/[identifier].vue'),
     meta: {
       canNavigateBack: true,

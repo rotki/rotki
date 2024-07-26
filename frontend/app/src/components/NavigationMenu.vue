@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { useAppRoutes } from '@/router/routes';
 import type { RuiIcons } from '@rotki/ui-library';
+import type { RouteLocationRaw } from 'vue-router';
 
 interface NavItemDetails {
   readonly text: string;
-  readonly route: string;
+  readonly route: RouteLocationRaw;
   readonly class?: string;
   readonly icon: RuiIcons;
   readonly image?: string;
@@ -226,9 +227,10 @@ const navItems: MenuItem[] = [
 ];
 
 const route = useRoute();
+const router = useRouter();
 
-function isRouteMatch(path: string) {
-  return route.path.startsWith(path);
+function isRouteMatch(location: RouteLocationRaw) {
+  return route.path.startsWith(router.resolve(location).path);
 }
 </script>
 
@@ -262,7 +264,7 @@ function isRouteMatch(path: string) {
       </RouterLink>
       <template v-else-if="navItem.type === 'group'">
         <RouterLink
-          :key="navItem.route"
+          :key="navItem.route.toString()"
           :to="navItem.route"
           custom
         >

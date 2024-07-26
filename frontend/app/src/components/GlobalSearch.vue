@@ -3,6 +3,7 @@ import { useAppRoutes } from '@/router/routes';
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { Exchange } from '@/types/exchanges';
 import type { TradeLocationData } from '@/types/history/trade/location';
+import type { RouteLocationRaw } from 'vue-router';
 
 interface SearchItem {
   value: number;
@@ -14,7 +15,7 @@ interface SearchItem {
   total?: BigNumber;
   icon?: string;
   image?: string;
-  route?: string;
+  route?: RouteLocationRaw;
   action?: () => void;
   matchedPoints?: number;
 }
@@ -251,7 +252,12 @@ async function getAssets(keyword: string): Promise<SearchItemWithoutValue[]> {
       const asset = balance.asset;
 
       return {
-        route: Routes.ASSETS.route.replace(':identifier', encodeURIComponent(asset)),
+        route: {
+          name: '/assets/[identifier]',
+          params: {
+            identifier: encodeURIComponent(asset),
+          },
+        },
         texts: [t('common.asset'), map[asset] ?? ''],
         price,
         asset,
@@ -269,7 +275,12 @@ function* transformLocations(): IterableIterator<SearchItemWithoutValue> {
 
     const total = locationBalances[identifier];
     yield {
-      route: Routes.LOCATIONS.route.replace(':identifier', location.identifier),
+      route: {
+        name: '/locations/[identifier]',
+        params: {
+          identifier: encodeURIComponent(location.identifier),
+        },
+      },
       texts: [t('common.location'), location.name],
       location,
       total,

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { type TabContent, getClass } from '@/types/tabs';
+import type { RouteLocationRaw } from 'vue-router';
 
 withDefaults(
   defineProps<{
@@ -14,6 +15,12 @@ withDefaults(
 );
 
 const model = ref('');
+
+const router = useRouter();
+
+function getTabClass(route: RouteLocationRaw): string {
+  return getClass(router.resolve(route).path);
+}
 </script>
 
 <template>
@@ -25,12 +32,12 @@ const model = ref('');
     >
       <RuiTab
         v-for="tab in tabs"
-        :key="tab.route"
+        :key="tab.route.toString()"
         :model-value="tab.route"
         link
         :to="tab.route"
         :exact-path="false"
-        :class="getClass(tab.route)"
+        :class="getTabClass(tab.route)"
       >
         <template #prepend>
           <RuiIcon

@@ -136,7 +136,7 @@ export function useMessageHandling() {
 
   const handleMissingApiKeyMessage = (data: MissingApiKey): Notification => {
     const { service, location } = data;
-    const { external, route } = getServiceRegisterUrl(service, location);
+    const { route, external } = getServiceRegisterUrl(service, location) ?? { route: undefined, external: undefined };
     const locationName = get(getChainName(location as Blockchain));
 
     const actions: NotificationAction[] = [];

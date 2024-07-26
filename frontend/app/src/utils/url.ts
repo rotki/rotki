@@ -3,6 +3,7 @@ import { pslSuffixes } from '@/data/psl';
 import { Routes } from '@/router/routes';
 import { etherscanLinks, externalLinks } from '@/data/external-links';
 import { isEtherscanKey } from '@/types/external';
+import type { RouteLocationRaw } from 'vue-router';
 
 export function getDomain(str: string): string {
   const pattern = /^(?:https?:)?(?:\/\/)?(?:[^\n@]+@)?(?:www\.)?([^\n/:]+)/;
@@ -35,9 +36,9 @@ export function getDomain(str: string): string {
 /**
  * Returns the registration url of a specified Etherscan location and a path to the local page
  * @param {string} location
- * @returns {{external: string, route: {path: string, hash: string}} | {}}
+ * @returns {{external: string, route: RouteLocationRaw} | undefined}
  */
-export function getEtherScanRegisterUrl(location: string) {
+export function getEtherScanRegisterUrl(location: string): { external: string; route: RouteLocationRaw } | undefined {
   const camelCaseLocation = camelCase(location);
 
   if (isEtherscanKey(camelCaseLocation)) {
@@ -49,10 +50,10 @@ export function getEtherScanRegisterUrl(location: string) {
   }
 
   logger.warn(`Unsupported etherscan location: '${location}'`);
-  return {};
+  return undefined;
 }
 
-export function getTheGraphRegisterUrl() {
+export function getTheGraphRegisterUrl(): { external: string; route: RouteLocationRaw } {
   return {
     external: externalLinks.applyTheGraphApiKey,
     route: { path: Routes.API_KEYS_EXTERNAL_SERVICES, hash: `#thegraph` },
@@ -63,7 +64,7 @@ export function getTheGraphRegisterUrl() {
  * Returns the registration url of a specified service location and a path to the local page
  * @param {string} service
  * @param {string} location
- * @returns {{} | {external: string, route: {path: string, hash: string}}}
+ * @returns {undefined | {external: string, route: RouteLocationRaw}}
  */
 export function getServiceRegisterUrl(service: string, location: string) {
   switch (service) {
@@ -73,6 +74,6 @@ export function getServiceRegisterUrl(service: string, location: string) {
       return getTheGraphRegisterUrl();
     default:
       logger.warn(`Unsupported service: '${service}'`);
-      return {};
+      return undefined;
   }
 }
