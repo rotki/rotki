@@ -69,6 +69,10 @@ disallow_untyped_defs = false
 # Pytest's fixture decorators are not typed
 disallow_untyped_decorators = false
 
+[[tool.mypy.overrides]]
+module = "rotkehlchen.tests.fixtures.google"
+ignore_errors = true  # since this is seen differently locally with requirements dev and differently in the CI with only requirements lint
+
 # custom pylint checkers still need to be typed
 [[tool.mypy.overrides]]
 module = "tools.pylint.*"
