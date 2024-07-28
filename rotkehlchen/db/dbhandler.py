@@ -3602,13 +3602,14 @@ class DBHandler:
                 identifiers,
             )
             serialized_nft_type = AssetType.NFT.serialize()
-            for entry in cursor:
-                result[entry[0]] = {
+            result = {
+                entry[0]: {
                     'name': entry[1],
                     'asset_type': serialized_nft_type,
                     'collection_name': entry[2],
                     'image_url': entry[3],
-                }
+                } for entry in cursor
+            }
 
         return result
 

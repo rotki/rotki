@@ -569,11 +569,7 @@ class SubstrateManager:
         - RemoteError: `request_available_nodes()` fails to request after
         trying with all the available nodes.
         """
-        balances: dict[SubstrateAddress, FVal] = {}
-        for account in accounts:
-            balances[account] = self.get_account_balance(account)
-
-        return balances
+        return {account: self.get_account_balance(account) for account in accounts}
 
     @request_available_nodes
     def get_chain_id(
