@@ -357,9 +357,7 @@ class EvmTokens(ABC):
             for address, balances in new_balances.items():
                 addresses_to_balances[address].update(balances)
 
-        token_usd_price: dict[EvmToken, Price] = {}
-        for token in all_tokens:
-            token_usd_price[token] = Inquirer.find_usd_price(asset=token)
+        token_usd_price: dict[EvmToken, Price] = {token: Inquirer.find_usd_price(asset=token) for token in all_tokens}  # noqa: E501
 
         return dict(addresses_to_balances), token_usd_price
 

@@ -1,15 +1,15 @@
 import hashlib
-import itertools
 import logging
 import shutil
 import urllib.parse
 from http import HTTPStatus
+from itertools import islice
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import gevent
 import requests
 from flask import Response, make_response
+from gevent import sleep as gevent_sleep
 
 from rotkehlchen.assets.asset import Asset, AssetWithNameAndType
 from rotkehlchen.assets.types import AssetType
@@ -248,8 +248,8 @@ class IconManager:
         with GlobalDBHandler().conn.read_ctx() as cursor:
             fiat_type = AssetType.FIAT.serialize_for_db()
             cursor.execute(querystr, [fiat_type])
-            for entry in cursor:
-                assets_mappings[entry[0]] = entry[1]
+            assets_mappings = {entry[0]: entry[1] for entry in cursor}
+
         return assets_mappings
 
     def query_uncached_icons_batch(self, batch_size: int) -> bool:
@@ -270,7 +270,7 @@ class IconManager:
             f'Uncached assets: {len(uncached_asset_ids)}. Cached assets: {len(cached_asset_ids)}',
         )
         assets_to_query = [(asset_id, coingecko_id) for asset_id, coingecko_id in coingecko_integrated_asset.items() if asset_id in uncached_asset_ids]  # noqa: E501
-        for asset_id, coingecko_id in itertools.islice(assets_to_query, batch_size):
+        for asset_id, coingecko_id in islice(assets_to_query, batch_size):
             self.query_coingecko_for_icon(asset=AssetWithNameAndType(asset_id), coingecko_id=coingecko_id)  # noqa: E501
 
         return len(uncached_asset_ids) > batch_size
@@ -289,7 +289,7 @@ class IconManager:
             carry_on = self.query_uncached_icons_batch(batch_size=batch_size)
             if not carry_on:
                 break
-            gevent.sleep(sleep_time_secs)
+            gevent_sleep(sleep_time_secs)
 
     def add_icon(self, asset: Asset, icon_path: Path) -> None:
         """Adds the icon in the custom icons directory for the asset
