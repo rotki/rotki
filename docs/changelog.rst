@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` rotki will now detect new tokens right after finishing decoding new events.
+* :bug:`8169` Prevent a recursion error when querying the price of a token.
 
 * :release:`1.34.1 <2024-07-24>`
 * :bug:`-` Eigenlayer LST pending withdrawals that have been completed should no longer count as user balance.
