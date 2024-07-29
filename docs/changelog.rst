@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` rotki will now detect new tokens right after finishing decoding new events.
+
 * :release:`1.34.1 <2024-07-24>`
 * :bug:`-` Eigenlayer LST pending withdrawals that have been completed should no longer count as user balance.
 * :bug:`-` Assets section will now show correct number of assets on any page when excluding ignored assets.

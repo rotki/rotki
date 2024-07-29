@@ -311,14 +311,14 @@ def test_events_aave_v2(rotkehlchen_api_server: 'APIServer') -> None:
         '0xe903fEed7c1098Ba92E4b7092ca77bBc48503d90': {
             'total_earned_interest': {
                 'eip155:1/erc20:0x030bA81f1c18d280636F32af80b9AAd02Cf0854e': {
-                    'amount': '0.000000127608703858',
-                    'usd_value': '0.0000001914130557870',
+                    'amount': '0.000000179425508819',
+                    'usd_value': '0.0000002691382632285',
                 },
             },
             'total_lost': {
                 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F': {
-                    'amount': '0.085033793839969583',
-                    'usd_value': '0.1275506907599543745',
+                    'amount': '0.085753899141957679',
+                    'usd_value': '0.1286308487129365185',
                 },
                 'ETH': {
                     'amount': '0.2',
