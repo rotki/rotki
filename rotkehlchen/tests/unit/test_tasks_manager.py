@@ -375,7 +375,7 @@ def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
                 ignore_cache=True,
             )
 
-            assert save_tokens_mock.call_count == 2
+            assert save_tokens_mock.call_count == 3
             assert save_tokens_mock.call_args_list[0].kwargs['address'] == accounts[1]
             assert save_tokens_mock.call_args_list[0].kwargs['blockchain'] == SupportedBlockchain.ETHEREUM  # noqa: E501
             assert save_tokens_mock.call_args_list[0].kwargs['tokens'] == [A_DAI]

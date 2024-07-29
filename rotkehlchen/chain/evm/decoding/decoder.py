@@ -48,6 +48,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.tasks.assets import maybe_detect_new_tokens
 from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction, EVMTxHash, Location
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address, hex_or_bytes_to_int
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
@@ -611,6 +612,7 @@ class EVMTransactionDecoder(ABC):
             )
 
         self._post_process(refresh_balances=refresh_balances)
+        maybe_detect_new_tokens(self.database)
         return events
 
     def _get_or_decode_transaction_events(
