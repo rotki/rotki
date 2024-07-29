@@ -96,6 +96,14 @@ defineExpose({
 });
 
 const isEvm = computed(() => get(category) === 'evm');
+const showEvmElements = computed(() => get(isEvm) || get(category) === 'all');
+
+function updateChainFilter(chain: string) {
+  set(filters, {
+    ...get(filters),
+    chain: [chain],
+  });
+}
 </script>
 
 <template>
@@ -110,7 +118,7 @@ const isEvm = computed(() => get(category) === 'evm');
           @refresh="refreshClick()"
         >
           <template
-            v-if="isEvm"
+            v-if="showEvmElements"
             #refreshMenu
           >
             <BlockchainBalanceRefreshBehaviourMenu />
@@ -125,7 +133,7 @@ const isEvm = computed(() => get(category) === 'evm');
     <div class="flex flex-col md:flex-row md:items-center gap-4 flex-wrap">
       <div
         class="flex items-center gap-2 flex-1"
-        :class="{ 'hidden lg:block': !(selection || isEvm) }"
+        :class="{ 'hidden lg:block': !(selection || showEvmElements) }"
       >
         <RuiTooltip
           v-if="selection"
@@ -149,7 +157,7 @@ const isEvm = computed(() => get(category) === 'evm');
           {{ t('account_balances.delete_tooltip') }}
         </RuiTooltip>
 
-        <template v-if="isEvm">
+        <template v-if="showEvmElements">
           <RuiTooltip
             :popper="{ placement: 'top' }"
             :open-delay="400"
@@ -202,14 +210,16 @@ const isEvm = computed(() => get(category) === 'evm');
       :show-group-label="category === 'all'"
       @edit="emit('edit', $event)"
       @refresh="fetchData()"
+      @update:chain="updateChainFilter($event)"
     >
       <template #details="{ row }">
         <AccountGroupDetails
           v-if="row.expansion === 'accounts'"
           ref="detailsTable"
-          :chains="chains"
+          :chains="chains || row.chains"
           :tags="visibleTags"
           :group-id="getGroupId(row)"
+          :is-xpub="row.data.type === 'xpub'"
           @edit="emit('edit', $event)"
         />
         <AccountBalanceDetails

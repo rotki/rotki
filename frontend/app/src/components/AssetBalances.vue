@@ -162,7 +162,7 @@ function expand(item: AssetBalanceWithPrice) {
         v-if="!hideBreakdown && isEvmNativeToken(row.asset)"
         blockchain-only
         :identifier="row.asset"
-        class="bg-white dark:bg-[#1E1E1E]"
+        class="bg-white dark:bg-[#1E1E1E] my-2"
       />
       <AssetBalances
         v-else
@@ -170,7 +170,7 @@ function expand(item: AssetBalanceWithPrice) {
         hide-total
         :balances="row.breakdown ?? []"
         :sticky-header="false"
-        class="bg-white dark:bg-[#1E1E1E]"
+        class="bg-white dark:bg-[#1E1E1E] my-2"
       />
     </template>
     <template #item.expand="{ row }">

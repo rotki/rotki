@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type BigNumber from 'bignumber.js';
-import type { Balance } from '@rotki/common';
+import type { AssetBalance, Balance } from '@rotki/common';
 import type { Module } from '@/types/modules';
 import type { PaginationRequestPayload } from '@/types/common';
 import type { BlockchainAssetBalances } from '@/types/blockchain/balances';
@@ -74,6 +74,7 @@ export interface BlockchainAccountGroupWithBalance<T extends BlockchainAccountDa
   readonly amount?: BigNumber;
   readonly usdValue: BigNumber;
   readonly nativeAsset?: string;
+  readonly aggregatedAssets?: AssetBalance[];
   readonly chains: string[];
 }
 

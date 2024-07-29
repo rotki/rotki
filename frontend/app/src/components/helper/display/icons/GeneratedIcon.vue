@@ -11,10 +11,12 @@ const props = withDefaults(
     size: string;
     asset?: string;
     customAsset?: boolean;
+    flat?: boolean;
   }>(),
   {
     asset: '',
     customAsset: false,
+    flat: false,
   },
 );
 
@@ -57,7 +59,8 @@ const textStyle = computed<Style>(() => {
 <template>
   <span
     :style="{ ...wrapperStyle, ...textStyle }"
-    class="flex items-center justify-center border border-rui-light-text-secondary rounded-full whitespace-nowrap tracking-normal text-rui-light-text bg-white font-bold"
+    class="flex items-center justify-center border-rui-light-text-secondary rounded-full whitespace-nowrap tracking-normal text-rui-light-text bg-white font-bold"
+    :class="{ border: !flat }"
   >
     <RuiIcon
       v-if="customAsset"

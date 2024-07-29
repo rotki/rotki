@@ -27,6 +27,7 @@
     "liabilities": "Liabilities"
   },
   "account_balances": {
+    "aggregated_assets": "Aggregated assets",
     "confirm_delete": {
       "description_address": "Are you sure you want to delete {count} address(es)",
       "description_xpub": "Are you sure you want to delete {address}",
@@ -48,6 +49,7 @@
     "headers": {
       "usd_value": "{symbol} value"
     },
+    "per_chain": "Per chain",
     "refresh_tooltip": "Refresh {blockchain} balances ignoring any cached entries"
   },
   "account_form": {

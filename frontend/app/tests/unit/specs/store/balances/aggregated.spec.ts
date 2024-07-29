@@ -257,6 +257,8 @@ describe('store::balances/aggregated', () => {
 
     const knownGroups = await fetchAccounts({ limit: 10, offset: 0 });
 
+    const chain = Blockchain.BTC.toString();
+
     const groups: BlockchainAccountGroupWithBalance[] = [
       {
         type: 'group',
@@ -264,11 +266,9 @@ describe('store::balances/aggregated', () => {
           type: 'address',
           address: '123',
         },
-        amount: bigNumberify(10),
         usdValue: bigNumberify(10),
-        chains: [Blockchain.BTC.toString()],
+        chains: [chain],
         label: '123',
-        nativeAsset: 'BTC',
         tags: undefined,
       },
       {
@@ -279,7 +279,7 @@ describe('store::balances/aggregated', () => {
           derivationPath: 'm',
         },
         nativeAsset: 'BTC',
-        chains: [Blockchain.BTC.toString()],
+        chains: [chain],
         expansion: 'accounts',
         label: undefined,
         tags: undefined,
@@ -296,11 +296,10 @@ describe('store::balances/aggregated', () => {
         amount: Zero,
         usdValue: Zero,
         nativeAsset: 'BTC',
-        chains: [Blockchain.BTC.toString()],
+        chains: [chain],
         label: '123',
         tags: ['a'],
       },
-
     ];
 
     expect(knownGroups.data).toEqual(groups);
