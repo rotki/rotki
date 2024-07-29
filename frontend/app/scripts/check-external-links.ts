@@ -1,5 +1,5 @@
 import process from 'node:process';
-import { externalLinks } from '../src/data/external-links';
+import { externalLinks } from '../src/data/external-links.js';
 
 async function processDynamicUrl(url: string): Promise<string> {
   if (url.includes('v$version')) {
@@ -10,7 +10,7 @@ async function processDynamicUrl(url: string): Promise<string> {
     return url.replace('v$version', tag_name);
   }
   else if (url.includes('$symbol')) {
-    return url.replace('$symbol', 'btc');
+    return url.replace('$symbol', 'usdc');
   }
 
   return url;
