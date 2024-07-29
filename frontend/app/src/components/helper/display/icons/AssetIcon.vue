@@ -14,6 +14,7 @@ const props = withDefaults(
     padding?: string;
     enableAssociation?: boolean;
     showChain?: boolean;
+    flat?: boolean;
   }>(),
   {
     styled: undefined,
@@ -22,6 +23,7 @@ const props = withDefaults(
     padding: '2px',
     enableAssociation: true,
     showChain: true,
+    flat: false,
   },
 );
 
@@ -145,6 +147,7 @@ watch([symbol, identifier], () => {
             :custom-asset="isCustomAsset"
             :asset="displayAsset"
             :size="size"
+            :flat="flat"
           />
 
           <AppImage

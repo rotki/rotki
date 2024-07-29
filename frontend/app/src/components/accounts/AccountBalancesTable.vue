@@ -2,13 +2,12 @@
 import { some } from 'lodash-es';
 import { TaskType } from '@/types/task-type';
 import { Section } from '@/types/status';
-import { getAccountAddress, getAccountId, getGroupId } from '@/utils/blockchain/accounts';
+import { getAccountAddress } from '@/utils/blockchain/accounts';
 import type { TableRowKey } from '@/composables/filter-paginate';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 import type { Collection } from '@/types/collection';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { BlockchainAccountGroupWithBalance, BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
-import type { BigNumber } from '@rotki/common';
 
 type DataRow = T & { id: string };
 
@@ -30,6 +29,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   (e: 'update:selection', enabled: boolean): void;
+  (e: 'update:chain', chain: string): void;
   (e: 'edit', account: AccountManageState): void;
   (e: 'refresh'): void;
 }>();
@@ -105,9 +105,8 @@ const cols = computed<DataTableColumn<DataRow>[]>(() => {
       sortable: false,
     },
     {
-      label: t('common.amount'),
-      key: 'amount',
-      sortable: true,
+      label: t('common.assets'),
+      key: 'assets',
       cellClass: 'py-0',
       align: 'end',
     },
@@ -188,10 +187,6 @@ function edit(row: DataRow) {
   emit('edit', editBlockchainAccount(row));
 }
 
-function getAmount(row: DataRow): BigNumber {
-  return row.amount ?? Zero;
-}
-
 defineExpose({
   confirmDelete,
 });
@@ -224,7 +219,10 @@ defineExpose({
       />
     </template>
     <template #item.chain="{ row }">
-      <AccountChains :row="row" />
+      <AccountChains
+        :row="row"
+        @update:chain="emit('update:chain', $event)"
+      />
     </template>
     <template #item.tags="{ row }">
       <TagDisplay
@@ -233,14 +231,8 @@ defineExpose({
         small
       />
     </template>
-    <template #item.amount="{ row }">
-      <AmountDisplay
-        v-if="row.nativeAsset"
-        :value="getAmount(row)"
-        :loading="isRowLoading(row)"
-        :asset="row.nativeAsset"
-        :asset-padding="0.1"
-      />
+    <template #item.assets="{ row }">
+      <AccountTopTokens :row="row" />
     </template>
     <template #item.usdValue="{ row }">
       <AmountDisplay
@@ -293,7 +285,10 @@ defineExpose({
         </template>
       </RowAppend>
     </template>
-    <template #expanded-item="{ row }">
+    <template
+      v-if="anyExpansion"
+      #expanded-item="{ row }"
+    >
       <slot
         name="details"
         :row="row"
@@ -306,26 +301,26 @@ defineExpose({
         @click="expand(row)"
       />
     </template>
-    <template #body.prepend="{ colspan }">
-      <Eth2ValidatorLimitRow :colspan="colspan" />
-    </template>
     <template #group.header="{ header, isOpen, toggle, colspan }">
-      <td class="py-1 px-2">
-        <RuiButton
-          icon
-          variant="text"
-          size="sm"
-          @click="toggle()"
-        >
-          <RuiIcon :name="isOpen ? 'arrow-up-s-line' : 'arrow-down-s-line' " />
-        </RuiButton>
-      </td>
       <td
-        v-if="header.group.category"
-        class="font-medium"
-        :colspan="colspan - 1"
+        class="py-2 px-2"
+        :colspan="colspan"
       >
-        {{ t('account_balances.data_table.group', { type: header.group.category === 'evm' ? 'EVM' : toSentenceCase(header.group.category) }) }}
+        <div class="flex font-medium gap-2 items-center">
+          <RuiButton
+            icon
+            variant="text"
+            size="sm"
+            @click="toggle()"
+          >
+            <RuiIcon :name="isOpen ? 'arrow-up-s-line' : 'arrow-down-s-line' " />
+          </RuiButton>
+          <template
+            v-if="header.group.category"
+          >
+            {{ t('account_balances.data_table.group', { type: header.group.category === 'evm' ? 'EVM' : toSentenceCase(header.group.category) }) }}
+          </template>
+        </div>
       </td>
     </template>
   </RuiDataTable>

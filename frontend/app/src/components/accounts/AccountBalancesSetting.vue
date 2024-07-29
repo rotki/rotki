@@ -3,7 +3,7 @@ const value = ref<boolean>(false);
 
 const { unifyAccountsTable: enabled } = storeToRefs(useFrontendSettingsStore());
 
-onMounted(() => {
+watchImmediate(enabled, () => {
   set(value, get(enabled));
 });
 

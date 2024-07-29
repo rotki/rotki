@@ -10,7 +10,7 @@ import {
   hasTokens,
 } from '@/utils/blockchain/accounts';
 import type { Accounts, AssetBreakdown, Balances, BlockchainAccount, BlockchainAccountGroupRequestPayload, BlockchainAccountGroupWithBalance, BlockchainAccountRequestPayload, BlockchainAccountWithBalance, DeleteBlockchainAccountParams, EthereumValidator, EthereumValidatorRequestPayload, Totals } from '@/types/blockchain/accounts';
-import type { AssetBalance, Balance, BigNumber } from '@rotki/common';
+import type { AssetBalance, Balance } from '@rotki/common';
 import type { Collection } from '@/types/collection';
 import type { BlockchainTotal } from '@/types/blockchain';
 import type { AssetBalances } from '@/types/balances';
@@ -28,7 +28,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
   }>();
 
   const { addressNameSelector } = useAddressesNamesStore();
-  const { getChainType } = useSupportedChains();
+  const { getChainAccountType } = useSupportedChains();
 
   const addresses = computed<Record<string, string[]>>(() => {
     const accountData = get(accounts);
@@ -67,24 +67,18 @@ export const useBlockchainStore = defineStore('blockchain', () => {
       const chains = accountsForAddress.map(account => account.chain);
       const label = accountsForAddress.length === 1 ? getAccountLabel(accountsForAddress[0]) : undefined;
 
-      let amount: BigNumber | undefined;
-      let nativeAsset: string | undefined;
       let hasAssets = false;
       if (accountsForAddress.length === 1) {
         const account = accountsForAddress[0];
         const assets = accountAssets?.[0]?.assets ?? {};
-        amount = assets[account.nativeAsset]?.amount;
-        nativeAsset = account.nativeAsset;
-        hasAssets = hasTokens(nativeAsset, assets);
+        hasAssets = hasTokens(account.nativeAsset, assets);
       }
 
       return {
         type: 'group',
         data: accountsForAddress.length === 1 ? accountsForAddress[0].data : { type: 'address', address },
-        category: getChainType(chains[0]),
+        category: getChainAccountType(chains[0]),
         usdValue,
-        amount,
-        nativeAsset,
         label,
         tags: tags.length > 0 ? tags : undefined,
         chains,
@@ -111,7 +105,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
           ...balance,
           type: 'group',
           chains: [account.chain],
-          category: getChainType(account.chain),
+          category: getChainAccountType(account.chain),
           expansion: groupAccounts.length > 0 ? 'accounts' : undefined,
         } satisfies BlockchainAccountGroupWithBalance;
       });
@@ -280,7 +274,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
       const { assets, liabilities } = addressAssets;
       return {
         assets: Object.entries(assets).map(([asset, balance]) => ({ asset, ...balance })),
-        liabilities: Object.entries(liabilities).map(([asset, balance]) => ({ asset, ...balance })),
+        liabilities: !liabilities ? [] : Object.entries(liabilities).map(([asset, balance]) => ({ asset, ...balance })),
       };
     }
 

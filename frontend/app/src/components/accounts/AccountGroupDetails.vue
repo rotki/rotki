@@ -8,8 +8,9 @@ import type {
 
 const props = defineProps<{
   groupId: string;
-  chains?: string[];
+  chains: string[];
   tags?: string[];
+  isXpub: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -31,7 +32,7 @@ const {
   {
     extraParams: computed(() => ({
       groupId: props.groupId,
-      chain: props.chains ?? [],
+      chain: props.chains,
       tags: props.tags,
     })),
     defaultSortBy: {
@@ -49,13 +50,19 @@ onMounted(() => {
 defineExpose({
   refresh: fetchData,
 });
+
+const tab = ref(0);
+const { t } = useI18n();
+
+const [DefineAccounts, ReuseAccounts] = createReusableTemplate();
 </script>
 
 <template>
-  <div class="bg-white dark:bg-[#1E1E1E] rounded-xl my-2">
+  <DefineAccounts>
     <AccountBalancesTable
       v-model:pagination="pagination"
       v-model:sort="sort"
+      class="bg-white dark:bg-[#1E1E1E]"
       :accounts="accounts"
       @edit="emit('edit', $event)"
       @refresh="fetchData()"
@@ -67,5 +74,33 @@ defineExpose({
         />
       </template>
     </AccountBalancesTable>
+  </DefineAccounts>
+  <ReuseAccounts
+    v-if="isXpub"
+    class="my-2"
+  />
+  <div
+    v-else
+    class="rounded-xl my-2"
+  >
+    <RuiTabs
+      v-model="tab"
+      color="primary"
+      class="border border-default rounded bg-white dark:bg-rui-grey-900 flex max-w-min mb-3"
+    >
+      <RuiTab>{{ t('account_balances.aggregated_assets') }}</RuiTab>
+      <RuiTab>{{ t('account_balances.per_chain') }}</RuiTab>
+    </RuiTabs>
+    <RuiTabItems :model-value="tab">
+      <RuiTabItem>
+        <AccountBalanceAggregatedAssets
+          :group-id="groupId"
+          :chains="chains"
+        />
+      </RuiTabItem>
+      <RuiTabItem>
+        <ReuseAccounts />
+      </RuiTabItem>
+    </RuiTabItems>
   </div>
 </template>
