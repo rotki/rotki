@@ -233,6 +233,9 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
 
         If `when_tracked_accounts` is True then it will connect when we have some
         tracked accounts in the DB. Otherwise when we have none.
+
+        In ethereum case always connect to nodes. Needed for ENS resolution.
+        For other EVM chains we respect `when_tracked_accounts`.
         """
         if self.connected_to_any_web3() or self.greenlet_manager.has_task(_connect_task_prefix(self.chain_name)):  # noqa: E501
             return
@@ -241,7 +244,10 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             accounts = self.database.get_blockchain_accounts(cursor)
 
         tracked_accounts_num = len(accounts.get(self.blockchain))
-        if (tracked_accounts_num != 0 and when_tracked_accounts) or (when_tracked_accounts is False and tracked_accounts_num == 0):  # noqa: E501
+        if (
+            (tracked_accounts_num != 0 and when_tracked_accounts) or
+            (tracked_accounts_num == 0 and (when_tracked_accounts is False or self.chain_id == ChainID.ETHEREUM))  # noqa: E501
+        ):
             rpc_nodes = self.database.get_rpc_nodes(blockchain=self.blockchain, only_active=True)
             self.connect_to_multiple_nodes(rpc_nodes)
 
