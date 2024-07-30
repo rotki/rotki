@@ -1,16 +1,21 @@
 <script setup lang="ts">
-import { toSentenceCase } from '@/utils/text';
 import { Routes } from '@/router/routes';
+import { toCapitalCase } from '@/utils/text';
 import type { BigNumber } from '@rotki/common';
 
-defineProps<{
+const props = defineProps<{
   name: string;
   amount: BigNumber;
 }>();
 
+const { name } = toRefs(props);
+
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const manualBalancesRoute = Routes.ACCOUNTS_BALANCES_MANUAL;
+
+const { locationData } = useLocations();
+const location = locationData(name);
 </script>
 
 <template>
@@ -30,7 +35,7 @@ const manualBalancesRoute = Routes.ACCOUNTS_BALANCES_MANUAL;
         </div>
       </template>
       <div class="flex flex-wrap justify-between gap-1 text-rui-text">
-        {{ toSentenceCase(name) }}
+        {{ location?.name || toCapitalCase(name) }}
         <AmountDisplay
           show-currency="symbol"
           :fiat-currency="currencySymbol"
