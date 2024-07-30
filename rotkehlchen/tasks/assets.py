@@ -320,6 +320,9 @@ def update_aave_v3_underlying_assets(chains_aggregator: 'ChainsAggregator') -> N
         (ChainID.GNOSIS, AAVE_V3_DATA_PROVIDER_GNO),
         (ChainID.SCROLL, AAVE_V3_DATA_PROVIDER_SCRL),
     ):
+        if len(chains_aggregator.accounts.get(chain_id.to_blockchain())) == 0:
+            continue  # avoid querying chains without nodes connected
+
         node_inquirer = chains_aggregator.get_evm_manager(chain_id=chain_id).node_inquirer  # type: ignore[arg-type]  # all iterated ChainIDs are supported
         aave_data_provider = node_inquirer.contracts.contract(address=data_provider_address)
         underlying_tokens = []

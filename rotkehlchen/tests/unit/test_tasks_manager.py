@@ -700,6 +700,13 @@ def test_augmented_detection_pendle_transactions(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('max_tasks_num', [5])
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('optimism_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('base_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('gnosis_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('scroll_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('arbitrum_one_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('polygon_pos_accounts', [[make_evm_address()]])
 def test_maybe_update_aave_v3_underlying_assets(
         task_manager: TaskManager,
         globaldb: GlobalDBHandler,

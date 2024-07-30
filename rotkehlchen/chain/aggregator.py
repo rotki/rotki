@@ -544,6 +544,9 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                 xpub_manager.check_for_new_xpub_addresses(blockchain=blockchain)  # type: ignore # is checked in the if
         else:  # all chains
             for chain in SupportedBlockchain:
+                if chain.is_evm() and len(self.accounts.get(chain)) == 0:  # don't check eth2 and bitcoin since we might need to query new addresses  # noqa: E501
+                    continue
+
                 query_method = f'query_{chain.get_key()}_balances'
                 getattr(self, query_method)(ignore_cache=ignore_cache)
                 if ignore_cache is True and chain.is_bitcoin():

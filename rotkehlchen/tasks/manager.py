@@ -897,6 +897,9 @@ class TaskManager:
         if should_run_periodic_task(self.database, DBCacheStatic.LAST_GRAPH_DELEGATIONS_CHECK_TS, DAY_IN_SECONDS) is False:  # noqa: E501
             return None
 
+        if len(self.chains_aggregator.accounts.get(SupportedBlockchain.ETHEREUM)) == 0:
+            return None
+
         return [self.greenlet_manager.spawn_and_track(
             after_seconds=None,
             task_name="Search for Graph's GRT DelegationTransferredToL2 events",
