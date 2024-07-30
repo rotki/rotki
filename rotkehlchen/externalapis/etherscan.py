@@ -240,9 +240,9 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
                     },
                 )
                 self.warning_given = True
-        else:
-            query_str += f'&apikey={api_key}'
+            raise RemoteError('Etherscan was queried but requires an API key. Please add one.')
 
+        query_str += f'&apikey={api_key}'
         backoff = 1
         backoff_limit = 33
         timeout = timeout or CachedSettings().get_timeout_tuple()
