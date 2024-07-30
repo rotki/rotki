@@ -462,6 +462,7 @@ class RestAPI:
         gevent.wait(self.waited_greenlets)
         log.debug('Waited for greenlets. Killing all other greenlets')
         gevent.killall(self.rotkehlchen.api_task_greenlets)
+        self.rotkehlchen.api_task_greenlets.clear()
         log.debug('Shutdown completed')
         logging.shutdown()
         self.stop_event.set()
@@ -1239,6 +1240,7 @@ class RestAPI:
         # 2. Have an intricate stop() notification system for each greenlet, but
         #   that is going to get complicated fast.
         gevent.killall(self.rotkehlchen.api_task_greenlets)
+        self.rotkehlchen.api_task_greenlets.clear()
         with self.task_lock:
             self.task_results = {}
         self.rotkehlchen.logout()

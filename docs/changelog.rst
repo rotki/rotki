@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` rotki will now properly run background tasks when logging out and logging in again.
 * :bug:`-` rotki will now detect new tokens right after finishing decoding new events.
 * :bug:`8169` Prevent a recursion error when querying the price of a token.
 
