@@ -37,12 +37,7 @@ async function confirm() {
   if (!valid)
     return;
 
-  const importState = await accountForm.importAccounts();
-
-  if (importState === null)
-    return;
-
-  const state = importState || get(model);
+  const state = get(model);
   assert(state);
 
   const success = await save(state);

@@ -119,7 +119,8 @@ function handleRequests(req: IncomingMessage, res: ServerResponse, cb: Callback)
       return;
     }
   }
-  const basePath = checkIfDevelopment() ? path.join(__dirname, '..', 'public') : __dirname;
+  const dirname = path.dirname(new URL(import.meta.url).pathname);
+  const basePath = checkIfDevelopment() ? path.join(dirname, '..', 'public') : dirname;
   const url = req.url ?? '';
   if (url === '/') {
     okResponse(res, fs.readFileSync(path.join(basePath, 'metamask/import.html')), headersHtml);

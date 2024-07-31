@@ -16,13 +16,9 @@ const emit = defineEmits<{
 const chain = toRef(props, 'chain');
 
 const { loading } = useAccountLoading();
-const { isEvm } = useSupportedChains();
-
-const isEvmChain = isEvm(chain);
 
 const showInputModeSelector = logicOr(
   computed(() => isBtcChain(get(chain))),
-  isEvmChain,
 );
 
 function updateModelValue(value?: string) {

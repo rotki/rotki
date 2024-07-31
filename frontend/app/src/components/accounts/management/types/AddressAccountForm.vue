@@ -170,6 +170,7 @@ defineExpose({
         v-model:error-messages="errors"
         :disabled="loading || editMode"
         :multi="!editMode"
+        :show-metamask="showEvmCheck"
       />
       <AccountDataInput
         v-model:tags="tags"
