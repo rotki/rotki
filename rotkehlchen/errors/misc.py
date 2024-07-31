@@ -82,6 +82,10 @@ class GreenletKilledError(Exception):
     """Raised when a greenlet is killed"""
 
 
+class ThreadKilledError(Exception):
+    """Raised when a greenlet is killed"""
+
+
 class AccountingError(Exception):
     """Fatal error while processing accounting events during a PnL report"""
 

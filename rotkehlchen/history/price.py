@@ -108,6 +108,10 @@ class PriceHistorian:
         return PriceHistorian.__instance
 
     @staticmethod
+    def destroy():
+        PriceHistorian.__instance = None
+
+    @staticmethod
     def set_oracles_order(oracles: Sequence[HistoricalPriceOracle]) -> None:
         assert len(oracles) != 0 and len(oracles) == len(set(oracles)), (
             "Oracles can't be empty or have repeated items"

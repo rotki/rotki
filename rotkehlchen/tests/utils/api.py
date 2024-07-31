@@ -93,6 +93,28 @@ def assert_proper_sync_response_with_result(
     return data['result']
 
 
+def assert_proper_async_response_with_result(
+        response: requests.Response,
+        message: str | None = None,
+        status_code: HTTPStatus = HTTPStatus.OK,
+) -> Any:
+    assert_proper_response(response, status_code)
+    task_id = assert_ok_async_response(response)
+    data = response.json()  # type: ignore
+    assert data['result'] is not None
+    if data['result']['status'] == 'pending':
+        assert data['message'] == f'The task with id {task_id} is still pending'
+        assert data['result']['outcome'] is None
+
+    elif data['result']['status'] == 'completed':
+        assert data['message'] == ''
+        assert data['result']['outcome'] is not None
+
+    if message:
+        assert message in data['result']['outcome']['message']
+    return data['result']
+
+
 def assert_proper_response_with_result(
         response: requests.Response,
         rotkehlchen_api_server: APIServer,
