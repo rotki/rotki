@@ -10,6 +10,7 @@ const props = withDefaults(
     blockchainOnly?: boolean;
     showPercentage?: boolean;
     total?: BigNumber | null;
+    breakdown?: AssetBreakdown[];
   }>(),
   {
     blockchainOnly: false,
@@ -20,7 +21,7 @@ const props = withDefaults(
 
 const { t } = useI18n();
 
-const { identifier, blockchainOnly, showPercentage, total } = toRefs(props);
+const { identifier, blockchainOnly, showPercentage, total, breakdown: breakdownProps } = toRefs(props);
 const { getBreakdown } = useBlockchainStore();
 const { assetBreakdown } = useBalancesBreakdown();
 
@@ -28,7 +29,11 @@ const { getChain } = useSupportedChains();
 
 const breakdowns = computed(() => {
   const asset = get(identifier);
-  const breakdown = get(blockchainOnly) ? get(getBreakdown(asset)) : get(assetBreakdown(asset));
+  const breakdown = isDefined(breakdownProps)
+    ? get(breakdownProps)
+    : (
+        get(blockchainOnly) ? get(getBreakdown(asset)) : get(assetBreakdown(asset))
+      );
 
   return groupAssetBreakdown(breakdown, (item) => {
     // TODO: Remove this when https://github.com/rotki/rotki/issues/6725 is resolved.

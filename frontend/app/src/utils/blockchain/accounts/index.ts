@@ -71,7 +71,7 @@ function filterAccount<T extends BlockchainAccountBalance>(
   if (categoryFilter)
     matches.push({ name: 'category', matches: account.category === categoryFilter });
 
-  return matches.length > 0 && matches.every(match => match.matches);
+  return matches.length === 0 || matches.every(match => match.matches);
 }
 
 export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
@@ -124,21 +124,27 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
       if (account.type === 'group' && ((tags && tags.length > 0) || (chain && chain.length > 0))) {
         const groupAccounts = getAccounts?.(getGroupId(account));
         if (groupAccounts) {
-          const matches = groupAccounts.filter(account => filterAccount(account, {
+          const matchesWithoutChains = groupAccounts.filter(account => filterAccount(account, {
             tags,
             label: undefined, // we only this to the group
             address: undefined, // we only this to the group
+          }, { getLabel }));
+
+          const matches = matchesWithoutChains.filter(account => filterAccount(account, {
             chain,
           }, { getLabel }));
 
           if (matches.length === 0)
             return null;
 
+          const fullChains = matchesWithoutChains.map(item => item.chain).filter(uniqueStrings);
+
           return {
             ...account,
             usdValue: sum(matches),
             tags: matches.flatMap(match => match.tags ?? []).filter(uniqueStrings),
             chains: matches.map(match => match.chain).filter(uniqueStrings),
+            fullChains,
             expansion: matches.length === 1 ? matches[0].expansion : 'accounts',
           };
         }

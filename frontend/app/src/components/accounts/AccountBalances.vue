@@ -29,9 +29,22 @@ const accountTable = ref<ComponentExposed<typeof AccountBalancesTable>>();
 const detailsTable = ref<ComponentExposed<typeof AccountGroupDetails>>();
 const selection = ref<boolean>(false);
 
-const { fetchAccounts: fetchAccountsPage } = useBlockchainStore();
+const blockchainStore = useBlockchainStore();
+const { fetchAccounts: fetchAccountsPage } = blockchainStore;
+const { groups } = storeToRefs(blockchainStore);
 const { handleBlockchainRefresh } = useRefresh();
 const { fetchAccounts } = useBlockchains();
+
+const { supportedChains: allChains } = useSupportedChains();
+
+const availableChains = computed(() => {
+  const chains = get(allChains);
+  const categoryVal = get(category);
+  if (categoryVal === 'all')
+    return chains.map(chain => chain.id);
+
+  return chains.filter(item => item.type === categoryVal || (categoryVal === 'evm' && item.type === 'evmlike')).map(chain => chain.id);
+});
 
 const {
   filters,
@@ -50,7 +63,7 @@ const {
 >(
   null,
   true,
-  () => useBlockchainAccountFilter(t),
+  () => useBlockchainAccountFilter(t, availableChains),
   fetchAccountsPage,
   {
     extraParams: computed(() => ({
@@ -81,7 +94,7 @@ async function refreshClick() {
   await fetchData();
 }
 
-onMounted(async () => {
+watchImmediate(groups, async () => {
   await fetchData();
 });
 
@@ -98,12 +111,17 @@ defineExpose({
 const isEvm = computed(() => get(category) === 'evm');
 const showEvmElements = computed(() => get(isEvm) || get(category) === 'all');
 
-function updateChainFilter(chain: string) {
-  set(filters, {
-    ...get(filters),
-    chain: [chain],
-  });
-}
+const chainFilter = computed<string[]>({
+  get() {
+    return get(filters).chain as string[] || [];
+  },
+  set(chains: string[]) {
+    set(filters, {
+      ...get(filters),
+      chain: chains,
+    });
+  },
+});
 </script>
 
 <template>
@@ -204,19 +222,20 @@ function updateChainFilter(chain: string) {
       v-model:pagination="pagination"
       v-model:sort="sort"
       v-model:selection="selection"
+      v-model:chain-filter="chainFilter"
+      :available-chains="availableChains"
       class="mt-4"
       group
       :accounts="accounts"
       :show-group-label="category === 'all'"
       @edit="emit('edit', $event)"
       @refresh="fetchData()"
-      @update:chain="updateChainFilter($event)"
     >
       <template #details="{ row }">
         <AccountGroupDetails
           v-if="row.expansion === 'accounts'"
           ref="detailsTable"
-          :chains="chains || row.chains"
+          :chains="chains && chains.length > 0 ? chains : row.chains"
           :tags="visibleTags"
           :group-id="getGroupId(row)"
           :is-xpub="row.data.type === 'xpub'"

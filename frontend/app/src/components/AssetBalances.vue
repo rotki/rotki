@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { some } from 'lodash-es';
 import { isEvmNativeToken } from '@/types/asset';
+import type { AssetBreakdown } from '@/types/blockchain/accounts';
 import type { AssetBalance, AssetBalanceWithPrice } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 
@@ -11,12 +12,14 @@ defineOptions({
 const props = withDefaults(
   defineProps<{
     balances: AssetBalanceWithPrice[];
+    evmNativeTokenBreakdowns?: Record<string, AssetBreakdown[]>;
     loading?: boolean;
     hideTotal?: boolean;
     hideBreakdown?: boolean;
     stickyHeader?: boolean;
   }>(),
   {
+    evmNativeTokenBreakdowns: () => ({}),
     loading: false,
     hideTotal: false,
     hideBreakdown: false,
@@ -161,6 +164,7 @@ function expand(item: AssetBalanceWithPrice) {
       <EvmNativeTokenBreakdown
         v-if="!hideBreakdown && isEvmNativeToken(row.asset)"
         blockchain-only
+        :breakdown="evmNativeTokenBreakdowns[row.asset]"
         :identifier="row.asset"
         class="bg-white dark:bg-[#1E1E1E] my-2"
       />

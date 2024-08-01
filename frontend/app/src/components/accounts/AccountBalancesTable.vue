@@ -18,21 +18,24 @@ const props = withDefaults(
     group?: boolean;
     loading?: boolean;
     showGroupLabel?: boolean;
+    availableChains?: string[];
   }>(),
   {
     loading: false,
     group: false,
     selection: false,
     showGroupLabel: false,
+    availableChains: () => [],
   },
 );
 
 const emit = defineEmits<{
   (e: 'update:selection', enabled: boolean): void;
-  (e: 'update:chain', chain: string): void;
   (e: 'edit', account: AccountManageState): void;
   (e: 'refresh'): void;
 }>();
+
+const chainFilter = defineModel<string[]>('chainFilter', { required: false, default: [] });
 
 const { t } = useI18n();
 
@@ -96,7 +99,7 @@ const cols = computed<DataTableColumn<DataRow>[]>(() => {
       label: t('common.chain'),
       key: 'chain',
       cellClass: 'py-0',
-      sortable: true,
+      sortable: false,
     },
     {
       label: t('common.tags'),
@@ -220,8 +223,10 @@ defineExpose({
     </template>
     <template #item.chain="{ row }">
       <AccountChains
+        v-model:chain-filter="chainFilter"
+        :group="group"
+        :available-chains="availableChains"
         :row="row"
-        @update:chain="emit('update:chain', $event)"
       />
     </template>
     <template #item.tags="{ row }">
@@ -232,7 +237,10 @@ defineExpose({
       />
     </template>
     <template #item.assets="{ row }">
-      <AccountTopTokens :row="row" />
+      <AccountTopTokens
+        :row="row"
+        :loading="isRowLoading(row)"
+      />
     </template>
     <template #item.usdValue="{ row }">
       <AmountDisplay
@@ -255,6 +263,7 @@ defineExpose({
           v-if="!('virtual' in row) || !row.virtual"
           class="account-balance-table__actions"
           :no-edit="group && !isEditable(row)"
+          :no-delete="group && !isEditable(row)"
           :edit-tooltip="t('account_balances.edit_tooltip')"
           :disabled="accountOperation"
           @edit-click="edit(row)"

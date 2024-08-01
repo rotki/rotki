@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { MaybeRef } from '@vueuse/core';
 import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/types/filtering';
 import type { FilterSchema } from '@/composables/filter-paginate';
 
@@ -18,12 +19,8 @@ export type Matcher = SearchMatcher<BlockchainAccountFilterKeys, BlockchainAccou
 
 export type Filters = MatchedKeywordWithBehaviour<BlockchainAccountFilterValueKeys>;
 
-export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t']): FilterSchema<Filters, Matcher> {
+export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], chainIds: MaybeRef<string[]>): FilterSchema<Filters, Matcher> {
   const filters = ref<Filters>({});
-
-  const { supportedChains } = useSupportedChains();
-
-  const chainIds = useArrayMap(supportedChains, chain => chain.id);
 
   const matchers = computed<Matcher[]>(() => [
     {
