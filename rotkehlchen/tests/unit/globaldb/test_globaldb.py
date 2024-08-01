@@ -1296,3 +1296,18 @@ def test_check_wal_mode_of_package_db(globaldb: GlobalDBHandler) -> None:
         journal_mode = cursor.execute('PRAGMA journal_mode').fetchone()[0]
 
     assert journal_mode == 'delete'
+
+
+def test_error_bad_underlying_token(globaldb: GlobalDBHandler):
+    """Test that we raise error if we try to add a token as its own underlying token"""
+    a_lusd = A_LUSD.resolve_to_evm_token()
+    with (
+        pytest.raises(InputError),
+        globaldb.conn.write_ctx() as write_cursor,
+    ):
+        globaldb._add_underlying_tokens(
+            write_cursor=write_cursor,
+            parent_token_identifier=A_LUSD.identifier,
+            underlying_tokens=[UnderlyingToken(address=a_lusd.evm_address, token_kind=EvmTokenKind.ERC20, weight=ONE)],  # noqa: E501
+            chain_id=a_lusd.chain_id,
+        )

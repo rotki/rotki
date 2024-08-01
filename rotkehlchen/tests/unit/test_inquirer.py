@@ -37,7 +37,6 @@ from rotkehlchen.constants.assets import (
     A_USDT,
     A_WETH_ARB,
 )
-from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address_to_identifier
 from rotkehlchen.db.custom_assets import DBCustomAssets
@@ -809,12 +808,12 @@ def test_recursion_in_inquirer(inquirer: Inquirer, globaldb: GlobalDBHandler):
     infinite recursion querying its price"""
     a_usdt = A_USDT.resolve_to_evm_token()
     with globaldb.conn.write_ctx() as write_cursor:
-        globaldb._add_underlying_tokens(
-            write_cursor=write_cursor,
-            parent_token_identifier=A_USDT.identifier,
-            underlying_tokens=[UnderlyingToken(address=a_usdt.evm_address, token_kind=EvmTokenKind.ERC20, weight=ONE)],  # noqa: E501
-            chain_id=a_usdt.chain_id,
+        write_cursor.execute(
+            'INSERT INTO underlying_tokens_list(identifier, weight, parent_token_entry) '
+            'VALUES(?, ?, ?)',
+            (a_usdt.identifier, '1', a_usdt.identifier),
         )
+
     AssetResolver.clean_memory_cache(A_USDT.identifier)
     assert inquirer.find_usd_price(A_USDT) != ZERO
 

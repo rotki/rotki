@@ -73,6 +73,7 @@ from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.defi import DefiPoolError
 from rotkehlchen.errors.misc import (
     BlockchainQueryError,
+    InputError,
     NotERC20Conformant,
     RemoteError,
     UnableToDecryptRemoteData,
@@ -1122,17 +1123,21 @@ class Inquirer:
                 )
             # store it in the DB, so next time no need to query chain
             with globaldb.conn.write_ctx() as write_cursor:
-                globaldb._add_underlying_tokens(
-                    write_cursor=write_cursor,
-                    parent_token_identifier=token.identifier,
-                    underlying_tokens=[
-                        UnderlyingToken(
-                            address=underlying_token_address,
-                            token_kind=EvmTokenKind.ERC20,  # this may be a guess here
-                            weight=ONE,  # all yearn vaults have single underlying
-                        )],
-                    chain_id=ChainID.ETHEREUM,
-                )
+                try:
+                    globaldb._add_underlying_tokens(
+                        write_cursor=write_cursor,
+                        parent_token_identifier=token.identifier,
+                        underlying_tokens=[
+                            UnderlyingToken(
+                                address=underlying_token_address,
+                                token_kind=EvmTokenKind.ERC20,  # this may be a guess here
+                                weight=ONE,  # all yearn vaults have single underlying
+                            )],
+                        chain_id=ChainID.ETHEREUM,
+                    )
+                except InputError as e:
+                    log.error(f'Failed to add yearn underlying token {underlying_token_address} for {token.identifier} due to: {e}')  # noqa: E501
+                    return None
         else:
             underlying_token = EvmToken(ethaddress_to_identifier(maybe_underlying_tokens[0].address))  # noqa: E501
 

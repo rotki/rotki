@@ -16,7 +16,12 @@ from rotkehlchen.chain.evm.utils import (
     maybe_notify_new_pools_status,
 )
 from rotkehlchen.constants.misc import ONE, ZERO
-from rotkehlchen.errors.misc import BlockchainQueryError, NotERC20Conformant, RemoteError
+from rotkehlchen.errors.misc import (
+    BlockchainQueryError,
+    InputError,
+    NotERC20Conformant,
+    RemoteError,
+)
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.cache import (
     globaldb_get_general_cache_keys_and_values_like,
@@ -249,18 +254,23 @@ def ensure_gearbox_lp_underlying_tokens(
 
     # store it in the DB, so next time no need to query chain
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        GlobalDBHandler._add_underlying_tokens(
-            write_cursor=write_cursor,
-            parent_token_identifier=token_identifier,
-            underlying_tokens=[
-                UnderlyingToken(
-                    address=underlying_token_address,
-                    token_kind=EvmTokenKind.ERC20,
-                    weight=ONE,  # all gearbox vaults have single underlying
-                ),
-            ],
-            chain_id=node_inquirer.chain_id,
-        )
+        try:
+            GlobalDBHandler._add_underlying_tokens(
+                write_cursor=write_cursor,
+                parent_token_identifier=token_identifier,
+                underlying_tokens=[
+                    UnderlyingToken(
+                        address=underlying_token_address,
+                        token_kind=EvmTokenKind.ERC20,
+                        weight=ONE,  # all gearbox vaults have single underlying
+                    ),
+                ],
+                chain_id=node_inquirer.chain_id,
+            )
+        except InputError as e:
+            log.error(f'Failed to add gearbox underlying token {underlying_token_address} for {token_identifier} due to: {e}')  # noqa: E501
+            return None
+
     return underlying_token
 
 
