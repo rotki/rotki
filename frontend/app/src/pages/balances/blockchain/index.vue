@@ -7,6 +7,7 @@ import AccountBalances from '@/components/accounts/AccountBalances.vue';
 import EthStakingValidators from '@/components/accounts/EthStakingValidators.vue';
 import { Module } from '@/types/modules';
 import { Routes } from '@/router/routes';
+import type { RouteLocationRaw } from 'vue-router';
 
 const props = defineProps<{
   tab: string[] | '';
@@ -69,13 +70,13 @@ watchImmediate(propsTab, (propsTab) => {
   set(tab, Array.isArray(props.tab) ? props.tab[0] : (props.tab || get(categories)[0]));
 });
 
-function getTabLink(category: string): string {
-  return router.resolve({
+function getTabLink(category: string): RouteLocationRaw {
+  return {
     path: Routes.ACCOUNTS_BALANCES_BLOCKCHAIN_TAB.replace(':tab*', category),
     query: {
       keepScrollPosition: 'true',
     },
-  }).fullPath;
+  };
 }
 
 watch(unifyAccountsTable, () => {

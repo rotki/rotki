@@ -33,6 +33,10 @@
       "description_xpub": "Are you sure you want to delete {address}",
       "title": "Account delete"
     },
+    "chain_filter": {
+      "add": "Add \"{chain}\" to filter",
+      "remove": "Remove \"{chain}\" from filter"
+    },
     "data_table": {
       "loading": "Please wait while rotki queries the blockchain...",
       "group": "{type} accounts"

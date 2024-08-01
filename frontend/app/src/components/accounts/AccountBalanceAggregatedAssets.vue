@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+import { isEvmNativeToken } from '@/types/asset';
+import type { AssetBreakdown } from '@/types/blockchain/accounts';
 import type { AssetBalance, AssetBalanceWithPrice } from '@rotki/common';
 
 const props = defineProps<{
@@ -7,7 +9,9 @@ const props = defineProps<{
 }>();
 
 const { groupId, chains } = toRefs(props);
-const { getAccountDetails } = useBlockchainStore();
+const blockchainStore = useBlockchainStore();
+const { getAccountDetails } = blockchainStore;
+const { balances } = storeToRefs(blockchainStore);
 
 const { isAssetIgnored } = useIgnoredAssetsStore();
 const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
@@ -38,11 +42,49 @@ const assets = computed<AssetBalanceWithPrice[]>(() => {
   const ownedAssets = mergeAssociatedAssets(assets, getAssociatedAssetIdentifier);
   return toSortedAssetBalanceWithPrice(get(ownedAssets), asset => get(isAssetIgnored(asset)), assetPrice);
 });
+
+const evmNativeTokenBreakdowns = computed(() => {
+  const balanceData = get(balances);
+  const nativeTokenBreakdowns: Record<string, AssetBreakdown[]> = {};
+
+  get(assets).forEach((item) => {
+    const asset = item.asset;
+    if (isEvmNativeToken(asset)) {
+      const address = get(groupId);
+
+      const breakdownPerAsset: AssetBreakdown[] = [];
+
+      get(chains).forEach((chain) => {
+        const chainBalanceData = balanceData[chain];
+
+        if (!chainBalanceData)
+          return;
+
+        const assetBalance = chainBalanceData[address]?.assets?.[asset];
+
+        if (!assetBalance)
+          return;
+
+        breakdownPerAsset.push({
+          address,
+          location: chain,
+          ...assetBalance,
+        });
+      });
+
+      if (breakdownPerAsset.length > 0)
+        nativeTokenBreakdowns[asset] = breakdownPerAsset;
+    }
+  });
+
+  return nativeTokenBreakdowns;
+});
 </script>
 
 <template>
   <AssetBalances
     class="bg-white dark:bg-[#1E1E1E]"
     :balances="assets"
+    :evm-native-token-breakdowns="evmNativeTokenBreakdowns"
   />
 </template>

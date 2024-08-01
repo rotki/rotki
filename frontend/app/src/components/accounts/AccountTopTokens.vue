@@ -2,7 +2,10 @@
 import type { BlockchainAccountGroupWithBalance, BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
 import type { AssetBalance } from '@rotki/common';
 
-const props = defineProps<{ row: BlockchainAccountWithBalance | BlockchainAccountGroupWithBalance }>();
+const props = defineProps<{
+  row: BlockchainAccountWithBalance | BlockchainAccountGroupWithBalance;
+  loading: boolean;
+}>();
 
 const chains = computed<string[]>(() => {
   const row = props.row;
@@ -88,9 +91,10 @@ const showMore = computed(() => get(assets).length - 3);
       :asset-padding="0.1"
     />
     <AmountDisplay
-      v-else-if="row.nativeAsset && row.amount"
+      v-else-if="(row.nativeAsset && row.amount) || loading"
       :value="row.amount"
       :asset="row.nativeAsset"
+      :loading="loading"
       :asset-padding="0.1"
     />
 
