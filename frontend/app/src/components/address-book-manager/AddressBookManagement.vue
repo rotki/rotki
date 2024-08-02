@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { ApiValidationError } from '@/types/api/errors';
 import type {
   AddressBookEntry,
   AddressBookLocation,
@@ -18,21 +17,17 @@ const { t } = useI18n();
 
 const location = computed<AddressBookLocation>(() => locations[get(tab)]);
 
-const emptyForm: () => AddressBookPayload = () => ({
+const emptyForm: () => Partial<AddressBookPayload> = () => ({
   location: get(location),
   blockchain: get(selectedChain) ?? null,
-  address: '',
-  name: '',
 });
 
-const { setSubmitFunc, setOpenDialog, closeDialog } = useAddressBookForm();
+const { setOpenDialog, setPostSubmitFunc } = useAddressBookForm();
 
 const editMode = ref<boolean>(false);
-const formPayload = ref<AddressBookPayload>(emptyForm());
-const errorMessages = ref<{ address?: string[]; name?: string[] }>({});
+const formPayload = ref<Partial<AddressBookPayload>>(emptyForm());
 
-const { getAddressBook, addAddressBook, updateAddressBook } = useAddressesNamesStore();
-const { setMessage } = useMessageStore();
+const { getAddressBook } = useAddressesNamesStore();
 
 const { filters, matchers, state, isLoading, fetchData, sort, pagination } = usePaginationFilters<
   AddressBookEntry,
@@ -61,80 +56,20 @@ function openForm(item: AddressBookEntry | null = null) {
     set(enableForAllChains, !item.blockchain);
   }
   else {
-    const newForm = emptyForm();
-    set(formPayload, {
-      ...newForm,
-    });
+    set(formPayload, emptyForm());
   }
   setOpenDialog(true);
 }
-
-const resetForm = function () {
-  closeDialog();
-  set(formPayload, emptyForm());
-  set(enableForAllChains, false);
-  set(errorMessages, {});
-};
-
-async function save() {
-  try {
-    const { blockchain, address, name, location } = get(formPayload);
-    const payload = {
-      address: address.trim(),
-      name: name.trim(),
-      blockchain: get(enableForAllChains) ? null : blockchain,
-    };
-    if (get(editMode))
-      await updateAddressBook(location, [payload]);
-    else await addAddressBook(location, [payload]);
-
-    set(tab, location === 'global' ? 0 : 1);
-
-    closeDialog();
-    await fetchData();
-    return true;
-  }
-  catch (error: any) {
-    let errors = error.message;
-
-    if (error instanceof ApiValidationError)
-      errors = error.getValidationErrors(get(formPayload));
-
-    if (typeof errors === 'string') {
-      const values = { message: error.message };
-      const title = get(editMode)
-        ? t('address_book.actions.edit.error.title')
-        : t('address_book.actions.add.error.title');
-      const description = get(editMode)
-        ? t('address_book.actions.edit.error.description', values)
-        : t('address_book.actions.add.error.description', values);
-      setMessage({
-        title,
-        description,
-        success: false,
-      });
-    }
-    else {
-      set(errorMessages, errors);
-    }
-    return false;
-  }
-}
-
-setSubmitFunc(save);
 
 onMounted(async () => {
   await fetchData();
 });
 
-watch(location, async () => {
+watchImmediate(location, async () => {
   await fetchData();
 });
 
-watch(formPayload, ({ blockchain }, { blockchain: oldBlockchain }) => {
-  if (blockchain !== oldBlockchain)
-    set(errorMessages, {});
-});
+setPostSubmitFunc(fetchData);
 </script>
 
 <template>
@@ -174,10 +109,11 @@ watch(formPayload, ({ blockchain }, { blockchain: oldBlockchain }) => {
         </div>
       </div>
 
-      <div class="flex flex-row items-end gap-2 mb-4">
+      <div class="flex flex-row items-center gap-2 mb-3">
         <RuiTabs
           v-model="tab"
           color="primary"
+          class="border border-default rounded bg-white dark:bg-rui-grey-900 flex max-w-min"
         >
           <RuiTab
             v-for="loc in locations"
@@ -212,11 +148,10 @@ watch(formPayload, ({ blockchain }, { blockchain: oldBlockchain }) => {
     </RuiCard>
 
     <AddressBookFormDialog
-      v-model="formPayload"
       v-model:enable-for-all-chains="enableForAllChains"
+      :payload="formPayload"
       :edit-mode="editMode"
-      :error-messages="errorMessages"
-      @reset="resetForm()"
+      @update-tab="tab = $event"
     />
   </TablePageLayout>
 </template>

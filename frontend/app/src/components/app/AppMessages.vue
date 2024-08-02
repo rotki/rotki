@@ -9,10 +9,16 @@ const dismissMessage = () => setMessage();
 const confirmStore = useConfirmStore();
 const { dismiss, confirm } = confirmStore;
 const { confirmation, visible } = storeToRefs(confirmStore);
+
+const { globalPayload } = useAddressBookForm();
 </script>
 
 <template>
   <slot />
+  <AddressBookFormDialog
+    :payload="globalPayload"
+    root
+  />
   <MessageDialog
     :title="message.title"
     :message="message.description"
