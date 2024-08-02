@@ -116,8 +116,8 @@ def test_edit_bitcoin_xpub(setup_db_for_xpub_tests):
         # Make sure that the tags of the derived addresses were updated
         cursor.execute(
             'SELECT B.tag_name FROM xpub_mappings as A LEFT JOIN tag_mappings as B '
-            'ON B.object_reference= ? || A.address WHERE xpub=? AND blockchain=?',
-            (SupportedBlockchain.BITCOIN_CASH.value, xpub.xpub.xpub, SupportedBlockchain.BITCOIN_CASH.value),  # noqa: E501
+            'ON B.object_reference=A.address WHERE xpub=? AND blockchain=?',
+            (xpub.xpub.xpub, SupportedBlockchain.BITCOIN_CASH.value),
         )
         found_tags = [entry[0] for entry in cursor]
         assert len(found_tags) == 3

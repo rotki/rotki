@@ -42,7 +42,7 @@ DEFAULT_START_TS = Timestamp(1451606400)
 ZERO_TIMESTAMP_MS = TimestampMS(0)
 ADDRESS_ETH = string_to_evm_address('0x9D904063e7e120302a13C6820561940538a2Ad57')
 ADDRESS_MULTICHAIN = string_to_evm_address('0x368B9ad9B6AAaeFCE33b8c21781cfF375e09be67')
-ADRESS_OP = string_to_evm_address('0x3D61AEBB1238062a21BE5CC79df308f030BF0c1B')
+ADDRESS_OP = string_to_evm_address('0x3D61AEBB1238062a21BE5CC79df308f030BF0c1B')
 
 
 def make_random_bytes(size: int) -> bytes:
@@ -190,7 +190,7 @@ def make_addressbook_entries() -> list[AddressbookEntry]:
             blockchain=SupportedBlockchain.ETHEREUM,
         ),
         AddressbookEntry(
-            address=ADRESS_OP,
+            address=ADDRESS_OP,
             name='Secret agent Rose',
             blockchain=SupportedBlockchain.OPTIMISM,
         ),

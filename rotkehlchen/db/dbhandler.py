@@ -1154,7 +1154,7 @@ class DBHandler:
                 f'Blockchain account/s {[x.address for x in account_data]} already exist',
             ) from e
 
-        insert_tag_mappings(write_cursor=write_cursor, data=account_data, object_reference_keys=['chain', 'address'])  # noqa: E501
+        insert_tag_mappings(write_cursor=write_cursor, data=account_data, object_reference_keys=['address'])  # noqa: E501
 
     def edit_blockchain_accounts(
             self,
@@ -1188,7 +1188,7 @@ class DBHandler:
         replace_tag_mappings(
             write_cursor=write_cursor,
             data=account_data,
-            object_reference_keys=['chain', 'address'],
+            object_reference_keys=['address'],
         )
 
     def remove_single_blockchain_accounts(
@@ -1215,7 +1215,6 @@ class DBHandler:
             )
 
         tuples = [(blockchain.value, x) for x in accounts]
-        chain_and_account_concat_tuples = [(f'{blockchain.value}{x}',) for x in accounts]
 
         # First remove all transaction related information for this address.
         # Needs to happen before the address is removed since removing the address
@@ -1230,8 +1229,8 @@ class DBHandler:
                 self.delete_data_for_evmlike_address(write_cursor, address, blockchain)  # type: ignore
 
         write_cursor.executemany(
-            'DELETE FROM tag_mappings WHERE '
-            'object_reference = ?;', chain_and_account_concat_tuples,
+            'DELETE FROM tag_mappings WHERE object_reference = ?;',
+            [(account,) for account in accounts],
         )
         write_cursor.executemany(
             'DELETE FROM blockchain_accounts WHERE '
@@ -1364,8 +1363,8 @@ class DBHandler:
         query = cursor.execute(
             'SELECT A.account, C.name, group_concat(B.tag_name,",") '
             'FROM blockchain_accounts AS A '
-            'LEFT OUTER JOIN tag_mappings AS B ON B.object_reference = A.blockchain || A.account '
-            'LEFT OUTER JOIN address_book AS C ON C.address = A.account AND A.blockchain IS C.blockchain '  # noqa: E501
+            'LEFT OUTER JOIN tag_mappings AS B ON B.object_reference = A.account '
+            'LEFT OUTER JOIN address_book AS C ON C.address = A.account AND (A.blockchain IS C.blockchain OR C.blockchain IS NULL) '  # noqa: E501
             'WHERE A.blockchain=? GROUP BY account;',
             (blockchain.value,),
         )
@@ -3038,7 +3037,7 @@ class DBHandler:
         write_cursor.execute(
             'DELETE FROM tag_mappings WHERE '
             'object_reference IN ('
-            'SELECT blockchain || address from xpub_mappings WHERE xpub=? AND derivation_path IS ? AND blockchain=?);',  # noqa: E501
+            'SELECT address from xpub_mappings WHERE xpub=? AND derivation_path IS ? AND blockchain IS ?);',  # noqa: E501
             (
                 xpub_data.xpub.xpub,
                 xpub_data.serialize_derivation_path_for_db(),
@@ -3096,7 +3095,7 @@ class DBHandler:
             replace_tag_mappings(
                 write_cursor=write_cursor,
                 data=addresses_data,
-                object_reference_keys=['chain', 'address'],
+                object_reference_keys=['address'],
             )
             key = xpub_data.xpub.xpub + xpub_data.serialize_derivation_path_for_db()  # type: ignore
             # Delete the tag mappings for the xpub itself (type ignore is for xpub is not None)

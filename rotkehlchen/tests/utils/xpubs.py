@@ -49,7 +49,7 @@ def setup_db_for_xpub_tests_impl(data_dir, username, sql_vm_instructions_cb):
         insert_tag_mappings(    # if we got tags add them to the existing addresses too
             write_cursor=cursor,
             data=account_data,
-            object_reference_keys=['chain', 'address'],
+            object_reference_keys=['address'],
         )
         data.db.ensure_xpub_mappings_exist(
             cursor,

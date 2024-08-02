@@ -21,7 +21,7 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.factories import (
     ADDRESS_ETH,
     ADDRESS_MULTICHAIN,
-    ADRESS_OP,
+    ADDRESS_OP,
     make_addressbook_entries,
 )
 from rotkehlchen.types import (
@@ -480,7 +480,7 @@ def test_delete_addressbook(
         db_addressbook.add_addressbook_entries(write_cursor=write_cursor, entries=generated_entries)  # noqa: E501
 
     btc_address = BTCAddress('bc1qamhqfr5z2ypehv0sqq784hzgd6ws2rjf6v46w8')
-    addresses_to_delete = [ADDRESS_ETH, ADRESS_OP]
+    addresses_to_delete = [ADDRESS_ETH, ADDRESS_OP]
     response = requests.delete(
         api_url_for(
             rotkehlchen_api_server,
@@ -500,7 +500,7 @@ def test_delete_addressbook(
                 filter_query=AddressbookFilterQuery.make(),
             )[0],
         ) == set(generated_entries[1:3] + generated_entries[4:])
-        nonexistent_addresses = [ADDRESS_ETH, ADRESS_OP]
+        nonexistent_addresses = [ADDRESS_ETH, ADDRESS_OP]
 
         data_before_bad_request = db_addressbook.get_addressbook_entries(cursor, filter_query=AddressbookFilterQuery.make())[0]  # noqa: E501
         response = requests.delete(

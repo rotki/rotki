@@ -58,6 +58,8 @@ from rotkehlchen.api.v1.schemas import (
     BlockchainAccountsPutSchema,
     BlockchainBalanceQuerySchema,
     BlockchainTransactionDeletionSchema,
+    BlockchainTypeAccountsDeleteSchema,
+    ChainTypeAccountSchema,
     ClearAvatarsCacheSchema,
     ClearCacheSchema,
     ClearIconsCacheSchema,
@@ -234,6 +236,7 @@ from rotkehlchen.types import (
     ApiKey,
     ApiSecret,
     AssetAmount,
+    ChainType,
     ChecksumEvmAddress,
     Eth2PubKey,
     EvmlikeChain,
@@ -1760,6 +1763,33 @@ class BlockchainsAccountsResource(BaseMethodView):
     ) -> dict[str, Any]:
         return self.rest_api.remove_single_blockchain_accounts(
             blockchain=blockchain,
+            accounts=accounts,
+        )
+
+
+class ChainTypeAccountResource(BaseMethodView):
+
+    @require_loggedin_user()
+    @use_kwargs(ChainTypeAccountSchema(), location='json_and_view_args')
+    def patch(
+            self,
+            chain_type: ChainType,  # pylint: disable=unused-argument
+            accounts: list[dict[str, Any]],
+    ) -> Response:
+        account_data = [
+            SingleBlockchainAccountData(
+                address=entry['address'],
+                label=entry['label'],
+                tags=entry['tags'],
+            ) for entry in accounts
+        ]
+        return self.rest_api.edit_chain_type_accounts_labels(accounts=account_data)
+
+    @require_loggedin_user()
+    @use_kwargs(BlockchainTypeAccountsDeleteSchema(), location='json_and_view_args')
+    def delete(self, chain_type: ChainType, accounts: ListOfBlockchainAddresses) -> Response:
+        return self.rest_api.remove_chain_type_accounts(
+            chain_type=chain_type,
             accounts=accounts,
         )
 

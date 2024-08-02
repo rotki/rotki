@@ -1,7 +1,7 @@
 import logging
 import urllib
 from collections.abc import Mapping, Sequence
-from enum import StrEnum
+from enum import Enum, StrEnum
 from pathlib import Path
 from typing import Any, Literal
 
@@ -430,11 +430,17 @@ class BlockchainField(fields.Field):
 class SerializableEnumField(fields.Field):
     """A field that takes an enum following the SerializableEnumMixin interface
     """
-    def __init__(self, enum_class: type[SerializableEnumNameMixin | (SerializableEnumIntValueMixin | (DBCharEnumMixIn | DBIntEnumMixIn))], **kwargs: Any) -> None:  # noqa: E501
+    def __init__(
+            self,
+            enum_class: type[SerializableEnumNameMixin | (SerializableEnumIntValueMixin | (DBCharEnumMixIn | DBIntEnumMixIn))],  # noqa: E501
+            exclude_types: Sequence[Enum] | None = None,
+            **kwargs: Any,
+    ) -> None:
         """We give all possible types as unions instead of just type[SerializableEnumMixin]
         due to this bug https://github.com/python/mypy/issues/4717
         Normally it should have sufficed to give just the former.
         """
+        self.exclude_types = exclude_types
         self.enum_class = enum_class
         super().__init__(**kwargs)
 
@@ -458,6 +464,9 @@ class SerializableEnumField(fields.Field):
             result = self.enum_class.deserialize(value)
         except DeserializationError as e:
             raise ValidationError(str(e)) from e
+
+        if self.exclude_types is not None and result in self.exclude_types:
+            raise ValidationError(f'{result} is not one of the valid values for this endpoint')
 
         return result
 

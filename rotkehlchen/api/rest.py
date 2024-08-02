@@ -239,6 +239,7 @@ from rotkehlchen.types import (
     AssetAmount,
     BTCAddress,
     CacheType,
+    ChainType,
     ChecksumEvmAddress,
     Eth2PubKey,
     EvmlikeChain,
@@ -762,7 +763,7 @@ class RestAPI:
             data = {
                 'id': blockchain.serialize(),
                 'name': str(blockchain),
-                'type': blockchain.get_chain_type(),
+                'type': blockchain.get_chain_type().serialize(),
                 'native_token': blockchain.get_native_token_id(),
                 'image': blockchain.get_image_name(),
             }
@@ -1950,6 +1951,28 @@ class RestAPI:
 
         return process_result(_wrap_in_result(data, ''))
 
+    @async_api_call()
+    def edit_chain_type_accounts_labels(
+            self,
+            accounts: list[SingleBlockchainAccountData],
+    ) -> dict[str, Any]:
+        """Edit the provided accounts in all the chains where they are present.
+        The names in the address book are replaced with the one provided and the tags
+        are also replaced in all the supported chains where the address is present.
+        """
+        try:
+            with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
+                self.rotkehlchen.edit_chain_type_accounts_labels(
+                    cursor=cursor,
+                    account_data=accounts,
+                )
+        except TagConstraintError as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.CONFLICT)
+        except InputError as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_REQUEST)
+
+        return OK_RESULT
+
     def remove_single_blockchain_accounts(
             self,
             blockchain: SupportedBlockchain,
@@ -1973,6 +1996,23 @@ class RestAPI:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 
         return _wrap_in_ok_result(balances_update.serialize())
+
+    @async_api_call()
+    def remove_chain_type_accounts(
+            self,
+            chain_type: ChainType,
+            accounts: ListOfBlockchainAddresses,
+    ) -> dict[str, Any]:
+        """Remove an address from multiple chains of the same type"""
+        try:
+            self.rotkehlchen.remove_chain_type_accounts(
+                chain_type=chain_type,
+                accounts=accounts,
+            )
+        except InputError as e:
+            return wrap_in_fail_result(str(e), status_code=HTTPStatus.BAD_REQUEST)
+
+        return OK_RESULT
 
     def _get_manually_tracked_balances(self) -> dict[str, Any]:
         db_entries = get_manually_tracked_balances(db=self.rotkehlchen.data.db, balance_type=None)

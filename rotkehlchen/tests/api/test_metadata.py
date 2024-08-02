@@ -47,7 +47,7 @@ def test_metadata_endpoint(rotkehlchen_api_server: 'APIServer') -> None:
             if (
                 entry.serialize() == result_entry['id'] and
                 str(entry) == result_entry['name'] and
-                entry.get_chain_type() == result_entry['type']
+                entry.get_chain_type().serialize() == result_entry['type']
             ):
                 if entry.is_evm() is True:
                     assert result_entry['evm_chain_name'] == entry.to_chain_id().to_name()

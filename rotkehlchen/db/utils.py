@@ -20,7 +20,7 @@ from typing_extensions import ParamSpec
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
-from rotkehlchen.chain.accounts import BlockchainAccountData
+from rotkehlchen.chain.accounts import BlockchainAccountData, SingleBlockchainAccountData
 from rotkehlchen.chain.substrate.utils import is_valid_substrate_address
 from rotkehlchen.db.checks import db_script_normalizer
 from rotkehlchen.db.drivers.gevent import DBCursor
@@ -43,6 +43,12 @@ if TYPE_CHECKING:
 
 P = ParamSpec('P')
 T_co = TypeVar('T_co', covariant=True)
+TAG_REFENCE_ENTRY_TYPE = Union[
+    'ManuallyTrackedBalance',
+    BlockchainAccountData,
+    'XpubData',
+    'SingleBlockchainAccountData',
+]
 
 
 class MaybeInjectWriteCursor(Protocol[P, T_co]):
@@ -274,7 +280,7 @@ def deserialize_tags_from_db(val: str | None) -> list[str] | None:
 
 
 def _get_tag_reference(
-        entry: Union['ManuallyTrackedBalance', BlockchainAccountData, 'XpubData'],
+        entry: TAG_REFENCE_ENTRY_TYPE,
         object_reference_keys: list[
             Literal['identifier', 'chain', 'address', 'xpub.xpub', 'derivation_path'],
         ],
@@ -288,7 +294,7 @@ def _get_tag_reference(
 
 
 def _prepare_tag_mappings(
-        entry: Union['ManuallyTrackedBalance', BlockchainAccountData, 'XpubData'],
+        entry: TAG_REFENCE_ENTRY_TYPE,
         object_reference_keys: list[
             Literal['identifier', 'chain', 'address', 'xpub.xpub', 'derivation_path'],
         ],
@@ -302,7 +308,7 @@ def _prepare_tag_mappings(
 
 def insert_tag_mappings(
         write_cursor: 'DBCursor',
-        data: list['ManuallyTrackedBalance'] | (list[BlockchainAccountData] | list['XpubData']),
+        data: list['ManuallyTrackedBalance'] | (list[BlockchainAccountData] | list['XpubData'] | list['SingleBlockchainAccountData']),  # noqa: E501
         object_reference_keys: list[
             Literal['identifier', 'chain', 'address', 'xpub.xpub', 'derivation_path'],
         ],
@@ -323,7 +329,7 @@ def insert_tag_mappings(
 
 def replace_tag_mappings(
         write_cursor: 'DBCursor',
-        data: list['ManuallyTrackedBalance'] | (list[BlockchainAccountData] | list['XpubData']),
+        data: list['ManuallyTrackedBalance'] | (list[BlockchainAccountData] | list['XpubData'] | list['SingleBlockchainAccountData']),  # noqa: E501
         object_reference_keys: list[
             Literal['identifier', 'chain', 'address', 'xpub.xpub', 'derivation_path'],
         ],
