@@ -93,9 +93,11 @@ def test_add_get_evm_transactions(data_dir, username, sql_vm_instructions_cb):
         assert len(errors) == 0
         assert len(warnings) == 0
         filter_query = EvmTransactionsFilterQuery.make(chain_id=ChainID.ETHEREUM)
+    with data.db.conn.read_ctx() as cursor:
         returned_transactions = dbevmtx.get_evm_transactions(cursor, filter_query, True)
         assert returned_transactions == [tx1, tx2]
 
+    with data.db.user_write() as cursor:
         # Add the last 2 transactions. Since tx2 already exists in the DB it should be
         # ignored (no errors shown for attempting to add already existing transaction)
         dbevmtx.add_evm_transactions(cursor, [tx2, tx3], relevant_address=ETH_ADDRESS3)
@@ -103,13 +105,16 @@ def test_add_get_evm_transactions(data_dir, username, sql_vm_instructions_cb):
         warnings = msg_aggregator.consume_warnings()
         assert len(errors) == 0
         assert len(warnings) == 0
+    with data.db.conn.read_ctx() as cursor:
         returned_transactions = dbevmtx.get_evm_transactions(cursor, filter_query, True)
         assert returned_transactions == [tx1, tx2, tx3]
 
+    with data.db.user_write() as cursor:
         # Now add same transactions but with other relevant address
         dbevmtx.add_evm_transactions(cursor, [tx1, tx3], relevant_address=ETH_ADDRESS1)
         dbevmtx.add_evm_transactions(cursor, [tx2], relevant_address=ETH_ADDRESS2)
 
+    with data.db.conn.read_ctx() as cursor:
         # try transaction query by tx_hash
         result = dbevmtx.get_evm_transactions(cursor, EvmTransactionsFilterQuery.make(tx_hash=tx2_hash, chain_id=ChainID.ETHEREUM), has_premium=True)  # noqa: E501
         assert result == [tx2], 'querying transaction by hash in bytes failed'
@@ -265,6 +270,7 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
         assert len(errors) == 0
         assert len(warnings) == 0
 
+    with data.db.conn.read_ctx() as cursor:
         result, total_filter_count = dbevmtx.get_evm_transactions_and_limit_info(
             cursor=cursor,
             filter_=EvmTransactionsFilterQuery.make(

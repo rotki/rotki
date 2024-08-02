@@ -8,15 +8,15 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+    from rotkehlchen.db.drivers.client import DBConnection, DBCursor, DBWriterClient
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
 @enter_exit_debug_log()
-def _create_new_tables(cursor: 'DBCursor') -> None:
-    cursor.execute(
+def _create_new_tables(write_cursor: 'DBWriterClient') -> None:
+    write_cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS default_rpc_nodes (
             identifier INTEGER NOT NULL PRIMARY KEY,
@@ -32,14 +32,14 @@ def _create_new_tables(cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _populate_rpc_nodes(cursor: 'DBCursor', root_dir: Path) -> None:
+def _populate_rpc_nodes(write_cursor: 'DBWriterClient', root_dir: Path) -> None:
     nodes_info = json.loads((root_dir / 'data' / 'nodes.json').read_text(encoding='utf8'))
     nodes_tuples = [
         (node['name'], node['endpoint'], False, True, str(FVal(node['weight'])), node['blockchain'])  # noqa: E501
         for node in nodes_info
     ]
     log.debug(nodes_tuples)
-    cursor.executemany(
+    write_cursor.executemany(
         'INSERT INTO default_rpc_nodes(name, endpoint, owned, active, weight, blockchain) '
         'VALUES (?, ?, ?, ?, ?, ?)',
         nodes_tuples,
@@ -47,16 +47,17 @@ def _populate_rpc_nodes(cursor: 'DBCursor', root_dir: Path) -> None:
 
 
 @enter_exit_debug_log()
-def _reset_curve_cache(write_cursor: 'DBCursor') -> None:
+def _reset_curve_cache(write_cursor: 'DBWriterClient') -> None:
     """Resets curve cache to query gauges and update format of the lp tokens"""
     write_cursor.execute('DELETE FROM general_cache WHERE key LIKE "%CURVE%"')
 
 
 @enter_exit_debug_log()
-def _remove_name_from_contracts(cursor: 'DBCursor') -> None:
+def _remove_name_from_contracts(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """Removes the name column from contract_data table if it exists"""
     update_table_schema(
-        write_cursor=cursor,
+        cursor=cursor,
+        write_cursor=write_cursor,
         table_name='contract_data',
         schema="""address VARCHAR[42] NOT NULL,
         chain_id INTEGER NOT NULL,
@@ -76,8 +77,8 @@ def migrate_to_v5(connection: 'DBConnection') -> None:
     """
     root_dir = Path(__file__).resolve().parent.parent.parent
 
-    with connection.write_ctx() as cursor:
-        _create_new_tables(cursor)
-        _populate_rpc_nodes(cursor, root_dir)
-        _reset_curve_cache(cursor)
-        _remove_name_from_contracts(cursor)
+    with connection.read_ctx() as cursor, connection.write_ctx() as write_cursor:
+        _create_new_tables(write_cursor)
+        _populate_rpc_nodes(write_cursor, root_dir)
+        _reset_curve_cache(write_cursor)
+        _remove_name_from_contracts(cursor, write_cursor)

@@ -20,7 +20,7 @@ from rotkehlchen.types import Location
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor, DBConnection
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient, DBConnection
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -61,7 +61,7 @@ LEDGER_ACTION_TYPE_TO_NAME = {
 
 
 @enter_exit_debug_log()
-def _migrate_rotki_events(write_cursor: 'DBCursor') -> None:
+def _migrate_rotki_events(write_cursor: 'DBWriterClient') -> None:
     """
     Migrate rotki events that were broken due to https://github.com/rotki/rotki/issues/6550.
     and events that need to update their types after the consolidation made in 1.31
@@ -85,10 +85,11 @@ def _migrate_rotki_events(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _upgrade_rotki_events(write_cursor: 'DBCursor') -> None:
+def _upgrade_rotki_events(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """Upgrade the rotki events schema table to specify location as a type"""
     write_cursor.executescript('PRAGMA foreign_keys = OFF;')
     update_table_schema(
+        cursor=cursor,
         write_cursor=write_cursor,
         table_name='history_events',
         schema="""identifier INTEGER NOT NULL PRIMARY KEY,
@@ -111,7 +112,7 @@ def _upgrade_rotki_events(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _purge_kraken_events(write_cursor: 'DBCursor') -> None:
+def _purge_kraken_events(write_cursor: 'DBWriterClient') -> None:
     """
     Purge kraken events, after the changes that allows for processing of new assets.
     We may have had missed events so now let's repull. And since we will also
@@ -130,7 +131,7 @@ def _purge_kraken_events(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _add_new_supported_chains_locations(write_cursor: 'DBCursor') -> None:
+def _add_new_supported_chains_locations(write_cursor: 'DBWriterClient') -> None:
     write_cursor.executemany(
         'INSERT OR IGNORE INTO location(location, seq) '
         'VALUES (?, ?)',
@@ -139,7 +140,7 @@ def _add_new_supported_chains_locations(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _migrate_ledger_actions(write_cursor: 'DBCursor', conn: 'DBConnection') -> None:
+def _migrate_ledger_actions(write_cursor: 'DBWriterClient', conn: 'DBConnection') -> None:
     """
     Migrate all ledger actions to history events, so that we can get rid of the
     deprecated ledger action structure.
@@ -247,7 +248,7 @@ def _migrate_ledger_actions(write_cursor: 'DBCursor', conn: 'DBConnection') -> N
 
 
 @enter_exit_debug_log()
-def _migrate_ledger_airdrop_accounting_setting(write_cursor: 'DBCursor') -> None:
+def _migrate_ledger_airdrop_accounting_setting(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:  # noqa: E501
     """
     Migrates the accounting setting for airdrops to the new table for accounting
     rules. It requires the existence of the accounting_rules table and the existence of
@@ -255,8 +256,8 @@ def _migrate_ledger_airdrop_accounting_setting(write_cursor: 'DBCursor') -> None
     """
     # copy the taxable ledger actions rules
     new_accounting_rule = None
-    write_cursor.execute('SELECT value FROM settings WHERE name=?', ('taxable_ledger_actions',))
-    if (taxable_ledgers_row := write_cursor.fetchone()) is not None:
+    cursor.execute('SELECT value FROM settings WHERE name=?', ('taxable_ledger_actions',))
+    if (taxable_ledgers_row := cursor.fetchone()) is not None:
         try:
             taxable_ledger_events = json.loads(taxable_ledgers_row[0])
         except json.JSONDecodeError as e:
@@ -284,7 +285,7 @@ def _migrate_ledger_airdrop_accounting_setting(write_cursor: 'DBCursor') -> None
 
 
 @enter_exit_debug_log()
-def _add_new_tables(write_cursor: 'DBCursor') -> None:
+def _add_new_tables(write_cursor: 'DBWriterClient') -> None:
     """
     Add new tables for this upgrade
     """
@@ -327,15 +328,15 @@ def _add_new_tables(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+def _reset_decoded_events(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """
     Reset all decoded evm events except the customized ones for ethereum mainnet,
     arbitrum, optimism and polygon.
     """
-    if write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] == 0:
+    if cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] == 0:
         return
 
-    customized_events = write_cursor.execute(
+    customized_events = cursor.execute(
         'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value=?',
         (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
     ).fetchone()[0]
@@ -358,7 +359,7 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _replace_velo_identifier(write_cursor: 'DBCursor') -> None:
+def _replace_velo_identifier(write_cursor: 'DBWriterClient') -> None:
     """
     Replace VELO with the binance version of the token. This is done as part of a consolidation
     process where we added VELO V1 and VELO V2 from Velodrome but our database also contained a
@@ -392,7 +393,7 @@ def upgrade_v39_to_v40(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Replace VELO asset in favor of the binance chain version
     """
     progress_handler.set_total_steps(10)
-    with db.user_write() as write_cursor:
+    with db.conn.read_ctx() as cursor, db.user_write() as write_cursor:
         _add_new_tables(write_cursor)
         progress_handler.new_step()
         _migrate_rotki_events(write_cursor)
@@ -401,13 +402,13 @@ def upgrade_v39_to_v40(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         progress_handler.new_step()
         _add_new_supported_chains_locations(write_cursor)
         progress_handler.new_step()
-        _upgrade_rotki_events(write_cursor)
+        _upgrade_rotki_events(cursor, write_cursor)
         progress_handler.new_step()
-        _migrate_ledger_airdrop_accounting_setting(write_cursor)
+        _migrate_ledger_airdrop_accounting_setting(cursor, write_cursor)
         progress_handler.new_step()
         _migrate_ledger_actions(write_cursor, db.conn)
         progress_handler.new_step()
-        _reset_decoded_events(write_cursor)
+        _reset_decoded_events(cursor, write_cursor)
         progress_handler.new_step()
         _replace_velo_identifier(write_cursor)
         progress_handler.new_step()

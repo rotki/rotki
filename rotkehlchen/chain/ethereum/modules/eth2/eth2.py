@@ -51,7 +51,7 @@ from .utils import create_profit_filter_queries
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
     from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
     from rotkehlchen.externalapis.beaconchain.service import BeaconChain
 
@@ -636,9 +636,10 @@ class Eth2(EthereumModule):
         if len(needed_validators) == 0:
             return
 
-        with self.database.user_write() as write_cursor:
+        with self.database.conn.read_ctx() as cursor, self.database.user_write() as write_cursor:
             for index, withdrawable_ts in needed_validators:
                 dbeth2.set_validator_exit(
+                    cursor=cursor,
                     write_cursor=write_cursor,
                     index=index,
                     withdrawable_timestamp=withdrawable_ts,

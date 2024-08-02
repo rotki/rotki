@@ -8,7 +8,7 @@ from rotkehlchen.utils.misc import is_valid_ethereum_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 
@@ -21,12 +21,13 @@ def _deserialize_event_identifier(val: str) -> bytes:
     return val.encode()
 
 
-def _refactor_xpubs_and_xpub_mappings(cursor: 'DBCursor') -> None:
+def _refactor_xpubs_and_xpub_mappings(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     # Keep a copy of the xpub_mappings because it will get deleted once
     # xpubs table is dropped.
     xpub_mappings = cursor.execute('SELECT * FROM xpub_mappings').fetchall()
     update_table_schema(
-        write_cursor=cursor,
+        cursor=cursor,
+        write_cursor=write_cursor,
         table_name='xpubs',
         schema="""xpub TEXT NOT NULL,
         derivation_path TEXT NOT NULL,
@@ -39,7 +40,7 @@ def _refactor_xpubs_and_xpub_mappings(cursor: 'DBCursor') -> None:
 
     # Now populate the xpub_mappings table with its previous data
     # and set `blockchain` column to NOT NULL
-    cursor.execute("""
+    write_cursor.execute("""
     CREATE TABLE xpub_mappings_copy (
         address TEXT NOT NULL,
         xpub TEXT NOT NULL,
@@ -57,7 +58,7 @@ def _refactor_xpubs_and_xpub_mappings(cursor: 'DBCursor') -> None:
         PRIMARY KEY (address, xpub, derivation_path)
     );
     """)
-    cursor.executemany("""
+    write_cursor.executemany("""
     INSERT INTO xpub_mappings_copy(
         address,
         xpub,
@@ -68,12 +69,12 @@ def _refactor_xpubs_and_xpub_mappings(cursor: 'DBCursor') -> None:
     )
     VALUES(?, ?, ?, ?, ?, ?);
     """, xpub_mappings)
-    cursor.execute('DROP TABLE xpub_mappings;')
-    cursor.execute('ALTER TABLE xpub_mappings_copy RENAME TO xpub_mappings;')
+    write_cursor.execute('DROP TABLE xpub_mappings;')
+    write_cursor.execute('ALTER TABLE xpub_mappings_copy RENAME TO xpub_mappings;')
 
 
-def _create_new_tables(cursor: 'DBCursor') -> None:
-    cursor.execute("""
+def _create_new_tables(write_cursor: 'DBWriterClient') -> None:
+    write_cursor.execute("""
     CREATE TABLE IF NOT EXISTS address_book (
         address TEXT NOT NULL,
         blockchain TEXT NOT NULL DEFAULT "ETH",
@@ -83,8 +84,8 @@ def _create_new_tables(cursor: 'DBCursor') -> None:
 """)
 
 
-def _create_nodes(cursor: 'DBCursor') -> None:
-    cursor.execute("""
+def _create_nodes(write_cursor: 'DBWriterClient') -> None:
+    write_cursor.execute("""
     CREATE TABLE IF NOT EXISTS web3_nodes(
     identifier INTEGER NOT NULL PRIMARY KEY,
     name TEXT NOT NULL,
@@ -96,7 +97,7 @@ def _create_nodes(cursor: 'DBCursor') -> None:
 """)
 
 
-def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
+def _force_bytes_for_tx_hashes(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """This DB upgrade function:
     - Updates the `tx_hash` column schema in aave_events, adex_events, balancer_events, amm_swaps,
     amm_events & yearn_vaults_events from TEXT to BLOB.
@@ -104,7 +105,7 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
     bytes event identifiers.
     """
     # aave_events
-    cursor.execute("""
+    write_cursor.execute("""
     CREATE TABLE aave_events_copy (
         address VARCHAR[42] NOT NULL,
         event_type VARCHAR[10] NOT NULL,
@@ -133,16 +134,16 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
         except DeserializationError:
             continue
         new_aave_events.append(tuple(aave_event))
-    cursor.executemany(
+    write_cursor.executemany(
         'INSERT INTO aave_events_copy VALUES'
         '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
         new_aave_events,
     )
-    cursor.execute('DROP TABLE aave_events;')
-    cursor.execute('ALTER TABLE aave_events_copy RENAME TO aave_events;')
+    write_cursor.execute('DROP TABLE aave_events;')
+    write_cursor.execute('ALTER TABLE aave_events_copy RENAME TO aave_events;')
 
     # adex_events
-    cursor.execute("""
+    write_cursor.execute("""
     CREATE TABLE adex_events_copy (
         tx_hash BLOB NOT NULL,
         address VARCHAR[42] NOT NULL,
@@ -172,16 +173,16 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
         except DeserializationError:
             continue
         new_adex_events.append(tuple(adex_event))
-    cursor.executemany(
+    write_cursor.executemany(
         'INSERT INTO adex_events_copy VALUES'
         '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
         new_adex_events,
     )
-    cursor.execute('DROP TABLE adex_events;')
-    cursor.execute('ALTER TABLE adex_events_copy RENAME TO adex_events;')
+    write_cursor.execute('DROP TABLE adex_events;')
+    write_cursor.execute('ALTER TABLE adex_events_copy RENAME TO adex_events;')
 
     # balancer_events
-    cursor.execute("""
+    write_cursor.execute("""
     CREATE TABLE balancer_events_copy (
         tx_hash BLOB NOT NULL,
         log_index INTEGER NOT NULL,
@@ -212,16 +213,16 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
         except DeserializationError:
             continue
         new_balance_events.append(tuple(balancer_event))
-    cursor.executemany(
+    write_cursor.executemany(
         'INSERT INTO balancer_events_copy VALUES'
         '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
         new_balance_events,
     )
-    cursor.execute('DROP TABLE balancer_events;')
-    cursor.execute('ALTER TABLE balancer_events_copy RENAME TO balancer_events;')
+    write_cursor.execute('DROP TABLE balancer_events;')
+    write_cursor.execute('ALTER TABLE balancer_events_copy RENAME TO balancer_events;')
 
     # yearn_vault_events
-    cursor.execute("""
+    write_cursor.execute("""
     CREATE TABLE yearn_vaults_events_copy (
         address VARCHAR[42] NOT NULL,
         event_type VARCHAR[10] NOT NULL,
@@ -252,16 +253,16 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
         except DeserializationError:
             continue
         new_yearn_vaults_events.append(tuple(yearn_vault_event))
-    cursor.executemany(
+    write_cursor.executemany(
         'INSERT INTO yearn_vaults_events_copy VALUES'
         '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
         new_yearn_vaults_events,
     )
-    cursor.execute('DROP TABLE yearn_vaults_events;')
-    cursor.execute('ALTER TABLE yearn_vaults_events_copy RENAME TO yearn_vaults_events;')
+    write_cursor.execute('DROP TABLE yearn_vaults_events;')
+    write_cursor.execute('ALTER TABLE yearn_vaults_events_copy RENAME TO yearn_vaults_events;')
 
     # amm_events
-    cursor.execute("""
+    write_cursor.execute("""
     CREATE TABLE amm_events_copy (
         tx_hash BLOB NOT NULL,
         log_index INTEGER NOT NULL,
@@ -289,18 +290,18 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
         except DeserializationError:
             continue
         new_amm_events.append(tuple(amm_event))
-    cursor.executemany(
+    write_cursor.executemany(
         'INSERT INTO amm_events_copy VALUES'
         '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
         new_amm_events,
     )
-    cursor.execute('DROP TABLE amm_events;')
-    cursor.execute('ALTER TABLE amm_events_copy RENAME TO amm_events;')
+    write_cursor.execute('DROP TABLE amm_events;')
+    write_cursor.execute('ALTER TABLE amm_events_copy RENAME TO amm_events;')
 
     # amm_swaps
     # drop the read only table and re create after modification
-    cursor.execute('DROP VIEW combined_trades_view;')
-    cursor.execute("""
+    write_cursor.execute('DROP VIEW combined_trades_view;')
+    write_cursor.execute("""
     CREATE TABLE amm_swaps_copy (
         tx_hash BLOB NOT NULL,
         log_index INTEGER NOT NULL,
@@ -329,14 +330,14 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
         except DeserializationError:
             continue
         new_amm_swaps.append(tuple(amm_swap))
-    cursor.executemany(
+    write_cursor.executemany(
         'INSERT INTO amm_swaps_copy VALUES'
         '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
         new_amm_swaps,
     )
-    cursor.execute('DROP TABLE amm_swaps;')
-    cursor.execute('ALTER TABLE amm_swaps_copy RENAME TO amm_swaps;')
-    cursor.execute("""
+    write_cursor.execute('DROP TABLE amm_swaps;')
+    write_cursor.execute('ALTER TABLE amm_swaps_copy RENAME TO amm_swaps;')
+    write_cursor.execute("""
     CREATE VIEW combined_trades_view AS
         WITH amounts_query AS (
             SELECT
@@ -437,7 +438,7 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
 
     # this is cascaded when `history_events` is dropped, so keep a copy
     history_events_mappings = cursor.execute('SELECT * FROM history_events_mappings').fetchall()
-    cursor.execute("""
+    write_cursor.execute("""
     CREATE TABLE history_events_copy (
         identifier INTEGER NOT NULL PRIMARY KEY,
         event_identifier BLOB NOT NULL,
@@ -466,22 +467,22 @@ def _force_bytes_for_tx_hashes(cursor: 'DBCursor') -> None:
         except DeserializationError:
             continue
         new_history_events.append(tuple(history_event))
-    cursor.executemany(
+    write_cursor.executemany(
         'INSERT INTO history_events_copy VALUES'
         '(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
         new_history_events,
     )
-    cursor.execute('DROP TABLE history_events;')
-    cursor.execute('ALTER TABLE history_events_copy RENAME TO history_events;')
+    write_cursor.execute('DROP TABLE history_events;')
+    write_cursor.execute('ALTER TABLE history_events_copy RENAME TO history_events;')
 
-    cursor.executemany(
+    write_cursor.executemany(
         'INSERT INTO history_events_mappings(parent_identifier, value) VALUES(?, ?);',
         history_events_mappings,
     )
 
 
-def _refactor_blockchain_account_labels(cursor: 'DBCursor') -> None:
-    cursor.execute('UPDATE blockchain_accounts SET label = NULL WHERE label = ""')
+def _refactor_blockchain_account_labels(write_cursor: 'DBWriterClient') -> None:
+    write_cursor.execute('UPDATE blockchain_accounts SET label = NULL WHERE label = ""')
 
 
 def upgrade_v32_to_v33(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
@@ -491,14 +492,14 @@ def upgrade_v32_to_v33(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     - Change tx_hash for tables to BLOB type & history events event_identifier column to BLOB type.
     """
     progress_handler.set_total_steps(5)
-    with db.user_write() as cursor:
-        _refactor_xpubs_and_xpub_mappings(cursor)
+    with db.conn.read_ctx() as cursor, db.user_write() as write_cursor:
+        _refactor_xpubs_and_xpub_mappings(cursor, write_cursor)
         progress_handler.new_step()
-        _create_new_tables(cursor)
+        _create_new_tables(write_cursor)
         progress_handler.new_step()
-        _refactor_blockchain_account_labels(cursor)
+        _refactor_blockchain_account_labels(write_cursor)
         progress_handler.new_step()
-        _create_nodes(cursor)
+        _create_nodes(write_cursor)
         progress_handler.new_step()
-        _force_bytes_for_tx_hashes(cursor)
+        _force_bytes_for_tx_hashes(cursor, write_cursor)
         progress_handler.new_step()

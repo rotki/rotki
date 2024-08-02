@@ -293,13 +293,13 @@ class Bitstamp(ExchangeInterface):
         # check for corresponding asset movement in the DB.
         serialized_location = Location.BITSTAMP.serialize_for_db()
         indices_to_delete = []
-        with self.db.user_write() as write_cursor:
+        with self.db.conn.read_ctx() as cursor, self.db.user_write() as write_cursor:
             for idx, crypto_movement in enumerate(crypto_asset_movements):
-                write_cursor.execute(
+                cursor.execute(
                     'SELECT id from asset_movements WHERE location=? AND category=? AND timestamp=? AND asset=?',  # noqa: E501
                     (serialized_location, crypto_movement.category.serialize_for_db(), crypto_movement.timestamp, crypto_movement.asset.identifier),  # noqa: E501
                 )
-                if (result := write_cursor.fetchone()) is not None:
+                if (result := cursor.fetchone()) is not None:
                     write_cursor.execute(
                         'UPDATE asset_movements SET address=?, transaction_id=? WHERE id=?',
                         (crypto_movement.address, crypto_movement.transaction_id, result[0]),

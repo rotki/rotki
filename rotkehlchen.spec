@@ -29,8 +29,8 @@ def Entrypoint(dist, group, name, scripts=None, pathex=None, hiddenimports=None,
     # script name must not be a valid module name to avoid name clashes on import
     script_path = os.path.join(workpath, name + '-script.py')
     with open(script_path, 'w') as fh:
-        fh.write('import rotkehlchen.__main__\n')
-        fh.write('rotkehlchen.__main__.main()')
+        fh.write('import rotkehlchen.start\n')
+        fh.write('rotkehlchen.start.main()')
 
     return Analysis(
         [script_path] + scripts,

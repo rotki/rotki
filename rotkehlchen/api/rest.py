@@ -272,7 +272,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
     from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
     from rotkehlchen.exchanges.kraken import KrakenAccountType
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
@@ -1024,10 +1024,10 @@ class RestAPI:
             foreground_color: HexColorCode,
     ) -> Response:
 
-        with self.rotkehlchen.data.db.user_write() as cursor:
+        with self.rotkehlchen.data.db.user_write() as write_cursor:
             try:
                 self.rotkehlchen.data.db.add_tag(
-                    write_cursor=cursor,
+                    write_cursor=write_cursor,
                     name=name,
                     description=description,
                     background_color=background_color,
@@ -1036,6 +1036,7 @@ class RestAPI:
             except TagConstraintError as e:
                 return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             return self._get_tags(cursor)
 
     def edit_tag(
@@ -2914,11 +2915,22 @@ class RestAPI:
         tracked_addresses = self.rotkehlchen.chains_aggregator.accounts.zksync_lite
 
         # first delete tranasaction data and all decoded events and related data
-        with self.rotkehlchen.data.db.user_write() as write_cursor:
-            concerning_address = write_cursor.execute('DELETE FROM zksynclite_transactions WHERE tx_hash=? RETURNING from_address', (tx_hash,)).fetchone()  # noqa: E501
-            deleted_event_data = write_cursor.execute(
+        with (
+            self.rotkehlchen.data.db.conn.read_ctx() as cursor,
+            self.rotkehlchen.data.db.user_write() as write_cursor,
+        ):
+            write_cursor.execute('DELETE FROM zksynclite_transactions WHERE tx_hash=?;', (tx_hash,))  # noqa: E501
+            concerning_address = cursor.execute(
+                'SELECT from_address FROM zksynclite_transactions WHERE rowid=?',
+                (write_cursor.lastrowid,),
+            ).fetchone()
+            write_cursor.execute(
                 'DELETE FROM history_events WHERE event_identifier=? RETURNING location_label',
                 (ZKL_IDENTIFIER.format(tx_hash=tx_hash.hex()),),
+            )
+            deleted_event_data = cursor.execute(
+                'SELECT location_label FROM history_events WHERE rowid=?',
+                (write_cursor.lastrowid,),
             ).fetchone()
             if deleted_event_data is not None:
                 concerning_address = deleted_event_data[0]

@@ -39,7 +39,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceipt
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
     from rotkehlchen.types import EvmTransaction
 
 
@@ -243,9 +243,9 @@ class EvmTransactions(ABC):  # noqa: B024
                 return
 
         log.debug(f'{self.evm_inquirer.chain_name} transactions done for {address}. Update range {start_ts} - {end_ts}')  # noqa: E501
-        with self.database.user_write() as cursor:
+        with self.database.user_write() as write_cursor:
             self.dbranges.update_used_query_range(  # entire range is now considered queried
-                write_cursor=cursor,
+                write_cursor=write_cursor,
                 location_string=location_string,
                 queried_ranges=[(start_ts, end_ts)],
             )
@@ -349,9 +349,9 @@ class EvmTransactions(ABC):  # noqa: B024
                 return
 
         log.debug(f'Internal {self.evm_inquirer.chain_name} transactions for address {address} done. Update range {start_ts} - {end_ts}')  # noqa: E501
-        with self.database.user_write() as cursor:
+        with self.database.user_write() as write_cursor:
             self.dbranges.update_used_query_range(  # entire range is now considered queried
-                write_cursor=cursor,
+                write_cursor=write_cursor,
                 location_string=location_string,
                 queried_ranges=[(start_ts, end_ts)],
             )
@@ -546,6 +546,7 @@ class EvmTransactions(ABC):  # noqa: B024
                 evm_transactions=[transaction],
                 relevant_address=relevant_address,
             )
+            write_cursor.commit()  # because we read identifier in add_or_ignore_receipt_data
             self.dbevmtx.add_or_ignore_receipt_data(
                 write_cursor=write_cursor,
                 chain_id=self.evm_inquirer.chain_id,
@@ -801,6 +802,7 @@ class EvmTransactions(ABC):  # noqa: B024
                 evm_transactions=[transaction],
                 relevant_address=associated_address,
             )
+            write_cursor.commit()  # because the above tx is read below
             self.dbevmtx.add_or_ignore_receipt_data(
                 write_cursor=write_cursor,
                 chain_id=self.evm_inquirer.chain_id,

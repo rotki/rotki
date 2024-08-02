@@ -5,7 +5,7 @@ from rotkehlchen.types import SPAM_PROTOCOL
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import EvmToken
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
 
 
 # Whenever you upgrade the global DB make sure to:
@@ -37,7 +37,7 @@ def globaldb_get_setting_value(cursor: 'DBCursor', name: str, default_value: int
 
 
 def set_token_spam_protocol(
-        write_cursor: 'DBCursor',
+        write_cursor: 'DBWriterClient',
         token: 'EvmToken',
         is_spam: bool,
 ) -> None:

@@ -5,10 +5,10 @@ from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.logging import enter_exit_debug_log
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+    from rotkehlchen.db.drivers.client import DBConnection, DBWriterClient
 
 
-def upgrade_from_sql(cursor: 'DBCursor', filename: str) -> None:
+def upgrade_from_sql(cursor: 'DBWriterClient', filename: str) -> None:
     """Executes SQL from the given file in the globalDB upgrade"""
     if (  # check if the SQL file exists
         sql_file := Path(__file__).resolve().parent.parent.parent / 'data' / f'{filename}.sql'
@@ -19,7 +19,7 @@ def upgrade_from_sql(cursor: 'DBCursor', filename: str) -> None:
 
 
 @enter_exit_debug_log()
-def _create_and_populate_location_asset_mappings_table(cursor: 'DBCursor') -> None:
+def _create_and_populate_location_asset_mappings_table(cursor: 'DBWriterClient') -> None:
     """Adds and populates the `location_asset_mappings` table. These mappings are added using
     `rotkehlchen/data/populate_location_asset_mappings.sql`, which were all hardcoded till v1.32.XX.
     """  # noqa: E501
@@ -33,7 +33,7 @@ def _create_and_populate_location_asset_mappings_table(cursor: 'DBCursor') -> No
 
 
 @enter_exit_debug_log()
-def _create_and_populate_location_unsupported_assets_table(cursor: 'DBCursor') -> None:
+def _create_and_populate_location_unsupported_assets_table(cursor: 'DBWriterClient') -> None:
     """Adds and populates the `location_unsupported_assets` table. These assets are added using
     `rotkehlchen/data/populate_location_unsupported_assets.sql`, which were all hardcoded till v1.32.XX.
     """  # noqa: E501

@@ -1,19 +1,19 @@
 import sqlite3
 from contextlib import suppress
+from typing import TYPE_CHECKING
 
 import gevent
 import pytest
 
-from rotkehlchen.db.drivers.gevent import ContextError, DBConnection, DBConnectionType
+from rotkehlchen.db.drivers.client import ContextError, DBConnection, DBConnectionType
 from rotkehlchen.errors.asset import UnknownAsset
 
+if TYPE_CHECKING:
+    from rotkehlchen.globaldb.handler import GlobalDBHandler
 
-def test_unnamed_savepoints():
-    conn = DBConnection(
-        path=':memory:',
-        connection_type=DBConnectionType.GLOBAL,
-        sql_vm_instructions_cb=0,
-    )
+
+def test_unnamed_savepoints(globaldb: 'GlobalDBHandler'):
+    conn = globaldb.conn
     conn.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
     with conn.savepoint_ctx() as cursor1:
         assert len(conn.savepoints) == 1
@@ -22,16 +22,25 @@ def test_unnamed_savepoints():
         cursor2, savepoint2 = conn._enter_savepoint()  # also check manual savepoints
         assert list(conn.savepoints) == [savepoint1, savepoint2]
         cursor2.execute('INSERT INTO a VALUES (2)')
+    with conn.read_ctx() as cursor:
         # make sure that 2 was added
-        assert cursor1.execute('SELECT b FROM a').fetchall() == [(1,), (2,)]
-        conn.rollback_savepoint()
+        assert cursor.execute('SELECT b FROM a').fetchall() == [(1,), (2,)]
+
+    # now add two values from seperate cursor and test rolling back
+    with conn.savepoint_ctx() as cursor1:
+        assert len(conn.savepoints) == 1
+        savepoint1 = next(iter(conn.savepoints))
+        cursor1.execute('INSERT INTO a VALUES (4)')
+        cursor2, savepoint2 = conn._enter_savepoint()  # also check manual savepoints
+        assert list(conn.savepoints) == [savepoint1, savepoint2]
+        cursor2.execute('INSERT INTO a VALUES (5)')
+        conn.rollback_savepoint(cursor2)
         # check that the second savepoint was NOT released since it was only rolled back
         assert list(conn.savepoints) == [savepoint1, savepoint2]
-        assert cursor1.execute('SELECT b FROM a').fetchall() == [(1,)]  # 2 should not be there
-        cursor1.execute('INSERT INTO a VALUES (3)')  # add one more value after the rollback
+        cursor1.execute('INSERT INTO a VALUES (6)')  # add one more value after the rollback
     assert len(conn.savepoints) == 0  # check that we released successfully
     # And make sure that the data is saved
-    assert conn.execute('SELECT b FROM a').fetchall() == [(1,), (3,)]
+    assert conn.cursor().execute('SELECT b FROM a').fetchall() == [(1,), (2,), (4,), (6,)]
 
 
 def test_savepoint_errors():
@@ -40,25 +49,22 @@ def test_savepoint_errors():
         connection_type=DBConnectionType.GLOBAL,
         sql_vm_instructions_cb=0,
     )
-    with pytest.raises(ContextError):
-        conn.release_savepoint()
+    with conn.write_ctx() as write_cursor:
+        with pytest.raises(ContextError):
+            conn.release_savepoint(write_cursor)
 
-    conn._enter_savepoint('point')
-    with pytest.raises(ContextError), conn._enter_savepoint('point'):
-        ...
+        conn._enter_savepoint('point')
+        with pytest.raises(ContextError):
+            conn._enter_savepoint('point')
 
-    with pytest.raises(ContextError):
-        conn.rollback_savepoint('abc')
+        with pytest.raises(ContextError):
+            conn.rollback_savepoint(write_cursor, 'abc')
 
 
-def test_write_transaction_with_savepoint():
+def test_write_transaction_with_savepoint(globaldb: 'GlobalDBHandler'):
     """Test that opening a savepoint within a write transaction in the
     same greenlet is okay"""
-    conn = DBConnection(
-        path=':memory:',
-        connection_type=DBConnectionType.GLOBAL,
-        sql_vm_instructions_cb=0,
-    )
+    conn = globaldb.conn
     conn.execute('CREATE TABLE a(b INTEGER PRIMARY KEY)')
     with conn.write_ctx() as write_cursor:
         write_cursor.execute('INSERT INTO a VALUES (1)')

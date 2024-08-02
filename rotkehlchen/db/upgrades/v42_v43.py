@@ -13,7 +13,7 @@ from rotkehlchen.types import Location
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 logger = logging.getLogger(__name__)
@@ -21,14 +21,14 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 @enter_exit_debug_log()
-def _add_usd_price_nft_table(write_cursor: 'DBCursor') -> None:
+def _add_usd_price_nft_table(write_cursor: 'DBWriterClient') -> None:
     write_cursor.execute(
         'ALTER TABLE nfts ADD COLUMN usd_price REAL NOT NULL DEFAULT 0;',
     )
 
 
 @enter_exit_debug_log()
-def _change_hop_counterparty_value(write_cursor: 'DBCursor') -> None:
+def _change_hop_counterparty_value(write_cursor: 'DBWriterClient') -> None:
     write_cursor.execute(
         'UPDATE evm_events_info SET counterparty=? WHERE counterparty=?',
         ('hop', 'hop-protocol'),
@@ -36,7 +36,7 @@ def _change_hop_counterparty_value(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _add_new_supported_locations(write_cursor: 'DBCursor') -> None:
+def _add_new_supported_locations(write_cursor: 'DBWriterClient') -> None:
     write_cursor.execute(
         'INSERT OR IGNORE INTO location(location, seq) VALUES (?, ?)',
         ('p', Location.HTX.value),
@@ -44,7 +44,7 @@ def _add_new_supported_locations(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _remove_coinbasepro_credentials(write_cursor: 'DBCursor') -> None:
+def _remove_coinbasepro_credentials(write_cursor: 'DBWriterClient') -> None:
     write_cursor.execute(
         'DELETE FROM user_credentials WHERE location=?;',
         (Location.COINBASEPRO.serialize_for_db(),),
@@ -65,10 +65,10 @@ def _remove_old_csv_files(data_dir: Path) -> None:
 
 
 @enter_exit_debug_log()
-def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+def _reset_decoded_events(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """Reset all decoded evm events except for the customized ones and those in zksync lite."""
-    if write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] > 0:
-        customized_events = write_cursor.execute(
+    if cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] > 0:
+        customized_events = cursor.execute(
             'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value=?',
             (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
         ).fetchone()[0]
@@ -102,7 +102,7 @@ def upgrade_v42_to_v43(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     - reset decoded evm events except for zksync lite and custom ones
     """
     progress_handler.set_total_steps(6)
-    with db.user_write() as write_cursor:
+    with db.conn.read_ctx() as cursor, db.user_write() as write_cursor:
         _add_usd_price_nft_table(write_cursor)
         progress_handler.new_step()
         _change_hop_counterparty_value(write_cursor)
@@ -113,5 +113,5 @@ def upgrade_v42_to_v43(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         progress_handler.new_step()
         _remove_old_csv_files(db.user_data_dir.parent.parent)
         progress_handler.new_step()
-        _reset_decoded_events(write_cursor)
+        _reset_decoded_events(cursor, write_cursor)
         progress_handler.new_step()

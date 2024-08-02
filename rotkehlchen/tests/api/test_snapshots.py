@@ -36,7 +36,7 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBWriterClient
 
 BALANCES_IMPORT_HEADERS = ['timestamp', 'category', 'asset_identifier', 'amount', 'usd_value']
 BALANCES_IMPORT_INVALID_HEADERS = ['timestamp', 'category', 'asset', 'amount', 'value']
@@ -46,7 +46,7 @@ LOCATION_DATA_IMPORT_INVALID_HEADERS = ['timestamp', 'location', 'value']
 NFT_TOKEN_ID = '_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_11'
 
 
-def _populate_db_with_balances(write_cursor: 'DBCursor', db: 'DBHandler', ts: Timestamp):
+def _populate_db_with_balances(write_cursor: 'DBWriterClient', db: 'DBHandler', ts: Timestamp):
     db.add_multiple_balances(
         write_cursor=write_cursor,
         balances=[
@@ -67,7 +67,7 @@ def _populate_db_with_balances(write_cursor: 'DBCursor', db: 'DBHandler', ts: Ti
         ])
 
 
-def _populate_db_with_balances_unknown_asset(write_cursor: 'DBCursor', ts: Timestamp):
+def _populate_db_with_balances_unknown_asset(write_cursor: 'DBWriterClient', ts: Timestamp):
     write_cursor.execute('INSERT INTO assets(identifier) VALUES ("YABIRXROTKI")')
     serialized_balances = [
         (ts, 'BTC', '1.00', '178.44', BalanceType.ASSET.serialize_for_db()),
@@ -81,7 +81,7 @@ def _populate_db_with_balances_unknown_asset(write_cursor: 'DBCursor', ts: Times
     )
 
 
-def _populate_db_with_location_data(write_cursor: 'DBCursor', db: 'DBHandler', ts: Timestamp):
+def _populate_db_with_location_data(write_cursor: 'DBWriterClient', db: 'DBHandler', ts: Timestamp):  # noqa: E501
     db.add_multiple_location_data(
         write_cursor=write_cursor,
         location_data=[
