@@ -179,6 +179,9 @@ def _ensure_curve_tokens_existence(
                     )
                     continue
 
+                if underlying_token_address == token_address:  # they are the same token. Stop here
+                    continue  # can happen for a pool to have token's underlying token as itself
+
                 try:
                     # and ensure token exists
                     get_or_create_evm_token(
@@ -204,7 +207,7 @@ def _ensure_curve_tokens_existence(
                     continue
         else:
             # Otherwise just ensure that coins and underlying coins exist in our assets database  # noqa: E501
-            for token_address in pool.coins + pool.underlying_coins:
+            for token_address in set(pool.coins + pool.underlying_coins):
                 if token_address == ETH_SPECIAL_ADDRESS:
                     continue
                 try:
