@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import TYPE_CHECKING, Final
 
 import pytest
 import requests
@@ -11,7 +12,13 @@ from rotkehlchen.tests.utils.api import (
 )
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import SupportedBlockchain
+from rotkehlchen.types import ChainType, HexColorCode
+
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
+
+
+TEST_ADDRESS: Final = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'
 
 
 def test_add_and_query_tags(
@@ -681,7 +688,7 @@ def test_delete_utilized_tag(rotkehlchen_api_server):
     cursor = rotki.data.db.conn.cursor()
     query = cursor.execute('SELECT object_reference, tag_name FROM tag_mappings;').fetchall()
     assert len(query) == 1
-    assert query[0][0] == f'{SupportedBlockchain.BITCOIN.value}{UNIT_BTC_ADDRESS1}'
+    assert query[0][0] == UNIT_BTC_ADDRESS1
     assert query[0][1] == 'public'
 
 
@@ -749,3 +756,72 @@ def test_delete_all_tags(rotkehlchen_api_server):
     with rotki.data.db.conn.read_ctx() as cursor:
         # Also check that the tag mapping is gone from the db
         assert len(cursor.execute('SELECT * FROM tag_mappings;').fetchall()) == 0
+
+
+@pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDRESS]])
+@pytest.mark.parametrize('gnosis_accounts', [[TEST_ADDRESS]])
+@pytest.mark.parametrize('optimism_accounts', [[TEST_ADDRESS]])
+@pytest.mark.parametrize('base_accounts', [[TEST_ADDRESS]])
+def test_editing_chain_type_tags(rotkehlchen_api_server: 'APIServer'):
+    """Test that modifying the label and tags of an account using the
+    chain type account endpoint works correctly removing previous values
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    # setup tags and addresses
+    with rotki.data.db.conn.read_ctx() as cursor:
+        for key in ('public', 'ledger', 'validators'):
+            rotki.data.db.add_tag(
+                write_cursor=cursor,
+                name=f'tag_{key}',
+                description=f'My {key} accounts',
+                background_color=HexColorCode('ffffff'),
+                foreground_color=HexColorCode('000000'),
+            )
+
+    # notice that the address is in base also but we don't add a label there.
+    # when editing the account we expect base to get a label set.
+    for blockchain in ('eth', 'gnosis', 'optimism'):
+        response = requests.patch(
+            api_url_for(
+                rotkehlchen_api_server,
+                'blockchainsaccountsresource',
+                blockchain=blockchain,
+            ), json={
+                'accounts': [{
+                    'address': TEST_ADDRESS,
+                    'label': 'my ledger address',
+                    'tags': ['tag_public', 'tag_ledger'],
+                }],
+            },
+        )
+        assert_proper_response(response)
+
+    # edit the tag and label for all chains
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'chaintypeaccountresource',
+            chain_type=ChainType.EVM.serialize(),
+        ),
+        json={
+            'accounts': [{
+                'address': TEST_ADDRESS,
+                'label': 'validators',
+                'tags': ['tag_validators'],
+            }],
+        },
+    )
+    assert_proper_response(response)
+
+    for chain in ('ETH', 'optimism', 'gnosis', 'base'):
+        response = requests.get(
+            api_url_for(
+                rotkehlchen_api_server,
+                'blockchainsaccountsresource',
+                blockchain=chain,
+            ),
+        )
+        result = assert_proper_sync_response_with_result(response)
+        assert result[0]['address'] == TEST_ADDRESS
+        assert result[0]['tags'] == ['tag_validators']
+        assert result[0]['label'] == 'validators'

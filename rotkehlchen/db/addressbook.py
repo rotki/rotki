@@ -89,7 +89,7 @@ class DBAddressbook:
                 # address since they are rendered redundant
                 if entry.blockchain is None:
                     write_cursor.execute(
-                        'DELETE FROM address_book where address=? AND blockchain IS NOT NULL',
+                        'DELETE FROM address_book where address=?',
                         (entry.address,),
                     )
 

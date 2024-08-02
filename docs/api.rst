@@ -9340,6 +9340,124 @@ Editing blockchain account data
    :statuscode 409: An account given to edit does not exist or a given tag does not exist.
    :statuscode 500: Internal rotki error
 
+
+Account operations by chain type
+==================================
+
+.. http:patch:: /api/(version)/blockchains/type/(chain_type)/accounts
+
+   .. note::
+      Supported blockchains types: ``EVM, BITCOIN, SUBSTRATE``
+
+   .. note::
+      This endpoint doesn't support ENS resolution
+
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+   Doing a PATCH on this endpoint with a list of accounts to edit will edit the label and tags for those accounts in all the chains of the same type where they are tracked.
+ 
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      PATCH /api/1/blockchains/type/evm/accounts HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {
+          "accounts": [
+              {
+                  "address": "0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B",
+                  "label": "my new metamask",
+                  "tags": [
+                      "public",
+                      "metamask"
+                  ]
+              },
+              {
+                  "address": "0xc37b40ABdB939635068d3c5f13E7faF686F03B65",
+                  "label": "my hardware wallet"
+              }
+          ]
+      }
+
+
+   :reqjson string chain_type: The type of blockchain where the address was added. ``EVM``, ``BITCOIN`` or ``SUBSTRATE``
+   :reqjson list[object] accounts: A list of account data to edit.
+   :reqjsonarr string address: The address of the account to edit. It doesn't allow ENS names.
+   :reqjsonarr string[optional] label: An optional label to edit for the account. Cannot be empty string.
+   :reqjsonarr list[optional] tags: An optional list of tags to attach to the account. Can be null. Should never be an empty list.
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result" : True,
+          "message": "",
+      }
+
+   :resjson list result: Okay result if all the accounts were edited correctly.
+
+   :statuscode 200: Accounts successfully edited
+   :statuscode 400: Provided JSON or data is in some way malformed. Given list to edit is empty.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: An account given to edit does not exist or a given tag does not exist.
+   :statuscode 500: Internal rotki error
+
+
+.. http:delete:: /api/(version)/blockchains/type/(chain_type)/accounts
+
+   .. note::
+      Supported blockchains types: ``EVM, BITCOIN, SUBSTRATE``
+
+   .. note::
+      This endpoint doesn't support ENS resolution
+
+      This endpoint can also be queried asynchronously by using ``"async_query": true``
+
+
+   Doing a DELETE on this endpoint with a list of accounts in the json data will remove these accounts from the tracked accounts for the all the chains of the ``chain_type`` provided.
+   If one of the given accounts to add is invalid the entire request will fail.
+
+
+   **Example Request**:
+
+   .. http:example:: curl wget httpie python-requests
+
+      DELETE /api/1/blockchains/type/evm/accounts HTTP/1.1
+      Host: localhost:5042
+      Content-Type: application/json;charset=UTF-8
+
+      {"accounts": ["0x78b0AD50E768D2376C6BA7de33F426ecE4e03e0B"]}
+
+   :reqjson string chain_type: The type of blockchain where the address was added. ``EVM``, ``BITCOIN`` or ``SUBSTRATE``
+   :reqjson list[string] accounts: A list of accounts to delete for the given blockchain. Each account Can only an address. ENS is not supported.
+   :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
+
+   **Example Response**:
+
+   .. sourcecode:: http
+
+      HTTP/1.1 200 OK
+      Content-Type: application/json
+
+      {
+          "result" : True,
+          "message": "",
+      }
+
+   :resjson list result: Okey result if all the accounts were deleted correctly.
+
+   :statuscode 200: Accounts successfully deleted
+   :statuscode 400: Provided JSON or data is in some way malformed. Given list to delete is empty.
+   :statuscode 401: User is not logged in.
+   :statuscode 409: An account given to be deleted does not exist.
+   :statuscode 500: Internal rotki error
+
 Removing blockchain accounts
 ==============================
 

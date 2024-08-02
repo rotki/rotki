@@ -9,6 +9,7 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.accounts import SingleBlockchainAccountData
 from rotkehlchen.chain.ethereum.defi.structures import (
     DefiBalance,
@@ -34,13 +35,16 @@ from rotkehlchen.tests.utils.blockchain import (
 )
 from rotkehlchen.tests.utils.constants import A_RDN
 from rotkehlchen.tests.utils.factories import (
+    ADDRESS_ETH,
+    ADDRESS_MULTICHAIN,
+    ADDRESS_OP,
     UNIT_BTC_ADDRESS1,
     UNIT_BTC_ADDRESS2,
     UNIT_BTC_ADDRESS3,
     make_evm_address,
 )
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import SupportedBlockchain
+from rotkehlchen.types import ChainType, SupportedBlockchain
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -1645,7 +1649,7 @@ def test_remove_nonexisting_blockchain_account_along_with_existing(
     cursor = rotki.data.db.conn.cursor()
     query = cursor.execute('SELECT object_reference, tag_name FROM tag_mappings;').fetchall()
     assert len(query) == 1
-    assert query[0][0] == f'{SupportedBlockchain.ETHEREUM.value}{ethereum_accounts[0]}'
+    assert query[0][0] == ethereum_accounts[0]
     assert query[0][1] == 'public'
 
 
@@ -1732,5 +1736,74 @@ def test_remove_blockchain_account_with_tags_removes_mapping(rotkehlchen_api_ser
     cursor = rotki.data.db.conn.cursor()
     query = cursor.execute('SELECT object_reference, tag_name FROM tag_mappings;').fetchall()
     assert len(query) == 1
-    assert query[0][0] == f'{SupportedBlockchain.BITCOIN.value}{UNIT_BTC_ADDRESS2}'
+    assert query[0][0] == UNIT_BTC_ADDRESS2
     assert query[0][1] == 'desktop'
+
+
+@pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('ethereum_accounts', [[ADDRESS_MULTICHAIN, ADDRESS_ETH]])
+@pytest.mark.parametrize('optimism_accounts', [[ADDRESS_MULTICHAIN, ADDRESS_OP]])
+@pytest.mark.parametrize('gnosis_accounts', [[ADDRESS_MULTICHAIN]])
+@pytest.mark.parametrize('bch_accounts', [[UNIT_BTC_ADDRESS1]])
+@pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
+def test_remove_chain_agnostic_accounts(rotkehlchen_api_server: APIServer):
+    """Test the removal of accounts for all the chains where they are tracked"""
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'chaintypeaccountresource',
+            chain_type=ChainType.EVM.serialize(),
+        ),
+        json={
+            'accounts': [ADDRESS_OP, ADDRESS_MULTICHAIN],
+        },
+    )
+    assert_proper_response(response)
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    assert len(rotki.chains_aggregator.accounts.get(SupportedBlockchain.OPTIMISM)) == 0
+    assert len(rotki.chains_aggregator.accounts.get(SupportedBlockchain.GNOSIS)) == 0
+    assert rotki.chains_aggregator.accounts.get(SupportedBlockchain.ETHEREUM) == (ADDRESS_ETH,)
+    assert rotki.chains_aggregator.accounts.get(SupportedBlockchain.BITCOIN) == (UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2)  # noqa: E501
+    assert rotki.chains_aggregator.accounts.get(SupportedBlockchain.BITCOIN_CASH) == (UNIT_BTC_ADDRESS1,)  # noqa: E501
+
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'chaintypeaccountresource',
+            chain_type=ChainType.EVM.serialize(),
+        ),
+        json={
+            'chain_type': ChainType.EVM.serialize(),
+            'accounts': [ADDRESS_OP, ADDRESS_MULTICHAIN],
+        },
+    )
+
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'chaintypeaccountresource',
+            chain_type=ChainType.BITCOIN.serialize(),
+        ),
+        json={
+            'accounts': [UNIT_BTC_ADDRESS1],
+        },
+    )
+    assert rotki.chains_aggregator.accounts.get(SupportedBlockchain.BITCOIN) == (UNIT_BTC_ADDRESS2,)  # noqa: E501
+    assert len(rotki.chains_aggregator.accounts.get(SupportedBlockchain.BITCOIN_CASH)) == 0
+
+    response = requests.delete(  # try that errors are raised correctly for an invalid address
+        api_url_for(
+            rotkehlchen_api_server,
+            'chaintypeaccountresource',
+            chain_type=ChainType.EVM.serialize(),
+        ),
+        json={
+            'accounts': [ADDRESS_OP],
+        },
+    )
+
+    assert_error_response(
+        response=response,
+        contained_in_msg='Tried to delete non tracked addresses',
+        status_code=HTTPStatus.BAD_REQUEST,
+    )

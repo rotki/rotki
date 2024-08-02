@@ -223,7 +223,7 @@ class XpubManager:
                     replace_tag_mappings(  # if we got tags add to the existing addresses too
                         write_cursor=write_cursor,
                         data=existing_address_data,
-                        object_reference_keys=['chain', 'address'],
+                        object_reference_keys=['address'],
                     )
 
         if len(new_addresses) != 0:

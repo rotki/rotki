@@ -52,10 +52,12 @@ from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_import.manager import CSVDataImporter
 from rotkehlchen.data_migrations.manager import DataMigrationManager
+from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.filtering import NFTFilterQuery
 from rotkehlchen.db.settings import CachedSettings, DBSettings, ModifiableDBSettings
 from rotkehlchen.db.updates import RotkiDataUpdater
+from rotkehlchen.db.utils import replace_tag_mappings
 from rotkehlchen.errors.api import PremiumAuthenticationError
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import (
@@ -91,9 +93,12 @@ from rotkehlchen.types import (
     SUPPORTED_EVM_CHAINS_TYPE,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     SUPPORTED_SUBSTRATE_CHAINS,
+    AddressbookEntry,
+    AddressbookType,
     ApiKey,
     ApiSecret,
     BTCAddress,
+    ChainType,
     ChecksumEvmAddress,
     ListOfBlockchainAddresses,
     Location,
@@ -814,6 +819,73 @@ class Rotkehlchen:
             write_cursor=write_cursor,
             account_data=[x.to_blockchain_account_data(blockchain) for x in account_data],
         )
+
+    def edit_chain_type_accounts_labels(
+            self,
+            cursor: 'DBCursor',
+            account_data: list[SingleBlockchainAccountData],
+    ) -> None:
+        """Edit the tags and labels for the accounts in all the chains
+        where they are tracked.
+        May raise:
+        - TagConstraintError: if the new tags don't exist
+        - InputError: If not all the selected addresses get updated
+        """
+        self.data.db.ensure_tags_exist(
+            cursor=cursor,
+            given_data=account_data,
+            action='editing',
+            data_type='blockchain accounts',
+        )
+
+        address_book_db = DBAddressbook(db_handler=self.data.db)
+        with address_book_db.write_ctx(book_type=AddressbookType.PRIVATE) as write_cursor:
+            for account in account_data:
+                if account.label is None:
+                    continue
+
+                address_book_db.add_addressbook_entries(
+                    write_cursor=write_cursor,
+                    entries=[AddressbookEntry(
+                        address=account.address,
+                        name=account.label,
+                        blockchain=None,
+                    )],
+                )
+
+        with self.data.db.user_write() as write_cursor:
+            replace_tag_mappings(
+                write_cursor=write_cursor,
+                data=account_data,
+                object_reference_keys=['address'],
+            )
+
+    def remove_chain_type_accounts(
+            self,
+            chain_type: ChainType,
+            accounts: ListOfBlockchainAddresses,
+    ) -> None:
+        """Remove the provided accounts from the specified chains
+        May raise:
+        - InputError: If we are trying to remove a non tracked account, the
+        removal fails or an invalid chain_type is provided.
+        """
+        blockchain_to_addresses, blockchains, accounts_seen = defaultdict(list), chain_type.type_to_blockchains(), set()  # noqa: E501
+        for blockchain in blockchains:
+            blockchain_accounts = self.chains_aggregator.accounts.get(blockchain)
+            for account in accounts:
+                if account in blockchain_accounts:
+                    accounts_seen.add(account)
+                    blockchain_to_addresses[blockchain].append(account)
+
+        if len(missing_accounts := set(accounts).difference(accounts_seen)) != 0:
+            raise InputError(f'Tried to delete non tracked addresses {missing_accounts}')
+
+        for blockchain, tracked_accounts in blockchain_to_addresses.items():
+            self.remove_single_blockchain_accounts(
+                blockchain=blockchain,
+                accounts=tracked_accounts,  # type: ignore  # mypy doesn't detect this as a list of blockchain addresses
+            )
 
     def remove_single_blockchain_accounts(
             self,

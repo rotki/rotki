@@ -108,6 +108,7 @@ from rotkehlchen.types import (
     BlockchainAddress,
     BTCAddress,
     ChainID,
+    ChainType,
     ChecksumEvmAddress,
     CostBasisMethod,
     EvmlikeChain,
@@ -1986,9 +1987,23 @@ def _transform_evm_addresses(data: dict[str, Any], ethereum_inquirer: 'EthereumI
         )
 
 
-class EvmAccountsPutSchema(AsyncQueryArgumentSchema):
+class ChainTypeSchema(Schema):
+    chain_type = SerializableEnumField(
+        enum_class=ChainType,
+        required=True,
+        exclude_types=(ChainType.EVMLIKE,),
+    )
+
+
+class BlockchainAccountListSchema(Schema):
     accounts = fields.List(fields.Nested(BlockchainAccountDataSchema), required=True)
 
+
+class ChainTypeAccountSchema(ChainTypeSchema, BlockchainAccountListSchema):
+    ...
+
+
+class EvmAccountsPutSchema(BlockchainAccountListSchema, AsyncQueryArgumentSchema):
     def __init__(self, ethereum_inquirer: EthereumInquirer):
         super().__init__()
         self.ethereum_inquirer = ethereum_inquirer
@@ -2059,9 +2074,16 @@ class BlockchainAccountsPutSchema(BlockchainAccountsPatchSchema):
     ...
 
 
-class BlockchainAccountsDeleteSchema(AsyncQueryArgumentSchema):
-    blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
+class StringAccountSchema(Schema):
     accounts = fields.List(fields.String(), required=True)
+
+
+class BlockchainTypeAccountsDeleteSchema(ChainTypeSchema, StringAccountSchema):
+    """Used to manage accounts in different chains filtering by chain type"""
+
+
+class BlockchainAccountsDeleteSchema(StringAccountSchema, AsyncQueryArgumentSchema):
+    blockchain = BlockchainField(required=True, exclude_types=(SupportedBlockchain.ETHEREUM_BEACONCHAIN,))  # noqa: E501
 
     def __init__(self, ethereum_inquirer: EthereumInquirer):
         super().__init__()
@@ -2802,7 +2824,7 @@ class AddressWithOptionalBlockchainSchema(Schema):
     ) -> OptionalChainAddress:
         if (
             data['blockchain'] is not None and
-            cast(SupportedBlockchain, data['blockchain']).get_chain_type() == 'evm'
+            cast(SupportedBlockchain, data['blockchain']).get_chain_type() == ChainType.EVM
         ):
             try:
                 address = to_checksum_address(data['address'])
@@ -2841,7 +2863,7 @@ class AddressWithOptionalBlockchainSchema(Schema):
             blockchain == SupportedBlockchain.BITCOIN_CASH and
             is_valid_bitcoin_cash_address(data['address']) is False
         ) or (
-            blockchain.get_chain_type() == 'substrate' and
+            blockchain.get_chain_type() == ChainType.SUBSTRATE and
             is_valid_substrate_address(chain=blockchain, value=data['address']) is False  # type: ignore  # expects polkadot or kusama
         )):
             raise ValidationError(
@@ -3564,7 +3586,7 @@ def _validate_address_with_blockchain(
         blockchain == SupportedBlockchain.BITCOIN_CASH and
         not is_valid_bitcoin_cash_address(address)
     ) or (
-        blockchain.get_chain_type() == 'substrate' and
+        blockchain.get_chain_type() == ChainType.SUBSTRATE and
         not is_valid_substrate_address(chain=blockchain, value=address)  # type: ignore  # expects polkadot or kusama
     ) or (
         blockchain.is_evm_or_evmlike() and

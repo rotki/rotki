@@ -20,6 +20,7 @@ from eth_typing import ChecksumAddress
 from hexbytes import HexBytes as Web3HexBytes
 
 from rotkehlchen.constants import ZERO
+from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.utils.hexbytes import HexBytes
@@ -422,6 +423,27 @@ class EvmInternalTransaction(NamedTuple):
         return str(self.chain_id.serialize()) + self.parent_tx_hash.hex() + str(self.trace_id)
 
 
+class ChainType(SerializableEnumNameMixin):
+    EVM = auto()
+    EVMLIKE = auto()
+    SUBSTRATE = auto()
+    BITCOIN = auto()
+    ETH2 = auto()
+
+    def type_to_blockchains(self) -> Sequence['SupportedBlockchain']:
+        """Return the set of valid blockchains for the chain type"""
+        if self in (ChainType.EVM, ChainType.EVMLIKE):
+            return SUPPORTED_EVM_CHAINS + SUPPORTED_EVMLIKE_CHAINS
+
+        if self == ChainType.BITCOIN:
+            return get_args(SUPPORTED_BITCOIN_CHAINS)
+
+        if self == ChainType.SUBSTRATE:
+            return get_args(SUPPORTED_SUBSTRATE_CHAINS)
+
+        raise InputError(f'Invalid chain type {self} when removing accounts')
+
+
 class SupportedBlockchain(SerializableEnumValueMixin):
     """
     These are the currently supported chains in any capacity in rotki
@@ -484,18 +506,18 @@ class SupportedBlockchain(SerializableEnumValueMixin):
 
         return self.value
 
-    def get_chain_type(self) -> Literal['evm', 'substrate', 'bitcoin', 'eth2', 'evmlike']:
+    def get_chain_type(self) -> ChainType:
         """Chain type to return to the API supported chains endpoint"""
         if self.is_evm():
-            return 'evm'
+            return ChainType.EVM
         if self.is_evmlike():
-            return 'evmlike'
+            return ChainType.EVMLIKE
         if self.is_substrate():
-            return 'substrate'
+            return ChainType.SUBSTRATE
         if self.is_bitcoin():
-            return 'bitcoin'
+            return ChainType.BITCOIN
         # else
-        return 'eth2'  # the outlier
+        return ChainType.ETH2  # the outlier
 
     def ens_coin_type(self) -> int:
         """Return the CoinType number according to EIP-2304, multichain address
