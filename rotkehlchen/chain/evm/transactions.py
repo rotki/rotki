@@ -39,7 +39,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceipt
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
     from rotkehlchen.types import EvmTransaction
 
 
@@ -183,9 +183,10 @@ class EvmTransactions(ABC):  # noqa: B024
                 )
             if period.range_type == 'timestamps':
                 assert location_string, 'should always be given for timestamps'
-                with self.database.user_write() as write_cursor:
+                with self.database.conn.read_ctx() as cursor, self.database.user_write() as write_cursor:  # noqa: E501
                     # update last queried time for the address
                     self.dbranges.update_used_query_range(
+                        cursor=cursor,
                         write_cursor=write_cursor,
                         location_string=location_string,
                         queried_ranges=[(period.from_value, new_transactions[-1].timestamp)],  # type: ignore
@@ -243,9 +244,10 @@ class EvmTransactions(ABC):  # noqa: B024
                 return
 
         log.debug(f'{self.evm_inquirer.chain_name} transactions done for {address}. Update range {start_ts} - {end_ts}')  # noqa: E501
-        with self.database.user_write() as cursor:
+        with self.database.conn.read_ctx() as cursor, self.database.user_write() as write_cursor:
             self.dbranges.update_used_query_range(  # entire range is now considered queried
-                write_cursor=cursor,
+                cursor=cursor,
+                write_cursor=write_cursor,
                 location_string=location_string,
                 queried_ranges=[(start_ts, end_ts)],
             )
@@ -290,9 +292,10 @@ class EvmTransactions(ABC):  # noqa: B024
                 if isinstance(period_or_hash, TimestampOrBlockRange) and period_or_hash.range_type == 'timestamps':  # noqa: E501
                     assert location_string, 'should always be given for timestamps'
                     log.debug(f'Internal {self.evm_inquirer.chain_name} transactions for {address} -> update range {period_or_hash.from_value} - {timestamp}')  # noqa: E501
-                    with self.database.conn.write_ctx() as write_cursor:
+                    with self.database.conn.read_ctx() as cursor, self.database.conn.write_ctx() as write_cursor:  # noqa: E501
                         # update last queried time for address
                         self.dbranges.update_used_query_range(
+                            cursor=cursor,
                             write_cursor=write_cursor,
                             location_string=location_string,
                             queried_ranges=[(period_or_hash.from_value, timestamp)],  # type: ignore
@@ -349,9 +352,10 @@ class EvmTransactions(ABC):  # noqa: B024
                 return
 
         log.debug(f'Internal {self.evm_inquirer.chain_name} transactions for address {address} done. Update range {start_ts} - {end_ts}')  # noqa: E501
-        with self.database.user_write() as cursor:
+        with self.database.conn.read_ctx() as cursor, self.database.user_write() as write_cursor:
             self.dbranges.update_used_query_range(  # entire range is now considered queried
-                write_cursor=cursor,
+                cursor=cursor,
+                write_cursor=write_cursor,
                 location_string=location_string,
                 queried_ranges=[(start_ts, end_ts)],
             )
@@ -392,9 +396,10 @@ class EvmTransactions(ABC):  # noqa: B024
                             )
                         timestamp = tx.timestamp
                         log.debug(f'{self.evm_inquirer.chain_name} ERC20 Transfers for {address} -> update range {query_start_ts} - {timestamp}')  # noqa: E501
-                        with self.database.user_write() as write_cursor:
+                        with self.database.conn.read_ctx() as cursor, self.database.user_write() as write_cursor:  # noqa: E501
                             # update last queried time for the address
                             self.dbranges.update_used_query_range(
+                                cursor=cursor,
                                 write_cursor=write_cursor,
                                 location_string=location_string,
                                 queried_ranges=[(query_start_ts, timestamp)],
@@ -419,8 +424,9 @@ class EvmTransactions(ABC):  # noqa: B024
                 )
 
         log.debug(f'{self.evm_inquirer.chain_name} ERC20 Transfers done for address {address}. Update range {start_ts} - {end_ts}')  # noqa: E501
-        with self.database.user_write() as write_cursor:
+        with self.database.conn.read_ctx() as cursor, self.database.user_write() as write_cursor:
             self.dbranges.update_used_query_range(  # entire range is now considered queried
+                cursor=cursor,
                 write_cursor=write_cursor,
                 location_string=location_string,
                 queried_ranges=[(start_ts, end_ts)],

@@ -6,11 +6,11 @@ from rotkehlchen.db.utils import update_table_schema
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 
-def _upgrade_history_events(cursor: 'DBCursor') -> None:
+def _upgrade_history_events(cursor: 'DBWriterClient') -> None:
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS history_events_copy (
         identifier INTEGER NOT NULL PRIMARY KEY,
@@ -49,7 +49,7 @@ def _upgrade_history_events(cursor: 'DBCursor') -> None:
     )
 
 
-def _remove_gitcoin(cursor: 'DBCursor') -> None:
+def _remove_gitcoin(cursor: 'DBWriterClient') -> None:
     cursor.execute('DELETE from ledger_actions WHERE identifier IN (SELECT parent_id FROM ledger_actions_gitcoin_data)')  # noqa: E501
     cursor.execute('DELETE from used_query_ranges WHERE name LIKE "gitcoingrants_%"')
     cursor.execute('DROP TABLE IF exists gitcoin_grant_metadata')
@@ -57,7 +57,7 @@ def _remove_gitcoin(cursor: 'DBCursor') -> None:
     cursor.execute('DROP TABLE IF exists gitcoin_tx_type')
 
 
-def _add_new_tables(cursor: 'DBCursor') -> None:
+def _add_new_tables(cursor: 'DBWriterClient') -> None:
     cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("d", 36)')
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS ethereum_internal_transactions (
@@ -104,9 +104,10 @@ def _add_new_tables(cursor: 'DBCursor') -> None:
 """)
 
 
-def _refactor_manual_balance_id(cursor: 'DBCursor') -> None:
+def _refactor_manual_balance_id(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     update_table_schema(
-        write_cursor=cursor,
+        cursor=cursor,
+        write_cursor=write_cursor,
         table_name='manually_tracked_balances',
         schema="""id INTEGER PRIMARY KEY,
         asset TEXT NOT NULL,
@@ -120,29 +121,29 @@ def _refactor_manual_balance_id(cursor: 'DBCursor') -> None:
     )
 
 
-def _update_fee_for_existing_trades(cursor: 'DBCursor') -> None:
+def _update_fee_for_existing_trades(cursor: 'DBWriterClient') -> None:
     cursor.execute('UPDATE trades SET fee = NULL WHERE fee_currency IS NULL')
     cursor.execute('UPDATE trades SET fee_currency = NULL WHERE fee IS NULL')
 
 
-def _update_history_entries_from_kraken(cursor: 'DBCursor') -> None:
+def _update_history_entries_from_kraken(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:  # noqa: E501
     """The logic for kraken was adding additional entries for trades when fee + kfee was
     being used. This function makes the state of the database consistent with the upgraded
     logic by:
     - Removing extra row additions
     - Make sure that no other event has duplicated sequence indexes
     """
-    cursor.execute("""
+    write_cursor.execute("""
     DELETE FROM history_events where location="B" AND asset="KFEE" AND
      type="trade" AND subtype=NULL;
     """)
 
-    cursor.execute('SELECT event_identifier, sequence_index from history_events')
+    write_cursor.execute('SELECT event_identifier, sequence_index from history_events')
     eventid_to_indices: dict[str, set[int]] = defaultdict(set)
     for event_identifier, sequence_index in cursor:
         eventid_to_indices[event_identifier].add(sequence_index)
 
-    cursor.execute("""
+    write_cursor.execute("""
     SELECT e.event_identifier, e.sequence_index, e.identifier from history_events e JOIN (SELECT event_identifier,
     sequence_index, COUNT(*) as cnt FROM history_events GROUP BY event_identifier, sequence_index)
     other ON e.event_identifier = other.event_identifier and e.sequence_index=other.sequence_index
@@ -157,19 +158,19 @@ def _update_history_entries_from_kraken(cursor: 'DBCursor') -> None:
         update_tuples.append((new_index, identifier))
 
     if len(update_tuples) != 0:
-        cursor.executemany(
+        write_cursor.executemany(
             'UPDATE history_events SET sequence_index=? WHERE identifier=?',
             update_tuples,
         )
 
 
-def _update_settings_name_for_selected_binance_markets(cursor: 'DBCursor') -> None:
+def _update_settings_name_for_selected_binance_markets(cursor: 'DBWriterClient') -> None:
     cursor.execute("""
     UPDATE user_credentials_mappings SET setting_name = ? WHERE setting_name = "PAIRS"
     """, (BINANCE_MARKETS_KEY,))
 
 
-def _update_manual_balances_tags(cursor_fetch: 'DBCursor', cursor_update: 'DBCursor') -> None:
+def _update_manual_balances_tags(cursor_fetch: 'DBCursor', cursor_update: 'DBWriterClient') -> None:  # noqa: E501
     manual_balances = cursor_fetch.execute('SELECT id, label FROM manually_tracked_balances')
     for balance_id, label in manual_balances:
         cursor_update.execute('UPDATE tag_mappings SET object_reference=? WHERE object_reference=?', (balance_id, label))  # noqa: E501
@@ -190,7 +191,7 @@ def upgrade_v31_to_v32(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     """
     progress_handler.set_total_steps(8)
     with db.user_write() as write_cursor, db.conn.read_ctx() as read_cursor:
-        _update_history_entries_from_kraken(write_cursor)
+        _update_history_entries_from_kraken(read_cursor, write_cursor)
         progress_handler.new_step()
         _upgrade_history_events(write_cursor)
         progress_handler.new_step()
@@ -198,7 +199,7 @@ def upgrade_v31_to_v32(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         progress_handler.new_step()
         _add_new_tables(write_cursor)
         progress_handler.new_step()
-        _refactor_manual_balance_id(write_cursor)
+        _refactor_manual_balance_id(read_cursor, write_cursor)
         progress_handler.new_step()
         _update_fee_for_existing_trades(write_cursor)
         progress_handler.new_step()

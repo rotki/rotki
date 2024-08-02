@@ -12,7 +12,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 
@@ -21,11 +21,12 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 @enter_exit_debug_log()
-def _update_nfts_table(write_cursor: 'DBCursor') -> None:
+def _update_nfts_table(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """
     Update the nft table to remove double quotes due to https://github.com/rotki/rotki/issues/6368
     """
     update_table_schema(
+        cursor=cursor,
         write_cursor=write_cursor,
         table_name='nfts',
         schema="""identifier TEXT NOT NULL PRIMARY KEY,
@@ -46,7 +47,7 @@ def _update_nfts_table(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _create_new_tables(write_cursor: 'DBCursor') -> None:
+def _create_new_tables(write_cursor: 'DBWriterClient') -> None:
     write_cursor.execute("""
     CREATE TABLE IF NOT EXISTS optimism_transactions (
         tx_id INTEGER NOT NULL PRIMARY KEY,
@@ -56,9 +57,9 @@ def _create_new_tables(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _reduce_eventid_size(write_cursor: 'DBCursor') -> None:
+def _reduce_eventid_size(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """Reduce the size of history event ids"""
-    staking_events = write_cursor.execute(
+    staking_events = cursor.execute(
         'SELECT H.identifier, H.subtype, S.validator_index, S.is_exit_or_blocknumber, '
         'H.timestamp FROM history_events H INNER JOIN eth_staking_events_info S '
         'ON S.identifier=H.identifier',
@@ -71,7 +72,7 @@ def _reduce_eventid_size(write_cursor: 'DBCursor') -> None:
         elif subtype in {'mev reward', 'block production'}:
             updates.append((f'BP1_{blocknumber}', identifier))
 
-    imported_events = write_cursor.execute(
+    imported_events = cursor.execute(
         "SELECT identifier, event_identifier FROM history_events WHERE event_identifier LIKE 'rotki_events_%'",  # noqa: E501
     ).fetchall()
     for identifier, event_identifier in imported_events:
@@ -84,19 +85,19 @@ def _reduce_eventid_size(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _update_evm_transaction_data(write_cursor: 'DBCursor') -> None:
+def _update_evm_transaction_data(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """Turn the primary key of evm transactions to be a unique integer ID instead
     of composite primary with hash + chain id. Saves lots of DB space.
 
     Implements https://github.com/rotki/rotki/issues/6372
     """
-    txs = write_cursor.execute('SELECT * from evm_transactions').fetchall()
-    internal_txs = write_cursor.execute('SELECT * from evm_internal_transactions').fetchall()
-    receipts = write_cursor.execute('SELECT * from evmtx_receipts').fetchall()
-    logs = write_cursor.execute('SELECT * from evmtx_receipt_logs').fetchall()
-    topics = write_cursor.execute('SELECT * from evmtx_receipt_log_topics').fetchall()
-    tx_mappings = write_cursor.execute('SELECT * from evm_tx_mappings').fetchall()
-    address_mappings = write_cursor.execute('SELECT tx_hash, chain_id, address from evmtx_address_mappings').fetchall()  # noqa: E501
+    txs = cursor.execute('SELECT * from evm_transactions').fetchall()
+    internal_txs = cursor.execute('SELECT * from evm_internal_transactions').fetchall()
+    receipts = cursor.execute('SELECT * from evmtx_receipts').fetchall()
+    logs = cursor.execute('SELECT * from evmtx_receipt_logs').fetchall()
+    topics = cursor.execute('SELECT * from evmtx_receipt_log_topics').fetchall()
+    tx_mappings = cursor.execute('SELECT * from evm_tx_mappings').fetchall()
+    address_mappings = cursor.execute('SELECT tx_hash, chain_id, address from evmtx_address_mappings').fetchall()  # noqa: E501
 
     write_cursor.execute('DROP TABLE IF EXISTS evm_transactions')
     write_cursor.execute('DROP TABLE IF EXISTS evm_internal_transactions')
@@ -228,13 +229,13 @@ def _update_evm_transaction_data(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _add_arbitrum_one_location(write_cursor: 'DBCursor') -> None:
+def _add_arbitrum_one_location(write_cursor: 'DBWriterClient') -> None:
     write_cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("i", 41);')
 
 
 @enter_exit_debug_log()
-def _update_rpc_nodes_table(write_cursor: 'DBCursor') -> None:
-    table_exists = write_cursor.execute(
+def _update_rpc_nodes_table(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
+    table_exists = cursor.execute(
         "SELECT COUNT(*) FROM sqlite_master "
         "WHERE type='table' AND name='rpc_nodes'",
     ).fetchone()[0] == 1
@@ -247,6 +248,7 @@ def _update_rpc_nodes_table(write_cursor: 'DBCursor') -> None:
         write_cursor.execute('DELETE FROM rpc_nodes WHERE name="polygon etherscan"')
 
     update_table_schema(
+        cursor=cursor,
         write_cursor=write_cursor,
         table_name='rpc_nodes',
         schema="""identifier INTEGER NOT NULL PRIMARY KEY,
@@ -262,9 +264,9 @@ def _update_rpc_nodes_table(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _remove_saddle_oracle(write_cursor: 'DBCursor') -> None:
+def _remove_saddle_oracle(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     write_cursor.execute('SELECT value FROM settings WHERE name="current_price_oracles"')
-    if (data := write_cursor.fetchone()) is None:
+    if (data := cursor.fetchone()) is None:
         return  # oracles not configured
     try:
         oracles: list[str] = json.loads(data[0])
@@ -280,15 +282,15 @@ def _remove_saddle_oracle(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+def _reset_decoded_events(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """
     Reset all decoded evm events except the customized ones for ethereum mainnet,
     optimism and polygon.
     """
-    if write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] == 0:
+    if cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] == 0:
         return
 
-    customized_events = write_cursor.execute(
+    customized_events = cursor.execute(
         'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value=?',
         (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
     ).fetchone()[0]
@@ -320,22 +322,22 @@ def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Add Arbitrum One location and nodes
     """
     progress_handler.set_total_steps(9)
-    with db.user_write() as write_cursor:
-        _update_nfts_table(write_cursor)
+    with db.conn.read_ctx() as cursor, db.user_write() as write_cursor:
+        _update_nfts_table(cursor, write_cursor)
         progress_handler.new_step()
-        _reduce_eventid_size(write_cursor)
+        _reduce_eventid_size(cursor, write_cursor)
         progress_handler.new_step()
         _create_new_tables(write_cursor)
         progress_handler.new_step()
-        _update_evm_transaction_data(write_cursor)
+        _update_evm_transaction_data(cursor, write_cursor)
         progress_handler.new_step()
-        _reset_decoded_events(write_cursor)
+        _reset_decoded_events(cursor, write_cursor)
         progress_handler.new_step()
         _add_arbitrum_one_location(write_cursor)
         progress_handler.new_step()
-        _remove_saddle_oracle(write_cursor)
+        _remove_saddle_oracle(cursor, write_cursor)
         progress_handler.new_step()
-        _update_rpc_nodes_table(write_cursor)
+        _update_rpc_nodes_table(cursor, write_cursor)
         progress_handler.new_step()
 
     db.conn.execute('VACUUM;')

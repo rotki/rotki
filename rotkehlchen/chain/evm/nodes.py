@@ -1,11 +1,11 @@
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
 
 
 def populate_rpc_nodes_in_database(
-        db_write_cursor: 'DBCursor',
+        db_write_cursor: 'DBWriterClient',
         globaldb_cursor: 'DBCursor',
 ) -> None:
     """Populates the rpc nodes in the user database from the global DB.

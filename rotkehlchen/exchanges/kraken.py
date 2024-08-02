@@ -75,7 +75,7 @@ from rotkehlchen.utils.serialization import jsonloads_dict
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset, AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
     from rotkehlchen.user_messages import MessagesAggregator
 
 
@@ -1039,6 +1039,7 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             if len(new_events) != 0 and with_errors is False:
                 with self.db.user_write() as write_cursor:
                     ranges.update_used_query_range(
+                        cursor=cursor,
                         write_cursor=write_cursor,
                         location_string=range_query_name,
                         queried_ranges=[(query_start_ts, query_end_ts)],

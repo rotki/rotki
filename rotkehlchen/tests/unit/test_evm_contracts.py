@@ -52,8 +52,10 @@ def test_fallback_to_packaged_db(ethereum_inquirer: 'EthereumInquirer'):
             'contract_abi ON contract_data.abi=contract_abi.id WHERE chain_id=1 LIMIT 1',
         )
         (address, abi) = cursor.fetchone()  # There has to be at least one entry
-        cursor.execute('DELETE FROM contract_data WHERE address=? AND chain_id=1', (address,))
-        cursor.execute('DELETE FROM contract_abi WHERE value=?', (abi,))
+
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        write_cursor.execute('DELETE FROM contract_data WHERE address=? AND chain_id=1', (address,))  # noqa: E501
+        write_cursor.execute('DELETE FROM contract_abi WHERE value=?', (abi,))
 
     # Now query the contract, let it get to packaged global DB and also see that
     # database packaged_db is locked is also not raised

@@ -74,7 +74,7 @@ from rotkehlchen.utils.mixins.lockable import protect_with_lock
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -879,6 +879,7 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
 
             with self.db.user_write() as write_cursor:
                 ranges.update_used_query_range(
+                    cursor=cursor,
                     write_cursor=write_cursor,
                     location_string=range_query_name,
                     queried_ranges=[(start_ts, end_ts)],

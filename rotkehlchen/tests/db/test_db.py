@@ -251,8 +251,8 @@ def test_add_remove_exchange(database: DBHandler) -> None:
     assert binance.api_secret == binance_api_secret
 
     # remove an exchange and see it works
-    with database.user_write() as cursor:
-        database.remove_exchange(cursor, 'kraken1', Location.KRAKEN)
+    with database.conn.read_ctx() as cursor, database.user_write() as write_cursor:
+        database.remove_exchange(cursor, write_cursor, 'kraken1', Location.KRAKEN)
         credentials = database.get_exchange_credentials(cursor)
     assert len(credentials) == 2
     assert len(credentials[Location.KRAKEN]) == 1
@@ -267,8 +267,8 @@ def test_add_remove_exchange(database: DBHandler) -> None:
     assert binance.api_secret == binance_api_secret
 
     # remove last exchange of a location and see nothing is returned
-    with database.user_write() as cursor:
-        database.remove_exchange(cursor, 'kraken2', Location.KRAKEN)
+    with database.conn.read_ctx() as cursor, database.user_write() as write_cursor:
+        database.remove_exchange(cursor, write_cursor, 'kraken2', Location.KRAKEN)
         credentials = database.get_exchange_credentials(cursor)
     assert len(credentials) == 1
     assert len(credentials[Location.BINANCE]) == 1
@@ -281,8 +281,9 @@ def test_add_remove_exchange(database: DBHandler) -> None:
     database.add_exchange('Coinbase', Location.COINBASE, make_api_key(), make_api_secret())
     database.add_exchange('Coinbase 2', Location.COINBASE, make_api_key(), make_api_secret())
 
-    with database.user_write() as write_cursor:
+    with database.conn.read_ctx() as cursor, database.user_write() as write_cursor:
         database.remove_exchange(
+            cursor=cursor,
             write_cursor=write_cursor,
             name='Coinbase',
             location=Location.COINBASE,
@@ -317,7 +318,7 @@ def test_export_import_db(data_dir: Path, username: str, sql_vm_instructions_cb:
     encoded_data, _ = data.compress_and_encrypt_db()
     # The server would return them decoded
     data.decompress_and_decrypt_db(encoded_data)
-    with data.db.user_write() as cursor:
+    with data.db.conn.read_ctx() as cursor:
         balances = data.db.get_manually_tracked_balances(cursor)
     assert balances == [starting_balance]
 
@@ -1675,12 +1676,11 @@ def test_unlock_with_invalid_premium_data(data_dir, username, sql_vm_instruction
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
-    cursor = data.db.conn.cursor()
-    cursor.execute(
-        'INSERT OR REPLACE INTO user_credentials(name, api_key, api_secret) VALUES (?, ?, ?)',
-        ('rotkehlchen', 'foo', 'boo'),
-    )
-    data.db.conn.commit()
+    with data.db.conn.write_ctx() as cursor:
+        cursor.execute(
+            'INSERT OR REPLACE INTO user_credentials(name, api_key, api_secret) VALUES (?, ?, ?)',
+            ('rotkehlchen', 'foo', 'boo'),
+        )
 
     # now relogin and check that no exception is thrown
     del data
@@ -1924,7 +1924,7 @@ def test_db_schema_sanity_check(database: 'DBHandler', caplog) -> None:
 def test_db_add_skipped_external_event_twice(database: 'DBHandler') -> None:
     """Test that adding same skipped event twice in the DB does not duplicate it"""
     data = {'event': 'someid', 'time': 'atime'}
-    with database.user_write() as write_cursor:
+    with database.conn.read_ctx() as cursor, database.user_write() as write_cursor:
         for _ in range(2):
             database.add_skipped_external_event(
                 write_cursor=write_cursor,
@@ -1932,7 +1932,7 @@ def test_db_add_skipped_external_event_twice(database: 'DBHandler') -> None:
                 data=data,
                 extra_data=None,
             )
-            assert write_cursor.execute('SELECT COUNT(*) FROM skipped_external_events').fetchone()[0] == 1  # noqa: E501
+            assert cursor.execute('SELECT COUNT(*) FROM skipped_external_events').fetchone()[0] == 1  # noqa: E501
 
 
 @pytest.mark.parametrize('db_settings', [

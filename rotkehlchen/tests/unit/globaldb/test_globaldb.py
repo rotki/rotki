@@ -1304,9 +1304,11 @@ def test_error_bad_underlying_token(globaldb: GlobalDBHandler):
     a_lusd = A_LUSD.resolve_to_evm_token()
     with (
         pytest.raises(InputError),
+        globaldb.conn.read_ctx() as cursor,
         globaldb.conn.write_ctx() as write_cursor,
     ):
         globaldb._add_underlying_tokens(
+            cursor=cursor,
             write_cursor=write_cursor,
             parent_token_identifier=A_LUSD.identifier,
             underlying_tokens=[UnderlyingToken(address=a_lusd.evm_address, token_kind=EvmTokenKind.ERC20, weight=ONE)],  # noqa: E501

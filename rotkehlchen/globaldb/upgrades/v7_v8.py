@@ -5,7 +5,7 @@ from rotkehlchen.logging import enter_exit_debug_log
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+    from rotkehlchen.db.drivers.client import DBConnection, DBCursor, DBWriterClient
 
 
 ASSETS_TO_WHITELIST: Final = (
@@ -54,7 +54,7 @@ ASSETS_TO_WHITELIST: Final = (
 
 
 @enter_exit_debug_log()
-def fix_detected_spam_tokens(write_cursor: 'DBCursor') -> None:
+def fix_detected_spam_tokens(write_cursor: 'DBWriterClient') -> None:
     """Remove assets marked as spam by error and whitelist them"""
     write_cursor.executemany(
         'UPDATE evm_tokens SET protocol=NULL WHERE identifier=?',
@@ -68,16 +68,16 @@ def fix_detected_spam_tokens(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def set_unique_asset_collections(write_cursor: 'DBCursor') -> None:
+def set_unique_asset_collections(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """It does the following:
     - Fixes the asset_collections table, to remove duplicated entries.
     - Adds UNIQUE constraint in asset_collections table.
     """
-    v7_multiasset_mappings = write_cursor.execute(
+    v7_multiasset_mappings = cursor.execute(
         'SELECT rowid, collection_id, asset FROM multiasset_mappings;',
     ).fetchall()
 
-    all_entries = write_cursor.execute('SELECT id, name, symbol FROM asset_collections;').fetchall()  # noqa: E501
+    all_entries = cursor.execute('SELECT id, name, symbol FROM asset_collections;').fetchall()
     unique_entries = set()
     duplicated_entries = 0  # to count how many duplicated entries are found until some iteration
     for collection_id, name, symbol in all_entries:
@@ -94,6 +94,7 @@ def set_unique_asset_collections(write_cursor: 'DBCursor') -> None:
             duplicated_entries += 1
 
     update_table_schema(
+        cursor=cursor,
         write_cursor=write_cursor,
         table_name='asset_collections',
         schema="""id INTEGER PRIMARY KEY,
@@ -108,7 +109,7 @@ def set_unique_asset_collections(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _update_scrollscan_contract(cursor: 'DBCursor') -> None:
+def _update_scrollscan_contract(cursor: 'DBWriterClient') -> None:
     """Update the balance scanner contract in scroll to use the
     same version as we use in other chains"""
     cursor.execute(
@@ -121,7 +122,7 @@ def _update_scrollscan_contract(cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _rename_curve_tokens_cache_keys(write_cursor: 'DBCursor') -> None:
+def _rename_curve_tokens_cache_keys(write_cursor: 'DBWriterClient') -> None:
     """Rename curve cache keys to include chain id and set their last_queried_ts to 0,
     so that other chains are queried again at the time of decoding the events. Adding only 1
     as chain_id because at the time of this upgrade only ethereum tokens are present in the cache.
@@ -135,10 +136,11 @@ def _rename_curve_tokens_cache_keys(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _update_contracts_abis(write_cursor: 'DBCursor') -> None:
+def _update_contracts_abis(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """Make the abi of contracts unique in the globaldb"""
     write_cursor.executescript('PRAGMA foreign_keys = OFF;')
     update_table_schema(
+        cursor=cursor,
         write_cursor=write_cursor,
         table_name='contract_abi',
         schema="""id INTEGER NOT NULL PRIMARY KEY,
@@ -157,9 +159,9 @@ def migrate_to_v8(connection: 'DBConnection') -> None:
     - Rename the keys of curve cache to include chain_id
 
     This upgrade takes place in v1.34.0"""
-    with connection.write_ctx() as write_cursor:
+    with connection.read_ctx() as cursor, connection.write_ctx() as write_cursor:
         fix_detected_spam_tokens(write_cursor)
-        set_unique_asset_collections(write_cursor)
+        set_unique_asset_collections(cursor, write_cursor)
         _update_scrollscan_contract(write_cursor)
         _rename_curve_tokens_cache_keys(write_cursor)
-        _update_contracts_abis(write_cursor)
+        _update_contracts_abis(cursor, write_cursor)

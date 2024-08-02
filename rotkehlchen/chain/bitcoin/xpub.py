@@ -18,7 +18,7 @@ from rotkehlchen.types import BTCAddress, SupportedBlockchain
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBWriterClient
 
 
 logger = logging.getLogger(__name__)
@@ -293,7 +293,7 @@ class XpubManager:
 
     def delete_bitcoin_xpub(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             xpub_data: XpubData,
     ) -> None:
         """
@@ -304,7 +304,8 @@ class XpubManager:
         with self.lock:
             # First try to delete the xpub, and if it does not exist raise InputError
             self.db.delete_bitcoin_xpub(write_cursor, xpub_data)
-            self.chains_aggregator.sync_bitcoin_accounts_with_db(write_cursor, xpub_data.blockchain)  # noqa: E501
+            with self.db.conn.read_ctx() as cursor:
+                self.chains_aggregator.sync_bitcoin_accounts_with_db(cursor, xpub_data.blockchain)
 
     def check_for_new_xpub_addresses(
             self,
@@ -334,16 +335,17 @@ class XpubManager:
 
     def edit_bitcoin_xpub(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             xpub_data: 'XpubData',
     ) -> None:
         with self.lock:
             # Update the xpub label
             self.db.edit_bitcoin_xpub(write_cursor, xpub_data)
             # Then add tags if not existing
-            self.db.ensure_tags_exist(
-                write_cursor,
-                given_data=[xpub_data],
-                action='editing',
-                data_type='bitcoin xpub' if xpub_data.blockchain == SupportedBlockchain.BITCOIN else 'bitcoin cash xpub',  # noqa: E501
-            )
+            with self.db.conn.read_ctx() as cursor:
+                self.db.ensure_tags_exist(
+                    cursor,
+                    given_data=[xpub_data],
+                    action='editing',
+                    data_type='bitcoin xpub' if xpub_data.blockchain == SupportedBlockchain.BITCOIN else 'bitcoin cash xpub',  # noqa: E501
+                )

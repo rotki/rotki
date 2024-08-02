@@ -1,9 +1,11 @@
-from gevent import monkey  # isort:skip
-monkey.patch_all()  # isort:skip
 import logging
 import sys
 import traceback
 
+from rotkehlchen.db.drivers.server import (  # noqa: F401  # pylint: disable=unused-import  # need to import them in this process so that zmq can (de)serialize them
+    ZMQCallData,
+    ZMQReturnData,
+)
 from rotkehlchen.errors.misc import DBSchemaError, SystemPermissionError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.server import RotkehlchenServer

@@ -4,7 +4,7 @@ from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
 
 
 class DBLoopring:
@@ -14,7 +14,7 @@ class DBLoopring:
 
     def add_accountid_mapping(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             address: ChecksumEvmAddress,
             account_id: int,
     ) -> None:
@@ -23,7 +23,7 @@ class DBLoopring:
             (f'loopring_{address}_account_id', str(account_id)),
         )
 
-    def remove_accountid_mapping(self, write_cursor: 'DBCursor', address: ChecksumEvmAddress) -> None:  # noqa: E501
+    def remove_accountid_mapping(self, write_cursor: 'DBWriterClient', address: ChecksumEvmAddress) -> None:  # noqa: E501
         write_cursor.execute(
             'DELETE FROM multisettings WHERE name=?;',
             (f'loopring_{address}_account_id',),

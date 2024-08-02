@@ -46,7 +46,7 @@ from rotkehlchen.utils.serialization import jsonloads_dict
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
 
 from .constants import ZKL_IDENTIFIER, ZKSYNCLITE_MAX_LIMIT, ZKSYNCLITE_TX_SAVEPREFIX
 from .structures import ZKSyncLiteSwapData, ZKSyncLiteTransaction, ZKSyncLiteTXType
@@ -194,8 +194,9 @@ class ZksyncLiteManager:
                 log.debug(f'Got {existing_txs} already queried transactions during pagination')
                 unique_transactions -= input_transactions
 
-            with self.database.conn.write_ctx() as write_cursor:
+            with self.database.conn.read_ctx() as cursor, self.database.user_write() as write_cursor:  # noqa: E501
                 self._add_zksynctxs_db(
+                    cursor=cursor,
                     write_cursor=write_cursor,
                     transactions=unique_transactions,
                 )
@@ -204,6 +205,7 @@ class ZksyncLiteManager:
                 else:  # direction -> newer
                     current_end_ts = new_transactions[-1].timestamp
                 ranges.update_used_query_range(
+                    cursor=cursor,
                     write_cursor=write_cursor,
                     location_string=location,
                     queried_ranges=[(current_start_ts, current_end_ts)],
@@ -465,14 +467,15 @@ class ZksyncLiteManager:
             log.error(f'Could not deserialize {tx_hash.hex()} transaction. Got None')
             return None
 
-        with self.database.user_write() as write_cursor:
-            self._add_zksynctxs_db(write_cursor=write_cursor, transactions=[tx])
+        with self.database.conn.read_ctx() as cursor, self.database.user_write() as write_cursor:
+            self._add_zksynctxs_db(cursor=cursor, write_cursor=write_cursor, transactions=[tx])
 
         return tx
 
     def _add_zksynctxs_db(
             self,
-            write_cursor: 'DBCursor',
+            cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             transactions: Iterable[ZKSyncLiteTransaction],
     ) -> None:
         for transaction in transactions:
@@ -480,15 +483,22 @@ class ZksyncLiteManager:
                 write_cursor.execute(
                     'INSERT INTO zksynclite_transactions(tx_hash, type, timestamp, block_number, '
                     'from_address, to_address, asset, amount, fee) '
-                    'VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING identifier',
+                    'VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?);',
                     transaction.serialize_for_db(),
                 )
                 if transaction.tx_type == ZKSyncLiteTXType.SWAP:
-                    identifier = write_cursor.fetchone()[0]
+                    if (identifier_row := cursor.execute(
+                        'SELECT identifier FROM calendar WHERE rowid=?',
+                        (write_cursor.lastrowid,),
+                    ).fetchone()) is None:
+                        log.error(
+                            f'Could not find identifier for zksynclite swap transaction {transaction}',  # noqa: E501
+                        )
+
                     write_cursor.execute(
                         'INSERT INTO zksynclite_swaps(tx_id, from_asset, from_amount, '
                         'to_asset, to_amount) VALUES(?, ?, ?, ?, ?)',
-                        transaction.swap_data.serialize_for_db(identifier),  # type: ignore  # swap_data exists for swap
+                        transaction.swap_data.serialize_for_db(identifier_row[0]),  # type: ignore  # swap_data exists for swap
                     )
             except IntegrityError as e:
                 log.error(f'Did not add zksync transaction {transaction} to the DB due to {e!s}')

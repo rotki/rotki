@@ -11,7 +11,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.types import YEARN_VAULTS_V1_PROTOCOL
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+    from rotkehlchen.db.drivers.client import DBConnection, DBCursor, DBWriterClient
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -80,16 +80,17 @@ def _get_abi(cursor: 'DBCursor', name: str) -> int:
     return result[0]
 
 
-def _insert_abi_return_id(cursor: 'DBCursor', name: str, serialized_abi: str) -> int:
-    cursor.execute(
+def _insert_abi_return_id(write_cursor: 'DBWriterClient', name: str, serialized_abi: str) -> int:
+    write_cursor.execute(
         'INSERT INTO contract_abi(value, name) VALUES(?, ?)',
         (serialized_abi, name),
     )
-    return cursor.lastrowid
+    return write_cursor.lastrowid
 
 
 def _get_or_create_common_abi(
         cursor: 'DBCursor',
+        write_cursor: 'DBWriterClient',
         name: str,
         serialized_abi: str,
 ) -> int:
@@ -99,22 +100,22 @@ def _get_or_create_common_abi(
         return result[0]
 
     return _insert_abi_return_id(
-        cursor=cursor,
+        write_cursor=write_cursor,
         name=name,
         serialized_abi=serialized_abi,
     )
 
 
 @enter_exit_debug_log()
-def _create_new_tables(cursor: 'DBCursor') -> None:
-    cursor.execute(
+def _create_new_tables(write_cursor: 'DBWriterClient') -> None:
+    write_cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS contract_abi (
             id INTEGER NOT NULL PRIMARY KEY,
             value TEXT NOT NULL,
             name TEXT
         );""")
-    cursor.execute(
+    write_cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS contract_data (
             address VARCHAR[42] NOT NULL,
@@ -128,17 +129,17 @@ def _create_new_tables(cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _add_eth_abis_json(cursor: 'DBCursor') -> None:
+def _add_eth_abis_json(write_cursor: 'DBWriterClient') -> None:
     root_dir = Path(__file__).resolve().parent.parent.parent
     abi_entries = json.loads((root_dir / 'data' / 'eth_abi.json').read_text(encoding='utf8'))
     abi_entries_tuples = []
     for name, value in abi_entries.items():
         abi_entries_tuples.append((name, json.dumps(value, separators=(',', ':'))))
-    cursor.executemany('INSERT INTO contract_abi(name, value) VALUES(?, ?)', abi_entries_tuples)
+    write_cursor.executemany('INSERT INTO contract_abi(name, value) VALUES(?, ?)', abi_entries_tuples)  # noqa: E501
 
 
 @enter_exit_debug_log()
-def _add_eth_contracts_json(cursor: 'DBCursor') -> tuple[int, int, int]:
+def _add_eth_contracts_json(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> tuple[int, int, int]:  # noqa: E501
     eth_scan_abi_id, multicall_abi_id, ds_registry_abi_id = None, None, None
     root_dir = Path(__file__).resolve().parent.parent.parent
     contract_entries = json.loads((root_dir / 'data' / 'eth_contracts.json').read_text(encoding='utf8'))  # noqa: E501
@@ -155,42 +156,49 @@ def _add_eth_contracts_json(cursor: 'DBCursor') -> tuple[int, int, int]:
         elif contract_key in MAKERDAO_ABI_GROUP_1:
             abi_id = _get_or_create_common_abi(
                 cursor=cursor,
+                write_cursor=write_cursor,
                 name='MAKERDAO_JOIN_GROUP1',
                 serialized_abi=serialized_abi,
             )
         elif contract_key in MAKERDAO_ABI_GROUP_2:
             abi_id = _get_or_create_common_abi(
                 cursor=cursor,
+                write_cursor=write_cursor,
                 name='MAKERDAO_JOIN_GROUP2',
                 serialized_abi=serialized_abi,
             )
         elif contract_key in MAKERDAO_ABI_GROUP_3:
             abi_id = _get_or_create_common_abi(
                 cursor=cursor,
+                write_cursor=write_cursor,
                 name='MAKERDAO_JOIN_GROUP3',
                 serialized_abi=serialized_abi,
             )
         elif contract_key in YEARN_ABI_GROUP_1:
             abi_id = _get_or_create_common_abi(
                 cursor=cursor,
+                write_cursor=write_cursor,
                 name='YEARN_VAULTS_GROUP1',
                 serialized_abi=serialized_abi,
             )
         elif contract_key in YEARN_ABI_GROUP_2:
             abi_id = _get_or_create_common_abi(
                 cursor=cursor,
+                write_cursor=write_cursor,
                 name='YEARN_VAULTS_GROUP2',
                 serialized_abi=serialized_abi,
             )
         elif contract_key in YEARN_ABI_GROUP_3:
             abi_id = _get_or_create_common_abi(
                 cursor=cursor,
+                write_cursor=write_cursor,
                 name='YEARN_VAULTS_GROUP3',
                 serialized_abi=serialized_abi,
             )
         elif contract_key in YEARN_ABI_GROUP_4:
             abi_id = _get_or_create_common_abi(
                 cursor=cursor,
+                write_cursor=write_cursor,
                 name='YEARN_VAULTS_GROUP4',
                 serialized_abi=serialized_abi,
             )
@@ -200,7 +208,7 @@ def _add_eth_contracts_json(cursor: 'DBCursor') -> tuple[int, int, int]:
             elif contract_key == 'ETH_MULTICALL_2':
                 contract_key = 'MULTICALL2'  # let's rename to non eth-specific  # noqa: E501, PLW2901
             abi_id = _insert_abi_return_id(
-                cursor=cursor,
+                write_cursor=write_cursor,
                 name=contract_key,
                 serialized_abi=serialized_abi,
             )
@@ -212,7 +220,7 @@ def _add_eth_contracts_json(cursor: 'DBCursor') -> tuple[int, int, int]:
         elif contract_key == 'DS_PROXY_REGISTRY':
             ds_registry_abi_id = abi_id
 
-        cursor.execute(
+        write_cursor.execute(
             'INSERT INTO contract_data(address, chain_id, name, abi, deployed_block) '
             'VALUES(?, ?, ?, ?, ?)',
             (items['address'], 1, contract_key, abi_id, items['deployed_block']),
@@ -228,12 +236,12 @@ def _add_eth_contracts_json(cursor: 'DBCursor') -> tuple[int, int, int]:
 
 @enter_exit_debug_log()
 def _add_optimism_contracts(
-        cursor: 'DBCursor',
+        write_cursor: 'DBWriterClient',
         eth_scan_abi_id: int,
         multicall_abi_id: int,
         ds_registry_abi_id: int,
 ) -> None:
-    cursor.executemany(
+    write_cursor.executemany(
         'INSERT INTO contract_data(address, chain_id, name, abi, deployed_block) '
         'VALUES(?, ?, ?, ?, ?)',
         [(
@@ -259,7 +267,7 @@ def _add_optimism_contracts(
 
 
 def _copy_assets_from_packaged_db(
-        cursor: 'DBCursor',
+        write_cursor: 'DBWriterClient',
         assets_ids: list[str],
         root_dir: Path,
 ) -> None:
@@ -277,22 +285,26 @@ def _copy_assets_from_packaged_db(
     """
     packaged_db_path = root_dir / 'data' / 'global.db'
     identifiers_quotes = ','.join('?' * len(assets_ids))
-    cursor.execute(f'ATTACH DATABASE "{packaged_db_path}" AS packaged_db;')
-    cursor.execute(f'INSERT INTO assets SELECT * FROM packaged_db.assets WHERE identifier IN ({identifiers_quotes});', assets_ids)  # noqa: E501
-    cursor.execute(f'INSERT INTO evm_tokens SELECT * FROM packaged_db.evm_tokens WHERE identifier IN ({identifiers_quotes});', assets_ids)  # noqa: E501
-    cursor.execute(f'INSERT INTO common_asset_details SELECT * FROM packaged_db.common_asset_details WHERE identifier IN ({identifiers_quotes});', assets_ids)  # noqa: E501
-    cursor.execute('COMMIT;')
-    cursor.execute('DETACH DATABASE packaged_db;')
+    write_cursor.execute(f'ATTACH DATABASE "{packaged_db_path}" AS packaged_db;')
+    write_cursor.execute(f'INSERT INTO assets SELECT * FROM packaged_db.assets WHERE identifier IN ({identifiers_quotes});', assets_ids)  # noqa: E501
+    write_cursor.execute(f'INSERT INTO evm_tokens SELECT * FROM packaged_db.evm_tokens WHERE identifier IN ({identifiers_quotes});', assets_ids)  # noqa: E501
+    write_cursor.execute(f'INSERT INTO common_asset_details SELECT * FROM packaged_db.common_asset_details WHERE identifier IN ({identifiers_quotes});', assets_ids)  # noqa: E501
+    write_cursor.execute('COMMIT;')
+    write_cursor.execute('DETACH DATABASE packaged_db;')
 
 
 @enter_exit_debug_log()
-def _populate_asset_collections(cursor: 'DBCursor', root_dir: Path) -> None:
+def _populate_asset_collections(write_cursor: 'DBWriterClient', root_dir: Path) -> None:
     """Insert into the collections table the information about known collections"""
-    cursor.execute((root_dir / 'data' / 'populate_asset_collections.sql').read_text(encoding='utf8'))  # noqa: E501
+    write_cursor.execute((root_dir / 'data' / 'populate_asset_collections.sql').read_text(encoding='utf8'))  # noqa: E501
 
 
 @enter_exit_debug_log()
-def _populate_multiasset_mappings(cursor: 'DBCursor', root_dir: Path) -> None:
+def _populate_multiasset_mappings(
+        cursor: 'DBCursor',
+        write_cursor: 'DBWriterClient',
+        root_dir: Path,
+) -> None:
     """
     Insert into the assets_mappings table the information about each asset's collection
     If any of the assets that needs to go in the collections is missing we copy it from the
@@ -314,7 +326,7 @@ def _populate_multiasset_mappings(cursor: 'DBCursor', root_dir: Path) -> None:
     if len(assets_to_add) != 0:
         try:
             _copy_assets_from_packaged_db(
-                cursor=cursor,
+                write_cursor=write_cursor,
                 assets_ids=list(assets_to_add),
                 root_dir=root_dir,
             )
@@ -322,14 +334,18 @@ def _populate_multiasset_mappings(cursor: 'DBCursor', root_dir: Path) -> None:
             log.error(f'Failed to add missing assets for collections. Missing assets were {assets_to_add}. {e!s}')  # noqa: E501
             return
 
-    cursor.execute(sql_sentences)
+    write_cursor.execute(sql_sentences)
 
 
 @enter_exit_debug_log()
-def _upgrade_address_book_table(cursor: 'DBCursor') -> None:
+def _upgrade_address_book_table(
+        cursor: 'DBCursor',
+        write_cursor: 'DBWriterClient',
+) -> None:
     """Upgrades the address book table if it exists by making the blockchain column optional"""
     update_table_schema(
-        write_cursor=cursor,
+        cursor=cursor,
+        write_cursor=write_cursor,
         table_name='address_book',
         schema="""address TEXT NOT NULL,
         blockchain TEXT,
@@ -340,9 +356,9 @@ def _upgrade_address_book_table(cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _update_yearn_v1_protocol(cursor: 'DBCursor') -> None:
+def _update_yearn_v1_protocol(write_cursor: 'DBWriterClient') -> None:
     """Update the protocol name for yearn assets"""
-    cursor.execute('UPDATE evm_tokens SET protocol=? WHERE protocol="yearn-v1"', (YEARN_VAULTS_V1_PROTOCOL,))  # noqa: E501
+    write_cursor.execute('UPDATE evm_tokens SET protocol=? WHERE protocol="yearn-v1"', (YEARN_VAULTS_V1_PROTOCOL,))  # noqa: E501
 
 
 @enter_exit_debug_log(name='GlobalDB v3->v4 upgrade')
@@ -357,12 +373,12 @@ def migrate_to_v4(connection: 'DBConnection') -> None:
     """
     root_dir = Path(__file__).resolve().parent.parent.parent
 
-    with connection.write_ctx() as cursor:
-        _create_new_tables(cursor)
-        _add_eth_abis_json(cursor)
-        eth_scan_abi_id, multicall_abi_id, ds_registry_abi_id = _add_eth_contracts_json(cursor)
-        _add_optimism_contracts(cursor, eth_scan_abi_id, multicall_abi_id, ds_registry_abi_id)
-        _populate_asset_collections(cursor, root_dir)
-        _populate_multiasset_mappings(cursor, root_dir)
-        _upgrade_address_book_table(cursor)
-        _update_yearn_v1_protocol(cursor)
+    with connection.read_ctx() as cursor, connection.write_ctx() as write_cursor:
+        _create_new_tables(write_cursor)
+        _add_eth_abis_json(write_cursor)
+        eth_scan_abi_id, multicall_abi_id, ds_registry_abi_id = _add_eth_contracts_json(cursor, write_cursor)  # noqa: E501
+        _add_optimism_contracts(write_cursor, eth_scan_abi_id, multicall_abi_id, ds_registry_abi_id)  # noqa: E501
+        _populate_asset_collections(write_cursor, root_dir)
+        _populate_multiasset_mappings(cursor, write_cursor, root_dir)
+        _upgrade_address_book_table(cursor, write_cursor)
+        _update_yearn_v1_protocol(write_cursor)

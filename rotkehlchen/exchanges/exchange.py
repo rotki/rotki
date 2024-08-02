@@ -277,12 +277,13 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
                 )
 
                 # make sure to add them to the DB
-                with self.db.user_write() as write_cursor:
+                with self.db.conn.read_ctx() as cursor, self.db.user_write() as write_cursor:
                     if len(new_trades) != 0:
                         self.db.add_trades(write_cursor=write_cursor, trades=new_trades)
 
                     # and also set the used queried timestamp range for the exchange
                     ranges.update_used_query_range(
+                        cursor=cursor,
                         write_cursor=write_cursor,
                         location_string=location_string,
                         queried_ranges=[queried_range],
@@ -339,12 +340,13 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             )
 
             # make sure to add them to the DB
-            with self.db.user_write() as write_cursor:
+            with self.db.conn.read_ctx() as cursor, self.db.user_write() as write_cursor:
                 if len(new_positions) != 0:
                     self.db.add_margin_positions(write_cursor, new_positions)
 
                 # and also set the last queried timestamp for the exchange
                 ranges.update_used_query_range(
+                    cursor=cursor,
                     write_cursor=write_cursor,
                     location_string=location_string,
                     queried_ranges=[(query_start_ts, query_end_ts)],
@@ -387,10 +389,11 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
                     start_ts=query_start_ts,
                     end_ts=query_end_ts,
                 )
-                with self.db.user_write() as write_cursor:
+                with self.db.conn.read_ctx() as cursor, self.db.user_write() as write_cursor:
                     if len(new_movements) != 0:
                         self.db.add_asset_movements(write_cursor, new_movements)
                     ranges.update_used_query_range(
+                        cursor=cursor,
                         write_cursor=write_cursor,
                         location_string=location_string,
                         queried_ranges=[(query_start_ts, query_end_ts)],
@@ -440,10 +443,11 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
                     start_ts=query_start_ts,
                     end_ts=query_end_ts,
                 )
-                with self.db.user_write() as write_cursor:
+                with self.db.conn.read_ctx() as cursor, self.db.user_write() as write_cursor:
                     if len(new_events) != 0:
                         db.add_history_events(write_cursor, new_events)
                     ranges.update_used_query_range(
+                        cursor=cursor,
                         write_cursor=write_cursor,
                         location_string=location_string,
                         queried_ranges=[(query_start_ts, query_end_ts)],

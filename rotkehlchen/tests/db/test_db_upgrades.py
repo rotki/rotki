@@ -18,7 +18,7 @@ from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.checks import sanity_check_impl
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
+from rotkehlchen.db.drivers.client import DBConnection, DBConnectionType
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.db.upgrade_manager import (
@@ -646,10 +646,12 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument
         msg_aggregator=msg_aggregator,
         resume_from_backup=False,
     )
-    cursor = db_v32.conn.cursor()
     # check that you cannot add blockchain column in xpub_mappings
-    with pytest.raises(sqlcipher.OperationalError) as exc_info:  # pylint: disable=no-member
-        cursor.execute(
+    with (
+        db_v32.user_write() as write_cursor,
+        pytest.raises(sqlcipher.OperationalError) as exc_info,  # pylint: disable=no-member
+    ):
+        write_cursor.execute(
             'INSERT INTO xpub_mappings(address, xpub, derivation_path, account_index, derived_index, blockchain) '  # noqa: E501
             'VALUES ("1234", "abcd", "d", 3, 6, "BCH");',
         )
@@ -662,6 +664,7 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument
         0,
         'BTC',
     )
+    cursor = db_v32.conn.cursor()
     old_xpub_mappings = cursor.execute('SELECT * FROM xpub_mappings').fetchall()
     assert len(old_xpub_mappings) == 2
     assert old_xpub_mappings[0] == xpub_mapping_data
@@ -704,11 +707,12 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument
     assert new_xpub_mappings == old_xpub_mappings
     # check that you can now add blockchain column in xpub_mappings
     address = '1MKSdDCtBSXiE49vik8xUG2pTgTGGh5pqe'
-    cursor.execute(
-        'INSERT INTO xpub_mappings(address, xpub, derivation_path, account_index, derived_index, blockchain) '  # noqa: E501
-        'VALUES (?, ?, ?, ?, ?, ?);',
-        (address, xpub_mapping_data[1], 'm', 0, 1, 'BTC'),
-    )
+    with db.user_write() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO xpub_mappings(address, xpub, derivation_path, account_index, derived_index, blockchain) '  # noqa: E501
+            'VALUES (?, ?, ?, ?, ?, ?);',
+            (address, xpub_mapping_data[1], 'm', 0, 1, 'BTC'),
+        )
     all_xpubs_mappings = cursor.execute('SELECT * FROM xpub_mappings').fetchall()
     assert len(all_xpubs_mappings) == 3
 
@@ -1301,7 +1305,8 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
     ]
 
     # test that the blockchain column is nullable
-    cursor.execute('INSERT INTO address_book(address, blockchain, name) VALUES ("0xc37b40ABdB939635068d3c5f13E7faF686F03B65", NULL, "yabir everywhere")')  # noqa: E501
+    with db_v35.user_write() as write_cursor:
+        write_cursor.execute('INSERT INTO address_book(address, blockchain, name) VALUES ("0xc37b40ABdB939635068d3c5f13E7faF686F03B65", NULL, "yabir everywhere")')  # noqa: E501
 
     # test that address book entries were kept
     cursor.execute('SELECT * FROM address_book')
@@ -2039,7 +2044,7 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggr
         'yearn_vaults_v2_events_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12': '890',
         'gnosisbridge_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12': '901',
     }
-    with db_v40.conn.write_ctx() as cursor:
+    with db_v40.conn.read_ctx() as cursor, db_v40.conn.write_ctx() as write_cursor:
         assert table_exists(cursor, 'key_value_cache') is False
         cursor.execute('SELECT name FROM settings;')
         for names in cursor:
@@ -2062,7 +2067,7 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggr
             ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'btc', 'btc1_address_book'),
         ]  # eth1 and btc1 already exists in address_book
         if address_name_priority is not None:
-            cursor.execute(
+            write_cursor.execute(
                 'INSERT INTO settings(name, value) VALUES(?, ?)',
                 ('address_name_priority', json.dumps(address_name_priority)),
             )
@@ -2076,8 +2081,6 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggr
             (f'{Location.BITTREX!s}\\_%', '\\'),
         ).fetchone()[0] == 3
 
-    # test external credentials are there
-    with db_v40.conn.read_ctx() as cursor:
         assert table_exists(
             cursor=cursor,
             name='external_service_credentials',
@@ -2140,12 +2143,12 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggr
     assert messages_aggregator.consume_errors() == []
     assert messages_aggregator.consume_warnings() == []
     # check if all the above values have been moved
-    with db.conn.read_ctx() as cursor:
-        assert table_exists(cursor, 'key_value_cache', """CREATE TABLE key_value_cache (
+    with db.conn.read_ctx() as write_cursor:
+        assert table_exists(write_cursor, 'key_value_cache', """CREATE TABLE key_value_cache (
         name TEXT NOT NULL PRIMARY KEY,
         value TEXT
     )""") is True
-        cache_values = cursor.execute('SELECT name, value FROM key_value_cache').fetchall()
+        cache_values = write_cursor.execute('SELECT name, value FROM key_value_cache').fetchall()
         assert len(cache_values) == len(should_move_settings) + len(should_move_used_query_ranges)
         for name, value in cache_values:
             assert name not in should_not_move_settings
@@ -2156,47 +2159,47 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggr
                 assert value == should_move_used_query_ranges[name]
             else:
                 pytest.fail(f'{name} should not end up in key_value_cache table')
-        db_settings = cursor.execute('SELECT name FROM settings').fetchall()
+        db_settings = write_cursor.execute('SELECT name FROM settings').fetchall()
         assert len(db_settings) == len(should_not_move_settings)
         for name in db_settings:
             assert name[0] not in should_move_settings
             assert name[0] in should_not_move_settings
-        db_used_query_ranges = cursor.execute('SELECT name FROM used_query_ranges').fetchall()
+        db_used_query_ranges = write_cursor.execute('SELECT name FROM used_query_ranges').fetchall()  # noqa: E501
         assert len(db_used_query_ranges) == len(should_not_move_used_query_ranges)
         for name in db_used_query_ranges:
             assert name[0] not in should_move_used_query_ranges
             assert name[0] in should_not_move_used_query_ranges
-        cursor.execute('SELECT COUNT(*) FROM location WHERE location=? AND seq=?', ('m', 45))
-        assert cursor.fetchone()[0] == 1
+        write_cursor.execute('SELECT COUNT(*) FROM location WHERE location=? AND seq=?', ('m', 45))
+        assert write_cursor.fetchone()[0] == 1
 
         # test external credentials have been upgraded
         assert table_exists(
-            cursor=cursor,
+            cursor=write_cursor,
             name='external_service_credentials',
             schema="""CREATE TABLE external_service_credentials (
             name VARCHAR[30] NOT NULL PRIMARY KEY,
             api_key TEXT NOT NULL,
             api_secret TEXT
             )""") is True
-        assert cursor.execute('SELECT * FROM external_service_credentials').fetchall() == [('etherscan', 'LOL', None), ('blockscout', 'LOL2', None)]  # noqa: E501
+        assert write_cursor.execute('SELECT * FROM external_service_credentials').fetchall() == [('etherscan', 'LOL', None), ('blockscout', 'LOL2', None)]  # noqa: E501
 
         # test if blockchain_accounts labels have been moved to address_book
         if address_name_priority is None or address_name_priority[0] == 'private_addressbook':
-            assert cursor.execute('SELECT * FROM address_book').fetchall() == [
+            assert write_cursor.execute('SELECT * FROM address_book').fetchall() == [
                 ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'eth', 'eth1_address_book'),
                 ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'btc', 'btc1_address_book'),
                 ('0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'eth', 'eth2_blockchain_accounts'),
                 ('0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'btc', 'btc2_blockchain_accounts'),
             ]
         else:
-            assert cursor.execute('SELECT * FROM address_book').fetchall() == [
+            assert write_cursor.execute('SELECT * FROM address_book').fetchall() == [
                 ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'eth', 'eth1_blockchain_accounts'),
                 ('0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'eth', 'eth2_blockchain_accounts'),
                 ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'btc', 'btc1_blockchain_accounts'),
                 ('0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'btc', 'btc2_blockchain_accounts'),
             ]
         assert table_exists(
-            cursor=cursor,
+            cursor=write_cursor,
             name='blockchain_accounts',
             schema="""CREATE TABLE IF NOT EXISTS blockchain_accounts (
                 blockchain VARCHAR[24] NOT NULL,
@@ -2206,24 +2209,24 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggr
         )
         # verify that the history_events are removed, except the one that is customized
         # and the kraken informational event
-        assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 2
-        assert cursor.execute('SELECT COUNT(*) FROM evm_events_info').fetchone()[0] == 1
-        assert cursor.execute(
+        assert write_cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 2
+        assert write_cursor.execute('SELECT COUNT(*) FROM evm_events_info').fetchone()[0] == 1
+        assert write_cursor.execute(
             'SELECT COUNT(*) FROM user_credentials WHERE location=?',
             ('D',),
         ).fetchone()[0] == 0
-        assert cursor.execute(
+        assert write_cursor.execute(
             'SELECT COUNT(*) FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
             (f'{Location.BITTREX!s}\\_%', '\\'),
         ).fetchone()[0] == 0
-        assert json.loads(cursor.execute(
+        assert json.loads(write_cursor.execute(
             'SELECT value FROM settings WHERE name=?',
             ('non_syncing_exchanges',),
         ).fetchone()[0]) == [{'name': 'Kraken 1', 'location': 'kraken'}]
 
         # verify that the new eth2 validators table and data is there
         assert table_exists(
-            cursor=cursor,
+            cursor=write_cursor,
             name='eth2_validators',
             schema="""CREATE TABLE IF NOT EXISTS eth2_validators (
                 identifier INTEGER NOT NULL PRIMARY KEY,
@@ -2235,8 +2238,8 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggr
                 withdrawable_timestamp INTEGER
             );""",
         )
-        assert cursor.execute('SELECT validator_index, public_key, ownership_proportion from eth2_validators').fetchall() == validators_data  # noqa: E501
-        assert cursor.execute('SELECT * from eth2_daily_staking_details').fetchall() == daily_stats
+        assert write_cursor.execute('SELECT validator_index, public_key, ownership_proportion from eth2_validators').fetchall() == validators_data  # noqa: E501
+        assert write_cursor.execute('SELECT * from eth2_daily_staking_details').fetchall() == daily_stats  # noqa: E501
 
     db.logout()
 
@@ -2251,7 +2254,7 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
         msg_aggregator=messages_aggregator,
         resume_from_backup=False,
     )
-    with db_v41.conn.write_ctx() as cursor:
+    with db_v41.conn.read_ctx() as cursor:
         assert table_exists(cursor, 'zksynclite_tx_type') is False
         assert table_exists(cursor, 'zksynclite_transactions') is False
         assert table_exists(cursor, 'calendar') is False
@@ -2579,12 +2582,11 @@ def test_db_newer_than_software_raises_error(data_dir, username, sql_vm_instruct
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
     # Manually set a bigger version than the current known one
-    cursor = data.db.conn.cursor()
-    cursor.execute(
-        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-        ('version', str(ROTKEHLCHEN_DB_VERSION + 1)),
-    )
-    data.db.conn.commit()
+    with data.db.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+            ('version', str(ROTKEHLCHEN_DB_VERSION + 1)),
+        )
 
     # now relogin and check that an error is thrown
     del data

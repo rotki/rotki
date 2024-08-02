@@ -273,15 +273,16 @@ def _write_transactions_to_db(
         end_ts: Timestamp,
 ) -> None:
     """Common function to replicate writing transactions in the DB for tests in this file"""
-    with db.user_write() as cursor:
+    with db.conn.read_ctx() as cursor, db.user_write() as write_cursor:
         dbevmtx = DBEvmTx(db)
-        dbevmtx.add_evm_transactions(cursor, transactions, relevant_address=ethereum_accounts[0])
-        dbevmtx.add_evm_transactions(cursor, extra_transactions, relevant_address=ethereum_accounts[1])  # noqa: E501
+        dbevmtx.add_evm_transactions(write_cursor, transactions, relevant_address=ethereum_accounts[0])  # noqa: E501
+        dbevmtx.add_evm_transactions(write_cursor, extra_transactions, relevant_address=ethereum_accounts[1])  # noqa: E501
         # Also make sure to update query ranges so as not to query etherscan at all
         for address in ethereum_accounts:
             for prefix in (SupportedBlockchain.ETHEREUM.to_range_prefix('txs'), SupportedBlockchain.ETHEREUM.to_range_prefix('internaltxs'), SupportedBlockchain.ETHEREUM.to_range_prefix('tokentxs')):  # noqa: E501
                 DBQueryRanges(db).update_used_query_range(
-                    write_cursor=cursor,
+                    cursor=cursor,
+                    write_cursor=write_cursor,
                     location_string=f'{prefix}_{address}',
                     queried_ranges=[(start_ts, end_ts)],
                 )

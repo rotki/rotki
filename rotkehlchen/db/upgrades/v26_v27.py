@@ -2,11 +2,11 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBWriterClient
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 
-def _do_upgrade(cursor: 'DBCursor', progress_handler: 'DBUpgradeProgressHandler') -> None:
+def _do_upgrade(cursor: 'DBWriterClient', progress_handler: 'DBUpgradeProgressHandler') -> None:
     cursor.execute('DROP TABLE IF EXISTS balancer_events;')
     cursor.execute("""
 CREATE TABLE IF NOT EXISTS balancer_events (

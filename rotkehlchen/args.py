@@ -55,6 +55,12 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
     )
 
     p.add_argument(
+        '--process',
+        help='Choose the process to run',
+        choices=['all', 'api_server', 'db_writer'],
+        default='all',
+    )
+    p.add_argument(
         '--data-dir',
         help='The directory where all data and configs are placed',
         type=str,

@@ -157,8 +157,11 @@ class ExchangeManager:
             self.connected_exchanges.pop(location)
         else:
             self.connected_exchanges[location] = [x for x in exchanges_list if x.name != name]
-        with self.database.user_write() as write_cursor:  # Also remove it from the db
-            self.database.remove_exchange(write_cursor=write_cursor, name=name, location=location)
+        with (
+            self.database.conn.read_ctx() as cursor,
+            self.database.user_write() as write_cursor,
+        ):  # Also remove it from the db
+            self.database.remove_exchange(cursor=cursor, write_cursor=write_cursor, name=name, location=location)  # noqa: E501
             self.database.delete_used_query_range_for_exchange(
                 write_cursor=write_cursor,
                 location=location,

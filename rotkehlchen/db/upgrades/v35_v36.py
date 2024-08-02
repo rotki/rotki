@@ -17,7 +17,7 @@ from rotkehlchen.types import ChainID
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 logger = logging.getLogger(__name__)
@@ -25,16 +25,16 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 @enter_exit_debug_log()
-def _remove_adex(write_cursor: 'DBCursor') -> None:
+def _remove_adex(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """Remove all adex related tables, events, data in other tables"""
     write_cursor.execute('DROP TABLE IF EXISTS adex_events')
-    if table_exists(write_cursor, 'used_query_ranges'):
+    if table_exists(cursor, 'used_query_ranges'):
         write_cursor.execute(
             'DELETE FROM used_query_ranges WHERE name LIKE ?', ('adex_events%',),
         )
 
-    write_cursor.execute('SELECT value FROM settings where name="active_modules"')
-    active_modules_result = write_cursor.fetchone()
+    cursor.execute('SELECT value FROM settings where name="active_modules"')
+    active_modules_result = cursor.fetchone()
     if active_modules_result is not None:
         active_modules_str = active_modules_result[0]
         try:
@@ -56,20 +56,19 @@ def _remove_adex(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _upgrade_ignored_actionids(write_cursor: 'DBCursor') -> None:
+def _upgrade_ignored_actionids(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """ignored_action_ids of ActionType ETHEREUM_TRANSACTION need chainid prepended"""
-    if table_exists(write_cursor, 'used_query_ranges'):
+    if table_exists(cursor, 'used_query_ranges'):
         write_cursor.execute('UPDATE ignored_actions SET identifier = "1" || identifier WHERE type="C"')  # noqa: E501
 
 
 @enter_exit_debug_log()
-def _upgrade_account_details(write_cursor: 'DBCursor') -> None:
+def _upgrade_account_details(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """Upgrade to account_defails table to evm_accounts_details"""
     new_data = []
     last_queried_timestamp_map: dict[str, int] = {}
-    if table_exists(write_cursor, 'accounts_details'):
-        write_cursor = write_cursor.execute('SELECT * FROM accounts_details')
-        for entry in write_cursor:
+    if table_exists(cursor, 'accounts_details'):
+        for entry in cursor.execute('SELECT * FROM accounts_details'):
             if entry[1] != 'eth':
                 log.error(
                     f'During v35->v36 DB upgrade a non-eth accounts_details entry '
@@ -110,62 +109,62 @@ def _upgrade_account_details(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _rename_eth_to_evm_add_chainid(write_cursor: 'DBCursor') -> None:
+def _rename_eth_to_evm_add_chainid(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """Rename all eth to evm tables, add chain id and adjust tx mappings"""
     # Get all data in memory and upgrade it
     transactions = []
-    if table_exists(write_cursor, 'ethereum_transactions'):
-        write_cursor.execute('SELECT * from ethereum_transactions')
+    if table_exists(cursor, 'ethereum_transactions'):
+        cursor.execute('SELECT * from ethereum_transactions')
         transactions.extend([(
             entry[0],    # tx_hash
             1,           # chain_id
             *entry[1:],  # all the rest are the same
-        ) for entry in write_cursor])
+        ) for entry in cursor])
     internal_transactions = []
-    if table_exists(write_cursor, 'ethereum_internal_transactions'):
-        write_cursor.execute('SELECT * from ethereum_internal_transactions')
+    if table_exists(cursor, 'ethereum_internal_transactions'):
+        cursor.execute('SELECT * from ethereum_internal_transactions')
         internal_transactions.extend([(
             entry[0],    # parent_ tx_hash
             1,           # chain_id
             *entry[1:],  # all the rest are the same
-        ) for entry in write_cursor])
+        ) for entry in cursor])
     tx_receipts = []
-    if table_exists(write_cursor, 'ethtx_receipts'):
-        write_cursor.execute('SELECT * from ethtx_receipts')
+    if table_exists(cursor, 'ethtx_receipts'):
+        cursor.execute('SELECT * from ethtx_receipts')
         tx_receipts.extend([(
             entry[0],    # tx_hash
             1,           # chain_id
             *entry[1:],  # all the rest are the same
-        ) for entry in write_cursor])
+        ) for entry in cursor])
     tx_receipt_logs = []
-    if table_exists(write_cursor, 'ethtx_receipt_logs'):
-        write_cursor.execute('SELECT * from ethtx_receipt_logs')
+    if table_exists(cursor, 'ethtx_receipt_logs'):
+        cursor.execute('SELECT * from ethtx_receipt_logs')
         tx_receipt_logs.extend([(
             entry[0],    # tx_hash
             1,           # chain_id
             *entry[1:],  # all the rest are the same
-        ) for entry in write_cursor])
+        ) for entry in cursor])
     tx_receipt_log_topics = []
-    if table_exists(write_cursor, 'ethtx_receipt_log_topics'):
-        write_cursor.execute('SELECT * from ethtx_receipt_log_topics')
+    if table_exists(cursor, 'ethtx_receipt_log_topics'):
+        cursor.execute('SELECT * from ethtx_receipt_log_topics')
         tx_receipt_log_topics.extend([(
             entry[0],    # tx_hash
             1,           # chain_id
             *entry[1:],  # all the rest are the same
-        ) for entry in write_cursor])
+        ) for entry in cursor])
     tx_address_mappings = []
-    if table_exists(write_cursor, 'ethtx_address_mappings'):
-        write_cursor.execute('SELECT * from ethtx_address_mappings')
+    if table_exists(cursor, 'ethtx_address_mappings'):
+        cursor.execute('SELECT * from ethtx_address_mappings')
         tx_address_mappings.extend([(
             entry[0],    # address
             entry[1],    # tx_hash
             1,           # chain_id
             *entry[2:],  # all the rest are the same
-        ) for entry in write_cursor])
+        ) for entry in cursor])
     tx_mappings = []
-    if table_exists(write_cursor, 'evm_tx_mappings'):
-        write_cursor.execute('SELECT * from evm_tx_mappings')
-        for entry in write_cursor:
+    if table_exists(cursor, 'evm_tx_mappings'):
+        cursor.execute('SELECT * from evm_tx_mappings')
+        for entry in cursor:
             if entry[2] == 'decoded':
                 value = 0
             elif entry[2] == 'customized':
@@ -376,12 +375,12 @@ def _rename_eth_to_evm_add_chainid(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _upgrade_events_mappings(write_cursor: 'DBCursor') -> None:
+def _upgrade_events_mappings(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """Upgrade history_events_mappings"""
     new_data = []
-    if table_exists(write_cursor, 'history_events_mappings'):
-        write_cursor = write_cursor.execute('SELECT * FROM history_events_mappings')
-        for entry in write_cursor:
+    if table_exists(cursor, 'history_events_mappings'):
+        cursor = cursor.execute('SELECT * FROM history_events_mappings')
+        for entry in cursor:
             if entry[1] == 'decoded':
                 value = 0
             elif entry[1] == 'customized':
@@ -417,7 +416,7 @@ def _upgrade_events_mappings(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _upgrade_nfts_table(write_cursor: 'DBCursor') -> None:
+def _upgrade_nfts_table(write_cursor: 'DBWriterClient') -> None:
     """Upgrade nfts table to add image url, collection name and whether it's a uniswap LP NFT"""
     write_cursor.execute('DROP TABLE IF EXISTS nfts')
     write_cursor.execute(
@@ -441,7 +440,7 @@ def _upgrade_nfts_table(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _upgrade_rpc_nodes(write_cursor: 'DBCursor') -> None:
+def _upgrade_rpc_nodes(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """
     Change name of web3_nodes to rpc_nodes and fix the schema. Weight should be
     a float from 0 to 1 saved as string, not an integer.
@@ -453,7 +452,7 @@ def _upgrade_rpc_nodes(write_cursor: 'DBCursor') -> None:
     # web3_nodes did not run through v34->v35 upgrade properly so blockchain column is missing.
     # I suspect the tests I noticed it were due to the developer who created the DB error, but
     # since this is equivalent to reading the blockchain column, better safe than sorry
-    nodes_tuples = write_cursor.execute(
+    nodes_tuples = cursor.execute(
         'SELECT name, endpoint, owned, active, weight, "ETH" from web3_nodes',
     ).fetchall()
     write_cursor.execute('DROP TABLE IF EXISTS web3_nodes')
@@ -482,15 +481,15 @@ def _upgrade_rpc_nodes(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _upgrade_tags(write_cursor: 'DBCursor') -> None:
+def _upgrade_tags(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """All tags tied to addresses should now be tied to chain + address"""
-    write_cursor.execute(
+    cursor.execute(
         'SELECT A.blockchain, A.account, B.tag_name from blockchain_accounts AS A '
         'LEFT OUTER JOIN tag_mappings AS B on A.account = B.object_reference',
     )
     delete_tuples = []
     insert_tuples = []
-    for entry in write_cursor:
+    for entry in cursor:
         delete_tuples.append((entry[1],))
         insert_tuples.append((entry[0] + entry[1], entry[2]))
 
@@ -502,9 +501,10 @@ def _upgrade_tags(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _upgrade_address_book_table(write_cursor: 'DBCursor') -> None:
+def _upgrade_address_book_table(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """Upgrades the address book table by making the blockchain column optional"""
     update_table_schema(
+        cursor=cursor,
         write_cursor=write_cursor,
         table_name='address_book',
         schema="""address TEXT NOT NULL,
@@ -516,12 +516,12 @@ def _upgrade_address_book_table(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _add_okx(write_cursor: 'DBCursor') -> None:
+def _add_okx(write_cursor: 'DBWriterClient') -> None:
     write_cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("e", 37);')
 
 
 @enter_exit_debug_log()
-def _remove_old_tables(write_cursor: 'DBCursor') -> None:
+def _remove_old_tables(write_cursor: 'DBWriterClient') -> None:
     """In 1.27.0 we added a check for old tables in the DB.
 
     This found that many old DBs still have an eth_tokens table which was left there
@@ -530,19 +530,19 @@ def _remove_old_tables(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _fix_eth2_pnl_genesis(write_cursor: 'DBCursor') -> None:
+def _fix_eth2_pnl_genesis(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """
     To avoid querying beaconchain for all the stats since genesis manually update
     the entries that have a wrong pnl in the database for eth2 daily staking details in the
     genesis date.
     """
     fixed_values = []
-    write_cursor.execute(
+    cursor.execute(
         'SELECT validator_index, pnl FROM eth2_daily_staking_details WHERE timestamp=?',
         (1606780800,),  # day after eth2 genesis, as seen during the old scraping
     )
 
-    for (validator_index, pnl_str) in write_cursor:
+    for (validator_index, pnl_str) in cursor:
         pnl = FVal(pnl_str)
         if pnl > ONE:
             pnl -= INITIAL_ETH_DEPOSIT
@@ -556,18 +556,18 @@ def _fix_eth2_pnl_genesis(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+def _reset_decoded_events(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """
     The code is taken from `delete_events_by_tx_hash` right before 1.27 release.
     Has to happen after `_upgrade_events_mappings` so that the schema is the needed one.
     """
-    write_cursor.execute('SELECT tx_hash from evm_transactions')
-    tx_hashes = [x[0] for x in write_cursor]
-    write_cursor.execute(
+    cursor.execute('SELECT tx_hash from evm_transactions')
+    tx_hashes = [x[0] for x in cursor]
+    cursor.execute(
         'SELECT parent_identifier FROM history_events_mappings WHERE name=? AND value=?',
         (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
     )
-    customized_event_ids = [x[0] for x in write_cursor]
+    customized_event_ids = [x[0] for x in cursor]
     length = len(customized_event_ids)
     querystr = 'DELETE FROM history_events WHERE event_identifier=?'
     if length != 0:
@@ -596,30 +596,30 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - rename web3_nodes to rpc_nodes
     """
     progress_handler.set_total_steps(13)
-    with db.user_write() as write_cursor:
-        _remove_adex(write_cursor)
+    with db.conn.read_ctx() as cursor, db.user_write() as write_cursor:
+        _remove_adex(cursor, write_cursor)
         progress_handler.new_step()
-        _upgrade_ignored_actionids(write_cursor)
+        _upgrade_ignored_actionids(cursor, write_cursor)
         progress_handler.new_step()
-        _upgrade_account_details(write_cursor)
+        _upgrade_account_details(cursor, write_cursor)
         progress_handler.new_step()
-        _rename_eth_to_evm_add_chainid(write_cursor)
+        _rename_eth_to_evm_add_chainid(cursor, write_cursor)
         progress_handler.new_step()
-        _upgrade_events_mappings(write_cursor)
+        _upgrade_events_mappings(cursor, write_cursor)
         progress_handler.new_step()
         _upgrade_nfts_table(write_cursor)
         progress_handler.new_step()
-        _upgrade_rpc_nodes(write_cursor)
+        _upgrade_rpc_nodes(cursor, write_cursor)
         progress_handler.new_step()
-        _upgrade_tags(write_cursor)
+        _upgrade_tags(cursor, write_cursor)
         progress_handler.new_step()
-        _upgrade_address_book_table(write_cursor)
+        _upgrade_address_book_table(cursor, write_cursor)
         progress_handler.new_step()
         _add_okx(write_cursor)
         progress_handler.new_step()
         _remove_old_tables(write_cursor)
         progress_handler.new_step()
-        _fix_eth2_pnl_genesis(write_cursor)
+        _fix_eth2_pnl_genesis(cursor, write_cursor)
         progress_handler.new_step()
-        _reset_decoded_events(write_cursor)
+        _reset_decoded_events(cursor, write_cursor)
         progress_handler.new_step()

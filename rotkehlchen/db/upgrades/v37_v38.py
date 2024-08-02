@@ -11,7 +11,7 @@ from rotkehlchen.logging import enter_exit_debug_log
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 
@@ -26,12 +26,12 @@ DEFAULT_POLYGON_NODES_AT_V38 = [
 
 
 @enter_exit_debug_log()
-def _add_polygon_pos_location(write_cursor: 'DBCursor') -> None:
+def _add_polygon_pos_location(write_cursor: 'DBWriterClient') -> None:
     write_cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("h", 40);')
 
 
 @enter_exit_debug_log()
-def _add_polygon_pos_nodes(write_cursor: 'DBCursor') -> None:
+def _add_polygon_pos_nodes(write_cursor: 'DBWriterClient') -> None:
     write_cursor.executemany(
         'INSERT INTO rpc_nodes(name, endpoint, owned, active, weight, blockchain) '
         'VALUES (?, ?, ?, ?, ?, ?)',
@@ -40,9 +40,10 @@ def _add_polygon_pos_nodes(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _reduce_internal_txs(write_cursor: 'DBCursor') -> None:
+def _reduce_internal_txs(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """Reduce the size of the evm internal transactions table by removing unused columns"""
     update_table_schema(
+        cursor=cursor,
         write_cursor=write_cursor,
         table_name='evm_internal_transactions',
         schema="""parent_tx_hash BLOB NOT NULL,
@@ -58,7 +59,7 @@ def _reduce_internal_txs(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _drop_aave_events(write_cursor: 'DBCursor') -> None:
+def _drop_aave_events(write_cursor: 'DBWriterClient') -> None:
     """
     Delete aave events from the database since we don't need them anymore
     """
@@ -67,7 +68,7 @@ def _drop_aave_events(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _delete_uniswap_sushiswap_events(write_cursor: 'DBCursor') -> None:
+def _delete_uniswap_sushiswap_events(write_cursor: 'DBWriterClient') -> None:
     """
     Delete query ranges and events for uniswap/sushiswap
     """
@@ -83,14 +84,14 @@ def _delete_uniswap_sushiswap_events(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+def _reset_decoded_events(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """
     Reset all decoded evm events except the customized ones for ethereum mainnet and optimism.
     """
-    if write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] == 0:
+    if cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] == 0:
         return
 
-    customized_events = write_cursor.execute(
+    customized_events = cursor.execute(
         'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value=?',
         (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
     ).fetchone()[0]
@@ -113,7 +114,7 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _remove_duplicate_block_mev_rewards(write_cursor: 'DBCursor') -> None:
+def _remove_duplicate_block_mev_rewards(write_cursor: 'DBWriterClient') -> None:
     """If mev reward is exact same as block production reward then it's a duplicate event.
     In that case it needs to be deleted.
     """
@@ -135,12 +136,12 @@ def upgrade_v37_to_v38(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Remove potential duplicate block mev reward events
     """
     progress_handler.set_total_steps(7)
-    with db.user_write() as write_cursor:
-        _reset_decoded_events(write_cursor)
+    with db.conn.read_ctx() as cursor, db.user_write() as write_cursor:
+        _reset_decoded_events(cursor, write_cursor)
         progress_handler.new_step()
         _remove_duplicate_block_mev_rewards(write_cursor)
         progress_handler.new_step()
-        _reduce_internal_txs(write_cursor)
+        _reduce_internal_txs(cursor, write_cursor)
         progress_handler.new_step()
         _add_polygon_pos_location(write_cursor)
         progress_handler.new_step()

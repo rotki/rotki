@@ -19,24 +19,24 @@ from rotkehlchen.types import EVM_LOCATIONS, Location, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+def _reset_decoded_events(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """
     Reset all decoded events except the customized ones.
     """
     write_cursor.execute('SELECT tx_hash from evm_transactions')
-    tx_hashes = [x[0] for x in write_cursor]
+    tx_hashes = [x[0] for x in cursor]
     write_cursor.execute(
         'SELECT parent_identifier FROM history_events_mappings WHERE name=? AND value=?',
         (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
     )
-    customized_event_ids = [x[0] for x in write_cursor]
+    customized_event_ids = [x[0] for x in cursor]
     length = len(customized_event_ids)
     querystr = 'DELETE FROM history_events WHERE event_identifier=?'
     if length != 0:
@@ -52,7 +52,7 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _move_event_locations(write_cursor: 'DBCursor') -> None:
+def _move_event_locations(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """
     Create location ethereum and optimism and move the blockchain events to those locations
 
@@ -64,12 +64,12 @@ def _move_event_locations(write_cursor: 'DBCursor') -> None:
     write_cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("f", 38);')
     write_cursor.execute('INSERT OR IGNORE INTO location(location, seq) VALUES ("g", 39);')
 
-    write_cursor.execute(
+    cursor.execute(
         'SELECT chain_id, tx_hash FROM evm_transactions WHERE '
         'tx_hash IN (SELECT event_identifier FROM history_events)',
     )
     update_tuples = []
-    for chain_id, tx_hash in write_cursor:
+    for chain_id, tx_hash in cursor:
         if chain_id == 1:
             location = 'f'  # ethereum
         elif chain_id == 10:
@@ -87,7 +87,7 @@ def _move_event_locations(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _update_history_events_schema(write_cursor: 'DBCursor', conn: 'DBConnection') -> None:
+def _update_history_events_schema(read_cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """
     1. Reset all decoded events
     2. Rewrite the DB schema of the history events to have subtype as non Optional
@@ -97,7 +97,7 @@ def _update_history_events_schema(write_cursor: 'DBCursor', conn: 'DBConnection'
 
     Also turn all null subtype entries to have subtype none
     """
-    _reset_decoded_events(write_cursor)
+    _reset_decoded_events(read_cursor, write_cursor)
     write_cursor.execute("""CREATE TABLE IF NOT EXISTS history_events_copy (
     identifier INTEGER NOT NULL PRIMARY KEY,
     entry_type INTEGER NOT NULL,
@@ -117,34 +117,33 @@ def _update_history_events_schema(write_cursor: 'DBCursor', conn: 'DBConnection'
     );""")
     new_entries = []
     extra_evm_info_entries = []
-    with conn.read_ctx() as read_cursor:
-        read_cursor.execute('SELECT * from history_events')
-        for entry in read_cursor:
-            location = Location.deserialize_from_db(entry[4])
-            db_event_identifier = entry[1]
-            if location in EVM_LOCATIONS:
-                event_identifier = f'{location.to_chain_id()}{deserialize_evm_tx_hash(db_event_identifier).hex()}'  # noqa: E501 # pylint: disable=no-member
-            elif location == Location.KRAKEN or db_event_identifier.startswith(b'rotki_events'):
-                # kraken is the only location with basic history event entry type that doesn't
-                # start with 'rotki_events'
-                event_identifier = db_event_identifier.decode()
-            else:
-                # this shouldn't happen, leaving it here to avoid failing during the upgrade
-                # _move_event_locations should have moved already all the events that are related
-                # to evm transactions with the wrong location
-                log.critical(f'Unexpected event {entry=} found. Skipping')
-                continue
+    read_cursor.execute('SELECT * from history_events')
+    for entry in read_cursor:
+        location = Location.deserialize_from_db(entry[4])
+        db_event_identifier = entry[1]
+        if location in EVM_LOCATIONS:
+            event_identifier = f'{location.to_chain_id()}{deserialize_evm_tx_hash(db_event_identifier).hex()}'  # noqa: E501 # pylint: disable=no-member
+        elif location == Location.KRAKEN or db_event_identifier.startswith(b'rotki_events'):
+            # kraken is the only location with basic history event entry type that doesn't
+            # start with 'rotki_events'
+            event_identifier = db_event_identifier.decode()
+        else:
+            # this shouldn't happen, leaving it here to avoid failing during the upgrade
+            # _move_event_locations should have moved already all the events that are related
+            # to evm transactions with the wrong location
+            log.critical(f'Unexpected event {entry=} found. Skipping')
+            continue
 
-            if location == Location.KRAKEN or event_identifier.startswith('rotki_events'):  # This is the rule at 1.27.1   # noqa: E501
-                entry_type = HistoryBaseEntryType.HISTORY_EVENT.serialize_for_db()
-            else:
-                entry_type = HistoryBaseEntryType.EVM_EVENT.serialize_for_db()
-                extra_evm_info_entries.append((entry[0], entry[1]) + entry[12:])
+        if location == Location.KRAKEN or event_identifier.startswith('rotki_events'):  # This is the rule at 1.27.1   # noqa: E501
+            entry_type = HistoryBaseEntryType.HISTORY_EVENT.serialize_for_db()
+        else:
+            entry_type = HistoryBaseEntryType.EVM_EVENT.serialize_for_db()
+            extra_evm_info_entries.append((entry[0], entry[1]) + entry[12:])
 
-            if entry[11] is None:
-                new_entries.append([entry[0], entry_type, event_identifier, *entry[2:11], 'none'])  # turn NULL values to text `none`  # noqa: E501
-            else:
-                new_entries.append([entry[0], entry_type, event_identifier, *entry[2:12]])  # Don't change NON-NULL values  # noqa: E501
+        if entry[11] is None:
+            new_entries.append([entry[0], entry_type, event_identifier, *entry[2:11], 'none'])  # turn NULL values to text `none`  # noqa: E501
+        else:
+            new_entries.append([entry[0], entry_type, event_identifier, *entry[2:12]])  # Don't change NON-NULL values  # noqa: E501
 
     # add all non-evm entries to the new table (no data lost)
     write_cursor.executemany('INSERT INTO history_events_copy VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)', new_entries)  # noqa: E501
@@ -161,7 +160,7 @@ def _update_history_events_schema(write_cursor: 'DBCursor', conn: 'DBConnection'
 
 
 @enter_exit_debug_log()
-def _create_new_tables(write_cursor: 'DBCursor') -> None:
+def _create_new_tables(write_cursor: 'DBWriterClient') -> None:
     """Create new tables
 
     Data is not migrated to the evm_events_info as it will be done when redecoding.
@@ -190,7 +189,7 @@ def _create_new_tables(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _delete_old_tables(write_cursor: 'DBCursor') -> None:
+def _delete_old_tables(write_cursor: 'DBWriterClient') -> None:
     """Deletes old tables that are now unused along with related data
     """
     write_cursor.execute('DROP TABLE IF EXISTS eth2_deposits')
@@ -201,8 +200,9 @@ def _delete_old_tables(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _update_ens_mappings_schema(write_cursor: 'DBCursor') -> None:
+def _update_ens_mappings_schema(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     update_table_schema(
+        cursor=cursor,
         write_cursor=write_cursor,
         table_name='ens_mappings',
         schema="""address TEXT NOT NULL PRIMARY KEY,
@@ -215,7 +215,7 @@ def _update_ens_mappings_schema(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
+def _fix_kraken_events(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """
     Fix kraken events with negative amounts related to:
     - staking ETH after the merge
@@ -224,7 +224,7 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
     - instant swaps
     Needs to be executed after _update_history_events_schema
     """
-    write_cursor.execute(
+    cursor.execute(
         'SELECT identifier, amount, usd_value FROM history_events WHERE location="B" AND '
         'asset=? AND type="staking" AND subtype="reward" AND CAST(amount AS REAL) < 0',
         (A_ETH2.identifier,),
@@ -236,7 +236,7 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
         str(-FVal(event_row[2])),
         'Automatic virtual conversion of staked ETH rewards to ETH',
         event_row[0],
-    ) for event_row in write_cursor]
+    ) for event_row in cursor]
     if len(update_tuples) != 0:
         write_cursor.executemany(
             'UPDATE history_events SET type=?, subtype=?, amount=?, usd_value=?, notes=? WHERE identifier=?',  # noqa: E501
@@ -244,14 +244,14 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
         )
 
     log.debug('Fixing kraken trades')
-    write_cursor.execute(
+    cursor.execute(
         'SELECT identifier, amount, usd_value FROM history_events WHERE location="B" AND '
         'type="trade" AND subtype="none"',
     )
 
     trade_db_type = HistoryEventType.TRADE.serialize()
     update_tuples = []
-    for event_row in write_cursor:
+    for event_row in cursor:
         asset_amount = FVal(event_row[1])
         usd_value = FVal(event_row[2])
         if asset_amount < ZERO:
@@ -278,7 +278,7 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
         )
 
     log.debug('Fixing kraken withdrawals')  # deposits are all positive amount already
-    write_cursor.execute(
+    cursor.execute(
         'SELECT identifier, amount, usd_value FROM history_events WHERE location="B" AND '
         'type="withdrawal"',
     )
@@ -286,7 +286,7 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
         str(-FVal(event_row[1])),
         str(-FVal(event_row[2])),
         event_row[0],
-    ) for event_row in write_cursor]
+    ) for event_row in cursor]
     if len(update_tuples) != 0:
         write_cursor.executemany(
             'UPDATE history_events SET amount=?, usd_value=? WHERE identifier=?',
@@ -296,11 +296,11 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
     log.debug('Fixing kraken instant swaps')
     update_tuples = []
     grouped_events: dict[str, list[Any]] = defaultdict(list)
-    write_cursor.execute(
+    cursor.execute(
         'SELECT identifier, event_identifier, type, amount, usd_value FROM history_events '
         'WHERE location="B" AND type IN ("spend", "receive") AND subtype="none"',
     )
-    for row in write_cursor:
+    for row in cursor:
         grouped_events[row[1]].append(row)
 
     for events in grouped_events.values():
@@ -337,9 +337,10 @@ def _fix_kraken_events(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _trim_daily_stats(write_cursor: 'DBCursor') -> None:
+def _trim_daily_stats(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """Decreases the amount of data in the daily stats table"""
     update_table_schema(
+        cursor=cursor,
         write_cursor=write_cursor,
         table_name='eth2_daily_staking_details',
         schema="""validator_index INTEGER NOT NULL,
@@ -353,7 +354,7 @@ def _trim_daily_stats(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _remove_ftx_data(write_cursor: 'DBCursor') -> None:
+def _remove_ftx_data(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """Removes FTX-related settings from the DB"""
     write_cursor.execute(
         'DELETE FROM user_credentials WHERE location IN (?, ?)',
@@ -371,7 +372,7 @@ def _remove_ftx_data(write_cursor: 'DBCursor') -> None:
         'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
         (f'{Location.FTXUS!s}\\_%', '\\'),
     )
-    non_syncing_exchanges_in_db = write_cursor.execute(
+    non_syncing_exchanges_in_db = cursor.execute(
         'SELECT value FROM settings WHERE name="non_syncing_exchanges"',
     ).fetchone()
     if non_syncing_exchanges_in_db is not None:
@@ -384,7 +385,7 @@ def _remove_ftx_data(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _adjust_user_settings(write_cursor: 'DBCursor') -> None:
+def _adjust_user_settings(write_cursor: 'DBWriterClient') -> None:
     """Adjust user settings, renaming a key that misbehaves in frontend transformation"""
     write_cursor.execute(
         'UPDATE settings SET name="ssf_graph_multiplier" WHERE name="ssf_0graph_multiplier"')
@@ -397,22 +398,22 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Replace null history event subtype
     """
     progress_handler.set_total_steps(9)
-    with db.user_write() as write_cursor:
-        _move_event_locations(write_cursor)
+    with db.conn.read_ctx() as cursor, db.user_write() as write_cursor:
+        _move_event_locations(cursor, write_cursor)
         progress_handler.new_step()
         _create_new_tables(write_cursor)
         progress_handler.new_step()
-        _update_history_events_schema(write_cursor, db.conn)
+        _update_history_events_schema(cursor, write_cursor)
         progress_handler.new_step()
-        _update_ens_mappings_schema(write_cursor)
+        _update_ens_mappings_schema(cursor, write_cursor)
         progress_handler.new_step()
         _delete_old_tables(write_cursor)
         progress_handler.new_step()
-        _fix_kraken_events(write_cursor)
+        _fix_kraken_events(cursor, write_cursor)
         progress_handler.new_step()
-        _trim_daily_stats(write_cursor)
+        _trim_daily_stats(cursor, write_cursor)
         progress_handler.new_step()
-        _remove_ftx_data(write_cursor)
+        _remove_ftx_data(cursor, write_cursor)
         progress_handler.new_step()
         _adjust_user_settings(write_cursor)
         progress_handler.new_step()
