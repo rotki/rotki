@@ -97,7 +97,6 @@ jobs:
           (Get-Command python).Path
       - name: Install dependencies
         run: |
-          uv pip install --system 'setuptools<72'
           uv pip install --system --upgrade wheel pytest-cov
           uv pip install --system -r requirements_dev.txt
           uv pip install --system -e .
