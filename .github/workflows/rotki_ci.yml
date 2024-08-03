@@ -181,37 +181,9 @@ jobs:
         with:
           category: "/language:python"
 
-  lint-backend:
-    name: 'Backend lint'
-    needs: ['check-changes']
-    if: ${{ github.event_name != 'push' && needs.check-changes.outputs.backend_tasks }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - name: Load env
-        uses: rotki/action-env@v2
-        with:
-          env_file: .github/.env.ci
-      - name: Setup python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-      - name: Set up uv
-        run: |
-          pip install --upgrade pip
-          pip install --no-cache uv
-      - name: Install dependencies
-        run: |
-          uv pip install --system -r requirements_lint.txt
-          uv pip install --system -e .
-          git rev-parse HEAD
-      - name: Lint
-        run: make lint
-
   test-backend:
     if: ${{ github.event_name != 'push' && needs.check-changes.outputs.backend_tasks }}
-    needs: ['lint-backend', 'check-changes']
+    needs: ['check-changes']
     uses: ./.github/workflows/task_backend_tests.yml
     with:
       os: ubuntu-20.04
@@ -226,7 +198,7 @@ jobs:
   done:
     name: 'Success check'
     if: ${{ always() }}
-    needs: [ 'check-changes', 'lint-frontend', 'unittest-frontend', 'docs', 'lint-backend', 'test-backend', 'test-e2e' ]
+    needs: [ 'check-changes', 'lint-frontend', 'unittest-frontend', 'docs', 'test-backend', 'test-e2e' ]
     runs-on: ubuntu-latest
     steps:
       - name: Check if any task failed

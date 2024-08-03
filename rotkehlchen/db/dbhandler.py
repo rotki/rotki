@@ -188,7 +188,7 @@ class DBHandler:
             sql_vm_instructions_cb: int,
             resume_from_backup: bool,
     ):
-        """Database constructor
+        """Database constructor.
 
         May raise:
         - DBUpgradeError if the rotki DB version is newer than the software or
