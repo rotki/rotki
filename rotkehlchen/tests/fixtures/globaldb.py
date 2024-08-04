@@ -1,3 +1,4 @@
+import shutil
 from collections.abc import Callable
 from contextlib import ExitStack
 from pathlib import Path
@@ -108,7 +109,7 @@ def _initialize_fixture_globaldb(
         empty_global_addressbook,
         remove_global_assets,
         load_global_caches,
-) -> GlobalDBHandler:
+) -> tuple[GlobalDBHandler, Path]:
     # clean the previous resolver memory cache, as it
     # may have cached results from a discarded database
     AssetResolver().clean_memory_cache()
@@ -154,7 +155,7 @@ def _initialize_fixture_globaldb(
                 [(asset,) for asset in remove_global_assets],
             )
 
-    return globaldb
+    return globaldb, new_data_dir
 
 
 @pytest.fixture(name='globaldb')
@@ -171,7 +172,7 @@ def fixture_globaldb(
         remove_global_assets,
         load_global_caches,
 ):
-    globaldb = _initialize_fixture_globaldb(
+    globaldb, new_data_dir = _initialize_fixture_globaldb(
         custom_globaldb=custom_globaldb,
         tmpdir_factory=tmpdir_factory,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
@@ -187,6 +188,7 @@ def fixture_globaldb(
     yield globaldb
 
     globaldb.cleanup()
+    shutil.rmtree(new_data_dir)
 
 
 @pytest.fixture(name='custom_globaldb')
