@@ -181,6 +181,7 @@ extend-select = [
     "PTH109",
 ]
 ignore = [
+    "A005",  # shadow builtin module is fine, since it's easy to differentiate and we can use names like csv.py, json.py, types.py under subdirectories
     "B028",  # no explicit stack level argument for warnings. Is fine due to the way we use them for now
     "E402",  # module level import at file top. https://www.flake8rules.com/rules/E402.html
     "N818",  # error suffix in exception names
