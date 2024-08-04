@@ -295,7 +295,7 @@ class DBHandler:
         Path(self.user_data_dir / DBINFO_FILENAME).write_text(rlk_jsondumps(dbinfo), encoding='utf8')  # noqa: E501
 
     def _check_settings(self) -> None:
-        """Check that the non_syncing_exchanges setting only has active locations"""
+        """Check that the non_syncing_exchanges setting only has active locations."""
         with self.conn.read_ctx() as cursor:
             non_syncing_exchanges = self.get_setting(
                 cursor=cursor,
