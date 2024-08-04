@@ -462,6 +462,7 @@ class RestAPI:
         gevent.wait(self.waited_greenlets)
         log.debug('Waited for greenlets. Killing all other greenlets')
         gevent.killall(self.rotkehlchen.api_task_greenlets)
+        self.rotkehlchen.api_task_greenlets.clear()
         log.debug('Shutdown completed')
         logging.shutdown()
         self.stop_event.set()
@@ -1240,6 +1241,7 @@ class RestAPI:
         # 2. Have an intricate stop() notification system for each greenlet, but
         #   that is going to get complicated fast.
         gevent.killall(self.rotkehlchen.api_task_greenlets)
+        self.rotkehlchen.api_task_greenlets.clear()
         with self.task_lock:
             self.task_results = {}
         self.rotkehlchen.logout()
@@ -3096,13 +3098,13 @@ class RestAPI:
                     oracle = CurrentPriceOracle.MANUALCURRENT if nft_price_data['manually_input'] is True else CurrentPriceOracle.BLOCKCHAIN  # noqa: E501
                     assets_price[asset] = [Price(nft_price_data['usd_price']), oracle.value, False]
                 else:
-                    price, oracle, used_main_currency = Inquirer().find_price_and_oracle(
+                    price, oracle, used_main_currency = Inquirer.find_price_and_oracle(
                         from_asset=asset,
                         to_asset=target_asset,
                         ignore_cache=ignore_cache,
                         match_main_currency=True,
                     )
-                    assets_price[asset] = [price, oracle.value, used_main_currency]
+                    assets_price[asset] = [price, oracle.value, used_main_currency]  # type: ignore  # mypy detects here the CurrentPriceOracle as nullable but is not by the definition of find_price_and_oracle
             else:
                 assets_price[asset] = [Price(ONE), CurrentPriceOracle.BLOCKCHAIN.value, False]
 

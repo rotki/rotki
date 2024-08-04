@@ -4,6 +4,7 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.modules.gitcoin.constants import GITCOIN_GRANTS_OLD1
 from rotkehlchen.chain.evm.constants import GENESIS_HASH
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -21,7 +22,7 @@ from rotkehlchen.history.events.structures.base import (
     HistoryEventType,
 )
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
-from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE
+from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE, get_decoded_events_of_transaction
 from rotkehlchen.types import (
     ChainID,
     ChecksumEvmAddress,
@@ -36,6 +37,7 @@ from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
+    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
     from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
     from rotkehlchen.chain.optimism.transactions import OptimismTransactions
@@ -296,3 +298,23 @@ def test_genesis_remove_address(
         )
 
     assert len(genesis_tx) == 0, 'Genesis transaction should have been deleted'
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('ethereum_accounts', [['0xcBe21204C4b9F1810363D69773b74203376681a2']])
+def test_token_detection_after_decoding(
+        database: 'DBHandler',
+        ethereum_inquirer: 'EthereumInquirer',
+        ethereum_accounts: 'list[ChecksumEvmAddress]',
+) -> None:
+    """Test that the tokens found in new IN history events are saved as detected tokens."""
+    with patch.object(database, 'save_tokens_for_address') as save_tokens_mock:
+        get_decoded_events_of_transaction(
+            evm_inquirer=ethereum_inquirer,
+            database=database,
+            tx_hash=deserialize_evm_tx_hash('0x21713730e79832ad0a88c9695745a95cd6e475fe69232f2aa8993ca98e6db92f'),
+        )
+        assert save_tokens_mock.call_count == 1
+        assert save_tokens_mock.call_args_list[0].kwargs['address'] == ethereum_accounts[0]
+        assert save_tokens_mock.call_args_list[0].kwargs['blockchain'] == SupportedBlockchain.ETHEREUM  # noqa: E501
+        assert save_tokens_mock.call_args_list[0].kwargs['tokens'] == [Asset('eip155:1/erc20:0x98C23E9d8f34FEFb1B7BD6a91B7FF122F4e16F5c')]  # noqa: E501

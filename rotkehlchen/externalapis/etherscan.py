@@ -6,7 +6,7 @@ from collections.abc import Iterator
 from enum import Enum, auto
 from http import HTTPStatus
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal, overload
+from typing import TYPE_CHECKING, Any, Final, Literal, overload
 
 import gevent
 import requests
@@ -30,6 +30,7 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import (
     SUPPORTED_EVM_CHAINS_TYPE,
+    ApiKey,
     ChecksumEvmAddress,
     EvmInternalTransaction,
     EvmTransaction,
@@ -74,6 +75,17 @@ def _hashes_tuple_to_list(hashes: set[tuple[EVMTxHash, Timestamp]]) -> list[EVMT
     This function needs to exist since Set has no guranteed order of iteration.
     """
     return [x[0] for x in sorted(hashes, key=operator.itemgetter(1))]
+
+
+ROTKI_INCLUDED_KEYS: Final = {
+    SupportedBlockchain.ETHEREUM: 'W9CEV6QB9NIPUEHD6KNEYM4PDX6KBPRVVR',
+    SupportedBlockchain.OPTIMISM: 'KQ54A7R984F1SU3HP1K7CE4JW5WVGCPCSM',
+    SupportedBlockchain.ARBITRUM_ONE: 'CED6CY1RYKISNURT4KGYBS867KC8642TXJ',
+    SupportedBlockchain.BASE: '2VR29FVKEJ1YUIT3AAJB8TQ73HDHQYWYZK',
+    SupportedBlockchain.POLYGON_POS: 'BGT3NM5T4UWNETFWITQWZQWFGZMF8MFAZF',
+    SupportedBlockchain.SCROLL: '5EBTU13S94SNPR77TUXMD8944ADFD5ZY15',
+    SupportedBlockchain.GNOSIS: 'SPF6XYXSKY7Y2IK9KHVAA25DQW35ZRQC39',
+}
 
 
 class Etherscan(ExternalServiceWithApiKey, ABC):
@@ -240,9 +252,11 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
                     },
                 )
                 self.warning_given = True
-        else:
-            query_str += f'&apikey={api_key}'
 
+            api_key = ApiKey(ROTKI_INCLUDED_KEYS[self.chain])
+            log.debug(f'Using default etherscan key for {self.chain}')
+
+        query_str += f'&apikey={api_key}'
         backoff = 1
         backoff_limit = 33
         timeout = timeout or CachedSettings().get_timeout_tuple()

@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test-group: [api, others]
+        test-group: [api, decoders, others]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -97,7 +97,7 @@ jobs:
           Get-ChildItem -Path $PYTHON_LOCATION
           (Get-Command python).Path
       - name: Install dependencies
-        run: |          
+        run: |
           uv pip install --system --upgrade wheel pytest-cov
           uv pip install --system -r requirements_dev.txt
           uv pip install --system -e .
@@ -122,27 +122,14 @@ jobs:
           if [ "${{ matrix.test-group }}" == 'api' ]
           then
             python pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS rotkehlchen/tests/api
+          elif [ "${{ matrix.test-group }}" == 'decoders' ]
+          then
+            python pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS -n 6 rotkehlchen/tests/unit/decoders -v
           else
-            python pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS --ignore=rotkehlchen/tests/api --ignore=rotkehlchen/tests/unit/decoders rotkehlchen/tests
+            python pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS --ignore=rotkehlchen/tests/api --ignore=rotkehlchen/tests/unit/decoders rotkehlchen/tests/
           fi
           
           python pytestgeventwrapper.py --dead-fixtures
-        shell: bash
-      - name: Run decoder tests
-        if: (success() || failure()) && matrix.test-group != 'api'
-        env:
-          PYTEST_ARGS: '--durations=150'
-          FORCE_COLOR: 1
-          MATRIX_JOB: ${{ matrix.test-group }}
-        run: |
-          if [ "${{ runner.os }}" == 'macOS' ];
-          then
-            COVERAGE_ARGS=''
-          else
-            COVERAGE_ARGS='--cov=./'
-          fi
-          export CASSETTES_DIR=$HOME/work/rotki/rotki/test-caching
-          python pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS -n 6 rotkehlchen/tests/unit/decoders -v
         shell: bash
       - name: Upload coverage
         uses: codecov/codecov-action@v4

@@ -27,6 +27,7 @@ from rotkehlchen.constants.misc import (
     GLOBALDIR_NAME,
     NFT_DIRECTIVE,
 )
+from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType, DBCursor
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetType
 from rotkehlchen.errors.misc import DBUpgradeError, InputError
@@ -727,6 +728,13 @@ class GlobalDBHandler:
         May raise InputError
         """
         for underlying_token in underlying_tokens:
+            if evm_address_to_identifier(
+                address=underlying_token.address,
+                chain_id=chain_id,
+                token_type=underlying_token.token_kind,
+            ) == parent_token_identifier:
+                raise InputError(f'{parent_token_identifier} cannot be its own underlying token')
+
             # make sure underlying token address is tracked if not already there
             asset_id = GlobalDBHandler.get_evm_token_identifier(
                 cursor=write_cursor,
@@ -924,7 +932,7 @@ class GlobalDBHandler:
     def add_evm_token_data(write_cursor: DBCursor, entry: EvmToken) -> None:
         """Adds ethereum token specific information into the global DB
 
-        May raise InputError if the token already exists
+        May raise InputError if the token already exists or we fail to add the underlying tokens
         """
         try:
             write_cursor.execute(

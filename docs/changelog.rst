@@ -7,6 +7,10 @@ Changelog
 * :feature:`8101` Failed transactions will now be displayed as failed and not just show "burned gas" event only.
 * :feature:`-` Transactions claiming SAFE tokens from vesting will now be properly decoded.
 * :feature:`-` Transactions locking, unlocking and withdrawing SAFE tokens will now be properly decoded. Also any locked SAFE tokens will be automatically detected and their balance counted.
+* :bug:`8334` Importing addresses from MetaMask should work when multiple browser wallets are installed.
+* :bug:`-` rotki will now properly run background tasks when logging out and logging in again.
+* :bug:`-` rotki will now detect new tokens right after finishing decoding new events.
+* :bug:`8169` Prevent a recursion error when querying the price of a token.
 
 * :release:`1.34.1 <2024-07-24>`
 * :bug:`-` Eigenlayer LST pending withdrawals that have been completed should no longer count as user balance.

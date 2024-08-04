@@ -375,7 +375,7 @@ def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
                 ignore_cache=True,
             )
 
-            assert save_tokens_mock.call_count == 2
+            assert save_tokens_mock.call_count == 3
             assert save_tokens_mock.call_args_list[0].kwargs['address'] == accounts[1]
             assert save_tokens_mock.call_args_list[0].kwargs['blockchain'] == SupportedBlockchain.ETHEREUM  # noqa: E501
             assert save_tokens_mock.call_args_list[0].kwargs['tokens'] == [A_DAI]
@@ -700,6 +700,13 @@ def test_augmented_detection_pendle_transactions(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('max_tasks_num', [5])
 @pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+@pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('optimism_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('base_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('gnosis_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('scroll_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('arbitrum_one_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('polygon_pos_accounts', [[make_evm_address()]])
 def test_maybe_update_aave_v3_underlying_assets(
         task_manager: TaskManager,
         globaldb: GlobalDBHandler,

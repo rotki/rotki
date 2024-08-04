@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 from unittest import mock
 
+import gevent
 import pytest
 import requests
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -569,6 +570,23 @@ def test_user_logout(rotkehlchen_api_server, username, db_password):
     )
     assert rotki.user_is_logged_in is True
 
+    # Run some async task
+    with mock.patch.object(
+        target=rotkehlchen_api_server.rest_api.rotkehlchen,
+        attribute='query_balances',
+        side_effect=lambda *args, **kwargs: gevent.sleep(10),
+    ):
+        response = requests.get(
+            api_url_for(rotkehlchen_api_server, 'allbalancesresource', name=username),
+            json={'async_query': True},
+        )
+        task_id = assert_ok_async_response(response)
+
+    response = requests.get(
+        api_url_for(rotkehlchen_api_server, 'specific_async_tasks_resource', task_id=task_id),
+    )
+    assert response.json()['result']['status'] == 'pending'
+
     # Logout of the active user
     assert rotki.data.db.password == db_password
     data = {'action': 'logout'}
@@ -579,6 +597,11 @@ def test_user_logout(rotkehlchen_api_server, username, db_password):
     assert_simple_ok_response(response)
     assert rotki.user_is_logged_in is False
     assert rotki.data.db.password == ''
+
+    # Check that task isn't pending anymore
+    assert requests.get(
+        api_url_for(rotkehlchen_api_server, 'specific_async_tasks_resource', task_id=task_id),
+    ).json()['result']['status'] == 'not-found'
 
     # Now try to log out of the same user again
     response = requests.patch(

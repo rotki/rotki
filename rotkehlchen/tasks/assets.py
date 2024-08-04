@@ -2,7 +2,6 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Final
 
-
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset, UnderlyingToken
 from rotkehlchen.assets.types import AssetType
@@ -18,11 +17,13 @@ from rotkehlchen.chain.ethereum.modules.aave.v3.constants import (
     AAVE_V3_DATA_PROVIDER as AAVE_V3_DATA_PROVIDER_ETH,
 )
 from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS
+from rotkehlchen.chain.evm.constants import EVM_ADDRESS_REGEX
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.aave.v3.constants import (
     AAVE_V3_DATA_PROVIDER as AAVE_V3_DATA_PROVIDER_EVM,
 )
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.gnosis.modules.aave.v3.constants import (
     AAVE_V3_DATA_PROVIDER as AAVE_V3_DATA_PROVIDER_GNO,
 )
@@ -33,11 +34,13 @@ from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.cache import DBCacheStatic
+from rotkehlchen.db.constants import EVM_EVENT_FIELDS, HISTORY_BASE_ENTRY_FIELDS
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import EvmEventFilterQuery
-from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.db.filtering import EVM_EVENT_JOIN, EvmEventFilterQuery
+from rotkehlchen.db.history_events import DBHistoryEvents, filter_ignore_asset_query
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.cache import (
@@ -45,23 +48,30 @@ from rotkehlchen.globaldb.cache import (
     globaldb_get_general_cache_values,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.types import (
+    EventDirection,
+    HistoryEventSubType,
+    HistoryEventType,
+)
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     CHAINID_TO_SUPPORTED_BLOCKCHAIN,
+    EVM_LOCATIONS,
     EVMLIKE_LOCATIONS,
     SPAM_PROTOCOL,
+    SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     CacheType,
     ChainID,
     EvmTokenKind,
+    SupportedBlockchain,
 )
-from rotkehlchen.utils.misc import ts_now
+from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
-    from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.types import ChecksumEvmAddress
 
 
@@ -310,6 +320,9 @@ def update_aave_v3_underlying_assets(chains_aggregator: 'ChainsAggregator') -> N
         (ChainID.GNOSIS, AAVE_V3_DATA_PROVIDER_GNO),
         (ChainID.SCROLL, AAVE_V3_DATA_PROVIDER_SCRL),
     ):
+        if len(chains_aggregator.accounts.get(chain_id.to_blockchain())) == 0:
+            continue  # avoid querying chains without nodes connected
+
         node_inquirer = chains_aggregator.get_evm_manager(chain_id=chain_id).node_inquirer  # type: ignore[arg-type]  # all iterated ChainIDs are supported
         aave_data_provider = node_inquirer.contracts.contract(address=data_provider_address)
         underlying_tokens = []
@@ -381,3 +394,57 @@ def update_aave_v3_underlying_assets(chains_aggregator: 'ChainsAggregator') -> N
             name=DBCacheStatic.LAST_AAVE_V3_ASSETS_UPDATE,
             value=ts_now(),
         )
+
+
+def maybe_detect_new_tokens(database: 'DBHandler') -> None:
+    """Checks newly found history events with IN direction and saves their assets as detected."""
+    if not CachedSettings().get_settings().auto_detect_tokens:
+        return
+
+    with database.conn.read_ctx() as cursor:
+        tracked_accounts = {address_tuple[0] for address_tuple in cursor.execute(
+            'SELECT DISTINCT account FROM blockchain_accounts;',
+        )}
+
+        last_save_time = database.get_last_balance_save_time(cursor)
+        detected_tokens = defaultdict(list)
+        # we query the decoded history events that are the first event of each distinct
+        # unignored asset for that account that happened on or after last_save_time.
+        for event_data in cursor.execute(
+            # events that are the earliest events of distinct assets after last_save_time
+            f'SELECT {HISTORY_BASE_ENTRY_FIELDS}, '
+            f'{EVM_EVENT_FIELDS} {EVM_EVENT_JOIN} {filter_ignore_asset_query()} '
+            'AND timestamp >= ? GROUP BY asset, location_label;',
+            (ts_sec_to_ms(last_save_time),),
+        ):
+            event = EvmEvent.deserialize_from_db(event_data[1:])
+            if (
+                event.location not in EVM_LOCATIONS or
+                not event.asset.is_evm_token() or
+                event.maybe_get_direction() != EventDirection.IN
+            ):
+                continue
+
+            chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE = SupportedBlockchain.from_location(event.location)  # type: ignore[arg-type,assignment]  # event.location is one of EVM_LOCATIONS  # noqa: E501
+            evm_asset = event.asset.resolve_to_evm_token()
+            if (
+                event.location_label is None or
+                EVM_ADDRESS_REGEX.fullmatch(event.location_label) is None or
+                event.location_label not in tracked_accounts
+            ):
+                log.warning(
+                    f'Found invalid or non-tracked location label {event.location_label} in '
+                    f'history {event=} in {event.location} while detecting new tokens. Skipping.',
+                )
+                continue
+
+            detected_tokens[(chain, event.location_label)].append(evm_asset)
+
+    with database.conn.write_ctx() as write_cursor:
+        for (chain, location_label), tokens in detected_tokens.items():
+            database.save_tokens_for_address(
+                write_cursor=write_cursor,
+                address=string_to_evm_address(location_label),
+                blockchain=chain,
+                tokens=tokens,
+            )

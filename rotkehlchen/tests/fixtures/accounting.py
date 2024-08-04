@@ -3,6 +3,7 @@ import os
 import shutil
 import sys
 from collections import defaultdict
+from collections.abc import Generator
 from contextlib import ExitStack
 from pathlib import Path
 from unittest.mock import patch
@@ -38,28 +39,30 @@ def fixture_use_clean_caching_directory():
 
 
 @pytest.fixture(name='data_dir')
-def fixture_data_dir(use_clean_caching_directory, tmpdir_factory, worker_id) -> Path:
-    """The tests data dir is persistent so that we can cache global DB.
+def fixture_data_dir(use_clean_caching_directory, tmpdir_factory, worker_id) -> Generator[Path | None, None, None]:  # noqa: E501
+    """The tests data dir is peristent so that we can cache global DB.
     Adjusted from old code. Not sure if it makes sense to keep. Could also just
     force clean caching directory everywhere"""
     if use_clean_caching_directory:
-        return Path(tmpdir_factory.mktemp('test_data_dir'))
-
-    if 'CI' in os.environ:
-        data_directory = Path.home() / '.cache' / '.rotkehlchen-test-dir'
+        path = Path(tmpdir_factory.mktemp('test_data_dir'))
+        yield path
+        shutil.rmtree(path)
     else:
-        data_directory = default_data_directory().parent / 'test_data'
+        if 'CI' in os.environ:
+            data_directory = Path.home() / '.cache' / '.rotkehlchen-test-dir'
+        else:
+            data_directory = default_data_directory().parent / 'test_data'
 
-    if worker_id != 'master':
-        # when running the test in parallel use a path based in the worker id to avoid
-        # conflicts between workers
-        data_directory /= worker_id
+        if worker_id != 'master':
+            # when running the test in parallel use a path based in the worker id to avoid
+            # conflicts between workers
+            data_directory /= worker_id
 
-    data_directory.mkdir(parents=True, exist_ok=True)
-    # But always reset users
-    shutil.rmtree(data_directory / USERSDIR_NAME, ignore_errors=True)
+        data_directory.mkdir(parents=True, exist_ok=True)
+        # But always reset users
+        shutil.rmtree(data_directory / USERSDIR_NAME, ignore_errors=True)
 
-    return data_directory
+        yield data_directory
 
 
 @pytest.fixture(name='should_mock_price_queries')

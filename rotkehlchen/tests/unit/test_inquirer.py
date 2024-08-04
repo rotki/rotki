@@ -34,6 +34,7 @@ from rotkehlchen.constants.assets import (
     A_LINK,
     A_USD,
     A_USDC,
+    A_USDT,
     A_WETH_ARB,
 )
 from rotkehlchen.constants.prices import ZERO_PRICE
@@ -799,3 +800,26 @@ def test_fake_symbol_doesnt_query_cc(inquirer: 'Inquirer'):
         decimals=18,
     )
     assert inquirer.find_usd_price(token) == ZERO
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_recursion_in_inquirer(inquirer: Inquirer, globaldb: GlobalDBHandler):
+    """Test that if a token has itself as underlying token we don't create an
+    infinite recursion querying its price"""
+    a_usdt = A_USDT.resolve_to_evm_token()
+    with globaldb.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO underlying_tokens_list(identifier, weight, parent_token_entry) '
+            'VALUES(?, ?, ?)',
+            (a_usdt.identifier, '1', a_usdt.identifier),
+        )
+
+    AssetResolver.clean_memory_cache(A_USDT.identifier)
+    assert inquirer.find_usd_price(A_USDT) != ZERO
+
+
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_recursion_decorator(inquirer: Inquirer):
+    """Test that the decorator handle_recursion_error works properly"""
+    with patch('rotkehlchen.inquirer.Inquirer._find_usd_price', side_effect=RecursionError):
+        assert inquirer.find_usd_price(A_USDT) == ZERO

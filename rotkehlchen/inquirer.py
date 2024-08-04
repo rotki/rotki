@@ -1,9 +1,11 @@
 import logging
 import operator
-from collections.abc import Iterable, Sequence
+import sqlite3
+from collections.abc import Callable, Iterable, Sequence
 from contextlib import suppress
+from functools import wraps
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, Union, cast, overload
+from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeVar, Union, cast, overload
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken, FiatAsset, UnderlyingToken
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
@@ -71,6 +73,7 @@ from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.defi import DefiPoolError
 from rotkehlchen.errors.misc import (
     BlockchainQueryError,
+    InputError,
     NotERC20Conformant,
     RemoteError,
     UnableToDecryptRemoteData,
@@ -245,6 +248,43 @@ def _query_currency_converterapi(base: FiatAsset, quote: FiatAsset) -> Price | N
             quote_currency=quote.identifier,
         )
         return None
+
+
+T = TypeVar('T', bound=Callable[..., Any])
+
+
+def handle_recursion_error(return_price_only: bool = False) -> Callable:
+    """
+    In the app we saw that having a wrongly configured token which had itself
+    as underlying token created a RecursionError. That recursion error was
+    tracked in the logs as an error with no traceback and sometimes an OperationalError
+    type from sqlite. The recursion error was not only seen here but also in the past
+    so we've decided to catch both of them here.
+
+    This decorator is used with methods that return a tuple with the price or only the price.
+    To keep the decorator compatible with the expected returned type if `return_price_only` is
+    set to True we return only `Price(ZERO)` and if it's False we return a tuple in case of
+    error.
+    """
+    def decorator(func: T) -> T:
+        @wraps(func)
+        def wrapper(*args, **kwargs):  # type: ignore
+            try:
+                result = func(*args, **kwargs)
+            except (RecursionError, sqlite3.OperationalError) as e:
+                from_asset = kwargs.get('from_asset') or kwargs.get('asset')
+                to_asset = kwargs.get('to_asset')
+                log.error(
+                    f'Failed to query price {from_asset=} {to_asset=} due to a recursion error: '
+                    f'{e}. Using zero as price.',
+                )
+                if return_price_only:
+                    return Price(ZERO)
+
+                return Price(ZERO), CurrentPriceOracle.BLOCKCHAIN, True
+            return result
+        return wrapper  # type: ignore
+    return decorator
 
 
 class CachedPriceEntry(NamedTuple):
@@ -433,7 +473,11 @@ class Inquirer:
     ) -> tuple[Price, bool, bool]:
         """Tries to query the current price of the asset pair using the provided oracle instance.
         Returns a tuple of (price, used_main_currency, is_error). The third element is used to
-        indicate whether the error should be ignored or not."""
+        indicate whether the error should be ignored or not.
+
+        May raise:
+        - RecursionError if `coming_from_latest_price` is True. Used in the ManualCurrentOracle
+        """
         price, used_main_currency, is_error = ZERO_PRICE, False, True
         try:
             price, used_main_currency, is_error = *oracle_instance.query_current_price(
@@ -599,6 +643,7 @@ class Inquirer:
         return oracle_price, oracle_queried, used_main_currency
 
     @staticmethod
+    @handle_recursion_error(return_price_only=True)
     def find_price(
             from_asset: Asset,
             to_asset: Asset,
@@ -617,6 +662,7 @@ class Inquirer:
         return price
 
     @staticmethod
+    @handle_recursion_error()
     def find_price_and_oracle(
             from_asset: Asset,
             to_asset: Asset,
@@ -639,6 +685,7 @@ class Inquirer:
         )
 
     @staticmethod
+    @handle_recursion_error(return_price_only=True)
     def find_usd_price(
             asset: Asset,
             ignore_cache: bool = False,
@@ -655,6 +702,7 @@ class Inquirer:
         return price
 
     @staticmethod
+    @handle_recursion_error()
     def find_usd_price_and_oracle(
             asset: Asset,
             ignore_cache: bool = False,
@@ -751,19 +799,27 @@ class Inquirer:
                 return price, oracle, False
 
             if is_known_protocol is True or underlying_tokens is not None:
-                result, oracle = get_underlying_asset_price(asset)
-                if result is not None:
-                    usd_price = Price(result)
-                    Inquirer.set_cached_price(
-                        cache_key=cache_key,
-                        cached_price=CachedPriceEntry(
-                            price=usd_price,
-                            time=ts_now(),
-                            oracle=oracle,
-                            used_main_currency=False,  # function is for usd only, so it doesn't matter  # noqa: E501
-                        ),
+                if (
+                    underlying_tokens is not None and
+                    asset.evm_address in (x.address for x in underlying_tokens)
+                ):
+                    Inquirer._msg_aggregator.add_error(
+                        f'Token {asset} has itself as underlying token. Please edit the '
+                        'asset to fix it. Price queries will not work until this is done.',
                     )
-                    return usd_price, oracle, False
+                else:
+                    result, oracle = get_underlying_asset_price(asset)
+                    if result is not None:
+                        Inquirer.set_cached_price(
+                            cache_key=cache_key,
+                            cached_price=CachedPriceEntry(
+                                price=(usd_price := Price(result)),
+                                time=ts_now(),
+                                oracle=oracle,
+                                used_main_currency=False,  # function is for usd only, so it doesn't matter  # noqa: E501
+                            ),
+                        )
+                        return usd_price, oracle, False
                 # else known protocol on-chain query failed. Continue to external oracles
 
         # BSQ is a special asset that doesn't have oracle information but its custom API
@@ -1067,17 +1123,21 @@ class Inquirer:
                 )
             # store it in the DB, so next time no need to query chain
             with globaldb.conn.write_ctx() as write_cursor:
-                globaldb._add_underlying_tokens(
-                    write_cursor=write_cursor,
-                    parent_token_identifier=token.identifier,
-                    underlying_tokens=[
-                        UnderlyingToken(
-                            address=underlying_token_address,
-                            token_kind=EvmTokenKind.ERC20,  # this may be a guess here
-                            weight=ONE,  # all yearn vaults have single underlying
-                        )],
-                    chain_id=ChainID.ETHEREUM,
-                )
+                try:
+                    globaldb._add_underlying_tokens(
+                        write_cursor=write_cursor,
+                        parent_token_identifier=token.identifier,
+                        underlying_tokens=[
+                            UnderlyingToken(
+                                address=underlying_token_address,
+                                token_kind=EvmTokenKind.ERC20,  # this may be a guess here
+                                weight=ONE,  # all yearn vaults have single underlying
+                            )],
+                        chain_id=ChainID.ETHEREUM,
+                    )
+                except InputError as e:
+                    log.error(f'Failed to add yearn underlying token {underlying_token_address} for {token.identifier} due to: {e}')  # noqa: E501
+                    return None
         else:
             underlying_token = EvmToken(ethaddress_to_identifier(maybe_underlying_tokens[0].address))  # noqa: E501
 
