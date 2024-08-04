@@ -118,7 +118,7 @@ jobs:
 
           export CASSETTES_DIR=$HOME/work/rotki/rotki/test-caching
 
-          python pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS --ignore=rotkehlchen/tests/api rotkehlchen/tests/integration rotkehlchen/tests/unit/
+          python pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS --ignore=rotkehlchen/tests/api rotkehlchen/tests/
 
           python pytestgeventwrapper.py --dead-fixtures
         shell: bash
