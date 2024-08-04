@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test-group: [api, others]
+        test-group: [api, decoders, others]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -121,8 +121,11 @@ jobs:
           if [ "${{ matrix.test-group }}" == 'api' ]
           then
             python pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS rotkehlchen/tests/api
+          elif [ "${{ matrix.test-group }}" == 'decoders' ]
+          then
+            python pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS rotkehlchen/tests/unit/decoders
           else
-            python pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS --ignore=rotkehlchen/tests/api rotkehlchen/tests/
+            python pytestgeventwrapper.py $PYTEST_ARGS $COVERAGE_ARGS --ignore=rotkehlchen/tests/api --ignore=rotkehlchen/tests/unit/decoders rotkehlchen/tests/
           fi
           
           python pytestgeventwrapper.py --dead-fixtures
