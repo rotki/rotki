@@ -92,7 +92,7 @@ jobs:
           echo "miniupnpc.dll will be installled in $PYTHON_LOCATION"
           curl.exe -L -O "https://github.com/mrx23dot/miniupnp/releases/download/miniupnpd_2_2_24/$MINIUPNPC_ZIP"
           
-          echo "Downloaded miniupnpc.zip "
+          echo "Downloaded miniupnpc.zip"
           
           Expand-Archive -Force -Path ".\$MINIUPNPC_ZIP" -DestinationPath $PYTHON_LOCATION
           
