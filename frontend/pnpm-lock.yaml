@@ -186,6 +186,9 @@ importers:
       '@vitest/ui':
         specifier: 2.0.5
         version: 2.0.5(vitest@2.0.5)
+      '@vue/devtools-api':
+        specifier: 6.6.3
+        version: 6.6.3
       '@vue/test-utils':
         specifier: 2.4.6
         version: 2.4.6

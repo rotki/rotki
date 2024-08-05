@@ -5,12 +5,14 @@ import 'typeface-roboto-mono';
 import { usePremiumApi } from '@/premium/setup-interface';
 import App from '@/App.vue';
 import { attemptPolyfillResizeObserver } from '@/utils/cypress';
+import { registerDevtools } from '@/plugins/devtools';
 import { i18n } from './i18n';
 import { router } from './router';
 import { createRuiPlugin } from './plugins/rui';
 import '@/main.scss';
 
 const isDevelopment = checkIfDevelopment() && !import.meta.env.VITE_TEST;
+const IS_CLIENT = typeof window !== 'undefined';
 
 attemptPolyfillResizeObserver();
 
@@ -52,5 +54,8 @@ app.mount('#app');
 
 setupDayjs();
 setupFormatter();
+
+if (isDevelopment && IS_CLIENT)
+  registerDevtools(app);
 
 export { app };
