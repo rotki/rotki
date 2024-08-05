@@ -31,7 +31,10 @@
     "confirm_delete": {
       "description_address": "Are you sure you want to delete {count} address(es)",
       "description_xpub": "Are you sure you want to delete {address}",
-      "title": "Account delete"
+      "title": "Account delete",
+      "agnostic": {
+        "description": "Are you sure you want to delete account {address} for all chains?"
+      }
     },
     "chain_filter": {
       "add": "Add \"{chain}\" to filter",
@@ -314,6 +317,15 @@
         "task": {
           "description": "{count} accounts are being removed",
           "title": "Removing {blockchain} account"
+        },
+        "agnostic": {
+          "error": {
+            "title": "Removing account for address {address}"
+          },
+          "task": {
+            "description": "Account {address} are being removed",
+            "title": "Removing blockchain account"
+          }
         }
       },
       "blockchain_accounts_add": {

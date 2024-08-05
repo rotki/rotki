@@ -73,6 +73,18 @@ export function useBlockchainAccountsApi() {
     return handleResponse(response);
   };
 
+  const removeAgnosticBlockchainAccount = async (chainType: string, accounts: string[]): Promise<PendingTask> => {
+    const response = await api.instance.delete<ActionResult<PendingTask>>(`/blockchains/type/${chainType}/accounts`, {
+      data: snakeCaseTransformer({
+        asyncQuery: true,
+        accounts,
+      }),
+      validateStatus: validWithParamsSessionAndExternalService,
+    });
+
+    return handleResponse(response);
+  };
+
   const editBtcAccount = async (
     payload: AccountPayload | XpubAccountPayload,
     chain: string,
@@ -221,6 +233,7 @@ export function useBlockchainAccountsApi() {
     addBlockchainAccount,
     addEvmAccount,
     detectEvmAccounts,
+    removeAgnosticBlockchainAccount,
     removeBlockchainAccount,
     editBlockchainAccount,
     editBtcAccount,

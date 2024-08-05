@@ -16,6 +16,7 @@ export function useBlockchainAccounts() {
   const {
     addBlockchainAccount,
     removeBlockchainAccount,
+    removeAgnosticBlockchainAccount,
     editBlockchainAccount,
     editBtcAccount,
     queryAccounts,
@@ -138,6 +139,33 @@ export function useBlockchainAccounts() {
     }
   };
 
+  const removeAgnosticAccount = async (chainType: string, address: string) => {
+    const { taskId } = await removeAgnosticBlockchainAccount(chainType, [address]);
+    try {
+      const taskType = TaskType.REMOVE_ACCOUNT;
+      await awaitTask<BlockchainBalances, BlockchainMetadata>(taskId, taskType, {
+        title: t('actions.balances.blockchain_account_removal.agnostic.task.title'),
+        description: t('actions.balances.blockchain_account_removal.agnostic.task.description', { address }),
+      });
+    }
+    catch (error: any) {
+      if (!isTaskCancelled(error)) {
+        logger.error(error);
+        const title = t('actions.balances.blockchain_account_removal.agnostic.error.title', {
+          address,
+        });
+        const description = t('actions.balances.blockchain_account_removal.error.description', {
+          error: error.message,
+        });
+        notify({
+          title,
+          message: description,
+          display: true,
+        });
+      }
+    }
+  };
+
   const fetchBlockchainAccounts = async (chain: string): Promise<string[] | null> => {
     try {
       const accounts = await queryAccounts(chain);
@@ -231,6 +259,7 @@ export function useBlockchainAccounts() {
     addEvmAccount,
     editAccount,
     removeAccount,
+    removeAgnosticAccount,
     fetch,
     deleteXpub,
     removeTag,

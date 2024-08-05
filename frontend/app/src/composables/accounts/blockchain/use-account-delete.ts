@@ -7,7 +7,7 @@ import type {
 
 export function useAccountDelete() {
   const { deleteEth2Validators } = useEthStaking();
-  const { removeAccount, deleteXpub } = useBlockchainAccounts();
+  const { removeAccount, removeAgnosticAccount, deleteXpub } = useBlockchainAccounts();
   const { refreshAccounts } = useBlockchains();
   const { t } = useI18n();
   const { show } = useConfirmStore();
@@ -115,7 +115,35 @@ export function useAccountDelete() {
     );
   }
 
+  async function deleteAgnosticAccount(payload: BlockchainAccountBalance): Promise<void> {
+    const category = payload.category;
+    if (category) {
+      const address = getAccountAddress(payload);
+
+      await removeAgnosticAccount(category, address);
+
+      if (category === 'evm')
+        await removeAgnosticAccount('evmlike', address);
+    }
+
+    startPromise(refreshAccounts());
+  }
+
+  function showAgnosticConfirmation(payload: BlockchainAccountBalance, onComplete?: () => void) {
+    const message: string = t('account_balances.confirm_delete.agnostic.description', {
+      address: getAccountAddress(payload),
+    });
+    show({
+      title: t('account_balances.confirm_delete.title'),
+      message,
+    }, async () => {
+      await deleteAgnosticAccount(payload);
+      onComplete?.();
+    });
+  }
+
   return {
     showConfirmation,
+    showAgnosticConfirmation,
   };
 }

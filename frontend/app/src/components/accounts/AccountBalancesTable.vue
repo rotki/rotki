@@ -50,7 +50,7 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { isTaskRunning } = useTaskStore();
 const { isLoading } = useStatusStore();
 const { supportsTransactions } = useSupportedChains();
-const { showConfirmation } = useAccountDelete();
+const { showConfirmation, showAgnosticConfirmation } = useAccountDelete();
 
 const loading = isLoading(Section.BLOCKCHAIN);
 
@@ -186,6 +186,13 @@ function confirmDelete(item?: DataRow) {
   });
 }
 
+function confirmAgnosticDelete(item: DataRow) {
+  showAgnosticConfirmation(item, () => {
+    set(selection, []);
+    emit('refresh');
+  });
+}
+
 function edit(row: DataRow) {
   emit('edit', editBlockchainAccount(row));
 }
@@ -262,12 +269,12 @@ defineExpose({
         <RowActions
           v-if="!('virtual' in row) || !row.virtual"
           class="account-balance-table__actions"
+          :edit-tooltip="t('account_balances.edit_tooltip')"
           :no-edit="group && !isEditable(row)"
           :no-delete="group && !isEditable(row)"
-          :edit-tooltip="t('account_balances.edit_tooltip')"
           :disabled="accountOperation"
           @edit-click="edit(row)"
-          @delete-click="confirmDelete(row)"
+          @delete-click="group && !isEditable(row) ? confirmAgnosticDelete(row) : confirmDelete(row)"
         />
       </div>
     </template>
