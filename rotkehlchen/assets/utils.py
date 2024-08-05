@@ -215,6 +215,9 @@ def get_or_create_evm_token(
         encounter: TokenEncounterInfo | None = None,
         coingecko: str | None = None,
         cryptocompare: str | None = None,
+        fallback_decimals: int | None = None,
+        fallback_name: str | None = None,
+        fallback_symbol: str | None = None,
 ) -> EvmToken:
     """Given a token address return the <EvmToken>
 
@@ -225,6 +228,9 @@ def get_or_create_evm_token(
 
     Optionally the caller can provide a transaction hash of where the token was seen.
     This is used in the websocket message to provide information to the frontend.
+
+    If fallback values are provided and the token isn't ERC20 conformant we use those
+    as values for the decimal, name and symbol attributes.
 
     Note: if the token already exists but the other arguments don't match the
     existing token will still be silently returned
@@ -273,14 +279,21 @@ def get_or_create_evm_token(
                 asset_exists = False
 
             if evm_inquirer is not None:
-                name, symbol, decimals = _query_or_get_given_token_info(
-                    evm_inquirer=evm_inquirer,
-                    evm_address=evm_address,
-                    name=name,
-                    symbol=symbol,
-                    decimals=decimals,
-                    token_kind=token_kind,
-                )
+                try:
+                    name, symbol, decimals = _query_or_get_given_token_info(
+                        evm_inquirer=evm_inquirer,
+                        evm_address=evm_address,
+                        name=name,
+                        symbol=symbol,
+                        decimals=decimals,
+                        token_kind=token_kind,
+                    )
+                except NotERC20Conformant:
+                    if None not in (fallback_name, fallback_symbol, fallback_decimals):
+                        name, symbol, decimals = fallback_name, fallback_symbol, fallback_decimals
+                    else:
+                        raise
+
             # make sure that basic information is always filled
             name = identifier if name is None else name
             decimals = 18 if decimals is None else decimals

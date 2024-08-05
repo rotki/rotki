@@ -87,7 +87,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
         ReloadablePoolsAndGaugesDecoderMixin.__init__(
             self,
             evm_inquirer=evm_inquirer,
-            cache_type_to_check_for_freshness=CacheType.CURVE_LP_TOKENS,
+            cache_type_to_check_for_freshness=CacheType.CURVE_POOL_ADDRESS,
             query_data_method=query_curve_data,
             save_data_to_cache_method=save_curve_data_to_cache,
             read_data_from_cache_method=read_curve_pools_and_gauges,
