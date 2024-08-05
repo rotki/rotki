@@ -231,7 +231,7 @@ def _ensure_curve_tokens_existence(
         # finally ensure lp token and gauge token exists in the globaldb. Since they are created
         # by curve, they should always be an ERC20
         try:
-            get_or_create_evm_token(
+            pool_lp_token = get_or_create_evm_token(
                 userdb=evm_inquirer.database,
                 evm_address=pool.lp_token_address,
                 chain_id=evm_inquirer.chain_id,
@@ -265,6 +265,9 @@ def _ensure_curve_tokens_existence(
                         token_kind=EvmTokenKind.ERC20,
                         weight=ONE,
                     )],
+                    decimals=18,  # 18 is the default for old gauges that don't implement the decimals method https://t.me/curvefi/654915  # noqa: E501
+                    name=f'{pool_lp_token.name} Gauge Deposit',
+                    symbol=f'{pool_lp_token.symbol}-gauge',
                 )
             except NotERC20Conformant:
                 log.warning(f'Curve gauge {pool.gauge_address} is not a valid ERC20 token.')
