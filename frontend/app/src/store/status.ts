@@ -87,7 +87,7 @@ export const useStatusStore = defineStore('status', () => {
   const shouldShowLoadingScreen = (section: Section, subsection: string = defaultSection) => computed<boolean>(() => {
     const statuses = get(status)[section];
     if (!statuses)
-      return false;
+      return true;
 
     return matchesStatus(statuses, subsection, isInitialLoadingStatus);
   });

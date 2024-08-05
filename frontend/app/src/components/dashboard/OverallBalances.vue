@@ -23,9 +23,12 @@ const { totalNetWorth } = storeToRefs(statistics);
 const frontendStore = useFrontendSettingsStore();
 const { visibleTimeframes } = storeToRefs(frontendStore);
 
-const { isLoading: isSectionLoading } = useStatusStore();
+const { shouldShowLoadingScreen, isLoading: isSectionLoading } = useStatusStore();
 
-const isLoading = isSectionLoading(Section.BLOCKCHAIN);
+const isLoading = logicOr(
+  shouldShowLoadingScreen(Section.BLOCKCHAIN),
+  isSectionLoading(Section.BLOCKCHAIN),
+);
 
 const adjustedTotalNetWorthFontSize = computed(() => {
   const digits = get(totalNetWorth)
