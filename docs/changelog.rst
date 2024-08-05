@@ -4,6 +4,7 @@ Changelog
 
 * :bug:`8334` Importing addresses from MetaMask should work when multiple browser wallets are installed.
 * :bug:`-` rotki will now properly run background tasks when logging out and logging in again.
+* :bug:`-` The task to read new curve pools from the chain will be faster now.
 * :bug:`-` rotki will now detect new tokens right after finishing decoding new events.
 * :bug:`8169` Prevent a recursion error when querying the price of a token.
 
