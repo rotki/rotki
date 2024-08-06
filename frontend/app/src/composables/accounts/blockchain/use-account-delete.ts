@@ -119,14 +119,9 @@ export function useAccountDelete() {
     const category = payload.category;
     if (category) {
       const address = getAccountAddress(payload);
-
       await removeAgnosticAccount(category, address);
-
-      if (category === 'evm')
-        await removeAgnosticAccount('evmlike', address);
+      startPromise(refreshAccounts());
     }
-
-    startPromise(refreshAccounts());
   }
 
   function showAgnosticConfirmation(payload: BlockchainAccountBalance, onComplete?: () => void) {

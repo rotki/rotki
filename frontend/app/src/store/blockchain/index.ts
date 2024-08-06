@@ -65,7 +65,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
 
       const tags = accountsForAddress.flatMap(account => account.tags ?? []).filter(uniqueStrings);
       const chains = accountsForAddress.map(account => account.chain);
-      const label = accountsForAddress.length === 1 ? getAccountLabel(accountsForAddress[0]) : undefined;
+      const label = accountsForAddress.length > 0 ? getAccountLabel(accountsForAddress[0]) : undefined;
 
       let hasAssets = false;
       if (accountsForAddress.length === 1) {
