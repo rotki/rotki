@@ -1,5 +1,13 @@
 <script setup lang="ts">
 import { externalLinks } from '@/data/external-links';
+import { NoteLocation } from '@/types/notes';
+
+definePage({
+  name: 'import',
+  meta: {
+    noteLocation: NoteLocation.IMPORT,
+  },
+});
 
 const { t } = useI18n();
 </script>

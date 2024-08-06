@@ -1,5 +1,13 @@
 <script setup lang="ts">
 import { Module } from '@/types/modules';
+import { NoteLocation } from '@/types/notes';
+
+definePage({
+  name: 'nfts',
+  meta: {
+    noteLocation: NoteLocation.NFTS,
+  },
+});
 
 const modules = [Module.NFTS];
 const { isModuleEnabled } = useModules();

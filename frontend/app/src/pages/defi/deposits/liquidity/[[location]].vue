@@ -1,7 +1,13 @@
 <script setup lang="ts">
-import { Routes } from '@/router/routes';
+const props = defineProps<{
+  location: NavType | '';
+}>();
 
-type NavType = 'uniswap_v2' | 'uniswap_v3' | 'balancer' | 'sushiswap';
+definePage({
+  props: true,
+});
+
+type NavType = 'uniswap-v2' | 'uniswap-v3' | 'balancer' | 'sushiswap';
 
 interface LiquidityPageInfo {
   id: NavType;
@@ -9,29 +15,25 @@ interface LiquidityPageInfo {
   name: string;
 }
 
-const props = defineProps<{
-  location: NavType[] | '';
-}>();
-
 const imageSize = '64px';
 
 const pages = {
-  uniswap_v2: defineAsyncComponent(() => import('@/pages/defi/deposits/liquidity/uniswap-v2/index.vue')),
-  uniswap_v3: defineAsyncComponent(() => import('@/pages/defi/deposits/liquidity/uniswap-v3/index.vue')),
-  balancer: defineAsyncComponent(() => import('@/pages/defi/deposits/liquidity/balancer/index.vue')),
-  sushiswap: defineAsyncComponent(() => import('@/pages/defi/deposits/liquidity/sushiswap/index.vue')),
+  'uniswap-v2': defineAsyncComponent(() => import('@/pages/defi/deposits/liquidity/uniswap-v2/index.vue')),
+  'uniswap-v3': defineAsyncComponent(() => import('@/pages/defi/deposits/liquidity/uniswap-v3/index.vue')),
+  'balancer': defineAsyncComponent(() => import('@/pages/defi/deposits/liquidity/balancer/index.vue')),
+  'sushiswap': defineAsyncComponent(() => import('@/pages/defi/deposits/liquidity/sushiswap/index.vue')),
 };
 
 const { t } = useI18n();
 
 const liquidities = computed<LiquidityPageInfo[]>(() => [
   {
-    id: 'uniswap_v2',
+    id: 'uniswap-v2',
     image: './assets/images/protocols/uniswap.svg',
     name: t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v2'),
   },
   {
-    id: 'uniswap_v3',
+    id: 'uniswap-v3',
     image: './assets/images/protocols/uniswap.svg',
     name: t('navigation_menu.defi_sub.deposits_sub.liquidity_sub.uniswap_v3'),
   },
@@ -53,7 +55,7 @@ const lastLocation = useLocalStorage('rotki.staking.last_liquidity_provider', ''
 
 const location = computed({
   get() {
-    return Array.isArray(props.location) ? props.location[0] : undefined;
+    return props.location ? props.location : undefined;
   },
   set(value?: NavType) {
     set(lastLocation, value);
@@ -72,7 +74,10 @@ watchImmediate(lastLocation, async (location) => {
     return;
 
   await nextTick(() => {
-    router.push(Routes.DEFI_DEPOSITS_LIQUIDITY.replace(':location*', location));
+    router.push({
+      name: '/defi/deposits/liquidity/[[location]]',
+      params: { location },
+    });
   });
 });
 </script>
@@ -142,7 +147,12 @@ watchImmediate(lastLocation, async (location) => {
               :open-delay="400"
             >
               <template #activator>
-                <InternalLink :to="Routes.DEFI_DEPOSITS_LIQUIDITY.replace(':location*', item.id)">
+                <InternalLink
+                  :to="{
+                    path: '/defi/deposits/liquidity',
+                    query: { location },
+                  }"
+                >
                   <AppImage
                     :size="imageSize"
                     contain

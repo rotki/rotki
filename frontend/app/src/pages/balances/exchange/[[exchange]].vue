@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import { Routes } from '@/router/routes';
 import { TaskType } from '@/types/task-type';
+import { NoteLocation } from '@/types/notes';
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
-import type { Nullable } from '@/types';
 
-const props = withDefaults(
-  defineProps<{
-    exchange?: Nullable<string>;
-  }>(),
-  {
-    exchange: null,
+const props = defineProps<{ exchange?: string }>();
+
+definePage({
+  name: 'accounts-balances-exchange',
+  meta: {
+    noteLocation: NoteLocation.ACCOUNTS_BALANCES_EXCHANGE,
   },
-);
+  props: true,
+});
 
 const { t } = useI18n();
 const selectedTab = ref<string | undefined>(props.exchange ?? undefined);
@@ -41,7 +42,7 @@ const router = useRouter();
 const route = useRoute();
 
 function setSelectedExchange() {
-  set(selectedExchange, get(route).params.exchange);
+  set(selectedExchange, get(route).query.location);
 }
 
 onMounted(() => {
@@ -57,9 +58,12 @@ function exchangeBalance(exchange: string): BigNumber {
   return balances.reduce((sum, asset: AssetBalanceWithPrice) => sum.plus(asset.usdValue), Zero);
 }
 
-async function openExchangeDetails() {
-  await router.push({
-    path: `${Routes.ACCOUNTS_BALANCES_EXCHANGE}/${get(selectedExchange)}`,
+function openExchangeDetails() {
+  router.push({
+    name: 'accounts-balances-exchange',
+    params: {
+      exchange: get(selectedExchange),
+    },
   });
 }
 
@@ -75,7 +79,7 @@ const vueRouter = useRouter();
 
 function navigate() {
   vueRouter.push({
-    path: Routes.API_KEYS_EXCHANGES,
+    path: '/api-keys/exchanges',
     query: { add: 'true' },
   });
 }
@@ -108,7 +112,7 @@ onMounted(() => {
   refreshExchangeSavings();
 });
 
-function isBinance(exchange: string | null): exchange is 'binance' | 'binanceus' {
+function isBinance(exchange?: string): exchange is 'binance' | 'binanceus' {
   return !!exchange && ['binance', 'binanceus'].includes(exchange);
 }
 </script>
@@ -185,7 +189,12 @@ function isBinance(exchange: string | null): exchange is 'binance' | 'binanceus'
               :key="i"
               link
               class="h-[8rem]"
-              :to="`/accounts-balances/exchange-balances/${usedExchange}`"
+              :to="{
+                name: 'accounts-balances-exchange',
+                params: {
+                  exchange: usedExchange,
+                },
+              }"
               :model-value="usedExchange"
             >
               <LocationDisplay

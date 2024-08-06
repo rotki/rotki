@@ -114,6 +114,7 @@
     "typescript": "5.5.4",
     "unplugin-auto-import": "0.18.2",
     "unplugin-vue-components": "0.27.3",
+    "unplugin-vue-router": "0.10.2",
     "vite": "5.3.5",
     "vite-plugin-checker": "0.7.2",
     "vite-plugin-istanbul": "6.0.2",

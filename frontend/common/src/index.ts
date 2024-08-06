@@ -7,6 +7,12 @@ export type SemiPartial<T, Ps extends keyof T> = Pick<T, Ps> & Partial<T>;
 
 export type AddressIndexed<T> = Readonly<Record<string, T>>;
 
+interface PromiseFunction {
+  (): PromiseLike<void>;
+}
+
+export type Awaitable = VoidFunction | PromiseFunction;
+
 export const NumericString = z
   .number()
   .or(z.string())

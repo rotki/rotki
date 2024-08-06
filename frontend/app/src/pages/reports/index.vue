@@ -1,11 +1,18 @@
 <script setup lang="ts">
 import { type Message, Priority, Severity } from '@rotki/common/lib/messages';
-import { Routes } from '@/router/routes';
 import { TaskType } from '@/types/task-type';
 import { displayDateFormatter } from '@/data/date-formatter';
 import FileUpload from '@/components/import/FileUpload.vue';
+import { NoteLocation } from '@/types/notes';
+import { Routes } from '@/router/routes';
 import type { ProfitLossReportDebugPayload, ProfitLossReportPeriod } from '@/types/reports';
 import type { TaskMeta } from '@/types/task';
+
+definePage({
+  meta: {
+    noteLocation: NoteLocation.PROFIT_LOSS_REPORTS,
+  },
+});
 
 const { isTaskRunning, awaitTask } = useTaskStore();
 const reportsStore = useReportsStore();
@@ -58,7 +65,10 @@ async function generate(period: ProfitLossReportPeriod) {
 
   const action = () => {
     router.push({
-      path: Routes.PROFIT_LOSS_REPORT.replace(':id', reportId.toString()),
+      name: '/reports/[id]',
+      params: {
+        id: reportId.toString(),
+      },
       query: {
         openReportActionable: 'true',
       },

@@ -2,6 +2,10 @@
 import { type TablePaginationData, useBreakpoint } from '@rotki/ui-library';
 import { Section } from '@/types/status';
 
+definePage({
+  name: 'defi-overview',
+});
+
 const page = ref(1);
 const itemsPerPage = ref(9);
 

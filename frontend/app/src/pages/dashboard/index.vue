@@ -3,6 +3,14 @@ import { TaskType } from '@/types/task-type';
 import { Routes } from '@/router/routes';
 import { Module } from '@/types/modules';
 import { DashboardTableType } from '@/types/settings/frontend-settings';
+import { NoteLocation } from '@/types/notes';
+
+definePage({
+  name: 'dashboard',
+  meta: {
+    noteLocation: NoteLocation.DASHBOARD,
+  },
+});
 
 const { t } = useI18n();
 const { isTaskRunning } = useTaskStore();

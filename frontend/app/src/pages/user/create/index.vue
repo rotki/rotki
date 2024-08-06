@@ -1,4 +1,10 @@
 <script setup lang="ts">
+definePage({
+  meta: {
+    layout: 'auth',
+  },
+});
+
 const { appVersion } = storeToRefs(useMainStore());
 
 const { upgradeVisible } = storeToRefs(useSessionAuthStore());

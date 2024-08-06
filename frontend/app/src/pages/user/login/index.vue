@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import type { LoginCredentials } from '@/types/login';
 
+definePage({
+  meta: {
+    layout: 'auth',
+  },
+});
+
 const { t } = useI18n();
 const { navigateToUserCreation, navigateToDashboard } = useAppNavigation();
 const { upgradeVisible, canRequestData } = storeToRefs(useSessionAuthStore());

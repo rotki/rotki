@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import { Routes } from '@/router/routes';
 import type { HistoryEventEntry } from '@/types/history/events';
 
 const props = defineProps<{
@@ -25,7 +24,7 @@ function onEditRule() {
     data.counterparty = entry.counterparty ?? '';
 
   vueRouter.push({
-    path: Routes.SETTINGS_ACCOUNTING,
+    path: '/settings/accounting',
     query: { 'edit-rule': 'true', ...data },
   });
 }

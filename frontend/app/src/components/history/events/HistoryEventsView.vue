@@ -8,7 +8,6 @@ import { RouterAccountsSchema } from '@/types/route';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import HistoryEventsAction from '@/components/history/events/HistoryEventsAction.vue';
-import { Routes } from '@/router/routes';
 import type {
   EvmChainAndTxHash,
   EvmHistoryEvent,
@@ -531,7 +530,7 @@ watch(shouldFetchEventsRegularly, (shouldFetchEventsRegularly) => {
 
 function onAddMissingRule(data: Pick<AccountingRuleEntry, 'eventType' | 'eventSubtype' | 'counterparty'>) {
   vueRouter.push({
-    path: Routes.SETTINGS_ACCOUNTING,
+    path: '/settings/accounting',
     query: { 'add-rule': 'true', ...data },
   });
 }

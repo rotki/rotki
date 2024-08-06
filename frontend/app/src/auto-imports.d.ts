@@ -1335,7 +1335,6 @@ declare module 'vue' {
     readonly useLastLanguage: UnwrapRef<typeof import('./composables/session/language')['useLastLanguage']>
     readonly useLatestPriceForm: UnwrapRef<typeof import('./composables/price-manager/latest/form')['useLatestPriceForm']>
     readonly useLatestPrices: UnwrapRef<typeof import('./composables/price-manager/latest/index')['useLatestPrices']>
-    readonly useLink: UnwrapRef<typeof import('vue-router')['useLink']>
     readonly useLinks: UnwrapRef<typeof import('./composables/links')['useLinks']>
     readonly useLiquidityPosition: UnwrapRef<typeof import('./composables/defi/index')['useLiquidityPosition']>
     readonly useLiquityApi: UnwrapRef<typeof import('./composables/api/defi/liquity')['useLiquityApi']>
@@ -2093,7 +2092,6 @@ declare module '@vue/runtime-core' {
     readonly useLastLanguage: UnwrapRef<typeof import('./composables/session/language')['useLastLanguage']>
     readonly useLatestPriceForm: UnwrapRef<typeof import('./composables/price-manager/latest/form')['useLatestPriceForm']>
     readonly useLatestPrices: UnwrapRef<typeof import('./composables/price-manager/latest/index')['useLatestPrices']>
-    readonly useLink: UnwrapRef<typeof import('vue-router')['useLink']>
     readonly useLinks: UnwrapRef<typeof import('./composables/links')['useLinks']>
     readonly useLiquidityPosition: UnwrapRef<typeof import('./composables/defi/index')['useLiquidityPosition']>
     readonly useLiquityApi: UnwrapRef<typeof import('./composables/api/defi/liquity')['useLiquityApi']>

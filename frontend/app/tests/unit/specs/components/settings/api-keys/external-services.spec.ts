@@ -3,7 +3,7 @@ import flushPromises from 'flush-promises';
 import { type Pinia, setActivePinia } from 'pinia';
 import { computed } from 'vue';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import ExternalServices from '@/pages/settings/api-keys/external/index.vue';
+import ExternalServices from '@/pages/api-keys/external/index.vue';
 import EvmChainIcon from '@/components/helper/display/icons/EvmChainIcon.vue';
 import ServiceKey from '@/components/settings/api-keys/ServiceKey.vue';
 import { createCustomPinia } from '../../../../utils/create-pinia';

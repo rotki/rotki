@@ -1,9 +1,16 @@
 <script setup lang="ts">
-import { Routes } from '@/router/routes';
+import { NoteLocation } from '@/types/notes';
 import type { SelectedReport } from '@/types/reports';
 
 defineOptions({
   name: 'ReportDetail',
+});
+
+definePage({
+  meta: {
+    canNavigateBack: true,
+    noteLocation: NoteLocation.PROFIT_LOSS_REPORTS,
+  },
 });
 
 const loading = ref(true);
@@ -13,7 +20,7 @@ const { report, reports } = storeToRefs(reportsStore);
 
 const { fetchReports, fetchReport, clearReport, isLatestReport } = reportsStore;
 const router = useRouter();
-const route = useRoute();
+const route = useRoute<'/reports/[id]'>();
 let firstPage = true;
 
 const selectedReport = computed<SelectedReport>(() => get(report));
@@ -33,7 +40,7 @@ onMounted(async () => {
 
   const success = await fetchReport(reportId);
   if (!success)
-    await router.push(Routes.PROFIT_LOSS_REPORTS);
+    router.push('/reports');
 
   if (get(route).query.openReportActionable) {
     set(initialOpenReportActionable, true);
@@ -61,7 +68,7 @@ async function onPage({ limit, offset, reportId }: { reportId: number; limit: nu
 async function regenerateReport() {
   const { start, end } = get(report);
   await router.push({
-    path: Routes.PROFIT_LOSS_REPORTS,
+    path: '/reports',
     query: {
       regenerate: 'true',
       start: start.toString(),

@@ -1,7 +1,9 @@
 <script setup lang="ts">
 definePage({
-  name: 'accounts-balances',
-  redirect: '/balances/blockchain',
+  redirect: '/user/login',
+  meta: {
+    layout: 'auth',
+  },
 });
 </script>
 

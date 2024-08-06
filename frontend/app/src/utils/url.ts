@@ -1,6 +1,5 @@
 import { camelCase } from 'lodash-es';
 import { pslSuffixes } from '@/data/psl';
-import { Routes } from '@/router/routes';
 import { etherscanLinks, externalLinks } from '@/data/external-links';
 import { isEtherscanKey } from '@/types/external';
 import type { RouteLocationRaw } from 'vue-router';
@@ -45,7 +44,7 @@ export function getEtherScanRegisterUrl(location: string): { external: string; r
     const data = etherscanLinks[camelCaseLocation];
     return {
       external: data,
-      route: { path: Routes.API_KEYS_EXTERNAL_SERVICES, hash: `#${location}` },
+      route: { path: '/api-keys/external', hash: `#${location}` },
     };
   }
 
@@ -56,7 +55,7 @@ export function getEtherScanRegisterUrl(location: string): { external: string; r
 export function getTheGraphRegisterUrl(): { external: string; route: RouteLocationRaw } {
   return {
     external: externalLinks.applyTheGraphApiKey,
-    route: { path: Routes.API_KEYS_EXTERNAL_SERVICES, hash: `#thegraph` },
+    route: { path: '/api-keys/external', hash: `#thegraph` },
   };
 }
 

@@ -3,11 +3,12 @@ import { NoteLocation } from '@/types/notes';
 
 definePage({
   meta: {
-    noteLocation: NoteLocation.ADDRESS_BOOK_MANAGER,
+    noteLocation: NoteLocation.API_KEYS,
   },
+  redirect: '/api-keys/premium',
 });
 </script>
 
 <template>
-  <AddressBookManagement />
+  <RouterView />
 </template>
