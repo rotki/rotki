@@ -278,7 +278,10 @@ def get_or_create_evm_token(
             except UnknownAsset:
                 asset_exists = False
 
-            if evm_inquirer is not None:
+            if (
+                None in (name, symbol, decimals) and
+                evm_inquirer is not None
+            ):
                 try:
                     name, symbol, decimals = _query_or_get_given_token_info(
                         evm_inquirer=evm_inquirer,

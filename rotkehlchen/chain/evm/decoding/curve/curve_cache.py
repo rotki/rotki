@@ -251,6 +251,10 @@ def _ensure_curve_tokens_existence(
 
         if pool.gauge_address is not None:
             try:
+                # Old gauges don't have the name/symbol/decimals methods. They use 18 decimals but
+                # the name and symbol differ and in the latest versions it is configurable. To be
+                # in sync with the onchain name we use the contract values and only
+                # if they are missing we resort to the fallback name and symbol.
                 get_or_create_evm_token(
                     userdb=evm_inquirer.database,
                     evm_address=pool.gauge_address,
@@ -265,7 +269,7 @@ def _ensure_curve_tokens_existence(
                         token_kind=EvmTokenKind.ERC20,
                         weight=ONE,
                     )],
-                    fallback_decimals=18,  # all gauges have 18 decimals https://t.me/curvefi/654915. Hard code since some contracts have no name/symbol/decimals.  # noqa: E501
+                    fallback_decimals=18,  # all gauges have 18 decimals https://t.me/curvefi/654915  # noqa: E501
                     fallback_name=f'{pool_lp_token.name} Gauge Deposit',
                     fallback_symbol=f'{pool_lp_token.symbol}-gauge',
                 )

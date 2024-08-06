@@ -269,9 +269,9 @@ def test_flaky_binding_parameter_zero(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
 def test_old_curve_gauge(ethereum_inquirer: 'EthereumInquirer'):
-    """Test that querying new and old gauges get the data correctly
-    Old one should peak the default values provided and the new one should
-    get values on chain
+    """Test that querying new and old gauges get the data correctly.
+    Old one should pick the default values provided and the new one should
+    get the values from the chain
     """
     # old gauge
     gauge_address = string_to_evm_address('0xC2b1DF84112619D190193E48148000e3990Bf627')
@@ -308,3 +308,32 @@ def test_old_curve_gauge(ethereum_inquirer: 'EthereumInquirer'):
     assert gauge_token.name == 'Curve.fi steCRV Gauge Deposit'
     assert gauge_token.symbol == 'steCRV-gauge'
     assert gauge_token.decimals == 18
+
+
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
+def test_chain_is_not_queried_when_details(ethereum_inquirer: 'EthereumInquirer'):
+    """Test that if we provide the values of name, decimals and symbol we don't query
+    the chain without need
+    """
+    lido_address = string_to_evm_address('0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32')
+    with suppress(InputError):
+        GlobalDBHandler.delete_evm_token(lido_address, chain_id=ChainID.ETHEREUM)
+
+    with patch(
+        'rotkehlchen.assets.utils._query_or_get_given_token_info',
+        side_effect=_query_or_get_given_token_info,
+    ) as patched_query:
+        new_token = get_or_create_evm_token(
+            userdb=ethereum_inquirer.database,
+            evm_address=lido_address,
+            chain_id=ethereum_inquirer.chain_id,
+            evm_inquirer=ethereum_inquirer,
+            decimals=17,
+            name='new LDO',
+            symbol='nLDO',
+        )
+        assert patched_query.call_count == 0
+
+    assert new_token.name == 'new LDO'
+    assert new_token.symbol == 'nLDO'
+    assert new_token.decimals == 17
