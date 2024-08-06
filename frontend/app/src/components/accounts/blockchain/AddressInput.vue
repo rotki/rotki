@@ -70,8 +70,13 @@ watch(address, (address) => {
 });
 
 function setAddress(addresses: string[]) {
-  if (addresses.length === 1)
+  if (addresses.length === 1) {
     set(address, addresses[0]);
+  }
+  else if (addresses.length === 0) {
+    set(address, '');
+    set(userAddresses, '');
+  }
 }
 
 watch(addresses, addresses => setAddress(addresses));

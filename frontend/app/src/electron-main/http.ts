@@ -119,7 +119,7 @@ function handleRequests(req: IncomingMessage, res: ServerResponse, cb: Callback)
       return;
     }
   }
-  const dirname = path.dirname(new URL(import.meta.url).pathname);
+  const dirname = import.meta.dirname;
   const basePath = checkIfDevelopment() ? path.join(dirname, '..', 'public') : dirname;
   const url = req.url ?? '';
   if (url === '/') {
