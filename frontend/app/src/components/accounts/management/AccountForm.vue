@@ -2,11 +2,9 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { InputMode } from '@/types/input-mode';
 import AddressAccountForm from '@/components/accounts/management/types/AddressAccountForm.vue';
-import MetamaskAccountForm from '@/components/accounts/management/types/MetamaskAccountForm.vue';
 import ValidatorAccountForm from '@/components/accounts/management/types/ValidatorAccountForm.vue';
 import XpubAccountForm from '@/components/accounts/management/types/XpubAccountForm.vue';
 import {
-  type AccountManageAdd,
   type AccountManageState,
   type StakingValidatorManage,
   type XpubManage,
@@ -24,7 +22,6 @@ const inputMode = ref<InputMode>(InputMode.MANUAL_ADD);
 
 const form = ref<
   | InstanceType<typeof AddressAccountForm>
-  | InstanceType<typeof MetamaskAccountForm>
   | InstanceType<typeof ValidatorAccountForm>
   | InstanceType<typeof XpubAccountForm>
 >();
@@ -43,15 +40,6 @@ async function validate(): Promise<boolean> {
 
   logger.debug('selected form does not implement validate default to true');
   return true;
-}
-
-async function importAccounts(): Promise<AccountManageAdd | null | false> {
-  const selectedForm = get(form);
-  assert(selectedForm);
-  if (!('importAccounts' in selectedForm))
-    return false;
-
-  return await selectedForm.importAccounts();
 }
 
 watch(modelValue, (modelValue) => {
@@ -120,7 +108,6 @@ watch(inputMode, (mode) => {
 
 defineExpose({
   validate,
-  importAccounts,
 });
 </script>
 
@@ -132,22 +119,8 @@ defineExpose({
       :edit-mode="modelValue.mode === 'edit'"
     />
 
-    <MetamaskAccountForm
-      v-if="modelValue.type === 'account' && inputMode === InputMode.METAMASK_IMPORT"
-      ref="form"
-      :chain="chain"
-      :loading="loading"
-    >
-      <template #selector="{ disabled, attrs }">
-        <AllEvmChainsSelector
-          v-bind="attrs"
-          :disabled="disabled"
-        />
-      </template>
-    </MetamaskAccountForm>
-
     <ValidatorAccountForm
-      v-else-if="modelValue.type === 'validator'"
+      v-if="modelValue.type === 'validator'"
       ref="form"
       v-model="modelValue"
       v-model:error-messages="errors"

@@ -32,7 +32,9 @@ export class BlockchainBalancesPage {
     cy.get('[data-cy="account-blockchain-field"]').type(balance.chainName);
     cy.get('[role=menu-content] button:first-child').should('contain.text', balance.chainName);
     cy.get('[data-cy="account-blockchain-field"]').type('{enter}');
-    cy.get('[data-cy="input-mode-manual"]').click();
+
+    if (balance.blockchain !== Blockchain.ETH)
+      cy.get('[data-cy="input-mode-manual"]').click();
 
     if (balance.blockchain === Blockchain.ETH)
       setCheckBox('[data-cy="account-all-evm-chains"]', false);

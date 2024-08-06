@@ -1504,12 +1504,6 @@
       "edit_subtitle": "Modify account details",
       "edit_title": "Edit blockchain account"
     },
-    "metamask_import": {
-      "error": {
-        "description": "Adding addresses from metamask could not be completed: {error}",
-        "title": "Metamask address import"
-      }
-    },
     "per_asset": {
       "title": "Blockchain Balances per Asset"
     },
@@ -3070,9 +3064,8 @@
       "label": "Manual"
     },
     "metamask_import": {
-      "label": "MetaMask",
-      "metamask": "* You will be prompted to import your addresses from MetaMask after pressing save.",
-      "missing": "* Importing addresses from MetaMask is disabled. MetaMask could not be detected.",
+      "label": "Import addresses from MetaMask",
+      "missing": "Importing addresses from MetaMask is disabled. MetaMask could not be detected.",
       "missing_tooltip": {
         "copy_url": "copy this page URL",
         "metamask_is_not_enabled": "The MetaMask is not enabled yet. You can enable it in menu Extension / Add Ons, depends on your browser.",

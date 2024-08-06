@@ -10,6 +10,7 @@ const props = defineProps<{
   disabled: boolean;
   multi: boolean;
   errorMessages: ValidationErrors;
+  showMetamask?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -69,8 +70,13 @@ watch(address, (address) => {
 });
 
 function setAddress(addresses: string[]) {
-  if (addresses.length === 1)
+  if (addresses.length === 1) {
     set(address, addresses[0]);
+  }
+  else if (addresses.length === 0) {
+    set(address, '');
+    set(userAddresses, '');
+  }
 }
 
 watch(addresses, addresses => setAddress(addresses));
@@ -147,6 +153,21 @@ watch(multiple, () => {
 defineExpose({
   validate,
 });
+
+function updateAddressesFromMetamask(addresses: string[]) {
+  if (addresses.length > 1) {
+    set(multiple, true);
+    nextTick(() => {
+      set(userAddresses, addresses.join(',\n'));
+    });
+  }
+  else if (addresses.length === 1) {
+    set(multiple, false);
+    nextTick(() => {
+      set(address, addresses[0]);
+    });
+  }
+}
 </script>
 
 <template>
@@ -155,40 +176,49 @@ defineExpose({
       v-if="multi"
       v-model="multiple"
       color="primary"
-      class="mt-0 mb-6"
+      class="mt-0 mb-4 flex"
       hide-details
       :disabled="disabled"
     >
       {{ t('account_form.labels.multiple') }}
     </RuiCheckbox>
-    <RuiTextField
-      v-if="!multiple"
-      v-model="address"
-      data-cy="account-address-field"
-      variant="outlined"
-      color="primary"
-      class="account-form__address"
-      :label="t('common.account')"
-      :rules="rules"
-      autocomplete="off"
-      :disabled="disabled"
-      :error-messages="toMessages(v$.address)"
-      @paste="onPasteAddress($event)"
-      @blur="v$.address.$touch()"
-    />
-    <RuiTextArea
-      v-else
-      v-model="userAddresses"
-      variant="outlined"
-      color="primary"
-      min-rows="5"
-      :disabled="disabled"
-      :error-messages="toMessages(v$.userAddresses)"
-      :hint="t('account_form.labels.addresses_hint')"
-      :label="t('account_form.labels.addresses')"
-      @blur="v$.userAddresses.$touch()"
-      @paste="onPasteMulti($event)"
-    />
+    <div class="flex items-start gap-2">
+      <RuiTextField
+        v-if="!multiple"
+        v-model="address"
+        data-cy="account-address-field"
+        variant="outlined"
+        color="primary"
+        class="account-form__address flex-1"
+        :label="t('common.account')"
+        :rules="rules"
+        autocomplete="off"
+        :disabled="disabled"
+        :error-messages="toMessages(v$.address)"
+        @paste="onPasteAddress($event)"
+        @blur="v$.address.$touch()"
+      />
+      <RuiTextArea
+        v-else
+        v-model="userAddresses"
+        variant="outlined"
+        color="primary"
+        class="flex-1"
+        min-rows="5"
+        :disabled="disabled"
+        :error-messages="toMessages(v$.userAddresses)"
+        :hint="t('account_form.labels.addresses_hint')"
+        :label="t('account_form.labels.addresses')"
+        @blur="v$.userAddresses.$touch()"
+        @paste="onPasteMulti($event)"
+      />
+      <MetamaskAddressesImport
+        v-if="showMetamask"
+        :disabled="disabled"
+        @update:addresses="updateAddressesFromMetamask($event)"
+      />
+    </div>
+
     <div
       v-if="multiple"
       class="text-caption mb-2 px-3"

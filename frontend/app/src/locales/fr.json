@@ -1438,12 +1438,6 @@
       "edit_subtitle": "Modifier les détails du compte",
       "edit_title": "Modifier le compte blockchain"
     },
-    "metamask_import": {
-      "error": {
-        "description": "L'importation des adresses à partir de Metamask n'a pas pu être terminée : {error}",
-        "title": "Importation d'adresse Metamask"
-      }
-    },
     "per_asset": {
       "title": "Solde blockchain par actif"
     },
@@ -2871,9 +2865,7 @@
       "label": "Manuel"
     },
     "metamask_import": {
-      "label": "MetaMask",
-      "metamask": "* Vous serez invité à importer vos adresses à partir de MetaMask après avoir cliqué sur 'enregistrer'.",
-      "missing": "* L'importation d'adresses à partir de MetaMask est désactivée. MetaMask n'a pas pu être détecté.",
+      "missing": "L'importation d'adresses à partir de MetaMask est désactivée. MetaMask n'a pas pu être détecté.",
       "missing_tooltip": {
         "copy_url": "copier cette URL de page",
         "metamask_is_not_enabled": "MetaMask n'est pas activé. Vous pouvez l'activer dans le menu 'Extensions / Composants complémentaires', selon votre navigateur.",

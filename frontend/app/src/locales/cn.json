@@ -1286,12 +1286,6 @@
       "edit_subtitle": "修改账户信息",
       "edit_title": "编辑区块链账户"
     },
-    "metamask_import": {
-      "error": {
-        "description": "从Metamask添加地址无法完成:{error}",
-        "title": "Metamask 地址导入"
-      }
-    },
     "per_asset": {
       "title": "每项资产的区块链余额"
     },
@@ -2640,9 +2634,7 @@
       "label": "手册"
     },
     "metamask_import": {
-      "label": "MetaMask",
-      "metamask": "*按下保存后，系统会提示您从 MetaMask 导入地址。",
-      "missing": "* 从 MetaMask 导入地址被禁用。无法检测到 MetaMask。",
+      "missing": "从 MetaMask 导入地址被禁用。无法检测到 MetaMask。",
       "missing_tooltip": {
         "copy_url": "复制本页网址",
         "metamask_is_not_enabled": "MetaMask 尚未启用。您可以在菜单扩展/附加组件中启用它，具体取决于您的浏览器。",
