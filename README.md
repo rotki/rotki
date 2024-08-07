@@ -38,7 +38,7 @@
   <a href="#changelog">Changelog</a> •
   <a href="#contribute">Contributing</a>
   <br/>
-  <a href="https://rotki.readthedocs.io/en/latest/" target="_blank">📖 Docs</a> •
+  <a href="https://docs.rotki.com" target="_blank">📖 Docs</a> •
   <a href="https://rotki.com/products" target="_blank">💻 Pro version</a>
 </p>
 
@@ -75,16 +75,16 @@ The [Pro Version](https://rotki.com/products/) of Rotki also supports additional
 Rotki currently supports the following operating systems:- Windows, MacOs, Linux.
 
 The installation of rotki can be simply done via two ways:-
-- [Packaged Binaries](https://rotki.readthedocs.io/en/latest/installation_guide.html#packaged-binaries) (Recommended)
-- [Building from Source](https://rotki.readthedocs.io/en/latest/installation_guide.html#build-from-source)
+- [Packaged Binaries](https://docs.rotki.com/requirement-and-installation/packaged-binaries.html) (Recommended)
+- [Building from Source](https://docs.rotki.com/requirement-and-installation/build-from-source.html)
 
 ## Usage
 
-Read the [documentation](https://rotki.readthedocs.io/en/latest/) for a complete guide, frequently-asked questions, API reference, and more.
+Read the [documentation](https://docs.rotki.com/) for a complete guide, frequently-asked questions, API reference, and more.
 
 Some quick links to useful parts of the documentation follow below for your convenience.
 
-To get started using rotki, check out the [detailed usage guide](https://rotki.readthedocs.io/en/latest/usage_guide.html).
+To get started using rotki, check out the [detailed usage guide](https://docs.rotki.com/usage-guides/).
 
 ## Changelog
 
@@ -96,7 +96,7 @@ Please refer to [Releases](https://rotki.readthedocs.io/en/latest/changelog.html
 If you are interested in contributing to rotki:
 
 - Start by reading our [contributing guide](CONTRIBUTING.md).
-- Check out our [developer guide](https://rotki.readthedocs.io/en/latest/contribute.html).
+- Check out our [developer guide](https://docs.rotki.com/contribution-guides/).
 - Navigate our codebase and [open issues](https://github.com/rotki/rotki/issues).
 
 We are thankful for all the contributions and feedback we receive. You can get a contributor badge (a POAP) for each year in which you have ever contributed even a single commit to our codebase. Go [claim yours](https://www.gitpoap.io/rp/62) now.

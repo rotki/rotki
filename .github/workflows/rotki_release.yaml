@@ -69,7 +69,7 @@ jobs:
               - [Windows executable](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-win32_x64-${{ env.RELEASE_VERSION }}.exe)
               - [Standalone Backend](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-core-${{ steps.change_log.outputs.version }}-windows.exe)
             
-            Optionally, you can also [verify the integrity](https://rotki.readthedocs.io/en/latest/installation_guide.html#verifying-integrity) of the aforementioned binaries using the following checksums:
+            Optionally, you can also [verify the integrity](https://docs.rotki.com/requirement-and-installation/packaged-binaries.html#verifying-integrity) of the aforementioned binaries using the following checksums:
             
             - **Linux**
               - [AppImage checksum](https://github.com/rotki/rotki/releases/download/${{ env.RELEASE_VERSION }}/rotki-linux_x86_64-${{ env.RELEASE_VERSION }}.AppImage.sha512)

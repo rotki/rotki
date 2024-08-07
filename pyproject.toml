@@ -20,7 +20,7 @@ dynamic = ["dependencies", "version"]
 
 [project.urls]
 homepage = "https://rotki.com"
-documentation = "https://rotki.readthedocs.io/en/stable/"
+documentation = "https://docs.rotki.com"
 repository = "https://github.com/rotki/rotki"
 changelog = "https://github.com/rotki/rotki/blob/develop/docs/changelog.rst"
 
