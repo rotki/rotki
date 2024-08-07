@@ -47,6 +47,9 @@ export default defineConfig({
       '@': `${join(PACKAGE_ROOT, 'src')}/`,
     },
   },
+  optimizeDeps: {
+    include: ['tasklist > csv'],
+  },
   plugins: [binaryDependencyPlugin()],
   build: {
     sourcemap: isDevelopment ? 'inline' : false,
@@ -62,14 +65,8 @@ export default defineConfig({
       output: {
         entryFileNames: '[name].js',
         manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('ajv'))
-              return 'background-ajv';
-            else if (id.includes('electron'))
-              return 'background-electron';
-            else
-              return 'background-vendor';
-          }
+          if (id.includes('node_modules'))
+            return 'background-vendor';
           if (id.includes('subprocess-handler'))
             return 'background-subprocess-handler';
           if (id.includes('http'))
