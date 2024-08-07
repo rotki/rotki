@@ -8,6 +8,7 @@ Changelog
 * :bug:`-` rotki will now properly run background tasks when logging out and logging in again.
 * :bug:`-` The task to read new curve pools from the chain will be faster now.
 * :bug:`-` rotki will now detect new tokens right after finishing decoding new events.
+* :bug:`-` The detection of account activity in new evm chains has been improved to avoid false positives when the account has been only sent spam tokens.
 * :bug:`8169` Prevent a recursion error when querying the price of a token.
 
 * :release:`1.34.1 <2024-07-24>`
