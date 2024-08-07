@@ -1775,6 +1775,7 @@ class ChainTypeAccountResource(BaseMethodView):
             self,
             chain_type: ChainType,  # pylint: disable=unused-argument
             accounts: list[dict[str, Any]],
+            async_query: bool,
     ) -> Response:
         account_data = [
             SingleBlockchainAccountData(
@@ -1783,12 +1784,21 @@ class ChainTypeAccountResource(BaseMethodView):
                 tags=entry['tags'],
             ) for entry in accounts
         ]
-        return self.rest_api.edit_chain_type_accounts_labels(accounts=account_data)
+        return self.rest_api.edit_chain_type_accounts_labels(
+            async_query=async_query,
+            accounts=account_data,
+        )
 
     @require_loggedin_user()
     @use_kwargs(BlockchainTypeAccountsDeleteSchema(), location='json_and_view_args')
-    def delete(self, chain_type: ChainType, accounts: ListOfBlockchainAddresses) -> Response:
+    def delete(
+            self,
+            chain_type: ChainType,
+            accounts: ListOfBlockchainAddresses,
+            async_query: bool,
+    ) -> Response:
         return self.rest_api.remove_chain_type_accounts(
+            async_query=async_query,
             chain_type=chain_type,
             accounts=accounts,
         )
