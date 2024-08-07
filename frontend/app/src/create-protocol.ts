@@ -3,12 +3,14 @@ import * as path from 'node:path';
 import { URL } from 'node:url';
 import { type Protocol, protocol } from 'electron';
 
+const currentDir = import.meta.dirname;
+
 export function createProtocol(scheme: string, customProtocol?: Protocol) {
   (customProtocol || protocol).registerBufferProtocol(scheme, (request, respond) => {
     let pathName = new URL(request.url).pathname;
     pathName = decodeURI(pathName); // Needed in case URL contains spaces
 
-    readFile(path.join(__dirname, pathName), (error, data) => {
+    readFile(path.join(currentDir, pathName), (error, data) => {
       if (error)
         console.error(`Failed to read ${pathName} on ${scheme} protocol`, error);
 
