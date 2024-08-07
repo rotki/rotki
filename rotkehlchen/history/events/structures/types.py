@@ -84,6 +84,8 @@ class HistoryEventSubType(SerializableEnumNameMixin):
     UPDATE = auto()
     CREATE = auto()  # used when tx creates a new entity like Maker vault or Gnosis safe
     ATTEST = auto()
+    PAYMENT = auto()
+    GRANT = auto()
 
     def serialize_or_none(self) -> str | None:
         return self.serialize()
@@ -155,6 +157,9 @@ class EventCategory(Enum):
     UNSTAKE = 36, EventDirection.IN
     ATTEST = 37, EventDirection.NEUTRAL
     STAKE_EXIT = 38, EventDirection.IN
+    PAY = 39, EventDirection.OUT
+    RECEIVE_PAYMENT = 40, EventDirection.IN
+    RECEIVE_GRANT = 41, EventDirection.IN
 
     @property
     def direction(self) -> EventDirection:

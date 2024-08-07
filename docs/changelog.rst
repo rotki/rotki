@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` New event type/subtype combinations added. Receive/payment to receive a payment for something, Spend/payment to pay for something, Receive/Grant to receive a grant. Accounting wise they are treated like normal spend/receive and receive donation respectively but it helps with filtering and categorization during history searching.
 * :bug:`-` Fix issue where ETH from staking doesn't appear under the ETH breakdown on the dashboard.
 * :bug:`8334` Importing addresses from MetaMask should work when multiple browser wallets are installed.
 * :bug:`-` rotki will now properly run background tasks when logging out and logging in again.
