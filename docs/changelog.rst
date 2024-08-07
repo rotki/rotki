@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Fix issue where ETH from staking doesn't appear under the ETH breakdown on the dashboard.
 * :bug:`8334` Importing addresses from MetaMask should work when multiple browser wallets are installed.
 * :bug:`-` rotki will now properly run background tasks when logging out and logging in again.
 * :bug:`-` The task to read new curve pools from the chain will be faster now.
