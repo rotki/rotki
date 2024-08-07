@@ -13,7 +13,7 @@ expected behaviour. -->
 ## Logs
 
 <!-- Before being able to provide logs you need to enable debug logging on rotki, which is off by default.
-For information on how to enable it check here: https://rotki.readthedocs.io/en/latest/contribute.html#id2
+For information on how to enable it check here: https://docs.rotki.com/contribution-guides#run-rotki-in-debug-mode
 
 Attach the relevant part of the logs to the issue, making sure to omit any sensitive/identifiable information. Or join [our discord](https://discord.rotki.com) and DM it to somebody from our team.
 
