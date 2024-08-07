@@ -1786,7 +1786,13 @@ def test_remove_chain_agnostic_accounts(rotkehlchen_api_server: APIServer):
         ),
         json={
             'accounts': [UNIT_BTC_ADDRESS1],
+            'async_query': True,
         },
+    )
+    assert_proper_response_with_result(
+        response=response,
+        rotkehlchen_api_server=rotkehlchen_api_server,
+        async_query=True,
     )
     assert rotki.chains_aggregator.accounts.get(SupportedBlockchain.BITCOIN) == (UNIT_BTC_ADDRESS2,)  # noqa: E501
     assert len(rotki.chains_aggregator.accounts.get(SupportedBlockchain.BITCOIN_CASH)) == 0

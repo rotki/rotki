@@ -8,6 +8,7 @@ from rotkehlchen.tests.utils.api import (
     api_url_for,
     assert_error_response,
     assert_proper_response,
+    assert_proper_response_with_result,
     assert_proper_sync_response_with_result,
 )
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2
@@ -809,9 +810,14 @@ def test_editing_chain_type_tags(rotkehlchen_api_server: 'APIServer'):
                 'label': 'validators',
                 'tags': ['tag_validators'],
             }],
+            'async_query': True,
         },
     )
-    assert_proper_response(response)
+    assert_proper_response_with_result(
+        response=response,
+        rotkehlchen_api_server=rotkehlchen_api_server,
+        async_query=True,
+    )
 
     for chain in ('ETH', 'optimism', 'gnosis', 'base'):
         response = requests.get(

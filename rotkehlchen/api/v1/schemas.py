@@ -1987,7 +1987,7 @@ def _transform_evm_addresses(data: dict[str, Any], ethereum_inquirer: 'EthereumI
         )
 
 
-class ChainTypeSchema(Schema):
+class ChainTypeSchema(AsyncQueryArgumentSchema):
     chain_type = SerializableEnumField(
         enum_class=ChainType,
         required=True,
