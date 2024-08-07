@@ -18,6 +18,7 @@ import type { BackendOptions } from '@/electron-main/ipc';
 import type stream from 'node:stream';
 
 const isDevelopment = checkIfDevelopment();
+const currentDir = import.meta.dirname;
 
 function streamToString(ioStream: stream.Readable, log: (msg: string) => void, label = 'rotki-core'): () => void {
   const bufferChunks: Buffer[] = [];
@@ -146,7 +147,7 @@ export class SubprocessHandler {
   }
 
   private static packagedBackendPath() {
-    const resources = process.resourcesPath ? process.resourcesPath : __dirname;
+    const resources = process.resourcesPath ? process.resourcesPath : currentDir;
     if (os.platform() === 'darwin')
       return path.join(resources, BACKEND_DIRECTORY, 'rotki-core');
 
@@ -154,7 +155,7 @@ export class SubprocessHandler {
   }
 
   private static packagedColibriPath() {
-    const resources = process.resourcesPath ? process.resourcesPath : __dirname;
+    const resources = process.resourcesPath ? process.resourcesPath : currentDir;
     return path.join(resources, COLIBRI_DIRECTORY);
   }
 

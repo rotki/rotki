@@ -26,6 +26,11 @@ module.exports = {
     'dist/**',
     '!node_modules/**',
     'node_modules/csv',
+    'node_modules/csv-generate',
+    'node_modules/csv-parse',
+    'node_modules/csv-stringify',
+    'node_modules/stream-transform',
+    'node_modules/mixme',
   ],
   publish: {
     provider: 'github',

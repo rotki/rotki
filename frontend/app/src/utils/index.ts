@@ -1,8 +1,7 @@
 import { UserCancelledTaskError } from '@/types/task';
-import { logger } from '@/utils/logging';
 
 export function startPromise<T>(promise: Promise<T>): void {
-  promise.then().catch(error => logger.debug(error));
+  promise.then().catch(error => console.error(error));
 }
 
 export function isOfEnum<T extends { [s: string]: unknown }>(e: T) {
