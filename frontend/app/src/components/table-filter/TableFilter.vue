@@ -175,7 +175,7 @@ const filteredMatchers: ComputedRef<SearchMatcher<any>[]> = computed(() => {
 
   const searchToken = getTextToken(searchVal);
   return filteredByUsedKeys
-    .filter(({ key }) => getTextToken(key).includes(searchVal))
+    .filter(({ key }) => getTextToken(key).includes(searchToken))
     .sort((a, b) => compareTextByKeyword(getTextToken(a.key), getTextToken(b.key), searchToken));
 });
 
