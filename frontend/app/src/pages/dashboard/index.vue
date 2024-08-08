@@ -58,7 +58,7 @@ const Type = DashboardTableType;
   >
     <DynamicMessageDisplay
       v-if="activeDashboardMessages.length > 0 && !dismissedMessage"
-      class="!-mt-4"
+      class="!-mt-6 mb-4"
       :messages="activeDashboardMessages"
       @dismiss="dismissedMessage = true"
     />
