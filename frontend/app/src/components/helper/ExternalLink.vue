@@ -1,4 +1,8 @@
 <script setup lang="ts">
+defineOptions({
+  inheritAttrs: false,
+});
+
 const props = withDefaults(
   defineProps<{
     url?: string;
@@ -22,9 +26,6 @@ const { isPackaged } = useInterop();
 const { href, linkTarget, onLinkClick } = useLinks(url);
 
 const displayText = computed(() => (get(truncate) ? truncateAddress(get(text)) : get(text)));
-
-const attrs = useAttrs();
-const css = useCssModule();
 </script>
 
 <template>
@@ -33,9 +34,9 @@ const css = useCssModule();
     :tag="isPackaged ? 'button' : 'a'"
     :href="href"
     :target="linkTarget"
-    v-bind="attrs"
+    v-bind="$attrs"
     variant="text"
-    :class="css.button"
+    :class="$style.button"
     @click="onLinkClick()"
   >
     <slot>{{ displayText }}</slot>
@@ -45,11 +46,15 @@ const css = useCssModule();
     :href="href"
     :target="linkTarget"
     class="whitespace-nowrap"
+    v-bind="$attrs"
     @click="onLinkClick()"
   >
     <slot>{{ displayText }}</slot>
   </a>
-  <div v-else>
+  <div
+    v-else
+    v-bind="$attrs"
+  >
     <slot />
   </div>
 </template>
@@ -57,6 +62,7 @@ const css = useCssModule();
 <style lang="scss" module>
 .button {
   @apply inline text-[1em] p-0 px-0.5 -mx-0.5 #{!important};
+
   font-weight: inherit !important;
 
   span {
