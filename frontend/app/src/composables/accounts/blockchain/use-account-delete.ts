@@ -1,3 +1,4 @@
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import type { Account } from '@rotki/common/lib/account';
 import type {
   BlockchainAccountGroupWithBalance,
@@ -62,8 +63,11 @@ export function useAccountDelete() {
       }
     });
 
-    if (validators.length > 0)
+    const chainsToRefresh = [];
+    if (validators.length > 0) {
       await deleteEth2Validators(validators);
+      chainsToRefresh.push(Blockchain.ETH2);
+    }
 
     if (chainAccounts.length > 0) {
       const deletion = chainAccounts.reduce((previousValue, currentValue) => {
@@ -73,7 +77,9 @@ export function useAccountDelete() {
           previousValue[currentValue.chain].push(currentValue.address);
         return previousValue;
       }, {} as Record<string, string[]>);
+
       for (const [chain, accounts] of Object.entries(deletion)) {
+        chainsToRefresh.push(chain);
         await removeAccount({
           accounts,
           chain,
@@ -82,11 +88,15 @@ export function useAccountDelete() {
     }
 
     if (xpubs.length > 0) {
-      for (const xpub of xpubs)
+      for (const xpub of xpubs) {
+        chainsToRefresh.push(xpub.chain);
         await deleteXpub(xpub);
+      }
     }
 
-    startPromise(refreshAccounts());
+    chainsToRefresh.filter(uniqueStrings).forEach((chain) => {
+      startPromise(refreshAccounts(chain));
+    });
   }
 
   function showConfirmation(payload: DataRow[]) {
