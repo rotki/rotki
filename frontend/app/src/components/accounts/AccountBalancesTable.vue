@@ -270,8 +270,6 @@ defineExpose({
           v-if="!('virtual' in row) || !row.virtual"
           class="account-balance-table__actions"
           :edit-tooltip="t('account_balances.edit_tooltip')"
-          :no-edit="group && !isEditable(row)"
-          :no-delete="group && !isEditable(row)"
           :disabled="accountOperation"
           @edit-click="edit(row)"
           @delete-click="group && !isEditable(row) ? confirmAgnosticDelete(row) : confirmDelete(row)"

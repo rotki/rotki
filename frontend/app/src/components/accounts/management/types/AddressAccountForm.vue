@@ -6,16 +6,11 @@ import type { ValidationErrors } from '@/types/api/errors';
 import type { Module } from '@/types/modules';
 import type { AccountManage } from '@/composables/accounts/blockchain/use-account-manage';
 
-const props = defineProps<{
-  modelValue: AccountManage;
+defineProps<{
   loading: boolean;
 }>();
 
-const emit = defineEmits<{
-  (e: 'update:model-value', value: AccountManage): void;
-}>();
-
-const { modelValue } = toRefs(props);
+const modelValue = defineModel<AccountManage>({ required: true });
 
 const address = ref<InstanceType<typeof AddressInput>>();
 const selectedModules = ref<Module[]>([]);
@@ -23,11 +18,7 @@ const selectedModules = ref<Module[]>([]);
 const { isEvm } = useSupportedChains();
 
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
-const editMode = computed(() => props.modelValue.mode === 'edit');
-
-function updateVModel(value: AccountManage): void {
-  emit('update:model-value', value);
-}
+const editMode = computed(() => get(modelValue).mode === 'edit');
 
 const tags = computed<string[]>({
   get() {
@@ -38,7 +29,7 @@ const tags = computed<string[]>({
     const model = get(modelValue);
     const tagData = tags.length > 0 ? tags : null;
     if (model.mode === 'edit') {
-      updateVModel({
+      set(modelValue, {
         ...model,
         data: {
           ...model.data,
@@ -47,7 +38,7 @@ const tags = computed<string[]>({
       });
     }
     else {
-      updateVModel({
+      set(modelValue, {
         ...model,
         data: [...model.data.map(item => ({ ...item, tags: tagData }))],
       });
@@ -64,7 +55,7 @@ const label = computed<string>({
     const model = get(modelValue);
     const labelData = label ? { label } : {};
     if (model.mode === 'edit') {
-      updateVModel({
+      set(modelValue, {
         ...model,
         data: {
           ...objectOmit(model.data, ['label']),
@@ -73,7 +64,7 @@ const label = computed<string>({
       });
     }
     else {
-      updateVModel({
+      set(modelValue, {
         ...model,
         data: [...model.data.map(item => ({ ...objectOmit(item, ['label']), ...labelData }))],
       });
@@ -89,7 +80,7 @@ const addresses = computed<string[]>({
   set(addresses: string[]) {
     const model = get(modelValue);
     if (model.mode === 'edit') {
-      updateVModel({
+      set(modelValue, {
         ...model,
         data: {
           ...model.data,
@@ -101,7 +92,7 @@ const addresses = computed<string[]>({
       const accountTags = get(tags);
       const accountLabel = get(label);
 
-      updateVModel({
+      set(modelValue, {
         ...model,
         data: addresses.map(address => ({
           address,
@@ -126,7 +117,7 @@ const allEvmChains = computed<boolean>({
     if (model.mode === 'edit')
       return;
 
-    updateVModel({ ...model, evm });
+    set(modelValue, { ...model, evm });
   },
 });
 

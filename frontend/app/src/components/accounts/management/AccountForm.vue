@@ -50,7 +50,7 @@ watch(modelValue, (modelValue) => {
 });
 
 watch(chain, (chain) => {
-  if (get(modelValue).mode === 'edit')
+  if (get(modelValue).mode === 'edit' || !chain)
     return;
 
   if (chain === Blockchain.ETH2) {
@@ -74,11 +74,11 @@ watch(chain, (chain) => {
 });
 
 watch(inputMode, (mode) => {
-  if (get(modelValue).mode === 'edit')
+  const selectedChain = get(chain);
+  if (get(modelValue).mode === 'edit' || !selectedChain)
     return;
 
   if (mode === InputMode.XPUB_ADD) {
-    const selectedChain = get(chain);
     assert(isBtcChain(selectedChain));
     set(modelValue, {
       mode: 'add',
@@ -96,12 +96,12 @@ watch(inputMode, (mode) => {
   }
   else {
     const account = createNewBlockchainAccount();
-    if (!get(isEvm(chain)))
+    if (!get(isEvm(selectedChain)))
       delete account.evm;
 
     set(modelValue, {
       ...account,
-      chain: get(chain),
+      chain: selectedChain,
     });
   }
 });
@@ -114,6 +114,7 @@ defineExpose({
 <template>
   <div data-cy="blockchain-balance-form">
     <AccountSelector
+      v-if="chain"
       v-model:input-mode="inputMode"
       v-model:chain="chain"
       :edit-mode="modelValue.mode === 'edit'"
@@ -129,6 +130,14 @@ defineExpose({
 
     <XpubAccountForm
       v-else-if="modelValue.type === 'xpub'"
+      ref="form"
+      v-model="modelValue"
+      v-model:error-messages="errors"
+      :loading="loading"
+    />
+
+    <AgnosticAddressAccountForm
+      v-else-if="modelValue.type === 'group'"
       ref="form"
       v-model="modelValue"
       v-model:error-messages="errors"

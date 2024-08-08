@@ -48,9 +48,17 @@ export interface AccountManageEdit extends AccountManageMode {
   data: AccountPayload;
 }
 
+export interface AccountAgnosticManage extends AccountManageMode {
+  readonly mode: 'edit';
+  category: string;
+  type: 'group';
+  chain: undefined;
+  data: AccountPayload;
+}
+
 export type AccountManage = AccountManageAdd | AccountManageEdit;
 
-export type AccountManageState = AccountManage | StakingValidatorManage | XpubManage;
+export type AccountManageState = AccountManage | StakingValidatorManage | XpubManage | AccountAgnosticManage;
 
 export function createNewBlockchainAccount(): AccountManageAdd {
   return {
@@ -101,6 +109,20 @@ export function editBlockchainAccount(account: BlockchainAccountBalance): Accoun
       },
     } satisfies XpubManage;
   }
+  else if (account.type === 'group' && account.chains.length > 1) {
+    assert(account.category);
+    return {
+      mode: 'edit',
+      type: 'group',
+      category: account.category,
+      chain: undefined,
+      data: {
+        tags: account.tags ?? null,
+        label: account.label,
+        address: account.data.address,
+      },
+    } satisfies AccountAgnosticManage;
+  }
   else {
     const chain = getChain(account);
     assert(chain);
@@ -125,7 +147,7 @@ export function useAccountManage() {
 
   const { addAccounts, addEvmAccounts, fetchAccounts, refreshAccounts } = useBlockchains();
   const { addEth2Validator, editEth2Validator, updateEthStakingOwnership } = useEthStaking();
-  const { editAccount } = useBlockchainAccounts();
+  const { editAccount, editAgnosticAccount } = useBlockchainAccounts();
   const { updateAccounts } = useBlockchainStore();
   const { setMessage } = useMessageStore();
 
@@ -172,6 +194,22 @@ export function useAccountManage() {
           });
         }
       }
+    }
+    catch (error: any) {
+      handleErrors(error);
+      return false;
+    }
+    finally {
+      set(pending, false);
+    }
+    return true;
+  }
+
+  async function saveAgnosticAccount(state: AccountAgnosticManage): Promise<boolean> {
+    try {
+      set(pending, true);
+      await editAgnosticAccount(state.category, state.data);
+      startPromise(fetchAccounts());
     }
     catch (error: any) {
       handleErrors(error);
@@ -269,6 +307,8 @@ export function useAccountManage() {
         return saveValidator(state);
       case 'xpub':
         return saveXpub(state);
+      case 'group':
+        return saveAgnosticAccount(state);
     }
   };
 

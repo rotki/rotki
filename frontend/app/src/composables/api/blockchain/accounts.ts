@@ -137,6 +137,20 @@ export function useBlockchainAccountsApi() {
     return BlockchainAccounts.parse(handleResponse(response));
   };
 
+  const editAgnosticBlockchainAccount = async (chainType: string, payload: AccountPayload): Promise<boolean> => {
+    const response = await api.instance.patch<ActionResult<boolean>>(
+      `/blockchains/type/${chainType}/accounts`,
+      {
+        ...nonEmptyProperties(payloadToData(payload)),
+      },
+      {
+        validateStatus: validWithParamsSessionAndExternalService,
+      },
+    );
+
+    return handleResponse(response);
+  };
+
   const queryAccounts = async (blockchain: string): Promise<BlockchainAccounts> => {
     const response = await api.instance.get<ActionResult<BlockchainAccounts>>(
       `/blockchains/${blockchain.toString()}/accounts`,
@@ -236,6 +250,7 @@ export function useBlockchainAccountsApi() {
     removeAgnosticBlockchainAccount,
     removeBlockchainAccount,
     editBlockchainAccount,
+    editAgnosticBlockchainAccount,
     editBtcAccount,
     queryAccounts,
     queryBtcAccounts,

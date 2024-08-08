@@ -145,7 +145,9 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
     items.forEach((item) => {
       const chains: string[] = item.blockchain
         ? [item.blockchain]
-        : get(supportedChains).map(chain => chain.id);
+        : get(supportedChains)
+          .filter(chain => !isValidEthAddress(item.address) || ['evm', 'evmlike'].includes(chain.type))
+          .map(chain => chain.id);
 
       chains.forEach((chain) => {
         const key = createKey(item.address, chain);

@@ -5,24 +5,15 @@ import type { ValidationErrors } from '@/types/api/errors';
 import type { XpubPayload } from '@/types/blockchain/accounts';
 import type { XpubManage } from '@/composables/accounts/blockchain/use-account-manage';
 
-const props = defineProps<{
-  modelValue: XpubManage;
+defineProps<{
   loading: boolean;
 }>();
 
-const emit = defineEmits<{
-  (e: 'update:model-value', value: XpubManage): void;
-}>();
-
-const { modelValue } = toRefs(props);
+const modelValue = defineModel<XpubManage>({ required: true });
 
 const input = ref<InstanceType<typeof XpubInput>>();
 
 const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
-
-function updateVModel(value: XpubManage) {
-  emit('update:model-value', value);
-}
 
 const xpub = computed<XpubPayload>({
   get() {
@@ -31,7 +22,7 @@ const xpub = computed<XpubPayload>({
   },
   set(xpub: XpubPayload) {
     const model = get(modelValue);
-    updateVModel({
+    set(modelValue, {
       ...model,
       data: {
         ...model.data,
@@ -47,7 +38,7 @@ const tags = computed<string[]>({
   },
   set(tags: string[]) {
     const model = get(modelValue);
-    updateVModel({
+    set(modelValue, {
       ...model,
       data: {
         ...model.data,
@@ -64,7 +55,7 @@ const label = computed<string>({
   set(label: string) {
     const model = get(modelValue);
     const labelData = label ? { label } : {};
-    updateVModel({
+    set(modelValue, {
       ...model,
       data: {
         ...objectOmit(model.data, ['label']),

@@ -18,6 +18,7 @@ export function useBlockchainAccounts() {
     removeBlockchainAccount,
     removeAgnosticBlockchainAccount,
     editBlockchainAccount,
+    editAgnosticBlockchainAccount,
     editBtcAccount,
     queryAccounts,
     queryBtcAccounts,
@@ -105,6 +106,18 @@ export function useBlockchainAccounts() {
     };
 
     return result.map(account => createAccount(account, chainInfo));
+  };
+
+  const editAgnosticAccount = async (chainType: string, payload: AccountPayload): Promise<boolean> => {
+    const result = await editAgnosticBlockchainAccount(chainType, payload);
+    resetAddressNamesData([
+      {
+        ...payload,
+        blockchain: null,
+      },
+    ]);
+
+    return result;
   };
 
   const removeAccount = async (payload: DeleteBlockchainAccountParams) => {
@@ -258,6 +271,7 @@ export function useBlockchainAccounts() {
     addAccount,
     addEvmAccount,
     editAccount,
+    editAgnosticAccount,
     removeAccount,
     removeAgnosticAccount,
     fetch,
