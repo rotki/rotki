@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.34.2 <2024-08-09>`
 * :bug:`-` Users will be able to filter by event subtype in the history events view.
 * :feature:`-` New event type/subtype combinations added. Receive/payment to receive a payment for something, Spend/payment to pay for something, Receive/Grant to receive a grant. Accounting wise they are treated like normal spend/receive and receive donation respectively but it helps with filtering and categorization during history searching.
 * :bug:`-` Fix issue where ETH from staking doesn't appear under the ETH breakdown on the dashboard.
