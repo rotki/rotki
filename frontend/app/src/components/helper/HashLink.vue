@@ -3,6 +3,10 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { truncateAddress } from '@/utils/truncate';
 import { type ExplorerUrls, explorerUrls, isChains } from '@/types/asset/asset-urls';
 
+defineOptions({
+  inheritAttrs: false,
+});
+
 const props = withDefaults(
   defineProps<{
     showIcon?: boolean;
@@ -126,10 +130,47 @@ const url = computed<string>(() => get(base) + get(text));
 const displayUrl = computed<string>(() => get(base) + truncateAddress(get(text), 10));
 
 const { href, onLinkClick } = useLinks(url);
+
+const { showGlobalDialog } = useAddressBookForm();
+
+const tooltip = ref();
+
+function openAddressBookForm() {
+  get(tooltip)?.onClose?.(true);
+  showGlobalDialog({
+    address: get(text),
+    blockchain: get(blockchain),
+  });
+}
+
+const showAddressBookButton = computed(() => get(type) === 'address' && get(blockchain) !== Blockchain.ETH2);
+
+const [DefineButton, ReuseButton] = createReusableTemplate();
+const attrs = useAttrs();
 </script>
 
 <template>
-  <div class="flex flex-row shrink items-center gap-1 text-xs [&_*]:font-mono [&_*]:leading-6">
+  <DefineButton>
+    <RuiButton
+      v-if="showAddressBookButton"
+      size="sm"
+      variant="text"
+      icon
+      @click="openAddressBookForm()"
+    >
+      <template #prepend>
+        <RuiIcon
+          name="pencil-line"
+          size="20"
+          class="!text-rui-grey-400"
+        />
+      </template>
+    </RuiButton>
+  </DefineButton>
+  <div
+    class="flex flex-row shrink items-center gap-1 text-xs [&_*]:font-mono [&_*]:leading-6"
+    v-bind="attrs"
+  >
     <template v-if="showIcon && !linkOnly && type === 'address'">
       <EnsAvatar
         :address="displayText"
@@ -148,9 +189,11 @@ const { href, onLinkClick } = useLinks(url);
 
       <RuiTooltip
         v-else
+        ref="tooltip"
         :popper="{ placement: 'top' }"
         :open-delay="400"
         tooltip-class="[&_*]:font-mono"
+        persist-on-tooltip-hover
       >
         <template #activator>
           <div :class="{ blur: !shouldShowAmount }">
@@ -162,13 +205,19 @@ const { href, onLinkClick } = useLinks(url);
             </template>
           </div>
         </template>
+        <div class="flex items-center gap-2">
+          {{ displayText }}
+
+          <ReuseButton v-if="!aliasName" />
+        </div>
         <div
-          v-if="aliasName && aliasName !== truncatedAliasName"
-          class="font-bold"
+          v-if="aliasName"
+          class="font-bold flex justify-between items-center mt-1 !gap-2"
         >
           {{ aliasName }}
+
+          <ReuseButton />
         </div>
-        {{ displayText }}
       </RuiTooltip>
     </template>
 

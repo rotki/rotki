@@ -88,6 +88,9 @@ export function useItemCache<T>(
           if (import.meta.env.VITE_VERBOSE_CACHE)
             logger.debug(`unknown key: ${key}`);
 
+          recent.delete(key);
+          deleteCacheKey(key);
+
           unknown.set(key, Date.now() + options.expiry);
         }
       }
@@ -100,8 +103,6 @@ export function useItemCache<T>(
     }
   }
 
-  const batchPromise = async () => await fetchBatch();
-
   const queueIdentifier = (key: string): void => {
     const unknownExpiry = unknown.get(key);
     if (unknownExpiry && unknownExpiry >= Date.now())
@@ -111,7 +112,7 @@ export function useItemCache<T>(
       unknown.delete(key);
 
     setPending(key);
-    startPromise(batchPromise());
+    startPromise(fetchBatch());
   };
 
   const retrieve = (key: string): ComputedRef<T | null> => {
