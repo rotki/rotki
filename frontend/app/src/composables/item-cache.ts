@@ -68,16 +68,16 @@ export function useItemCache<T>(
     updateCacheKey(key, item);
   };
 
-  const fetchBatch = useDebounceFn((refresh: boolean) => {
+  const fetchBatch = useDebounceFn(() => {
     const currentBatch = get(batch);
     if (currentBatch.length === 0)
       return;
 
     set(batch, []);
-    startPromise(processBatch(currentBatch, refresh));
+    startPromise(processBatch(currentBatch));
   }, 800);
 
-  async function processBatch(keys: string[], refresh: boolean): Promise<void> {
+  async function processBatch(keys: string[]): Promise<void> {
     try {
       const batch = await fetch(keys);
       for (const { item, key } of batch()) {
@@ -88,10 +88,8 @@ export function useItemCache<T>(
           if (import.meta.env.VITE_VERBOSE_CACHE)
             logger.debug(`unknown key: ${key}`);
 
-          if (refresh) {
-            recent.delete(key);
-            deleteCacheKey(key);
-          }
+          recent.delete(key);
+          deleteCacheKey(key);
 
           unknown.set(key, Date.now() + options.expiry);
         }
@@ -105,7 +103,7 @@ export function useItemCache<T>(
     }
   }
 
-  const queueIdentifier = (key: string, refresh = false): void => {
+  const queueIdentifier = (key: string): void => {
     const unknownExpiry = unknown.get(key);
     if (unknownExpiry && unknownExpiry >= Date.now())
       return;
@@ -114,7 +112,7 @@ export function useItemCache<T>(
       unknown.delete(key);
 
     setPending(key);
-    startPromise(fetchBatch(refresh));
+    startPromise(fetchBatch());
   };
 
   const retrieve = (key: string): ComputedRef<T | null> => {
@@ -143,7 +141,7 @@ export function useItemCache<T>(
     if (unknown.has(key))
       unknown.delete(key);
 
-    queueIdentifier(key, true);
+    queueIdentifier(key);
   };
 
   const isPending = (identifier: MaybeRef<string>) => computed<boolean>(() => get(pending)[get(identifier)] ?? false);
