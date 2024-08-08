@@ -11,7 +11,7 @@ const emit = defineEmits<{
 
 const { step, steps, onNavigate, onPause, onResume } = useRandomStepper(props.messages.length);
 
-const activeItem = computed(() => props.messages[get(step) - 1]);
+const activeItem = computed<DashboardMessage>(() => props.messages[get(step) - 1]);
 </script>
 
 <template>
@@ -37,7 +37,7 @@ const activeItem = computed(() => props.messages[get(step) - 1]);
             <ExternalLink
               v-if="activeItem.action"
               color="primary"
-              class="text-left md:text-center"
+              class="text-left md:text-center !ms-1"
               :url="activeItem.action?.url"
             >
               {{ activeItem.action.text }}
