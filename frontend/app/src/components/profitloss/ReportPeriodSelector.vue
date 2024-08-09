@@ -185,7 +185,7 @@ const quarterModel = computed({
           v-for="subPeriod in subPeriods"
           :key="subPeriod.id"
           :color="quarter === subPeriod.id ? 'primary' : undefined"
-          :value="subPeriod.id"
+          :model-value="subPeriod.id"
           :disabled="isStartAfterNow(subPeriod.id)"
         >
           {{ subPeriod.name }}

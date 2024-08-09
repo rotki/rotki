@@ -4,7 +4,7 @@ import type { DatabaseInfo, UserDbBackup, UserDbBackupWithId } from '@/types/bac
 
 const { t } = useI18n();
 
-const backupInfo = ref<DatabaseInfo | null>();
+const backupInfo = ref<DatabaseInfo>();
 const selected = ref<UserDbBackupWithId[]>([]);
 const loading = ref(false);
 const saving = ref(false);
@@ -182,12 +182,11 @@ onMounted(loadInfo);
 
 <template>
   <DatabaseInfoDisplay
-    class="mt-8"
     :directory="directory"
     :global-db="globalDb"
     :user-db="userDb"
   />
-  <RuiCard class="mt-8">
+  <RuiCard>
     <template #header>
       <CardTitle>
         <RefreshButton

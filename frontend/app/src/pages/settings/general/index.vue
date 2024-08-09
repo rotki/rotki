@@ -13,7 +13,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <div class="general-settings">
+  <div class="general-settings flex flex-col gap-8">
     <SettingCategory>
       <template #title>
         {{ t('general_settings.title') }}

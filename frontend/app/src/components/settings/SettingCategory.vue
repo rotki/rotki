@@ -3,7 +3,7 @@ const slots = useSlots();
 </script>
 
 <template>
-  <RuiCard class="mt-8">
+  <RuiCard>
     <template #header>
       <slot name="title" />
     </template>

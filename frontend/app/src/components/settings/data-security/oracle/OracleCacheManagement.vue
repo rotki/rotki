@@ -177,7 +177,7 @@ function showDeleteConfirmation(entry: OracleCacheMeta) {
 </script>
 
 <template>
-  <RuiCard class="mt-8">
+  <RuiCard>
     <template #header>
       {{ t('oracle_cache_management.title') }}
     </template>
