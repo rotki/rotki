@@ -33,6 +33,8 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
         HistoryEventSubType.DONATE: EventCategory.RECEIVE_DONATION,
         HistoryEventSubType.NONE: EventCategory.RECEIVE,
         HistoryEventSubType.LIQUIDATE: EventCategory.LIQUIDATION_REWARD,
+        HistoryEventSubType.PAYMENT: EventCategory.RECEIVE_PAYMENT,
+        HistoryEventSubType.GRANT: EventCategory.RECEIVE_GRANT,
     }, HistoryEventType.DEPOSIT: {
         HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
         HistoryEventSubType.BRIDGE: EventCategory.BRIDGE_DEPOSIT,
@@ -44,6 +46,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
         HistoryEventSubType.PAYBACK_DEBT: EventCategory.REPAY,
         HistoryEventSubType.FEE: EventCategory.FEE,
         HistoryEventSubType.DONATE: EventCategory.DONATE,
+        HistoryEventSubType.PAYMENT: EventCategory.PAY,
         HistoryEventSubType.NONE: EventCategory.SEND,
     }, HistoryEventType.WITHDRAWAL: {
         HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
@@ -88,6 +91,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
 # possible color values
 # success=green, error=red, warning=yellow/orangish, info=blue,
 # primary=our primary blue color, secondary=somewhat gray
+# Icons are taken from here: https://remixicon.com/
 # IMPORTANT: All icons added here need to also be packaged in the frontend
 # here frontend/app/src/plugins/rui/index.ts
 EVENT_CATEGORY_DETAILS = {
@@ -219,6 +223,15 @@ EVENT_CATEGORY_DETAILS = {
     )}, EventCategory.ATTEST: {DEFAULT: EventCategoryDetails(
         label='Attest',
         icon='quill-pen-line',
+    )}, EventCategory.PAY: {DEFAULT: EventCategoryDetails(
+        label='pay',
+        icon='upload-line',
+    )}, EventCategory.RECEIVE_PAYMENT: {DEFAULT: EventCategoryDetails(
+        label='receive payment',
+        icon='download-line',
+    )}, EventCategory.RECEIVE_GRANT: {DEFAULT: EventCategoryDetails(
+        label='receive grant',
+        icon='hand-coin-line',
     )},
 }
 

@@ -23,6 +23,7 @@ from rotkehlchen.errors.misc import AlreadyExists, InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
+from rotkehlchen.tasks.assets import MULTISEND_SPAM_THRESHOLD
 from rotkehlchen.types import (
     CHAINID_TO_SUPPORTED_BLOCKCHAIN,
     SPAM_PROTOCOL,
@@ -458,7 +459,8 @@ class EvmTransactions(ABC):  # noqa: B024
             ):
                 for tx_hash in erc20_tx_hashes:
                     raw_receipt_data = self.evm_inquirer.get_transaction_receipt(tx_hash)
-                    for log_entry in raw_receipt_data['logs']:
+                    detected_transfers = 0
+                    for idx, log_entry in enumerate(raw_receipt_data['logs']):
                         if len(log_entry['topics']) == 0:
                             continue
 
@@ -472,6 +474,7 @@ class EvmTransactions(ABC):  # noqa: B024
                         if topic != ERC20_OR_ERC721_TRANSFER:
                             continue
 
+                        detected_transfers += 1
                         log_address = deserialize_evm_address(log_entry['address'])
                         if log_address in checked_tokens:
                             continue
@@ -489,7 +492,18 @@ class EvmTransactions(ABC):  # noqa: B024
                         try:
                             token = EvmToken(identifier)
                         except UnknownAsset:
-                            return False
+                            # since we don't track the token, check if the logs after this
+                            # log event are transfer log events only.
+                            for following_log_entry in raw_receipt_data['logs'][idx:]:
+                                if hexstring_to_bytes(following_log_entry['topics'][0]) == ERC20_OR_ERC721_TRANSFER:  # noqa: E501
+                                    detected_transfers += 1
+
+                                if detected_transfers > MULTISEND_SPAM_THRESHOLD:
+                                    break  # break this inner loop. Spam detected
+                            else:  # if we didn't break we mark it as not spammed
+                                return False
+
+                            break  # the transaction is spam and we continue to the next
 
                         if token.protocol == SPAM_PROTOCOL:
                             checked_tokens.add(log_address)
@@ -499,9 +513,13 @@ class EvmTransactions(ABC):  # noqa: B024
                         return False
 
                     log.debug(f'Address detection: queried {self.evm_inquirer.chain_name} ERC20 Transfers for {address} -> range {start_ts} - {end_ts}')  # noqa: E501
-        except RemoteError as e:
+        except (RemoteError, KeyError) as e:
+            str_e = str(e)
+            if isinstance(e, KeyError):
+                str_e = f'Missing key {e}'
+
             log.error(
-                f'Got error "{e!s}" while querying {self.evm_inquirer.chain_name} '
+                f'Got error "{str_e}" while querying {self.evm_inquirer.chain_name} '
                 f'token transactions from Etherscan. address: {address} spam detection failed',
             )
             return False

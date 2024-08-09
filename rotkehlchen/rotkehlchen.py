@@ -521,10 +521,7 @@ class Rotkehlchen:
         if not self.user_is_logged_in:
             return
         user = self.data.username
-        log.info(
-            'Logging out user',
-            user=user,
-        )
+        log.info('Logging out user', user=user)
 
         self.deactivate_premium_status()
         self.greenlet_manager.clear()
@@ -542,13 +539,15 @@ class Rotkehlchen:
         # Make sure no messages leak to other user sessions
         self.msg_aggregator.consume_errors()
         self.msg_aggregator.consume_warnings()
+        self.task_manager.clear()  # type: ignore  # task_manager is not None here
         self.task_manager = None
 
+        # We have locks in the chain aggregator that gets removed in this
+        # function and in the db connections. The user db gets replaced but the globaldb
+        # needs to be released.
+        GlobalDBHandler().clear_locks()
         self.user_is_logged_in = False
-        log.info(
-            'User successfully logged out',
-            user=user,
-        )
+        log.info('User successfully logged out', user=user)
 
     def logout(self) -> None:
         if self.task_manager is None:  # no user logged in?

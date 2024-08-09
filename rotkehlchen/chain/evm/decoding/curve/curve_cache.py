@@ -28,7 +28,7 @@ from rotkehlchen.errors.misc import (
 )
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.cache import (
-    globaldb_get_general_cache_like,
+    compute_cache_key,
     globaldb_get_general_cache_values,
     globaldb_get_unique_cache_value,
     globaldb_set_general_cache_values,
@@ -231,7 +231,7 @@ def _ensure_curve_tokens_existence(
         # finally ensure lp token and gauge token exists in the globaldb. Since they are created
         # by curve, they should always be an ERC20
         try:
-            get_or_create_evm_token(
+            pool_lp_token = get_or_create_evm_token(
                 userdb=evm_inquirer.database,
                 evm_address=pool.lp_token_address,
                 chain_id=evm_inquirer.chain_id,
@@ -251,6 +251,10 @@ def _ensure_curve_tokens_existence(
 
         if pool.gauge_address is not None:
             try:
+                # Old gauges don't have the name/symbol/decimals methods. They use 18 decimals but
+                # the name and symbol differ and in the latest versions it is configurable. To be
+                # in sync with the onchain name we use the contract values and only
+                # if they are missing we resort to the fallback name and symbol.
                 get_or_create_evm_token(
                     userdb=evm_inquirer.database,
                     evm_address=pool.gauge_address,
@@ -265,6 +269,9 @@ def _ensure_curve_tokens_existence(
                         token_kind=EvmTokenKind.ERC20,
                         weight=ONE,
                     )],
+                    fallback_decimals=18,  # all gauges have 18 decimals https://t.me/curvefi/654915  # noqa: E501
+                    fallback_name=f'{pool_lp_token.name} Gauge Deposit',
+                    fallback_symbol=f'{pool_lp_token.symbol}-gauge',
                 )
             except NotERC20Conformant:
                 log.warning(f'Curve gauge {pool.gauge_address} is not a valid ERC20 token.')
@@ -330,7 +337,7 @@ def save_curve_data_to_cache(
 
 def _query_curve_data_from_api(
         chain_id: ChainID,
-        existing_pools: list[ChecksumEvmAddress],
+        existing_pools: set[ChecksumEvmAddress],
 ) -> list[CurvePoolData]:
     """
     Query all curve information(lp tokens, pools, gagues, pool coins) from curve api.
@@ -382,7 +389,7 @@ def _query_curve_data_from_api(
 
 def _query_curve_data_from_chain(
         evm_inquirer: 'EvmNodeInquirer',
-        existing_pools: list[ChecksumEvmAddress],
+        existing_pools: set[ChecksumEvmAddress],
         msg_aggregator: 'MessagesAggregator',
 ) -> list[CurvePoolData] | None:
     """
@@ -481,7 +488,7 @@ def _query_curve_data_from_chain(
 
 def query_curve_data(
         inquirer: 'EvmNodeInquirer',
-        cache_type: Literal[CacheType.CURVE_LP_TOKENS],
+        cache_type: Literal[CacheType.CURVE_POOL_ADDRESS],
         msg_aggregator: 'MessagesAggregator',
 ) -> list[CurvePoolData] | None:
     """Query curve lp tokens, curve pools and curve gauges.
@@ -493,13 +500,14 @@ def query_curve_data(
     curve api returns "Curve.fi DAI/USDC/USDT" while metaregistry returns "3pool".
     TODO: think of how to make pool names uniform."""
     with GlobalDBHandler().conn.read_ctx() as cursor:
-        existing_pools = [
-            string_to_evm_address(address)
-            for address in globaldb_get_general_cache_like(
-                cursor=cursor,
-                key_parts=(cache_type, str(inquirer.chain_id.serialize_for_db())),
+        existing_pools = {  # query the pools that we already have in the db
+            string_to_evm_address(address[0])
+            for address in cursor.execute(
+                'SELECT value FROM unique_cache WHERE key LIKE ?',
+                (f'{compute_cache_key((cache_type, str(inquirer.chain_id.serialize_for_db())))}%',),  # noqa: E501
             )
-        ]
+        }
+
     try:
         pools_data: list[CurvePoolData] | None = _query_curve_data_from_api(
             chain_id=inquirer.chain_id,

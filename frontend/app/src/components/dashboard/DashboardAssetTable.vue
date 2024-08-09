@@ -312,14 +312,14 @@ watch(search, () => setPage(1));
           show-percentage
           :total="row.usdValue"
           :identifier="row.asset"
-          class="bg-white dark:bg-[#1E1E1E]"
+          class="bg-white dark:bg-[#1E1E1E] my-2"
         />
         <AssetBalances
           v-else
           hide-total
           v-bind="props"
           :balances="row.breakdown ?? []"
-          class="bg-white dark:bg-[#1E1E1E]"
+          class="bg-white dark:bg-[#1E1E1E] my-2"
         />
       </template>
       <template #item.expand="{ row }">

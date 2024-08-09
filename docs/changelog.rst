@@ -7,10 +7,17 @@ Changelog
 * :feature:`4457` Rotki will show links to CoinGecko and CryptoCompare on the asset detail page if they exist.
 * :feature:`8101` Failed transactions will now be displayed as failed and not just show "burned gas" event only.
 * :feature:`-` Transactions claiming SAFE tokens from vesting will now be properly decoded.
-* :feature:`-` Transactions locking, unlocking and withdrawing SAFE tokens will now be properly decoded. Also any locked SAFE tokens will be automatically detected and their balance counted.
+* :feature:`-` Transactions locking, unlocking and withdrawing SAFE tokens will now be properly decoded. Also any locked SAFE tokens will be automatically detected and their balance counted.  
+
+* :release:`1.34.2 <2024-08-09>`
+* :bug:`-` Users will be able to filter by event subtype in the history events view.
+* :feature:`-` New event type/subtype combinations added. Receive/payment to receive a payment for something, Spend/payment to pay for something, Receive/Grant to receive a grant. Accounting wise they are treated like normal spend/receive and receive donation respectively but it helps with filtering and categorization during history searching.
+* :bug:`-` Fix issue where ETH from staking doesn't appear under the ETH breakdown on the dashboard.
 * :bug:`8334` Importing addresses from MetaMask should work when multiple browser wallets are installed.
 * :bug:`-` rotki will now properly run background tasks when logging out and logging in again.
+* :bug:`-` The task to read new curve pools from the chain will be faster now.
 * :bug:`-` rotki will now detect new tokens right after finishing decoding new events.
+* :bug:`-` The detection of account activity in new evm chains has been improved to avoid false positives when the account has been only sent spam tokens.
 * :bug:`8169` Prevent a recursion error when querying the price of a token.
 
 * :release:`1.34.1 <2024-07-24>`

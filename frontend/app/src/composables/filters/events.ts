@@ -190,15 +190,34 @@ export function useHistoryEventFilter(
       if (!Array.isArray(selectedEventTypes))
         selectedEventTypes = [`${selectedEventTypes}`];
 
-      if (!disabled.eventSubtypes && selectedEventTypes.length > 0) {
+      if (!disabled.eventSubtypes) {
         const globalMapping = get(historyEventTypeGlobalMapping);
 
         const globalMappingKeys: string[] = [];
-        selectedEventTypes.forEach((selectedEventType) => {
-          const globalMappingFound = globalMapping[selectedEventType];
-          if (globalMappingFound)
-            globalMappingKeys.push(...Object.keys(globalMappingFound));
-        });
+        if (selectedEventTypes.length > 0) {
+          selectedEventTypes.forEach((selectedEventType) => {
+            const globalMappingFound = globalMapping[selectedEventType];
+            if (globalMappingFound)
+              globalMappingKeys.push(...Object.keys(globalMappingFound));
+          });
+        }
+        else {
+          for (const key in globalMapping)
+            globalMappingKeys.push(...Object.keys(globalMapping[key]));
+        }
+
+        let selectedEventSubtypes = get(filters)?.eventSubtypes || [];
+        if (!Array.isArray(selectedEventSubtypes))
+          selectedEventSubtypes = [`${selectedEventSubtypes}`];
+
+        if (selectedEventSubtypes && selectedEventSubtypes.length > 0) {
+          const filteredEventSubtypes = selectedEventSubtypes.filter(item => globalMappingKeys.includes(item));
+
+          set(filters, {
+            ...get(filters),
+            eventSubtypes: filteredEventSubtypes.length > 0 ? filteredEventSubtypes : undefined,
+          });
+        }
 
         data.push({
           key: HistoryEventFilterKeys.EVENT_SUBTYPE,
@@ -206,8 +225,8 @@ export function useHistoryEventFilter(
           description: t('transactions.filter.event_subtype'),
           string: true,
           multiple: true,
-          suggestions: () => get(globalMappingKeys),
-          validate: (type: string) => get(globalMappingKeys).includes(type),
+          suggestions: () => globalMappingKeys.filter(uniqueStrings),
+          validate: (type: string) => globalMappingKeys.includes(type),
         });
       }
     }

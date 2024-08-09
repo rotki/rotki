@@ -452,7 +452,7 @@ def test_find_curve_lp_token_price(inquirer: 'Inquirer', blockchain: 'ChainsAggr
 
     def mock_query_curve_data_from_api(
             chain_id: ChainID,
-            existing_pools: list[ChecksumEvmAddress],
+            existing_pools: set[ChecksumEvmAddress],
     ) -> list[CurvePoolData]:
         for pool in _query_curve_data_from_api(
             chain_id=chain_id,

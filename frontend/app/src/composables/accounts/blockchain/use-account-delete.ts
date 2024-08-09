@@ -1,3 +1,4 @@
+import { Blockchain } from '@rotki/common/lib/blockchain';
 import type { Account } from '@rotki/common/lib/account';
 import type {
   BlockchainAccountBalance,
@@ -57,8 +58,11 @@ export function useAccountDelete() {
       }
     });
 
-    if (validators.length > 0)
+    const chainsToRefresh = [];
+    if (validators.length > 0) {
       await deleteEth2Validators(validators);
+      chainsToRefresh.push(Blockchain.ETH2);
+    }
 
     if (chainAccounts.length > 0) {
       const deletion = chainAccounts.reduce(
@@ -71,6 +75,7 @@ export function useAccountDelete() {
         {} as Record<string, string[]>,
       );
       for (const [chain, accounts] of Object.entries(deletion)) {
+        chainsToRefresh.push(chain);
         await removeAccount({
           accounts,
           chain,

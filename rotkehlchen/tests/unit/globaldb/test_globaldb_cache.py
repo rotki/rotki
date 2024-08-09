@@ -377,7 +377,6 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api, globaldb):
 
     assert mock_notify.call_args_list == [
         make_call_object(CPT_CURVE, ChainID.ETHEREUM, processed=1, total=2),
-        make_call_object(CPT_CURVE, ChainID.ETHEREUM, processed=1, total=2),
     ] if use_curve_api else [
         make_call_object(CPT_CURVE, ChainID.ETHEREUM, processed=0, total=0),
         make_call_object(CPT_CURVE, ChainID.ETHEREUM, processed=1, total=2),

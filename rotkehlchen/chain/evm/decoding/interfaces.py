@@ -53,7 +53,7 @@ CACHE_QUERY_METHOD_TYPE = (
         ],
         list['VelodromePoolData'] | None] |
     Callable[
-        ['EthereumInquirer', Literal[CacheType.CURVE_LP_TOKENS], 'MessagesAggregator'],
+        ['EthereumInquirer', Literal[CacheType.CURVE_POOL_ADDRESS], 'MessagesAggregator'],
         list | None,
     ] |
     Callable[

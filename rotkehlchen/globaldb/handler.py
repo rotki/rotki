@@ -2170,3 +2170,17 @@ class GlobalDBHandler:
                 'SELECT protocol FROM evm_tokens WHERE identifier=?;',
                 (asset_identifier,),
             ).fetchone()) is not None else None
+
+    def clear_locks(self) -> None:
+        """release the locks in the globaldb.
+
+        We saw that when killing a greenlet the locks are not released and has to
+        be done manually.
+        It won't raise errors if the lock is over-released
+        https://www.gevent.org/api/gevent.lock.html#gevent.lock.Semaphore.release
+        The killall that happens in this logic can trigger a greenlet switch as per
+        https://github.com/gevent/gevent/issues/1473#issuecomment-548327614
+        """
+        self.packaged_db_lock.release()
+        self.conn.transaction_lock.release()
+        self.conn.in_callback.release()

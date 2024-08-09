@@ -228,6 +228,8 @@ export const useBlockchainStore = defineStore('blockchain', () => {
 
   const getAddresses = (chain: string): string[] => get(addresses)[chain] ?? [];
 
+  const { getAssetAssociationIdentifiers } = useAssetInfoRetrieval();
+
   const getBreakdown = (asset: string, chain?: string): AssetBreakdown[] => {
     const breakdown: AssetBreakdown[] = [];
     const balanceData = get(balances);
@@ -243,16 +245,19 @@ export const useBlockchainStore = defineStore('blockchain', () => {
 
       for (const address in chainBalanceData) {
         const balance = chainBalanceData[address];
-        const assetBalance = balance.assets[asset];
-        if (!assetBalance)
-          continue;
+        const assetAssociations = get(getAssetAssociationIdentifiers(asset));
+        assetAssociations.forEach((asset) => {
+          const assetBalance = balance.assets[asset];
+          if (!assetBalance)
+            return;
 
-        breakdown.push({
-          address,
-          location: chain,
-          ...assetBalance,
-          tags: chainAccounts.find(account => getAccountAddress(account) === address && account.chain === chain)
-            ?.tags,
+          breakdown.push({
+            address,
+            location: chain,
+            ...assetBalance,
+            tags: chainAccounts.find(account => getAccountAddress(account) === address && account.chain === chain)
+              ?.tags,
+          });
         });
       }
     }

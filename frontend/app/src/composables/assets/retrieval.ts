@@ -26,6 +26,21 @@ export function useAssetInfoRetrieval() {
   const getAssociatedAssetIdentifier = (identifier: string): ComputedRef<string> =>
     computed(() => get(assetAssociationMap)[identifier] ?? identifier);
 
+  const getAssetAssociationIdentifiers = (
+    identifier: string,
+  ): ComputedRef<string[]> => computed(() => {
+    const assets = [identifier];
+
+    Object.entries(get(assetAssociationMap)).forEach(([key, item]) => {
+      if (item !== identifier)
+        return;
+
+      assets.push(key);
+    });
+
+    return assets;
+  });
+
   const getAssetNameFallback = (id: string) => {
     if (isEvmIdentifier(id)) {
       const address = getAddressFromEvmIdentifier(id);
@@ -166,6 +181,7 @@ export function useAssetInfoRetrieval() {
   return {
     fetchTokenDetails,
     getAssociatedAssetIdentifier,
+    getAssetAssociationIdentifiers,
     assetInfo,
     refetchAssetInfo: queueIdentifier,
     assetSymbol,

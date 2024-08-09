@@ -82,7 +82,7 @@ export const useStatusStore = defineStore('status', () => {
     computed<boolean>(() => {
       const statuses = get(status)[section];
       if (!statuses)
-        return false;
+        return true;
 
       return matchesStatus(statuses, subsection, isInitialLoadingStatus);
     });
