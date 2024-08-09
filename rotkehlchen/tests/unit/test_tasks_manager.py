@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Any, cast
 from unittest.mock import MagicMock, patch
 
 import gevent
+import gevent.lock
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -1030,3 +1031,50 @@ def test_maybe_create_calendar_reminder(
         assert (last_ran_ts := task_manager.database.get_static_cache(
             cursor=cursor, name=DBCacheStatic.LAST_CREATE_REMINDER_CHECK_TS,
         )) is not None and last_ran_ts - ts_now() < 5  # executed recently
+
+
+def test_deadlock_logout(
+        rotkehlchen_instance: 'Rotkehlchen',
+        globaldb: GlobalDBHandler,  # pylint: disable=unused-argument
+):
+    """Test that we don't leave locks acquired by a greenlet that has been killed during logout"""
+    task_manager = cast(TaskManager, rotkehlchen_instance.task_manager)
+    task_manager.max_tasks_num = 10
+    task_runs = 0
+
+    def task():
+        """Task that will be killed and acquires the lock"""
+        nonlocal task_runs
+        GlobalDBHandler().packaged_db_lock.acquire()
+        while True:
+            task_runs += 1
+            gevent.sleep(1)
+
+    def maybe_task():
+        return [task_manager.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name='TEst',
+            exception_is_error=True,
+            method=task,
+        )]
+
+    # schedule the task
+    task_manager.should_schedule = True
+    task_manager.potential_tasks = [maybe_task]
+    task_manager.schedule()
+
+    # ensure that the task runs
+    assert task_runs == 0
+    gevent.sleep(0)
+    assert task_runs == 1
+
+    # logout
+    rotkehlchen_instance.logout()
+
+    # context switch to be sure that the task has not been executed again
+    gevent.sleep(0)
+    assert task_runs == 1
+
+    # shouldn't raise any exception because we released it
+    GlobalDBHandler().packaged_db_lock.acquire()
+    assert len(task_manager.running_greenlets) == 0
