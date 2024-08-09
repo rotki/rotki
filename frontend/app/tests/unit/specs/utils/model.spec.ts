@@ -1,4 +1,4 @@
-import { describe } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 describe('model utilities', () => {
   describe('useSimplePropVModel', () => {

@@ -1,4 +1,5 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { describe, expect, it, vi } from 'vitest';
 import { type NoteFormat, NoteType } from '@/composables/history/events/notes';
 
 vi.mock('@/composables/assets/retrieval', () => ({

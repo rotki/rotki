@@ -1,4 +1,5 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import flushPromises from 'flush-promises';
 import { FrontendSettings } from '@/types/settings/frontend-settings';
 import type { AddressBookEntry, AddressBookSimplePayload } from '@/types/eth-names';

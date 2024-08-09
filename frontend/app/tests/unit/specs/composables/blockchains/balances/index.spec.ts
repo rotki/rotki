@@ -1,5 +1,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { computed } from 'vue';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Section } from '@/types/status';
 import { useBlockchainStore } from '@/store/blockchain';
 import { createAccount } from '@/utils/blockchain/accounts';

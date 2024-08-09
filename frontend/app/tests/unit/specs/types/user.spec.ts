@@ -1,4 +1,4 @@
-import { describe } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
 import { BigNumber } from '@rotki/common';

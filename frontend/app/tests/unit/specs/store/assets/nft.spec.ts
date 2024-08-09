@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { NftResponse } from '@/types/nfts';
 
 vi.mock('@/composables/api/assets/index', () => ({

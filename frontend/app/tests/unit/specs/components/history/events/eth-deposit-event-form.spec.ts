@@ -1,5 +1,6 @@
 import { type ComponentMountingOptions, type VueWrapper, mount } from '@vue/test-utils';
 import { type Pinia, createPinia, setActivePinia } from 'pinia';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import EthDepositEventForm from '@/components/history/events/forms/EthDepositEventForm.vue';
 import type { AssetMap } from '@/types/asset';

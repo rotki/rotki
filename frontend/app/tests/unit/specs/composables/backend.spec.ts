@@ -1,6 +1,7 @@
 import { mount } from '@vue/test-utils';
 import flushPromises from 'flush-promises';
 import { createTestingPinia } from '@pinia/testing';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('@/composables/electron-interop', () => ({
   useInterop: vi.fn().mockReturnValue({

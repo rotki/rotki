@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { updateGeneralSettings } from '../../../utils/general-settings';
 
 describe('store::balances/manual', () => {

@@ -1,6 +1,6 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import flushPromises from 'flush-promises';
-import { vi } from 'vitest';
+import { afterEach, assertType, beforeAll, beforeEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import { type LocationQuery, RouterAccountsSchema } from '@/types/route';
 import { useMainStore } from '@/store/main';
 import { FilterBehaviour } from '@/types/filtering';

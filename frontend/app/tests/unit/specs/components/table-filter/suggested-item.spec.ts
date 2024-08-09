@@ -1,4 +1,5 @@
 import { type VueWrapper, mount } from '@vue/test-utils';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import SuggestedItem from '@/components/table-filter/SuggestedItem.vue';
 import type { Suggestion } from '@/types/filtering';
 
@@ -123,10 +124,10 @@ describe('table-filter/SuggestedItem.vue', () => {
     };
     wrapper = createWrapper({ suggestion });
 
-    await expect(wrapper.find('span').text()).toBe(`${key}=true`);
+    expect(wrapper.find('span').text()).toBe(`${key}=true`);
 
     await wrapper.setProps({ chip: true });
 
-    await expect(wrapper.find('span').text()).toBe(key);
+    expect(wrapper.find('span').text()).toBe(key);
   });
 });

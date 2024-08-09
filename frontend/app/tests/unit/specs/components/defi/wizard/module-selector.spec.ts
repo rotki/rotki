@@ -1,6 +1,7 @@
 import { type VueWrapper, mount } from '@vue/test-utils';
 import { type Pinia, createPinia, setActivePinia } from 'pinia';
 import flushPromises from 'flush-promises';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import ModuleSelector from '@/components/defi/wizard/ModuleSelector.vue';
 import { Module } from '@/types/modules';
 import { setModules } from '../../../../utils/general-settings';

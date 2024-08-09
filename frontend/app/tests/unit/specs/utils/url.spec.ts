@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest';
+
 describe('utils/url', () => {
   it('default', () => {
     expect(getDomain('https://www.google.com')).toEqual('google.com');

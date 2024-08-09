@@ -1,4 +1,5 @@
 import { type VueWrapper, mount } from '@vue/test-utils';
+import { beforeEach, describe, expect, it } from 'vitest';
 import UserSecuritySettings from '@/pages/settings/data-security/index.vue';
 import { libraryDefaults } from '../../../utils/provide-defaults';
 

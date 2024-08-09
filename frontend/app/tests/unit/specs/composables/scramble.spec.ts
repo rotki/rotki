@@ -1,3 +1,5 @@
+import { beforeAll, describe, expect, it } from 'vitest';
+
 describe('composables::message-handling', () => {
   let store: ReturnType<typeof useSessionSettingsStore>;
 

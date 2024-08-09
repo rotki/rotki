@@ -1,6 +1,7 @@
 import { type VueWrapper, mount } from '@vue/test-utils';
 import { promiseTimeout } from '@vueuse/core';
 import flushPromises from 'flush-promises';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiValidationError } from '@/types/api/errors';
 import EvmChainsToIgnoreSettings from '@/components/settings/general/EvmChainsToIgnoreSettings.vue';
 import { libraryDefaults } from '../../../utils/provide-defaults';
@@ -78,7 +79,7 @@ describe('evmChainsToIgnoreSettings.vue', () => {
     expect(wrapper.find('.details').exists()).toBeTruthy();
     expect(wrapper.find('.details').text()).toContain('settings.saved');
 
-    expect(inputEl.value).toMatchObject(chains.toString());
+    expect(inputEl.value).toMatch(chains.toString());
   });
 
   it('displays warning if wrong chain values are passed', async () => {

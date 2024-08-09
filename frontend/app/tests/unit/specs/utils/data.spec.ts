@@ -1,4 +1,4 @@
-import { expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 describe('utils/data', () => {
   it('returns a partial object without the null properties', () => {

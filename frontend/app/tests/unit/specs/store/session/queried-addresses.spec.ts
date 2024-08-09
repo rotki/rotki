@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Module } from '@/types/modules';
 import type { QueriedAddressPayload, QueriedAddresses } from '@/types/session';
 

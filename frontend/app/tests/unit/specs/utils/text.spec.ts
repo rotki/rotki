@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest';
+
 describe('utils/text', () => {
   it('check return value of human readable function', () => {
     expect(toHumanReadable('lorem_ipsum dolor sit_amet')).toEqual('lorem ipsum dolor sit amet');
