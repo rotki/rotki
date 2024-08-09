@@ -182,11 +182,13 @@ def test_need_cursor_and_need_writable_cursor(database):
     assert otherdb.get_setting('premium_should_sync') is False
     with otherdb.db.user_write() as cursor:
         otherdb.set_setting(cursor, 'premium_should_sync', True)
-        assert otherdb.get_setting('premium_should_sync') is True
+    assert otherdb.get_setting('premium_should_sync') is True
+    with otherdb.db.user_write() as cursor:
         otherdb.set_setting(write_cursor=cursor, name='premium_should_sync', value=False)
-        assert otherdb.get_setting('premium_should_sync') is False
+    assert otherdb.get_setting('premium_should_sync') is False
+    with otherdb.db.user_write() as cursor:
         otherdb.set_setting(cursor, name='premium_should_sync', value=True)
-        assert otherdb.get_setting('premium_should_sync') is True
+    assert otherdb.get_setting('premium_should_sync') is True
 
 
 @pytest.mark.parametrize(

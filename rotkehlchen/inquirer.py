@@ -1122,9 +1122,10 @@ class Inquirer:
                     f'detecting underlying tokens of {token.evm_address!s}: {e!s}',
                 )
             # store it in the DB, so next time no need to query chain
-            with globaldb.conn.write_ctx() as write_cursor:
+            with globaldb.conn.read_ctx() as cursor, globaldb.conn.write_ctx() as write_cursor:
                 try:
                     globaldb._add_underlying_tokens(
+                        cursor=cursor,
                         write_cursor=write_cursor,
                         parent_token_identifier=token.identifier,
                         underlying_tokens=[

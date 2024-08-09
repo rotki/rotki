@@ -8,7 +8,7 @@ from rotkehlchen.assets.converters import asset_from_bitstamp
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.importers.constants import BITSTAMP_EVENT_PREFIX
 from rotkehlchen.data_import.utils import BaseExchangeImporter
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.client import DBWriterClient
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.base import HistoryEvent
@@ -25,7 +25,7 @@ from rotkehlchen.utils.misc import ts_sec_to_ms
 class BitstampTransactionsImporter(BaseExchangeImporter):
     def _consume_bitstamp_transaction(
             self,
-            write_cursor: DBCursor,
+            write_cursor: DBWriterClient,
             csv_row: dict[str, Any],
             timestamp_format: str = '%b. %d, %Y, %I:%M %p',
     ) -> None:
@@ -135,7 +135,7 @@ class BitstampTransactionsImporter(BaseExchangeImporter):
             )
             self.add_history_events(write_cursor, [movement_event])
 
-    def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
+    def _import_csv(self, write_cursor: DBWriterClient, filepath: Path, **kwargs: Any) -> None:
         """
         Import trades from bitstamp.
         """

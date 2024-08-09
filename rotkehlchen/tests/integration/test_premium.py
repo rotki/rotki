@@ -182,11 +182,12 @@ def test_upload_data_to_server_same_hash(rotkehlchen_instance):
 ])
 def test_upload_data_to_server_smaller_db(rotkehlchen_instance, db_settings: dict[str, bool]):
     """Test that if the server has bigger DB size no upload happens"""
-    with rotkehlchen_instance.data.db.user_write() as cursor:
+    with rotkehlchen_instance.data.db.conn.read_ctx() as cursor:
         last_ts = rotkehlchen_instance.data.db.get_static_cache(
             cursor=cursor, name=DBCacheStatic.LAST_DATA_UPLOAD_TS,
         )
         assert last_ts is None
+    with rotkehlchen_instance.data.db.user_write() as cursor:
         # Write anything in the DB to set a non-zero last_write_ts
         rotkehlchen_instance.data.db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR.resolve_to_asset_with_oracles()))  # noqa: E501
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db()

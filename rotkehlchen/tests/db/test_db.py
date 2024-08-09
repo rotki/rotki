@@ -1,7 +1,6 @@
 import dataclasses
 import logging
 import time
-from contextlib import suppress
 from copy import deepcopy
 from pathlib import Path
 from unittest.mock import patch
@@ -251,8 +250,8 @@ def test_add_remove_exchange(database: DBHandler) -> None:
     assert binance.api_secret == binance_api_secret
 
     # remove an exchange and see it works
-    with database.user_write() as cursor:
-        database.remove_exchange(cursor, 'kraken1', Location.KRAKEN)
+    with database.conn.read_ctx() as cursor, database.user_write() as write_cursor:
+        database.remove_exchange(write_cursor, 'kraken1', Location.KRAKEN)
         credentials = database.get_exchange_credentials(cursor)
     assert len(credentials) == 2
     assert len(credentials[Location.KRAKEN]) == 1
@@ -267,8 +266,8 @@ def test_add_remove_exchange(database: DBHandler) -> None:
     assert binance.api_secret == binance_api_secret
 
     # remove last exchange of a location and see nothing is returned
-    with database.user_write() as cursor:
-        database.remove_exchange(cursor, 'kraken2', Location.KRAKEN)
+    with database.conn.read_ctx() as cursor, database.user_write() as write_cursor:
+        database.remove_exchange(write_cursor, 'kraken2', Location.KRAKEN)
         credentials = database.get_exchange_credentials(cursor)
     assert len(credentials) == 1
     assert len(credentials[Location.BINANCE]) == 1
@@ -317,7 +316,7 @@ def test_export_import_db(data_dir: Path, username: str, sql_vm_instructions_cb:
     encoded_data, _ = data.compress_and_encrypt_db()
     # The server would return them decoded
     data.decompress_and_decrypt_db(encoded_data)
-    with data.db.user_write() as cursor:
+    with data.db.conn.read_ctx() as cursor:
         balances = data.db.get_manually_tracked_balances(cursor)
     assert balances == [starting_balance]
 
@@ -370,14 +369,14 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
             tx_hash=random_tx_hash_in_cache.hex(),  # pylint: disable=no-member
             receiver=string_to_evm_address('0xd36029d76af6fE4A356528e4Dc66B2C18123597D'),
         )
+    with data.db.conn.read_ctx() as cursor:
         assert data.db.get_dynamic_cache(  # ensure it's properly set
-            cursor=write_cursor,
+            cursor=cursor,
             name=DBCacheDynamic.EXTRA_INTERNAL_TX,
             tx_hash=random_tx_hash_in_cache.hex(),  # pylint: disable=no-member
             receiver=string_to_evm_address('0xd36029d76af6fE4A356528e4Dc66B2C18123597D'),
         ) == string_to_evm_address('0xd36029d76af6fE4A356528e4Dc66B2C18123597D')
 
-    with data.db.conn.read_ctx() as cursor:
         accounts = data.db.get_blockchain_accounts(cursor)
         assert isinstance(accounts, BlockchainAccounts)
         assert accounts.btc == ('1CB7Pbji3tquDtMRp8mBkerimkFzWRkovS',)
@@ -409,44 +408,46 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
             SupportedBlockchain.ETHEREUM,
             ['0xd36029d76af6fE4A356528e4Dc66B2C18123597D'],
         )
-        accounts = data.db.get_blockchain_accounts(write_cursor)
+    with data.db.conn.read_ctx() as cursor:
+        accounts = data.db.get_blockchain_accounts(cursor)
         assert set(accounts.eth) == {
             '0x80B369799104a47e98A553f3329812a44A7FaCDc',
             '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
         }
         assert data.db.get_dynamic_cache(
-            cursor=write_cursor,
+            cursor=cursor,
             name=DBCacheDynamic.EXTRA_INTERNAL_TX,
             tx_hash=random_tx_hash_in_cache.hex(),  # pylint: disable=no-member
             receiver=string_to_evm_address('0xd36029d76af6fE4A356528e4Dc66B2C18123597D'),
         ) is None
+    with data.db.user_write() as write_cursor:
         # Remove only the polygon account
         data.db.remove_single_blockchain_accounts(
             write_cursor,
             SupportedBlockchain.POLYGON_POS,
             ['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'],
         )
-        accounts = data.db.get_blockchain_accounts(write_cursor)
+    with data.db.conn.read_ctx() as cursor:
+        accounts = data.db.get_blockchain_accounts(cursor)
         assert set(accounts.eth) == {
             '0x80B369799104a47e98A553f3329812a44A7FaCDc',
             '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
         }
         assert accounts.polygon_pos == ()
         # and also make sure that the relevant meta data of the mainnet account are still there
-        assert queried_addresses.get_queried_addresses_for_module(write_cursor, 'makerdao_vaults') == ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',)  # noqa: E501
+        assert queried_addresses.get_queried_addresses_for_module(cursor, 'makerdao_vaults') == ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',)  # noqa: E501
         assert data.db.get_tokens_for_address(
-            cursor=write_cursor,
+            cursor=cursor,
             address='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
             blockchain=SupportedBlockchain.POLYGON_POS,
         ) == (None, None)
         eth_tokens, _ = data.db.get_tokens_for_address(
-            cursor=write_cursor,
+            cursor=cursor,
             address='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
             blockchain=SupportedBlockchain.ETHEREUM,
         )
         assert set(eth_tokens) == {A_DAI, A_USDC}
 
-    with data.db.conn.read_ctx() as cursor:
         ignored_assets_before = data.db.get_ignored_asset_ids(cursor)
 
     success, already = data.add_ignored_assets([A_DAO])
@@ -545,6 +546,7 @@ def test_settings_entry_types(database):
             date_display_format='%d/%m/%Y %H:%M:%S %z',
             submit_usage_analytics=False,
         ))
+    with database.conn.read_ctx() as cursor:
         res = database.get_settings(cursor)
 
     assert isinstance(res.version, int)
@@ -577,13 +579,14 @@ def test_settings_entry_types(database):
 
 
 def test_key_value_cache_entry_types(database):
-    with database.user_write() as cursor:
+    with database.user_write() as write_cursor:
         for db_cache in (
             DBCacheStatic.LAST_BALANCE_SAVE,
             DBCacheStatic.LAST_DATA_UPLOAD_TS,
             DBCacheStatic.LAST_EVM_ACCOUNTS_DETECT_TS,
         ):
-            database.set_static_cache(write_cursor=cursor, name=db_cache, value=123)
+            database.set_static_cache(write_cursor=write_cursor, name=db_cache, value=123)
+    with database.conn.read_ctx() as cursor:
         cache = database.get_cache_for_api(cursor)
         default_value = database.get_static_cache(cursor=cursor, name=DBCacheStatic.LAST_DATA_UPDATES_TS)  # noqa: E501
     assert isinstance(cache[DBCacheStatic.LAST_BALANCE_SAVE.value], int)
@@ -602,13 +605,15 @@ def test_balance_save_frequency_check(data_dir, username, sql_vm_instructions_cb
 
     now = int(time.time())
     data_save_ts = now - 24 * 60 * 60 + 20
-    with data.db.user_write() as cursor:
-        data.db.add_multiple_location_data(cursor, [LocationData(
+    with data.db.user_write() as write_cursor:
+        data.db.add_multiple_location_data(write_cursor, [LocationData(
             time=data_save_ts, location=Location.KRAKEN.serialize_for_db(), usd_value='1500',  # pylint: disable=no-member
         )])
-
+    with data.db.conn.read_ctx() as cursor:
         assert not data.db.should_save_balances(cursor)
-        data.db.set_settings(cursor, ModifiableDBSettings(balance_save_frequency=5))
+    with data.db.user_write() as write_cursor:
+        data.db.set_settings(write_cursor, ModifiableDBSettings(balance_save_frequency=5))
+    with data.db.conn.read_ctx() as cursor:
         assert data.db.should_save_balances(cursor)
 
         last_save_ts = data.db.get_last_balance_save_time(cursor)
@@ -716,6 +721,7 @@ def test_query_timed_balances(data_dir, username, sql_vm_instructions_cb):
     with data.db.user_write() as cursor:
         data.db.set_settings(cursor, settings=ModifiableDBSettings(infer_zero_timed_balances=True))
         data.db.add_multiple_balances(cursor, ASSET_BALANCES)
+    with data.db.conn.read_ctx() as cursor:
         result = data.db.query_timed_balances(
             cursor=cursor,
             asset=A_USD,
@@ -798,6 +804,7 @@ def test_query_collection_timed_balances(data_dir, username, sql_vm_instructions
     with data.db.user_write() as cursor:
         data.db.set_settings(cursor, settings=ModifiableDBSettings(infer_zero_timed_balances=True))
         data.db.add_multiple_balances(cursor, asset_balances)
+    with data.db.conn.read_ctx() as cursor:
         result = data.db.query_collection_timed_balances(
             cursor=cursor,
             collection_id=36,  # USDC collection
@@ -845,9 +852,9 @@ def test_timed_balances_inferred_zero_balances(data_dir, username, sql_vm_instru
             'VALUES (?,?,?,?,?)',
             timed_balance_entries,
         )
-
+    with data.db.conn.read_ctx() as cursor:
         all_data = data.db.query_timed_balances(  # sorted by time in ascending order
-            cursor=write_cursor,
+            cursor=cursor,
             asset=A_ETH,
             balance_type=BalanceType.ASSET,
         )
@@ -866,6 +873,7 @@ def test_timed_balances_inferred_zero_balances(data_dir, username, sql_vm_instru
         assert all_data[5].amount == ZERO
 
         # Retest another case
+    with data.db.user_write() as write_cursor:
         write_cursor.execute('DELETE FROM timed_balances')
 
         timed_balance_entries = [
@@ -889,8 +897,9 @@ def test_timed_balances_inferred_zero_balances(data_dir, username, sql_vm_instru
             timed_balance_entries,
         )
 
+    with data.db.conn.read_ctx() as cursor:
         all_data = data.db.query_timed_balances(  # sorted by time in ascending order
-            cursor=write_cursor,
+            cursor=cursor,
             asset=A_ETH,
             balance_type=BalanceType.ASSET,
         )
@@ -905,6 +914,7 @@ def test_timed_balances_inferred_zero_balances(data_dir, username, sql_vm_instru
         assert all_data[6].time == 1514849100
 
         # Test a case with ssf_graph_multiplier on
+    with data.db.user_write() as write_cursor:
         write_cursor.execute('DELETE FROM timed_balances')
         data.db.set_settings(write_cursor, settings=ModifiableDBSettings(treat_eth2_as_eth=True))
         data.db.set_settings(write_cursor, settings=ModifiableDBSettings(ssf_graph_multiplier=2))
@@ -930,8 +940,9 @@ def test_timed_balances_inferred_zero_balances(data_dir, username, sql_vm_instru
             timed_balance_entries,
         )
 
+    with data.db.conn.read_ctx() as cursor:
         all_data = data.db.query_timed_balances(  # sorted by time in ascending order
-            cursor=write_cursor,
+            cursor=cursor,
             asset=A_ETH,
             balance_type=BalanceType.ASSET,
         )
@@ -1196,18 +1207,21 @@ def test_add_trades(data_dir, username, sql_vm_instructions_cb):
     )
 
     # Add and retrieve the first 2 trades. All should be fine.
-    with data.db.user_write() as cursor:
-        data.db.add_trades(cursor, [trade1, trade2])
+    with data.db.user_write() as write_cursor:
+        data.db.add_trades(write_cursor, [trade1, trade2])
         errors = msg_aggregator.consume_errors()
         warnings = msg_aggregator.consume_warnings()
         assert len(errors) == 0
         assert len(warnings) == 0
+    with data.db.conn.read_ctx() as cursor:
         returned_trades = data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
         assert returned_trades == [trade1, trade2]
 
+    with data.db.user_write() as write_cursor:
         # Add the last 2 trades. Since trade2 already exists in the DB it should be
         # ignored
-        data.db.add_trades(cursor, [trade2, trade3])
+        data.db.add_trades(write_cursor, [trade2, trade3])
+    with data.db.conn.read_ctx() as cursor:
         returned_trades = data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
 
     assert returned_trades == [trade1, trade2, trade3]
@@ -1257,22 +1271,25 @@ def test_add_margin_positions(data_dir, username, caplog, sql_vm_instructions_cb
     )
 
     # Add and retrieve the first 2 margins. All should be fine.
-    with data.db.user_write() as cursor:
-        data.db.add_margin_positions(cursor, [margin1, margin2])
+    with data.db.user_write() as write_cursor:
+        data.db.add_margin_positions(write_cursor, [margin1, margin2])
         errors = msg_aggregator.consume_errors()
         warnings = msg_aggregator.consume_warnings()
         assert len(errors) == 0
         assert len(warnings) == 0
+    with data.db.conn.read_ctx() as cursor:
         returned_margins = data.db.get_margin_positions(cursor)
         assert returned_margins == [margin1, margin2]
 
+    with data.db.user_write() as write_cursor:
         # Add the last 2 margins. Since margin2 already exists in the DB it should be
         # ignored and a warning should be logged
-        data.db.add_margin_positions(cursor, [margin2, margin3])
+        data.db.add_margin_positions(write_cursor, [margin2, margin3])
         assert (
             'Did not add "Margin position with id 0a57acc1f4c09da0f194c59c4cd240e6'
             '8e2d36e56c05b3f7115def9b8ee3943f'
         ) in caplog.text
+    with data.db.conn.read_ctx() as cursor:
         returned_margins = data.db.get_margin_positions(cursor)
         assert returned_margins == [margin1, margin2, margin3]
 
@@ -1324,12 +1341,13 @@ def test_add_asset_movements(data_dir, username, sql_vm_instructions_cb):
     )
 
     # Add and retrieve the first 2 margins. All should be fine.
-    with data.db.user_write() as cursor:
-        data.db.add_asset_movements(cursor, [movement1, movement2])
+    with data.db.user_write() as write_cursor:
+        data.db.add_asset_movements(write_cursor, [movement1, movement2])
         errors = msg_aggregator.consume_errors()
         warnings = msg_aggregator.consume_warnings()
         assert len(errors) == 0
         assert len(warnings) == 0
+    with data.db.conn.read_ctx() as cursor:
         returned_movements = data.db.get_asset_movements(
             cursor=cursor,
             filter_query=AssetMovementsFilterQuery.make(),
@@ -1338,7 +1356,9 @@ def test_add_asset_movements(data_dir, username, sql_vm_instructions_cb):
         assert returned_movements == [movement1, movement2]
 
         # Add the last 2 movements. Since movement2 already exists in the DB it should be ignored
-        data.db.add_asset_movements(cursor, [movement2, movement3])
+    with data.db.user_write() as write_cursor:
+        data.db.add_asset_movements(write_cursor, [movement2, movement3])
+    with data.db.conn.read_ctx() as cursor:
         returned_movements = data.db.get_asset_movements(
             cursor=cursor,
             filter_query=AssetMovementsFilterQuery.make(),
@@ -1439,8 +1459,7 @@ def test_timed_balances_primary_key_works(user_data_dir, sql_vm_instructions_cb)
         db.add_multiple_balances(cursor, balances)
     assert exc_info.errisinstance(InputError)
     assert 'Adding timed_balance failed' in str(exc_info.value)
-
-    with db.user_write() as cursor:
+    with db.conn.read_ctx() as cursor:
         balances = db.query_timed_balances(cursor, asset=A_BTC, balance_type=BalanceType.ASSET)
         assert len(balances) == 0
         balances = [
@@ -1458,6 +1477,7 @@ def test_timed_balances_primary_key_works(user_data_dir, sql_vm_instructions_cb)
                 usd_value='9100',
             ),
         ]
+    with db.user_write() as cursor:
         db.add_multiple_balances(cursor, balances)
     assert len(balances) == 2
 
@@ -1535,6 +1555,7 @@ def test_timed_balances_treat_eth2_as_eth(database):
     with database.user_write() as cursor:
         database.set_settings(cursor, ModifiableDBSettings(infer_zero_timed_balances=True))
         database.add_multiple_balances(cursor, balances)
+    with database.conn.read_ctx() as cursor:
         balances = database.query_timed_balances(cursor, asset=A_BTC, balance_type=BalanceType.ASSET)  # noqa: E501
     assert len(balances) == 1
     expected_balances = [
@@ -1675,12 +1696,11 @@ def test_unlock_with_invalid_premium_data(data_dir, username, sql_vm_instruction
     msg_aggregator = MessagesAggregator()
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
-    cursor = data.db.conn.cursor()
-    cursor.execute(
-        'INSERT OR REPLACE INTO user_credentials(name, api_key, api_secret) VALUES (?, ?, ?)',
-        ('rotkehlchen', 'foo', 'boo'),
-    )
-    data.db.conn.commit()
+    with data.db.conn.write_ctx() as cursor:
+        cursor.execute(
+            'INSERT OR REPLACE INTO user_credentials(name, api_key, api_secret) VALUES (?, ?, ?)',
+            ('rotkehlchen', 'foo', 'boo'),
+        )
 
     # now relogin and check that no exception is thrown
     del data
@@ -1857,11 +1877,14 @@ def test_binance_pairs(user_data_dir, sql_vm_instructions_cb):
 
     with db.user_write() as write_cursor:
         db.set_binance_pairs(write_cursor, 'binance', ['ETHUSDC', 'ETHBTC', 'BNBBTC'], Location.BINANCE)  # noqa: E501
-        query = db.get_binance_pairs('binance', Location.BINANCE)
-        assert query == ['ETHUSDC', 'ETHBTC', 'BNBBTC']
 
+    query = db.get_binance_pairs('binance', Location.BINANCE)
+    assert query == ['ETHUSDC', 'ETHBTC', 'BNBBTC']
+
+    with db.user_write() as write_cursor:
         db.set_binance_pairs(write_cursor, 'binance', [], Location.BINANCE)
-        query = db.get_binance_pairs('binance', Location.BINANCE)
+
+    query = db.get_binance_pairs('binance', Location.BINANCE)
     assert query == []
 
 
@@ -1887,7 +1910,7 @@ def test_fresh_db_adds_version(user_data_dir, sql_vm_instructions_cb):
     assert int(query[0][0]) == ROTKEHLCHEN_DB_VERSION
 
 
-def test_db_schema_sanity_check(database: 'DBHandler', caplog) -> None:
+def test_db_schema_sanity_check_missing_tables(database: 'DBHandler', caplog) -> None:
     connection = database.conn
     # by default should run without problems
     connection.schema_sanity_check()
@@ -1898,41 +1921,44 @@ def test_db_schema_sanity_check(database: 'DBHandler', caplog) -> None:
     connection.schema_sanity_check()
 
     assert 'Your user database has the following unexpected tables' not in caplog.text, 'Found unexpected table in clean DB'  # noqa: E501
-    with suppress(ValueError), database.user_write() as cursor:
+    with database.user_write() as cursor:
         cursor.execute('DROP TABLE rpc_nodes')
         cursor.execute('CREATE TABLE rpc_nodes(column1 INTEGER)')
         cursor.execute('DROP TABLE ens_mappings')
         cursor.execute('CREATE TABLE ens_mappings(column2 TEXT)')
-        with pytest.raises(DBSchemaError) as exception_info:
-            connection.schema_sanity_check()
-        raise ValueError('Do not persist any of the changes')
-
+    with pytest.raises(DBSchemaError) as exception_info:
+        connection.schema_sanity_check()
     assert 'in your user database differ' in str(exception_info.value)
+
+
+def test_db_schema_sanity_check_extra_tables(database: 'DBHandler', caplog) -> None:
+    connection = database.conn
     # Make sure that having an extra table does not break the sanity check
     with database.user_write() as cursor:
         cursor.execute('CREATE TABLE new_table(some_column integer)')
-        connection.schema_sanity_check()
-        assert "Your user database has the following unexpected tables: {'new_table'}" in caplog.text  # noqa: E501
+    connection.schema_sanity_check()
+    assert "Your user database has the following unexpected tables: {'new_table'}" in caplog.text
 
     with database.user_write() as cursor:
         cursor.execute('DROP TABLE user_notes;')
-        with pytest.raises(DBSchemaError) as exception_info:
-            connection.schema_sanity_check()
+    with pytest.raises(DBSchemaError) as exception_info:
+        connection.schema_sanity_check()
     assert "Tables {'user_notes'} are missing" in str(exception_info.value)
 
 
 def test_db_add_skipped_external_event_twice(database: 'DBHandler') -> None:
     """Test that adding same skipped event twice in the DB does not duplicate it"""
     data = {'event': 'someid', 'time': 'atime'}
-    with database.user_write() as write_cursor:
-        for _ in range(2):
+    for _ in range(2):
+        with database.user_write() as write_cursor:
             database.add_skipped_external_event(
                 write_cursor=write_cursor,
                 location=Location.KRAKEN,
                 data=data,
                 extra_data=None,
             )
-            assert write_cursor.execute('SELECT COUNT(*) FROM skipped_external_events').fetchone()[0] == 1  # noqa: E501
+        with database.conn.read_ctx() as cursor:
+            assert cursor.execute('SELECT COUNT(*) FROM skipped_external_events').fetchone()[0] == 1  # noqa: E501
 
 
 @pytest.mark.parametrize('db_settings', [

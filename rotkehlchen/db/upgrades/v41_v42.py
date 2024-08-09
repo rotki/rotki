@@ -12,7 +12,7 @@ from rotkehlchen.types import ChainID, Location
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 logger = logging.getLogger(__name__)
@@ -20,7 +20,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 @enter_exit_debug_log()
-def _add_zksynclite(write_cursor: 'DBCursor') -> None:
+def _add_zksynclite(write_cursor: 'DBWriterClient') -> None:
     """Add zksynclite related table"""
     write_cursor.execute("""
     CREATE TABLE IF NOT EXISTS zksynclite_tx_type (
@@ -79,7 +79,7 @@ CREATE TABLE IF NOT EXISTS zksynclite_swaps (
 
 
 @enter_exit_debug_log()
-def _add_new_supported_locations(write_cursor: 'DBCursor') -> None:
+def _add_new_supported_locations(write_cursor: 'DBWriterClient') -> None:
     write_cursor.executemany(
         'INSERT OR IGNORE INTO location(location, seq) VALUES (?, ?)',
         [('n', Location.SCROLL.value), ('o', Location.ZKSYNC_LITE.value)],
@@ -87,11 +87,11 @@ def _add_new_supported_locations(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _upgrade_evmchains_to_skip_detection(write_cursor: 'DBCursor') -> None:
+def _upgrade_evmchains_to_skip_detection(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:  # noqa: E501
     """We used to have it only in EVM Chain IDs serialized as names.
     Now turning it into all supported chains due to evmlike introduction"""
-    write_cursor.execute("SELECT value from settings WHERE name='evmchains_to_skip_detection'")
-    if (result := write_cursor.fetchone()) is None:
+    cursor.execute("SELECT value from settings WHERE name='evmchains_to_skip_detection'")
+    if (result := cursor.fetchone()) is None:
         return
     try:
         evmchains_to_skip = json.loads(result[0])
@@ -108,7 +108,7 @@ def _upgrade_evmchains_to_skip_detection(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _remove_yearn_events_table(write_cursor: 'DBCursor') -> None:
+def _remove_yearn_events_table(write_cursor: 'DBWriterClient') -> None:
     """Delete the table with balancer events"""
     write_cursor.execute('DROP TABLE yearn_vaults_events')
     write_cursor.execute(
@@ -117,7 +117,7 @@ def _remove_yearn_events_table(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _add_calendar_tables(write_cursor: 'DBCursor') -> None:
+def _add_calendar_tables(write_cursor: 'DBWriterClient') -> None:
     write_cursor.execute("""CREATE TABLE IF NOT EXISTS calendar (
     identifier INTEGER PRIMARY KEY NOT NULL,
     name TEXT NOT NULL,
@@ -141,10 +141,10 @@ def _add_calendar_tables(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _remove_manualcurrent_oracle(write_cursor: 'DBCursor') -> None:
+def _remove_manualcurrent_oracle(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """Removes the manualcurrent oracle from the current_price_oracles setting"""
-    write_cursor.execute('SELECT value FROM settings WHERE name="current_price_oracles"')
-    if (data := write_cursor.fetchone()) is None:
+    cursor.execute('SELECT value FROM settings WHERE name="current_price_oracles"')
+    if (data := cursor.fetchone()) is None:
         return  # oracles not configured
 
     try:
@@ -163,10 +163,10 @@ def _remove_manualcurrent_oracle(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+def _reset_decoded_events(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """Reset all decoded evm events except the customized ones."""
-    if write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] > 0:
-        customized_events = write_cursor.execute(
+    if cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] > 0:
+        customized_events = cursor.execute(
             'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value=?',
             (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
         ).fetchone()[0]
@@ -189,7 +189,7 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _remove_balancer_events_table(write_cursor: 'DBCursor') -> None:
+def _remove_balancer_events_table(write_cursor: 'DBWriterClient') -> None:
     """Delete the table with balancer events"""
     write_cursor.execute('DROP TABLE balancer_events')
     write_cursor.execute(
@@ -198,7 +198,7 @@ def _remove_balancer_events_table(write_cursor: 'DBCursor') -> None:
     )
 
 
-def _delete_orphan_events(write_cursor: 'DBCursor') -> None:
+def _delete_orphan_events(write_cursor: 'DBWriterClient') -> None:
     """
     Delete all the evm events that have a tx_hash that is not present in the db.
     This can for example happen for customized events of addresses that got deleted
@@ -227,18 +227,18 @@ def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - remove evm events that link to a transaction not in the database
     """
     progress_handler.set_total_steps(9)
-    with db.user_write() as write_cursor:
+    with db.conn.read_ctx() as cursor, db.user_write() as write_cursor:
         _add_zksynclite(write_cursor)
         progress_handler.new_step()
         _add_new_supported_locations(write_cursor)
         progress_handler.new_step()
-        _upgrade_evmchains_to_skip_detection(write_cursor)
+        _upgrade_evmchains_to_skip_detection(cursor, write_cursor)
         progress_handler.new_step()
         _add_calendar_tables(write_cursor)
         progress_handler.new_step()
-        _remove_manualcurrent_oracle(write_cursor)
+        _remove_manualcurrent_oracle(cursor, write_cursor)
         progress_handler.new_step()
-        _reset_decoded_events(write_cursor)
+        _reset_decoded_events(cursor, write_cursor)
         progress_handler.new_step()
         _remove_balancer_events_table(write_cursor)
         progress_handler.new_step()

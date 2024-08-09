@@ -12,7 +12,7 @@ from freezegun import freeze_time
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
+from rotkehlchen.db.drivers.client import DBConnection, DBConnectionType
 from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.globaldb.cache import (
@@ -298,7 +298,8 @@ def test_upgrade_v3_v4(globaldb: GlobalDBHandler):
         assert GlobalDBHandler.get_schema_version() == 4
 
         # test that the blockchain column is nullable
-        cursor.execute('INSERT INTO address_book(address, blockchain, name) VALUES ("0xc37b40ABdB939635068d3c5f13E7faF686F03B65", NULL, "yabir everywhere")')  # noqa: E501
+        with globaldb.conn.write_ctx() as write_cursor:
+            write_cursor.execute('INSERT INTO address_book(address, blockchain, name) VALUES ("0xc37b40ABdB939635068d3c5f13E7faF686F03B65", NULL, "yabir everywhere")')  # noqa: E501
 
         # test that address book entries were kept
         cursor.execute('SELECT * FROM address_book')
@@ -666,7 +667,8 @@ def test_upgrade_v7_v8(globaldb: GlobalDBHandler):
         assert cursor.execute('SELECT COUNT(*) FROM unique_cache WHERE key LIKE "CURVE_POOL_ADDRESS1%"').fetchone()[0] == 0  # noqa: E501
 
         # before update, the cache is not eligible to refresh, because last_queried_ts is ts_now()
-        cursor.execute('UPDATE general_cache SET last_queried_ts=? WHERE key LIKE ?', (ts_now(), 'CURVE_LP_TOKENS%'))  # noqa: E501
+        with globaldb.conn.write_ctx() as write_cursor:
+            write_cursor.execute('UPDATE general_cache SET last_queried_ts=? WHERE key LIKE ?', (ts_now(), 'CURVE_LP_TOKENS%'))  # noqa: E501
         assert should_update_protocol_cache(CacheType.CURVE_LP_TOKENS) is False
 
     assert unique_entries['Wormhole Token', 'W'] == 263

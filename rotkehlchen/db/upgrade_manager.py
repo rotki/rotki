@@ -154,7 +154,7 @@ class DBUpgradeManager:
         upgrade to or if there is a problem during upgrade or if the version is older
         than the one supported.
         """
-        with self.db.conn.write_ctx() as cursor:
+        with self.db.conn.read_ctx() as cursor:
             try:
                 our_version = self.db.get_setting(cursor, 'version')
             except sqlcipher.OperationalError:  # pylint: disable=no-member
@@ -169,12 +169,12 @@ class DBUpgradeManager:
                     f'https://docs.rotki.com/usage-guides#upgrading-rotki-after-a-long-time',
                 )
 
-            if our_version > ROTKEHLCHEN_DB_VERSION:
-                raise DBUpgradeError(
-                    'Your database version is newer than the version expected by the '
-                    'executable. Did you perhaps try to revert to an older rotki version? '
-                    'Please only use the latest version of the software.',
-                )
+        if our_version > ROTKEHLCHEN_DB_VERSION:
+            raise DBUpgradeError(
+                'Your database version is newer than the version expected by the '
+                'executable. Did you perhaps try to revert to an older rotki version? '
+                'Please only use the latest version of the software.',
+            )
 
         progress_handler = DBUpgradeProgressHandler(
             messages_aggregator=self.db.msg_aggregator,

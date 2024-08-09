@@ -13,7 +13,7 @@ from rotkehlchen.types import DEFAULT_ADDRESS_NAME_PRIORITY, Location
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 logger = logging.getLogger(__name__)
@@ -21,7 +21,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 @enter_exit_debug_log()
-def _add_cache_table(write_cursor: 'DBCursor') -> None:
+def _add_cache_table(write_cursor: 'DBWriterClient') -> None:
     """Add a new key-value cache table for this upgrade"""
     write_cursor.execute("""CREATE TABLE IF NOT EXISTS key_value_cache (
         name TEXT NOT NULL PRIMARY KEY,
@@ -30,7 +30,7 @@ def _add_cache_table(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _move_non_settings_mappings_to_cache(write_cursor: 'DBCursor') -> None:
+def _move_non_settings_mappings_to_cache(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:  # noqa: E501
     """Move the non-settings value from `settings` to a seperate `key_value_cache` table"""
     settings_moved = (
         'last_balance_save',
@@ -41,7 +41,7 @@ def _move_non_settings_mappings_to_cache(write_cursor: 'DBCursor') -> None:
         'last_spam_assets_detect_key',
         'last_augmented_spam_assets_detect_key',
     )
-    movable_settings = write_cursor.execute(
+    movable_settings = cursor.execute(
         f'SELECT name, value FROM settings WHERE name IN ({",".join(["?"] * len(settings_moved))});',  # noqa: E501
         settings_moved,
     ).fetchall()
@@ -55,10 +55,10 @@ def _move_non_settings_mappings_to_cache(write_cursor: 'DBCursor') -> None:
     )
 
 
-def maybe_move_value(write_cursor: 'DBCursor', pattern: str) -> None:
+def maybe_move_value(cursor: 'DBCursor', write_cursor: 'DBWriterClient', pattern: str) -> None:
     """An auxiliary function to move `name` and `end_ts` from `used_query_ranges` table to
     `key_value_cache` table if it matches the given pattern"""
-    rows = write_cursor.execute(
+    rows = cursor.execute(
         'SELECT name, end_ts FROM used_query_ranges WHERE name LIKE ?',
         (pattern, ),
     ).fetchall()
@@ -72,9 +72,10 @@ def maybe_move_value(write_cursor: 'DBCursor', pattern: str) -> None:
 
 
 @enter_exit_debug_log()
-def _upgrade_external_service_credentials(write_cursor: 'DBCursor') -> None:
+def _upgrade_external_service_credentials(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:  # noqa: E501
     """Upgrade the external service credentials schema table to add a secret"""
     update_table_schema(
+        cursor=cursor,
         write_cursor=write_cursor,
         table_name='external_service_credentials',
         schema="""name VARCHAR[30] NOT NULL PRIMARY KEY,
@@ -85,7 +86,7 @@ def _upgrade_external_service_credentials(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _move_non_intervals_from_used_query_ranges_to_cache(write_cursor: 'DBCursor') -> None:
+def _move_non_intervals_from_used_query_ranges_to_cache(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:  # noqa: E501
     """Move timestamps that are not ranges from `used_query_ranges` to the `key_value_cache` table"""  # noqa: E501
     value_patterns = {
         '{pattern}%': (  # to match patterns with prefixes
@@ -105,11 +106,11 @@ def _move_non_intervals_from_used_query_ranges_to_cache(write_cursor: 'DBCursor'
     }
     for key, patterns in value_patterns.items():
         for pattern in patterns:
-            maybe_move_value(write_cursor, key.format(pattern=pattern))
+            maybe_move_value(cursor, write_cursor, key.format(pattern=pattern))
 
 
 @enter_exit_debug_log()
-def _add_new_supported_locations(write_cursor: 'DBCursor') -> None:
+def _add_new_supported_locations(write_cursor: 'DBWriterClient') -> None:
     write_cursor.execute(
         'INSERT OR IGNORE INTO location(location, seq) VALUES (?, ?)',
         ('m', 45),
@@ -117,7 +118,7 @@ def _add_new_supported_locations(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _remove_covalent_api_key(write_cursor: 'DBCursor') -> None:
+def _remove_covalent_api_key(write_cursor: 'DBWriterClient') -> None:
     write_cursor.execute(
         'DELETE FROM external_service_credentials WHERE name=?',
         ('covalent', ),
@@ -125,7 +126,7 @@ def _remove_covalent_api_key(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _remove_bad_kraken_events(write_cursor: 'DBCursor') -> None:
+def _remove_bad_kraken_events(write_cursor: 'DBWriterClient') -> None:
     """Remove events that were created by error in the kraken logic"""
     write_cursor.execute(
         'DELETE FROM history_events WHERE location=? AND type=? AND subtype=?',
@@ -134,12 +135,12 @@ def _remove_bad_kraken_events(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _move_labels_to_addressbook(write_cursor: 'DBCursor') -> None:
+def _move_labels_to_addressbook(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """Move all the `label` column values from `blockchain_accounts` table to the `name` column
     of the 'address_book` table. If a `name` already exists in the `address_book` table, then
     `address_name_priority` setting is used to determine which one to keep. Defaults to
     `DEFAULT_ADDRESS_NAME_PRIORITY`."""
-    address_name_priority = write_cursor.execute(  # get priority settings
+    address_name_priority = cursor.execute(  # get priority settings
         'SELECT value FROM settings WHERE name = "address_name_priority"',
     ).fetchone()
     if address_name_priority is not None:
@@ -160,13 +161,13 @@ def _move_labels_to_addressbook(write_cursor: 'DBCursor') -> None:
     except ValueError:
         address_book_priority, blockchain_account_priority = 0, 1
     labels_to_move = {  # get all the labels from `blockchain_accounts` table
-        (account, blockchain): label for account, blockchain, label in write_cursor.execute(
+        (account, blockchain): label for account, blockchain, label in cursor.execute(
             'SELECT account, blockchain, label FROM blockchain_accounts WHERE label IS NOT NULL',
         )
     }
 
     if address_book_priority < blockchain_account_priority:
-        for address, blockchain in write_cursor.execute(
+        for address, blockchain in cursor.execute(
             'SELECT address, blockchain FROM address_book;',
         ):  # remove the labels_to_move that are already present in the address_book
             labels_to_move.pop((address, blockchain), None)
@@ -180,10 +181,10 @@ def _move_labels_to_addressbook(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+def _reset_decoded_events(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """Reset all decoded evm events except the customized ones."""
-    if write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] > 0:
-        customized_events = write_cursor.execute(
+    if cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] > 0:
+        customized_events = cursor.execute(
             'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value=?',
             (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
         ).fetchone()[0]
@@ -206,7 +207,7 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _remove_bittrex_data(write_cursor: 'DBCursor') -> None:
+def _remove_bittrex_data(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """
     Removes bittrex settings and credentials from the DB.
     Code taken from v36->v37 upgrade from ftx.
@@ -219,7 +220,7 @@ def _remove_bittrex_data(write_cursor: 'DBCursor') -> None:
         'DELETE FROM used_query_ranges WHERE name LIKE ? ESCAPE ?;',
         (f'{Location.BITTREX!s}\\_%', '\\'),
     )
-    non_syncing_exchanges_in_db = write_cursor.execute(
+    non_syncing_exchanges_in_db = cursor.execute(
         'SELECT value FROM settings WHERE name="non_syncing_exchanges"',
     ).fetchone()
     if non_syncing_exchanges_in_db is not None:
@@ -239,12 +240,13 @@ def _remove_bittrex_data(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _upgrade_eth2_validators(write_cursor: 'DBCursor') -> None:
+def _upgrade_eth2_validators(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     """
     Upgrade the eth2 validators DB table while preserving eth2 daily stats table.
     Foreign keys off so that recreation of table does not delete all daily stats"""
     write_cursor.executescript('PRAGMA foreign_keys = OFF;')
     update_table_schema(
+        cursor=cursor,
         write_cursor=write_cursor,
         table_name='eth2_validators',
         schema="""identifier INTEGER NOT NULL PRIMARY KEY,
@@ -271,26 +273,26 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Move labels to `address_book` and drop its column from `blockchain_accounts`
     """
     progress_handler.set_total_steps(11)
-    with db.user_write() as write_cursor:
+    with db.conn.read_ctx() as cursor, db.user_write() as write_cursor:
         _add_cache_table(write_cursor)
         progress_handler.new_step()
         _remove_covalent_api_key(write_cursor)
         progress_handler.new_step()
-        _remove_bittrex_data(write_cursor)
+        _remove_bittrex_data(cursor, write_cursor)
         progress_handler.new_step()
-        _upgrade_external_service_credentials(write_cursor)
+        _upgrade_external_service_credentials(cursor, write_cursor)
         progress_handler.new_step()
-        _move_non_settings_mappings_to_cache(write_cursor)
+        _move_non_settings_mappings_to_cache(cursor, write_cursor)
         progress_handler.new_step()
-        _move_non_intervals_from_used_query_ranges_to_cache(write_cursor)
+        _move_non_intervals_from_used_query_ranges_to_cache(cursor, write_cursor)
         progress_handler.new_step()
         _add_new_supported_locations(write_cursor)
         progress_handler.new_step()
-        _move_labels_to_addressbook(write_cursor)
+        _move_labels_to_addressbook(cursor, write_cursor)
         progress_handler.new_step()
-        _reset_decoded_events(write_cursor)
+        _reset_decoded_events(cursor, write_cursor)
         progress_handler.new_step()
-        _upgrade_eth2_validators(write_cursor)
+        _upgrade_eth2_validators(cursor, write_cursor)
         progress_handler.new_step()
         _remove_bad_kraken_events(write_cursor)
         progress_handler.new_step()

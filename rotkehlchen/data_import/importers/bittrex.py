@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 from rotkehlchen.assets.converters import asset_from_bittrex
 from rotkehlchen.constants import ZERO
 from rotkehlchen.data_import.utils import BaseExchangeImporter
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.client import DBWriterClient
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
@@ -158,7 +158,7 @@ class BittrexImporter(BaseExchangeImporter):
             link='Imported from bittrex CSV file',
         )
 
-    def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
+    def _import_csv(self, write_cursor: DBWriterClient, filepath: Path, **kwargs: Any) -> None:
         """
         Import deposits, withdrawals and trades from Bittrex. Find out which file
         we are parsing depending on its format.
@@ -168,7 +168,7 @@ class BittrexImporter(BaseExchangeImporter):
         - InputError if a column we need is missing
         """
         consumer_fn: Callable[[dict[str, Any], BittrexFileType, str], AssetMovement] | Callable[[dict[str, Any], BittrexFileType, str], Trade]  # noqa: E501
-        save_fn: Callable[[DBCursor, Trade], None] | Callable[[DBCursor, AssetMovement], None]
+        save_fn: Callable[[DBWriterClient, Trade], None] | Callable[[DBWriterClient, AssetMovement], None]  # noqa: E501
         with open(filepath, encoding='utf-8-sig') as csvfile:
             while True:
                 saved_pos = csvfile.tell()

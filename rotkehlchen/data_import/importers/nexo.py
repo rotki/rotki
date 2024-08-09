@@ -8,7 +8,7 @@ from rotkehlchen.assets.converters import asset_from_nexo
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data_import.utils import BaseExchangeImporter, UnsupportedCSVEntry, hash_csv_row
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.client import DBWriterClient
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -34,7 +34,7 @@ NEXO_PREFIX = 'NEXO_'
 class NexoImporter(BaseExchangeImporter):
     def _consume_nexo(
             self,
-            write_cursor: DBCursor,
+            write_cursor: DBWriterClient,
             csv_row: dict[str, Any],
             timestamp_format: str = '%Y-%m-%d %H:%M:%S',
     ) -> None:
@@ -162,7 +162,7 @@ class NexoImporter(BaseExchangeImporter):
         else:
             raise UnsupportedCSVEntry(f'Unsuported entry {entry_type}. Data: {csv_row}')
 
-    def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
+    def _import_csv(self, write_cursor: DBWriterClient, filepath: Path, **kwargs: Any) -> None:
         """
         Information for the values that the columns can have has been obtained from
         https://github.com/BittyTax/BittyTax/blob/06794f51223398759852d6853bc7112ffb96129a/bittytax/conv/parsers/nexo.py

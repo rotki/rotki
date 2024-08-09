@@ -5,7 +5,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 logger = logging.getLogger(__name__)
@@ -13,7 +13,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 
 @enter_exit_debug_log()
-def _update_nft_table(write_cursor: 'DBCursor') -> None:
+def _update_nft_table(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> None:
     write_cursor.execute("""
     CREATE TABLE IF NOT EXISTS nfts_new (
         identifier TEXT NOT NULL PRIMARY KEY,
@@ -31,12 +31,12 @@ def _update_nft_table(write_cursor: 'DBCursor') -> None:
         FOREIGN KEY (identifier) REFERENCES assets(identifier) ON UPDATE CASCADE,
         FOREIGN KEY (last_price_asset) REFERENCES assets(identifier) ON UPDATE CASCADE
     );""")  # noqa: E501
-    write_cursor.execute(
+    cursor.execute(
         'SELECT identifier, name, last_price, last_price_asset, manual_price, owner_address, '
         'is_lp, image_url, collection_name, usd_price FROM nfts',
     )
     final_rows = []
-    for row in write_cursor:
+    for row in cursor:
         final_row = list(row)
         if row[2] is None:
             final_row[2] = 0  # set last_price to a default of 0
@@ -56,7 +56,7 @@ def _update_nft_table(write_cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _remove_log_removed_column(write_cursor: 'DBCursor') -> None:
+def _remove_log_removed_column(write_cursor: 'DBWriterClient') -> None:
     write_cursor.execute(
         'ALTER TABLE evmtx_receipt_logs DROP COLUMN removed;',
     )
@@ -69,8 +69,8 @@ def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     - add usd_price to the nfts table
     """
     progress_handler.set_total_steps(3)
-    with db.user_write() as write_cursor:
-        _update_nft_table(write_cursor)
+    with db.conn.read_ctx() as cursor, db.user_write() as write_cursor:
+        _update_nft_table(cursor, write_cursor)
         progress_handler.new_step()
         _remove_log_removed_column(write_cursor)
         progress_handler.new_step()

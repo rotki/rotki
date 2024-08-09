@@ -166,9 +166,11 @@ class RotkiDataUpdater:
             )
             for node in data
         ]
+        # Update the default nodes, stored in the global DB
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            existing_default_nodes = cursor.execute('SELECT * FROM default_rpc_nodes').fetchall()
+
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            # Update the default nodes, stored in the global DB
-            existing_default_nodes = write_cursor.execute('SELECT * FROM default_rpc_nodes').fetchall()  # noqa: E501
             write_cursor.execute('DELETE FROM default_rpc_nodes')
             write_cursor.executemany(
                 'INSERT OR IGNORE INTO default_rpc_nodes(name, endpoint, owned, active, weight, blockchain) '  # noqa: E501

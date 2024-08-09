@@ -14,7 +14,7 @@ from rotkehlchen.constants.resolver import (
 from rotkehlchen.logging import enter_exit_debug_log
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+    from rotkehlchen.db.drivers.client import DBConnection, DBCursor, DBWriterClient
 
 log = logging.getLogger(__name__)
 
@@ -312,13 +312,13 @@ def translate_owned_assets(cursor: 'DBCursor') -> list[tuple[str]]:
     return owned_assets
 
 
-def translate_binance_pairs(cursor: 'DBCursor') -> list[tuple[str, str, str, str]]:
+def translate_binance_pairs(cursor: 'DBCursor', write_cursor: 'DBWriterClient') -> list[tuple[str, str, str, str]]:  # noqa: E501
     """Collect and update assets in the binance_pairs tables to use the new id format"""
     table_exists = cursor.execute(
         'SELECT COUNT(*) FROM sqlite_master WHERE type="table" AND name="binance_pairs"',
     ).fetchone()[0]
     if table_exists == 0:  # handle binance_pairs not having been created
-        cursor.execute(  # fix https://github.com/rotki/rotki/issues/5073
+        write_cursor.execute(  # fix https://github.com/rotki/rotki/issues/5073
             """CREATE TABLE IF NOT EXISTS binance_pairs (
             pair TEXT NOT NULL,
             base_asset TEXT NOT NULL,
@@ -331,7 +331,7 @@ def translate_binance_pairs(cursor: 'DBCursor') -> list[tuple[str, str, str, str
         )
         return []
 
-    cursor.execute('SELECT pair, base_asset, quote_asset, location from binance_pairs;')
+    write_cursor.execute('SELECT pair, base_asset, quote_asset, location from binance_pairs;')
     binance_pairs = []
     for entry in cursor:
         new_base = _maybe_upgrade_identifier(entry[1])
@@ -374,7 +374,7 @@ def translate_assets_in_price_table(cursor: 'DBCursor') -> list[tuple[str, str, 
 @enter_exit_debug_log(name='GlobalDB v2->v3 upgrade')
 def migrate_to_v3(connection: 'DBConnection') -> None:
     """Upgrade assets information and migrate globaldb to version 3"""
-    with connection.read_ctx() as cursor:
+    with connection.read_ctx() as cursor, connection.write_ctx() as write_cursor:
         log.debug('Obtain ethereum assets information')
         evm_tuples, assets_tuple, common_asset_details = upgrade_ethereum_asset_ids_v3(cursor)
         mappings = translate_underlying_table(cursor)
@@ -384,44 +384,44 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         log.debug('Upgrade prices')
         updated_prices = translate_assets_in_price_table(cursor)
         log.debug('Upgrade binance pairs')
-        updated_binance_pairs = translate_binance_pairs(cursor)
+        updated_binance_pairs = translate_binance_pairs(cursor, write_cursor)
 
-    with connection.write_ctx() as cursor:
+    with connection.write_ctx() as write_cursor:
         log.debug('Purge/delete tables with outdated information')
         # Some of these tables like user_owned_assets are recreated in an identical state but are
         # dropped and recreated since they have references to a table that is dropped and modified
-        cursor.switch_foreign_keys('OFF')
-        cursor.execute('DROP TABLE IF EXISTS user_owned_assets')
-        cursor.execute('DROP TABLE IF EXISTS assets')
-        cursor.execute('DROP TABLE IF EXISTS ethereum_tokens')
-        cursor.execute('DROP TABLE IF EXISTS evm_tokens')
-        cursor.execute('DROP TABLE IF EXISTS common_asset_details')
-        cursor.execute('DROP TABLE IF EXISTS underlying_tokens_list')
-        cursor.execute('DROP TABLE IF EXISTS price_history')
-        cursor.execute('DROP TABLE IF EXISTS binance_pairs')
-        cursor.switch_foreign_keys('ON')
+        write_cursor.switch_foreign_keys('OFF')
+        write_cursor.execute('DROP TABLE IF EXISTS user_owned_assets')
+        write_cursor.execute('DROP TABLE IF EXISTS assets')
+        write_cursor.execute('DROP TABLE IF EXISTS ethereum_tokens')
+        write_cursor.execute('DROP TABLE IF EXISTS evm_tokens')
+        write_cursor.execute('DROP TABLE IF EXISTS common_asset_details')
+        write_cursor.execute('DROP TABLE IF EXISTS underlying_tokens_list')
+        write_cursor.execute('DROP TABLE IF EXISTS price_history')
+        write_cursor.execute('DROP TABLE IF EXISTS binance_pairs')
+        write_cursor.switch_foreign_keys('ON')
 
         log.debug('Create new tables')
-        cursor.execute("""
+        write_cursor.execute("""
         CREATE TABLE IF NOT EXISTS token_kinds (
           token_kind    CHAR(1)       PRIMARY KEY NOT NULL,
           seq     INTEGER UNIQUE
         );""")
         # ERC20
-        cursor.execute('INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ("A", 1)')
+        write_cursor.execute('INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ("A", 1)')
         # ERC721
-        cursor.execute('INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ("B", 2)')
+        write_cursor.execute('INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ("B", 2)')
         # UNKNOWN
-        cursor.execute('INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ("C", 3)')
+        write_cursor.execute('INSERT OR IGNORE INTO token_kinds(token_kind, seq) VALUES ("C", 3)')
 
-        cursor.execute("""
+        write_cursor.execute("""
         CREATE TABLE IF NOT EXISTS assets (
             identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
             name TEXT,
             type CHAR(1) NOT NULL DEFAULT('A') REFERENCES asset_types(type)
         );
         """)
-        cursor.execute("""
+        write_cursor.execute("""
         CREATE TABLE IF NOT EXISTS common_asset_details(
             identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
             symbol TEXT,
@@ -435,7 +435,7 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
             FOREIGN KEY(swapped_for) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE SET NULL
         );
         """)  # noqa: E501
-        cursor.execute("""
+        write_cursor.execute("""
         CREATE TABLE IF NOT EXISTS evm_tokens (
             identifier TEXT PRIMARY KEY NOT NULL COLLATE NOCASE,
             token_kind CHAR(1) NOT NULL DEFAULT('A') REFERENCES token_kinds(token_kind),
@@ -446,7 +446,7 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
             FOREIGN KEY(identifier) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
         );
         """)  # noqa: E501
-        cursor.execute("""
+        write_cursor.execute("""
         CREATE TABLE IF NOT EXISTS multiasset_mappings(
             collection_id INTEGER NOT NULL,
             asset TEXT NOT NULL,
@@ -454,13 +454,13 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
             FOREIGN KEY(asset) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
         );
         """)  # noqa: E501
-        cursor.execute("""
+        write_cursor.execute("""
         CREATE TABLE IF NOT EXISTS user_owned_assets (
             asset_id VARCHAR[24] NOT NULL PRIMARY KEY,
             FOREIGN KEY(asset_id) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
         );
         """)
-        cursor.execute("""
+        write_cursor.execute("""
         CREATE TABLE IF NOT EXISTS underlying_tokens_list (
             identifier TEXT NOT NULL,
             weight TEXT NOT NULL,
@@ -471,7 +471,7 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
             PRIMARY KEY(identifier, parent_token_entry)
         );
         """)  # noqa: E501
-        cursor.execute("""
+        write_cursor.execute("""
         CREATE TABLE IF NOT EXISTS price_history (
             from_asset TEXT NOT NULL COLLATE NOCASE,
             to_asset TEXT NOT NULL COLLATE NOCASE,
@@ -483,14 +483,14 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
             PRIMARY KEY(from_asset, to_asset, source_type, timestamp)
         );
         """)  # noqa: E501
-        cursor.execute("""
+        write_cursor.execute("""
         CREATE TABLE IF NOT EXISTS asset_collections(
             id INTEGER PRIMARY KEY,
             name TEXT NOT NULL,
             symbol TEXT NOT NULL
         );
         """)
-        cursor.execute("""
+        write_cursor.execute("""
         CREATE TABLE IF NOT EXISTS custom_assets(
             identifier TEXT NOT NULL PRIMARY KEY,
             notes TEXT,
@@ -498,7 +498,7 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
             FOREIGN KEY(identifier) REFERENCES assets(identifier) ON UPDATE CASCADE ON DELETE CASCADE
         );
         """)  # noqa: E501
-        cursor.execute("""
+        write_cursor.execute("""
         CREATE TABLE IF NOT EXISTS binance_pairs (
         pair TEXT NOT NULL,
         base_asset TEXT NOT NULL,
@@ -509,7 +509,7 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         PRIMARY KEY(pair, location)
         );
         """)
-        cursor.execute("""
+        write_cursor.execute("""
         CREATE TABLE IF NOT EXISTS general_cache (
             key TEXT NOT NULL,
             value TEXT NOT NULL,
@@ -518,27 +518,27 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         );
         """)
 
-        cursor.switch_foreign_keys('OFF')
+        write_cursor.switch_foreign_keys('OFF')
         log.debug('Input common asset data')
-        cursor.executemany(COMMON_ASSETS_INSERT, common_asset_details)
-        cursor.executemany(COMMON_ASSETS_INSERT, common_asset_details_others)
+        write_cursor.executemany(COMMON_ASSETS_INSERT, common_asset_details)
+        write_cursor.executemany(COMMON_ASSETS_INSERT, common_asset_details_others)
         log.debug('Input asset data')
-        cursor.executemany(ASSETS_INSERT, assets_tuple)
-        cursor.executemany(ASSETS_INSERT, assets_tuple_others)
-        cursor.executemany(OWNED_ASSETS_INSERT, owned_assets)
+        write_cursor.executemany(ASSETS_INSERT, assets_tuple)
+        write_cursor.executemany(ASSETS_INSERT, assets_tuple_others)
+        write_cursor.executemany(OWNED_ASSETS_INSERT, owned_assets)
         log.debug('Input prices')
-        cursor.executemany(PRICES_INSERT, updated_prices)
+        write_cursor.executemany(PRICES_INSERT, updated_prices)
         log.debug('Input binance pairs')
-        cursor.executemany(BINANCE_INSERT, updated_binance_pairs)
-        cursor.switch_foreign_keys('ON')
+        write_cursor.executemany(BINANCE_INSERT, updated_binance_pairs)
+        write_cursor.switch_foreign_keys('ON')
         log.debug('Input evm and underlying tokens')
-        cursor.executemany(EVM_TOKEN_INSERT, evm_tuples)
-        cursor.executemany(UNDERLYING_TOKEN_INSERT, mappings)
+        write_cursor.executemany(EVM_TOKEN_INSERT, evm_tuples)
+        write_cursor.executemany(UNDERLYING_TOKEN_INSERT, mappings)
         # Add `custom asset` asset type
-        cursor.execute('INSERT OR IGNORE INTO asset_types(type, seq) VALUES ("[", 27)')
+        write_cursor.execute('INSERT OR IGNORE INTO asset_types(type, seq) VALUES ("[", 27)')
         # Add manual current price source and defillama
-        cursor.execute('INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ("E", 5)')  # noqa: E501
-        cursor.execute('INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ("F", 6)')  # noqa: E501
+        write_cursor.execute('INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ("E", 5)')  # noqa: E501
+        write_cursor.execute('INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ("F", 6)')  # noqa: E501
 
         dir_path = Path(__file__).resolve().parent.parent.parent
         # This file contains the EVM version of the assets that are currently in the
@@ -547,4 +547,4 @@ def migrate_to_v3(connection: 'DBConnection') -> None:
         raw_sql_sentences = (dir_path / 'data' / 'globaldb_v2_v3_assets.sql').read_text(encoding='utf8')  # noqa: E501
         per_table_sentences = raw_sql_sentences.split('\n\n')
         for sql_sentences in per_table_sentences:
-            cursor.execute(sql_sentences)
+            write_cursor.execute(sql_sentences)

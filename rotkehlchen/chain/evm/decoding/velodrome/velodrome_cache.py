@@ -10,7 +10,7 @@ from rotkehlchen.chain.evm.utils import (
     maybe_notify_new_pools_status,
 )
 from rotkehlchen.db.addressbook import DBAddressbook
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.client import DBWriterClient
 from rotkehlchen.errors.misc import InputError, NotERC20Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.cache import (
@@ -54,7 +54,7 @@ class VelodromePoolData(NamedTuple):
 
 
 def save_velodrome_data_to_cache(
-        write_cursor: DBCursor,
+        write_cursor: DBWriterClient,
         database: 'DBHandler',
         new_data: list[VelodromePoolData],
 ) -> None:
