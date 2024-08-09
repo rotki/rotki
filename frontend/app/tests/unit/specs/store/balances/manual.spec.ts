@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { TRADE_LOCATION_BANKS, TRADE_LOCATION_BLOCKCHAIN, TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { BalanceType } from '@/types/balances';
 import { updateGeneralSettings } from '../../../utils/general-settings';

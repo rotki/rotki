@@ -1,6 +1,7 @@
 import { type VueWrapper, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
 import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import flushPromises from 'flush-promises';
 import HistoryEventForm from '@/components/history/events/HistoryEventForm.vue';
 import { One } from '@/utils/bignumbers';

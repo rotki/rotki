@@ -1,3 +1,5 @@
+import { describe, expect, it, vi } from 'vitest';
+
 describe('awaitParallelExecution', () => {
   it('instant resolve if no items exist', async () => {
     await expect(

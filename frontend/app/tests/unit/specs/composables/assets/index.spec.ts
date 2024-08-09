@@ -1,4 +1,4 @@
-import { afterEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AssetMergePayload, AssetUpdatePayload } from '@/types/asset';
 
 vi.mock('@/composables/api/assets/index', () => ({

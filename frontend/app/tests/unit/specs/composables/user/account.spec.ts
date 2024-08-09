@@ -1,4 +1,4 @@
-import { beforeAll, describe, it, vi } from 'vitest';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 
 vi.mock('vue-router', () => ({
   useRoute: vi.fn(),

@@ -1,3 +1,4 @@
+import { beforeAll, describe, expect, it } from 'vitest';
 import type { BalancerBalance } from '@rotki/common/lib/defi/balancer';
 import type { XswapPool } from '@rotki/common/lib/defi/xswap';
 

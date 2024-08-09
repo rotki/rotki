@@ -1,6 +1,6 @@
 import { computed } from 'vue';
 import { Blockchain } from '@rotki/common/lib/blockchain';
-import { expect } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
   type EditEvmHistoryEventPayload,
   type EvmHistoryEvent,

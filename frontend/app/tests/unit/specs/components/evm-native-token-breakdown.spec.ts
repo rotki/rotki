@@ -1,7 +1,7 @@
 import { type Pinia, setActivePinia } from 'pinia';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type ComponentMountingOptions, type VueWrapper, mount } from '@vue/test-utils';
 import { computed, ref } from 'vue';
-import { expect } from 'vitest';
 import EvmNativeTokenBreakdown from '@/components/EvmNativeTokenBreakdown.vue';
 import { libraryDefaults } from '../../utils/provide-defaults';
 

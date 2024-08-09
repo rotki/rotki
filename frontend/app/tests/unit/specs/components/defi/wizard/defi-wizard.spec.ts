@@ -1,5 +1,6 @@
 import { type VueWrapper, mount } from '@vue/test-utils';
 import { createPinia, setActivePinia } from 'pinia';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import DefiWizard from '@/components/defi/wizard/DefiWizard.vue';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { FrontendSettings } from '@/types/settings/frontend-settings';

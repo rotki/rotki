@@ -14,7 +14,7 @@ import { VitePWA } from 'vite-plugin-pwa';
 import VueI18nPlugin from '@intlify/unplugin-vue-i18n/vite';
 import Layouts from 'vite-plugin-vue-layouts';
 import vueDevTools from 'vite-plugin-vue-devtools';
-import { RuiComponentResolver } from './src/plugins/rui/component-resolver';
+import type { ComponentResolver } from 'unplugin-vue-components';
 
 const PACKAGE_ROOT = __dirname;
 const envPath = process.env.VITE_PUBLIC_PATH;
@@ -22,6 +22,21 @@ const publicPath = envPath || '/';
 const isDevelopment = process.env.NODE_ENV === 'development';
 const isTest = !!process.env.VITE_TEST;
 const hmrEnabled = isDevelopment && !(process.env.CI && isTest);
+
+function RuiComponentResolver(): ComponentResolver {
+  return {
+    type: 'component',
+    resolve: (name: string) => {
+      const prefix = 'Rui';
+      if (name.startsWith(prefix)) {
+        return {
+          name,
+          from: '@rotki/ui-library/components',
+        };
+      }
+    },
+  };
+}
 
 if (isTest)
   console.log('Running in test mode. Enabling Coverage');
@@ -39,23 +54,6 @@ export default defineConfig({
       '~@': resolve(PACKAGE_ROOT, 'src'),
     },
     dedupe: ['vue'],
-  },
-  test: {
-    globals: true,
-    environment: 'jsdom',
-    server: {
-      deps: {
-        inline: ['@rotki/ui-library'],
-      },
-    },
-    setupFiles: ['tests/unit/setup-files/setup.ts'],
-    coverage: {
-      provider: 'v8',
-      reportsDirectory: 'tests/unit/coverage',
-      reporter: ['json'],
-      include: ['src/*'],
-      exclude: ['node_modules', 'tests/', '**/*.d.ts'],
-    },
   },
   base: publicPath,
   define: {

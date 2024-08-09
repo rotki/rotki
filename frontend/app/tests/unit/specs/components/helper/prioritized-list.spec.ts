@@ -1,5 +1,5 @@
 import { type ComponentMountingOptions, type VueWrapper, mount } from '@vue/test-utils';
-import { expect } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import PrioritizedList from '@/components/helper/PrioritizedList.vue';
 import PrioritizedListEntry from '@/components/helper/PrioritizedListEntry.vue';
 import { PrioritizedListData } from '@/types/settings/prioritized-list-data';

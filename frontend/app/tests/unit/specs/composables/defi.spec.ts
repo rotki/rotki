@@ -1,4 +1,5 @@
 import { LpType } from '@rotki/common/lib/defi';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { setBalancerBalances } from '../store/defi/balancer.spec';
 import { setSushiswapBalances } from '../store/defi/sushiswap.spec';
 import { setUniswapV2Balances, setUniswapV3Balances } from '../store/defi/uniswap.spec';

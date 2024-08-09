@@ -1,4 +1,5 @@
 import { Blockchain } from '@rotki/common/lib/blockchain';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type VueWrapper, mount } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';
 import AccountBalances from '@/components/accounts/AccountBalances.vue';

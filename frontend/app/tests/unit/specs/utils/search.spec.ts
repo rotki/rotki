@@ -1,3 +1,5 @@
+import { describe, expect, it } from 'vitest';
+
 describe('utils/search', () => {
   it('splitSearch return correct result', () => {
     expect(splitSearch(null)).toStrictEqual({ key: '', value: '', exclude: undefined });

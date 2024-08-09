@@ -1,4 +1,5 @@
 import { createPinia, setActivePinia } from 'pinia';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('composables::accounts/blockie', () => {
   setActivePinia(createPinia());

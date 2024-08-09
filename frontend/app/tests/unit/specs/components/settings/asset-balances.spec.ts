@@ -1,5 +1,6 @@
 import { type VueWrapper, mount } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import AssetBalances from '@/components/AssetBalances.vue';
 import { createCustomPinia } from '../../../utils/create-pinia';
 import { libraryDefaults } from '../../../utils/provide-defaults';

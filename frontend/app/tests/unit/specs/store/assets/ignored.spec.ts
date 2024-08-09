@@ -1,3 +1,5 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 vi.mock('@/composables/api/assets/ignore', () => ({
   useAssetIgnoreApi: vi.fn().mockReturnValue({
     getIgnoredAssets: vi.fn().mockResolvedValue([]),

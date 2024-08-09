@@ -1,3 +1,5 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 vi.mock('@/composables/assets/retrieval', () => ({
   useAssetInfoRetrieval: vi.fn().mockReturnValue({
     assetInfo: vi.fn().mockImplementation((identifier) => {

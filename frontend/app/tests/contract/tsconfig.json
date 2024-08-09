@@ -1,9 +1,0 @@
-{
-  "extends": "../../tsconfig.json",
-  "compilerOptions": {
-    "types": ["vitest/globals"]
-  },
-  "include": ["**/*.ts", "../../src/auto-imports.d.ts"],
-  "exclude": ["node_modules/**", "**/.*"],
-  "compileOnSave": false
-}

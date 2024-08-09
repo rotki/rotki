@@ -1,4 +1,5 @@
 import { config } from '@vue/test-utils';
+import { afterAll, afterEach, beforeAll, vi } from 'vitest';
 import { mockT } from '../i18n';
 import { RuiIconStub } from '../specs/stubs/RuiIcon';
 import { RuiTooltipStub } from '../specs/stubs/RuiTooltip';

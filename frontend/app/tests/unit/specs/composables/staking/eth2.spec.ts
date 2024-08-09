@@ -1,4 +1,5 @@
 import flushPromises from 'flush-promises';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('composables::staking/eth2/eth2', () => {
   setActivePinia(createPinia());

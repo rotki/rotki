@@ -3,6 +3,7 @@ import { Blockchain } from '@rotki/common/lib/blockchain';
 import { Theme } from '@rotki/common/lib/settings';
 import { TimeFramePeriod, TimeFramePersist } from '@rotki/common/lib/settings/graphs';
 import { type Pinia, createPinia } from 'pinia';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Defaults } from '@/data/defaults';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';

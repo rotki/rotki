@@ -1,3 +1,5 @@
+import { describe, it } from 'vitest';
+
 /*
     grep "const use.*Api" ./app/src/auto-imports.d.ts | cut -d ' ' -f4 | tr -d ':'
 */

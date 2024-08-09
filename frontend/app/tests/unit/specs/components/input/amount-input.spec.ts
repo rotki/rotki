@@ -1,5 +1,6 @@
 import { type ComponentMountingOptions, type VueWrapper, mount } from '@vue/test-utils';
 import { type Pinia, setActivePinia } from 'pinia';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import AmountInput from '@/components/inputs/AmountInput.vue';
 import { createCustomPinia } from '../../../utils/create-pinia';
 
@@ -32,7 +33,11 @@ describe('amountInput.vue', () => {
     });
 
   it('should format the numbers', async () => {
-    wrapper = createWrapper({});
+    wrapper = createWrapper({
+      props: {
+        modelValue: '',
+      },
+    });
     await nextTick();
 
     await wrapper.find('input').setValue('100000');
@@ -41,7 +46,7 @@ describe('amountInput.vue', () => {
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe('100,000');
 
     expect(wrapper.emitted()).toHaveProperty('update:modelValue');
-    expect(wrapper.emitted('update:modelValue').at(-1)).toEqual(['100000']);
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['100000']);
   });
 
   it('should use prop value', async () => {
@@ -89,11 +94,13 @@ describe('amountInput.vue', () => {
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe('500.000,123');
 
     expect(wrapper.emitted()).toHaveProperty('update:modelValue');
-    expect(wrapper.emitted('update:modelValue').at(-1)).toEqual(['500000.123']);
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['500000.123']);
   });
 
   it('should emit correct value', async () => {
-    wrapper = createWrapper({});
+    wrapper = createWrapper({
+      props: { modelValue: '' },
+    });
     await nextTick();
 
     await wrapper.find('input').setValue('100000');
@@ -102,20 +109,20 @@ describe('amountInput.vue', () => {
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe('100,000');
 
     expect(wrapper.emitted()).toHaveProperty('update:modelValue');
-    expect(wrapper.emitted('update:modelValue').at(-1)).toEqual(['100000']);
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['100000']);
 
     await wrapper.find('input').setValue('');
     await nextTick();
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe('');
 
-    expect(wrapper.emitted('update:modelValue').at(-1)).toEqual(['']);
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['']);
 
     await wrapper.find('input').setValue('5555abcde');
     await nextTick();
 
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe('5,555');
 
-    expect(wrapper.emitted('update:modelValue').at(-1)).toEqual(['5555']);
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['5555']);
   });
 });

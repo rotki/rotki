@@ -1,5 +1,5 @@
 import { type VueWrapper, mount } from '@vue/test-utils';
-import { beforeEach } from 'vitest';
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import OnboardingSettings from '@/components/settings/OnboardingSettings.vue';
 import { useMainStore } from '@/store/main';
 import type { Pinia } from 'pinia';
