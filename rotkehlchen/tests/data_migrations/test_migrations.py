@@ -645,3 +645,8 @@ def test_new_db_remembers_last_migration_even_if_no_migrations_run(database):
     with rotki.data.db.conn.read_ctx() as cursor:
         cursor.execute('SELECT value FROM settings WHERE name="last_data_migration"')
         assert int(cursor.fetchone()[0]) == LAST_DATA_MIGRATION
+
+
+def test_last_data_migration_constant() -> None:
+    """Test that the LAST_DATA_MIGRATION constant is updated correctly"""
+    assert max(x.version for x in MIGRATION_LIST) == LAST_DATA_MIGRATION
