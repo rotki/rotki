@@ -53,7 +53,7 @@ const rpcSettingTabs = computed<RpcSettingTab[]>(() => [
 </script>
 
 <template>
-  <RuiCard class="mt-8">
+  <RuiCard>
     <template #header>
       {{ t('general_settings.rpc_node_setting.title') }}
     </template>

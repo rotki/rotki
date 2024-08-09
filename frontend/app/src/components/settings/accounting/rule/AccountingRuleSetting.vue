@@ -453,15 +453,17 @@ const importFileDialog = ref<boolean>(false);
           </RuiDataTable>
         </template>
       </CollectionHandler>
+
+      <AccountingRuleFormDialog
+        :loading="isLoading"
+        :editable-item="editableItem"
+      />
+
+      <AccountingRuleImportDialog
+        v-model="importFileDialog"
+        :loading="importFileLoading"
+        @refresh="refresh()"
+      />
     </RuiCard>
-    <AccountingRuleFormDialog
-      :loading="isLoading"
-      :editable-item="editableItem"
-    />
-    <AccountingRuleImportDialog
-      v-model="importFileDialog"
-      :loading="importFileLoading"
-      @refresh="refresh()"
-    />
   </TablePageLayout>
 </template>

@@ -3,7 +3,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <RuiCard class="mt-8">
+  <RuiCard>
     <template #header>
       {{ t('asset_update.restore.title') }}
     </template>

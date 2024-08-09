@@ -9,13 +9,13 @@ definePage({
 </script>
 
 <template>
-  <div>
+  <div class="flex flex-col gap-8">
     <ChangePassword />
     <AssetUpdate />
-    <BackupManager class="mt-8" />
+    <BackupManager />
     <DataManagement />
-    <OracleCacheManagement class="mt-8" />
-    <ManageCustomAssets class="mt-8" />
+    <OracleCacheManagement />
+    <ManageCustomAssets />
     <RestoreAssetsDatabase />
   </div>
 </template>

@@ -10,7 +10,7 @@ definePage({
 </script>
 
 <template>
-  <div class="accounting-settings">
+  <div class="accounting-settings flex flex-col gap-8">
     <AccountingRuleSetting />
     <AccountingTradeSettings />
     <AccountingCsvExportSetting />
