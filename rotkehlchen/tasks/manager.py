@@ -957,3 +957,10 @@ class TaskManager:
 
         with self.schedule_lock:
             self._schedule()
+
+    def clear(self) -> None:
+        """Ensure that no task is kept referenced. Used when removing the task manager"""
+        for task_list in self.running_greenlets.values():
+            gevent.killall(task_list)
+
+        self.running_greenlets.clear()
