@@ -485,9 +485,9 @@ def test_remote_updates_consistency_with_packaged_db(
 
     # find all the location_asset_mappings that are present in both but have different values  # noqa: E501
     missing_in_packaged_db.extend([
-        f'UPDATE location_asset_mappings SET local_id = "{updated_location_asset_mappings[(location, symbol)]}" WHERE location = "{location}" AND exchange_symbol = "{symbol}";'  # noqa: E501
+        f'UPDATE location_asset_mappings SET local_id = "{updated_location_asset_mappings[location, symbol]}" WHERE location = "{location}" AND exchange_symbol = "{symbol}";'  # noqa: E501
         for (location, symbol), identifier in packaged_location_asset_mappings.items()
-        if (location, symbol) in updated_location_asset_mappings and updated_location_asset_mappings[(location, symbol)] != identifier  # noqa: E501
+        if (location, symbol) in updated_location_asset_mappings and updated_location_asset_mappings[location, symbol] != identifier  # noqa: E501
     ])
 
     # find all the location_unsupported_assets that are present in remote updates but not in packaged db  # noqa: E501

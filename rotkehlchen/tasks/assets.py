@@ -438,7 +438,7 @@ def maybe_detect_new_tokens(database: 'DBHandler') -> None:
                 )
                 continue
 
-            detected_tokens[(chain, event.location_label)].append(evm_asset)
+            detected_tokens[chain, event.location_label].append(evm_asset)
 
     with database.conn.write_ctx() as write_cursor:
         for (chain, location_label), tokens in detected_tokens.items():
