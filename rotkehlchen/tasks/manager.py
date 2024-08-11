@@ -328,7 +328,7 @@ class TaskManager:
                 queriable_accounts: list[ChecksumEvmAddress] = []
                 for account in accounts:
                     _, end_ts = dbevmtx.get_queried_range(cursor, account, blockchain)
-                    if now - max(self.last_evm_tx_query_ts[(account, blockchain)], end_ts) > EVM_TX_QUERY_FREQUENCY:  # noqa: E501
+                    if now - max(self.last_evm_tx_query_ts[account, blockchain], end_ts) > EVM_TX_QUERY_FREQUENCY:  # noqa: E501
                         queriable_accounts.append(account)
 
             if len(queriable_accounts) == 0:
@@ -338,7 +338,7 @@ class TaskManager:
             address = random.choice(queriable_accounts)
             task_name = f'Query {blockchain!s} transactions for {address}'
             log.debug(f'Scheduling task to {task_name}')
-            self.last_evm_tx_query_ts[(address, blockchain)] = now
+            self.last_evm_tx_query_ts[address, blockchain] = now
             # Since this task is heavy we spawn it only for one chain at a time.
             return [self.greenlet_manager.spawn_and_track(
                 after_seconds=None,

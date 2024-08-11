@@ -429,7 +429,7 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
     now = ts_now()
     task_manager.potential_tasks = [task_manager._maybe_query_evm_transactions]
     for address in ethereum_accounts[:-1]:  # leave last address to run via task manager
-        task_manager.last_evm_tx_query_ts[(address, SupportedBlockchain.ETHEREUM)] = now
+        task_manager.last_evm_tx_query_ts[address, SupportedBlockchain.ETHEREUM] = now
     task_manager_addy = ethereum_accounts[-1]
     api_addies = ethereum_accounts[:2].copy()
 

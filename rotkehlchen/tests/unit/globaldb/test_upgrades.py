@@ -639,7 +639,7 @@ def test_upgrade_v7_v8(globaldb: GlobalDBHandler):
         duplicated_entries = set()
         for collection_id, name, symbol in cursor.execute('SELECT id, name, symbol FROM asset_collections;'):  # noqa: E501
             if (name, symbol) not in unique_entries:
-                unique_entries[(name, symbol)] = collection_id
+                unique_entries[name, symbol] = collection_id
             else:
                 duplicated_entries.add((collection_id, name, symbol))
 

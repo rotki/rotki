@@ -31,7 +31,7 @@ class Aavev2Accountant(ModuleAccountantInterface):
             event: 'EvmEvent',
             other_events: Iterator['EvmEvent'],  # pylint: disable=unused-argument
     ) -> int:
-        self.assets_borrowed[(string_to_evm_address(event.location_label), event.asset)] += event.balance.amount  # type: ignore[arg-type]  # location_label can't be None here  # noqa: E501
+        self.assets_borrowed[string_to_evm_address(event.location_label), event.asset] += event.balance.amount  # type: ignore[arg-type]  # location_label can't be None here  # noqa: E501
         return 1
 
     def _process_payback(
@@ -68,7 +68,7 @@ class Aavev2Accountant(ModuleAccountantInterface):
             event: 'EvmEvent',
             other_events: Iterator['EvmEvent'],  # pylint: disable=unused-argument
     ) -> int:
-        self.assets_supplied[(string_to_evm_address(event.location_label), event.asset)] += event.balance.amount  # type: ignore[arg-type]  # location_label can't be None here  # noqa: E501
+        self.assets_supplied[string_to_evm_address(event.location_label), event.asset] += event.balance.amount  # type: ignore[arg-type]  # location_label can't be None here  # noqa: E501
         return 1
 
     def _process_withdraw(

@@ -196,7 +196,7 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
                     log.error(f'Could not find direction of event {event}. Should never happen')
                     continue
 
-                related_transfer_events[(direction, event.asset, event.balance.amount)] = event
+                related_transfer_events[direction, event.asset, event.balance.amount] = event
 
         trades_events: list[tuple[EvmEvent, EvmEvent, EvmEvent | None, SwapData]] = []
         for swap_data in all_swap_data:

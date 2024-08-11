@@ -90,7 +90,6 @@ disallow_untyped_defs = false
 [tool.ruff]
 line-length = 99
 
-
 # Exclude a variety of commonly ignored directories.
 exclude = [
     ".bzr",
