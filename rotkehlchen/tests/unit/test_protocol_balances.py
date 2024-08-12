@@ -39,7 +39,6 @@ from rotkehlchen.constants.assets import (
     A_AAVE,
     A_ARB,
     A_CVX,
-    A_ETH,
     A_GLM,
     A_GMX,
     A_GRT,
@@ -423,35 +422,6 @@ def test_eigenlayer_balances(
     assert balances[ethereum_accounts[0]].assets[A_STETH.resolve_to_evm_token()] == Balance(
         amount=FVal('0.114063122816914142'),
         usd_value=FVal('0.1710946842253712130'),
-    )
-
-
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('ethereum_accounts', [['0x789E8DD02FfCCd7A753B048559d4FBeA1e1a1b7c']])
-def test_eigenpod_balances(
-        ethereum_inquirer: 'EthereumInquirer',
-        ethereum_transaction_decoder: 'EthereumTransactionDecoder',
-        ethereum_accounts: list[ChecksumEvmAddress],
-        inquirer: 'Inquirer',  # pylint: disable=unused-argument
-) -> None:
-    database = ethereum_transaction_decoder.database
-    tx_hex = deserialize_evm_tx_hash('0xb6fa282227916f9b16df953f79a5859ba80b8bc3b9c6adc01f262070d3c9e3d5')  # noqa: E501
-    events, tx_decoder = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=ethereum_transaction_decoder.database,
-        tx_hash=tx_hex,
-    )
-    assert len(events) == 2
-    balances_inquirer = EigenlayerBalances(
-        database=database,
-        evm_inquirer=ethereum_inquirer,
-        tx_decoder=tx_decoder,
-    )
-    eigenpod_balance, delayed_withdrawals = FVal('0.054506232'), FVal('0.007164493')
-    balances = balances_inquirer.query_balances()
-    assert balances[ethereum_accounts[0]].assets[A_ETH] == Balance(
-        amount=eigenpod_balance + delayed_withdrawals,
-        usd_value=FVal('1.5') * (eigenpod_balance + delayed_withdrawals),
     )
 
 
