@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import * as querystring from 'node:querystring';
 import process from 'node:process';
 import { Buffer } from 'node:buffer';
-import { json, urlencoded } from 'body-parser';
+import bodyParser from 'body-parser';
 import express, { type Request, type Response } from 'express';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 import consola, { LogLevels } from 'consola';
@@ -43,7 +43,7 @@ else {
   consola.info('async-mock.json doesnt exist. No async_query mocking is enabled');
 }
 
-function manipulateResponse(res: Response, callback: (original: any) => any) {
+function manipulateResponse(res: Response, callback: (original: any) => any): void {
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const originalWrite = res.write;
 
@@ -54,8 +54,6 @@ function manipulateResponse(res: Response, callback: (original: any) => any) {
       res.header('content-length', payload.length.toString());
       res.status(200);
       res.statusMessage = 'OK';
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-expect-error
       originalWrite.call(res, payload);
       return true;
     }
@@ -103,7 +101,7 @@ function createResult(result: unknown): Record<string, unknown> {
   };
 }
 
-function handleTasksStatus(res: Response) {
+function handleTasksStatus(res: Response): void {
   manipulateResponse(res, (data) => {
     const result = data.result;
     if (result && result.pending)
@@ -118,7 +116,7 @@ function handleTasksStatus(res: Response) {
   });
 }
 
-function handleTaskRequest(url: string, tasks: string, res: Response) {
+function handleTaskRequest(url: string, tasks: string, res: Response): void {
   const task = url.replace(tasks, '');
   try {
     const taskId = Number.parseInt(task);
@@ -149,7 +147,7 @@ function handleTaskRequest(url: string, tasks: string, res: Response) {
   }
 }
 
-function increaseCounter(baseUrl: string, method: string) {
+function increaseCounter(baseUrl: string, method: string): void {
   if (!counter[baseUrl])
     counter[baseUrl] = { [method]: 1 };
   else if (!counter[baseUrl][method])
@@ -161,7 +159,7 @@ function getCounter(baseUrl: string, method: string): number {
   return counter[baseUrl]?.[method] ?? 0;
 }
 
-function handleAsyncQuery(url: string, req: Request, res: Response) {
+function handleAsyncQuery(url: string, req: Request, res: Response): void {
   const mockedUrls = Object.keys(mockedAsyncCalls);
   const baseUrl = url.split('?')[0];
   const index = mockedUrls.findIndex(value => value.includes(baseUrl));
@@ -203,7 +201,7 @@ function handleAsyncQuery(url: string, req: Request, res: Response) {
   }));
 }
 
-function isAsyncQuery(req: Request) {
+function isAsyncQuery(req: Request): boolean {
   return (
     req.method !== 'GET'
     && req.rawHeaders.findIndex(h => h.toLocaleLowerCase().includes('application/json'))
@@ -212,14 +210,14 @@ function isAsyncQuery(req: Request) {
   );
 }
 
-function isPreflight(req: Request) {
+function isPreflight(req: Request): boolean {
   const mockedUrls = Object.keys(mockedAsyncCalls);
   const baseUrl = req.url.split('?')[0];
   const index = mockedUrls.findIndex(value => value.includes(baseUrl));
   return req.method === 'OPTIONS' && index >= 0;
 }
 
-function onProxyReq(proxyReq: http.ClientRequest, req: Request, _res: Response) {
+function onProxyReq(proxyReq: http.ClientRequest, req: Request, _res: Response): void {
   if (!req.body)
     return;
 
@@ -237,7 +235,7 @@ function onProxyReq(proxyReq: http.ClientRequest, req: Request, _res: Response) 
     writeBody(querystring.stringify(req.body));
 }
 
-function mockPreflight(res: Response) {
+function mockPreflight(res: Response): void {
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const originalWrite = res.write;
 
@@ -249,8 +247,6 @@ function mockPreflight(res: Response) {
       res.header('Access-Control-Allow-Credentials', 'true');
       res.status(200);
       res.statusMessage = 'OK';
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-expect-error
       originalWrite.call(res, chunk);
       return true;
     }
@@ -260,12 +256,12 @@ function mockPreflight(res: Response) {
   };
 }
 
-function hasResponse(req: Request) {
+function hasResponse(req: Request): boolean {
   const mockResponse = mockedAsyncCalls[req.url];
   return !!mockResponse && !!mockResponse[req.method];
 }
 
-function onProxyRes(proxyRes: http.IncomingMessage, req: Request, res: Response) {
+function onProxyRes(_proxyRes: http.IncomingMessage, req: Request, res: Response): void {
   let handled = false;
   const url = req.url;
   const tasks = '/api/1/tasks/';
@@ -310,17 +306,20 @@ function onProxyRes(proxyRes: http.IncomingMessage, req: Request, res: Response)
     consola.info('Handled request:', req.method, req.url);
 }
 
-server.use(urlencoded({ extended: true }));
-server.use(json());
-server.use(
-  createProxyMiddleware({
-    target: backend,
-    onProxyRes,
-    onProxyReq,
-    ws: true,
-  }),
-);
+server.use(bodyParser.urlencoded({ extended: true }));
+server.use(bodyParser.json());
+// eslint-disable-next-line @typescript-eslint/no-misused-promises
+server.use(createProxyMiddleware({
+  target: backend,
+  on: {
+    proxyRes: onProxyRes,
+    proxyReq: onProxyReq,
+  },
+  ws: true,
+  logger: consola,
+}));
 
 server.listen(port, () => {
   consola.log(`Proxy server is running at http://127.0.0.1:${port}`);
+  consola.log(`Forwarding requests to ${backend}`);
 });

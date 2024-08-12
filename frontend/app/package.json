@@ -79,7 +79,7 @@
     "@intlify/unplugin-vue-i18n": "4.0.0",
     "@pinia/testing": "0.1.5",
     "@tsconfig/node20": "20.1.4",
-    "@types/node": "22.1.0",
+    "@types/node": "20.14.15",
     "@vitejs/plugin-vue": "5.1.2",
     "@vitest/coverage-v8": "2.0.5",
     "@vitest/ui": "2.0.5",
