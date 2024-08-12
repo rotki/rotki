@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` Fix an error introduced in 1.34.2 that was creating snapshots more frequently than expected.
+* :bug:`-` Eigenlayer native restaking exited balances residing in eigenpod will no longer be double counted.
 
 * :release:`1.34.2 <2024-08-09>`
 * :bug:`-` Users will be able to filter by event subtype in the history events view.

@@ -1084,7 +1084,7 @@ def test_deadlock_logout(
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_snapshots_dont_happen_always(rotkehlchen_api_server: 'APIServer') -> None:
     """Regression test for an issue we had where the task for snapshots was
-    creating one for each run of the background task.
+    creating a snapshot for each run of the background task.
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     task_manager = cast(TaskManager, rotki.task_manager)
