@@ -538,9 +538,10 @@ class TaskManager:
         and the current time exceeds the `balance_save_frequency`.
         """
         with self.database.conn.read_ctx() as read_cursor:
-            if self.database.should_save_balances(read_cursor):
-                maybe_detect_new_tokens(self.database)
+            if not self.database.should_save_balances(read_cursor):
+                return None
 
+        maybe_detect_new_tokens(self.database)
         task_name = 'Periodically update snapshot balances'
         log.debug(f'Scheduling task to {task_name}')
         return [self.greenlet_manager.spawn_and_track(
