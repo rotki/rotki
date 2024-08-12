@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`8378` Rotki will now decode zksync lite withdrawals
 * :bug:`` Change the flow for importing addresses from MetaMask. Instead of automatically proceeding with the imported addresses, they will only be displayed in the text input, for better clarity.
 * :feature:`7629` Rotki will now decode all the swap events done via Odos v1 and v2.
 * :feature:`4457` Rotki will show links to CoinGecko and CryptoCompare on the asset detail page if they exist.
