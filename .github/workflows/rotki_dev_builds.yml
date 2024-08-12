@@ -95,6 +95,7 @@ jobs:
       _PYTHON_HOST_PLATFORM: ${{ matrix.os.platform }}
       MACOSX_DEPLOYMENT_TARGET: ${{ matrix.os.target }}
       CMAKE_OSX_ARCHITECTURES: ${{ matrix.os.arch }}
+      NODE_OPTIONS: --max-old-space-size=4096
     environment: macos_sign
     runs-on: ${{ matrix.os.runner }}
     steps:
