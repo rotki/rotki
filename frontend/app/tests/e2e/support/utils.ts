@@ -1,5 +1,4 @@
-import { getValidSelectorFromEvmAddress } from '@/utils/assets';
-import type { ActionResult } from '@rotki/common/lib/data';
+import { type ActionResult, getValidSelectorFromEvmAddress } from '@rotki/common';
 
 export function setCheckBox(selector: string, enabled = false) {
   const slot = `${selector} label`;

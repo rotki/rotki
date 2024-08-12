@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { CanceledError } from 'axios';
-import { getValidSelectorFromEvmAddress } from '@/utils/assets';
 import type { AssetInfoWithId } from '@/types/asset';
 import type { NftAsset } from '@/types/nfts';
 

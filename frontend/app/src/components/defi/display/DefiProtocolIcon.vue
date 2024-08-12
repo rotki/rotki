@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { toSentenceCase } from '@/utils/text';
 import { DefiProtocol } from '@/types/modules';
 
 const props = withDefaults(

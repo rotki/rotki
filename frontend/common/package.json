@@ -15,22 +15,21 @@
   "types": "lib/index.d.ts",
   "scripts": {
     "postinstall": "pnpm run build",
-    "build": "rimraf lib && tsc -m es6",
-    "watch": "tsc -w -m es6"
+    "build": "tsup",
+    "watch": "tsup --watch"
   },
   "peerDependencies": {
     "@vueuse/core": ">=10.11.0",
-    "vue": ">=3.4.0"
-  },
-  "dependencies": {
     "bignumber.js": "9.1.2",
+    "vue": ">=3.4.0",
     "zod": "3.23.8"
   },
   "devDependencies": {
     "@vueuse/core": "10.11.1",
-    "core-js": "3.38.0",
-    "rimraf": "6.0.1",
+    "bignumber.js": "9.1.2",
+    "tsup": "8.2.4",
     "typescript": "5.5.4",
-    "vue": "3.4.37"
+    "vue": "3.4.37",
+    "zod": "3.23.8"
   }
 }

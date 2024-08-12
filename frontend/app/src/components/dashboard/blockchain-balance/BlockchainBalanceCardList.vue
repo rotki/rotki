@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Routes } from '@/router/routes';
 import { type BlockchainTotal, SupportedSubBlockchainProtocolData } from '@/types/blockchain';
-import { toSentenceCase } from '@/utils/text';
 import type { ActionDataEntry } from '@/types/action';
 
 const props = defineProps<{

@@ -1,5 +1,4 @@
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import { BigNumber } from '@rotki/common';
+import { BigNumber, Blockchain } from '@rotki/common';
 import { setCheckBox, waitForAsyncQuery } from '../../support/utils';
 import { RotkiApp } from '../rotki-app';
 import { updateLocationBalance } from '../../utils/amounts';

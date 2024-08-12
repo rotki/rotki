@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { useHistoryEventCounterpartyMappings } from '@/composables/history/events/mapping/counterparty';
-import { toHumanReadable } from '@/utils/text';
 
 const props = defineProps<{
   counterparty: string;

@@ -1,5 +1,4 @@
-import { bigNumberify } from '@/utils/bignumbers';
-import type { BigNumber } from '@rotki/common';
+import { type BigNumber, bigNumberify } from '@rotki/common';
 
 /**
  * Removes the separator (comma) from a given amount.

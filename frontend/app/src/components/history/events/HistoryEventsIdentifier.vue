@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common/lib/blockchain';
 import { useBreakpoint } from '@rotki/ui-library';
-import { toSentenceCase } from '@/utils/text';
 import type { HistoryEventEntry } from '@/types/history/events';
 
 const props = defineProps<{

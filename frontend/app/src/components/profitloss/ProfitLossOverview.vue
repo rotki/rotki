@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { pluralizeLastWord, toCapitalCase } from '@/utils/text';
 import type { ProfitLossOverviewItem, Report, SelectedReport } from '@/types/reports';
 
 const props = withDefaults(

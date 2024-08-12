@@ -1,5 +1,4 @@
-import { BigNumber } from '@rotki/common';
-import { toSentenceCase } from '@/utils/text';
+import { BigNumber, toSentenceCase } from '@rotki/common';
 import { RotkiApp } from '../rotki-app';
 import { formatAmount, updateLocationBalance } from '../../utils/amounts';
 import { selectAsset } from '../../support/utils';

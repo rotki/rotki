@@ -1,4 +1,4 @@
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common';
 import {
   BlockchainBalancesPage,
   type FixtureBlockchainBalance,

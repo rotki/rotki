@@ -12,28 +12,90 @@ declare global {
   const $ref: (typeof import('vue/macros'))['$ref']
   const $shallowRef: (typeof import('vue/macros'))['$shallowRef']
   const $toRef: (typeof import('vue/macros'))['$toRef']
+  const AaveBalances: typeof import('@rotki/common')['AaveBalances']
+  const AaveHistory: typeof import('@rotki/common')['AaveHistory']
   const AccountExternalFilterSchema: typeof import('./composables/filters/blockchain-account')['AccountExternalFilterSchema']
+  const AssetBalance: typeof import('@rotki/common')['AssetBalance']
+  const AssetBalanceWithPriceBeforeBreakdown: typeof import('@rotki/common')['AssetBalanceWithPriceBeforeBreakdown']
+  const AssetEntry: typeof import('@rotki/common')['AssetEntry']
+  const AssetInfo: typeof import('@rotki/common')['AssetInfo']
+  const AssetInfoWithTransformer: typeof import('@rotki/common')['AssetInfoWithTransformer']
+  const Balance: typeof import('@rotki/common')['Balance']
+  const BalancerBalances: typeof import('@rotki/common')['BalancerBalances']
+  const BaseAsset: typeof import('@rotki/common')['BaseAsset']
+  const BigNumber: typeof import('@rotki/common')['BigNumber']
+  const Blockchain: typeof import('@rotki/common')['Blockchain']
+  const DARK_THEME: typeof import('@rotki/common')['DARK_THEME']
   const EffectScope: typeof import('vue')['EffectScope']
+  const Eth2DailyStats: typeof import('@rotki/common')['Eth2DailyStats']
+  const Eth2Validators: typeof import('@rotki/common')['Eth2Validators']
+  const EthStakingPerformanceResponse: typeof import('@rotki/common')['EthStakingPerformanceResponse']
+  const EvmTokenKind: typeof import('@rotki/common')['EvmTokenKind']
+  const EvmTokenKindEnum: typeof import('@rotki/common')['EvmTokenKindEnum']
+  const HistoryEventEntryType: typeof import('@rotki/common')['HistoryEventEntryType']
   const IndexedDb: typeof import('./utils/indexed-db')['IndexedDb']
   const KEY_BACKEND_URL: typeof import('./utils/account-management')['KEY_BACKEND_URL']
   const KEY_BACKEND_URL_SESSION_ONLY: typeof import('./utils/account-management')['KEY_BACKEND_URL_SESSION_ONLY']
+  const LIGHT_THEME: typeof import('@rotki/common')['LIGHT_THEME']
   const LimitedParallelizationQueue: typeof import('./utils/limited-parallelization-queue')['LimitedParallelizationQueue']
+  const LiquityBalances: typeof import('@rotki/common')['LiquityBalances']
+  const LiquityBalancesWithCollateralInfo: typeof import('@rotki/common')['LiquityBalancesWithCollateralInfo']
+  const LiquityPoolDetail: typeof import('@rotki/common')['LiquityPoolDetail']
+  const LiquityPoolDetailEntry: typeof import('@rotki/common')['LiquityPoolDetailEntry']
+  const LiquityPoolDetailProxyEntries: typeof import('@rotki/common')['LiquityPoolDetailProxyEntries']
+  const LiquityPoolDetails: typeof import('@rotki/common')['LiquityPoolDetails']
+  const LiquityStakingDetail: typeof import('@rotki/common')['LiquityStakingDetail']
+  const LiquityStakingDetailEntry: typeof import('@rotki/common')['LiquityStakingDetailEntry']
+  const LiquityStakingDetailProxyEntries: typeof import('@rotki/common')['LiquityStakingDetailProxyEntries']
+  const LiquityStakingDetails: typeof import('@rotki/common')['LiquityStakingDetails']
+  const LiquityStatisticDetails: typeof import('@rotki/common')['LiquityStatisticDetails']
+  const LiquityStatistics: typeof import('@rotki/common')['LiquityStatistics']
+  const LocationData: typeof import('@rotki/common')['LocationData']
   const LogLevel: typeof import('./utils/log-level')['LogLevel']
-  const NoPrice: typeof import('./utils/bignumbers')['NoPrice']
+  const LpType: typeof import('@rotki/common')['LpType']
+  const NetValue: typeof import('@rotki/common')['NetValue']
+  const NoPrice: typeof import('@rotki/common')['NoPrice']
   const NoteType: typeof import('./composables/history/events/notes')['NoteType']
-  const One: typeof import('./utils/bignumbers')['One']
+  const NotificationCategory: typeof import('@rotki/common')['NotificationCategory']
+  const NotificationGroup: typeof import('@rotki/common')['NotificationGroup']
+  const NumericString: typeof import('@rotki/common')['NumericString']
+  const One: typeof import('@rotki/common')['One']
+  const OwnedAssets: typeof import('@rotki/common')['OwnedAssets']
+  const Percentage: typeof import('@rotki/common')['Percentage']
+  const Priority: typeof import('@rotki/common')['Priority']
+  const SELECTED_THEME: typeof import('@rotki/common')['SELECTED_THEME']
   const SettingLocation: typeof import('./composables/settings/index')['SettingLocation']
+  const Severity: typeof import('@rotki/common')['Severity']
   const StoreResetPlugin: typeof import('./store/plugins')['StoreResetPlugin']
   const StoreTrackPlugin: typeof import('./store/plugins')['StoreTrackPlugin']
+  const SupportedAsset: typeof import('@rotki/common')['SupportedAsset']
+  const TIMEFRAME_CUSTOM: typeof import('@rotki/common')['TIMEFRAME_CUSTOM']
+  const Theme: typeof import('@rotki/common')['Theme']
+  const ThemeColors: typeof import('@rotki/common')['ThemeColors']
+  const ThemeEnum: typeof import('@rotki/common')['ThemeEnum']
+  const TimeFramePeriod: typeof import('@rotki/common')['TimeFramePeriod']
+  const TimeFramePeriodEnum: typeof import('@rotki/common')['TimeFramePeriodEnum']
+  const TimeFramePersist: typeof import('@rotki/common')['TimeFramePersist']
+  const TimeFrameSetting: typeof import('@rotki/common')['TimeFrameSetting']
+  const TimeUnit: typeof import('@rotki/common')['TimeUnit']
+  const TimedAssetBalances: typeof import('@rotki/common')['TimedAssetBalances']
+  const TimedBalances: typeof import('@rotki/common')['TimedBalances']
+  const UnderlyingToken: typeof import('@rotki/common')['UnderlyingToken']
   const Unit: typeof import('./utils/calculation')['Unit']
   const XpubPrefix: typeof import('./utils/xpub')['XpubPrefix']
-  const Zero: typeof import('./utils/bignumbers')['Zero']
+  const XswapAsset: typeof import('@rotki/common')['XswapAsset']
+  const XswapBalance: typeof import('@rotki/common')['XswapBalance']
+  const XswapBalances: typeof import('@rotki/common')['XswapBalances']
+  const XswapEvents: typeof import('@rotki/common')['XswapEvents']
+  const XswapPool: typeof import('@rotki/common')['XswapPool']
+  const Zero: typeof import('@rotki/common')['Zero']
   const acceptHMRUpdate: typeof import('pinia')['acceptHMRUpdate']
   const aggregateTotal: typeof import('./utils/calculation')['aggregateTotal']
   const aggregateTotals: typeof import('./utils/blockchain/accounts/index')['aggregateTotals']
   const appendAssetBalance: typeof import('./utils/balances')['appendAssetBalance']
-  const assert: typeof import('./utils/assertions')['assert']
+  const assert: typeof import('@rotki/common')['assert']
   const assetSum: typeof import('./utils/calculation')['assetSum']
+  const assetSymbolToIdentifierMap: typeof import('@rotki/common')['assetSymbolToIdentifierMap']
   const asyncComputed: typeof import('@vueuse/core')['asyncComputed']
   const attemptPolyfillResizeObserver: typeof import('./utils/cypress')['attemptPolyfillResizeObserver']
   const autoResetRef: typeof import('@vueuse/core')['autoResetRef']
@@ -42,7 +104,7 @@ declare global {
   const balanceSum: typeof import('./utils/calculation')['balanceSum']
   const balanceUsdValueSum: typeof import('./utils/balances')['balanceUsdValueSum']
   const bigNumberSum: typeof import('./utils/calculation')['bigNumberSum']
-  const bigNumberify: typeof import('./utils/bignumbers')['bigNumberify']
+  const bigNumberify: typeof import('@rotki/common')['bigNumberify']
   const bigNumberifyFromRef: typeof import('./utils/bignumbers')['bigNumberifyFromRef']
   const calculatePercentage: typeof import('./utils/calculation')['calculatePercentage']
   const calculateTotalProfitLoss: typeof import('./utils/report')['calculateTotalProfitLoss']
@@ -56,7 +118,7 @@ declare global {
   const computedEager: typeof import('@vueuse/core')['computedEager']
   const computedInject: typeof import('@vueuse/core')['computedInject']
   const computedWithControl: typeof import('@vueuse/core')['computedWithControl']
-  const consistOfNumbers: typeof import('./utils/text')['consistOfNumbers']
+  const consistOfNumbers: typeof import('@rotki/common')['consistOfNumbers']
   const controlledComputed: typeof import('@vueuse/core')['controlledComputed']
   const controlledRef: typeof import('@vueuse/core')['controlledRef']
   const convertBtcAccounts: typeof import('./utils/blockchain/accounts/index')['convertBtcAccounts']
@@ -69,7 +131,7 @@ declare global {
   const createApp: typeof import('vue')['createApp']
   const createBlockie: typeof import('./utils/blockie')['createBlockie']
   const createEventHook: typeof import('@vueuse/core')['createEventHook']
-  const createEvmIdentifierFromAddress: typeof import('./utils/assets')['createEvmIdentifierFromAddress']
+  const createEvmIdentifierFromAddress: typeof import('@rotki/common')['createEvmIdentifierFromAddress']
   const createGenericProjection: typeof import('@vueuse/math')['createGenericProjection']
   const createGlobalState: typeof import('@vueuse/core')['createGlobalState']
   const createInjectionState: typeof import('@vueuse/core')['createInjectionState']
@@ -85,9 +147,10 @@ declare global {
   const createValidatorAccount: typeof import('./utils/blockchain/accounts/index')['createValidatorAccount']
   const createXpubAccount: typeof import('./utils/blockchain/accounts/index')['createXpubAccount']
   const customRef: typeof import('vue')['customRef']
+  const customTimeframe: typeof import('@rotki/common')['customTimeframe']
   const debouncedRef: typeof import('@vueuse/core')['debouncedRef']
   const debouncedWatch: typeof import('@vueuse/core')['debouncedWatch']
-  const decodeHtmlEntities: typeof import('./utils/text')['decodeHtmlEntities']
+  const decodeHtmlEntities: typeof import('@rotki/common')['decodeHtmlEntities']
   const defaultCollectionState: typeof import('./utils/collection')['defaultCollectionState']
   const defaultOptions: typeof import('./utils/collection')['defaultOptions']
   const defineAsyncComponent: typeof import('vue')['defineAsyncComponent']
@@ -113,7 +176,7 @@ declare global {
   const getAccountId: typeof import('./utils/blockchain/accounts/index')['getAccountId']
   const getAccountLabel: typeof import('./utils/blockchain/accounts/index')['getAccountLabel']
   const getActivePinia: typeof import('pinia')['getActivePinia']
-  const getAddressFromEvmIdentifier: typeof import('./utils/assets')['getAddressFromEvmIdentifier']
+  const getAddressFromEvmIdentifier: typeof import('@rotki/common')['getAddressFromEvmIdentifier']
   const getBackendUrl: typeof import('./utils/account-management')['getBackendUrl']
   const getBalances: typeof import('./utils/defi/xswap')['getBalances']
   const getChain: typeof import('./utils/blockchain/accounts/index')['getChain']
@@ -129,6 +192,7 @@ declare global {
   const getEtherScanRegisterUrl: typeof import('./utils/url')['getEtherScanRegisterUrl']
   const getFilepath: typeof import('./utils/backups')['getFilepath']
   const getGroupId: typeof import('./utils/blockchain/accounts/index')['getGroupId']
+  const getIdentifierFromSymbolMap: typeof import('@rotki/common')['getIdentifierFromSymbolMap']
   const getKeyType: typeof import('./utils/xpub')['getKeyType']
   const getMetamaskAddresses: typeof import('./utils/metamask')['getMetamaskAddresses']
   const getNonRootAttrs: typeof import('./utils/attrs')['getNonRootAttrs']
@@ -142,21 +206,22 @@ declare global {
   const getServiceRegisterUrl: typeof import('./utils/url')['getServiceRegisterUrl']
   const getSortItems: typeof import('./utils/assets')['getSortItems']
   const getTags: typeof import('./utils/tags')['getTags']
-  const getTextToken: typeof import('./utils/text')['getTextToken']
+  const getTextToken: typeof import('@rotki/common')['getTextToken']
   const getTheGraphRegisterUrl: typeof import('./utils/url')['getTheGraphRegisterUrl']
-  const getValidSelectorFromEvmAddress: typeof import('./utils/assets')['getValidSelectorFromEvmAddress']
+  const getTimeframeByRange: typeof import('@rotki/common')['getTimeframeByRange']
+  const getValidSelectorFromEvmAddress: typeof import('@rotki/common')['getValidSelectorFromEvmAddress']
   const getValidatorData: typeof import('./utils/blockchain/accounts/index')['getValidatorData']
   const groupAssetBreakdown: typeof import('./utils/balances')['groupAssetBreakdown']
   const guessTimezone: typeof import('./utils/date')['guessTimezone']
   const h: typeof import('vue')['h']
   const hasAccountAddress: typeof import('./utils/blockchain/accounts/index')['hasAccountAddress']
   const hasTokens: typeof import('./utils/blockchain/accounts/index')['hasTokens']
-  const hexToRgbPoints: typeof import('./utils/color')['hexToRgbPoints']
+  const hexToRgbPoints: typeof import('@rotki/common')['hexToRgbPoints']
   const ignorableWatch: typeof import('@vueuse/core')['ignorableWatch']
   const includes: typeof import('./utils/blockchain/accounts/common')['includes']
   const inject: typeof import('vue')['inject']
   const injectLocal: typeof import('@vueuse/core')['injectLocal']
-  const invertColor: typeof import('./utils/color')['invertColor']
+  const invertColor: typeof import('@rotki/common')['invertColor']
   const isAccountWithBalanceValidator: typeof import('./utils/blockchain/accounts/index')['isAccountWithBalanceValidator']
   const isAccountingRuleProcessed: typeof import('./utils/history/events')['isAccountingRuleProcessed']
   const isDefined: typeof import('@vueuse/core')['isDefined']
@@ -171,7 +236,7 @@ declare global {
   const isEvmEvent: typeof import('./utils/history/events')['isEvmEvent']
   const isEvmEventRef: typeof import('./utils/history/events')['isEvmEventRef']
   const isEvmEventType: typeof import('./utils/history/events')['isEvmEventType']
-  const isEvmIdentifier: typeof import('./utils/assets')['isEvmIdentifier']
+  const isEvmIdentifier: typeof import('@rotki/common')['isEvmIdentifier']
   const isFilterEnabled: typeof import('./utils/blockchain/accounts/common')['isFilterEnabled']
   const isMetaMaskSupported: typeof import('./utils/metamask')['isMetaMaskSupported']
   const isMissingAccountingRule: typeof import('./utils/history/events')['isMissingAccountingRule']
@@ -189,12 +254,12 @@ declare global {
   const isRef: typeof import('vue')['isRef']
   const isTaskCancelled: typeof import('./utils/index')['isTaskCancelled']
   const isTransactionEvent: typeof import('./utils/report')['isTransactionEvent']
-  const isValidBchAddress: typeof import('./utils/text')['isValidBchAddress']
-  const isValidBtcAddress: typeof import('./utils/text')['isValidBtcAddress']
+  const isValidBchAddress: typeof import('@rotki/common')['isValidBchAddress']
+  const isValidBtcAddress: typeof import('@rotki/common')['isValidBtcAddress']
   const isValidDate: typeof import('./utils/date')['isValidDate']
-  const isValidEthAddress: typeof import('./utils/text')['isValidEthAddress']
-  const isValidTxHash: typeof import('./utils/text')['isValidTxHash']
-  const isValidUrl: typeof import('./utils/text')['isValidUrl']
+  const isValidEthAddress: typeof import('@rotki/common')['isValidEthAddress']
+  const isValidTxHash: typeof import('@rotki/common')['isValidTxHash']
+  const isValidUrl: typeof import('@rotki/common')['isValidUrl']
   const isWithdrawalEvent: typeof import('./utils/history/events')['isWithdrawalEvent']
   const isWithdrawalEventRef: typeof import('./utils/history/events')['isWithdrawalEventRef']
   const isWithdrawalEventType: typeof import('./utils/history/events')['isWithdrawalEventType']
@@ -240,12 +305,13 @@ declare global {
   const onStartTyping: typeof import('@vueuse/core')['onStartTyping']
   const onUnmounted: typeof import('vue')['onUnmounted']
   const onUpdated: typeof import('vue')['onUpdated']
+  const onlyIfTruthy: typeof import('@rotki/common')['onlyIfTruthy']
   const pausableWatch: typeof import('@vueuse/core')['pausableWatch']
-  const pluralize: typeof import('./utils/text')['pluralize']
-  const pluralizeLastWord: typeof import('./utils/text')['pluralizeLastWord']
+  const pluralize: typeof import('@rotki/common')['pluralize']
+  const pluralizeLastWord: typeof import('@rotki/common')['pluralizeLastWord']
   const provide: typeof import('vue')['provide']
   const provideLocal: typeof import('@vueuse/core')['provideLocal']
-  const randomColor: typeof import('./utils/color')['randomColor']
+  const randomColor: typeof import('@rotki/common')['randomColor']
   const reactify: typeof import('@vueuse/core')['reactify']
   const reactifyObject: typeof import('@vueuse/core')['reactifyObject']
   const reactive: typeof import('vue')['reactive']
@@ -268,8 +334,8 @@ declare global {
   const resolveComponent: typeof import('vue')['resolveComponent']
   const resolveRef: typeof import('@vueuse/core')['resolveRef']
   const resolveUnref: typeof import('@vueuse/core')['resolveUnref']
-  const rgbPointsToHex: typeof import('./utils/color')['rgbPointsToHex']
-  const sanitizeAddress: typeof import('./utils/text')['sanitizeAddress']
+  const rgbPointsToHex: typeof import('@rotki/common')['rgbPointsToHex']
+  const sanitizeAddress: typeof import('@rotki/common')['sanitizeAddress']
   const saveBackendUrl: typeof import('./utils/account-management')['saveBackendUrl']
   const saveUserOptions: typeof import('./composables/backend')['saveUserOptions']
   const serializer: typeof import('./composables/dynamic-messages')['serializer']
@@ -301,9 +367,10 @@ declare global {
   const templateRef: typeof import('@vueuse/core')['templateRef']
   const throttledRef: typeof import('@vueuse/core')['throttledRef']
   const throttledWatch: typeof import('@vueuse/core')['throttledWatch']
-  const toCapitalCase: typeof import('./utils/text')['toCapitalCase']
+  const timeframes: typeof import('@rotki/common')['timeframes']
+  const toCapitalCase: typeof import('@rotki/common')['toCapitalCase']
   const toEvmChainAndTxHash: typeof import('./utils/history/index')['toEvmChainAndTxHash']
-  const toHumanReadable: typeof import('./utils/text')['toHumanReadable']
+  const toHumanReadable: typeof import('@rotki/common')['toHumanReadable']
   const toMessages: typeof import('./utils/validation')['toMessages']
   const toProfitLossModel: typeof import('./utils/defi/index')['toProfitLossModel']
   const toRaw: typeof import('vue')['toRaw']
@@ -311,12 +378,12 @@ declare global {
   const toRef: typeof import('vue')['toRef']
   const toRefs: typeof import('vue')['toRefs']
   const toRem: typeof import('./utils/data')['toRem']
-  const toSentenceCase: typeof import('./utils/text')['toSentenceCase']
-  const toSnakeCase: typeof import('./utils/text')['toSnakeCase']
+  const toSentenceCase: typeof import('@rotki/common')['toSentenceCase']
+  const toSnakeCase: typeof import('@rotki/common')['toSnakeCase']
   const toUnit: typeof import('./utils/calculation')['toUnit']
   const toValue: typeof import('vue')['toValue']
   const totalCollateral: typeof import('./utils/total-collateral')['totalCollateral']
-  const transformCase: typeof import('./utils/text')['transformCase']
+  const transformCase: typeof import('@rotki/common')['transformCase']
   const transformEntryWithMeta: typeof import('./utils/history/index')['transformEntryWithMeta']
   const triggerRef: typeof import('vue')['triggerRef']
   const trimOnPaste: typeof import('./utils/event')['trimOnPaste']
@@ -793,28 +860,90 @@ import { UnwrapRef } from 'vue'
 declare module 'vue' {
   interface GlobalComponents {}
   interface ComponentCustomProperties {
+    readonly AaveBalances: UnwrapRef<typeof import('@rotki/common')['AaveBalances']>
+    readonly AaveHistory: UnwrapRef<typeof import('@rotki/common')['AaveHistory']>
     readonly AccountExternalFilterSchema: UnwrapRef<typeof import('./composables/filters/blockchain-account')['AccountExternalFilterSchema']>
+    readonly AssetBalance: UnwrapRef<typeof import('@rotki/common')['AssetBalance']>
+    readonly AssetBalanceWithPriceBeforeBreakdown: UnwrapRef<typeof import('@rotki/common')['AssetBalanceWithPriceBeforeBreakdown']>
+    readonly AssetEntry: UnwrapRef<typeof import('@rotki/common')['AssetEntry']>
+    readonly AssetInfo: UnwrapRef<typeof import('@rotki/common')['AssetInfo']>
+    readonly AssetInfoWithTransformer: UnwrapRef<typeof import('@rotki/common')['AssetInfoWithTransformer']>
+    readonly Balance: UnwrapRef<typeof import('@rotki/common')['Balance']>
+    readonly BalancerBalances: UnwrapRef<typeof import('@rotki/common')['BalancerBalances']>
+    readonly BaseAsset: UnwrapRef<typeof import('@rotki/common')['BaseAsset']>
+    readonly BigNumber: UnwrapRef<typeof import('@rotki/common')['BigNumber']>
+    readonly Blockchain: UnwrapRef<typeof import('@rotki/common')['Blockchain']>
+    readonly DARK_THEME: UnwrapRef<typeof import('@rotki/common')['DARK_THEME']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
+    readonly Eth2DailyStats: UnwrapRef<typeof import('@rotki/common')['Eth2DailyStats']>
+    readonly Eth2Validators: UnwrapRef<typeof import('@rotki/common')['Eth2Validators']>
+    readonly EthStakingPerformanceResponse: UnwrapRef<typeof import('@rotki/common')['EthStakingPerformanceResponse']>
+    readonly EvmTokenKind: UnwrapRef<typeof import('@rotki/common')['EvmTokenKind']>
+    readonly EvmTokenKindEnum: UnwrapRef<typeof import('@rotki/common')['EvmTokenKindEnum']>
+    readonly HistoryEventEntryType: UnwrapRef<typeof import('@rotki/common')['HistoryEventEntryType']>
     readonly IndexedDb: UnwrapRef<typeof import('./utils/indexed-db')['IndexedDb']>
     readonly KEY_BACKEND_URL: UnwrapRef<typeof import('./utils/account-management')['KEY_BACKEND_URL']>
     readonly KEY_BACKEND_URL_SESSION_ONLY: UnwrapRef<typeof import('./utils/account-management')['KEY_BACKEND_URL_SESSION_ONLY']>
+    readonly LIGHT_THEME: UnwrapRef<typeof import('@rotki/common')['LIGHT_THEME']>
     readonly LimitedParallelizationQueue: UnwrapRef<typeof import('./utils/limited-parallelization-queue')['LimitedParallelizationQueue']>
+    readonly LiquityBalances: UnwrapRef<typeof import('@rotki/common')['LiquityBalances']>
+    readonly LiquityBalancesWithCollateralInfo: UnwrapRef<typeof import('@rotki/common')['LiquityBalancesWithCollateralInfo']>
+    readonly LiquityPoolDetail: UnwrapRef<typeof import('@rotki/common')['LiquityPoolDetail']>
+    readonly LiquityPoolDetailEntry: UnwrapRef<typeof import('@rotki/common')['LiquityPoolDetailEntry']>
+    readonly LiquityPoolDetailProxyEntries: UnwrapRef<typeof import('@rotki/common')['LiquityPoolDetailProxyEntries']>
+    readonly LiquityPoolDetails: UnwrapRef<typeof import('@rotki/common')['LiquityPoolDetails']>
+    readonly LiquityStakingDetail: UnwrapRef<typeof import('@rotki/common')['LiquityStakingDetail']>
+    readonly LiquityStakingDetailEntry: UnwrapRef<typeof import('@rotki/common')['LiquityStakingDetailEntry']>
+    readonly LiquityStakingDetailProxyEntries: UnwrapRef<typeof import('@rotki/common')['LiquityStakingDetailProxyEntries']>
+    readonly LiquityStakingDetails: UnwrapRef<typeof import('@rotki/common')['LiquityStakingDetails']>
+    readonly LiquityStatisticDetails: UnwrapRef<typeof import('@rotki/common')['LiquityStatisticDetails']>
+    readonly LiquityStatistics: UnwrapRef<typeof import('@rotki/common')['LiquityStatistics']>
+    readonly LocationData: UnwrapRef<typeof import('@rotki/common')['LocationData']>
     readonly LogLevel: UnwrapRef<typeof import('./utils/log-level')['LogLevel']>
-    readonly NoPrice: UnwrapRef<typeof import('./utils/bignumbers')['NoPrice']>
+    readonly LpType: UnwrapRef<typeof import('@rotki/common')['LpType']>
+    readonly NetValue: UnwrapRef<typeof import('@rotki/common')['NetValue']>
+    readonly NoPrice: UnwrapRef<typeof import('@rotki/common')['NoPrice']>
     readonly NoteType: UnwrapRef<typeof import('./composables/history/events/notes')['NoteType']>
-    readonly One: UnwrapRef<typeof import('./utils/bignumbers')['One']>
+    readonly NotificationCategory: UnwrapRef<typeof import('@rotki/common')['NotificationCategory']>
+    readonly NotificationGroup: UnwrapRef<typeof import('@rotki/common')['NotificationGroup']>
+    readonly NumericString: UnwrapRef<typeof import('@rotki/common')['NumericString']>
+    readonly One: UnwrapRef<typeof import('@rotki/common')['One']>
+    readonly OwnedAssets: UnwrapRef<typeof import('@rotki/common')['OwnedAssets']>
+    readonly Percentage: UnwrapRef<typeof import('@rotki/common')['Percentage']>
+    readonly Priority: UnwrapRef<typeof import('@rotki/common')['Priority']>
+    readonly SELECTED_THEME: UnwrapRef<typeof import('@rotki/common')['SELECTED_THEME']>
     readonly SettingLocation: UnwrapRef<typeof import('./composables/settings/index')['SettingLocation']>
+    readonly Severity: UnwrapRef<typeof import('@rotki/common')['Severity']>
     readonly StoreResetPlugin: UnwrapRef<typeof import('./store/plugins')['StoreResetPlugin']>
     readonly StoreTrackPlugin: UnwrapRef<typeof import('./store/plugins')['StoreTrackPlugin']>
+    readonly SupportedAsset: UnwrapRef<typeof import('@rotki/common')['SupportedAsset']>
+    readonly TIMEFRAME_CUSTOM: UnwrapRef<typeof import('@rotki/common')['TIMEFRAME_CUSTOM']>
+    readonly Theme: UnwrapRef<typeof import('@rotki/common')['Theme']>
+    readonly ThemeColors: UnwrapRef<typeof import('@rotki/common')['ThemeColors']>
+    readonly ThemeEnum: UnwrapRef<typeof import('@rotki/common')['ThemeEnum']>
+    readonly TimeFramePeriod: UnwrapRef<typeof import('@rotki/common')['TimeFramePeriod']>
+    readonly TimeFramePeriodEnum: UnwrapRef<typeof import('@rotki/common')['TimeFramePeriodEnum']>
+    readonly TimeFramePersist: UnwrapRef<typeof import('@rotki/common')['TimeFramePersist']>
+    readonly TimeFrameSetting: UnwrapRef<typeof import('@rotki/common')['TimeFrameSetting']>
+    readonly TimeUnit: UnwrapRef<typeof import('@rotki/common')['TimeUnit']>
+    readonly TimedAssetBalances: UnwrapRef<typeof import('@rotki/common')['TimedAssetBalances']>
+    readonly TimedBalances: UnwrapRef<typeof import('@rotki/common')['TimedBalances']>
+    readonly UnderlyingToken: UnwrapRef<typeof import('@rotki/common')['UnderlyingToken']>
     readonly Unit: UnwrapRef<typeof import('./utils/calculation')['Unit']>
     readonly XpubPrefix: UnwrapRef<typeof import('./utils/xpub')['XpubPrefix']>
-    readonly Zero: UnwrapRef<typeof import('./utils/bignumbers')['Zero']>
+    readonly XswapAsset: UnwrapRef<typeof import('@rotki/common')['XswapAsset']>
+    readonly XswapBalance: UnwrapRef<typeof import('@rotki/common')['XswapBalance']>
+    readonly XswapBalances: UnwrapRef<typeof import('@rotki/common')['XswapBalances']>
+    readonly XswapEvents: UnwrapRef<typeof import('@rotki/common')['XswapEvents']>
+    readonly XswapPool: UnwrapRef<typeof import('@rotki/common')['XswapPool']>
+    readonly Zero: UnwrapRef<typeof import('@rotki/common')['Zero']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
     readonly aggregateTotal: UnwrapRef<typeof import('./utils/calculation')['aggregateTotal']>
     readonly aggregateTotals: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['aggregateTotals']>
     readonly appendAssetBalance: UnwrapRef<typeof import('./utils/balances')['appendAssetBalance']>
-    readonly assert: UnwrapRef<typeof import('./utils/assertions')['assert']>
+    readonly assert: UnwrapRef<typeof import('@rotki/common')['assert']>
     readonly assetSum: UnwrapRef<typeof import('./utils/calculation')['assetSum']>
+    readonly assetSymbolToIdentifierMap: UnwrapRef<typeof import('@rotki/common')['assetSymbolToIdentifierMap']>
     readonly asyncComputed: UnwrapRef<typeof import('@vueuse/core')['asyncComputed']>
     readonly attemptPolyfillResizeObserver: UnwrapRef<typeof import('./utils/cypress')['attemptPolyfillResizeObserver']>
     readonly autoResetRef: UnwrapRef<typeof import('@vueuse/core')['autoResetRef']>
@@ -823,7 +952,7 @@ declare module 'vue' {
     readonly balanceSum: UnwrapRef<typeof import('./utils/calculation')['balanceSum']>
     readonly balanceUsdValueSum: UnwrapRef<typeof import('./utils/balances')['balanceUsdValueSum']>
     readonly bigNumberSum: UnwrapRef<typeof import('./utils/calculation')['bigNumberSum']>
-    readonly bigNumberify: UnwrapRef<typeof import('./utils/bignumbers')['bigNumberify']>
+    readonly bigNumberify: UnwrapRef<typeof import('@rotki/common')['bigNumberify']>
     readonly bigNumberifyFromRef: UnwrapRef<typeof import('./utils/bignumbers')['bigNumberifyFromRef']>
     readonly calculatePercentage: UnwrapRef<typeof import('./utils/calculation')['calculatePercentage']>
     readonly calculateTotalProfitLoss: UnwrapRef<typeof import('./utils/report')['calculateTotalProfitLoss']>
@@ -837,7 +966,7 @@ declare module 'vue' {
     readonly computedEager: UnwrapRef<typeof import('@vueuse/core')['computedEager']>
     readonly computedInject: UnwrapRef<typeof import('@vueuse/core')['computedInject']>
     readonly computedWithControl: UnwrapRef<typeof import('@vueuse/core')['computedWithControl']>
-    readonly consistOfNumbers: UnwrapRef<typeof import('./utils/text')['consistOfNumbers']>
+    readonly consistOfNumbers: UnwrapRef<typeof import('@rotki/common')['consistOfNumbers']>
     readonly controlledComputed: UnwrapRef<typeof import('@vueuse/core')['controlledComputed']>
     readonly controlledRef: UnwrapRef<typeof import('@vueuse/core')['controlledRef']>
     readonly convertBtcAccounts: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['convertBtcAccounts']>
@@ -850,7 +979,7 @@ declare module 'vue' {
     readonly createApp: UnwrapRef<typeof import('vue')['createApp']>
     readonly createBlockie: UnwrapRef<typeof import('./utils/blockie')['createBlockie']>
     readonly createEventHook: UnwrapRef<typeof import('@vueuse/core')['createEventHook']>
-    readonly createEvmIdentifierFromAddress: UnwrapRef<typeof import('./utils/assets')['createEvmIdentifierFromAddress']>
+    readonly createEvmIdentifierFromAddress: UnwrapRef<typeof import('@rotki/common')['createEvmIdentifierFromAddress']>
     readonly createGenericProjection: UnwrapRef<typeof import('@vueuse/math')['createGenericProjection']>
     readonly createGlobalState: UnwrapRef<typeof import('@vueuse/core')['createGlobalState']>
     readonly createInjectionState: UnwrapRef<typeof import('@vueuse/core')['createInjectionState']>
@@ -866,9 +995,10 @@ declare module 'vue' {
     readonly createValidatorAccount: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['createValidatorAccount']>
     readonly createXpubAccount: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['createXpubAccount']>
     readonly customRef: UnwrapRef<typeof import('vue')['customRef']>
+    readonly customTimeframe: UnwrapRef<typeof import('@rotki/common')['customTimeframe']>
     readonly debouncedRef: UnwrapRef<typeof import('@vueuse/core')['debouncedRef']>
     readonly debouncedWatch: UnwrapRef<typeof import('@vueuse/core')['debouncedWatch']>
-    readonly decodeHtmlEntities: UnwrapRef<typeof import('./utils/text')['decodeHtmlEntities']>
+    readonly decodeHtmlEntities: UnwrapRef<typeof import('@rotki/common')['decodeHtmlEntities']>
     readonly defaultCollectionState: UnwrapRef<typeof import('./utils/collection')['defaultCollectionState']>
     readonly defaultOptions: UnwrapRef<typeof import('./utils/collection')['defaultOptions']>
     readonly defineAsyncComponent: UnwrapRef<typeof import('vue')['defineAsyncComponent']>
@@ -893,7 +1023,7 @@ declare module 'vue' {
     readonly getAccountId: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getAccountId']>
     readonly getAccountLabel: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getAccountLabel']>
     readonly getActivePinia: UnwrapRef<typeof import('pinia')['getActivePinia']>
-    readonly getAddressFromEvmIdentifier: UnwrapRef<typeof import('./utils/assets')['getAddressFromEvmIdentifier']>
+    readonly getAddressFromEvmIdentifier: UnwrapRef<typeof import('@rotki/common')['getAddressFromEvmIdentifier']>
     readonly getBackendUrl: UnwrapRef<typeof import('./utils/account-management')['getBackendUrl']>
     readonly getBalances: UnwrapRef<typeof import('./utils/defi/xswap')['getBalances']>
     readonly getChain: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getChain']>
@@ -909,6 +1039,7 @@ declare module 'vue' {
     readonly getEtherScanRegisterUrl: UnwrapRef<typeof import('./utils/url')['getEtherScanRegisterUrl']>
     readonly getFilepath: UnwrapRef<typeof import('./utils/backups')['getFilepath']>
     readonly getGroupId: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getGroupId']>
+    readonly getIdentifierFromSymbolMap: UnwrapRef<typeof import('@rotki/common')['getIdentifierFromSymbolMap']>
     readonly getKeyType: UnwrapRef<typeof import('./utils/xpub')['getKeyType']>
     readonly getMetamaskAddresses: UnwrapRef<typeof import('./utils/metamask')['getMetamaskAddresses']>
     readonly getNonRootAttrs: UnwrapRef<typeof import('./utils/attrs')['getNonRootAttrs']>
@@ -922,21 +1053,22 @@ declare module 'vue' {
     readonly getServiceRegisterUrl: UnwrapRef<typeof import('./utils/url')['getServiceRegisterUrl']>
     readonly getSortItems: UnwrapRef<typeof import('./utils/assets')['getSortItems']>
     readonly getTags: UnwrapRef<typeof import('./utils/tags')['getTags']>
-    readonly getTextToken: UnwrapRef<typeof import('./utils/text')['getTextToken']>
+    readonly getTextToken: UnwrapRef<typeof import('@rotki/common')['getTextToken']>
     readonly getTheGraphRegisterUrl: UnwrapRef<typeof import('./utils/url')['getTheGraphRegisterUrl']>
-    readonly getValidSelectorFromEvmAddress: UnwrapRef<typeof import('./utils/assets')['getValidSelectorFromEvmAddress']>
+    readonly getTimeframeByRange: UnwrapRef<typeof import('@rotki/common')['getTimeframeByRange']>
+    readonly getValidSelectorFromEvmAddress: UnwrapRef<typeof import('@rotki/common')['getValidSelectorFromEvmAddress']>
     readonly getValidatorData: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getValidatorData']>
     readonly groupAssetBreakdown: UnwrapRef<typeof import('./utils/balances')['groupAssetBreakdown']>
     readonly guessTimezone: UnwrapRef<typeof import('./utils/date')['guessTimezone']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly hasAccountAddress: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['hasAccountAddress']>
     readonly hasTokens: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['hasTokens']>
-    readonly hexToRgbPoints: UnwrapRef<typeof import('./utils/color')['hexToRgbPoints']>
+    readonly hexToRgbPoints: UnwrapRef<typeof import('@rotki/common')['hexToRgbPoints']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly includes: UnwrapRef<typeof import('./utils/blockchain/accounts/common')['includes']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>
-    readonly invertColor: UnwrapRef<typeof import('./utils/color')['invertColor']>
+    readonly invertColor: UnwrapRef<typeof import('@rotki/common')['invertColor']>
     readonly isAccountWithBalanceValidator: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['isAccountWithBalanceValidator']>
     readonly isAccountingRuleProcessed: UnwrapRef<typeof import('./utils/history/events')['isAccountingRuleProcessed']>
     readonly isDefined: UnwrapRef<typeof import('@vueuse/core')['isDefined']>
@@ -951,7 +1083,7 @@ declare module 'vue' {
     readonly isEvmEvent: UnwrapRef<typeof import('./utils/history/events')['isEvmEvent']>
     readonly isEvmEventRef: UnwrapRef<typeof import('./utils/history/events')['isEvmEventRef']>
     readonly isEvmEventType: UnwrapRef<typeof import('./utils/history/events')['isEvmEventType']>
-    readonly isEvmIdentifier: UnwrapRef<typeof import('./utils/assets')['isEvmIdentifier']>
+    readonly isEvmIdentifier: UnwrapRef<typeof import('@rotki/common')['isEvmIdentifier']>
     readonly isFilterEnabled: UnwrapRef<typeof import('./utils/blockchain/accounts/common')['isFilterEnabled']>
     readonly isMetaMaskSupported: UnwrapRef<typeof import('./utils/metamask')['isMetaMaskSupported']>
     readonly isMissingAccountingRule: UnwrapRef<typeof import('./utils/history/events')['isMissingAccountingRule']>
@@ -969,12 +1101,12 @@ declare module 'vue' {
     readonly isRef: UnwrapRef<typeof import('vue')['isRef']>
     readonly isTaskCancelled: UnwrapRef<typeof import('./utils/index')['isTaskCancelled']>
     readonly isTransactionEvent: UnwrapRef<typeof import('./utils/report')['isTransactionEvent']>
-    readonly isValidBchAddress: UnwrapRef<typeof import('./utils/text')['isValidBchAddress']>
-    readonly isValidBtcAddress: UnwrapRef<typeof import('./utils/text')['isValidBtcAddress']>
+    readonly isValidBchAddress: UnwrapRef<typeof import('@rotki/common')['isValidBchAddress']>
+    readonly isValidBtcAddress: UnwrapRef<typeof import('@rotki/common')['isValidBtcAddress']>
     readonly isValidDate: UnwrapRef<typeof import('./utils/date')['isValidDate']>
-    readonly isValidEthAddress: UnwrapRef<typeof import('./utils/text')['isValidEthAddress']>
-    readonly isValidTxHash: UnwrapRef<typeof import('./utils/text')['isValidTxHash']>
-    readonly isValidUrl: UnwrapRef<typeof import('./utils/text')['isValidUrl']>
+    readonly isValidEthAddress: UnwrapRef<typeof import('@rotki/common')['isValidEthAddress']>
+    readonly isValidTxHash: UnwrapRef<typeof import('@rotki/common')['isValidTxHash']>
+    readonly isValidUrl: UnwrapRef<typeof import('@rotki/common')['isValidUrl']>
     readonly isWithdrawalEvent: UnwrapRef<typeof import('./utils/history/events')['isWithdrawalEvent']>
     readonly isWithdrawalEventRef: UnwrapRef<typeof import('./utils/history/events')['isWithdrawalEventRef']>
     readonly isWithdrawalEventType: UnwrapRef<typeof import('./utils/history/events')['isWithdrawalEventType']>
@@ -1020,12 +1152,13 @@ declare module 'vue' {
     readonly onStartTyping: UnwrapRef<typeof import('@vueuse/core')['onStartTyping']>
     readonly onUnmounted: UnwrapRef<typeof import('vue')['onUnmounted']>
     readonly onUpdated: UnwrapRef<typeof import('vue')['onUpdated']>
+    readonly onlyIfTruthy: UnwrapRef<typeof import('@rotki/common')['onlyIfTruthy']>
     readonly pausableWatch: UnwrapRef<typeof import('@vueuse/core')['pausableWatch']>
-    readonly pluralize: UnwrapRef<typeof import('./utils/text')['pluralize']>
-    readonly pluralizeLastWord: UnwrapRef<typeof import('./utils/text')['pluralizeLastWord']>
+    readonly pluralize: UnwrapRef<typeof import('@rotki/common')['pluralize']>
+    readonly pluralizeLastWord: UnwrapRef<typeof import('@rotki/common')['pluralizeLastWord']>
     readonly provide: UnwrapRef<typeof import('vue')['provide']>
     readonly provideLocal: UnwrapRef<typeof import('@vueuse/core')['provideLocal']>
-    readonly randomColor: UnwrapRef<typeof import('./utils/color')['randomColor']>
+    readonly randomColor: UnwrapRef<typeof import('@rotki/common')['randomColor']>
     readonly reactify: UnwrapRef<typeof import('@vueuse/core')['reactify']>
     readonly reactifyObject: UnwrapRef<typeof import('@vueuse/core')['reactifyObject']>
     readonly reactive: UnwrapRef<typeof import('vue')['reactive']>
@@ -1048,8 +1181,8 @@ declare module 'vue' {
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
     readonly resolveRef: UnwrapRef<typeof import('@vueuse/core')['resolveRef']>
     readonly resolveUnref: UnwrapRef<typeof import('@vueuse/core')['resolveUnref']>
-    readonly rgbPointsToHex: UnwrapRef<typeof import('./utils/color')['rgbPointsToHex']>
-    readonly sanitizeAddress: UnwrapRef<typeof import('./utils/text')['sanitizeAddress']>
+    readonly rgbPointsToHex: UnwrapRef<typeof import('@rotki/common')['rgbPointsToHex']>
+    readonly sanitizeAddress: UnwrapRef<typeof import('@rotki/common')['sanitizeAddress']>
     readonly saveBackendUrl: UnwrapRef<typeof import('./utils/account-management')['saveBackendUrl']>
     readonly saveUserOptions: UnwrapRef<typeof import('./composables/backend')['saveUserOptions']>
     readonly serializer: UnwrapRef<typeof import('./composables/dynamic-messages')['serializer']>
@@ -1081,9 +1214,10 @@ declare module 'vue' {
     readonly templateRef: UnwrapRef<typeof import('@vueuse/core')['templateRef']>
     readonly throttledRef: UnwrapRef<typeof import('@vueuse/core')['throttledRef']>
     readonly throttledWatch: UnwrapRef<typeof import('@vueuse/core')['throttledWatch']>
-    readonly toCapitalCase: UnwrapRef<typeof import('./utils/text')['toCapitalCase']>
+    readonly timeframes: UnwrapRef<typeof import('@rotki/common')['timeframes']>
+    readonly toCapitalCase: UnwrapRef<typeof import('@rotki/common')['toCapitalCase']>
     readonly toEvmChainAndTxHash: UnwrapRef<typeof import('./utils/history/index')['toEvmChainAndTxHash']>
-    readonly toHumanReadable: UnwrapRef<typeof import('./utils/text')['toHumanReadable']>
+    readonly toHumanReadable: UnwrapRef<typeof import('@rotki/common')['toHumanReadable']>
     readonly toMessages: UnwrapRef<typeof import('./utils/validation')['toMessages']>
     readonly toProfitLossModel: UnwrapRef<typeof import('./utils/defi/index')['toProfitLossModel']>
     readonly toRaw: UnwrapRef<typeof import('vue')['toRaw']>
@@ -1091,12 +1225,12 @@ declare module 'vue' {
     readonly toRef: UnwrapRef<typeof import('vue')['toRef']>
     readonly toRefs: UnwrapRef<typeof import('vue')['toRefs']>
     readonly toRem: UnwrapRef<typeof import('./utils/data')['toRem']>
-    readonly toSentenceCase: UnwrapRef<typeof import('./utils/text')['toSentenceCase']>
-    readonly toSnakeCase: UnwrapRef<typeof import('./utils/text')['toSnakeCase']>
+    readonly toSentenceCase: UnwrapRef<typeof import('@rotki/common')['toSentenceCase']>
+    readonly toSnakeCase: UnwrapRef<typeof import('@rotki/common')['toSnakeCase']>
     readonly toUnit: UnwrapRef<typeof import('./utils/calculation')['toUnit']>
     readonly toValue: UnwrapRef<typeof import('vue')['toValue']>
     readonly totalCollateral: UnwrapRef<typeof import('./utils/total-collateral')['totalCollateral']>
-    readonly transformCase: UnwrapRef<typeof import('./utils/text')['transformCase']>
+    readonly transformCase: UnwrapRef<typeof import('@rotki/common')['transformCase']>
     readonly transformEntryWithMeta: UnwrapRef<typeof import('./utils/history/index')['transformEntryWithMeta']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
     readonly trimOnPaste: UnwrapRef<typeof import('./utils/event')['trimOnPaste']>
@@ -1550,28 +1684,90 @@ declare module 'vue' {
 declare module '@vue/runtime-core' {
   interface GlobalComponents {}
   interface ComponentCustomProperties {
+    readonly AaveBalances: UnwrapRef<typeof import('@rotki/common')['AaveBalances']>
+    readonly AaveHistory: UnwrapRef<typeof import('@rotki/common')['AaveHistory']>
     readonly AccountExternalFilterSchema: UnwrapRef<typeof import('./composables/filters/blockchain-account')['AccountExternalFilterSchema']>
+    readonly AssetBalance: UnwrapRef<typeof import('@rotki/common')['AssetBalance']>
+    readonly AssetBalanceWithPriceBeforeBreakdown: UnwrapRef<typeof import('@rotki/common')['AssetBalanceWithPriceBeforeBreakdown']>
+    readonly AssetEntry: UnwrapRef<typeof import('@rotki/common')['AssetEntry']>
+    readonly AssetInfo: UnwrapRef<typeof import('@rotki/common')['AssetInfo']>
+    readonly AssetInfoWithTransformer: UnwrapRef<typeof import('@rotki/common')['AssetInfoWithTransformer']>
+    readonly Balance: UnwrapRef<typeof import('@rotki/common')['Balance']>
+    readonly BalancerBalances: UnwrapRef<typeof import('@rotki/common')['BalancerBalances']>
+    readonly BaseAsset: UnwrapRef<typeof import('@rotki/common')['BaseAsset']>
+    readonly BigNumber: UnwrapRef<typeof import('@rotki/common')['BigNumber']>
+    readonly Blockchain: UnwrapRef<typeof import('@rotki/common')['Blockchain']>
+    readonly DARK_THEME: UnwrapRef<typeof import('@rotki/common')['DARK_THEME']>
     readonly EffectScope: UnwrapRef<typeof import('vue')['EffectScope']>
+    readonly Eth2DailyStats: UnwrapRef<typeof import('@rotki/common')['Eth2DailyStats']>
+    readonly Eth2Validators: UnwrapRef<typeof import('@rotki/common')['Eth2Validators']>
+    readonly EthStakingPerformanceResponse: UnwrapRef<typeof import('@rotki/common')['EthStakingPerformanceResponse']>
+    readonly EvmTokenKind: UnwrapRef<typeof import('@rotki/common')['EvmTokenKind']>
+    readonly EvmTokenKindEnum: UnwrapRef<typeof import('@rotki/common')['EvmTokenKindEnum']>
+    readonly HistoryEventEntryType: UnwrapRef<typeof import('@rotki/common')['HistoryEventEntryType']>
     readonly IndexedDb: UnwrapRef<typeof import('./utils/indexed-db')['IndexedDb']>
     readonly KEY_BACKEND_URL: UnwrapRef<typeof import('./utils/account-management')['KEY_BACKEND_URL']>
     readonly KEY_BACKEND_URL_SESSION_ONLY: UnwrapRef<typeof import('./utils/account-management')['KEY_BACKEND_URL_SESSION_ONLY']>
+    readonly LIGHT_THEME: UnwrapRef<typeof import('@rotki/common')['LIGHT_THEME']>
     readonly LimitedParallelizationQueue: UnwrapRef<typeof import('./utils/limited-parallelization-queue')['LimitedParallelizationQueue']>
+    readonly LiquityBalances: UnwrapRef<typeof import('@rotki/common')['LiquityBalances']>
+    readonly LiquityBalancesWithCollateralInfo: UnwrapRef<typeof import('@rotki/common')['LiquityBalancesWithCollateralInfo']>
+    readonly LiquityPoolDetail: UnwrapRef<typeof import('@rotki/common')['LiquityPoolDetail']>
+    readonly LiquityPoolDetailEntry: UnwrapRef<typeof import('@rotki/common')['LiquityPoolDetailEntry']>
+    readonly LiquityPoolDetailProxyEntries: UnwrapRef<typeof import('@rotki/common')['LiquityPoolDetailProxyEntries']>
+    readonly LiquityPoolDetails: UnwrapRef<typeof import('@rotki/common')['LiquityPoolDetails']>
+    readonly LiquityStakingDetail: UnwrapRef<typeof import('@rotki/common')['LiquityStakingDetail']>
+    readonly LiquityStakingDetailEntry: UnwrapRef<typeof import('@rotki/common')['LiquityStakingDetailEntry']>
+    readonly LiquityStakingDetailProxyEntries: UnwrapRef<typeof import('@rotki/common')['LiquityStakingDetailProxyEntries']>
+    readonly LiquityStakingDetails: UnwrapRef<typeof import('@rotki/common')['LiquityStakingDetails']>
+    readonly LiquityStatisticDetails: UnwrapRef<typeof import('@rotki/common')['LiquityStatisticDetails']>
+    readonly LiquityStatistics: UnwrapRef<typeof import('@rotki/common')['LiquityStatistics']>
+    readonly LocationData: UnwrapRef<typeof import('@rotki/common')['LocationData']>
     readonly LogLevel: UnwrapRef<typeof import('./utils/log-level')['LogLevel']>
-    readonly NoPrice: UnwrapRef<typeof import('./utils/bignumbers')['NoPrice']>
+    readonly LpType: UnwrapRef<typeof import('@rotki/common')['LpType']>
+    readonly NetValue: UnwrapRef<typeof import('@rotki/common')['NetValue']>
+    readonly NoPrice: UnwrapRef<typeof import('@rotki/common')['NoPrice']>
     readonly NoteType: UnwrapRef<typeof import('./composables/history/events/notes')['NoteType']>
-    readonly One: UnwrapRef<typeof import('./utils/bignumbers')['One']>
+    readonly NotificationCategory: UnwrapRef<typeof import('@rotki/common')['NotificationCategory']>
+    readonly NotificationGroup: UnwrapRef<typeof import('@rotki/common')['NotificationGroup']>
+    readonly NumericString: UnwrapRef<typeof import('@rotki/common')['NumericString']>
+    readonly One: UnwrapRef<typeof import('@rotki/common')['One']>
+    readonly OwnedAssets: UnwrapRef<typeof import('@rotki/common')['OwnedAssets']>
+    readonly Percentage: UnwrapRef<typeof import('@rotki/common')['Percentage']>
+    readonly Priority: UnwrapRef<typeof import('@rotki/common')['Priority']>
+    readonly SELECTED_THEME: UnwrapRef<typeof import('@rotki/common')['SELECTED_THEME']>
     readonly SettingLocation: UnwrapRef<typeof import('./composables/settings/index')['SettingLocation']>
+    readonly Severity: UnwrapRef<typeof import('@rotki/common')['Severity']>
     readonly StoreResetPlugin: UnwrapRef<typeof import('./store/plugins')['StoreResetPlugin']>
     readonly StoreTrackPlugin: UnwrapRef<typeof import('./store/plugins')['StoreTrackPlugin']>
+    readonly SupportedAsset: UnwrapRef<typeof import('@rotki/common')['SupportedAsset']>
+    readonly TIMEFRAME_CUSTOM: UnwrapRef<typeof import('@rotki/common')['TIMEFRAME_CUSTOM']>
+    readonly Theme: UnwrapRef<typeof import('@rotki/common')['Theme']>
+    readonly ThemeColors: UnwrapRef<typeof import('@rotki/common')['ThemeColors']>
+    readonly ThemeEnum: UnwrapRef<typeof import('@rotki/common')['ThemeEnum']>
+    readonly TimeFramePeriod: UnwrapRef<typeof import('@rotki/common')['TimeFramePeriod']>
+    readonly TimeFramePeriodEnum: UnwrapRef<typeof import('@rotki/common')['TimeFramePeriodEnum']>
+    readonly TimeFramePersist: UnwrapRef<typeof import('@rotki/common')['TimeFramePersist']>
+    readonly TimeFrameSetting: UnwrapRef<typeof import('@rotki/common')['TimeFrameSetting']>
+    readonly TimeUnit: UnwrapRef<typeof import('@rotki/common')['TimeUnit']>
+    readonly TimedAssetBalances: UnwrapRef<typeof import('@rotki/common')['TimedAssetBalances']>
+    readonly TimedBalances: UnwrapRef<typeof import('@rotki/common')['TimedBalances']>
+    readonly UnderlyingToken: UnwrapRef<typeof import('@rotki/common')['UnderlyingToken']>
     readonly Unit: UnwrapRef<typeof import('./utils/calculation')['Unit']>
     readonly XpubPrefix: UnwrapRef<typeof import('./utils/xpub')['XpubPrefix']>
-    readonly Zero: UnwrapRef<typeof import('./utils/bignumbers')['Zero']>
+    readonly XswapAsset: UnwrapRef<typeof import('@rotki/common')['XswapAsset']>
+    readonly XswapBalance: UnwrapRef<typeof import('@rotki/common')['XswapBalance']>
+    readonly XswapBalances: UnwrapRef<typeof import('@rotki/common')['XswapBalances']>
+    readonly XswapEvents: UnwrapRef<typeof import('@rotki/common')['XswapEvents']>
+    readonly XswapPool: UnwrapRef<typeof import('@rotki/common')['XswapPool']>
+    readonly Zero: UnwrapRef<typeof import('@rotki/common')['Zero']>
     readonly acceptHMRUpdate: UnwrapRef<typeof import('pinia')['acceptHMRUpdate']>
     readonly aggregateTotal: UnwrapRef<typeof import('./utils/calculation')['aggregateTotal']>
     readonly aggregateTotals: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['aggregateTotals']>
     readonly appendAssetBalance: UnwrapRef<typeof import('./utils/balances')['appendAssetBalance']>
-    readonly assert: UnwrapRef<typeof import('./utils/assertions')['assert']>
+    readonly assert: UnwrapRef<typeof import('@rotki/common')['assert']>
     readonly assetSum: UnwrapRef<typeof import('./utils/calculation')['assetSum']>
+    readonly assetSymbolToIdentifierMap: UnwrapRef<typeof import('@rotki/common')['assetSymbolToIdentifierMap']>
     readonly asyncComputed: UnwrapRef<typeof import('@vueuse/core')['asyncComputed']>
     readonly attemptPolyfillResizeObserver: UnwrapRef<typeof import('./utils/cypress')['attemptPolyfillResizeObserver']>
     readonly autoResetRef: UnwrapRef<typeof import('@vueuse/core')['autoResetRef']>
@@ -1580,7 +1776,7 @@ declare module '@vue/runtime-core' {
     readonly balanceSum: UnwrapRef<typeof import('./utils/calculation')['balanceSum']>
     readonly balanceUsdValueSum: UnwrapRef<typeof import('./utils/balances')['balanceUsdValueSum']>
     readonly bigNumberSum: UnwrapRef<typeof import('./utils/calculation')['bigNumberSum']>
-    readonly bigNumberify: UnwrapRef<typeof import('./utils/bignumbers')['bigNumberify']>
+    readonly bigNumberify: UnwrapRef<typeof import('@rotki/common')['bigNumberify']>
     readonly bigNumberifyFromRef: UnwrapRef<typeof import('./utils/bignumbers')['bigNumberifyFromRef']>
     readonly calculatePercentage: UnwrapRef<typeof import('./utils/calculation')['calculatePercentage']>
     readonly calculateTotalProfitLoss: UnwrapRef<typeof import('./utils/report')['calculateTotalProfitLoss']>
@@ -1594,7 +1790,7 @@ declare module '@vue/runtime-core' {
     readonly computedEager: UnwrapRef<typeof import('@vueuse/core')['computedEager']>
     readonly computedInject: UnwrapRef<typeof import('@vueuse/core')['computedInject']>
     readonly computedWithControl: UnwrapRef<typeof import('@vueuse/core')['computedWithControl']>
-    readonly consistOfNumbers: UnwrapRef<typeof import('./utils/text')['consistOfNumbers']>
+    readonly consistOfNumbers: UnwrapRef<typeof import('@rotki/common')['consistOfNumbers']>
     readonly controlledComputed: UnwrapRef<typeof import('@vueuse/core')['controlledComputed']>
     readonly controlledRef: UnwrapRef<typeof import('@vueuse/core')['controlledRef']>
     readonly convertBtcAccounts: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['convertBtcAccounts']>
@@ -1607,7 +1803,7 @@ declare module '@vue/runtime-core' {
     readonly createApp: UnwrapRef<typeof import('vue')['createApp']>
     readonly createBlockie: UnwrapRef<typeof import('./utils/blockie')['createBlockie']>
     readonly createEventHook: UnwrapRef<typeof import('@vueuse/core')['createEventHook']>
-    readonly createEvmIdentifierFromAddress: UnwrapRef<typeof import('./utils/assets')['createEvmIdentifierFromAddress']>
+    readonly createEvmIdentifierFromAddress: UnwrapRef<typeof import('@rotki/common')['createEvmIdentifierFromAddress']>
     readonly createGenericProjection: UnwrapRef<typeof import('@vueuse/math')['createGenericProjection']>
     readonly createGlobalState: UnwrapRef<typeof import('@vueuse/core')['createGlobalState']>
     readonly createInjectionState: UnwrapRef<typeof import('@vueuse/core')['createInjectionState']>
@@ -1623,9 +1819,10 @@ declare module '@vue/runtime-core' {
     readonly createValidatorAccount: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['createValidatorAccount']>
     readonly createXpubAccount: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['createXpubAccount']>
     readonly customRef: UnwrapRef<typeof import('vue')['customRef']>
+    readonly customTimeframe: UnwrapRef<typeof import('@rotki/common')['customTimeframe']>
     readonly debouncedRef: UnwrapRef<typeof import('@vueuse/core')['debouncedRef']>
     readonly debouncedWatch: UnwrapRef<typeof import('@vueuse/core')['debouncedWatch']>
-    readonly decodeHtmlEntities: UnwrapRef<typeof import('./utils/text')['decodeHtmlEntities']>
+    readonly decodeHtmlEntities: UnwrapRef<typeof import('@rotki/common')['decodeHtmlEntities']>
     readonly defaultCollectionState: UnwrapRef<typeof import('./utils/collection')['defaultCollectionState']>
     readonly defaultOptions: UnwrapRef<typeof import('./utils/collection')['defaultOptions']>
     readonly defineAsyncComponent: UnwrapRef<typeof import('vue')['defineAsyncComponent']>
@@ -1650,7 +1847,7 @@ declare module '@vue/runtime-core' {
     readonly getAccountId: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getAccountId']>
     readonly getAccountLabel: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getAccountLabel']>
     readonly getActivePinia: UnwrapRef<typeof import('pinia')['getActivePinia']>
-    readonly getAddressFromEvmIdentifier: UnwrapRef<typeof import('./utils/assets')['getAddressFromEvmIdentifier']>
+    readonly getAddressFromEvmIdentifier: UnwrapRef<typeof import('@rotki/common')['getAddressFromEvmIdentifier']>
     readonly getBackendUrl: UnwrapRef<typeof import('./utils/account-management')['getBackendUrl']>
     readonly getBalances: UnwrapRef<typeof import('./utils/defi/xswap')['getBalances']>
     readonly getChain: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getChain']>
@@ -1666,6 +1863,7 @@ declare module '@vue/runtime-core' {
     readonly getEtherScanRegisterUrl: UnwrapRef<typeof import('./utils/url')['getEtherScanRegisterUrl']>
     readonly getFilepath: UnwrapRef<typeof import('./utils/backups')['getFilepath']>
     readonly getGroupId: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getGroupId']>
+    readonly getIdentifierFromSymbolMap: UnwrapRef<typeof import('@rotki/common')['getIdentifierFromSymbolMap']>
     readonly getKeyType: UnwrapRef<typeof import('./utils/xpub')['getKeyType']>
     readonly getMetamaskAddresses: UnwrapRef<typeof import('./utils/metamask')['getMetamaskAddresses']>
     readonly getNonRootAttrs: UnwrapRef<typeof import('./utils/attrs')['getNonRootAttrs']>
@@ -1679,21 +1877,22 @@ declare module '@vue/runtime-core' {
     readonly getServiceRegisterUrl: UnwrapRef<typeof import('./utils/url')['getServiceRegisterUrl']>
     readonly getSortItems: UnwrapRef<typeof import('./utils/assets')['getSortItems']>
     readonly getTags: UnwrapRef<typeof import('./utils/tags')['getTags']>
-    readonly getTextToken: UnwrapRef<typeof import('./utils/text')['getTextToken']>
+    readonly getTextToken: UnwrapRef<typeof import('@rotki/common')['getTextToken']>
     readonly getTheGraphRegisterUrl: UnwrapRef<typeof import('./utils/url')['getTheGraphRegisterUrl']>
-    readonly getValidSelectorFromEvmAddress: UnwrapRef<typeof import('./utils/assets')['getValidSelectorFromEvmAddress']>
+    readonly getTimeframeByRange: UnwrapRef<typeof import('@rotki/common')['getTimeframeByRange']>
+    readonly getValidSelectorFromEvmAddress: UnwrapRef<typeof import('@rotki/common')['getValidSelectorFromEvmAddress']>
     readonly getValidatorData: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getValidatorData']>
     readonly groupAssetBreakdown: UnwrapRef<typeof import('./utils/balances')['groupAssetBreakdown']>
     readonly guessTimezone: UnwrapRef<typeof import('./utils/date')['guessTimezone']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly hasAccountAddress: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['hasAccountAddress']>
     readonly hasTokens: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['hasTokens']>
-    readonly hexToRgbPoints: UnwrapRef<typeof import('./utils/color')['hexToRgbPoints']>
+    readonly hexToRgbPoints: UnwrapRef<typeof import('@rotki/common')['hexToRgbPoints']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly includes: UnwrapRef<typeof import('./utils/blockchain/accounts/common')['includes']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>
-    readonly invertColor: UnwrapRef<typeof import('./utils/color')['invertColor']>
+    readonly invertColor: UnwrapRef<typeof import('@rotki/common')['invertColor']>
     readonly isAccountWithBalanceValidator: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['isAccountWithBalanceValidator']>
     readonly isAccountingRuleProcessed: UnwrapRef<typeof import('./utils/history/events')['isAccountingRuleProcessed']>
     readonly isDefined: UnwrapRef<typeof import('@vueuse/core')['isDefined']>
@@ -1708,7 +1907,7 @@ declare module '@vue/runtime-core' {
     readonly isEvmEvent: UnwrapRef<typeof import('./utils/history/events')['isEvmEvent']>
     readonly isEvmEventRef: UnwrapRef<typeof import('./utils/history/events')['isEvmEventRef']>
     readonly isEvmEventType: UnwrapRef<typeof import('./utils/history/events')['isEvmEventType']>
-    readonly isEvmIdentifier: UnwrapRef<typeof import('./utils/assets')['isEvmIdentifier']>
+    readonly isEvmIdentifier: UnwrapRef<typeof import('@rotki/common')['isEvmIdentifier']>
     readonly isFilterEnabled: UnwrapRef<typeof import('./utils/blockchain/accounts/common')['isFilterEnabled']>
     readonly isMetaMaskSupported: UnwrapRef<typeof import('./utils/metamask')['isMetaMaskSupported']>
     readonly isMissingAccountingRule: UnwrapRef<typeof import('./utils/history/events')['isMissingAccountingRule']>
@@ -1726,12 +1925,12 @@ declare module '@vue/runtime-core' {
     readonly isRef: UnwrapRef<typeof import('vue')['isRef']>
     readonly isTaskCancelled: UnwrapRef<typeof import('./utils/index')['isTaskCancelled']>
     readonly isTransactionEvent: UnwrapRef<typeof import('./utils/report')['isTransactionEvent']>
-    readonly isValidBchAddress: UnwrapRef<typeof import('./utils/text')['isValidBchAddress']>
-    readonly isValidBtcAddress: UnwrapRef<typeof import('./utils/text')['isValidBtcAddress']>
+    readonly isValidBchAddress: UnwrapRef<typeof import('@rotki/common')['isValidBchAddress']>
+    readonly isValidBtcAddress: UnwrapRef<typeof import('@rotki/common')['isValidBtcAddress']>
     readonly isValidDate: UnwrapRef<typeof import('./utils/date')['isValidDate']>
-    readonly isValidEthAddress: UnwrapRef<typeof import('./utils/text')['isValidEthAddress']>
-    readonly isValidTxHash: UnwrapRef<typeof import('./utils/text')['isValidTxHash']>
-    readonly isValidUrl: UnwrapRef<typeof import('./utils/text')['isValidUrl']>
+    readonly isValidEthAddress: UnwrapRef<typeof import('@rotki/common')['isValidEthAddress']>
+    readonly isValidTxHash: UnwrapRef<typeof import('@rotki/common')['isValidTxHash']>
+    readonly isValidUrl: UnwrapRef<typeof import('@rotki/common')['isValidUrl']>
     readonly isWithdrawalEvent: UnwrapRef<typeof import('./utils/history/events')['isWithdrawalEvent']>
     readonly isWithdrawalEventRef: UnwrapRef<typeof import('./utils/history/events')['isWithdrawalEventRef']>
     readonly isWithdrawalEventType: UnwrapRef<typeof import('./utils/history/events')['isWithdrawalEventType']>
@@ -1777,12 +1976,13 @@ declare module '@vue/runtime-core' {
     readonly onStartTyping: UnwrapRef<typeof import('@vueuse/core')['onStartTyping']>
     readonly onUnmounted: UnwrapRef<typeof import('vue')['onUnmounted']>
     readonly onUpdated: UnwrapRef<typeof import('vue')['onUpdated']>
+    readonly onlyIfTruthy: UnwrapRef<typeof import('@rotki/common')['onlyIfTruthy']>
     readonly pausableWatch: UnwrapRef<typeof import('@vueuse/core')['pausableWatch']>
-    readonly pluralize: UnwrapRef<typeof import('./utils/text')['pluralize']>
-    readonly pluralizeLastWord: UnwrapRef<typeof import('./utils/text')['pluralizeLastWord']>
+    readonly pluralize: UnwrapRef<typeof import('@rotki/common')['pluralize']>
+    readonly pluralizeLastWord: UnwrapRef<typeof import('@rotki/common')['pluralizeLastWord']>
     readonly provide: UnwrapRef<typeof import('vue')['provide']>
     readonly provideLocal: UnwrapRef<typeof import('@vueuse/core')['provideLocal']>
-    readonly randomColor: UnwrapRef<typeof import('./utils/color')['randomColor']>
+    readonly randomColor: UnwrapRef<typeof import('@rotki/common')['randomColor']>
     readonly reactify: UnwrapRef<typeof import('@vueuse/core')['reactify']>
     readonly reactifyObject: UnwrapRef<typeof import('@vueuse/core')['reactifyObject']>
     readonly reactive: UnwrapRef<typeof import('vue')['reactive']>
@@ -1805,8 +2005,8 @@ declare module '@vue/runtime-core' {
     readonly resolveComponent: UnwrapRef<typeof import('vue')['resolveComponent']>
     readonly resolveRef: UnwrapRef<typeof import('@vueuse/core')['resolveRef']>
     readonly resolveUnref: UnwrapRef<typeof import('@vueuse/core')['resolveUnref']>
-    readonly rgbPointsToHex: UnwrapRef<typeof import('./utils/color')['rgbPointsToHex']>
-    readonly sanitizeAddress: UnwrapRef<typeof import('./utils/text')['sanitizeAddress']>
+    readonly rgbPointsToHex: UnwrapRef<typeof import('@rotki/common')['rgbPointsToHex']>
+    readonly sanitizeAddress: UnwrapRef<typeof import('@rotki/common')['sanitizeAddress']>
     readonly saveBackendUrl: UnwrapRef<typeof import('./utils/account-management')['saveBackendUrl']>
     readonly saveUserOptions: UnwrapRef<typeof import('./composables/backend')['saveUserOptions']>
     readonly serializer: UnwrapRef<typeof import('./composables/dynamic-messages')['serializer']>
@@ -1838,9 +2038,10 @@ declare module '@vue/runtime-core' {
     readonly templateRef: UnwrapRef<typeof import('@vueuse/core')['templateRef']>
     readonly throttledRef: UnwrapRef<typeof import('@vueuse/core')['throttledRef']>
     readonly throttledWatch: UnwrapRef<typeof import('@vueuse/core')['throttledWatch']>
-    readonly toCapitalCase: UnwrapRef<typeof import('./utils/text')['toCapitalCase']>
+    readonly timeframes: UnwrapRef<typeof import('@rotki/common')['timeframes']>
+    readonly toCapitalCase: UnwrapRef<typeof import('@rotki/common')['toCapitalCase']>
     readonly toEvmChainAndTxHash: UnwrapRef<typeof import('./utils/history/index')['toEvmChainAndTxHash']>
-    readonly toHumanReadable: UnwrapRef<typeof import('./utils/text')['toHumanReadable']>
+    readonly toHumanReadable: UnwrapRef<typeof import('@rotki/common')['toHumanReadable']>
     readonly toMessages: UnwrapRef<typeof import('./utils/validation')['toMessages']>
     readonly toProfitLossModel: UnwrapRef<typeof import('./utils/defi/index')['toProfitLossModel']>
     readonly toRaw: UnwrapRef<typeof import('vue')['toRaw']>
@@ -1848,12 +2049,12 @@ declare module '@vue/runtime-core' {
     readonly toRef: UnwrapRef<typeof import('vue')['toRef']>
     readonly toRefs: UnwrapRef<typeof import('vue')['toRefs']>
     readonly toRem: UnwrapRef<typeof import('./utils/data')['toRem']>
-    readonly toSentenceCase: UnwrapRef<typeof import('./utils/text')['toSentenceCase']>
-    readonly toSnakeCase: UnwrapRef<typeof import('./utils/text')['toSnakeCase']>
+    readonly toSentenceCase: UnwrapRef<typeof import('@rotki/common')['toSentenceCase']>
+    readonly toSnakeCase: UnwrapRef<typeof import('@rotki/common')['toSnakeCase']>
     readonly toUnit: UnwrapRef<typeof import('./utils/calculation')['toUnit']>
     readonly toValue: UnwrapRef<typeof import('vue')['toValue']>
     readonly totalCollateral: UnwrapRef<typeof import('./utils/total-collateral')['totalCollateral']>
-    readonly transformCase: UnwrapRef<typeof import('./utils/text')['transformCase']>
+    readonly transformCase: UnwrapRef<typeof import('@rotki/common')['transformCase']>
     readonly transformEntryWithMeta: UnwrapRef<typeof import('./utils/history/index')['transformEntryWithMeta']>
     readonly triggerRef: UnwrapRef<typeof import('vue')['triggerRef']>
     readonly trimOnPaste: UnwrapRef<typeof import('./utils/event')['trimOnPaste']>
