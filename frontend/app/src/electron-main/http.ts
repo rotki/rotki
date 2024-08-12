@@ -1,7 +1,6 @@
 import fs from 'node:fs';
 import http, { type IncomingMessage, type OutgoingHttpHeaders, type Server, type ServerResponse } from 'node:http';
 import path from 'node:path';
-import { assert } from '@/utils/assertions';
 import { checkIfDevelopment } from '@/utils/env-utils';
 import type { Buffer } from 'node:buffer';
 

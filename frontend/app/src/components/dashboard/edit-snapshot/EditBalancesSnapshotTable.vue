@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { CURRENCY_USD } from '@/types/currencies';
 import { isNft } from '@/utils/nft';
-import { toSentenceCase } from '@/utils/text';
 import { BalanceType } from '@/types/balances';
 import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';

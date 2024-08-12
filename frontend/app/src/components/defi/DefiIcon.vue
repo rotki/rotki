@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { toSentenceCase } from '@/utils/text';
-
 interface Item {
   icon?: string;
   name: string;

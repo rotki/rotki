@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { Zero } from '@/utils/bignumbers';
-import type { XswapAsset, XswapBalance } from '@rotki/common/lib/defi/xswap';
+import { type XswapAsset, type XswapBalance, Zero } from '@rotki/common';
 
 defineProps<{
   balance: XswapBalance;

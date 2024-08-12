@@ -1,6 +1,5 @@
 <script lang="ts" setup>
 import { TaskType } from '@/types/task-type';
-import { toSentenceCase } from '@/utils/text';
 import type { EvmUnDecodedTransactionsData, ProtocolCacheUpdatesData } from '@/types/websocket-messages';
 import type { DataTableColumn } from '@rotki/ui-library';
 

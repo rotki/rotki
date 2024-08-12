@@ -1,4 +1,4 @@
-import { hexToRgbPoints } from '@/utils/color';
+import { hexToRgbPoints } from '@rotki/common';
 
 export class TagManager {
   addTag(parent: string, name: string, description: string, background?: string, foreground?: string) {

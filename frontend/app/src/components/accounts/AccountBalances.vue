@@ -4,7 +4,6 @@ import { AccountExternalFilterSchema, type Filters, type Matcher } from '@/compo
 import { getAccountAddress, getGroupId } from '@/utils/blockchain/accounts';
 import AccountBalancesTable from '@/components/accounts/AccountBalancesTable.vue';
 import AccountGroupDetails from '@/components/accounts/AccountGroupDetails.vue';
-import { toSentenceCase } from '@/utils/text';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 import type { Collection } from '@/types/collection';
 import type {

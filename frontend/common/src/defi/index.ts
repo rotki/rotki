@@ -1,5 +1,11 @@
 import type { Balance } from '../index';
 
+export * from './xswap';
+
+export * from './aave';
+
+export * from './balancer';
+
 export interface ProfitLossModel {
   readonly address: string;
   readonly asset: string;

@@ -1,3 +1,5 @@
+import { assert } from '../assertions';
+
 export function invertColor(color: string, bw = true): string {
   if (color.indexOf('#') === 0)
     color = color.slice(1);

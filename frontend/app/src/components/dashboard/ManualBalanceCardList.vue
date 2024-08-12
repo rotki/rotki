@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Routes } from '@/router/routes';
-import { toCapitalCase } from '@/utils/text';
 import type { BigNumber } from '@rotki/common';
 
 const props = defineProps<{

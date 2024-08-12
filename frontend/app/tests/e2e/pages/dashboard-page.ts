@@ -1,7 +1,6 @@
-import { Zero } from '@/utils/bignumbers';
+import { type BigNumber, Zero } from '@rotki/common';
 import { parseBigNumber, updateLocationBalance } from '../utils/amounts';
 import { RotkiApp } from './rotki-app';
-import type { BigNumber } from '@rotki/common';
 
 export class DashboardPage {
   visit() {

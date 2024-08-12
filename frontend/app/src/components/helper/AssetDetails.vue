@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { getAddressFromEvmIdentifier } from '@/utils/assets';
 import type { StyleValue } from 'vue';
 import type { AssetInfoWithId } from '@/types/asset';
 

@@ -72,6 +72,7 @@ export default defineConfig({
       vueTsc: !(process.env.CI || process.env.VITE_TEST || process.env.VITEST),
     }),
     AutoImport({
+      packagePresets: ['@rotki/common'],
       include: [
         /\.[jt]sx?$/, // .ts, .tsx, .js, .jsx
         /\.vue$/,

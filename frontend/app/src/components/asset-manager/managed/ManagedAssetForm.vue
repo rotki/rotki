@@ -1,8 +1,6 @@
 <script setup lang="ts">
-import { onlyIfTruthy } from '@rotki/common';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { omit } from 'lodash-es';
-import { toSentenceCase } from '@/utils/text';
 import { evmTokenKindsData } from '@/types/blockchain/chains';
 import { CUSTOM_ASSET, EVM_TOKEN } from '@/types/asset';
 import { ApiValidationError } from '@/types/api/errors';

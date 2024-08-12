@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { AddressNamePriority } from '@/types/settings/address-name-priorities';
 import { PriceOracle } from '@/types/settings/price-oracle';
-import { toSentenceCase } from '@/utils/text';
 import type { PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
 import type { PrioritizedListId } from '@/types/settings/prioritized-list-id';
 
