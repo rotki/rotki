@@ -1078,3 +1078,39 @@ def test_deadlock_logout(
     # shouldn't raise any exception because we released it
     GlobalDBHandler().packaged_db_lock.acquire()
     assert len(task_manager.running_greenlets) == 0
+
+
+@pytest.mark.parametrize('max_tasks_num', [5])
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+def test_snapshots_dont_happen_always(rotkehlchen_api_server: 'APIServer') -> None:
+    """Regression test for an issue we had where the task for snapshots was
+    creating one for each run of the background task.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    task_manager = cast(TaskManager, rotki.task_manager)
+
+    task_manager.potential_tasks = [task_manager._maybe_update_snapshot_balances]
+    task_manager.should_schedule = True
+
+    query = 'SELECT COUNT(*) FROM timed_location_data'
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert cursor.execute(query).fetchone()[0] == 0
+
+        # Schedule the task and check that we got one snapshot.
+        task_manager.schedule()
+        gevent.joinall(rotki.greenlet_manager.greenlets)
+        assert cursor.execute(query).fetchone()[0] == 1
+
+        # Schedule again. The job shouldn't run.
+        task_manager.schedule()
+        gevent.joinall(rotki.greenlet_manager.greenlets)
+        assert cursor.execute(query).fetchone()[0] == 1
+
+        with patch(  # Force a new snapshot.
+            'rotkehlchen.db.dbhandler.DBHandler.get_last_balance_save_time',
+            return_value=Timestamp(0),
+        ):
+            task_manager.schedule()
+            gevent.joinall(rotki.greenlet_manager.greenlets)
+
+        assert cursor.execute(query).fetchone()[0] == 2
