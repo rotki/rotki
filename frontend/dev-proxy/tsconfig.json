@@ -1,24 +1,16 @@
 {
   "compilerOptions": {
-    // Target latest version of ECMAScript.
-    "target": "ES2020",
-    "baseUrl": ".",
-    "module": "commonjs",
-    // Search under node_modules for non-relative imports.
-    "moduleResolution": "node",
-    "typeRoots": ["node_modules/@types"],
-    // Process & infer types from .js files.
+    // Treat files as modules even if it doesn't use import/export
+    "moduleDetection": "force",
+    // Ignore module structure
+    "module": "Preserve",
+    // Allow JSON modules to be imported
+    "resolveJsonModule": true,
+    // Allow JS files to be imported from TS and vice versa
     "allowJs": true,
-    // Enable strictest settings like strictNullChecks & noImplicitAny.
-    "strict": true,
-    // Don't emit; allow Babel to transform files.
-    "noEmit": true,
-    "sourceMap": true,
-    // Import non-ES modules as default imports.
+    // Use correct ESM import behavior
     "esModuleInterop": true,
-    // Disallow features that require cross-file information for emit.
+    // Disallow features that require cross-file awareness
     "isolatedModules": true
-  },
-  "include": ["src"],
-  "exclude": ["node_modules/**", "**/.*"]
+  }
 }

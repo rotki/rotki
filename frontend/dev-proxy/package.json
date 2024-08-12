@@ -2,26 +2,24 @@
   "name": "@rotki/dev-proxy",
   "version": "1.0.0",
   "description": "",
-  "type": "commonjs",
+  "type": "module",
   "keywords": [],
   "license": "AGPL-3.0",
   "author": "Rotki Solutions GmbH",
   "scripts": {
-    "serve": "nodemon -r dotenv/config src/index.ts"
+    "serve": "tsx --env-file=.env --watch ./src/index.ts"
   },
   "dependencies": {
     "body-parser": "1.20.2",
     "express": "4.19.2",
-    "http-proxy-middleware": "2.0.6"
+    "http-proxy-middleware": "3.0.0"
   },
   "devDependencies": {
     "@types/body-parser": "1.19.5",
     "@types/express": "4.17.21",
-    "@types/node": "22.1.0",
+    "@types/node": "20.14.15",
     "consola": "3.2.3",
-    "dotenv": "16.4.5",
-    "nodemon": "3.1.4",
-    "ts-node": "10.9.2",
+    "tsx": "4.17.0",
     "typescript": "5.5.4"
   }
 }
