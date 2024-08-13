@@ -880,6 +880,130 @@ def test_gnosis_vested_claim(database, gnosis_inquirer, gnosis_accounts):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0x4eF72636664E3348791357588b7d3BF61d29f4DF']])
+def test_gnosis_claim_airdrop_with_xdai_payment(database, gnosis_inquirer, gnosis_accounts):
+    user_address = gnosis_accounts[0]
+    tx_hash = deserialize_evm_tx_hash('0x1b82f080f70f00d63be3da2bed93834c254517640406aec949126020f7deb4c4')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas_amount, payment_amount, claim_amount = TimestampMS(1644614725000), '0.00012231000065232', '864.055299539170506912', '5760.36866359447004608'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_XDAI,
+            balance=Balance(amount=FVal(gas_amount)),
+            location_label=user_address,
+            notes=f'Burned {gas_amount} XDAI for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=A_XDAI,
+            balance=Balance(amount=FVal(payment_amount)),
+            location_label=user_address,
+            notes=f'Pay {payment_amount} XDAI to claim vCOW',
+            tx_hash=tx_hash,
+            counterparty=None,
+            address=A_GNOSIS_VCOW.resolve_to_evm_token().evm_address,
+        ), EvmEvent(
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_GNOSIS_VCOW,
+            balance=Balance(amount=FVal(claim_amount)),
+            location_label=user_address,
+            notes=f'Claim {claim_amount} vCOW from cowswap airdrop',
+            tx_hash=tx_hash,
+            counterparty=CPT_COWSWAP,
+            address=ZERO_ADDRESS,
+            extra_data={AIRDROP_IDENTIFIER_KEY: 'cow_gnosis'},
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0x0b297C31d2DA6d959Bc911413990653e19F0e283']])
+def test_gnosis_claim_airdrop_with_gno_payment(database, gnosis_inquirer, gnosis_accounts):
+    user_address = gnosis_accounts[0]
+    tx_hash = deserialize_evm_tx_hash('0xdae21fd2a64756326ba0bf119b8ee33cf41480fb758d0d7f17168fcc01622da1')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        database=database,
+        tx_hash=tx_hash,
+    )
+    timestamp, gas_amount, claim1_amount, payment_amount, claim2_amount = TimestampMS(1645776935000), '0.000259548002076384', '3559.387459031416241036', '2.085578589276220452', '3559.387459031416239786'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_XDAI,
+            balance=Balance(amount=FVal(gas_amount)),
+            location_label=user_address,
+            notes=f'Burned {gas_amount} XDAI for gas',
+            tx_hash=tx_hash,
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            sequence_index=10,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.AIRDROP,
+            asset=A_GNOSIS_VCOW,
+            balance=Balance(amount=FVal(claim1_amount)),
+            location_label=user_address,
+            notes=f'Claim {claim1_amount} vCOW from cowswap airdrop',
+            tx_hash=tx_hash,
+            counterparty=CPT_COWSWAP,
+            address=ZERO_ADDRESS,
+            extra_data={AIRDROP_IDENTIFIER_KEY: 'cow_gnosis'},
+        ), EvmEvent(
+            sequence_index=11,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=Asset('eip155:100/erc20:0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb'),
+            balance=Balance(amount=FVal(payment_amount)),
+            location_label=user_address,
+            notes=f'Pay {payment_amount} GNO to claim vCOW',
+            tx_hash=tx_hash,
+            counterparty=None,
+            address='0xcA771eda0c70aA7d053aB1B25004559B918FE662',
+        ), EvmEvent(
+            sequence_index=12,
+            timestamp=timestamp,
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=A_GNOSIS_VCOW,
+            balance=Balance(amount=FVal(claim2_amount)),
+            location_label=user_address,
+            notes=f'Claim {claim2_amount} vCOW from cowswap airdrop',
+            tx_hash=tx_hash,
+            counterparty=CPT_COWSWAP,
+            address=ZERO_ADDRESS,
+            extra_data={AIRDROP_IDENTIFIER_KEY: 'cow_gnosis'},
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 def test_swap_token_to_token_arb(database, arbitrum_one_inquirer, arbitrum_one_accounts):
     tx_hex = deserialize_evm_tx_hash('0xd1b5ca7b7616f827216d4fd541f87b5c4571e568754f1d05ad87370975d4c69a')  # noqa: E501

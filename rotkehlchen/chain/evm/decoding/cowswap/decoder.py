@@ -323,6 +323,7 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
             wrapped_native_asset: Asset,
             vcow_token: Asset,
             cow_token: Asset,
+            gno_token: Asset,
     ) -> None:
         super().__init__(
             evm_inquirer=evm_inquirer,
@@ -333,6 +334,7 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
         )
         self.vcow_token = vcow_token.resolve_to_evm_token()
         self.cow_token = cow_token.resolve_to_evm_token()
+        self.gno_token = gno_token.resolve_to_evm_token()
 
     def _cowswap_post_decoding(
             self,
@@ -369,7 +371,28 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[128:160])
         amount = asset_normalized_value(amount=raw_amount, asset=self.vcow_token)
         airdrop_identifier: Literal['cow_mainnet', 'cow_gnosis'] = 'cow_mainnet' if self.evm_inquirer.chain_id == ChainID.ETHEREUM else 'cow_gnosis'  # noqa: E501
+        # claimTypes with payment: 1=GnoOption, 2=UserOption, 3=Investor
+        claim_supports_payment = hex_or_bytes_to_int(context.tx_log.data[32:64]) in (1, 2, 3)
+        claimant_address = hex_or_bytes_to_address(context.tx_log.data[64:96])
+        if not self.base.is_tracked(claimant_address):
+            return DEFAULT_DECODING_OUTPUT
+        claim_has_payment = False
+        out_event = in_event = None
         for event in context.decoded_events:
+            # Claim event always follows payment. Continue on payment, break on claim.
+            if (
+                claim_supports_payment and
+                event.location_label == claimant_address and
+                event.event_type == HistoryEventType.SPEND and
+                event.event_subtype == HistoryEventSubType.NONE and
+                event.asset in (self.evm_inquirer.native_token, self.gno_token)
+            ):
+                event.event_type = HistoryEventType.TRADE
+                event.event_subtype = HistoryEventSubType.SPEND
+                event.notes = f'Pay {event.balance.amount} {event.asset.symbol_or_name()} to claim vCOW'  # noqa: E501
+                claim_has_payment = True
+                out_event = event
+                continue
             if match_airdrop_claim(
                 event,
                 user_address=hex_or_bytes_to_address(context.tx_log.data[64:96]),
@@ -378,10 +401,23 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
                 counterparty=CPT_COWSWAP,
                 airdrop_identifier=airdrop_identifier,
             ):
+                if claim_has_payment:
+                    event.event_type = HistoryEventType.TRADE
+                    event.event_subtype = HistoryEventSubType.RECEIVE
+                    in_event = event
                 break
 
         else:
             log.error(f'Could not find the normal COW token claim for {self.evm_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}')  # noqa: E501
+
+        if claim_has_payment:
+            if in_event is not None:
+                maybe_reshuffle_events(
+                    ordered_events=[out_event, in_event],
+                    events_list=context.decoded_events,
+                )
+            else:
+                log.error(f'Could not find the COW token claim corresponding to detected payment for {self.evm_inquirer.chain_name} transaction {context.transaction.tx_hash.hex()}')  # noqa: E501
 
         return DEFAULT_DECODING_OUTPUT
 
