@@ -162,6 +162,9 @@ class EigenlayerBalances(ProtocolWithBalance):
         )
         for address, event_list in addresses_with_withdrawals.items():
             for event in event_list:
+                if event.asset == A_ETH:
+                    continue  # For native ETH restaking's pending ETH we count from the eigenpod. Doing it here again would double count  # noqa: E501
+
                 if event.extra_data is None:
                     log.error(f'Unexpected eigenlayer withdrawal queueing event {event}. Missing extra data. Skipping')  # noqa: E501
                     continue
@@ -185,8 +188,8 @@ class EigenlayerBalances(ProtocolWithBalance):
 
         return balances
 
-    def _query_delayed_withdrawal_balances(self, balances: 'BalancesSheetType') -> 'BalancesSheetType':  # noqa: E501
-        """Queries the balance of ETH in the Delayed Withdrawal router"""
+    def _query_eigenpod_balances(self, balances: 'BalancesSheetType') -> 'BalancesSheetType':
+        """Queries the balance of ETH in the eigenpod and in the Delayed Withdrawal router"""
         if len(eigenpod_data := self.addresses_with_activity(
             event_types={(HistoryEventType.INFORMATIONAL, HistoryEventSubType.CREATE)},
         )) == 0:
@@ -203,7 +206,15 @@ class EigenlayerBalances(ProtocolWithBalance):
 
                 owner_mapping[eigenpod] = owner
 
-        eth_price = Inquirer.find_usd_price(A_ETH)  # check the balance in the delayed withdrawal router for all eigenpod owners  # noqa: E501
+        eth_price = Inquirer.find_usd_price(A_ETH)  # now query all eigenpod balances and add it
+        for eigenpod_address, amount in self.evm_inquirer.get_multi_balance(accounts=list(owner_mapping.keys())).items():  # noqa: E501
+            if amount > ZERO:
+                balances[owner_mapping[eigenpod_address]].assets[A_ETH] += Balance(
+                    amount=amount,
+                    usd_value=eth_price * amount,
+                )
+
+        # finally check the balance in the delayed withdrawal router for all eigenpod owners
         contract = EvmContract(  # TODO: perhaps move this in the DB
             address=EIGENPOD_DELAYED_WITHDRAWAL_ROUTER,
             abi=EIGENPOD_DELAYED_WITHDRAWAL_ROUTER_ABI,
@@ -244,6 +255,6 @@ class EigenlayerBalances(ProtocolWithBalance):
         """
         balances: BalancesSheetType = defaultdict(BalanceSheet)
         balances = self._query_lst_deposits(balances)
-        balances = self._query_delayed_withdrawal_balances(balances)
+        balances = self._query_eigenpod_balances(balances)
         balances = self._query_token_pending_withdrawals(balances)
         return balances
