@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Rotki will now decode payments for cowswap vCOW claims
 * :feature:`8378` Rotki will now decode zksync lite withdrawals
 * :bug:`` Change the flow for importing addresses from MetaMask. Instead of automatically proceeding with the imported addresses, they will only be displayed in the text input, for better clarity.
 * :feature:`7629` Rotki will now decode all the swap events done via Odos v1 and v2.
