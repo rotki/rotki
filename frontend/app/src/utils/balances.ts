@@ -2,11 +2,11 @@ import type {
   AssetBalance,
   BigNumber,
   HasBalance,
+  Writeable,
 } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { AssetBalances } from '@/types/balances';
 import type { AssetBreakdown } from '@/types/blockchain/accounts';
-import type { Writeable } from '@/types';
 
 export function removeZeroAssets(entries: AssetBalances): AssetBalances {
   const balances = { ...entries };

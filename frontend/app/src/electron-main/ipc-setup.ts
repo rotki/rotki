@@ -5,37 +5,12 @@ import Store from 'electron-store';
 import { autoUpdater } from 'electron-updater';
 import { loadConfig } from '@/electron-main/config';
 import { startHttp, stopHttp } from '@/electron-main/http';
-import {
-  IPC_BACKEND_PROCESS_DETECTED,
-  IPC_CHECK_FOR_UPDATES,
-  IPC_CLEAR_PASSWORD,
-  IPC_CLOSE_APP,
-  IPC_CONFIG,
-  IPC_DOWNLOAD_PROGRESS,
-  IPC_DOWNLOAD_UPDATE,
-  IPC_GET_DEBUG,
-  IPC_GET_PASSWORD,
-  IPC_INSTALL_UPDATE,
-  IPC_IS_MAC,
-  IPC_LOG_TO_FILE,
-  IPC_METAMASK_IMPORT,
-  IPC_OPEN_DIRECTORY,
-  IPC_OPEN_PATH,
-  IPC_OPEN_URL,
-  IPC_PREMIUM_LOGIN,
-  IPC_RESTART_BACKEND,
-  IPC_SERVER_URL,
-  IPC_STORE_PASSWORD,
-  IPC_THEME,
-  IPC_TRAY_UPDATE,
-  IPC_VERSION,
-} from '@/electron-main/ipc-commands';
 import { type MenuActions, debugSettings, getUserMenu } from '@/electron-main/menu';
 import { selectPort } from '@/electron-main/port-utils';
 import { checkIfDevelopment } from '@/utils/env-utils';
 import { startPromise } from '@/utils';
+import { type BackendOptions, IpcCommands, type SystemVersion, type TrayUpdate } from '@/electron-main/ipc';
 import type { TrayManager } from '@/electron-main/tray-manager';
-import type { BackendOptions, SystemVersion, TrayUpdate } from '@/electron-main/ipc';
 import type { ProgressInfo } from 'electron-builder';
 import type { SubprocessHandler } from '@/subprocess-handler';
 
@@ -66,7 +41,7 @@ function setupMetamaskImport() {
   async function importFromMetamask(event: Electron.IpcMainEvent) {
     try {
       const port = startHttp(
-        addresses => event.sender.send(IPC_METAMASK_IMPORT, { addresses }),
+        addresses => event.sender.send(IpcCommands.METAMASK_IMPORT, { addresses }),
         await selectPort(40000),
       );
       await shell.openExternal(`http://localhost:${port}`);
@@ -75,15 +50,15 @@ function setupMetamaskImport() {
 
       importTimeout = setTimeout(() => {
         stopHttp();
-        event.sender.send(IPC_METAMASK_IMPORT, { error: 'waiting timeout' });
+        event.sender.send(IpcCommands.METAMASK_IMPORT, { error: 'waiting timeout' });
       }, 120000);
     }
     catch (error: any) {
-      event.sender.send(IPC_METAMASK_IMPORT, { error: error.message });
+      event.sender.send(IpcCommands.METAMASK_IMPORT, { error: error.message });
     }
   }
 
-  ipcMain.on(IPC_METAMASK_IMPORT, (event, _args) => startPromise(importFromMetamask(event)));
+  ipcMain.on(IpcCommands.METAMASK_IMPORT, (event, _args) => startPromise(importFromMetamask(event)));
 }
 
 let firstStart = true;
@@ -95,7 +70,7 @@ function setupBackendRestart(getWindow: WindowProvider, pyHandler: SubprocessHan
       firstStart = false;
       const pids = await pyHandler.checkForBackendProcess();
       if (pids.length > 0)
-        event.sender.send(IPC_BACKEND_PROCESS_DETECTED, pids);
+        event.sender.send(IpcCommands.BACKEND_PROCESS_DETECTED, pids);
     }
 
     let success = false;
@@ -116,10 +91,10 @@ function setupBackendRestart(getWindow: WindowProvider, pyHandler: SubprocessHan
       }
     }
 
-    event.sender.send(IPC_RESTART_BACKEND, success);
+    event.sender.send(IpcCommands.RESTART_BACKEND, success);
   }
 
-  ipcMain.on(IPC_RESTART_BACKEND, (event, options: Partial<BackendOptions>) => {
+  ipcMain.on(IpcCommands.RESTART_BACKEND, (event, options: Partial<BackendOptions>) => {
     startPromise(restartBackend(event, options));
   });
 }
@@ -132,26 +107,26 @@ function setupVersionInfo() {
     electron: process.versions.electron,
   };
 
-  ipcMain.on(IPC_VERSION, (event) => {
-    event.sender.send(IPC_VERSION, version);
+  ipcMain.on(IpcCommands.VERSION, (event) => {
+    event.sender.send(IpcCommands.VERSION, version);
   });
 
-  ipcMain.on(IPC_IS_MAC, (event) => {
+  ipcMain.on(IpcCommands.IS_MAC, (event) => {
     const isMac = version?.os === 'darwin';
-    event.sender.send(IPC_IS_MAC, isMac);
+    event.sender.send(IpcCommands.IS_MAC, isMac);
   });
 }
 
 function setupSelectedTheme() {
-  ipcMain.on(IPC_THEME, (event, selectedTheme: number) => {
+  ipcMain.on(IpcCommands.THEME, (event, selectedTheme: number) => {
     const themeSource = ['dark', 'system', 'light'] as const;
     nativeTheme.themeSource = themeSource[selectedTheme];
-    event.sender.send(IPC_THEME, nativeTheme.shouldUseDarkColors);
+    event.sender.send(IpcCommands.THEME, nativeTheme.shouldUseDarkColors);
   });
 }
 
 function setupTrayInterop(trayManager: TrayManager) {
-  ipcMain.on(IPC_TRAY_UPDATE, (_event, trayUpdate: TrayUpdate) => {
+  ipcMain.on(IpcCommands.TRAY_UPDATE, (_event, trayUpdate: TrayUpdate) => {
     trayManager.update(trayUpdate);
   });
 }
@@ -180,28 +155,28 @@ function setupPasswordStorage() {
     return '';
   };
 
-  ipcMain.on(IPC_STORE_PASSWORD, (event, { username, password }: { username: string; password: string }) => {
+  ipcMain.on(IpcCommands.STORE_PASSWORD, (event, { username, password }: { username: string; password: string }) => {
     let success = false;
     if (getEncryptionAvailability()) {
       setPassword(username, password);
       success = true;
     }
-    event.sender.send(IPC_STORE_PASSWORD, success);
+    event.sender.send(IpcCommands.STORE_PASSWORD, success);
   });
 
-  ipcMain.on(IPC_GET_PASSWORD, (event, username: string) => {
+  ipcMain.on(IpcCommands.GET_PASSWORD, (event, username: string) => {
     let password = '';
     if (getEncryptionAvailability())
       password = getPassword(username);
 
-    event.sender.send(IPC_GET_PASSWORD, password);
+    event.sender.send(IpcCommands.GET_PASSWORD, password);
   });
 
-  ipcMain.on(IPC_CLEAR_PASSWORD, (event) => {
+  ipcMain.on(IpcCommands.CLEAR_PASSWORD, (event) => {
     if (getEncryptionAvailability())
       clearPassword();
 
-    event.sender.send(IPC_CLEAR_PASSWORD);
+    event.sender.send(IpcCommands.CLEAR_PASSWORD);
   });
 }
 
@@ -213,21 +188,21 @@ export function ipcSetup(
   menuActions: MenuActions,
   ensureSafeUpdateRestart: () => void,
 ) {
-  ipcMain.on(IPC_GET_DEBUG, (event) => {
+  ipcMain.on(IpcCommands.GET_DEBUG, (event) => {
     event.returnValue = debugSettings;
   });
 
-  ipcMain.on(IPC_SERVER_URL, (event) => {
+  ipcMain.on(IpcCommands.SERVER_URL, (event) => {
     event.returnValue = pyHandler.serverUrl;
   });
 
-  ipcMain.on(IPC_PREMIUM_LOGIN, (_event, args) => {
+  ipcMain.on(IpcCommands.PREMIUM_LOGIN, (_event, args) => {
     Menu.setApplicationMenu(Menu.buildFromTemplate(getUserMenu(!args, menuActions)));
   });
 
-  ipcMain.on(IPC_CLOSE_APP, () => startPromise(closeApp()));
+  ipcMain.on(IpcCommands.CLOSE_APP, () => startPromise(closeApp()));
 
-  ipcMain.on(IPC_OPEN_URL, (_event, args) => {
+  ipcMain.on(IpcCommands.OPEN_URL, (_event, args) => {
     if (!args.startsWith('https://')) {
       console.error(`Error: Requested to open untrusted URL: ${args} `);
       return;
@@ -235,22 +210,22 @@ export function ipcSetup(
     startPromise(shell.openExternal(args));
   });
 
-  ipcMain.on(IPC_OPEN_DIRECTORY, (event, title: string, defaultPath?: string) => {
+  ipcMain.on(IpcCommands.OPEN_DIRECTORY, (event, title: string, defaultPath?: string) => {
     select(title, 'openDirectory', defaultPath)
       .then((directory) => {
-        event.sender.send(IPC_OPEN_DIRECTORY, directory);
+        event.sender.send(IpcCommands.OPEN_DIRECTORY, directory);
       })
       .catch(error => console.error(error));
   });
-  ipcMain.on(IPC_OPEN_PATH, (_event, path) => {
+  ipcMain.on(IpcCommands.OPEN_PATH, (_event, path) => {
     startPromise(shell.openPath(path));
   });
-  ipcMain.on(IPC_CONFIG, (event, defaults: boolean) => {
+  ipcMain.on(IpcCommands.CONFIG, (event, defaults: boolean) => {
     const options: Partial<BackendOptions> = defaults ? { logDirectory: pyHandler.defaultLogDirectory } : loadConfig();
-    event.sender.send(IPC_CONFIG, options);
+    event.sender.send(IpcCommands.CONFIG, options);
   });
 
-  ipcMain.on(IPC_LOG_TO_FILE, (_, message: string) => {
+  ipcMain.on(IpcCommands.LOG_TO_FILE, (_, message: string) => {
     pyHandler.logToFile(message);
   });
 
@@ -284,39 +259,39 @@ function setupInstallUpdate(pyHandler: SubprocessHandler, ensureSafeUpdateRestar
     });
     try {
       await quit;
-      event.sender.send(IPC_INSTALL_UPDATE, true);
+      event.sender.send(IpcCommands.INSTALL_UPDATE, true);
     }
     catch (error: any) {
       pyHandler.logToFile(error);
-      event.sender.send(IPC_INSTALL_UPDATE, error);
+      event.sender.send(IpcCommands.INSTALL_UPDATE, error);
     }
   }
 
-  ipcMain.on(IPC_INSTALL_UPDATE, event => startPromise(installUpdate(event)));
+  ipcMain.on(IpcCommands.INSTALL_UPDATE, event => startPromise(installUpdate(event)));
 }
 
 function setupDownloadUpdate(getWindow: WindowProvider, pyHandler: SubprocessHandler) {
   async function downloadUpdate(event: Electron.IpcMainEvent) {
     const window = getWindow();
     const progress = (progress: ProgressInfo) => {
-      event.sender.send(IPC_DOWNLOAD_PROGRESS, progress.percent);
+      event.sender.send(IpcCommands.DOWNLOAD_PROGRESS, progress.percent);
       window.setProgressBar(progress.percent);
     };
     autoUpdater.on('download-progress', progress);
     try {
       await autoUpdater.downloadUpdate();
-      event.sender.send(IPC_DOWNLOAD_UPDATE, true);
+      event.sender.send(IpcCommands.DOWNLOAD_UPDATE, true);
     }
     catch (error: any) {
       pyHandler.logToFile(error);
-      event.sender.send(IPC_DOWNLOAD_UPDATE, false);
+      event.sender.send(IpcCommands.DOWNLOAD_UPDATE, false);
     }
     finally {
       autoUpdater.off('download-progress', progress);
     }
   }
 
-  ipcMain.on(IPC_DOWNLOAD_UPDATE, event => startPromise(downloadUpdate(event)));
+  ipcMain.on(IpcCommands.DOWNLOAD_UPDATE, event => startPromise(downloadUpdate(event)));
 }
 
 function setupCheckForUpdates(pyHandler: SubprocessHandler) {
@@ -326,10 +301,10 @@ function setupCheckForUpdates(pyHandler: SubprocessHandler) {
       return;
     }
     autoUpdater.once('update-available', () => {
-      event.sender.send(IPC_CHECK_FOR_UPDATES, true);
+      event.sender.send(IpcCommands.CHECK_FOR_UPDATES, true);
     });
     autoUpdater.once('update-not-available', () => {
-      event.sender.send(IPC_CHECK_FOR_UPDATES, false);
+      event.sender.send(IpcCommands.CHECK_FOR_UPDATES, false);
     });
 
     try {
@@ -338,11 +313,11 @@ function setupCheckForUpdates(pyHandler: SubprocessHandler) {
     catch (error: any) {
       console.error(error);
       pyHandler.logToFile(error);
-      event.sender.send(IPC_CHECK_FOR_UPDATES, false);
+      event.sender.send(IpcCommands.CHECK_FOR_UPDATES, false);
     }
   }
 
-  ipcMain.on(IPC_CHECK_FOR_UPDATES, event => startPromise(checkForUpdates(event)));
+  ipcMain.on(IpcCommands.CHECK_FOR_UPDATES, event => startPromise(checkForUpdates(event)));
 }
 
 function setupUpdaterInterop(

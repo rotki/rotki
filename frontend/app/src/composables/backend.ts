@@ -1,5 +1,5 @@
 import { BackendOptions } from '@/electron-main/ipc';
-import type { Writeable } from '@/types';
+import type { Writeable } from '@rotki/common';
 import type { LogLevel } from '@/utils/log-level';
 
 const BACKEND_OPTIONS = 'BACKEND_OPTIONS';

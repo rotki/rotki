@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useBreakpoint } from '@rotki/ui-library';
 import { TaskType } from '@/types/task-type';
 import type { EvmTransactionQueryData } from '@/types/websocket-messages';
 

@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useBreakpoint } from '@rotki/ui-library';
-
 const { t } = useI18n();
 const premium = usePremium();
 const { isLgAndDown } = useBreakpoint();

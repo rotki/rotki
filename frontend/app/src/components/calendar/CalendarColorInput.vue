@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { contextColors } from '@rotki/ui-library';
-
 const model = defineModel<string | undefined>({ required: true });
 
 const contextColorsInHex: string[] = contextColors

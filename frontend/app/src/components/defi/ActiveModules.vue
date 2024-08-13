@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
-import type { Nullable } from '@/types';
+import type { Nullable } from '@rotki/common';
 
 interface ModuleWithStatus {
   readonly identifier: Module;

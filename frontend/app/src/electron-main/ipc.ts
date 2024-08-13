@@ -1,7 +1,45 @@
 import { z } from 'zod';
 import { LogLevel } from '@/utils/log-level';
 import type { DebugSettings } from '@rotki/common/lib/settings';
-import type { BackendCode } from '@/electron-main/backend-code';
+
+export const BackendCode = {
+  TERMINATED: 0,
+  MACOS_VERSION: 1,
+  WIN_VERSION: 2,
+};
+
+export type BackendCode = typeof BackendCode[keyof typeof BackendCode];
+
+export const IpcCommands = {
+  RESTART_BACKEND: 'RESTART_BACKEND',
+  REQUEST_RESTART: 'REQUEST_RESTART',
+  BACKEND_PROCESS_DETECTED: 'BACKEND_PROCESS_DETECTED',
+  CHECK_FOR_UPDATES: 'CHECK_FOR_UPDATES',
+  DOWNLOAD_UPDATE: 'DOWNLOAD_UPDATE',
+  DOWNLOAD_PROGRESS: 'DOWNLOAD_PROGRESS',
+  INSTALL_UPDATE: 'INSTALL_UPDATE',
+  THEME: 'THEME',
+  VERSION: 'VERSION',
+  IS_MAC: 'IS_MAC',
+  ABOUT: 'ABOUT',
+  OPEN_PATH: 'OPEN_PATH',
+  CONFIG: 'CONFIG',
+  METAMASK_IMPORT: 'METAMASK_IMPORT',
+  SERVER_URL: 'SERVER_URL',
+  GET_DEBUG: 'GET_DEBUG',
+  OPEN_URL: 'OPEN_URL',
+  OPEN_DIRECTORY: 'OPEN_DIRECTORY',
+  DEBUG_SETTINGS: 'DEBUG_SETTINGS',
+  CLOSE_APP: 'CLOSE_APP',
+  PREMIUM_LOGIN: 'PREMIUM_USER_LOGGED_IN',
+  TRAY_UPDATE: 'TRAY_UPDATE',
+  LOG_TO_FILE: 'LOG_TO_FILE',
+  STORE_PASSWORD: 'STORE_PASSWORD',
+  GET_PASSWORD: 'GET_PASSWORD',
+  CLEAR_PASSWORD: 'CLEAR_PASSWORD',
+} as const;
+
+export type IpcCommands = typeof IpcCommands[keyof typeof IpcCommands];
 
 interface MetamaskImportError {
   readonly error: string;

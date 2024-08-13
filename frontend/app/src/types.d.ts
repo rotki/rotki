@@ -59,14 +59,6 @@ export interface EIP1193Provider {
   request: (request: Request) => Promise<Permission[] | string[]>;
 }
 
-export type Writeable<T> = { -readonly [P in keyof T]: T[P] };
-
-export type Properties<TObj, TResult> = {
-  [K in keyof TObj]: TObj[K] extends TResult ? K : never;
-}[keyof TObj];
-
-export type Nullable<T> = T | null;
-
 export interface WebVersion {
   readonly platform: string;
   readonly userAgent: string;

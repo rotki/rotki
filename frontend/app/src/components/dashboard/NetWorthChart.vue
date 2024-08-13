@@ -7,7 +7,6 @@ import {
 } from '@rotki/common/lib/settings/graphs';
 import { Chart, type ChartConfiguration, type ChartOptions, type TooltipOptions } from 'chart.js';
 import dayjs from 'dayjs';
-import { useRotkiTheme } from '@rotki/ui-library';
 import type { NetValue } from '@rotki/common/lib/statistics';
 import type { ValueOverTime } from '@/types/graphs';
 

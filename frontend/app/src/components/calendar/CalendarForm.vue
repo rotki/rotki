@@ -4,7 +4,7 @@ import { toMessages } from '@/utils/validation';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { ApiValidationError } from '@/types/api/errors';
 import type { CalendarEvent, CalendarEventPayload } from '@/types/history/calendar';
-import type { Writeable } from '@/types';
+import type { Writeable } from '@rotki/common';
 import type { Dayjs } from 'dayjs';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 

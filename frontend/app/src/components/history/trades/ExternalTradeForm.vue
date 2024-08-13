@@ -3,7 +3,7 @@ import { helpers, required, requiredIf } from '@vuelidate/validators';
 import dayjs from 'dayjs';
 import { TaskType } from '@/types/task-type';
 import { toMessages } from '@/utils/validation';
-import type { Writeable } from '@/types';
+import type { Writeable } from '@rotki/common';
 import type { NewTrade, Trade, TradeType } from '@/types/history/trade';
 
 const props = withDefaults(

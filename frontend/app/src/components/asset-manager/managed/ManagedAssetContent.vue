@@ -2,7 +2,7 @@
 import { isEqual, keyBy } from 'lodash-es';
 import type { SupportedAsset } from '@rotki/common/lib/data';
 import type { Collection } from '@/types/collection';
-import type { Nullable } from '@/types';
+import type { Nullable } from '@rotki/common';
 import type { AssetRequestPayload, IgnoredAssetsHandlingType } from '@/types/asset';
 import type { Filters, Matcher } from '@/composables/filters/assets';
 

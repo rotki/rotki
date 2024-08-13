@@ -1,14 +1,11 @@
 // TODO: Split class
 /* eslint-disable max-lines */
-import { type Balance, BigNumber } from '@rotki/common';
-import { assetSymbolToIdentifierMap } from '@rotki/common/lib/data';
+import { type AaveHistoryTotal, type AaveLending, type Balance, BigNumber, type Writeable, assetSymbolToIdentifierMap } from '@rotki/common';
 import { sortBy } from 'lodash-es';
 import { type Collateral, type DefiLoan, ProtocolVersion } from '@/types/defi';
 import { Section, Status } from '@/types/status';
 import { DefiProtocol } from '@/types/modules';
-import type { AaveHistoryTotal, AaveLending } from '@rotki/common/lib/defi/aave';
 import type { AaveLoan, BaseDefiBalance, DefiBalance, LoanSummary } from '@/types/defi/lending';
-import type { Writeable } from '@/types';
 import type { CompoundBalances, CompoundLoan } from '@/types/defi/compound';
 import type { MakerDAOVaultModel } from '@/types/defi/maker';
 import type { LiquityLoan } from '@/types/defi/liquity';

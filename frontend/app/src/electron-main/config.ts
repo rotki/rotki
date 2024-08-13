@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import { LogLevel } from '@/utils/log-level';
 import type { BackendOptions } from '@/electron-main/ipc';
-import type { Writeable } from '@/types';
+import type { Writeable } from '@rotki/common';
 
 const CONFIG_FILE = 'rotki_config.json';
 

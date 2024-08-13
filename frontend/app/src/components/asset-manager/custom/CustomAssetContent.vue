@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Nullable } from '@/types';
+import type { Nullable } from '@rotki/common';
 import type { Collection } from '@/types/collection';
 import type { Filters, Matcher } from '@/composables/filters/custom-assets';
 import type { CustomAsset, CustomAssetRequestPayload } from '@/types/asset';

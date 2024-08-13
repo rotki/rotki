@@ -2,8 +2,8 @@ import process from 'node:process';
 import { type BrowserWindow, type MenuItem, app, shell } from 'electron';
 import { settingsManager } from '@/electron-main/app-settings';
 import { externalLinks } from '@/data/external-links';
-import { IPC_ABOUT, IPC_DEBUG_SETTINGS, IPC_REQUEST_RESTART } from '@/electron-main/ipc-commands';
 import { checkIfDevelopment } from '@/utils/env-utils';
+import { IpcCommands } from '@/electron-main/ipc';
 
 const isDevelopment = checkIfDevelopment();
 const isMac = process.platform === 'darwin';
@@ -27,7 +27,7 @@ const debugMenu = {
       checked: debugSettings.persistStore,
       click: (item: MenuItem, browserWindow: BrowserWindow) => {
         debugSettings.persistStore = item.checked;
-        browserWindow.webContents.send(IPC_DEBUG_SETTINGS, debugSettings);
+        browserWindow.webContents.send(IpcCommands.DEBUG_SETTINGS, debugSettings);
         browserWindow.reload();
       },
     },
@@ -82,14 +82,14 @@ const helpMenu = {
       label: 'Reset Settings / Restart Backend',
       click: async (_item: MenuItem, browserWindow: BrowserWindow) => {
         await browserWindow.webContents.session.clearStorageData();
-        browserWindow.webContents.send(IPC_REQUEST_RESTART);
+        browserWindow.webContents.send(IpcCommands.REQUEST_RESTART);
       },
     },
     separator,
     {
       label: 'About',
       click: (_item: MenuItem, browserWindow: BrowserWindow) => {
-        browserWindow.webContents.send(IPC_ABOUT);
+        browserWindow.webContents.send(IpcCommands.ABOUT);
       },
     },
   ],

@@ -89,6 +89,9 @@ export default defineConfig({
         {
           'vue-i18n': ['useI18n'],
         },
+        {
+          '@rotki/ui-library': ['useRotkiTheme', 'useBreakpoint', 'contextColors'],
+        },
       ],
       dts: 'src/auto-imports.d.ts',
       dirs: ['src/composables/**', 'src/api/**', 'src/store/**', 'src/utils/**'],
