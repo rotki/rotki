@@ -94,9 +94,10 @@ def test_get_transaction_receipt(
             relevant_address=from_addy,
         )
 
-        # also test receipt can be stored and retrieved from the DB.
-        # This tests that all node types (say openethereum) are processed properly
-        db.add_or_ignore_receipt_data(cursor, ChainID.ETHEREUM, result)
+    # also test receipt can be stored and retrieved from the DB.
+    # This tests that all node types (say openethereum) are processed properly
+    db.add_or_ignore_receipt_data(ChainID.ETHEREUM, result)
+    with database.conn.read_ctx() as cursor:
         receipt = db.get_receipt(cursor, tx_hash, ChainID.ETHEREUM)
 
     assert receipt == EvmTxReceipt(

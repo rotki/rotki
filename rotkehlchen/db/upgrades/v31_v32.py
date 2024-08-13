@@ -6,7 +6,7 @@ from rotkehlchen.db.utils import update_table_schema
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 
@@ -189,7 +189,7 @@ def upgrade_v31_to_v32(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     -Sets fee to null for existing trades if fee_currency is missing.
     """
     progress_handler.set_total_steps(8)
-    with db.user_write() as write_cursor, db.conn.read_ctx() as read_cursor:
+    with db.user_read_write() as write_cursor, db.conn.read_ctx() as read_cursor:
         _update_history_entries_from_kraken(write_cursor)
         progress_handler.new_step()
         _upgrade_history_events(write_cursor)

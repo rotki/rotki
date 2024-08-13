@@ -35,7 +35,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBWriterClient
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -66,10 +66,10 @@ CACHE_QUERY_METHOD_TYPE = (
     ]
 )
 SAVE_CACHE_DATA_METHOD_TYPE = Callable[
-    ['DBCursor', 'DBHandler', list, ChainID],
+    ['DBWriterClient', 'DBHandler', list, ChainID],
     None,
 ] | Callable[
-    ['DBCursor', 'DBHandler', list],
+    ['DBWriterClient', 'DBHandler', list],
     None,
 ]
 
@@ -415,7 +415,7 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, ABC):
             evm_inquirer: 'EvmNodeInquirer',
             cache_type_to_check_for_freshness: CacheType,
             query_data_method: CACHE_QUERY_METHOD_TYPE,
-            save_data_to_cache_method: Callable[['DBCursor', 'DBHandler', list], None],
+            save_data_to_cache_method: Callable[['DBWriterClient', 'DBHandler', list], None],
             read_data_from_cache_method: Callable[[], tuple[dict[ChecksumEvmAddress, Any] | set[ChecksumEvmAddress], ...]],  # noqa: E501
     ) -> None:
         ...
@@ -426,7 +426,7 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, ABC):
             evm_inquirer: 'EvmNodeInquirer',
             cache_type_to_check_for_freshness: CacheType,
             query_data_method: CACHE_QUERY_METHOD_TYPE,
-            save_data_to_cache_method: Callable[['DBCursor', 'DBHandler', list, ChainID], None],
+            save_data_to_cache_method: Callable[['DBWriterClient', 'DBHandler', list, ChainID], None],  # noqa: E501
             read_data_from_cache_method: Callable[[ChainID], tuple[dict[ChecksumEvmAddress, Any] | set[ChecksumEvmAddress], ...]],  # noqa: E501
             chain_id: ChainID,
     ) -> None:

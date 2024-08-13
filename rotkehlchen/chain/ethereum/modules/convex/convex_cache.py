@@ -20,7 +20,7 @@ from rotkehlchen.utils.misc import hex_or_bytes_to_address
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -47,7 +47,7 @@ def get_existing_pools(
 
 
 def save_convex_data_to_cache(
-        write_cursor: 'DBCursor',
+        write_cursor: 'DBWriterClient',
         database: Optional['DBHandler'],  # pylint: disable=unused-argument
         new_data: list[ConvexPoolData],
 ) -> None:

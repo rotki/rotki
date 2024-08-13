@@ -22,7 +22,7 @@ if TYPE_CHECKING:
     from collections.abc import Sequence
 
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+    from rotkehlchen.db.drivers.client import DBConnection, DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 logger = logging.getLogger(__name__)
@@ -422,7 +422,7 @@ def upgrade_v34_to_v35(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     - Renames the asset identifiers to use CAIPS
     """
     progress_handler.set_total_steps(13)
-    with db.user_write() as write_cursor:
+    with db.user_read_write() as write_cursor:
         _clean_amm_swaps(write_cursor)
         progress_handler.new_step()
         _remove_unused_assets(write_cursor)

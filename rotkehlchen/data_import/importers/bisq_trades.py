@@ -5,7 +5,7 @@ from typing import Any
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants.assets import A_BSQ, A_BTC
 from rotkehlchen.data_import.utils import BaseExchangeImporter
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.client import DBWriterClient
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -21,7 +21,7 @@ from rotkehlchen.types import Location, Price, TradeType
 class BisqTradesImporter(BaseExchangeImporter):
     def _consume_bisq_trade(
             self,
-            write_cursor: DBCursor,
+            write_cursor: DBWriterClient,
             csv_row: dict[str, Any],
             timestamp_format: str = '%d %b %Y %H:%M:%S',
     ) -> None:
@@ -86,7 +86,7 @@ class BisqTradesImporter(BaseExchangeImporter):
         )
         self.add_trade(write_cursor, trade)
 
-    def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
+    def _import_csv(self, write_cursor: DBWriterClient, filepath: Path, **kwargs: Any) -> None:
         """
         Import trades from bisq. The information and comments about this importer were addressed
         at the issue https://github.com/rotki/rotki/issues/824

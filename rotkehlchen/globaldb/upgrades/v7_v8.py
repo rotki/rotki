@@ -5,7 +5,7 @@ from rotkehlchen.logging import enter_exit_debug_log
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+    from rotkehlchen.db.drivers.client import DBConnection, DBCursor
 
 
 ASSETS_TO_WHITELIST: Final = (
@@ -157,7 +157,7 @@ def migrate_to_v8(connection: 'DBConnection') -> None:
     - Rename the keys of curve cache to include chain_id
 
     This upgrade takes place in v1.34.0"""
-    with connection.write_ctx() as write_cursor:
+    with connection.read_write_ctx() as write_cursor:
         fix_detected_spam_tokens(write_cursor)
         set_unique_asset_collections(write_cursor)
         _update_scrollscan_contract(write_cursor)

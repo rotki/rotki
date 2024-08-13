@@ -19,7 +19,8 @@ from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.checks import sanity_check_impl
 from rotkehlchen.db.constants import HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
+from rotkehlchen.db.drivers.client import DBConnection, DBConnectionType
+from rotkehlchen.db.drivers.server import DEFAULT_DB_WRITER_PORT
 from rotkehlchen.db.schema import DB_SCRIPT_CREATE_TABLES
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION
 from rotkehlchen.db.upgrade_manager import (
@@ -132,6 +133,7 @@ def _init_db_with_target_version(
             initial_settings=None,
             sql_vm_instructions_cb=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
             resume_from_backup=resume_from_backup,
+            db_writer_port=DEFAULT_DB_WRITER_PORT,
         )
     return db
 
@@ -653,10 +655,12 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument
         msg_aggregator=msg_aggregator,
         resume_from_backup=False,
     )
-    cursor = db_v32.conn.cursor()
     # check that you cannot add blockchain column in xpub_mappings
-    with pytest.raises(sqlcipher.OperationalError) as exc_info:  # pylint: disable=no-member
-        cursor.execute(
+    with (
+        db_v32.user_write() as write_cursor,
+        pytest.raises(sqlcipher.OperationalError) as exc_info,  # pylint: disable=no-member
+    ):
+        write_cursor.execute(
             'INSERT INTO xpub_mappings(address, xpub, derivation_path, account_index, derived_index, blockchain) '  # noqa: E501
             'VALUES ("1234", "abcd", "d", 3, 6, "BCH");',
         )
@@ -669,6 +673,7 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument
         0,
         'BTC',
     )
+    cursor = db_v32.conn.cursor()
     old_xpub_mappings = cursor.execute('SELECT * FROM xpub_mappings').fetchall()
     assert len(old_xpub_mappings) == 2
     assert old_xpub_mappings[0] == xpub_mapping_data
@@ -711,11 +716,12 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument
     assert new_xpub_mappings == old_xpub_mappings
     # check that you can now add blockchain column in xpub_mappings
     address = '1MKSdDCtBSXiE49vik8xUG2pTgTGGh5pqe'
-    cursor.execute(
-        'INSERT INTO xpub_mappings(address, xpub, derivation_path, account_index, derived_index, blockchain) '  # noqa: E501
-        'VALUES (?, ?, ?, ?, ?, ?);',
-        (address, xpub_mapping_data[1], 'm', 0, 1, 'BTC'),
-    )
+    with db.user_write() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO xpub_mappings(address, xpub, derivation_path, account_index, derived_index, blockchain) '  # noqa: E501
+            'VALUES (?, ?, ?, ?, ?, ?);',
+            (address, xpub_mapping_data[1], 'm', 0, 1, 'BTC'),
+        )
     all_xpubs_mappings = cursor.execute('SELECT * FROM xpub_mappings').fetchall()
     assert len(all_xpubs_mappings) == 3
 
@@ -926,7 +932,7 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument
             ),
         )
     # it should fail before the upgrade
-    with db_v34.conn.write_ctx() as write_cursor, pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member
+    with db_v34.conn.read_write_ctx() as write_cursor, pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member
         try_insert_mapping(write_cursor)
     db_v34.logout()
 
@@ -938,7 +944,7 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument
         resume_from_backup=False,
     )
     # it should not fail after upgrade since we added `blockchain` to primary key
-    with db_v35.conn.write_ctx() as write_cursor:
+    with db_v35.conn.read_write_ctx() as write_cursor:
         try_insert_mapping(write_cursor)
 
     expected_xpubs_mappings = [
@@ -1312,7 +1318,8 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
     ]
 
     # test that the blockchain column is nullable
-    cursor.execute('INSERT INTO address_book(address, blockchain, name) VALUES ("0xc37b40ABdB939635068d3c5f13E7faF686F03B65", NULL, "yabir everywhere")')  # noqa: E501
+    with db.user_write() as write_cursor:
+        write_cursor.execute('INSERT INTO address_book(address, blockchain, name) VALUES ("0xc37b40ABdB939635068d3c5f13E7faF686F03B65", NULL, "yabir everywhere")')  # noqa: E501
 
     # test that address book entries were kept
     cursor.execute('SELECT * FROM address_book')
@@ -2055,7 +2062,7 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggr
         'yearn_vaults_v2_events_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12': '890',
         'gnosisbridge_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12': '901',
     }
-    with db_v40.conn.write_ctx() as cursor:
+    with db_v40.conn.read_ctx() as cursor, db_v40.conn.write_ctx() as write_cursor:
         assert table_exists(cursor, 'key_value_cache') is False
         cursor.execute('SELECT name FROM settings;')
         for names in cursor:
@@ -2078,7 +2085,7 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggr
             ('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12', 'btc', 'btc1_address_book'),
         ]  # eth1 and btc1 already exists in address_book
         if address_name_priority is not None:
-            cursor.execute(
+            write_cursor.execute(
                 'INSERT INTO settings(name, value) VALUES(?, ?)',
                 ('address_name_priority', json.dumps(address_name_priority)),
             )
@@ -2092,8 +2099,6 @@ def test_upgrade_db_40_to_41(user_data_dir, address_name_priority, messages_aggr
             (f'{Location.BITTREX!s}\\_%', '\\'),
         ).fetchone()[0] == 3
 
-    # test external credentials are there
-    with db_v40.conn.read_ctx() as cursor:
         assert table_exists(
             cursor=cursor,
             name='external_service_credentials',
@@ -2267,7 +2272,7 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
         msg_aggregator=messages_aggregator,
         resume_from_backup=False,
     )
-    with db_v41.conn.write_ctx() as cursor:
+    with db_v41.conn.read_ctx() as cursor:
         assert table_exists(cursor, 'zksynclite_tx_type') is False
         assert table_exists(cursor, 'zksynclite_transactions') is False
         assert table_exists(cursor, 'calendar') is False
@@ -2606,32 +2611,32 @@ def test_steps_counted_properly_in_upgrades(user_data_dir):
     last_db.logout()
 
 
-def test_db_newer_than_software_raises_error(data_dir, username, sql_vm_instructions_cb):
+def test_db_newer_than_software_raises_error(data_dir, username, sql_vm_instructions_cb, db_writer_port):  # noqa: E501
     """
     If the DB version is greater than the current known version in the
     software warn the user to use the latest version of the software
     """
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb, db_writer_port)
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
     # Manually set a bigger version than the current known one
-    cursor = data.db.conn.cursor()
-    cursor.execute(
-        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
-        ('version', str(ROTKEHLCHEN_DB_VERSION + 1)),
-    )
-    data.db.conn.commit()
+    with data.db.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+            ('version', str(ROTKEHLCHEN_DB_VERSION + 1)),
+        )
 
     # now relogin and check that an error is thrown
     data.logout()
     del data
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb, db_writer_port)
     with pytest.raises(DBUpgradeError):
         data.unlock(username, '123', create_new=False, resume_from_backup=False)
     DBConnection(  # close the db connection
         path=data_dir / USERDB_NAME,
         connection_type=DBConnectionType.USER,
         sql_vm_instructions_cb=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
+        db_writer_port=db_writer_port,
     ).close()
 
 
@@ -2661,7 +2666,7 @@ def test_old_versions_raise_error(user_data_dir):  # pylint: disable=unused-argu
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
-def test_unfinished_upgrades(user_data_dir):
+def test_unfinished_upgrades(user_data_dir, db_writer_port):
     msg_aggregator = MessagesAggregator()
     for backup_version in (33, 31):  # try both with correct and wrong backup
         _use_prepared_db(user_data_dir, 'v33_rotkehlchen.db')
@@ -2706,6 +2711,7 @@ def test_unfinished_upgrades(user_data_dir):
                 path=str(backup_path),
                 connection_type=DBConnectionType.USER,
                 sql_vm_instructions_cb=0,
+                db_writer_port=db_writer_port,
             )
             backup_connection.executescript('PRAGMA key="123"')  # unlock
             with backup_connection.write_ctx() as write_cursor:

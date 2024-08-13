@@ -272,7 +272,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
     from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
     from rotkehlchen.exchanges.kraken import KrakenAccountType
     from rotkehlchen.history.events.structures.base import HistoryBaseEntry
 
@@ -1036,6 +1036,7 @@ class RestAPI:
             except TagConstraintError as e:
                 return api_response(wrap_in_fail_result(str(e)), status_code=HTTPStatus.CONFLICT)
 
+        with self.rotkehlchen.data.db.conn.read_ctx() as cursor:
             return self._get_tags(cursor)
 
     def edit_tag(
@@ -1792,11 +1793,9 @@ class RestAPI:
             xpub_data: 'XpubData',
     ) -> dict[str, Any]:
         try:
-            with self.rotkehlchen.data.db.user_write() as cursor:
-                XpubManager(self.rotkehlchen.chains_aggregator).delete_bitcoin_xpub(
-                    write_cursor=cursor,
-                    xpub_data=xpub_data,
-                )
+            XpubManager(self.rotkehlchen.chains_aggregator).delete_bitcoin_xpub(
+                xpub_data=xpub_data,
+            )
         except InputError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_REQUEST}
 
@@ -2914,20 +2913,36 @@ class RestAPI:
         tracked_addresses = self.rotkehlchen.chains_aggregator.accounts.zksync_lite
 
         # first delete tranasaction data and all decoded events and related data
-        with self.rotkehlchen.data.db.user_write() as write_cursor:
-            concerning_address = write_cursor.execute('DELETE FROM zksynclite_transactions WHERE tx_hash=? RETURNING from_address', (tx_hash,)).fetchone()  # noqa: E501
-            deleted_event_data = write_cursor.execute(
-                'DELETE FROM history_events WHERE event_identifier=? RETURNING location_label',
-                (ZKL_IDENTIFIER.format(tx_hash=tx_hash.hex()),),
+        with (
+            self.rotkehlchen.data.db.conn.read_ctx() as cursor,
+            self.rotkehlchen.data.db.user_write() as write_cursor,
+        ):
+            concerning_address = cursor.execute(
+                'SELECT from_address FROM zksynclite_transactions WHERE tx_hash=?',
+                (tx_hash,),
             ).fetchone()
+            write_cursor.execute('DELETE FROM zksynclite_transactions WHERE tx_hash=?;', (tx_hash,))  # noqa: E501
+            deleted_event_data = cursor.execute(
+                'SELECT location_label FROM history_events WHERE event_identifier=?',
+                (identifier := ZKL_IDENTIFIER.format(tx_hash=tx_hash.hex()),),
+            ).fetchone()
+            write_cursor.execute(
+                'DELETE FROM history_events WHERE event_identifier=?',
+                (identifier,),
+            )
             if deleted_event_data is not None:
-                concerning_address = deleted_event_data[0]
+                concerning_address = deleted_event_data
 
-        transaction = self.rotkehlchen.chains_aggregator.zksync_lite.query_single_transaction(
-            tx_hash=tx_hash,
-            concerning_address=concerning_address,
-        )
-        if transaction:
+        if concerning_address is None or (
+            transaction := self.rotkehlchen.chains_aggregator.zksync_lite.query_single_transaction(
+                tx_hash=tx_hash,
+                concerning_address=concerning_address[0],
+            )
+        ) is None:
+            status_code = HTTPStatus.BAD_GATEWAY
+            message = f'Failed to fetch transaction {tx_hash.hex()} from zksync lite API'
+            success = False
+        else:
             self.rotkehlchen.chains_aggregator.zksync_lite.decode_transaction(
                 transaction=transaction,
                 tracked_addresses=tracked_addresses,
@@ -2949,11 +2964,6 @@ class RestAPI:
                 status_code = HTTPStatus.BAD_GATEWAY
                 message = f'Failed to request evm transaction decoding due to {e!s}'
                 success = False
-
-        else:
-            status_code = HTTPStatus.BAD_GATEWAY
-            message = f'Failed to fetch transaction {tx_hash.hex()} from zksync lite API'
-            success = False
 
         return {'result': success, 'message': message, 'status_code': status_code}
 
@@ -3357,7 +3367,7 @@ class RestAPI:
             conflicts: dict[Asset, Literal['remote', 'local']] | None,
     ) -> dict[str, Any]:
         try:
-            result = self.rotkehlchen.assets_updater.perform_update(up_to_version, conflicts)
+            result = self.rotkehlchen.assets_updater.perform_update(up_to_version, conflicts, self.rotkehlchen.args.db_api_port)  # noqa: E501
         except RemoteError as e:
             return {'result': None, 'message': str(e), 'status_code': HTTPStatus.BAD_GATEWAY}
 

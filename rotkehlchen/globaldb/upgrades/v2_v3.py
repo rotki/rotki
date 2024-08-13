@@ -14,7 +14,7 @@ from rotkehlchen.constants.resolver import (
 from rotkehlchen.logging import enter_exit_debug_log
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+    from rotkehlchen.db.drivers.client import DBConnection, DBCursor
 
 log = logging.getLogger(__name__)
 

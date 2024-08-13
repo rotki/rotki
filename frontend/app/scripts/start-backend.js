@@ -38,7 +38,7 @@ if (!fs.existsSync(logDir))
 
 const args = [
   '-m',
-  'rotkehlchen',
+  'rotkehlchen.start',
   '--rest-api-port',
   '22221',
   '--websockets-api-port',

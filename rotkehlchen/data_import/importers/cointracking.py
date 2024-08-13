@@ -12,7 +12,7 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data_import.importers.constants import COINTRACKING_EVENT_PREFIX
 from rotkehlchen.data_import.utils import BaseExchangeImporter, UnsupportedCSVEntry
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.client import DBWriterClient
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -94,7 +94,7 @@ class CointrackingImporter(BaseExchangeImporter):
 
     def _consume_cointracking_entry(
             self,
-            write_cursor: DBCursor,
+            write_cursor: DBWriterClient,
             csv_row: dict[str, Any],
             timestamp_format: str = '%d.%m.%Y %H:%M:%S',
     ) -> None:
@@ -221,7 +221,7 @@ class CointrackingImporter(BaseExchangeImporter):
 
     def _import_csv(
             self,
-            write_cursor: DBCursor,
+            write_cursor: DBWriterClient,
             filepath: Path,
             **kwargs: Any,
     ) -> None:

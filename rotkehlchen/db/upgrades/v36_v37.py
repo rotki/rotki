@@ -19,7 +19,7 @@ from rotkehlchen.types import EVM_LOCATIONS, Location, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+    from rotkehlchen.db.drivers.client import DBConnection, DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 logger = logging.getLogger(__name__)
@@ -397,7 +397,7 @@ def upgrade_v36_to_v37(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Replace null history event subtype
     """
     progress_handler.set_total_steps(9)
-    with db.user_write() as write_cursor:
+    with db.user_read_write() as write_cursor:
         _move_event_locations(write_cursor)
         progress_handler.new_step()
         _create_new_tables(write_cursor)

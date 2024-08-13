@@ -138,9 +138,10 @@ def test_last_queried_ts(tokens, freezer):
             only_cache=False,
             addresses=[address],
         )
-        after_first_query = tokens.db.conn.execute(
-            'SELECT key, value FROM evm_accounts_details',
-        ).fetchall()
+        with tokens.db.conn.read_ctx() as cursor:
+            after_first_query = cursor.execute(
+                'SELECT key, value FROM evm_accounts_details',
+            ).fetchall()
         assert len(after_first_query) == 1
         assert after_first_query[0][0] == 'last_queried_timestamp'
         assert int(after_first_query[0][1]) >= beginning
@@ -153,9 +154,10 @@ def test_last_queried_ts(tokens, freezer):
             addresses=['0x4bBa290826C253BD854121346c370a9886d1bC26'],
         )
         # Check that last_queried_timestamp was updated and that there are no duplicates
-        after_second_query = tokens.db.conn.execute(
-            'SELECT key, value FROM evm_accounts_details',
-        ).fetchall()
+        with tokens.db.conn.read_ctx() as cursor:
+            after_second_query = cursor.execute(
+                'SELECT key, value FROM evm_accounts_details',
+            ).fetchall()
         assert len(after_second_query) == 1
         assert after_second_query[0][0] == 'last_queried_timestamp'
         assert int(after_second_query[0][1]) >= continuation
@@ -261,11 +263,12 @@ def test_flaky_binding_parameter_zero(
         )
 
     # Create the conditions for the bug to hit. Can verify by removing the retry in dbhandler.py
-    gevent.spawn(_do_spawn, database)
+    testing_thread = gevent.spawn(_do_spawn, database)
     gevent.sleep(.1)
     with database.conn.read_ctx() as cursor:
         for address in ethereum_accounts:
             database.get_tokens_for_address(cursor, address, SupportedBlockchain.ETHEREUM)
+    testing_thread.kill()
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])

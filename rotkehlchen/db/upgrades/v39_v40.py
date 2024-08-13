@@ -20,7 +20,7 @@ from rotkehlchen.types import Location
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor, DBConnection
+    from rotkehlchen.db.drivers.client import DBCursor, DBConnection
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -392,7 +392,7 @@ def upgrade_v39_to_v40(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Replace VELO asset in favor of the binance chain version
     """
     progress_handler.set_total_steps(10)
-    with db.user_write() as write_cursor:
+    with db.user_read_write() as write_cursor:
         _add_new_tables(write_cursor)
         progress_handler.new_step()
         _migrate_rotki_events(write_cursor)

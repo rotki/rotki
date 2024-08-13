@@ -25,7 +25,7 @@ from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
     from rotkehlchen.db.filtering import Eth2DailyStatsFilterQuery
 
 logger = logging.getLogger(__name__)
@@ -241,19 +241,20 @@ class DBEth2:
 
     def set_validator_exit(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             index: int,
             withdrawable_timestamp: Timestamp,
     ) -> None:
         """If the validator has withdrawal events, find last one and mark as exit if after withdrawable ts"""  # noqa: E501
-        write_cursor.execute(
-            'SELECT HE.identifier, HE.timestamp, HE.amount FROM history_events HE LEFT JOIN '
-            'eth_staking_events_info SE ON SE.identifier = HE.identifier '
-            'WHERE SE.validator_index=? AND HE.entry_type=? ORDER BY HE.timestamp DESC LIMIT 1',
-            (index, HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT.value),
-        )
-        if (latest_result := write_cursor.fetchone()) is None:
-            return  # no event found so nothing to do
+        with self.db.conn.read_ctx() as cursor:
+            cursor.execute(
+                'SELECT HE.identifier, HE.timestamp, HE.amount FROM history_events HE LEFT JOIN '
+                'eth_staking_events_info SE ON SE.identifier = HE.identifier WHERE '
+                'SE.validator_index=? AND HE.entry_type=? ORDER BY HE.timestamp DESC LIMIT 1',
+                (index, HistoryBaseEntryType.ETH_WITHDRAWAL_EVENT.value),
+            )
+            if (latest_result := cursor.fetchone()) is None:
+                return  # no event found so nothing to do
 
         if ts_ms_to_sec(latest_result[1]) >= withdrawable_timestamp:
             write_cursor.execute(
@@ -267,7 +268,7 @@ class DBEth2:
 
     def add_or_update_validators_except_ownership(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             validators: list[ValidatorDetails],
     ) -> None:
         """Adds or update validator data but keeps the ownership already in the DB"""
@@ -279,7 +280,7 @@ class DBEth2:
 
     def add_or_update_validators(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             validators: list[ValidatorDetails],
             updatable_attributes: tuple[str, ...] = ('validator_index', 'ownership_proportion', 'withdrawal_address', 'activation_timestamp', 'withdrawable_timestamp'),  # noqa: E501
     ) -> None:
@@ -290,28 +291,29 @@ class DBEth2:
         at the time of writing the daily stats have a foreign key relation to this table
         all the daily stats were deleted.
         """
-        for validator in validators:
-            result = write_cursor.execute(
-                'SELECT validator_index, public_key, ownership_proportion, withdrawal_address, '
-                'activation_timestamp, withdrawable_timestamp FROM eth2_validators '
-                'WHERE public_key=?', (validator.public_key,),
-            ).fetchone()
-            if result is not None:  # update case
-                db_validator = ValidatorDetails.deserialize_from_db(result)
-                for attr in updatable_attributes:
-                    if getattr(db_validator, attr) != (new_value := getattr(validator, attr)):
-                        write_cursor.execute(
-                            f'UPDATE eth2_validators SET {attr}=? WHERE public_key=?',
-                            (new_value, validator.public_key),
-                        )
-            else:  # insertion case
-                write_cursor.execute(
-                    'INSERT INTO '
-                    'eth2_validators(validator_index, public_key, ownership_proportion, withdrawal_address, activation_timestamp, withdrawable_timestamp) VALUES(?, ?, ?, ?, ?, ?)',  # noqa: E501
-                    validator.serialize_for_db(),
-                )
+        with self.db.conn.read_ctx() as cursor:
+            for validator in validators:
+                result = cursor.execute(
+                    'SELECT validator_index, public_key, ownership_proportion, '
+                    'withdrawal_address, activation_timestamp, withdrawable_timestamp FROM '
+                    'eth2_validators WHERE public_key=?', (validator.public_key,),
+                ).fetchone()
+                if result is not None:  # update case
+                    db_validator = ValidatorDetails.deserialize_from_db(result)
+                    for attr in updatable_attributes:
+                        if getattr(db_validator, attr) != (new_value := getattr(validator, attr)):
+                            write_cursor.execute(
+                                f'UPDATE eth2_validators SET {attr}=? WHERE public_key=?',
+                                (new_value, validator.public_key),
+                            )
+                else:  # insertion case
+                    write_cursor.execute(
+                        'INSERT INTO '
+                        'eth2_validators(validator_index, public_key, ownership_proportion, withdrawal_address, activation_timestamp, withdrawable_timestamp) VALUES(?, ?, ?, ?, ?, ?)',  # noqa: E501
+                        validator.serialize_for_db(),
+                    )
 
-    def edit_validator_ownership(self, write_cursor: 'DBCursor', validator_index: int, ownership_proportion: FVal) -> None:  # noqa: E501
+    def edit_validator_ownership(self, write_cursor: 'DBWriterClient', validator_index: int, ownership_proportion: FVal) -> None:  # noqa: E501
         """Edits the ownership proportion for a validator identified by its index.
         May raise:
         - InputError if we try to edit a non existing validator.

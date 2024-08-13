@@ -13,7 +13,7 @@ from rotkehlchen.types import DEFAULT_ADDRESS_NAME_PRIORITY, Location
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 logger = logging.getLogger(__name__)
@@ -271,7 +271,7 @@ def upgrade_v40_to_v41(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Move labels to `address_book` and drop its column from `blockchain_accounts`
     """
     progress_handler.set_total_steps(11)
-    with db.user_write() as write_cursor:
+    with db.user_read_write() as write_cursor:
         _add_cache_table(write_cursor)
         progress_handler.new_step()
         _remove_covalent_api_key(write_cursor)

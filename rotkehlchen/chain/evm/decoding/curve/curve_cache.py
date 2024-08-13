@@ -50,9 +50,9 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.network import request_get_dict
 
 if TYPE_CHECKING:
-    from gevent import DBCursor
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.client import DBWriterClient
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -281,7 +281,7 @@ def _ensure_curve_tokens_existence(
 
 
 def save_curve_data_to_cache(
-        write_cursor: 'DBCursor',
+        write_cursor: 'DBWriterClient',
         database: 'DBHandler',
         new_data: list[CurvePoolData],
         chain_id: ChainID,

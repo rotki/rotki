@@ -8,10 +8,10 @@ from rotkehlchen.types import SupportedBlockchain
 from rotkehlchen.user_messages import MessagesAggregator
 
 
-def setup_db_for_xpub_tests_impl(data_dir, username, sql_vm_instructions_cb):
+def setup_db_for_xpub_tests_impl(data_dir, username, sql_vm_instructions_cb, db_writer_port):
     """Setups a test database with xpub data"""
     msg_aggregator = MessagesAggregator()
-    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
+    data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb, db_writer_port)
     data.unlock(username, '123', create_new=True, resume_from_backup=False)
 
     with data.db.user_write() as cursor:
@@ -27,7 +27,9 @@ def setup_db_for_xpub_tests_impl(data_dir, username, sql_vm_instructions_cb):
             label='xpub1',
             tags=['public', 'desktop'],
         )
+    with data.db.conn.read_ctx() as cursor:
         data.db.ensure_tags_exist(cursor, [xpub_data1], action='adding', data_type='bitcoin cash xpub')  # noqa: E501
+    with data.db.user_write() as cursor:
         insert_tag_mappings(    # if we got tags add them to the xpub
             write_cursor=cursor,
             data=[xpub_data1],

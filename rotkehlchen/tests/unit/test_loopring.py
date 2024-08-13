@@ -43,18 +43,21 @@ def test_loopring_accountid_mapping(database):
     addr1 = make_evm_address()
     addr2 = make_evm_address()
 
-    with database.user_write() as cursor:
-        assert db.get_accountid_mapping(cursor, addr1) is None
-        db.add_accountid_mapping(cursor, addr1, id1)
-        assert db.get_accountid_mapping(cursor, addr1) == id1
-        db.add_accountid_mapping(cursor, addr2, id2)
-        assert db.get_accountid_mapping(cursor, addr2) == id2
+    cursor = database.conn.cursor()
+    assert db.get_accountid_mapping(cursor, addr1) is None
+    with database.user_write() as write_cursor:
+        db.add_accountid_mapping(write_cursor, addr1, id1)
+    assert db.get_accountid_mapping(cursor, addr1) == id1
+    with database.user_write() as write_cursor:
+        db.add_accountid_mapping(write_cursor, addr2, id2)
+    assert db.get_accountid_mapping(cursor, addr2) == id2
 
+    with database.user_write() as write_cursor:
         # assure nothing happens with non existing address
-        db.remove_accountid_mapping(cursor, make_evm_address())
+        db.remove_accountid_mapping(write_cursor, make_evm_address())
 
-        db.remove_accountid_mapping(cursor, addr1)
-        assert db.get_accountid_mapping(cursor, addr1) is None
+        db.remove_accountid_mapping(write_cursor, addr1)
+    assert db.get_accountid_mapping(cursor, addr1) is None
 
 
 def test_get_account_balances(temp_loopring, inquirer):  # pylint: disable=W0613

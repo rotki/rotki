@@ -494,8 +494,8 @@ def test_uniswap_v2_swap_events_order(
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    with database.user_write() as cursor, patch_decoder_reload_data():
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
+    with database.conn.read_ctx() as cursor, database.user_write() as write_cursor, patch_decoder_reload_data():  # noqa: E501
+        dbevmtx.add_evm_transactions(write_cursor, [transaction], relevant_address=None)
         decoder.reload_data(cursor)
 
     events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)

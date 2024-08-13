@@ -35,9 +35,9 @@ class GlobalDBBinance:
         - InputError if there is a DB insertion failure
         """
         query = 'INSERT OR IGNORE INTO binance_pairs(pair, base_asset, quote_asset, location) VALUES (?, ?, ?, ?)'  # noqa: E501
-        cursor = self.db.conn.cursor()
         try:
-            cursor.executemany(query, [pair.serialize_for_db() for pair in new_pairs])
+            with self.db.conn.write_ctx() as write_cursor:
+                write_cursor.executemany(query, [pair.serialize_for_db() for pair in new_pairs])
             self.db.add_setting_value(name=f'binance_pairs_queried_at_{location}', value=ts_now())
         except sqlite3.IntegrityError as e:
             raise InputError(

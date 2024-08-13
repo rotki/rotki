@@ -33,7 +33,7 @@ if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
 
 
 logger = logging.getLogger(__name__)
@@ -86,7 +86,7 @@ class DBAccountingRules:
                 write_cursor.execute(
                     'INSERT INTO accounting_rules(type, subtype, counterparty, taxable, '
                     'count_entire_amount_spend, count_cost_basis_pnl, '
-                    'accounting_treatment) VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING identifier',
+                    'accounting_treatment) VALUES (?, ?, ?, ?, ?, ?, ?);',
                     (
 
                         event_type.serialize(),
@@ -99,8 +99,17 @@ class DBAccountingRules:
                 raise InputError(
                     f'{self._rule_for_string(event_type=event_type, event_subtype=event_subtype, counterparty=counterparty)} already exists',  # noqa: E501
                 ) from e
+            rowid = write_cursor.lastrowid
 
-            inserted_rule_id = write_cursor.fetchone()[0]
+        with self.db.conn.read_ctx() as cursor:
+            result = cursor.execute(
+                'SELECT identifier FROM accounting_rules WHERE rowid=?',
+                (rowid,),
+            ).fetchone()
+            assert result is not None, 'Could not fetch inserted rule id'
+            inserted_rule_id = result[0]
+
+        with self.db.conn.write_ctx() as write_cursor:
             for property_name, setting_name in links.items():
                 self.add_linked_setting(
                     write_cursor=write_cursor,
@@ -117,18 +126,19 @@ class DBAccountingRules:
         May raise:
         - InputError if the rule doesn't exist
         """
-        with self.db.conn.write_ctx() as write_cursor:
-            write_cursor.execute(
+        with self.db.conn.read_ctx() as cursor:
+            cursor.execute(
                 'SELECT type, subtype, counterparty FROM accounting_rules WHERE identifier=?',
                 (rule_id,),
             )
-            if (entry := write_cursor.fetchone()) is None:
+            if (entry := cursor.fetchone()) is None:
                 raise InputError(f'Rule with id {rule_id} does not exist')
 
             event_type = HistoryEventType.deserialize(entry[0])
             event_subtype = HistoryEventSubType.deserialize(entry[1])
             counterparty = None if entry[2] == NO_ACCOUNTING_COUNTERPARTY else entry[2]
 
+        with self.db.conn.write_ctx() as write_cursor:
             write_cursor.execute(
                 'DELETE FROM linked_rules_properties WHERE accounting_rule=?',
                 (rule_id,))
@@ -202,7 +212,7 @@ class DBAccountingRules:
 
     def add_linked_setting(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             rule_identifier: int,
             rule_property: LINKABLE_ACCOUNTING_PROPERTIES,
             setting_name: LINKABLE_ACCOUNTING_SETTINGS_NAME,

@@ -8,7 +8,7 @@ from rotkehlchen.utils.misc import is_valid_ethereum_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 
@@ -491,7 +491,7 @@ def upgrade_v32_to_v33(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     - Change tx_hash for tables to BLOB type & history events event_identifier column to BLOB type.
     """
     progress_handler.set_total_steps(5)
-    with db.user_write() as cursor:
+    with db.user_read_write() as cursor:
         _refactor_xpubs_and_xpub_mappings(cursor)
         progress_handler.new_step()
         _create_new_tables(cursor)

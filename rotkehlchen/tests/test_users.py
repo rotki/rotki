@@ -17,11 +17,13 @@ def _user_creation_and_login(
         data_dir: Path,
         msg_aggregator: MessagesAggregator,
         sql_vm_instructions_cb: int,
+        db_writer_port: int,
 ):
     handler = DataHandler(
         data_directory=data_dir,
         msg_aggregator=msg_aggregator,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_writer_port=db_writer_port,
     )
     filepath = handler.unlock(
         username=username,
@@ -46,6 +48,7 @@ def test_user_long_password(
         data_dir: Path,
         function_scope_messages_aggregator: MessagesAggregator,
         sql_vm_instructions_cb: int,
+        db_writer_port: int,
 ):
     """Test that very long password work. https://github.com/rotki/rotki/issues/805"""
     username = 'foo'
@@ -56,6 +59,7 @@ def test_user_long_password(
         data_dir=data_dir,
         msg_aggregator=function_scope_messages_aggregator,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_writer_port=db_writer_port,
     )
 
 
@@ -63,6 +67,7 @@ def test_user_password_with_double_quote(
         data_dir: Path,
         function_scope_messages_aggregator: MessagesAggregator,
         sql_vm_instructions_cb: int,
+        db_writer_port: int,
 ):
     """Test that a password containing " is accepted.
 
@@ -75,6 +80,7 @@ def test_user_password_with_double_quote(
         data_dir=data_dir,
         msg_aggregator=function_scope_messages_aggregator,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_writer_port=db_writer_port,
     )
 
 
@@ -82,6 +88,7 @@ def test_user_password_with_all_ascii(
         data_dir: Path,
         function_scope_messages_aggregator: MessagesAggregator,
         sql_vm_instructions_cb: int,
+        db_writer_port: int,
 ):
     """Test that a password containing all ASCII characters is accepted"""
     username = 'foo'
@@ -92,6 +99,7 @@ def test_user_password_with_all_ascii(
         data_dir=data_dir,
         msg_aggregator=function_scope_messages_aggregator,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_writer_port=db_writer_port,
     )
 
 
@@ -100,6 +108,7 @@ def test_users_query_permission_error(
         data_dir: Path,
         function_scope_messages_aggregator: MessagesAggregator,
         sql_vm_instructions_cb: int,
+        db_writer_port: int,
 ):
     users_dir = data_dir / USERSDIR_NAME
     not_allowed_dir = users_dir / 'notallowed'
@@ -112,6 +121,7 @@ def test_users_query_permission_error(
         data_directory=data_dir,
         msg_aggregator=function_scope_messages_aggregator,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_writer_port=db_writer_port,
     )
     assert handler.get_users() == {'allowed_user': 'loggedout'}
     # Change permissions back to that pytest cleanup can clean it
@@ -125,6 +135,7 @@ def test_new_user_permission_error(
         data_dir: Path,
         function_scope_messages_aggregator: MessagesAggregator,
         sql_vm_instructions_cb: int,
+        db_writer_port: int,
 ):
     not_allowed_dir = data_dir / 'notallowed'
     os.mkdir(not_allowed_dir)
@@ -132,6 +143,7 @@ def test_new_user_permission_error(
         data_directory=not_allowed_dir,
         msg_aggregator=function_scope_messages_aggregator,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_writer_port=db_writer_port,
     )
     with pytest.raises(SystemPermissionError):
         handler.unlock(

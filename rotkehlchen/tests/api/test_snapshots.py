@@ -36,7 +36,7 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBWriterClient
 
 BALANCES_IMPORT_HEADERS = ['timestamp', 'category', 'asset_identifier', 'amount', 'usd_value']
 BALANCES_IMPORT_INVALID_HEADERS = ['timestamp', 'category', 'asset', 'amount', 'value']
@@ -46,7 +46,7 @@ LOCATION_DATA_IMPORT_INVALID_HEADERS = ['timestamp', 'location', 'value']
 NFT_TOKEN_ID = '_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_11'
 
 
-def _populate_db_with_balances(write_cursor: 'DBCursor', db: 'DBHandler', ts: Timestamp):
+def _populate_db_with_balances(write_cursor: 'DBWriterClient', db: 'DBHandler', ts: Timestamp):
     db.add_multiple_balances(
         write_cursor=write_cursor,
         balances=[
@@ -67,7 +67,7 @@ def _populate_db_with_balances(write_cursor: 'DBCursor', db: 'DBHandler', ts: Ti
         ])
 
 
-def _populate_db_with_balances_unknown_asset(write_cursor: 'DBCursor', ts: Timestamp):
+def _populate_db_with_balances_unknown_asset(write_cursor: 'DBWriterClient', ts: Timestamp):
     write_cursor.execute('INSERT INTO assets(identifier) VALUES ("YABIRXROTKI")')
     serialized_balances = [
         (ts, 'BTC', '1.00', '178.44', BalanceType.ASSET.serialize_for_db()),
@@ -81,7 +81,7 @@ def _populate_db_with_balances_unknown_asset(write_cursor: 'DBCursor', ts: Times
     )
 
 
-def _populate_db_with_location_data(write_cursor: 'DBCursor', db: 'DBHandler', ts: Timestamp):
+def _populate_db_with_location_data(write_cursor: 'DBWriterClient', db: 'DBHandler', ts: Timestamp):  # noqa: E501
     db.add_multiple_location_data(
         write_cursor=write_cursor,
         location_data=[
@@ -431,54 +431,56 @@ def test_export_snapshot(rotkehlchen_api_server, tmpdir_factory):
         _populate_db_with_balances(cursor, db, ts)
         _populate_db_with_location_data(cursor, db, ts)
         db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))
-        response = requests.get(
-            api_url_for(
-                rotkehlchen_api_server,
-                'per_timestamp_db_snapshots_resource',
-                timestamp=ts,
-                path=csv_dir,
-                action='export',
-            ),
-        )
-        assert_csv_export_response(
-            response=response,
-            csv_dir=csv_dir,
-            main_currency=A_EUR.resolve_to_asset_with_oracles(),
-            is_download=False,
-            timestamp_validation_data=(ts, display_date_in_localtime),
-        )
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'per_timestamp_db_snapshots_resource',
+            timestamp=ts,
+            path=csv_dir,
+            action='export',
+        ),
+    )
+    assert_csv_export_response(
+        response=response,
+        csv_dir=csv_dir,
+        main_currency=A_EUR.resolve_to_asset_with_oracles(),
+        is_download=False,
+        timestamp_validation_data=(ts, display_date_in_localtime),
+    )
 
+    with db.user_write() as cursor:
         db.set_settings(cursor, ModifiableDBSettings(main_currency=A_ETH))
-        response = requests.get(
-            api_url_for(
-                rotkehlchen_api_server,
-                'per_timestamp_db_snapshots_resource',
-                timestamp=ts,
-                path=csv_dir2,
-                action='export',
-            ),
-        )
-        assert_csv_export_response(
-            response=response,
-            csv_dir=csv_dir2,
-            main_currency=A_ETH.resolve_to_asset_with_oracles(),
-            is_download=False,
-            timestamp_validation_data=(ts, display_date_in_localtime),
-        )
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'per_timestamp_db_snapshots_resource',
+            timestamp=ts,
+            path=csv_dir2,
+            action='export',
+        ),
+    )
+    assert_csv_export_response(
+        response=response,
+        csv_dir=csv_dir2,
+        main_currency=A_ETH.resolve_to_asset_with_oracles(),
+        is_download=False,
+        timestamp_validation_data=(ts, display_date_in_localtime),
+    )
 
+    with db.user_write() as cursor:
         db.set_settings(cursor, ModifiableDBSettings(main_currency=A_USD))
-        response = requests.get(
-            api_url_for(
-                rotkehlchen_api_server,
-                'per_timestamp_db_snapshots_resource',
-                timestamp=ts,
-                action='export',
-            ),
-        )
-        assert_error_response(
-            response,
-            contained_in_msg='A path has to be provided when action is export',
-        )
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'per_timestamp_db_snapshots_resource',
+            timestamp=ts,
+            action='export',
+        ),
+    )
+    assert_error_response(
+        response,
+        contained_in_msg='A path has to be provided when action is export',
+    )
 
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
@@ -490,25 +492,25 @@ def test_export_snapshot_unknown_asset(rotkehlchen_api_server, tmpdir_factory):
         _populate_db_with_balances_unknown_asset(cursor, ts)
         _populate_db_with_location_data(cursor, db, ts)
         db.set_settings(cursor, ModifiableDBSettings(main_currency=A_EUR))
-        response = requests.get(
-            api_url_for(
-                rotkehlchen_api_server,
-                'per_timestamp_db_snapshots_resource',
-                timestamp=ts,
-                path=csv_dir,
-                action='export',
-            ),
-        )
-        assert_csv_export_response(
-            response,
-            csv_dir,
-            main_currency=A_EUR.resolve_to_asset_with_oracles(),
-            is_download=False,
-            expected_entries=1,
-        )
-        errors = rotkehlchen_api_server.rest_api.rotkehlchen.msg_aggregator.consume_errors()
-        assert len(errors) == 1
-        assert 'Failed to include balance for asset YABIRXROTKI.' in errors[0]
+    response = requests.get(
+        api_url_for(
+            rotkehlchen_api_server,
+            'per_timestamp_db_snapshots_resource',
+            timestamp=ts,
+            path=csv_dir,
+            action='export',
+        ),
+    )
+    assert_csv_export_response(
+        response,
+        csv_dir,
+        main_currency=A_EUR.resolve_to_asset_with_oracles(),
+        is_download=False,
+        expected_entries=1,
+    )
+    errors = rotkehlchen_api_server.rest_api.rotkehlchen.msg_aggregator.consume_errors()
+    assert len(errors) == 1
+    assert 'Failed to include balance for asset YABIRXROTKI.' in errors[0]
 
 
 @pytest.mark.parametrize('default_mock_price_value', [ONE])

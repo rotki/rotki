@@ -8,7 +8,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+    from rotkehlchen.db.drivers.client import DBConnection, DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -76,7 +76,7 @@ def migrate_to_v5(connection: 'DBConnection') -> None:
     """
     root_dir = Path(__file__).resolve().parent.parent.parent
 
-    with connection.write_ctx() as cursor:
+    with connection.read_write_ctx() as cursor:
         _create_new_tables(cursor)
         _populate_rpc_nodes(cursor, root_dir)
         _reset_curve_cache(cursor)

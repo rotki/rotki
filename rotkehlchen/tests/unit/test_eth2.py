@@ -1175,7 +1175,8 @@ def test_refresh_validator_data_after_v40_v41_upgrade(eth2):
                 (5231, 1707998469, '0.01'),
             ],
         )
-        assert write_cursor.execute('SELECT COUNT(*) from eth2_daily_staking_details').fetchone()[0] == 3  # noqa: E501
+    with eth2.database.conn.read_ctx() as cursor:
+        assert cursor.execute('SELECT COUNT(*) from eth2_daily_staking_details').fetchone()[0] == 3
 
     eth2.detect_and_refresh_validators([])
 

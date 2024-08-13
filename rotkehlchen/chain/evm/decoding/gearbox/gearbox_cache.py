@@ -38,7 +38,7 @@ from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress, EvmTokenKi
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -75,7 +75,7 @@ def get_existing_pools(
 
 
 def save_gearbox_data_to_cache(
-        write_cursor: 'DBCursor',
+        write_cursor: 'DBWriterClient',
         database: Optional['DBHandler'],  # pylint: disable=unused-argument
         new_data: list[GearboxPoolData],
         chain_id: ChainID,

@@ -146,14 +146,17 @@ def setup_starting_environment(
     starts up his node either for the first time or logs in an already
     existing account
     """
-    with rotkehlchen_instance.data.db.user_write() as cursor:
-        if not first_time:
-            # Emulate already having the api keys in the DB
-            rotkehlchen_instance.data.db.set_rotkehlchen_premium(premium_credentials)
+    if not first_time:
+        # Emulate already having the api keys in the DB
+        rotkehlchen_instance.data.db.set_rotkehlchen_premium(premium_credentials)
 
-        rotkehlchen_instance.data.db.set_setting(cursor, name='premium_should_sync', value=db_can_sync_setting)  # noqa: E501
-        our_last_write_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_write_ts')
-        assert rotkehlchen_instance.data.db.get_setting(cursor, name='main_currency') == DEFAULT_TESTS_MAIN_CURRENCY  # noqa: E501
+    cursor = rotkehlchen_instance.data.db.conn.cursor()
+    with rotkehlchen_instance.data.db.user_write() as write_cursor:
+        rotkehlchen_instance.data.db.set_setting(write_cursor, name='premium_should_sync', value=db_can_sync_setting)  # noqa: E501
+
+    our_last_write_ts = rotkehlchen_instance.data.db.get_setting(cursor, name='last_write_ts')
+    assert rotkehlchen_instance.data.db.get_setting(cursor, name='main_currency') == DEFAULT_TESTS_MAIN_CURRENCY  # noqa: E501
+    cursor.close()
 
     _, our_hash = rotkehlchen_instance.data.compress_and_encrypt_db()
 

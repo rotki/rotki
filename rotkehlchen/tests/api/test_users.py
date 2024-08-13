@@ -15,7 +15,7 @@ from pysqlcipher3 import dbapi2 as sqlcipher
 from rotkehlchen.api.server import APIServer
 from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
 from rotkehlchen.db.cache import DBCacheStatic
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
+from rotkehlchen.db.drivers.client import DBConnection, DBConnectionType
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION, DBSettings
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.tests.fixtures.rotkehlchen import patch_no_op_unlock
@@ -616,7 +616,7 @@ def test_user_logout(rotkehlchen_api_server, username, db_password):
     assert rotki.user_is_logged_in is False
 
 
-def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
+def test_user_login(rotkehlchen_api_server, username, db_password, data_dir, db_writer_port):
     """Test that user login works properly"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
@@ -745,6 +745,7 @@ def test_user_login(rotkehlchen_api_server, username, db_password, data_dir):
         path=str(backup_path),
         connection_type=DBConnectionType.USER,
         sql_vm_instructions_cb=0,
+        db_writer_port=db_writer_port,
     )
     backup_connection.executescript(f'PRAGMA key="{db_password}"')  # unlock
     with backup_connection.write_ctx() as write_cursor:

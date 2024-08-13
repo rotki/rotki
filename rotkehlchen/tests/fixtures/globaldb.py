@@ -85,6 +85,7 @@ def fixture_load_global_caches() -> list[str]:
 def create_globaldb(
         data_directory,
         sql_vm_instructions_cb,
+        db_writer_port,
 ) -> GlobalDBHandler:
     # Since this is a singleton and we want it initialized everytime the fixture
     # is called make sure its instance is always starting from scratch
@@ -93,6 +94,7 @@ def create_globaldb(
     handler = GlobalDBHandler(
         data_dir=data_directory,
         sql_vm_instructions_cb=sql_vm_instructions_cb,
+        db_writer_port=db_writer_port,
     )
     return handler
 
@@ -109,6 +111,7 @@ def _initialize_fixture_globaldb(
         empty_global_addressbook,
         remove_global_assets,
         load_global_caches,
+        db_writer_port: int,
 ) -> tuple[GlobalDBHandler, Path]:
     # clean the previous resolver memory cache, as it
     # may have cached results from a discarded database
@@ -142,7 +145,7 @@ def _initialize_fixture_globaldb(
             patch_for_globaldb_upgrade_to(stack, target_globaldb_version)
 
         stack.enter_context(patch_decoder_reload_data(load_global_caches))
-        globaldb = create_globaldb(new_data_dir, sql_vm_instructions_cb)
+        globaldb = create_globaldb(new_data_dir, sql_vm_instructions_cb, db_writer_port)
 
     if empty_global_addressbook is True:
         with globaldb.conn.write_ctx() as cursor:
@@ -171,6 +174,7 @@ def fixture_globaldb(
         empty_global_addressbook,
         remove_global_assets,
         load_global_caches,
+        db_writer_port,
 ):
     globaldb, new_data_dir = _initialize_fixture_globaldb(
         custom_globaldb=custom_globaldb,
@@ -184,6 +188,7 @@ def fixture_globaldb(
         empty_global_addressbook=empty_global_addressbook,
         remove_global_assets=remove_global_assets,
         load_global_caches=load_global_caches,
+        db_writer_port=db_writer_port,
     )
     yield globaldb
 

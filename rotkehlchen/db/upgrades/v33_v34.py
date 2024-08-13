@@ -12,7 +12,7 @@ def upgrade_v33_to_v34(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     transformation to bytes
     """
     progress_handler.set_total_steps(1)
-    with db.user_write() as write_cursor:
+    with db.user_read_write() as write_cursor:
         write_cursor.execute('DROP VIEW combined_trades_view;')
         write_cursor.execute("""
         CREATE VIEW IF NOT EXISTS combined_trades_view AS

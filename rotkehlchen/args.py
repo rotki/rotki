@@ -55,6 +55,12 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
     )
 
     p.add_argument(
+        '--process',
+        help='Choose the process to run',
+        choices=['all', 'api_server', 'db_writer'],
+        default='all',
+    )
+    p.add_argument(
         '--data-dir',
         help='The directory where all data and configs are placed',
         type=str,
@@ -70,6 +76,12 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
         help='The port on which the rest API will run',
         type=int,
         default=5042,
+    )
+    p.add_argument(
+        '--db-api-port',
+        help='The port on which the db writer process will listen',
+        type=int,
+        default=5555,
     )
     p.add_argument(
         '--websockets-api-port',
