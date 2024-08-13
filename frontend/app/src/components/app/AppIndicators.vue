@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useBreakpoint } from '@rotki/ui-library';
-
 const isDevelopment = checkIfDevelopment();
 
 const { isSmAndUp } = useBreakpoint();

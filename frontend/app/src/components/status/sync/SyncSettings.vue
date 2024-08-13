@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useBreakpoint } from '@rotki/ui-library';
-
 const model = defineModel<boolean>({ required: true });
 
 const { t } = useI18n();

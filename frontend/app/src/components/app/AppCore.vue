@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { Chart, registerables } from 'chart.js';
 import zoomPlugin from 'chartjs-plugin-zoom';
-import { useBreakpoint } from '@rotki/ui-library';
 
 const visibilityStore = useAreaVisibilityStore();
 const { showDrawer, isMini } = storeToRefs(visibilityStore);

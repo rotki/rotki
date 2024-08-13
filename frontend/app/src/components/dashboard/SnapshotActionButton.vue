@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { useRotkiTheme } from '@rotki/ui-library';
 import SnapshotImportDialog from '@/components/dashboard/SnapshotImportDialog.vue';
-import type { Writeable } from '@/types';
+import type { Writeable } from '@rotki/common';
 import type { AllBalancePayload } from '@/types/blockchain/accounts';
 
 const ignoreErrors = ref<boolean>(false);

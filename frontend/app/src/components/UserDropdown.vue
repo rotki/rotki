@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useBreakpoint } from '@rotki/ui-library';
-
 const { t } = useI18n();
 
 const KEY_REMEMBER_PASSWORD = 'rotki.remember_password';

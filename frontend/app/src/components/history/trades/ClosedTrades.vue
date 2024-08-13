@@ -3,7 +3,7 @@ import { Routes } from '@/router/routes';
 import { Section } from '@/types/status';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { SavedFilterLocation } from '@/types/filtering';
-import type { Writeable } from '@/types';
+import type { Writeable } from '@rotki/common';
 import type { Trade, TradeEntry, TradeRequestPayload } from '@/types/history/trade';
 import type { Collection } from '@/types/collection';
 import type { Filters, Matcher } from '@/composables/filters/trades';

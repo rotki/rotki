@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { EmptyListId, type PrioritizedListId } from '@/types/settings/prioritized-list-id';
-import type { Nullable } from '@/types';
+import type { Nullable } from '@rotki/common';
 import type { BaseMessage } from '@/types/messages';
 import type { PrioritizedListData, PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
 

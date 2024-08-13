@@ -1,5 +1,5 @@
 import { api } from '@/services/rotkehlchen-api';
-import type { Nullable } from '@/types';
+import type { Nullable } from '@rotki/common';
 
 export const useWebsocketStore = defineStore('websocket', () => {
   const connection = ref<Nullable<WebSocket>>(null);

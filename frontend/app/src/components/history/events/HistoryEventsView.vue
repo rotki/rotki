@@ -17,7 +17,7 @@ import type {
 } from '@/types/history/events';
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { Writeable } from '@/types';
+import type { Writeable } from '@rotki/common';
 import type { Collection } from '@/types/collection';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
 import type { Blockchain } from '@rotki/common/lib/blockchain';

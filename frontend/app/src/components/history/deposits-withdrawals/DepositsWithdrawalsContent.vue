@@ -5,7 +5,7 @@ import { SavedFilterLocation } from '@/types/filtering';
 import type { AssetMovement, AssetMovementEntry, AssetMovementRequestPayload } from '@/types/history/asset-movements';
 import type { Collection } from '@/types/collection';
 import type { Filters, Matcher } from '@/composables/filters/asset-movement';
-import type { Writeable } from '@/types';
+import type { Writeable } from '@rotki/common';
 import type { DataTableColumn } from '@rotki/ui-library';
 
 const props = withDefaults(

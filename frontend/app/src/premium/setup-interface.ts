@@ -1,5 +1,4 @@
 import dayjs from 'dayjs';
-import { useRotkiTheme } from '@rotki/ui-library';
 import { displayDateFormatter } from '@/data/date-formatter';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
 import {

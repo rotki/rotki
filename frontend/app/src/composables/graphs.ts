@@ -1,4 +1,3 @@
-import { useRotkiTheme } from '@rotki/ui-library';
 import type { BigNumber } from '@rotki/common';
 import type { TooltipDisplayOption } from '@rotki/common/lib/settings/graphs';
 import type { TooltipModel } from 'chart.js';

@@ -2,9 +2,8 @@
 import { CURRENCY_USD } from '@/types/currencies';
 import { TableColumn } from '@/types/table-column';
 import { isEvmNativeToken } from '@/types/asset';
-import type { AssetBalance, AssetBalanceWithPrice, BigNumber } from '@rotki/common';
+import type { AssetBalance, AssetBalanceWithPrice, BigNumber, Nullable } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { Nullable } from '@/types';
 import type { DashboardTableType } from '@/types/settings/frontend-settings';
 
 const props = withDefaults(

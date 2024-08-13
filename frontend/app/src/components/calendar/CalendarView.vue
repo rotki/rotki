@@ -6,7 +6,7 @@ import CalendarGrid from '@/components/calendar/CalendarGrid.vue';
 import type { CalendarEvent, CalendarEventRequestPayload } from '@/types/history/calendar';
 import type { Collection } from '@/types/collection';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { Writeable } from '@/types';
+import type { Writeable } from '@rotki/common';
 
 const { t } = useI18n();
 

@@ -1,4 +1,4 @@
-import { BackendCode } from '@/electron-main/backend-code';
+import { BackendCode } from '@/electron-main/ipc';
 
 export const useBackendMessagesStore = defineStore('backendMessages', () => {
   const startupErrorMessage = ref('');

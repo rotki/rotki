@@ -6,7 +6,7 @@ import type {
   XswapPool,
   XswapPoolProfit,
 } from '@rotki/common/lib/defi/xswap';
-import type { Writeable } from '@/types';
+import type { Writeable } from '@rotki/common';
 
 export function getPools(balances: XswapBalances, events: XswapEvents): XswapPool[] {
   const pools: XswapPool[] = [];

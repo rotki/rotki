@@ -2,7 +2,7 @@
 import { helpers, requiredIf, requiredUnless } from '@vuelidate/validators';
 import { type ExchangePayload, KrakenAccountType } from '@/types/exchanges';
 import { toMessages } from '@/utils/validation';
-import type { Writeable } from '@/types';
+import type { Writeable } from '@rotki/common';
 
 const props = defineProps<{
   modelValue: ExchangePayload;

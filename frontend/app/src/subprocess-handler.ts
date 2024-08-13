@@ -10,11 +10,10 @@ import { type App, type BrowserWindow, app, ipcMain } from 'electron';
 import psList from 'ps-list';
 import { assert } from '@rotki/common';
 import { type Task, tasklist } from 'tasklist';
-import { BackendCode } from '@/electron-main/backend-code';
 import { DEFAULT_PORT, selectPort } from '@/electron-main/port-utils';
 import { wait } from '@/utils/backoff';
 import { checkIfDevelopment } from '@/utils/env-utils';
-import type { BackendOptions } from '@/electron-main/ipc';
+import { BackendCode, type BackendOptions } from '@/electron-main/ipc';
 import type stream from 'node:stream';
 
 const isDevelopment = checkIfDevelopment();

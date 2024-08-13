@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { useRotkiTheme } from '@rotki/ui-library';
-
 const props = withDefaults(
   defineProps<{
     tag?: string;

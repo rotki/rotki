@@ -119,6 +119,7 @@ declare global {
   const computedInject: typeof import('@vueuse/core')['computedInject']
   const computedWithControl: typeof import('@vueuse/core')['computedWithControl']
   const consistOfNumbers: typeof import('@rotki/common')['consistOfNumbers']
+  const contextColors: typeof import('@rotki/ui-library')['contextColors']
   const controlledComputed: typeof import('@vueuse/core')['controlledComputed']
   const controlledRef: typeof import('@vueuse/core')['controlledRef']
   const convertBtcAccounts: typeof import('./utils/blockchain/accounts/index')['convertBtcAccounts']
@@ -488,6 +489,7 @@ declare global {
   const useBlockchains: typeof import('./composables/blockchain/index')['useBlockchains']
   const useBlockie: typeof import('./composables/accounts/blockie')['useBlockie']
   const useBluetooth: typeof import('@vueuse/core')['useBluetooth']
+  const useBreakpoint: typeof import('@rotki/ui-library')['useBreakpoint']
   const useBreakpoints: typeof import('@vueuse/core')['useBreakpoints']
   const useBroadcastChannel: typeof import('@vueuse/core')['useBroadcastChannel']
   const useBrowserLocation: typeof import('@vueuse/core')['useBrowserLocation']
@@ -711,6 +713,7 @@ declare global {
   const useReportsStore: typeof import('./store/reports/index')['useReportsStore']
   const useResizeObserver: typeof import('@vueuse/core')['useResizeObserver']
   const useRestartingStatus: typeof import('./composables/user/account')['useRestartingStatus']
+  const useRotkiTheme: typeof import('@rotki/ui-library')['useRotkiTheme']
   const useRound: typeof import('@vueuse/math')['useRound']
   const useRoute: typeof import('vue-router')['useRoute']
   const useRouter: typeof import('vue-router')['useRouter']
@@ -967,6 +970,7 @@ declare module 'vue' {
     readonly computedInject: UnwrapRef<typeof import('@vueuse/core')['computedInject']>
     readonly computedWithControl: UnwrapRef<typeof import('@vueuse/core')['computedWithControl']>
     readonly consistOfNumbers: UnwrapRef<typeof import('@rotki/common')['consistOfNumbers']>
+    readonly contextColors: UnwrapRef<typeof import('@rotki/ui-library')['contextColors']>
     readonly controlledComputed: UnwrapRef<typeof import('@vueuse/core')['controlledComputed']>
     readonly controlledRef: UnwrapRef<typeof import('@vueuse/core')['controlledRef']>
     readonly convertBtcAccounts: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['convertBtcAccounts']>
@@ -1335,6 +1339,7 @@ declare module 'vue' {
     readonly useBlockchains: UnwrapRef<typeof import('./composables/blockchain/index')['useBlockchains']>
     readonly useBlockie: UnwrapRef<typeof import('./composables/accounts/blockie')['useBlockie']>
     readonly useBluetooth: UnwrapRef<typeof import('@vueuse/core')['useBluetooth']>
+    readonly useBreakpoint: UnwrapRef<typeof import('@rotki/ui-library')['useBreakpoint']>
     readonly useBreakpoints: UnwrapRef<typeof import('@vueuse/core')['useBreakpoints']>
     readonly useBroadcastChannel: UnwrapRef<typeof import('@vueuse/core')['useBroadcastChannel']>
     readonly useBrowserLocation: UnwrapRef<typeof import('@vueuse/core')['useBrowserLocation']>
@@ -1555,6 +1560,7 @@ declare module 'vue' {
     readonly useReportsStore: UnwrapRef<typeof import('./store/reports/index')['useReportsStore']>
     readonly useResizeObserver: UnwrapRef<typeof import('@vueuse/core')['useResizeObserver']>
     readonly useRestartingStatus: UnwrapRef<typeof import('./composables/user/account')['useRestartingStatus']>
+    readonly useRotkiTheme: UnwrapRef<typeof import('@rotki/ui-library')['useRotkiTheme']>
     readonly useRound: UnwrapRef<typeof import('@vueuse/math')['useRound']>
     readonly useRoute: UnwrapRef<typeof import('vue-router')['useRoute']>
     readonly useRouter: UnwrapRef<typeof import('vue-router')['useRouter']>
@@ -1791,6 +1797,7 @@ declare module '@vue/runtime-core' {
     readonly computedInject: UnwrapRef<typeof import('@vueuse/core')['computedInject']>
     readonly computedWithControl: UnwrapRef<typeof import('@vueuse/core')['computedWithControl']>
     readonly consistOfNumbers: UnwrapRef<typeof import('@rotki/common')['consistOfNumbers']>
+    readonly contextColors: UnwrapRef<typeof import('@rotki/ui-library')['contextColors']>
     readonly controlledComputed: UnwrapRef<typeof import('@vueuse/core')['controlledComputed']>
     readonly controlledRef: UnwrapRef<typeof import('@vueuse/core')['controlledRef']>
     readonly convertBtcAccounts: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['convertBtcAccounts']>
@@ -2159,6 +2166,7 @@ declare module '@vue/runtime-core' {
     readonly useBlockchains: UnwrapRef<typeof import('./composables/blockchain/index')['useBlockchains']>
     readonly useBlockie: UnwrapRef<typeof import('./composables/accounts/blockie')['useBlockie']>
     readonly useBluetooth: UnwrapRef<typeof import('@vueuse/core')['useBluetooth']>
+    readonly useBreakpoint: UnwrapRef<typeof import('@rotki/ui-library')['useBreakpoint']>
     readonly useBreakpoints: UnwrapRef<typeof import('@vueuse/core')['useBreakpoints']>
     readonly useBroadcastChannel: UnwrapRef<typeof import('@vueuse/core')['useBroadcastChannel']>
     readonly useBrowserLocation: UnwrapRef<typeof import('@vueuse/core')['useBrowserLocation']>
@@ -2379,6 +2387,7 @@ declare module '@vue/runtime-core' {
     readonly useReportsStore: UnwrapRef<typeof import('./store/reports/index')['useReportsStore']>
     readonly useResizeObserver: UnwrapRef<typeof import('@vueuse/core')['useResizeObserver']>
     readonly useRestartingStatus: UnwrapRef<typeof import('./composables/user/account')['useRestartingStatus']>
+    readonly useRotkiTheme: UnwrapRef<typeof import('@rotki/ui-library')['useRotkiTheme']>
     readonly useRound: UnwrapRef<typeof import('@vueuse/math')['useRound']>
     readonly useRoute: UnwrapRef<typeof import('vue-router')['useRoute']>
     readonly useRouter: UnwrapRef<typeof import('vue-router')['useRouter']>

@@ -1,5 +1,5 @@
 import { api } from '@/services/rotkehlchen-api';
-import type { Nullable } from '@/types';
+import type { Nullable } from '@rotki/common';
 import type { LogLevel } from '@/utils/log-level';
 import type { Version } from '@/types/action';
 import type { DefaultBackendArguments } from '@/types/backend';
