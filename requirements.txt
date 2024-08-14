@@ -50,3 +50,6 @@ pycparser<=2.17 # ugly -- to avoid https://github.com/eliben/pycparser/pull/198
 
 # To build JWT
 PyJWT==2.8.0
+
+# Hardcode version due to web3.py not pinning it properly
+eth-typing==4.4.0
