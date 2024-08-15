@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` Fix an error introduced in 1.34.2 that was creating snapshots more frequently than expected.
+* :bug:`8350` Users will no longer be able to add duplicate names for an address for all evm chains to the address book.
 * :bug:`-` Eigenlayer native restaking exited balances residing in eigenpod will no longer be double counted.
 
 * :release:`1.34.2 <2024-08-09>`

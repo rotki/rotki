@@ -27,6 +27,7 @@ from rotkehlchen.constants.assets import (
 )
 from rotkehlchen.constants.misc import USERSDIR_NAME
 from rotkehlchen.data_handler import DataHandler
+from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import AssetMovementsFilterQuery, TradesFilterQuery
@@ -90,6 +91,7 @@ from rotkehlchen.tests.utils.factories import make_api_key, make_api_secret, mak
 from rotkehlchen.tests.utils.rotkehlchen import add_starting_balances, add_starting_nfts
 from rotkehlchen.types import (
     DEFAULT_ADDRESS_NAME_PRIORITY,
+    AddressbookEntry,
     ApiKey,
     ApiSecret,
     AssetAmount,
@@ -1956,3 +1958,22 @@ def test_startup_check_settings(database: 'DBHandler') -> None:
     assert settings.non_syncing_exchanges == [
         ExchangeLocationID(name='Coinbase', location=Location.COINBASE),
     ]
+
+
+def test_address_book_primary_key(database: DBHandler):
+    """Test that adding the same address twice to the database having
+    the blockchain value as None fails because duplicates can't be added.
+
+    Regression test for https://github.com/rotki/rotki/issues/8350
+    """
+    db_addressbook = DBAddressbook(database)
+    address = string_to_evm_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65')
+    entries = [
+        AddressbookEntry(address=address, name='yabir.eth', blockchain=None),
+        AddressbookEntry(address=address, name='yabirgb.eth', blockchain=None),
+    ]
+    with (
+        database.user_write() as write_cursor,
+        pytest.raises(InputError),
+    ):
+        db_addressbook.add_addressbook_entries(write_cursor=write_cursor, entries=entries)
