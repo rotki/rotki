@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import TYPE_CHECKING
 
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
@@ -62,17 +63,44 @@ def _remove_log_removed_column(write_cursor: 'DBCursor') -> None:
     )
 
 
+def _upgrade_account_tags(write_cursor: 'DBCursor') -> None:
+    """Upgrade the object_reference references in tag_mappings to not
+    depend on the supported blockchain since the format has changed in 1.35
+    """
+    object_references: list[tuple[str, str]] = write_cursor.execute(
+        'SELECT object_reference, tag_name FROM tag_mappings',
+    ).fetchall()
+    if len(object_references) == 0:
+        return
+
+    remove_keys, insert_entries = [], set()
+    supported_blockchains = re.compile('^(ETH|ETH2|BTC|BCH|KSM|AVAX|DOT|OPTIMISM|POLYGON_POS|ARBITRUM_ONE|BASE|GNOSIS|SCROLL|ZKSYNC_LITE)')  # noqa: E501  # supported blockchains at v1.35
+    for (object_reference, tag_name) in object_references:
+        new_object_reference, count = supported_blockchains.subn('', object_reference)
+        if count != 0:
+            remove_keys.append((object_reference,))
+            insert_entries.add((new_object_reference, tag_name))
+
+    write_cursor.executemany('DELETE FROM tag_mappings WHERE object_reference=?', remove_keys)
+    write_cursor.executemany(
+        'INSERT OR IGNORE INTO tag_mappings(object_reference, tag_name) VALUES (?, ?)',
+        list(insert_entries),
+    )
+
+
 @enter_exit_debug_log(name='UserDB v43->v44 upgrade')
 def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v42 to v43. This was in v1.35 release.
 
     - add usd_price to the nfts table
     """
-    progress_handler.set_total_steps(3)
+    progress_handler.set_total_steps(4)
     with db.user_write() as write_cursor:
         _update_nft_table(write_cursor)
         progress_handler.new_step()
         _remove_log_removed_column(write_cursor)
+        progress_handler.new_step()
+        _upgrade_account_tags(write_cursor)
         progress_handler.new_step()
 
     db.conn.execute('VACUUM;')
