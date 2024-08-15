@@ -3,11 +3,11 @@ import { handleResponse, validWithoutSessionStatus } from '@/services/utils';
 import type { ActionResult } from '@rotki/common';
 
 export function useAssetSpamApi() {
-  const markAssetAsSpam = async (token: string): Promise<boolean> => {
+  const markAssetsAsSpam = async (tokens: string[]): Promise<boolean> => {
     const response = await api.instance.post<ActionResult<boolean>>(
       '/assets/evm/spam/',
       {
-        token,
+        tokens,
       },
       {
         validateStatus: validWithoutSessionStatus,
@@ -27,7 +27,7 @@ export function useAssetSpamApi() {
   };
 
   return {
-    markAssetAsSpam,
+    markAssetsAsSpam,
     removeAssetFromSpamList,
   };
 }

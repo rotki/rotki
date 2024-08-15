@@ -24,7 +24,7 @@ definePage({
 const { identifier } = toRefs(props);
 const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();
 const { isAssetWhitelisted, whitelistAsset, unWhitelistAsset } = useWhitelistedAssetsStore();
-const { markAssetAsSpam, removeAssetFromSpamList } = useSpamAsset();
+const { markAssetsAsSpam, removeAssetFromSpamList } = useSpamAsset();
 const { assetName, assetSymbol, assetInfo, tokenAddress, refetchAssetInfo } = useAssetInfoRetrieval();
 const { getChain } = useSupportedChains();
 
@@ -106,7 +106,8 @@ async function toggleSpam() {
   const id = get(identifier);
   if (get(isSpam))
     await removeAssetFromSpamList(id);
-  else await markAssetAsSpam(id);
+  else
+    await markAssetsAsSpam([id]);
 
   refetchAssetInfo(id);
 }

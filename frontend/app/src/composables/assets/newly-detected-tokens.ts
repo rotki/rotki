@@ -2,21 +2,21 @@ import type { NewDetectedToken } from '@/types/websocket-messages';
 
 const MAX_SIZE = 500;
 
-function createStorage(username: string): Ref<NewDetectedToken[]> {
-  return useLocalStorage(`rotki.newly_detected_tokens.${username}`, []);
+function createStorage(identifier: string): Ref<NewDetectedToken[]> {
+  return useLocalStorage(`rotki.newly_detected_tokens.${identifier}`, []);
 }
 
 export const useNewlyDetectedTokens = createSharedComposable(() => {
   let internalTokens = ref<NewDetectedToken[]>([]);
+
   const ignoredAssetStore = useIgnoredAssetsStore();
   const { ignoredAssets } = storeToRefs(ignoredAssetStore);
   const { addIgnoredAsset } = ignoredAssetStore;
+  const loggedUserIdentifier = useLoggedUserIdentifier();
 
-  const initTokens = (username: string): void => {
-    internalTokens = createStorage(username);
-  };
+  const tokens = computed<NewDetectedToken[]>(() => get(internalTokens));
 
-  const clearInternalTokens = () => {
+  const clearInternalTokens = (): void => {
     set(internalTokens, []);
   };
 
@@ -37,22 +37,24 @@ export const useNewlyDetectedTokens = createSharedComposable(() => {
     return tokenIndex === -1;
   };
 
-  const removeNewDetectedTokens = (tokensToRemove: string[]) => {
-    const filtered = get(internalTokens).filter(item => !tokensToRemove.includes(item.tokenIdentifier));
-
-    set(internalTokens, filtered);
+  const removeNewDetectedTokens = (tokensToRemove: string[]): void => {
+    set(internalTokens, get(internalTokens).filter(item => !tokensToRemove.includes(item.tokenIdentifier)));
   };
 
-  const tokens = computed<NewDetectedToken[]>(() => get(internalTokens));
-
-  watch(ignoredAssets, (value, oldValue) => {
+  watch(ignoredAssets, (value, oldValue): void => {
     const ignoredItems = value.filter(x => !oldValue.includes(x));
     removeNewDetectedTokens(ignoredItems);
   });
 
+  watch(loggedUserIdentifier, (identifier): void => {
+    if (identifier)
+      internalTokens = createStorage(identifier);
+    else
+      internalTokens = ref<NewDetectedToken[]>([]);
+  }, { immediate: true });
+
   return {
     tokens,
-    initTokens,
     removeNewDetectedTokens,
     clearInternalTokens,
     addNewDetectedToken,

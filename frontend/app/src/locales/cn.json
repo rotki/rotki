@@ -1019,7 +1019,6 @@
     },
     "newly_detected": {
       "accept_selected": "接受选择的代币",
-      "ignore_selected": "忽略选定的代币",
       "seen_during": "看到期间",
       "select_deselect_all_tokens": "选择/取消选择所有的代币",
       "subtitle": "检查新检测到的令牌列表并将任何垃圾邮件资产添加到忽略的代币列表"
@@ -1370,7 +1369,6 @@
     "entry_type": "输入类型",
     "account": "账户",
     "actions": {
-      "accept": "接受",
       "back": "返回",
       "cancel": "取消",
       "clear_selection": "清除选择",

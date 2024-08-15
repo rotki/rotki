@@ -12,7 +12,6 @@ describe('composables::/assets/newly-detected-tokens', () => {
     store = useIgnoredAssetsStore();
     ignoredAssets = storeToRefs(store).ignoredAssets;
     composable = useNewlyDetectedTokens();
-    composable.initTokens('test');
   });
 
   beforeEach(() => {

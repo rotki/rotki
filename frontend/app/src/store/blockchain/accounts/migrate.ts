@@ -1,9 +1,10 @@
 import { type Notification, NotificationCategory, Severity } from '@rotki/common';
 import { type MaybeRef, useSessionStorage } from '@vueuse/core';
+import { useLoggedUserIdentifier } from '@/composables/user/account';
 import type { MigratedAddresses } from '@/types/websocket-messages';
 
-function setupMigrationSessionCache(username: string): Ref<MigratedAddresses> {
-  return useSessionStorage(`rotki.migrated_addresses.${username}`, []);
+function setupMigrationSessionCache(identifier: string): Ref<MigratedAddresses> {
+  return useSessionStorage(`rotki.migrated_addresses.${identifier}`, []);
 }
 
 export const useAccountMigrationStore = defineStore('blockchain/accounts/migration', () => {
@@ -12,6 +13,7 @@ export const useAccountMigrationStore = defineStore('blockchain/accounts/migrati
   const { canRequestData } = storeToRefs(useSessionAuthStore());
   const { txChains, getChainName, isEvm } = useSupportedChains();
   const { fetchAccounts } = useBlockchains();
+  const loggedUserIdentifier = useLoggedUserIdentifier();
 
   const { t } = useI18n();
   const { notify } = useNotificationsStore();
@@ -78,15 +80,17 @@ export const useAccountMigrationStore = defineStore('blockchain/accounts/migrati
     runMigrationIfPossible(canRequestData);
   };
 
-  const setupCache = (username: string): void => {
-    migratedAddresses = setupMigrationSessionCache(username);
-  };
-
   watch(canRequestData, runMigrationIfPossible);
+
+  watch(loggedUserIdentifier, (identifier) => {
+    if (!identifier)
+      migratedAddresses = ref<MigratedAddresses>([]);
+    else
+      migratedAddresses = setupMigrationSessionCache(identifier);
+  }, { immediate: true });
 
   return {
     migratedAddresses,
-    setupCache,
     setUpgradedAddresses: upgradeMigratedAddresses,
   };
 });
