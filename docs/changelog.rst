@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`8116` Rotki will now decode Gnosis chain omnibridge token bridging
 * :feature:`-` Rotki will now decode payments for cowswap vCOW claims
 * :feature:`8378` Rotki will now decode zksync lite withdrawals
 * :bug:`` Change the flow for importing addresses from MetaMask. Instead of automatically proceeding with the imported addresses, they will only be displayed in the text input, for better clarity.

@@ -16,18 +16,11 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_1INCH, A_ETH, A_GTC
-from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
 
-from .constants import (
-    CPT_GNOSIS_CHAIN,
-    ETHADDRESS_TO_KNOWN_NAME,
-    GNOSIS_CHAIN_BRIDGE_RECEIVE,
-    GNOSIS_CPT_DETAILS,
-    GTC_CLAIM,
-)
+from .constants import ETHADDRESS_TO_KNOWN_NAME, GNOSIS_CPT_DETAILS, GTC_CLAIM
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -95,26 +88,6 @@ class EthereumTransactionDecoder(EVMTransactionDecoderWithDSProxy):
                     event.notes = f'Claim {event.balance.amount} 1INCH from the 1INCH airdrop'
                     event.extra_data = {AIRDROP_IDENTIFIER_KEY: '1inch'}
             return DEFAULT_DECODING_OUTPUT
-
-        if tx_log.topics[0] == GNOSIS_CHAIN_BRIDGE_RECEIVE and tx_log.address == '0x88ad09518695c6c3712AC10a214bE5109a655671':  # noqa: E501
-            for event in decoded_events:
-                if event.event_type == HistoryEventType.RECEIVE:
-                    try:
-                        crypto_asset = event.asset.resolve_to_crypto_asset()
-                    except (UnknownAsset, WrongAssetType):
-                        next(iter(self.decoders.values())).notify_user(
-                            event=event,
-                            counterparty=CPT_GNOSIS_CHAIN,
-                        )
-                        continue
-
-                    # user bridged from gnosis chain
-                    event.event_type = HistoryEventType.WITHDRAWAL
-                    event.event_subtype = HistoryEventSubType.BRIDGE
-                    event.counterparty = CPT_GNOSIS_CHAIN
-                    event.notes = (
-                        f'Bridge {event.balance.amount} {crypto_asset.symbol} from gnosis chain'
-                    )
 
         return DEFAULT_DECODING_OUTPUT
 

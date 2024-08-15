@@ -84,6 +84,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Odosv1',
         'Odosv2',
         'Omni',
+        'Omnibridge',
         'Oneinchv1',
         'Oneinchv2',
         'Oneinchv3',

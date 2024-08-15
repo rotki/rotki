@@ -3,7 +3,6 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
-from rotkehlchen.chain.ethereum.decoding.constants import CPT_GNOSIS_CHAIN
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.airdrops.constants import CPT_ONEINCH
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
@@ -120,112 +119,6 @@ def test_1inch_claim(database, ethereum_inquirer, eth_transactions):
             counterparty=CPT_ONEINCH,
             address=string_to_evm_address('0xE295aD71242373C37C5FdA7B57F26f9eA1088AFe'),
             extra_data={AIRDROP_IDENTIFIER_KEY: '1inch'},
-        ),
-    ]
-    assert events == expected_events
-
-
-@pytest.mark.parametrize('ethereum_accounts', [['0x5EDCf547eCE0EA1765D6C02e9E5bae53b52E09D4']])
-def test_gnosis_chain_bridge(database, ethereum_inquirer, eth_transactions):
-    """Data for bridge taken from
-    https://etherscan.io/tx/0x52f853d559d83b5303faf044e00e9109bd5c6a05b6633f9df34939f8e7c6de02
-    """
-    tx_hex = '0x52f853d559d83b5303faf044e00e9109bd5c6a05b6633f9df34939f8e7c6de02'
-    evmhash = deserialize_evm_tx_hash(tx_hex)
-    transaction = EvmTransaction(
-        tx_hash=evmhash,
-        chain_id=ChainID.ETHEREUM,
-        timestamp=1646375440,
-        block_number=14351442,
-        from_address=string_to_evm_address('0x5EDCf547eCE0EA1765D6C02e9E5bae53b52E09D4'),
-        to_address=string_to_evm_address('0x88ad09518695c6c3712AC10a214bE5109a655671'),
-        value=0,
-        gas=171249,
-        gas_price=22990000000,
-        gas_used=171249,
-        input_data=hexstring_to_bytes('0x09c5eabe000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000002e43f7658fd000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000001a0000000000000000000000000000000000000000000000000000000000000013500050000a7823d6f1e31569f51861e345b30c6bebf70ebe70000000000009cf6f6a78083ca3e2a662d6dd1703c939c8ace2e268d88ad09518695c6c3712ac10a214be5109a655671000927c00101006401867f7a4d000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc20000000000000000000000003f615ba21bc6cc5d4a6d798c5950cc5c42937fbd00000000000000000000000000000000000000000000000007392088b40d14000000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000004000000000000000000000000006c187e1b71ffbee4429003bb846c1b3eb1610000000000000000000000000000000000000000000000000000048c52ee05b140000000000000000000000000000000000000000000000000000000000000000000000000000000000000105041b1c1c1c73a08c7605fa9c69f068338cb7cd1c8dd21189cbe56f4cc66cff8dc7f0b0c8cc8c64433ea24643b893c9062beae6a05656b1df5643a242533d63925144c3e5c7dfd0509fb3c4232cfdb4c500e942a95b23439b3e18bab4a40057e1bdfae2d9967025b3f8fdca13354b25250c0d7fa9e4b472dc97df1f0cd0f595dc266d09e711628b3a63c1a6e4c83a11d3655891e31901eacf73b927e10bfbe6b0d5ed808cc228d606779a19a7dfb7393956b4fada14eaef8f6de6ee3824e67d6df18cc2d55f00cf869cc920135a94fb4abc213dc43e97812879d9efab046e4fffb931dcb55e5aa2b86f6a848408fea42cd221df99f1720b2ce22830498d78d04e1d083ba12800000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000'),
-        nonce=12,
-    )
-    receipt = EvmTxReceipt(
-        tx_hash=evmhash,
-        chain_id=ChainID.ETHEREUM,
-        contract_address=None,
-        status=True,
-        tx_type=0,
-        logs=[
-            EvmTxReceiptLog(
-                log_index=473,
-                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000250d51ce33'),
-                address=string_to_evm_address('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
-                topics=[
-                    hexstring_to_bytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
-                    hexstring_to_bytes('0x00000000000000000000000088ad09518695c6c3712ac10a214be5109a655671'),
-                    hexstring_to_bytes('0x0000000000000000000000005edcf547ece0ea1765d6c02e9e5bae53b52e09d4'),
-                ],
-            ), EvmTxReceiptLog(
-                log_index=474,
-                data=hexstring_to_bytes('0x000000000000000000000000000000000000000000000000000000250d51ce33'),
-                address=string_to_evm_address('0x88ad09518695c6c3712AC10a214bE5109a655671'),
-                topics=[
-                    hexstring_to_bytes('0x9afd47907e25028cdaca89d193518c302bbb128617d5a992c5abd45815526593'),
-                    hexstring_to_bytes('0x000000000000000000000000a0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'),
-                    hexstring_to_bytes('0x0000000000000000000000005edcf547ece0ea1765d6c02e9e5bae53b52e09d4'),
-                    hexstring_to_bytes('0x00050000a7823d6f1e31569f51861e345b30c6bebf70ebe70000000000009cf9'),
-                ],
-            ), EvmTxReceiptLog(
-                log_index=6,
-                data=hexstring_to_bytes('0x0000000000000000000000000000000000000000000000000000000000000001'),
-                address=string_to_evm_address('0x4c36d2919e407f0cc2ee3c993ccf8ac26d9ce64e'),
-                topics=[
-                    hexstring_to_bytes('0x27333edb8bdcd40a0ae944fb121b5e2d62ea782683946654a0f5e607a908d578'),
-                    hexstring_to_bytes('0x000000000000000000000000f6a78083ca3e2a662d6dd1703c939c8ace2e268d'),
-                    hexstring_to_bytes('0x00000000000000000000000088ad09518695c6c3712ac10a214be5109a655671'),
-                    hexstring_to_bytes('0x00050000a7823d6f1e31569f51861e345b30c6bebf70ebe70000000000009cf9'),
-                ],
-            ),
-        ],
-    )
-
-    dbevmtx = DBEvmTx(database)
-    decoder = EthereumTransactionDecoder(
-        database=database,
-        ethereum_inquirer=ethereum_inquirer,
-        transactions=eth_transactions,
-    )
-    with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
-        dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
-        decoder.reload_data(cursor)
-    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
-    assert len(events) == 2
-    expected_events = [
-        EvmEvent(
-            tx_hash=evmhash,
-            sequence_index=0,
-            timestamp=1646375440000,
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.SPEND,
-            event_subtype=HistoryEventSubType.FEE,
-            asset=A_ETH,
-            balance=Balance(
-                amount=FVal(0.00393701451),
-                usd_value=ZERO,
-            ),
-            location_label='0x5EDCf547eCE0EA1765D6C02e9E5bae53b52E09D4',
-            notes='Burned 0.00393701451 ETH for gas',
-            counterparty=CPT_GAS,
-        ), EvmEvent(
-            tx_hash=evmhash,
-            sequence_index=474,
-            timestamp=1646375440000,
-            location=Location.ETHEREUM,
-            event_type=HistoryEventType.WITHDRAWAL,
-            event_subtype=HistoryEventSubType.BRIDGE,
-            asset=EvmToken('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
-            balance=Balance(amount=FVal('159137.254963'), usd_value=ZERO),
-            location_label='0x5EDCf547eCE0EA1765D6C02e9E5bae53b52E09D4',
-            notes='Bridge 159137.254963 USDC from gnosis chain',
-            counterparty=CPT_GNOSIS_CHAIN,
-            address=string_to_evm_address('0x88ad09518695c6c3712AC10a214bE5109a655671'),
         ),
     ]
     assert events == expected_events
