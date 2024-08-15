@@ -116,7 +116,7 @@ const { setMessage } = useMessageStore();
 const { isAssetIgnored, ignoreAsset, unignoreAsset, fetchIgnoredAssets } = useIgnoredAssetsStore();
 const { isAssetWhitelisted, whitelistAsset, unWhitelistAsset } = useWhitelistedAssetsStore();
 
-const { markAssetAsSpam, removeAssetFromSpamList } = useSpamAsset();
+const { markAssetsAsSpam, removeAssetFromSpamList } = useSpamAsset();
 
 function isAssetWhitelistedValue(asset: string) {
   return get(isAssetWhitelisted(asset));
@@ -141,7 +141,8 @@ async function toggleSpam(item: SupportedAsset) {
   const { identifier } = item;
   if (isSpamAsset(item))
     await removeAssetFromSpamList(identifier);
-  else await markAssetAsSpam(identifier);
+  else
+    await markAssetsAsSpam([identifier]);
 
   refetchAssetInfo(identifier);
 

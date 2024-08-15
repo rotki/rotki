@@ -1145,7 +1145,6 @@
     },
     "newly_detected": {
       "accept_selected": "Accepter les jetons sélectionnés",
-      "ignore_selected": "Ignorer les jetons sélectionnés",
       "seen_during": "Vu pendant",
       "select_deselect_all_tokens": "Sélectionner/Désélectionner tous les jetons",
       "subtitle": "Inspecter la liste des jetons détectés récemment et ajouter tous les jetons spam à la liste des jetons ignorés"
@@ -1522,7 +1521,6 @@
     "entry_type": "Type d'entrée",
     "account": "Compte",
     "actions": {
-      "accept": "Accepter",
       "add": "Ajouter",
       "back": "Retour",
       "cancel": "Annuler",

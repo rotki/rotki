@@ -4,15 +4,17 @@ export function useSpamAsset() {
   const { notify } = useNotificationsStore();
   const { t } = useI18n();
 
-  const { markAssetAsSpam: markAssetAsSpamCaller, removeAssetFromSpamList: removeAssetFromSpamListCaller }
-    = useAssetSpamApi();
+  const {
+    markAssetsAsSpam: markAssetAsSpamCaller,
+    removeAssetFromSpamList: removeAssetFromSpamListCaller,
+  } = useAssetSpamApi();
 
   const { fetchWhitelistedAssets } = useWhitelistedAssetsStore();
   const { fetchIgnoredAssets } = useIgnoredAssetsStore();
 
-  const markAssetAsSpam = async (token: string): Promise<ActionStatus> => {
+  const markAssetsAsSpam = async (tokens: string[]): Promise<ActionStatus> => {
     try {
-      await markAssetAsSpamCaller(token);
+      await markAssetAsSpamCaller(tokens);
       await fetchWhitelistedAssets();
       await fetchIgnoredAssets();
       return { success: true };
@@ -49,7 +51,7 @@ export function useSpamAsset() {
   };
 
   return {
-    markAssetAsSpam,
+    markAssetsAsSpam,
     removeAssetFromSpamList,
   };
 }

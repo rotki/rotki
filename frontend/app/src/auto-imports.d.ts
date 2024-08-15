@@ -633,6 +633,7 @@ declare global {
   const useLocalStorage: typeof import('@vueuse/core')['useLocalStorage']
   const useLocationStore: typeof import('./store/locations')['useLocationStore']
   const useLocations: typeof import('./composables/locations')['useLocations']
+  const useLoggedUserIdentifier: typeof import('./composables/user/account')['useLoggedUserIdentifier']
   const useMagicKeys: typeof import('@vueuse/core')['useMagicKeys']
   const useMainStore: typeof import('./store/main')['useMainStore']
   const useMakerDaoApi: typeof import('./composables/api/defi/makerdao')['useMakerDaoApi']
@@ -1489,6 +1490,7 @@ declare module 'vue' {
     readonly useLocalStorage: UnwrapRef<typeof import('@vueuse/core')['useLocalStorage']>
     readonly useLocationStore: UnwrapRef<typeof import('./store/locations')['useLocationStore']>
     readonly useLocations: UnwrapRef<typeof import('./composables/locations')['useLocations']>
+    readonly useLoggedUserIdentifier: UnwrapRef<typeof import('./composables/user/account')['useLoggedUserIdentifier']>
     readonly useMagicKeys: UnwrapRef<typeof import('@vueuse/core')['useMagicKeys']>
     readonly useMainStore: UnwrapRef<typeof import('./store/main')['useMainStore']>
     readonly useMakerDaoApi: UnwrapRef<typeof import('./composables/api/defi/makerdao')['useMakerDaoApi']>
@@ -2326,6 +2328,7 @@ declare module '@vue/runtime-core' {
     readonly useLocalStorage: UnwrapRef<typeof import('@vueuse/core')['useLocalStorage']>
     readonly useLocationStore: UnwrapRef<typeof import('./store/locations')['useLocationStore']>
     readonly useLocations: UnwrapRef<typeof import('./composables/locations')['useLocations']>
+    readonly useLoggedUserIdentifier: UnwrapRef<typeof import('./composables/user/account')['useLoggedUserIdentifier']>
     readonly useMagicKeys: UnwrapRef<typeof import('@vueuse/core')['useMagicKeys']>
     readonly useMainStore: UnwrapRef<typeof import('./store/main')['useMainStore']>
     readonly useMakerDaoApi: UnwrapRef<typeof import('./composables/api/defi/makerdao')['useMakerDaoApi']>

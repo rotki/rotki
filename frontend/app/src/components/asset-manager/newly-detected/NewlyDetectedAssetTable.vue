@@ -10,24 +10,26 @@ interface Token extends NewDetectedToken {
 
 const { t } = useI18n();
 
+const selected = ref<string[]>([]);
+const sort = ref<DataTableSortData<NewDetectedToken>>();
+
 const { tokens, removeNewDetectedTokens } = useNewlyDetectedTokens();
 const { cache } = storeToRefs(useAssetCacheStore());
-
 const { getChain } = useSupportedChains();
+const { markAssetsAsSpam } = useSpamAsset();
 
-const mappedTokens = computed<Token[]>(() =>
-  get(tokens).map((data) => {
-    const evmChain = get(cache)[data.tokenIdentifier]?.evmChain;
+const rows = computed<Token[]>(() => get(tokens).map((data) => {
+  const evmChain = get(cache)[data.tokenIdentifier]?.evmChain;
 
-    return {
-      ...data,
-      address: getAddressFromEvmIdentifier(data.tokenIdentifier),
-      evmChain: evmChain ? getChain(evmChain) : Blockchain.ETH,
-    };
-  }),
+  return {
+    ...data,
+    address: getAddressFromEvmIdentifier(data.tokenIdentifier),
+    evmChain: evmChain ? getChain(evmChain) : Blockchain.ETH,
+  };
+}),
 );
 
-const tableHeaders = computed<DataTableColumn<Token>[]>(() => [
+const cols = computed<DataTableColumn<Token>[]>(() => [
   {
     label: t('common.asset'),
     key: 'tokenIdentifier',
@@ -49,65 +51,51 @@ const tableHeaders = computed<DataTableColumn<Token>[]>(() => [
     class: 'py-0',
   },
   {
-    label: t('common.actions.accept'),
-    key: 'accept',
-    cellClass: 'py-0',
-    class: 'py-0',
-  },
-  {
-    label: t('ignore_buttons.ignore'),
-    key: 'ignore',
+    label: t('common.actions_text'),
+    key: 'actions',
+    align: 'center',
     cellClass: 'py-0',
     class: 'py-0',
   },
 ]);
 
-const selected = ref<string[]>([]);
-const sort = ref<DataTableSortData<NewDetectedToken>>({
-  direction: 'desc' as const,
+const allSelected = computed<boolean>(() => {
+  const selectionLength = get(selected).length;
+  return selectionLength > 0 && get(rows).length === selectionLength;
 });
 
-function selectDeselectAllTokens() {
+function toggleSelection() {
+  const tokens = get(rows);
   const selectedLength = get(selected).length;
-  const existLength = get(mappedTokens).length;
+  const existLength = tokens.length;
 
-  if (selectedLength === existLength) {
+  if (selectedLength === existLength)
     set(selected, []);
-  }
-  else {
-    set(
-      selected,
-      get(mappedTokens).map(({ tokenIdentifier }) => tokenIdentifier),
-    );
-  }
+
+  else
+    set(selected, tokens.map(({ tokenIdentifier }) => tokenIdentifier));
 }
 
-function removeTokens(identifiers?: string[]) {
-  removeNewDetectedTokens(identifiers || get(selected));
+function getIdentifiers(identifiers?: string | string[]): string [] {
+  return identifiers
+    ? (Array.isArray(identifiers) ? identifiers : [identifiers])
+    : get(selected);
+}
+
+function removeTokens(identifiers?: string | string[]): void {
+  removeNewDetectedTokens(getIdentifiers(identifiers));
 
   set(selected, []);
 }
 
-const { setMessage } = useMessageStore();
-const { isAssetIgnored, ignoreAsset } = useIgnoredAssetsStore();
+function getUniqueIds(identifiers?: string | string[]): string[] {
+  return getIdentifiers(identifiers).filter(uniqueStrings);
+}
 
-async function ignoreTokens(identifiers?: string[]) {
-  const ids
-    = identifiers
-    || get(selected)
-      .filter(tokenIdentifier => !get(isAssetIgnored(tokenIdentifier)))
-      .filter(uniqueStrings);
+async function markAsSpam(identifiers?: string | string[]): Promise<void> {
+  const ids = getUniqueIds(identifiers);
 
-  if (ids.length === 0) {
-    setMessage({
-      success: false,
-      title: t('ignore.no_items.title', 1),
-      description: t('ignore.no_items.description', 1),
-    });
-    return;
-  }
-
-  const status = await ignoreAsset(ids);
+  const status = await markAssetsAsSpam(ids);
 
   if (status.success)
     removeTokens(ids);
@@ -117,83 +105,78 @@ async function ignoreTokens(identifiers?: string[]) {
 <template>
   <RuiCard>
     <template #custom-header>
-      <div class="flex flex-col sm:flex-row sm:items-center gap-4 px-4 pt-4">
-        <div class="shrink-0">
-          <RuiButton
-            :disabled="mappedTokens.length === 0"
-            variant="outlined"
-            @click="selectDeselectAllTokens()"
+      <div class="flex gap-4 justify-between grow px-4 pt-4">
+        <div class="flex gap-4 content-center">
+          <RuiTooltip
+            :popper="{ placement: 'bottom' }"
+            :open-delay="500"
           >
-            <template #prepend>
-              <RuiIcon name="checkbox-multiple-line" />
+            <template #activator>
+              <RuiCheckbox
+                color="primary"
+                hide-details
+                size="sm"
+                class="ms-4 mt-1 text-body-2"
+                :model-value="allSelected"
+                @update:model-value="toggleSelection()"
+              >
+                {{ t('asset_table.selected', { count: selected.length }) }}
+              </RuiCheckbox>
             </template>
-            <span>
-              {{ t('asset_table.newly_detected.select_deselect_all_tokens') }}
-            </span>
-          </RuiButton>
-          <div class="flex mt-3">
-            <div class="mr-4 mt-1">
-              {{ t('asset_table.selected', { count: selected.length }) }}
-            </div>
-            <RuiButton
-              :disabled="selected.length === 0"
-              size="sm"
-              variant="text"
-              @click="selected = []"
+            {{ t('asset_table.newly_detected.select_deselect_all_tokens') }}
+          </RuiTooltip>
+
+          <div>
+            <RuiTooltip
+              :popper="{ placement: 'bottom' }"
+              :open-delay="500"
             >
-              {{ t('common.actions.clear_selection') }}
-            </RuiButton>
-          </div>
-        </div>
-
-        <div class="border-b sm:border-r border-default align-self-stretch sm:w-0" />
-
-        <div class="flex gap-4 justify-between grow">
-          <div class="flex gap-4">
-            <RuiTooltip :popper="{ placement: 'bottom' }">
               <template #activator>
                 <RuiButton
                   :disabled="selected.length === 0"
                   color="success"
-                  icon
-                  variant="outlined"
+                  variant="text"
+                  class="w-12 h-12"
                   @click="removeTokens()"
                 >
                   <RuiIcon name="check-line" />
                 </RuiButton>
               </template>
-              <span>{{ t('asset_table.newly_detected.accept_selected') }}</span>
+
+              {{ t('asset_table.newly_detected.accept_selected') }}
             </RuiTooltip>
 
-            <RuiTooltip :popper="{ placement: 'bottom' }">
+            <RuiTooltip
+              :popper="{ placement: 'bottom' }"
+              :open-delay="500"
+            >
               <template #activator>
                 <RuiButton
                   :disabled="selected.length === 0"
                   color="error"
-                  icon
-                  variant="outlined"
-                  @click="ignoreTokens()"
+                  variant="text"
+                  class="w-12 h-12"
+                  @click="markAsSpam()"
                 >
-                  <RuiIcon name="eye-off-line" />
+                  <RuiIcon name="spam-line" />
                 </RuiButton>
               </template>
-              <span>
-                {{ t('asset_table.newly_detected.ignore_selected') }}
-              </span>
+
+              {{ t('asset_table.newly_detected.mark_as_spam') }}
             </RuiTooltip>
           </div>
-
-          <HintMenuIcon :popper="{ placement: 'left-start' }">
-            {{ t('asset_table.newly_detected.subtitle') }}
-          </HintMenuIcon>
         </div>
+
+        <HintMenuIcon :popper="{ placement: 'left-start' }">
+          {{ t('asset_table.newly_detected.subtitle') }}
+        </HintMenuIcon>
       </div>
     </template>
 
     <RuiDataTable
       v-model="selected"
-      :cols="tableHeaders"
-      :rows="mappedTokens"
+      :cols="cols"
+      :rows="rows"
       :sort="sort"
       outlined
       dense
@@ -228,26 +211,27 @@ async function ignoreTokens(identifiers?: string[]) {
         </div>
       </template>
 
-      <template #item.accept="{ row }">
-        <RuiButton
-          color="success"
-          variant="text"
-          icon
-          @click="removeTokens([row.tokenIdentifier])"
-        >
-          <RuiIcon name="check-line" />
-        </RuiButton>
-      </template>
-
-      <template #item.ignore="{ row }">
-        <RuiButton
-          color="error"
-          variant="text"
-          icon
-          @click="ignoreTokens([row.tokenIdentifier])"
-        >
-          <RuiIcon name="eye-off-line" />
-        </RuiButton>
+      <template #item.actions="{ row }">
+        <RuiButtonGroup variant="text">
+          <RuiButton
+            color="success"
+            variant="text"
+            icon
+            class="m-auto"
+            @click="removeTokens(row.tokenIdentifier)"
+          >
+            <RuiIcon name="check-line" />
+          </RuiButton>
+          <RuiButton
+            color="error"
+            variant="text"
+            icon
+            class="m-auto"
+            @click="markAsSpam(row.tokenIdentifier)"
+          >
+            <RuiIcon name="spam-line" />
+          </RuiButton>
+        </RuiButtonGroup>
       </template>
     </RuiDataTable>
   </RuiCard>

@@ -1,5 +1,7 @@
 import type { CreateAccountPayload, LoginCredentials } from '@/types/login';
 
+export const useLoggedUserIdentifier = createSharedComposable(() => useSessionStorage<string | undefined>('rotki.logged_user_id', undefined));
+
 export function useAccountManagement() {
   const { t } = useI18n();
   const loading = ref<boolean>(false);
@@ -15,17 +17,16 @@ export function useAccountManagement() {
   const authStore = useSessionAuthStore();
   const { logged, canRequestData, upgradeVisible } = storeToRefs(authStore);
   const { clearUpgradeMessages } = authStore;
-  const { setupCache } = useAccountMigrationStore();
-  const { initTokens } = useNewlyDetectedTokens();
   const { isDevelop } = storeToRefs(useMainStore());
+  const loggedUserIdentifier = useLoggedUserIdentifier();
 
   const createNewAccount = async (payload: CreateAccountPayload) => {
     set(loading, true);
     set(error, '');
     const username = payload.credentials.username;
     const userIdentifier = `${username}${get(isDevelop) ? '.dev' : ''}`;
-    setupCache(userIdentifier);
-    initTokens(userIdentifier);
+    set(loggedUserIdentifier, userIdentifier);
+
     await connect();
     const start = Date.now();
     const result = await createAccount(payload);
@@ -52,8 +53,7 @@ export function useAccountManagement() {
   const userLogin = async ({ username, password, syncApproval, resumeFromBackup }: LoginCredentials): Promise<void> => {
     set(loading, true);
     const userIdentifier = `${username}${get(isDevelop) ? '.dev' : ''}`;
-    setupCache(userIdentifier);
-    initTokens(userIdentifier);
+    set(loggedUserIdentifier, userIdentifier);
     await connect();
 
     const result = await login({

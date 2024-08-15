@@ -32,7 +32,11 @@ export const useMainStore = defineStore('main', () => {
     return indexOfDev > 0 ? appVersion.slice(0, Math.max(0, indexOfDev + 3)) : appVersion;
   });
 
-  const isDevelop = computed(() => {
+  const isDevelop = computed<boolean>(() => {
+    const dev = checkIfDevelopment();
+    if (dev)
+      return true;
+
     const { version: appVersion } = get(version);
     return appVersion.includes('dev') || get(dataDirectory).includes('develop_data');
   });
