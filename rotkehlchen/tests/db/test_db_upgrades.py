@@ -2449,6 +2449,15 @@ def test_upgrade_db_43_to_44(user_data_dir, messages_aggregator):
             ('_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041', '0.00059', 'ETH'),  # noqa: E501
             ('_nft_sdfdsfsdf_1_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', None, None),
         ]
+        assert set(cursor.execute('SELECT object_reference, tag_name FROM tag_mappings').fetchall()) == {  # noqa: E501
+            ('ETH0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'safe'),
+            ('OPTIMISM0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'safe'),
+            ('GNOSIS0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'safe'),
+            ('5', 'staked'),
+            ('13', 'beefy'),
+            ('ARBITRUM_ONE0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'safe'),
+            ('GNOSIS0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'beefy'),
+        }
 
         old_receipt_logs = cursor.execute('SELECT * from evmtx_receipt_logs').fetchall()
 
@@ -2472,6 +2481,12 @@ def test_upgrade_db_43_to_44(user_data_dir, messages_aggregator):
         ]
         new_receipt_logs = cursor.execute('SELECT * from evmtx_receipt_logs').fetchall()
         assert new_receipt_logs == [(x[0], x[1], x[2], x[3], x[4]) for x in old_receipt_logs]
+        assert set(cursor.execute('SELECT object_reference, tag_name FROM tag_mappings').fetchall()) == {  # noqa: E501
+            ('0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'safe'),
+            ('0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'beefy'),
+            ('5', 'staked'),
+            ('13', 'beefy'),
+        }
 
 
 def test_latest_upgrade_correctness(user_data_dir):
