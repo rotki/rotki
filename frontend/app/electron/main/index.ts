@@ -3,12 +3,12 @@ import process from 'node:process';
 import { BrowserWindow, Menu, MenuItem, app, protocol, screen } from 'electron';
 import windowStateKeeper from 'electron-window-state';
 import { type Nullable, assert } from '@rotki/common';
-import { ipcSetup } from '@/electron-main/ipc-setup';
-import { getUserMenu } from '@/electron-main/menu';
-import { TrayManager } from '@/electron-main/tray-manager';
-import { startPromise } from '@/utils';
-import { createProtocol } from './create-protocol';
-import { SubprocessHandler } from './subprocess-handler';
+import { ipcSetup } from '@electron/main/ipc-setup';
+import { getUserMenu } from '@electron/main/menu';
+import { TrayManager } from '@electron/main/tray-manager';
+import { startPromise } from '@shared/utils';
+import { createProtocol } from '@electron/main/create-protocol';
+import { SubprocessHandler } from '@electron/main/subprocess-handler';
 
 let trayManager: Nullable<TrayManager> = null;
 let forceQuit = false;

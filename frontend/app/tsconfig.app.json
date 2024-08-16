@@ -5,16 +5,19 @@
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
-    },
-    "verbatimModuleSyntax": false
+      "@/*": ["./src/*"],
+      "@shared/*": ["./shared/*"],
+      "@electron/*": ["./electron/*"]
+    }
   },
   "include": [
     "env.d.ts",
     "components.d.ts",
     "typed-router.d.ts",
     "src/**/*",
-    "src/**/*.vue"
+    "src/**/*.vue",
+    "shared/**/*",
+    "electron/**/*"
   ],
   "exclude": [
     "node_modules/**",

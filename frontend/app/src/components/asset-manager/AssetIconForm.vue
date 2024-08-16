@@ -14,7 +14,7 @@ const icon = ref<File>();
 
 const refreshIconLoading = ref<boolean>(false);
 const { notify } = useNotificationsStore();
-const { appSession } = useInterop();
+const { getPath } = useInterop();
 const { setMessage } = useMessageStore();
 const { refreshIcon: refresh, setIcon, uploadIcon } = useAssetIconApi();
 
@@ -48,9 +48,11 @@ async function saveIcon(identifier: string) {
     return;
 
   try {
-    if (appSession)
-      await setIcon(identifier, iconVal.path);
-    else await uploadIcon(identifier, iconVal);
+    const path = getPath(iconVal);
+    if (path)
+      await setIcon(identifier, path);
+    else
+      await uploadIcon(identifier, iconVal);
 
     setLastRefreshedAssetIcon();
   }

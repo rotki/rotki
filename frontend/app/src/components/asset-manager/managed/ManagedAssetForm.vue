@@ -6,7 +6,6 @@ import { CUSTOM_ASSET, EVM_TOKEN } from '@/types/asset';
 import { ApiValidationError } from '@/types/api/errors';
 import AssetIconForm from '@/components/asset-manager/AssetIconForm.vue';
 import { toMessages } from '@/utils/validation';
-import { externalLinks } from '@/data/external-links';
 import type { SelectOption, SelectOptions } from '@/types/common';
 import type { EvmTokenKind, SupportedAsset, UnderlyingToken } from '@rotki/common';
 

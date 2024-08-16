@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { isMetaMaskSupported } from '@/utils/metamask';
-import { externalLinks } from '@/data/external-links';
 
 defineProps<{
   disabled: boolean;

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SystemVersion } from '@/electron-main/ipc';
+import type { SystemVersion } from '@shared/ipc';
 import type { WebVersion } from '@/types';
 
 const css = useCssModule();

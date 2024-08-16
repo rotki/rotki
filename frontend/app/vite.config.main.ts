@@ -44,7 +44,8 @@ export default defineConfig({
   envDir: process.cwd(),
   resolve: {
     alias: {
-      '@': `${join(PACKAGE_ROOT, 'src')}/`,
+      '@electron': `${join(PACKAGE_ROOT, 'electron')}/`,
+      '@shared': `${join(PACKAGE_ROOT, 'shared')}/`,
     },
   },
   optimizeDeps: {
@@ -57,13 +58,13 @@ export default defineConfig({
     assetsDir: '.',
     minify: !isDevelopment,
     lib: {
-      entry: 'src/background.ts',
+      entry: 'electron/main/index.ts',
       formats: ['es'],
     },
     rollupOptions: {
       external: ['csv', 'electron', ...builtinModules.flatMap(p => [p, `node:${p}`])],
       output: {
-        entryFileNames: '[name].js',
+        entryFileNames: 'main.js',
         manualChunks(id) {
           if (id.includes('node_modules'))
             return 'background-vendor';

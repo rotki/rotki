@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { isEqual } from 'lodash-es';
-import { externalLinks } from '@/data/external-links';
 
 defineProps<{
   noPadding?: boolean;

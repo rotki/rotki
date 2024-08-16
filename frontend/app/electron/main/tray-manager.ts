@@ -1,9 +1,9 @@
 import path from 'node:path';
 import process from 'node:process';
 import { type BrowserWindow, Menu, Tray, app, nativeImage } from 'electron';
-import { settingsManager } from '@/electron-main/app-settings';
-import { checkIfDevelopment } from '@/utils/env-utils';
-import type { TrayUpdate } from '@/electron-main/ipc';
+import { settingsManager } from '@electron/main/settings-manager';
+import { checkIfDevelopment } from '@shared/utils';
+import type { TrayUpdate } from '@shared/ipc';
 
 const dirname = import.meta.dirname;
 

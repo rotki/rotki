@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { IndexedDb } from '@/utils/indexed-db';
-import { TWITTER_URL, externalLinks } from '@/data/external-links';
 import type { RuiIcons } from '@rotki/ui-library';
 
 const emit = defineEmits<{

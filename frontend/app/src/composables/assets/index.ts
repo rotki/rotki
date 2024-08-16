@@ -14,7 +14,7 @@ import type { ActionStatus } from '@/types/action';
 export function useAssets() {
   const { awaitTask } = useTaskStore();
   const { t } = useI18n();
-  const { appSession, openDirectory } = useInterop();
+  const { appSession, getPath, openDirectory } = useInterop();
   const {
     checkForAssetUpdate,
     performUpdate,
@@ -117,7 +117,8 @@ export function useAssets() {
 
   const importCustomAssets = async (file: File): Promise<ActionStatus> => {
     try {
-      const { taskId } = await importCustom(file, !appSession);
+      const path = getPath(file);
+      const { taskId } = await importCustom(path ?? file);
       await awaitTask<boolean, TaskMeta>(taskId, TaskType.IMPORT_ASSET, {
         title: t('actions.assets.import.task.title'),
       });

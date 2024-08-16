@@ -2,10 +2,10 @@
 import useVuelidate from '@vuelidate/core';
 import { and, helpers, minValue, numeric, required } from '@vuelidate/validators';
 import { isEqual } from 'lodash-es';
-import { LogLevel } from '@/utils/log-level';
+import { LogLevel } from '@shared/log-level';
 import { toMessages } from '@/utils/validation';
 import type { RuiIcons } from '@rotki/ui-library';
-import type { BackendOptions } from '@/electron-main/ipc';
+import type { BackendOptions } from '@shared/ipc';
 import type { Writeable } from '@rotki/common';
 import type { BackendConfiguration } from '@/types/backend';
 

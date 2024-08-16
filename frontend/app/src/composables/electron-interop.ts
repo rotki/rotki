@@ -1,8 +1,12 @@
-import { externalLinks } from '@/data/external-links';
-import type { BackendOptions, Listeners, SystemVersion, TrayUpdate } from '@/electron-main/ipc';
+import type { BackendOptions, Listeners, SystemVersion, TrayUpdate } from '@shared/ipc';
 import type { WebVersion } from '@/types';
 
 const electronApp = !!window.interop;
+
+function isAppSession() {
+  const { url } = getBackendUrl();
+  return electronApp && !url;
+}
 
 const interop = {
   get isPackaged(): boolean {
@@ -10,8 +14,7 @@ const interop = {
   },
 
   get appSession(): boolean {
-    const { url } = getBackendUrl();
-    return electronApp && !url;
+    return isAppSession();
   },
 
   logToFile: (message: string): void => {
@@ -111,6 +114,23 @@ const interop = {
     (await window.interop?.downloadUpdate(progress)) ?? false,
 
   installUpdate: async (): Promise<boolean | Error> => (await window.interop?.installUpdate()) ?? false,
+
+  /**
+   * Electron attaches a path property to {@see File}. In normal DOM inside a browser this property does not exist.
+   * The method will return the path if we are in app session and the property exists or it will return undefined.
+   * It can be used to check if we will upload, or path the file.
+   *
+   * @param file The file we want to get the path.
+   */
+  getPath: (file: File): string | undefined => {
+    if (!isAppSession())
+      return undefined;
+
+    if ('path' in file && typeof file.path === 'string')
+      return file.path;
+
+    return undefined;
+  },
 };
 
 export const useInterop = () => interop;

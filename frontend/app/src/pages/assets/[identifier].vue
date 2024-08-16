@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { AssetAmountAndValueOverTime } from '@/premium/premium';
 import { EVM_TOKEN } from '@/types/asset';
-import { externalLinks } from '@/data/external-links';
 import { NoteLocation } from '@/types/notes';
 import type { RouteLocationRaw } from 'vue-router';
 import type { AssetBalanceWithPrice } from '@rotki/common';

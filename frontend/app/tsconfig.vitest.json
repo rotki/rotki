@@ -14,7 +14,8 @@
     "src/**/*",
     "src/**/*.vue",
     "tests/unit/**/*",
-    "tests/contract/**/*"
+    "tests/contract/**/*",
+    "shared/**/*"
   ],
   "exclude": []
 }

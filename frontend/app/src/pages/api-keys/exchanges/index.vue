@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { externalLinks } from '@/data/external-links';
 import type { DataTableColumn, DataTableSortColumn } from '@rotki/ui-library';
 import type { Writeable } from '@rotki/common';
 import type { Exchange, ExchangePayload } from '@/types/exchanges';

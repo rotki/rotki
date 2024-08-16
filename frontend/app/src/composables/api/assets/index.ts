@@ -54,8 +54,8 @@ export function useAssetsApi() {
     return handleResponse(response);
   };
 
-  const importCustom = async (file: File, upload = false): Promise<PendingTask> => {
-    if (upload) {
+  const importCustom = async (file: File | string): Promise<PendingTask> => {
+    if (typeof file !== 'string') {
       const data = new FormData();
       data.append('file', file);
       data.append('async_query', 'true');
@@ -73,7 +73,7 @@ export function useAssetsApi() {
       '/assets/user',
       snakeCaseTransformer({
         action: 'upload',
-        file: file.path,
+        file,
         asyncQuery: true,
       }),
       {

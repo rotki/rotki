@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { externalLinks } from '@/data/external-links';
 import type { AssetBalance, BigNumber } from '@rotki/common';
 
 withDefaults(

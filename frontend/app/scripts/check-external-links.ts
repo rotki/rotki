@@ -1,5 +1,5 @@
 import process from 'node:process';
-import { externalLinks } from '../src/data/external-links.js';
+import { externalLinks } from '../shared/external-links';
 
 async function processDynamicUrl(url: string): Promise<string> {
   if (url.includes('v$version')) {
