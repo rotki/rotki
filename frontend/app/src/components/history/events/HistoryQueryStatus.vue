@@ -5,7 +5,7 @@ import type {
   EvmUnDecodedTransactionsData,
   HistoryEventsQueryData,
 } from '@/types/websocket-messages';
-import type { Blockchain } from '@rotki/common/lib/blockchain';
+import type { Blockchain } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

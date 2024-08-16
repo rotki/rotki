@@ -1,6 +1,5 @@
-import { Balance, NumericString } from '@rotki/common';
+import { Balance, HistoryEventEntryType, NumericString } from '@rotki/common';
 import { z } from 'zod';
-import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 import { EntryMeta } from '@/types/history/meta';
 import { CollectionCommonFields } from '@/types/collection';
 import type { PaginationRequestPayload } from '@/types/common';

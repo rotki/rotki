@@ -1,5 +1,4 @@
-import { type Eth2ValidatorEntry, Eth2Validators, type EthValidatorFilter } from '@rotki/common/lib/staking/eth2';
-import { type Nullable, onlyIfTruthy } from '@rotki/common';
+import { type ActionResult, type Eth2ValidatorEntry, Eth2Validators, type EthValidatorFilter, type Nullable, onlyIfTruthy } from '@rotki/common';
 import { objectOmit } from '@vueuse/shared';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
@@ -21,7 +20,6 @@ import {
   type XpubAccountPayload,
 } from '@/types/blockchain/accounts';
 import { type BtcChains, isBtcChain } from '@/types/blockchain/chains';
-import type { ActionResult } from '@rotki/common/lib/data';
 import type { Eth2Validator } from '@/types/balances';
 import type { PendingTask } from '@/types/task';
 

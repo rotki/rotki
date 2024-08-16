@@ -1,10 +1,8 @@
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import { Severity } from '@rotki/common/lib/messages';
+import { type Account, Blockchain, Severity } from '@rotki/common';
 import { TaskType } from '@/types/task-type';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { Section } from '@/types/status';
 import type { EvmAccountsResult } from '@/types/api/accounts';
-import type { Account } from '@rotki/common/lib/account';
 import type { MaybeRef } from '@vueuse/core';
 import type { AccountPayload, AddAccountsPayload, XpubAccountPayload } from '@/types/blockchain/accounts';
 import type { TaskMeta } from '@/types/task';

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
-import type { UnderlyingToken } from '@rotki/common/lib/data';
+import type { UnderlyingToken } from '@rotki/common';
 
 defineProps<{ tokens: UnderlyingToken[] }>();
 

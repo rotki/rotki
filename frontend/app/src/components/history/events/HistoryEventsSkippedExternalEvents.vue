@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DataTableColumn } from '@rotki/ui-library';
-import type { Message } from '@rotki/common/lib/messages';
+import type { Message } from '@rotki/common';
 import type { SkippedHistoryEventsSummary } from '@/types/history/events';
 
 interface Location {

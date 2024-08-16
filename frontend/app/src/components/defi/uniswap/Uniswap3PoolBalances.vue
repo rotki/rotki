@@ -1,7 +1,6 @@
 <script lang="ts" setup>
 import UniswapPoolHeader from '@/components/defi/uniswap/UniswapPoolHeader.vue';
-import type { XswapBalance } from '@rotki/common/lib/defi/xswap';
-import type { LpType } from '@rotki/common/lib/defi';
+import type { LpType, XswapBalance } from '@rotki/common';
 
 defineProps<{
   item: XswapBalance;

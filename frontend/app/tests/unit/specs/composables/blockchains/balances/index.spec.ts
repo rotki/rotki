@@ -1,4 +1,4 @@
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common';
 import { computed } from 'vue';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Section } from '@/types/status';

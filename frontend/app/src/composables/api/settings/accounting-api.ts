@@ -14,7 +14,7 @@ import { api } from '@/services/rotkehlchen-api';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import type { PendingTask } from '@/types/task';
 import type { CollectionResponse } from '@/types/collection';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 
 export function useAccountingApi() {
   const fetchAccountingRule = async (

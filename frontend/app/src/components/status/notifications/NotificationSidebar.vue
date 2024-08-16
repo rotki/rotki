@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Priority, Severity } from '@rotki/common/lib/messages';
+import { Priority, Severity } from '@rotki/common';
 import { Routes } from '@/router/routes';
 
 const display = defineModel<boolean>({ required: true });

@@ -3,7 +3,7 @@ import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import type { ActionStatus } from '@/types/action';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 
 export function useSkippedHistoryEventsApi() {
   const getSkippedEventsSummary = async (): Promise<SkippedHistoryEventsSummary> => {

@@ -1,7 +1,7 @@
 import { type MaybeRef, objectOmit } from '@vueuse/core';
 import { TaskType } from '@/types/task-type';
 import { Section, Status } from '@/types/status';
-import type { Eth2DailyStats, Eth2DailyStatsPayload, EthStakingDailyStatData } from '@rotki/common/lib/staking/eth2';
+import type { Eth2DailyStats, Eth2DailyStatsPayload, EthStakingDailyStatData } from '@rotki/common';
 import type { TaskMeta } from '@/types/task';
 
 export function useEth2DailyStats() {

@@ -1,15 +1,4 @@
-import type { ProfitLossModel } from '@rotki/common/lib/defi';
-import type {
-  AssetsApi,
-  BalancerApi,
-  BalancesApi,
-  CompoundApi,
-  StatisticsApi,
-  SushiApi,
-  UserSettingsApi,
-  UtilsApi,
-} from '@rotki/common/lib/premium';
-import type { LocationData, OwnedAssets, TimedAssetBalances, TimedBalances } from '@rotki/common/lib/statistics';
+import type { AssetsApi, BalancerApi, BalancesApi, CompoundApi, LocationData, OwnedAssets, ProfitLossModel, StatisticsApi, SushiApi, TimedAssetBalances, TimedBalances, UserSettingsApi, UtilsApi } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 
 export function assetsApi(): AssetsApi {

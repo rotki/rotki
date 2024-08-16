@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { assetSymbolToIdentifierMap } from '@rotki/common/lib/data';
-import type { BigNumber } from '@rotki/common';
+import { type BigNumber, assetSymbolToIdentifierMap } from '@rotki/common';
 
 const props = defineProps<{
   totalInterestOwed: BigNumber;

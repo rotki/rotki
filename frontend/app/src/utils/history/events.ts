@@ -1,4 +1,4 @@
-import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
+import { HistoryEventEntryType } from '@rotki/common';
 import {
   type EthBlockEvent,
   type EthDepositEvent,

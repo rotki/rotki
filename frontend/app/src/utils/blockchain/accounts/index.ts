@@ -22,7 +22,7 @@ import type {
   XpubData,
 } from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
-import type { Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
+import type { Eth2ValidatorEntry } from '@rotki/common';
 import type { AssetBalances } from '@/types/balances';
 
 export function hasAccountAddress(data: BlockchainAccount): data is BlockchainAccount<AddressData> {

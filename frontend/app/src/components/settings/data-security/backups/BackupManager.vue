@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Severity } from '@rotki/common/lib/messages';
+import { Severity } from '@rotki/common';
 import type { DatabaseInfo, UserDbBackup, UserDbBackupWithId } from '@/types/backup';
 
 const { t } = useI18n();

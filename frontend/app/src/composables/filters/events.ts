@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
+import { HistoryEventEntryType } from '@rotki/common';
 import {
   type MatchedKeywordWithBehaviour,
   type SearchMatcher,

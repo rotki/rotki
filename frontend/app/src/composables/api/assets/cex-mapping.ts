@@ -11,7 +11,7 @@ import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { handleResponse, validStatus } from '@/services/utils';
 import type { MaybeRef } from '@vueuse/core';
 import type { Collection } from '@/types/collection';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 
 export function useAssetCexMappingApi() {
   const fetchAllCexMapping = async (payload: MaybeRef<CexMappingRequestPayload>): Promise<Collection<CexMapping>> => {

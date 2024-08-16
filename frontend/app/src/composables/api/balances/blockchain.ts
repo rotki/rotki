@@ -7,8 +7,7 @@ import {
   validWithSessionAndExternalService,
 } from '@/services/utils';
 import { EvmTokensRecord } from '@/types/balances';
-import type { ActionResult } from '@rotki/common/lib/data';
-import type { Nullable } from '@rotki/common';
+import type { ActionResult, Nullable } from '@rotki/common';
 import type { Module } from '@/types/modules';
 import type { PendingTask } from '@/types/task';
 

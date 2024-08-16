@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Severity } from '@rotki/common/lib/messages';
+import { Severity } from '@rotki/common';
 import { DialogType } from '@/types/dialogs';
 import { TaskType } from '@/types/task-type';
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { omit } from 'lodash-es';
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common';
 import { ApiValidationError } from '@/types/api/errors';
 import { isBlockchain } from '@/types/blockchain/chains';
 import EvmRpcNodeForm from '@/components/settings/general/rpc/EvmRpcNodeForm.vue';

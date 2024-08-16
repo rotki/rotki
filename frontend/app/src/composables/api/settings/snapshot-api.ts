@@ -7,7 +7,7 @@ import {
   validWithoutSessionStatus,
 } from '@/services/utils';
 import { Snapshot, type SnapshotPayload } from '@/types/snapshots';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 
 export function useSnapshotApi() {
   const getSnapshotData = async (timestamp: number): Promise<Snapshot> => {

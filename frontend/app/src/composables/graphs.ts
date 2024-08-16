@@ -1,5 +1,4 @@
-import type { BigNumber } from '@rotki/common';
-import type { TooltipDisplayOption } from '@rotki/common/lib/settings/graphs';
+import type { BigNumber, TooltipDisplayOption } from '@rotki/common';
 import type { TooltipModel } from 'chart.js';
 
 export function useGraph(canvasId: string) {

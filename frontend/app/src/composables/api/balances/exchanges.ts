@@ -15,7 +15,7 @@ import {
   Exchanges,
 } from '@/types/exchanges';
 import type { AxiosResponse } from 'axios';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 import type { PendingTask } from '@/types/task';
 
 export function useExchangeApi() {

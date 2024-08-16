@@ -2,7 +2,7 @@ import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validWithSessionAndExternalService } from '@/services/utils';
 import { KrakenStakingEvents, type KrakenStakingPagination, emptyPagination } from '@/types/staking';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 import type { PendingTask } from '@/types/task';
 
 export function useKrakenApi() {

@@ -1,8 +1,7 @@
 <script setup lang="ts">
-import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
+import { Blockchain, HistoryEventEntryType } from '@rotki/common';
 import dayjs from 'dayjs';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
-import { Blockchain } from '@rotki/common/lib/blockchain';
 import { isEmpty } from 'lodash-es';
 import { TRADE_LOCATION_EXTERNAL } from '@/data/defaults';
 import { toMessages } from '@/utils/validation';

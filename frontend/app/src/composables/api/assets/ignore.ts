@@ -2,7 +2,7 @@ import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus, validWithoutSessionStatus } from '@/services/utils';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { IgnoredAssetResponse } from '@/types/asset';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 
 export function useAssetIgnoreApi() {
   const getIgnoredAssets = async (): Promise<string[]> => {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { AssetInfo } from '@rotki/common/lib/data';
+import type { AssetInfo } from '@rotki/common';
 import type {
   MatchedKeyword,
   MatchedKeywordWithBehaviour,

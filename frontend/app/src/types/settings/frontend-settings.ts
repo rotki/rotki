@@ -1,11 +1,4 @@
-import { BigNumber } from '@rotki/common';
-import { Theme, ThemeColors, ThemeEnum } from '@rotki/common/lib/settings';
-import {
-  TimeFramePeriod,
-  TimeFramePeriodEnum,
-  TimeFramePersist,
-  TimeFrameSetting,
-} from '@rotki/common/lib/settings/graphs';
+import { BigNumber, Theme, ThemeColors, ThemeEnum, TimeFramePeriod, TimeFramePeriodEnum, TimeFramePersist, TimeFrameSetting } from '@rotki/common';
 import { z } from 'zod';
 import { Constraints, MINIMUM_DIGIT_TO_BE_ABBREVIATED } from '@/data/constraints';
 import { Defaults } from '@/data/defaults';

@@ -2,7 +2,7 @@ import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus, validWithSessionStatus } from '@/services/utils';
 import { type ExternalServiceKey, ExternalServiceKeys } from '@/types/user';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 
 export function useExternalServicesApi() {
   const queryExternalServices = async (): Promise<ExternalServiceKeys> => {

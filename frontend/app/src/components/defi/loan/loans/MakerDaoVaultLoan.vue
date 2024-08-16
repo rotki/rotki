@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
-import type { BigNumber } from '@rotki/common';
+import { type BigNumber, Blockchain, HistoryEventEntryType } from '@rotki/common';
 import type { MakerDAOVaultModel } from '@/types/defi/maker';
 
 const props = defineProps<{

@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import type { LpType } from '@rotki/common/lib/defi';
-import type { XswapPool } from '@rotki/common/lib/defi/xswap';
+import type { LpType, XswapPool } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

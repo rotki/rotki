@@ -1,5 +1,5 @@
 import { cloneDeep } from 'lodash-es';
-import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
+import { HistoryEventEntryType } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type {
   HistoryEventCategoryDetailWithId,

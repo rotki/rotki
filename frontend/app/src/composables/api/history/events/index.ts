@@ -25,7 +25,7 @@ import {
 import { type HistoryEventProductData, HistoryEventTypeData } from '@/types/history/events/event-type';
 import type { CollectionResponse } from '@/types/collection';
 import type { PendingTask } from '@/types/task';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 import type { ActionDataEntry } from '@/types/action';
 
 export function useHistoryEventsApi() {

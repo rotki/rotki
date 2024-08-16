@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from 'vitest';
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common';
 import { useBlockchainStore } from '@/store/blockchain';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { AssetPrices } from '@/types/prices';

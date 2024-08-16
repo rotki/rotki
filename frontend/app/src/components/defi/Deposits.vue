@@ -1,12 +1,10 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
+import { type BigNumber, Blockchain, HistoryEventEntryType } from '@rotki/common';
 import { DefiProtocol, Module, isDefiProtocol } from '@/types/modules';
 import { Section } from '@/types/status';
 import { ProtocolVersion } from '@/types/defi';
 import { AaveEarnedDetails, CompoundLendingDetails } from '@/premium/premium';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { BigNumber } from '@rotki/common';
 
 const section = Section.DEFI_LENDING;
 const historySection = Section.DEFI_LENDING_HISTORY;

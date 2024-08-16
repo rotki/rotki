@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { AssetInfoWithId, type AssetsWithId } from '@/types/asset';
-import type { AssetInfo } from '@rotki/common/lib/data';
+import type { AssetInfo } from '@rotki/common';
 import type { DateFormat } from '@/types/date-format';
 
 export enum FilterBehaviour {

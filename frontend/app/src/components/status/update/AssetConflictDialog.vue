@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import type { SupportedAsset } from '@rotki/common/lib/data';
+import type { SupportedAsset, Writeable } from '@rotki/common';
 import type { DataTableColumn } from '@rotki/ui-library';
-import type { Writeable } from '@rotki/common';
 import type { AssetUpdateConflictResult, ConflictResolution } from '@/types/asset';
 import type { ConflictResolutionStrategy } from '@/types/common';
 

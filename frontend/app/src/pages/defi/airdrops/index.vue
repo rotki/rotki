@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { type BigNumber, Blockchain } from '@rotki/common';
 import {
   AIRDROP_POAP,
   type Airdrop,
@@ -10,7 +10,6 @@ import {
 } from '@/types/defi/airdrops';
 import { TaskType } from '@/types/task-type';
 import AirdropDisplay from '@/components/defi/airdrops/AirdropDisplay.vue';
-import type { BigNumber } from '@rotki/common';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 import type { TaskMeta } from '@/types/task';

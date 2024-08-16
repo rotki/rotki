@@ -1,4 +1,4 @@
-import { Severity } from '@rotki/common/lib/messages';
+import { Severity } from '@rotki/common';
 import { api } from '@/services/rotkehlchen-api';
 import { TaskType } from '@/types/task-type';
 import { SYNC_DOWNLOAD, SYNC_UPLOAD, type SyncAction } from '@/types/session/sync';

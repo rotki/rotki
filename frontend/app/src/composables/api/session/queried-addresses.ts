@@ -1,6 +1,6 @@
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus, validWithSessionStatus } from '@/services/utils';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 import type { QueriedAddressPayload, QueriedAddresses } from '@/types/session';
 
 export function useQueriedAddressApi() {

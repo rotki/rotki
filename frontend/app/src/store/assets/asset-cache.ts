@@ -1,4 +1,4 @@
-import type { AssetInfo } from '@rotki/common/lib/data';
+import type { AssetInfo } from '@rotki/common';
 import type { AssetMap } from '@/types/asset';
 
 export const useAssetCacheStore = defineStore('assets/cache', () => {

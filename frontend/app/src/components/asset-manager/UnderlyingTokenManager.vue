@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { EvmTokenKind, type UnderlyingToken } from '@rotki/common/lib/data';
+import { EvmTokenKind, type UnderlyingToken } from '@rotki/common';
 import useVuelidate from '@vuelidate/core';
 import { between, helpers, numeric, required } from '@vuelidate/validators';
 import { evmTokenKindsData } from '@/types/blockchain/chains';

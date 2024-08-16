@@ -1,6 +1,6 @@
 import flushPromises from 'flush-promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { AssetInfo } from '@rotki/common/lib/data';
+import type { AssetInfo } from '@rotki/common';
 import type { AssetMap } from '@/types/asset';
 
 describe('store::assets/cache', () => {

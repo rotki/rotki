@@ -12,7 +12,7 @@ import { BackendCancelledTaskError, type TaskMeta } from '@/types/task';
 import { Module } from '@/types/modules';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import type { ActionStatus } from '@/types/action';
-import type { Blockchain } from '@rotki/common/lib/blockchain';
+import type { Blockchain } from '@rotki/common';
 
 export const useHistoryTransactions = createSharedComposable(() => {
   const { t } = useI18n();

@@ -4,7 +4,7 @@ import { CUSTOM_ASSET, EVM_TOKEN, IgnoredAssetHandlingType, type IgnoredAssetsHa
 import type { Collection } from '@/types/collection';
 import type { Filters, Matcher } from '@/composables/filters/assets';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { SupportedAsset } from '@rotki/common/lib/data';
+import type { SupportedAsset } from '@rotki/common';
 import type { ActionStatus } from '@/types/action';
 
 interface IgnoredFilter {

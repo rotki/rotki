@@ -1,4 +1,4 @@
-import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common/lib/messages';
+import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common';
 import { omit } from 'lodash-es';
 import { Section } from '@/types/status';
 import { CURRENCY_USD } from '@/types/currencies';

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common';
 import { type Module, SUPPORTED_MODULES } from '@/types/modules';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { CamelCase } from '@/types/common';

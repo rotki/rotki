@@ -1,4 +1,4 @@
-import type { ThemeColors } from '@rotki/common/lib/settings';
+import type { ThemeColors } from '@rotki/common';
 
 export const LIGHT_PRIMARY = '#4e5ba6';
 

@@ -1,7 +1,6 @@
 import { z } from 'zod';
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { type Account, Blockchain } from '@rotki/common';
 import type { LocationQueryValue, LocationQueryValueRaw } from 'vue-router';
-import type { Account } from '@rotki/common/lib/account';
 
 export type LocationQuery = Record<string, LocationQueryValue | LocationQueryValue[]>;
 

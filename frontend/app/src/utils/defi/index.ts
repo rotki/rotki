@@ -1,4 +1,4 @@
-import type { ProfitLossModel } from '@rotki/common/lib/defi';
+import type { ProfitLossModel } from '@rotki/common';
 import type { CompoundProfitAndLoss } from '@/types/defi/compound';
 
 export function toProfitLossModel(profitAndLoss: CompoundProfitAndLoss): ProfitLossModel[] {

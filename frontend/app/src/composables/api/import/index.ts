@@ -1,7 +1,7 @@
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { handleResponse, validStatus } from '@/services/utils';
 import { api } from '@/services/rotkehlchen-api';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 import type { PendingTask } from '@/types/task';
 
 export function useImportDataApi() {

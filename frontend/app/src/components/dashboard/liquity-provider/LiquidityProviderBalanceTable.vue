@@ -1,13 +1,11 @@
 <script setup lang="ts">
 import { isEqual } from 'lodash-es';
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { type BigNumber, Blockchain, type XSwapLiquidityBalance, type XswapAsset } from '@rotki/common';
 import { Routes } from '@/router/routes';
 import { DashboardTableType, type DashboardTablesVisibleColumns } from '@/types/settings/frontend-settings';
 import { Section } from '@/types/status';
 import { TableColumn } from '@/types/table-column';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-import type { XSwapLiquidityBalance, XswapAsset } from '@rotki/common/lib/defi/xswap';
-import type { BigNumber } from '@rotki/common';
 
 const { t } = useI18n();
 const LIQUIDITY_POSITION = DashboardTableType.LIQUIDITY_POSITION;

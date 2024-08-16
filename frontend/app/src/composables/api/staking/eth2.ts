@@ -1,13 +1,13 @@
 import {
+  type ActionResult,
   Eth2DailyStats,
   type Eth2DailyStatsPayload,
   type EthStakingPayload,
   EthStakingPerformanceResponse,
-} from '@rotki/common/lib/staking/eth2';
+} from '@rotki/common';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validWithSessionAndExternalService } from '@/services/utils';
-import type { ActionResult } from '@rotki/common/lib/data';
 import type { PendingTask } from '@/types/task';
 
 export function useEth2Api() {

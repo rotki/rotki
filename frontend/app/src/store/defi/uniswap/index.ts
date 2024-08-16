@@ -1,4 +1,4 @@
-import { type XswapBalance, XswapBalances, XswapEvents, type XswapPoolProfit } from '@rotki/common/lib/defi/xswap';
+import { type XswapBalance, XswapBalances, XswapEvents, type XswapPoolProfit } from '@rotki/common';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';

@@ -1,6 +1,5 @@
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { type BigNumber, Blockchain } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
-import type { BigNumber } from '@rotki/common';
 
 export const NoteType = {
   ADDRESS: 'address',

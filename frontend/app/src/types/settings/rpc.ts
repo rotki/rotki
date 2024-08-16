@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { Blockchain } from '@rotki/common/lib/blockchain';
+import type { Blockchain } from '@rotki/common';
 
 const EvmRpcNode = z.object({
   identifier: z.number(),

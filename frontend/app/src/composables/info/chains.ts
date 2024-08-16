@@ -1,4 +1,4 @@
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common';
 import { isBlockchain } from '@/types/blockchain/chains';
 import type { MaybeRef } from '@vueuse/core';
 import type {

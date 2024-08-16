@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common/lib/messages';
+import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { AddressBookEntry, AddressBookLocation } from '@/types/eth-names';
 import type { Collection } from '@/types/collection';

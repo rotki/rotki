@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { Section } from '@/types/status';
-import type { LiquityStakingDetailEntry } from '@rotki/common/lib/liquity';
+import type { LiquityStakingDetailEntry } from '@rotki/common';
 
 withDefaults(
   defineProps<{

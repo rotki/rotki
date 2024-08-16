@@ -1,8 +1,7 @@
-import { NotificationGroup, Severity } from '@rotki/common/lib/messages';
+import { type AssetInfo, NotificationGroup, Severity } from '@rotki/common';
 import { type AssetsWithId, CUSTOM_ASSET } from '@/types/asset';
 import { TaskType } from '@/types/task-type';
 import type { MaybeRef } from '@vueuse/core';
-import type { AssetInfo } from '@rotki/common/lib/data';
 import type { ERC20Token } from '@/types/blockchain/accounts';
 import type { TaskMeta } from '@/types/task';
 import type { EvmChainAddress } from '@/types/history/events';

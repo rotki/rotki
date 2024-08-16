@@ -1,6 +1,6 @@
 import { handleResponse, validAuthorizedStatus, validStatus } from '@/services/utils';
 import { api } from '@/services/rotkehlchen-api';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 
 export function usePremiumCredentialsApi() {
   const setPremiumCredentials = async (username: string, apiKey: string, apiSecret: string): Promise<true> => {

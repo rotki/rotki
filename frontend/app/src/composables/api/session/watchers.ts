@@ -6,7 +6,7 @@ import {
 } from '@/services/utils';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { type Watcher, Watchers } from '@/types/session';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 
 export function useWatchersApi() {
   const watchers = async (): Promise<Watchers> => {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common';
 import { TaskType } from '@/types/task-type';
 import { Section } from '@/types/status';
 import PercentageDisplay from '@/components/display/PercentageDisplay.vue';

@@ -1,6 +1,6 @@
 import { NftResponse } from '@/types/nfts';
 import { TaskType } from '@/types/task-type';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 import type { TaskMeta } from '@/types/task';
 
 export function useNfts() {

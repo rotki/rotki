@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { CURRENCY_USD } from '@/types/currencies';
 import type { AssetBreakdown } from '@/types/blockchain/accounts';
-import type { BigNumber } from '@rotki/common/lib';
+import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 
 const props = withDefaults(

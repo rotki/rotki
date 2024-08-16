@@ -1,4 +1,4 @@
-import { AssetInfo, AssetInfoWithTransformer, SupportedAsset } from '@rotki/common/lib/data';
+import { AssetInfo, AssetInfoWithTransformer, SupportedAsset } from '@rotki/common';
 import { z } from 'zod';
 import { CollectionCommonFields } from '@/types/collection';
 import type { ConflictResolutionStrategy, PaginationRequestPayload } from '@/types/common';

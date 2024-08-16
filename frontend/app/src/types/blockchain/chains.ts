@@ -1,5 +1,4 @@
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import { EvmTokenKind } from '@rotki/common/lib/data';
+import { Blockchain, EvmTokenKind } from '@rotki/common';
 
 const BtcChains = [Blockchain.BTC, Blockchain.BCH] as const;
 const RestChains = [

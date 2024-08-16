@@ -1,10 +1,11 @@
 import {
+  type Blockchain,
   type Notification,
   type NotificationAction,
   NotificationGroup,
   Priority,
   Severity,
-} from '@rotki/common/lib/messages';
+} from '@rotki/common';
 import dayjs from 'dayjs';
 import {
   type AccountingRuleConflictData,
@@ -23,7 +24,6 @@ import {
 import { camelCaseTransformer } from '@/services/axios-tranformers';
 import { Routes } from '@/router/routes';
 import { externalLinks } from '@/data/external-links';
-import type { Blockchain } from '@rotki/common/lib/blockchain';
 import type { CalendarEventPayload } from '@/types/history/calendar';
 
 export function useMessageHandling() {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { truncateAddress } from '@/utils/truncate';
-import type { Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
+import type { Eth2ValidatorEntry } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

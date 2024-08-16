@@ -1,9 +1,6 @@
-import { TimeUnit } from '@rotki/common/lib/settings';
-import { timeframes } from '@rotki/common/lib/settings/graphs';
+import { type BigNumber, type NetValue, TimeUnit, timeframes } from '@rotki/common';
 import dayjs from 'dayjs';
 import { CURRENCY_USD } from '@/types/currencies';
-import type { NetValue } from '@rotki/common/lib/statistics';
-import type { BigNumber } from '@rotki/common';
 
 function defaultNetValue(): NetValue {
   return {

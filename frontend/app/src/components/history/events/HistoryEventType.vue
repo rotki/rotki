@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import HistoryEventTypeCounterparty from '@/components/history/events/HistoryEventTypeCounterparty.vue';
 import { isEthDepositEventRef, isEvmEventRef, isOnlineHistoryEventRef } from '@/utils/history/events';
-import type { Blockchain } from '@rotki/common/lib/blockchain';
+import type { Blockchain } from '@rotki/common';
 import type { HistoryEventEntry } from '@/types/history/events';
 
 const props = defineProps<{

@@ -1,5 +1,4 @@
-import { BigNumber } from '@rotki/common';
-import { type Theme, ThemeColors } from '@rotki/common/lib/settings';
+import { BigNumber, type Theme, ThemeColors, type TimeFramePeriod, type TimeFrameSetting } from '@rotki/common';
 import { isUndefined } from 'lodash-es';
 import { getBnFormat } from '@/data/amount-formatter';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
@@ -15,7 +14,6 @@ import {
   SupportedLanguage,
 } from '@/types/settings/frontend-settings';
 import { CURRENT_DEFAULT_THEME_VERSION, DARK_COLORS, DEFAULT_THEME_HISTORIES, LIGHT_COLORS } from '@/plugins/theme';
-import type { TimeFramePeriod, TimeFrameSetting } from '@rotki/common/lib/settings/graphs';
 import type { CurrencyLocation } from '@/types/currency-location';
 import type { DateFormat } from '@/types/date-format';
 import type { ActionStatus } from '@/types/action';

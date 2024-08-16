@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common';
 
 defineOptions({
   inheritAttrs: false,

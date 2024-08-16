@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { I18nParam } from '@rotki/common/lib/messages';
+import type { I18nParam } from '@rotki/common';
 
 defineProps<{
   params: I18nParam;

@@ -1,12 +1,12 @@
 import { cloneDeep } from 'lodash-es';
 import type {
+  Writeable,
   XswapBalance,
   XswapBalances,
   XswapEvents,
   XswapPool,
   XswapPoolProfit,
-} from '@rotki/common/lib/defi/xswap';
-import type { Writeable } from '@rotki/common';
+} from '@rotki/common';
 
 export function getPools(balances: XswapBalances, events: XswapEvents): XswapPool[] {
   const pools: XswapPool[] = [];

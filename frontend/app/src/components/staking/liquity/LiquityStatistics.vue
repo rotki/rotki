@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { Section } from '@/types/status';
 import { CURRENCY_USD } from '@/types/currencies';
-import type { LiquityPoolDetailEntry, LiquityStatisticDetails } from '@rotki/common/lib/liquity';
-import type { AssetBalance, Balance, BigNumber } from '@rotki/common';
+import type { AssetBalance, Balance, BigNumber, LiquityPoolDetailEntry, LiquityStatisticDetails } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

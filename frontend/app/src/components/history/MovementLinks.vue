@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common';
 import type { AssetMovement } from '@/types/history/asset-movements';
 
 const props = defineProps<{

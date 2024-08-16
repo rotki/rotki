@@ -5,7 +5,7 @@ import { IncompleteUpgradeError, SyncConflictError, SyncConflictPayload } from '
 import { api } from '@/services/rotkehlchen-api';
 import { ApiValidationError } from '@/types/api/errors';
 import type { AxiosRequestConfig, AxiosResponseTransformer } from 'axios';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 
 export function useTaskApi() {
   const queryTasks = async (): Promise<TaskStatus> => {

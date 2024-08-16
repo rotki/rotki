@@ -2,7 +2,7 @@ import { setupTransformer, snakeCaseTransformer } from '@/services/axios-tranfor
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validAccountOperationStatus, validAuthorizedStatus, validStatus } from '@/services/utils';
 import { AccountSession, type CreateAccountPayload, type LoginCredentials } from '@/types/login';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 import type { PendingTask } from '@/types/task';
 
 export function useUsersApi() {

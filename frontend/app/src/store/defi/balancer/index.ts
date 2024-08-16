@@ -1,11 +1,9 @@
-import { type BalancerBalance, BalancerBalances, type BalancerProfitLoss } from '@rotki/common/lib/defi/balancer';
+import { type BalancerBalance, BalancerBalances, type BalancerProfitLoss, type Writeable, type XswapPool } from '@rotki/common';
 import { cloneDeep } from 'lodash-es';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import type { TaskMeta } from '@/types/task';
-import type { Writeable } from '@rotki/common';
-import type { XswapPool } from '@rotki/common/lib/defi/xswap';
 import type { OnError } from '@/types/fetch';
 
 export const useBalancerStore = defineStore('defi/balancer', () => {
