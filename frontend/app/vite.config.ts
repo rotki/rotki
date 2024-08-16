@@ -52,6 +52,7 @@ export default defineConfig({
     alias: {
       '@': resolve(PACKAGE_ROOT, 'src'),
       '~@': resolve(PACKAGE_ROOT, 'src'),
+      '@shared': `${join(PACKAGE_ROOT, 'shared')}/`,
     },
     dedupe: ['vue'],
   },
@@ -94,7 +95,7 @@ export default defineConfig({
         },
       ],
       dts: 'src/auto-imports.d.ts',
-      dirs: ['src/composables/**', 'src/api/**', 'src/store/**', 'src/utils/**'],
+      dirs: ['src/composables/**', 'src/api/**', 'src/store/**', 'src/utils/**', 'shared/**'],
       vueTemplate: true,
       injectAtEnd: true,
     }),

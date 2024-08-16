@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { camelCase } from 'lodash-es';
 import { isEtherscanKey } from '@/types/external';
-import { etherscanLinks } from '@/data/external-links';
 
 const props = defineProps<{ evmChain: string; chainName: string }>();
 const { evmChain } = toRefs(props);

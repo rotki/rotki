@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from 'electron';
-import { checkIfDevelopment } from '@/utils/env-utils';
-import { type Interop, IpcCommands, type Listeners, type TrayUpdate } from '@/electron-main/ipc';
+import { IpcCommands } from '@electron/ipc-commands';
+import { checkIfDevelopment } from '@shared/utils';
+import type { Interop, Listeners, TrayUpdate } from '@shared/ipc';
 
 function ipcAction<T>(message: string, arg?: any): Promise<T> {
   return new Promise((resolve) => {

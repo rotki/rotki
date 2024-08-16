@@ -3,16 +3,16 @@ import { Buffer } from 'node:buffer';
 import { type BrowserWindow, Menu, dialog, ipcMain, nativeTheme, safeStorage, shell } from 'electron';
 import Store from 'electron-store';
 import { autoUpdater } from 'electron-updater';
-import { loadConfig } from '@/electron-main/config';
-import { startHttp, stopHttp } from '@/electron-main/http';
-import { type MenuActions, debugSettings, getUserMenu } from '@/electron-main/menu';
-import { selectPort } from '@/electron-main/port-utils';
-import { checkIfDevelopment } from '@/utils/env-utils';
-import { startPromise } from '@/utils';
-import { type BackendOptions, IpcCommands, type SystemVersion, type TrayUpdate } from '@/electron-main/ipc';
-import type { TrayManager } from '@/electron-main/tray-manager';
+import { loadConfig } from '@electron/main/config';
+import { startHttp, stopHttp } from '@electron/main/http';
+import { type MenuActions, debugSettings, getUserMenu } from '@electron/main/menu';
+import { selectPort } from '@electron/main/port-utils';
+import { checkIfDevelopment, startPromise } from '@shared/utils';
+import { IpcCommands } from '@electron/ipc-commands';
+import type { BackendOptions, SystemVersion, TrayUpdate } from '@shared/ipc';
+import type { TrayManager } from '@electron/main/tray-manager';
 import type { ProgressInfo } from 'electron-builder';
-import type { SubprocessHandler } from '@/subprocess-handler';
+import type { SubprocessHandler } from '@electron/main/subprocess-handler';
 
 const isDevelopment = checkIfDevelopment();
 

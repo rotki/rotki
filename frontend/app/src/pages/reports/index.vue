@@ -28,7 +28,7 @@ const router = useRouter();
 const route = useRoute();
 
 const { t } = useI18n();
-const { appSession, openDirectory } = useInterop();
+const { appSession, getPath, openDirectory } = useInterop();
 
 onMounted(async () => {
   const query = get(route).query;
@@ -146,7 +146,7 @@ async function exportData({ start, end }: ProfitLossReportPeriod) {
 const { importReportData, uploadReportData } = useReportsApi();
 
 async function importData() {
-  if (!get(reportDebugData))
+  if (!isDefined(reportDebugData))
     return;
 
   set(importDataLoading, true);
@@ -156,10 +156,13 @@ async function importData() {
 
   const taskType = TaskType.IMPORT_PNL_REPORT_DATA;
 
+  const file = get(reportDebugData);
+
   try {
-    const { taskId } = appSession
-      ? await importReportData(get(reportDebugData)!.path)
-      : await uploadReportData(get(reportDebugData)!);
+    const path = getPath(file);
+    const { taskId } = path
+      ? await importReportData(path)
+      : await uploadReportData(file);
 
     const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, {
       title: t('profit_loss_reports.debug.import_message.title'),

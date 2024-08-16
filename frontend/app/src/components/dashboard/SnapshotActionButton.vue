@@ -15,7 +15,7 @@ const premium = usePremium();
 const { logout } = useSessionStore();
 const { lastBalanceSave } = storeToRefs(usePeriodicStore());
 const { fetchBalances } = useBalances();
-const { appSession } = useInterop();
+const { getPath } = useInterop();
 const { fetchNetValue } = useStatisticsStore();
 const { setMessage } = useMessageStore();
 const { importBalancesSnapshot, uploadBalancesSnapshot } = useSnapshotApi();
@@ -35,15 +35,23 @@ async function refreshAllAndSave() {
 }
 
 async function importSnapshot() {
+  if (!(isDefined(balanceSnapshotFile) && isDefined(locationDataSnapshotFile)))
+    return;
+
   set(importSnapshotLoading, true);
+
+  const balanceFile = get(balanceSnapshotFile);
+  const locationFile = get(locationDataSnapshotFile);
 
   let success = false;
   let message = '';
   try {
-    if (appSession)
-      await importBalancesSnapshot(get(balanceSnapshotFile)!.path, get(locationDataSnapshotFile)!.path);
+    const balanceFilePath = getPath(balanceFile);
+    const locationFilePath = getPath(locationFile);
+    if (balanceFilePath && locationFilePath)
+      await importBalancesSnapshot(balanceFilePath, locationFilePath);
     else
-      await uploadBalancesSnapshot(get(balanceSnapshotFile)!, get(locationDataSnapshotFile)!);
+      await uploadBalancesSnapshot(balanceFile, locationFile);
 
     success = true;
   }

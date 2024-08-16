@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { externalLinks } from '@/data/external-links';
-
 const name = 'thegraph';
 const { t } = useI18n();
 

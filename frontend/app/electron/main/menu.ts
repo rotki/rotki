@@ -1,9 +1,9 @@
 import process from 'node:process';
 import { type BrowserWindow, type MenuItem, app, shell } from 'electron';
-import { settingsManager } from '@/electron-main/app-settings';
-import { externalLinks } from '@/data/external-links';
-import { checkIfDevelopment } from '@/utils/env-utils';
-import { IpcCommands } from '@/electron-main/ipc';
+import { settingsManager } from '@electron/main/settings-manager';
+import { externalLinks } from '@shared/external-links';
+import { checkIfDevelopment } from '@shared/utils';
+import { IpcCommands } from '@electron/ipc-commands';
 
 const isDevelopment = checkIfDevelopment();
 const isMac = process.platform === 'darwin';

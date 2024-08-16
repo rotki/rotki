@@ -2,7 +2,6 @@
 import useVuelidate from '@vuelidate/core';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
-import { externalLinks } from '@/data/external-links';
 import type { LoginCredentials, SyncApproval } from '@/types/login';
 
 const props = withDefaults(

@@ -1,7 +1,7 @@
 import consola, { type ConsolaInstance, type LogLevel as ConsolaLogLevel, LogLevels, type LogObject } from 'consola';
+import { LogLevel } from '@shared/log-level';
+import { checkIfDevelopment } from '@shared/utils';
 import { IndexedDb } from '@/utils/indexed-db';
-import { LogLevel } from '@/utils/log-level';
-import { checkIfDevelopment } from '@/utils/env-utils';
 
 const isDevelopment = checkIfDevelopment();
 

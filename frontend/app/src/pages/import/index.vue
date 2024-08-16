@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { externalLinks } from '@/data/external-links';
 import { NoteLocation } from '@/types/notes';
 
 definePage({

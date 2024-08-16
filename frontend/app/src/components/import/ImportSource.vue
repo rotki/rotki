@@ -18,7 +18,7 @@ const formatHelp = ref<boolean>(false);
 const file = ref<File>();
 
 const { t } = useI18n();
-const { appSession } = useInterop();
+const { getPath } = useInterop();
 
 const rules = {
   dateInputFormat: {
@@ -79,8 +79,9 @@ async function uploadPackaged(file: string) {
 async function uploadFile() {
   const fileVal = get(file);
   if (fileVal) {
-    if (appSession) {
-      await uploadPackaged(fileVal.path);
+    const path = getPath(fileVal);
+    if (path) {
+      await uploadPackaged(path);
     }
     else {
       const formData = new FormData();

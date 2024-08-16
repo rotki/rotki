@@ -1,3 +1,9 @@
+export const checkIfDevelopment = (): boolean => import.meta.env.DEV;
+
+export function startPromise<T>(promise: Promise<T>): void {
+  promise.then().catch(error => console.error(error));
+}
+
 type BackoffCall<T> = () => Promise<T>;
 
 export function wait(duration: number): Promise<void> {

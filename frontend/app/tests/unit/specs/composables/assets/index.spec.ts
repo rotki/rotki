@@ -27,6 +27,7 @@ vi.mock('@/composables/electron-interop', () => {
   const mockInterop = {
     appSession: vi.fn(),
     openDirectory: vi.fn(),
+    getPath: vi.fn().mockReturnValue(undefined),
   };
   return {
     useInterop: vi.fn().mockReturnValue(mockInterop),
@@ -214,7 +215,7 @@ describe('store::assets/index', () => {
 
       const result = await store.importCustomAssets(file);
 
-      expect(api.importCustom).toHaveBeenCalledWith(file, false);
+      expect(api.importCustom).toHaveBeenCalledWith(file);
 
       expect(result).toEqual({
         success: true,
@@ -226,7 +227,7 @@ describe('store::assets/index', () => {
 
       const result = await store.importCustomAssets(file);
 
-      expect(api.importCustom).toHaveBeenCalledWith(file, false);
+      expect(api.importCustom).toHaveBeenCalledWith(file);
 
       expect(result).toEqual({
         success: false,

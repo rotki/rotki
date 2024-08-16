@@ -1,4 +1,3 @@
-import { externalLinks } from '@/data/external-links';
 import type { MaybeRef } from '@vueuse/core';
 
 export function useLinks(url?: MaybeRef<string | undefined>) {

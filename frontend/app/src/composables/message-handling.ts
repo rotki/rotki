@@ -23,7 +23,6 @@ import {
 } from '@/types/websocket-messages';
 import { camelCaseTransformer } from '@/services/axios-tranformers';
 import { Routes } from '@/router/routes';
-import { externalLinks } from '@/data/external-links';
 import type { CalendarEventPayload } from '@/types/history/calendar';
 
 export function useMessageHandling() {

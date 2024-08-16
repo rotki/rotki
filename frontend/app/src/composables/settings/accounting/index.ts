@@ -139,7 +139,7 @@ export function useAccountingSettings() {
     }
   };
 
-  const { appSession, openDirectory } = useInterop();
+  const { appSession, getPath, openDirectory } = useInterop();
 
   async function exportJSON(): Promise<void> {
     let message: Message | null = null;
@@ -194,8 +194,9 @@ export function useAccountingSettings() {
     const taskType = TaskType.IMPORT_ACCOUNTING_RULES;
 
     try {
-      const { taskId } = appSession
-        ? await importAccountingRulesData(file.path)
+      const path = getPath(file);
+      const { taskId } = path
+        ? await importAccountingRulesData(path)
         : await uploadAccountingRulesData(file);
 
       const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, {

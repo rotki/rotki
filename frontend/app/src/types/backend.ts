@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { ActiveLogLevel } from '@/electron-main/ipc';
+import { ActiveLogLevel } from '@shared/ipc';
 
 const BackendVersion = z.object({
   ourVersion: z.string().optional(),

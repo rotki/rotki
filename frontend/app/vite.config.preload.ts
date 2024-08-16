@@ -11,7 +11,8 @@ export default defineConfig({
   envDir: process.cwd(),
   resolve: {
     alias: {
-      '@': `${join(PACKAGE_ROOT, 'src')}/`,
+      '@electron': `${join(PACKAGE_ROOT, 'electron')}/`,
+      '@shared': `${join(PACKAGE_ROOT, 'shared')}/`,
     },
   },
   build: {
@@ -20,13 +21,13 @@ export default defineConfig({
     assetsDir: '.',
     minify: !isDevelopment,
     lib: {
-      entry: 'src/preload.ts',
+      entry: 'electron/preload/index.ts',
       formats: ['cjs'],
     },
     rollupOptions: {
       external: ['electron', ...builtinModules.flatMap(p => [p, `node:${p}`])],
       output: {
-        entryFileNames: '[name].js',
+        entryFileNames: 'preload.js',
       },
     },
     emptyOutDir: false,

@@ -2,8 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { type App, app } from 'electron';
 
-class AppSettingManager {
-  private readonly _appSettings: AppSettings = {
+class SettingManager {
+  private readonly _appSettings: SettingsManager = {
     displayTray: true,
   };
 
@@ -11,7 +11,7 @@ class AppSettingManager {
     this._appSettings = this.readAppSettings();
   }
 
-  get appSettings(): AppSettings {
+  get appSettings(): SettingsManager {
     return this._appSettings;
   }
 
@@ -20,7 +20,7 @@ class AppSettingManager {
     return path.join(userData, 'app.config.json');
   }
 
-  private writeAppSettings(settings: AppSettings) {
+  private writeAppSettings(settings: SettingsManager) {
     const appConfig = this.appConfigFile();
     const json = JSON.stringify(settings);
     try {
@@ -31,17 +31,17 @@ class AppSettingManager {
     }
   }
 
-  private readAppSettings(): AppSettings {
-    const settings: AppSettings = {
+  private readAppSettings(): SettingsManager {
+    const settings: SettingsManager = {
       displayTray: true,
     };
     const appConfig = this.appConfigFile();
     if (fs.existsSync(appConfig)) {
       try {
         const file = fs.readFileSync(appConfig, { encoding: 'utf8' });
-        const loadedSettings = JSON.parse(file) as Partial<AppSettings>;
+        const loadedSettings = JSON.parse(file) as Partial<SettingsManager>;
         for (const [key, value] of Object.entries(loadedSettings)) {
-          if (typeof settings[key as keyof AppSettings] === typeof value) {
+          if (typeof settings[key as keyof SettingsManager] === typeof value) {
             // @ts-expect-error any type
             settings[key] = loadedSettings[key];
           }
@@ -60,8 +60,8 @@ class AppSettingManager {
   }
 }
 
-export interface AppSettings {
+export interface SettingsManager {
   displayTray: boolean;
 }
 
-export const settingsManager = new AppSettingManager(app);
+export const settingsManager = new SettingManager(app);
