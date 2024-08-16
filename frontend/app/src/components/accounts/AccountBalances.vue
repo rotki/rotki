@@ -238,6 +238,7 @@ const chainFilter = computed<string[]>({
           :tags="visibleTags"
           :group-id="getGroupId(row)"
           :is-xpub="row.data.type === 'xpub'"
+          :is-evm="row.category === 'evm'"
           @edit="emit('edit', $event)"
         />
         <AccountBalanceDetails
