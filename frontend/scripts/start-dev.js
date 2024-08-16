@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import { platform } from 'node:os';
 import path from 'node:path';
 import { config } from 'dotenv';
+import consola from 'consola';
 
 const PROXY = 'proxy';
 const COMMON = '@rotki/common';
@@ -35,11 +36,7 @@ const colors = {
   cyan: msg => `\u001B[36m${msg}\u001B[0m`,
 };
 
-const logger = {
-  info: msg => console.info(colors.cyan('dev'), `${msg}`),
-  error: (prefix, msg) => console.error(prefix, msg.replace(/\n$/, '')),
-  debug: (prefix, msg) => console.log(prefix, msg.replace(/\n$/, '')),
-};
+const logger = consola.withTag(colors.cyan('dev'));
 
 if (!process.env.VIRTUAL_ENV) {
   logger.info('No python virtual environment detected');
@@ -58,12 +55,13 @@ const listeners = {};
 const subprocesses = [];
 
 function startProcess(cmd, tag, name, args, opts = undefined) {
-  const createListeners = tag => ({
+  const logger = consola.withTag(tag);
+  const createListeners = () => ({
     out: (buffer) => {
-      logger.debug(tag, buffer.toLocaleString());
+      logger.log(buffer.toString().replace(/\n$/, ''));
     },
     err: (buffer) => {
-      logger.error(tag, buffer.toLocaleString());
+      logger.log(buffer.toString().replace(/\n$/, ''));
     },
   });
 
@@ -71,6 +69,10 @@ function startProcess(cmd, tag, name, args, opts = undefined) {
     ...opts,
     shell: true,
     stdio: [process.stdin],
+    env: {
+      ...{ FORCE_COLOR: 1 },
+      ...process.env,
+    },
   });
 
   subprocesses.push(child);
