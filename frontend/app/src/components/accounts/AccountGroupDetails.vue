@@ -11,6 +11,7 @@ const props = defineProps<{
   chains: string[];
   tags?: string[];
   isXpub: boolean;
+  isEvm: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -64,6 +65,7 @@ const [DefineAccounts, ReuseAccounts] = createReusableTemplate();
       v-model:sort="sort"
       class="bg-white dark:bg-[#1E1E1E]"
       :accounts="accounts"
+      :is-evm="isEvm"
       @edit="emit('edit', $event)"
       @refresh="fetchData()"
     >

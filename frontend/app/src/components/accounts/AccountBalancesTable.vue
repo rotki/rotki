@@ -19,6 +19,7 @@ const props = withDefaults(
     loading?: boolean;
     showGroupLabel?: boolean;
     availableChains?: string[];
+    isEvm?: boolean;
   }>(),
   {
     loading: false,
@@ -26,6 +27,7 @@ const props = withDefaults(
     selection: false,
     showGroupLabel: false,
     availableChains: () => [],
+    isEvm: false,
   },
 );
 
@@ -79,6 +81,7 @@ const anyExpansion = computed(() => get(rows).some(item => item.expansion));
 
 const cols = computed<DataTableColumn<DataRow>[]>(() => {
   const currency = { symbol: get(currencySymbol) };
+  const isEvm = props.isEvm;
   const headers: DataTableColumn<T>[] = [
     ...(get(anyExpansion)
       ? [{
@@ -89,24 +92,28 @@ const cols = computed<DataTableColumn<DataRow>[]>(() => {
           cellClass: '!py-0 !pr-0',
         }]
       : []),
-    {
-      label: t('common.account'),
-      key: 'label',
-      cellClass: 'py-0',
-      sortable: true,
-    },
+    ...(isEvm
+      ? []
+      : [{
+          label: t('common.account'),
+          key: 'label',
+          cellClass: 'py-0',
+          sortable: true,
+        }]),
     {
       label: t('common.chain'),
       key: 'chain',
       cellClass: 'py-0',
       sortable: false,
     },
-    {
-      label: t('common.tags'),
-      key: 'tags',
-      cellClass: 'py-0',
-      sortable: false,
-    },
+    ...(isEvm
+      ? []
+      : [{
+          label: t('common.tags'),
+          key: 'tags',
+          cellClass: 'py-0',
+          sortable: false,
+        }]),
     {
       label: t('common.assets'),
       key: 'assets',
@@ -271,6 +278,7 @@ defineExpose({
           class="account-balance-table__actions"
           :edit-tooltip="t('account_balances.edit_tooltip')"
           :disabled="accountOperation"
+          :no-edit="isEvm"
           @edit-click="edit(row)"
           @delete-click="group && !isEditable(row) ? confirmAgnosticDelete(row) : confirmDelete(row)"
         />
@@ -283,7 +291,7 @@ defineExpose({
       <RowAppend
         :label="t('common.total')"
         :left-patch-colspan="anyExpansion ? 1 : 0"
-        :label-colspan="4"
+        :label-colspan="isEvm ? 2 : 4"
         :is-mobile="false"
         class-name="[&>td]:p-4 text-sm"
       >
