@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
+import { HistoryEventEntryType } from '@rotki/common';
 import dayjs from 'dayjs';
 import { helpers, required } from '@vuelidate/validators';
 import { isEmpty } from 'lodash-es';

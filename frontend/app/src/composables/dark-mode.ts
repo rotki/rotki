@@ -1,7 +1,7 @@
 import { ThemeMode, useRotkiTheme } from '@rotki/ui-library';
 import { getColors } from 'theme-colors';
 import { DARK_COLORS, LIGHT_COLORS } from '@/plugins/theme';
-import type { ThemeColors } from '@rotki/common/lib/settings';
+import type { ThemeColors } from '@rotki/common';
 
 export const useDarkMode = createSharedComposable(() => {
   const { config, switchThemeScheme, setThemeConfig } = useRotkiTheme();

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common';
 import { truncateAddress } from '@/utils/truncate';
 import { type ExplorerUrls, explorerUrls, isChains } from '@/types/asset/asset-urls';
 

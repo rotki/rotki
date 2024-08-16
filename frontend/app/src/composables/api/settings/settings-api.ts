@@ -3,7 +3,7 @@ import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus, validWithSessionStatus } from '@/services/utils';
 import { type SettingsUpdate, UserSettingsModel } from '@/types/user';
 import { BackendConfiguration } from '@/types/backend';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 
 export function useSettingsApi() {
   const setSettings = async (settings: SettingsUpdate): Promise<UserSettingsModel> => {

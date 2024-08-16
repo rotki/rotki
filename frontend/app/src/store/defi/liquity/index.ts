@@ -3,7 +3,7 @@ import {
   LiquityPoolDetails,
   LiquityStakingDetails,
   LiquityStatistics,
-} from '@rotki/common/lib/liquity';
+} from '@rotki/common';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';

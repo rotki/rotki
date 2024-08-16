@@ -7,7 +7,7 @@ import {
   validWithSessionAndExternalService,
   validWithoutSessionStatus,
 } from '@/services/utils';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 import type { SupportedCurrency } from '@/types/currencies';
 import type { PriceOracle } from '@/types/settings/price-oracle';
 import type { HistoricPricesPayload, OracleCacheMeta } from '@/types/prices';

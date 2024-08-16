@@ -2,7 +2,7 @@ import { noRootCamelCaseTransformer, snakeCaseTransformer } from '@/services/axi
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus, validWithSessionStatus } from '@/services/utils';
 import { type Tag, Tags } from '@/types/tags';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 
 export function useTagsApi() {
   const queryTags = async (): Promise<Tags> => {

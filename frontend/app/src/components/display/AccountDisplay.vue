@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { type Account, Blockchain } from '@rotki/common';
 import { truncateAddress } from '@/utils/truncate';
-import type { Account } from '@rotki/common/lib/account';
 
 const props = withDefaults(
   defineProps<{

@@ -1,4 +1,4 @@
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common';
 
 export interface ExplorerUrls {
   readonly address: string;

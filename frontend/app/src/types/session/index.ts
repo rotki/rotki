@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import type { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
+import type { TimeFramePeriod } from '@rotki/common';
 import type { Module } from '@/types/modules';
 import type { CamelCase } from '@/types/common';
 

@@ -1,5 +1,5 @@
 <script lang="ts" setup>
-import type { XswapAsset } from '@rotki/common/lib/defi/xswap';
+import type { XswapAsset } from '@rotki/common';
 
 const props = defineProps<{ asset: XswapAsset }>();
 

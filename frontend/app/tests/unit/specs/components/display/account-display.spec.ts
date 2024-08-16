@@ -1,10 +1,9 @@
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { type Account, Blockchain } from '@rotki/common';
 import { type VueWrapper, mount } from '@vue/test-utils';
 import { type Pinia, createPinia, setActivePinia } from 'pinia';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import AccountDisplay from '@/components/display/AccountDisplay.vue';
 import { PrivacyMode } from '@/types/session';
-import type { Account } from '@rotki/common/lib/account';
 
 vi.mock('@/composables/api/assets/icon', () => ({
   useAssetIconApi: () => ({

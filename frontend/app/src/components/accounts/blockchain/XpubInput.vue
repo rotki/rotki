@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common';
 import { helpers, required } from '@vuelidate/validators';
 import { isEmpty } from 'lodash-es';
 import useVuelidate from '@vuelidate/core';

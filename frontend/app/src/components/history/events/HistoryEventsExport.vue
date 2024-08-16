@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { type NotificationPayload, Severity } from '@rotki/common/lib/messages';
+import { type NotificationPayload, type SemiPartial, Severity } from '@rotki/common';
 import { TaskType } from '@/types/task-type';
 import { jsonTransformer } from '@/services/axios-tranformers';
 import type { TaskMeta } from '@/types/task';
 import type { HistoryEventRequestPayload } from '@/types/history/events';
-import type { SemiPartial } from '@rotki/common';
 
 const props = defineProps<{
   filters: HistoryEventRequestPayload;

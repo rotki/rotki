@@ -11,7 +11,7 @@ import {
   NonFungibleBalancesCollectionResponse,
   type NonFungibleBalancesRequestPayload,
 } from '@/types/nfbalances';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 import type { PendingTask } from '@/types/task';
 
 export function useNftBalancesApi() {

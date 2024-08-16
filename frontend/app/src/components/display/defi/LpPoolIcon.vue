@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { LpType } from '@rotki/common/lib/defi';
+import { LpType } from '@rotki/common';
 
 const props = defineProps<{
   assets: string[];

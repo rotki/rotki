@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TimeFramePeriod, type TimeFrameSetting } from '@rotki/common/lib/settings/graphs';
+import { TimeFramePeriod, type TimeFrameSetting } from '@rotki/common';
 
 const defaultGraphTimeframe = ref<TimeFrameSetting>(TimeFramePeriod.ALL);
 const visibleTimeframes = ref<TimeFramePeriod[]>([]);

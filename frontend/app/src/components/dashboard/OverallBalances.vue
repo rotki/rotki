@@ -1,11 +1,5 @@
 <script setup lang="ts">
-import { TimeUnit } from '@rotki/common/lib/settings';
-import {
-  TimeFramePeriod,
-  TimeFramePersist,
-  type TimeFrameSetting,
-  timeframes,
-} from '@rotki/common/lib/settings/graphs';
+import { TimeFramePeriod, TimeFramePersist, type TimeFrameSetting, TimeUnit, timeframes } from '@rotki/common';
 import dayjs from 'dayjs';
 import { Section } from '@/types/status';
 

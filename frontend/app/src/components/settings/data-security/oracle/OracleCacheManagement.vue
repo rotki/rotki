@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Severity } from '@rotki/common/lib/messages';
+import { Severity } from '@rotki/common';
 import { PriceOracle } from '@/types/settings/price-oracle';
 import { CRYPTOCOMPARE_PRIO_LIST_ITEM, type PrioritizedListId } from '@/types/settings/prioritized-list-id';
 import { TaskType } from '@/types/task-type';

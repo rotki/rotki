@@ -1,4 +1,4 @@
-import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
+import { TimeFramePeriod } from '@rotki/common';
 import { CurrencyLocation } from '@/types/currency-location';
 import { DateFormat } from '@/types/date-format';
 import { TableColumn } from '@/types/table-column';

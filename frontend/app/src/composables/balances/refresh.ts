@@ -1,4 +1,4 @@
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common';
 import { BlockchainRefreshButtonBehaviour } from '@/types/settings/frontend-settings';
 import type { MaybeRef } from '@vueuse/core';
 

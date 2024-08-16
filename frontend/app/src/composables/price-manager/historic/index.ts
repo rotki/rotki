@@ -1,4 +1,4 @@
-import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common/lib/messages';
+import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common';
 import type { HistoricalPrice, HistoricalPriceFormPayload, ManualPricePayload } from '@/types/prices';
 
 export function useHistoricPrices(

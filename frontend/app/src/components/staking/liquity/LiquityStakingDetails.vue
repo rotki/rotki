@@ -1,16 +1,17 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
+import {
+  type AssetBalance,
+  type Balance,
+  Blockchain,
+  HistoryEventEntryType,
+  type LiquityPoolDetailEntry,
+  type LiquityPoolDetails,
+  type LiquityStakingDetailEntry,
+  type LiquityStakingDetails,
+  type LiquityStatisticDetails,
+} from '@rotki/common';
 import { Section } from '@/types/status';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type {
-  LiquityPoolDetailEntry,
-  LiquityPoolDetails,
-  LiquityStakingDetailEntry,
-  LiquityStakingDetails,
-  LiquityStatisticDetails,
-} from '@rotki/common/lib/liquity';
-import type { AssetBalance, Balance } from '@rotki/common';
 
 const emit = defineEmits<{
   (e: 'refresh', refresh: boolean): void;

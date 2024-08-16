@@ -1,4 +1,4 @@
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { isBtcChain } from '@/types/blockchain/chains';
 import { XpubPrefix } from '@/utils/xpub';

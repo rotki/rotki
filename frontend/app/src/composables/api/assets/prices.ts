@@ -12,7 +12,7 @@ import {
   ManualPrices,
   NftPriceArray,
 } from '@/types/prices';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 
 export function useAssetPricesApi() {
   const fetchHistoricalPrices = async (payload?: Partial<ManualPricePayload>): Promise<HistoricalPrice[]> => {

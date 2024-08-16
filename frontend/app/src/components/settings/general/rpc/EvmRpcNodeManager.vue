@@ -6,7 +6,7 @@ import {
   type EvmRpcNodeManageState,
   getPlaceholderNode,
 } from '@/types/settings/rpc';
-import type { Blockchain } from '@rotki/common/lib/blockchain';
+import type { Blockchain } from '@rotki/common';
 
 const props = defineProps<{
   chain: Blockchain;

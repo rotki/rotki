@@ -1,4 +1,4 @@
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common';
 import { type BtcChains, isBtcChain } from '@/types/blockchain/chains';
 import { TaskType } from '@/types/task-type';
 import type {

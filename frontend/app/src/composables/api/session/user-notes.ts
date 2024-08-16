@@ -4,7 +4,7 @@ import { handleResponse } from '@/services/utils';
 import { type UserNote, UserNoteCollectionResponse, type UserNotesRequestPayload } from '@/types/notes';
 import type { MaybeRef } from '@vueuse/core';
 import type { Collection } from '@/types/collection';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 
 export function useUserNotesApi() {
   const fetchUserNotes = async (filter: MaybeRef<UserNotesRequestPayload>): Promise<Collection<UserNote>> => {

@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { BigNumber } from '@rotki/common';
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { BigNumber, Blockchain } from '@rotki/common';
 import { type TablePaginationData, useBreakpoint } from '@rotki/ui-library';
 import { keyBy } from 'lodash-es';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';

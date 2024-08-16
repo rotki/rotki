@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Severity } from '@rotki/common/lib/messages';
+import { Severity } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

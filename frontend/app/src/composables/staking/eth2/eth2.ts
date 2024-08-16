@@ -1,12 +1,10 @@
 import { type MaybeRef, objectOmit } from '@vueuse/core';
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain, type
+EthStakingPayload, type
+EthStakingPerformance, type
+EthStakingPerformanceResponse } from '@rotki/common';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
-import type {
-  EthStakingPayload,
-  EthStakingPerformance,
-  EthStakingPerformanceResponse,
-} from '@rotki/common/lib/staking/eth2';
 import type { TaskMeta } from '@/types/task';
 
 export function useEth2Staking() {

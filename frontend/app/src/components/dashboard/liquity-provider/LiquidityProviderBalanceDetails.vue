@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import type { AssetBalanceWithPrice } from '@rotki/common';
-import type { XswapAsset } from '@rotki/common/lib/defi/xswap';
+import type { AssetBalanceWithPrice, XswapAsset } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 
 withDefaults(

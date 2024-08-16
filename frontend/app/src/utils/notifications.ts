@@ -3,7 +3,7 @@ import {
   type NotificationData,
   type NotificationPayload,
   Severity,
-} from '@rotki/common/lib/messages';
+} from '@rotki/common';
 
 export function createNotification(
   id = 0,

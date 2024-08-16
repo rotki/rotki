@@ -1,4 +1,4 @@
-import { NotificationGroup, Priority } from '@rotki/common/lib/messages';
+import { NotificationGroup, Priority } from '@rotki/common';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 describe('store::notifications/index', () => {

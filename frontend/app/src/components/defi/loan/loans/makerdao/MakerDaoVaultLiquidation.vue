@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { assetSymbolToIdentifierMap } from '@rotki/common/lib/data';
+import { assetSymbolToIdentifierMap } from '@rotki/common';
 import type { MakerDAOVaultModel } from '@/types/defi/maker';
 
 const props = defineProps<{

@@ -1,9 +1,8 @@
-import { AaveBalances, AaveHistory } from '@rotki/common/lib/defi/aave';
+import { AaveBalances, AaveHistory, type ProfitLossModel } from '@rotki/common';
 import { Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import type { TaskMeta } from '@/types/task';
-import type { ProfitLossModel } from '@rotki/common/lib/defi';
 
 export const useAaveStore = defineStore('defi/aave', () => {
   const balances = ref<AaveBalances>({});

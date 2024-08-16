@@ -10,7 +10,7 @@ import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { handleResponse } from '@/services/utils';
 import type { Collection } from '@/types/collection';
 import type { MaybeRef } from '@vueuse/core';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 
 export function useCalendarApi() {
   const fetchCalendarEvents = async (

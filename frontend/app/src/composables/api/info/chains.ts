@@ -1,7 +1,7 @@
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse } from '@/services/utils';
 import { EvmChainEntries, SupportedChains } from '@/types/api/chains';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 
 export function useSupportedChainsApi() {
   const fetchSupportedChains = async (): Promise<SupportedChains> => {

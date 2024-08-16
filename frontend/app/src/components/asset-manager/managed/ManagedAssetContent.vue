@@ -1,8 +1,7 @@
 <script setup lang="ts">
 import { isEqual, keyBy } from 'lodash-es';
-import type { SupportedAsset } from '@rotki/common/lib/data';
+import type { Nullable, SupportedAsset } from '@rotki/common';
 import type { Collection } from '@/types/collection';
-import type { Nullable } from '@rotki/common';
 import type { AssetRequestPayload, IgnoredAssetsHandlingType } from '@/types/asset';
 import type { Filters, Matcher } from '@/composables/filters/assets';
 

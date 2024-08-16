@@ -1,5 +1,4 @@
-import type { SemiPartial } from '@rotki/common';
-import type { Message } from '@rotki/common/lib/messages';
+import type { Message, SemiPartial } from '@rotki/common';
 
 function emptyMessage(): Message {
   return {

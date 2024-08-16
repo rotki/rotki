@@ -1,5 +1,4 @@
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import type { Account } from '@rotki/common/lib/account';
+import { type Account, Blockchain } from '@rotki/common';
 import type {
   BlockchainAccountBalance,
   DeleteXpubParams,

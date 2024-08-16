@@ -10,7 +10,7 @@ import {
   TaskNotFoundError,
   UserCancelledTaskError,
 } from '@/types/task';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 
 const USER_CANCELLED_TASK = 'task_cancelled_by_user';
 const TIMEOUT_THRESHOLD = 3;

@@ -1,6 +1,4 @@
-import { LpType } from '@rotki/common/lib/defi';
-import type { XSwapLiquidityBalance } from '@rotki/common/lib/defi/xswap';
-import type { BigNumber } from '@rotki/common';
+import { type BigNumber, LpType, type XSwapLiquidityBalance } from '@rotki/common';
 
 export function useLiquidityPosition() {
   const { uniswapV2Balances, uniswapV3Balances } = useUniswapStore();

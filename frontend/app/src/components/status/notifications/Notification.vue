@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type NotificationAction, type NotificationData, Severity } from '@rotki/common/lib/messages';
+import { type NotificationAction, type NotificationData, Severity } from '@rotki/common';
 import dayjs from 'dayjs';
 import { type RuiIcons, isRuiIcon } from '@rotki/ui-library';
 

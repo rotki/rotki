@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { EthStakingCombinedFilter, EthStakingFilter, EthStakingFilterType } from '@rotki/common/lib/staking/eth2';
+import type { EthStakingCombinedFilter, EthStakingFilter, EthStakingFilterType } from '@rotki/common';
 
 const filterModel = defineModel<EthStakingCombinedFilter | undefined>('filter', { required: true });
 const model = defineModel<EthStakingFilter>({ required: true });

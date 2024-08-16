@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { type BigNumber, Blockchain } from '@rotki/common';
 import { CURRENCY_USD } from '@/types/currencies';
 import { isBlockchain } from '@/types/blockchain/chains';
 import type { AssetBreakdown, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
-import type { BigNumber } from '@rotki/common';
 
 type AssetLocations = AssetLocation[];
 

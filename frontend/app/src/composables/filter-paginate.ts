@@ -1,5 +1,5 @@
 /* eslint-disable max-lines */
-import { Severity } from '@rotki/common/lib/messages';
+import { Severity } from '@rotki/common';
 import { isEmpty, isEqual } from 'lodash-es';
 import { type LocationQuery, type RawLocationQuery, RouterPaginationOptionsSchema } from '@/types/route';
 import { FilterBehaviour, type MatchedKeywordWithBehaviour, type SearchMatcher } from '@/types/filtering';

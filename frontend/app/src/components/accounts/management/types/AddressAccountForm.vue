@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common';
 import { objectOmit } from '@vueuse/core';
 import AddressInput from '@/components/accounts/blockchain/AddressInput.vue';
 import type { ValidationErrors } from '@/types/api/errors';

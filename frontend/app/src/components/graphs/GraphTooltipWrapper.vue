@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { TooltipDisplayOption } from '@rotki/common/lib/settings/graphs';
+import type { TooltipDisplayOption } from '@rotki/common';
 
 withDefaults(
   defineProps<{

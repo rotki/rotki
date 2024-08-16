@@ -11,7 +11,7 @@ import type {
 import type { Collection } from '@/types/collection';
 import type { ActionStatus } from '@/types/action';
 import type { TaskMeta } from '@/types/task';
-import type { Message } from '@rotki/common/lib/messages';
+import type { Message } from '@rotki/common';
 
 export function useAccountingSettings() {
   const {

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import dayjs from 'dayjs';
-import type { BigNumber } from '@rotki/common';
-import type { Message } from '@rotki/common/lib/messages';
+import type { BigNumber, Message } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

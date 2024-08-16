@@ -1,9 +1,8 @@
-import { LpType } from '@rotki/common/lib/defi';
+import { LpType, type XSwapLiquidityBalance } from '@rotki/common';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { setBalancerBalances } from '../store/defi/balancer.spec';
 import { setSushiswapBalances } from '../store/defi/sushiswap.spec';
 import { setUniswapV2Balances, setUniswapV3Balances } from '../store/defi/uniswap.spec';
-import type { XSwapLiquidityBalance } from '@rotki/common/lib/defi/xswap';
 
 describe('composables::defi', () => {
   beforeAll(() => {

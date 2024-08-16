@@ -1,4 +1,4 @@
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import { SocketMessageType } from '@/types/websocket-messages';
 import type { EvmChainInfo } from '@/types/api/chains';

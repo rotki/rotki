@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { getIdentifierFromSymbolMap } from '@rotki/common/lib/data';
+import { getIdentifierFromSymbolMap } from '@rotki/common';
 import { useCurrencies } from '@/types/currencies';
 import { isBlockchain } from '@/types/blockchain/chains';
 import type { StyleValue } from 'vue';

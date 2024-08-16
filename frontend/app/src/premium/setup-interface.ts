@@ -11,8 +11,7 @@ import {
   userSettings,
   utilsApi,
 } from '@/premium/premium-apis';
-import type { Themes, TimeUnit } from '@rotki/common/lib/settings';
-import type { DataUtilities, DateUtilities, PremiumInterface, SettingsApi } from '@rotki/common/lib/premium';
+import type { DataUtilities, DateUtilities, PremiumInterface, SettingsApi, Themes, TimeUnit } from '@rotki/common';
 import type { DateFormat } from '@/types/date-format';
 import type { FrontendSettingsPayload } from '@/types/settings/frontend-settings';
 

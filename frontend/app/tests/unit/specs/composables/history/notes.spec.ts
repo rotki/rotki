@@ -1,4 +1,4 @@
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common';
 import { describe, expect, it, vi } from 'vitest';
 import { type NoteFormat, NoteType } from '@/composables/history/events/notes';
 

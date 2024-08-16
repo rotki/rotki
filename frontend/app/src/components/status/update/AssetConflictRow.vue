@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { UnderlyingToken } from '@rotki/common/lib/data';
+import type { UnderlyingToken } from '@rotki/common';
 
 const props = defineProps<{
   field: string;

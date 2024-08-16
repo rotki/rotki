@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { TimeFramePeriod, TimeFramePersist, type TimeFrameSetting } from '@rotki/common/lib/settings/graphs';
+import { TimeFramePeriod, TimeFramePersist, type TimeFrameSetting } from '@rotki/common';
 
 const props = defineProps<{
   message: { error: string; success: string };

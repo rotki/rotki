@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { each } from 'lodash-es';
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common';
 import { helpers, required, requiredIf } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
 import type { SelectOptions } from '@/types/common';

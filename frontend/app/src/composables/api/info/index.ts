@@ -3,7 +3,7 @@ import { handleResponse } from '@/services/utils';
 import { api } from '@/services/rotkehlchen-api';
 import { BackendInfo } from '@/types/backend';
 import type { PendingTask } from '@/types/task';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 
 export function useInfoApi() {
   const info = async (checkForUpdates = false): Promise<BackendInfo> => {

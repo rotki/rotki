@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common';
 import { type ExplorerUrls, explorerUrls } from '@/types/asset/asset-urls';
 
 const additional = ['ETC'] as const;

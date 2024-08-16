@@ -2,7 +2,7 @@ import { fetchExternalAsync, handleResponse, validWithSessionAndExternalService 
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import type { ProtocolMetadata } from '@/types/defi';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 import type { PendingTask } from '@/types/task';
 
 export function useDefiApi() {

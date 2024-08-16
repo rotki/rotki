@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common';
 import { EvmChainAddress, EvmChainLikeAddress } from '@/types/history/events';
 import { CalendarEventPayload } from '@/types/history/calendar';
 

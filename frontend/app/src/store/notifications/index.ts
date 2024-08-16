@@ -3,11 +3,11 @@ import {
   type NotificationData,
   type NotificationPayload,
   Priority,
+  type SemiPartial,
   Severity,
-} from '@rotki/common/lib/messages';
+} from '@rotki/common';
 import { useSessionStorage } from '@vueuse/core';
 import { orderBy } from 'lodash-es';
-import type { SemiPartial } from '@rotki/common';
 
 function notificationDefaults(): NotificationPayload {
   return {

@@ -1,4 +1,4 @@
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { type BigNumber, Blockchain } from '@rotki/common';
 import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { TaskType } from '@/types/task-type';
 import { Section } from '@/types/status';
@@ -7,7 +7,6 @@ import type { BlockchainAccount, ValidatorData } from '@/types/blockchain/accoun
 import type { AssetBalances, Eth2Validator } from '@/types/balances';
 import type { ActionStatus } from '@/types/action';
 import type { TaskMeta } from '@/types/task';
-import type { BigNumber } from '@rotki/common';
 
 export function useEthStaking() {
   const {

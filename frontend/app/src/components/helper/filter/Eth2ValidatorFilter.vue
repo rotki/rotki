@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain, type Eth2ValidatorEntry, type EthStakingFilter } from '@rotki/common';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { Eth2ValidatorEntry, EthStakingFilter } from '@rotki/common/lib/staking/eth2';
 
 defineProps<{
   modelValue: EthStakingFilter;

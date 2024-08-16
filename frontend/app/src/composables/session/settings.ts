@@ -1,5 +1,4 @@
-import { BigNumber } from '@rotki/common';
-import { TimeFramePersist } from '@rotki/common/lib/settings/graphs';
+import { BigNumber, TimeFramePersist } from '@rotki/common';
 import { getBnFormat } from '@/data/amount-formatter';
 import type { Exchange } from '@/types/exchanges';
 import type { UserSettingsModel } from '@/types/user';

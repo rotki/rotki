@@ -1,9 +1,8 @@
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain, type Message } from '@rotki/common';
 import { CURRENCY_USD } from '@/types/currencies';
 import { TaskType } from '@/types/task-type';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { jsonTransformer } from '@/services/axios-tranformers';
-import type { Message } from '@rotki/common/lib/messages';
 import type {
   ProfitLossReportDebugPayload,
   ProfitLossReportPeriod,

@@ -5,7 +5,7 @@ import { BackendCancelledTaskError, type TaskMeta, type TaskResultResponse, type
 import { TaskType } from '@/types/task-type';
 import { server } from '../../../setup-files/server';
 import { createCustomPinia } from '../../../utils/create-pinia';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 
 const backendUrl = process.env.VITE_BACKEND_URL;
 

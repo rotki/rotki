@@ -1,7 +1,7 @@
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 import type { IgnorePayload } from '@/types/history/ignored';
 
 export function useHistoryIgnoringApi() {

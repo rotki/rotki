@@ -1,6 +1,6 @@
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validWithoutSessionStatus } from '@/services/utils';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 
 export function useAssetWhitelistApi() {
   const getWhitelistedAssets = async (): Promise<string[]> => {

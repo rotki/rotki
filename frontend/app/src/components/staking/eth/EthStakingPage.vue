@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { type BigNumber, Blockchain, type
+Eth2ValidatorEntry, type
+Eth2Validators, type
+EthStakingCombinedFilter, type
+EthStakingFilter } from '@rotki/common';
 import { objectOmit } from '@vueuse/core';
 import { isEmpty } from 'lodash-es';
 import dayjs from 'dayjs';
@@ -8,13 +12,6 @@ import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import { OnlineHistoryEventsQueryType } from '@/types/history/events';
-import type { BigNumber } from '@rotki/common';
-import type {
-  Eth2ValidatorEntry,
-  Eth2Validators,
-  EthStakingCombinedFilter,
-  EthStakingFilter,
-} from '@rotki/common/lib/staking/eth2';
 
 const module = Module.ETH2;
 const performanceSection = Section.STAKING_ETH2;

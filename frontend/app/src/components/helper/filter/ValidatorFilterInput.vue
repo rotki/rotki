@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Eth2ValidatorEntry } from '@rotki/common/lib/staking/eth2';
+import type { Eth2ValidatorEntry } from '@rotki/common';
 
 defineOptions({
   inheritAttrs: false,

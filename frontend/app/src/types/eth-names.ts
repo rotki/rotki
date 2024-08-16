@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common';
 import { CollectionCommonFields } from '@/types/collection';
 import type { PaginationRequestPayload } from '@/types/common';
 

@@ -1,8 +1,7 @@
-import { LocationData, NetValue, TimedAssetBalances, TimedBalances } from '@rotki/common/lib/statistics';
+import { type ActionResult, LocationData, NetValue, TimedAssetBalances, TimedBalances } from '@rotki/common';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
-import type { ActionResult } from '@rotki/common/lib/data';
 
 export function useStatisticsApi() {
   const queryNetValueData = async (includeNfts: boolean): Promise<NetValue> => {

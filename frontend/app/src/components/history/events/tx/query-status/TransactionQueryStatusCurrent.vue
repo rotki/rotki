@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Blockchain } from '@rotki/common/lib/blockchain';
+import type { Blockchain } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

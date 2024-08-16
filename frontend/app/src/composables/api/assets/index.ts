@@ -1,7 +1,7 @@
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { handleResponse, validFileOperationStatus, validStatus, validWithoutSessionStatus } from '@/services/utils';
 import { api } from '@/services/rotkehlchen-api';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 import type { ActionStatus } from '@/types/action';
 import type { ConflictResolution } from '@/types/asset';
 import type { PendingTask } from '@/types/task';

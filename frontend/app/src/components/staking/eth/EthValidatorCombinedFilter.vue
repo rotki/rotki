@@ -6,7 +6,7 @@ import {
   dateSerializer,
   dateValidator,
 } from '@/types/filtering';
-import type { EthStakingCombinedFilter } from '@rotki/common/lib/staking/eth2';
+import type { EthStakingCombinedFilter } from '@rotki/common';
 
 const props = defineProps<{
   filter: EthStakingCombinedFilter | undefined;

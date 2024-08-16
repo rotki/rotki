@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { type Message, Priority, Severity } from '@rotki/common/lib/messages';
+import { type Message, Priority, Severity } from '@rotki/common';
 import { TaskType } from '@/types/task-type';
 import { displayDateFormatter } from '@/data/date-formatter';
 import FileUpload from '@/components/import/FileUpload.vue';

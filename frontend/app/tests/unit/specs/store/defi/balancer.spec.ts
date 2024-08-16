@@ -1,6 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import type { BalancerBalance } from '@rotki/common/lib/defi/balancer';
-import type { XswapPool } from '@rotki/common/lib/defi/xswap';
+import type { BalancerBalance, XswapPool } from '@rotki/common';
 
 export function setBalancerBalances() {
   const { balances } = storeToRefs(useBalancerStore());

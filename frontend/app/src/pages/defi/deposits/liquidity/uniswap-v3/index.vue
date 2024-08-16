@@ -1,12 +1,9 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import { LpType } from '@rotki/common/lib/defi';
-import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
+import { Blockchain, HistoryEventEntryType, LpType, type XswapBalance } from '@rotki/common';
 import { Module } from '@/types/modules';
 import { Section } from '@/types/status';
 import Uniswap3PoolBalances from '@/components/defi/uniswap/Uniswap3PoolBalances.vue';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { XswapBalance } from '@rotki/common/lib/defi/xswap';
 
 const uniswap = Module.UNISWAP;
 const chains = [Blockchain.ETH];

@@ -6,7 +6,7 @@ import {
   validWithSessionAndExternalService,
 } from '@/services/utils';
 import { type ManualBalance, ManualBalances, type RawManualBalance } from '@/types/manual-balances';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 import type { PendingTask } from '@/types/task';
 
 export function useManualBalancesApi() {

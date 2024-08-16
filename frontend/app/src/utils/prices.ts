@@ -1,5 +1,5 @@
 import { cloneDeep } from 'lodash-es';
-import type { Blockchain } from '@rotki/common/lib/blockchain';
+import type { Blockchain } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { AccountAssetBalances, AssetBalances } from '@/types/balances';
 import type { Balances, BlockchainAssetBalances, BtcBalances } from '@/types/blockchain/balances';

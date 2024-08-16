@@ -9,7 +9,7 @@ import {
   type CalenderReminderPayload,
 } from '@/types/history/calendar/reminder';
 import type { AddCalendarEventResponse } from '@/types/history/calendar';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 
 export function useCalendarReminderApi() {
   const fetchCalendarReminders = async (filter: CalendarReminderRequestPayload): Promise<CalendarReminderEntry[]> => {

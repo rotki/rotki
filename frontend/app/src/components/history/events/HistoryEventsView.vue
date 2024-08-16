@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { isEqual } from 'lodash-es';
 import { not } from '@vueuse/math';
-import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
+import { type Account, type Blockchain, HistoryEventEntryType, type Writeable } from '@rotki/common';
 import { SavedFilterLocation } from '@/types/filtering';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { RouterAccountsSchema } from '@/types/route';
@@ -17,11 +17,8 @@ import type {
 } from '@/types/history/events';
 import type { DataTableColumn } from '@rotki/ui-library';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
-import type { Writeable } from '@rotki/common';
 import type { Collection } from '@/types/collection';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
-import type { Blockchain } from '@rotki/common/lib/blockchain';
-import type { Account } from '@rotki/common/lib/account';
 import type { Filters, Matcher } from '@/composables/filters/events';
 
 const props = withDefaults(

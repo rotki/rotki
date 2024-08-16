@@ -1,5 +1,5 @@
 import { type EvmTransactionQueryData, EvmTransactionsQueryStatus } from '@/types/websocket-messages';
-import type { Blockchain } from '@rotki/common/lib/blockchain';
+import type { Blockchain } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 
 export function useTransactionQueryStatus(onlyChains: MaybeRef<Blockchain[]> = []) {

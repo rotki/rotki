@@ -1,4 +1,4 @@
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common';
 import { AllDefiProtocols } from '@/types/defi/overview';
 import { DECENTRALIZED_EXCHANGES, DefiProtocol, Module } from '@/types/modules';
 import { Section, Status } from '@/types/status';

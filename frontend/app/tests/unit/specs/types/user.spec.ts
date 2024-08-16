@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Blockchain } from '@rotki/common/lib/blockchain';
-import { TimeFramePeriod } from '@rotki/common/lib/settings/graphs';
-import { BigNumber } from '@rotki/common';
-import { Theme } from '@rotki/common/lib/settings';
+import { BigNumber, Blockchain, Theme, TimeFramePeriod } from '@rotki/common';
 import { CurrencyLocation } from '@/types/currency-location';
 import {
   BlockchainRefreshButtonBehaviour,

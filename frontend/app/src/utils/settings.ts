@@ -1,4 +1,4 @@
-import { TimeFramePeriod, type TimeFrameSetting } from '@rotki/common/lib/settings/graphs';
+import { TimeFramePeriod, type TimeFrameSetting } from '@rotki/common';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
 
 export function isPeriodAllowed(period: TimeFrameSetting): boolean {

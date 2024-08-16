@@ -2,7 +2,7 @@ import { type ComponentMountingOptions, type VueWrapper, mount } from '@vue/test
 import { type Pinia, createPinia, setActivePinia } from 'pinia';
 import flushPromises from 'flush-promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
+import { HistoryEventEntryType } from '@rotki/common';
 import OnlineHistoryEventForm from '@/components/history/events/forms/OnlineHistoryEventForm.vue';
 import type { AssetMap } from '@/types/asset';
 import type { OnlineHistoryEvent } from '@/types/history/events';

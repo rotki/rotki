@@ -1,4 +1,4 @@
-import { type Notification, NotificationCategory, Severity } from '@rotki/common/lib/messages';
+import { type Notification, NotificationCategory, Severity } from '@rotki/common';
 import { type MaybeRef, useSessionStorage } from '@vueuse/core';
 import type { MigratedAddresses } from '@/types/websocket-messages';
 

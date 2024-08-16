@@ -8,7 +8,7 @@ import {
 } from '@/types/history/asset-movements';
 import type { CollectionResponse } from '@/types/collection';
 import type { EntryWithMeta } from '@/types/history/meta';
-import type { ActionResult } from '@rotki/common/lib/data';
+import type { ActionResult } from '@rotki/common';
 import type { PendingTask } from '@/types/task';
 
 export function useAssetMovementsApi() {

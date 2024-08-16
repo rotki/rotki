@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { SupportedAsset } from '@rotki/common/lib/data';
+import type { SupportedAsset } from '@rotki/common';
 
 const props = withDefaults(
   defineProps<{

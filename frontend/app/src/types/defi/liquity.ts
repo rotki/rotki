@@ -1,4 +1,4 @@
-import type { LiquityBalance } from '@rotki/common/lib/liquity';
+import type { LiquityBalance } from '@rotki/common';
 import type { DefiProtocol } from '@/types/modules';
 
 export interface LiquityLoan {

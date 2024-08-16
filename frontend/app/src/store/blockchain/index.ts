@@ -1,5 +1,5 @@
 import { camelCase, isEmpty } from 'lodash-es';
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { type AssetBalance, type Balance, Blockchain } from '@rotki/common';
 import { type MaybeRef, objectOmit, objectPick } from '@vueuse/core';
 import {
   aggregateTotals,
@@ -10,7 +10,6 @@ import {
   hasTokens,
 } from '@/utils/blockchain/accounts';
 import type { Accounts, AssetBreakdown, Balances, BlockchainAccount, BlockchainAccountGroupRequestPayload, BlockchainAccountGroupWithBalance, BlockchainAccountRequestPayload, BlockchainAccountWithBalance, DeleteBlockchainAccountParams, EthereumValidator, EthereumValidatorRequestPayload, Totals } from '@/types/blockchain/accounts';
-import type { AssetBalance, Balance } from '@rotki/common';
 import type { Collection } from '@/types/collection';
 import type { BlockchainTotal } from '@/types/blockchain';
 import type { AssetBalances } from '@/types/balances';

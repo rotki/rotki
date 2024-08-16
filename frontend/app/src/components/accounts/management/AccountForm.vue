@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Blockchain } from '@rotki/common/lib/blockchain';
+import { Blockchain } from '@rotki/common';
 import { InputMode } from '@/types/input-mode';
 import AddressAccountForm from '@/components/accounts/management/types/AddressAccountForm.vue';
 import ValidatorAccountForm from '@/components/accounts/management/types/ValidatorAccountForm.vue';

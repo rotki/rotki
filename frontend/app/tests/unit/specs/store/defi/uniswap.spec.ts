@@ -1,5 +1,5 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import type { XswapBalance, XswapPool } from '@rotki/common/lib/defi/xswap';
+import type { XswapBalance, XswapPool } from '@rotki/common';
 
 export function setUniswapV2Balances() {
   const { v2Balances } = storeToRefs(useUniswapStore());
