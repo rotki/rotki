@@ -4099,7 +4099,7 @@ class RestAPI:
             chain_addresses: list[OptionalChainAddress],
     ) -> Response:
         mappings = search_for_addresses_names(
-            database=self.rotkehlchen.data.db,
+            prioritizer=self.rotkehlchen.addressbook_prioritizer,
             chain_addresses=chain_addresses,
         )
         return api_response(_wrap_in_ok_result(process_result_list(mappings)))

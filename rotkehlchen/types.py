@@ -910,7 +910,7 @@ class CostBasisMethod(SerializableEnumNameMixin):
     ACB = auto()
 
 
-ANY_BLOCKCHAIN_ADDRESS_BOOK_VALUE: Final = 'NONE'  # blockchain value used to mark in the DB that the address entry is valid for any blockchain  # noqa: E501
+ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE: Final = 'NONE'  # blockchain value used to mark in the DB that the address entry is valid for any blockchain  # noqa: E501
 
 
 class AddressbookEntry(NamedTuple):
@@ -926,7 +926,7 @@ class AddressbookEntry(NamedTuple):
         }
 
     def serialize_for_db(self) -> tuple[str, str, str]:
-        return (self.address, self.name, self.blockchain.value if self.blockchain is not None else ANY_BLOCKCHAIN_ADDRESS_BOOK_VALUE)  # noqa: E501
+        return (self.address, self.name, self.blockchain.value if self.blockchain is not None else ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE)  # noqa: E501
 
     @classmethod
     def deserialize(cls: type['AddressbookEntry'], data: dict[str, Any]) -> 'AddressbookEntry':
