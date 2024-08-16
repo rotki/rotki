@@ -33,7 +33,7 @@ from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
 from rotkehlchen.tests.utils.exchanges import check_saved_events_for_exchange
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
-    ANY_BLOCKCHAIN_ADDRESS_BOOK_VALUE,
+    ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     ChainID,
     ChecksumEvmAddress,
@@ -661,8 +661,8 @@ def test_migration_17(rotkehlchen_api_server: 'APIServer', globaldb: 'GlobalDBHa
             'SELECT * FROM address_book WHERE address IN (?, ?)',
             (bad_address, tether_address),
         ).fetchall() == [
-            (tether_address, ANY_BLOCKCHAIN_ADDRESS_BOOK_VALUE, 'Black Tether'),
-            (bad_address, ANY_BLOCKCHAIN_ADDRESS_BOOK_VALUE, 'yabirgb.eth'),
+            (tether_address, ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, 'Black Tether'),
+            (bad_address, ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, 'yabirgb.eth'),
         ]
 
 

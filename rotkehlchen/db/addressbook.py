@@ -8,7 +8,7 @@ from pysqlcipher3 import dbapi2
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.types import (
-    ANY_BLOCKCHAIN_ADDRESS_BOOK_VALUE,
+    ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,
     AddressbookEntry,
     AddressbookType,
     ChecksumEvmAddress,
@@ -67,7 +67,7 @@ class DBAddressbook:
             AddressbookEntry(
                 address=ChecksumEvmAddress(address),
                 name=name,
-                blockchain=SupportedBlockchain(blockchain_str) if blockchain_str != ANY_BLOCKCHAIN_ADDRESS_BOOK_VALUE else None,  # noqa: E501
+                blockchain=SupportedBlockchain(blockchain_str) if blockchain_str != ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE else None,  # noqa: E501
             ) for address, name, blockchain_str in cursor
         ]
         return entries, total_found_result
@@ -91,7 +91,7 @@ class DBAddressbook:
                 if entry.blockchain is None:
                     write_cursor.execute(
                         'DELETE FROM address_book where address=? AND blockchain IS NOT ?',
-                        (entry.address, ANY_BLOCKCHAIN_ADDRESS_BOOK_VALUE),
+                        (entry.address, ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE),
                     )
 
                 write_cursor.execute(
@@ -113,7 +113,7 @@ class DBAddressbook:
         with self.write_ctx(book_type) as write_cursor:
             for entry in entries:
                 query = 'UPDATE address_book SET name = ? WHERE address = ? AND blockchain IS ?'
-                bindings = (entry.name, entry.address, entry.blockchain.value if entry.blockchain else ANY_BLOCKCHAIN_ADDRESS_BOOK_VALUE)  # noqa: E501
+                bindings = (entry.name, entry.address, entry.blockchain.value if entry.blockchain else ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE)  # noqa: E501
                 write_cursor.execute(query, bindings)
                 if write_cursor.rowcount == 0:
                     raise InputError(
@@ -183,8 +183,8 @@ class DBAddressbook:
                 'SELECT name FROM address_book WHERE address=? AND (blockchain IS ? OR blockchain IS ?) ORDER BY blockchain DESC',  # noqa: E501
                 (
                     chain_address.address,
-                    chain_address.blockchain.value if chain_address.blockchain is not None else ANY_BLOCKCHAIN_ADDRESS_BOOK_VALUE,  # noqa: E501
-                    ANY_BLOCKCHAIN_ADDRESS_BOOK_VALUE,
+                    chain_address.blockchain.value if chain_address.blockchain is not None else ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,  # noqa: E501
+                    ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,
                 ),
             )
             result = read_cursor.fetchone()

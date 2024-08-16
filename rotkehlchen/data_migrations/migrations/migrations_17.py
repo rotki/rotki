@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
-from rotkehlchen.types import ANY_BLOCKCHAIN_ADDRESS_BOOK_VALUE
+from rotkehlchen.types import ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE
 
 if TYPE_CHECKING:
     from rotkehlchen.data_migrations.progress import MigrationProgressHandler
@@ -21,7 +21,7 @@ def data_migration_17(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
     For both the user db and the globaldb ensure that if there are duplicates in the
     table for the address book we delete them except the one with the highest rowid
     (latest inserted) and set the blockchain value with the constant
-    ANY_BLOCKCHAIN_ADDRESS_BOOK_VALUE to avoid having NULL values.
+    ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE to avoid having NULL values.
     """
     progress_handler.set_total_steps(2)
 
@@ -39,7 +39,7 @@ def data_migration_17(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
 
             write_cursor.execute(
                 'UPDATE address_book SET blockchain=? WHERE blockchain IS NULL',
-                (ANY_BLOCKCHAIN_ADDRESS_BOOK_VALUE,),
+                (ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,),
             )
 
         progress_handler.new_step()
