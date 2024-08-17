@@ -162,6 +162,9 @@ class EigenlayerBalances(ProtocolWithBalance):
         )
         for address, event_list in addresses_with_withdrawals.items():
             for event in event_list:
+                if event.asset == A_ETH:
+                    continue  # For native ETH restaking's pending ETH we count from the eigenpod. Doing it here again would double count  # noqa: E501
+
                 if event.extra_data is None:
                     log.error(f'Unexpected eigenlayer withdrawal queueing event {event}. Missing extra data. Skipping')  # noqa: E501
                     continue

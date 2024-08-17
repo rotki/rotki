@@ -25,6 +25,7 @@ from rotkehlchen.tests.utils.factories import (
     make_addressbook_entries,
 )
 from rotkehlchen.types import (
+    ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,
     AddressbookEntry,
     AddressbookType,
     BTCAddress,
@@ -824,11 +825,7 @@ def test_insert_into_addressbook_no_blockchain(
             'addressbookresource',
             book_type=book_type,
         ),
-        json={
-            'addresses': [
-                {'address': test_address},
-            ],
-        },
+        json={'addresses': [{'address': test_address}]},
     )
     result = assert_proper_sync_response_with_result(response)
     assert result['entries'] == [custom_name.serialize()]
@@ -841,4 +838,4 @@ def test_insert_into_addressbook_no_blockchain(
             cursor.execute('SELECT * FROM address_book')
             result = cursor.fetchall()
 
-    assert result == [(test_address, None, 'my address')]
+    assert result == [(test_address, ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, 'my address')]

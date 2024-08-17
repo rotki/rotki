@@ -107,11 +107,8 @@ def test_uses_sources_only_when_needed(evm_address, database: 'DBHandler'):
             )],
         )
     names = search_for_addresses_names(
-        database=database,
-        chain_addresses=[ChainAddress(
-            address=evm_address,
-            blockchain=None,
-        )],
+        prioritizer=NamePrioritizer(database),
+        chain_addresses=[ChainAddress(address=evm_address, blockchain=None)],
     )
     assert names == [], 'No names should have been returned since the blockchain was None'
 
