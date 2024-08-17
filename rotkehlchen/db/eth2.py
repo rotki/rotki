@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Final, Literal
 
 from pysqlcipher3 import dbapi2 as sqlcipher
 
@@ -21,7 +21,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, Timestamp
-from rotkehlchen.utils.misc import ts_ms_to_sec
+from rotkehlchen.utils.misc import ts_ms_to_sec, ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -30,6 +30,10 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+
+# At the moment of writing the moment between queing a withdrawal and it happpening seems to be 8-9 days  # noqa: E501
+TEMP_MAX_WITHDRAWAL_WAIT: Final = DAY_IN_SECONDS * 9
 
 
 class DBEth2:
@@ -183,31 +187,39 @@ class DBEth2:
     def get_active_validator_indices(self, cursor: 'DBCursor') -> set[int]:
         """Returns the indices of the tracked validators that we know have not exited
 
-        Does so by using processed events, so will only return a list as up to date
-        as the events we got
+        Same issues as with the get_exited_validator_indices function as far as
+        using processed events is concerned.
         """
         cursor.execute(
-            'SELECT EV.validator_index FROM eth2_validators EV LEFT JOIN '
-            'eth_staking_events_info SE ON EV.validator_index = SE.validator_index '
-            'WHERE SE.validator_index IS NULL '
-            'UNION '
-            'SELECT DISTINCT EV.validator_index FROM eth2_validators EV INNER JOIN '
-            'eth_staking_events_info SE ON EV.validator_index = SE.validator_index '
-            'WHERE EV.validator_index NOT IN ('
-            'SELECT validator_index from eth_staking_events_info WHERE is_exit_or_blocknumber=1)',
+            'SELECT validator_index from eth2_validators WHERE withdrawable_timestamp IS NULL '
+            'OR (? - withdrawable_timestamp < ?)',
+            (ts_now(), TEMP_MAX_WITHDRAWAL_WAIT),
         )
-        return {x[0] for x in cursor}
+        result = {x[0] for x in cursor}
+        return result
 
     def get_exited_validator_indices(self, cursor: 'DBCursor') -> set[int]:
         """Returns the indices of the tracked validators that we know have exited
 
-        Does so by using processed events, so will only return a list as up to date
-        as the events we got
+        This used to query the eth staking events for full exit of the validator
+
+        But since https://github.com/rotki/rotki/issues/8397 we need to change strategy and
+        for now we just compare withdrawable_ts with current timetamp. If the difference
+        is "big enough" we consider it exited.
+
+        The reason is that we don't always track the withdrawal address such as for eigenlayer
+        and we still need to know that a validator exited.
+
+        This solution is hacky. As per the linked issue the actual solution will come
+        in develop/1.35.0
         """
         cursor.execute(
-            'SELECT validator_index FROM eth_staking_events_info WHERE is_exit_or_blocknumber=1',
-        )  # checking against literal 1 is safe since block 1 was not mined during PoS
-        return {x[0] for x in cursor}
+            'SELECT validator_index FROM eth2_validators WHERE withdrawable_timestamp '
+            'IS NOT NULL AND ? - withdrawable_timestamp > ?',
+            (ts_now(), TEMP_MAX_WITHDRAWAL_WAIT),
+        )
+        result = {x[0] for x in cursor}
+        return result
 
     def get_associated_with_addresses_validator_indices(
             self,
