@@ -5,6 +5,7 @@ Changelog
 * :bug:`-` Fix an error introduced in 1.34.2 that was creating snapshots more frequently than expected.
 * :bug:`8350` Users will no longer be able to add duplicate names for an address for all evm chains to the address book.
 * :bug:`-` Eigenlayer native restaking exited balances residing in eigenpod will no longer be double counted.
+* :bug:`8397` Active/exited validators will now be propely displayed and filtered for validators that are tracked but the withdrawal address is not. This applies to protocols such as eigenlayer.
 
 * :release:`1.34.2 <2024-08-09>`
 * :bug:`-` Users will be able to filter by event subtype in the history events view.

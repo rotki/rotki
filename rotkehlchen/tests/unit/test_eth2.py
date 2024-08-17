@@ -1104,6 +1104,7 @@ def test_get_active_validator_indices(database):
             ), ValidatorDetails(
                 validator_index=exited_index,
                 public_key=Eth2PubKey('0x800041b1eff8af7a583caa402426ffe8e5da001615f5ce00ba30ea8e3e627491e0aa7f8c0417071d5c1c7eb908962d8e'),
+                withdrawable_timestamp=Timestamp(1699801559),
             ), ValidatorDetails(
                 validator_index=noevents_index,
                 public_key=Eth2PubKey('0xb02c42a2cda10f06441597ba87e87a47c187cd70e2b415bef8dc890669efe223f551a2c91c3d63a5779857d3073bf288'),
