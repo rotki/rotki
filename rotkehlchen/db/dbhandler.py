@@ -120,6 +120,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.serialization.deserialize import deserialize_hex_color_code, deserialize_timestamp
 from rotkehlchen.types import (
+    ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,
     EVM_CHAINS_WITH_TRANSACTIONS,
     SPAM_PROTOCOL,
     SUPPORTED_BITCOIN_CHAINS,
@@ -1364,9 +1365,9 @@ class DBHandler:
             'SELECT A.account, C.name, group_concat(B.tag_name,",") '
             'FROM blockchain_accounts AS A '
             'LEFT OUTER JOIN tag_mappings AS B ON B.object_reference = A.account '
-            'LEFT OUTER JOIN address_book AS C ON C.address = A.account AND (A.blockchain IS C.blockchain OR C.blockchain IS NULL) '  # noqa: E501
+            'LEFT OUTER JOIN address_book AS C ON C.address = A.account AND (A.blockchain IS C.blockchain OR C.blockchain IS ?) '  # noqa: E501
             'WHERE A.blockchain=? GROUP BY account;',
-            (blockchain.value,),
+            (ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, blockchain.value),
         )
 
         data = []
