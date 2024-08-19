@@ -4,7 +4,7 @@ import { TaskType } from '@/types/task-type';
 import { Section } from '@/types/status';
 import { Module } from '@/types/modules';
 import type { BlockchainAccount, ValidatorData } from '@/types/blockchain/accounts';
-import type { AssetBalances, Eth2Validator } from '@/types/balances';
+import type { Eth2Validator } from '@/types/balances';
 import type { ActionStatus } from '@/types/action';
 import type { TaskMeta } from '@/types/task';
 
@@ -17,7 +17,7 @@ export function useEthStaking() {
   } = useBlockchainAccountsApi();
   const blockchainStore = useBlockchainStore();
   const { updateAccounts, getAccounts, updateBalances } = blockchainStore;
-  const { stakingValidatorsLimits, ethStakingValidators, balances, totals } = storeToRefs(blockchainStore);
+  const { stakingValidatorsLimits, ethStakingValidators, balances } = storeToRefs(blockchainStore);
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
   const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
@@ -188,9 +188,6 @@ export function useEthStaking() {
 
     const newValue = calc(usdValue, oldOwnershipPercentage, newOwnershipPercentage);
 
-    const amountDiff = amount.minus(newAmount);
-    const valueDiff = usdValue.minus(newValue);
-
     const updatedBalance = {
       [publicKey]: {
         assets: {
@@ -203,23 +200,6 @@ export function useEthStaking() {
       },
     };
 
-    const oldTotals = get(totals);
-    const stakingTotals = oldTotals[Blockchain.ETH2];
-
-    let newTotals: AssetBalances;
-    if (!stakingTotals[ETH2_ASSET]) {
-      newTotals = {};
-    }
-    else {
-      const { amount: oldTotalAmount, usdValue: oldTotalUsdValue } = stakingTotals[ETH2_ASSET];
-      newTotals = {
-        [ETH2_ASSET]: {
-          amount: oldTotalAmount.plus(amountDiff),
-          usdValue: oldTotalUsdValue.plus(valueDiff),
-        },
-      };
-    }
-
     updateBalances(Blockchain.ETH2, {
       perAccount: {
         [Blockchain.ETH2]: {
@@ -228,10 +208,7 @@ export function useEthStaking() {
         },
       },
       totals: {
-        assets: {
-          ...stakingTotals,
-          ...newTotals,
-        },
+        assets: {},
         liabilities: {},
       },
     });

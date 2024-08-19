@@ -9,18 +9,28 @@ import {
   getAccountLabel,
   hasTokens,
 } from '@/utils/blockchain/accounts';
-import type { Accounts, AssetBreakdown, Balances, BlockchainAccount, BlockchainAccountGroupRequestPayload, BlockchainAccountGroupWithBalance, BlockchainAccountRequestPayload, BlockchainAccountWithBalance, DeleteBlockchainAccountParams, EthereumValidator, EthereumValidatorRequestPayload, Totals } from '@/types/blockchain/accounts';
+import type {
+  Accounts,
+  AssetBreakdown,
+  Balances,
+  BlockchainAccount,
+  BlockchainAccountGroupRequestPayload,
+  BlockchainAccountGroupWithBalance,
+  BlockchainAccountRequestPayload,
+  BlockchainAccountWithBalance,
+  DeleteBlockchainAccountParams,
+  EthereumValidator,
+  EthereumValidatorRequestPayload,
+} from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
 import type { BlockchainTotal } from '@/types/blockchain';
-import type { AssetBalances } from '@/types/balances';
 import type { BlockchainBalances } from '@/types/blockchain/balances';
 import type { AssetPrices } from '@/types/prices';
 
 export const useBlockchainStore = defineStore('blockchain', () => {
   const accounts = ref<Accounts>({});
   const balances = ref<Balances>({});
-  const totals = ref<Totals>({});
-  const liabilities = ref<Totals>({});
+
   const stakingValidatorsLimits = ref<{
     limit: number;
     total: number;
@@ -40,9 +50,8 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     ]));
   });
 
-  const aggregatedTotals = computed<AssetBalances>(() => aggregateTotals(get(totals)));
-
-  const aggregatedLiabilities = computed<AssetBalances>(() => aggregateTotals(get(liabilities)));
+  const aggregatedTotals = aggregateTotals(balances);
+  const aggregatedLiabilities = aggregateTotals(balances, 'liabilities');
 
   const groups = computed<BlockchainAccountGroupWithBalance[]>(() => {
     const accountData = objectOmit(get(accounts), [Blockchain.ETH2]);
@@ -185,26 +194,14 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     }
   };
 
-  const updateBalances = (chain: string, { perAccount, totals: updatedTotals }: BlockchainBalances) => {
+  const updateBalances = (chain: string, { perAccount }: BlockchainBalances) => {
     set(balances, {
       ...get(balances),
       [chain]: perAccount[camelCase(chain)] ?? {},
     });
-
-    set(totals, {
-      ...get(totals),
-      [chain]: removeZeroAssets(updatedTotals.assets),
-    });
-
-    set(liabilities, {
-      ...get(liabilities),
-      [chain]: removeZeroAssets(updatedTotals.liabilities),
-    });
   };
 
   const updatePrices = (prices: MaybeRef<AssetPrices>) => {
-    set(totals, updateTotalsPrices(totals, prices));
-    set(liabilities, updateTotalsPrices(liabilities, prices));
     set(balances, updateBlockchainAssetBalances(balances, prices));
   };
 
@@ -244,7 +241,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
 
       for (const address in chainBalanceData) {
         const balance = chainBalanceData[address];
-        const assetAssociations = get(getAssetAssociationIdentifiers(asset));
+        const assetAssociations = getAssetAssociationIdentifiers(asset);
         assetAssociations.forEach((asset) => {
           const assetBalance = balance.assets[asset];
           if (!assetBalance)
@@ -333,8 +330,6 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     accounts,
     addresses,
     balances,
-    totals,
-    liabilities,
     groups,
     stakingValidatorsLimits,
     ethStakingValidators,

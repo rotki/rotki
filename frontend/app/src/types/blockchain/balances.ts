@@ -30,6 +30,8 @@ const EthBalance = z.object({
   liabilities: Balances,
 });
 
+export type EthBalance = z.infer<typeof EthBalance>;
+
 const BlockchainAssetBalances = z.record(EthBalance);
 
 export type BlockchainAssetBalances = z.infer<typeof BlockchainAssetBalances>;

@@ -20,7 +20,7 @@ describe('store::balances/aggregated', () => {
     const { prices } = storeToRefs(useBalancePricesStore());
     const { manualBalancesData } = storeToRefs(useManualBalancesStore());
     const { balances } = useAggregatedBalances();
-    const { totals: ethTotals } = storeToRefs(useBlockchainStore());
+    const { balances: ethBalances } = storeToRefs(useBlockchainStore());
 
     set(connectedExchanges, [
       {
@@ -91,29 +91,31 @@ describe('store::balances/aggregated', () => {
       },
     ]);
 
-    const totalsState = {
-      [Blockchain.ETH]: {
-        DAI: {
-          amount: bigNumberify(100),
-          usdValue: bigNumberify(100),
-        },
-        BTC: {
-          amount: bigNumberify(100),
-          usdValue: bigNumberify(100),
-        },
-        ETH: {
-          amount: bigNumberify(100),
-          usdValue: bigNumberify(100),
-        },
-        SAI: {
-          amount: bigNumberify(100),
-          usdValue: bigNumberify(100),
+    set(ethBalances, {
+      [Blockchain.ETH.toString()]: {
+        '0x123': {
+          assets: {
+            DAI: {
+              amount: bigNumberify(100),
+              usdValue: bigNumberify(100),
+            },
+            BTC: {
+              amount: bigNumberify(100),
+              usdValue: bigNumberify(100),
+            },
+            ETH: {
+              amount: bigNumberify(100),
+              usdValue: bigNumberify(100),
+            },
+            SAI: {
+              amount: bigNumberify(100),
+              usdValue: bigNumberify(100),
+            },
+          },
+          liabilities: {},
         },
       },
-      [Blockchain.ETH2]: {},
-    };
-
-    set(ethTotals, totalsState);
+    });
 
     const actualResult = sortBy(get(balances()), 'asset');
 
@@ -389,31 +391,33 @@ describe('store::balances/aggregated', () => {
     ]);
 
     const { balances } = useAggregatedBalances();
-    const { totals } = storeToRefs(useBlockchainStore());
+    const { balances: allBalances } = storeToRefs(useBlockchainStore());
 
-    const totalsState = {
+    set(allBalances, {
       [Blockchain.ETH]: {
-        DAI: {
-          amount: bigNumberify(100),
-          usdValue: bigNumberify(100),
-        },
-        BTC: {
-          amount: bigNumberify(100),
-          usdValue: bigNumberify(100),
-        },
-        ETH: {
-          amount: bigNumberify(100),
-          usdValue: bigNumberify(100),
-        },
-        SAI: {
-          amount: bigNumberify(100),
-          usdValue: bigNumberify(100),
+        '0x123': {
+          assets: {
+            DAI: {
+              amount: bigNumberify(100),
+              usdValue: bigNumberify(100),
+            },
+            BTC: {
+              amount: bigNumberify(100),
+              usdValue: bigNumberify(100),
+            },
+            ETH: {
+              amount: bigNumberify(100),
+              usdValue: bigNumberify(100),
+            },
+            SAI: {
+              amount: bigNumberify(100),
+              usdValue: bigNumberify(100),
+            },
+          },
+          liabilities: {},
         },
       },
-      [Blockchain.ETH2]: {},
-    };
-
-    set(totals, totalsState);
+    });
     adjustPrices(get(prices));
     const actualResult = sortBy(get(balances()), 'asset');
     const expectedResult = sortBy(

@@ -51,7 +51,7 @@ describe('useBlockchainStore', () => {
 
       store.updatePrices(assetPrices);
 
-      expect(store.totals.eth.ETH).toEqual({
+      expect(store.aggregatedTotals.ETH).toEqual({
         amount: bigNumberify(10),
         usdValue: bigNumberify(25000),
       });
