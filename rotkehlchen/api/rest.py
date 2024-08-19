@@ -5006,26 +5006,27 @@ class RestAPI:
 
         return api_response(_wrap_in_ok_result(whitelisted_tokens), status_code=HTTPStatus.OK)
 
-    def add_token_to_spam(self, token: EvmToken) -> Response:
+    def add_tokens_to_spam(self, tokens: list[EvmToken]) -> Response:
         """
         Change the protocol value for the provided token to spam if it isn't spam.
         It also adds the token to the list of ignored assets and removes it from
         the whitelisted tokens.
         """
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            if token.protocol != SPAM_PROTOCOL:
-                set_token_spam_protocol(write_cursor=write_cursor, token=token, is_spam=True)
+            for token in tokens:
+                if token.protocol != SPAM_PROTOCOL:
+                    set_token_spam_protocol(write_cursor=write_cursor, token=token, is_spam=True)
 
-            # remove the asset from the whitelist if it was there
-            globaldb_delete_general_cache_values(
-                write_cursor=write_cursor,
-                key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
-                values=(token.identifier,),
-            )
+                # remove the asset from the whitelist if it was there
+                globaldb_delete_general_cache_values(
+                    write_cursor=write_cursor,
+                    key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
+                    values=(token.identifier,),
+                )
+                AssetResolver.clean_memory_cache(token.identifier)
 
-        AssetResolver().clean_memory_cache(token.identifier)
         # add to ignored assets if it wasn't there
-        self.rotkehlchen.data.add_ignored_assets(assets=[token])
+        self.rotkehlchen.data.add_ignored_assets(assets=tokens)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
     def remove_token_from_spam(self, token: EvmToken) -> Response:

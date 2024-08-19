@@ -1183,12 +1183,13 @@ def test_setting_tokens_as_spam(rotkehlchen_api_server: APIServer) -> None:
         api_url_for(
             rotkehlchen_api_server,
             'spamevmtokenresource',
-        ), json={'token': A_DAI.identifier},
+        ), json={'tokens': [A_DAI.identifier, A_OP.identifier]},
     )
     assert_proper_response(response)
     assert A_DAI.resolve_to_evm_token().protocol == SPAM_PROTOCOL
+    assert A_OP.resolve_to_evm_token().protocol == SPAM_PROTOCOL
     with db.conn.read_ctx() as cursor:
-        assert A_DAI in rotki.data.db.get_ignored_asset_ids(cursor)
+        assert {A_DAI, A_OP}.issubset(rotki.data.db.get_ignored_asset_ids(cursor))
 
     with globaldb.conn.read_ctx() as cursor:
         assert A_DAI.identifier not in globaldb_get_general_cache_values(
@@ -1201,7 +1202,7 @@ def test_setting_tokens_as_spam(rotkehlchen_api_server: APIServer) -> None:
         api_url_for(
             rotkehlchen_api_server,
             'spamevmtokenresource',
-        ), json={'token': A_BTC.identifier},
+        ), json={'tokens': [A_BTC.identifier]},
     )
     assert_error_response(
         response=response,

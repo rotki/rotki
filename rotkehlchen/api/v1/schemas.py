@@ -3566,12 +3566,12 @@ class AccountingRuleConflictsPagination(DBPaginationSchema):
         return {'filter_query': filter_query}
 
 
-class FalsePositveSpamTokenSchema(Schema):
+class SingleTokenSchema(Schema):
     token = AssetField(expected_type=EvmToken, required=True)
 
 
-class SpamTokenSchema(Schema):
-    token = AssetField(expected_type=EvmToken, required=True)
+class SpamTokenListSchema(Schema):
+    tokens = fields.List(AssetField(expected_type=EvmToken), required=True)
 
 
 def _validate_address_with_blockchain(
