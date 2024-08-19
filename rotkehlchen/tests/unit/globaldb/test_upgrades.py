@@ -787,6 +787,7 @@ def test_unfinished_upgrades(globaldb: GlobalDBHandler):
     )
     with backup_connection.write_ctx() as write_cursor:
         write_cursor.execute('INSERT INTO settings VALUES("is_backup", "Yes")')  # mark as a backup  # noqa: E501
+    backup_connection.close()
 
     globaldb = create_globaldb(globaldb._data_directory, 0)  # Now the backup should be used
     assert globaldb.used_backup is True
@@ -794,6 +795,7 @@ def test_unfinished_upgrades(globaldb: GlobalDBHandler):
     assert globaldb.get_setting_value('ongoing_upgrade_from_version', -1) == -1
     with globaldb.conn.read_ctx() as cursor:
         assert cursor.execute('SELECT value FROM settings WHERE name="is_backup"').fetchone()[0] == 'Yes'  # noqa: E501
+    globaldb.cleanup()
 
 
 @pytest.mark.parametrize('globaldb_upgrades', [[]])

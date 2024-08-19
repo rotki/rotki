@@ -126,6 +126,7 @@ def test_add_get_evm_transactions(data_dir, username, sql_vm_instructions_cb):
             has_premium=True,
         )
         assert result == [tx1, tx3]
+    data.logout()
 
 
 def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instructions_cb):
@@ -307,3 +308,4 @@ def test_query_also_internal_evm_transactions(data_dir, username, sql_vm_instruc
             has_premium=True,
         )
         assert result == [tx1, tx3, tx4]
+    data.logout()

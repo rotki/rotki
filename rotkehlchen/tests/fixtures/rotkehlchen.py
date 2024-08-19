@@ -1,5 +1,6 @@
 import base64
 import json
+from collections.abc import Generator
 from contextlib import ExitStack
 from unittest.mock import patch
 
@@ -439,7 +440,7 @@ def initialize_mock_rotkehlchen_instance(
 
 
 @pytest.fixture(name='uninitialized_rotkehlchen')
-def fixture_uninitialized_rotkehlchen(cli_args, inquirer, asset_resolver, globaldb) -> Rotkehlchen:  # pylint: disable=unused-argument
+def fixture_uninitialized_rotkehlchen(cli_args, inquirer, asset_resolver, globaldb) -> Generator[Rotkehlchen, None, None]:  # noqa: E501  # pylint: disable=unused-argument
     """A rotkehlchen instance that has only had __init__ run but is not unlocked
 
     Adding the inquirer fixture as a requirement to make sure that any mocking that
@@ -451,7 +452,8 @@ def fixture_uninitialized_rotkehlchen(cli_args, inquirer, asset_resolver, global
     Adding the AssetResolver as a requirement so that the first initialization happens here
     """
     rotki = Rotkehlchen(cli_args)
-    return rotki
+    yield rotki
+    rotki.data.logout()
 
 
 @pytest.fixture(name='mocked_proxies')
