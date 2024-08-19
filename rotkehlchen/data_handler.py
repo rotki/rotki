@@ -4,8 +4,8 @@ import logging
 import shutil
 import tempfile
 import zlib
+from collections.abc import Sequence
 from pathlib import Path
-
 
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
@@ -122,7 +122,7 @@ class DataHandler:
         self.username = username
         return user_data_dir
 
-    def add_ignored_assets(self, assets: list[Asset]) -> tuple[set[Asset], set[Asset]]:
+    def add_ignored_assets(self, assets: Sequence[Asset]) -> tuple[set[Asset], set[Asset]]:
         """Adds ignored assets to the DB.
 
         Returns the set of assets that have been ignored and the set of assets that were already

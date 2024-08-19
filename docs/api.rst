@@ -10278,10 +10278,10 @@ Toggle spam status in evm tokens
       PATH /api/1/assets/evm/spam HTTP/1.1
       Host: localhost:5042
 
-      {"token": "eip155:1/erc20:0x6B3595068778DD592e39A122f4f5a5cF09C90fE2"}
+      {"tokens": "eip155:1/erc20:0x6B3595068778DD592e39A122f4f5a5cF09C90fE2"}
 
 
-  :reqjsonarr string token: The identifier of the evm token that will be marked as spam
+  :reqjsonarr list[string] token: The identifiers of the EVM tokens that will be marked as spam
 
   **Example Response**:
 

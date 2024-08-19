@@ -99,7 +99,6 @@ from rotkehlchen.api.v1.schemas import (
     ExportHistoryEventSchema,
     ExternalServicesResourceAddSchema,
     ExternalServicesResourceDeleteSchema,
-    FalsePositveSpamTokenSchema,
     FileListSchema,
     HistoricalAssetsPriceSchema,
     HistoryEventSchema,
@@ -145,12 +144,13 @@ from rotkehlchen.api.v1.schemas import (
     SingleAssetIdentifierSchema,
     SingleAssetWithOraclesIdentifierSchema,
     SingleFileSchema,
+    SingleTokenSchema,
     SkippedExternalEventsExportSchema,
     SnapshotEditingSchema,
     SnapshotImportingSchema,
     SnapshotQuerySchema,
     SnapshotTimestampQuerySchema,
-    SpamTokenSchema,
+    SpamTokenListSchema,
     StakingQuerySchema,
     StatisticsAssetBalanceSchema,
     StatisticsNetValueSchema,
@@ -3246,7 +3246,7 @@ class AccountingRulesConflictsResource(BaseMethodView):
 
 class FalsePositiveSpamTokenResource(BaseMethodView):
 
-    post_delete_schema = FalsePositveSpamTokenSchema()
+    post_delete_schema = SingleTokenSchema()
 
     @require_loggedin_user()
     @use_kwargs(post_delete_schema, location='json_and_query')
@@ -3264,15 +3264,16 @@ class FalsePositiveSpamTokenResource(BaseMethodView):
 
 class SpamEvmTokenResource(BaseMethodView):
 
-    post_delete_schema = SpamTokenSchema()
+    delete_schema = SingleTokenSchema()
+    post_schema = SpamTokenListSchema()
 
     @require_loggedin_user()
-    @use_kwargs(post_delete_schema, location='json_and_query')
-    def post(self, token: EvmToken) -> Response:
-        return self.rest_api.add_token_to_spam(token=token)
+    @use_kwargs(post_schema, location='json_and_query')
+    def post(self, tokens: list[EvmToken]) -> Response:
+        return self.rest_api.add_tokens_to_spam(tokens)
 
     @require_loggedin_user()
-    @use_kwargs(post_delete_schema, location='json_and_query')
+    @use_kwargs(delete_schema, location='json_and_query')
     def delete(self, token: EvmToken) -> Response:
         return self.rest_api.remove_token_from_spam(token=token)
 
