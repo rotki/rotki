@@ -1,8 +1,7 @@
 import { type VueWrapper, mount } from '@vue/test-utils';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import OnboardingSettings from '@/components/settings/OnboardingSettings.vue';
 import { useMainStore } from '@/store/main';
-import type { Pinia } from 'pinia';
 
 vi.mock('@/composables/electron-interop', () => ({
   useInterop: vi.fn().mockReturnValue({
@@ -63,10 +62,13 @@ vi.mock('@/composables/api/settings/settings-api', () => ({
 }));
 
 describe('onboardingSetting.vue', () => {
-  let pinia: Pinia;
   let wrapper: VueWrapper<InstanceType<typeof OnboardingSettings>>;
 
-  function createWrapper() {
+  async function createWrapper() {
+    const pinia = createPinia();
+    setActivePinia(pinia);
+    await useMainStore().getInfo();
+
     return mount(OnboardingSettings, {
       global: {
         plugins: [pinia],
@@ -87,14 +89,8 @@ describe('onboardingSetting.vue', () => {
     });
   }
 
-  beforeAll(async () => {
-    const pinia = createPinia();
-    setActivePinia(pinia);
-    await useMainStore().getInfo();
-  });
-
   beforeEach(async () => {
-    wrapper = createWrapper();
+    wrapper = await createWrapper();
     await nextTick();
   });
 

@@ -1,9 +1,20 @@
 import { type VueWrapper, mount } from '@vue/test-utils';
 import { setActivePinia } from 'pinia';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import AssetBalances from '@/components/AssetBalances.vue';
 import { createCustomPinia } from '../../../utils/create-pinia';
 import { libraryDefaults } from '../../../utils/provide-defaults';
+
+vi.mock('vue-router', () => ({
+  useRoute: vi.fn(),
+  useRouter: vi.fn().mockReturnValue({
+    push: vi.fn(),
+  }),
+  createRouter: vi.fn().mockImplementation(() => ({
+    beforeEach: vi.fn(),
+  })),
+  createWebHashHistory: vi.fn(),
+}));
 
 describe('assetBalances.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof AssetBalances>>;

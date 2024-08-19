@@ -5,6 +5,17 @@ import { computed, ref } from 'vue';
 import EvmNativeTokenBreakdown from '@/components/EvmNativeTokenBreakdown.vue';
 import { libraryDefaults } from '../../utils/provide-defaults';
 
+vi.mock('vue-router', () => ({
+  useRoute: vi.fn(),
+  useRouter: vi.fn().mockReturnValue({
+    push: vi.fn(),
+  }),
+  createRouter: vi.fn().mockImplementation(() => ({
+    beforeEach: vi.fn(),
+  })),
+  createWebHashHistory: vi.fn(),
+}));
+
 vi.mock('@/composables/locations', () => ({
   useLocations: vi.fn().mockReturnValue({
     locationData: vi.fn().mockImplementation((identifier) => {
