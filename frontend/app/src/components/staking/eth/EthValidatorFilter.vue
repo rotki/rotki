@@ -26,13 +26,13 @@ const { t } = useI18n();
           color="primary"
         >
           <RuiButton
-            value="validator"
+            model-value="validator"
             class="!py-2"
           >
             {{ t('eth2_page.toggle.key') }}
           </RuiButton>
           <RuiButton
-            value="address"
+            model-value="address"
             class="!py-2"
           >
             {{ t('eth2_page.toggle.withdrawal') }}
