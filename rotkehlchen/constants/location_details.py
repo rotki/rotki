@@ -78,6 +78,13 @@ LOCATION_DETAILS: dict = {
         'image': 'htx.svg',
     },
     Location.ZKSYNC_LITE: {'image': 'zksync_lite.svg'},
+    Location.BITCOIN: {'image': 'bitcoin.svg'},
+    Location.BITCOIN_CASH: {
+        'label': 'Bitcoin Cash',
+        'image': 'bitcoin-cash.svg',
+    },
+    Location.POLKADOT: {'image': 'polkadot.svg'},
+    Location.KUSAMA: {'image': 'kusama.svg'},
 }
 for key, value in LOCATION_DETAILS.items():
     if key in ALL_SUPPORTED_EXCHANGES:

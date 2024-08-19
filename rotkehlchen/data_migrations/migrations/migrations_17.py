@@ -22,8 +22,10 @@ def data_migration_17(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
     table for the address book we delete them except the one with the highest rowid
     (latest inserted) and set the blockchain value with the constant
     ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE to avoid having NULL values.
+
+    Also add 4 new locations to the DB
     """
-    progress_handler.set_total_steps(2)
+    progress_handler.set_total_steps(3)
 
     for conn in (rotki.data.db.conn, GlobalDBHandler().conn):
         with conn.read_ctx() as cursor:
@@ -43,3 +45,17 @@ def data_migration_17(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
             )
 
         progress_handler.new_step()
+
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        write_cursor.executescript("""
+        /* Bitcoin */
+        INSERT OR IGNORE INTO location(location, seq) VALUES ('q', 49);
+        /* Bitcoin Cash */
+        INSERT OR IGNORE INTO location(location, seq) VALUES ('r', 50);
+        /* Polkadot */
+        INSERT OR IGNORE INTO location(location, seq) VALUES ('s', 51);
+        /* Kusama */
+        INSERT OR IGNORE INTO location(location, seq) VALUES ('t', 52);
+        """)
+
+    progress_handler.new_step()
