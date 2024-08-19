@@ -13,7 +13,7 @@ from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_DAI, A_USDC, A_USDT, A_YFI
+from rotkehlchen.constants.assets import A_COMP, A_DAI, A_LUSD, A_USDC, A_USDT, A_YFI
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import evm_address_to_identifier
@@ -354,6 +354,13 @@ def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
                 ),
             ],
         )
+        # prepopulate the database with tokens
+        database.save_tokens_for_address(
+            write_cursor=write_cursor,
+            address=accounts[1],
+            blockchain=SupportedBlockchain.ETHEREUM,
+            tokens=[A_COMP, A_LUSD],  # two tokens that we don't have in the events.
+        )
 
     task_manager = rotkehlchen_instance.task_manager
     assert task_manager is not None
@@ -363,7 +370,11 @@ def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
         with (
             gevent.Timeout(timeout),
             patch.object(task_manager, 'query_balances') as query_mock,
-            patch.object(task_manager.database, 'save_tokens_for_address') as save_tokens_mock,
+            patch.object(
+                task_manager.database,
+                'save_tokens_for_address',
+                side_effect=database.save_tokens_for_address,
+            ) as save_tokens_mock,
         ):
             task_manager.schedule()
             while query_mock.call_count != 1:
@@ -379,12 +390,21 @@ def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
             assert save_tokens_mock.call_count == 3
             assert save_tokens_mock.call_args_list[0].kwargs['address'] == accounts[1]
             assert save_tokens_mock.call_args_list[0].kwargs['blockchain'] == SupportedBlockchain.ETHEREUM  # noqa: E501
-            assert save_tokens_mock.call_args_list[0].kwargs['tokens'] == [A_DAI]
+            assert set(save_tokens_mock.call_args_list[0].kwargs['tokens']) == {A_COMP, A_LUSD, A_DAI}  # noqa: E501
             assert save_tokens_mock.call_args_list[1].kwargs['address'] == accounts[2]
             assert save_tokens_mock.call_args_list[1].kwargs['blockchain'] == SupportedBlockchain.OPTIMISM  # noqa: E501
             assert save_tokens_mock.call_args_list[1].kwargs['tokens'] == [A_USDC]
     except gevent.Timeout as e:
         raise AssertionError(f'Update snapshot balances was not completed within {timeout} seconds') from e  # noqa: E501
+
+    # verify that newly saved tokens respects the list of already existing tokens
+    with database.conn.read_ctx() as cursor:
+        tokens, _ = database.get_tokens_for_address(
+            cursor=cursor,
+            address=accounts[1],
+            blockchain=SupportedBlockchain.ETHEREUM,
+        )
+        assert set(tokens or {}) == {A_COMP, A_LUSD, A_DAI}
 
 
 @pytest.mark.parametrize('max_tasks_num', [5])

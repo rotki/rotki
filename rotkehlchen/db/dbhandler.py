@@ -1294,7 +1294,7 @@ class DBHandler:
             write_cursor: 'DBCursor',
             address: ChecksumEvmAddress,
             blockchain: SupportedBlockchain,
-            tokens: list[EvmToken],
+            tokens: Sequence[Asset],
     ) -> None:
         """Saves detected tokens for an address"""
         now = ts_now()
