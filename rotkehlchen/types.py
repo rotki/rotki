@@ -754,6 +754,10 @@ class Location(DBCharEnumMixIn):
     SCROLL = 46  # on-chain Scroll events
     ZKSYNC_LITE = 47
     HTX = 48
+    BITCOIN = 49
+    BITCOIN_CASH = 50
+    POLKADOT = 51
+    KUSAMA = 52
 
     @staticmethod
     def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> 'EVM_LOCATIONS_TYPE':
