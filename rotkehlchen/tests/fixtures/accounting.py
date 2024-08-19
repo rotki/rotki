@@ -46,7 +46,7 @@ def fixture_data_dir(use_clean_caching_directory, tmpdir_factory, worker_id) -> 
     if use_clean_caching_directory:
         path = Path(tmpdir_factory.mktemp('test_data_dir'))
         yield path
-        shutil.rmtree(path)
+        shutil.rmtree(path, ignore_errors=sys.platform == 'win32')
     else:
         if 'CI' in os.environ:
             data_directory = Path.home() / '.cache' / '.rotkehlchen-test-dir'

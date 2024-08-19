@@ -17,6 +17,7 @@ def test_get_last_consecutive_xpub_derived_indices(setup_db_for_xpub_tests):
         receiving_idx, change_idx = db.get_last_consecutive_xpub_derived_indices(cursor, xpub3)
         assert receiving_idx == 0
         assert change_idx == 0
+    db.logout()
 
 
 def test_get_addresses_to_xpub_mapping(setup_db_for_xpub_tests):
@@ -47,6 +48,7 @@ def test_get_addresses_to_xpub_mapping(setup_db_for_xpub_tests):
     for x in all_addresses[5:10]:
         assert result_btc[x].xpub.xpub == xpub2.xpub.xpub
         assert result_btc[x].derivation_path == xpub2.derivation_path
+    db.logout()
 
 
 def test_delete_bitcoin_xpub(setup_db_for_xpub_tests):
@@ -75,6 +77,7 @@ def test_delete_bitcoin_xpub(setup_db_for_xpub_tests):
 
         cursor.execute('SELECT * from tag_mappings;')
         assert len(cursor.fetchall()) == 0
+    db.logout()
 
 
 def test_get_bitcoin_xpub_data(setup_db_for_xpub_tests):
@@ -94,6 +97,7 @@ def test_get_bitcoin_xpub_data(setup_db_for_xpub_tests):
     assert result1[0].label == xpub1.label
     assert result1[0].derivation_path == xpub1.derivation_path
     assert set(result1[0].tags) == set(xpub1.tags)
+    db.logout()
 
 
 def test_edit_bitcoin_xpub(setup_db_for_xpub_tests):
@@ -127,6 +131,7 @@ def test_edit_bitcoin_xpub(setup_db_for_xpub_tests):
     assert result[0].label == '123'
     assert result[0].derivation_path == xpub.derivation_path
     assert set(result[0].tags) == {'test'}
+    db.logout()
 
 
 def test_edit_bitcoin_xpub_not_existing_tag(setup_db_for_xpub_tests):
@@ -151,3 +156,4 @@ def test_edit_bitcoin_xpub_not_existing_tag(setup_db_for_xpub_tests):
     assert result[0].label == xpub.label
     assert result[0].derivation_path == xpub.derivation_path
     assert result[0].tags != {'test'}
+    db.logout()

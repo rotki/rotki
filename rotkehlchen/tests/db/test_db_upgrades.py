@@ -13,6 +13,7 @@ from rotkehlchen.constants.misc import (
     AIRDROPSDIR_NAME,
     APPDIR_NAME,
     DEFAULT_SQL_VM_INSTRUCTIONS_CB,
+    USERDB_NAME,
 )
 from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.db.checks import sanity_check_impl
@@ -178,6 +179,7 @@ def test_upgrade_db_26_to_27(user_data_dir):  # pylint: disable=unused-argument
     # Finally also make sure that we have updated to the target version
     with db.conn.read_ctx() as cursor:
         assert db.get_setting(cursor, 'version') == 27
+    db.logout()
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -230,6 +232,7 @@ def test_upgrade_db_27_to_28(user_data_dir):  # pylint: disable=unused-argument
     # Finally also make sure that we have updated to the target version
     with db.conn.read_ctx() as cursor:
         assert db.get_setting(cursor, 'version') == 28
+    db.logout()
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -345,6 +348,7 @@ def test_upgrade_db_28_to_29(user_data_dir):  # pylint: disable=unused-argument
     # Finally also make sure that we have updated to the target version
     with db.conn.read_ctx() as cursor:
         assert db.get_setting(cursor, 'version') == 29
+    db.logout()
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -368,6 +372,7 @@ def test_upgrade_db_29_to_30(user_data_dir):  # pylint: disable=unused-argument
     # Check that existing balances are not considered as liabilities after migration
     cursor.execute('SELECT category FROM manually_tracked_balances;')
     assert cursor.fetchone() == ('A',)
+    db.logout()
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -442,6 +447,7 @@ def test_upgrade_db_30_to_31(user_data_dir):  # pylint: disable=unused-argument
         ('eth2_deposits_0x45E6CA515E840A4e9E02A3062F99216951825eB2', 1602667372, 1637575118),
         ('kraken_asset_movements_kraken1', 0, 1634850532),
     ]
+    db.logout()
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -632,6 +638,7 @@ def test_upgrade_db_31_to_32(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.fetchone() == (1, expected_timestamp // 10)
     cursor.execute('SELECT COUNT(*), timestamp FROM history_events WHERE subtype="remove asset" AND type="staking"')  # noqa: E501
     assert cursor.fetchone() == (1, expected_timestamp // 10)
+    db.logout()
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -746,6 +753,7 @@ def test_upgrade_db_32_to_33(user_data_dir):  # pylint: disable=unused-argument
     # not all combined_trades_views have tx hash.
     assert_tx_hash_is_bytes(old=old_combined_trades_views[:1], new=new_combined_trades_views[:1], tx_hash_index=10)  # noqa: E501
     assert_tx_hash_is_bytes(old=old_history_events, new=new_history_events, tx_hash_index=1, is_history_event=True)  # noqa: E501
+    db.logout()
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -781,6 +789,7 @@ def test_upgrade_db_33_to_34(user_data_dir):  # pylint: disable=unused-argument
         result = cursor.fetchall()
         assert isinstance(result[-1][10], str)
         assert result[-1][10] == '0xb1fcf4aef6af87a061ca03e92c4eb8039efe600d501ba288a8bae90f78c91db5'  # noqa: E501
+    db.logout()
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -919,6 +928,7 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument
     # it should fail before the upgrade
     with db_v34.conn.write_ctx() as write_cursor, pytest.raises(sqlcipher.IntegrityError):  # pylint: disable=no-member
         try_insert_mapping(write_cursor)
+    db_v34.logout()
 
     # Migrate the database
     db_v35 = _init_db_with_target_version(
@@ -1028,6 +1038,7 @@ def test_upgrade_db_34_to_35(user_data_dir):  # pylint: disable=unused-argument
             (b"\x0c\x04\x82\x92Z\xf0\x97\xedM\x85\xec\x06\x8f\xed\xc3\xdaMev<\xc82WO'6\x92\xc5\xe88wV", 'ETH', 'customized'),  # noqa: E501
         ]
         assert cursor.execute('SELECT * from evm_tx_mappings').fetchall() == expected_evm_tx_mappings  # noqa: E501
+    db_v35.logout()
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -1327,6 +1338,7 @@ def test_upgrade_db_35_to_36(user_data_dir):  # pylint: disable=unused-argument
     res = cursor.execute('SELECT * FROM history_events WHERE identifier=?', (234,)).fetchone()
     assert res is not None
     assert res[9] == 'Edited event'  # event's notes
+    db.logout()
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -1529,6 +1541,7 @@ def test_upgrade_db_36_to_37(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute(
         'SELECT value FROM settings WHERE name="ssf_graph_multiplier"',
     ).fetchone()[0] == '42'
+    db.logout()
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -1615,6 +1628,7 @@ def test_upgrade_db_37_to_38(user_data_dir):  # pylint: disable=unused-argument
     assert cursor.execute('SELECT * from history_events WHERE entry_type=4;').fetchall() == expected_history_events  # noqa: E501
     expected_eth_staking_events_info = [expected_eth_staking_events_info[0]] + expected_eth_staking_events_info[2:6]  # noqa: E501
     assert cursor.execute('SELECT * from eth_staking_events_info').fetchall() == expected_eth_staking_events_info  # noqa: E501
+    db.logout()
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -1805,6 +1819,7 @@ def test_upgrade_db_38_to_39(user_data_dir):  # pylint: disable=unused-argument
     settings = db.get_settings(cursor=cursor)
     expected_oracles = [CurrentPriceOracle.deserialize(oracle) for oracle in oracles if oracle != 'saddle']  # noqa: E501
     assert settings.current_price_oracles == expected_oracles
+    db.logout()
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -1965,6 +1980,7 @@ def test_upgrade_db_39_to_40(user_data_dir):  # pylint: disable=unused-argument
         'SELECT base_asset FROM trades WHERE id=?',
         ('1a1ee5',),
     ).fetchall() == [(bnb_velo_asset_id,)]
+    db.logout()
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -2358,6 +2374,7 @@ def test_upgrade_db_41_to_42(user_data_dir, messages_aggregator):
         assert cursor.execute(
             'SELECT parent_identifier FROM history_events_mappings',
         ).fetchall() == [(17987,)]
+    db.logout()
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -2429,6 +2446,7 @@ def test_upgrade_db_42_to_43(user_data_dir, messages_aggregator, data_dir):
     assert uniswap_path.exists() is False
     assert zk_path.exists() is False
     assert zk_parquet_path.exists() is True
+    db.logout()
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -2487,6 +2505,7 @@ def test_upgrade_db_43_to_44(user_data_dir, messages_aggregator):
             ('5', 'staked'),
             ('13', 'beefy'),
         }
+    db.logout()
 
 
 def test_latest_upgrade_correctness(user_data_dir):
@@ -2552,6 +2571,7 @@ def test_latest_upgrade_correctness(user_data_dir):
     assert new_tables == set()
     new_views = views_after_upgrade - views_before
     assert new_views == set()
+    db.logout()
 
 
 def test_steps_counted_properly_in_upgrades(user_data_dir):
@@ -2583,6 +2603,7 @@ def test_steps_counted_properly_in_upgrades(user_data_dir):
         # Check that the db version in progress handler is correct
         assert progress_handler.current_version == upgrade.from_version + 1
         assert progress_handler.start_version == MIN_SUPPORTED_USER_DB_VERSION + 1
+    last_db.logout()
 
 
 def test_db_newer_than_software_raises_error(data_dir, username, sql_vm_instructions_cb):
@@ -2602,10 +2623,16 @@ def test_db_newer_than_software_raises_error(data_dir, username, sql_vm_instruct
     data.db.conn.commit()
 
     # now relogin and check that an error is thrown
+    data.logout()
     del data
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
     with pytest.raises(DBUpgradeError):
         data.unlock(username, '123', create_new=False, resume_from_backup=False)
+    DBConnection(  # close the db connection
+        path=data_dir / USERDB_NAME,
+        connection_type=DBConnectionType.USER,
+        sql_vm_instructions_cb=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
+    ).close()
 
 
 def test_upgrades_list_is_sane():
@@ -2683,6 +2710,7 @@ def test_unfinished_upgrades(user_data_dir):
             backup_connection.executescript('PRAGMA key="123"')  # unlock
             with backup_connection.write_ctx() as write_cursor:
                 write_cursor.execute('INSERT INTO settings VALUES(?, ?)', ('is_backup', write_version))  # mark as a backup  # noqa: E501
+            backup_connection.close()
 
             if backup_version == 33:
                 db = _init_db_with_target_version(  # Now the backup should be used

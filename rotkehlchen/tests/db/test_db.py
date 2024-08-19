@@ -196,10 +196,12 @@ def test_data_init_and_password(data_dir, username, sql_vm_instructions_cb):
     assert set(results) == set(TABLES_AT_INIT)
 
     # finally logging in with wrong password should also fail
+    data.logout()
     del data
     data = DataHandler(data_dir, msg_aggregator, sql_vm_instructions_cb)
     with pytest.raises(AuthenticationError):
         data.unlock(username, '1234', create_new=False, resume_from_backup=False)
+    data.logout()
 
 
 @pytest.mark.parametrize('db_settings', [
@@ -322,6 +324,7 @@ def test_export_import_db(data_dir: Path, username: str, sql_vm_instructions_cb:
     with data.db.user_write() as cursor:
         balances = data.db.get_manually_tracked_balances(cursor)
     assert balances == [starting_balance]
+    data.logout()
 
 
 def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
@@ -533,6 +536,7 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         assert field.name in expected_dict
         if field.name != 'last_write_ts':
             assert getattr(result, field.name) == expected_dict[field.name]
+    data.logout()
 
 
 def test_settings_entry_types(database):
@@ -615,6 +619,7 @@ def test_balance_save_frequency_check(data_dir, username, sql_vm_instructions_cb
 
         last_save_ts = data.db.get_last_balance_save_time(cursor)
         assert last_save_ts == data_save_ts
+    data.logout()
 
 
 def test_sqlcipher_detect_version():
@@ -761,6 +766,7 @@ def test_query_timed_balances(data_dir, username, sql_vm_instructions_cb):
     assert result[0].category == BalanceType.LIABILITY
     assert result[0].amount == FVal('1')
     assert result[0].usd_value == FVal('9.98')
+    data.logout()
 
 
 def test_query_collection_timed_balances(data_dir, username, sql_vm_instructions_cb):
@@ -816,6 +822,7 @@ def test_query_collection_timed_balances(data_dir, username, sql_vm_instructions
         amount=FVal(40),
         usd_value=FVal(40),
     )]
+    data.logout()
 
 
 def test_timed_balances_inferred_zero_balances(data_dir, username, sql_vm_instructions_cb):
@@ -938,6 +945,7 @@ def test_timed_balances_inferred_zero_balances(data_dir, username, sql_vm_instru
             balance_type=BalanceType.ASSET,
         )
     assert len(all_data) == 319  # 5 from db + 312 ssf_graph_multiplier zeros + 2 inferred zeros  # noqa: E501
+    data.logout()
 
 
 def test_query_owned_assets(data_dir, username, sql_vm_instructions_cb):
@@ -1039,6 +1047,7 @@ def test_query_owned_assets(data_dir, username, sql_vm_instructions_cb):
     assert all(isinstance(x, Asset) for x in assets_list)
     warnings = data.db.msg_aggregator.consume_warnings()
     assert len(warnings) == 0
+    data.logout()
 
 
 def test_get_latest_location_value_distribution(data_dir, username, sql_vm_instructions_cb):
@@ -1060,6 +1069,7 @@ def test_get_latest_location_value_distribution(data_dir, username, sql_vm_instr
     assert distribution[3].usd_value == '10000'
     assert distribution[4].location == 'J'  # blockchain location serialized for DB enum
     assert distribution[4].usd_value == '200000'
+    data.logout()
 
 
 def test_get_latest_asset_value_distribution(data_dir, username, sql_vm_instructions_cb):
@@ -1088,6 +1098,7 @@ def test_get_latest_asset_value_distribution(data_dir, username, sql_vm_instruct
     assert len(assets) == 3
     assert FVal(assets[0].usd_value) > FVal(assets[1].usd_value)
     assert FVal(assets[1].usd_value) > FVal(assets[2].usd_value)
+    data.logout()
 
 
 def test_get_netvalue_data(data_dir, username, sql_vm_instructions_cb):
@@ -1105,6 +1116,7 @@ def test_get_netvalue_data(data_dir, username, sql_vm_instructions_cb):
     assert values[0] == '1500'
     assert values[1] == '4500'
     assert values[2] == '10700.5'
+    data.logout()
 
 
 def test_get_netvalue_data_from_date(data_dir, username, sql_vm_instructions_cb):
@@ -1118,6 +1130,7 @@ def test_get_netvalue_data_from_date(data_dir, username, sql_vm_instructions_cb)
     assert times[0] == 1491607800
     assert len(values) == 1
     assert values[0] == '10700.5'
+    data.logout()
 
 
 def test_get_netvalue_without_nfts(data_dir, username, sql_vm_instructions_cb):
@@ -1146,6 +1159,7 @@ def test_get_netvalue_without_nfts(data_dir, username, sql_vm_instructions_cb):
     assert values[0] == '2000'
     assert values[2] == '3000'
     assert values[3] == '4500'
+    data.logout()
 
 
 def test_add_trades(data_dir, username, sql_vm_instructions_cb):
@@ -1213,6 +1227,7 @@ def test_add_trades(data_dir, username, sql_vm_instructions_cb):
         returned_trades = data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
 
     assert returned_trades == [trade1, trade2, trade3]
+    data.logout()
 
 
 def test_add_margin_positions(data_dir, username, caplog, sql_vm_instructions_cb):
@@ -1277,6 +1292,7 @@ def test_add_margin_positions(data_dir, username, caplog, sql_vm_instructions_cb
         ) in caplog.text
         returned_margins = data.db.get_margin_positions(cursor)
         assert returned_margins == [margin1, margin2, margin3]
+    data.logout()
 
 
 def test_add_asset_movements(data_dir, username, sql_vm_instructions_cb):
@@ -1347,6 +1363,7 @@ def test_add_asset_movements(data_dir, username, sql_vm_instructions_cb):
             has_premium=True,
         )
     assert returned_movements == [movement1, movement2, movement3]
+    data.logout()
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[]])
@@ -1405,6 +1422,7 @@ def test_can_unlock_db_with_disabled_taxfree_after_period(data_dir, username, sq
     with data.db.conn.read_ctx() as cursor:
         settings = data.db.get_settings(cursor)
     assert settings.taxfree_after_period is None
+    data.logout()
 
 
 def test_timed_balances_primary_key_works(user_data_dir, sql_vm_instructions_cb):
@@ -1462,6 +1480,7 @@ def test_timed_balances_primary_key_works(user_data_dir, sql_vm_instructions_cb)
         ]
         db.add_multiple_balances(cursor, balances)
     assert len(balances) == 2
+    db.logout()
 
 
 @pytest.mark.parametrize('db_settings', [{'treat_eth2_as_eth': True}])
@@ -1642,6 +1661,7 @@ def test_multiple_location_data_and_balances_same_timestamp(user_data_dir, sql_v
 
     locations = db.get_latest_location_value_distribution()
     assert len(locations) == 0
+    db.logout()
 
 
 def test_set_get_rotkehlchen_premium_credentials(data_dir, username, sql_vm_instructions_cb):
@@ -1668,6 +1688,7 @@ def test_set_get_rotkehlchen_premium_credentials(data_dir, username, sql_vm_inst
     assert returned_credentials == credentials
     assert returned_credentials.serialize_key() == api_key
     assert returned_credentials.serialize_secret() == secret
+    data.logout()
 
 
 def test_unlock_with_invalid_premium_data(data_dir, username, sql_vm_instructions_cb):
@@ -1698,6 +1719,7 @@ def test_unlock_with_invalid_premium_data(data_dir, username, sql_vm_instruction
     assert len(warnings) == 0
     assert len(errors) == 1
     assert 'Incorrect rotki API Key/Secret format found in the DB' in errors[0]
+    data.logout()
 
 
 @pytest.mark.parametrize('include_etherscan_key', [False])
@@ -1749,6 +1771,7 @@ def test_remove_queried_address_on_account_remove(data_dir, username, sql_vm_ins
     with data.db.conn.read_ctx() as cursor:
         addresses = queried_addresses.get_queried_addresses_for_module(cursor, 'makerdao_vaults')
     assert addresses is None
+    data.logout()
 
 
 def test_int_overflow_at_tuple_insertion(database, caplog):
@@ -1865,6 +1888,7 @@ def test_binance_pairs(user_data_dir, sql_vm_instructions_cb):
         db.set_binance_pairs(write_cursor, 'binance', [], Location.BINANCE)
         query = db.get_binance_pairs('binance', Location.BINANCE)
     assert query == []
+    db.logout()
 
 
 def test_fresh_db_adds_version(user_data_dir, sql_vm_instructions_cb):
@@ -1887,6 +1911,7 @@ def test_fresh_db_adds_version(user_data_dir, sql_vm_instructions_cb):
     query = query.fetchall()
     assert len(query) != 0
     assert int(query[0][0]) == ROTKEHLCHEN_DB_VERSION
+    db.logout()
 
 
 def test_db_schema_sanity_check(database: 'DBHandler', caplog) -> None:

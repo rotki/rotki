@@ -58,7 +58,9 @@ def fixture_blockchain_balances(use_db, data_dir, username, sql_vm_instructions_
     a.optimism[address2].assets[OPTIMISM_OP_TOKEN] = Balance(amount=1, usd_value=1)
     a.optimism[address2].assets[A_ETH] = Balance(amount=1, usd_value=1)
 
-    return a, address1, address2, all_btc_addresses, xpub_data
+    yield a, address1, address2, all_btc_addresses, xpub_data
+    if use_db is True:
+        db.logout()
 
 
 def test_copy():

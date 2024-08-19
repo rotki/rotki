@@ -39,6 +39,7 @@ def _user_creation_and_login(
         resume_from_backup=False,
     )
     assert filepath is not None
+    handler.logout()
 
 
 def test_user_long_password(

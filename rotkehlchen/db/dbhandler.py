@@ -502,6 +502,7 @@ class DBHandler:
             # switch to WAL mode: https://www.sqlite.org/wal.html
             conn.execute('PRAGMA journal_mode=WAL;')
         except sqlcipher.DatabaseError as e:  # pylint: disable=no-member
+            conn.close()
             raise AuthenticationError(
                 'Wrong password or invalid/corrupt database for user',
             ) from e
