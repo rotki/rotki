@@ -262,6 +262,7 @@ declare global {
   const isWithdrawalEvent: typeof import('./utils/history/events')['isWithdrawalEvent']
   const isWithdrawalEventRef: typeof import('./utils/history/events')['isWithdrawalEventRef']
   const isWithdrawalEventType: typeof import('./utils/history/events')['isWithdrawalEventType']
+  const iterateAssets: typeof import('./utils/blockchain/accounts/index')['iterateAssets']
   const keyType: typeof import('./utils/xpub')['keyType']
   const lastLogin: typeof import('./utils/account-management')['lastLogin']
   const loadUserOptions: typeof import('./composables/backend')['loadUserOptions']
@@ -1114,6 +1115,7 @@ declare module 'vue' {
     readonly isWithdrawalEvent: UnwrapRef<typeof import('./utils/history/events')['isWithdrawalEvent']>
     readonly isWithdrawalEventRef: UnwrapRef<typeof import('./utils/history/events')['isWithdrawalEventRef']>
     readonly isWithdrawalEventType: UnwrapRef<typeof import('./utils/history/events')['isWithdrawalEventType']>
+    readonly iterateAssets: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['iterateAssets']>
     readonly keyType: UnwrapRef<typeof import('./utils/xpub')['keyType']>
     readonly lastLogin: UnwrapRef<typeof import('./utils/account-management')['lastLogin']>
     readonly loadUserOptions: UnwrapRef<typeof import('./composables/backend')['loadUserOptions']>
@@ -1947,6 +1949,7 @@ declare module '@vue/runtime-core' {
     readonly isWithdrawalEvent: UnwrapRef<typeof import('./utils/history/events')['isWithdrawalEvent']>
     readonly isWithdrawalEventRef: UnwrapRef<typeof import('./utils/history/events')['isWithdrawalEventRef']>
     readonly isWithdrawalEventType: UnwrapRef<typeof import('./utils/history/events')['isWithdrawalEventType']>
+    readonly iterateAssets: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['iterateAssets']>
     readonly keyType: UnwrapRef<typeof import('./utils/xpub')['keyType']>
     readonly lastLogin: UnwrapRef<typeof import('./utils/account-management')['lastLogin']>
     readonly loadUserOptions: UnwrapRef<typeof import('./composables/backend')['loadUserOptions']>

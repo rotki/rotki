@@ -5,10 +5,12 @@ import type {
   BlockchainBalances,
   BlockchainTotals,
   BtcBalances,
+  EthBalance,
 } from '@/types/blockchain/balances';
 import type {
   AccountExtraParams,
   AddressData,
+  Balances,
   BasicBlockchainAccount,
   BitcoinAccounts,
   BitcoinXpubAccount,
@@ -17,12 +19,11 @@ import type {
   BlockchainAccountData,
   BlockchainAccountRequestPayload,
   BlockchainAccountWithBalance,
-  Totals,
   ValidatorData,
   XpubData,
 } from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
-import type { Eth2ValidatorEntry } from '@rotki/common';
+import type { Balance, Eth2ValidatorEntry } from '@rotki/common';
 import type { AssetBalances } from '@/types/balances';
 
 export function hasAccountAddress(data: BlockchainAccount): data is BlockchainAccount<AddressData> {
@@ -327,14 +328,31 @@ export function convertBtcBalances(
   };
 }
 
-export function aggregateTotals(totals: Totals): AssetBalances {
-  const balances: AssetBalances = {};
-  for (const value of Object.values(totals)) {
-    for (const asset of Object.keys(value))
-      balances[asset] = !balances[asset] ? value[asset] : balanceSum(balances[asset], value[asset]);
-  }
+export function* iterateAssets(balances: Balances, key: keyof EthBalance = 'assets'): Generator<[string, Balance]> {
+  for (const chainBalances of Object.values(balances)) {
+    for (const account of Object.values(chainBalances)) {
+      if (!account[key])
+        continue;
 
-  return balances;
+      for (const [identifier, balance] of Object.entries(account[key]))
+        yield [identifier, balance] as const;
+    }
+  }
+}
+
+export function aggregateTotals(balances: MaybeRef<Balances>, key: keyof EthBalance = 'assets'): Readonly<Ref<AssetBalances>> {
+  return computed<AssetBalances>(() => {
+    const aggregated: AssetBalances = {};
+
+    for (const [identifier, balance] of iterateAssets(get(balances), key)) {
+      if (!aggregated[identifier])
+        aggregated[identifier] = balance;
+      else
+        aggregated[identifier] = balanceSum(aggregated[identifier], balance);
+    }
+
+    return aggregated;
+  });
 }
 
 export function hasTokens(nativeAsset: string, assetBalances?: AssetBalances): boolean {
