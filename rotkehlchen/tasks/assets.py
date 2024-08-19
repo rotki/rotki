@@ -407,7 +407,7 @@ def maybe_detect_new_tokens(database: 'DBHandler') -> None:
         )}
 
         last_save_time = database.get_last_balance_save_time(cursor)
-        detected_tokens = defaultdict(list)
+        detected_tokens: defaultdict[tuple[SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE, str], set[Asset]] = defaultdict(set)  # noqa: E501
         # we query the decoded history events that are the first event of each distinct
         # unignored asset for that account that happened on or after last_save_time.
         for event_data in cursor.execute(
@@ -426,7 +426,6 @@ def maybe_detect_new_tokens(database: 'DBHandler') -> None:
                 continue
 
             chain: SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE = SupportedBlockchain.from_location(event.location)  # type: ignore[arg-type,assignment]  # event.location is one of EVM_LOCATIONS  # noqa: E501
-            evm_asset = event.asset.resolve_to_evm_token()
             if (
                 event.location_label is None or
                 EVM_ADDRESS_REGEX.fullmatch(event.location_label) is None or
@@ -438,13 +437,21 @@ def maybe_detect_new_tokens(database: 'DBHandler') -> None:
                 )
                 continue
 
-            detected_tokens[(chain, event.location_label)].append(evm_asset)
+            detected_tokens[(chain, event.location_label)].add(event.asset)
 
-    with database.conn.write_ctx() as write_cursor:
+    with (
+        database.conn.read_ctx() as cursor,
+        database.conn.write_ctx() as write_cursor,
+    ):
         for (chain, location_label), tokens in detected_tokens.items():
+            old_tokens, _ = database.get_tokens_for_address(
+                cursor=cursor,
+                address=(address := string_to_evm_address(location_label)),
+                blockchain=chain,
+            )
             database.save_tokens_for_address(
                 write_cursor=write_cursor,
-                address=string_to_evm_address(location_label),
+                address=address,
                 blockchain=chain,
-                tokens=tokens,
+                tokens=list(set(old_tokens or {}).union(tokens)),
             )
