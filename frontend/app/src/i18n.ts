@@ -8,6 +8,10 @@ export const i18n = createI18n({
   messages,
   silentTranslationWarn: import.meta.env.VITE_SILENT_TRANSLATION_WARN === 'true',
   modifiers: {
-    quote: str => `"${str.toString()}"`,
+    quote: (val, type) => type === 'text' && typeof val === 'string'
+      ? `"${val}"`
+      : type === 'vnode' && typeof val === 'object' && '__v_isVNode' in val
+        ? `"${(val as any).children}"`
+        : `"${val.toString()}"`,
   },
 });
