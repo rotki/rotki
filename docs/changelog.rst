@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`8225` Rotki will now decode LlamaZip swaps on Optimism and Arbitrum One
 * :feature:`8116` Rotki will now decode Gnosis chain omnibridge token bridging
 * :feature:`-` Rotki will now decode payments for cowswap vCOW claims
 * :feature:`8378` Rotki will now decode zksync lite withdrawals
