@@ -49,7 +49,7 @@ class ClrfundCommonDecoder(CommonGrantsDecoderMixin):
 
         Round data contain:
         - the funding round address. That's where participants withdraw donations from
-        and where contributors conate to
+        and where contributors donate to
         - the recipient registry address. That's where participant apply to participate
         - round name
         - asset used to donate/payout in the round

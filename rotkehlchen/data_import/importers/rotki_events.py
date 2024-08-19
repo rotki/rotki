@@ -66,7 +66,7 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
             notes=csv_row['Description'],
         )
         events.append(history_event)
-        if fee:
+        if fee and fee != ZERO:
             fee_event = HistoryEvent(
                 event_identifier=identifier,
                 sequence_index=sequence_index + 1,

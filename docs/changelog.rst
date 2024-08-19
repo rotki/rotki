@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` Importing events with generic import will no longer create a fee event if the fee is zero. Before it was not creating one only if fee was omitted.
 * :bug:`-` Fix an error introduced in 1.34.2 that was creating snapshots more frequently than expected.
 * :bug:`8350` Users will no longer be able to add duplicate names for an address for all evm chains to the address book.
 * :bug:`-` Eigenlayer native restaking exited balances residing in eigenpod will no longer be double counted.
