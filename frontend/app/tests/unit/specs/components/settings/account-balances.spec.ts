@@ -9,12 +9,13 @@ import { createCustomPinia } from '../../../utils/create-pinia';
 import { libraryDefaults } from '../../../utils/provide-defaults';
 
 vi.mock('vue-router', () => ({
-  useRoute: vi.fn().mockReturnValue({
-    query: {
-      limit: '10',
-      offset: '0',
-    },
-  }),
+  useRoute: vi.fn().mockImplementation(() =>
+    ref({
+      query: {
+        limit: '10',
+        offset: '0',
+      },
+    })),
   useRouter: vi.fn(),
   createRouter: vi.fn().mockImplementation(() => ({
     beforeEach: vi.fn(),

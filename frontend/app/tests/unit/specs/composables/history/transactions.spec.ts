@@ -13,7 +13,7 @@ import type { EvmChainInfo } from '@/types/api/chains';
 
 vi.mock('@/store/tasks', () => ({
   useTaskStore: vi.fn().mockReturnValue({
-    isTaskRunning: vi.fn().mockReturnValue(false),
+    isTaskRunning: vi.fn().mockImplementation(() => ref(false)),
     awaitTask: vi.fn().mockResolvedValue({}),
   }),
 }));

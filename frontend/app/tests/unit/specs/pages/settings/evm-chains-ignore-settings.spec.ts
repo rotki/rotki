@@ -7,14 +7,6 @@ import EvmChainsToIgnoreSettings from '@/components/settings/general/EvmChainsTo
 import { libraryDefaults } from '../../../utils/provide-defaults';
 import type { SettingsUpdate } from '@/types/user';
 
-vi.mock('@/store/main', () => ({
-  useMainStore: vi.fn().mockReturnValue({
-    connected: true,
-    setConnected: vi.fn(),
-    connect: vi.fn(),
-  }),
-}));
-
 vi.mock('@/composables/api/settings/settings-api', async () => {
   const mod = await vi.importActual<typeof import('@/composables/api/settings/settings-api')>(
     '@/composables/api/settings/settings-api',
@@ -47,6 +39,12 @@ describe('evmChainsToIgnoreSettings.vue', () => {
   function createWrapper() {
     const pinia = createPinia();
     setActivePinia(pinia);
+
+    const mainStore = useMainStore();
+    vi.spyOn(mainStore, 'setConnected').mockReturnValue(undefined);
+    vi.spyOn(mainStore, 'connect').mockReturnValue(undefined);
+    mainStore.connected = true;
+
     return mount(EvmChainsToIgnoreSettings, {
       pinia,
       provide: libraryDefaults,
@@ -73,7 +71,7 @@ describe('evmChainsToIgnoreSettings.vue', () => {
     await input.trigger('input', { value: chains });
 
     await nextTick();
-    await promiseTimeout(2000);
+    await promiseTimeout(2000); // TODO: figure a way that does not require hardcoding delay in the tests
     await flushPromises();
 
     expect(wrapper.find('.details').exists()).toBeTruthy();
@@ -87,7 +85,7 @@ describe('evmChainsToIgnoreSettings.vue', () => {
 
     await input.trigger('input', { value: ['ethereum'] });
     await nextTick();
-    await promiseTimeout(2000);
+    await promiseTimeout(2000); // TODO: figure a way that does not require hardcoding delay in the tests
     await flushPromises();
 
     expect(wrapper.find('.details').text()).toContain('settings.not_saved');
