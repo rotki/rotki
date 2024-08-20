@@ -2,12 +2,15 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
-from rotkehlchen.chain.ethereum.modules.optimism_bridge.decoder import OPTIMISM_PORTAL_ADDRESS
+from rotkehlchen.chain.ethereum.modules.optimism_bridge.decoder import (
+    OPTIMISM_L1_ESCROW,
+    OPTIMISM_PORTAL_ADDRESS,
+)
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.optimism.constants import CPT_OPTIMISM
-from rotkehlchen.constants.assets import A_ETH, A_OPTIMISM_ETH
+from rotkehlchen.constants.assets import A_DAI, A_ETH, A_OPTIMISM_ETH
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
@@ -403,5 +406,153 @@ def test_prove_withdrawal(database, ethereum_inquirer, ethereum_accounts):
             notes='Prove optimism bridge withdrawal 0xa030ef121ef8a49271b3201cc277c919063e740cc2fefe9b50d2f7327359710b',  # noqa: E501
             counterparty=CPT_OPTIMISM,
             address=OPTIMISM_PORTAL_ADDRESS,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x74eEFF1A4D24C9Cd48FF9D8Dabd9Db0120b9Caf6']])
+def test_deposit_dai_on_ethereum(database, ethereum_inquirer, ethereum_accounts):
+    evmhash = deserialize_evm_tx_hash('0xad659c207e54b3fdb2124e38b8cfa673851c49feb97115f45ba396f80a4fd35b')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=evmhash,
+    )
+    user_address, timestamp, gas_amount, deposit_amount = ethereum_accounts[0], TimestampMS(1723807967000), '0.0006873796276356', '97.27'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_amount)),
+            location_label=user_address,
+            notes=f'Burned {gas_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=227,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.BRIDGE,
+            asset=A_DAI,
+            balance=Balance(amount=FVal(deposit_amount)),
+            location_label=user_address,
+            notes=f'Bridge {deposit_amount} DAI from Ethereum to Optimism via Optimism bridge',
+            counterparty=CPT_OPTIMISM,
+            address=OPTIMISM_L1_ESCROW,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_deposit_dai_on_optimism(database, optimism_inquirer, optimism_accounts):
+    evmhash = deserialize_evm_tx_hash('0xd566bc86bdc88cf811fee5bbf5f233cb8add71642fdf547866f4054c4362a922')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        database=database,
+        tx_hash=evmhash,
+    )
+    user_address, timestamp, gas_amount, deposit_amount = optimism_accounts[0], TimestampMS(1670442294000), '0.000073960153367596', '106317.949168317256453804'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_amount)),
+            location_label=user_address,
+            notes=f'Burned {gas_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.BRIDGE,
+            asset=Asset('eip155:10/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'),
+            balance=Balance(amount=FVal(deposit_amount)),
+            location_label=user_address,
+            notes=f'Bridge {deposit_amount} DAI from Optimism to Ethereum via Optimism bridge',
+            counterparty=CPT_OPTIMISM,
+            address=ZERO_ADDRESS,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_withdraw_dai_on_ethereum(database, ethereum_inquirer, ethereum_accounts):
+    evmhash = deserialize_evm_tx_hash('0x3e958996b7c4b2466ca9521d4c688ff4817c28d66bb3f52ec1174c6d0f1c44db')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=evmhash,
+    )
+    user_address, timestamp, gas_amount, receive_amount = ethereum_accounts[0], TimestampMS(1671053711000), '0.0097257501', '106317.949168317256453804'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_amount)),
+            location_label=user_address,
+            notes=f'Burned {gas_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=876,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.BRIDGE,
+            asset=A_DAI,
+            balance=Balance(amount=FVal(receive_amount)),
+            location_label=user_address,
+            notes=f'Bridge {receive_amount} DAI from Optimism to Ethereum via Optimism bridge',
+            counterparty=CPT_OPTIMISM,
+            address=OPTIMISM_L1_ESCROW,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0x301605C95acbED7A1fD9C2c0DeEe964e2AFBd0C3']])
+def test_withdraw_dai_on_optimism(database, optimism_inquirer, optimism_accounts):
+    evmhash = deserialize_evm_tx_hash('0x785d75b9a5c93b2ad47b662f8f98f9c63d31cd629497bcbd846c57a70f76366e')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        database=database,
+        tx_hash=evmhash,
+    )
+    user_address, timestamp, deposit_amount = optimism_accounts[0], TimestampMS(1724102399000), '309.321'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.BRIDGE,
+            asset=Asset('eip155:10/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'),
+            balance=Balance(amount=FVal(deposit_amount)),
+            location_label=user_address,
+            notes=f'Bridge {deposit_amount} DAI from Ethereum to Optimism via Optimism bridge',
+            counterparty=CPT_OPTIMISM,
+            address=ZERO_ADDRESS,
         ),
     ]

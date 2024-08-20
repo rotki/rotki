@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import Any, Final
 
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
@@ -21,10 +21,13 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
-BRIDGE_ADDRESS = string_to_evm_address('0x4200000000000000000000000000000000000010')
+BRIDGE_ADDRESSES: Final = (
+    string_to_evm_address('0x4200000000000000000000000000000000000010'),  # Normal Bridge
+    string_to_evm_address('0x467194771dAe2967Aef3ECbEDD3Bf9a310C76C65'),  # L2DAITokenBridge
+)
 
-DEPOSIT_FINALIZED = b'\xb0DE#&\x87\x17\xa0&\x98\xbeG\xd0\x80:\xa7F\x8c\x00\xac\xbe\xd2\xf8\xbd\x93\xa0E\x9c\xdea\xdd\x89'  # noqa: E501
-WITHDRAWAL_INITIATED = b"s\xd1p\x91\n\xba\x9emP\xb1\x02\xdbR+\x1d\xbc\xd7\x96!oQ(\xb4E\xaa!5'(\x86I~"  # noqa: E501
+DEPOSIT_FINALIZED: Final = b'\xb0DE#&\x87\x17\xa0&\x98\xbeG\xd0\x80:\xa7F\x8c\x00\xac\xbe\xd2\xf8\xbd\x93\xa0E\x9c\xdea\xdd\x89'  # noqa: E501
+WITHDRAWAL_INITIATED: Final = b"s\xd1p\x91\n\xba\x9emP\xb1\x02\xdbR+\x1d\xbc\xd7\x96!oQ(\xb4E\xaa!5'(\x86I~"  # noqa: E501
 
 
 logger = logging.getLogger(__name__)
@@ -33,7 +36,9 @@ log = RotkehlchenLogsAdapter(logger)
 
 class OptimismBridgeDecoder(DecoderInterface):
     def _decode_receive_deposit(self, context: DecoderContext) -> DecodingOutput:
-        """Decodes a bridging event. Either a deposit or a withdrawal"""
+        """Decodes a bridging event. Either a deposit or a withdrawal
+        DAI uses special bridge. See https://github.com/makerdao/optimism-dai-bridge
+        """
         if context.tx_log.topics[0] not in {DEPOSIT_FINALIZED, WITHDRAWAL_INITIATED}:
             return DEFAULT_DECODING_OUTPUT
 
@@ -98,9 +103,7 @@ class OptimismBridgeDecoder(DecoderInterface):
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return {
-            BRIDGE_ADDRESS: (self._decode_receive_deposit,),
-        }
+        return dict.fromkeys(BRIDGE_ADDRESSES, (self._decode_receive_deposit,))
 
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
