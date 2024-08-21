@@ -2,21 +2,24 @@ import { defaultAccountingSettings } from '@/data/factories';
 import type { AccountingSettings } from '@/types/user';
 
 export const useAccountingSettingsStore = defineStore('settings/accounting', () => {
-  const settings = reactive(defaultAccountingSettings());
+  const settings = ref(defaultAccountingSettings());
 
-  const pnlCsvHaveSummary = computed(() => settings.pnlCsvHaveSummary);
-  const pnlCsvWithFormulas = computed(() => settings.pnlCsvWithFormulas);
-  const includeCrypto2crypto = computed(() => settings.includeCrypto2crypto);
-  const includeFeesInCostBasis = computed(() => settings.includeFeesInCostBasis);
-  const includeGasCosts = computed(() => settings.includeGasCosts);
-  const taxfreeAfterPeriod = computed(() => settings.taxfreeAfterPeriod);
-  const accountForAssetsMovements = computed(() => settings.accountForAssetsMovements);
-  const calculatePastCostBasis = computed(() => settings.calculatePastCostBasis);
-  const ethStakingTaxableAfterWithdrawalEnabled = computed(() => settings.ethStakingTaxableAfterWithdrawalEnabled);
-  const costBasisMethod = computed(() => settings.costBasisMethod);
+  const pnlCsvHaveSummary = useComputedRef(settings, 'pnlCsvHaveSummary');
+  const pnlCsvWithFormulas = useComputedRef(settings, 'pnlCsvWithFormulas');
+  const includeCrypto2crypto = useComputedRef(settings, 'includeCrypto2crypto');
+  const includeFeesInCostBasis = useComputedRef(settings, 'includeFeesInCostBasis');
+  const includeGasCosts = useComputedRef(settings, 'includeGasCosts');
+  const taxfreeAfterPeriod = useComputedRef(settings, 'taxfreeAfterPeriod');
+  const accountForAssetsMovements = useComputedRef(settings, 'accountForAssetsMovements');
+  const calculatePastCostBasis = useComputedRef(settings, 'calculatePastCostBasis');
+  const ethStakingTaxableAfterWithdrawalEnabled = useComputedRef(settings, 'ethStakingTaxableAfterWithdrawalEnabled');
+  const costBasisMethod = useComputedRef(settings, 'costBasisMethod');
 
   const update = (accountingSettings: AccountingSettings): void => {
-    Object.assign(settings, accountingSettings);
+    set(settings, {
+      ...get(settings),
+      ...accountingSettings,
+    });
   };
 
   return {
@@ -30,8 +33,7 @@ export const useAccountingSettingsStore = defineStore('settings/accounting', () 
     ethStakingTaxableAfterWithdrawalEnabled,
     includeFeesInCostBasis,
     costBasisMethod,
-    // return settings on development for state persistence
-    ...(checkIfDevelopment() ? { settings } : {}),
+    settings,
     update,
   };
 });

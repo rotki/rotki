@@ -21,11 +21,11 @@ pinia.use(StoreResetPlugin);
 pinia.use(StoreTrackPlugin);
 
 if (isDevelopment)
-  pinia.use(storePiniaPlugins);
+  pinia.use(StoreStatePersistsPlugin);
 
 setActivePinia(pinia);
 
-const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
+const itemsPerPage = useItemsPerPage();
 
 const rui = createRuiPlugin({
   table: { itemsPerPage, globalItemsPerPage: true, limits: [10, 25, 50, 100], stickyOffset: 60 },

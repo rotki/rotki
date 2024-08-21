@@ -18,7 +18,7 @@ describe('composables::staking/eth2/eth2', () => {
       expect(get(performance).validators).toHaveLength(10);
       expect(get(performance).entriesTotal).toBe(11);
 
-      const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
+      const itemsPerPage = useItemsPerPage();
 
       set(itemsPerPage, 25);
       set(pagination, { ...get(pagination), offset: 10 });
