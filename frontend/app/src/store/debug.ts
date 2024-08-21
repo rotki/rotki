@@ -60,7 +60,7 @@ function shouldPersistStore(): any {
   return (menuEnabled || envEnabled) && !isTest;
 }
 
-export function storePiniaPlugins(context: PiniaPluginContext) {
+export function StoreStatePersistsPlugin(context: PiniaPluginContext): void {
   const persistStore = shouldPersistStore();
 
   const { store } = context;
@@ -86,15 +86,12 @@ export function storePiniaPlugins(context: PiniaPluginContext) {
     logger.error(error);
   }
 
-  store.$subscribe(
-    (_, state) => {
-      try {
-        setState(storeId, state);
-      }
-      catch (error) {
-        logger.error(error);
-      }
-    },
-    { detached: true },
-  );
+  store.$subscribe((_, state) => {
+    try {
+      setState(storeId, state);
+    }
+    catch (error) {
+      logger.error(error);
+    }
+  }, { detached: true });
 }

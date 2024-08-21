@@ -5,10 +5,11 @@ import type { UserSettingsModel } from '@/types/user';
 
 export function useSessionSettings() {
   const { premium, premiumSync } = storeToRefs(usePremiumStore());
-  const { update: updateFrontendSettings, checkDefaultThemeVersion } = useFrontendSettingsStore();
+  const { update: updateFrontendSettings } = useFrontendSettingsStore();
   const { update: updateAccountingSettings } = useAccountingSettingsStore();
   const { update: updateGeneralSettings } = useGeneralSettingsStore();
   const { update: updateSessionSettings, setConnectedExchanges } = useSessionSettingsStore();
+  const { checkDefaultThemeVersion } = useThemeMigration();
 
   const initialize = (
     { accounting, general, other: { frontendSettings, havePremium, premiumShouldSync } }: UserSettingsModel,
@@ -38,3 +39,11 @@ export function useSessionSettings() {
     initialize,
   };
 }
+
+/**
+ * Keeps track of a shared, global instance of the items per page setting.
+ *
+ * It is shared between the main.ts and settings store, because referencing the store
+ * directly, creates issues with tracking.
+ */
+export const useItemsPerPage = createSharedComposable(() => ref<number>(10));

@@ -17,30 +17,34 @@ function defaultSessionSettings(): SessionSettings {
 }
 
 export const useSessionSettingsStore = defineStore('settings/session', () => {
-  const settings = reactive(defaultSessionSettings());
-
-  const privacyMode = computed(() => settings.privacyMode);
-  const scrambleData = computed(() => settings.scrambleData);
-  const scrambleMultiplier = computed(() => settings.scrambleMultiplier);
-  const timeframe = computed(() => settings.timeframe);
-  const animationsEnabled = computed(() => settings.animationsEnabled);
+  const settings = ref(defaultSessionSettings());
   const connectedExchanges = ref<Exchange[]>([]);
+
+  const privacyMode = useComputedRef(settings, 'privacyMode');
+  const scrambleData = useComputedRef(settings, 'scrambleData');
+  const scrambleMultiplier = useComputedRef(settings, 'scrambleMultiplier');
+  const timeframe = useComputedRef(settings, 'timeframe');
+  const animationsEnabled = useComputedRef(settings, 'animationsEnabled');
+  const shouldShowAmount = computed(() => get(settings).privacyMode < PrivacyMode.SEMI_PRIVATE);
+  const shouldShowPercentage = computed(() => get(settings).privacyMode < PrivacyMode.PRIVATE);
 
   const setConnectedExchanges = (exchanges: Exchange[]): void => {
     set(connectedExchanges, exchanges);
   };
 
-  const shouldShowAmount = computed(() => settings.privacyMode < PrivacyMode.SEMI_PRIVATE);
-
-  const shouldShowPercentage = computed(() => settings.privacyMode < PrivacyMode.PRIVATE);
-
   const setAnimationsEnabled = (enabled: boolean): void => {
     set(isAnimationEnabledSetting, enabled);
-    settings.animationsEnabled = enabled;
+    set(settings, {
+      ...get(settings),
+      animationsEnabled: enabled,
+    });
   };
 
   const update = (sessionSettings: Partial<SessionSettings>): ActionStatus => {
-    Object.assign(settings, sessionSettings);
+    set(settings, {
+      ...get(settings),
+      ...sessionSettings,
+    });
     return {
       success: true,
     };
@@ -55,8 +59,7 @@ export const useSessionSettingsStore = defineStore('settings/session', () => {
     shouldShowPercentage,
     scrambleMultiplier,
     connectedExchanges,
-    // return settings on development for state persistence
-    ...(checkIfDevelopment() ? { settings } : {}),
+    settings,
     setAnimationsEnabled,
     setConnectedExchanges,
     update,

@@ -34,13 +34,6 @@ export const useHistoryStore = defineStore('history', () => {
   const { isTaskRunning } = useTaskStore();
   const refreshProtocolCacheTaskRunning = isTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
 
-  watch(refreshProtocolCacheTaskRunning, (curr, prev) => {
-    if (!curr && prev) {
-      set(receivingProtocolCacheStatus, false);
-      resetProtocolCacheUpdatesStatus();
-    }
-  });
-
   const setProtocolCacheStatus = (data: ProtocolCacheUpdatesData) => {
     set(receivingProtocolCacheStatus, true);
     const old = get(protocolCacheUpdateStatus);
@@ -89,6 +82,13 @@ export const useHistoryStore = defineStore('history', () => {
       });
     }
   };
+
+  watch(refreshProtocolCacheTaskRunning, (curr, prev) => {
+    if (!curr && prev) {
+      set(receivingProtocolCacheStatus, false);
+      resetProtocolCacheUpdatesStatus();
+    }
+  });
 
   return {
     associatedLocations,

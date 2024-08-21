@@ -11,17 +11,17 @@ function getMetamaskProviderWithTimeout(timeout = 2000): Promise<EIP1193Provider
   return new Promise((resolve) => {
     let provider;
 
-    const handleProviderAnnouncement = (event: EIP6963AnnounceProviderEvent) => {
+    function handleProviderAnnouncement(event: EIP6963AnnounceProviderEvent) {
       if (event.detail.info.rdns === 'io.metamask') {
         provider = event.detail.provider;
         cleanup();
         resolve(provider);
       }
-    };
+    }
 
-    const cleanup = () => {
+    function cleanup() {
       window.removeEventListener('eip6963:announceProvider', handleProviderAnnouncement);
-    };
+    }
 
     window.addEventListener('eip6963:announceProvider', handleProviderAnnouncement);
     window.dispatchEvent(new Event('eip6963:requestProvider'));

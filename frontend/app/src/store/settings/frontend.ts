@@ -1,97 +1,71 @@
-import { BigNumber, type Theme, ThemeColors, type TimeFramePeriod, type TimeFrameSetting } from '@rotki/common';
-import { isUndefined } from 'lodash-es';
+import { BigNumber } from '@rotki/common';
 import { getBnFormat } from '@/data/amount-formatter';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import {
-  type BlockchainRefreshButtonBehaviour,
-  type DashboardTablesVisibleColumns,
-  type ExplorersSettings,
   FrontendSettings,
   type FrontendSettingsPayload,
-  type ProfitLossTimeframe,
-  type RefreshPeriod,
-  type RoundingMode,
-  SupportedLanguage,
 } from '@/types/settings/frontend-settings';
-import { CURRENT_DEFAULT_THEME_VERSION, DARK_COLORS, DEFAULT_THEME_HISTORIES, LIGHT_COLORS } from '@/plugins/theme';
-import type { CurrencyLocation } from '@/types/currency-location';
-import type { DateFormat } from '@/types/date-format';
 import type { ActionStatus } from '@/types/action';
-import type { BaseSuggestion, SavedFilterLocation } from '@/types/filtering';
 
 export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
-  const settings = reactive(FrontendSettings.parse({}));
-  const defiSetupDone = computed<boolean>(() => settings.defiSetupDone);
-  const language = computed<SupportedLanguage>(() => settings.language);
-  const timeframeSetting = computed<TimeFrameSetting>(() => settings.timeframeSetting);
-  const visibleTimeframes = computed<TimeFrameSetting[]>(() => settings.visibleTimeframes);
-  const lastKnownTimeframe = computed<TimeFramePeriod>(() => settings.lastKnownTimeframe);
-  const queryPeriod = computed<number>(() => settings.queryPeriod);
-  const profitLossReportPeriod = computed<ProfitLossTimeframe>(() => settings.profitLossReportPeriod);
-  const thousandSeparator = computed<string>(() => settings.thousandSeparator);
-  const decimalSeparator = computed<string>(() => settings.decimalSeparator);
-  const currencyLocation = computed<CurrencyLocation>(() => settings.currencyLocation);
-  const abbreviateNumber = computed<boolean>(() => settings.abbreviateNumber);
-  const minimumDigitToBeAbbreviated = computed<number>(() => settings.minimumDigitToBeAbbreviated);
-  const refreshPeriod = computed<RefreshPeriod>(() => settings.refreshPeriod);
-  const explorers = computed<ExplorersSettings>(() => settings.explorers);
-  const itemsPerPage = computed<number>({
-    get: () => settings.itemsPerPage,
-    set: (value: number) => {
-      settings.itemsPerPage = value;
-    },
-  });
-  const amountRoundingMode = computed<RoundingMode>(() => settings.amountRoundingMode);
-  const valueRoundingMode = computed<RoundingMode>(() => settings.valueRoundingMode);
-  const selectedTheme = computed<Theme>(() => settings.selectedTheme);
-  const lightTheme = computed<ThemeColors>(() => settings.lightTheme);
-  const darkTheme = computed<ThemeColors>(() => settings.darkTheme);
-  const defaultThemeVersion = computed<number>(() => settings.defaultThemeVersion);
-  const graphZeroBased = computed<boolean>(() => settings.graphZeroBased);
-  const showGraphRangeSelector = computed<boolean>(() => settings.showGraphRangeSelector);
-  const nftsInNetValue = computed<boolean>(() => settings.nftsInNetValue);
-  const renderAllNftImages = computed<boolean>(() => settings.renderAllNftImages);
-  const whitelistedDomainsForNftImages = computed<string[]>(() => settings.whitelistedDomainsForNftImages);
-  const dashboardTablesVisibleColumns = computed<DashboardTablesVisibleColumns>(
-    () => settings.dashboardTablesVisibleColumns,
-  );
-  const dateInputFormat = computed<DateFormat>(() => settings.dateInputFormat);
-  const versionUpdateCheckFrequency = computed<number>(() => settings.versionUpdateCheckFrequency);
-  const enableAliasNames = computed<boolean>(() => settings.enableAliasNames);
-  const blockchainRefreshButtonBehaviour = computed<BlockchainRefreshButtonBehaviour>(
-    () => settings.blockchainRefreshButtonBehaviour,
-  );
-  const shouldRefreshValidatorDailyStats = computed<boolean>(
-    () => settings.shouldRefreshValidatorDailyStats,
-  );
-  const unifyAccountsTable = computed<boolean>(
-    () => settings.unifyAccountsTable,
-  );
+  const settings = ref<FrontendSettings>(markRaw(FrontendSettings.parse({})));
 
-  const savedFilters = computed<{
-    [key in SavedFilterLocation]?: BaseSuggestion[][];
-  }>(() => settings.savedFilters);
+  const defiSetupDone = useComputedRef(settings, 'defiSetupDone');
+  const language = useComputedRef(settings, 'language');
+  const timeframeSetting = useComputedRef(settings, 'timeframeSetting');
+  const visibleTimeframes = useComputedRef(settings, 'visibleTimeframes');
+  const lastKnownTimeframe = useComputedRef(settings, 'lastKnownTimeframe');
+  const queryPeriod = useComputedRef(settings, 'queryPeriod');
+  const profitLossReportPeriod = useComputedRef(settings, 'profitLossReportPeriod');
+  const thousandSeparator = useComputedRef(settings, 'thousandSeparator');
+  const decimalSeparator = useComputedRef(settings, 'decimalSeparator');
+  const currencyLocation = useComputedRef(settings, 'currencyLocation');
+  const abbreviateNumber = useComputedRef(settings, 'abbreviateNumber');
+  const minimumDigitToBeAbbreviated = useComputedRef(settings, 'minimumDigitToBeAbbreviated');
+  const refreshPeriod = useComputedRef(settings, 'refreshPeriod');
+  const explorers = useComputedRef(settings, 'explorers');
+  const itemsPerPage = useComputedRef(settings, 'itemsPerPage');
+  const amountRoundingMode = useComputedRef(settings, 'amountRoundingMode');
+  const valueRoundingMode = useComputedRef(settings, 'valueRoundingMode');
+  const selectedTheme = useComputedRef(settings, 'selectedTheme');
+  const lightTheme = useComputedRef(settings, 'lightTheme');
+  const darkTheme = useComputedRef(settings, 'darkTheme');
+  const defaultThemeVersion = useComputedRef(settings, 'defaultThemeVersion');
+  const graphZeroBased = useComputedRef(settings, 'graphZeroBased');
+  const showGraphRangeSelector = useComputedRef(settings, 'showGraphRangeSelector');
+  const nftsInNetValue = useComputedRef(settings, 'nftsInNetValue');
+  const renderAllNftImages = useComputedRef(settings, 'renderAllNftImages');
+  const whitelistedDomainsForNftImages = useComputedRef(settings, 'whitelistedDomainsForNftImages');
+  const dashboardTablesVisibleColumns = useComputedRef(settings, 'dashboardTablesVisibleColumns');
+  const dateInputFormat = useComputedRef(settings, 'dateInputFormat');
+  const versionUpdateCheckFrequency = useComputedRef(settings, 'versionUpdateCheckFrequency');
+  const enableAliasNames = useComputedRef(settings, 'enableAliasNames');
+  const blockchainRefreshButtonBehaviour = useComputedRef(settings, 'blockchainRefreshButtonBehaviour');
+  const shouldRefreshValidatorDailyStats = useComputedRef(settings, 'shouldRefreshValidatorDailyStats');
+  const unifyAccountsTable = useComputedRef(settings, 'unifyAccountsTable');
+  const savedFilters = useComputedRef(settings, 'savedFilters');
+
+  const globalItemsPerPage = useItemsPerPage();
 
   const api = useSettingsApi();
+  const { checkMachineLanguage, forceUpdateMachineLanguage } = useLastLanguage();
 
-  const { lastLanguage, forceUpdateMachineLanguage } = useLastLanguage();
-
-  const checkMachineLanguage = (): void => {
-    if (get(forceUpdateMachineLanguage) === 'true')
-      set(lastLanguage, get(language));
-    else set(lastLanguage, SupportedLanguage.EN);
-  };
-
-  const update = (update: FrontendSettings): void => {
-    Object.assign(settings, update);
-    checkMachineLanguage();
-  };
+  function update(update: FrontendSettings): void {
+    set(settings, {
+      ...get(settings),
+      ...update,
+    });
+    checkMachineLanguage(language);
+    const itemsPerPage = get(settings, 'itemsPerPage');
+    if (itemsPerPage !== get(globalItemsPerPage))
+      set(globalItemsPerPage, itemsPerPage);
+  }
 
   async function updateSetting(payload: FrontendSettingsPayload): Promise<ActionStatus> {
     const props = Object.keys(payload);
     assert(props.length > 0, 'Payload must be not-empty');
     try {
-      const updatedSettings = { ...settings, ...payload };
+      const updatedSettings = { ...get(settings), ...payload };
       const { other } = await api.setSettings({
         frontendSettings: JSON.stringify(snakeCaseTransformer(updatedSettings)),
       });
@@ -117,62 +91,22 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   }
 
   watch([language, forceUpdateMachineLanguage], () => {
-    checkMachineLanguage();
+    checkMachineLanguage(get(language));
   });
 
-  watchDebounced(
-    itemsPerPage,
-    (value, oldValue) => {
-      if (isUndefined(oldValue) || value === oldValue)
-        return;
+  watchDebounced(globalItemsPerPage, async (value, oldValue) => {
+    if (oldValue === undefined || value === oldValue)
+      return;
 
-      updateSetting({ itemsPerPage: value }).catch(error => logger.debug(error));
-    },
-    { debounce: 100 },
-  );
-
-  const checkDefaultThemeVersion = () => {
-    const defaultThemeVersionSetting = get(defaultThemeVersion);
-    if (defaultThemeVersionSetting < CURRENT_DEFAULT_THEME_VERSION) {
-      const historicDefaultTheme = DEFAULT_THEME_HISTORIES.find(
-        ({ version }) => version === defaultThemeVersionSetting,
-      );
-
-      if (historicDefaultTheme) {
-        const newLightTheme: ThemeColors = { ...LIGHT_COLORS };
-        const newDarkTheme: ThemeColors = { ...DARK_COLORS };
-        const savedLightTheme = get(lightTheme);
-        const savedDarkTheme = get(darkTheme);
-
-        const accentColors = Object.keys(ThemeColors.shape);
-
-        const isKeyOfThemeColors = (key: string): key is keyof ThemeColors => accentColors.includes(key);
-
-        accentColors.forEach((key) => {
-          if (!isKeyOfThemeColors(key))
-            return;
-
-          // If saved theme isn't the same with the default theme at that version, do not replace with new default.
-          if (historicDefaultTheme.lightColors[key] !== savedLightTheme[key])
-            newLightTheme[key] = savedLightTheme[key];
-
-          if (historicDefaultTheme.darkColors[key] !== savedDarkTheme[key])
-            newDarkTheme[key] = savedDarkTheme[key];
-        });
-
-        startPromise(
-          updateSetting({
-            lightTheme: newLightTheme,
-            darkTheme: newDarkTheme,
-            defaultThemeVersion: CURRENT_DEFAULT_THEME_VERSION,
-          }),
-        );
-      }
+    try {
+      await updateSetting({ itemsPerPage: value });
     }
-  };
+    catch (error: any) {
+      logger.error(error);
+    }
+  }, { debounce: 800, maxWait: 1200 });
 
   return {
-    forceUpdateMachineLanguage,
     defiSetupDone,
     language,
     timeframeSetting,
@@ -184,6 +118,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     decimalSeparator,
     currencyLocation,
     abbreviateNumber,
+    defaultThemeVersion,
     minimumDigitToBeAbbreviated,
     refreshPeriod,
     explorers,
@@ -206,11 +141,9 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     shouldRefreshValidatorDailyStats,
     unifyAccountsTable,
     savedFilters,
-    // return settings on development for state persistence
-    ...(checkIfDevelopment() ? { settings } : {}),
+    settings,
     updateSetting,
     update,
-    checkDefaultThemeVersion,
   };
 });
 

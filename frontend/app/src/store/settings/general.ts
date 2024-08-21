@@ -1,71 +1,61 @@
 import { defaultGeneralSettings } from '@/data/factories';
-import { type Currency, type SupportedCurrency, useCurrencies } from '@/types/currencies';
-import type { AddressNamePriority } from '@/types/settings/address-name-priorities';
-import type { Exchange } from '@/types/exchanges';
-import type { Module } from '@/types/modules';
-import type { PriceOracle } from '@/types/settings/price-oracle';
+import { type SupportedCurrency, useCurrencies } from '@/types/currencies';
 import type { GeneralSettings } from '@/types/user';
 
 export const useGeneralSettingsStore = defineStore('settings/general', () => {
   const { defaultCurrency } = useCurrencies();
-  const settings = reactive(defaultGeneralSettings(get(defaultCurrency)));
+  const settings = ref(defaultGeneralSettings(get(defaultCurrency)));
 
-  const uiFloatingPrecision = computed<number>(() => settings.uiFloatingPrecision);
-  const submitUsageAnalytics = computed<boolean>(() => settings.submitUsageAnalytics);
-  const ksmRpcEndpoint = computed<string>(() => settings.ksmRpcEndpoint);
-  const dotRpcEndpoint = computed<string>(() => settings.dotRpcEndpoint);
-  const beaconRpcEndpoint = computed<string>(() => settings.beaconRpcEndpoint);
-  const balanceSaveFrequency = computed<number>(() => settings.balanceSaveFrequency);
-  const dateDisplayFormat = computed<string>(() => settings.dateDisplayFormat);
-  const mainCurrency = computed<Currency>(() => settings.mainCurrency);
-  const activeModules = computed<Module[]>(() => settings.activeModules);
-  const btcDerivationGapLimit = computed<number>(() => settings.btcDerivationGapLimit);
-  const displayDateInLocaltime = computed<boolean>(() => settings.displayDateInLocaltime);
-  const currentPriceOracles = computed<PriceOracle[]>(() => settings.currentPriceOracles);
-  const historicalPriceOracles = computed<PriceOracle[]>(() => settings.historicalPriceOracles);
-  const ssfGraphMultiplier = computed<number>(() => settings.ssfGraphMultiplier);
-  const inferZeroTimedBalances = computed<boolean>(() => settings.inferZeroTimedBalances);
-  const nonSyncingExchanges = computed<Exchange[]>(() => settings.nonSyncingExchanges);
-  const evmchainsToSkipDetection = computed<string[]>(() => settings.evmchainsToSkipDetection);
-  const treatEth2AsEth = computed<boolean>(() => settings.treatEth2AsEth);
-  const addressNamePriority = computed<AddressNamePriority[]>(() => settings.addressNamePriority);
-  const queryRetryLimit = computed<number>(() => settings.queryRetryLimit);
-  const connectTimeout = computed<number>(() => settings.connectTimeout);
-  const readTimeout = computed<number>(() => settings.readTimeout);
-
-  const oraclePenaltyThresholdCount = computed<number>(() => settings.oraclePenaltyThresholdCount);
-
-  const oraclePenaltyDuration = computed<number>(() => settings.oraclePenaltyDuration);
-
-  const autoDeleteCalendarEntries = computed<boolean>(() => settings.autoDeleteCalendarEntries);
-
-  const autoCreateCalendarReminders = computed<boolean>(() => settings.autoCreateCalendarReminders);
-
-  const askUserUponSizeDiscrepancy = computed<boolean>(() => settings.askUserUponSizeDiscrepancy);
-
-  const autoDetectTokens = computed<boolean>(() => settings.autoDetectTokens);
+  const uiFloatingPrecision = useComputedRef(settings, 'uiFloatingPrecision');
+  const submitUsageAnalytics = useComputedRef(settings, 'submitUsageAnalytics');
+  const ksmRpcEndpoint = useComputedRef(settings, 'ksmRpcEndpoint');
+  const dotRpcEndpoint = useComputedRef(settings, 'dotRpcEndpoint');
+  const beaconRpcEndpoint = useComputedRef(settings, 'beaconRpcEndpoint');
+  const balanceSaveFrequency = useComputedRef(settings, 'balanceSaveFrequency');
+  const dateDisplayFormat = useComputedRef(settings, 'dateDisplayFormat');
+  const mainCurrency = useComputedRef(settings, 'mainCurrency');
+  const activeModules = useComputedRef(settings, 'activeModules');
+  const btcDerivationGapLimit = useComputedRef(settings, 'btcDerivationGapLimit');
+  const displayDateInLocaltime = useComputedRef(settings, 'displayDateInLocaltime');
+  const currentPriceOracles = useComputedRef(settings, 'currentPriceOracles');
+  const historicalPriceOracles = useComputedRef(settings, 'historicalPriceOracles');
+  const ssfGraphMultiplier = useComputedRef(settings, 'ssfGraphMultiplier');
+  const inferZeroTimedBalances = useComputedRef(settings, 'inferZeroTimedBalances');
+  const nonSyncingExchanges = useComputedRef(settings, 'nonSyncingExchanges');
+  const evmchainsToSkipDetection = useComputedRef(settings, 'evmchainsToSkipDetection');
+  const treatEth2AsEth = useComputedRef(settings, 'treatEth2AsEth');
+  const addressNamePriority = useComputedRef(settings, 'addressNamePriority');
+  const queryRetryLimit = useComputedRef(settings, 'queryRetryLimit');
+  const connectTimeout = useComputedRef(settings, 'connectTimeout');
+  const readTimeout = useComputedRef(settings, 'readTimeout');
+  const oraclePenaltyThresholdCount = useComputedRef(settings, 'oraclePenaltyThresholdCount');
+  const oraclePenaltyDuration = useComputedRef(settings, 'oraclePenaltyDuration');
+  const autoDeleteCalendarEntries = useComputedRef(settings, 'autoDeleteCalendarEntries');
+  const autoCreateCalendarReminders = useComputedRef(settings, 'autoCreateCalendarReminders');
+  const askUserUponSizeDiscrepancy = useComputedRef(settings, 'askUserUponSizeDiscrepancy');
+  const autoDetectTokens = useComputedRef(settings, 'autoDetectTokens');
 
   const currencySymbol = computed<SupportedCurrency>(() => {
     const currency = get(mainCurrency);
     return currency.tickerSymbol;
   });
 
-  const floatingPrecision: ComputedRef<number> = uiFloatingPrecision;
-  const currency: ComputedRef<Currency> = mainCurrency;
-
   const update = (generalSettings: GeneralSettings): void => {
-    Object.assign(settings, generalSettings);
+    set(settings, {
+      ...get(settings),
+      ...generalSettings,
+    });
   };
 
   return {
-    floatingPrecision,
+    floatingPrecision: uiFloatingPrecision,
     submitUsageAnalytics,
     ksmRpcEndpoint,
     dotRpcEndpoint,
     beaconRpcEndpoint,
     balanceSaveFrequency,
     dateDisplayFormat,
-    currency,
+    currency: mainCurrency,
     currencySymbol,
     activeModules,
     btcDerivationGapLimit,
@@ -87,8 +77,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     autoCreateCalendarReminders,
     askUserUponSizeDiscrepancy,
     autoDetectTokens,
-    // return settings on development for state persistence
-    ...(checkIfDevelopment() ? { settings } : {}),
+    settings,
     update,
   };
 });

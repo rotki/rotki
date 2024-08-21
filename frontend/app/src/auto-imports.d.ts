@@ -22,6 +22,7 @@ declare global {
   const BigNumber: typeof import('@rotki/common')['BigNumber']
   const Blockchain: typeof import('@rotki/common')['Blockchain']
   const DARK_THEME: typeof import('@rotki/common')['DARK_THEME']
+  const DevelopStatePersistsPlugin: typeof import('./store/debug')['DevelopStatePersistsPlugin']
   const EffectScope: typeof import('vue')['EffectScope']
   const Eth2DailyStats: typeof import('@rotki/common')['Eth2DailyStats']
   const Eth2Validators: typeof import('@rotki/common')['Eth2Validators']
@@ -63,6 +64,7 @@ declare global {
   const SettingLocation: typeof import('./composables/settings/index')['SettingLocation']
   const Severity: typeof import('@rotki/common')['Severity']
   const StoreResetPlugin: typeof import('./store/plugins')['StoreResetPlugin']
+  const StoreStatePersistsPlugin: typeof import('./store/debug')['StoreStatePersistsPlugin']
   const StoreTrackPlugin: typeof import('./store/plugins')['StoreTrackPlugin']
   const SupportedAsset: typeof import('@rotki/common')['SupportedAsset']
   const TIMEFRAME_CUSTOM: typeof import('@rotki/common')['TIMEFRAME_CUSTOM']
@@ -358,7 +360,6 @@ declare global {
   const sortDesc: typeof import('./utils/bignumbers')['sortDesc']
   const splitSearch: typeof import('./utils/search')['splitSearch']
   const startPromise: typeof import('../shared/utils')['startPromise']
-  const storePiniaPlugins: typeof import('./store/debug')['storePiniaPlugins']
   const storeToRefs: typeof import('pinia')['storeToRefs']
   const sum: typeof import('./utils/balances')['sum']
   const sumAssetBalances: typeof import('./utils/balances')['sumAssetBalances']
@@ -507,6 +508,7 @@ declare global {
   const useColorMode: typeof import('@vueuse/core')['useColorMode']
   const useCompoundApi: typeof import('./composables/api/defi/compound')['useCompoundApi']
   const useCompoundStore: typeof import('./store/defi/compound/index')['useCompoundStore']
+  const useComputedRef: typeof import('./composables/utils/useComputedRef/index')['useComputedRef']
   const useConfirmDialog: typeof import('@vueuse/core')['useConfirmDialog']
   const useConfirmStore: typeof import('./store/confirm')['useConfirmStore']
   const useCopy: typeof import('./composables/copy')['useCopy']
@@ -614,6 +616,7 @@ declare global {
   const useInterval: typeof import('@vueuse/core')['useInterval']
   const useIntervalFn: typeof import('@vueuse/core')['useIntervalFn']
   const useItemCache: typeof import('./composables/item-cache')['useItemCache']
+  const useItemsPerPage: typeof import('./composables/session/settings')['useItemsPerPage']
   const useKeyModifier: typeof import('@vueuse/core')['useKeyModifier']
   const useKrakenApi: typeof import('./composables/api/staking/kraken')['useKrakenApi']
   const useKrakenStakingEventTypes: typeof import('./composables/staking/kraken-events')['useKrakenStakingEventTypes']
@@ -766,6 +769,7 @@ declare global {
   const useTextDirection: typeof import('@vueuse/core')['useTextDirection']
   const useTextSelection: typeof import('@vueuse/core')['useTextSelection']
   const useTextareaAutosize: typeof import('@vueuse/core')['useTextareaAutosize']
+  const useThemeMigration: typeof import('./composables/settings/theme')['useThemeMigration']
   const useThrottle: typeof import('@vueuse/core')['useThrottle']
   const useThrottleFn: typeof import('@vueuse/core')['useThrottleFn']
   const useThrottledRefHistory: typeof import('@vueuse/core')['useThrottledRefHistory']
@@ -916,6 +920,7 @@ declare module 'vue' {
     readonly SettingLocation: UnwrapRef<typeof import('./composables/settings/index')['SettingLocation']>
     readonly Severity: UnwrapRef<typeof import('@rotki/common')['Severity']>
     readonly StoreResetPlugin: UnwrapRef<typeof import('./store/plugins')['StoreResetPlugin']>
+    readonly StoreStatePersistsPlugin: UnwrapRef<typeof import('./store/debug')['StoreStatePersistsPlugin']>
     readonly StoreTrackPlugin: UnwrapRef<typeof import('./store/plugins')['StoreTrackPlugin']>
     readonly SupportedAsset: UnwrapRef<typeof import('@rotki/common')['SupportedAsset']>
     readonly TIMEFRAME_CUSTOM: UnwrapRef<typeof import('@rotki/common')['TIMEFRAME_CUSTOM']>
@@ -1211,7 +1216,6 @@ declare module 'vue' {
     readonly sortDesc: UnwrapRef<typeof import('./utils/bignumbers')['sortDesc']>
     readonly splitSearch: UnwrapRef<typeof import('./utils/search')['splitSearch']>
     readonly startPromise: UnwrapRef<typeof import('../shared/utils')['startPromise']>
-    readonly storePiniaPlugins: UnwrapRef<typeof import('./store/debug')['storePiniaPlugins']>
     readonly storeToRefs: UnwrapRef<typeof import('pinia')['storeToRefs']>
     readonly sum: UnwrapRef<typeof import('./utils/balances')['sum']>
     readonly sumAssetBalances: UnwrapRef<typeof import('./utils/balances')['sumAssetBalances']>
@@ -1360,6 +1364,7 @@ declare module 'vue' {
     readonly useColorMode: UnwrapRef<typeof import('@vueuse/core')['useColorMode']>
     readonly useCompoundApi: UnwrapRef<typeof import('./composables/api/defi/compound')['useCompoundApi']>
     readonly useCompoundStore: UnwrapRef<typeof import('./store/defi/compound/index')['useCompoundStore']>
+    readonly useComputedRef: UnwrapRef<typeof import('./composables/utils/useComputedRef/index')['useComputedRef']>
     readonly useConfirmDialog: UnwrapRef<typeof import('@vueuse/core')['useConfirmDialog']>
     readonly useConfirmStore: UnwrapRef<typeof import('./store/confirm')['useConfirmStore']>
     readonly useCopy: UnwrapRef<typeof import('./composables/copy')['useCopy']>
@@ -1467,6 +1472,7 @@ declare module 'vue' {
     readonly useInterval: UnwrapRef<typeof import('@vueuse/core')['useInterval']>
     readonly useIntervalFn: UnwrapRef<typeof import('@vueuse/core')['useIntervalFn']>
     readonly useItemCache: UnwrapRef<typeof import('./composables/item-cache')['useItemCache']>
+    readonly useItemsPerPage: UnwrapRef<typeof import('./composables/session/settings')['useItemsPerPage']>
     readonly useKeyModifier: UnwrapRef<typeof import('@vueuse/core')['useKeyModifier']>
     readonly useKrakenApi: UnwrapRef<typeof import('./composables/api/staking/kraken')['useKrakenApi']>
     readonly useKrakenStakingEventTypes: UnwrapRef<typeof import('./composables/staking/kraken-events')['useKrakenStakingEventTypes']>
@@ -1619,6 +1625,7 @@ declare module 'vue' {
     readonly useTextDirection: UnwrapRef<typeof import('@vueuse/core')['useTextDirection']>
     readonly useTextSelection: UnwrapRef<typeof import('@vueuse/core')['useTextSelection']>
     readonly useTextareaAutosize: UnwrapRef<typeof import('@vueuse/core')['useTextareaAutosize']>
+    readonly useThemeMigration: UnwrapRef<typeof import('./composables/settings/theme')['useThemeMigration']>
     readonly useThrottle: UnwrapRef<typeof import('@vueuse/core')['useThrottle']>
     readonly useThrottleFn: UnwrapRef<typeof import('@vueuse/core')['useThrottleFn']>
     readonly useThrottledRefHistory: UnwrapRef<typeof import('@vueuse/core')['useThrottledRefHistory']>
@@ -1750,6 +1757,7 @@ declare module '@vue/runtime-core' {
     readonly SettingLocation: UnwrapRef<typeof import('./composables/settings/index')['SettingLocation']>
     readonly Severity: UnwrapRef<typeof import('@rotki/common')['Severity']>
     readonly StoreResetPlugin: UnwrapRef<typeof import('./store/plugins')['StoreResetPlugin']>
+    readonly StoreStatePersistsPlugin: UnwrapRef<typeof import('./store/debug')['StoreStatePersistsPlugin']>
     readonly StoreTrackPlugin: UnwrapRef<typeof import('./store/plugins')['StoreTrackPlugin']>
     readonly SupportedAsset: UnwrapRef<typeof import('@rotki/common')['SupportedAsset']>
     readonly TIMEFRAME_CUSTOM: UnwrapRef<typeof import('@rotki/common')['TIMEFRAME_CUSTOM']>
@@ -2045,7 +2053,6 @@ declare module '@vue/runtime-core' {
     readonly sortDesc: UnwrapRef<typeof import('./utils/bignumbers')['sortDesc']>
     readonly splitSearch: UnwrapRef<typeof import('./utils/search')['splitSearch']>
     readonly startPromise: UnwrapRef<typeof import('../shared/utils')['startPromise']>
-    readonly storePiniaPlugins: UnwrapRef<typeof import('./store/debug')['storePiniaPlugins']>
     readonly storeToRefs: UnwrapRef<typeof import('pinia')['storeToRefs']>
     readonly sum: UnwrapRef<typeof import('./utils/balances')['sum']>
     readonly sumAssetBalances: UnwrapRef<typeof import('./utils/balances')['sumAssetBalances']>
@@ -2194,6 +2201,7 @@ declare module '@vue/runtime-core' {
     readonly useColorMode: UnwrapRef<typeof import('@vueuse/core')['useColorMode']>
     readonly useCompoundApi: UnwrapRef<typeof import('./composables/api/defi/compound')['useCompoundApi']>
     readonly useCompoundStore: UnwrapRef<typeof import('./store/defi/compound/index')['useCompoundStore']>
+    readonly useComputedRef: UnwrapRef<typeof import('./composables/utils/useComputedRef/index')['useComputedRef']>
     readonly useConfirmDialog: UnwrapRef<typeof import('@vueuse/core')['useConfirmDialog']>
     readonly useConfirmStore: UnwrapRef<typeof import('./store/confirm')['useConfirmStore']>
     readonly useCopy: UnwrapRef<typeof import('./composables/copy')['useCopy']>
@@ -2301,6 +2309,7 @@ declare module '@vue/runtime-core' {
     readonly useInterval: UnwrapRef<typeof import('@vueuse/core')['useInterval']>
     readonly useIntervalFn: UnwrapRef<typeof import('@vueuse/core')['useIntervalFn']>
     readonly useItemCache: UnwrapRef<typeof import('./composables/item-cache')['useItemCache']>
+    readonly useItemsPerPage: UnwrapRef<typeof import('./composables/session/settings')['useItemsPerPage']>
     readonly useKeyModifier: UnwrapRef<typeof import('@vueuse/core')['useKeyModifier']>
     readonly useKrakenApi: UnwrapRef<typeof import('./composables/api/staking/kraken')['useKrakenApi']>
     readonly useKrakenStakingEventTypes: UnwrapRef<typeof import('./composables/staking/kraken-events')['useKrakenStakingEventTypes']>
@@ -2453,6 +2462,7 @@ declare module '@vue/runtime-core' {
     readonly useTextDirection: UnwrapRef<typeof import('@vueuse/core')['useTextDirection']>
     readonly useTextSelection: UnwrapRef<typeof import('@vueuse/core')['useTextSelection']>
     readonly useTextareaAutosize: UnwrapRef<typeof import('@vueuse/core')['useTextareaAutosize']>
+    readonly useThemeMigration: UnwrapRef<typeof import('./composables/settings/theme')['useThemeMigration']>
     readonly useThrottle: UnwrapRef<typeof import('@vueuse/core')['useThrottle']>
     readonly useThrottleFn: UnwrapRef<typeof import('@vueuse/core')['useThrottleFn']>
     readonly useThrottledRefHistory: UnwrapRef<typeof import('@vueuse/core')['useThrottledRefHistory']>
