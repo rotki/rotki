@@ -3064,6 +3064,10 @@
       "import_types": "trades",
       "line_one": "We support the import of trades csv file type.",
       "name": "Kucoin"
+    },
+    "blockpit": {
+      "line_one": "Trades imported from Blockpit are treated as buys, for instance, selling ETH for USD will be shown as buying USD with ETH.",
+      "name": "Blockpit"
     }
   },
   "input_mode_select": {

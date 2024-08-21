@@ -11,7 +11,11 @@ from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data_import.importers.constants import COINTRACKING_EVENT_PREFIX
-from rotkehlchen.data_import.utils import BaseExchangeImporter, UnsupportedCSVEntry
+from rotkehlchen.data_import.utils import (
+    BaseExchangeImporter,
+    UnsupportedCSVEntry,
+    detect_duplicate_event,
+)
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
@@ -180,26 +184,26 @@ class CointrackingImporter(BaseExchangeImporter):
                 link='',
             )
             self.add_asset_movement(write_cursor, asset_movement)
-        elif row_type == 'Staking':  # TODO: Not like the way duplication is checked here
-            # We probably need to work on standardizing this and improving performance
-            self.flush_all(write_cursor)  # flush so that the DB check later can work and not miss unwritten events  # noqa: E501
+        elif row_type == 'Staking':
             amount = deserialize_asset_amount(csv_row['Buy'])
             asset = asset_resolver(csv_row['Cur.Buy'])
             timestamp_ms = ts_sec_to_ms(timestamp)
             event_type = HistoryEventType.STAKING
             event_subtype = HistoryEventSubType.REWARD
-            with self.db.conn.read_ctx() as read_cursor:
-                read_cursor.execute(
-                    f"SELECT COUNT(*) FROM history_events WHERE "
-                    f"event_identifier LIKE '{COINTRACKING_EVENT_PREFIX}%' "
-                    "AND asset=? AND amount=? AND timestamp=? AND location=? "
-                    "AND type=? AND subtype=?",
-                    (asset.identifier, str(amount), timestamp_ms, location.serialize_for_db(),
-                     event_type.serialize(), event_subtype.serialize()),
-                )
-                if read_cursor.fetchone()[0] != 0:
-                    log.warning(f'Cointracking staking event for {asset} at {timestamp} already exists in the DB')  # noqa: E501
-                    return
+
+            if detect_duplicate_event(
+                event_type=event_type,
+                event_subtype=event_subtype,
+                amount=amount,
+                asset=asset,
+                timestamp_ms=timestamp_ms,
+                location=location,
+                event_prefix=COINTRACKING_EVENT_PREFIX,
+                importer=self,
+                write_cursor=write_cursor,
+            ):
+                log.warning(f'Cointracking staking event for {asset} at {timestamp} already exists in the DB')  # noqa: E501
+                return
 
             event = HistoryEvent(
                 event_identifier=f'{COINTRACKING_EVENT_PREFIX}_{uuid4().hex}',
