@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`8147` Users can now import data from Blockpit into rotki.
 * :feature:`-` Rotki will now decode interest earned from aave v3 as independent events.
 * :feature:`-` Rotki will now decode Optimism DAI bridging
 * :feature:`8225` Rotki will now decode LlamaZip swaps on Optimism and Arbitrum One

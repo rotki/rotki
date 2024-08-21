@@ -12,8 +12,9 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.exchanges.data_structures import AssetMovement, MarginPosition, Trade
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount, deserialize_timestamp
-from rotkehlchen.types import Fee, Location, TimestampMS
+from rotkehlchen.types import AssetAmount, Fee, Location, TimestampMS
 
 ITEMS_PER_DB_WRITE = 400
 
@@ -103,3 +104,30 @@ def hash_csv_row(csv_row: Mapping[str, Any]) -> str:
     """Convert the row to string and encode it to a hex string to get a unique hash"""
     row_str = str(csv_row).encode()
     return hashlib.sha256(row_str).hexdigest()
+
+
+def detect_duplicate_event(
+        event_type: HistoryEventType,
+        event_subtype: HistoryEventSubType,
+        amount: AssetAmount,
+        asset: Asset,
+        timestamp_ms: TimestampMS,
+        location: Location,
+        event_prefix: str,
+        importer: BaseExchangeImporter,
+        write_cursor: DBWriterClient,
+) -> bool:
+    """Detect if an event with these attributes is already in the database.
+    Returns True if the event is found, and False if not found.
+    """
+    importer.flush_all(write_cursor)  # flush so that the DB check later can work and not miss unwritten events  # noqa: E501
+    with importer.db.conn.read_ctx() as read_cursor:
+        read_cursor.execute(
+            f"SELECT COUNT(*) FROM history_events WHERE "
+            f"event_identifier LIKE '{event_prefix}%' "
+            "AND asset=? AND amount=? AND timestamp=? AND location=? "
+            "AND type=? AND subtype=?",
+            (asset.identifier, str(amount), timestamp_ms, location.serialize_for_db(),
+             event_type.serialize(), event_subtype.serialize()),
+        )
+        return read_cursor.fetchone()[0] != 0
