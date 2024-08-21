@@ -444,6 +444,15 @@
         }
       }
     },
+    "fetch_counterparties": {
+      "error": {
+        "title": "Counterparties",
+        "description": "Failed to fetch the counterparties: {message}"
+      },
+      "actions": {
+        "fetch_again": "Fetch again"
+      }
+    },
     "defi": {
       "aave_balances": {
         "error": {

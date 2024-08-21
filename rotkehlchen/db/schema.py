@@ -114,8 +114,16 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('m', 45);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('n', 46);
 /* ZKSync Lite */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('o', 47);
-/* HTX Lite */
+/* HTX */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('p', 48);
+/* Bitcoin */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('q', 49);
+/* Bitcoin Cash */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('r', 50);
+/* Polkadot */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('s', 51);
+/* Kusama */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('t', 52);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)

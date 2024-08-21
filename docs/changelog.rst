@@ -12,9 +12,16 @@ Changelog
 * :feature:`8101` Failed transactions will now be displayed as failed and not just show "burned gas" event only.
 * :feature:`-` Transactions claiming SAFE tokens from vesting will now be properly decoded.
 * :feature:`-` Transactions locking, unlocking and withdrawing SAFE tokens will now be properly decoded. Also any locked SAFE tokens will be automatically detected and their balance counted.  
+
+* :release:`1.34.3 <2024-08-20>`
+* :feature:`-` Generic events can now be created or imported with location being bitcoin, bitcoin cash, polkadot and kusama.
+* :bug:`-` Importing events with generic import will no longer create a fee event if the fee is zero. Before it was not creating one only if fee was omitted.
 * :bug:`-` Fix an error introduced in 1.34.2 that was creating snapshots more frequently than expected.
 * :bug:`8350` Users will no longer be able to add duplicate names for an address for all evm chains to the address book.
 * :bug:`-` Eigenlayer native restaking exited balances residing in eigenpod will no longer be double counted.
+* :bug:`8397` Active/exited validators will now be propely displayed and filtered for validators that are tracked but the withdrawal address is not. This applies to protocols such as eigenlayer.
+* :bug:`8414` Detected tokens will no longer randomly disappear from a tracked address if new events are processed.
+* :bug:`-` It will now be possible to refresh counterparty data if loading initially fails.
 
 * :release:`1.34.2 <2024-08-09>`
 * :bug:`-` Users will be able to filter by event subtype in the history events view.
