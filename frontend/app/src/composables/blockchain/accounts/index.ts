@@ -264,7 +264,8 @@ export function useBlockchainAccounts() {
       await fetchBtcAccounts(blockchain);
     else if (blockchain === Blockchain.ETH2)
       await fetchEthStakingValidators();
-    else await fetchBlockchainAccounts(blockchain);
+    else
+      await fetchBlockchainAccounts(blockchain);
   };
 
   return {

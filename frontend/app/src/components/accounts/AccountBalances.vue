@@ -26,7 +26,6 @@ const { t } = useI18n();
 const visibleTags = ref<string[]>([]);
 const accountTable = ref<ComponentExposed<typeof AccountBalancesTable>>();
 const detailsTable = ref<ComponentExposed<typeof AccountGroupDetails>>();
-const selection = ref<boolean>(false);
 
 const blockchainStore = useBlockchainStore();
 const { fetchAccounts: fetchAccountsPage } = blockchainStore;
@@ -85,7 +84,7 @@ const chains = computed<string[] | undefined>(() => {
   return Array.isArray(chainFilter) ? chainFilter : undefined;
 });
 
-const { refreshDisabled, deleteDisabled, isDetectingTokens } = useBlockchainAccountLoading(fetchData);
+const { refreshDisabled, isDetectingTokens } = useBlockchainAccountLoading(fetchData);
 
 async function refreshClick() {
   await fetchAccounts(undefined, true);
@@ -150,30 +149,8 @@ const chainFilter = computed<string[]>({
     <div class="flex flex-col md:flex-row md:items-center gap-4 flex-wrap">
       <div
         class="flex items-center gap-2 flex-1"
-        :class="{ 'hidden lg:block': !(selection || showEvmElements) }"
+        :class="{ 'hidden lg:block': !(showEvmElements) }"
       >
-        <RuiTooltip
-          v-if="selection"
-          :popper="{ placement: 'top' }"
-          :open-delay="400"
-        >
-          <template #activator>
-            <RuiButton
-              data-cy="account-balances__delete-button"
-              color="error"
-              variant="outlined"
-              :disabled="deleteDisabled || !selection"
-              @click="accountTable?.confirmDelete()"
-            >
-              <template #prepend>
-                <RuiIcon name="delete-bin-line" />
-              </template>
-              {{ t('common.actions.delete') }}
-            </RuiButton>
-          </template>
-          {{ t('account_balances.delete_tooltip') }}
-        </RuiTooltip>
-
         <template v-if="showEvmElements">
           <RuiTooltip
             :popper="{ placement: 'top' }"
@@ -220,7 +197,6 @@ const chainFilter = computed<string[]>({
       ref="accountTable"
       v-model:pagination="pagination"
       v-model:sort="sort"
-      v-model:selection="selection"
       v-model:chain-filter="chainFilter"
       :available-chains="availableChains"
       class="mt-4"

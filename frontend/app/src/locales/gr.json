@@ -19,14 +19,13 @@
   },
   "account_balances": {
     "confirm_delete": {
-      "description_address": "Είστε σίγουροι οτι θέλτε να διαγράψετε {count} διεύθυνσ(η/εις)",
+      "description_address": "Είστε σίγουροι οτι θέλτε να διαγράψετε {address} διεύθυνση",
       "description_xpub": "Είστε σίγουροι οτι θέλτε να διαγράψετε {address}",
       "title": "Διαγραφή λογαριασμού"
     },
     "data_table": {
       "loading": "Παρακαλώ περιμένετε όσο το rotki ρωτάει το blockchain..."
     },
-    "delete_tooltip": "Διαγράφή των επιλεγμένων λογαριασμών",
     "detect_tokens": {
       "tooltip": {
         "last_detected": "Τελευταία σάρωση: {time}",

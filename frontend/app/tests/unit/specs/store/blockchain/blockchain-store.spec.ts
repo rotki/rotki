@@ -100,7 +100,7 @@ describe('useBlockchainStore', () => {
     });
     expect(store.accounts).toMatchObject({ eth: [account] });
     expect(store.balances).toMatchObject({ eth: balances });
-    store.removeAccounts({ accounts: ['0x123'], chain: 'eth' });
+    store.removeAccounts({ addresses: ['0x123'], chains: ['eth'] });
     expect(store.accounts).toMatchObject({ eth: [] });
     expect(store.balances).toMatchObject({ eth: {} });
   });

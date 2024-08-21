@@ -29,7 +29,7 @@
   "account_balances": {
     "aggregated_assets": "Aggregated assets",
     "confirm_delete": {
-      "description_address": "Are you sure you want to delete {count} address(es)",
+      "description_address": "Are you sure you want to delete {address} address",
       "description_xpub": "Are you sure you want to delete {address}",
       "title": "Account delete",
       "agnostic": {
@@ -44,7 +44,6 @@
       "loading": "Please wait while rotki queries the blockchain...",
       "group": "{type} accounts"
     },
-    "delete_tooltip": "Delete selected account(s)",
     "detect_tokens": {
       "tooltip": {
         "last_detected": "Last detected: {time}",

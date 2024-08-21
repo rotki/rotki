@@ -25,14 +25,13 @@
   },
   "account_balances": {
     "confirm_delete": {
-      "description_address": "你确定要删除{count}个地址",
+      "description_address": "你确定要删除{address}个地址",
       "description_xpub": "你确定要删除{address}",
       "title": "账号删除"
     },
     "data_table": {
       "loading": "rotki 正在查询区块链，请稍候..."
     },
-    "delete_tooltip": "删除选定的账户",
     "detect_tokens": {
       "tooltip": {
         "last_detected": "上次检测到: {time}",
