@@ -20,58 +20,15 @@ export const useHistoryEventMappings = createSharedComposable(() => {
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const { t, te } = useI18n();
 
-  const { getTransactionTypeMappings } = useHistoryEventsApi();
-
-  const defaultHistoryEventTypeData = () => ({
+  const historyEventTypeData = ref<HistoryEventTypeData>(({
     globalMappings: {},
     eventCategoryDetails: {},
     accountingEventsIcons: {},
     entryTypeMappings: {},
-  });
+  }));
 
+  const { getTransactionTypeMappings } = useHistoryEventsApi();
   const { notify } = useNotificationsStore();
-
-  const fetchError = ref<boolean>(true);
-
-  const refresh = async () => {
-    if (get(fetchError)) {
-      try {
-        set(historyEventTypeData, await getTransactionTypeMappings());
-      }
-      catch (error: any) {
-        onFetchError(error);
-      }
-    }
-  };
-
-  const onFetchError = (e: any) => {
-    set(fetchError, true);
-    notify({
-      display: true,
-      title: t('actions.history_events.fetch_mapping.error.title'),
-      message: t('actions.history_events.fetch_mapping.error.description', {
-        message: e.message,
-      }),
-      action: [
-        {
-          label: t('actions.history_events.fetch_mapping.actions.fetch_again'),
-          action: refresh,
-          icon: 'refresh-line',
-        },
-      ],
-    });
-  };
-
-  const historyEventTypeData: Ref<HistoryEventTypeData> = asyncComputed<HistoryEventTypeData>(
-    () => {
-      set(fetchError, false);
-      return getTransactionTypeMappings();
-    },
-    defaultHistoryEventTypeData(),
-    {
-      onError: onFetchError,
-    },
-  );
 
   const historyEventTypeGlobalMapping = useRefMap(historyEventTypeData, ({ globalMappings }) => globalMappings);
 
@@ -107,36 +64,44 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     };
   });
 
-  const transactionEventTypesData: ComputedRef<HistoryEventCategoryMapping> = useRefMap(
-    historyEventTypeData,
-    ({ eventCategoryDetails }) => {
-      const newEventCategoryDetails = cloneDeep(eventCategoryDetails);
-      for (const eventCategory in newEventCategoryDetails) {
-        const counterpartyMappings = newEventCategoryDetails[eventCategory].counterpartyMappings;
-        for (const counterparty in counterpartyMappings) {
-          const label = counterpartyMappings[counterparty].label;
-          const translationId = toSnakeCase(label);
-          const translationKey = `backend_mappings.events.type.${translationId}`;
-          counterpartyMappings[counterparty].label = te(translationKey) ? t(translationKey) : toSentenceCase(label);
-        }
+  const transactionEventTypesData: ComputedRef<HistoryEventCategoryMapping> = useRefMap(historyEventTypeData, ({ eventCategoryDetails }) => {
+    const newEventCategoryDetails = cloneDeep(eventCategoryDetails);
+    for (const eventCategory in newEventCategoryDetails) {
+      const counterpartyMappings = newEventCategoryDetails[eventCategory].counterpartyMappings;
+      for (const counterparty in counterpartyMappings) {
+        const label = counterpartyMappings[counterparty].label;
+        const translationId = toSnakeCase(label);
+        const translationKey = `backend_mappings.events.type.${translationId}`;
+        counterpartyMappings[counterparty].label = te(translationKey) ? t(translationKey) : toSentenceCase(label);
       }
-      return newEventCategoryDetails;
-    },
-  );
+    }
+    return newEventCategoryDetails;
+  });
 
-  const getEventType = (event: Event): ComputedRef<string | undefined> =>
-    computed(() => {
-      const { eventType, eventSubtype, entryType, isExit } = get(event);
+  const accountingEventsTypeData: Ref<ActionDataEntry[]> = useRefMap(historyEventTypeData, ({ accountingEventsIcons }) =>
+    Object.entries(accountingEventsIcons).map(([identifier, icon]) => {
+      const translationId = toSnakeCase(identifier);
+      const translationKey = `backend_mappings.profit_loss_event_type.${translationId}`;
 
-      let byEntryType;
-      if (entryType && entryType === HistoryEventEntryType.ETH_WITHDRAWAL_EVENT) {
-        byEntryType = get(historyEventTypeByEntryTypeMapping)[entryType]?.[eventType]?.[eventSubtype]?.[
-          isExit ? 'isExit' : 'notExit'
-        ];
-      }
+      return {
+        identifier,
+        icon,
+        label: te(translationKey) ? t(translationKey) : toCapitalCase(identifier),
+      };
+    }));
 
-      return byEntryType || get(historyEventTypeGlobalMapping)[eventType]?.[eventSubtype];
-    });
+  const getEventType = (event: Event): ComputedRef<string | undefined> => computed(() => {
+    const { eventType, eventSubtype, entryType, isExit } = get(event);
+
+    let byEntryType;
+    if (entryType && entryType === HistoryEventEntryType.ETH_WITHDRAWAL_EVENT) {
+      byEntryType = get(historyEventTypeByEntryTypeMapping)[entryType]?.[eventType]?.[eventSubtype]?.[
+        isExit ? 'isExit' : 'notExit'
+      ];
+    }
+
+    return byEntryType || get(historyEventTypeGlobalMapping)[eventType]?.[eventSubtype];
+  });
 
   function getFallbackData(
     showFallbackLabel: boolean,
@@ -155,55 +120,67 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     };
   }
 
-  const getEventTypeData = (event: Event, showFallbackLabel = true): ComputedRef<HistoryEventCategoryDetailWithId> =>
-    computed(() => {
-      const defaultKey = 'default';
-      const type = get(getEventType(event));
-      const { counterparty, eventType, eventSubtype } = get(event);
-      const counterpartyVal = counterparty || defaultKey;
-      const data = type && get(transactionEventTypesData)[type];
+  const getEventTypeData = (
+    event: Event,
+    showFallbackLabel = true,
+  ): ComputedRef<HistoryEventCategoryDetailWithId> => computed(() => {
+    const defaultKey = 'default';
+    const type = get(getEventType(event));
+    const { counterparty, eventType, eventSubtype } = get(event);
+    const counterpartyVal = counterparty || defaultKey;
+    const data = type && get(transactionEventTypesData)[type];
 
-      if (type && data) {
-        const categoryDetail = data.counterpartyMappings[counterpartyVal] || data.counterpartyMappings[defaultKey];
+    if (type && data) {
+      const categoryDetail = data.counterpartyMappings[counterpartyVal] || data.counterpartyMappings[defaultKey];
 
-        if (categoryDetail) {
-          return {
-            ...categoryDetail,
-            identifier: counterpartyVal !== defaultKey ? counterpartyVal : type,
-            direction: data.direction,
-          };
-        }
-      }
-
-      return getFallbackData(showFallbackLabel, eventSubtype, eventType);
-    });
-
-  const accountingEventsTypeData: Ref<ActionDataEntry[]> = useRefMap(
-    historyEventTypeData,
-    ({ accountingEventsIcons }) =>
-      Object.entries(accountingEventsIcons).map(([identifier, icon]) => {
-        const translationId = toSnakeCase(identifier);
-        const translationKey = `backend_mappings.profit_loss_event_type.${translationId}`;
-
+      if (categoryDetail) {
         return {
-          identifier,
-          icon,
-          label: te(translationKey) ? t(translationKey) : toCapitalCase(identifier),
+          ...categoryDetail,
+          identifier: counterpartyVal !== defaultKey ? counterpartyVal : type,
+          direction: data.direction,
         };
-      }),
-  );
+      }
+    }
 
-  const getAccountingEventTypeData = (type: MaybeRef<string>): ComputedRef<ActionDataEntry> =>
-    computed(() => {
-      const typeVal = get(type);
-      return (
-        get(accountingEventsTypeData).find(({ identifier }) => identifier === typeVal) || {
-          identifier: typeVal,
-          icon: 'question-line',
-          label: toCapitalCase(typeVal),
-        }
-      );
-    });
+    return getFallbackData(showFallbackLabel, eventSubtype, eventType);
+  });
+
+  const getAccountingEventTypeData = (type: MaybeRef<string>): ComputedRef<ActionDataEntry> => computed(() => {
+    const typeVal = get(type);
+    return (
+      get(accountingEventsTypeData).find(({ identifier }) => identifier === typeVal) || {
+        identifier: typeVal,
+        icon: 'question-line',
+        label: toCapitalCase(typeVal),
+      }
+    );
+  });
+
+  const fetchMappings = async (): Promise<void> => {
+    try {
+      set(historyEventTypeData, await getTransactionTypeMappings());
+    }
+    catch (error: any) {
+      notify({
+        display: true,
+        title: t('actions.history_events.fetch_mapping.error.title'),
+        message: t('actions.history_events.fetch_mapping.error.description', {
+          message: error.message,
+        }),
+        action: [
+          {
+            label: t('actions.history_events.fetch_mapping.actions.fetch_again'),
+            action: async () => await fetchMappings(),
+            icon: 'refresh-line',
+          },
+        ],
+      });
+    }
+  };
+
+  onBeforeMount(() => {
+    startPromise(fetchMappings());
+  });
 
   return {
     historyEventTypeData,
@@ -217,6 +194,6 @@ export const useHistoryEventMappings = createSharedComposable(() => {
     historyEventTypeGlobalMapping,
     accountingEventsTypeData,
     getAccountingEventTypeData,
-    refresh,
+    refresh: fetchMappings,
   };
 });
