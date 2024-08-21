@@ -14,7 +14,6 @@ type DataRow = T & { id: string };
 const props = withDefaults(
   defineProps<{
     accounts: Collection<T>;
-    selection?: boolean;
     group?: boolean;
     loading?: boolean;
     showGroupLabel?: boolean;
@@ -24,7 +23,6 @@ const props = withDefaults(
   {
     loading: false,
     group: false,
-    selection: false,
     showGroupLabel: false,
     availableChains: () => [],
     isEvm: false,
@@ -32,7 +30,6 @@ const props = withDefaults(
 );
 
 const emit = defineEmits<{
-  (e: 'update:selection', enabled: boolean): void;
   (e: 'edit', account: AccountManageState): void;
   (e: 'refresh'): void;
 }>();
@@ -44,7 +41,6 @@ const { t } = useI18n();
 const pagination = defineModel<TablePaginationData>('pagination', { required: true });
 const sort = defineModel<DataTableSortData<T>>('sort', { required: true });
 
-const selection = ref<string[]>([]);
 const expanded = ref<DataRow[]>([]) as Ref<DataRow[]>;
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -52,20 +48,9 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { isTaskRunning } = useTaskStore();
 const { isLoading } = useStatusStore();
 const { supportsTransactions } = useSupportedChains();
-const { showConfirmation, showAgnosticConfirmation } = useAccountDelete();
+const { showConfirmation } = useAccountDelete();
 
 const loading = isLoading(Section.BLOCKCHAIN);
-
-// Keeping it as it is, will allow us to enable it easily later
-const selectedIds = computed<undefined>({
-  get() {
-    return undefined;
-  },
-  set(value?: string[]) {
-    set(selection, value);
-    emit('update:selection', !!value && value.length > 0);
-  },
-});
 
 const rows = computed<DataRow[]>(() => {
   const data = props.accounts.data;
@@ -74,8 +59,6 @@ const rows = computed<DataRow[]>(() => {
     id: 'chain' in account ? getAccountId(account) : getGroupId(account),
   }));
 });
-
-const selectedRows = computed<DataRow[]>(() => get(rows).filter(row => get(selection).includes(row.id)));
 
 const anyExpansion = computed(() => get(rows).some(item => item.expansion));
 
@@ -172,10 +155,6 @@ function expand(item: DataRow) {
   set(expanded, isExpanded(item) ? [] : [item]);
 }
 
-function isEditable(row: T): boolean {
-  return row.data.type === 'xpub' || (row.type === 'group' && row.chains.length === 1);
-}
-
 function showTokenDetection(row: DataRow): boolean {
   if (row.type === 'group')
     return row.chains.length === 1 && supportsTransactions(row.chains[0]);
@@ -183,19 +162,11 @@ function showTokenDetection(row: DataRow): boolean {
   return supportsTransactions(row.chain);
 }
 
-function confirmDelete(item?: DataRow) {
+function confirmDelete(item: DataRow) {
   showConfirmation({
-    type: 'accounts',
-    data: item ? [item] : get(selectedRows),
+    type: 'account',
+    data: item,
   }, () => {
-    set(selection, []);
-    emit('refresh');
-  });
-}
-
-function confirmAgnosticDelete(item: DataRow) {
-  showAgnosticConfirmation(item, () => {
-    set(selection, []);
     emit('refresh');
   });
 }
@@ -204,6 +175,27 @@ function edit(row: DataRow) {
   emit('edit', editBlockchainAccount(row));
 }
 
+/**
+ * Tracks the row changes and collapses the expanded row if the updated entry only has a single chain.
+ * This is for the case where we delete one of the two chains and then we go to a single chain group.
+ */
+watch(rows, (rows) => {
+  const expandedRows = get(expanded);
+
+  const collapseRows: string[] = [];
+  for (const expandedItem of expandedRows) {
+    const matchingRow = rows.find(row => row.id === expandedItem.id);
+    if (!matchingRow)
+      continue;
+
+    if ('chains' in matchingRow && matchingRow.chains.length === 1)
+      collapseRows.push(matchingRow.id);
+  }
+
+  if (collapseRows.length > 0)
+    set(expanded, expandedRows.filter(row => !collapseRows.includes(row.id)));
+});
+
 defineExpose({
   confirmDelete,
 });
@@ -211,7 +203,6 @@ defineExpose({
 
 <template>
   <RuiDataTable
-    v-model="selectedIds"
     v-bind="$attrs"
     v-model:expanded="expanded"
     v-model:sort.external="sort"
@@ -280,7 +271,7 @@ defineExpose({
           :disabled="accountOperation"
           :no-edit="isEvm"
           @edit-click="edit(row)"
-          @delete-click="group && !isEditable(row) ? confirmAgnosticDelete(row) : confirmDelete(row)"
+          @delete-click="confirmDelete(row)"
         />
       </div>
     </template>

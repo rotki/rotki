@@ -34,6 +34,6 @@ const emit = defineEmits<{
         <RuiIcon name="refresh-line" />
       </RuiButton>
     </template>
-    <span>{{ tooltip }}</span>
+    {{ tooltip }}
   </RuiTooltip>
 </template>

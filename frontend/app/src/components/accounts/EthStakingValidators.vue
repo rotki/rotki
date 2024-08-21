@@ -151,8 +151,10 @@ async function refresh() {
 
 function confirmDelete(item: EthereumValidator) {
   showConfirmation({
-    type: 'validators',
-    data: [item],
+    type: 'validator',
+    data: item,
+  }, () => {
+    startPromise(fetchData());
   });
 }
 

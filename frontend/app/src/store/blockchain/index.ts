@@ -18,7 +18,6 @@ import type {
   BlockchainAccountGroupWithBalance,
   BlockchainAccountRequestPayload,
   BlockchainAccountWithBalance,
-  DeleteBlockchainAccountParams,
   EthereumValidator,
   EthereumValidatorRequestPayload,
 } from '@/types/blockchain/accounts';
@@ -173,25 +172,41 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     set(accounts, { ...get(accounts), [chain]: data });
   };
 
-  const removeAccounts = ({ accounts: addresses, chain }: DeleteBlockchainAccountParams): void => {
+  const removeAccounts = ({ addresses, chains }: { addresses: string[]; chains: string[] }): void => {
     const knownAccounts = { ...get(accounts) };
-    const chainAccounts = knownAccounts[chain];
-    if (chainAccounts) {
-      knownAccounts[chain] = chainAccounts.filter(account => !addresses.includes(getAccountAddress(account)));
-      set(accounts, knownAccounts);
-    }
-
     const knownBalances = { ...get(balances) };
-    const chainBalances = knownBalances[chain];
+    const groupAddresses: string[] = [];
 
-    if (chainBalances) {
-      addresses.forEach((address) => {
+    for (const chain of chains) {
+      const chainAccounts = knownAccounts[chain];
+      if (chainAccounts) {
+        const groupIds = chainAccounts
+          .filter(account => addresses.includes(getAccountAddress(account)) && account.groupId && account.groupHeader)
+          .map(account => account.groupId!);
+
+        const groups = chainAccounts.filter(account => account.groupId && groupIds.includes(account.groupId));
+        groupAddresses.push(...groups.map(account => getAccountAddress(account)));
+
+        knownAccounts[chain] = chainAccounts.filter(
+          account => !(
+            addresses.includes(getAccountAddress(account)) || (account.groupId && groupIds.includes(account.groupId))
+          ),
+        );
+      }
+
+      const chainBalances = knownBalances[chain];
+      if (!chainBalances)
+        continue;
+
+      for (const address of [...addresses, ...groupAddresses].filter(uniqueStrings)) {
         if (chainBalances[address])
           delete chainBalances[address];
-      });
+      }
       knownBalances[chain] = chainBalances;
-      set(balances, knownBalances);
     }
+
+    set(accounts, knownAccounts);
+    set(balances, knownBalances);
   };
 
   const updateBalances = (chain: string, { perAccount }: BlockchainBalances) => {

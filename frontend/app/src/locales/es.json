@@ -25,14 +25,13 @@
   },
   "account_balances": {
     "confirm_delete": {
-      "description_address": "Are you sure you want to delete {count} address(es)",
+      "description_address": "Are you sure you want to delete {address} address",
       "description_xpub": "Are you sure you want to delete {address}",
       "title": "Account delete"
     },
     "data_table": {
       "loading": "Please wait while rotki queries the blockchain..."
     },
-    "delete_tooltip": "Borrar las cuentas seleccionadas",
     "detect_tokens": {
       "tooltip": {
         "last_detected": "Last detected: {time}",
