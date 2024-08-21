@@ -22,6 +22,7 @@ export const SOURCES = [
   'rotki_trades',
   'bittrex',
   'kucoin',
+  'blockpit',
 ] as const;
 
 export type ImportSourceType = (typeof SOURCES)[number];

@@ -24,6 +24,7 @@ from rotkehlchen.tests.utils.dataimport import (
     assert_bittrex_import_results,
     assert_blockfi_trades_import_results,
     assert_blockfi_transactions_import_results,
+    assert_blockpit_import_results,
     assert_cointracking_import_results,
     assert_cryptocom_import_results,
     assert_cryptocom_special_events_import_results,
@@ -673,3 +674,21 @@ def test_kucoin_history_import(rotkehlchen_api_server):
         assert assert_proper_sync_response_with_result(response) is True
 
     assert_kucoin_import_results(rotki)
+
+
+def test_blockpit_history_import(rotkehlchen_api_server):
+    """Test that data import works for blockpit csv files"""
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    dir_path = Path(__file__).resolve().parent.parent
+
+    filepath = dir_path / 'data' / 'blockpit_transactions.csv'
+    json_data = {'source': 'blockpit', 'file': str(filepath)}
+    response = requests.put(
+        api_url_for(
+            rotkehlchen_api_server,
+            'dataimportresource',
+        ), json=json_data,
+    )
+    assert assert_proper_sync_response_with_result(response) is True
+
+    assert_blockpit_import_results(rotki)

@@ -84,6 +84,12 @@ const sources = computed<ImportSource[]>(() => [
     form: defineAsyncComponent(() => import('@/components/import/KucoinImport.vue')),
   },
   {
+    key: 'blockpit',
+    label: t('import_data.blockpit.name'),
+    logo: './assets/images/protocols/blockpit.png',
+    form: defineAsyncComponent(() => import('@/components/import/BlockpitImport.vue')),
+  },
+  {
     key: 'custom',
     label: t('import_data.custom.name'),
     icon: 'file-text-line',

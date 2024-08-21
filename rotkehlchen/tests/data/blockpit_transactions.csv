@@ -1,0 +1,18 @@
+Blockpit ID;Timestamp;Source Type;Source Name;Integration;Transaction Type;Outgoing Asset;Outgoing Amount;Incoming Asset;Incoming Amount;Fee Asset;Fee Amount;Transaction ID;Note;Merge ID
+1,55444E+13;06.01.2023 20:08;Chain;Polygon;Polygon Wallet Depot;Gift;META;10;;;MATIC;0.001537148341223424;0x000000000000000000000000000000000000dead;;
+1,55989E+11;08.01.2023 01:00;API;Binance;Binance Depot;Bounties;;;EUR;0.01061899;;;;Referral Kickback (sum);
+1,55983E+14;08.01.2023 12:44;API;Binance;Binance Depot;Trade;EUR;168.69217;MATIC;223.7;MATIC;0.2237;;spot;
+1,55983E+14;08.01.2023 15:48;API;Binance;Binance Depot;Trade;MATIC;140.5;EUR;106.1899;EUR;0.1061899;;spot;
+1,55947E+11;08.01.2023 16:19;API;Binance;Binance Depot;Withdrawal;BNB;0.0095;;;BNB;0.0005;;;155934547
+1,55939E+13;08.01.2023 16:19;Chain;BNB Smart Chain (BSC);BNB Smart Chain (BSC) Depot;Deposit;;;BNB;0.0095;;;0x000000000000000000000000000000000000dead;;1,55949E+11
+1,55965E+12;08.01.2023 16:20;Chain;BNB Smart Chain (BSC);BNB Smart Chain (BSC) Depot;Fee;BNB;0.00024391;;;;;0x000000000000000000000000000000000000dead;;
+1,55935E+14;08.01.2023 16:22;Chain;BNB Smart Chain (BSC);BNB Smart Chain (BSC) Depot;Withdrawal;BNB;0.00915109;;;BNB;0.000105;0x000000000000000000000000000000000000dead;;1,5595E+14
+1,55948E+13;08.01.2023 16:22;API;Binance;Binance Depot;Deposit;;;BNB;0.00915109;;;;;1,55933E+11
+1,55988E+12;08.01.2023 16:24;API;Binance;Binance Depot;Trade;USDT;0.24209916;BNB;0.00092036;BNB;0.0000184;;;
+1,55835E+12;08.01.2023 18:56;API;One Trading;Bitpanda Pro Depot;NonTaxableOut;EUR;150;;;;;;;
+1,62946E+11;26.01.2023 19:06;API;Bitpanda;Bitpanda Depot;NonTaxableIn;;;EUR;1000;;;;;
+1,62936E+11;26.01.2023 19:10;API;Bitpanda;Bitpanda Depot;NonTaxableOut;EUR;1000;;;;;;;1,62453E+14
+1,65179E+12;04.02.2023 17:37;API;Kraken;Kraken Depot;Margin_trading_loss;EUR;0.0181;;;;;;;
+1,65184E+13;04.02.2023 17:45;API;Kraken;Kraken Depot;Margin_trading_profit;;;EUR;0.0025;EUR;0.0021;;;
+1,66483E+11;09.02.2023 03:25;API;Kraken;Kraken Depot;Staking;;;MATIC;0.1932938;;;;;
+1,66569E+12;09.02.2023 15:00;API;Kraken;Kraken Depot;Lending;;;EUR;0.06;;;;;
