@@ -138,14 +138,11 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
           if (matches.length === 0)
             return null;
 
-          const fullChains = matchesWithoutChains.map(item => item.chain).filter(uniqueStrings);
-
           return {
             ...account,
             usdValue: sum(matches),
             tags: matches.flatMap(match => match.tags ?? []).filter(uniqueStrings),
             chains: matches.map(match => match.chain).filter(uniqueStrings),
-            fullChains,
             expansion: matches.length === 1 ? matches[0].expansion : 'accounts',
           };
         }
