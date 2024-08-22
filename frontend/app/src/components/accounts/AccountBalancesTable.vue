@@ -7,6 +7,7 @@ import type { TableRowKey } from '@/composables/filter-paginate';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 import type { Collection } from '@/types/collection';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
+import type { BigNumber } from '@rotki/common';
 import type { BlockchainAccountGroupWithBalance, BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
 
 type DataRow = T & { id: string };
@@ -42,6 +43,7 @@ const pagination = defineModel<TablePaginationData>('pagination', { required: tr
 const sort = defineModel<DataTableSortData<T>>('sort', { required: true });
 
 const expanded = ref<DataRow[]>([]) as Ref<DataRow[]>;
+const collapsed = ref<DataRow[]>([]) as Ref<DataRow[]>;
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
@@ -51,6 +53,14 @@ const { supportsTransactions } = useSupportedChains();
 const { showConfirmation } = useAccountDelete();
 
 const loading = isLoading(Section.BLOCKCHAIN);
+
+const totalValue = computed<BigNumber | undefined>(() => {
+  const totalUsdValue = props.accounts.totalUsdValue;
+  if (!totalUsdValue)
+    return undefined;
+
+  return totalUsdValue.minus(sum(get(collapsed)));
+});
 
 const rows = computed<DataRow[]>(() => {
   const data = props.accounts.data;
@@ -207,6 +217,7 @@ defineExpose({
     v-model:expanded="expanded"
     v-model:sort.external="sort"
     v-model:pagination.external="pagination"
+    v-model:collapsed="collapsed"
     :cols="cols"
     :rows="rows"
     :loading="group && isAnyLoading"
@@ -276,7 +287,7 @@ defineExpose({
       </div>
     </template>
     <template
-      v-if="accounts.totalUsdValue"
+      v-if="totalValue"
       #body.append
     >
       <RowAppend
@@ -292,7 +303,7 @@ defineExpose({
               :loading="loading"
               fiat-currency="USD"
               show-currency="symbol"
-              :value="accounts.totalUsdValue"
+              :value="totalValue"
             />
           </td>
         </template>
