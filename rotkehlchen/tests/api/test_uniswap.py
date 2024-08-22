@@ -74,10 +74,8 @@ def test_get_balances(
     """
     tx_hex = deserialize_evm_tx_hash('0x856a5b5d95623f85923938e1911dfda6ad1dd185f45ab101bac99371aeaed329')  # noqa: E501
     ethereum_inquirer = rotkehlchen_api_server.rest_api.rotkehlchen.chains_aggregator.ethereum.node_inquirer  # noqa: E501
-    database = rotkehlchen_api_server.rest_api.rotkehlchen.data.db
     get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=database,
         tx_hash=tx_hex,
     )
     async_query = random.choice([False, True])
@@ -163,8 +161,6 @@ def test_get_events_history_filtering_by_timestamp(
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     ethereum_inquirer = rotki.chains_aggregator.ethereum.node_inquirer
-    database = rotki.data.db
-
     expected_events_balances_1 = [
         LiquidityPoolEventsBalance(
             pool_address=string_to_evm_address('0x55111baD5bC368A2cb9ecc9FBC923296BeDb3b89'),
@@ -181,7 +177,6 @@ def test_get_events_history_filtering_by_timestamp(
     for tx_hex in (tx_hex_1, tx_hex_2):
         get_decoded_events_of_transaction(
             evm_inquirer=ethereum_inquirer,
-            database=database,
             tx_hash=tx_hex,
         )
 

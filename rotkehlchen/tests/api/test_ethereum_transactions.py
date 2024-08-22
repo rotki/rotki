@@ -1455,7 +1455,6 @@ def test_count_transactions_missing_decoding(rotkehlchen_api_server: 'APIServer'
 
     get_decoded_events_of_transaction(
         evm_inquirer=rotki.chains_aggregator.ethereum.node_inquirer,
-        database=rotki.data.db,
         tx_hash=eth_transactions[0].tx_hash,
     )  # decode 1 transaction in ethereum
 
@@ -1500,7 +1499,6 @@ def test_repulling_transaction_with_internal_txs(rotkehlchen_api_server: 'APISer
     ethereum_inquirer = rotki.chains_aggregator.ethereum
     get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer.node_inquirer,
-        database=database,
         tx_hash=tx_hash,
     )
 

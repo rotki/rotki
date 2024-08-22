@@ -19,14 +19,10 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x7F248e4301F5A16B2a8289989584A509f7157845']])
-def test_claim_grain(database, ethereum_inquirer, ethereum_accounts):
+def test_claim_grain(ethereum_inquirer, ethereum_accounts):
     tx_hex = deserialize_evm_tx_hash('0x5d0464be1198872d88507a3da2a876fe32c9d4427fb9ba7254c29fef0a94698c')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hex,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
     timestamp, gas_str, amount_str = TimestampMS(1613015691000), '0.007051027', '1373.104541023509385198'  # noqa: E501
     expected_events = [
         EvmEvent(

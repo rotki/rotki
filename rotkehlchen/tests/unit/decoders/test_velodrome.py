@@ -52,7 +52,6 @@ def test_add_liquidity_v2(optimism_transaction_decoder, optimism_accounts, load_
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
-        database=optimism_transaction_decoder.database,
         tx_hash=evmhash,
         load_global_caches=load_global_caches,
     )
@@ -139,7 +138,6 @@ def test_add_liquidity_v1(optimism_transaction_decoder, optimism_accounts, load_
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
-        database=optimism_transaction_decoder.database,
         tx_hash=evmhash,
         load_global_caches=load_global_caches,
     )
@@ -223,7 +221,6 @@ def test_remove_liquidity_v2(optimism_transaction_decoder, optimism_accounts, lo
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
-        database=optimism_transaction_decoder.database,
         tx_hash=evmhash,
         load_global_caches=load_global_caches,
     )
@@ -309,7 +306,6 @@ def test_remove_liquidity_v1(optimism_transaction_decoder, optimism_accounts, lo
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
-        database=optimism_transaction_decoder.database,
         tx_hash=evmhash,
         load_global_caches=load_global_caches,
     )
@@ -396,7 +392,6 @@ def test_swap_eth_to_token_v2(optimism_accounts, optimism_transaction_decoder, l
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
-        database=optimism_transaction_decoder.database,
         tx_hash=evmhash,
         load_global_caches=load_global_caches,
     )
@@ -454,7 +449,6 @@ def test_swap_eth_to_token_v1(optimism_accounts, optimism_transaction_decoder, l
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
-        database=optimism_transaction_decoder.database,
         tx_hash=evmhash,
         load_global_caches=load_global_caches,
     )
@@ -512,7 +506,6 @@ def test_swap_token_to_eth_v2(optimism_accounts, optimism_transaction_decoder, l
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
-        database=optimism_transaction_decoder.database,
         tx_hash=evmhash,
         load_global_caches=load_global_caches,
     )
@@ -582,7 +575,6 @@ def test_swap_token_to_eth_v1(optimism_accounts, optimism_transaction_decoder, l
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
-        database=optimism_transaction_decoder.database,
         tx_hash=evmhash,
         load_global_caches=load_global_caches,
     )
@@ -640,7 +632,6 @@ def test_swap_tokens_v2(optimism_accounts, optimism_transaction_decoder, load_gl
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
-        database=optimism_transaction_decoder.database,
         tx_hash=evmhash,
         load_global_caches=load_global_caches,
     )
@@ -710,7 +701,6 @@ def test_swap_tokens_v1(optimism_accounts, optimism_transaction_decoder, load_gl
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
-        database=optimism_transaction_decoder.database,
         tx_hash=evmhash,
         load_global_caches=load_global_caches,
     )
@@ -775,7 +765,6 @@ def test_stake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_deco
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
-        database=optimism_transaction_decoder.database,
         tx_hash=evmhash,
         load_global_caches=load_global_caches,
     )
@@ -834,7 +823,6 @@ def test_unstake_lp_token_to_gauge_v2(optimism_accounts, optimism_transaction_de
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
-        database=optimism_transaction_decoder.database,
         tx_hash=evmhash,
         load_global_caches=load_global_caches,
     )
@@ -880,7 +868,6 @@ def test_get_reward_from_gauge_v2(optimism_accounts, optimism_transaction_decode
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
-        database=optimism_transaction_decoder.database,
         tx_hash=evmhash,
         load_global_caches=load_global_caches,
     )

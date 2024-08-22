@@ -12,7 +12,6 @@ from rotkehlchen.chain.base.transactions import BaseTransactions
 from rotkehlchen.chain.ethereum.constants import ETHEREUM_ETHERSCAN_NODE
 from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
-from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
@@ -44,6 +43,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
@@ -340,7 +340,6 @@ def setup_ethereum_transactions_test(
 @overload
 def get_decoded_events_of_transaction(
         evm_inquirer: 'EthereumInquirer',
-        database: DBHandler,
         tx_hash: EVMTxHash,
         transactions: EvmTransactions | None = None,
         relevant_address: ChecksumAddress | None = None,
@@ -352,7 +351,6 @@ def get_decoded_events_of_transaction(
 @overload
 def get_decoded_events_of_transaction(
         evm_inquirer: 'OptimismInquirer',
-        database: DBHandler,
         tx_hash: EVMTxHash,
         transactions: EvmTransactions | None = None,
         relevant_address: ChecksumAddress | None = None,
@@ -364,7 +362,6 @@ def get_decoded_events_of_transaction(
 @overload
 def get_decoded_events_of_transaction(
         evm_inquirer: 'ArbitrumOneInquirer',
-        database: DBHandler,
         tx_hash: EVMTxHash,
         transactions: EvmTransactions | None = None,
         relevant_address: ChecksumAddress | None = None,
@@ -376,7 +373,6 @@ def get_decoded_events_of_transaction(
 @overload
 def get_decoded_events_of_transaction(
         evm_inquirer: 'BaseInquirer',
-        database: DBHandler,
         tx_hash: EVMTxHash,
         transactions: EvmTransactions | None = None,
         relevant_address: ChecksumAddress | None = None,
@@ -388,7 +384,6 @@ def get_decoded_events_of_transaction(
 @overload
 def get_decoded_events_of_transaction(
         evm_inquirer: 'GnosisInquirer',
-        database: DBHandler,
         tx_hash: EVMTxHash,
         transactions: EvmTransactions | None = None,
         relevant_address: ChecksumAddress | None = None,
@@ -400,7 +395,6 @@ def get_decoded_events_of_transaction(
 @overload
 def get_decoded_events_of_transaction(
         evm_inquirer: 'PolygonPOSInquirer',
-        database: DBHandler,
         tx_hash: EVMTxHash,
         transactions: EvmTransactions | None = None,
         relevant_address: ChecksumAddress | None = None,
@@ -412,7 +406,6 @@ def get_decoded_events_of_transaction(
 @overload
 def get_decoded_events_of_transaction(
         evm_inquirer: 'ScrollInquirer',
-        database: DBHandler,
         tx_hash: EVMTxHash,
         transactions: EvmTransactions | None = None,
         relevant_address: ChecksumAddress | None = None,
@@ -423,12 +416,11 @@ def get_decoded_events_of_transaction(
 
 def get_decoded_events_of_transaction(
         evm_inquirer: 'EvmNodeInquirer',
-        database: DBHandler,
         tx_hash: EVMTxHash,
         transactions: EvmTransactions | None = None,
         relevant_address: ChecksumAddress | None = None,
         load_global_caches: list[str] | None = None,
-) -> tuple[list['EvmEvent'], EVMTransactionDecoder]:
+) -> tuple[list['EvmEvent'], 'EVMTransactionDecoder']:
     """A convenience function to ask get transaction, receipt and decoded event for a tx_hash
 
     It also accepts `transactions` in case the caller whants to apply some mocks (like call_count)
@@ -451,8 +443,8 @@ def get_decoded_events_of_transaction(
     mappings_result = chain_mappings.get(evm_inquirer.chain_id)
     if mappings_result is not None:
         if transactions is None:
-            transactions = mappings_result[0](evm_inquirer, database)
-        decoder = mappings_result[1](database, evm_inquirer, transactions)
+            transactions = mappings_result[0](evm_inquirer, evm_inquirer.database)
+        decoder: EVMTransactionDecoder = mappings_result[1](evm_inquirer.database, evm_inquirer, transactions)  # noqa: E501
     else:
         raise AssertionError('Unsupported chainID at tests')
 

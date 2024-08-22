@@ -33,7 +33,6 @@ def test_claim_airdrop_2(
     user_address = base_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_transaction_decoder.evm_inquirer,
-        database=base_transaction_decoder.database,
         tx_hash=evmhash,
     )
     timestamp, gas_amount, claimed_amount = TimestampMS(1709555247000), '0.000443147649294366', '100'  # noqa: E501
@@ -79,7 +78,6 @@ def test_claim_airdrop_3(
     user_address = base_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_transaction_decoder.evm_inquirer,
-        database=base_transaction_decoder.database,
         tx_hash=evmhash,
     )
     timestamp, gas_amount, claimed_amount = TimestampMS(1715696797000), '0.000016768741928411', '1649'  # noqa: E501

@@ -1035,7 +1035,6 @@ def test_query_combined_mev_reward_and_block_production_events(rotkehlchen_api_s
         assert cursor.execute('SELECT COUNT(*) FROM eth2_validators').fetchone() == (2,)
     _, _ = get_decoded_events_of_transaction(
         evm_inquirer=rotki.chains_aggregator.ethereum.node_inquirer,
-        database=rotki.data.db,
         tx_hash=tx_hash,
     )
 

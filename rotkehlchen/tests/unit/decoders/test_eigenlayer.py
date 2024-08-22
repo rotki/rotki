@@ -30,13 +30,9 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xbec0937E0E99425a886B99A3b956C7aC6C39aA12']])
-def test_deposit_token(database, ethereum_inquirer, ethereum_accounts):
+def test_deposit_token(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x716b15f5088ff469d7d31680535d35b085e1c3de25255c7849e5955a59df8d31')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, gas_amount = TimestampMS(1702926167000), '0.049006058268043653'
     deposited_amount = '5.740516176725108094'
     strategy_addr = string_to_evm_address('0x0Fe4F44beE93503346A3Ac9EE5A26b130a5796d6')
@@ -86,13 +82,9 @@ def test_deposit_token(database, ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x47E50634E32212F43713Bf4e4A86E6275AcD456d']])
-def test_withdraw(database, ethereum_inquirer, ethereum_accounts):
+def test_withdraw(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x00bdab08d05bd68f8f863e35a8dbe435978481dcbf15faf7276da30a5bfee971')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, gas_amount = TimestampMS(1707668387000), '0.004606768190817408'
     withdrawn_amount = '0.407049270448991651'
     strategy_addr = string_to_evm_address('0x0Fe4F44beE93503346A3Ac9EE5A26b130a5796d6')
@@ -128,13 +120,9 @@ def test_withdraw(database, ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xabe8430e3f0BeCa32915dA84E530f81A01379953']])
-def test_airdrop_claim_s1_phase1(database, ethereum_inquirer, ethereum_accounts):
+def test_airdrop_claim_s1_phase1(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x0a72c7bf0fe1808035f8df466a70453f29c6b57d0bec46913d993a19ef72265c')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, gas_amount, claim_amount = TimestampMS(1715680739000), '0.00074757962836592', '110'
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
@@ -168,13 +156,9 @@ def test_airdrop_claim_s1_phase1(database, ethereum_inquirer, ethereum_accounts)
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xf6d3d6B6cee9991900Bf53261e1bb213A3d54Fec']])
-def test_airdrop_claim_s1_phase2(database, ethereum_inquirer, ethereum_accounts):
+def test_airdrop_claim_s1_phase2(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x7896ca761e9e2fd53dbec28c946d5dbc2e0802a3700641d26d61bc79afaac1a5')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, gas_amount, claim_amount = TimestampMS(1720527731000), '0.000428532817567424', '110'
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
@@ -208,13 +192,9 @@ def test_airdrop_claim_s1_phase2(database, ethereum_inquirer, ethereum_accounts)
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x65151A6343b16c38286f31fcC93e20246629cF8c']])
-def test_stake_eigen(database, ethereum_inquirer, ethereum_accounts):
+def test_stake_eigen(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x4da63226965a8b0584f137efa934106cd0cb7a15b536d6f659945cfd4c260b4e')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, gas_amount, staked_amount = TimestampMS(1715684387000), '0.00141296787957222', '110'
     a_eigen, strategy_addr = Asset(EIGEN_TOKEN_ID), '0xaCB55C530Acdb2849e6d4f36992Cd8c9D50ED8F7'
     expected_events = [EvmEvent(
@@ -262,13 +242,9 @@ def test_stake_eigen(database, ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x80B7EDA1Baa2290478205786615F65052c80882f']])
-def test_deploy_eigenpod(database, ethereum_inquirer, ethereum_accounts):
+def test_deploy_eigenpod(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x910087fb1be44dbf2d89363579c162e70d5666f16182c9015d635c4f81ac07b6')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, gas_amount, eigenpod_address = TimestampMS(1715733143000), '0.00133529055565527', '0x664BFef14A62F316175d39D355809D04D2Cb7a23'  # noqa: E501
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
@@ -302,13 +278,9 @@ def test_deploy_eigenpod(database, ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x15646dDb42Ee60B26A0BA727CFeB4E8b1A319cdE', '0x24557b5D264757A3fCe2B55b257709D9f8C5aE94']])  # noqa: E501
-def test_deploy_eigenpod_via_safe(database, ethereum_inquirer, ethereum_accounts):
+def test_deploy_eigenpod_via_safe(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x449447b417019f9d8617e41c735c206d94669e91e066bd3cb0dd609fcd8faff7')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, gas_amount, eigenpod_address, user_address, safe_address = TimestampMS(1715601779000), '0.002212107522528736', '0x081aC22eb8582eF9f5ae596A5E8Df42b451b28b7', ethereum_accounts[0], ethereum_accounts[1]  # noqa: E501
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
@@ -355,13 +327,9 @@ def test_deploy_eigenpod_via_safe(database, ethereum_inquirer, ethereum_accounts
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xd007058e9b58E74C33c6bF6fbCd38BaAB813cBB6']])
-def test_create_delayed_withdrawals(database, ethereum_inquirer, ethereum_accounts):
+def test_create_delayed_withdrawals(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xd054c9f07b880ac8e587c725b0427dde2b4c2633250f6f84a5c803fa665fe307')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, gas_amount, withdrawal_amount = TimestampMS(1715768063000), '0.036853617070145433', '0.021045998'  # noqa: E501
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
@@ -398,7 +366,6 @@ def test_lst_create_delayed_withdrawals(database, ethereum_inquirer, ethereum_ac
     tx_hash = deserialize_evm_tx_hash('0x8c006f764e9264cd150b2583ba72205bb4575ace76ed3afa83689227e9fe461b')  # noqa: E501
     events, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=database,
         tx_hash=tx_hash,
     )
     user_address, timestamp, gas_amount, amount = ethereum_accounts[0], TimestampMS(1718731823000), '0.001066996197578511', '0.501457627266872814'  # noqa: E501
@@ -469,15 +436,10 @@ def test_lst_complete_delayed_withdrawals(database, ethereum_inquirer, ethereum_
     queue_tx_hash = deserialize_evm_tx_hash('0xeab48010e80d50b7d35fd43a886448ffca1e798b641baf7c8877fc04075d972b')  # noqa: E501
     get_decoded_events_of_transaction(  # just decode the events of the withdrawal queuing
         evm_inquirer=ethereum_inquirer,
-        database=database,
         tx_hash=queue_tx_hash,
     )  # and now get the actual withdrawal complete transaction a week later
     tx_hash = deserialize_evm_tx_hash('0x2c9a7caf78126fdfe43760dedbf3648c6a3255ee17a7bc312372dba26e16132b')  # noqa: E501
-    events, tx_decoder = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, tx_decoder = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)  # noqa: E501
     user_address, timestamp, gas_amount, amount, cbeth_strategy = ethereum_accounts[0], TimestampMS(1718879927000), '0.000880395253730733', '0.108703837292797063', string_to_evm_address('0x54945180dB7943c0ed0FEE7EdaB2Bd24620256bc')  # noqa: E501
     cbeth = Asset('eip155:1/erc20:0xBe9895146f7AF43049ca1c1AE358B0541Ea49704')
     expected_events = [EvmEvent(
@@ -555,13 +517,9 @@ def test_lst_complete_delayed_withdrawals(database, ethereum_inquirer, ethereum_
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xCd2bCdE423F36E1B81a25168D5373f908546c9BE', '0xf17606D3FFbd5B07454542146a74712Eb797Ac0a']])  # noqa: E501
-def test_claim_delayed_withdrawals(database, ethereum_inquirer, ethereum_accounts):
+def test_claim_delayed_withdrawals(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xc5d38c05567f5a4d51e686225dfc461ddf177eefa7c531822656b2ed9560ab12')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, gas_amount, withdrawal_amount, user_address, safe_address = TimestampMS(1716123995000), '0.000369830372847984', '0.004538247', ethereum_accounts[0], ethereum_accounts[1]  # noqa: E501
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
@@ -607,13 +565,9 @@ def test_claim_delayed_withdrawals(database, ethereum_inquirer, ethereum_account
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x78524bEeAc12368e600457478738c233f436e9f6']])
-def test_native_restake_delegate(database, ethereum_inquirer, ethereum_accounts):
+def test_native_restake_delegate(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xd857a09084c1dfc1d2df83cbeed70e99b79b1e3a74c7385df7dc7065a79e184c')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, eth_restaked = TimestampMS(1715866679000), '160'
     expected_events = [
         EvmEvent(

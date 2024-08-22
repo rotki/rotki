@@ -2199,7 +2199,6 @@ def test_makerdao_sai_cdp_migration(ethereum_transaction_decoder, ethereum_accou
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=evmhash,
     )
     expected_events = [
@@ -2330,7 +2329,6 @@ def test_sai_dai_migration(ethereum_transaction_decoder, ethereum_accounts):
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=evmhash,
     )
     timestamp = TimestampMS(1575726133000)

@@ -624,7 +624,6 @@ def test_maybe_augmented_detect_new_spam_tokens(
     tx_hex = deserialize_evm_tx_hash('0x6c10aaafec60e012316f54e2ac691b0a64d8744c21382fd3eb5013b4d1935bab')  # noqa: E501
     get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        database=database,
         tx_hash=tx_hex,
     )
     token = EvmToken(evm_address_to_identifier(
@@ -639,7 +638,6 @@ def test_maybe_augmented_detect_new_spam_tokens(
     tx_hex = deserialize_evm_tx_hash('0x5d7e7646e3749fcd575ea76e35763fa8eeb6dfb83c4c242a4448ee1495f695ba')  # noqa: E501
     get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=database,
         tx_hash=tx_hex,
     )
     globaldb.delete_asset_by_identifier(A_YFI.identifier)
@@ -685,7 +683,6 @@ def test_tasks_dont_schedule_if_no_eth_address(task_manager: TaskManager) -> Non
 @pytest.mark.parametrize('max_tasks_num', [5])
 def test_augmented_detection_pendle_transactions(
         task_manager: TaskManager,
-        database: 'DBHandler',
         globaldb: GlobalDBHandler,
         ethereum_inquirer: 'EthereumInquirer',
 ) -> None:
@@ -696,7 +693,6 @@ def test_augmented_detection_pendle_transactions(
     tx_hex = deserialize_evm_tx_hash('0x9d4ff6ae12790aa747f2f886529092476df6b63e745684b80b8f32c61b90be67')  # noqa: E501
     get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=database,
         tx_hash=tx_hex,
     )
     token = EvmToken(evm_address_to_identifier(
@@ -1005,7 +1001,6 @@ def test_maybe_create_calendar_reminder(
     ens_events = [
         next(x for x in get_decoded_events_of_transaction(  # decode ENS registration/renewal event and get the event with the metadata  # noqa: E501
             evm_inquirer=ethereum_inquirer,
-            database=database,
             tx_hash=ens_tx_hash,
         )[0] if x.extra_data is not None) for ens_tx_hash in ens_tx_hashes
     ]

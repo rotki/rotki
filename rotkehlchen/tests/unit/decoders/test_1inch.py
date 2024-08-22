@@ -39,16 +39,12 @@ ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
-def test_1inchv1_swap(database, ethereum_inquirer):
+def test_1inchv1_swap(ethereum_inquirer):
     """Data taken from
     https://etherscan.io/tx/0x8b8652c502e80ce7c5441cdedc9184ea8f07a9c13b4c3446a47ae08c6c1d6efa
     """
     tx_hash = deserialize_evm_tx_hash('0x8b8652c502e80ce7c5441cdedc9184ea8f07a9c13b4c3446a47ae08c6c1d6efa')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     chispender_addy = string_to_evm_address('0xed04A060050cc289d91779A8BB3942C3A6589254')
     oneinch_contract = string_to_evm_address('0x11111254369792b2Ca5d084aB5eEA397cA8fa48B')
     timestamp = TimestampMS(1594500575000)
@@ -110,7 +106,7 @@ def test_1inchv1_swap(database, ethereum_inquirer):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
-def test_1inchv2_swap_for_eth(database, ethereum_inquirer):
+def test_1inchv2_swap_for_eth(ethereum_inquirer):
     """
     Test an 1inchv2 swap for ETH.
 
@@ -118,11 +114,7 @@ def test_1inchv2_swap_for_eth(database, ethereum_inquirer):
     https://etherscan.io/tx/0x5edc23d5a05e347afc60e64a4d5831ed2551985c21dceb85d267926ca2e2c13e
     """
     tx_hash = deserialize_evm_tx_hash('0x5edc23d5a05e347afc60e64a4d5831ed2551985c21dceb85d267926ca2e2c13e')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1608498702000)
     expected_events = [
         EvmEvent(
@@ -182,14 +174,10 @@ def test_1inchv2_swap_for_eth(database, ethereum_inquirer):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_1inchv3_swap_for_eth(database, ethereum_inquirer, ethereum_accounts):
+def test_1inchv3_swap_for_eth(ethereum_inquirer, ethereum_accounts):
     """Test an 1inchv3 swap for ETH."""
     tx_hash = deserialize_evm_tx_hash('0xc9403f8010c78cec3036fd502103b78566f9b50eae57068538735527b59435ae')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
     timestamp = TimestampMS(1618011137000)
     expected_events = [
@@ -238,7 +226,7 @@ def test_1inchv3_swap_for_eth(database, ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x312419eEC9C4632155904D9440dc1EeeafFBb280']])
-def test_1inchv4_swap_on_uniswapv3(database, ethereum_inquirer):
+def test_1inchv4_swap_on_uniswapv3(ethereum_inquirer):
     """
     Test an 1inch v4 swap for ETH via Uniswap v3.
 
@@ -246,11 +234,7 @@ def test_1inchv4_swap_on_uniswapv3(database, ethereum_inquirer):
     https://etherscan.io/tx/0xd02bbee01f92d778af8c2d159fb269ad31425b32703da568abb427ac14547e6d
     """
     tx_hash = deserialize_evm_tx_hash('0xd02bbee01f92d778af8c2d159fb269ad31425b32703da568abb427ac14547e6d')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1687361999000)
     user_address = '0x312419eEC9C4632155904D9440dc1EeeafFBb280'
     expected_events = [
@@ -299,11 +283,10 @@ def test_1inchv4_swap_on_uniswapv3(database, ethereum_inquirer):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x456325F2AC7067234dD71E01bebe032B0255e039']])
-def test_1inchv4_orderfilledrfq(database, ethereum_inquirer, ethereum_accounts):
+def test_1inchv4_orderfilledrfq(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x7e98fc61cdec43a7b886a9d045264bcc9292b2a34f8c466e4270ee6671684b69')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=database,
         tx_hash=tx_hash,
     )
     timestamp, user_address, gas, amount_out, amount_in = TimestampMS(1683201803000), ethereum_accounts[0], '0.010777074', '1457.408044', '634.912997630527012864'  # noqa: E501
@@ -353,7 +336,7 @@ def test_1inchv4_orderfilledrfq(database, ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xF92940216a808378bfFD05f444B7bF71d5A193Cd']])
-def test_1inchv4_swap_on_sushiswap(database, ethereum_inquirer):
+def test_1inchv4_swap_on_sushiswap(ethereum_inquirer):
     """
     Test an 1inch v4 swap for ETH via Sushiswap.
 
@@ -363,7 +346,6 @@ def test_1inchv4_swap_on_sushiswap(database, ethereum_inquirer):
     tx_hash = deserialize_evm_tx_hash('0x396f57534e5deff9b530357bda8dcd31b80892ba7ce3de6f6593b0225bba3d0f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=database,
         tx_hash=tx_hash,
     )
     timestamp = TimestampMS(1687551611000)
@@ -414,7 +396,7 @@ def test_1inchv4_swap_on_sushiswap(database, ethereum_inquirer):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x201b5Abfd44A8F9b75F0fE1BaE74CDaC7675E54B']])
-def test_1inchv4_multiple_swaps(database, ethereum_inquirer):
+def test_1inchv4_multiple_swaps(ethereum_inquirer):
     """
     Test an 1inch v4 swap via multiple pools.
 
@@ -424,7 +406,6 @@ def test_1inchv4_multiple_swaps(database, ethereum_inquirer):
     tx_hash = deserialize_evm_tx_hash('0xeeefe25741462f0832183925ac4b1b840b819fbacd95cfc635496d853b7022bd')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=database,
         tx_hash=tx_hash,
     )
     timestamp = TimestampMS(1687762727000)
@@ -487,7 +468,7 @@ def test_1inchv4_multiple_swaps(database, ethereum_inquirer):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xcA74F404E0C7bfA35B13B511097df966D5a65597']])
-def test_1inchv4_weth_eth_swap(database, ethereum_inquirer):
+def test_1inchv4_weth_eth_swap(ethereum_inquirer):
     """
     Test an 1inch v4 WETH to ETH swap via the WETH contract.
 
@@ -497,7 +478,6 @@ def test_1inchv4_weth_eth_swap(database, ethereum_inquirer):
     tx_hash = deserialize_evm_tx_hash('0x7097e7e9ef2b8bb096ed98950875b4512a833d41ceb3246903e06b61665cd5cd')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=database,
         tx_hash=tx_hash,
     )
     timestamp = TimestampMS(1687870007000)
@@ -548,7 +528,7 @@ def test_1inchv4_weth_eth_swap(database, ethereum_inquirer):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xdCB02829F91533Ab757b1B0e8B595D7c950AfBb8']])
-def test_1inchv4_eth_weth_swap(database, ethereum_inquirer):
+def test_1inchv4_eth_weth_swap(ethereum_inquirer):
     """
     Test an 1inch v4 ETH to WETH swap via the WETH contract.
 
@@ -558,7 +538,6 @@ def test_1inchv4_eth_weth_swap(database, ethereum_inquirer):
     tx_hash = deserialize_evm_tx_hash('0x6446f928148dc9f7e1ad719730d661d6d3409a9c62293ca8e8c259d06c6bd004')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=database,
         tx_hash=tx_hash,
     )
     timestamp = TimestampMS(1688039855000)
@@ -609,14 +588,13 @@ def test_1inchv4_eth_weth_swap(database, ethereum_inquirer):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_1inch_swap_polygon(database, polygon_pos_inquirer, polygon_pos_accounts):
+def test_1inch_swap_polygon(polygon_pos_inquirer, polygon_pos_accounts):
     """Data taken from
     https://polygonscan.com/tx/0xe13e0ebab7a6abc0c0a22fcf0766b9a585a430415c88f3f90328b310119a85af
     """
     tx_hash = deserialize_evm_tx_hash('0xe13e0ebab7a6abc0c0a22fcf0766b9a585a430415c88f3f90328b310119a85af')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
-        database=database,
         tx_hash=tx_hash,
     )
     user_addy = polygon_pos_accounts[0]
@@ -681,11 +659,10 @@ def test_1inch_swap_polygon(database, polygon_pos_inquirer, polygon_pos_accounts
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_1inch_gnosis_v5_swap(database, gnosis_inquirer, gnosis_accounts):
+def test_1inch_gnosis_v5_swap(gnosis_inquirer, gnosis_accounts):
     tx_hash = deserialize_evm_tx_hash('0x4b1fcb8836d7cc323015c0d019f595273d176bd6024f7b59b4b15d3f7071ef71')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        database=database,
         tx_hash=tx_hash,
     )
     user_addy = gnosis_accounts[0]
@@ -736,11 +713,10 @@ def test_1inch_gnosis_v5_swap(database, gnosis_inquirer, gnosis_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('optimism_accounts', [['0x3Ba6eB0e4327B96aDe6D4f3b578724208a590CEF']])
-def test_1inch_velodrome(database, optimism_inquirer, optimism_accounts):
+def test_1inch_velodrome(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0x3cb68ee7dae76c0ca6466e3a593b32144d25eabb27c1ba416c83f154627d84d8')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_inquirer,
-        database=database,
         tx_hash=tx_hash,
     )
     user_addy = optimism_accounts[0]
@@ -791,7 +767,7 @@ def test_1inch_velodrome(database, optimism_inquirer, optimism_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xC5d494aa0CBabD7871af0Ef122fB410Fa25c3379']])
-def test_half_decoded_1inch_v5_swap(database, ethereum_inquirer, ethereum_accounts):
+def test_half_decoded_1inch_v5_swap(ethereum_inquirer, ethereum_accounts):
     """
     Test that if a swap using 1inch v5 has been  half decoded by other decoder (uniswap) first
     then the two legs of the swap are properly handled by the 1inch decoder.
@@ -799,7 +775,6 @@ def test_half_decoded_1inch_v5_swap(database, ethereum_inquirer, ethereum_accoun
     tx_hash = deserialize_evm_tx_hash('0x0a86fef1df2e7f186cf7239083f67c424c735f91461388c5b23e01c4d6a4e7d8')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=database,
         tx_hash=tx_hash,
     )
     timestamp = TimestampMS(1701001727000)
@@ -863,11 +838,10 @@ def test_half_decoded_1inch_v5_swap(database, ethereum_inquirer, ethereum_accoun
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('base_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_1inch_base_v6_swap(database, base_inquirer, base_accounts):
+def test_1inch_base_v6_swap(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0x5b41c094c49462cd97fc19dc898ef23c24f859b46dbd38ecf5d34d3d0fd291f5')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_inquirer,
-        database=database,
         tx_hash=tx_hash,
     )
     timestamp, gas, swap_amount, receive_amount = TimestampMS(1716833467000), '0.000019908608867869', '311804', '0.002362174980374604'  # noqa: E501
@@ -929,11 +903,10 @@ def test_1inch_base_v6_swap(database, base_inquirer, base_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_1inchv4_swap_on_polygon(database, polygon_pos_inquirer, polygon_pos_accounts):
+def test_1inchv4_swap_on_polygon(polygon_pos_inquirer, polygon_pos_accounts):
     tx_hash = deserialize_evm_tx_hash('0x4c1fcbc20fdd397229d9e3e88411fea589e7ceb901e770f6af2e70e89008d5fa')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
-        database=database,
         tx_hash=tx_hash,
     )
     timestamp, user, gas, amount_in, amount_out = TimestampMS(1653476213000), polygon_pos_accounts[0], '0.015694020167926014', '174.218999', '174.206'  # noqa: E501

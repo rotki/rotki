@@ -311,7 +311,6 @@ def test_token_detection_after_decoding(
     with patch.object(database, 'save_tokens_for_address') as save_tokens_mock:
         get_decoded_events_of_transaction(
             evm_inquirer=ethereum_inquirer,
-            database=database,
             tx_hash=deserialize_evm_tx_hash('0x21713730e79832ad0a88c9695745a95cd6e475fe69232f2aa8993ca98e6db92f'),
         )
         assert save_tokens_mock.call_count == 1

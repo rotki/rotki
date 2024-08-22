@@ -20,14 +20,12 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
-    from rotkehlchen.db.dbhandler import DBHandler
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3630220f243288E3EAC4C5676fC191CFf5756431']])
 def test_gearbox_deposit(
-        database: 'DBHandler',
         ethereum_inquirer: 'EthereumInquirer',
         ethereum_accounts: list['ChecksumEvmAddress'],
         load_global_caches: list[str],
@@ -35,7 +33,6 @@ def test_gearbox_deposit(
     tx_hash = deserialize_evm_tx_hash('0x04e3bcebf71873a5de1c4d9b40f1c97631a3958ef0d8d743a1a1b4d50361855d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=database,
         tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
@@ -88,7 +85,6 @@ def test_gearbox_deposit(
 @pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('ethereum_accounts', [['0xb99a2c4C1C4F1fc27150681B740396F6CE1cBcF5']])
 def test_gearbox_deposit_usdc(
-        database: 'DBHandler',
         ethereum_inquirer: 'EthereumInquirer',
         ethereum_accounts: list['ChecksumEvmAddress'],
         load_global_caches: list[str],
@@ -96,7 +92,6 @@ def test_gearbox_deposit_usdc(
     tx_hash = deserialize_evm_tx_hash('0x92d178bbe5152cad47029b0c130450848ee46084e72addd09ba955631af1325b')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=database,
         tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
@@ -161,7 +156,6 @@ def test_gearbox_deposit_usdc(
 @pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9167B9d55BA7E7D6163bAAa97C099dfE3d1D9420']])
 def test_gearbox_withdraw(
-        database: 'DBHandler',
         ethereum_inquirer: 'EthereumInquirer',
         ethereum_accounts: list['ChecksumEvmAddress'],
         load_global_caches: list[str],
@@ -169,7 +163,6 @@ def test_gearbox_withdraw(
     tx_hash = deserialize_evm_tx_hash('0xb286e618ec2e5961c696df1855006dea0343fb635c7f199621f8592db342dfba')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=database,
         tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
@@ -222,7 +215,6 @@ def test_gearbox_withdraw(
 @pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D']])
 def test_gearbox_deposit_arbitrum(
-        database: 'DBHandler',
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
         arbitrum_one_accounts: list['ChecksumEvmAddress'],
         load_global_caches: list[str],
@@ -230,7 +222,6 @@ def test_gearbox_deposit_arbitrum(
     tx_hash = deserialize_evm_tx_hash('0x00db27b8c09c9ec4478f27da7e40b90afbb577cfb4822536eab5a52dcae321e6')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        database=database,
         tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
@@ -283,7 +274,6 @@ def test_gearbox_deposit_arbitrum(
 @pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D']])
 def test_gearbox_deposit_arbitrum_lp(
-        database: 'DBHandler',
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
         arbitrum_one_accounts: list['ChecksumEvmAddress'],
         load_global_caches: list[str],
@@ -291,7 +281,6 @@ def test_gearbox_deposit_arbitrum_lp(
     tx_hash = deserialize_evm_tx_hash('0x7dbb02839dab23bc87ed6f4f5899fc77986c576e6fedf16cfbd9751fbe09e2eb')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        database=database,
         tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
@@ -344,7 +333,6 @@ def test_gearbox_deposit_arbitrum_lp(
 @pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x3a212d3d7504dC4A39E21C731d0E80b114A2108b']])
 def test_gearbox_withdraw_arbitrum(
-        database: 'DBHandler',
         arbitrum_one_inquirer: 'EthereumInquirer',
         arbitrum_one_accounts: list['ChecksumEvmAddress'],
         load_global_caches: list[str],
@@ -352,7 +340,6 @@ def test_gearbox_withdraw_arbitrum(
     tx_hash = deserialize_evm_tx_hash('0x9b3f388e53c6b0f2eb12c323aebb05d47e27f6d9f511bd1176ed826a351c6c06')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        database=database,
         tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
@@ -405,7 +392,6 @@ def test_gearbox_withdraw_arbitrum(
 @pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x7b007E8c0f77B50bEC8009f0e97F523DBa6FE506']])
 def test_gearbox_deposit_usdc_arbitrum(
-        database: 'DBHandler',
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
         arbitrum_one_accounts: list['ChecksumEvmAddress'],
         load_global_caches: list[str],
@@ -413,7 +399,6 @@ def test_gearbox_deposit_usdc_arbitrum(
     tx_hash = deserialize_evm_tx_hash('0xc7a3b95862eba49a86b8eefe81837ea141037feda8c0da236d9c3adb370fdfb3')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        database=database,
         tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
@@ -490,7 +475,6 @@ def test_gearbox_deposit_usdc_arbitrum(
 @pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('optimism_accounts', [['0xb8150a1B6945e75D05769D685b127b41E6335Bbc']])
 def test_gearbox_deposit_optimism(
-        database: 'DBHandler',
         optimism_inquirer: 'OptimismInquirer',
         optimism_accounts: list['ChecksumEvmAddress'],
         load_global_caches: list[str],
@@ -498,7 +482,6 @@ def test_gearbox_deposit_optimism(
     tx_hash = deserialize_evm_tx_hash('0x1dc1803865e909909bf20a82b0d88b476bcac13c7a0efa57c531baa06b0cb27e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_inquirer,
-        database=database,
         tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
@@ -551,7 +534,6 @@ def test_gearbox_deposit_optimism(
 @pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('optimism_accounts', [['0xb8150a1B6945e75D05769D685b127b41E6335Bbc']])
 def test_gearbox_deposit_usdc_optimism(
-        database: 'DBHandler',
         optimism_inquirer: 'OptimismInquirer',
         optimism_accounts: list['ChecksumEvmAddress'],
         load_global_caches: list[str],
@@ -559,7 +541,6 @@ def test_gearbox_deposit_usdc_optimism(
     tx_hash = deserialize_evm_tx_hash('0x25baef6edb2fae8fde18b7ee49dbba94bdaa500db1388cc5b22bdb4ba953d7b4')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_inquirer,
-        database=database,
         tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
@@ -624,7 +605,6 @@ def test_gearbox_deposit_usdc_optimism(
 @pytest.mark.parametrize('load_global_caches', [[CPT_GEARBOX]])
 @pytest.mark.parametrize('optimism_accounts', [['0x42ccF4f456D7c7fEBF274242CACcD74AAa0a53d7']])
 def test_gearbox_withdraw_optimism_usdc(
-        database: 'DBHandler',
         optimism_inquirer: 'OptimismInquirer',
         optimism_accounts: list['ChecksumEvmAddress'],
         load_global_caches: list[str],
@@ -632,7 +612,6 @@ def test_gearbox_withdraw_optimism_usdc(
     tx_hash = deserialize_evm_tx_hash('0x03569fa219dd445c120a38eb294a21feee8da7f0e1d3b6aed1d87a3ca519b16d')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_inquirer,
-        database=database,
         tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
@@ -684,16 +663,11 @@ def test_gearbox_withdraw_optimism_usdc(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D']])
 def test_gearbox_staking(
-        database: 'DBHandler',
         ethereum_inquirer: 'EthereumInquirer',
         ethereum_accounts: list['ChecksumEvmAddress'],
 ):
     tx_hash = deserialize_evm_tx_hash('0x5de7647a4c8f8ca1e5434725dd09b27ce05e41954d72c3f1f4d639c8b7019f4a')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, gas, stake_amount = TimestampMS(1718177819000), '0.0008970313372218', '260.869836197270890866'  # noqa: E501
     expected_events = [
         EvmEvent(
@@ -754,16 +728,11 @@ def test_gearbox_staking(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xe4283e107fB8E96F3175955EC7269afb51ECa6ea']])
 def test_gearbox_unstaking(
-        database: 'DBHandler',
         ethereum_inquirer: 'EthereumInquirer',
         ethereum_accounts: list['ChecksumEvmAddress'],
 ):
     tx_hash = deserialize_evm_tx_hash('0xb50badadb71b7c8c4ab2d0f9691931396322b2395da2396bee1ed65755e3882a')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, gas, stake_amount = TimestampMS(1717241039000), '0.000287410296179888', '1210105.252774990252868034'  # noqa: E501
     expected_events = [
         EvmEvent(

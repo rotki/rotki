@@ -28,13 +28,9 @@ ADDY_3 = string_to_evm_address('0x3D6a724247c4B133C3b279558e90EdD0c5d25751')
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_1]])
-def test_sushiswap_single_swap(database, ethereum_inquirer):
+def test_sushiswap_single_swap(ethereum_inquirer):
     tx_hash = deserialize_evm_tx_hash('0xbfe3c8a13c325a32736beb34ea170053cdbbd1740a9c3ceca52060906b7f87bd')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, gas, swap_amount, received_amount, approved_amount = TimestampMS(1622840771000), '0.001815413', '19.157411925828275084', '18.47349725628421943', '115792089237316195423570985008687907853269984665640564039438.426595987301364851'  # noqa: E501
     expected_events = [
         EvmEvent(
@@ -95,14 +91,10 @@ def test_sushiswap_single_swap(database, ethereum_inquirer):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_2]])
-def test_sushiswap_v2_remove_liquidity(database, ethereum_inquirer):
+def test_sushiswap_v2_remove_liquidity(ethereum_inquirer):
     """This checks that removing liquidity to Sushiswap V2 pool is decoded properly"""
     tx_hash = deserialize_evm_tx_hash('0x4720a52fc768591cb3997da3a2eab76c54b69176f3c3f8d9a817c2d60dd449ac')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, gas_amount, spent_amount, removed_eth, removed_usdt, pool_address = TimestampMS(1672888271000), '0.006668386', '0.0000243611620791', '1.122198589808876532', '1408.739932', string_to_evm_address('0x06da0fd433C1A5d7a4faa01111c044910A184553')  # noqa: E501
     expected_events = [
         EvmEvent(
@@ -165,14 +157,10 @@ def test_sushiswap_v2_remove_liquidity(database, ethereum_inquirer):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_3]])
-def test_sushiswap_v2_add_liquidity(database, ethereum_inquirer):
+def test_sushiswap_v2_add_liquidity(ethereum_inquirer):
     """This checks that adding liquidity to Sushiswap V2 pool is decoded properly"""
     tx_hash = deserialize_evm_tx_hash('0x2ce6f92f4020fdc4ed69a173b10c1dd2811184fac34d56188270950db1152f3a')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, gas_amount, received_amount, deposited_eth, deposited_usdt, pool_address = TimestampMS(1672893947000), '0.0030789891485573', '0.000000017297304741', '0.000797012710918264', '0.999992', string_to_evm_address('0x06da0fd433C1A5d7a4faa01111c044910A184553')  # noqa: E501
     lp_token_identifier = evm_address_to_identifier(
         address=pool_address,

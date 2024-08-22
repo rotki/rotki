@@ -27,11 +27,7 @@ def test_deposit(database, ethereum_inquirer, ethereum_accounts):
 
     evmhash = deserialize_evm_tx_hash('0xb3658f940cab23f95273bb7c199eec5c71424a8bf2f111201f5cc2a1491d3471')  # noqa: E501
     user_address = ethereum_accounts[0]
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=evmhash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash)
     assert events == [
         EvmEvent(
             tx_hash=evmhash,
@@ -61,11 +57,7 @@ def test_deposit(database, ethereum_inquirer, ethereum_accounts):
 def test_multiple_deposits(database, ethereum_inquirer, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash('0x819fe4a07894cf044f5d8c63e5c1e2294e068d05bf91d9cfc3e7ae3e60528ae5')  # noqa: E501
     user_address = ethereum_accounts[0]
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=evmhash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash)
     dbeth2 = DBEth2(database)
     validators = [
         ValidatorDetails(
@@ -143,11 +135,7 @@ def test_deposit_with_anonymous_event(database, ethereum_inquirer, ethereum_acco
     evmhash = deserialize_evm_tx_hash('0xd455d892453de3c5b06a00ebedc1994b8d66eeba69e6b08bd20508281e690e80')  # noqa: E501
     user_address = ethereum_accounts[0]
     proxy_address = ethereum_accounts[1]
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=evmhash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash)
     timestamp = TimestampMS(1669806275000)
     assert events == [
         EvmEvent(

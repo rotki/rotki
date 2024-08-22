@@ -39,13 +39,9 @@ ADDY_4 = string_to_evm_address('0x43e141534d718D72552De1B606a5FCBc72256cD7')
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_1]])
-def test_uniswap_v2_swap(database, ethereum_inquirer):
+def test_uniswap_v2_swap(ethereum_inquirer):
     tx_hash = deserialize_evm_tx_hash('0x67cf6c4ce5078f9750a14afd2f5070c327caf8c5180bdee2be59644ac59974e1')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [
         EvmEvent(
             tx_hash=tx_hash,
@@ -92,14 +88,10 @@ def test_uniswap_v2_swap(database, ethereum_inquirer):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_1]])
-def test_uniswap_v2_swap_eth_returned(database, ethereum_inquirer):
+def test_uniswap_v2_swap_eth_returned(ethereum_inquirer):
     """Test a transaction where eth is swapped and some of it is returned due to change in price"""
     tx_hash = deserialize_evm_tx_hash('0x20ecc226c438a8803a6195d8031ae7dd97a27351e6b7429621b36194121b9b76')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1634652419000)
     expected_events = [
         EvmEvent(
@@ -160,15 +152,11 @@ def test_uniswap_v2_swap_eth_returned(database, ethereum_inquirer):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xa931b486F661540c6D709aE6DfC8BcEF347ea437']])
-def test_uniswap_v2_swap_with_approval(database, ethereum_inquirer, ethereum_accounts):
+def test_uniswap_v2_swap_with_approval(ethereum_inquirer, ethereum_accounts):
     tx_hex = deserialize_evm_tx_hash('0xcbe558177f62ccdb77f59b6be11e60b0a3fed1d224d5ce28d2bb6dff59447d3b')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = ethereum_accounts[0]
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hex,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
     assert events == [
         EvmEvent(
             tx_hash=evmhash,
@@ -226,14 +214,10 @@ def test_uniswap_v2_swap_with_approval(database, ethereum_inquirer, ethereum_acc
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_2]])
-def test_uniswap_v2_add_liquidity(database, ethereum_inquirer):
+def test_uniswap_v2_add_liquidity(ethereum_inquirer):
     """This checks that adding liquidity to a Uniswap V2 pool is decoded properly."""
     tx_hash = deserialize_evm_tx_hash('0x1bab8a89a6a3f8cb127cfaf7cd58809201a4e230d0a05f9e067674749605959e')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     lp_token_identifier = evm_address_to_identifier(
         address='0xAE461cA67B15dc8dc81CE7615e0320dA1A9aB8D5',
         chain_id=ChainID.ETHEREUM,
@@ -303,14 +287,10 @@ def test_uniswap_v2_add_liquidity(database, ethereum_inquirer):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY_3]])
-def test_uniswap_v2_remove_liquidity(database, ethereum_inquirer):
+def test_uniswap_v2_remove_liquidity(ethereum_inquirer):
     """This checks that removing liquidity from a Uniswap V2 pool is decoded properly."""
     tx_hash = deserialize_evm_tx_hash('0x0936a16e1d3655e832c60bed52040fd5ac0d99d03865d11225b3183dba318f43')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [
         EvmEvent(
             tx_hash=tx_hash,
@@ -578,16 +558,12 @@ def test_uniswap_v2_swap_events_order(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xbcce162c23480a4d44b88F57D5D2D9997402010e']])
-def test_remove_liquidity_with_weth(database, ethereum_inquirer, ethereum_accounts):
+def test_remove_liquidity_with_weth(ethereum_inquirer, ethereum_accounts):
     """Test that removing liquidity as weth gets correctly decoded"""
     tx_hex = deserialize_evm_tx_hash('0x00007120e5281e9bdf9a57739e3ecaf736013e4a1a31ecfe44f719c229cc2cbd')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = ethereum_accounts[0]
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hex,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
@@ -650,15 +626,11 @@ def test_remove_liquidity_with_weth(database, ethereum_inquirer, ethereum_accoun
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x3163Bb273E8D9960Ce003fD542bF26b4C529f515']])
-def test_claim_airdrop(database, ethereum_inquirer, ethereum_accounts):
+def test_claim_airdrop(ethereum_inquirer, ethereum_accounts):
     tx_hex = deserialize_evm_tx_hash('0x0e50e7374e0ffbe0aea82dbe94a04ab0da3981f3bfb1a66927eb250c7aff29e3')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = ethereum_accounts[0]
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hex,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
     timestamp = TimestampMS(1600446008000)
     gas_amount, claimed_amount = '0.027890731101011885', '408.638074'
     expected_events = [

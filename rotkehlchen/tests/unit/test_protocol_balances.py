@@ -76,7 +76,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
-    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.inquirer import Inquirer
 
 
@@ -94,7 +93,6 @@ def test_curve_balances(
     tx_hex = deserialize_evm_tx_hash('0x09b67a0846ce2f6bea50221cfb5ac67f5b2f55b89300e45f58bf2f69dc589d43')  # noqa: E501
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
         load_global_caches=load_global_caches,
     )
@@ -124,7 +122,6 @@ def test_convex_gauges_balances(
     tx_hex = deserialize_evm_tx_hash('0x0d8863fb26d57ca11dc11c694dbf6a13ef03920e39d0482081aa88b0b20ba61b')  # noqa: E501
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
     )
     convex_balances_inquirer = ConvexBalances(
@@ -154,13 +151,11 @@ def test_convex_staking_balances(
     tx_hex = deserialize_evm_tx_hash('0x0d8863fb26d57ca11dc11c694dbf6a13ef03920e39d0482081aa88b0b20ba61b')  # noqa: E501
     get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
     )
     tx_hex = deserialize_evm_tx_hash('0x679746961f731819e351f866b33bc2267dfb341e9d0b30ebccd012834ae3ffde')  # noqa: E501
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
     )
     convex_balances_inquirer = ConvexBalances(
@@ -195,7 +190,6 @@ def test_convex_staking_balances_without_gauges(
     tx_hex = deserialize_evm_tx_hash('0x38bd199803e7cb065c809ce07957afc0647a41da4c0610d1209a843d9b045cd6')  # noqa: E501
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
     )
     convex_balances_inquirer = ConvexBalances(
@@ -226,7 +220,6 @@ def test_velodrome_v2_staking_balances(
     tx_hex = deserialize_evm_tx_hash('0xed7e13e4941bba33edbbd70c4f48c734629fd67fe4eac43ce1bed3ef8f3da7df')  # transaction that interacts with the gauge address  # noqa: E501
     _, tx_decoder = get_decoded_events_of_transaction(  # decode events that interact with the gauge address  # noqa: E501
         evm_inquirer=optimism_inquirer,
-        database=optimism_transaction_decoder.database,
         tx_hash=tx_hex,
         load_global_caches=load_global_caches,
     )
@@ -261,7 +254,6 @@ def test_thegraph_balances(
     amount = '6626.873960369737'
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
     )
     thegraph_balances_inquirer = ThegraphBalances(
@@ -296,7 +288,6 @@ def test_thegraph_balances_arbitrum_one(
     tx_hex = deserialize_evm_tx_hash('0x3c846f305330969fb0ddb87c5ae411b4e9692f451a7ff3237b6f71020030c7d1')  # noqa: E501
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        database=arbitrum_one_transaction_decoder.database,
         tx_hash=tx_hex,
     )
     thegraph_balances_inquirer = ThegraphBalancesArbitrumOne(
@@ -319,7 +310,6 @@ def test_thegraph_balances_arbitrum_one(
 def test_thegraph_balances_vested_arbitrum_one(
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
         arbitrum_one_transaction_decoder: 'ArbitrumOneTransactionDecoder',
-        database: 'DBHandler',
         ethereum_inquirer: 'EthereumInquirer',
         arbitrum_one_accounts: list[ChecksumEvmAddress],
         arbitrum_one_manager_connect_at_start,
@@ -338,7 +328,6 @@ def test_thegraph_balances_vested_arbitrum_one(
     ):
         get_decoded_events_of_transaction(
             evm_inquirer=ethereum_inquirer,
-            database=database,
             tx_hash=deserialize_evm_tx_hash(
                 tx_hash,
             ),
@@ -387,7 +376,6 @@ def test_octant_balances(
     tx_hex = deserialize_evm_tx_hash('0x29944efad254413b5eccdd5f13f14642ab830dbf51d5f2cfc59cf4957f33671a')  # noqa: E501
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
     )
     octant_balances_inquirer = OctantBalances(
@@ -412,7 +400,6 @@ def test_eigenlayer_balances(
     tx_hex = deserialize_evm_tx_hash('0x89981857ab9f31369f954ae332ffd910e1f3c8efe531efde5f26666316855591')  # noqa: E501
     events, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
     )
     assert len(events) == 2
@@ -440,7 +427,6 @@ def test_eigenpod_balances(
     tx_hex = deserialize_evm_tx_hash('0xb6fa282227916f9b16df953f79a5859ba80b8bc3b9c6adc01f262070d3c9e3d5')  # noqa: E501
     events, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
     )
     assert len(events) == 2
@@ -487,7 +473,6 @@ def test_gmx_balances(
         tx_hex = deserialize_evm_tx_hash(tx_hash)
         _, tx_decoder = get_decoded_events_of_transaction(
             evm_inquirer=arbitrum_one_inquirer,
-            database=arbitrum_one_transaction_decoder.database,
             tx_hash=tx_hex,
         )
 
@@ -557,7 +542,6 @@ def test_gmx_balances_staking(
     )
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        database=arbitrum_one_transaction_decoder.database,
         tx_hash=deserialize_evm_tx_hash('0x25160bf17e5a77935c7661933c045739dba44606859a20f00f187ef291e56a8f'),
     )
     balances_inquirer = GmxBalances(
@@ -587,7 +571,6 @@ def test_aave_balances_staking(
     amount = FVal('0.134274348203440352')
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=deserialize_evm_tx_hash('0xfaf96358784483a96a61db6aa4ecf4ac87294b841671ca208de6b5d8f83edf17'),
     )
     balances_inquirer = AaveBalances(
@@ -758,7 +741,6 @@ def test_blur_balances(
     amount = FVal('6350.3577325406')
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
     )
     blur_balances_inquirer = BlurBalances(
@@ -787,7 +769,6 @@ def test_hop_balances_staking(
     lp_amount, reward_amount = FVal('0.005676129314105837'), FVal('0.06248913329652552')
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        database=arbitrum_one_transaction_decoder.database,
         tx_hash=deserialize_evm_tx_hash('0x6329984b82cb85903fee9fef61fb77cdf848ff6344056156da2e66676ad91473'),
     )
     balances_inquirer = HopBalances(
@@ -819,7 +800,6 @@ def test_hop_balances_staking_2(
     lp_amount, reward_amount = FVal('0.005676129314105837'), FVal('0.008945843949587174')
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        database=arbitrum_one_transaction_decoder.database,
         tx_hash=deserialize_evm_tx_hash('0xe0c1f6f152422784a4e4346d84af7d32fda95eab17da257f3fdc5121f4a6fbc8'),
     )
     balances_inquirer = HopBalances(
@@ -851,7 +831,6 @@ def test_gearbox_balances(
     amount = FVal('260.869836197270890866')
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
     )
     protocol_balances_inquirer = GearboxBalances(
@@ -880,7 +859,6 @@ def test_gearbox_balances_arb(
     amount = FVal('139896.73226582730792446')
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        database=arbitrum_one_transaction_decoder.database,
         tx_hash=tx_hex,
     )
     protocol_balances_inquirer = GearboxBalancesArbitrumOne(
@@ -909,7 +887,6 @@ def test_safe_locked(
     amount = FVal('11515.763372')
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
     )
     protocol_balances_inquirer = SafeBalances(

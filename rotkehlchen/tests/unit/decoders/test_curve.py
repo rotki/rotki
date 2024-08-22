@@ -767,7 +767,6 @@ def test_deposit_multiple_tokens(ethereum_transaction_decoder, ethereum_accounts
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
         load_global_caches=load_global_caches,
     )
@@ -825,7 +824,6 @@ def test_gauge_vote(ethereum_accounts, ethereum_transaction_decoder) -> None:
     timestamp = TimestampMS(1685562071000)
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=cast(EthereumInquirer, ethereum_transaction_decoder.evm_inquirer),
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
     )
     expected_events = [
@@ -875,7 +873,6 @@ def test_gauge_deposit(
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=cast(EthereumInquirer, ethereum_transaction_decoder.evm_inquirer),
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
         load_global_caches=load_global_caches,
     )
@@ -929,7 +926,6 @@ def test_gauge_withdraw(ethereum_transaction_decoder, ethereum_accounts, load_gl
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
         load_global_caches=load_global_caches,
     )
@@ -975,7 +971,6 @@ def test_gauge_claim_rewards(ethereum_transaction_decoder, ethereum_accounts, lo
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
         load_global_caches=load_global_caches,
     )
@@ -1021,7 +1016,6 @@ def test_curve_trade_token_to_token(ethereum_transaction_decoder, ethereum_accou
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
         load_global_caches=load_global_caches,
     )
@@ -1080,7 +1074,6 @@ def test_curve_trade_eth_to_token(ethereum_transaction_decoder, ethereum_account
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
         load_global_caches=load_global_caches,
     )
@@ -1139,7 +1132,6 @@ def test_curve_trade_exchange_underlying(ethereum_transaction_decoder, ethereum_
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
         load_global_caches=load_global_caches,
     )
@@ -1197,7 +1189,6 @@ def test_curve_swap_router(ethereum_transaction_decoder, ethereum_accounts):
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
     )
     expected_events = [
@@ -1255,7 +1246,6 @@ def test_curve_usdn_add_liquidity(ethereum_transaction_decoder, ethereum_account
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
         load_global_caches=load_global_caches,
     )
@@ -1315,7 +1305,6 @@ def test_curve_usdn_remove_liquidity(ethereum_transaction_decoder, ethereum_acco
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
         load_global_caches=load_global_caches,
     )
@@ -1414,7 +1403,6 @@ def test_3pool_add_liquidity(ethereum_transaction_decoder, ethereum_accounts, lo
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
         load_global_caches=load_global_caches,
     )
@@ -1474,7 +1462,6 @@ def test_3pool_remove_liquidity(ethereum_transaction_decoder, ethereum_accounts,
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
         load_global_caches=load_global_caches,
     )
@@ -1576,7 +1563,6 @@ def test_remove_from_aave_pool(ethereum_transaction_decoder, ethereum_accounts, 
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
         load_global_caches=load_global_caches,
     )
@@ -1639,7 +1625,6 @@ def test_deposit_via_zap_in_metapool(ethereum_transaction_decoder, ethereum_acco
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
         load_global_caches=load_global_caches,
     )
@@ -1715,7 +1700,6 @@ def test_no_zap_event(ethereum_transaction_decoder, ethereum_accounts, load_glob
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=evmhash,
         load_global_caches=load_global_caches,
     )
@@ -1772,7 +1756,6 @@ def test_gauge_bribe_v2(ethereum_transaction_decoder, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash(tx_hex)
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
     )
     user_address, timestamp, gas, amount = ethereum_accounts[0], TimestampMS(1680736307000), '0.007331605001682333', '14.752122471808652238'  # noqa: E501
@@ -1810,11 +1793,10 @@ def test_gauge_bribe_v2(ethereum_transaction_decoder, ethereum_accounts):
 @pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x1c362DFE864a4c4b3311eC97bf0b8320CB0a4952']])
-def test_curve_deposit_polygon(database, polygon_pos_inquirer, polygon_pos_accounts, load_global_caches):  # noqa: E501
+def test_curve_deposit_polygon(polygon_pos_inquirer, polygon_pos_accounts, load_global_caches):
     tx_hash = deserialize_evm_tx_hash('0x6cb9d7ceb55a1063c17b58cb643e699525ca6037e711c34283cf0f3d6e81716e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
-        database=database,
         tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
@@ -1892,7 +1874,6 @@ def test_gauge_deposit_optimism(database, optimism_inquirer, optimism_accounts, 
     )
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_inquirer,
-        database=database,
         tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
@@ -1957,7 +1938,6 @@ def test_gauge_withdraw_gnosis(database, gnosis_inquirer, gnosis_accounts, load_
     )
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        database=database,
         tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
@@ -2008,14 +1988,10 @@ def test_gauge_withdraw_gnosis(database, gnosis_inquirer, gnosis_accounts, load_
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('base_accounts', [['0x4113a3CB9004E193E9906131B632e280F5f9B61e']])
-def test_curve_swap_router_base(database, base_inquirer, base_accounts):
+def test_curve_swap_router_base(base_inquirer, base_accounts):
     """Test that transactions made via the new curve swap router are decoded correctly"""
     tx_hash = deserialize_evm_tx_hash('0x6fee2438337aefe297a69d4361ff4d743865ef7fce6637e9e3e544af0c19184f')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=base_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     timestamp, swap_amount, receive_amount, gas_fees = TimestampMS(1718096041000), '0.01702', '59.996794', '0.000001665983350053'  # noqa: E501
     expected_events = [
         EvmEvent(
@@ -2064,11 +2040,10 @@ def test_curve_swap_router_base(database, base_inquirer, base_accounts):
 @pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x8800AcEDF5571F35675CF8Aa1E3C16C7A8da0088']])
-def test_deposit_via_zap_arbitrum(database, arbitrum_one_inquirer, arbitrum_one_accounts, load_global_caches):  # noqa: E501
+def test_deposit_via_zap_arbitrum(arbitrum_one_inquirer, arbitrum_one_accounts, load_global_caches):  # noqa: E501
     tx_hash = deserialize_evm_tx_hash('0x5a72b9be1302cc4b9e1d79e61134b0b7f225b3a4aa723c27c557a672c29791ce')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        database=database,
         tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
@@ -2138,7 +2113,6 @@ def test_fee_distributor(ethereum_transaction_decoder, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash(tx_hex)
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
     )
     user_address, timestamp, gas, amount = ethereum_accounts[0], TimestampMS(1697289611000), '0.002010414684866136', '112.875618618497828084'  # noqa: E501
@@ -2180,7 +2154,6 @@ def test_vote_escrow_deposit(ethereum_transaction_decoder, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash(tx_hex)
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
     )
     user_address, timestamp, gas, amount, locktime = ethereum_accounts[0], TimestampMS(1671946199000), '0.002774219663106188', '128.808146476393839874', Timestamp(1778112000)  # noqa: E501
@@ -2222,7 +2195,6 @@ def test_vote_escrow_withdraw(ethereum_transaction_decoder, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash(tx_hex)
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_transaction_decoder.evm_inquirer,
-        database=ethereum_transaction_decoder.database,
         tx_hash=tx_hex,
     )
     user_address, timestamp, gas, amount = ethereum_accounts[0], TimestampMS(1671887987000), '0.002702199385335098', '1.872144205854855426'  # noqa: E501
@@ -2260,12 +2232,11 @@ def test_vote_escrow_withdraw(ethereum_transaction_decoder, ethereum_accounts):
 @pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_gauge_deposit_and_stake(database, gnosis_inquirer, gnosis_accounts, load_global_caches):
+def test_gauge_deposit_and_stake(gnosis_inquirer, gnosis_accounts, load_global_caches):
     tx_hash = deserialize_evm_tx_hash('0x52141e28c55744cdfddaa1ab5614642f61459d7624a51981e21ec06176c8f65c')  # noqa: E501
     timestamp, gauge_address, deposited_amount, gas_fees, received_amount = TimestampMS(1717744880000), string_to_evm_address('0xd91770E868c7471a9585d1819143063A40c54D00'), '834.517942394847767492', '0.0023483922', '431.905365995549947348'  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        database=database,
         tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
@@ -2316,13 +2287,12 @@ def test_gauge_deposit_and_stake(database, gnosis_inquirer, gnosis_accounts, loa
 @pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_gauge_deposit_and_stake_multiple(database, gnosis_inquirer, gnosis_accounts, load_global_caches):  # noqa: E501
+def test_gauge_deposit_and_stake_multiple(gnosis_inquirer, gnosis_accounts, load_global_caches):
     tx_hash = deserialize_evm_tx_hash('0xcbeaaee59405d5f7fd456dc510f1b841cc1329cd9624255ce64c894ac6643bd7')  # noqa: E501
     timestamp, gauge_address, gas_fees, received_amount = TimestampMS(1719684750000), string_to_evm_address('0xd91770E868c7471a9585d1819143063A40c54D00'), '0.0023626991', '0.567442277824060065'  # noqa: E501
     deposited_eur, deposited_usdc = '0.551864219634212696', '0.593161'
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        database=database,
         tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
@@ -2387,14 +2357,13 @@ def test_gauge_deposit_and_stake_multiple(database, gnosis_inquirer, gnosis_acco
 @pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_CURVE]])
 @pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_liquidity_withdrawal(database, gnosis_inquirer, gnosis_accounts, load_global_caches):
+def test_liquidity_withdrawal(gnosis_inquirer, gnosis_accounts, load_global_caches):
     """Test that a withdrawal in the case of pools that have underlying pools
     is correctly decoded"""
     tx_hash = deserialize_evm_tx_hash('0x7645bfeb43a1ccacd3f8eb29c496823bd73586498ff7b79be5a3a48145f1c4b4')  # noqa: E501
     timestamp, pool_address, gas_fees, removed_amount, returned_amount = TimestampMS(1719046465000), string_to_evm_address('0x0CA1C1eC4EBf3CC67a9f545fF90a3795b318cA4a'), '0.000813878', '1656.600276747801451581', '850'  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        database=database,
         tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
