@@ -244,7 +244,6 @@ defineExpose({
     <template #item.chain="{ row }">
       <AccountChains
         v-model:chain-filter="chainFilter"
-        :group="group"
         :available-chains="availableChains"
         :row="row"
       />
