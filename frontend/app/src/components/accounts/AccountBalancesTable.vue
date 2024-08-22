@@ -185,6 +185,10 @@ function edit(row: DataRow) {
   emit('edit', editBlockchainAccount(row));
 }
 
+function getCategoryTotal(category: string): BigNumber {
+  return sum(get(rows).filter(row => row.category === category));
+}
+
 /**
  * Tracks the row changes and collapses the expanded row if the updated entry only has a single chain.
  * This is for the case where we delete one of the two chains and then we go to a single chain group.
@@ -328,7 +332,7 @@ defineExpose({
     <template #group.header="{ header, isOpen, toggle, colspan }">
       <td
         class="py-2 px-2"
-        :colspan="colspan"
+        :colspan="colspan - 2"
       >
         <div class="flex font-medium gap-2 items-center">
           <RuiButton
@@ -346,6 +350,16 @@ defineExpose({
           </template>
         </div>
       </td>
+      <td class="text-end text-body-2 px-4 py-0">
+        <AmountDisplay
+          v-if="header.group.category"
+          fiat-currency="USD"
+          :value="getCategoryTotal(header.group.category)"
+          show-currency="symbol"
+          :loading="loading"
+        />
+      </td>
+      <td />
     </template>
   </RuiDataTable>
 </template>
