@@ -19,8 +19,19 @@ export type Matcher = SearchMatcher<BlockchainAccountFilterKeys, BlockchainAccou
 
 export type Filters = MatchedKeywordWithBehaviour<BlockchainAccountFilterValueKeys>;
 
-export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], chainIds: MaybeRef<string[]>): FilterSchema<Filters, Matcher> {
+export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], category: MaybeRef<string>): FilterSchema<Filters, Matcher> {
   const filters = ref<Filters>({});
+
+  const { supportedChains: allChains } = useSupportedChains();
+
+  const chainIds = computed(() => {
+    const chains = get(allChains);
+    const categoryVal = get(category);
+    if (categoryVal === 'all')
+      return chains.map(chain => chain.id);
+
+    return chains.filter(item => item.type === categoryVal || (categoryVal === 'evm' && item.type === 'evmlike')).map(chain => chain.id);
+  });
 
   const matchers = computed<Matcher[]>(() => [
     {

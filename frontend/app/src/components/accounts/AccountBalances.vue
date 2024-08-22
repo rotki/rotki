@@ -24,6 +24,7 @@ const { category } = toRefs(props);
 const { t } = useI18n();
 
 const visibleTags = ref<string[]>([]);
+const chainExclusionFilter = ref<Record<string, string[]>>({});
 const accountTable = ref<ComponentExposed<typeof AccountBalancesTable>>();
 const detailsTable = ref<ComponentExposed<typeof AccountGroupDetails>>();
 
@@ -32,17 +33,6 @@ const { fetchAccounts: fetchAccountsPage } = blockchainStore;
 const { groups } = storeToRefs(blockchainStore);
 const { handleBlockchainRefresh } = useRefresh();
 const { fetchAccounts } = useBlockchains();
-
-const { supportedChains: allChains } = useSupportedChains();
-
-const availableChains = computed(() => {
-  const chains = get(allChains);
-  const categoryVal = get(category);
-  if (categoryVal === 'all')
-    return chains.map(chain => chain.id);
-
-  return chains.filter(item => item.type === categoryVal || (categoryVal === 'evm' && item.type === 'evmlike')).map(chain => chain.id);
-});
 
 const {
   filters,
@@ -61,7 +51,7 @@ const {
 >(
   null,
   true,
-  () => useBlockchainAccountFilter(t, availableChains),
+  () => useBlockchainAccountFilter(t, category),
   fetchAccountsPage,
   {
     extraParams: computed(() => ({
@@ -79,10 +69,8 @@ const {
   },
 );
 
-const chains = computed<string[] | undefined>(() => {
-  const chainFilter = get(filters).chain;
-  return Array.isArray(chainFilter) ? chainFilter : undefined;
-});
+const isEvm = computed(() => get(category) === 'evm');
+const showEvmElements = computed(() => get(isEvm) || get(category) === 'all');
 
 const { refreshDisabled, isDetectingTokens } = useBlockchainAccountLoading(fetchData);
 
@@ -90,6 +78,12 @@ async function refreshClick() {
   await fetchAccounts(undefined, true);
   await handleBlockchainRefresh();
   await fetchData();
+}
+
+function getChains(row: BlockchainAccountGroupWithBalance): string[] {
+  const chains = row.chains;
+  const excludedChains = get(chainExclusionFilter)[getGroupId(row)];
+  return excludedChains ? chains.filter(chain => !excludedChains.includes(chain)) : chains;
 }
 
 watchImmediate(groups, async () => {
@@ -103,21 +97,6 @@ defineExpose({
       return;
 
     await get(detailsTable).refresh();
-  },
-});
-
-const isEvm = computed(() => get(category) === 'evm');
-const showEvmElements = computed(() => get(isEvm) || get(category) === 'all');
-
-const chainFilter = computed<string[]>({
-  get() {
-    return get(filters).chain as string[] || [];
-  },
-  set(chains: string[]) {
-    set(filters, {
-      ...get(filters),
-      chain: chains,
-    });
   },
 });
 </script>
@@ -197,8 +176,7 @@ const chainFilter = computed<string[]>({
       ref="accountTable"
       v-model:pagination="pagination"
       v-model:sort="sort"
-      v-model:chain-filter="chainFilter"
-      :available-chains="availableChains"
+      v-model:chain-filter="chainExclusionFilter"
       class="mt-4"
       group
       :accounts="accounts"
@@ -210,7 +188,7 @@ const chainFilter = computed<string[]>({
         <AccountGroupDetails
           v-if="row.expansion === 'accounts'"
           ref="detailsTable"
-          :chains="chains && chains.length > 0 ? chains : row.chains"
+          :chains="getChains(row)"
           :tags="visibleTags"
           :group-id="getGroupId(row)"
           :is-xpub="row.data.type === 'xpub'"

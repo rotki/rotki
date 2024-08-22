@@ -18,14 +18,12 @@ const props = withDefaults(
     group?: boolean;
     loading?: boolean;
     showGroupLabel?: boolean;
-    availableChains?: string[];
     isEvm?: boolean;
   }>(),
   {
     loading: false,
     group: false,
     showGroupLabel: false,
-    availableChains: () => [],
     isEvm: false,
   },
 );
@@ -35,7 +33,7 @@ const emit = defineEmits<{
   (e: 'refresh'): void;
 }>();
 
-const chainFilter = defineModel<string[]>('chainFilter', { required: false, default: [] });
+const chainFilter = defineModel<Record<string, string[]>>('chainFilter', { required: false, default: {} });
 
 const { t } = useI18n();
 
@@ -244,7 +242,6 @@ defineExpose({
     <template #item.chain="{ row }">
       <AccountChains
         v-model:chain-filter="chainFilter"
-        :available-chains="availableChains"
         :row="row"
       />
     </template>

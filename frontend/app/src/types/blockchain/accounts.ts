@@ -76,7 +76,6 @@ export interface BlockchainAccountGroupWithBalance<T extends BlockchainAccountDa
   readonly nativeAsset?: string;
   readonly aggregatedAssets?: AssetBalance[];
   readonly chains: string[];
-  readonly fullChains?: string[];
 }
 
 export type BlockchainAccountBalance<

@@ -1,14 +1,9 @@
 <script lang="ts" setup>
-type Row = ({ chain: string } | { chains: string[] }) & {
-  fullChains?: string[];
-};
+type Row = ({ chain: string } | { chains: string[] }) & { id: string };
 
-const props = defineProps<{
-  row: Row;
-  availableChains: string[];
-}>();
+const props = defineProps<{ row: Row }>();
 
-const chainFilter = defineModel<string[]>('chainFilter', { required: true });
+const chainFilter = defineModel<Record<string, string[]>>('chainFilter', { required: true });
 
 const chains = computed<string[]>(() => {
   const row = props.row;
@@ -16,51 +11,42 @@ const chains = computed<string[]>(() => {
 });
 
 const { getChainName } = useSupportedChains();
-const aggregatedChains = computed<{ chain: string; enabled: boolean }[]>(() => {
-  const full = props.row.fullChains;
+
+const chainStatus = computed<{ chain: string; enabled: boolean }[]>(() => {
   const activated = get(chains);
-
-  if (!full)
-    return activated.map(chain => ({ chain, enabled: true })).reverse();
-
-  return full.map(chain => ({ chain, enabled: activated.includes(chain) })).reverse();
+  const filter = get(chainFilter)[props.row.id] ?? [];
+  return activated.map(chain => ({ chain, enabled: !filter.includes(chain) })).reverse();
 });
 
 function updateChain(chain: string, enabled: boolean) {
-  if (get(chains).length <= 1)
+  if (!(get(chains).length > 1))
     return;
 
-  const currentFilter = get(chainFilter);
-  const available = props.availableChains;
-
-  if (currentFilter.length === 0 && !enabled) {
-    set(chainFilter, available.filter(item => item !== chain));
-    return;
+  const currentFilter = get(chainFilter)[props.row.id] ?? [];
+  if (!enabled) {
+    set(chainFilter, {
+      ...get(chainFilter),
+      [props.row.id]: [...currentFilter, chain].filter(uniqueStrings),
+    });
   }
+  else {
+    const updatedFilter = { ...get(chainFilter) };
+    const excluded = currentFilter.filter(entry => entry !== chain);
+    if (excluded.length === 0)
+      delete updatedFilter[props.row.id];
+    else
+      updatedFilter[props.row.id] = excluded;
 
-  let newValue = [
-    ...currentFilter,
-  ];
-
-  const index = newValue.indexOf(chain);
-
-  if (enabled && index === -1)
-    newValue.push(chain);
-  else if (!enabled && index > -1)
-    newValue.splice(index, 1);
-
-  if (newValue.length === available.length)
-    newValue = [];
-
-  set(chainFilter, newValue);
+    set(chainFilter, updatedFilter);
+  }
 }
 </script>
 
 <template>
   <div class="flex flex-row-reverse justify-end pl-2">
     <template
-      v-for="chain in aggregatedChains"
-      :key="chain.chain"
+      v-for="item in chainStatus"
+      :key="item.chain"
     >
       <RuiTooltip
         :close-delay="0"
@@ -69,29 +55,29 @@ function updateChain(chain: string, enabled: boolean) {
         <template #activator>
           <div
             class="rounded-full w-8 h-8 bg-rui-grey-300 dark:bg-white flex items-center justify-center border-2 border-white dark:border-rui-grey-300 -ml-2 relative z-[0] hover:z-[1] cursor-pointer account-chain transition-all overflow-hidden"
-            :class="{ '!border-0': !chain.enabled }"
-            :data-chain="chain.chain"
-            @click="updateChain(chain.chain, !chain.enabled)"
+            :class="{ '!border-0': !item.enabled }"
+            :data-chain="item.chain"
+            @click="updateChain(item.chain, !item.enabled)"
           >
             <ChainIcon
-              :chain="chain.chain"
+              :chain="item.chain"
               size="1"
             />
             <div
               class="absolute top-0 left-0 w-full h-full opacity-0 bg-black z-[2] transition-all"
-              :class="{ 'opacity-40 dark:opacity-60': !chain.enabled } "
+              :class="{ 'opacity-40 dark:opacity-60': !item.enabled } "
             />
           </div>
         </template>
 
         <template v-if="chains.length > 1">
           <i18n-t
-            v-if="chain.enabled"
+            v-if="item.enabled"
             keypath="account_balances.chain_filter.remove"
             tag="span"
           >
             <template #chain>
-              <b>{{ getChainName(chain.chain) }}</b>
+              <b>{{ getChainName(item.chain) }}</b>
             </template>
           </i18n-t>
           <i18n-t
@@ -100,12 +86,12 @@ function updateChain(chain: string, enabled: boolean) {
             tag="span"
           >
             <template #chain>
-              <b>{{ getChainName(chain.chain) }}</b>
+              <b>{{ getChainName(item.chain) }}</b>
             </template>
           </i18n-t>
         </template>
         <template v-else>
-          {{ getChainName(chain.chain) }}
+          {{ getChainName(item.chain) }}
         </template>
       </RuiTooltip>
     </template>
