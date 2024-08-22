@@ -1,0 +1,428 @@
+from typing import TYPE_CHECKING
+
+import pytest
+
+from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.optimism.modules.extrafi.decoder import (
+    CPT_EXTRAFI,
+    EXTRAFI_FARMING_CONTRACT,
+    EXTRAFI_POOL_CONTRACT,
+    EXTRAFI_STAKING_CONTRACT,
+    VOTE_ESCROW,
+)
+from rotkehlchen.constants.assets import A_ETH, A_OP
+from rotkehlchen.constants.misc import ZERO
+from rotkehlchen.fval import FVal
+from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
+from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
+from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
+    from rotkehlchen.types import ChecksumEvmAddress
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0x4ba257EC214BA1e6a3b4E46Bd7C4654b9E81CED3']])
+def test_extrafi_deposit_and_stake(
+        optimism_inquirer: 'OptimismInquirer',
+        optimism_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0x81a87d2f8a9752ac4889ec92d6ec553417e3b4cc709a240718cf423f362e89b1')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
+    timestamp, fee_amount, deposited_amount = TimestampMS(1724325113000), '0.000000295568286412', '3259.807132247307892938'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(fee_amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Burned {fee_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=13,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:10/erc20:0x9560e827aF36c94D2Ac33a39bCE1Fe78631088Db'),
+            balance=Balance(amount=FVal('10180971820322352348298.271714677763401611')),
+            location_label=optimism_accounts[0],
+            notes=f'Set VELO spending approval of 0x4ba257EC214BA1e6a3b4E46Bd7C4654b9E81CED3 by {EXTRAFI_POOL_CONTRACT} to 10180971820322352348298.271714677763401611',  # noqa: E501
+            address=EXTRAFI_POOL_CONTRACT,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=14,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=Asset('eip155:10/erc20:0x9560e827aF36c94D2Ac33a39bCE1Fe78631088Db'),
+            balance=Balance(amount=FVal(deposited_amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Deposit {deposited_amount} VELO into Extrafi',
+            counterparty=CPT_EXTRAFI,
+            address=string_to_evm_address('0xC89Bddb6E5aada6Ef9e15eeA77E9C5e0dB9dAe5D'),
+            extra_data={'reserve_index': 35},
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0x92c90a4eA6F205dEe545ac348bBF005C4a019c78']])
+def test_extrafi_unstake_and_withdraw(
+        optimism_inquirer: 'OptimismInquirer',
+        optimism_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0x6acaea14d49f1e27902064251b1656067ed2518f831ae2d75ca6806bb7a21892')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
+    timestamp, fee_amount, deposited_amount = TimestampMS(1724414161000), '0.00000029164013947', '28996.716869'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(fee_amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Burned {fee_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=19,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=Asset('eip155:10/erc20:0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85'),
+            balance=Balance(amount=FVal(deposited_amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Withdraw {deposited_amount} USDC from Extrafi',
+            address=string_to_evm_address('0x85B16A35d310Db338D7bA35b85F83ea44182A396'),
+            counterparty=CPT_EXTRAFI,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0x7C16C022048b25142482CF06AC98064527395290']])
+def test_extrafi_claim_from_pool(
+        optimism_inquirer: 'OptimismInquirer',
+        optimism_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0x0c14b9d8d9a7dbe9243a29f4ec4d32852456163f80f46de7119c2c9fd8737a0b')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
+    timestamp, fee_amount, claimed_extra, claimed_op = TimestampMS(1717599275000), '0.000012215355410845', '42.0693742435086256', '0.162673580112061904'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(fee_amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Burned {fee_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=18,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:10/erc20:0x2dAD3a13ef0C6366220f989157009e501e7938F8'),
+            balance=Balance(amount=FVal(claimed_extra)),
+            location_label=optimism_accounts[0],
+            notes=f'Claim {claimed_extra} EXTRA from Extrafi',
+            counterparty=CPT_EXTRAFI,
+            address=EXTRAFI_STAKING_CONTRACT,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=20,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_OP,
+            balance=Balance(amount=FVal(claimed_op)),
+            location_label=optimism_accounts[0],
+            notes=f'Claim {claimed_op} OP from Extrafi',
+            counterparty=CPT_EXTRAFI,
+            address=EXTRAFI_STAKING_CONTRACT,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0xfE9182CD69F9fEb2A22C8bB88D03dCBBDfF77f11']])
+def test_extrafi_lock_token(
+        optimism_inquirer: 'OptimismInquirer',
+        optimism_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0x10cc6bb6d749e4c42c4d961de69bcd0d3885fe74ecc627e9069b41d000344fa7')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
+    timestamp, fee_amount, locked_amount = TimestampMS(1724678695000), '0.000002162513212219', '10077.656075837376207314'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(fee_amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Burned {fee_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=12,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:10/erc20:0x2dAD3a13ef0C6366220f989157009e501e7938F8'),
+            balance=Balance(amount=ZERO),
+            location_label=optimism_accounts[0],
+            notes=f'Revoke EXTRA spending approval of 0xfE9182CD69F9fEb2A22C8bB88D03dCBBDfF77f11 by {VOTE_ESCROW}',  # noqa: E501
+            address=VOTE_ESCROW,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=13,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=Asset('eip155:10/erc20:0x2dAD3a13ef0C6366220f989157009e501e7938F8'),
+            balance=Balance(amount=FVal(locked_amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Lock {locked_amount} EXTRA until 21/08/2025 00:00:00',
+            counterparty=CPT_EXTRAFI,
+            address=VOTE_ESCROW,
+            product=EvmProduct.STAKING,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0x4003eeb8e27D300c8420ecDeDfB96C4dE7a46E7E']])
+def test_extrafi_repay(
+        optimism_inquirer: 'OptimismInquirer',
+        optimism_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0xc1b3c8ac33f3b5d27e48377e59a6a6c384ee425f86c7ac86cec4b903e38c9bca')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
+    timestamp, fee_amount, repaid_amount, refund_amount = TimestampMS(1722746575000), '0.000001297692870133', '0.001369169723826962', '0.000000000000000002'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(fee_amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Burned {fee_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.PAYBACK_DEBT,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(repaid_amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Repay {repaid_amount} ETH in Extrafi',
+            address=EXTRAFI_FARMING_CONTRACT,
+            counterparty=CPT_EXTRAFI,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REFUND,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(refund_amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Receive {refund_amount} ETH as refund from Extrafi',
+            counterparty=CPT_EXTRAFI,
+            address=EXTRAFI_FARMING_CONTRACT,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0x225170393fCD06F3295aDa2bF33002C8ec94b8E4']])
+def test_extrafi_repay_with_token(
+        optimism_inquirer: 'OptimismInquirer',
+        optimism_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0x5b907d75ec3ba70436385071fc57e31b428b24cb92a05d802a5714273171e697')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
+    timestamp, fee_amount, repaid_amount, refund_amount = TimestampMS(1721340039000), '0.000076904200008685', '1589.9698', '0.000002'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(fee_amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Burned {fee_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=44,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
+            balance=Balance(amount=FVal('115792089237316195423570985008687907853269984665640564039457584007873814.838605')),
+            location_label=optimism_accounts[0],
+            notes=f'Set USDC.e spending approval of {optimism_accounts[0]} by 0xf9cFB8a62f50e10AdDE5Aa888B44cF01C5957055 to 115792089237316195423570985008687907853269984665640564039457584007873814.838605',  # noqa: E501
+            address=EXTRAFI_FARMING_CONTRACT,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=45,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.PAYBACK_DEBT,
+            asset=Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
+            balance=Balance(amount=FVal(repaid_amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Repay {repaid_amount} USDC.e in Extrafi',
+            address=string_to_evm_address('0x5f88d6f7beD0538Ca825404Baf20C846b4073e5D'),
+            counterparty=CPT_EXTRAFI,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=46,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REFUND,
+            asset=Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
+            balance=Balance(amount=FVal(refund_amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Receive {refund_amount} USDC.e as refund from Extrafi',
+            counterparty=CPT_EXTRAFI,
+            address=string_to_evm_address('0x5f88d6f7beD0538Ca825404Baf20C846b4073e5D'),
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0x4003eeb8e27D300c8420ecDeDfB96C4dE7a46E7E']])
+def test_close_position(
+        optimism_inquirer: 'OptimismInquirer',
+        optimism_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0x24c5e37be0340c3713c851cbe849f2f2d7c9fd9c776d889fe065cd5aaaadb49f')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
+    timestamp, fee_amount, withdrawn_amount = TimestampMS(1722759379000), '0.000001936939279642', '6.195522513842170302'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(fee_amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Burned {fee_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=96,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=Asset('eip155:10/erc20:0x1e925De1c68ef83bD98eE3E130eF14a50309C01B'),
+            balance=Balance(amount=FVal(withdrawn_amount)),
+            location_label=optimism_accounts[0],
+            notes=f"Withdraw {withdrawn_amount} EXA from Extrafi's farm",
+            counterparty=CPT_EXTRAFI,
+            address=string_to_evm_address('0x9558FF42E95dcA076A8DEB67c8FF8B86f52b2f8C'),
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('optimism_accounts', [['0x4003eeb8e27D300c8420ecDeDfB96C4dE7a46E7E']])
+def test_farm_investment(
+        optimism_inquirer: 'OptimismInquirer',
+        optimism_accounts: list['ChecksumEvmAddress'],
+):
+    tx_hash = deserialize_evm_tx_hash('0xf1f2de24757b57df7b53090369020a527f9ea54d5a876fe85fe972643c50a7e2')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
+    timestamp, fee_amount, deposited_amount = TimestampMS(1722792861000), '0.000027486262250944', '8.230157245731733013'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(fee_amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Burned {fee_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=48,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=Asset('eip155:10/erc20:0x1e925De1c68ef83bD98eE3E130eF14a50309C01B'),
+            balance=Balance(amount=FVal(2)),
+            location_label=optimism_accounts[0],
+            notes=f'Set EXA spending approval of 0x4003eeb8e27D300c8420ecDeDfB96C4dE7a46E7E by {EXTRAFI_FARMING_CONTRACT} to 2',  # noqa: E501
+            address=EXTRAFI_FARMING_CONTRACT,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=49,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=Asset('eip155:10/erc20:0x1e925De1c68ef83bD98eE3E130eF14a50309C01B'),
+            balance=Balance(amount=FVal(deposited_amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Deposit {deposited_amount} EXA in Extrafi',
+            counterparty=CPT_EXTRAFI,
+            extra_data={'vault_id': 70, 'vault_position': 511},
+            address=string_to_evm_address('0x9558FF42E95dcA076A8DEB67c8FF8B86f52b2f8C'),
+        ),
+    ]
