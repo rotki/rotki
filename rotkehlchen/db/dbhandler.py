@@ -3352,6 +3352,7 @@ class DBHandler:
             self,
             blockchain: SupportedBlockchain,
             only_active: bool = False,
+            include_zero_weighted: bool = True,
     ) -> Sequence[WeightedNode]:
         """
         Get all the nodes in the database. If only_active is set to true only the nodes that
@@ -3377,6 +3378,7 @@ class DBHandler:
                     active=bool(entry[5]),
                 )
                 for entry in cursor
+                if include_zero_weighted is True or (include_zero_weighted is False and FVal(entry[4]) != ZERO)  # noqa: E501
             ]
 
     def rebalance_rpc_nodes_weights(

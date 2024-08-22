@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Sequence
 from contextlib import suppress
 from itertools import zip_longest
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, TypeVar
 from urllib.parse import urlparse
 
 import requests
@@ -173,6 +173,28 @@ def _query_web3_get_logs(
     return events
 
 
+T = TypeVar('T')
+
+
+def weighted_sample_without_replacement(
+        population: list[T],
+        weights: list[float],
+        k: int,
+) -> list[T]:
+    """
+    Get a list sorted randomly with weighted elements
+
+    Python provides choices but it returns a single element if you don't want
+    replacement. `sample` for python does what we want but doesn't allow to provide
+    weights for the items.
+
+    Code taken from https://maxhalford.github.io/blog/weighted-sampling-without-replacement/
+    """
+    v = [random.random() ** (1 / w) for w in weights]
+    order = sorted(range(len(population)), key=lambda i: v[i])
+    return [population[i] for i in order[-k:]]
+
+
 class EvmNodeInquirer(ABC, LockableQueryMixIn):
     """Class containing generic functionality for querying evm nodes
 
@@ -287,18 +309,21 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         ===> Runs: 66, 82, 72, 58, 72 seconds
         ---> Average: 70 seconds
         """
-        open_nodes = self.database.get_rpc_nodes(blockchain=self.blockchain, only_active=True)
+        open_nodes = self.database.get_rpc_nodes(
+            blockchain=self.blockchain,
+            only_active=True,
+            include_zero_weighted=False,
+        )
         if skip_etherscan:
             selection = [wnode for wnode in open_nodes if wnode.node_info.name != self.etherscan_node_name and wnode.node_info.owned is False]  # noqa: E501
         else:
             selection = [wnode for wnode in open_nodes if wnode.node_info.owned is False]
 
-        ordered_list = []
-        while len(selection) != 0:
-            weights = [float(entry.weight) for entry in selection]
-            node = random.choices(selection, weights, k=1)
-            ordered_list.append(node[0])
-            selection.remove(node[0])
+        ordered_list = weighted_sample_without_replacement(
+            population=selection,
+            weights=[float(entry.weight) for entry in selection],
+            k=len(selection),
+        )
 
         owned_nodes = [node for node in self.web3_mapping if node.owned]
         if len(owned_nodes) != 0:
@@ -521,20 +546,19 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         """
         for weighted_node in call_order:
             node_info = weighted_node.node_info
-            web3node = self.web3_mapping.get(node_info, None)
-            if web3node is None and node_info.name != self.etherscan_node_name:
-                continue
+            if node_info.name != self.etherscan_node_name:
+                if (
+                    (web3node := self.web3_mapping.get(node_info)) is None or
+                    (web3node.is_pruned is True and method.__name__ in self.methods_that_query_past_data)  # noqa: E501
+                ):
+                    continue
 
-            if (
-                web3node is not None and
-                method.__name__ in self.methods_that_query_past_data and
-                web3node.is_pruned is True
-            ):
-                continue
+                web3 = web3node.web3_instance
+            else:
+                web3 = None
 
             try:
-                web3 = web3node.web3_instance if web3node is not None else None
-                result = method(web3, **kwargs)
+                return method(web3, **kwargs)
             except TransactionNotFound:
                 if kwargs.get('must_exist', False) is True:
                     continue  # try other nodes, as transaction has to exist
@@ -550,8 +574,6 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                 log.warning(f'Failed to query {node_info} for {method!s} due to {e!s}')
                 # Catch all possible errors here and just try next node call
                 continue
-
-            return result
 
         # no node in the call order list was successfully queried
         log.error(
