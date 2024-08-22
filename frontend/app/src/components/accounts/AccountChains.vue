@@ -4,7 +4,6 @@ type Row = ({ chain: string } | { chains: string[] }) & {
 };
 
 const props = defineProps<{
-  group: boolean;
   row: Row;
   availableChains: string[];
 }>();
@@ -28,7 +27,7 @@ const aggregatedChains = computed<{ chain: string; enabled: boolean }[]>(() => {
 });
 
 function updateChain(chain: string, enabled: boolean) {
-  if (!props.group)
+  if (get(chains).length <= 1)
     return;
 
   const currentFilter = get(chainFilter);
@@ -85,7 +84,7 @@ function updateChain(chain: string, enabled: boolean) {
           </div>
         </template>
 
-        <template v-if="group">
+        <template v-if="chains.length > 1">
           <i18n-t
             v-if="chain.enabled"
             keypath="account_balances.chain_filter.remove"
