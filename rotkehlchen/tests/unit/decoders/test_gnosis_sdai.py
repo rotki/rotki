@@ -21,12 +21,11 @@ A_GNOSIS_SDAI = evm_address_to_identifier(
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('gnosis_accounts', [['0x78E87757861185Ec5e8C0EF6BF0C69Fa7832df6C']])
-def test_deposit_xdai_to_sdai(database, gnosis_inquirer, gnosis_accounts):
+def test_deposit_xdai_to_sdai(gnosis_inquirer, gnosis_accounts):
     user_address = gnosis_accounts[0]
     tx_hash = deserialize_evm_tx_hash('0x1342646cab122d58f0b7dfae404dad5235d42224de881099dc05e59477bb93aa')  # noqa: E501
     actual_events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        database=database,
         tx_hash=tx_hash,
     )
     timestamp = TimestampMS(1707169525000)
@@ -78,13 +77,12 @@ def test_deposit_xdai_to_sdai(database, gnosis_inquirer, gnosis_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('gnosis_accounts', [['0x4fFAD6ac852c0Af0AA301376F4C5Dea3a928b120']])
-def test_withdraw_xdai_from_sdai(database, gnosis_inquirer, gnosis_accounts):
+def test_withdraw_xdai_from_sdai(gnosis_inquirer, gnosis_accounts):
     user_address = gnosis_accounts[0]
     receive_address = '0xD499b51fcFc66bd31248ef4b28d656d67E591A94'
     tx_hash = deserialize_evm_tx_hash('0xe23ee1ac52b8981723c737b01781691b965c5819cccccdb98e7c8cb5894dddbb')  # noqa: E501
     actual_events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        database=database,
         tx_hash=tx_hash,
     )
     timestamp = TimestampMS(1707070975000)
@@ -137,12 +135,11 @@ def test_withdraw_xdai_from_sdai(database, gnosis_inquirer, gnosis_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('gnosis_accounts', [['0x5938852FE18Ad6963322FB98D1fDDA5c24DD8a0E']])
-def test_deposit_wxdai_to_sdai(database, gnosis_inquirer, gnosis_accounts):
+def test_deposit_wxdai_to_sdai(gnosis_inquirer, gnosis_accounts):
     user_address = gnosis_accounts[0]
     tx_hash = deserialize_evm_tx_hash('0xd406f40ecd2538d41adb2e645c8fb6d32cec5485510798bfed5d991c258d4b1d')  # noqa: E501
     actual_events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        database=database,
         tx_hash=tx_hash,
     )
     timestamp = TimestampMS(1706794335000)
@@ -194,12 +191,11 @@ def test_deposit_wxdai_to_sdai(database, gnosis_inquirer, gnosis_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('gnosis_accounts', [['0x23727b54163F63CffdD8B7769e0eCb13Df253b4e']])
-def test_withdraw_wxdai_from_sdai(database, gnosis_inquirer, gnosis_accounts):
+def test_withdraw_wxdai_from_sdai(gnosis_inquirer, gnosis_accounts):
     user_address = gnosis_accounts[0]
     tx_hash = deserialize_evm_tx_hash('0xd7e2123adc6c8f4fd8ced74733010cf47dba2bd4e0e5c468d63d53942b9e2dd3')  # noqa: E501
     actual_events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        database=database,
         tx_hash=tx_hash,
     )
     timestamp = TimestampMS(1706699405000)

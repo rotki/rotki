@@ -57,7 +57,6 @@ def test_add_liquidity(base_transaction_decoder, base_accounts, load_global_cach
     user_address = base_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_transaction_decoder.evm_inquirer,
-        database=base_transaction_decoder.database,
         tx_hash=evmhash,
         load_global_caches=load_global_caches,
     )
@@ -145,7 +144,6 @@ def test_stake_lp_token_to_gauge(base_accounts, base_transaction_decoder, load_g
     user_address = base_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_transaction_decoder.evm_inquirer,
-        database=base_transaction_decoder.database,
         tx_hash=evmhash,
         load_global_caches=load_global_caches,
     )
@@ -205,7 +203,6 @@ def test_remove_liquidity(base_accounts, base_transaction_decoder, load_global_c
     user_address = base_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_transaction_decoder.evm_inquirer,
-        database=base_transaction_decoder.database,
         tx_hash=evmhash,
         load_global_caches=load_global_caches,
     )

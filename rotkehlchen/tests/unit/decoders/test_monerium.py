@@ -12,13 +12,9 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xbCCeE6Ff2bCAfA95300D222D316A29140c4746da']])
-def test_minting_monerium_on_eth(database, ethereum_inquirer, ethereum_accounts):
+def test_minting_monerium_on_eth(ethereum_inquirer, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash(val='0x4ed9db44c5ee4ba6a4cf3e8e9b386f0b857afebad8339a92666e175c747bdd74')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=evmhash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash)
     amount_str = '1500'
     expected_events = [
         EvmEvent(
@@ -40,13 +36,9 @@ def test_minting_monerium_on_eth(database, ethereum_inquirer, ethereum_accounts)
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x99a0618B846D43E29C15ac468Eae06d03C9243C7']])
-def test_burning_monerium_on_eth(database, ethereum_inquirer, ethereum_accounts):
+def test_burning_monerium_on_eth(ethereum_inquirer, ethereum_accounts):
     evmhash = deserialize_evm_tx_hash(val='0x10d953610921f39d9d20722082077e03ec8db8d9c75e4b301d0d552119fd0354')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=evmhash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash)
     amount_str = '1161210.84'
     expected_events = [
         EvmEvent(
@@ -68,11 +60,10 @@ def test_burning_monerium_on_eth(database, ethereum_inquirer, ethereum_accounts)
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x762e5f511c219823eeC73C743C8245807A53E123']])
-def test_minting_monerium_on_matic(database, polygon_pos_inquirer, polygon_pos_accounts):
+def test_minting_monerium_on_matic(polygon_pos_inquirer, polygon_pos_accounts):
     evmhash = deserialize_evm_tx_hash(val='0xb240acc158fb2cdcdebc7321ca4a96f71b371379e2a78a9a7f27d0718a2e3735')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
-        database=database,
         tx_hash=evmhash,
     )
     amount_str = '95'
@@ -96,11 +87,10 @@ def test_minting_monerium_on_matic(database, polygon_pos_inquirer, polygon_pos_a
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x0A251dF99A88A20a93876205Fb7f5Faf2E85A481']])
-def test_burning_monerium_on_matic(database, polygon_pos_inquirer, polygon_pos_accounts):
+def test_burning_monerium_on_matic(polygon_pos_inquirer, polygon_pos_accounts):
     evmhash = deserialize_evm_tx_hash(val='0xeaed8e3e862a9b41189e9039c825ee57fb80385801b8ac5c3ed70339baf243e5')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
-        database=database,
         tx_hash=evmhash,
     )
     amount_str = '208.93'
@@ -124,11 +114,10 @@ def test_burning_monerium_on_matic(database, polygon_pos_inquirer, polygon_pos_a
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('gnosis_accounts', [['0x9566E3e6F55D4378243E55DE8e037Ee8E6e4de7E']])
-def test_minting_monerium_on_gnosis(database, gnosis_inquirer, gnosis_accounts):
+def test_minting_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts):
     evmhash = deserialize_evm_tx_hash(val='0x31183d757f530f799872600e6fe8644e3c20a1f90d02de9e89d0463454b400fa')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        database=database,
         tx_hash=evmhash,
     )
     amount_str = '66'
@@ -152,13 +141,9 @@ def test_minting_monerium_on_gnosis(database, gnosis_inquirer, gnosis_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('gnosis_accounts', [['0xAf31992307AcBb6Ad8795261EeA31494e62A8e40']])
-def test_burning_monerium_on_gnosis(database, gnosis_inquirer, gnosis_accounts):
+def test_burning_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts):
     evmhash = deserialize_evm_tx_hash(val='0xae087f309231e4dc1fa84927888deb6c56b9980e63f9cc049cbe2d7d2bc503e6')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=gnosis_inquirer,
-        database=database,
-        tx_hash=evmhash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=evmhash)
     amount_str = '1'
     expected_events = [
         EvmEvent(
@@ -180,13 +165,9 @@ def test_burning_monerium_on_gnosis(database, gnosis_inquirer, gnosis_accounts):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('gnosis_accounts', [['0x39c185721fbe8b350363e6B49801305d32485A45']])
-def test_burnfrom_monerium_on_gnosis(database, gnosis_inquirer, gnosis_accounts):
+def test_burnfrom_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts):
     evmhash = deserialize_evm_tx_hash(val='0xf04a5d84e6749828ff63991fb3323944472346c3b2c421e51d9999283d18f1fd')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=gnosis_inquirer,
-        database=database,
-        tx_hash=evmhash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=evmhash)
     amount_str = '501.04'
     expected_events = [
         EvmEvent(

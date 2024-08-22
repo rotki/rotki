@@ -21,23 +21,17 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
-    from rotkehlchen.db.dbhandler import DBHandler
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x373aDc79FF63d5076D0685cA35031339d4E0Da82']])
 def test_compound_v3_claim_comp(
-        database: 'DBHandler',
         ethereum_inquirer: 'EthereumInquirer',
         ethereum_accounts,
 ) -> None:
     """Test that claiming comp reward for v3 works fine"""
     tx_hash = deserialize_evm_tx_hash('0x89b189f36989aba504c77e686cb52691fdb147873f72ef9c64c31f39bf355fc8')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
     timestamp = TimestampMS(1700653367000)
     gas_str = '0.002927949668742244'
@@ -75,13 +69,9 @@ def test_compound_v3_claim_comp(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xc1f8d0c485eC00B9A3A54c3B9BbeB5D7a2B4265a']])
-def test_compound_v3_supply(database, ethereum_inquirer, ethereum_accounts):
+def test_compound_v3_supply(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xcac67d0ca139b9418673f04dcc18fe7805b1242566489bf2e9c99a2fea4ee01c')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1712239823000)
     gas_fees, supply_amount, position_amount = '0.003305489949685846', '15000', '14999.999998'
     expected_events = [
@@ -129,13 +119,9 @@ def test_compound_v3_supply(database, ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xD7ca0E0238E3fDAB2a33646348207AB945d55df7']])
-def test_compound_v3_withdraw(database, ethereum_inquirer, ethereum_accounts):
+def test_compound_v3_withdraw(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0xd8ba70d3e993cae4b89a68d5b991d0a85dd9888c0e6a07814c9ddd2ff4ba93d2')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1712239703000)
     gas_fees, withdraw_amount = '0.002760840922152728', '8158.266856'
     expected_events = [
@@ -183,13 +169,9 @@ def test_compound_v3_withdraw(database, ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x274B56e812b7951B737e450a22e849860C8adA11']])
-def test_compound_v3_withdraw_collateral(database, ethereum_inquirer, ethereum_accounts):
+def test_compound_v3_withdraw_collateral(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x70aca19e6ac5285a586ad9e6a6d38bb4e4a682386901e987c7f7a30ea8c2431c')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1712235011000)
     gas_fees, collateral_amount = '0.003503372063979697', '30'
     expected_events = [
@@ -237,13 +219,9 @@ def test_compound_v3_withdraw_collateral(database, ethereum_inquirer, ethereum_a
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x048C013be418178cBf35Fc7102d80298506e82E8']])
-def test_compound_v3_deposit_collateral(database, ethereum_inquirer, ethereum_accounts):
+def test_compound_v3_deposit_collateral(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x2e362252c9c96669eb0801cd431d6b36bdea63968e5781d33ea58efc528ac205')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1712238731000)
     gas_fees, collateral_amount = '0.00267689111806624', '15'
     expected_events = [
@@ -291,11 +269,10 @@ def test_compound_v3_deposit_collateral(database, ethereum_inquirer, ethereum_ac
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xD350663eB2615FF8aDa1Db2A2c810129003142f1']])
-def test_polygon_pos_withdraw(database, polygon_pos_inquirer, polygon_pos_accounts):
+def test_polygon_pos_withdraw(polygon_pos_inquirer, polygon_pos_accounts):
     tx_hash = deserialize_evm_tx_hash('0xb747e7075a5f4d1b4b60da150da7fb0bce7759e36d2753fed47f0f6ecbda780c')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
-        database=database,
         tx_hash=tx_hash,
     )
     timestamp = TimestampMS(1712676523000)
@@ -345,11 +322,10 @@ def test_polygon_pos_withdraw(database, polygon_pos_inquirer, polygon_pos_accoun
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xb453dE1360cEcf95bD9717CB9DEB6Fb961b7010D']])
-def test_arbitrum_one_borrow(database, arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_arbitrum_one_borrow(arbitrum_one_inquirer, arbitrum_one_accounts):
     tx_hash = deserialize_evm_tx_hash('0xaabe8666d515f5fa97cf31a5ac43c3f56af062ff3a077ef79dbc2480b33b7802')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        database=database,
         tx_hash=tx_hash,
     )
     timestamp = TimestampMS(1714561431000)
@@ -386,11 +362,10 @@ def test_arbitrum_one_borrow(database, arbitrum_one_inquirer, arbitrum_one_accou
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('base_accounts', [['0xBD1eefb658C2B80c297493A0D4298B16941eff85']])
-def test_base_repay(database, base_inquirer, base_accounts):
+def test_base_repay(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0x455761ce3e1076eb03a3af1a90b935b42a703336e08aacf218afe76102d8d171')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=base_inquirer,
-        database=database,
         tx_hash=tx_hash,
     )
     timestamp = TimestampMS(1714564377000)
@@ -428,11 +403,10 @@ def test_base_repay(database, base_inquirer, base_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('scroll_accounts', [['0xe53Ca0bB4E6F22514Aa1c1ABFd9634d52A808546']])
-def test_scroll_withdraw(database, scroll_inquirer, scroll_accounts):
+def test_scroll_withdraw(scroll_inquirer, scroll_accounts):
     tx_hash = deserialize_evm_tx_hash('0x0ec09157328bba439e276c83a2c3364c390d430b5bc0bddf3169d475b6fbfdee')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=scroll_inquirer,
-        database=database,
         tx_hash=tx_hash,
     )
     timestamp = TimestampMS(1712739257000)

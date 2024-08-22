@@ -828,7 +828,6 @@ def test_genesis_transaction(database, ethereum_inquirer, ethereum_accounts):
     with query_patch as query_mock:
         events, _ = get_decoded_events_of_transaction(
             evm_inquirer=ethereum_inquirer,
-            database=database,
             tx_hash=evmhash,
             transactions=transactions,
         )
@@ -867,7 +866,7 @@ def test_genesis_transaction(database, ethereum_inquirer, ethereum_accounts):
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDRESS_WITHOUT_GENESIS_TX]])
-def test_genesis_transaction_no_address(database, ethereum_inquirer):
+def test_genesis_transaction_no_address(ethereum_inquirer):
     """
     Test that decoding a genesis transaction is handled correctly when there is no address tracked
     with a genesis transaction.
@@ -876,7 +875,6 @@ def test_genesis_transaction_no_address(database, ethereum_inquirer):
     with pytest.raises(InputError):
         get_decoded_events_of_transaction(
             evm_inquirer=ethereum_inquirer,
-            database=database,
             tx_hash=tx_hex,
         )
 
@@ -889,7 +887,6 @@ def test_phising_zero_transfers(database, ethereum_inquirer):
     evmhash = deserialize_evm_tx_hash(tx_hex)
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=database,
         tx_hash=evmhash,
     )
     assert events == []
@@ -903,11 +900,7 @@ def test_phising_zero_transfers(database, ethereum_inquirer):
     assert ignored_actions == {ActionType.HISTORY_EVENT: {f'{ChainID.ETHEREUM.value}{tx_hex}'}}, 'Transaction with only zero transfers should have been marked as ignored'  # noqa: E501
 
     # Repeat the same process to see that redecoding doesnt break anything
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=evmhash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash)
     assert events == []
 
     with database.conn.read_ctx() as cursor:
@@ -938,15 +931,11 @@ def test_error_at_decoder_initialization(database, ethereum_inquirer, eth_transa
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])
-def test_failed_transaction(database, ethereum_inquirer, ethereum_accounts):
+def test_failed_transaction(ethereum_inquirer, ethereum_accounts):
     """Checks that a failed transaction is understood as failed"""
     tx_hex = deserialize_evm_tx_hash('0xfbfd35db096d0acb26a988895841d786baafe08f6cf55265338e0b5db58350ee')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=evmhash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash)
     gas = '0.00056954114283532'
     assert events == [EvmEvent(
         tx_hash=evmhash,

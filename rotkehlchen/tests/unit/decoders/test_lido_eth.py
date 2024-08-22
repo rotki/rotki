@@ -14,14 +14,10 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x4C49d4Bd6a571827B4A556a0e1e3071DA6231B9D']])
-def test_lido_steth_staking(database, ethereum_inquirer, ethereum_accounts):
+def test_lido_steth_staking(ethereum_inquirer, ethereum_accounts):
     tx_hex = deserialize_evm_tx_hash('0x23a3ee601475424e91bdc0999a780afe57bf37cbcce6d1c09a4dfaaae1765451')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hex,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
     timestamp, gas_str, amount_deposited, amount_minted = TimestampMS(1710486191000), '0.002846110430778206', '1.12137397', '1.121373969999999999'  # noqa: E501
     expected_events = [
         EvmEvent(

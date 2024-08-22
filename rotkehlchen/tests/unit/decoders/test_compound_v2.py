@@ -29,7 +29,6 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
-    from rotkehlchen.db.dbhandler import DBHandler
 
 ADDY = '0x5727c0481b90a129554395937612d8b9301D6c7b'
 ADDY2 = '0x87Dd56068Af560B0D8472C4EF41CB902FCbF5ebE'
@@ -42,16 +41,12 @@ ADDR_REPAYS_ETH = '0x18c42014Fb0aeD3E35515eb45DF8498Af67773a4'
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
-def test_compound_ether_deposit(database, ethereum_inquirer):
+def test_compound_ether_deposit(ethereum_inquirer):
     """Data taken from:
     https://etherscan.io/tx/0x06a8b9f758b0471886186c2a48dea189b3044916c7f94ee7f559026fefd91c39
     """
     tx_hash = deserialize_evm_tx_hash('0x06a8b9f758b0471886186c2a48dea189b3044916c7f94ee7f559026fefd91c39')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1598639099000)
     expected_events = [
         EvmEvent(
@@ -98,16 +93,12 @@ def test_compound_ether_deposit(database, ethereum_inquirer):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY]])
-def test_compound_ether_withdraw(database, ethereum_inquirer):
+def test_compound_ether_withdraw(ethereum_inquirer):
     """Data taken from:
     https://etherscan.io/tx/0x024bd402420c3ba2f95b875f55ce2a762338d2a14dac4887b78174254c9ab807
     """
     tx_hash = deserialize_evm_tx_hash('0x024bd402420c3ba2f95b875f55ce2a762338d2a14dac4887b78174254c9ab807')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1598813490000)
     expected_events = [
         EvmEvent(
@@ -154,19 +145,12 @@ def test_compound_ether_withdraw(database, ethereum_inquirer):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY2]])
-def test_compound_deposit_with_comp_claim(
-        database,
-        ethereum_inquirer,
-):
+def test_compound_deposit_with_comp_claim(ethereum_inquirer):
     """Data taken from:
     https://etherscan.io/tx/0xfdbfe6e9ce822bd988054945c86f2dff1fac6a12b4acb0b68c8805b5aa3b30ba
     """
     tx_hash = deserialize_evm_tx_hash('0xfdbfe6e9ce822bd988054945c86f2dff1fac6a12b4acb0b68c8805b5aa3b30ba')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1607572696000)
     amount = FVal('14309.930911242041089052')
     wrapped_amount = FVal('687371.5068874')
@@ -229,18 +213,14 @@ def test_compound_deposit_with_comp_claim(
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[ADDY3]])
-def test_compound_multiple_comp_claim(database, ethereum_inquirer):
+def test_compound_multiple_comp_claim(ethereum_inquirer):
     """Test that a transaction with multiple comp claims decodes all of them as rewards
     This is to test against a regression of a bug that decoded the last reward claim
     as a simple receive.
     """
     tx_hash = deserialize_evm_tx_hash('0x25d341421044fa27006c0ec8df11067d80f69b2d2135065828f1992fa6868a49')  # noqa: E501
     timestamp = TimestampMS(1622430975000)
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [
         EvmEvent(
             tx_hash=tx_hash,
@@ -325,18 +305,14 @@ def test_compound_multiple_comp_claim(database, ethereum_inquirer):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xB8cCf257d32b134ffecb902e5Bef3042841B8A4A']])
-def test_compound_comp_claim_last_transfer(database, ethereum_inquirer, ethereum_accounts):
+def test_compound_comp_claim_last_transfer(ethereum_inquirer, ethereum_accounts):
     """
     Test comp claim case that was not decoded properly before due to
     the transfer being last the last event
     """
     tx_hash = deserialize_evm_tx_hash('0xbd2dcb1121bf230a855788a77aa054dc1aae7a898cb4a7d7c45c5866f3f887ac')  # noqa: E501
     timestamp = TimestampMS(1622430975000)
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp, gas_amount, amount = TimestampMS(1672433507000), '0.0041468661739364', '12.817402848098541218'  # noqa: E501
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
@@ -369,19 +345,12 @@ def test_compound_comp_claim_last_transfer(database, ethereum_inquirer, ethereum
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDR_BORROWS]])
-def test_compound_borrow(
-        database: 'DBHandler',
-        ethereum_inquirer: 'EthereumInquirer',
-) -> None:
+def test_compound_borrow(ethereum_inquirer: 'EthereumInquirer') -> None:
     """Data taken from:
     https://etherscan.io/tx/0x036338316a076590a496791a729d3459934a89d6eb512f765cf0e28f9eb8b50c
     """
     tx_hash = deserialize_evm_tx_hash('0x036338316a076590a496791a729d3459934a89d6eb512f765cf0e28f9eb8b50c')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [
         EvmEvent(
             tx_hash=tx_hash,
@@ -415,19 +384,12 @@ def test_compound_borrow(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDR_REPAYS]])
-def test_compound_payback(
-        database: 'DBHandler',
-        ethereum_inquirer: 'EthereumInquirer',
-) -> None:
+def test_compound_payback(ethereum_inquirer: 'EthereumInquirer') -> None:
     """Data taken from:
     https://etherscan.io/tx/0x000da925508a1a2f322f6fb74592baf9a75bb9f971cb3a72a5deb0526d39757d
     """
     tx_hash = deserialize_evm_tx_hash('0x000da925508a1a2f322f6fb74592baf9a75bb9f971cb3a72a5deb0526d39757d')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [
         EvmEvent(
             tx_hash=tx_hash,
@@ -474,19 +436,12 @@ def test_compound_payback(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDR_BORROWS_ETH]])
-def test_compound_borrow_eth(
-        database: 'DBHandler',
-        ethereum_inquirer: 'EthereumInquirer',
-) -> None:
+def test_compound_borrow_eth(ethereum_inquirer: 'EthereumInquirer') -> None:
     """Data taken from:
     https://etherscan.io/tx/0x00035065f364453ca4585ab5d4ee7dacc59a3f7acc305644c334fdfff3a2527f
     """
     tx_hash = deserialize_evm_tx_hash('0x00035065f364453ca4585ab5d4ee7dacc59a3f7acc305644c334fdfff3a2527f')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [
         EvmEvent(
             tx_hash=tx_hash,
@@ -520,19 +475,12 @@ def test_compound_borrow_eth(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDR_REPAYS_ETH]])
-def test_compound_repays_eth(
-        database: 'DBHandler',
-        ethereum_inquirer: 'EthereumInquirer',
-) -> None:
+def test_compound_repays_eth(ethereum_inquirer: 'EthereumInquirer') -> None:
     """Data taken from:
     https://etherscan.io/tx/0x0007416c8caa441ce07c61dbf2455b3068d21d9bffbfbbfca9f1016d7c3ca33f
     """
     tx_hash = deserialize_evm_tx_hash('0x0007416c8caa441ce07c61dbf2455b3068d21d9bffbfbbfca9f1016d7c3ca33f')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     expected_events = [
         EvmEvent(
             tx_hash=tx_hash,
@@ -567,7 +515,6 @@ def test_compound_repays_eth(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9bf62c518ffe86bD43D57c7026aA1A4fBeA83b15']])
 def test_compound_liquidate(
-        database: 'DBHandler',
         ethereum_inquirer: 'EthereumInquirer',
         ethereum_accounts,
 ) -> None:
@@ -575,11 +522,7 @@ def test_compound_liquidate(
     Decode a liquidation happening to the position of 0x9bf62c518ffe86bD43D57c7026aA1A4fBeA83b15
     """
     tx_hash = deserialize_evm_tx_hash('0x0001a89e439c3673b8264f880730784ebd698502bb9dd62949d42a66a4129f23')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [
         EvmEvent(
             tx_hash=tx_hash,
@@ -601,7 +544,6 @@ def test_compound_liquidate(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xD911560979B78821D7b045C79E36E9CbfC2F6C6F']])
 def test_compound_liquidator_side(
-        database: 'DBHandler',
         ethereum_inquirer: 'EthereumInquirer',
         ethereum_accounts,
 ) -> None:
@@ -609,11 +551,7 @@ def test_compound_liquidator_side(
     Decode liquidation made by 0xD911560979B78821D7b045C79E36E9CbfC2F6C6F
     """
     tx_hash = deserialize_evm_tx_hash('0x0001a89e439c3673b8264f880730784ebd698502bb9dd62949d42a66a4129f23')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [
         EvmEvent(
             tx_hash=tx_hash,
@@ -650,17 +588,12 @@ def test_compound_liquidator_side(
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xC440f3C87DC4B6843CABc413916220D4f4FeD117']])
 def test_compound_liquidation_eth(
-        database: 'DBHandler',
         ethereum_inquirer: 'EthereumInquirer',
         ethereum_accounts,
 ) -> None:
     """Test that repaying a compound loan in a liquidation using ETH is correctly decoded"""
     tx_hash = deserialize_evm_tx_hash('0x160c0e6db0df5ea0c1cc9b1b31bd90c842ef793c9b2ab496efdc62bdd80eeb52')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [
         EvmEvent(
             tx_hash=tx_hash,

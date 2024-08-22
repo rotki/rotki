@@ -18,18 +18,14 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x6d379cb5BA04c09293b21Bf314E7aba3FfEAaF5b']])
-def test_kyber_legacy_old_contract(database, ethereum_inquirer, ethereum_accounts):
+def test_kyber_legacy_old_contract(ethereum_inquirer, ethereum_accounts):
     """
     Data for trade taken from
     https://etherscan.io/tx/0xe9cc9f27ef2a09fe23abc886a0a0f7ae19d9e2eb73663e1e41e07a3e0c011b87
     """
     tx_hex = deserialize_evm_tx_hash('0xe9cc9f27ef2a09fe23abc886a0a0f7ae19d9e2eb73663e1e41e07a3e0c011b87')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hex,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
 
     assert len(events) == 3
     expected_events = [
@@ -83,17 +79,13 @@ def test_kyber_legacy_old_contract(database, ethereum_inquirer, ethereum_account
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x5340F6faff9BF55F66C16Db6Bf9E020d987F87D0']])
-def test_kyber_legacy_new_contract(database, ethereum_inquirer):
+def test_kyber_legacy_new_contract(ethereum_inquirer):
     """Data for trade taken from
     https://etherscan.io/tx/0xe80928d5e21f9628c047af1f8b191cbffbb6b8b9945adb502cfb3af152552f22
     """
     tx_hex = deserialize_evm_tx_hash('0xe80928d5e21f9628c047af1f8b191cbffbb6b8b9945adb502cfb3af152552f22')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hex,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
 
     assert len(events) == 3
     expected_events = [
@@ -145,13 +137,9 @@ def test_kyber_legacy_new_contract(database, ethereum_inquirer):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xceD462398bDFBb1B45d75b7F2c61172643a18009']])
-def test_kyber_aggregator_swap_ethereum(database, ethereum_inquirer, ethereum_accounts):
+def test_kyber_aggregator_swap_ethereum(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x82205817d573da45a2f6da6e5e9623739bd4cdbce5f9b65d48450805bce0bdff')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1714563455000)
     gas, approval_amount = '0.00199568430867988', '20.819823166790499332'
     spend_amount, receive_amount = '20', '21.100486952910759139'
@@ -214,11 +202,10 @@ def test_kyber_aggregator_swap_ethereum(database, ethereum_inquirer, ethereum_ac
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D']])
-def test_kyber_aggregator_swap_arbitrum_one(database, arbitrum_one_inquirer, arbitrum_one_accounts):  # noqa: E501
+def test_kyber_aggregator_swap_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts):
     tx_hash = deserialize_evm_tx_hash('0xbcc690fb11b0a6b0f3b1e5bed6abb5c3e93d5b4855472f94adea824bfa2be6ed')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        database=database,
         tx_hash=tx_hash,
     )
     timestamp = TimestampMS(1714517062000)
@@ -270,13 +257,9 @@ def test_kyber_aggregator_swap_arbitrum_one(database, arbitrum_one_inquirer, arb
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('base_accounts', [['0x8a8162b86A3179a9F7A2F46FFd7029B669876B75']])
-def test_kyber_aggregator_swap_base(database, base_inquirer, base_accounts):
+def test_kyber_aggregator_swap_base(base_inquirer, base_accounts):
     tx_hash = deserialize_evm_tx_hash('0x27b040b725caa995343f98ca16fabebfbd2116063488761cbbdc1f99a2bf8619')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=base_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=base_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1714588063000)
     gas, spend_amount, receive_amount = '0.000057116139238782', '10076.279107426212183073', '19.725836184026980754'  # noqa: E501
     a_dog = Asset('eip155:8453/erc20:0xAfb89a09D82FBDE58f18Ac6437B3fC81724e4dF6')
@@ -339,13 +322,9 @@ def test_kyber_aggregator_swap_base(database, base_inquirer, base_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('optimism_accounts', [['0x1961425eB7467330380ea268d4b909C7975f79c6']])
-def test_kyber_aggregator_swap_optimism(database, optimism_inquirer, optimism_accounts):
+def test_kyber_aggregator_swap_optimism(optimism_inquirer, optimism_accounts):
     tx_hash = deserialize_evm_tx_hash('0xc50282f437bacfbeef00baf4dae0785a259f87294089b96f7a6363ad4928570e')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=optimism_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1714589233000)
     gas, spend_amount, receive_amount = '0.000018524563536246', '1.404275039033980017', '1.633943151167508706'  # noqa: E501
     a_wsteth_op = Asset('eip155:10/erc20:0x1F32b1c2345538c0c6f582fCB022739c4A194Ebb')
@@ -407,11 +386,10 @@ def test_kyber_aggregator_swap_optimism(database, optimism_inquirer, optimism_ac
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x686e14AFb1AB9eb5aB89593ddE9fCe9389cA8C35']])
-def test_kyber_aggregator_swap_polygon(database, polygon_pos_inquirer, polygon_pos_accounts):
+def test_kyber_aggregator_swap_polygon(polygon_pos_inquirer, polygon_pos_accounts):
     tx_hash = deserialize_evm_tx_hash('0xfd32220a3dfad3a74b0e172b88f0052670cd60b72f4b0cf19ded4a4145ba4a2b')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=polygon_pos_inquirer,
-        database=database,
         tx_hash=tx_hash,
     )
     timestamp = TimestampMS(1714589685000)
@@ -464,13 +442,9 @@ def test_kyber_aggregator_swap_polygon(database, polygon_pos_inquirer, polygon_p
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('scroll_accounts', [['0x8C6270BB0D3d95Dad8581D6e9795Bb7089A34123']])
-def test_kyber_aggregator_swap_scroll(database, scroll_inquirer, scroll_accounts):
+def test_kyber_aggregator_swap_scroll(scroll_inquirer, scroll_accounts):
     tx_hash = deserialize_evm_tx_hash('0xd5c9011e2edd8b724eb3f0a691f5657eb7adb0d943be01b54b52a22b82df7062')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=scroll_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=scroll_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1714590811000)
     gas, spend_amount, receive_amount = '0.00014495886763554', '327.431697', '0.109956490224557286'
     a_usdc_scroll = Asset('eip155:534352/erc20:0x06eFdBFf2a14a7c8E15944D1F4A48F9F95F663A4')

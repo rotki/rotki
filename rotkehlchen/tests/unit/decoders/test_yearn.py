@@ -478,7 +478,7 @@ def test_withdraw_yearn_v1(database, ethereum_inquirer, eth_transactions):
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xfDb7EEc5eBF4c4aC7734748474123aC25C6eDCc8']])
-def test_deposit_yearn_full_amount(database, ethereum_inquirer, ethereum_accounts):
+def test_deposit_yearn_full_amount(ethereum_inquirer, ethereum_accounts):
     """
     In the case of deposits and withdrawals for yearn there are two different signatures for
     the functions used. If no amount is provided all the available amount is deposited/withdrawn.
@@ -486,11 +486,7 @@ def test_deposit_yearn_full_amount(database, ethereum_inquirer, ethereum_account
     tx_hex = deserialize_evm_tx_hash('0x02486ccc1fe49b3c7df60c51efad78ddca5af025834e30ba1a736ff352b33592')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = ethereum_accounts[0]
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hex,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
     assert events == [
         EvmEvent(
             tx_hash=evmhash,

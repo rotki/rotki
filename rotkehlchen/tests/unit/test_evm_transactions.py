@@ -64,13 +64,11 @@ def test_delete_transactions_by_chain(
     """
     get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
-        database=database,
         tx_hash=deserialize_evm_tx_hash('0xac02ba9db26eee16f72a4b155fd07517ead140a539b1c41b67ba5a52b85d9dcb'),
         relevant_address=gnosis_accounts[0],
     )
     get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        database=database,
         tx_hash=deserialize_evm_tx_hash('0xafce539bd7fb898c5f03fdccf4c34e2c5c9ca321d612142953a7baf2849caafd'),
         relevant_address=gnosis_accounts[0],
     )

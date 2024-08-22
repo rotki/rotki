@@ -14,20 +14,13 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x648aA14e4424e0825A5cE739C8C68610e143FB79']])
-def test_makerdao_simple_transaction(
-        database,
-        ethereum_inquirer,
-):
+def test_makerdao_simple_transaction(ethereum_inquirer):
     """Data taken from
     https://etherscan.io/tx/0x95de47059bcc084ebb8bdd60f48fbcf05619c2af84bf612fdc27a6bbf9b5097e
     """
     tx_hash = deserialize_evm_tx_hash('0x95de47059bcc084ebb8bdd60f48fbcf05619c2af84bf612fdc27a6bbf9b5097e')  # noqa: E501
     # We don't need any events here, we just check that no errors occured during decoding
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     assert events == [
         EvmEvent(
             tx_hash=tx_hash,
@@ -61,17 +54,9 @@ def test_makerdao_simple_transaction(
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xa217BDa86b0EDb86eE7d4D6e34F493eDF1ea4F29']])
-def test_withdraw_dai_from_sdai(
-        database,
-        ethereum_inquirer,
-        ethereum_accounts,
-):
+def test_withdraw_dai_from_sdai(ethereum_inquirer, ethereum_accounts):
     tx_hash = deserialize_evm_tx_hash('0x6b2a1f836cfc7c28002e4ac60297daa6d79fcde892d9c3b9ca723dea2f21af5c')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     user_address = ethereum_accounts[0]
     timestamp = TimestampMS(1695854591000)
     sdai = A_SDAI.resolve_to_evm_token()
@@ -120,18 +105,10 @@ def test_withdraw_dai_from_sdai(
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0xa217BDa86b0EDb86eE7d4D6e34F493eDF1ea4F29']])
-def test_deposit_dai_to_sdai(
-        database,
-        ethereum_inquirer,
-        ethereum_accounts,
-):
+def test_deposit_dai_to_sdai(ethereum_inquirer, ethereum_accounts):
     user_address = ethereum_accounts[0]
     tx_hash = deserialize_evm_tx_hash('0x27bd72a2ccd999a44c2a7aaed9090572f34045d62e153362a34715a70ca7a6a7')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1695089927000)
     address = A_SDAI.resolve_to_evm_token().evm_address
     assert events == [

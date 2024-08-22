@@ -13,7 +13,7 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x7277F7849966426d345D8F6B9AFD1d3d89183083']])
-def test_zksync_lite_legacy_deposit(database, ethereum_inquirer, ethereum_accounts):
+def test_zksync_lite_legacy_deposit(ethereum_inquirer, ethereum_accounts):
     """
     Test a transaction with the OnChainDeposit event which is missing
     from the newest implementation of the proxy address
@@ -22,11 +22,7 @@ def test_zksync_lite_legacy_deposit(database, ethereum_inquirer, ethereum_accoun
     evmhash = deserialize_evm_tx_hash(tx_hex)
     timestamp = TimestampMS(1607624823000)
     user_address = ethereum_accounts[0]
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hex,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
     gas_str = '0.003633546'
     dai_str = '9.4361'
     expected_events = [
@@ -62,17 +58,13 @@ def test_zksync_lite_legacy_deposit(database, ethereum_inquirer, ethereum_accoun
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [['0x7277F7849966426d345D8F6B9AFD1d3d89183083']])
-def test_zksync_lite_deposit(database, ethereum_inquirer, ethereum_accounts):
+def test_zksync_lite_deposit(ethereum_inquirer, ethereum_accounts):
     """Test a transaction with the Deposit event"""
     tx_hex = deserialize_evm_tx_hash('0x041514c879ae6f4f36c44000270ce482798502be230865911d1013978f4bcb87')  # noqa: E501
     evmhash = deserialize_evm_tx_hash(tx_hex)
     timestamp = TimestampMS(1639578202000)
     user_address = ethereum_accounts[0]
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=tx_hex,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
     gas_str = '0.007252433740671543'
     dai_str = '18.4614'
     expected_events = [
@@ -108,15 +100,11 @@ def test_zksync_lite_deposit(database, ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_zksync_lite_withdrawal(database, ethereum_inquirer, ethereum_accounts):
+def test_zksync_lite_withdrawal(ethereum_inquirer, ethereum_accounts):
     """Test a transaction with the Withdrawal event"""
     evmhash = deserialize_evm_tx_hash('0x234407968b9a688be3fb37cf7ff8ef3b4168d6cd85ec45b8344bb2a88832f982')  # noqa: E501
     user_address = ethereum_accounts[0]
-    events, _ = get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        database=database,
-        tx_hash=evmhash,
-    )
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=evmhash)
     timestamp, eth_str, dai_str, pan_str, usdc_str, usdt_str = TimestampMS(1604326368000), '1.4437093', '1691.92749999', '1586.6', '57.25', '15.2'  # noqa: E501
     expected_events = [
         EvmEvent(

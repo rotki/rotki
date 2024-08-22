@@ -19,14 +19,13 @@ from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x0c5b7A89b3689d86Ed473caE4E7CB00381949861']])
 @pytest.mark.parametrize('arbitrum_one_manager_connect_at_start', [(get_arbitrum_allthatnode(ONE),)])  # noqa: E501
-def test_arbitrum_airdrop_claim(database, arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_arbitrum_airdrop_claim(arbitrum_one_inquirer, arbitrum_one_accounts):
     """Data taken from
     https://arbiscan.io/tx/0xa230fc4d5e61db1d9be044215b00cb6ad1775b413a240ea23a98117153f6264e
     """
     tx_hash = deserialize_evm_tx_hash('0xa230fc4d5e61db1d9be044215b00cb6ad1775b413a240ea23a98117153f6264e')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        database=database,
         tx_hash=tx_hash,
     )
     timestamp, user_address = TimestampMS(1689935876000), arbitrum_one_accounts[0]
@@ -62,11 +61,10 @@ def test_arbitrum_airdrop_claim(database, arbitrum_one_inquirer, arbitrum_one_ac
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_vote_cast(database, arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_vote_cast(arbitrum_one_inquirer, arbitrum_one_accounts):
     tx_hash = deserialize_evm_tx_hash('0x10b9c5adb845151365bf6977d76b728fad60b64372ce0bde6ae52602b01c282b')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        database=database,
         tx_hash=tx_hash,
     )
     timestamp, user_address = TimestampMS(1707677598000), arbitrum_one_accounts[0]
@@ -102,11 +100,10 @@ def test_vote_cast(database, arbitrum_one_inquirer, arbitrum_one_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_vote_cast_2(database, arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_vote_cast_2(arbitrum_one_inquirer, arbitrum_one_accounts):
     tx_hash = deserialize_evm_tx_hash('0xf58c9b1ee6643d6af1fd3b5edbfb311bd86eb3417da561fd1650f12be775d71a')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        database=database,
         tx_hash=tx_hash,
     )
     timestamp, gas = TimestampMS(1713188011000), '0.00000252921'
@@ -143,11 +140,10 @@ def test_vote_cast_2(database, arbitrum_one_inquirer, arbitrum_one_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
-def test_vote_cast_treasury(database, arbitrum_one_inquirer, arbitrum_one_accounts):
+def test_vote_cast_treasury(arbitrum_one_inquirer, arbitrum_one_accounts):
     tx_hash = deserialize_evm_tx_hash('0x8f5eed6ec89eeccbdfa141b91129118a8294d35a1b44f9e7d570945d17f42765')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=arbitrum_one_inquirer,
-        database=database,
         tx_hash=tx_hash,
     )
     timestamp, gas = TimestampMS(1717152106000), '0.00000270109'
