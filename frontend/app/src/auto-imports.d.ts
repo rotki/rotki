@@ -126,8 +126,8 @@ declare global {
   const convertDateByTimezone: typeof import('./utils/date')['convertDateByTimezone']
   const convertFromTimestamp: typeof import('./utils/date')['convertFromTimestamp']
   const convertToTimestamp: typeof import('./utils/date')['convertToTimestamp']
-  const createAccount: typeof import('./utils/blockchain/accounts/index')['createAccount']
-  const createAccountWithBalance: typeof import('./utils/blockchain/accounts/index')['createAccountWithBalance']
+  const createAccount: typeof import('./utils/blockchain/accounts/create')['createAccount']
+  const createAccountWithBalance: typeof import('./utils/blockchain/accounts/create')['createAccountWithBalance']
   const createApp: typeof import('vue')['createApp']
   const createBlockie: typeof import('./utils/blockie')['createBlockie']
   const createEventHook: typeof import('@vueuse/core')['createEventHook']
@@ -144,8 +144,8 @@ declare global {
   const createSharedComposable: typeof import('@vueuse/core')['createSharedComposable']
   const createTemplatePromise: typeof import('@vueuse/core')['createTemplatePromise']
   const createUnrefFn: typeof import('@vueuse/core')['createUnrefFn']
-  const createValidatorAccount: typeof import('./utils/blockchain/accounts/index')['createValidatorAccount']
-  const createXpubAccount: typeof import('./utils/blockchain/accounts/index')['createXpubAccount']
+  const createValidatorAccount: typeof import('./utils/blockchain/accounts/create')['createValidatorAccount']
+  const createXpubAccount: typeof import('./utils/blockchain/accounts/create')['createXpubAccount']
   const customRef: typeof import('vue')['customRef']
   const customTimeframe: typeof import('@rotki/common')['customTimeframe']
   const debouncedRef: typeof import('@vueuse/core')['debouncedRef']
@@ -172,15 +172,15 @@ declare global {
   const findAddressKnownPrefix: typeof import('./utils/truncate')['findAddressKnownPrefix']
   const generateRandomScrambleMultiplier: typeof import('./utils/session')['generateRandomScrambleMultiplier']
   const get: typeof import('@vueuse/shared')['get']
-  const getAccountAddress: typeof import('./utils/blockchain/accounts/index')['getAccountAddress']
+  const getAccountAddress: typeof import('./utils/blockchain/accounts/utils')['getAccountAddress']
   const getAccountBalance: typeof import('./utils/blockchain/accounts/index')['getAccountBalance']
-  const getAccountId: typeof import('./utils/blockchain/accounts/index')['getAccountId']
-  const getAccountLabel: typeof import('./utils/blockchain/accounts/index')['getAccountLabel']
+  const getAccountId: typeof import('./utils/blockchain/accounts/utils')['getAccountId']
+  const getAccountLabel: typeof import('./utils/blockchain/accounts/utils')['getAccountLabel']
   const getActivePinia: typeof import('pinia')['getActivePinia']
   const getAddressFromEvmIdentifier: typeof import('@rotki/common')['getAddressFromEvmIdentifier']
   const getBackendUrl: typeof import('./utils/account-management')['getBackendUrl']
   const getBalances: typeof import('./utils/defi/xswap')['getBalances']
-  const getChain: typeof import('./utils/blockchain/accounts/index')['getChain']
+  const getChain: typeof import('./utils/blockchain/accounts/utils')['getChain']
   const getCollectionData: typeof import('./utils/collection')['getCollectionData']
   const getCurrentInstance: typeof import('vue')['getCurrentInstance']
   const getCurrentScope: typeof import('vue')['getCurrentScope']
@@ -192,7 +192,7 @@ declare global {
   const getEthAddressesFromText: typeof import('./utils/history/index')['getEthAddressesFromText']
   const getEtherScanRegisterUrl: typeof import('./utils/url')['getEtherScanRegisterUrl']
   const getFilepath: typeof import('./utils/backups')['getFilepath']
-  const getGroupId: typeof import('./utils/blockchain/accounts/index')['getGroupId']
+  const getGroupId: typeof import('./utils/blockchain/accounts/utils')['getGroupId']
   const getIdentifierFromSymbolMap: typeof import('@rotki/common')['getIdentifierFromSymbolMap']
   const getKeyType: typeof import('./utils/xpub')['getKeyType']
   const getMetamaskAddresses: typeof import('./utils/metamask')['getMetamaskAddresses']
@@ -983,8 +983,8 @@ declare module 'vue' {
     readonly convertDateByTimezone: UnwrapRef<typeof import('./utils/date')['convertDateByTimezone']>
     readonly convertFromTimestamp: UnwrapRef<typeof import('./utils/date')['convertFromTimestamp']>
     readonly convertToTimestamp: UnwrapRef<typeof import('./utils/date')['convertToTimestamp']>
-    readonly createAccount: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['createAccount']>
-    readonly createAccountWithBalance: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['createAccountWithBalance']>
+    readonly createAccount: UnwrapRef<typeof import('./utils/blockchain/accounts/create')['createAccount']>
+    readonly createAccountWithBalance: UnwrapRef<typeof import('./utils/blockchain/accounts/create')['createAccountWithBalance']>
     readonly createApp: UnwrapRef<typeof import('vue')['createApp']>
     readonly createBlockie: UnwrapRef<typeof import('./utils/blockie')['createBlockie']>
     readonly createEventHook: UnwrapRef<typeof import('@vueuse/core')['createEventHook']>
@@ -1001,8 +1001,8 @@ declare module 'vue' {
     readonly createSharedComposable: UnwrapRef<typeof import('@vueuse/core')['createSharedComposable']>
     readonly createTemplatePromise: UnwrapRef<typeof import('@vueuse/core')['createTemplatePromise']>
     readonly createUnrefFn: UnwrapRef<typeof import('@vueuse/core')['createUnrefFn']>
-    readonly createValidatorAccount: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['createValidatorAccount']>
-    readonly createXpubAccount: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['createXpubAccount']>
+    readonly createValidatorAccount: UnwrapRef<typeof import('./utils/blockchain/accounts/create')['createValidatorAccount']>
+    readonly createXpubAccount: UnwrapRef<typeof import('./utils/blockchain/accounts/create')['createXpubAccount']>
     readonly customRef: UnwrapRef<typeof import('vue')['customRef']>
     readonly customTimeframe: UnwrapRef<typeof import('@rotki/common')['customTimeframe']>
     readonly debouncedRef: UnwrapRef<typeof import('@vueuse/core')['debouncedRef']>
@@ -1029,15 +1029,15 @@ declare module 'vue' {
     readonly findAddressKnownPrefix: UnwrapRef<typeof import('./utils/truncate')['findAddressKnownPrefix']>
     readonly generateRandomScrambleMultiplier: UnwrapRef<typeof import('./utils/session')['generateRandomScrambleMultiplier']>
     readonly get: UnwrapRef<typeof import('@vueuse/shared')['get']>
-    readonly getAccountAddress: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getAccountAddress']>
+    readonly getAccountAddress: UnwrapRef<typeof import('./utils/blockchain/accounts/utils')['getAccountAddress']>
     readonly getAccountBalance: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getAccountBalance']>
-    readonly getAccountId: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getAccountId']>
-    readonly getAccountLabel: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getAccountLabel']>
+    readonly getAccountId: UnwrapRef<typeof import('./utils/blockchain/accounts/utils')['getAccountId']>
+    readonly getAccountLabel: UnwrapRef<typeof import('./utils/blockchain/accounts/utils')['getAccountLabel']>
     readonly getActivePinia: UnwrapRef<typeof import('pinia')['getActivePinia']>
     readonly getAddressFromEvmIdentifier: UnwrapRef<typeof import('@rotki/common')['getAddressFromEvmIdentifier']>
     readonly getBackendUrl: UnwrapRef<typeof import('./utils/account-management')['getBackendUrl']>
     readonly getBalances: UnwrapRef<typeof import('./utils/defi/xswap')['getBalances']>
-    readonly getChain: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getChain']>
+    readonly getChain: UnwrapRef<typeof import('./utils/blockchain/accounts/utils')['getChain']>
     readonly getCollectionData: UnwrapRef<typeof import('./utils/collection')['getCollectionData']>
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
@@ -1049,7 +1049,7 @@ declare module 'vue' {
     readonly getEthAddressesFromText: UnwrapRef<typeof import('./utils/history/index')['getEthAddressesFromText']>
     readonly getEtherScanRegisterUrl: UnwrapRef<typeof import('./utils/url')['getEtherScanRegisterUrl']>
     readonly getFilepath: UnwrapRef<typeof import('./utils/backups')['getFilepath']>
-    readonly getGroupId: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getGroupId']>
+    readonly getGroupId: UnwrapRef<typeof import('./utils/blockchain/accounts/utils')['getGroupId']>
     readonly getIdentifierFromSymbolMap: UnwrapRef<typeof import('@rotki/common')['getIdentifierFromSymbolMap']>
     readonly getKeyType: UnwrapRef<typeof import('./utils/xpub')['getKeyType']>
     readonly getMetamaskAddresses: UnwrapRef<typeof import('./utils/metamask')['getMetamaskAddresses']>
@@ -1068,7 +1068,6 @@ declare module 'vue' {
     readonly getTheGraphRegisterUrl: UnwrapRef<typeof import('./utils/url')['getTheGraphRegisterUrl']>
     readonly getTimeframeByRange: UnwrapRef<typeof import('@rotki/common')['getTimeframeByRange']>
     readonly getValidSelectorFromEvmAddress: UnwrapRef<typeof import('@rotki/common')['getValidSelectorFromEvmAddress']>
-    readonly getValidatorData: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getValidatorData']>
     readonly groupAssetBreakdown: UnwrapRef<typeof import('./utils/balances')['groupAssetBreakdown']>
     readonly guessTimezone: UnwrapRef<typeof import('./utils/date')['guessTimezone']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
@@ -1821,8 +1820,8 @@ declare module '@vue/runtime-core' {
     readonly convertDateByTimezone: UnwrapRef<typeof import('./utils/date')['convertDateByTimezone']>
     readonly convertFromTimestamp: UnwrapRef<typeof import('./utils/date')['convertFromTimestamp']>
     readonly convertToTimestamp: UnwrapRef<typeof import('./utils/date')['convertToTimestamp']>
-    readonly createAccount: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['createAccount']>
-    readonly createAccountWithBalance: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['createAccountWithBalance']>
+    readonly createAccount: UnwrapRef<typeof import('./utils/blockchain/accounts/create')['createAccount']>
+    readonly createAccountWithBalance: UnwrapRef<typeof import('./utils/blockchain/accounts/create')['createAccountWithBalance']>
     readonly createApp: UnwrapRef<typeof import('vue')['createApp']>
     readonly createBlockie: UnwrapRef<typeof import('./utils/blockie')['createBlockie']>
     readonly createEventHook: UnwrapRef<typeof import('@vueuse/core')['createEventHook']>
@@ -1839,8 +1838,8 @@ declare module '@vue/runtime-core' {
     readonly createSharedComposable: UnwrapRef<typeof import('@vueuse/core')['createSharedComposable']>
     readonly createTemplatePromise: UnwrapRef<typeof import('@vueuse/core')['createTemplatePromise']>
     readonly createUnrefFn: UnwrapRef<typeof import('@vueuse/core')['createUnrefFn']>
-    readonly createValidatorAccount: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['createValidatorAccount']>
-    readonly createXpubAccount: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['createXpubAccount']>
+    readonly createValidatorAccount: UnwrapRef<typeof import('./utils/blockchain/accounts/create')['createValidatorAccount']>
+    readonly createXpubAccount: UnwrapRef<typeof import('./utils/blockchain/accounts/create')['createXpubAccount']>
     readonly customRef: UnwrapRef<typeof import('vue')['customRef']>
     readonly customTimeframe: UnwrapRef<typeof import('@rotki/common')['customTimeframe']>
     readonly debouncedRef: UnwrapRef<typeof import('@vueuse/core')['debouncedRef']>
@@ -1867,15 +1866,15 @@ declare module '@vue/runtime-core' {
     readonly findAddressKnownPrefix: UnwrapRef<typeof import('./utils/truncate')['findAddressKnownPrefix']>
     readonly generateRandomScrambleMultiplier: UnwrapRef<typeof import('./utils/session')['generateRandomScrambleMultiplier']>
     readonly get: UnwrapRef<typeof import('@vueuse/shared')['get']>
-    readonly getAccountAddress: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getAccountAddress']>
+    readonly getAccountAddress: UnwrapRef<typeof import('./utils/blockchain/accounts/utils')['getAccountAddress']>
     readonly getAccountBalance: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getAccountBalance']>
-    readonly getAccountId: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getAccountId']>
-    readonly getAccountLabel: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getAccountLabel']>
+    readonly getAccountId: UnwrapRef<typeof import('./utils/blockchain/accounts/utils')['getAccountId']>
+    readonly getAccountLabel: UnwrapRef<typeof import('./utils/blockchain/accounts/utils')['getAccountLabel']>
     readonly getActivePinia: UnwrapRef<typeof import('pinia')['getActivePinia']>
     readonly getAddressFromEvmIdentifier: UnwrapRef<typeof import('@rotki/common')['getAddressFromEvmIdentifier']>
     readonly getBackendUrl: UnwrapRef<typeof import('./utils/account-management')['getBackendUrl']>
     readonly getBalances: UnwrapRef<typeof import('./utils/defi/xswap')['getBalances']>
-    readonly getChain: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getChain']>
+    readonly getChain: UnwrapRef<typeof import('./utils/blockchain/accounts/utils')['getChain']>
     readonly getCollectionData: UnwrapRef<typeof import('./utils/collection')['getCollectionData']>
     readonly getCurrentInstance: UnwrapRef<typeof import('vue')['getCurrentInstance']>
     readonly getCurrentScope: UnwrapRef<typeof import('vue')['getCurrentScope']>
@@ -1887,7 +1886,7 @@ declare module '@vue/runtime-core' {
     readonly getEthAddressesFromText: UnwrapRef<typeof import('./utils/history/index')['getEthAddressesFromText']>
     readonly getEtherScanRegisterUrl: UnwrapRef<typeof import('./utils/url')['getEtherScanRegisterUrl']>
     readonly getFilepath: UnwrapRef<typeof import('./utils/backups')['getFilepath']>
-    readonly getGroupId: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getGroupId']>
+    readonly getGroupId: UnwrapRef<typeof import('./utils/blockchain/accounts/utils')['getGroupId']>
     readonly getIdentifierFromSymbolMap: UnwrapRef<typeof import('@rotki/common')['getIdentifierFromSymbolMap']>
     readonly getKeyType: UnwrapRef<typeof import('./utils/xpub')['getKeyType']>
     readonly getMetamaskAddresses: UnwrapRef<typeof import('./utils/metamask')['getMetamaskAddresses']>
@@ -1906,7 +1905,6 @@ declare module '@vue/runtime-core' {
     readonly getTheGraphRegisterUrl: UnwrapRef<typeof import('./utils/url')['getTheGraphRegisterUrl']>
     readonly getTimeframeByRange: UnwrapRef<typeof import('@rotki/common')['getTimeframeByRange']>
     readonly getValidSelectorFromEvmAddress: UnwrapRef<typeof import('@rotki/common')['getValidSelectorFromEvmAddress']>
-    readonly getValidatorData: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['getValidatorData']>
     readonly groupAssetBreakdown: UnwrapRef<typeof import('./utils/balances')['groupAssetBreakdown']>
     readonly guessTimezone: UnwrapRef<typeof import('./utils/date')['guessTimezone']>
     readonly h: UnwrapRef<typeof import('vue')['h']>

@@ -1,14 +1,6 @@
 import { camelCase, isEmpty } from 'lodash-es';
 import { type AssetBalance, type Balance, Blockchain } from '@rotki/common';
 import { type MaybeRef, objectOmit, objectPick } from '@vueuse/core';
-import {
-  aggregateTotals,
-  createAccountWithBalance,
-  getAccountAddress,
-  getAccountBalance,
-  getAccountLabel,
-  hasTokens,
-} from '@/utils/blockchain/accounts';
 import type {
   Accounts,
   AssetBreakdown,

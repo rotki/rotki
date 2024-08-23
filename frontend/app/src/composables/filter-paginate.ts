@@ -390,12 +390,11 @@ export function usePaginationFilters<
     if (get(userAction) && get(mainPage)) {
       // Route should only be updated on user action otherwise it messes with forward navigation.
       const query = getQuery();
-      if (isEqual(route.query, query)) {
-        // prevent pushing same route
-        return;
+      // prevent pushing same route
+      if (!isEqual(route.query, query)) {
+        await router.push({ query });
+        set(userAction, false);
       }
-      await router.push({ query });
-      set(userAction, false);
     }
 
     await fetchData();

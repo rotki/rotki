@@ -1,8 +1,7 @@
 <script setup lang="ts" generic="T extends BlockchainAccountWithBalance | BlockchainAccountGroupWithBalance">
-import { some } from 'lodash-es';
+import { isEmpty, some } from 'lodash-es';
 import { TaskType } from '@/types/task-type';
 import { Section } from '@/types/status';
-import { getAccountAddress } from '@/utils/blockchain/accounts';
 import type { TableRowKey } from '@/composables/filter-paginate';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 import type { Collection } from '@/types/collection';
@@ -187,6 +186,18 @@ function getCategoryTotal(category: string): BigNumber {
   return sum(get(rows).filter(row => row.category === category));
 }
 
+function getChains(row: DataRow): string[] {
+  if (row.type === 'account')
+    return [row.chain];
+
+  const groupId = getGroupId(row);
+  const excluded = get(chainFilter)[groupId] ?? [];
+
+  return isEmpty(excluded)
+    ? row.chains
+    : row.chains.filter(chain => !excluded.includes(chain));
+}
+
 /**
  * Tracks the row changes and collapses the expanded row if the updated entry only has a single chain.
  * This is for the case where we delete one of the two chains and then we go to a single chain group.
@@ -254,7 +265,8 @@ defineExpose({
     </template>
     <template #item.assets="{ row }">
       <AccountTopTokens
-        :row="row"
+        :chains="getChains(row)"
+        :address="getAccountAddress(row)"
         :loading="isRowLoading(row)"
       />
     </template>

@@ -88,6 +88,7 @@ export interface BlockchainAccountRequestPayload extends PaginationRequestPayloa
   readonly label?: string;
   readonly tags?: string[];
   readonly category?: string;
+  readonly excluded?: Record<string, string[]>;
 }
 
 export interface BlockchainAccountGroupRequestPayload extends PaginationRequestPayload<BlockchainAccount> {

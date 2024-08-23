@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { getChain } from '@/utils/blockchain/accounts';
 import type {
   BlockchainAccount,
   BlockchainAccountBalance,
