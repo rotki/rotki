@@ -1,26 +1,20 @@
 <script lang="ts" setup>
-import type { BlockchainAccountGroupWithBalance, BlockchainAccountWithBalance } from '@/types/blockchain/accounts';
 import type { AssetBalance } from '@rotki/common';
 
 const props = defineProps<{
-  row: BlockchainAccountWithBalance | BlockchainAccountGroupWithBalance;
+  chains: string[];
+  address: string;
   loading: boolean;
 }>();
-
-const chains = computed<string[]>(() => {
-  const row = props.row;
-  return 'chains' in row ? row.chains : [row.chain];
-});
 
 const { getAccountDetails } = useBlockchainStore();
 const { assetInfo } = useAssetInfoRetrieval();
 
 const assets = computed<AssetBalance[]>(() => {
-  const address = getAccountAddress(props.row);
-
   const assets: Record<string, AssetBalance> = {};
+  const address = props.address;
 
-  get(chains).forEach((chain) => {
+  props.chains.forEach((chain) => {
     const details = getAccountDetails(chain, address);
     details.assets.forEach((item) => {
       const assetId = item.asset;
@@ -39,64 +33,46 @@ const assets = computed<AssetBalance[]>(() => {
     });
   });
 
-  return Object.values(assets)
-    .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
+  return Object.values(assets).sort((a, b) => sortDesc(a.usdValue, b.usdValue));
 });
 
-const showMore = computed(() => get(assets).length - 3);
+const showMore = computed<number>(() => get(assets).length - 3);
 </script>
 
 <template>
   <div class="flex justify-end pl-2">
     <template
-      v-if="assets.length > 1"
+      v-for="asset in assets.slice(0, 3)"
+      :key="asset.asset"
     >
-      <template
-        v-for="asset in assets.slice(0, 3)"
-        :key="asset.asset"
+      <RuiTooltip
+        :close-delay="0"
+        tooltip-class="!-ml-1"
       >
-        <RuiTooltip
-          :close-delay="0"
-          tooltip-class="!-ml-1"
-        >
-          <template #activator>
-            <div
-              data-cy="top-asset"
-              class="rounded-full w-8 h-8 bg-rui-grey-300 dark:bg-white flex items-center justify-center border-2 border-white dark:border-rui-grey-300 -ml-2 cursor-pointer overflow-hidden"
-            >
-              <AssetIcon
-                no-tooltip
-                flat
-                :identifier="asset.asset"
-                size="24px"
-                class="[&_.icon-bg>div]:!rounded-full [&_.icon-bg>div]:!overflow-hidden"
-                :show-chain="false"
-              />
-            </div>
-          </template>
+        <template #activator>
+          <div
+            data-cy="top-asset"
+            class="rounded-full w-8 h-8 bg-rui-grey-300 dark:bg-white flex items-center justify-center border-2 border-white dark:border-rui-grey-300 -ml-2 cursor-pointer overflow-hidden"
+          >
+            <AssetIcon
+              no-tooltip
+              flat
+              :identifier="asset.asset"
+              size="24px"
+              class="[&_.icon-bg>div]:!rounded-full [&_.icon-bg>div]:!overflow-hidden"
+              :show-chain="false"
+            />
+          </div>
+        </template>
 
-          <AmountDisplay
-            :value="asset.amount"
-            :asset="asset.asset"
-            :asset-padding="0.1"
-            data-cy="top-asset-amount"
-          />
-        </RuiTooltip>
-      </template>
+        <AmountDisplay
+          :value="asset.amount"
+          :asset="asset.asset"
+          :asset-padding="0.1"
+          data-cy="top-asset-amount"
+        />
+      </RuiTooltip>
     </template>
-    <AmountDisplay
-      v-else-if="assets.length === 1"
-      :value="assets[0].amount"
-      :asset="assets[0].asset"
-      :asset-padding="0.1"
-    />
-    <AmountDisplay
-      v-else-if="(row.nativeAsset && row.amount) || loading"
-      :value="row.amount"
-      :asset="row.nativeAsset"
-      :loading="loading"
-      :asset-padding="0.1"
-    />
 
     <div
       v-if="showMore > 0"

@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { SavedFilterLocation } from '@/types/filtering';
 import { AccountExternalFilterSchema, type Filters, type Matcher } from '@/composables/filters/blockchain-account';
-import { getAccountAddress, getGroupId } from '@/utils/blockchain/accounts';
 import AccountBalancesTable from '@/components/accounts/AccountBalancesTable.vue';
 import AccountGroupDetails from '@/components/accounts/AccountGroupDetails.vue';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
@@ -56,13 +55,16 @@ const {
   {
     extraParams: computed(() => ({
       tags: get(visibleTags),
-      ...(category.value !== 'all' ? { category: get(category) } : {}),
+      ...(get(category) !== 'all' ? { category: get(category) } : {}),
     })),
     onUpdateFilters(query) {
       const externalFilterSchema = AccountExternalFilterSchema.parse(query);
       if (externalFilterSchema.tags)
         set(visibleTags, externalFilterSchema.tags);
     },
+    customPageParams: computed(() => ({
+      excluded: get(chainExclusionFilter),
+    })),
     defaultSortBy: {
       key: 'usdValue',
     },

@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { getAccountAddress } from '@/utils/blockchain/accounts';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 import type {
   BlockchainAccountGroupRequestPayload,

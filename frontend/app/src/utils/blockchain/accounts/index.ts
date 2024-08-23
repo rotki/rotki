@@ -8,22 +8,17 @@ import type {
   EthBalance,
 } from '@/types/blockchain/balances';
 import type {
-  AccountExtraParams,
   AddressData,
   Balances,
-  BasicBlockchainAccount,
   BitcoinAccounts,
-  BitcoinXpubAccount,
   BlockchainAccount,
   BlockchainAccountBalance,
-  BlockchainAccountData,
   BlockchainAccountRequestPayload,
   BlockchainAccountWithBalance,
   ValidatorData,
-  XpubData,
 } from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
-import type { Balance, Eth2ValidatorEntry } from '@rotki/common';
+import type { Balance } from '@rotki/common';
 import type { AssetBalances } from '@/types/balances';
 
 export function hasAccountAddress(data: BlockchainAccount): data is BlockchainAccount<AddressData> {
@@ -75,6 +70,27 @@ function filterAccount<T extends BlockchainAccountBalance>(
   return matches.length === 0 || matches.every(match => match.matches);
 }
 
+function applyExclusionFilter<T extends BlockchainAccountBalance>(
+  account: T,
+  excluded: Record<string, string[]>,
+  getGroupAccounts: (groupId: string) => BlockchainAccountWithBalance[],
+): T {
+  if (isEmpty(excluded) || account.type !== 'group' || account.chains.length === 1)
+    return account;
+
+  const groupId = getGroupId(account);
+  const exclusion = excluded[groupId];
+  if (!exclusion)
+    return account;
+
+  const selectedAccounts = getGroupAccounts(groupId).filter(account => !exclusion.includes(account.chain));
+
+  return {
+    ...account,
+    usdValue: sum(selectedAccounts),
+  };
+}
+
 export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
   accounts: T[],
   params: BlockchainAccountRequestPayload,
@@ -97,6 +113,7 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
     address,
     chain,
     category,
+    excluded = {},
   } = params;
 
   const hasFilter = isFilterEnabled(tags)
@@ -108,7 +125,7 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
   const nonNull = <T extends BlockchainAccountBalance>(x: T | null): x is T => x !== null;
 
   const filtered = !hasFilter
-    ? accounts
+    ? accounts.map(account => applyExclusionFilter(account, excluded, groupId => getAccounts?.(groupId) ?? []))
     : accounts.filter(account => filterAccount(account, {
       tags,
       label,
@@ -138,17 +155,22 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
           if (matches.length === 0)
             return null;
 
+          const chains = matches.map(match => match.chain).filter(uniqueStrings);
+          const groupId = getGroupId({ data: account.data, chains });
+          const exclusion = excluded[groupId];
+          const usdValue = exclusion ? sum(matches.filter(match => !exclusion.includes(match.chain))) : sum(matches);
+
           return {
             ...account,
-            usdValue: sum(matches),
+            usdValue,
             tags: matches.flatMap(match => match.tags ?? []).filter(uniqueStrings),
-            chains: matches.map(match => match.chain).filter(uniqueStrings),
+            chains,
             expansion: matches.length === 1 ? matches[0].expansion : 'accounts',
           };
         }
       }
 
-      return account;
+      return applyExclusionFilter(account, excluded, groupId => getAccounts?.(groupId) ?? []);
     }).filter(nonNull);
 
   const getSortElement = <T extends BlockchainAccountBalance>(key: keyof T, item: T) => {
@@ -181,103 +203,6 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
   };
 }
 
-export function createXpubAccount(data: BitcoinXpubAccount, extra: AccountExtraParams): BlockchainAccount<XpubData> {
-  return {
-    data: {
-      type: 'xpub',
-      xpub: data.xpub,
-      derivationPath: data.derivationPath ?? undefined,
-    },
-    tags: data.tags ?? undefined,
-    label: data.label ?? undefined,
-    ...extra,
-  };
-}
-
-export function createValidatorAccount(
-  data: Eth2ValidatorEntry,
-  extra: AccountExtraParams,
-): BlockchainAccount<ValidatorData> {
-  return {
-    data: {
-      type: 'validator',
-      ...data,
-    },
-    ...extra,
-  };
-}
-
-export function createAccount(data: BasicBlockchainAccount, extra: AccountExtraParams): BlockchainAccount<AddressData> {
-  return {
-    data: {
-      type: 'address',
-      address: data.address,
-    },
-    tags: data.tags ?? undefined,
-    label: data.label ?? undefined,
-    ...extra,
-  };
-}
-
-function getDataId(group: { data: BlockchainAccountData }): string {
-  if (group.data.type === 'address') {
-    return group.data.address;
-  }
-  else if (group.data.type === 'validator') {
-    return group.data.publicKey;
-  }
-  else {
-    if (!group.data.derivationPath)
-      return group.data.xpub;
-
-    return `${group.data.xpub}#${group.data.derivationPath}`;
-  }
-}
-
-export function getGroupId(group: { data: BlockchainAccountData; chains: string[] }): string {
-  const main = getDataId(group);
-  if (group.data.type === 'xpub')
-    return `${main}#${getChain(group)}`;
-
-  return main;
-}
-
-export function getAccountId(account: { data: BlockchainAccountData; chain: string }): string {
-  return `${getDataId(account)}#${account.chain}`;
-}
-
-export function getAccountAddress(account: { data: BlockchainAccountData }): string {
-  if (account.data.type === 'address')
-    return account.data.address;
-  else if (account.data.type === 'validator')
-    return account.data.publicKey;
-  else return account.data.xpub;
-}
-
-export function getAccountLabel(account: { data: BlockchainAccountData; label?: string }): string {
-  if (account.label)
-    return account.label;
-  else if (account.data.type === 'address')
-    return account.data.address;
-  else if (account.data.type === 'validator')
-    return account.data.index.toString();
-  else if (account.data.type === 'xpub')
-    return account.data.xpub;
-  return '';
-}
-
-export function getValidatorData(account: BlockchainAccount): ValidatorData | undefined {
-  return account.data.type === 'validator' ? account.data : undefined;
-}
-
-export function getChain(account: { chain: string } | { chains: string[] }): string | undefined {
-  if ('chain' in account)
-    return account.chain;
-  else if ('chains' in account && account.chains.length === 1)
-    return account.chains[0];
-  return undefined;
-}
-
 export function convertBtcAccounts(
   getNativeAsset: (chain: MaybeRef<string>) => string,
   chain: string,
@@ -307,18 +232,13 @@ export function convertBtcBalances(
   totals: BlockchainTotals,
   perAccountData: BtcBalances,
 ): BlockchainBalances {
-  const chainBalances = Object.fromEntries(
-    Object.entries(
-      {
-        ...perAccountData.standalone,
-        ...perAccountData.xpubs?.map(x => x.addresses).reduce((previousValue, currentValue) => ({
-          ...previousValue,
-          ...currentValue,
-        }), {}),
-      },
-    ).map(([address, value]) => [address, { assets: { [chain.toUpperCase()]: value },
-    }]),
-  );
+  const chainBalances = Object.fromEntries(Object.entries({
+    ...perAccountData.standalone,
+    ...perAccountData.xpubs?.map(x => x.addresses).reduce((previousValue, currentValue) => ({
+      ...previousValue,
+      ...currentValue,
+    }), {}),
+  }).map(([address, value]) => [address, { assets: { [chain.toUpperCase()]: value } }]));
   return {
     totals,
     perAccount: { [chain]: chainBalances },
@@ -377,20 +297,4 @@ export function getAccountBalance(account: BlockchainAccount, chainBalances: Blo
   const expandable = hasTokens(nativeAsset, accountBalances.assets)
     || hasTokens(nativeAsset, accountBalances.liabilities);
   return { balance, expansion: expandable ? 'assets' as const : undefined };
-}
-
-export function createAccountWithBalance(
-  account: BlockchainAccount,
-  chainBalances: BlockchainAssetBalances,
-) {
-  const { balance, expansion } = getAccountBalance(account, chainBalances);
-  const address = getAccountAddress(account);
-
-  return {
-    type: 'account',
-    groupId: address,
-    ...account,
-    ...balance,
-    expansion,
-  } satisfies BlockchainAccountWithBalance;
 }
