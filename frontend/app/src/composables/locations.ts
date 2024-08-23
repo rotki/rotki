@@ -12,28 +12,28 @@ export const useLocations = createSharedComposable(() => {
     return exchange?.name ?? '';
   };
 
-  const { getChainName, getChainImageUrl } = useSupportedChains();
+  const { getChainName, getChainImageUrl, getChainAccountType } = useSupportedChains();
 
-  const locationData = (identifier: MaybeRef<string | null>): ComputedRef<TradeLocationData | null> =>
-    computed(() => {
-      const id = get(identifier);
-      if (!id)
-        return null;
+  const locationData = (identifier: MaybeRef<string | null>): ComputedRef<TradeLocationData | null> => computed(() => {
+    const id = get(identifier);
+    if (!id)
+      return null;
 
-      const blockchainId = id.split(' ').join('_');
+    const blockchainId = id.split(' ').join('_');
 
-      if (isBlockchain(blockchainId)) {
-        return {
-          name: get(getChainName(blockchainId)),
-          identifier: blockchainId,
-          image: get(getChainImageUrl(blockchainId)),
-          detailPath: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN}#blockchain-balances-${id}`,
-        };
-      }
+    if (isBlockchain(blockchainId)) {
+      const type = blockchainId === Blockchain.ETH ? 'validators' : getChainAccountType(blockchainId);
+      return {
+        name: get(getChainName(blockchainId)),
+        identifier: blockchainId,
+        image: get(getChainImageUrl(blockchainId)),
+        detailPath: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN}/${type}`,
+      };
+    }
 
-      const locations = get(tradeLocations);
-      return locations.find(location => location.identifier === id) ?? null;
-    });
+    const locations = get(tradeLocations);
+    return locations.find(location => location.identifier === id) ?? null;
+  });
 
   const getLocationData = (identifier: string): TradeLocationData | null => get(locationData(identifier));
 
