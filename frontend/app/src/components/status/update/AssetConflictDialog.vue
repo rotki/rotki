@@ -275,10 +275,10 @@ onMounted(() => {
               variant="outlined"
               @update:model-value="onStrategyChange(resolution[conflict.identifier])"
             >
-              <RuiButton value="local">
+              <RuiButton model-value="local">
                 {{ t('conflict_dialog.action.local') }}
               </RuiButton>
-              <RuiButton value="remote">
+              <RuiButton model-value="remote">
                 {{ t('conflict_dialog.action.remote') }}
               </RuiButton>
             </RuiButtonGroup>
