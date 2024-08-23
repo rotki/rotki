@@ -35,6 +35,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
         HistoryEventSubType.LIQUIDATE: EventCategory.LIQUIDATION_REWARD,
         HistoryEventSubType.PAYMENT: EventCategory.RECEIVE_PAYMENT,
         HistoryEventSubType.GRANT: EventCategory.RECEIVE_GRANT,
+        HistoryEventSubType.INTEREST: EventCategory.INTEREST,
     }, HistoryEventType.DEPOSIT: {
         HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
         HistoryEventSubType.BRIDGE: EventCategory.BRIDGE_DEPOSIT,
@@ -232,6 +233,9 @@ EVENT_CATEGORY_DETAILS = {
     )}, EventCategory.RECEIVE_GRANT: {DEFAULT: EventCategoryDetails(
         label='receive grant',
         icon='hand-coin-line',
+    )}, EventCategory.INTEREST: {DEFAULT: EventCategoryDetails(
+        label='receive interest',
+        icon='funds-line',
     )},
 }
 

@@ -29,7 +29,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x93a208b0d7007f5733ea23F65bACF101Be8aC6cD']])
 def test_aave_v3_enable_collateral(ethereum_inquirer, ethereum_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x867d09a777ca7c5cbccd281d197ffbed327b5a8f07153483e94f75d4e1d04413')  # noqa: E501
@@ -93,13 +93,13 @@ def test_aave_v3_enable_collateral(ethereum_inquirer, ethereum_accounts) -> None
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x203b2E862C57fbAc813c05c46B6e1242844724A2']])
 def test_aave_v3_disable_collateral(ethereum_inquirer, ethereum_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x1f7614ba2425f3345d02bf1518c81ab3aa46e888553b409f3c9a360259bc7988')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1711028735000)
-    returned_amount, withdraw_amount, gas_fees = '0.3', '0.30005421', '0.005234272941346752'
+    returned_amount, interest_amount, gas_fees = '0.3', '0.00005421', '0.005234272941346752'
     expected_events = [
         EvmEvent(
             tx_hash=tx_hash,
@@ -147,17 +147,29 @@ def test_aave_v3_disable_collateral(ethereum_inquirer, ethereum_accounts) -> Non
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=A_WBTC,
-            balance=Balance(amount=FVal(withdraw_amount)),
+            balance=Balance(amount=FVal(returned_amount)),
             location_label=ethereum_accounts[0],
-            notes=f'Withdraw {withdraw_amount} WBTC from AAVE v3',
+            notes=f'Withdraw {returned_amount} WBTC from AAVE v3',
             counterparty=CPT_AAVE_V3,
             address=string_to_evm_address('0x5Ee5bf7ae06D1Be5997A1A72006FE6C607eC6DE8'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=264,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.INTEREST,
+            asset=A_WBTC,
+            balance=Balance(amount=FVal(interest_amount)),
+            location_label=ethereum_accounts[0],
+            notes=f'Receive {interest_amount} WBTC as interest earned from AAVE v3',
+            counterparty=CPT_AAVE_V3,
         ),
     ]
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x08c14B32C8A48894E4b933090EBcC9CE33B21135']])
 def test_aave_v3_deposit(ethereum_inquirer, ethereum_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x062bb6b01d4ac5fabd7b7783965d22589d289e44bb0227bb2fc0adaad7eb563b')  # noqa: E501
@@ -208,13 +220,76 @@ def test_aave_v3_deposit(ethereum_inquirer, ethereum_accounts) -> None:
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x8abad97dBdBE16D043a5df66cf9E120D13708a3F']])
+def test_aave_v3_deposit_with_interest(ethereum_inquirer, ethereum_accounts) -> None:
+    tx_hash = deserialize_evm_tx_hash('0xd5dc3d24da9a97957743c09b8655154ffedb3cb40325b698b1159aa2fe9cf166')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    timestamp = TimestampMS(1723640027000)
+    deposit_amount, interest_amount, gas_fees = '0.21191208', '0.00000083', '0.000975505588598266'
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label=ethereum_accounts[0],
+            notes=f'Burned {gas_fees} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.DEPOSIT,
+            event_subtype=HistoryEventSubType.DEPOSIT_ASSET,
+            asset=A_WBTC,
+            balance=Balance(amount=FVal(deposit_amount)),
+            location_label=ethereum_accounts[0],
+            notes=f'Deposit {deposit_amount} WBTC into AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=string_to_evm_address('0x5Ee5bf7ae06D1Be5997A1A72006FE6C607eC6DE8'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.RECEIVE_WRAPPED,
+            asset=EvmToken('eip155:1/erc20:0x5Ee5bf7ae06D1Be5997A1A72006FE6C607eC6DE8'),
+            balance=Balance(amount=FVal(deposit_amount)),
+            location_label=ethereum_accounts[0],
+            notes=f'Receive {deposit_amount} aEthWBTC from AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=3,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.INTEREST,
+            asset=EvmToken('eip155:1/erc20:0x5Ee5bf7ae06D1Be5997A1A72006FE6C607eC6DE8'),
+            balance=Balance(amount=FVal(interest_amount)),
+            location_label=ethereum_accounts[0],
+            notes=f'Receive {interest_amount} aEthWBTC as interest earned from AAVE v3',
+            counterparty=CPT_AAVE_V3,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0xabE9e5d199E1E411098181b6a5Ab9f5f65d91389']])
 def test_aave_v3_withdraw(ethereum_inquirer, ethereum_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0xf184c285dab9ea6c72d18025c65202e3d9e5ec3181209a6cbedf88dfd4c8283f')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
     timestamp = TimestampMS(1711030631000)
-    return_amount, withdraw_amount, gas_fees = '6770.796829', '6779.85', '0.00692900756596481'
+    return_amount, interest_amount, gas_fees = '6770.796829', '9.053171', '0.00692900756596481'
     expected_events = [
         EvmEvent(
             tx_hash=tx_hash,
@@ -249,17 +324,92 @@ def test_aave_v3_withdraw(ethereum_inquirer, ethereum_accounts) -> None:
             event_type=HistoryEventType.WITHDRAWAL,
             event_subtype=HistoryEventSubType.REMOVE_ASSET,
             asset=A_USDT,
-            balance=Balance(amount=FVal(withdraw_amount)),
+            balance=Balance(amount=FVal(return_amount)),
             location_label=ethereum_accounts[0],
-            notes=f'Withdraw {withdraw_amount} USDT from AAVE v3',
+            notes=f'Withdraw {return_amount} USDT from AAVE v3',
             counterparty=CPT_AAVE_V3,
             address=string_to_evm_address('0x23878914EFE38d27C4D67Ab83ed1b93A74D4086a'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=3,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.INTEREST,
+            asset=A_USDT,
+            balance=Balance(amount=FVal(interest_amount)),
+            location_label=ethereum_accounts[0],
+            notes=f'Receive {interest_amount} USDT as interest earned from AAVE v3',
+            counterparty=CPT_AAVE_V3,
         ),
     ]
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x430431aE62cD20F0D519ee9fF7E26c2005b50AAf']])
+def test_aave_v3_withdraw_with_bigger_interest(ethereum_inquirer, ethereum_accounts) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x8ed7c1ed348212c6b9aa615a2c13857dd801dfac103f01852a303e62cc58b24f')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    timestamp = TimestampMS(1723591427000)
+    return_amount, interest_amount, gas_fees = '20000', '33086.007538', '0.000395645857253556'
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label=ethereum_accounts[0],
+            notes=f'Burned {gas_fees} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.RETURN_WRAPPED,
+            asset=EvmToken('eip155:1/erc20:0x23878914EFE38d27C4D67Ab83ed1b93A74D4086a'),
+            balance=Balance(amount=FVal(return_amount)),
+            location_label=ethereum_accounts[0],
+            notes=f'Return {return_amount} aEthUSDT to AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_USDT,
+            balance=Balance(amount=FVal(return_amount)),
+            location_label=ethereum_accounts[0],
+            notes=f'Withdraw {return_amount} USDT from AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=string_to_evm_address('0x23878914EFE38d27C4D67Ab83ed1b93A74D4086a'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=3,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.INTEREST,
+            asset=EvmToken('eip155:1/erc20:0x23878914EFE38d27C4D67Ab83ed1b93A74D4086a'),
+            balance=Balance(amount=FVal(interest_amount)),
+            location_label=ethereum_accounts[0],
+            notes=f'Receive {interest_amount} aEthUSDT as interest earned from AAVE v3',
+            counterparty=CPT_AAVE_V3,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x08c14B32C8A48894E4b933090EBcC9CE33B21135']])
 def test_aave_v3_borrow(ethereum_inquirer, ethereum_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x44367976e841cde459d84aec984d5fae4466b2978b1d71c9cd916bb79792ee20')  # noqa: E501
@@ -310,7 +460,7 @@ def test_aave_v3_borrow(ethereum_inquirer, ethereum_accounts) -> None:
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9CBF099ff424979439dFBa03F00B5961784c06ce']])
 def test_aave_v3_repay(ethereum_inquirer, ethereum_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x440dddaad9f8d9c6d99777494640520854cca8dd102fb557f1654f5746da5f7e')  # noqa: E501
@@ -361,7 +511,7 @@ def test_aave_v3_repay(ethereum_inquirer, ethereum_accounts) -> None:
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x7420fA58bA44E1141d5E9ADB6903BE549f7cE0b5']])
 def test_aave_v3_liquidation(ethereum_inquirer, ethereum_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0xc1a03e87f1c0446ddd5a77f7eb906831c72618a921a1f6f9f430f612edca0531')  # noqa: E501
@@ -427,7 +577,7 @@ def test_aave_v3_liquidation(ethereum_inquirer, ethereum_accounts) -> None:
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xA55EaD17fa903b1218dc6a79c47b54C9370E20AB']])
 def test_aave_v3_enable_collateral_polygon(polygon_pos_inquirer, polygon_pos_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x8002f1a3044bcdec645d512713724f09551c18a14c67509417c83961b230294b')  # noqa: E501
@@ -494,7 +644,7 @@ def test_aave_v3_enable_collateral_polygon(polygon_pos_inquirer, polygon_pos_acc
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x645C22593c232Ae78a7eCbaC93b38cbaC535ef12']])
 def test_aave_v3_withdraw_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x09d5e6da511fb88e8a7db6f1209542610a9d3873048e405b88c7a766d7210d6f')  # noqa: E501
@@ -503,7 +653,7 @@ def test_aave_v3_withdraw_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accou
         tx_hash=tx_hash,
     )
     timestamp = TimestampMS(1711450245000)
-    return_amount, withdraw_amount, gas_fees = '11.905748099167569087', '12', '0.00000490517'
+    interest_amount, withdraw_amount, gas_fees = '0.094251900832430913', '11.905748099167569087', '0.00000490517'  # noqa: E501
     expected_events = [
         EvmEvent(
             tx_hash=tx_hash,
@@ -525,9 +675,9 @@ def test_aave_v3_withdraw_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accou
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.RETURN_WRAPPED,
             asset=Asset('eip155:42161/erc20:0x191c10Aa4AF7C30e871E70C95dB0E4eb77237530'),
-            balance=Balance(amount=FVal(return_amount)),
+            balance=Balance(amount=FVal(withdraw_amount)),
             location_label=arbitrum_one_accounts[0],
-            notes=f'Return {return_amount} aArbLINK to AAVE v3',
+            notes=f'Return {withdraw_amount} aArbLINK to AAVE v3',
             counterparty=CPT_AAVE_V3,
             address=ZERO_ADDRESS,
         ), EvmEvent(
@@ -543,12 +693,24 @@ def test_aave_v3_withdraw_arbitrum_one(arbitrum_one_inquirer, arbitrum_one_accou
             notes=f'Withdraw {withdraw_amount} LINK from AAVE v3',
             counterparty=CPT_AAVE_V3,
             address=string_to_evm_address('0x191c10Aa4AF7C30e871E70C95dB0E4eb77237530'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=3,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.INTEREST,
+            asset=Asset('eip155:42161/erc20:0xf97f4df75117a78c1A5a0DBb814Af92458539FB4'),
+            balance=Balance(amount=FVal(interest_amount)),
+            location_label=arbitrum_one_accounts[0],
+            notes=f'Receive {interest_amount} LINK as interest earned from AAVE v3',
+            counterparty=CPT_AAVE_V3,
         ),
     ]
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('base_accounts', [['0xaafc3e3C8B4fD93584256E6D49a9C364648E66cE']])
 def test_aave_v3_borrow_base(base_inquirer, base_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x92b6fef0623a3f56daa651968819f2e5b7a982037c19fed2166e4c00ba4d6350')  # noqa: E501
@@ -599,7 +761,7 @@ def test_aave_v3_borrow_base(base_inquirer, base_accounts) -> None:
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x91ed7A7fd3072885c1ec905C932717Df6A8aE2cA']])
 def test_aave_v3_withdraw_gnosis(gnosis_inquirer, gnosis_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x1f3cae37be928563d154c534c98f41eefe9201eb3d0129c99c1ecb51f83e5596')  # noqa: E501
@@ -650,7 +812,7 @@ def test_aave_v3_withdraw_gnosis(gnosis_inquirer, gnosis_accounts) -> None:
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('optimism_accounts', [['0xdbD5D31B7f48adC13A0aB0c591F7e3D4f9642e69']])
 def test_aave_v3_borrow_optimism(optimism_inquirer, optimism_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0xb043a7f28cccd6cb0392db47cea4607f8cf3b91b6510669a0a62588b66eb7fcf')  # noqa: E501
@@ -701,7 +863,7 @@ def test_aave_v3_borrow_optimism(optimism_inquirer, optimism_accounts) -> None:
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('scroll_accounts', [['0x3E6B4598E5bfeEc911f344E546C9EbFe4A00d770']])
 def test_aave_v3_repay_scroll(scroll_inquirer, scroll_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x66010f353be60adaa004f839d37cecd22c35c580060eeaffb9a28ebe169e1692')  # noqa: E501
@@ -752,7 +914,7 @@ def test_aave_v3_repay_scroll(scroll_inquirer, scroll_accounts) -> None:
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x35E0091D67B5e213db857F605c2047cA29A8800d']])
 def test_non_aave_tx(ethereum_inquirer, ethereum_accounts) -> None:
     """Test that the non-aave transactions happened through flash loans are not decoded
@@ -791,7 +953,7 @@ def test_non_aave_tx(ethereum_inquirer, ethereum_accounts) -> None:
     assert events == expected_events
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.vcr(filter_query_parameters=['apikey'])(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('optimism_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
 def test_claim_incentives_reward(optimism_inquirer, optimism_accounts) -> None:
     """Test that claim rewards for incentives works"""
@@ -829,7 +991,7 @@ def test_claim_incentives_reward(optimism_inquirer, optimism_accounts) -> None:
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0xfe46dCeb5d586DA13aBAA571613e20f5a61fa62e']])
 def test_aave_v3_events_with_approval(polygon_pos_inquirer, polygon_pos_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x0aaca18a7e0ee29a247bd9bfab3b081acf469833105a9204251c5a4969a5fc29')  # noqa: E501
@@ -907,7 +1069,7 @@ def test_aave_v3_events_with_approval(polygon_pos_inquirer, polygon_pos_accounts
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('scroll_accounts', [['0x76111D2841b41B15e6F07fBae4796a82438D9c90']])
 def test_aave_v3_withdraw_eth(scroll_inquirer, scroll_accounts) -> None:
     """Test that withdrawing ETH from Aave gets decoded properly"""
@@ -998,7 +1160,7 @@ def test_aave_v3_withdraw_eth(scroll_inquirer, scroll_accounts) -> None:
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x2013b74bdbd2Adf3eBF39E5112a9f794144Aeb15']])
 def test_aave_v3_withdraw_matic(polygon_pos_inquirer, polygon_pos_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x301885bdc8998d0e6d5c0064b3b92f5ee34f81ebbd14ca2b796579981ff8df31')  # noqa: E501
@@ -1076,7 +1238,7 @@ def test_aave_v3_withdraw_matic(polygon_pos_inquirer, polygon_pos_accounts) -> N
     assert events == expected_events
 
 
-@pytest.mark.vcr
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('gnosis_accounts', [['0x44ddBB35CfeBbafE98e402970517b33d8e925eB3']])
 def test_aave_v3_withdraw_xdai(gnosis_inquirer, gnosis_accounts) -> None:
     tx_hash = deserialize_evm_tx_hash('0x0154ef3042e93a632d654c86bff99f7d452681dba72f4f773806c9c26470f678')  # noqa: E501
@@ -1159,6 +1321,56 @@ def test_aave_v3_withdraw_xdai(gnosis_inquirer, gnosis_accounts) -> None:
             notes=f'Withdraw {withdrawn_amount} XDAI from AAVE v3',
             counterparty=CPT_AAVE_V3,
             address=gateway_address,
+        ),
+    ]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x79A4D7448B110bf926d96b726D113f7d7De6781f']])
+def test_aave_v3_interest_on_transfer(ethereum_inquirer, ethereum_accounts) -> None:
+    tx_hash = deserialize_evm_tx_hash('0x84a70d14ef53987e1ee267435492100f07a4480b7d8022a8d3508e3a4ee70fbf')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    timestamp = TimestampMS(1723481603000)
+    transfer_amount, interest_amount, gas_fees = '50000', '2447.464003', '0.001366713726208557'
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas_fees)),
+            location_label=ethereum_accounts[0],
+            notes=f'Burned {gas_fees} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=271,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.INTEREST,
+            asset=EvmToken('eip155:1/erc20:0x23878914EFE38d27C4D67Ab83ed1b93A74D4086a'),
+            balance=Balance(amount=FVal(interest_amount)),
+            location_label=ethereum_accounts[0],
+            notes=f'Receive {interest_amount} aEthUSDT as interest earned from AAVE v3',
+            counterparty=CPT_AAVE_V3,
+            address=ZERO_ADDRESS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=273,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=EvmToken('eip155:1/erc20:0x23878914EFE38d27C4D67Ab83ed1b93A74D4086a'),
+            balance=Balance(amount=FVal(transfer_amount)),
+            location_label=ethereum_accounts[0],
+            notes=f'Send {transfer_amount} aEthUSDT from {ethereum_accounts[0]} to 0x9C9EF79aae8996c72eA8C374011D7ac1eB42c4Fc',  # noqa: E501
+            address=string_to_evm_address('0x9C9EF79aae8996c72eA8C374011D7ac1eB42c4Fc'),
         ),
     ]
     assert events == expected_events
