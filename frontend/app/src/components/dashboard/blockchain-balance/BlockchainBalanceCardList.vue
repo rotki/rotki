@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Routes } from '@/router/routes';
 import { type BlockchainTotal, SupportedSubBlockchainProtocolData } from '@/types/blockchain';
+import type { RouteLocationRaw } from 'vue-router';
 import type { ActionDataEntry } from '@/types/action';
 
 const props = defineProps<{
@@ -9,24 +10,41 @@ const props = defineProps<{
 
 const { total } = toRefs(props);
 
-const { getChainName } = useSupportedChains();
+const { getChainName, getChainAccountType } = useSupportedChains();
 
+const amount = useRefMap(total, ({ usdValue }) => usdValue);
+const loading = useRefMap(total, ({ loading }) => loading);
 const chain = useRefMap(total, ({ chain }) => chain);
 const name = getChainName(chain);
+
+const { unifyAccountsTable } = storeToRefs(useFrontendSettingsStore());
+
+const navTarget = computed<RouteLocationRaw>(() => {
+  let target: string;
+  const balanceChain = get(chain);
+  if (balanceChain === Blockchain.ETH2) {
+    target = 'validators';
+  }
+  else {
+    if (get(unifyAccountsTable))
+      target = 'all';
+    else
+      target = getChainAccountType(balanceChain) ?? 'evm';
+  }
+
+  return {
+    path: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN}/${target}`,
+  };
+});
 
 function childData(identifier: string): ActionDataEntry | null {
   return SupportedSubBlockchainProtocolData.find(item => item.identifier === identifier) || null;
 }
-
-const amount = useRefMap(total, ({ usdValue }) => usdValue);
-const loading = useRefMap(total, ({ loading }) => loading);
-
-const balanceBlockchainRoute = Routes.ACCOUNTS_BALANCES_BLOCKCHAIN;
 </script>
 
 <template>
   <div>
-    <RouterLink :to="`${balanceBlockchainRoute}#blockchain-balances-${total.chain}`">
+    <RouterLink :to="navTarget">
       <ListItem
         data-cy="blockchain-balance__summary"
         :data-location="total.chain"

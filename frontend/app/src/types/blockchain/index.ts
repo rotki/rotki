@@ -12,7 +12,7 @@ export const SupportedSubBlockchainProtocolData: ActionDataEntry[] = [
     identifier: L2_LOOPRING,
     label: 'Loopring',
     image: './assets/images/protocols/loopring.svg',
-    detailPath: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN}#blockchain-balances-LRC`,
+    detailPath: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN}`,
   },
 ];
 

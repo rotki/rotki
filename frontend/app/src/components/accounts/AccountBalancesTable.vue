@@ -339,6 +339,7 @@ defineExpose({
     </template>
     <template #group.header="{ header, isOpen, toggle, colspan }">
       <td
+        :id="header.group.category"
         class="py-2 px-2"
         :colspan="colspan - 2"
       >
