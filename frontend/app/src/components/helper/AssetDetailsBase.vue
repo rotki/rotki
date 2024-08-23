@@ -42,7 +42,7 @@ async function navigate() {
   await router.push({
     name: '/assets/[identifier]',
     params: {
-      identifier: encodeURIComponent(get(asset).identifier),
+      identifier: get(asset).identifier,
     },
     ...(!collectionParent
       ? {}

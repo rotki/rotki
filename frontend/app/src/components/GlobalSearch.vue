@@ -255,7 +255,7 @@ async function getAssets(keyword: string): Promise<SearchItemWithoutValue[]> {
         route: {
           name: '/assets/[identifier]',
           params: {
-            identifier: encodeURIComponent(asset),
+            identifier: asset,
           },
         },
         texts: [t('common.asset'), map[asset] ?? ''],
