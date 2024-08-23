@@ -35,14 +35,16 @@ async function toggleIgnoreAsset() {
   const id = get(identifier);
   if (get(isIgnored))
     await unignoreAsset(id);
-  else await ignoreAsset(id);
+  else
+    await ignoreAsset(id);
 }
 
 async function toggleWhitelistAsset() {
   const id = get(identifier);
   if (get(isWhitelisted))
     await unWhitelistAsset(id);
-  else await whitelistAsset(id);
+  else
+    await whitelistAsset(id);
 
   refetchAssetInfo(id);
 }

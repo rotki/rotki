@@ -4,7 +4,7 @@ export function useAssetPageNavigation(asset: Ref<string>) {
     await router.push({
       name: '/assets/[identifier]',
       params: {
-        identifier: encodeURIComponent(get(asset)),
+        identifier: get(asset),
       },
     });
   };
