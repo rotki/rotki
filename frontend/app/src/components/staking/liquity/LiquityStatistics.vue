@@ -175,10 +175,10 @@ const totalPnl = computed<BigNumber | null>(() => {
           variant="outlined"
           color="primary"
         >
-          <RuiButton value="current">
+          <RuiButton model-value="current">
             {{ t('liquity_statistic.switch.current') }}
           </RuiButton>
-          <RuiButton value="historical">
+          <RuiButton model-value="historical">
             {{ t('liquity_statistic.switch.historical') }}
           </RuiButton>
         </RuiButtonGroup>

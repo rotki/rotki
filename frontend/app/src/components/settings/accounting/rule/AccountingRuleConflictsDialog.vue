@@ -424,13 +424,13 @@ async function save() {
               >
                 <RuiButton
                   class="w-full"
-                  value="local"
+                  model-value="local"
                 >
                   {{ t('conflict_dialog.action.local') }}
                 </RuiButton>
                 <RuiButton
                   class="w-full"
-                  value="remote"
+                  model-value="remote"
                 >
                   {{ t('conflict_dialog.action.remote') }}
                 </RuiButton>
