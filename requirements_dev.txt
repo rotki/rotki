@@ -6,7 +6,7 @@ pytest-xdist==3.6.1
 bump2version==1.0.1
 pytest-cov==5.0.0
 coverage==7.5.1
-psutil==5.9.8
+psutil==6.0.0
 pytest-freezer==0.4.8
 pytest-deadfixtures @ git+https://github.com/rotki/pytest-deadfixtures@87d2be8#egg=pytest-deadfixtures # temporarily due to false positive
 pytest-socket==0.7.0
@@ -16,7 +16,7 @@ freezegun==1.5.1
 
 
 # To test google spreadsheet uploading
-google-api-python-client==2.140.0
+google-api-python-client==2.142.0
 google-auth-httplib2==0.2.0
 google-api-core==2.19.1
-google-auth==2.33.0
+google-auth==2.34.0
