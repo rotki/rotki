@@ -2,7 +2,6 @@ import json
 import logging
 from http import HTTPStatus
 from typing import Any, Literal, NamedTuple, overload
-from urllib.parse import urlencode
 
 import requests
 
@@ -557,10 +556,11 @@ class Coingecko(HistoricalPriceOracleWithCoinListInterface, PenalizablePriceOrac
         if subpath:
             url += subpath
 
-        log.debug(f'Querying coingecko: {url}?{urlencode(options)}')
+        log.debug(f'Querying coingecko: {url=} with {options=}')
         try:
             response = self.session.get(
-                f'{url}?{urlencode(options)}',
+                url=url,
+                params=options,
                 timeout=CachedSettings().get_timeout_tuple(),
             )
         except requests.exceptions.RequestException as e:
@@ -611,7 +611,7 @@ class Coingecko(HistoricalPriceOracleWithCoinListInterface, PenalizablePriceOrac
         }
         data = self._query(
             module='coins',
-            subpath=f'{asset_coingecko_id}',
+            subpath=asset_coingecko_id,
             options=options,
         )
 
