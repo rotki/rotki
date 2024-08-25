@@ -2,7 +2,6 @@ import json
 import logging
 from http import HTTPStatus
 from typing import Any
-from urllib.parse import urlencode
 
 import requests
 
@@ -59,10 +58,11 @@ class Defillama(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
         if subpath:
             url += subpath
 
-        log.debug(f'Querying defillama: {url}?{urlencode(options)}')
+        log.debug(f'Querying defillama: {url=} with {options=}')
         try:
             response = self.session.get(
-                f'{url}?{urlencode(options)}',
+                url=url,
+                params=options,
                 timeout=CachedSettings().get_timeout_tuple(),
             )
         except requests.exceptions.RequestException as e:
