@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.tests.utils.constants import GRAPH_QUERY_CRED
@@ -9,7 +10,7 @@ if TYPE_CHECKING:
 
 
 @pytest.fixture(name='add_subgraph_api_key')
-def fixture_add_subgraph_api_key(database: 'DBHandler') -> None:  # noqa: PT004 # adding _ won't export it
+def fixture_add_subgraph_api_key(database: 'DBHandler') -> None:
     """ count generator used to get a unique port number. """
     database.add_external_service_credentials([ExternalServiceApiCredentials(
         service=ExternalService.THEGRAPH,

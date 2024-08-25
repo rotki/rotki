@@ -197,7 +197,7 @@ def fixture_custom_globaldb() -> int | None:
 
 
 @pytest.fixture(name='historical_price_test_data')
-def fixture_historical_price_test_data(globaldb):  # noqa: PT004  # adding _ won't export it
+def fixture_historical_price_test_data(globaldb):
     data = [HistoricalPrice(
         from_asset=A_BTC,
         to_asset=A_EUR,

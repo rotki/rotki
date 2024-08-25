@@ -17,7 +17,7 @@ def fixture_cryptocompare_cache_coinlist():
 
 
 @pytest.fixture(name='cache_coinlist')
-def fixture_cache_coinlist(rotkehlchen_api_server, coingecko_cache_coinlist, cryptocompare_cache_coinlist) -> None:  # noqa: E501, PT004 # adding _ won't export it
+def fixture_cache_coinlist(rotkehlchen_api_server, coingecko_cache_coinlist, cryptocompare_cache_coinlist) -> None:  # noqa: E501
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     if cryptocompare_cache_coinlist is not None:
         rotki.cryptocompare.cache_coinlist(cryptocompare_cache_coinlist)
