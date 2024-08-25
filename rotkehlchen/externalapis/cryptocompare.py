@@ -11,6 +11,7 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_BAT,
     A_BNB,
+    A_BTC,
     A_BZRX,
     A_CBAT,
     A_CDAI,
@@ -258,24 +259,23 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleWithCoinList
         assert self.db is not None, msg
         self.db = None
 
-    def _api_query(self, path: str) -> dict[str, Any]:
+    def _api_query(self, path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         """Queries cryptocompare
 
         - May raise RemoteError if there is a problem reaching the cryptocompare server
         or with reading the response returned by the server
         """
         querystr = f'https://min-api.cryptocompare.com/data/{path}'
-        log.debug('Querying cryptocompare', url=querystr)
-        api_key = self._get_api_key()
-        if api_key:
-            querystr += '?' if '?' not in querystr else '&'
-            querystr += f'api_key={api_key}'
+        params = params if params is not None else {}
+        if (api_key := self._get_api_key()):
+            params |= {'api_key': api_key}
 
         tries = CRYPTOCOMPARE_QUERY_RETRY_TIMES
         timeout = CachedSettings().get_timeout_tuple()
         while tries >= 0:
+            log.debug('Querying cryptocompare', url=querystr, params=params)
             try:
-                response = self.session.get(querystr, timeout=timeout)
+                response = self.session.get(querystr, timeout=timeout, params=params)
             except requests.exceptions.RequestException as e:
                 self.penalty_info.note_failure_or_penalize()
                 raise RemoteError(f'Cryptocompare API request failed due to {e!s}') from e
@@ -434,11 +434,15 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleWithCoinList
         except UnsupportedAsset as e:
             raise PriceQueryUnsupportedAsset(e.identifier) from e
 
-        query_path = (
-            f'v2/histohour?fsym={cc_from_asset_symbol}&tsym={cc_to_asset_symbol}'
-            f'&limit={limit}&toTs={to_timestamp}'
+        result = self._api_query(
+            path='v2/histohour',
+            params={
+                'fsym': cc_from_asset_symbol,
+                'tsym': cc_to_asset_symbol,
+                'limit': limit,
+                'toTs': to_timestamp,
+            },
         )
-        result = self._api_query(path=query_path)
         return result
 
     def query_current_price(
@@ -474,8 +478,13 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleWithCoinList
         except UnsupportedAsset as e:
             raise PriceQueryUnsupportedAsset(e.identifier) from e
 
-        query_path = f'price?fsym={cc_from_asset_symbol}&tsyms={cc_to_asset_symbol}'
-        result = self._api_query(path=query_path)
+        result = self._api_query(
+            path='price',
+            params={
+                'fsym': cc_from_asset_symbol,
+                'tsyms': cc_to_asset_symbol,
+            },
+        )
         # Up until 23/09/2020 cryptocompare may return {} due to bug.
         # Handle that case by assuming 0 if that happens
         if cc_to_asset_symbol not in result:
@@ -520,13 +529,15 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleWithCoinList
         except UnsupportedAsset as e:
             raise PriceQueryUnsupportedAsset(e.identifier) from e
 
-        query_path = (
-            f'pricehistorical?fsym={cc_from_asset_symbol}&tsyms={cc_to_asset_symbol}'
-            f'&ts={timestamp}'
-        )
-        if to_asset == 'BTC':
-            query_path += '&tryConversion=false'
-        result = self._api_query(query_path)
+        params = {
+            'fsym': cc_from_asset_symbol,
+            'tsyms': cc_to_asset_symbol,
+            'ts': timestamp,
+        }
+        if to_asset == A_BTC:
+            params['tryConversion'] = 'false'
+
+        result = self._api_query(path='pricehistorical', params=params)
         # Up until 23/09/2020 cryptocompare may return {} due to bug.
         # Handle that case by assuming 0 if that happens
         if (

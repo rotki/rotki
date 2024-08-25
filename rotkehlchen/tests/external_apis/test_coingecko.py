@@ -87,7 +87,7 @@ def test_asset_icons_for_collections(icon_manager: IconManager) -> None:
     assert icon_path.exists() is False
 
     # mock coingecko response
-    def mock_coingecko(url, timeout):  # pylint: disable=unused-argument
+    def mock_coingecko(url, *args, **kwargs):  # pylint: disable=unused-argument
         nonlocal times_api_was_queried
         times_api_was_queried += 1
         test_data_folder = Path(__file__).resolve().parent.parent / 'data' / 'mocks' / 'test_coingecko'  # noqa: E501

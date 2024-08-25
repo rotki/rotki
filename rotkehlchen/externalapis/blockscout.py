@@ -46,9 +46,9 @@ class Blockscout(ExternalServiceWithApiKey):
     ) -> dict[str, Any]:
         """Shared logic between v1 and v2 for querying blockscout api"""
         log.debug(f'Querying blockscout API for {query_str} with {params}')
-        times = CachedSettings().get_query_retry_limit()
+        times = (cached_settings := CachedSettings()).get_query_retry_limit()
         retries_num = times
-        timeout = CachedSettings().get_timeout_tuple()
+        timeout = cached_settings.get_timeout_tuple()
         backoff_in_seconds = 10
 
         while True:
