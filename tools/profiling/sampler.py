@@ -41,7 +41,7 @@ def collect_frames(frame: FrameType) -> list[str]:
 
 
 def flamegraph_format(stack_count: FlameGraph) -> str:
-    return '\n'.join('%s %d' % (key, value) for key, value in sorted(stack_count.items()))
+    return '\n'.join(f'{key} {value}' for key, value in sorted(stack_count.items()))
 
 
 def sample_stack(stack_count: FlameGraph, frame: FrameType, timespent: float) -> None:
