@@ -231,22 +231,25 @@ export const useBlockchainStore = defineStore('blockchain', () => {
 
   const getAddresses = (chain: string): string[] => get(addresses)[chain] ?? [];
 
-  const { getAssetAssociationIdentifiers } = useAssetInfoRetrieval();
+  const { getAssetAssociationIdentifiers, getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
 
-  const getBreakdown = (asset: string, chain?: string): AssetBreakdown[] => {
+  const getBreakdown = (asset: string, chains?: string[], groupId?: string): AssetBreakdown[] => {
     const breakdown: AssetBreakdown[] = [];
     const balanceData = get(balances);
     const accountData = get(accounts);
 
-    const chains = chain ? [chain] : Object.keys(accountData);
+    const chainList = chains ?? Object.keys(accountData);
 
-    for (const chain of chains) {
+    for (const chain of chainList) {
       const chainAccounts = accountData[chain] ?? {};
       const chainBalanceData = balanceData[chain];
       if (!chainBalanceData)
         return [];
 
       for (const address in chainBalanceData) {
+        if (groupId && address !== groupId)
+          continue;
+
         const balance = chainBalanceData[address];
         const assetAssociations = getAssetAssociationIdentifiers(asset);
         assetAssociations.forEach((asset) => {
@@ -281,8 +284,8 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     if (addressAssets) {
       const { assets, liabilities } = addressAssets;
       return {
-        assets: Object.entries(assets).map(([asset, balance]) => ({ asset, ...balance })),
-        liabilities: !liabilities ? [] : Object.entries(liabilities).map(([asset, balance]) => ({ asset, ...balance })),
+        assets: Object.entries(get(mergeAssociatedAssets(assets, getAssociatedAssetIdentifier))).map(([asset, balance]) => ({ asset, ...balance })),
+        liabilities: !liabilities ? [] : Object.entries(get(mergeAssociatedAssets(liabilities, getAssociatedAssetIdentifier))).map(([asset, balance]) => ({ asset, ...balance })),
       };
     }
 

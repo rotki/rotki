@@ -7,39 +7,54 @@ import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 const props = withDefaults(
   defineProps<{
     identifier: string;
+    assets: string[];
+    details?: {
+      groupId: string;
+      chains: string[];
+    };
     blockchainOnly?: boolean;
     showPercentage?: boolean;
-    total?: BigNumber | null;
-    breakdown?: AssetBreakdown[];
+    total?: BigNumber;
   }>(),
   {
     blockchainOnly: false,
     showPercentage: false,
-    total: null,
+    total: undefined,
   },
 );
 
 const { t } = useI18n();
 
-const { identifier, blockchainOnly, showPercentage, total, breakdown: breakdownProps } = toRefs(props);
+const { blockchainOnly, showPercentage, total } = toRefs(props);
 const { getBreakdown } = useBlockchainStore();
 const { assetBreakdown } = useBalancesBreakdown();
-
 const { getChain } = useSupportedChains();
 
-const breakdowns = computed(() => {
-  const asset = get(identifier);
-  const breakdown = isDefined(breakdownProps)
-    ? get(breakdownProps)
-    : (
-        get(blockchainOnly) ? get(getBreakdown(asset)) : get(assetBreakdown(asset))
-      );
+const breakdown = computed<Record<string, AssetBreakdown[]>>(() => {
+  const assets = props.assets.length > 0 ? props.assets : [props.identifier];
+  const breakdown: Record<string, AssetBreakdown[]> = {};
 
-  return groupAssetBreakdown(breakdown, (item) => {
+  for (const asset of assets) {
+    const details = props.details;
+    if (details)
+      breakdown[asset] = get(getBreakdown(asset, details.chains, details.groupId));
+    else if (get(blockchainOnly))
+      breakdown[asset] = get(getBreakdown(asset));
+    else
+      breakdown[asset] = get(assetBreakdown(asset));
+  }
+
+  return breakdown;
+});
+
+const rows = computed<AssetBreakdown[]>(() => {
+  const data: AssetBreakdown[] = Object.values(get(breakdown)).reduce((acc, item) => {
+    acc.push(...item);
+    return acc;
+  }, []);
+  return groupAssetBreakdown(data, item =>
     // TODO: Remove this when https://github.com/rotki/rotki/issues/6725 is resolved.
-    const location = item.location;
-    return getChain(location, null) || location;
-  });
+    getChain(item.location, null) || item.location);
 });
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -49,13 +64,20 @@ const sort = ref<DataTableSortData<AssetBreakdown>>({
   direction: 'desc' as const,
 });
 
-const tableHeaders = computed<DataTableColumn<AssetBreakdown>[]>(() => {
+const cols = computed<DataTableColumn<AssetBreakdown>[]>(() => {
   const headers: DataTableColumn<AssetBreakdown>[] = [
     {
       label: t('common.location'),
       key: 'location',
       align: 'center',
       class: 'text-no-wrap',
+      cellClass: 'py-2',
+      sortable: true,
+    },
+    {
+      key: 'tokens',
+      align: 'end',
+      class: 'w-full',
       cellClass: 'py-2',
       sortable: true,
     },
@@ -103,8 +125,8 @@ function percentage(value: BigNumber) {
 <template>
   <RuiDataTable
     v-model:sort="sort"
-    :cols="tableHeaders"
-    :rows="breakdowns"
+    :cols="cols"
+    :rows="rows"
     :empty="{ description: t('data_table.no_data') }"
     row-attr="location"
     outlined
