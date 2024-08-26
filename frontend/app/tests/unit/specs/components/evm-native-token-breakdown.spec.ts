@@ -137,8 +137,9 @@ describe('evmNativeTokenBreakdown.vue', () => {
       ...options,
     });
 
-  it('should show correct entries', () => {
-    wrapper = createWrapper({ props: { identifier: 'ETH' } });
+  it('should show correct entries', async () => {
+    wrapper = createWrapper({ props: { identifier: 'ETH', assets: [] } });
+    await nextTick();
     const expectedResult = [
       {
         location: 'ethereum',
@@ -165,15 +166,16 @@ describe('evmNativeTokenBreakdown.vue', () => {
     expectedResult.forEach((result, index) => {
       const tr = wrapper.find(`tbody tr:nth-child(${index + 1})`);
       expect(tr.find('td:first-child').text()).toBe(result.location);
-      expect(tr.find('td:nth-child(2)').text()).toBe(result.amount.toFormat(2));
-      expect(tr.find('td:nth-child(3)').text()).toContain(result.usdValue.toFormat(2));
+      expect(tr.find('td:nth-child(3)').text()).toBe(result.amount.toFormat(2));
+      expect(tr.find('td:nth-child(4)').text()).toContain(result.usdValue.toFormat(2));
     });
   });
 
-  it('should show correct entries for blockchainOnly=true', () => {
+  it('should show correct entries for blockchainOnly=true', async () => {
     wrapper = createWrapper({
-      props: { identifier: 'ETH', blockchainOnly: true },
+      props: { identifier: 'ETH', blockchainOnly: true, assets: [] },
     });
+    await nextTick();
     const expectedResult = [
       {
         location: 'ethereum',
@@ -190,8 +192,8 @@ describe('evmNativeTokenBreakdown.vue', () => {
     expectedResult.forEach((result, index) => {
       const tr = wrapper.find(`tbody tr:nth-child(${index + 1})`);
       expect(tr.find('td:first-child').text()).toBe(result.location);
-      expect(tr.find('td:nth-child(2)').text()).toBe(result.amount.toFormat(2));
-      expect(tr.find('td:nth-child(3)').text()).toContain(result.usdValue.toFormat(2));
+      expect(tr.find('td:nth-child(3)').text()).toBe(result.amount.toFormat(2));
+      expect(tr.find('td:nth-child(4)').text()).toContain(result.usdValue.toFormat(2));
     });
   });
 });

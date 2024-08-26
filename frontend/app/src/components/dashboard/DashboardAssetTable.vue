@@ -310,6 +310,7 @@ watch(search, () => setPage(1));
           v-if="isEvmNativeToken(row.asset)"
           show-percentage
           :total="row.usdValue"
+          :assets="row.breakdown?.map(entry => entry.asset) ?? []"
           :identifier="row.asset"
           class="bg-white dark:bg-[#1E1E1E] my-2"
         />
