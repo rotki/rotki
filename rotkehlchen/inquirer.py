@@ -20,6 +20,7 @@ from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.evm.utils import lp_price_from_uniswaplike_pool_contract
+from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_POL_HARDFORK
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_3CRV,
@@ -46,6 +47,7 @@ from rotkehlchen.constants.assets import (
     A_FARM_WETH,
     A_GUSD,
     A_KFEE,
+    A_POLYGON_POS_MATIC,
     A_TUSD,
     A_USD,
     A_USDC,
@@ -479,6 +481,9 @@ class Inquirer:
         - RecursionError if `coming_from_latest_price` is True. Used in the ManualCurrentOracle
         """
         price, used_main_currency, is_error = ZERO_PRICE, False, True
+
+        if from_asset == A_POLYGON_POS_MATIC and ts_now() > POLYGON_POS_POL_HARDFORK:  # after hardfork, we use different oracles  # noqa: E501
+            from_asset = AssetWithOracles('eip155:1/erc20:0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6')  # POL token  # noqa: E501
         try:
             price, used_main_currency, is_error = *oracle_instance.query_current_price(
                 from_asset=from_asset,

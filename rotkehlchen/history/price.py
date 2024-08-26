@@ -6,8 +6,9 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_POL_HARDFORK
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_KFEE, A_USD
+from rotkehlchen.constants.assets import A_KFEE, A_POLYGON_POS_MATIC, A_USD
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
@@ -151,6 +152,12 @@ class PriceHistorian:
                 timestamp=timestamp,
             )
             return Price(usd_price * price_mapping)
+        if from_asset == A_POLYGON_POS_MATIC and timestamp > POLYGON_POS_POL_HARDFORK:
+            return PriceHistorian.query_historical_price(
+                from_asset=Asset('eip155:1/erc20:0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6'),  # POL token  # noqa: E501,
+                to_asset=to_asset,
+                timestamp=timestamp,
+            )
         return None
 
     @staticmethod
