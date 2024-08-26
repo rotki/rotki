@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`7349` Rotki's CSV importers will now report the number of successfully imported and total entries, and each error message will include the line number of the problematic entry.
 * :feature:`8147` Users can now import data from Blockpit into rotki.
 * :feature:`-` Rotki will now decode interest earned from aave v3 as independent events.
 * :feature:`-` Rotki will now decode Optimism DAI bridging

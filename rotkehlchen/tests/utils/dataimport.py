@@ -41,6 +41,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.rotkehlchen import Rotkehlchen
+from rotkehlchen.tests.fixtures.websockets import WebsocketReader
 from rotkehlchen.tests.utils.constants import A_AXS, A_CRO, A_GBP, A_KCS, A_MCO, A_XMR, A_XTZ
 from rotkehlchen.types import (
     AssetAmount,
@@ -59,7 +60,7 @@ def get_cryptocom_note(desc: str):
     return f'{desc}\nSource: crypto.com (CSV import)'
 
 
-def assert_cointracking_import_results(rotki: Rotkehlchen):
+def assert_cointracking_import_results(rotki: Rotkehlchen, websocket_connection: WebsocketReader):
     """A utility function to help assert on correctness of importing data from cointracking.info"""
     dbevents = DBHistoryEvents(rotki.data.db)
     with rotki.data.db.conn.read_ctx() as cursor:
@@ -74,7 +75,23 @@ def assert_cointracking_import_results(rotki: Rotkehlchen):
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
-    assert len(warnings) == 4
+    assert len(warnings) == 0
+    websocket_connection.wait_until_messages_num(num=1, timeout=10)
+    assert websocket_connection.pop_message() == {
+        'type': 'csv_import_result',
+        'data': {
+            'source_name': 'Cointracking',
+            'total_entries': 12,
+            'imported_entries': 7,
+            'messages': [
+                {'msg': 'Not importing ETH Transactions from Cointracking. Cointracking does not export enough data for them. Simply enter your ethereum accounts and all your transactions will be auto imported directly from the chain', 'rows': [1, 2], 'is_error': True},  # noqa: E501
+                {'msg': 'Not importing BTC Transactions from Cointracking. Cointracking does not export enough data for them. Simply enter your BTC accounts and all your transactions will be auto imported directly from the chain', 'rows': [5], 'is_error': True},  # noqa: E501
+                {'msg': 'Unknown asset ADS.', 'rows': [9], 'is_error': True},
+                {'msg': 'Staking event for eip155:1/erc20:0xBB0E17EF65F82Ab018d8EDd776e8DD940327B28b(Axie Infinity Shard) at 1641386280 already exists in the DB', 'rows': [12]},  # noqa: E501
+            ],
+        },
+    }
+    assert websocket_connection.messages_num() == 0
 
     expected_trades = [Trade(
         timestamp=Timestamp(1566687719),
@@ -724,7 +741,7 @@ def assert_blockfi_trades_import_results(rotki: Rotkehlchen):
     assert trades == expected_trades
 
 
-def assert_nexo_results(rotki: Rotkehlchen):
+def assert_nexo_results(rotki: Rotkehlchen, websocket_connection: WebsocketReader):
     """A utility function to help assert on correctness of importing data from nexo"""
     with rotki.data.db.conn.read_ctx() as cursor:
         events_db = DBHistoryEvents(rotki.data.db)
@@ -741,8 +758,21 @@ def assert_nexo_results(rotki: Rotkehlchen):
     warnings = rotki.msg_aggregator.consume_warnings()
     errors = rotki.msg_aggregator.consume_errors()
     assert len(errors) == 0
-    assert len(warnings) == 2
-    assert 'Found exchange/credit card status transaction in nexo csv' in str(warnings)
+    assert len(warnings) == 0
+    websocket_connection.wait_until_messages_num(num=1, timeout=10)
+    assert websocket_connection.pop_message() == {
+        'type': 'csv_import_result',
+        'data': {
+            'source_name': 'Nexo',
+            'total_entries': 23,
+            'imported_entries': 19,
+            'messages': [
+                {'msg': 'Ignoring rejected entry.', 'rows': [2, 8]},
+                {'msg': 'Found exchange/credit card status transaction in nexo csv import but the entry will be ignored since not enough information is provided about the trade.', 'rows': [7, 15], 'is_error': True},  # noqa: E501
+            ],
+        },
+    }
+    assert websocket_connection.messages_num() == 0
 
     expected_events = [HistoryEvent(
         identifier=1,
@@ -1361,7 +1391,7 @@ def assert_bitmex_import_wallet_history(rotki: Rotkehlchen):
     assert len(errors) == 0
 
 
-def assert_binance_import_results(rotki: Rotkehlchen):
+def assert_binance_import_results(rotki: Rotkehlchen, websocket_connection: WebsocketReader):
     expected_trades = [
         Trade(
             timestamp=Timestamp(1603922583),
@@ -1825,6 +1855,17 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             notes='Reward from BNB Vault Rewards',
         ), HistoryEvent(
             identifier=16,
+            event_identifier='BNC_2d4a94bee000e141e2f5b63195fc805d28757e6f2b7cc8f7af9488e9c3ea3f1b',
+            sequence_index=0,
+            timestamp=ts_sec_to_ms(Timestamp(1686538886)),
+            location=Location.BINANCE, event_type=HistoryEventType.STAKING,
+            event_subtype=HistoryEventSubType.REMOVE_ASSET,
+            asset=A_BNB,
+            balance=Balance(amount=FVal('0.95901726')),
+            location_label='CSV import',
+            notes='Unstake eip155:1/erc20:0xB8c77482e45F1F44dE1745F52C74426C631bDD52(Binance Coin) in Staking Redemption',  # noqa: E501
+        ), HistoryEvent(
+            identifier=17,
             event_identifier='BNC_60fcc311b4f38019dde25c9c55b28058faf57f602ecf3d775004515ff934a152',
             sequence_index=0,
             timestamp=ts_sec_to_ms(Timestamp(1686539468)),
@@ -1835,7 +1876,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             location_label='CSV import',
             notes='Deposit in Staking Purchase',
         ), HistoryEvent(
-            identifier=17,
+            identifier=18,
             event_identifier='BNC_4259a864eeb6e39a046bbd4030a62d63bcaafebb36c4a5f55b00d1e78a90569e',
             sequence_index=0,
             timestamp=ts_sec_to_ms(Timestamp(1686543089)),
@@ -1846,7 +1887,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             location_label='CSV import',
             notes='Deposit in Simple Earn Locked Subscription',
         ), HistoryEvent(
-            identifier=18,
+            identifier=19,
             event_identifier='BNC_4b706868b7c8906507b66b1b35017dcaa9eec3c27e63563603e8aa7475243f81',
             sequence_index=0,
             timestamp=ts_sec_to_ms(Timestamp(1686824951)),
@@ -1857,7 +1898,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             location_label='CSV import',
             notes='Reward from Cash Voucher Distribution',
         ), HistoryEvent(
-            identifier=19,
+            identifier=20,
             event_identifier='BNC_6b282ed5ab3de42a924f008ed20e35ebcbbe1618b60c0a120c7c76278240f725',
             sequence_index=0,
             timestamp=ts_sec_to_ms(Timestamp(1686825000)),
@@ -1869,7 +1910,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             location_label='CSV import',
             notes='Reward from Mission Reward Distribution',
         ), HistoryEvent(
-            identifier=20,
+            identifier=21,
             event_identifier='BNC_d6a38298147f2c10d888205893ac2baeccad83d1dbed1477a3e2f4ddd943761f',
             sequence_index=0,
             timestamp=ts_sec_to_ms(Timestamp(1694505602)),
@@ -1881,7 +1922,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             location_label='CSV import',
             notes='0.07779065 USDT fee paid on binance USD-MFutures',
         ), HistoryEvent(
-            identifier=21,
+            identifier=22,
             event_identifier='BNC_982287169e9675e5c799ca2f9d2b7f345eb6be73dbe6cfdb60a161949fdf8c01',
             sequence_index=0,
             timestamp=ts_sec_to_ms(Timestamp(1694623421)),
@@ -1893,7 +1934,7 @@ def assert_binance_import_results(rotki: Rotkehlchen):
             location_label='CSV import',
             notes='0.05576000 USDT realized loss on binance USD-MFutures',
         ), HistoryEvent(
-            identifier=22,
+            identifier=23,
             event_identifier='BNC_cd4e771cb6692df31c11743419800b4ccd73c3ac2b4b3f948f731cf663c7db0a',
             sequence_index=0,
             timestamp=ts_sec_to_ms(Timestamp(1694623421)),
@@ -1909,7 +1950,6 @@ def assert_binance_import_results(rotki: Rotkehlchen):
 
     with rotki.data.db.conn.read_ctx() as cursor:
         trades = rotki.data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
-        warnings = rotki.msg_aggregator.consume_warnings()
         asset_movements = rotki.data.db.get_asset_movements(
             cursor,
             filter_query=AssetMovementsFilterQuery.make(),
@@ -1924,14 +1964,24 @@ def assert_binance_import_results(rotki: Rotkehlchen):
     assert trades == expected_trades
     assert asset_movements == expected_asset_movements
     assert expected_events == events
-    expected_warnings = [
-        '2 Binance rows have bad format. Check logs for details.',
-        'Skipped 4 rows during processing binance csv file. Check logs for details',
-    ]
-    assert warnings == expected_warnings
+    websocket_connection.wait_until_messages_num(num=1, timeout=10)
+    assert websocket_connection.pop_message() == {
+        'type': 'csv_import_result',
+        'data': {
+            'source_name': 'Binance',
+            'total_entries': 84,
+            'imported_entries': 78,
+            'messages': [
+                {'msg': 'Failed to deserialize a timestamp from a null entry in binance', 'rows': [4], 'is_error': True},  # noqa: E501
+                {'msg': 'Unknown asset "" provided.', 'rows': [5], 'is_error': True},
+                {'msg': 'Could not process CSV entry', 'rows': [31, 32, 33, 41], 'is_error': True},
+            ],
+        },
+    }
+    assert websocket_connection.messages_num() == 0
 
 
-def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen):
+def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen, websocket_connection: WebsocketReader):  # noqa: E501
     expected_trades = [
         Trade(  # Sell 1875.64 USDC for 1 ETH
             timestamp=Timestamp(1659085200),
@@ -1970,17 +2020,25 @@ def assert_rotki_generic_trades_import_results(rotki: Rotkehlchen):
     ]
     with rotki.data.db.conn.read_ctx() as cursor:
         trades = rotki.data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)  # noqa: E501
-        warnings = rotki.msg_aggregator.consume_warnings()
 
-    expected_warnings = [
-        'Deserialization error during rotki generic trades CSV import. Failed to deserialize Location value luno. Ignoring entry',  # noqa: E501
-        "During rotki generic trades import, csv row {'Location': 'bisq', 'Base Currency': 'eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F', 'Quote Currency': 'eip155:1/erc20:0xdAC17F958D2ee523a2206206994597C13D831ec7', 'Type': ' BuY ', 'Buy Amount': '0', 'Sell Amount': '4576.6400', 'Fee': '5.1345', 'Fee Currency': 'USD', 'Description': 'Trade USDT for DAI', 'Timestamp': '1659345600000'} has zero amount bought. Ignoring entry",  # noqa: E501
-    ]
     assert trades == expected_trades
-    assert warnings == expected_warnings
+    websocket_connection.wait_until_messages_num(num=1, timeout=10)
+    assert websocket_connection.pop_message() == {
+        'type': 'csv_import_result',
+        'data': {
+            'source_name': 'Rotki generic trades',
+            'total_entries': 5,
+            'imported_entries': 3,
+            'messages': [
+                {'msg': 'Deserialization error: Failed to deserialize Location value luno.', 'rows': [4], 'is_error': True},  # noqa: E501
+                {'msg': 'Entry has zero amount bought.', 'rows': [5], 'is_error': True},
+            ],
+        },
+    }
+    assert websocket_connection.messages_num() == 0
 
 
-def assert_rotki_generic_events_import_results(rotki: Rotkehlchen):
+def assert_rotki_generic_events_import_results(rotki: Rotkehlchen, websocket_connection: WebsocketReader):  # noqa: E501
     expected_history_events = [
         HistoryEvent(
             identifier=1,
@@ -2062,15 +2120,25 @@ def assert_rotki_generic_events_import_results(rotki: Rotkehlchen):
             has_premium=True,
         )
         warnings = rotki.msg_aggregator.consume_warnings()
-    expected_warnings = [
-        'Deserialization error during rotki generic events CSV import. Failed to deserialize Location value luno. Ignoring entry',  # noqa: E501
-        'Deserialization error during rotki generic events CSV import. Failed to deserialize Location value cex. Ignoring entry',  # noqa: E501
-        "Unsupported entry Invalid. Data: {'Type': 'Invalid', 'Location': 'bisq', 'Currency': 'BCH', 'Amount': '0.3456', 'Fee': '', 'Fee Currency': '', 'Description': '', 'Timestamp': '1659686400000'}",  # noqa: E501
-    ]
+
     assert len(history_events) == 5
     assert len(expected_history_events) == 5
-    assert len(warnings) == 3
-    assert warnings == expected_warnings
+    assert len(warnings) == 0
+    websocket_connection.wait_until_messages_num(num=1, timeout=10)
+    assert websocket_connection.pop_message() == {
+        'type': 'csv_import_result',
+        'data': {
+            'source_name': 'Rotki generic events',
+            'total_entries': 7,
+            'imported_entries': 4,
+            'messages': [
+                {'msg': 'Deserialization error: Failed to deserialize Location value luno.', 'rows': [4], 'is_error': True},  # noqa: E501
+                {'msg': 'Deserialization error: Failed to deserialize Location value cex.', 'rows': [6], 'is_error': True},   # noqa: E501
+                {'msg': "Unsupported entry Invalid. Data: {'Type': 'Invalid', 'Location': 'bisq', 'Currency': 'BCH', 'Amount': '0.3456', 'Fee': '', 'Fee Currency': '', 'Description': '', 'Timestamp': '1659686400000'}", 'rows': [7], 'is_error': True},  # noqa: E501
+            ],
+        },
+    }
+    assert websocket_connection.messages_num() == 0
     for actual, expected in zip(history_events, expected_history_events, strict=True):
         assert_is_equal_history_event(actual=actual, expected=expected)
 

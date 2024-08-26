@@ -1,5 +1,4 @@
 import csv
-import logging
 from itertools import count
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
@@ -13,6 +12,7 @@ from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data_import.importers.constants import COINTRACKING_EVENT_PREFIX
 from rotkehlchen.data_import.utils import (
     BaseExchangeImporter,
+    SkippedCSVEntry,
     UnsupportedCSVEntry,
     detect_duplicate_event,
 )
@@ -23,7 +23,6 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_asset_amount_force_positive,
@@ -37,10 +36,6 @@ from rotkehlchen.utils.misc import ts_sec_to_ms
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
     from rotkehlchen.db.dbhandler import DBHandler
-
-
-logger = logging.getLogger(__name__)
-log = RotkehlchenLogsAdapter(logger)
 
 
 def remap_header(fieldnames: list[str]) -> list[str]:
@@ -91,9 +86,10 @@ def exchange_row_to_location(entry: str) -> Location:
 
 
 class CointrackingImporter(BaseExchangeImporter):
+    """Cointracking CSV importer"""
 
     def __init__(self, db: 'DBHandler') -> None:
-        super().__init__(db=db)
+        super().__init__(db=db, name='Cointracking')
         self.usd = A_USD.resolve_to_asset_with_oracles()
 
     def _consume_cointracking_entry(
@@ -202,8 +198,7 @@ class CointrackingImporter(BaseExchangeImporter):
                 importer=self,
                 write_cursor=write_cursor,
             ):
-                log.warning(f'Cointracking staking event for {asset} at {timestamp} already exists in the DB')  # noqa: E501
-                return
+                raise SkippedCSVEntry(f'Staking event for {asset} at {timestamp} already exists in the DB')  # noqa: E501
 
             event = HistoryEvent(
                 event_identifier=f'{COINTRACKING_EVENT_PREFIX}_{uuid4().hex}',
@@ -213,7 +208,7 @@ class CointrackingImporter(BaseExchangeImporter):
                 event_type=event_type,
                 event_subtype=event_subtype,
                 asset=asset,
-                balance=Balance(amount, ZERO),
+                balance=Balance(amount),
                 notes=f'Stake reward of {amount} {asset.symbol} in {location!s}',
             )
             self.add_history_events(write_cursor, [event])
@@ -235,29 +230,46 @@ class CointrackingImporter(BaseExchangeImporter):
         with open(filepath, encoding='utf-8-sig') as csvfile:
             data = csv.reader(csvfile, delimiter=',', quotechar='"')
             header = remap_header(next(data))
-            for row in data:
+            for index, row_values in enumerate(data, start=1):
+                row = dict(zip(header, row_values, strict=True))
                 try:
-                    self._consume_cointracking_entry(write_cursor, dict(zip(header, row, strict=True)), **kwargs)  # noqa: E501
+                    self.total_entries += 1
+                    self._consume_cointracking_entry(write_cursor, row, **kwargs)
+                    self.imported_entries += 1
                 except UnknownAsset as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'During cointracking CSV import found action with unknown '
-                        f'asset {e.identifier}. Ignoring entry',
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=f'Unknown asset {e.identifier}.',
+                        is_error=True,
                     )
-                    continue
                 except (IndexError, ValueError):
-                    self.db.msg_aggregator.add_warning(
-                        'During cointracking CSV import found entry with '
-                        'unexpected number of columns',
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg='Unexpected number of columns.',
+                        is_error=True,
                     )
-                    continue
                 except DeserializationError as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'Error during cointracking CSV import deserialization. '
-                        f'Error was {e!s}. Ignoring entry',
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=f'Deserialization error: {e!s}.',
+                        is_error=True,
                     )
-                    continue
                 except UnsupportedCSVEntry as e:
-                    self.db.msg_aggregator.add_warning(str(e))
-                    continue
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=str(e),
+                        is_error=True,
+                    )
+                except SkippedCSVEntry as e:
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=str(e),
+                        is_error=False,
+                    )
                 except KeyError as e:
                     raise InputError(f'Could not find key {e!s} in csv row {row!s}') from e

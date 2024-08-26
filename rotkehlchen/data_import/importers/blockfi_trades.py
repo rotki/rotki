@@ -1,11 +1,11 @@
 import csv
 import logging
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.converters import asset_from_blockfi
 from rotkehlchen.constants import ZERO
-from rotkehlchen.data_import.utils import BaseExchangeImporter
+from rotkehlchen.data_import.utils import BaseExchangeImporter, SkippedCSVEntry
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
@@ -18,11 +18,19 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import Location, Price, TradeType
 
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
 class BlockfiTradesImporter(BaseExchangeImporter):
+    """Blockfi trades CSV importer"""
+
+    def __init__(self, db: 'DBHandler') -> None:
+        super().__init__(db=db, name='Blockfi trades')
+
     def _consume_blockfi_trade(
             self,
             write_cursor: DBCursor,
@@ -46,8 +54,7 @@ class BlockfiTradesImporter(BaseExchangeImporter):
         sold_asset = asset_from_blockfi(csv_row['Sold Currency'])
         sold_amount = deserialize_asset_amount(csv_row['Sold Quantity'])
         if sold_amount == ZERO:
-            log.debug(f'Ignoring BlockFi trade with sold_amount equal to zero. {csv_row}')
-            return
+            raise SkippedCSVEntry('Trade has sold_amount equal to zero.')
         rate = Price(buy_amount / sold_amount)
         trade = Trade(
             timestamp=timestamp,
@@ -72,21 +79,31 @@ class BlockfiTradesImporter(BaseExchangeImporter):
         - InputError if one of the rows is malformed
         """
         with open(filepath, encoding='utf-8-sig') as csvfile:
-            data = csv.DictReader(csvfile)
-            for row in data:
+            for index, row in enumerate(csv.DictReader(csvfile), start=1):
                 try:
+                    self.total_entries += 1
                     self._consume_blockfi_trade(write_cursor, row, **kwargs)
+                    self.imported_entries += 1
                 except UnknownAsset as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'During BlockFi CSV import found action with unknown '
-                        f'asset {e.identifier}. Ignoring entry',
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=f'Unknown asset {e.identifier}.',
+                        is_error=True,
                     )
-                    continue
                 except DeserializationError as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'Deserialization error during BlockFi CSV import. '
-                        f'{e!s}. Ignoring entry',
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=f'Deserialization error: {e!s}.',
+                        is_error=True,
                     )
-                    continue
+                except SkippedCSVEntry as e:
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=str(e),
+                        is_error=False,
+                    )
                 except KeyError as e:
                     raise InputError(f'Could not find key {e!s} in csv row {row!s}') from e
