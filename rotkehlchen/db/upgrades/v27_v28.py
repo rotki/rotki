@@ -13,7 +13,7 @@ def upgrade_v27_to_v28(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     - Adds the Gitcoin tables
     """
     progress_handler.set_total_steps(1)
-    with db.user_write() as cursor:
+    with db.user_read_write() as cursor:
         cursor.execute(
             'SELECT COUNT(*) FROM sqlite_master WHERE type="yearn_vaults_events" AND name="version"',  # noqa: E501
         )

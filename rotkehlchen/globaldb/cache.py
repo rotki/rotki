@@ -4,7 +4,7 @@ from collections.abc import Iterable
 
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
 from rotkehlchen.types import (
     CacheType,
     ChainID,
@@ -36,7 +36,7 @@ def base_pool_tokens_key_length(chain_id: ChainID) -> int:
 
 
 def globaldb_set_general_cache_values_at_ts(
-        write_cursor: DBCursor,
+        write_cursor: DBWriterClient,
         key_parts: Iterable[str | GeneralCacheType],
         values: Iterable[str],
         timestamp: Timestamp,
@@ -53,7 +53,7 @@ def globaldb_set_general_cache_values_at_ts(
 
 
 def globaldb_set_general_cache_values(
-        write_cursor: DBCursor,
+        write_cursor: DBWriterClient,
         key_parts: Iterable[str | GeneralCacheType],
         values: Iterable[str],
 ) -> None:
@@ -68,7 +68,7 @@ def globaldb_set_general_cache_values(
 
 
 def globaldb_delete_general_cache_values(
-        write_cursor: DBCursor,
+        write_cursor: DBWriterClient,
         key_parts: Iterable[str | GeneralCacheType],
         values: tuple[str, ...] | None = None,
 ) -> None:
@@ -109,7 +109,7 @@ def globaldb_general_cache_exists(
 
 
 def globaldb_set_unique_cache_value_at_ts(
-        write_cursor: DBCursor,
+        write_cursor: DBWriterClient,
         key_parts: Iterable[str | UniqueCacheType],
         value: str,
         timestamp: Timestamp,
@@ -125,7 +125,7 @@ def globaldb_set_unique_cache_value_at_ts(
 
 
 def globaldb_set_unique_cache_value(
-        write_cursor: DBCursor,
+        write_cursor: DBWriterClient,
         key_parts: Iterable[str | UniqueCacheType],
         value: str,
 ) -> None:

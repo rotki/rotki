@@ -4,7 +4,7 @@ from typing import Any
 
 from rotkehlchen.assets.converters import asset_from_kucoin
 from rotkehlchen.data_import.utils import BaseExchangeImporter
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.client import DBWriterClient
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Trade
@@ -21,7 +21,7 @@ from rotkehlchen.types import Location, TradeType
 class KucoinImporter(BaseExchangeImporter):
     def _import_csv(
             self,
-            write_cursor: DBCursor,
+            write_cursor: DBWriterClient,
             filepath: Path,
             **kwargs: Any,
     ) -> None:

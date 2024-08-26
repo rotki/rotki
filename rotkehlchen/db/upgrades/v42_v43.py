@@ -13,7 +13,7 @@ from rotkehlchen.types import Location
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 logger = logging.getLogger(__name__)
@@ -102,7 +102,7 @@ def upgrade_v42_to_v43(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     - reset decoded evm events except for zksync lite and custom ones
     """
     progress_handler.set_total_steps(6)
-    with db.user_write() as write_cursor:
+    with db.user_read_write() as write_cursor:
         _add_usd_price_nft_table(write_cursor)
         progress_handler.new_step()
         _change_hop_counterparty_value(write_cursor)

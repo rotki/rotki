@@ -110,10 +110,9 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server):
         assert len(result) == 0
         assert filter_count == 0
 
-    def _add_zksynclitetxs(write_cursor):
+    def _add_zksynclitetxs():
         for i in range(2):
             rotki.chains_aggregator.zksync_lite._add_zksynctxs_db(
-                write_cursor=write_cursor,
                 transactions=[ZKSyncLiteTransaction(
                     tx_hash=make_evm_tx_hash(),
                     tx_type=ZKSyncLiteTXType.TRANSFER if i == 0 else ZKSyncLiteTXType.SWAP,
@@ -128,14 +127,14 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server):
                 )],
             )
 
-    def _assert_zksynclite_txs_num(cursor, tx_num, swap_num):
-        assert cursor.execute('SELECT COUNT(*) FROM zksynclite_transactions').fetchone()[0] == tx_num  # noqa: E501
-        assert cursor.execute('SELECT COUNT(*) FROM zksynclite_swaps').fetchone()[0] == swap_num
+    def _assert_zksynclite_txs_num(tx_num, swap_num):
+        with rotki.data.db.conn.read_ctx() as cursor:
+            assert cursor.execute('SELECT COUNT(*) FROM zksynclite_transactions').fetchone()[0] == tx_num  # noqa: E501
+            assert cursor.execute('SELECT COUNT(*) FROM zksynclite_swaps').fetchone()[0] == swap_num  # noqa: E501
 
     # now add a few zksync lite transactions
-    with rotki.data.db.user_write() as write_cursor:
-        _add_zksynclitetxs(write_cursor)
-        _assert_zksynclite_txs_num(write_cursor, tx_num=2, swap_num=1)
+    _add_zksynclitetxs()
+    _assert_zksynclite_txs_num(tx_num=2, swap_num=1)
 
     # see that purging without arguments removes the remaining
     # optimism, gnosis and zksync_lite transctions
@@ -150,12 +149,11 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server):
         result, filter_count = db.get_evm_transactions_and_limit_info(cursor, EvmTransactionsFilterQuery.make(), True)  # noqa: E501
         assert len(result) == 0
         assert filter_count == 0
-        _assert_zksynclite_txs_num(cursor, tx_num=0, swap_num=0)
+    _assert_zksynclite_txs_num(tx_num=0, swap_num=0)
 
     # re-add a few zksync lite transactions
-    with rotki.data.db.user_write() as write_cursor:
-        _add_zksynclitetxs(write_cursor)
-        _assert_zksynclite_txs_num(write_cursor, tx_num=2, swap_num=1)
+    _add_zksynclitetxs()
+    _assert_zksynclite_txs_num(tx_num=2, swap_num=1)
 
     # and check removing only zksync_lite by argument works
     response = requests.delete(
@@ -166,5 +164,4 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server):
         json={'chain': 'zksync_lite'},
     )
     assert_simple_ok_response(response)
-    with rotki.data.db.conn.read_ctx() as cursor:
-        _assert_zksynclite_txs_num(cursor, tx_num=0, swap_num=0)
+    _assert_zksynclite_txs_num(tx_num=0, swap_num=0)

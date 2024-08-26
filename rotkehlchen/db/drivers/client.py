@@ -4,18 +4,26 @@ but heavily modified"""
 
 import random
 import sqlite3
-from collections.abc import Generator, Sequence
+from collections.abc import Callable, Generator, Sequence
 from contextlib import contextmanager
-from enum import Enum, auto
 from pathlib import Path
 from types import TracebackType
-from typing import TYPE_CHECKING, Any, Literal, Optional, TypeAlias
+from typing import TYPE_CHECKING, Any, Literal, Optional, TypeAlias, overload
 from uuid import uuid4
 
 import gevent
+import zmq
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.db.checks import sanity_check_impl
+from rotkehlchen.db.drivers.server import (
+    DB_CONNECTION_ADDRESS,
+    DBConnectionType,
+    DbMethod,
+    SerializedZMQReturnData,
+    ZMQCallData,
+    ZMQReturnData,
+)
 from rotkehlchen.db.minimized_schema import MINIMIZED_USER_DB_SCHEMA
 from rotkehlchen.globaldb.minimized_schema import MINIMIZED_GLOBAL_DB_SCHEMA
 from rotkehlchen.greenlets.utils import get_greenlet_name
@@ -151,6 +159,12 @@ class DBCursor:
             logger.trace('FINISH CURSOR FETCHALL')
         return result
 
+    def rollback(self) -> None:
+        self.connection._conn.rollback()
+
+    def commit(self) -> None:
+        self.connection._conn.commit()
+
     @property
     def rowcount(self) -> int:
         return self._cursor.rowcount
@@ -163,10 +177,105 @@ class DBCursor:
         self._cursor.close()
 
 
-class DBConnectionType(Enum):
-    USER = auto()
-    TRANSIENT = auto()
-    GLOBAL = auto()
+class DBWriterClient:
+    def __init__(
+            self,
+            connection_type: 'DBConnectionType',
+            db_path: str,
+            zmq_connection: zmq.SyncSocket,
+            cursor_name: str | None = None,
+    ) -> None:
+        self.connection_type = connection_type
+        self.db_path = db_path
+        self.zmq_connection = zmq_connection
+        self.rowcount: int = 0
+        self.lastrowid: int = 0
+        self.cursor_name = cursor_name
+        if cursor_name is not None:
+            self._send(DbMethod.OPEN_CURSOR, cursor_name=cursor_name)
+
+    def _send(self, method: DbMethod, cursor_name: str | None = None, *args: Any, **kwargs: Any) -> None:  # noqa: E501
+        self.zmq_connection.send_pyobj(ZMQCallData(
+            connection_type=self.connection_type,
+            db_path=self.db_path,
+            cursor_name=cursor_name,
+            method=method,
+            args=args,
+            kwargs=kwargs,
+        ))
+        response: SerializedZMQReturnData | None = self.zmq_connection.recv_pyobj()
+        if response is None:
+            return
+        result = ZMQReturnData.deserialize(response)
+        if result.error is not None:
+            raise result.error
+        if result.result is not None:
+            self.lastrowid = result.result['lastrowid']
+            self.rowcount = result.result['rowcount']
+
+    def connect(self, *args: Any, **kwargs: Any) -> None:
+        gevent.wait([gevent.spawn(
+            self._send,
+            DbMethod.INITIALIZE,
+            *args,
+            **kwargs | {'database': self.db_path},
+        )])
+
+    def execute(self, statement: str, *bindings: Sequence[Any]) -> None:
+        if __debug__:
+            logger.trace(f'EXECUTE {statement}')
+        try:
+            self._send(DbMethod.EXECUTE, self.cursor_name, statement, *bindings)
+        except (sqlcipher.InterfaceError, sqlite3.InterfaceError):  # pylint: disable=no-member
+            # Long story. Don't judge me. https://github.com/rotki/rotki/issues/5432
+            logger.debug(f'{statement} with {bindings} failed due to https://github.com/rotki/rotki/issues/5432. Retrying')  # noqa: E501
+            self._send(DbMethod.EXECUTE, self.cursor_name, statement, *bindings)
+
+        if __debug__:
+            logger.trace(f'FINISH EXECUTE {statement}')
+
+    def executemany(self, statement: str, *bindings: Sequence[Sequence]) -> None:
+        if __debug__:
+            logger.trace(f'EXECUTEMANY {statement}')
+        self._send(DbMethod.EXECUTEMANY, self.cursor_name, statement, *bindings)
+        if __debug__:
+            logger.trace(f'FINISH EXECUTEMANY {statement}')
+
+    def executescript(self, script: str) -> None:
+        """Remember this always issues a COMMIT before
+        https://docs.python.org/3/library/sqlite3.html#sqlite3.Cursor.executescript
+        """
+        if __debug__:
+            logger.trace(f'EXECUTESCRIPT {script}')
+        self._send(DbMethod.EXECUTESCRIPT, self.cursor_name, script)
+        if __debug__:
+            logger.trace(f'FINISH EXECUTESCRIPT {script}')
+
+    def rollback(self) -> None:
+        self._send(DbMethod.ROLLBACK)
+
+    def commit(self) -> None:
+        self._send(DbMethod.COMMIT)
+
+    def close(self) -> None:
+        self._send(DbMethod.CLOSE_CURSOR)
+
+    def close_connection(self) -> None:
+        self._send(DbMethod.CLOSE)
+
+    def switch_foreign_keys(
+            self,
+            on_or_off: Literal['ON', 'OFF'],
+            restart_transaction: bool = True,
+    ) -> None:
+        """
+        Switches foreign keys ON or OFF depending on `on_or_off`. Important! When switching
+        foreign keys a commit always happens which means that if you had a transaction, it might
+        need to be restarted which this function does if `restart_transaction` is True.
+        """
+        self.executescript(f'PRAGMA foreign_keys={on_or_off};')
+        if restart_transaction is True:
+            self.execute('BEGIN TRANSACTION')
 
 
 # This is a global connection map to be able to get the connection from inside the
@@ -239,9 +348,11 @@ class DBConnection:
             path: str | Path,
             connection_type: DBConnectionType,
             sql_vm_instructions_cb: int,
+            db_writer_port: int,
     ) -> None:
         CONNECTION_MAP[connection_type] = self
         self._conn: UnderlyingConnection
+        self.db_path = str(path)
         self.in_callback = gevent.lock.Semaphore()
         self.transaction_lock = gevent.lock.Semaphore()
         self.connection_type = connection_type
@@ -253,58 +364,63 @@ class DBConnection:
         # https://www.gevent.org/api/gevent.greenlet.html#gevent.Greenlet.minimal_ident
         self.savepoint_greenlet_id: str | None = None
         self.write_greenlet_id: str | None = None
-        if connection_type == DBConnectionType.GLOBAL:
-            self._conn = sqlite3.connect(
-                database=path,
-                check_same_thread=False,
-                isolation_level=None,
-            )
-        else:
-            self._conn = sqlcipher.connect(  # pylint: disable=no-member
-                database=str(path),
-                check_same_thread=False,
-                isolation_level=None,
-            )
+        connect_func = sqlite3.connect if connection_type == DBConnectionType.GLOBAL else sqlcipher.connect  # noqa: E501  # pylint: disable=no-member
+        connect_kwargs = {
+            'check_same_thread': False,
+            'isolation_level': None,
+        }
+        self._conn = connect_func(**connect_kwargs | {'database': str(path)})
         self._set_progress_handler()
         self.minimized_schema = None
         if connection_type == DBConnectionType.USER:
             self.minimized_schema = MINIMIZED_USER_DB_SCHEMA
         elif connection_type == DBConnectionType.GLOBAL:
             self.minimized_schema = MINIMIZED_GLOBAL_DB_SCHEMA
+        self.zmq_connection = zmq.Context().socket(zmq.REQ)
+        self.zmq_connection.connect(f'{DB_CONNECTION_ADDRESS}:{db_writer_port}')
+        DBWriterClient(
+            connection_type=self.connection_type,
+            db_path=self.db_path,
+            zmq_connection=self.zmq_connection,
+        ).connect(**connect_kwargs)
 
-    def execute(self, statement: str, *bindings: Sequence) -> DBCursor:
+    def execute(self, statement: str, *bindings: Sequence) -> None:
+        """Execute a query and return the cursor.
+
+        Note: This should only be used for writing queries."""
         if __debug__:
             logger.trace(f'DB CONNECTION EXECUTE {statement}')
-        underlying_cursor = self._conn.execute(statement, *bindings)
+        self.write_conn(cursor_name=None).execute(statement, *bindings)
         if __debug__:
             logger.trace(f'FINISH DB CONNECTION EXECUTEMANY {statement}')
-        return DBCursor(connection=self, cursor=underlying_cursor)
 
-    def executemany(self, statement: str, *bindings: Sequence[Sequence]) -> DBCursor:
+    def executemany(self, statement: str, *bindings: Sequence[Sequence]) -> None:
+        """Execute a query with multiple bindings and return the cursor.
+
+        Note: This should only be used for writing queries."""
         if __debug__:
             logger.trace(f'DB CONNECTION EXECUTEMANY {statement}')
-        underlying_cursor = self._conn.executemany(statement, *bindings)
+        self.write_conn(cursor_name=None).executemany(statement, *bindings)
         if __debug__:
             logger.trace(f'FINISH DB CONNECTION EXECUTEMANY {statement}')
-        return DBCursor(connection=self, cursor=underlying_cursor)
 
-    def executescript(self, script: str) -> DBCursor:
+    def executescript(self, script: str) -> None:
         """Remember this always issues a COMMIT before
         https://docs.python.org/3/library/sqlite3.html#sqlite3.Cursor.executescript
-        """
+
+        Note: This should only be used for writing queries."""
         if __debug__:
             logger.trace(f'DB CONNECTION EXECUTESCRIPT {script}')
-        underlying_cursor = self._conn.executescript(script)
+        self.write_conn(cursor_name=None).executescript(script)
         if __debug__:
             logger.trace(f'DB CONNECTION EXECUTESCRIPT {script}')
-        return DBCursor(connection=self, cursor=underlying_cursor)
 
     def commit(self) -> None:
         with self.in_callback:
             if __debug__:
                 logger.trace('START DB CONNECTION COMMIT')
             try:
-                self._conn.commit()
+                self.write_conn(cursor_name=None).commit()
             finally:
                 if __debug__:
                     logger.trace('FINISH DB CONNECTION COMMIT')
@@ -314,7 +430,7 @@ class DBConnection:
             if __debug__:
                 logger.trace('START DB CONNECTION ROLLBACK')
             try:
-                self._conn.rollback()
+                self.write_conn(cursor_name=None).rollback()
             finally:
                 if __debug__:
                     logger.trace('FINISH DB CONNECTION ROLLBACK')
@@ -322,9 +438,22 @@ class DBConnection:
     def cursor(self) -> DBCursor:
         return DBCursor(connection=self, cursor=self._conn.cursor())
 
+    def write_conn(self, cursor_name: str | None = 'default') -> DBWriterClient:
+        return DBWriterClient(
+            connection_type=self.connection_type,
+            db_path=self.db_path,
+            zmq_connection=self.zmq_connection,
+            cursor_name=cursor_name,
+        )
+
     def close(self) -> None:
         self._conn.close()
+        self.write_conn(cursor_name=None).close_connection()
         CONNECTION_MAP.pop(self.connection_type, None)
+
+    def __del__(self) -> None:
+        self._conn.close()
+        self.zmq_connection.close()
 
     @contextmanager
     def read_ctx(self) -> Generator['DBCursor', None, None]:
@@ -334,15 +463,28 @@ class DBConnection:
         finally:
             cursor.close()
 
-    @contextmanager
-    def write_ctx(self, commit_ts: bool = False) -> Generator['DBCursor', None, None]:
-        """Opens a transaction to the database. This should be used kept open for
-        as little time as possible.
+    @overload
+    def _internal_write_ctx(
+            self: 'DBConnection',
+            connection_opener: Callable[..., DBCursor],
+            commit_ts: bool,
+    ) -> Generator['DBCursor', None, None]:
+        ...
 
-        It's possible that a write transaction tries to be opened when savepoints are being used.
-        In order for savepoints to work then, we will need to open a savepoint instead of a write
-        transaction in that case. This should be used sparingly.
-        """
+    @overload
+    def _internal_write_ctx(
+            self: 'DBConnection',
+            connection_opener: Callable[..., DBWriterClient],
+            commit_ts: bool,
+    ) -> Generator['DBWriterClient', None, None]:
+        ...
+
+    def _internal_write_ctx(
+            self: 'DBConnection',
+            connection_opener: Callable[..., DBCursor | DBWriterClient],
+            commit_ts: bool = False,
+    ) -> Generator['DBCursor | DBWriterClient', None, None]:
+        cursor: DBCursor | DBWriterClient
         if len(self.savepoints) != 0:
             current_id = get_greenlet_name(gevent.getcurrent())
             if current_id != self.savepoint_greenlet_id:
@@ -356,13 +498,13 @@ class DBConnection:
                     return
         # else
         with self.critical_section(), self.transaction_lock:
-            cursor = self.cursor()
+            cursor = connection_opener()
             self.write_greenlet_id = get_greenlet_name(gevent.getcurrent())
             cursor.execute('BEGIN TRANSACTION')
             try:
                 yield cursor
             except Exception:
-                self._conn.rollback()
+                cursor.rollback()
                 raise
             else:
                 if commit_ts is True:
@@ -373,16 +515,33 @@ class DBConnection:
                     # last_write_ts in not cached to cached settings. This is a critical section
                     # and adding even one more function call can have very ugly and
                     # detrimental effects in the entire codebase as everything calls this.
-                self._conn.commit()
+                cursor.commit()
             finally:
                 cursor.close()
                 self.write_greenlet_id = None
 
     @contextmanager
+    def write_ctx(self, commit_ts: bool = False) -> Generator['DBWriterClient', None, None]:
+        """Opens a transaction to the database. This should be used kept open for
+        as little time as possible.
+
+        It's possible that a write transaction tries to be opened when savepoints are being used.
+        In order for savepoints to work then, we will need to open a savepoint instead of a write
+        transaction in that case. This should be used sparingly.
+        """
+        return self._internal_write_ctx(self.write_conn, commit_ts=commit_ts)
+
+    @contextmanager
+    def read_write_ctx(self, commit_ts: bool = False) -> Generator['DBCursor', None, None]:
+        """WARNING: This should only be used in places where no other process is writing to the DB.
+        For example at the time of DB upgrades."""
+        return self._internal_write_ctx(self.cursor, commit_ts=commit_ts)
+
+    @contextmanager
     def savepoint_ctx(
             self,
             savepoint_name: str | None = None,
-    ) -> Generator['DBCursor', None, None]:
+    ) -> Generator['DBWriterClient', None, None]:
         """
         Creates a savepoint context with the provided name. If the code inside the savepoint fails,
         rolls back this savepoint, otherwise releases it (aka forgets it -- this is not commited to the DB).
@@ -392,13 +551,12 @@ class DBConnection:
         try:
             yield cursor
         except Exception:
-            self.rollback_savepoint(savepoint_name)
+            self.rollback_savepoint(cursor, savepoint_name)
             raise
         finally:
-            self.release_savepoint(savepoint_name)
-            cursor.close()
+            self.release_savepoint(cursor, savepoint_name)
 
-    def _enter_savepoint(self, savepoint_name: str | None = None) -> tuple['DBCursor', str]:
+    def _enter_savepoint(self, savepoint_name: str | None = None) -> tuple['DBWriterClient', str]:
         """
         Creates an sqlite savepoint with the given name. If None is given, a uuid is created.
         Returns cursor and savepoint's name.
@@ -413,7 +571,7 @@ class DBConnection:
             savepoint_name = str(uuid4())
 
         current_id = get_greenlet_name(gevent.getcurrent())
-        if self._conn.in_transaction is True and self.write_greenlet_id != current_id:
+        if self.transaction_lock.locked() and self.write_greenlet_id != current_id:
             # a transaction is open in a different greenlet
             while self.write_greenlet_id is not None:
                 gevent.sleep(CONTEXT_SWITCH_WAIT)  # wait until that transaction ends
@@ -427,7 +585,7 @@ class DBConnection:
                 f'Wanted to enter savepoint {savepoint_name} but a savepoint with the same name '
                 f'already exists. Current savepoints: {list(self.savepoints)}',
             )
-        cursor = self.cursor()
+        cursor = self.write_conn(cursor_name=savepoint_name)
         cursor.execute(f'SAVEPOINT "{savepoint_name}"')
         self.savepoints[savepoint_name] = None
         self.savepoint_greenlet_id = current_id
@@ -436,6 +594,7 @@ class DBConnection:
     def _modify_savepoint(
             self,
             rollback_or_release: Literal['ROLLBACK TO', 'RELEASE'],
+            cursor: 'DBWriterClient',
             savepoint_name: str | None,
     ) -> None:
         if len(self.savepoints) == 0:
@@ -451,7 +610,7 @@ class DBConnection:
                 f'Incorrect use of savepoints! Wanted to {rollback_or_release.lower()} savepoint '
                 f'{savepoint_name}, but it is not present in the stack: {list_savepoints}',
             )
-        self.execute(f'{rollback_or_release} SAVEPOINT "{savepoint_name}"')
+        cursor.execute(f'{rollback_or_release} SAVEPOINT "{savepoint_name}"')
 
         # Release all savepoints until, and including, the one with name `savepoint_name`.
         # For rollback we don't remove the savepoints since they are not released yet.
@@ -460,21 +619,37 @@ class DBConnection:
             if len(self.savepoints) == 0:  # mark if we are out of all savepoints
                 self.savepoint_greenlet_id = None
 
-    def rollback_savepoint(self, savepoint_name: str | None = None) -> None:
+    def rollback_savepoint(
+            self,
+            cursor: 'DBWriterClient',
+            savepoint_name: str | None = None,
+    ) -> None:
         """
         Rollbacks to `savepoint_name` if given and to the latest savepoint otherwise.
         May raise:
         - ContextError if savepoints stack is empty or given savepoint name is not in the stack
         """
-        self._modify_savepoint(rollback_or_release='ROLLBACK TO', savepoint_name=savepoint_name)
+        self._modify_savepoint(
+            rollback_or_release='ROLLBACK TO',
+            savepoint_name=savepoint_name,
+            cursor=cursor,
+        )
 
-    def release_savepoint(self, savepoint_name: str | None = None) -> None:
+    def release_savepoint(
+            self,
+            cursor: 'DBWriterClient',
+            savepoint_name: str | None = None,
+    ) -> None:
         """
         Releases (aka forgets) `savepoint_name` if given and the latest savepoint otherwise.
         May raise:
         - ContextError if savepoints stack is empty or given savepoint name is not in the stack
         """
-        self._modify_savepoint(rollback_or_release='RELEASE', savepoint_name=savepoint_name)
+        self._modify_savepoint(
+            rollback_or_release='RELEASE',
+            savepoint_name=savepoint_name,
+            cursor=cursor,
+        )
 
     @contextmanager
     def critical_section(self) -> Generator[None, None, None]:
@@ -493,12 +668,6 @@ class DBConnection:
     def critical_section_and_transaction_lock(self) -> Generator[None, None, None]:
         with self.critical_section(), self.transaction_lock:
             yield
-
-    @property
-    def total_changes(self) -> int:
-        """total number of database rows that have been modified, inserted,
-        or deleted since the database connection was opened"""
-        return self._conn.total_changes
 
     def schema_sanity_check(self) -> None:
         """Ensures that database schema is not broken.

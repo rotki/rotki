@@ -40,7 +40,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.chain.evm.structures import EvmTxReceipt
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
     from rotkehlchen.types import EvmTransaction
 
 
@@ -564,11 +564,10 @@ class EvmTransactions(ABC):  # noqa: B024
                 evm_transactions=[transaction],
                 relevant_address=relevant_address,
             )
-            self.dbevmtx.add_or_ignore_receipt_data(
-                write_cursor=write_cursor,
-                chain_id=self.evm_inquirer.chain_id,
-                data=raw_receipt_data,
-            )
+        self.dbevmtx.add_or_ignore_receipt_data(
+            chain_id=self.evm_inquirer.chain_id,
+            data=raw_receipt_data,
+        )
 
         tx_data = cursor.execute(query, bindings).fetchone()
         tx_receipt = self.dbevmtx.get_receipt(cursor, tx_hash, self.evm_inquirer.chain_id)
@@ -692,12 +691,10 @@ class EvmTransactions(ABC):  # noqa: B024
             )
 
         tx_receipt_raw_data = self.evm_inquirer.get_transaction_receipt(tx_hash=GENESIS_HASH)
-        with self.database.user_write() as write_cursor:
-            self.dbevmtx.add_or_ignore_receipt_data(
-                write_cursor=write_cursor,
-                chain_id=self.evm_inquirer.chain_id,
-                data=tx_receipt_raw_data,
-            )
+        self.dbevmtx.add_or_ignore_receipt_data(
+            chain_id=self.evm_inquirer.chain_id,
+            data=tx_receipt_raw_data,
+        )
 
         with self.database.conn.read_ctx() as cursor:
             tx_receipt = self.dbevmtx.get_receipt(
@@ -775,12 +772,10 @@ class EvmTransactions(ABC):  # noqa: B024
                     log.warning(f'Failed to query information for {self.evm_inquirer.chain_name} transaction {entry.hex()} due to {e!s}. Skipping...')  # noqa: E501
                     continue
 
-                with self.database.user_write() as write_cursor:
-                    self.dbevmtx.add_or_ignore_receipt_data(
-                        write_cursor=write_cursor,
-                        chain_id=self.evm_inquirer.chain_id,
-                        data=tx_receipt_data,
-                    )
+                self.dbevmtx.add_or_ignore_receipt_data(
+                    chain_id=self.evm_inquirer.chain_id,
+                    data=tx_receipt_data,
+                )
 
     def add_transaction_by_hash(
             self,
@@ -819,11 +814,10 @@ class EvmTransactions(ABC):  # noqa: B024
                 evm_transactions=[transaction],
                 relevant_address=associated_address,
             )
-            self.dbevmtx.add_or_ignore_receipt_data(
-                write_cursor=write_cursor,
-                chain_id=self.evm_inquirer.chain_id,
-                data=receipt_data,
-            )
+        self.dbevmtx.add_or_ignore_receipt_data(
+            chain_id=self.evm_inquirer.chain_id,
+            data=receipt_data,
+        )
 
         with self.dbevmtx.db.conn.read_ctx() as cursor:
             tx_receipt = self.dbevmtx.get_receipt(

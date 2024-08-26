@@ -11,7 +11,7 @@ def upgrade_v29_to_v30(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     - Add category table to manually_tracked_balances
     """
     progress_handler.set_total_steps(1)
-    with db.user_write() as cursor:
+    with db.user_read_write() as cursor:
         # We need to disable foreign_keys to add the table due the following constraint
         # Cannot add a REFERENCES column with non-NULL default value
         cursor.switch_foreign_keys('OFF')

@@ -19,7 +19,7 @@ if TYPE_CHECKING:
         DSProxyL2WithL1FeesInquirerWithCacheData,
     )
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
     from rotkehlchen.assets.asset import Asset
     from rotkehlchen.assets.utils import TokenEncounterInfo
 

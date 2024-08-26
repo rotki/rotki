@@ -12,7 +12,7 @@ from freezegun import freeze_time
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
-from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
+from rotkehlchen.db.drivers.client import DBConnection, DBConnectionType
 from rotkehlchen.db.utils import table_exists
 from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.globaldb.cache import (
@@ -298,7 +298,8 @@ def test_upgrade_v3_v4(globaldb: GlobalDBHandler):
         assert GlobalDBHandler.get_schema_version() == 4
 
         # test that the blockchain column is nullable
-        cursor.execute('INSERT INTO address_book(address, blockchain, name) VALUES ("0xc37b40ABdB939635068d3c5f13E7faF686F03B65", NULL, "yabir everywhere")')  # noqa: E501
+        with globaldb.conn.write_ctx() as write_cursor:
+            write_cursor.execute('INSERT INTO address_book(address, blockchain, name) VALUES ("0xc37b40ABdB939635068d3c5f13E7faF686F03B65", NULL, "yabir everywhere")')  # noqa: E501
 
         # test that address book entries were kept
         cursor.execute('SELECT * FROM address_book')
@@ -666,7 +667,8 @@ def test_upgrade_v7_v8(globaldb: GlobalDBHandler):
         assert cursor.execute('SELECT COUNT(*) FROM unique_cache WHERE key LIKE "CURVE_POOL_ADDRESS1%"').fetchone()[0] == 0  # noqa: E501
 
         # before update, the cache is not eligible to refresh, because last_queried_ts is ts_now()
-        cursor.execute('UPDATE general_cache SET last_queried_ts=? WHERE key LIKE ?', (ts_now(), 'CURVE_LP_TOKENS%'))  # noqa: E501
+        with globaldb.conn.write_ctx() as write_cursor:
+            write_cursor.execute('UPDATE general_cache SET last_queried_ts=? WHERE key LIKE ?', (ts_now(), 'CURVE_LP_TOKENS%'))  # noqa: E501
         assert should_update_protocol_cache(CacheType.CURVE_LP_TOKENS) is False
 
     assert unique_entries['Wormhole Token', 'W'] == 263
@@ -773,7 +775,7 @@ def test_unfinished_upgrades(globaldb: GlobalDBHandler):
     )
     # There are no backups, so it is supposed to raise an error
     with pytest.raises(DBUpgradeError):
-        create_globaldb(globaldb._data_directory, 0)
+        create_globaldb(globaldb._data_directory, 0, globaldb._db_writer_port)
 
     globaldb.conn.execute('PRAGMA wal_checkpoint;')  # flush the wal file
 
@@ -784,12 +786,13 @@ def test_unfinished_upgrades(globaldb: GlobalDBHandler):
         path=str(backup_path),
         connection_type=DBConnectionType.GLOBAL,
         sql_vm_instructions_cb=0,
+        db_writer_port=globaldb._db_writer_port,
     )
     with backup_connection.write_ctx() as write_cursor:
         write_cursor.execute('INSERT INTO settings VALUES("is_backup", "Yes")')  # mark as a backup  # noqa: E501
     backup_connection.close()
 
-    globaldb = create_globaldb(globaldb._data_directory, 0)  # Now the backup should be used
+    globaldb = create_globaldb(globaldb._data_directory, 0, globaldb._db_writer_port)  # Now the backup should be used  # noqa: E501
     assert globaldb.used_backup is True
     # Check that there is no setting left
     assert globaldb.get_setting_value('ongoing_upgrade_from_version', -1) == -1

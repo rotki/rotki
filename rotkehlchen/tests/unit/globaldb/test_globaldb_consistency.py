@@ -88,6 +88,7 @@ class DBToken:
 def test_asset_updates_consistency_with_packaged_db(
         tmpdir_factory: 'pytest.TempdirFactory',
         messages_aggregator: 'MessagesAggregator',
+        db_writer_port: int,
 ):
     """Test that the globalDB updates are consistent with the packaged one.
     - All assets are present in both cases.
@@ -101,7 +102,7 @@ def test_asset_updates_consistency_with_packaged_db(
         filename=old_db_dir / 'global.db',
     )
 
-    globaldb = create_globaldb(data_directory=temp_data_dir, sql_vm_instructions_cb=0)
+    globaldb = create_globaldb(data_directory=temp_data_dir, sql_vm_instructions_cb=0, db_writer_port=db_writer_port)  # noqa: E501
 
     with (
         globaldb.conn.read_ctx() as old_db_cursor,
@@ -114,6 +115,7 @@ def test_asset_updates_consistency_with_packaged_db(
     if (conflicts := assets_updater.perform_update(
         up_to_version=None,
         conflicts=None,
+        db_writer_port=db_writer_port,
     )) is not None:
         assert assets_updater.perform_update(
             up_to_version=None,
@@ -121,6 +123,7 @@ def test_asset_updates_consistency_with_packaged_db(
                 Asset(conflict['identifier']): 'remote'
                 for conflict in conflicts
             },
+            db_writer_port=db_writer_port,
         ) is None
 
     evm_type_db = AssetType.EVM_TOKEN.serialize_for_db()
@@ -437,7 +440,7 @@ def test_remote_updates_consistency_with_packaged_db(
         filename=old_db_dir / 'global.db',
     )
 
-    globaldb = create_globaldb(data_directory=temp_data_dir, sql_vm_instructions_cb=0)
+    globaldb = create_globaldb(data_directory=temp_data_dir, sql_vm_instructions_cb=0, db_writer_port=database._db_writer_port)  # noqa: E501
     rotki_updater = RotkiDataUpdater(msg_aggregator=messages_aggregator, user_db=database)
     rotki_updater.check_for_updates(updates=[
         UpdateType.LOCATION_ASSET_MAPPINGS,

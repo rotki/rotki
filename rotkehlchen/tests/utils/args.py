@@ -5,6 +5,7 @@ from rotkehlchen.constants.misc import (
     DEFAULT_MAX_LOG_SIZE_IN_MB,
     DEFAULT_SQL_VM_INSTRUCTIONS_CB,
 )
+from rotkehlchen.db.drivers.server import DEFAULT_DB_WRITER_PORT
 
 
 class ConfigurationArgs(NamedTuple):
@@ -17,6 +18,7 @@ class ConfigurationArgs(NamedTuple):
     max_size_in_mb_all_logs: int = DEFAULT_MAX_LOG_SIZE_IN_MB
     max_logfiles_num: int = DEFAULT_MAX_LOG_BACKUP_FILES
     sqlite_instructions: int = DEFAULT_SQL_VM_INSTRUCTIONS_CB
+    db_api_port: int = DEFAULT_DB_WRITER_PORT
 
 
 def default_args(
@@ -24,6 +26,7 @@ def default_args(
         ethrpc_endpoint: str | None = None,
         max_size_in_mb_all_logs: int = DEFAULT_MAX_LOG_SIZE_IN_MB,
         loglevel: str = 'debug',
+        db_writer_port: int = DEFAULT_DB_WRITER_PORT,
 ):
     return ConfigurationArgs(
         loglevel=loglevel,
@@ -35,4 +38,5 @@ def default_args(
         sqlite_instructions=DEFAULT_SQL_VM_INSTRUCTIONS_CB,
         logfile=None,
         logtarget=None,
+        db_api_port=db_writer_port,
     )

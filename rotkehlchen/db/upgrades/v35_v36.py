@@ -17,7 +17,7 @@ from rotkehlchen.types import ChainID
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 logger = logging.getLogger(__name__)
@@ -596,7 +596,7 @@ def upgrade_v35_to_v36(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - rename web3_nodes to rpc_nodes
     """
     progress_handler.set_total_steps(13)
-    with db.user_write() as write_cursor:
+    with db.user_read_write() as write_cursor:
         _remove_adex(write_cursor)
         progress_handler.new_step()
         _upgrade_ignored_actionids(write_cursor)

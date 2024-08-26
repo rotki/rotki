@@ -294,6 +294,9 @@ def test_check_premium_status(rotkehlchen_api_server, username):
 def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
     database = rotkehlchen_instance.data.db
     db_history_events = DBHistoryEvents(database)
+    with db_history_events.db.conn.read_ctx() as cursor:
+        accounts = database.get_blockchain_accounts(cursor).get(SupportedBlockchain.ETHEREUM)
+
     with db_history_events.db.user_write() as write_cursor:
         database.add_multiple_location_data(
             write_cursor=write_cursor,
@@ -303,7 +306,6 @@ def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
                 usd_value='',
             )],
         )
-        accounts = database.get_blockchain_accounts(write_cursor).get(SupportedBlockchain.ETHEREUM)
         db_history_events.add_history_events(
             write_cursor=write_cursor,
             history=[
@@ -736,7 +738,9 @@ def test_maybe_update_aave_v3_underlying_assets(
             '(SELECT identifier FROM evm_tokens WHERE protocol = ?);',
             (CPT_AAVE_V3,),
         )
-        assert write_cursor.execute(
+
+    with globaldb.conn.read_ctx() as cursor:
+        assert cursor.execute(
             'SELECT COUNT(*) FROM evm_tokens WHERE protocol = ?;', (CPT_AAVE_V3,),
         ).fetchone()[0] == 0
 

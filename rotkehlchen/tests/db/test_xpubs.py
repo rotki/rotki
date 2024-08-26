@@ -58,6 +58,7 @@ def test_delete_bitcoin_xpub(setup_db_for_xpub_tests):
     all_addresses.append('18ddjB7HWTVxzvTbLp1nWvaBxU3U2oTZF2')
     with db.user_write() as cursor:
         db.delete_bitcoin_xpub(cursor, xpub1)  # xpub1 is a bch xpub
+    with db.conn.read_ctx() as cursor:
         result_bch = db.get_addresses_to_xpub_mapping(
             cursor=cursor,
             blockchain=SupportedBlockchain.BITCOIN_CASH,
@@ -115,6 +116,7 @@ def test_edit_bitcoin_xpub(setup_db_for_xpub_tests):
                 label='123',
                 tags=['test'],
             ))
+    with db.conn.read_ctx() as cursor:
         result = db.get_bitcoin_xpub_data(cursor, blockchain=SupportedBlockchain.BITCOIN_CASH)
 
         # Make sure that the tags of the derived addresses were updated
@@ -138,18 +140,18 @@ def test_edit_bitcoin_xpub_not_existing_tag(setup_db_for_xpub_tests):
     """Test that edits bitcoin xpub label and tries to add non existing tag"""
     db, xpub, _, _, _ = setup_db_for_xpub_tests
 
-    with db.user_write() as cursor:
-        with pytest.raises(InputError):
-            db.edit_bitcoin_xpub(
-                cursor,
-                XpubData(
-                    xpub=xpub.xpub,
-                    blockchain=SupportedBlockchain.BITCOIN_CASH,
-                    derivation_path=xpub.derivation_path,
-                    label='123',
-                    tags=['test'],
-                ),
-            )
+    with db.user_write() as cursor, pytest.raises(InputError):
+        db.edit_bitcoin_xpub(
+            cursor,
+            XpubData(
+                xpub=xpub.xpub,
+                blockchain=SupportedBlockchain.BITCOIN_CASH,
+                derivation_path=xpub.derivation_path,
+                label='123',
+                tags=['test'],
+            ),
+        )
+    with db.conn.read_ctx() as cursor:
         result = db.get_bitcoin_xpub_data(cursor, SupportedBlockchain.BITCOIN_CASH)
 
     assert result[0].xpub == xpub.xpub

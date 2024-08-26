@@ -37,7 +37,7 @@ from rotkehlchen.user_messages import MessagesAggregator
 from .utils import clean_folder, parse_args, prepare_globaldb
 
 
-def populate_db_with_assets():
+def populate_db_with_assets(db_writer_port: int):
     """Populate the globaldb created in target_directory with the updates in the remote assets repo
     """
     print('Applying updates...')
@@ -47,6 +47,7 @@ def populate_db_with_assets():
     if (conflicts := assets_updater.perform_update(
         up_to_version=parse_args().target_version,
         conflicts=None,
+        db_writer_port=db_writer_port,
     )) is not None:
         assert assets_updater.perform_update(
             up_to_version=None,
@@ -54,10 +55,11 @@ def populate_db_with_assets():
                 Asset(conflict['identifier']): 'remote'
                 for conflict in conflicts
             },
+            db_writer_port=db_writer_port,
         ) is None, 'Could not resolve all conflicts during assets upgrade using "remote" data'
 
 
-def populate_location_mappings():
+def populate_location_mappings(db_writer_port: int):
     """Apply remote updates to query mappings for assets"""
     msg_aggregator = MessagesAggregator()
     with TemporaryDirectory() as tmp_dir:
@@ -70,6 +72,7 @@ def populate_location_mappings():
                 initial_settings=None,
                 sql_vm_instructions_cb=0,
                 resume_from_backup=False,
+                db_writer_port=db_writer_port,
             ),
         )
         print('Applying remote updates...')
@@ -84,9 +87,9 @@ def main() -> None:
     globaldb, target_directory = prepare_globaldb(args)
 
     if args.update_mode in {'assets', 'all'}:
-        populate_db_with_assets()
+        populate_db_with_assets(args.db_api_port)
     if args.update_mode in {'remote', 'all'}:
-        populate_location_mappings()
+        populate_location_mappings(args.db_api_port)
 
     clean_folder(globaldb, target_directory)
 

@@ -390,17 +390,18 @@ INSERT INTO assets(identifier, name, type) VALUES("NEW-ASSET-2", "name4", "B"); 
         update_file_type=UpdateFileType.ASSETS,
     )
 
+    cursor = connection.cursor()
     # Should have stayed unchanged since one of the insertions was incorrect
-    assert connection.execute('SELECT name FROM assets WHERE identifier="ETH"').fetchone()[0] == 'Ethereum'  # noqa: E501
-    assert connection.execute('SELECT symbol FROM common_asset_details WHERE identifier="ETH"').fetchone()[0] == 'ETH'  # noqa: E501
+    assert cursor.execute('SELECT name FROM assets WHERE identifier="ETH"').fetchone()[0] == 'Ethereum'  # noqa: E501
+    assert cursor.execute('SELECT symbol FROM common_asset_details WHERE identifier="ETH"').fetchone()[0] == 'ETH'  # noqa: E501
     # BTC should have been updated since the insertion were correct
-    assert connection.execute('SELECT name FROM assets WHERE identifier="BTC"').fetchone()[0] == 'name2'  # noqa: E501
-    assert connection.execute('SELECT symbol FROM common_asset_details WHERE identifier="BTC"').fetchone()[0] == 'symbol2'  # noqa: E501
+    assert cursor.execute('SELECT name FROM assets WHERE identifier="BTC"').fetchone()[0] == 'name2'  # noqa: E501
+    assert cursor.execute('SELECT symbol FROM common_asset_details WHERE identifier="BTC"').fetchone()[0] == 'symbol2'  # noqa: E501
     # NEW-ASSET-1 should have not been added since the insertions were incorrect
-    assert connection.execute('SELECT * FROM assets WHERE identifier="NEW-ASSET-1"').fetchone() is None  # noqa: E501
+    assert cursor.execute('SELECT * FROM assets WHERE identifier="NEW-ASSET-1"').fetchone() is None
     # NEW-ASSET-2 should have been added since the insertions were correct
-    assert connection.execute('SELECT name FROM assets WHERE identifier="NEW-ASSET-2"').fetchone()[0] == 'name4'  # noqa: E501
-    assert connection.execute('SELECT symbol FROM common_asset_details WHERE identifier="NEW-ASSET-2"').fetchone()[0] == 'symbol4'  # noqa: E501
+    assert cursor.execute('SELECT name FROM assets WHERE identifier="NEW-ASSET-2"').fetchone()[0] == 'name4'  # noqa: E501
+    assert cursor.execute('SELECT symbol FROM common_asset_details WHERE identifier="NEW-ASSET-2"').fetchone()[0] == 'symbol4'  # noqa: E501
 
 
 def test_updates_assets_collections_errors(assets_updater: AssetsUpdater):
@@ -470,6 +471,7 @@ def test_asset_update(
         update_assets: bool,
         update_collections: bool,
         update_mappings: bool,
+        db_writer_port: int,
 ):
     """
     Check that globaldb updates work properly when getting information from github
@@ -480,7 +482,7 @@ def test_asset_update(
     # set a high version of the globaldb to avoid conflicts with future changes
     GlobalDBHandler.add_setting_value(ASSETS_VERSION_KEY, 997)
     with patch('requests.get', wraps=get_mock_github_assets_response(update_assets, update_collections, update_mappings)):  # noqa: E501
-        assets_updater.perform_update(up_to_version=999, conflicts={})
+        assets_updater.perform_update(up_to_version=999, conflicts={}, db_writer_port=db_writer_port)  # noqa: E501
 
     with GlobalDBHandler().conn.read_ctx() as cursor:
         assert cursor.execute('SELECT * FROM assets WHERE identifier = "MYBONK"').fetchall() == ([
@@ -514,12 +516,12 @@ def test_conflict_updates(assets_updater: AssetsUpdater, globaldb: GlobalDBHandl
     in the globaldb assets updates. Also test a bug in asset updates where the foreign key entries
     are removed when an asset update conflict is resolved through 'remote' option.
     """
-    with globaldb.conn.write_ctx() as write_cursor:
-        assert write_cursor.execute(
+    with globaldb.conn.read_ctx() as cursor:
+        assert cursor.execute(
             'SELECT COUNT(*) FROM underlying_tokens_list WHERE parent_token_entry=?;',
             ('eip155:42161/erc20:0xA5EDBDD9646f8dFF606d7448e414884C7d905dCA',),
         ).fetchone()[0] == 1
-        assert write_cursor.execute(
+        assert cursor.execute(
             'SELECT COUNT(*) FROM multiasset_mappings WHERE asset=?;',
             ('eip155:42161/erc20:0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8',),
         ).fetchone()[0] == 1
@@ -542,12 +544,14 @@ def test_conflict_updates(assets_updater: AssetsUpdater, globaldb: GlobalDBHandl
         }},
         sql_actions={'1': {'assets': update_1, 'collections': '', 'mappings': ''}, '2': {'assets': update_2, 'collections': '', 'mappings': ''}},  # noqa: E501
     )
+    with globaldb.conn.write_ctx() as write_cursor:
+        write_cursor.execute(f'DELETE FROM settings WHERE name="{ASSETS_VERSION_KEY}"')
     cursor = globaldb.conn.cursor()
-    cursor.execute(f'DELETE FROM settings WHERE name="{ASSETS_VERSION_KEY}"')
     with update_patch:
         conflicts = assets_updater.perform_update(
             up_to_version=2,
             conflicts=None,
+            db_writer_port=globaldb._db_writer_port,
         )
     assert conflicts is not None
     assert len(conflicts) == 1
@@ -561,6 +565,7 @@ def test_conflict_updates(assets_updater: AssetsUpdater, globaldb: GlobalDBHandl
                 Asset(conflict['identifier']): 'remote'
                 for conflict in conflicts
             },
+            db_writer_port=globaldb._db_writer_port,
         )
     assert cursor.execute('SELECT value FROM settings WHERE name="assets_version"').fetchone()[0] == '2'  # noqa: E501
     with globaldb.conn.read_ctx() as cursor:

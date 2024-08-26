@@ -8,7 +8,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.types import CacheType
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+    from rotkehlchen.db.drivers.client import DBConnection, DBCursor
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -120,7 +120,7 @@ def migrate_to_v6(connection: 'DBConnection') -> None:
 
     This upgrade takes place in v1.31.0
     """
-    with connection.write_ctx() as cursor:
+    with connection.read_write_ctx() as cursor:
         _create_and_populate_unique_cache_table(cursor)
         _fix_asset_in_multiasset_mappings(cursor)
         _update_multiasset_mappings(cursor)

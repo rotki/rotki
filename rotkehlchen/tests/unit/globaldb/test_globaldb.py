@@ -150,7 +150,7 @@ def test_get_ethereum_token_identifier(globaldb):
     assert token_0_id == user_tokens[0].identifier
 
 
-def test_open_new_globaldb_with_old_rotki(tmpdir_factory, sql_vm_instructions_cb):
+def test_open_new_globaldb_with_old_rotki(tmpdir_factory, sql_vm_instructions_cb, db_writer_port):
     """Test for https://github.com/rotki/rotki/issues/2781"""
     # clean the previous resolver memory cache, as it
     # may have cached results from a discarded database
@@ -163,7 +163,7 @@ def test_open_new_globaldb_with_old_rotki(tmpdir_factory, sql_vm_instructions_cb
     new_global_dir.mkdir(parents=True, exist_ok=True)
     copyfile(source_db_path, new_global_dir / GLOBALDB_NAME)
     with pytest.raises(ValueError) as excinfo:
-        create_globaldb(new_data_dir, sql_vm_instructions_cb)
+        create_globaldb(new_data_dir, sql_vm_instructions_cb, db_writer_port)
 
     msg = (
         f'Tried to open a rotki version intended to work with GlobalDB v{GLOBAL_DB_VERSION} '
@@ -742,6 +742,7 @@ def test_global_db_reset(globaldb, database):
             ),
         )
 
+    with GlobalDBHandler().conn.read_ctx() as cursor:
         # Read original information from underlying tokens before the reset
         # get yDAI's underlying tokens
         ydai_underlying_tokens = cursor.execute(
@@ -749,14 +750,15 @@ def test_global_db_reset(globaldb, database):
             (A_yDAI.identifier,),
         ).fetchall()
         assert len(ydai_underlying_tokens) > 0
+    with GlobalDBHandler().conn.write_ctx() as cursor:
         # And put someting extra in there which should be deleted by the reset
         cursor.execute(
             'INSERT INTO underlying_tokens_list(identifier, weight, parent_token_entry) VALUES (?, ?, ?)',  # noqa: E501
             (A_CRV.identifier, '1.0', A_yDAI.identifier),
         )
 
-    status, _ = GlobalDBHandler().soft_reset_assets_list()
-    assert status
+    status, msg = GlobalDBHandler().soft_reset_assets_list()
+    assert status, msg
     cursor = globaldb.conn.cursor()
     query = f'SELECT COUNT(*) FROM evm_tokens where address == "{address_to_delete}";'
     r = cursor.execute(query)
@@ -1063,8 +1065,9 @@ def test_unique_cache(globaldb):
             key_parts=(CacheType.CURVE_POOL_ADDRESS, '0x123'),
             value='def',
         )
+    with globaldb.conn.read_ctx() as cursor:
         values_3 = globaldb_get_unique_cache_value(
-            cursor=write_cursor,
+            cursor=cursor,
             key_parts=(CacheType.CURVE_POOL_ADDRESS, '0x123'),
         )
         assert values_3 == 'def'

@@ -5,7 +5,7 @@ from rotkehlchen.errors.misc import DBUpgradeError
 from rotkehlchen.logging import enter_exit_debug_log
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+    from rotkehlchen.db.drivers.client import DBConnection, DBCursor
 
 
 def upgrade_from_sql(cursor: 'DBCursor', filename: str) -> None:
@@ -52,6 +52,6 @@ def migrate_to_v7(connection: 'DBConnection') -> None:
     - Adds and populates the `location_unsupported_assets` table.
 
     This upgrade takes place in v1.33.0"""
-    with connection.write_ctx() as cursor:
+    with connection.read_write_ctx() as cursor:
         _create_and_populate_location_asset_mappings_table(cursor)
         _create_and_populate_location_unsupported_assets_table(cursor)

@@ -8,7 +8,7 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
 
 
 class DBEns:
@@ -18,7 +18,7 @@ class DBEns:
 
     def add_ens_mapping(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             address: ChecksumEvmAddress,
             name: str | None,
             now: Timestamp,
@@ -68,7 +68,7 @@ class DBEns:
 
     def update_values(
             self,
-            write_cursor: 'DBCursor',
+            write_cursor: 'DBWriterClient',
             ens_lookup_results: dict[ChecksumEvmAddress, str | None],
             mappings_to_send: dict[ChecksumEvmAddress, str],
     ) -> dict[ChecksumEvmAddress, str]:
@@ -79,8 +79,7 @@ class DBEns:
                 self.add_ens_mapping(write_cursor, address=address, name=name, now=now)
             except sqlcipher.IntegrityError:  # pylint: disable=no-member
                 # Means that we have an old name mapping in the DB which has by now expired
-                cursor = self.db.conn.cursor()
-                cursor.execute('DELETE FROM ens_mappings WHERE ens_name=?', (name,))
+                write_cursor.execute('DELETE FROM ens_mappings WHERE ens_name=?', (name,))
                 self.add_ens_mapping(write_cursor, address=address, name=name, now=now)
 
             if name is not None:

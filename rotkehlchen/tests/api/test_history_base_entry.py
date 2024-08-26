@@ -513,7 +513,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
 
     # test pagination works fine with/without exclude_ignored_assets filter with/without premium
     db_history_events = DBHistoryEvents(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
-    with db_history_events.db.user_write() as cursor:
+    with db_history_events.db.conn.read_ctx() as write_cursor:
         for limit, exclude_ignored, total, found in (
             (None, False, 6, 6),  # premium without ignoring assets, we get all the events
             (None, True, 2, 2),  # premium with ignoring assets (ETH), we get only 2 events
@@ -523,7 +523,7 @@ def test_get_events(rotkehlchen_api_server: 'APIServer'):
             (1, True, 2, 1),  # free limit (1) with ignoring assets, total events are 2 but we get only 1 (limited)  # noqa: E501
         ):
             assert db_history_events.get_history_events_count(
-                cursor=cursor,
+                cursor=write_cursor,
                 group_by_event_ids=True,
                 query_filter=HistoryEventFilterQuery.make(exclude_ignored_assets=exclude_ignored),
                 entries_limit=limit,

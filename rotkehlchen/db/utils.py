@@ -23,7 +23,7 @@ from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.chain.accounts import BlockchainAccountData, SingleBlockchainAccountData
 from rotkehlchen.chain.substrate.utils import is_valid_substrate_address
 from rotkehlchen.db.checks import db_script_normalizer
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
     AssetMovementCategory,
@@ -53,7 +53,7 @@ TAG_REFENCE_ENTRY_TYPE = Union[
 
 class MaybeInjectWriteCursor(Protocol[P, T_co]):
     @overload
-    def __call__(self, write_cursor: 'DBCursor', *args: P.args, **kwargs: P.kwargs) -> T_co:
+    def __call__(self, write_cursor: 'DBWriterClient', *args: P.args, **kwargs: P.kwargs) -> T_co:
         ...
 
     @overload
@@ -61,8 +61,8 @@ class MaybeInjectWriteCursor(Protocol[P, T_co]):
         ...
 
 
-def need_writable_cursor(path_to_context_manager: str) -> Callable[[Callable[Concatenate['DBHandler', 'DBCursor', P], T_co]], MaybeInjectWriteCursor[P, T_co]]:  # noqa: E501
-    def _need_writable_cursor(method: Callable[Concatenate['DBHandler', 'DBCursor', P], T_co]) -> MaybeInjectWriteCursor[P, T_co]:  # noqa: E501
+def need_writable_cursor(path_to_context_manager: str) -> Callable[[Callable[Concatenate['DBHandler', 'DBWriterClient', P], T_co]], MaybeInjectWriteCursor[P, T_co]]:  # noqa: E501
+    def _need_writable_cursor(method: Callable[Concatenate['DBHandler', 'DBWriterClient', P], T_co]) -> MaybeInjectWriteCursor[P, T_co]:  # noqa: E501
         """Wraps the method of a class in a write cursor or uses one if passed.
 
         The method should:
@@ -78,7 +78,7 @@ def need_writable_cursor(path_to_context_manager: str) -> Callable[[Callable[Con
         """
         @wraps(method)
         def _impl(self: 'DBHandler', *args: Any, **kwargs: Any) -> T_co:
-            if kwargs.get('write_cursor') or (len(args) != 0 and isinstance(args[0], DBCursor)):
+            if kwargs.get('write_cursor') or (len(args) != 0 and isinstance(args[0], DBWriterClient)):  # noqa: E501
                 return method(self, *args, **kwargs)
 
             # else we need to wrap this in a new writable cursor
@@ -307,7 +307,7 @@ def _prepare_tag_mappings(
 
 
 def insert_tag_mappings(
-        write_cursor: 'DBCursor',
+        write_cursor: 'DBWriterClient',
         data: list['ManuallyTrackedBalance'] | (list[BlockchainAccountData] | list['XpubData'] | list['SingleBlockchainAccountData']),  # noqa: E501
         object_reference_keys: list[
             Literal['identifier', 'chain', 'address', 'xpub.xpub', 'derivation_path'],
@@ -328,7 +328,7 @@ def insert_tag_mappings(
 
 
 def replace_tag_mappings(
-        write_cursor: 'DBCursor',
+        write_cursor: 'DBWriterClient',
         data: list['ManuallyTrackedBalance'] | (list[BlockchainAccountData] | list['XpubData'] | list['SingleBlockchainAccountData']),  # noqa: E501
         object_reference_keys: list[
             Literal['identifier', 'chain', 'address', 'xpub.xpub', 'derivation_path'],

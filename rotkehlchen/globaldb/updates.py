@@ -15,7 +15,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.client import DBCursor, DBWriterClient
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import RemoteError
@@ -29,7 +29,7 @@ from rotkehlchen.utils.network import query_file
 from .handler import GlobalDBHandler, initialize_globaldb
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBConnection
+    from rotkehlchen.db.drivers.client import DBConnection
     from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
@@ -48,7 +48,7 @@ class UpdateFileType(Enum):
     ASSET_COLLECTIONS_MAPPINGS = auto()
 
 
-def executeall(cursor: DBCursor, statements: str) -> None:
+def executeall(cursor: DBWriterClient, statements: str) -> None:
     """Splits all statements and execute()s one by one to avoid the
     commit that executescript would do.
 
@@ -88,7 +88,12 @@ def _replace_assets_from_db(
         """)
 
 
-def _force_remote_asset(cursor: DBCursor, local_asset: Asset, full_insert: str) -> None:
+def _force_remote_asset(
+        cursor: DBCursor,
+        write_cursor: DBWriterClient,
+        local_asset: Asset,
+        full_insert: str,
+) -> None:
     """Force the remote entry into the database by deleting old one and doing the full insert.
 
     May raise an sqlite3 error if something fails.
@@ -104,21 +109,21 @@ def _force_remote_asset(cursor: DBCursor, local_asset: Asset, full_insert: str) 
         'WHERE identifier=? OR parent_token_entry=?;',
         (local_asset.identifier, local_asset.identifier),
     ).fetchall()
-    cursor.execute(
+    write_cursor.execute(
         'DELETE FROM assets WHERE identifier=?;',
         (local_asset.identifier,),
     )
     # Insert new entry. Since identifiers are the same, no foreign key constrains should break
-    executeall(cursor, full_insert)
+    executeall(write_cursor, full_insert)
 
     # now add the old mappings back into the db
     if len(multiasset_mappings) > 0:
-        cursor.executemany(  # add the old multiasset mappings
+        write_cursor.executemany(  # add the old multiasset mappings
             'INSERT INTO multiasset_mappings (collection_id, asset) VALUES (?, ?);',
             multiasset_mappings,
         )
     if len(underlying_assets) > 0:
-        cursor.executemany(  # add the old underlying assets
+        write_cursor.executemany(  # add the old underlying assets
             'INSERT INTO underlying_tokens_list (parent_token_entry, weight, identifier) '
             'VALUES (?, ?, ?);',
             underlying_assets,
@@ -457,23 +462,26 @@ class AssetsUpdater:
             local_asset = Asset(remote_asset_data.identifier).check_existence(query_packaged_db=False)  # noqa: E501
 
         try:
-            with connection.savepoint_ctx() as cursor:
-                # if the action is to update an asset, but it doesn't exist in the DB
+            # if the action is to update an asset, but it doesn't exist in the DB
+            with (
+                connection.read_ctx() as cursor,
+                connection.savepoint_ctx() as write_cursor,
+            ):
                 if action.strip().startswith('UPDATE') and cursor.execute(
                     'SELECT COUNT(*) FROM assets WHERE identifier=?',
                     (remote_asset_data.identifier,),
                 ).fetchone()[0] == 0:
-                    executeall(cursor, full_insert)  # we apply the full insert query
+                    executeall(write_cursor, full_insert)  # we apply the full insert query
                 else:
-                    executeall(cursor, action)
+                    executeall(write_cursor, action)
 
                 if local_asset is not None:
                     AssetResolver().clean_memory_cache(identifier=local_asset.identifier)
         except sqlite3.Error:  # https://docs.python.org/3/library/sqlite3.html#exceptions
             if local_asset is None:
                 try:  # if asset is not known then simply do an insertion
-                    with connection.savepoint_ctx() as cursor:
-                        executeall(cursor, full_insert)
+                    with connection.savepoint_ctx() as write_cursor:
+                        executeall(write_cursor, full_insert)
                 except sqlite3.Error as e:
                     self.msg_aggregator.add_warning(
                         f'Failed to add asset {remote_asset_data.identifier} in the '
@@ -492,8 +500,16 @@ class AssetsUpdater:
                 return
             if resolution == 'remote':
                 try:
-                    with connection.savepoint_ctx() as cursor:
-                        _force_remote_asset(cursor, local_asset, full_insert)
+                    with (
+                        connection.read_ctx() as cursor,
+                        connection.savepoint_ctx() as write_cursor,
+                    ):
+                        _force_remote_asset(
+                            cursor=cursor,
+                            write_cursor=write_cursor,
+                            local_asset=local_asset,
+                            full_insert=full_insert,
+                        )
                 except sqlite3.Error as e:
                     self.msg_aggregator.add_warning(
                         f'Failed to resolve conflict for {remote_asset_data.identifier} in '
@@ -600,6 +616,7 @@ class AssetsUpdater:
             self,
             up_to_version: int | None,
             conflicts: dict[Asset, Literal['remote', 'local']] | None,
+            db_writer_port: int,
     ) -> list[dict[str, Any]] | None:
         """Performs an asset update by downloading new changes from the remote
 
@@ -636,6 +653,7 @@ class AssetsUpdater:
                 global_dir=tmpdir,
                 db_filename=temp_db_name,
                 sql_vm_instructions_cb=GlobalDBHandler().conn.sql_vm_instructions_cb,
+                db_writer_port=db_writer_port,
             )
 
             # use a critical section to avoid modifications in the globaldb during the update

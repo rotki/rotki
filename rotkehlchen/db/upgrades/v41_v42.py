@@ -12,7 +12,7 @@ from rotkehlchen.types import ChainID, Location
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 logger = logging.getLogger(__name__)
@@ -227,7 +227,7 @@ def upgrade_v41_to_v42(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - remove evm events that link to a transaction not in the database
     """
     progress_handler.set_total_steps(9)
-    with db.user_write() as write_cursor:
+    with db.user_read_write() as write_cursor:
         _add_zksynclite(write_cursor)
         progress_handler.new_step()
         _add_new_supported_locations(write_cursor)

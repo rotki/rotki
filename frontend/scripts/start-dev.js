@@ -130,7 +130,7 @@ if (noElectron) {
     ...(profilingArgs ? profilingArgs.split(' ') : []),
     ...(profilingCmd ? ['python'] : []),
     '-m',
-    'rotkehlchen',
+    'rotkehlchen.start',
     '--rest-api-port',
     '4242',
     '--api-cors',

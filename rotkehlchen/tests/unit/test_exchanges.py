@@ -49,12 +49,13 @@ def test_exchanges_filtering(database, exchange_manager, function_scope_messages
         database.set_settings(cursor, ModifiableDBSettings(
             non_syncing_exchanges=[kraken1.location_id(), kraken2.location_id()],
         ))
-        assert set(exchange_manager.iterate_exchanges()) == {binance1, binance2}
+    assert set(exchange_manager.iterate_exchanges()) == {binance1, binance2}
 
+    with database.user_write() as cursor:
         database.set_settings(cursor, ModifiableDBSettings(
             non_syncing_exchanges=[binance1.location_id()],
         ))
-        assert set(exchange_manager.iterate_exchanges()) == {binance2, kraken1, kraken2}
+    assert set(exchange_manager.iterate_exchanges()) == {binance2, kraken1, kraken2}
 
 
 TEST_CREDENTIALS_1 = ExchangeApiCredentials(

@@ -1022,6 +1022,7 @@ def test_delete_external_exchange_data_works(rotkehlchen_api_server_with_exchang
         rotki.data.db.add_trades(cursor, trades)
         rotki.data.db.add_asset_movements(cursor, movements)
 
+    with rotki.data.db.conn.read_ctx() as cursor:
         assert len(rotki.data.db.get_trades(cursor, filter_query=TradesFilterQuery.make(), has_premium=True)) == 2  # noqa: E501
         assert len(rotki.data.db.get_asset_movements(
             cursor,

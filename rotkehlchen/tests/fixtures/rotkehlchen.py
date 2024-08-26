@@ -83,8 +83,8 @@ def fixture_max_size_in_mb_all_logs() -> int:
 
 
 @pytest.fixture(name='cli_args')
-def fixture_cli_args(data_dir, ethrpc_endpoint, max_size_in_mb_all_logs):
-    return default_args(data_dir=data_dir, ethrpc_endpoint=ethrpc_endpoint, max_size_in_mb_all_logs=max_size_in_mb_all_logs)  # noqa: E501
+def fixture_cli_args(data_dir, ethrpc_endpoint, max_size_in_mb_all_logs, db_writer_port):
+    return default_args(data_dir=data_dir, ethrpc_endpoint=ethrpc_endpoint, max_size_in_mb_all_logs=max_size_in_mb_all_logs, db_writer_port=db_writer_port)  # noqa: E501
 
 
 @pytest.fixture(name='perform_upgrades_at_unlock')

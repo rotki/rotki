@@ -9,7 +9,7 @@ def test_get_location_query_ranges(database):
     with database.user_write() as cursor:
         database.update_used_query_range(cursor, location1, 15, 25)
         database.update_used_query_range(cursor, location2, 10, 125)
-
+    with database.conn.read_ctx() as cursor:
         result = dbranges.get_location_query_ranges(cursor, location1, 0, 2)
         assert result == [(0, 14)]
         result = dbranges.get_location_query_ranges(cursor, location1, 8, 17)
@@ -38,26 +38,28 @@ def test_update_used_query_range(database):
     location1 = 'location1'
     location2 = 'location2'
 
-    with database.user_write() as cursor:
-        database.update_used_query_range(cursor, location1, 15, 25)
-        database.update_used_query_range(cursor, location2, 10, 125)
+    cursor = database.conn.cursor()
+    with database.user_write() as write_cursor:
+        database.update_used_query_range(write_cursor, location1, 15, 25)
+        database.update_used_query_range(write_cursor, location2, 10, 125)
 
         start_ts = 12
         end_ts = 90
-        query_range = dbranges.get_location_query_ranges(cursor, location1, start_ts, end_ts)
+    query_range = dbranges.get_location_query_ranges(cursor, location1, start_ts, end_ts)
+    with database.user_write() as write_cursor:
         dbranges.update_used_query_range(
-            cursor,
+            write_cursor,
             location1,
             queried_ranges=[(start_ts, end_ts)] + query_range,
         )
-        assert database.get_used_query_range(cursor, location1) == (12, 90)
-
-        start_ts = 250
-        end_ts = 500
-        query_range = dbranges.get_location_query_ranges(cursor, location2, start_ts, end_ts)
+    assert database.get_used_query_range(cursor, location1) == (12, 90)
+    start_ts = 250
+    end_ts = 500
+    query_range = dbranges.get_location_query_ranges(cursor, location2, start_ts, end_ts)
+    with database.user_write() as write_cursor:
         dbranges.update_used_query_range(
-            cursor,
+            write_cursor,
             location2,
             queried_ranges=[(start_ts, end_ts)] + query_range,
         )
-        assert database.get_used_query_range(cursor, location2) == (10, 500)
+    assert database.get_used_query_range(cursor, location2) == (10, 500)

@@ -10,7 +10,7 @@ from rotkehlchen.data_import.utils import (
     UnsupportedCSVEntry,
     process_rotki_generic_import_csv_fields,
 )
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.client import DBWriterClient
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -33,7 +33,7 @@ GENERIC_TYPE_TO_HISTORY_EVENT_TYPE_MAPPINGS = {
 class RotkiGenericEventsImporter(BaseExchangeImporter):
     def _consume_rotki_event(
             self,
-            write_cursor: DBCursor,
+            write_cursor: DBWriterClient,
             csv_row: dict[str, Any],
             sequence_index: int,
     ) -> None:
@@ -84,7 +84,7 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
             events.append(fee_event)
         self.add_history_events(write_cursor, events)  # event assets are always resolved here
 
-    def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
+    def _import_csv(self, write_cursor: DBWriterClient, filepath: Path, **kwargs: Any) -> None:
         """May raise:
         - InputError if one of the rows is malformed
         """

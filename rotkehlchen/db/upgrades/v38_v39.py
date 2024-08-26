@@ -12,7 +12,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 
@@ -320,7 +320,7 @@ def upgrade_v38_to_v39(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         - Add Arbitrum One location and nodes
     """
     progress_handler.set_total_steps(9)
-    with db.user_write() as write_cursor:
+    with db.user_read_write() as write_cursor:
         _update_nfts_table(write_cursor)
         progress_handler.new_step()
         _reduce_eventid_size(write_cursor)

@@ -36,7 +36,7 @@ from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import EVM_EVENT_FIELDS, HISTORY_BASE_ENTRY_FIELDS
 from rotkehlchen.db.dbhandler import DBHandler
-from rotkehlchen.db.drivers.gevent import DBCursor
+from rotkehlchen.db.drivers.client import DBWriterClient
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EVM_EVENT_JOIN, EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents, filter_ignore_asset_query
@@ -94,7 +94,7 @@ def _add_spam_asset(
         detected_spam_assets: list[str],
         globaldb: GlobalDBHandler,
         user_db: DBHandler,
-        user_db_write_cursor: DBCursor,
+        user_db_write_cursor: DBWriterClient,
 ) -> None:
     """Updates the protocol to SPAM_PROTOCOL for the list of assets
     provided and also ignores it

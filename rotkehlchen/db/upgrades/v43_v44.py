@@ -6,7 +6,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor
+    from rotkehlchen.db.drivers.client import DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 logger = logging.getLogger(__name__)
@@ -95,7 +95,7 @@ def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     - add usd_price to the nfts table
     """
     progress_handler.set_total_steps(4)
-    with db.user_write() as write_cursor:
+    with db.user_read_write() as write_cursor:
         _update_nft_table(write_cursor)
         progress_handler.new_step()
         _remove_log_removed_column(write_cursor)
