@@ -1,13 +1,18 @@
 import csv
 import logging
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_blockfi
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
-from rotkehlchen.data_import.utils import BaseExchangeImporter, UnsupportedCSVEntry, hash_csv_row
+from rotkehlchen.data_import.utils import (
+    BaseExchangeImporter,
+    SkippedCSVEntry,
+    UnsupportedCSVEntry,
+    hash_csv_row,
+)
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
@@ -23,6 +28,9 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import AssetAmount, AssetMovementCategory, Fee, Location
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -30,6 +38,11 @@ BLOCKFI_PREFIX = 'BLF_'
 
 
 class BlockfiTransactionsImporter(BaseExchangeImporter):
+    """Blockfi transactions CSV importer"""
+
+    def __init__(self, db: 'DBHandler') -> None:
+        super().__init__(db=db, name='Blockfi transactions')
+
     def _consume_blockfi_entry(
             self,
             write_cursor: DBCursor,
@@ -51,8 +64,7 @@ class BlockfiTransactionsImporter(BaseExchangeImporter):
                 location='BlockFi',
             )
         else:
-            log.debug(f'Ignoring unconfirmed BlockFi entry {csv_row}')
-            return
+            raise SkippedCSVEntry('Entry is unconfirmed.')
 
         asset = asset_from_blockfi(csv_row['Cryptocurrency'])
         raw_amount = deserialize_asset_amount(csv_row['Amount'])
@@ -135,7 +147,7 @@ class BlockfiTransactionsImporter(BaseExchangeImporter):
             )
             self.add_asset_movement(write_cursor, asset_movement)
         elif entry_type == 'Trade':
-            pass
+            raise SkippedCSVEntry('Entry is a trade.')
         else:
             raise UnsupportedCSVEntry(f'Unsuported entry {entry_type}. Data: {csv_row}')
 
@@ -147,24 +159,38 @@ class BlockfiTransactionsImporter(BaseExchangeImporter):
         - InputError if one of the rows is malformed
         """
         with open(filepath, encoding='utf-8-sig') as csvfile:
-            data = csv.DictReader(csvfile)
-            for row in data:
+            for index, row in enumerate(csv.DictReader(csvfile), start=1):
                 try:
+                    self.total_entries += 1
                     self._consume_blockfi_entry(write_cursor, row, **kwargs)
+                    self.imported_entries += 1
                 except UnknownAsset as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'During BlockFi CSV import found action with unknown '
-                        f'asset {e.identifier}. Ignoring entry',
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=f'Unknown asset {e.identifier}.',
+                        is_error=True,
                     )
-                    continue
                 except DeserializationError as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'Deserialization error during BlockFi CSV import. '
-                        f'{e!s}. Ignoring entry',
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=f'Deserialization error: {e!s}.',
+                        is_error=True,
                     )
-                    continue
                 except UnsupportedCSVEntry as e:
-                    self.db.msg_aggregator.add_warning(str(e))
-                    continue
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=str(e),
+                        is_error=True,
+                    )
+                except SkippedCSVEntry as e:
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=str(e),
+                        is_error=False,
+                    )
                 except KeyError as e:
                     raise InputError(f'Could not find key {e!s} in csv row {row!s}') from e

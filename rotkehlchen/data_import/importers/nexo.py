@@ -1,13 +1,18 @@
 import csv
 import logging
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_nexo
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
-from rotkehlchen.data_import.utils import BaseExchangeImporter, UnsupportedCSVEntry, hash_csv_row
+from rotkehlchen.data_import.utils import (
+    BaseExchangeImporter,
+    SkippedCSVEntry,
+    UnsupportedCSVEntry,
+    hash_csv_row,
+)
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
@@ -24,6 +29,9 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import AssetMovementCategory, Fee, Location
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -32,6 +40,11 @@ NEXO_PREFIX = 'NEXO_'
 
 
 class NexoImporter(BaseExchangeImporter):
+    """Nexo CSV importer"""
+
+    def __init__(self, db: 'DBHandler') -> None:
+        super().__init__(db=db, name='Nexo')
+
     def _consume_nexo(
             self,
             write_cursor: DBCursor,
@@ -62,8 +75,7 @@ class NexoImporter(BaseExchangeImporter):
                 location='NEXO',
             )
         else:
-            log.debug(f'Ignoring rejected nexo entry {csv_row}')
-            return
+            raise SkippedCSVEntry('Ignoring rejected entry.')
 
         asset = asset_from_nexo(csv_row['Output Currency'])
         amount = deserialize_asset_amount_force_positive(csv_row['Output Amount'])
@@ -71,11 +83,10 @@ class NexoImporter(BaseExchangeImporter):
         transaction = csv_row['Transaction']
 
         if entry_type in {'Exchange', 'CreditCardStatus'}:
-            self.db.msg_aggregator.add_warning(
+            raise UnsupportedCSVEntry(
                 'Found exchange/credit card status transaction in nexo csv import but the entry '
                 'will be ignored since not enough information is provided about the trade.',
             )
-            return
         if entry_type in {'Deposit', 'ExchangeDepositedOn'}:
             asset_movement = AssetMovement(
                 location=Location.NEXO,
@@ -170,24 +181,38 @@ class NexoImporter(BaseExchangeImporter):
         - InputError if one of the rows is malformed
         """
         with open(filepath, encoding='utf-8-sig') as csvfile:
-            data = csv.DictReader(csvfile)
-            for row in data:
+            for index, row in enumerate(csv.DictReader(csvfile), start=1):
                 try:
+                    self.total_entries += 1
                     self._consume_nexo(write_cursor, row, **kwargs)
+                    self.imported_entries += 1
                 except UnknownAsset as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'During Nexo CSV import found action with unknown '
-                        f'asset {e.identifier}. Ignoring entry',
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=f'Unknown asset {e.identifier}.',
+                        is_error=True,
                     )
-                    continue
                 except DeserializationError as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'Deserialization error during Nexo CSV import. '
-                        f'{e!s}. Ignoring entry',
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=f'Deserialization error: {e!s}.',
+                        is_error=True,
                     )
-                    continue
                 except UnsupportedCSVEntry as e:
-                    self.db.msg_aggregator.add_warning(str(e))
-                    continue
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=str(e),
+                        is_error=True,
+                    )
+                except SkippedCSVEntry as e:
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=str(e),
+                        is_error=False,
+                    )
                 except KeyError as e:
                     raise InputError(f'Could not find key {e!s} in csv row {row!s}') from e

@@ -1,6 +1,6 @@
 import csv
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.converters import asset_from_kucoin
 from rotkehlchen.data_import.utils import BaseExchangeImporter
@@ -17,8 +17,16 @@ from rotkehlchen.serialization.deserialize import (
 )
 from rotkehlchen.types import Location, TradeType
 
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+
 
 class KucoinImporter(BaseExchangeImporter):
+    """Kucoin CSV importer"""
+
+    def __init__(self, db: 'DBHandler') -> None:
+        super().__init__(db=db, name='Kucoin')
+
     def _import_csv(
             self,
             write_cursor: DBCursor,
@@ -56,8 +64,9 @@ class KucoinImporter(BaseExchangeImporter):
                 raise InputError('The given kucoin CSV file format can not be recognized')
 
             csvfile.seek(start_pos)  # go back to start of the file
-            for row in csv.DictReader(csvfile):
+            for index, row in enumerate(csv.DictReader(csvfile), start=1):
                 try:
+                    self.total_entries += 1
                     base, quote = row[tokens_key].split(splitter)
                     fee_currency = get_key_if_has_val(row, fee_currency_key)
                     self.add_trade(
@@ -78,10 +87,13 @@ class KucoinImporter(BaseExchangeImporter):
                             fee_currency=asset_from_kucoin(fee_currency) if fee_currency else None,
                         ),
                     )
+                    self.imported_entries += 1
                 except DeserializationError as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'Deserialization error during Kucoin CSV import. '
-                        f'{e!s}. Ignoring entry',
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=f'Deserialization error: {e!s}.',
+                        is_error=True,
                     )
                 except KeyError as e:
                     raise InputError(f'Could not find key {e!s} in kucoin csv row {row!s}') from e

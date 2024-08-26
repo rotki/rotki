@@ -9,7 +9,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_binance
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_USD
-from rotkehlchen.data_import.utils import BaseExchangeImporter, hash_csv_row
+from rotkehlchen.data_import.utils import BaseExchangeImporter, UnsupportedCSVEntry, hash_csv_row
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import InputError
@@ -38,6 +38,7 @@ from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import AssetWithOracles
+    from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -45,6 +46,12 @@ log = RotkehlchenLogsAdapter(logger)
 BinanceCsvRow = dict[str, Any]
 BINANCE_TRADE_OPERATIONS = {'Buy', 'Sell', 'Fee'}
 EVENT_IDENTIFIER_PREFIX = 'BNC_'
+INDEX = '_index'
+
+
+def hash_binance_csv_row(csv_row: BinanceCsvRow) -> str:
+    """Hash the CSV row excluding the INDEX"""
+    return hash_csv_row({k: v for k, v in csv_row.items() if k != INDEX})
 
 
 class BinanceEntry(abc.ABC):  # noqa: B024
@@ -126,7 +133,7 @@ class BinanceTransferEntry(BinanceMultipleEntry):
         row = data[0]
         return [
             HistoryEvent(
-                event_identifier=f'{EVENT_IDENTIFIER_PREFIX}{hash_csv_row(row)}',
+                event_identifier=f'{EVENT_IDENTIFIER_PREFIX}{hash_binance_csv_row(row)}',
                 sequence_index=0,
                 timestamp=ts_sec_to_ms(timestamp),
                 location=Location.BINANCE,
@@ -240,7 +247,12 @@ class BinanceTradeEntry(BinanceMultipleEntry):
                     )
                 except NoPriceForGivenTimestamp:
                     # If we can't find price we can't group, so we quit the method
-                    log.warning(f'Couldn\'t find price of {row["Coin"]} on {timestamp}')
+                    importer.send_message(
+                        row_index=row[INDEX],
+                        csv_row=row,
+                        msg=f'Couldn\'t find price of {row["Coin"]} on {timestamp}',
+                        is_error=True,
+                    )
                     return []
 
         # Group rows depending on whether they are fee or not and then sort them by amount
@@ -294,11 +306,13 @@ class BinanceTradeEntry(BinanceMultipleEntry):
                 to_amount is None or to_amount == ZERO or
                 from_amount is None or from_amount == ZERO
             ):
-                log.warning(
-                    f'Skipped binance rows {data} because '
-                    f"it didn't have enough data",
-                )
-                importer.db.msg_aggregator.add_warning("Skipped some rows because couldn't find amounts or it was zero")  # noqa: E501
+                for row in trade_rows:
+                    importer.send_message(
+                        row_index=row[INDEX],
+                        csv_row=row,
+                        msg='Trade associated with row is missing required assets or amounts.',
+                        is_error=True,
+                    )
                 continue
 
             rate = to_amount / from_amount
@@ -406,7 +420,7 @@ class BinanceDistributionEntry(BinanceSingleEntry):
         """
         importer.add_history_events(write_cursor, history_events=[
             HistoryEvent(
-                event_identifier=f'{EVENT_IDENTIFIER_PREFIX}{hash_csv_row(data)}',
+                event_identifier=f'{EVENT_IDENTIFIER_PREFIX}{hash_binance_csv_row(data)}',
                 sequence_index=0,
                 timestamp=ts_sec_to_ms(timestamp),
                 location=Location.BINANCE,
@@ -440,7 +454,7 @@ class BinanceStakingRewardsEntry(BinanceSingleEntry):
             data: BinanceCsvRow,
     ) -> None:
         event = HistoryEvent(
-            event_identifier=f'{EVENT_IDENTIFIER_PREFIX}{hash_csv_row(data)}',
+            event_identifier=f'{EVENT_IDENTIFIER_PREFIX}{hash_binance_csv_row(data)}',
             sequence_index=0,
             timestamp=ts_sec_to_ms(timestamp),
             location=Location.BINANCE,
@@ -482,7 +496,7 @@ class BinanceEarnProgram(BinanceSingleEntry):
         """
         asset = data['Coin']
         amount = abs(data['Change'])
-        event_identifier = f'{EVENT_IDENTIFIER_PREFIX}{hash_csv_row(data)}'
+        event_identifier = f'{EVENT_IDENTIFIER_PREFIX}{hash_binance_csv_row(data)}'
         timestamp_ms = ts_sec_to_ms(timestamp)
         staking_event = None
         if data['Operation'] in {
@@ -520,11 +534,11 @@ class BinanceEarnProgram(BinanceSingleEntry):
                 location_label='CSV import',
                 notes=f'Deposit in {data["Operation"]}',
             )
-        elif data['Operation'] == (
+        elif data['Operation'] in {
             'Simple Earn Locked Redemption',
             'Simple Earn Flexible Redemption',
             'Staking Redemption',
-        ):
+        }:
             staking_event = HistoryEvent(
                 event_identifier=event_identifier,
                 sequence_index=0,
@@ -538,8 +552,7 @@ class BinanceEarnProgram(BinanceSingleEntry):
                 notes=f'Unstake {asset} in {data["Operation"]}',
             )
         if staking_event is None:
-            log.error(f'Could not process Binance CSV entry {data}')
-            return
+            raise UnsupportedCSVEntry(f'Unknown staking event operation: {data["Operation"]}.')
         importer.add_history_events(write_cursor=write_cursor, history_events=[staking_event])
 
 
@@ -575,7 +588,7 @@ class BinanceUSDMProgram(BinanceSingleEntry):
             action = 'profit' if is_profit else 'loss'
             notes = f'{amount} {data["Coin"].symbol} realized {action} on binance USD-MFutures'
         return HistoryEvent(
-            event_identifier=f'{EVENT_IDENTIFIER_PREFIX}{hash_csv_row(data)}',
+            event_identifier=f'{EVENT_IDENTIFIER_PREFIX}{hash_binance_csv_row(data)}',
             sequence_index=0,
             timestamp=ts_sec_to_ms(timestamp),
             location=Location.BINANCE,
@@ -628,7 +641,7 @@ class BinancePOSEntry(BinanceSingleEntry):
             event_subtype = HistoryEventSubType.NONE
 
         event = HistoryEvent(
-            event_identifier=f'{EVENT_IDENTIFIER_PREFIX}{hash_csv_row(data)}',
+            event_identifier=f'{EVENT_IDENTIFIER_PREFIX}{hash_binance_csv_row(data)}',
             sequence_index=0,
             timestamp=ts_sec_to_ms(timestamp),
             location=Location.BINANCE,
@@ -656,41 +669,58 @@ MULTIPLE_BINANCE_ENTRIES: list[BinanceMultipleEntry] = [
 ]
 
 
-def _group_binance_rows(
-        rows: list[BinanceCsvRow],
-        timestamp_format: str = '%Y-%m-%d %H:%M:%S',
-) -> tuple[int, dict[Timestamp, list[BinanceCsvRow]]]:
-    """Groups Binance rows by timestamp and deletes unused columns"""
-    multirows: dict[Timestamp, list[BinanceCsvRow]] = defaultdict(list)
-    skipped_count = 0
-    for csv_row in rows:
-        try:
-            timestamp = deserialize_timestamp_from_date(
-                date=csv_row['UTC_Time'],
-                formatstr=timestamp_format,
-                location='binance',
-            )
-            csv_row['Coin'] = asset_from_binance(csv_row['Coin'])
-            csv_row['Change'] = deserialize_asset_amount(csv_row['Change'])
-            multirows[timestamp].append(csv_row)
-        except (DeserializationError, UnknownAsset, UnsupportedAsset) as e:
-            log.warning(f'Skipped binance csv row {csv_row} because of {e!s}')
-            skipped_count += 1
-        except KeyError as e:
-            log.error(f'Malformed binance csv columns! Broke on row {csv_row}. {e!s}')
-            return len(rows), {}
-
-    return skipped_count, multirows
-
-
 class BinanceImporter(BaseExchangeImporter):
+    """Binance CSV importer"""
+
+    def __init__(self, db: 'DBHandler') -> None:
+        super().__init__(db=db, name='Binance')
+
+    def _group_binance_rows(
+            self,
+            rows: list[BinanceCsvRow],
+            timestamp_format: str = '%Y-%m-%d %H:%M:%S',
+    ) -> tuple[int, dict[Timestamp, list[BinanceCsvRow]]]:
+        """Groups Binance rows by timestamp and deletes unused columns"""
+        multirows: dict[Timestamp, list[BinanceCsvRow]] = defaultdict(list)
+        skipped_count = 0
+        for index, csv_row in enumerate(rows, start=1):
+            try:
+                timestamp = deserialize_timestamp_from_date(
+                    date=csv_row['UTC_Time'],
+                    formatstr=timestamp_format,
+                    location='binance',
+                )
+                csv_row['Coin'] = asset_from_binance(csv_row['Coin'])
+                csv_row['Change'] = deserialize_asset_amount(csv_row['Change'])
+                csv_row[INDEX] = index
+                multirows[timestamp].append(csv_row)
+            except UnknownAsset as e:
+                self.send_message(
+                    row_index=index,
+                    csv_row=csv_row,
+                    msg=f'Unknown asset "{e.identifier}" provided.',
+                    is_error=True,
+                )
+                skipped_count += 1
+            except (DeserializationError, UnsupportedAsset) as e:
+                self.send_message(
+                    row_index=index,
+                    csv_row=csv_row,
+                    msg=str(e),
+                    is_error=True,
+                )
+                skipped_count += 1
+            except KeyError as e:
+                raise InputError(f'Malformed binance csv columns! {e!s}') from e
+
+        return skipped_count, multirows
 
     def _process_single_binance_entries(
             self,
             write_cursor: DBCursor,
             timestamp: Timestamp,
             rows: list[BinanceCsvRow],
-    ) -> tuple[dict[BinanceSingleEntry, int], list[BinanceCsvRow]]:
+    ) -> tuple[int, dict[BinanceSingleEntry, int], list[BinanceCsvRow]]:
         """
         Processes binance entries that are represented with a single row in a csv file.
         May raise:
@@ -698,6 +728,7 @@ class BinanceImporter(BaseExchangeImporter):
         """
         processed: dict[BinanceSingleEntry, int] = defaultdict(int)
         ignored: list[BinanceCsvRow] = []
+        skipped_count: int = 0
         for row in rows:
             for single_entry_class in SINGLE_BINANCE_ENTRIES:
                 try:
@@ -714,6 +745,15 @@ class BinanceImporter(BaseExchangeImporter):
                         )
                         processed[single_entry_class] += 1
                         break
+                except UnsupportedCSVEntry as e:
+                    self.send_message(
+                        row_index=row[INDEX],
+                        csv_row=row,
+                        msg=str(e),
+                        is_error=True,
+                    )
+                    skipped_count += 1
+                    break
                 except KeyError as e:
                     raise InputError(f'Could not read key {e} in binance CSV row {row}') from e
                 except DeserializationError as e:
@@ -722,7 +762,7 @@ class BinanceImporter(BaseExchangeImporter):
                     ) from e
             else:  # there was no break in the for loop above
                 ignored.append(row)
-        return processed, ignored
+        return skipped_count, processed, ignored
 
     def _process_multiple_binance_entries(
             self,
@@ -742,21 +782,34 @@ class BinanceImporter(BaseExchangeImporter):
                     data=rows,
                 )
                 return multiple_entry_class, processed_count
+
+        for row in rows:
+            self.send_message(
+                row_index=row[INDEX],
+                csv_row=row,
+                msg='Could not process CSV entry',
+                is_error=True,
+            )
         return None, 0
 
     def _process_binance_rows(
             self,
             write_cursor: DBCursor,
             multi: dict[Timestamp, list[BinanceCsvRow]],
-    ) -> None:
+    ) -> int:
+        """Process binance entries grouped by timestamp
+        Returns a count of how many rows were skipped during import
+        """
         stats: dict[BinanceEntry, int] = defaultdict(int)
-        skipped_rows: list[Any] = []
+        ignored_rows: list[Any] = []
+        skipped_count: int = 0
         for timestamp, rows in multi.items():
-            single_processed, rows_without_single = self._process_single_binance_entries(
+            skipped_count_single, single_processed, rows_without_single = self._process_single_binance_entries(  # noqa: E501
                 write_cursor=write_cursor,
                 timestamp=timestamp,
                 rows=rows,
             )
+            skipped_count += skipped_count_single
             for entry_type, amount in single_processed.items():
                 stats[entry_type] += amount
 
@@ -771,31 +824,29 @@ class BinanceImporter(BaseExchangeImporter):
             else:
                 rows_without_multiple = rows_without_single
 
+            skipped_count += len(rows_without_multiple)
             if len(rows_without_multiple) > 0:
-                skipped_rows.append([timestamp, rows_without_multiple])
+                ignored_rows.append([timestamp, rows_without_multiple])
 
         skipped_nontrade_rows = []
         skipped_trade_rows = []
-        for skipped_rows_group in skipped_rows:
+        for skipped_rows_group in ignored_rows:
             cur_operations = {el['Operation'] for el in skipped_rows_group[1]}
             if cur_operations.issubset(BINANCE_TRADE_OPERATIONS):
                 skipped_trade_rows.append(skipped_rows_group)
             else:
                 skipped_nontrade_rows.append(skipped_rows_group)
         total_found = sum(stats.values())
-        skipped_count = 0
-        for _, rows in skipped_rows:
-            skipped_count += len(rows)
+        ignored_count = 0
+        for _, rows in ignored_rows:
+            ignored_count += len(rows)
         log.debug(f'Skipped Binance trade rows: {skipped_trade_rows}')
         log.debug(f'Skipped Binance non-trade rows {skipped_nontrade_rows}')
         log.debug(f'Total found Binance entries: {total_found}')
-        log.debug(f'Total skipped Binance csv rows: {skipped_count}')
+        log.debug(f'Total skipped Binance csv rows: {ignored_count}')
         log.debug(f'Binance import stats: {[{type(entry_class).__name__: amount} for entry_class, amount in stats.items()]}')  # noqa: E501
-        if skipped_count > 0:
-            self.db.msg_aggregator.add_warning(
-                f'Skipped {skipped_count} rows during processing binance csv file. '
-                f'Check logs for details',
-            )
+
+        return skipped_count
 
     def _import_csv(self, write_cursor: DBCursor, filepath: Path, **kwargs: Any) -> None:
         """
@@ -804,9 +855,7 @@ class BinanceImporter(BaseExchangeImporter):
         """
         with open(filepath, encoding='utf-8-sig') as csvfile:
             input_rows = list(csv.DictReader(csvfile))
-            skipped_count, multirows = _group_binance_rows(rows=input_rows, **kwargs)
-            if skipped_count > 0:
-                self.db.msg_aggregator.add_warning(
-                    f'{skipped_count} Binance rows have bad format. Check logs for details.',
-                )
-            self._process_binance_rows(write_cursor=write_cursor, multi=multirows)
+            self.total_entries = len(input_rows)
+            skipped_count, multirows = self._group_binance_rows(rows=input_rows, **kwargs)
+            skipped_count += self._process_binance_rows(write_cursor=write_cursor, multi=multirows)
+            self.imported_entries = self.total_entries - skipped_count

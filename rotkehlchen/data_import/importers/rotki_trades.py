@@ -1,8 +1,7 @@
 import csv
-import logging
 from decimal import DivisionByZero
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.utils import symbol_to_asset_or_token
 from rotkehlchen.data_import.utils import (
@@ -14,16 +13,20 @@ from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Trade
-from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_asset_amount
 from rotkehlchen.types import Price, TradeType
 from rotkehlchen.utils.misc import ts_ms_to_sec
 
-logger = logging.getLogger(__name__)
-log = RotkehlchenLogsAdapter(logger)
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 class RotkiGenericTradesImporter(BaseExchangeImporter):
+    """Rotki generic trades CSV importer"""
+
+    def __init__(self, db: 'DBHandler') -> None:
+        super().__init__(db=db, name='Rotki generic trades')
+
     def _consume_rotki_trades(
             self,
             write_cursor: DBCursor,
@@ -64,27 +67,31 @@ class RotkiGenericTradesImporter(BaseExchangeImporter):
         - InputError if one of the rows is malformed
         """
         with open(filepath, encoding='utf-8-sig') as csvfile:
-            data = csv.DictReader(csvfile)
-            for row in data:
+            for index, row in enumerate(csv.DictReader(csvfile), start=1):
                 try:
+                    self.total_entries += 1
                     self._consume_rotki_trades(write_cursor, row)
+                    self.imported_entries += 1
                 except UnknownAsset as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'During rotki generic trades CSV import, found action with unknown '
-                        f'asset {e.identifier}. Ignoring entry',
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=f'Unknown asset {e.identifier}.',
+                        is_error=True,
                     )
                 except DeserializationError as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'Deserialization error during rotki generic trades CSV import. '
-                        f'{e!s}. Ignoring entry',
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=f'Deserialization error: {e!s}.',
+                        is_error=True,
                     )
                 except DivisionByZero:
-                    self.db.msg_aggregator.add_warning(
-                        f'During rotki generic trades import, csv row {row!s} has zero '
-                        f'amount bought. Ignoring entry',
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg='Entry has zero amount bought.',
+                        is_error=True,
                     )
                 except KeyError as e:
                     raise InputError(f'Could not find key {e!s} in csv row {row!s}') from e
-
-                # if more logic is ever added here,
-                # `continue` must be placed at the end of all the exceptions handlers
