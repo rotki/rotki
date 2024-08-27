@@ -3,6 +3,7 @@ import { getIdentifierFromSymbolMap } from '@rotki/common';
 import { useCurrencies } from '@/types/currencies';
 import { isBlockchain } from '@/types/blockchain/chains';
 import type { StyleValue } from 'vue';
+import type { AssetResolutionOptions } from '@/composables/assets/retrieval';
 
 const props = withDefaults(
   defineProps<{
@@ -15,6 +16,7 @@ const props = withDefaults(
     enableAssociation?: boolean;
     showChain?: boolean;
     flat?: boolean;
+    resolutionOptions?: AssetResolutionOptions;
   }>(),
   {
     styled: undefined,
@@ -24,6 +26,7 @@ const props = withDefaults(
     enableAssociation: true,
     showChain: true,
     flat: false,
+    resolutionOptions: () => ({}),
   },
 );
 
@@ -31,7 +34,7 @@ const emit = defineEmits<{ (e: 'click'): void }>();
 
 const { t } = useI18n();
 
-const { identifier, padding, size, enableAssociation, showChain } = toRefs(props);
+const { identifier, padding, size, resolutionOptions, showChain } = toRefs(props);
 
 const error = ref<boolean>(false);
 const pending = ref<boolean>(true);
@@ -55,7 +58,7 @@ const currency = computed<string | undefined>(() => {
 const { assetInfo } = useAssetInfoRetrieval();
 const { getAssetImageUrl } = useAssetIconStore();
 
-const asset = assetInfo(mappedIdentifier, enableAssociation);
+const asset = assetInfo(mappedIdentifier, resolutionOptions);
 const isCustomAsset = computed(() => get(asset)?.isCustomAsset ?? false);
 const chain = computed(() => get(asset)?.evmChain);
 const symbol = computed(() => get(asset)?.symbol);
