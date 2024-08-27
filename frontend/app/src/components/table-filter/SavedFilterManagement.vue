@@ -13,7 +13,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const css = useCssModule();
 
 const { selection, location, matchers } = toRefs(props);
 
@@ -93,7 +92,7 @@ async function addToSavedFilter() {
       </template>
       <div
         class="text-center"
-        :class="css['add-tooltip']"
+        :class="$style['add-tooltip']"
       >
         <div
           class="h-4 transition-all"

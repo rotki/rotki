@@ -41,19 +41,17 @@ async function navigate() {
   set(showReleaseNotes, false);
 }
 
-const css = useCssModule();
-
 onMounted(() => fetchMessages());
 </script>
 
 <template>
-  <section :class="css.section">
-    <div :class="css.container">
+  <section :class="$style.section">
+    <div :class="$style.container">
       <RotkiLogo
-        :class="css.logo__mobile"
+        :class="$style.logo__mobile"
         unique-key="0"
       />
-      <div :class="css.wrapper">
+      <div :class="$style.wrapper">
         <div data-cy="account-management">
           <UserHost>
             <div v-if="checkForAssetUpdate">
@@ -76,7 +74,7 @@ onMounted(() => fetchMessages());
           </UserHost>
         </div>
       </div>
-      <footer :class="css.container__footer">
+      <footer :class="$style.container__footer">
         <AccountManagementFooterText #default="{ copyright }">
           {{ copyright }}
         </AccountManagementFooterText>
@@ -88,7 +86,7 @@ onMounted(() => fetchMessages());
   </section>
   <AccountManagementAside class="p-6 hidden lg:flex lg:p-12">
     <div>
-      <span :class="css.logo">
+      <span :class="$style.logo">
         <RotkiLogo
           size="2"
           unique-key="0"

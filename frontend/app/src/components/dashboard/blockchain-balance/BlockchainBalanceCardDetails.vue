@@ -11,8 +11,6 @@ withDefaults(
     details: null,
   },
 );
-
-const css = useCssModule();
 </script>
 
 <template>
@@ -24,7 +22,7 @@ const css = useCssModule();
       :id="`${child.protocol}_box`"
       :key="child.protocol"
       class="blockchain-balance-box__item group py-1 pr-6"
-      :class="css['sub-item']"
+      :class="$style['sub-item']"
     >
       <template #avatar>
         <div class="grayscale group-hover:grayscale-0">

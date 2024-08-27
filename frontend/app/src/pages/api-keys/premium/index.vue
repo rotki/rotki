@@ -127,8 +127,6 @@ function showDeleteConfirmation() {
     remove,
   );
 }
-
-const css = useCssModule();
 </script>
 
 <template>
@@ -196,7 +194,7 @@ const css = useCssModule();
       <template #footer>
         <div
           class="flex flex-row gap-2 pt-4"
-          :class="css.buttons"
+          :class="$style.buttons"
         >
           <template v-if="premium">
             <RuiButton

@@ -41,8 +41,6 @@ function show() {
   set(appear, true);
 }
 
-const css = useCssModule();
-
 const minHeightUsed = computed(() => {
   const heightVal = get(height);
   if (heightVal !== 'max-content' || get(usedAppear))
@@ -54,7 +52,7 @@ const minHeightUsed = computed(() => {
 <template>
   <div
     ref="wrapper"
-    :class="[css.wrapper, { [css.appear]: usedAppear }]"
+    :class="[$style.wrapper, { [$style.appear]: usedAppear }]"
     @mouseenter="!usedAppear && show()"
   >
     <slot v-if="usedAppear" />

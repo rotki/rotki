@@ -13,8 +13,6 @@ const emit = defineEmits<{
 function click(matcher: SearchMatcher<any>) {
   emit('click', matcher);
 }
-
-const css = useCssModule();
 </script>
 
 <template>
@@ -22,7 +20,7 @@ const css = useCssModule();
     variant="text"
     class="text-body-1 tracking-wide w-full justify-start text-left text-rui-text-secondary"
     :class="{
-      [css.selected]: active,
+      [$style.selected]: active,
     }"
     @click="click(matcher)"
   >

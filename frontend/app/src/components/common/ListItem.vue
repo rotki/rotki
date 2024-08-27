@@ -28,16 +28,14 @@ const avatarSizeClasses = computed(() => {
 });
 
 const slots = useSlots();
-
-const css = useCssModule();
 </script>
 
 <template>
   <div
     :class="[
-      css.wrapper,
+      $style.wrapper,
       {
-        [css['with-padding']]: !noPadding,
+        [$style['with-padding']]: !noPadding,
         'hover:bg-rui-grey-100 hover:dark:bg-rui-grey-800': !noHover,
       },
     ]"

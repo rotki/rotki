@@ -36,7 +36,6 @@ function nextStep() {
   setStep(get(step) + 1);
 }
 
-const css = useCssModule();
 const { t } = useI18n();
 
 const premiumEnabled = ref<boolean>(false);
@@ -79,8 +78,8 @@ function confirm() {
     leave-to-class="-translate-y-5 opacity-0"
     leave-active-class="transform duration-100"
   >
-    <div :class="css.register">
-      <div :class="css.register__wrapper">
+    <div :class="$style.register">
+      <div :class="$style.register__wrapper">
         <div class="flex flex-col items-center">
           <RotkiLogo unique-key="1b" />
           <h4 class="text-h4 mb-3 mt-8">
@@ -148,7 +147,7 @@ function confirm() {
               </RuiTabItem>
             </RuiTabItems>
           </div>
-          <div :class="css.register__actions__footer">
+          <div :class="$style.register__actions__footer">
             <span>{{ t('create_account.have_account.description') }}</span>
             <RuiButton
               color="primary"

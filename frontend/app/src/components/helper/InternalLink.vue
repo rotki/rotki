@@ -22,7 +22,6 @@ const props = withDefaults(
 );
 
 const rootAttrs = useAttrs();
-const css = useCssModule();
 </script>
 
 <template>
@@ -46,7 +45,7 @@ const css = useCssModule();
       <RuiButton
         variant="text"
         color="primary"
-        :class="css.button"
+        :class="$style.button"
       >
         <slot />
       </RuiButton>

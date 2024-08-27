@@ -11,8 +11,6 @@ function getFlagEmoji(code: string) {
     .map(char => 127397 + char.charCodeAt(0));
   return String.fromCodePoint(...codePoints);
 }
-
-const css = useCssModule();
 </script>
 
 <template>
@@ -29,7 +27,7 @@ const css = useCssModule();
         >
           /
         </span>
-        <span :class="css.flag">
+        <span :class="$style.flag">
           {{ getFlagEmoji(country) }}
         </span>
       </div>

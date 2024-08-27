@@ -15,8 +15,6 @@ defineProps<{
   refreshing: boolean;
 }>();
 
-const css = useCssModule();
-
 const historyStore = useHistoryStore();
 const { protocolCacheStatus, receivingProtocolCacheStatus } = storeToRefs(historyStore);
 
@@ -106,7 +104,7 @@ const [DefineProgress, ReuseProgress] = createReusableTemplate<{
     </div>
     <div
       v-else-if="protocolCacheStatus.length > 0"
-      :class="css.content"
+      :class="$style.content"
     >
       <DefineProgress #default="{ data }">
         <div

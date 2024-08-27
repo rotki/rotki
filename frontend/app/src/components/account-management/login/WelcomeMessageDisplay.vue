@@ -37,15 +37,13 @@ onMounted(async () => {
   if (get(activeItem)?.icon)
     set(svg, await fetchSvg());
 });
-
-const css = useCssModule();
 </script>
 
 <template>
   <div
     v-if="activeItem"
     class="flex flex-col items-start gap-4 w-full p-6 overflow-hidden rounded-lg"
-    :class="css.card"
+    :class="$style.card"
   >
     <FadeTransition tag="div">
       <div
@@ -60,7 +58,7 @@ const css = useCssModule();
         >
           <div
             class="object-contain text-rui-primary h-6 w-6"
-            :class="css.icon"
+            :class="$style.icon"
             v-html="svg"
           />
         </div>

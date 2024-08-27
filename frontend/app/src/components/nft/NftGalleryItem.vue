@@ -20,7 +20,6 @@ const { shouldRender, isVideo, renderedMedia } = useNftImage(imageUrlSource);
 const name = computed(() => (get(item).name ? get(item).name : get(item).collection.name));
 
 const { t } = useI18n();
-const css = useCssModule();
 
 const domain = computed<string | null>(() => getDomain(get(imageUrlSource) || ''));
 
@@ -88,7 +87,7 @@ const mediaStyle = computed<StyleValue>(() => {
               :src="renderedMedia"
               :style="mediaStyle"
               class="w-full"
-              :class="css.media"
+              :class="$style.media"
             />
             <AppImage
               v-else
@@ -96,7 +95,7 @@ const mediaStyle = computed<StyleValue>(() => {
               contain
               :style="mediaStyle"
               width="100%"
-              :class="css.media"
+              :class="$style.media"
             />
           </ExternalLink>
         </template>
@@ -108,7 +107,7 @@ const mediaStyle = computed<StyleValue>(() => {
         v-if="!shouldRender"
         :popper="{ placement: 'top' }"
         :open-delay="400"
-        :class="css['unlock-button']"
+        :class="$style['unlock-button']"
       >
         <template #activator>
           <RuiButton

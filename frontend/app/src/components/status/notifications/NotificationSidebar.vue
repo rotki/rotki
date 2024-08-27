@@ -6,8 +6,6 @@ const display = defineModel<boolean>({ required: true });
 
 const { t } = useI18n();
 
-const css = useCssModule();
-
 const confirmStore = useConfirmStore();
 const { visible: dialogVisible } = storeToRefs(confirmStore);
 const { show } = confirmStore;
@@ -98,14 +96,14 @@ watch(
 <template>
   <RuiNavigationDrawer
     v-model="display"
-    :content-class="css.sidebar"
+    :content-class="$style.sidebar"
     width="400px"
     position="right"
     temporary
     :stateless="dialogVisible"
   >
     <DefineNoMessages>
-      <div :class="css['no-messages']">
+      <div :class="$style['no-messages']">
         <RuiIcon
           size="64px"
           color="primary"
@@ -133,7 +131,7 @@ watch(
       <ReuseNoMessages v-if="!hasRunningTasks && allNotifications.length === 0" />
       <div
         v-else
-        :class="css.messages"
+        :class="$style.messages"
       >
         <PendingTasks />
         <div class="border-b border-default mx-4">
@@ -155,7 +153,7 @@ watch(
         <div
           v-if="selectedNotifications.length > 0"
           ref="contentWrapper"
-          :class="css.content"
+          :class="$style.content"
         >
           <LazyLoader
             v-for="item in selectedNotifications"

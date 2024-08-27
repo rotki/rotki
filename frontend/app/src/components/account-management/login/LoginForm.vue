@@ -37,7 +37,6 @@ const newAccount = () => emit('new-account');
 const backendChanged = (url: string | null) => emit('backend-changed', url);
 
 const { logoutRemoteSession } = useSessionStore();
-const css = useCssModule();
 
 const username = ref<string>('');
 const usernameSearch = ref<string>('');
@@ -286,8 +285,8 @@ function abortLogin() {
     leave-to-class="-translate-y-5 opacity-0"
     leave-active-class="transform duration-100"
   >
-    <div :class="css.login">
-      <div :class="css.login__wrapper">
+    <div :class="$style.login">
+      <div :class="$style.login__wrapper">
         <h4 class="text-h4 mb-3">
           {{ t('login.title') }}
         </h4>
@@ -393,7 +392,7 @@ function abortLogin() {
                   :disabled="customBackendDisplay || rememberPassword || loading"
                   color="primary"
                   hide-details
-                  :class="css.remember"
+                  :class="$style.remember"
                 >
                   {{ t('login.remember_username') }}
                 </RuiCheckbox>
@@ -407,7 +406,7 @@ function abortLogin() {
                       :disabled="customBackendDisplay || loading"
                       color="primary"
                       hide-details
-                      :class="css.remember"
+                      :class="$style.remember"
                     >
                       {{ t('login.remember_password') }}
                     </RuiCheckbox>
@@ -521,7 +520,7 @@ function abortLogin() {
 
                 <RuiCheckbox
                   v-model="customBackendSessionOnly"
-                  :class="css.remember"
+                  :class="$style.remember"
                   color="primary"
                   hide-details
                   :disabled="customBackendSaved"
@@ -538,7 +537,7 @@ function abortLogin() {
               @cancel="abortLogin()"
             />
 
-            <div :class="css.login__actions">
+            <div :class="$style.login__actions">
               <RuiButton
                 color="primary"
                 size="lg"
@@ -589,7 +588,7 @@ function abortLogin() {
                 </RuiCard>
               </RuiDialog>
 
-              <div :class="css.login__actions__footer">
+              <div :class="$style.login__actions__footer">
                 <span>{{ t('login.button_no_account') }}</span>
                 <RuiButton
                   color="primary"

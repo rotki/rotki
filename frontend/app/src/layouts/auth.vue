@@ -3,16 +3,14 @@ const { showAbout } = storeToRefs(useAreaVisibilityStore());
 const { isPackaged } = useInterop();
 const { updateDarkMode } = useDarkMode();
 updateDarkMode(false);
-
-const css = useCssModule();
 </script>
 
 <template>
   <AppHost>
     <FrontendUpdateNotifier v-if="!isPackaged" />
     <AppMessages>
-      <div :class="css.overlay">
-        <div :class="css.overlay__scroll">
+      <div :class="$style.overlay">
+        <div :class="$style.overlay__scroll">
           <RouterView />
         </div>
       </div>

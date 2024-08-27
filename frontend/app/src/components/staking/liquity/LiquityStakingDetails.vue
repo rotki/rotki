@@ -205,7 +205,6 @@ function refresh() {
   emit('refresh', true);
 }
 
-const css = useCssModule();
 const slots = useSlots();
 </script>
 
@@ -284,13 +283,13 @@ const slots = useSlots();
             </div>
             <div
               class="ml-3 pl-4 pt-2"
-              :class="css['proxies-wrapper']"
+              :class="$style['proxies-wrapper']"
             >
               <div
                 v-for="proxy in proxies"
                 :key="proxy"
                 class="mb-1 flex"
-                :class="css['proxies-item']"
+                :class="$style['proxies-item']"
               >
                 <HashLink
                   :text="proxy"

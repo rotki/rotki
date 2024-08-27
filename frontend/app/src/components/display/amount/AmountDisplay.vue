@@ -289,7 +289,6 @@ function fixExponentialSeparators(value: string, thousands: string, decimals: st
 }
 
 const { copy, copied } = useCopy(copyValue);
-const css = useCssModule();
 
 const anyLoading = logicOr(loading, evaluating);
 const info = assetInfo(asset, resolutionOptions);
@@ -351,8 +350,8 @@ const [DefineSymbol, ReuseSymbol] = createReusableTemplate<{ name: string }>();
           'blur': !shouldShowAmount,
           'text-rui-success': pnl && displayValue.gt(0),
           'text-rui-error': pnl && displayValue.lt(0),
-          [css.xl]: xl,
-          [`skeleton min-w-[3.5rem] max-w-[4rem] ${css.loading}`]: anyLoading,
+          [$style.xl]: xl,
+          [`skeleton min-w-[3.5rem] max-w-[4rem] ${$style.loading}`]: anyLoading,
         },
       ]"
       class="inline-flex items-center gap-1 transition duration-200 rounded-lg max-w-full"
