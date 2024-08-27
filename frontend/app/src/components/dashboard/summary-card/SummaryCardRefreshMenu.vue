@@ -16,13 +16,11 @@ const emit = defineEmits<{
 }>();
 
 const refresh = () => emit('refresh');
-
-const slots = useSlots();
 </script>
 
 <template>
   <RefreshButton
-    v-if="!slots.refreshMenu"
+    v-if="!$slots.refreshMenu"
     :loading="loading"
     :disabled="disabled"
     :tooltip="tooltip"

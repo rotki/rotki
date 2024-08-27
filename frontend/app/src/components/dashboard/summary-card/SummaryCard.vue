@@ -24,8 +24,6 @@ function refresh(balanceSource: string) {
 }
 
 const { t } = useI18n();
-
-const slots = useSlots();
 </script>
 
 <template>
@@ -55,7 +53,7 @@ const slots = useSlots();
             @refresh="refresh(name)"
           >
             <template
-              v-if="slots.refreshMenu"
+              v-if="$slots.refreshMenu"
               #refreshMenu
             >
               <slot name="refreshMenu" />

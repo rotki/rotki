@@ -10,7 +10,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const slots = useSlots();
 </script>
 
 <template>
@@ -31,7 +30,7 @@ const slots = useSlots();
         @click="emit('cancel')"
       >
         <slot
-          v-if="slots.cancel"
+          v-if="$slots.cancel"
           name="cancel"
         />
         <span v-else> {{ t('common.actions.no') }} </span>
@@ -41,7 +40,7 @@ const slots = useSlots();
         @click="emit('confirm')"
       >
         <slot
-          v-if="slots.confirm"
+          v-if="$slots.confirm"
           name="confirm"
         />
         <span v-else> {{ t('common.actions.yes') }} </span>

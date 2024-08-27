@@ -95,8 +95,6 @@ watch(
     deep: true,
   },
 );
-
-const slots = useSlots();
 </script>
 
 <template>
@@ -154,7 +152,7 @@ const slots = useSlots();
       </RuiTooltip>
     </div>
 
-    <slot v-if="slots.default" />
+    <slot v-if="$slots.default" />
 
     <div
       class="pt-4 flex gap-2"
