@@ -1,12 +1,15 @@
 <script lang="ts" setup>
 import type { AssetBalance } from '@rotki/common';
+import type { AssetResolutionOptions } from '@/composables/assets/retrieval';
 
 const props = withDefaults(defineProps<{
   assets: AssetBalance[];
   loading: boolean;
   visible?: number;
+  resolutionOptions?: AssetResolutionOptions;
 }>(), {
   visible: 3,
+  resolutionOptions: () => ({ collectionParent: false }),
 });
 
 const { assets, visible } = toRefs(props);
@@ -17,7 +20,7 @@ const showMore = computed<number>(() => get(assets).length - get(visible));
 <template>
   <div class="flex justify-end pl-2">
     <template
-      v-for="asset in assets.slice(0, 3)"
+      v-for="asset in assets.slice(0, visible)"
       :key="asset.asset"
     >
       <RuiTooltip
@@ -33,7 +36,7 @@ const showMore = computed<number>(() => get(assets).length - get(visible));
               no-tooltip
               flat
               :identifier="asset.asset"
-              ignore-collection
+              :resolution-options="resolutionOptions"
               size="24px"
               class="[&_.icon-bg>div]:!rounded-full [&_.icon-bg>div]:!overflow-hidden"
               :show-chain="false"
@@ -45,6 +48,7 @@ const showMore = computed<number>(() => get(assets).length - get(visible));
           :value="asset.amount"
           :asset="asset.asset"
           :asset-padding="0.1"
+          :resolution-options="resolutionOptions"
           data-cy="top-asset-amount"
         />
       </RuiTooltip>

@@ -24,10 +24,13 @@ const props = withDefaults(
   },
 );
 
-const { asset, enableAssociation, isCollectionParent } = toRefs(props);
+const { asset } = toRefs(props);
 const { assetInfo } = useAssetInfoRetrieval();
 
-const assetDetails = assetInfo(asset, enableAssociation, isCollectionParent);
+const assetDetails = assetInfo(asset, computed(() => ({
+  associated: props.enableAssociation,
+  collectionParent: props.isCollectionParent,
+})));
 const address = reactify(getAddressFromEvmIdentifier)(asset);
 
 const currentAsset = computed<AssetInfoWithId>(() => ({

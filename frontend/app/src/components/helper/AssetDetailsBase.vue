@@ -84,7 +84,7 @@ const loading = computed<boolean>(() => get(isPending(get(asset).identifier)));
         size="26px"
         :styled="assetStyled"
         :identifier="asset.identifier"
-        :enable-association="enableAssociation"
+        :resolution-options="{ associate: enableAssociation }"
         :show-chain="showChain"
       />
     </template>

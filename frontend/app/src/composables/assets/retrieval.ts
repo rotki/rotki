@@ -6,6 +6,11 @@ import type { ERC20Token } from '@/types/blockchain/accounts';
 import type { TaskMeta } from '@/types/task';
 import type { EvmChainAddress } from '@/types/history/events';
 
+export interface AssetResolutionOptions {
+  associate?: boolean;
+  collectionParent?: boolean;
+}
+
 export function useAssetInfoRetrieval() {
   const { t } = useI18n();
   const { erc20details, assetSearch: assetSearchCaller } = useAssetInfoApi();
@@ -48,73 +53,71 @@ export function useAssetInfoRetrieval() {
 
   const assetInfo = (
     identifier: MaybeRef<string | undefined>,
-    enableAssociation: MaybeRef<boolean> = true,
-    isCollectionParent: MaybeRef<boolean> = true,
-  ): ComputedRef<AssetInfo | null> =>
-    computed(() => {
-      const id = get(identifier);
-      if (!id)
-        return null;
+    options: MaybeRef<AssetResolutionOptions> = {},
+  ): ComputedRef<(AssetInfo & { resolved: boolean }) | null> => computed(() => {
+    const id = get(identifier);
+    if (!id)
+      return null;
 
-      const key = get(enableAssociation) ? get(getAssociatedAssetIdentifier(id)) : id;
+    const {
+      associate = true,
+      collectionParent = true,
+    } = get(options);
 
-      const data = get(retrieve(key));
+    const key = associate ? get(getAssociatedAssetIdentifier(id)) : id;
+    const data = get(retrieve(key));
 
-      const isCustomAsset = data?.isCustomAsset || data?.assetType === CUSTOM_ASSET;
+    const isCustomAsset = data?.isCustomAsset || data?.assetType === CUSTOM_ASSET;
 
-      if (isCustomAsset) {
-        return {
-          ...data,
-          symbol: data.name,
-          isCustomAsset,
-        };
-      }
-      const { fetchedAssetCollections } = storeToRefs(useAssetCacheStore());
-      const collectionData
-        = get(isCollectionParent) && data?.collectionId ? get(fetchedAssetCollections)[data.collectionId] : null;
-
-      const name = collectionData?.name || data?.name || getAssetNameFallback(id);
-      const symbol = collectionData?.symbol || data?.symbol || getAssetNameFallback(id);
-
+    if (isCustomAsset) {
       return {
         ...data,
+        symbol: data.name,
         isCustomAsset,
-        name,
-        symbol,
+        resolved: !!data,
       };
-    });
+    }
+    const { fetchedAssetCollections } = storeToRefs(useAssetCacheStore());
+    const collectionData = collectionParent && data?.collectionId
+      ? get(fetchedAssetCollections)[data.collectionId]
+      : null;
+
+    const fallback = getAssetNameFallback(id);
+    const name = collectionData?.name || data?.name || fallback;
+    const symbol = collectionData?.symbol || data?.symbol || fallback;
+
+    return {
+      ...data,
+      isCustomAsset,
+      name,
+      symbol,
+      resolved: !!data,
+    };
+  });
 
   const assetSymbol = (
     identifier: MaybeRef<string | undefined>,
     enableAssociation: MaybeRef<boolean> = true,
-  ): ComputedRef<string> =>
-    computed(() => {
-      const id = get(identifier);
-      if (!id)
-        return '';
-
-      const symbol = get(assetInfo(id, enableAssociation))?.symbol;
-      if (symbol)
-        return symbol;
-
+  ): ComputedRef<string> => computed(() => {
+    const id = get(identifier);
+    if (!id)
       return '';
-    });
+
+    const symbol = get(assetInfo(id, { associate: get(enableAssociation) }))?.symbol;
+    return symbol || '';
+  });
 
   const assetName = (
     identifier: MaybeRef<string | undefined>,
     enableAssociation: MaybeRef<boolean> = true,
-  ): ComputedRef<string> =>
-    computed(() => {
-      const id = get(identifier);
-      if (!id)
-        return '';
-
-      const name = get(assetInfo(id, enableAssociation))?.name;
-      if (name)
-        return name;
-
+  ): ComputedRef<string> => computed(() => {
+    const id = get(identifier);
+    if (!id)
       return '';
-    });
+
+    const name = get(assetInfo(id, { associate: get(enableAssociation) }))?.name;
+    return name || '';
+  });
 
   const tokenAddress = (
     identifier: MaybeRef<string>,
