@@ -13,8 +13,6 @@ const props = withDefaults(
   },
 );
 
-const css = useCssModule();
-
 const { identifier } = toRefs(props);
 const { assetInfo } = useAssetInfoRetrieval();
 
@@ -104,7 +102,7 @@ const fallbackData = computed(() => {
           <template #activator>
             <div
               class="my-2 bg-rui-grey-200 rounded flex items-center justify-center"
-              :class="css.preview"
+              :class="$style.preview"
               :style="styled"
               @click="!shouldRender ? showAllowDomainConfirmation() : null"
             >
@@ -139,7 +137,7 @@ const fallbackData = computed(() => {
         </template>
         <div
           v-else-if="name"
-          :class="css['nft-details']"
+          :class="$style['nft-details']"
         >
           <div class="font-medium text-truncate">
             {{ name }}

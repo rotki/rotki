@@ -45,8 +45,6 @@ const displayValue = computed(() => {
 
   return usedAsset.isCustomAsset ? usedAsset.name : usedAsset.symbol;
 });
-
-const css = useCssModule();
 </script>
 
 <template>
@@ -57,7 +55,7 @@ const css = useCssModule();
     <template v-if="!(chip && isBoolean)">
       <span
         :class="{
-          [css.comparator]: chip,
+          [$style.comparator]: chip,
           ['text-rui-primary']: !chip,
         }"
         class="px-1"

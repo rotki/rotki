@@ -44,23 +44,26 @@ function expandParent() {
     }, 150);
   }
 }
-
-const css = useCssModule();
 </script>
 
 <template>
   <div ref="outer">
     <div
       :class="[
-        css.wrapper,
-        { [css.active]: active, [css.active__parent]: active && parent, [css.mini]: mini, [css.submenu]: subMenu },
+        $style.wrapper,
+        {
+          [$style.active]: active,
+          [$style.active__parent]: active && parent,
+          [$style.mini]: mini,
+          [$style.submenu]: subMenu,
+        },
       ]"
       @click="expandParent()"
     >
       <DefineImage>
         <div
           :class="[
-            css.icon,
+            $style.icon,
             {
               ['mr-2']: subMenu && !mini,
               ['mr-3']: !subMenu && !mini,
@@ -74,7 +77,7 @@ const css = useCssModule();
             contain
             width="24px"
             :src="image"
-            :class="css.image"
+            :class="$style.image"
           />
           <Component
             :is="iconComponent"
@@ -105,7 +108,7 @@ const css = useCssModule();
       </template>
       <div
         v-if="parent && !mini"
-        :class="css.toggle"
+        :class="$style.toggle"
       >
         <RuiIcon
           name="arrow-down-s-line"
@@ -117,9 +120,9 @@ const css = useCssModule();
     <div
       v-if="parent"
       :class="[
-        css['submenu-wrapper'],
+        $style['submenu-wrapper'],
         {
-          [`${css.expanded} submenu-wrapper__expanded`]: subMenuExpanded,
+          [`${$style.expanded} submenu-wrapper__expanded`]: subMenuExpanded,
         },
       ]"
       class="submenu-wrapper"

@@ -43,8 +43,6 @@ const formattedNotes: ComputedRef<NoteFormat[]> = formatNotes({
   counterparty,
 });
 
-const css = useCssModule();
-
 function isLinkType(t: any): t is keyof ExplorerUrls {
   return [NoteType.TX, NoteType.ADDRESS, NoteType.BLOCK].includes(t);
 }
@@ -61,7 +59,7 @@ function isLinkType(t: any): t is keyof ExplorerUrls {
         :key="index"
         class="inline-flex"
         :class="{
-          [css.address]: true,
+          [$style.address]: true,
           'pl-2': !note.showIcon,
         }"
         :text="note.address"

@@ -45,8 +45,6 @@ const secondary = computed(() => get(secondaryAction) || t('common.actions.cance
 const confirm = () => emit('confirm');
 const cancel = () => emit('cancel');
 
-const css = useCssModule();
-
 const displayModel = computed({
   get() {
     return get(display);
@@ -89,7 +87,7 @@ const displayModel = computed({
         v-if="display"
         ref="wrapper"
         class="overflow-y-auto -mx-4 px-4 -mt-4 pt-2 pb-4"
-        :class="[css.card, { [css['auto-height']]: autoHeight }]"
+        :class="[$style.card, { [$style['auto-height']]: autoHeight }]"
       >
         <slot :wrapper="wrapper" />
       </div>

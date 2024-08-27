@@ -151,8 +151,6 @@ async function refreshHistoricalPrice(item: EditableMissingPrice) {
   }
   set(refreshing, false);
 }
-
-const css = useCssModule();
 </script>
 
 <template>
@@ -162,7 +160,7 @@ const css = useCssModule();
       v-model:sort="sort"
       class="table-inside-dialog"
       :class="{
-        [css['table--pinned']]: isPinned,
+        [$style['table--pinned']]: isPinned,
       }"
       :cols="headers"
       :rows="formattedItems"
@@ -188,7 +186,7 @@ const css = useCssModule();
       <template #item.price="{ row }">
         <AmountInput
           v-model="row.price"
-          :class="css.input"
+          :class="$style.input"
           dense
           :disabled="row.useRefreshedHistoricalPrice"
           :label="t('profit_loss_report.actionable.missing_prices.input_price')"

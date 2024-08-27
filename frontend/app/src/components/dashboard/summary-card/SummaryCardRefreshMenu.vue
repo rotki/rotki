@@ -18,7 +18,6 @@ const emit = defineEmits<{
 const refresh = () => emit('refresh');
 
 const slots = useSlots();
-const css = useCssModule();
 </script>
 
 <template>
@@ -43,7 +42,7 @@ const css = useCssModule();
         />
         <RuiButton
           :disabled="disabled"
-          :class="css.expander"
+          :class="$style.expander"
           icon
           variant="text"
           size="sm"

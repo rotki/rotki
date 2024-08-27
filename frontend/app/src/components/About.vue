@@ -2,8 +2,6 @@
 import type { SystemVersion } from '@shared/ipc';
 import type { WebVersion } from '@/types';
 
-const css = useCssModule();
-
 const store = useMainStore();
 const { version: getVersion, isPackaged, openPath } = useInterop();
 const { t } = useI18n();
@@ -120,7 +118,7 @@ const { copy } = useClipboard({ source: versionText });
       <table class="w-full">
         <tbody>
           <tr>
-            <td :class="css.label">
+            <td :class="$style.label">
               {{ t('about.data_directory') }}
             </td>
             <td>
@@ -132,12 +130,12 @@ const { copy } = useClipboard({ source: versionText });
                   <template #activator>
                     <div
                       class="truncate text-rui-text-secondary"
-                      :class="css.directory"
+                      :class="$style.directory"
                     >
                       {{ dataDirectory }}
                     </div>
                   </template>
-                  <span :class="css.directory">
+                  <span :class="$style.directory">
                     {{ dataDirectory }}
                   </span>
                 </RuiTooltip>
@@ -176,7 +174,7 @@ const { copy } = useClipboard({ source: versionText });
             </td>
           </tr>
           <tr>
-            <td :class="css.label">
+            <td :class="$style.label">
               {{ t('about.frontend_version') }}
             </td>
             <td class="text-rui-text-secondary">
@@ -185,7 +183,7 @@ const { copy } = useClipboard({ source: versionText });
           </tr>
           <template v-if="webVersion">
             <tr>
-              <td :class="css.label">
+              <td :class="$style.label">
                 {{ t('about.platform') }}
               </td>
               <td class="text-rui-text-secondary">
@@ -193,7 +191,7 @@ const { copy } = useClipboard({ source: versionText });
               </td>
             </tr>
             <tr>
-              <td :class="css.label">
+              <td :class="$style.label">
                 {{ t('about.user_agent') }}
               </td>
               <td class="text-rui-text-secondary">
@@ -203,7 +201,7 @@ const { copy } = useClipboard({ source: versionText });
           </template>
           <template v-if="electronVersion">
             <tr>
-              <td :class="css.label">
+              <td :class="$style.label">
                 {{ t('about.platform') }}
               </td>
               <td class="text-rui-text-secondary">
@@ -212,7 +210,7 @@ const { copy } = useClipboard({ source: versionText });
               </td>
             </tr>
             <tr>
-              <td :class="css.label">
+              <td :class="$style.label">
                 {{ t('about.electron') }}
               </td>
               <td class="text-rui-text-secondary">
@@ -229,7 +227,7 @@ const { copy } = useClipboard({ source: versionText });
               </td>
             </tr>
             <tr v-if="componentsVersion.version">
-              <td :class="css.label">
+              <td :class="$style.label">
                 {{ t('about.components.version') }}
               </td>
               <td class="text-rui-text-secondary">
@@ -237,7 +235,7 @@ const { copy } = useClipboard({ source: versionText });
               </td>
             </tr>
             <tr v-if="componentsVersion.build">
-              <td :class="css.label">
+              <td :class="$style.label">
                 {{ t('about.components.build') }}
               </td>
               <td class="text-rui-text-secondary">

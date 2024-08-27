@@ -13,8 +13,6 @@ function click() {
 const { hasRunningTasks } = storeToRefs(useTaskStore());
 
 const { t } = useI18n();
-
-const css = useCssModule();
 </script>
 
 <template>
@@ -33,7 +31,7 @@ const css = useCssModule();
       <RuiIcon
         v-if="!hasRunningTasks"
         :class="{
-          [css.visible]: visible,
+          [$style.visible]: visible,
         }"
         name="notification-3-line"
       />

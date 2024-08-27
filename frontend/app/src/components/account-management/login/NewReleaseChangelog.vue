@@ -2,13 +2,12 @@
 const { t } = useI18n();
 
 const { version, link } = useUpdateMessage();
-const css = useCssModule();
 </script>
 
 <template>
   <div
     class="flex flex-col items-start gap-4 w-full p-6"
-    :class="css.card"
+    :class="$style.card"
   >
     <div class="bg-white rounded-[0.625rem] p-3">
       <RuiIcon

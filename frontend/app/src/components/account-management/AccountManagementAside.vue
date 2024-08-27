@@ -1,9 +1,5 @@
-<script setup lang="ts">
-const css = useCssModule();
-</script>
-
 <template>
-  <div :class="css.aside">
+  <div :class="$style.aside">
     <slot />
   </div>
 </template>

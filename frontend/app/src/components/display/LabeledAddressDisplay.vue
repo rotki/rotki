@@ -11,7 +11,6 @@ const props = defineProps<{
 const { account } = toRefs(props);
 const { scrambleData, shouldShowAmount, scrambleAddress, scrambleIdentifier } = useScramble();
 const { addressNameSelector, ensNameSelector } = useAddressesNamesStore();
-const css = useCssModule();
 const { t } = useI18n();
 
 const accountAddress = computed<string>(() => getAccountAddress(get(account)));
@@ -91,7 +90,7 @@ const truncatedLabelDisplayed = computed(() => {
 <template>
   <RuiChip
     variant="outlined"
-    :class="css['labeled-address-display']"
+    :class="$style['labeled-address-display']"
     size="sm"
     color="primary"
   >
@@ -103,7 +102,7 @@ const truncatedLabelDisplayed = computed(() => {
       <template #activator>
         <div
           data-cy="labeled-address-display"
-          :class="[css['labeled-address-display__address']]"
+          :class="[$style['labeled-address-display__address']]"
         >
           <EnsAvatar
             :address="address"
@@ -143,9 +142,9 @@ const truncatedLabelDisplayed = computed(() => {
     </RuiTooltip>
     <RuiDivider
       vertical
-      :class="css['labeled-address-display__divider']"
+      :class="$style['labeled-address-display__divider']"
     />
-    <div :class="css['labeled-address-display__actions']">
+    <div :class="$style['labeled-address-display__actions']">
       <HashLink
         class="h-full"
         :text="accountAddress"

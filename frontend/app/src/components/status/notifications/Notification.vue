@@ -13,7 +13,6 @@ const props = withDefaults(
 
 const emit = defineEmits<{ (e: 'dismiss', id: number): void }>();
 
-const css = useCssModule();
 const { t } = useI18n();
 const { copy: copyToClipboard } = useClipboard();
 
@@ -140,11 +139,11 @@ function getIcon(action: NotificationAction): RuiIcons {
 <template>
   <RuiCard
     :class="[
-      css.notification,
+      $style.notification,
       {
-        [css[`bg_${color}`]]: color,
-        [css.flat]: !color,
-        [css.popup]: popup,
+        [$style[`bg_${color}`]]: color,
+        [$style.flat]: !color,
+        [$style.popup]: popup,
       },
     ]"
     class="!p-2 !pb-1.5"
@@ -185,7 +184,7 @@ function getIcon(action: NotificationAction): RuiIcons {
     <div
       class="mt-1 px-2 break-words text-rui-text-secondary text-body-2 leading-2 group"
       :class="[
-        css.message,
+        $style.message,
         {
           'cursor-pointer': showExpandArrow && !expanded,
           'pb-6': showExpandArrow && expanded,
@@ -208,11 +207,11 @@ function getIcon(action: NotificationAction): RuiIcons {
       </div>
       <div
         v-if="showExpandArrow"
-        :class="css.expand"
+        :class="$style.expand"
       >
         <RuiButton
           class="!p-0.5"
-          :class="css['expand-button']"
+          :class="$style['expand-button']"
           @click.stop="buttonClicked()"
         >
           <RuiIcon

@@ -24,7 +24,6 @@ withDefaults(
 );
 
 const { t } = useI18n();
-const css = useCssModule();
 </script>
 
 <template>
@@ -66,7 +65,7 @@ const css = useCssModule();
           </div>
         </template>
 
-        <div :class="css.content">
+        <div :class="$style.content">
           <div>
             <h6 class="text-body-1 font-medium">
               {{ t('transactions.query_status_events.title') }}
@@ -100,7 +99,7 @@ const css = useCssModule();
               <TransactionQueryStatusDetails :item="item" />
               <TransactionQueryStatusSteps
                 :item="item"
-                :class="css.stepper"
+                :class="$style.stepper"
               />
             </div>
           </div>

@@ -16,8 +16,6 @@ const emit = defineEmits<{
   (e: 'update:model-value', newValue: any): void;
 }>();
 
-const css = useCssModule();
-
 const jsonEditorContainer = ref();
 const jsonEditor = ref<JSONEditor | null>(null);
 
@@ -73,7 +71,7 @@ onBeforeUnmount(() => {
     >
       {{ label }}
     </div>
-    <div :class="css.editor">
+    <div :class="$style.editor">
       <div ref="jsonEditorContainer" />
     </div>
   </div>
