@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { CURRENCY_USD } from '@/types/currencies';
 import type { AssetBreakdown } from '@/types/blockchain/accounts';
-import type { BigNumber } from '@rotki/common';
+import type { AssetBalance, BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 
 const props = withDefaults(
@@ -120,6 +120,25 @@ function percentage(value: BigNumber) {
 
   return calculatePercentage(value, totalVal);
 }
+
+function getAssets(location: string): AssetBalance[] {
+  const balances: AssetBalance[] = [];
+  const perAsset = get(breakdown);
+
+  for (const asset of Object.keys(perAsset)) {
+    const entries = perAsset[asset];
+    const entry = entries.find(entry => entry.location === location);
+    if (entry) {
+      balances.push({
+        asset,
+        amount: entry.amount,
+        usdValue: entry.usdValue,
+      });
+    }
+  }
+
+  return balances;
+}
 </script>
 
 <template>
@@ -135,6 +154,12 @@ function percentage(value: BigNumber) {
       <LocationDisplay
         :identifier="row.location"
         :detail-path="row.detailPath"
+      />
+    </template>
+    <template #item.tokens="{ row }">
+      <IconTokenDisplay
+        :assets="getAssets(row.location)"
+        :loading="false"
       />
     </template>
     <template #item.amount="{ row }">
