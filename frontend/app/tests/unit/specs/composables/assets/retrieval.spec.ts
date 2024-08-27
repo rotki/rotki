@@ -189,7 +189,10 @@ describe('store::assets/retrieval', () => {
       });
 
       it('isCollectionParent = false', () => {
-        const result = get(assetInfoRetrieval.assetInfo(identifier, true, false));
+        const result = get(assetInfoRetrieval.assetInfo(identifier, {
+          associate: true,
+          collectionParent: false,
+        }));
 
         expect(result).toMatchObject({
           name: assetName,

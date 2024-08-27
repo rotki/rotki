@@ -4,6 +4,7 @@ import { or } from '@vueuse/math';
 import { displayAmountFormatter } from '@/data/amount-formatter';
 import { CURRENCY_USD, type Currency, type ShownCurrency, useCurrencies } from '@/types/currencies';
 import type { RoundingMode } from '@/types/settings/frontend-settings';
+import type { AssetResolutionOptions } from '@/composables/assets/retrieval';
 
 const props = withDefaults(
   defineProps<{
@@ -32,6 +33,7 @@ const props = withDefaults(
      * Amount display text is really large
      */
     xl?: boolean;
+    resolutionOptions?: AssetResolutionOptions;
   }>(),
   {
     loading: false,
@@ -50,6 +52,7 @@ const props = withDefaults(
     timestamp: -1,
     milliseconds: false,
     xl: false,
+    resolutionOptions: () => ({}),
   },
 );
 
@@ -66,6 +69,7 @@ const {
   timestamp,
   milliseconds,
   loading,
+  resolutionOptions,
 } = toRefs(props);
 
 const { t } = useI18n();
@@ -92,7 +96,7 @@ const { findCurrency } = useCurrencies();
 
 const { historicPriceInCurrentCurrency, isPending, createKey } = useHistoricCachePriceStore();
 
-const { assetSymbol } = useAssetInfoRetrieval();
+const { assetInfo } = useAssetInfoRetrieval();
 
 const timestampToUse = computed(() => {
   const timestampVal = get(timestamp);
@@ -288,14 +292,14 @@ const { copy, copied } = useCopy(copyValue);
 const css = useCssModule();
 
 const anyLoading = logicOr(loading, evaluating);
-const symbol: ComputedRef<string> = assetSymbol(asset);
+const info = assetInfo(asset, resolutionOptions);
 const { isManualAssetPrice } = useBalancePricesStore();
 const isManualPrice = isManualAssetPrice(priceAsset);
 
 const displayAsset = computed(() => {
-  const symb = get(symbol);
-  if (symb !== '')
-    return symb;
+  const assetInfo = get(info);
+  if (assetInfo && assetInfo.resolved)
+    return assetInfo.symbol ?? '';
 
   const show = get(defaultShownCurrency);
   const value = get(displayCurrency);
