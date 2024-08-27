@@ -16,13 +16,12 @@ withDefaults(
   },
 );
 
-const attrs = useAttrs();
 const branch = checkIfDevelopment() ? 'develop' : 'main';
 </script>
 
 <template>
   <RuiLogo
-    v-bind="attrs"
+    v-bind="$attrs"
     :branch="branch"
     :logo="logo"
     :text="text"

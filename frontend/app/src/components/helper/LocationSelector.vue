@@ -15,8 +15,6 @@ const props = withDefaults(
 
 const model = defineModel<string>({ required: true, default: '' });
 
-const rootAttrs = useAttrs();
-
 const { items, excludes } = toRefs(props);
 
 const { tradeLocations } = useLocations();
@@ -53,7 +51,7 @@ watch([locations, model], ([locations, value], [prevLocations, prevValue]) => {
     text-attr="name"
     :item-height="52"
     auto-select-first
-    v-bind="rootAttrs"
+    v-bind="$attrs"
   >
     <template #item="{ item }">
       <LocationIcon
