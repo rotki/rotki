@@ -6,11 +6,13 @@ on:
       - master
       - develop
       - bugfixes
+      - alexandria
   push:
     branches:
       - master
       - develop
       - bugfixes
+      - alexandria
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
