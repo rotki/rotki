@@ -118,8 +118,6 @@ function changeShouldCustomDateFormat() {
 }
 
 const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
-
-const slots = useSlots();
 </script>
 
 <template>
@@ -173,7 +171,7 @@ const slots = useSlots();
 
       <div class="mt-4">
         <slot />
-        <div v-if="slots.hint">
+        <div v-if="$slots.hint">
           <slot name="hint" />
         </div>
       </div>

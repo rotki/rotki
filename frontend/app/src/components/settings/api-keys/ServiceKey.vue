@@ -82,8 +82,6 @@ onMounted(() => {
 watch(apiKey, () => {
   updateStatus();
 });
-
-const slots = useSlots();
 </script>
 
 <template>
@@ -151,6 +149,6 @@ const slots = useSlots();
         {{ editMode ? t('common.actions.save') : t('common.actions.edit') }}
       </RuiButton>
     </div>
-    <slot v-if="slots.default" />
+    <slot v-if="$slots.default" />
   </div>
 </template>
