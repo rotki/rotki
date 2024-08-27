@@ -146,7 +146,6 @@ function openAddressBookForm() {
 const showAddressBookButton = computed(() => get(type) === 'address' && get(blockchain) !== Blockchain.ETH2);
 
 const [DefineButton, ReuseButton] = createReusableTemplate();
-const attrs = useAttrs();
 </script>
 
 <template>
@@ -169,7 +168,7 @@ const attrs = useAttrs();
   </DefineButton>
   <div
     class="flex flex-row shrink items-center gap-1 text-xs [&_*]:font-mono [&_*]:leading-6"
-    v-bind="attrs"
+    v-bind="$attrs"
   >
     <template v-if="showIcon && !linkOnly && type === 'address'">
       <EnsAvatar

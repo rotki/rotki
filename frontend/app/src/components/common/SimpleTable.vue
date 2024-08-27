@@ -16,8 +16,6 @@ const props = withDefaults(
   },
 );
 
-const attrs = useAttrs();
-
 const style = computed<StyleValue | undefined>(() => {
   if (!props.height)
     return undefined;
@@ -37,7 +35,7 @@ const style = computed<StyleValue | undefined>(() => {
       },
     ]"
     :style="style"
-    v-bind="attrs"
+    v-bind="$attrs"
   >
     <table>
       <slot />

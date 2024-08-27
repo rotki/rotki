@@ -20,8 +20,6 @@ const props = withDefaults(
     exactActiveClass: '',
   },
 );
-
-const rootAttrs = useAttrs();
 </script>
 
 <template>
@@ -36,7 +34,7 @@ const rootAttrs = useAttrs();
         [`${exactActiveClass}`]: isExactActive,
       }"
       :href="href"
-      v-bind="rootAttrs"
+      v-bind="$attrs"
       @click.exact="navigate($event)"
       @click.meta.prevent
       @click.ctrl.prevent
