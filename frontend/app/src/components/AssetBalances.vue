@@ -96,6 +96,10 @@ const isExpanded = (asset: string) => some(get(expanded), { asset });
 function expand(item: AssetBalanceWithPrice) {
   set(expanded, isExpanded(item.asset) ? [] : [item]);
 }
+
+function getAssets(item: AssetBalanceWithPrice): string[] {
+  return item.breakdown?.map(entry => entry.asset) ?? [];
+}
 </script>
 
 <template>
@@ -166,7 +170,7 @@ function expand(item: AssetBalanceWithPrice) {
       <EvmNativeTokenBreakdown
         v-if="!hideBreakdown && isEvmNativeToken(row.asset)"
         blockchain-only
-        :assets="row.breakdown?.map(entry => entry.asset) ?? []"
+        :assets="getAssets(row)"
         :details="details"
         :identifier="row.asset"
         class="bg-white dark:bg-[#1E1E1E] my-2"
