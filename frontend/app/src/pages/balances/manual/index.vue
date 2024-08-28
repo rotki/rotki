@@ -34,6 +34,8 @@ const dialogSubtitle = computed<string>(() => {
 });
 
 const router = useRouter();
+const route = useRoute('accounts-balances-manual');
+
 const { setMessage } = useMessageStore();
 const { save: saveBalance, fetchManualBalances } = useManualBalancesStore();
 const { refreshPrices } = useBalances();
@@ -87,10 +89,10 @@ function add() {
 }
 
 onMounted(async () => {
-  const { currentRoute } = router;
-  if (get(currentRoute).query.add) {
-    add();
+  const { query } = get(route);
+  if (query.add) {
     await router.replace({ query: {} });
+    startPromise(nextTick(() => add()));
   }
   await fetchManualBalances();
   await fetchAssociatedLocations();
