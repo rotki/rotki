@@ -6,6 +6,7 @@ export class RotkehlchenApi {
   private _serverUrl: string;
   private signal = axios.CancelToken.source();
   private readonly pathname: string;
+  private authFailureAction?: () => void;
 
   get defaultServerUrl(): string {
     if (import.meta.env.VITE_BACKEND_URL)
@@ -45,6 +46,7 @@ export class RotkehlchenApi {
       transformResponse: basicAxiosTransformer,
     });
     this.setupCancellation();
+    this.setupAuthRedirect();
   }
 
   setup(serverUrl: string) {
@@ -56,6 +58,10 @@ export class RotkehlchenApi {
     });
     this.setupCancellation();
     this.setupAuthRedirect();
+  }
+
+  setOnAuthFailure(action: () => void): void {
+    this.authFailureAction = action;
   }
 
   private setupCancellation() {
@@ -78,6 +84,7 @@ export class RotkehlchenApi {
       (response) => {
         if (response.status === 401) {
           this.cancel();
+          this.authFailureAction?.();
           window.location.href = '/#/';
         }
 
