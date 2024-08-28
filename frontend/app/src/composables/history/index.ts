@@ -100,7 +100,8 @@ export function useIgnore<T extends EntryMeta>(
 
     if (ignored)
       status = await ignoreActions(payload);
-    else status = await unignoreActions(payload);
+    else
+      status = await unignoreActions(payload);
 
     if (status.success) {
       refresh();
@@ -108,7 +109,13 @@ export function useIgnore<T extends EntryMeta>(
     }
   };
 
+  async function toggle(item: T) {
+    set(selected, [item]);
+    await ignore(!item.ignoredInAccounting);
+  }
+
   return {
     ignore,
+    toggle,
   };
 }

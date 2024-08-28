@@ -347,56 +347,41 @@ async function resetEventsHandler(data: EvmHistoryEvent) {
 }
 
 function resetEvents(data: EvmHistoryEvent) {
-  show(
-    {
-      title: t('transactions.events.confirmation.reset.title'),
-      message: t('transactions.events.confirmation.reset.message'),
-    },
-    () => resetEventsHandler(data),
-  );
+  show({
+    title: t('transactions.events.confirmation.reset.title'),
+    message: t('transactions.events.confirmation.reset.message'),
+  }, () => resetEventsHandler(data));
 }
 
 function deleteTxAndEvents({ evmChain, txHash }: EvmChainAndTxHash) {
-  show(
-    {
-      title: t('transactions.dialog.delete.title'),
-      message: t('transactions.dialog.delete.message'),
-    },
-    async () => {
-      try {
-        await deleteTransactions(evmChain, txHash);
-        await fetchData();
+  show({
+    title: t('transactions.dialog.delete.title'),
+    message: t('transactions.dialog.delete.message'),
+  }, async () => {
+    try {
+      await deleteTransactions(evmChain, txHash);
+      await fetchData();
+    }
+    catch (error: any) {
+      if (!isTaskCancelled(error)) {
+        const title = t('transactions.dialog.delete.error.title');
+        const message = t('transactions.dialog.delete.error.message', {
+          message: error.message,
+        });
+        notify({
+          title,
+          message,
+          display: true,
+        });
       }
-      catch (error: any) {
-        if (!isTaskCancelled(error)) {
-          const title = t('transactions.dialog.delete.error.title');
-          const message = t('transactions.dialog.delete.error.message', {
-            message: error.message,
-          });
-          notify({
-            title,
-            message,
-            display: true,
-          });
-        }
-      }
-    },
-  );
+    }
+  });
 }
 
-const { ignore } = useIgnore<HistoryEventEntry>(
-  {
-    actionType: IgnoreActionType.HISTORY_EVENTS,
-    toData: (item: HistoryEventEntry) => item.eventIdentifier,
-  },
-  selected,
-  fetchData,
-);
-
-async function toggleIgnore(item: HistoryEventEntry) {
-  set(selected, [item]);
-  await ignore(!item.ignoredInAccounting);
-}
+const { ignore, toggle } = useIgnore<HistoryEventEntry>({
+  actionType: IgnoreActionType.HISTORY_EVENTS,
+  toData: (item: HistoryEventEntry) => item.eventIdentifier,
+}, selected, fetchData);
 
 const { setOpenDialog, setPostSubmitFunc } = useHistoryEventsForm();
 
@@ -848,7 +833,7 @@ watchImmediate(route, async (route) => {
                   :event="row"
                   :loading="eventTaskLoading"
                   @add-event="addEvent($event)"
-                  @toggle-ignore="toggleIgnore($event)"
+                  @toggle-ignore="toggle($event)"
                   @redecode="forceRedecodeEvmEvents($event)"
                   @reset="resetEvents($event)"
                   @delete-tx="deleteTxAndEvents($event)"
