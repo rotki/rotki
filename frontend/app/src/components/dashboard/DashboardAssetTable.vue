@@ -282,13 +282,12 @@ watch(search, () => setPage(1));
           :asset-padding="0.1"
         />
       </template>
-      <template #no-data>
+      <template
+        v-if="search.length > 0"
+        #no-data
+      >
         <span class="text-rui-text-secondary">
-          {{
-            t('dashboard_asset_table.no_search_result', {
-              search,
-            })
-          }}
+          {{ t('dashboard_asset_table.no_search_result', { search }) }}
         </span>
       </template>
       <template
