@@ -179,6 +179,7 @@ defineExpose({
       v-model:pagination="pagination"
       v-model:sort="sort"
       v-model:chain-filter="chainExclusionFilter"
+      :data-category="category"
       class="mt-4"
       group
       :accounts="accounts"
