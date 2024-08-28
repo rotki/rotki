@@ -78,7 +78,12 @@ const Type = DashboardTableType;
             >
               <SummaryCardCreateButton
                 v-if="exchanges.length === 0"
-                :to="`#${Routes.API_KEYS_EXCHANGES}?add=true`"
+                :to="{
+                  path: '/api-keys/exchanges',
+                  query: {
+                    add: 'true',
+                  },
+                }"
               >
                 {{ t('dashboard.exchange_balances.add') }}
               </SummaryCardCreateButton>
@@ -108,7 +113,12 @@ const Type = DashboardTableType;
               </template>
               <SummaryCardCreateButton
                 v-if="blockchainTotals.length === 0"
-                :to="`#${Routes.ACCOUNTS_BALANCES}?add=true`"
+                :to="{
+                  path: '/balances',
+                  query: {
+                    add: 'true',
+                  },
+                }"
               >
                 {{ t('dashboard.blockchain_balances.add') }}
               </SummaryCardCreateButton>
@@ -135,7 +145,12 @@ const Type = DashboardTableType;
             >
               <SummaryCardCreateButton
                 v-if="manualBalanceByLocation.length === 0"
-                :to="`#${Routes.ACCOUNTS_BALANCES_MANUAL}?add=true`"
+                :to="{
+                  path: '/balances/manual',
+                  query: {
+                    add: 'true',
+                  },
+                }"
               >
                 {{ t('dashboard.manual_balances.add') }}
               </SummaryCardCreateButton>

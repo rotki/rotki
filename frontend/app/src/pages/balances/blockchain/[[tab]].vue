@@ -8,12 +8,13 @@ import EthStakingValidators from '@/components/accounts/EthStakingValidators.vue
 import { Module } from '@/types/modules';
 import { NoteLocation } from '@/types/notes';
 import type { RouteLocationRaw } from 'vue-router';
+import type { ComponentExposed } from 'vue-component-type-helpers';
 
 const props = defineProps<{
-  tab: string[] | '';
+  tab: string;
 }>();
 
-const { tab: propsTab } = toRefs(props);
+const { tab } = toRefs(props);
 
 definePage({
   name: 'accounts-balances-blockchain',
@@ -25,32 +26,18 @@ definePage({
 });
 
 const account = ref<AccountManageState>();
-const balances = ref<InstanceType<typeof AccountBalances>>();
+const balances = ref<ComponentExposed<typeof AccountBalances>>();
 
 const { t } = useI18n();
 
 const router = useRouter();
-const route = useRoute();
+const route = useRoute('accounts-balances-blockchain');
 
 const { blockchainAssets } = useBlockchainAggregatedBalances();
 const { isBlockchainLoading } = useAccountLoading();
 const { isModuleEnabled } = useModules();
 
 const isEth2Enabled = isModuleEnabled(Module.ETH2);
-
-function refresh() {
-  if (isDefined(balances))
-    get(balances).refresh();
-}
-
-onMounted(async () => {
-  const query = get(route).query;
-
-  if (query.add) {
-    set(account, createNewBlockchainAccount());
-    await router.replace({ query: {} });
-  }
-});
 
 const { unifyAccountsTable } = storeToRefs(useFrontendSettingsStore());
 const { supportedChains } = useSupportedChains();
@@ -64,20 +51,14 @@ const categories = computed(() => {
     .filter((value, index, array) => !['eth2', 'evmlike'].includes(value) && uniqueStrings(value, index, array));
 });
 
-const tab = ref('');
-
 function goToFirstCategory() {
-  router.push(getTabLink(get(categories)[0]));
+  router.replace(getTabLink(get(categories)[0]));
 }
 
-watchImmediate(propsTab, (propsTab) => {
-  if (!propsTab) {
-    goToFirstCategory();
-    return;
-  }
-
-  set(tab, Array.isArray(props.tab) ? props.tab[0] : (props.tab || get(categories)[0]));
-});
+function refresh() {
+  if (isDefined(balances))
+    get(balances).refresh();
+}
 
 function getTabLink(category: string): RouteLocationRaw {
   return {
@@ -92,15 +73,31 @@ function getTabLink(category: string): RouteLocationRaw {
 }
 
 watch(unifyAccountsTable, () => {
-  const tab = Array.isArray(props.tab) ? props.tab[0] : props.tab;
+  const tab = props.tab;
   if (tab && !get(categories).includes(tab))
+    goToFirstCategory();
+});
+
+onMounted(() => {
+  const { query, params } = get(route);
+
+  if (query.add) {
+    startPromise(nextTick(() => {
+      set(account, createNewBlockchainAccount());
+    }));
+  }
+
+  if (!params.tab)
     goToFirstCategory();
 });
 </script>
 
 <template>
   <TablePageLayout
-    :title="[t('navigation_menu.accounts_balances'), t('navigation_menu.accounts_balances_sub.blockchain_balances')]"
+    :title="[
+      t('navigation_menu.accounts_balances'),
+      t('navigation_menu.accounts_balances_sub.blockchain_balances'),
+    ]"
   >
     <template #buttons>
       <PriceRefresh />
