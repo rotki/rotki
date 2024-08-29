@@ -46,9 +46,13 @@ def fixture_temp_etherscan(function_scope_messages_aggregator, tmpdir_factory, s
     if not api_key:
         api_key = '8JT7WQBB2VQP5C3416Y8X3S8GBA3CVZKP4'
 
-    db.add_external_service_credentials(credentials=[  # pylint: disable=no-value-for-parameter
-        ExternalServiceApiCredentials(service=ExternalService.ETHERSCAN, api_key=api_key),
-    ])
+    with db.user_write() as write_cursor:
+        db.add_external_service_credentials(
+            write_cursor=write_cursor,
+            credentials=[
+                ExternalServiceApiCredentials(service=ExternalService.ETHERSCAN, api_key=api_key),
+            ])
+
     etherscan = EthereumEtherscan(database=db, msg_aggregator=function_scope_messages_aggregator)
     return etherscan
 

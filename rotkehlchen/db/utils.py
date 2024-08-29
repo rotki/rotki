@@ -1,19 +1,6 @@
 import re
-from collections.abc import Callable
 from dataclasses import dataclass
-from functools import wraps
-from operator import attrgetter
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Concatenate,
-    Literal,
-    NamedTuple,
-    Protocol,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, TypeVar, Union
 
 from eth_utils import is_checksum_address
 from typing_extensions import ParamSpec
@@ -23,7 +10,6 @@ from rotkehlchen.assets.asset import Asset, AssetWithOracles
 from rotkehlchen.chain.accounts import BlockchainAccountData, SingleBlockchainAccountData
 from rotkehlchen.chain.substrate.utils import is_valid_substrate_address
 from rotkehlchen.db.checks import db_script_normalizer
-from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import (
     AssetMovementCategory,
@@ -39,7 +25,7 @@ from rotkehlchen.utils.misc import pairwise_longest, rgetattr, timestamp_to_date
 if TYPE_CHECKING:
     from rotkehlchen.balances.manual import ManuallyTrackedBalance
     from rotkehlchen.chain.bitcoin.xpub import XpubData
-    from rotkehlchen.db.dbhandler import DBHandler
+    from rotkehlchen.db.drivers.gevent import DBCursor
 
 P = ParamSpec('P')
 T_co = TypeVar('T_co', covariant=True)
@@ -49,80 +35,6 @@ TAG_REFENCE_ENTRY_TYPE = Union[
     'XpubData',
     'SingleBlockchainAccountData',
 ]
-
-
-class MaybeInjectWriteCursor(Protocol[P, T_co]):
-    @overload
-    def __call__(self, write_cursor: 'DBCursor', *args: P.args, **kwargs: P.kwargs) -> T_co:
-        ...
-
-    @overload
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> T_co:
-        ...
-
-
-def need_writable_cursor(path_to_context_manager: str) -> Callable[[Callable[Concatenate['DBHandler', 'DBCursor', P], T_co]], MaybeInjectWriteCursor[P, T_co]]:  # noqa: E501
-    def _need_writable_cursor(method: Callable[Concatenate['DBHandler', 'DBCursor', P], T_co]) -> MaybeInjectWriteCursor[P, T_co]:  # noqa: E501
-        """Wraps the method of a class in a write cursor or uses one if passed.
-
-        The method should:
-        1. have the write_cursor as the first argument.
-        2. **NOT HAVE** a cursor as the 2nd argument
-
-        The class should have something that would return a cursor context manager
-
-        Typing guide: https://sobolevn.me/2021/12/paramspec-guide
-
-        Keeping this only as an advanced example for typing and not using
-        it much as I did not wanna add extra if checks in heavy calls
-        """
-        @wraps(method)
-        def _impl(self: 'DBHandler', *args: Any, **kwargs: Any) -> T_co:
-            if kwargs.get('write_cursor') or (len(args) != 0 and isinstance(args[0], DBCursor)):
-                return method(self, *args, **kwargs)
-
-            # else we need to wrap this in a new writable cursor
-            with attrgetter(path_to_context_manager)(self)() as cursor:
-                result = method(self, cursor, *args, **kwargs)
-
-            return result
-
-        return _impl  # type: ignore
-    return _need_writable_cursor
-
-
-class MaybeInjectCursor(Protocol[P, T_co]):
-    @overload
-    def __call__(self, cursor: 'DBCursor', *args: P.args, **kwargs: P.kwargs) -> T_co:
-        ...
-
-    @overload
-    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> T_co:
-        ...
-
-
-def need_cursor(path_to_context_manager: str) -> Callable[[Callable[Concatenate['DBHandler', 'DBCursor', P], T_co]], MaybeInjectCursor[P, T_co]]:  # noqa: E501
-    def _need_cursor(method: Callable[Concatenate['DBHandler', 'DBCursor', P], T_co]) -> MaybeInjectCursor[P, T_co]:  # noqa: E501
-        """Wraps the method of DBHandler in a read cursor or uses one if passed.
-
-        The method should:
-        1. have the cursor as the first argument.
-        2. **NOT HAVE** a cursor as the 2nd argument
-
-        Typing guide: https://sobolevn.me/2021/12/paramspec-guide
-        """
-        @wraps(method)
-        def _impl(self: 'DBHandler', *args: Any, **kwargs: Any) -> T_co:
-            if kwargs.get('cursor') or (len(args) != 0 and isinstance(args[0], DBCursor)):
-                return method(self, *args, **kwargs)
-
-            # else we need to wrap this in a new read only cursor
-            with attrgetter(path_to_context_manager)(self)() as cursor:
-                result = method(self, cursor, *args, **kwargs)
-            return result
-
-        return _impl  # type: ignore
-    return _need_cursor
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
