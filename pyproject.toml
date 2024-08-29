@@ -147,7 +147,7 @@ select = [
     "RET",
     "SIM",
     "SLOT",
-    # "FA",  # We do not target older python versions
+    "FA",
     #  "SLF",  # Private member access -- we unfortunately do that some times
     # "TD",  # this is just to detect todos
     # "FIX",  # this is just to detect todos

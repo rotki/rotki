@@ -617,7 +617,12 @@ class RestAPI:
                 status_code=HTTPStatus.FORBIDDEN,
             )
 
-        self.rotkehlchen.data.db.add_external_service_credentials(services)
+        with self.rotkehlchen.data.db.user_write() as write_cursor:
+            self.rotkehlchen.data.db.add_external_service_credentials(
+                write_cursor=write_cursor,
+                credentials=services,
+            )
+
         return self._return_external_services_response()
 
     def delete_external_services(self, services: list[ExternalService]) -> Response:
