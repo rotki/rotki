@@ -510,17 +510,6 @@ async function refresh(userInitiated = false): Promise<void> {
   startPromise(fetchDataAndLocations());
 }
 
-const { setOpenDialog: setTxFormOpenDialog, setPostSubmitFunc: setTxFormPostSubmitFunc } = useHistoryTransactionsForm();
-
-setTxFormPostSubmitFunc((payload) => {
-  if (payload)
-    fetchDataAndRefreshEvents(payload, true);
-});
-
-function addTransactionHash(): void {
-  setTxFormOpenDialog(true);
-}
-
 async function fetchDataAndRefreshEvents(data: EvmChainAndTxHash, reDecodeEvents = false): Promise<void> {
   await fetchDataAndLocations();
   if (reDecodeEvents)
@@ -581,93 +570,15 @@ onUnmounted(() => {
     :title="[t('navigation_menu.history'), usedTitle]"
   >
     <template #buttons>
-      <RuiTooltip :open-delay="400">
-        <template #activator>
-          <RuiButton
-            :disabled="processing"
-            variant="outlined"
-            color="primary"
-            @click="refresh(true)"
-          >
-            <template #prepend>
-              <RuiIcon name="refresh-line" />
-            </template>
-            {{ t('common.refresh') }}
-          </RuiButton>
-        </template>
-        {{ t('transactions.refresh_tooltip') }}
-      </RuiTooltip>
-      <RuiButton
-        color="primary"
-        data-cy="history-events__add"
-        @click="addEvent()"
-      >
-        <template #prepend>
-          <RuiIcon name="add-line" />
-        </template>
-        {{ t('transactions.actions.add_event') }}
-      </RuiButton>
-
-      <RuiMenu
-        :popper="{ placement: 'bottom-end' }"
-        menu-class="max-w-[24rem]"
-        close-on-content-click
-      >
-        <template #activator="{ attrs }">
-          <RuiBadge
-            :model-value="eventTaskLoading"
-            color="primary"
-            dot
-            placement="top"
-            offset-y="12"
-            offset-x="-12"
-          >
-            <RuiButton
-              variant="text"
-              icon
-              size="sm"
-              class="!p-2"
-              v-bind="attrs"
-            >
-              <RuiIcon name="more-2-fill" />
-            </RuiButton>
-          </RuiBadge>
-        </template>
-        <div class="py-2">
-          <template v-if="includeEvmEvents">
-            <RuiButton
-              variant="list"
-              @click="decodingStatusDialogOpen = true"
-            >
-              <template #prepend>
-                <RuiBadge
-                  :model-value="eventTaskLoading"
-                  color="primary"
-                  dot
-                  placement="top"
-                  offset-y="4"
-                  offset-x="-4"
-                >
-                  <RuiIcon name="file-info-line" />
-                </RuiBadge>
-              </template>
-              {{ t('transactions.events_decoding.title') }}
-            </RuiButton>
-          </template>
-
-          <RuiButton
-            variant="list"
-            data-cy="history-events__add_by_tx_hash"
-            :disabled="eventTaskLoading"
-            @click="addTransactionHash()"
-          >
-            <template #prepend>
-              <RuiIcon name="add-line" />
-            </template>
-            {{ t('transactions.dialog.add_tx') }}
-          </RuiButton>
-        </div>
-      </RuiMenu>
+      <HistoryEventsViewButtons
+        v-model:open-decoding-dialog="decodingStatusDialogOpen"
+        :processing="processing"
+        :loading="eventTaskLoading"
+        :include-evm-events="includeEvmEvents"
+        @refresh="refresh(true)"
+        @reload="fetchDataAndRefreshEvents($event, true)"
+        @add-event="addEvent()"
+      />
     </template>
 
     <RuiCard>
