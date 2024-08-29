@@ -2,6 +2,8 @@
 Changelog
 =========
 
+* :bug:`-` ZKSync Era tokens will now have prices queried properly by defillama.
+
 * :release:`1.34.3 <2024-08-20>`
 * :feature:`-` Generic events can now be created or imported with location being bitcoin, bitcoin cash, polkadot and kusama.
 * :bug:`-` Importing events with generic import will no longer create a fee event if the fee is zero. Before it was not creating one only if fee was omitted.
