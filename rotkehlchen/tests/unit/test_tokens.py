@@ -11,7 +11,8 @@ from rotkehlchen.chain.ethereum.tokens import EthereumTokens
 from rotkehlchen.chain.evm.tokens import generate_multicall_chunks
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_OMG, A_WETH
+from rotkehlchen.constants.assets import A_GNOSIS_EURE, A_OMG, A_WETH
+from rotkehlchen.db.constants import EVM_ACCOUNTS_DETAILS_TOKENS
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -22,6 +23,7 @@ from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.gnosis.manager import GnosisManager
     from rotkehlchen.db.dbhandler import DBHandler
 
 
@@ -264,7 +266,12 @@ def test_flaky_binding_parameter_zero(
     gevent.sleep(.1)
     with database.conn.read_ctx() as cursor:
         for address in ethereum_accounts:
-            database.get_tokens_for_address(cursor, address, SupportedBlockchain.ETHEREUM)
+            database.get_tokens_for_address(
+                cursor=cursor,
+                address=address,
+                blockchain=SupportedBlockchain.ETHEREUM,
+                token_exceptions=set(),
+            )
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
@@ -337,3 +344,43 @@ def test_chain_is_not_queried_when_details(ethereum_inquirer: 'EthereumInquirer'
     assert new_token.name == 'new LDO'
     assert new_token.symbol == 'nLDO'
     assert new_token.decimals == 17
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+def test_monerium_queries(
+        gnosis_manager: 'GnosisManager',
+        gnosis_accounts: list[ChecksumEvmAddress],
+):
+    """Test that we query balances for the new monerium eure but not the old one"""
+    new_eure = get_or_create_evm_token(  # ensure that the new eure is in the db
+        userdb=gnosis_manager.node_inquirer.database,
+        evm_address=string_to_evm_address('0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
+        chain_id=(chain_id := gnosis_manager.node_inquirer.chain_id),
+        evm_inquirer=gnosis_manager.node_inquirer,
+    )
+    tokens = gnosis_manager.tokens.detect_tokens(
+        only_cache=False,
+        addresses=gnosis_accounts,
+    )[gnosis_accounts[0]][0]
+    assert new_eure in tokens  # type: ignore
+
+    # insert the old eure and see that is not queried
+    with gnosis_manager.node_inquirer.database.user_write() as write_cursor:
+        write_cursor.execute(
+            'INSERT OR REPLACE INTO evm_accounts_details '
+            '(account, chain_id, key, value) VALUES (?, ?, ?, ?)',
+            (
+                gnosis_accounts[0],
+                chain_id.serialize_for_db(),
+                EVM_ACCOUNTS_DETAILS_TOKENS,
+                A_GNOSIS_EURE.identifier,
+            ),
+        )
+
+    tokens_second_query = gnosis_manager.tokens.detect_tokens(
+        only_cache=False,
+        addresses=gnosis_accounts,
+    )[gnosis_accounts[0]][0]
+    assert new_eure in tokens_second_query  # type: ignore
+    assert A_GNOSIS_EURE not in tokens_second_query  # type: ignore

@@ -138,6 +138,7 @@ class EVMTransactionDecoder(ABC):
             misc_counterparties: list[CounterpartyDetails],
             base_tools: BaseDecoderTools,
             dbevmtx_class: type[DBEvmTx] = DBEvmTx,
+            addresses_exceptions: dict[ChecksumEvmAddress, int] | None = None,
     ):
         """
         Initialize an evm chain transaction decoder module for a particular chain.
@@ -150,6 +151,10 @@ class EVMTransactionDecoder(ABC):
 
         `misc_counterparties` is a list of counterparties not associated with any specific
         decoder that should be included for this decoder modules.
+
+        `addresses_exceptions` is a dict of address to the block number at which we should start
+        ignoring transfers for that address. It was introduced to ignore events for monerium
+        legacy tokens.
         """
         self.database = database
         self.misc_counterparties = [CounterpartyDetails(identifier=CPT_GAS, label='gas', icon='fire-line')] + misc_counterparties  # noqa: E501
@@ -176,6 +181,7 @@ class EVMTransactionDecoder(ABC):
         self.rules.event_rules.extend(event_rules)
         self.value_asset = value_asset
         self.decoders: dict[str, DecoderInterface] = {}
+        self.addresses_exceptions = addresses_exceptions or {}
 
         # Add the built-in decoders
         self._add_builtin_decoders(self.rules)
@@ -893,6 +899,13 @@ class EVMTransactionDecoder(ABC):
                 return DEFAULT_DECODING_OUTPUT  # ignore non token transfers for now
         else:
             found_token = token
+
+        if (
+            (block_number := self.addresses_exceptions.get(found_token.evm_address)) is not None and  # noqa: E501
+            block_number < transaction.block_number
+        ):
+            # ignore transfers of token exceptions after the set timestamp
+            return DEFAULT_DECODING_OUTPUT
 
         transfer = self.base.decode_erc20_721_transfer(
             token=found_token,

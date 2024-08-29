@@ -928,23 +928,18 @@ class DBHandler:
             (asset.identifier,),
         )
 
-    @staticmethod
-    def _get_ignored_asset_ids(cursor: 'DBCursor', only_nfts: bool = False) -> None:
-        """Executes a DB query to get the ignored asset identifiers. Modifies the cursor"""
-        bindings = []
-        query = 'SELECT value FROM multisettings WHERE name="ignored_asset" '
-        if only_nfts is True:
-            query += 'AND value LIKE ?'
-            bindings.append(f'{NFT_DIRECTIVE}%')
-        cursor.execute(query, bindings)
-
     def get_ignored_asset_ids(self, cursor: 'DBCursor', only_nfts: bool = False) -> set[str]:
         """Gets the ignored asset ids without converting each one of them to an asset object
 
         We used to have a heavier version which converted them to an asset but removed
         it due to unnecessary roundtrips to the global DB for each asset initialization
         """
-        self._get_ignored_asset_ids(cursor, only_nfts)
+        bindings = []
+        query = 'SELECT value FROM multisettings WHERE name="ignored_asset" '
+        if only_nfts is True:
+            query += 'AND value LIKE ?'
+            bindings.append(f'{NFT_DIRECTIVE}%')
+        cursor.execute(query, bindings)
         return {x[0] for x in cursor}
 
     def add_to_ignored_action_ids(
@@ -1246,15 +1241,19 @@ class DBHandler:
             cursor: 'DBCursor',
             address: ChecksumEvmAddress,
             blockchain: SupportedBlockchain,
+            token_exceptions: set[ChecksumEvmAddress],
     ) -> tuple[list[EvmToken] | None, Timestamp | None]:
         """Gets the detected tokens for the given address if the given current time
         is recent enough.
 
         If not, or if there is no saved entry, return None.
         """
-        ignored_asset_ids = self.get_ignored_asset_ids(cursor)
         last_queried_ts = None
-        querystr = 'SELECT key, value FROM evm_accounts_details WHERE account=? AND chain_id=? AND (key=? OR key=?)'  # noqa: E501
+        querystr = (
+            'SELECT key, value FROM evm_accounts_details WHERE account=? AND chain_id=? '
+            'AND (key=? OR key=?) AND value NOT IN '
+            '(SELECT value FROM multisettings WHERE name="ignored_asset")'
+        )
         bindings = (address, blockchain.to_chain_id().serialize_for_db(), EVM_ACCOUNTS_DETAILS_LAST_QUERIED_TS, EVM_ACCOUNTS_DETAILS_TOKENS)  # noqa: E501
         cursor.execute(querystr, bindings)  # original place https://github.com/rotki/rotki/issues/5432 was seen # noqa: E501
 
@@ -1272,16 +1271,13 @@ class DBHandler:
                     # to resolve the token here
                     token = EvmToken(value)
                 except (DeserializationError, UnknownAsset):
-                    token = None
-
-                if token is None:
                     self.msg_aggregator.add_warning(
                         f'Could not deserialize {value} as a token when reading latest '
                         f'tokens list of {address}',
                     )
                     continue
 
-                if token.identifier not in ignored_asset_ids:
+                if token.evm_address not in token_exceptions:
                     returned_list.append(token)
 
         if len(returned_list) == 0 and last_queried_ts is None:

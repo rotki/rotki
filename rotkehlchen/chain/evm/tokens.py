@@ -248,6 +248,7 @@ class EvmTokens(ABC):
                     cursor=cursor,
                     address=address,
                     blockchain=self.evm_inquirer.blockchain,
+                    token_exceptions=self._per_chain_token_exceptions(),
                 )
 
         return addresses_info
@@ -339,6 +340,7 @@ class EvmTokens(ABC):
                     cursor=cursor,
                     address=address,
                     blockchain=self.evm_inquirer.blockchain,
+                    token_exceptions=self._per_chain_token_exceptions(),
                 )
                 if saved_list is None:
                     continue  # Do not query if we know the address has no tokens
@@ -431,6 +433,7 @@ class EvmTokensWithDSProxy(EvmTokens, ABC):
                         cursor=cursor,
                         address=proxy_address,
                         blockchain=self.evm_inquirer.blockchain,
+                        token_exceptions=self._per_chain_token_exceptions(),
                     )
 
                     if proxy_detected_tokens is not None:

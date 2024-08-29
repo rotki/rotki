@@ -403,6 +403,7 @@ def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
             cursor=cursor,
             address=accounts[1],
             blockchain=SupportedBlockchain.ETHEREUM,
+            token_exceptions=set(),
         )
         assert set(tokens or {}) == {A_COMP, A_LUSD, A_DAI}
 

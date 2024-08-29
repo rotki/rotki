@@ -27,6 +27,10 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.gnosis.modules.aave.v3.constants import (
     AAVE_V3_DATA_PROVIDER as AAVE_V3_DATA_PROVIDER_GNO,
 )
+from rotkehlchen.chain.gnosis.modules.monerium.constants import GNOSIS_MONERIUM_LEGACY_ADDRESSES
+from rotkehlchen.chain.polygon_pos.modules.monerium.constants import (
+    POLYGON_MONERIUM_LEGACY_ADDRESSES,
+)
 from rotkehlchen.chain.scroll.modules.aave.v3.constants import (
     AAVE_V3_DATA_PROVIDER as AAVE_V3_DATA_PROVIDER_SCRL,
 )
@@ -444,10 +448,18 @@ def maybe_detect_new_tokens(database: 'DBHandler') -> None:
         database.conn.write_ctx() as write_cursor,
     ):
         for (chain, location_label), tokens in detected_tokens.items():
+            if chain == SupportedBlockchain.GNOSIS:
+                token_exceptions = GNOSIS_MONERIUM_LEGACY_ADDRESSES
+            elif chain == SupportedBlockchain.POLYGON_POS:
+                token_exceptions = POLYGON_MONERIUM_LEGACY_ADDRESSES
+            else:
+                token_exceptions = set()
+
             old_tokens, _ = database.get_tokens_for_address(
                 cursor=cursor,
                 address=(address := string_to_evm_address(location_label)),
                 blockchain=chain,
+                token_exceptions=token_exceptions,
             )
             database.save_tokens_for_address(
                 write_cursor=write_cursor,
