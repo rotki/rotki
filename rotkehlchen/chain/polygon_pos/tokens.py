@@ -1,6 +1,9 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.tokens import EvmTokens
+from rotkehlchen.chain.polygon_pos.modules.monerium.constants import (
+    POLYGON_MONERIUM_LEGACY_ADDRESSES,
+)
 from rotkehlchen.constants.assets import A_POLYGON_POS_MATIC
 from rotkehlchen.types import ChecksumEvmAddress
 
@@ -21,4 +24,6 @@ class PolygonPOSTokens(EvmTokens):
         Polygon MATIC ERC20 token mirrors the user's balance on the chain.
         To avoid double counting, we exclude the token from the balance query.
         """
-        return {A_POLYGON_POS_MATIC.resolve_to_evm_token().evm_address}
+        return {
+            A_POLYGON_POS_MATIC.resolve_to_evm_token().evm_address,
+        } | POLYGON_MONERIUM_LEGACY_ADDRESSES

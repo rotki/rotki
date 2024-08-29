@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` ZKSync Era tokens will now have prices queried properly by defillama.
+* :bug:`8452` Fix Monerium integration after the v2 contracts upgrade.
 
 * :release:`1.34.3 <2024-08-20>`
 * :feature:`-` Generic events can now be created or imported with location being bitcoin, bitcoin cash, polkadot and kusama.

@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
 from rotkehlchen.chain.evm.decoding.monerium.decoder import MoneriumCommonDecoder
-from rotkehlchen.constants.assets import A_POLYGON_EURE
+from rotkehlchen.chain.polygon_pos.modules.monerium.constants import POLYGON_MONERIUM_ADDRESSES
 
 
 if TYPE_CHECKING:
@@ -21,5 +21,5 @@ class MoneriumDecoder(MoneriumCommonDecoder):
             evm_inquirer=ethereum_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
-            native_asset=A_POLYGON_EURE,
+            monerium_token_addresses=POLYGON_MONERIUM_ADDRESSES,
         )
