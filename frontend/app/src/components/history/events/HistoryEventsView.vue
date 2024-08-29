@@ -2,19 +2,16 @@
 import { isEqual } from 'lodash-es';
 import { not } from '@vueuse/math';
 import { type Account, type Blockchain, HistoryEventEntryType, type Writeable } from '@rotki/common';
-import { IgnoreActionType } from '@/types/history/ignored';
 import { RouterAccountsSchema } from '@/types/route';
 import { Section } from '@/types/status';
 import { TaskType } from '@/types/task-type';
-import HistoryEventsAction from '@/components/history/events/HistoryEventsAction.vue';
 import type {
   EvmChainAndTxHash,
-  EvmHistoryEvent,
   HistoryEvent,
   HistoryEventEntry,
   HistoryEventRequestPayload,
+  ShowEventHistoryForm,
 } from '@/types/history/events';
-import type { DataTableColumn } from '@rotki/ui-library';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
@@ -68,18 +65,15 @@ const {
 } = toRefs(props);
 
 const nextSequence = ref<string>();
-const selectedGroupEventHeader = ref<HistoryEvent>();
-const eventToDelete = ref<HistoryEventEntry>();
+const selectedGroup = ref<HistoryEvent>();
 const eventWithMissingRules = ref<HistoryEventEntry>();
 const missingRulesDialog = ref<boolean>(false);
-const transactionToIgnore = ref<HistoryEventEntry>();
 const accounts = ref<BlockchainAccount<AddressData>[]>([]);
 const locationOverview = ref(get(location));
 const toggles = ref<{ customizedEventsOnly: boolean; showIgnoredAssets: boolean }>({
   customizedEventsOnly: false,
   showIgnoredAssets: false,
 });
-const isEventsLoading = ref<boolean>(false);
 const decodingStatusDialogPersistent = ref<boolean>(false);
 const decodingStatusDialogOpen = ref<boolean>(false);
 const protocolCacheStatusDialogOpen = ref<boolean>(false);
@@ -90,13 +84,12 @@ const { show } = useConfirmStore();
 const { fetchAssociatedLocations, resetUndecodedTransactionsStatus } = useHistoryStore();
 const { decodingStatus } = storeToRefs(useHistoryStore());
 const { getAccountByAddress } = useBlockchainStore();
-const { notify } = useNotificationsStore();
 const { isAllFinished: isQueryingTxsFinished } = toRefs(useTxQueryStatusStore());
 const { isAllFinished: isQueryingOnlineEventsFinished } = toRefs(useEventsQueryStatusStore());
 const { isLoading: isSectionLoading } = useStatusStore();
 
-const { fetchHistoryEvents, deleteHistoryEvent } = useHistoryEvents();
-const { deleteTransactions } = useHistoryEventsApi();
+const { fetchHistoryEvents } = useHistoryEvents();
+
 const { refreshTransactions } = useHistoryTransactions();
 const { pullAndRedecodeTransaction, fetchUndecodedTransactionsStatus, redecodeTransactions } = useHistoryTransactionDecoding();
 const historyEventMappings = useHistoryEventMappings();
@@ -125,50 +118,13 @@ const usedAccounts = computed<Account[]>(() => {
   return accountData.length > 0 ? [accountData[0]] : accountData;
 });
 
-const cols = computed<DataTableColumn<HistoryEventEntry>[]>(() => [
-  {
-    label: '',
-    key: 'ignoredInAccounting',
-    class: '!p-0 w-px',
-    cellClass: '!p-0 w-px',
-  },
-  {
-    label: t('transactions.events.headers.event_identifier'),
-    key: 'txHash',
-    class: 'w-[60%]',
-    cellClass: '!py-2',
-  },
-  {
-    label: t('common.datetime'),
-    key: 'timestamp',
-    cellClass: 'text-no-wrap !py-2',
-    align: 'end',
-    sortable: true,
-  },
-  {
-    label: '',
-    key: 'action',
-    class: 'w-[1.25rem]',
-    cellClass: 'w-[1.25rem] !py-2',
-    align: 'end',
-  },
-  {
-    label: '',
-    key: 'expand',
-    align: 'end',
-    class: '!w-0 !p-0',
-    cellClass: '!w-0 !p-0',
-  },
-]);
-
 const includeEvmEvents: ComputedRef<boolean> = useEmptyOrSome(entryTypes, type => isEvmEventType(type));
 const includeOnlineEvents: ComputedRef<boolean> = useEmptyOrSome(entryTypes, type => isOnlineHistoryEventType(type));
 
 const {
-  selected,
-  isLoading: isEventsGroupHeaderLoading,
+  isLoading: groupLoading,
   userAction,
-  state: eventsHeader,
+  state: groups,
   filters,
   matchers,
   setPage,
@@ -251,40 +207,10 @@ const {
   },
 );
 
-const loading = refDebounced(logicOr(isEventsGroupHeaderLoading, isEventsLoading), 300);
-const { data } = getCollectionData<HistoryEventEntry>(eventsHeader);
-
-const { ignore, toggle } = useIgnore<HistoryEventEntry>({
-  actionType: IgnoreActionType.HISTORY_EVENTS,
-  toData: (item: HistoryEventEntry) => item.eventIdentifier,
-}, selected, fetchData);
-
 async function fetchDataAndLocations(): Promise<void> {
   await fetchData();
   await fetchAssociatedLocations();
 }
-
-const allEvents: Ref<HistoryEventEntry[]> = asyncComputed(async () => {
-  const eventsHeaderData = get(data);
-
-  if (eventsHeaderData.length === 0)
-    return [];
-
-  const response = await fetchHistoryEvents({
-    limit: -1,
-    offset: 0,
-    eventIdentifiers: eventsHeaderData.map(item => item.eventIdentifier),
-    groupByEventIds: false,
-    excludeIgnoredAssets: !get(toggles, 'showIgnoredAssets'),
-  });
-
-  return response.data;
-}, [], {
-  lazy: true,
-  evaluating: isEventsLoading,
-});
-
-const hasIgnoredEvent = computed<boolean>(() => get(allEvents).some(event => event.ignoredInAccounting));
 
 const locations = computed<string[]>(() => {
   const filteredData = get(filters);
@@ -329,126 +255,31 @@ async function forceRedecodeEvmEvents(data: EvmChainAndTxHash): Promise<void> {
   await fetchData();
 }
 
-async function resetEventsHandler(data: EvmHistoryEvent): Promise<void> {
-  const eventIds = get(allEvents)
-    .filter(event => isEvmEvent(event) && event.txHash === data.txHash && event.customized)
-    .map(event => event.identifier);
-
-  if (eventIds.length > 0)
-    await deleteHistoryEvent(eventIds, true);
-
-  await forceRedecodeEvmEvents(toEvmChainAndTxHash(data));
-  await fetchDataAndLocations();
-}
-
-function resetEvents(data: EvmHistoryEvent): void {
-  show({
-    title: t('transactions.events.confirmation.reset.title'),
-    message: t('transactions.events.confirmation.reset.message'),
-  }, () => resetEventsHandler(data));
-}
-
-function deleteTxAndEvents({ evmChain, txHash }: EvmChainAndTxHash): void {
-  show({
-    title: t('transactions.dialog.delete.title'),
-    message: t('transactions.dialog.delete.message'),
-  }, async () => {
-    try {
-      await deleteTransactions(evmChain, txHash);
-      await fetchData();
-    }
-    catch (error: any) {
-      if (!isTaskCancelled(error)) {
-        const title = t('transactions.dialog.delete.error.title');
-        const message = t('transactions.dialog.delete.error.message', {
-          message: error.message,
-        });
-        notify({
-          title,
-          message,
-          display: true,
-        });
-      }
-    }
-  });
-}
-
 const { setOpenDialog, setPostSubmitFunc } = useHistoryEventsForm();
 
 setPostSubmitFunc(() => {
-  const groupHeader = get(selectedGroupEventHeader);
-  if (groupHeader)
-    fetchDataAndRefreshEvents(toEvmChainAndTxHash(groupHeader));
-  else fetchDataAndLocations();
+  fetchAndRedecodeEvents(isDefined(selectedGroup) ? toEvmChainAndTxHash(get(selectedGroup)) : undefined);
 });
 
-function suggestNextSequence(): string {
-  const eventHeader = get(selectedGroupEventHeader);
+function showForm(payload: ShowEventHistoryForm): void {
+  if (payload.type === 'event') {
+    const {
+      group,
+      nextSequenceId,
+      event,
+    } = payload.data;
 
-  if (!eventHeader)
-    return '0';
-
-  const all = get(allEvents);
-
-  if (!all?.length)
-    return (Number(eventHeader.sequenceIndex) + 1).toString();
-
-  const eventIdentifierHeader = eventHeader.eventIdentifier;
-  const filtered = all
-    .filter(({ eventIdentifier, hidden }) => eventIdentifier === eventIdentifierHeader && !hidden)
-    .map(({ sequenceIndex }) => Number(sequenceIndex))
-    .sort((a, b) => b - a);
-
-  return ((filtered[0] ?? Number(eventHeader.sequenceIndex)) + 1).toString();
-}
-
-function addEvent(groupHeader?: HistoryEvent): void {
-  set(selectedGroupEventHeader, groupHeader);
-  set(editableItem, undefined);
-  set(nextSequence, suggestNextSequence());
-  setOpenDialog(true);
-}
-
-function editEventHandler(event: HistoryEvent, groupHeader?: HistoryEvent): void {
-  set(selectedGroupEventHeader, groupHeader);
-  set(editableItem, event);
-  set(nextSequence, undefined);
-  setOpenDialog(true);
-}
-
-function promptForDelete({ item, canDelete }: { item: HistoryEventEntry; canDelete: boolean }): void {
-  if (canDelete)
-    set(eventToDelete, item);
-  else
-    set(transactionToIgnore, item);
-
-  showDeleteConfirmation();
-}
-
-async function deleteEventHandler(): Promise<void> {
-  const txToIgnore = get(transactionToIgnore);
-  if (txToIgnore) {
-    set(selected, [txToIgnore]);
-    await ignore(true);
+    set(selectedGroup, group);
+    set(editableItem, event);
+    set(nextSequence, nextSequenceId);
+    setOpenDialog(true);
   }
-
-  const eventToDeleteVal = get(eventToDelete);
-  const id = eventToDeleteVal?.identifier;
-
-  if (eventToDeleteVal && id) {
-    const { success } = await deleteHistoryEvent([id]);
-    if (!success)
-      return;
-
-    await fetchDataAndRefreshEvents(toEvmChainAndTxHash(eventToDeleteVal));
+  else {
+    const { event, group } = payload.data;
+    set(eventWithMissingRules, event);
+    set(selectedGroup, group);
+    set(missingRulesDialog, true);
   }
-
-  set(eventToDelete, null);
-  set(transactionToIgnore, null);
-}
-
-function getItemClass(item: HistoryEventEntry): '' | 'opacity-50' {
-  return item.ignoredInAccounting ? 'opacity-50' : '';
 }
 
 const { pause, resume, isActive } = useIntervalFn(() => {
@@ -462,39 +293,13 @@ function onAddMissingRule(data: Pick<AccountingRuleEntry, 'eventType' | 'eventSu
   });
 }
 
-function resetPendingDeletion(): void {
-  set(eventToDelete, null);
-  set(transactionToIgnore, null);
-}
-
-function setMissingRulesDialog(event: HistoryEventEntry, groupHeader: HistoryEvent): void {
-  set(eventWithMissingRules, event);
-  set(selectedGroupEventHeader, groupHeader);
-  set(missingRulesDialog, true);
-}
-
 function editMissingRulesEntry(event?: HistoryEventEntry): void {
   if (!event)
     return;
 
-  const groupHeader = get(selectedGroupEventHeader);
+  const group = get(selectedGroup);
   set(missingRulesDialog, false);
-  editEventHandler(event, groupHeader);
-}
-
-function showDeleteConfirmation(): void {
-  const text = get(transactionToIgnore)
-    ? {
-        title: t('transactions.events.confirmation.ignore.title'),
-        message: t('transactions.events.confirmation.ignore.message'),
-        primaryAction: t('transactions.events.confirmation.ignore.action'),
-      }
-    : {
-        title: t('transactions.events.confirmation.delete.title'),
-        message: t('transactions.events.confirmation.delete.message'),
-        primaryAction: t('common.actions.confirm'),
-      };
-  show(text, deleteEventHandler, resetPendingDeletion);
+  showForm({ type: 'event', data: { event, group } });
 }
 
 async function refresh(userInitiated = false): Promise<void> {
@@ -510,9 +315,9 @@ async function refresh(userInitiated = false): Promise<void> {
   startPromise(fetchDataAndLocations());
 }
 
-async function fetchDataAndRefreshEvents(data: EvmChainAndTxHash, reDecodeEvents = false): Promise<void> {
+async function fetchAndRedecodeEvents(data?: EvmChainAndTxHash): Promise<void> {
   await fetchDataAndLocations();
-  if (reDecodeEvents)
+  if (data)
     await forceRedecodeEvmEvents(data);
 }
 
@@ -576,8 +381,8 @@ onUnmounted(() => {
         :loading="eventTaskLoading"
         :include-evm-events="includeEvmEvents"
         @refresh="refresh(true)"
-        @reload="fetchDataAndRefreshEvents($event, true)"
-        @add-event="addEvent()"
+        @reload="fetchAndRedecodeEvents($event)"
+        @show:form="showForm($event)"
       />
     </template>
 
@@ -607,114 +412,36 @@ onUnmounted(() => {
         @update:accounts="onFilterAccountsChanged($event)"
       />
 
-      <CollectionHandler
-        :collection="eventsHeader"
+      <HistoryEventsTable
+        v-model:sort="sort"
+        v-model:pagination="pagination"
+        :group-loading="groupLoading"
+        :groups="groups"
+        :exclude-ignored="!toggles.showIgnoredAssets"
+        @show:form="showForm($event)"
+        @refresh="fetchAndRedecodeEvents($event)"
         @set-page="setPage($event)"
       >
-        <template #default="{ data: eventsData, showUpgradeRow, limit, total, found, entriesFoundTotal }">
-          <RuiDataTable
-            v-model:pagination.external="pagination"
-            v-model:sort.external="sort"
-            :expanded="eventsData"
-            :cols="cols"
-            :rows="eventsData"
-            :loading="loading"
-            :item-class="getItemClass"
-            :empty="{ label: t('data_table.no_data') }"
-            :texts="{
-              rowsPerPage: t('data_table.rows_per_page'),
-              itemsNumber: t('data_table.items_no'),
-              of: t('common.of'),
-            }"
-            row-attr="identifier"
-            outlined
-          >
-            <template #item.ignoredInAccounting="{ row }">
-              <IgnoredInAcountingIcon
-                v-if="row.ignoredInAccounting"
-                class="ml-4"
-              />
-              <div
-                v-else
-                class="min-h-[3.25rem]"
-              />
-            </template>
-            <template #item.txHash="{ row }">
-              <LazyLoader class="flex items-center gap-2">
-                <LocationIcon
-                  icon
-                  :item="row.location"
-                  size="20px"
-                />
-                <HistoryEventsIdentifier :event="row" />
-              </LazyLoader>
-            </template>
-            <template #item.timestamp="{ row }">
-              <LazyLoader>
-                <DateDisplay
-                  :timestamp="row.timestamp"
-                  milliseconds
-                />
-              </LazyLoader>
-            </template>
-            <template #item.action="{ row }">
-              <LazyLoader>
-                <HistoryEventsAction
-                  :event="row"
-                  :loading="eventTaskLoading"
-                  @add-event="addEvent($event)"
-                  @toggle-ignore="toggle($event)"
-                  @redecode="forceRedecodeEvmEvents($event)"
-                  @reset="resetEvents($event)"
-                  @delete-tx="deleteTxAndEvents($event)"
-                />
-              </LazyLoader>
-            </template>
-            <template #item.expand />
-            <template #expanded-item="{ row }">
-              <HistoryEventsList
-                class="-my-4"
-                :class="{ 'opacity-50': row.ignoredInAccounting }"
-                :all-events="allEvents"
-                :event-group="row"
-                :loading="sectionLoading || eventTaskLoading"
-                :has-ignored-event="hasIgnoredEvent"
-                @edit-event="editEventHandler($event, row)"
-                @delete-event="promptForDelete($event)"
-                @show:missing-rule-action="setMissingRulesDialog($event, row)"
-              />
-            </template>
-            <template #body.prepend="{ colspan }">
-              <HistoryQueryStatus
-                v-model:current-action="currentAction"
-                :include-evm-events="includeEvmEvents"
-                :include-online-events="includeOnlineEvents"
-                :only-chains="onlyChains"
-                :locations="locations"
-                :decoding-status="decodingStatus"
-                :decoding="eventTaskLoading"
-                :colspan="colspan"
-                :loading="processing"
-                @show-decode-details="decodingStatusDialogOpen = true"
-                @show-protocol-refresh-details="protocolCacheStatusDialogOpen = true"
-              />
-              <UpgradeRow
-                v-if="showUpgradeRow"
-                :limit="limit"
-                :total="total"
-                :found="found"
-                :entries-found-total="entriesFoundTotal"
-                :colspan="colspan"
-                :label="t('common.events')"
-              />
-            </template>
-          </RuiDataTable>
+        <template #query-status="{ colspan, eventsLoading }">
+          <HistoryQueryStatus
+            v-model:current-action="currentAction"
+            :include-evm-events="includeEvmEvents"
+            :include-online-events="includeOnlineEvents"
+            :only-chains="onlyChains"
+            :locations="locations"
+            :decoding-status="decodingStatus"
+            :decoding="eventsLoading"
+            :colspan="colspan"
+            :loading="processing"
+            @show-decode-details="decodingStatusDialogOpen = true"
+            @show-protocol-refresh-details="protocolCacheStatusDialogOpen = true"
+          />
         </template>
-      </CollectionHandler>
+      </HistoryEventsTable>
 
       <HistoryEventFormDialog
         :editable-item="editableItem"
-        :group-header="selectedGroupEventHeader"
+        :group-header="selectedGroup"
         :next-sequence="nextSequence"
       />
 

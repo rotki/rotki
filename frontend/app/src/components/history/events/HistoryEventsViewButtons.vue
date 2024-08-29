@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { EvmChainAndTxHash } from '@/types/history/events';
+import type { EvmChainAndTxHash, ShowEventForm } from '@/types/history/events';
 
 defineProps<{
   processing: boolean;
@@ -8,9 +8,9 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-  refresh: [];
-  reload: [payload: EvmChainAndTxHash];
-  addEvent: [];
+  'refresh': [];
+  'reload': [payload: EvmChainAndTxHash];
+  'show:form': [payload: ShowEventForm];
 }>();
 
 const openDecodingDialog = defineModel<boolean>('openDecodingDialog', { required: true });
@@ -50,7 +50,7 @@ function addTransactionHash(): void {
   <RuiButton
     color="primary"
     data-cy="history-events__add"
-    @click="emit('addEvent')"
+    @click="emit('show:form', { type: 'event', data: { nextSequenceId: '0' } })"
   >
     <template #prepend>
       <RuiIcon name="add-line" />
