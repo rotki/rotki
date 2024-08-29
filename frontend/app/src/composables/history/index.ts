@@ -114,8 +114,14 @@ export function useIgnore<T extends EntryMeta>(
     await ignore(!item.ignoredInAccounting);
   }
 
+  async function ignoreSingle(item: T, ignored: boolean) {
+    set(selected, [item]);
+    await ignore(ignored);
+  }
+
   return {
     ignore,
+    ignoreSingle,
     toggle,
   };
 }
