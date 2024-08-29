@@ -67,7 +67,6 @@ const {
 const nextSequence = ref<string>();
 const selectedGroup = ref<HistoryEvent>();
 const eventWithMissingRules = ref<HistoryEventEntry>();
-const missingRulesDialog = ref<boolean>(false);
 const accounts = ref<BlockchainAccount<AddressData>[]>([]);
 const locationOverview = ref(get(location));
 const toggles = ref<{ customizedEventsOnly: boolean; showIgnoredAssets: boolean }>({
@@ -283,7 +282,6 @@ function showForm(payload: ShowEventHistoryForm): void {
     const { event, group } = payload.data;
     set(eventWithMissingRules, event);
     set(selectedGroup, group);
-    set(missingRulesDialog, true);
   }
 }
 
@@ -298,13 +296,12 @@ function onAddMissingRule(data: Pick<AccountingRuleEntry, 'eventType' | 'eventSu
   });
 }
 
-function editMissingRulesEntry(event?: HistoryEventEntry): void {
-  if (!event)
-    return;
-
+function editMissingRulesEntry(event: HistoryEventEntry): void {
   const group = get(selectedGroup);
-  set(missingRulesDialog, false);
-  showForm({ type: 'event', data: { event, group } });
+
+  startPromise(nextTick(() => {
+    showForm({ type: 'event', data: { event, group } });
+  }));
 }
 
 async function refresh(userInitiated = false): Promise<void> {
@@ -457,12 +454,11 @@ onUnmounted(() => {
       <TransactionFormDialog :loading="sectionLoading" />
 
       <MissingRulesDialog
-        v-if="missingRulesDialog"
-        v-model="missingRulesDialog"
-        :event="eventWithMissingRules"
-        @edit="editMissingRulesEntry($event)"
-        @re-decode="forceRedecodeEvmEvents($event)"
-        @add-rule="onAddMissingRule($event)"
+        v-model="eventWithMissingRules"
+        @edit-event="editMissingRulesEntry($event)"
+        @redecode="forceRedecodeEvmEvents($event)"
+        @add="onAddMissingRule($event)"
+        @dismiss="eventWithMissingRules = undefined"
       />
     </RuiCard>
 
