@@ -118,8 +118,13 @@ const usedAccounts = computed<Account[]>(() => {
   return accountData.length > 0 ? [accountData[0]] : accountData;
 });
 
-const includeEvmEvents: ComputedRef<boolean> = useEmptyOrSome(entryTypes, type => isEvmEventType(type));
-const includeOnlineEvents: ComputedRef<boolean> = useEmptyOrSome(entryTypes, type => isOnlineHistoryEventType(type));
+const includes = computed<{ evmEvents: boolean; onlineEvents: boolean }>(() => {
+  const entryTypes = props.entryTypes;
+  return {
+    evmEvents: entryTypes ? entryTypes.some(type => isEvmEventType(type)) : true,
+    onlineEvents: entryTypes ? entryTypes.some(type => isOnlineHistoryEventType(type)) : true,
+  };
+});
 
 const {
   isLoading: groupLoading,
@@ -321,6 +326,13 @@ async function fetchAndRedecodeEvents(data?: EvmChainAndTxHash): Promise<void> {
     await forceRedecodeEvmEvents(data);
 }
 
+function onShowDialog(type: 'decode' | 'protocol-refresh'): void {
+  if (type === 'decode')
+    set(decodingStatusDialogOpen, true);
+  else
+    set(protocolCacheStatusDialogOpen, true);
+}
+
 watchImmediate(route, async (route) => {
   if (route.query.openDecodingStatusDialog) {
     set(decodingStatusDialogOpen, true);
@@ -379,7 +391,7 @@ onUnmounted(() => {
         v-model:open-decoding-dialog="decodingStatusDialogOpen"
         :processing="processing"
         :loading="eventTaskLoading"
-        :include-evm-events="includeEvmEvents"
+        :include-evm-events="includes.evmEvents"
         @refresh="refresh(true)"
         @reload="fetchAndRedecodeEvents($event)"
         @show:form="showForm($event)"
@@ -425,16 +437,13 @@ onUnmounted(() => {
         <template #query-status="{ colspan, eventsLoading }">
           <HistoryQueryStatus
             v-model:current-action="currentAction"
-            :include-evm-events="includeEvmEvents"
-            :include-online-events="includeOnlineEvents"
             :only-chains="onlyChains"
             :locations="locations"
             :decoding-status="decodingStatus"
             :decoding="eventsLoading"
             :colspan="colspan"
             :loading="processing"
-            @show-decode-details="decodingStatusDialogOpen = true"
-            @show-protocol-refresh-details="protocolCacheStatusDialogOpen = true"
+            @show:dialog="onShowDialog($event)"
           />
         </template>
       </HistoryEventsTable>
