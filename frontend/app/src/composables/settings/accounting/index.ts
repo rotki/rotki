@@ -31,9 +31,9 @@ export function useAccountingSettings() {
   const getAccountingRule = async (
     payload: MaybeRef<AccountingRuleRequestPayload>,
     counterparty: string | null,
-  ): Promise<AccountingRuleEntry | null> => {
+  ): Promise<AccountingRuleEntry | undefined> => {
     try {
-      return await fetchAccountingRule(get(payload), counterparty);
+      return await fetchAccountingRule(get(payload), counterparty) ?? undefined;
     }
     catch (error: any) {
       logger.error(error);
@@ -47,7 +47,7 @@ export function useAccountingSettings() {
         display: true,
       });
 
-      return null;
+      return undefined;
     }
   };
 

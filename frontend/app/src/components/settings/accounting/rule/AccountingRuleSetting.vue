@@ -7,6 +7,7 @@ import type { AccountingRuleEntry, AccountingRuleRequestPayload } from '@/types/
 
 const { t } = useI18n();
 const router = useRouter();
+const route = useRoute();
 
 const { getAccountingRule, getAccountingRules, getAccountingRulesConflicts, exportJSON } = useAccountingSettings();
 
@@ -42,7 +43,7 @@ async function checkConflicts() {
   }
 }
 
-const tableHeaders = computed<DataTableColumn<AccountingRuleEntry>[]>(() => [
+const cols = computed<DataTableColumn<AccountingRuleEntry>[]>(() => [
   {
     label: `${t('accounting_settings.rule.labels.event_type')} - \n${t(
       'accounting_settings.rule.labels.event_subtype',
@@ -162,11 +163,8 @@ function getType(eventType: string, eventSubtype: string) {
 }
 
 onMounted(async () => {
-  const { currentRoute } = router;
-
-  const {
-    query: { 'add-rule': addRule, 'edit-rule': editRule, eventSubtype, eventType, counterparty },
-  } = get(currentRoute);
+  const { query } = get(route);
+  const { 'add-rule': addRule, 'edit-rule': editRule, eventSubtype, eventType, counterparty } = query;
 
   const ruleData = {
     eventSubtype: eventSubtype?.toString() ?? '',
@@ -174,27 +172,27 @@ onMounted(async () => {
     counterparty: counterparty?.toString() ?? null,
   };
 
+  async function openDialog(rule?: AccountingRuleEntry) {
+    set(editableItem, rule);
+    startPromise(nextTick(() => {
+      setOpenDialog(!!rule);
+    }));
+    await router.replace({ query: {} });
+  }
+
   if (addRule) {
-    set(editableItem, {
+    await openDialog({
       ...getPlaceholderRule(),
       ...ruleData,
     });
-    setOpenDialog(true);
-    await router.replace({ query: {} });
   }
   else if (editRule) {
-    const rule = await getAccountingRule(
-      {
-        eventTypes: [ruleData.eventType],
-        eventSubtypes: [ruleData.eventSubtype],
-        limit: 2,
-        offset: 0,
-      },
-      ruleData.counterparty,
-    );
-    set(editableItem, rule);
-    setOpenDialog(!!rule);
-    await router.replace({ query: {} });
+    await openDialog(await getAccountingRule({
+      eventTypes: [ruleData.eventType],
+      eventSubtypes: [ruleData.eventSubtype],
+      limit: 2,
+      offset: 0,
+    }, ruleData.counterparty));
   }
   await refresh();
 });
@@ -307,7 +305,7 @@ const importFileDialog = ref<boolean>(false);
             </RuiButton>
             <AccountingRuleConflictsDialog
               v-if="conflictsDialogOpen"
-              :table-headers="tableHeaders"
+              :table-headers="cols"
               @close="conflictsDialogOpen = false"
               @refresh="refresh()"
             />
@@ -332,7 +330,7 @@ const importFileDialog = ref<boolean>(false);
             v-model:pagination.external="pagination"
             outlined
             :rows="data"
-            :cols="tableHeaders"
+            :cols="cols"
             :loading="isLoading"
             row-attr="identifier"
           >
