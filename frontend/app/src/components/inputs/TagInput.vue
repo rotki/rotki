@@ -114,7 +114,6 @@ watch(tags, () => {
       :label="label"
       variant="outlined"
       text-attr="name"
-      key-attr="name"
       return-object
       custom-value
       :item-height="54"

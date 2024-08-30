@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { Severity } from '@rotki/common';
 import { PriceOracle } from '@/types/settings/price-oracle';
-import { CRYPTOCOMPARE_PRIO_LIST_ITEM, type PrioritizedListId } from '@/types/settings/prioritized-list-id';
+import { CRYPTOCOMPARE_PRIO_LIST_ITEM } from '@/types/settings/prioritized-list-id';
 import { TaskType } from '@/types/task-type';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { PrioritizedListItemData } from '@/types/settings/prioritized-list-data';
@@ -43,7 +43,7 @@ const columns = computed<DataTableColumn<OracleCacheEntry>[]>(() => [
 const { isTaskRunning } = useTaskStore();
 const { createOracleCache, getPriceCache, deletePriceCache } = useBalancePricesStore();
 
-const oracles: PrioritizedListItemData<PrioritizedListId>[] = [CRYPTOCOMPARE_PRIO_LIST_ITEM];
+const oracles: PrioritizedListItemData<PriceOracle>[] = [CRYPTOCOMPARE_PRIO_LIST_ITEM];
 
 const loading = ref<boolean>(false);
 const confirmClear = ref<boolean>(false);

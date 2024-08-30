@@ -31,7 +31,7 @@ const editClick = () => emit('edit-click');
 const deleteClick = () => emit('delete-click');
 
 const tooltipProps = {
-  popper: { placement: 'top', offsetDistance: 0 },
+  popper: { placement: 'top' as const, offsetDistance: 0 },
   openDelay: 400,
 };
 
