@@ -1,31 +1,29 @@
 <script setup lang="ts">
 import type { RuiIcons } from '@rotki/ui-library';
 
-const props = withDefaults(
-  defineProps<{
-    title: string;
-    message: string;
-    success?: boolean;
-  }>(),
-  {
-    success: false,
-  },
-);
+const props = withDefaults(defineProps<{
+  title: string;
+  message: string;
+  success?: boolean;
+}>(), {
+  success: false,
+});
 
 const emit = defineEmits<{
-  (e: 'dismiss'): void;
+  dismiss: [];
 }>();
+
+const { message, success } = toRefs(props);
 
 const { t } = useI18n();
 
-const { message, success } = toRefs(props);
 const visible = ref<boolean>(false);
+
+const icon = computed<RuiIcons>(() => (get(success) ? 'checkbox-circle-line' : 'error-warning-line'));
 
 watch(message, (message) => {
   set(visible, message.length > 0);
 });
-
-const icon = computed<RuiIcons>(() => (get(success) ? 'checkbox-circle-line' : 'error-warning-line'));
 </script>
 
 <template>
@@ -33,6 +31,7 @@ const icon = computed<RuiIcons>(() => (get(success) ? 'checkbox-circle-line' : '
     :model-value="visible"
     max-width="500"
     persistent
+    z-index="10000"
     @close="emit('dismiss')"
     @keydown.esc="emit('dismiss')"
     @keydown.enter="emit('dismiss')"
