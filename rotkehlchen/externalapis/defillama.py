@@ -108,6 +108,8 @@ class Defillama(HistoricalPriceOracleInterface, PenalizablePriceOracleMixin):
                 chain_name = 'bsc'
             elif asset.chain_id == ChainID.AVALANCHE:
                 chain_name = 'avax'
+            elif asset.chain_id == ChainID.ZKSYNC_ERA:
+                chain_name = 'era'
             else:
                 chain_name = str(asset.chain_id)
 
