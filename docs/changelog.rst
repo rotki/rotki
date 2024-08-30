@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`8117` Rotki will now create calendar reminders for the end of the lock period of CRV in vote escrow
 * :feature:`8339` Users will be able to import addresses from browser wallets other than MetaMask, such as Rabby Wallet, Phantom, Rainbow, etc.
 * :feature:`7349` Rotki's CSV importers will now report the number of successfully imported and total entries, and each error message will include the line number of the problematic entry.
 * :feature:`8147` Users can now import data from Blockpit into rotki.

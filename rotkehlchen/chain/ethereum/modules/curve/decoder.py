@@ -177,6 +177,7 @@ class CurveDecoder(CurveCommonDecoder):
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_CURVE
                 event.notes = f'Lock {amount} CRV in vote escrow until {timestamp_to_date(locktime, formatstr="%d/%m/%Y %H:%M:%S")}{suffix}'  # noqa: E501
+                event.extra_data = {'locktime': locktime}
                 break
         else:  # not found
             log.error(f'CRV vote escrow locking transfer was not found for {context.transaction.tx_hash.hex()}')  # noqa: E501
