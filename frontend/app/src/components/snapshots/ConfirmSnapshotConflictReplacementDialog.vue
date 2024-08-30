@@ -11,7 +11,6 @@ const emit = defineEmits<{
   (e: 'confirm'): void;
 }>();
 const { t } = useI18n();
-const css = useCssModule();
 
 const { snapshot } = toRefs(props);
 
@@ -39,7 +38,7 @@ const asset = computed<string>(() => get(snapshot)?.assetIdentifier ?? '');
       />
       <AssetDetails
         v-if="!isNft(asset)"
-        :class="css.asset"
+        :class="$style.asset"
         :asset="asset"
         :opens-details="false"
         :enable-association="false"
@@ -47,7 +46,7 @@ const asset = computed<string>(() => get(snapshot)?.assetIdentifier ?? '');
       <div v-else>
         <NftDetails
           :identifier="asset"
-          :class="css.asset"
+          :class="$style.asset"
         />
       </div>
     </div>

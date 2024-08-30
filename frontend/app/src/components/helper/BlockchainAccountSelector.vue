@@ -198,7 +198,6 @@ function input(nextValue: null | AccountWithAddressData | AccountWithAddressData
 }
 
 const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
-const attrs = useAttrs();
 </script>
 
 <template>
@@ -224,7 +223,7 @@ const attrs = useAttrs();
       :label="label || t('blockchain_account_selector.default_label')"
       class="blockchain-account-selector"
       :error-messages="errorMessages"
-      v-bind="getNonRootAttrs(attrs)"
+      v-bind="getNonRootAttrs($attrs)"
       :no-data-text="t('blockchain_account_selector.no_data')"
       return-object
       @update:model-value="input($event)"
@@ -254,14 +253,14 @@ const attrs = useAttrs();
   <div
     v-if="!hint"
     class="bg-white dark:bg-[#1E1E1E]"
-    v-bind="getRootAttrs(attrs)"
+    v-bind="getRootAttrs($attrs)"
   >
     <ReuseAutocomplete />
   </div>
   <RuiCard
     v-else
     variant="outlined"
-    v-bind="getRootAttrs(attrs)"
+    v-bind="getRootAttrs($attrs)"
   >
     <ReuseAutocomplete />
     <div

@@ -116,8 +116,6 @@ const childHeaders = computed<DataTableColumn<MissingAcquisition>[]>(() => [
 ]);
 
 const isIgnored = (asset: string) => get(isAssetIgnored(asset));
-
-const css = useCssModule();
 </script>
 
 <template>
@@ -128,7 +126,7 @@ const css = useCssModule();
       v-model:expanded="expanded"
       class="table-inside-dialog"
       :class="{
-        [css['table--pinned']]: isPinned,
+        [$style['table--pinned']]: isPinned,
       }"
       :cols="headers"
       :rows="groupedMissingAcquisitions"

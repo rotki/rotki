@@ -1,7 +1,6 @@
 <script setup lang="ts">
 withDefaults(defineProps<{ full?: boolean }>(), { full: false });
 
-const slots = useSlots();
 const { isMdAndUp } = useBreakpoint();
 </script>
 
@@ -25,13 +24,13 @@ const { isMdAndUp } = useBreakpoint();
       </div>
     </div>
     <div
-      v-if="slots.title"
+      v-if="$slots.title"
       class="text-h5"
     >
       <slot name="title" />
     </div>
     <div
-      v-if="slots.default"
+      v-if="$slots.default"
       class="text-subtitle-2 text-rui-text-secondary"
     >
       <slot />

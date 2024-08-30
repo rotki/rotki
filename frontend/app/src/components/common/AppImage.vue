@@ -36,8 +36,6 @@ const emit = defineEmits<{
   (e: 'loadstart'): void;
 }>();
 
-const css = useCssModule();
-
 const { width, height, maxWidth, maxHeight, size } = toRefs(props);
 
 const error = ref<boolean>(false);
@@ -72,7 +70,7 @@ function onLoadStart() {
 </script>
 
 <template>
-  <div :class="css.wrapper">
+  <div :class="$style.wrapper">
     <RuiSkeletonLoader
       v-if="loading"
       :style="style"

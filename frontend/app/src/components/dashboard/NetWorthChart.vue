@@ -593,13 +593,11 @@ onMounted(() => {
 onBeforeUnmount(() => {
   window.removeEventListener('mouseup', mouseup);
 });
-
-const css = useCssModule();
 </script>
 
 <template>
-  <div :class="css.wrapper">
-    <div :class="css.canvas">
+  <div :class="$style.wrapper">
+    <div :class="$style.canvas">
       <canvas
         :id="chartId"
         @mousedown="canvasMouseDown($event)"
@@ -634,11 +632,11 @@ const css = useCssModule();
       </GraphTooltipWrapper>
     </div>
 
-    <div :class="css.range__wrapper">
+    <div :class="$style.range__wrapper">
       <div
         v-if="showGraphRangeSelector"
         ref="rangeRef"
-        :class="css.range"
+        :class="$style.range"
         @mousemove="rangeButtonMouseMove($event)"
         @dblclick="resetZoom()"
       >
@@ -646,36 +644,36 @@ const css = useCssModule();
 
         <div
           :class="[
-            css.range__marker,
+            $style.range__marker,
             {
-              [css['range__marker--dark']]: isDark,
+              [$style['range__marker--dark']]: isDark,
             },
           ]"
           :style="rangeMarkerStyle"
           @mousedown="rangeButtonMouseDown('both', $event)"
         >
-          <div :class="[css.range__marker__limit, css['range__marker__limit--start']]">
+          <div :class="[$style.range__marker__limit, $style['range__marker__limit--start']]">
             <RuiButton
-              :class="css.range__marker__limit__button"
+              :class="$style.range__marker__limit__button"
               :color="isDark ? 'primary' : undefined"
               elevation="1"
               @mousedown.stop="rangeButtonMouseDown('start', $event)"
             >
               <RuiIcon
-                :class="css.range__marker__limit__button__icon"
+                :class="$style.range__marker__limit__button__icon"
                 name="equal-line"
               />
             </RuiButton>
           </div>
-          <div :class="[css.range__marker__limit, css['range__marker__limit--end']]">
+          <div :class="[$style.range__marker__limit, $style['range__marker__limit--end']]">
             <RuiButton
-              :class="css.range__marker__limit__button"
+              :class="$style.range__marker__limit__button"
               :color="isDark ? 'primary' : undefined"
               elevation="1"
               @mousedown.stop="rangeButtonMouseDown('end', $event)"
             >
               <RuiIcon
-                :class="css.range__marker__limit__button__icon"
+                :class="$style.range__marker__limit__button__icon"
                 name="equal-line"
               />
             </RuiButton>
@@ -687,7 +685,7 @@ const css = useCssModule();
         class="grow"
       />
 
-      <div :class="css.snapshot">
+      <div :class="$style.snapshot">
         <SnapshotActionButton>
           <template #button-icon>
             <RuiIcon name="arrow-down-s-line" />

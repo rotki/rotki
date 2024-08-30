@@ -93,7 +93,6 @@ from rotkehlchen.db.utils import (
     form_query_to_filter_timestamps,
     insert_tag_mappings,
     is_valid_db_blockchain_account,
-    need_writable_cursor,
     protect_password_sqlcipher,
     replace_tag_mappings,
     str_to_bool,
@@ -870,7 +869,6 @@ class DBHandler:
             (name.get_db_key(**kwargs), value),
         )
 
-    @need_writable_cursor('user_write')
     def add_external_service_credentials(
             self,
             write_cursor: 'DBWriterClient',
@@ -924,7 +922,6 @@ class DBHandler:
             # There can only be 1 result, since name is the primary key of the table
             return ExternalServiceApiCredentials(service=service_name, api_key=result[0], api_secret=result[1])  # noqa: E501
 
-    @need_writable_cursor('user_write')
     def add_to_ignored_assets(self, write_cursor: 'DBWriterClient', asset: Asset) -> None:
         """Add a new asset to the set of ignored assets. If the asset was already marked as
         ignored then we don't do anything.

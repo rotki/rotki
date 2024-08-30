@@ -16,9 +16,6 @@ const props = withDefaults(
   },
 );
 
-const css = useCssModule();
-const attrs = useAttrs();
-
 const style = computed<StyleValue | undefined>(() => {
   if (!props.height)
     return undefined;
@@ -32,13 +29,13 @@ const style = computed<StyleValue | undefined>(() => {
 <template>
   <div
     :class="[
-      css.table,
+      $style.table,
       {
-        [css.outlined]: variant === 'outlined',
+        [$style.outlined]: variant === 'outlined',
       },
     ]"
     :style="style"
-    v-bind="attrs"
+    v-bind="$attrs"
   >
     <table>
       <slot />

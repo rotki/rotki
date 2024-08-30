@@ -22,8 +22,6 @@ const { item } = toRefs(props);
 const { locationData } = useLocations();
 
 const location = locationData(item);
-
-const css = useCssModule();
 </script>
 
 <template>
@@ -34,7 +32,7 @@ const css = useCssModule();
       'flex-row gap-2': horizontal,
       'flex-col gap-1': !horizontal,
       'skeleton': !location,
-      [css.wrapper]: icon,
+      [$style.wrapper]: icon,
     }"
     @click="emit('click', item)"
   >

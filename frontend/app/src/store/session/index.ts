@@ -8,6 +8,7 @@ import {
 } from '@/types/login';
 import { TaskType } from '@/types/task-type';
 import { UserAccount, type UserSettingsModel } from '@/types/user';
+import { api } from '@/services/rotkehlchen-api';
 import type { Exchange } from '@/types/exchanges';
 import type { SupportedLanguage } from '@/types/settings/frontend-settings';
 import type { TaskMeta } from '@/types/task';
@@ -35,6 +36,10 @@ export const useSessionStore = defineStore('session', () => {
 
   const { t } = useI18n();
   const { start } = useMonitorStore();
+
+  api.setOnAuthFailure(() => {
+    set(logged, false);
+  });
 
   const createActionStatus = (error: any): ActionStatus => {
     let message = '';

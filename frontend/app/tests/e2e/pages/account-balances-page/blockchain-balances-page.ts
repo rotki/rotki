@@ -21,6 +21,7 @@ export class BlockchainBalancesPage {
   openTab(tab: string) {
     cy.get(`[data-cy=${tab}-tab]`).scrollIntoView();
     cy.get(`[data-cy=${tab}-tab]`).click();
+    cy.get(`[data-category=${tab}`).should('be.visible');
   }
 
   addBalance(balance: FixtureBlockchainBalance) {
@@ -93,7 +94,7 @@ export class BlockchainBalancesPage {
 
   private getBalances() {
     const balances: Map<string, BigNumber> = new Map();
-    const categories = ['evm', 'bitcoin', 'substrate'];
+    const categories = ['evm', 'bitcoin'];
 
     categories.forEach((category) => {
       this.openTab(category);

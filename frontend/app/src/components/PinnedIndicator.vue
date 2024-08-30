@@ -10,8 +10,6 @@ const { t } = useI18n();
 function toggleVisibility() {
   emit('update:visible', !get(visible));
 }
-
-const css = useCssModule();
 </script>
 
 <template>
@@ -29,7 +27,7 @@ const css = useCssModule();
       class="flex items-center"
     >
       <RuiIcon
-        :class="{ [css.visible]: visible }"
+        :class="{ [$style.visible]: visible }"
         name="pushpin-line"
       />
     </RuiBadge>

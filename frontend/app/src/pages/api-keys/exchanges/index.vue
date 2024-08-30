@@ -17,11 +17,6 @@ const placeholder: () => ExchangePayload = () => ({
 });
 
 const nonSyncingExchanges = ref<Exchange[]>([]);
-
-const store = useExchangesStore();
-const { setupExchange, removeExchange } = store;
-const { connectedExchanges } = storeToRefs(store);
-
 const exchange = ref<ExchangePayload>(placeholder());
 const editMode = ref<boolean>(false);
 const sort = ref<DataTableSortColumn<Exchange>>({
@@ -29,10 +24,38 @@ const sort = ref<DataTableSortColumn<Exchange>>({
   direction: 'asc',
 });
 
+const store = useExchangesStore();
+const { setupExchange, removeExchange } = store;
+const { connectedExchanges: rows } = storeToRefs(store);
+
 const { nonSyncingExchanges: current } = storeToRefs(useGeneralSettingsStore());
 const { update } = useSettingsStore();
 
 const { t } = useI18n();
+
+const cols = computed<DataTableColumn<Exchange>[]>(() => [
+  {
+    label: t('common.location'),
+    key: 'location',
+    width: '120px',
+    align: 'center',
+    cellClass: 'py-0',
+  },
+  {
+    label: t('common.name'),
+    key: 'name',
+  },
+  {
+    label: t('exchange_settings.header.sync_enabled'),
+    key: 'syncEnabled',
+  },
+  {
+    label: t('common.actions_text'),
+    key: 'actions',
+    width: '105px',
+    align: 'center',
+  },
+]);
 
 function findNonSyncExchangeIndex(exchange: Exchange) {
   return get(nonSyncingExchanges).findIndex(
@@ -131,64 +154,42 @@ async function remove(item: Exchange) {
     set(exchange, placeholder());
 }
 
-onBeforeMount(() => {
-  resetNonSyncingExchanges();
-});
-
 const router = useRouter();
-onMounted(async () => {
-  const { currentRoute } = router;
-  if (get(currentRoute).query.add) {
-    addExchange();
-    await router.replace({ query: {} });
-  }
-});
-
-const headers = computed<DataTableColumn<Exchange>[]>(() => [
-  {
-    label: t('common.location'),
-    key: 'location',
-    width: '120px',
-    align: 'center',
-    cellClass: 'py-0',
-  },
-  {
-    label: t('common.name'),
-    key: 'name',
-  },
-  {
-    label: t('exchange_settings.header.sync_enabled'),
-    key: 'syncEnabled',
-  },
-  {
-    label: t('common.actions_text'),
-    key: 'actions',
-    width: '105px',
-    align: 'center',
-  },
-]);
+const route = useRoute('/api-keys/exchanges/');
 
 const { show } = useConfirmStore();
 
 function showRemoveConfirmation(item: Exchange) {
-  show(
-    {
-      title: t('exchange_settings.confirmation.title'),
-      message: t('exchange_settings.confirmation.message', {
-        name: item?.name ?? '',
-        location: item ? exchangeName(item.location) : '',
-      }),
-    },
-    () => remove(item),
-  );
+  show({
+    title: t('exchange_settings.confirmation.title'),
+    message: t('exchange_settings.confirmation.message', {
+      name: item?.name ?? '',
+      location: item ? exchangeName(item.location) : '',
+    }),
+  }, () => remove(item));
 }
+
+onBeforeMount(() => {
+  resetNonSyncingExchanges();
+});
+
+onMounted(async () => {
+  const { query } = get(route);
+  if (query.add) {
+    await router.replace({ query: {} });
+    startPromise(nextTick(() => addExchange()));
+  }
+});
 </script>
 
 <template>
   <TablePageLayout
     class="exchange-settings"
     data-cy="exchanges"
-    :title="[t('navigation_menu.api_keys'), t('navigation_menu.api_keys_sub.exchanges')]"
+    :title="[
+      t('navigation_menu.api_keys'),
+      t('navigation_menu.api_keys_sub.exchanges'),
+    ]"
   >
     <template #buttons>
       <RuiButton
@@ -222,8 +223,8 @@ function showRemoveConfirmation(item: Exchange) {
         outlined
         row-attr="name"
         data-cy="exchange-table"
-        :rows="connectedExchanges"
-        :cols="headers"
+        :rows="rows"
+        :cols="cols"
         :sort="sort"
       >
         <template #item.location="{ row }">

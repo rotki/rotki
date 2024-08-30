@@ -35,8 +35,6 @@ const icon = computed(() => {
 });
 
 const multiple = computed<boolean>(() => props.assets.length > 2);
-
-const css = useCssModule();
 </script>
 
 <template>
@@ -52,7 +50,7 @@ const css = useCssModule();
       <AssetIcon
         v-if="!multiple"
         circle
-        :class="css['second-icon']"
+        :class="$style['second-icon']"
         :identifier="assets[1]"
         size="32px"
         padding="0"
@@ -60,7 +58,7 @@ const css = useCssModule();
       />
       <RuiMenu v-else>
         <template #activator>
-          <div :class="[css['second-icon'], css['more-assets']]">
+          <div :class="[$style['second-icon'], $style['more-assets']]">
             +{{ assets.length - 1 }}
           </div>
         </template>
@@ -77,7 +75,7 @@ const css = useCssModule();
         </div>
       </RuiMenu>
     </div>
-    <div :class="css['lp-type-icon']">
+    <div :class="$style['lp-type-icon']">
       <AppImage
         size="1rem"
         :src="icon"

@@ -346,14 +346,13 @@ watch(matches, (matches) => {
   restoreSelection(matches);
 });
 
-const slots = useSlots();
 const { t } = useI18n();
 </script>
 
 <template>
   <RuiTooltip
     :popper="{ placement: 'top' }"
-    :disabled="!disabled || !slots.tooltip"
+    :disabled="!disabled || !$slots.tooltip"
     :open-delay="400"
     :close-delay="1000"
     class="block flex-1"

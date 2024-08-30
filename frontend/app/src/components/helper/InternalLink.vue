@@ -20,9 +20,6 @@ const props = withDefaults(
     exactActiveClass: '',
   },
 );
-
-const rootAttrs = useAttrs();
-const css = useCssModule();
 </script>
 
 <template>
@@ -37,7 +34,7 @@ const css = useCssModule();
         [`${exactActiveClass}`]: isExactActive,
       }"
       :href="href"
-      v-bind="rootAttrs"
+      v-bind="$attrs"
       @click.exact="navigate($event)"
       @click.meta.prevent
       @click.ctrl.prevent
@@ -46,7 +43,7 @@ const css = useCssModule();
       <RuiButton
         variant="text"
         color="primary"
-        :class="css.button"
+        :class="$style.button"
       >
         <slot />
       </RuiButton>

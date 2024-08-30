@@ -26,24 +26,20 @@ const avatarSizeClasses = computed(() => {
 
   return 'w-8 h-8';
 });
-
-const slots = useSlots();
-
-const css = useCssModule();
 </script>
 
 <template>
   <div
     :class="[
-      css.wrapper,
+      $style.wrapper,
       {
-        [css['with-padding']]: !noPadding,
+        [$style['with-padding']]: !noPadding,
         'hover:bg-rui-grey-100 hover:dark:bg-rui-grey-800': !noHover,
       },
     ]"
   >
     <div
-      v-if="slots.avatar"
+      v-if="$slots.avatar"
       :class="avatarSizeClasses"
       class="flex items-center justify-center avatar shrink-0"
     >

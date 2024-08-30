@@ -25,8 +25,6 @@ const sort = ref<DataTableSortData<Acquisition>>({
   direction: 'asc',
 });
 
-const css = useCssModule();
-
 const cols = computed<DataTableColumn<Acquisition>[]>(() => [
   {
     label: t('cost_basis_table.headers.amount'),
@@ -87,9 +85,9 @@ const matchedAcquisitions = computed<Acquisition[]>(() => {
   <div class="relative">
     <div
       v-if="showGroupLine"
-      :class="css.group"
+      :class="$style.group"
     >
-      <div :class="css.group__line" />
+      <div :class="$style.group__line" />
     </div>
 
     <div
@@ -121,7 +119,7 @@ const matchedAcquisitions = computed<Acquisition[]>(() => {
       >
         <RuiDataTable
           v-model:sort="sort"
-          :class="css.table"
+          :class="$style.table"
           :rows="matchedAcquisitions"
           :cols="cols"
           row-attr="amount"

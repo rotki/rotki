@@ -19,7 +19,6 @@ const emit = defineEmits<{
   (e: 'reset-undecoded-transactions'): void;
 }>();
 
-const css = useCssModule();
 const { isTaskRunning } = useTaskStore();
 const fetching = isTaskRunning(TaskType.FETCH_UNDECODED_TXS);
 const eventTaskLoading = isTaskRunning(TaskType.TRANSACTIONS_DECODING);
@@ -120,7 +119,7 @@ onMounted(() => refresh());
 
     <div
       v-if="combinedDecodingStatus.length > 0"
-      :class="css.content"
+      :class="$style.content"
     >
       <div class="mb-4">
         {{ t('transactions.events_decoding.decoded.false') }}

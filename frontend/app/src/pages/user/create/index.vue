@@ -12,7 +12,6 @@ const { navigateToUserLogin } = useAppNavigation();
 const { createNewAccount, error, loading } = useAccountManagement();
 
 const { t } = useI18n();
-const css = useCssModule();
 
 const step = ref<number>(1);
 const steps = [
@@ -35,9 +34,9 @@ const steps = [
 </script>
 
 <template>
-  <section :class="css.section">
-    <div :class="css.container">
-      <div :class="css.wrapper">
+  <section :class="$style.section">
+    <div :class="$style.container">
+      <div :class="$style.wrapper">
         <div
           class="pb-4"
           data-cy="account-management"
@@ -63,7 +62,7 @@ const steps = [
           variant="pill"
         />
       </div>
-      <footer :class="css.container__footer">
+      <footer :class="$style.container__footer">
         <AccountManagementFooterText
           #default="{ copyright }"
           class="lg:hidden"

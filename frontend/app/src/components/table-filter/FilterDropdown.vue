@@ -136,8 +136,6 @@ watch(selectedSuggestion, async () => {
 });
 
 const highlightedTextClasses = 'text-subtitle-2 text-rui-text-secondary';
-
-const css = useCssModule();
 </script>
 
 <template>
@@ -146,7 +144,7 @@ const css = useCssModule();
       <div
         v-if="suggested.length > 0"
         class="mb-2"
-        :class="css.suggestions"
+        :class="$style.suggestions"
         data-cy="suggestions"
       >
         <RuiButton
@@ -220,7 +218,7 @@ const css = useCssModule();
       </div>
       <RuiDivider class="my-2" />
       <div
-        :class="css.suggestions"
+        :class="$style.suggestions"
         data-cy="suggestions"
       >
         <FilterEntry

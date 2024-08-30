@@ -18,8 +18,6 @@ function setData() {
 onMounted(setData);
 
 watch([enabled, multiplier], setData);
-
-const css = useCssModule();
 </script>
 
 <template>
@@ -46,7 +44,7 @@ const css = useCssModule();
       setting="scrambleMultiplier"
       session-setting
     >
-      <div :class="css.multiplier">
+      <div :class="$style.multiplier">
         <AmountInput
           v-model="scrambleMultiplier"
           class="general-settings__fields__scramble-multiplier"

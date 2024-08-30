@@ -34,8 +34,6 @@ const name = computed(() => {
 
   return defiProtocol;
 });
-
-const css = useCssModule();
 </script>
 
 <template>
@@ -56,14 +54,14 @@ const css = useCssModule();
           max-height="32px"
           :class="{
             'mr-2': mode !== 'icon',
-            [css.icon]: true,
+            [$style.icon]: true,
           }"
           :src="`./assets/images/protocols/${icon}.svg`"
         />
         <span
           v-if="mode === 'label' || mode === 'both'"
           class="text-rui-text-secondary"
-          :class="css.label"
+          :class="$style.label"
         >
           {{ toSentenceCase(name) }}
         </span>

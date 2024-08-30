@@ -9,8 +9,6 @@ withDefaults(
     tooltipOption: undefined,
   },
 );
-
-const css = useCssModule();
 </script>
 
 <template>
@@ -18,9 +16,9 @@ const css = useCssModule();
     v-if="tooltipOption"
     :id="tooltipOption.id"
     :class="[
-      css.tooltip,
+      $style.tooltip,
       {
-        [css.tooltip__show]: tooltipOption.visible,
+        [$style.tooltip__show]: tooltipOption.visible,
       },
     ]"
     class="bg-white dark:bg-black"

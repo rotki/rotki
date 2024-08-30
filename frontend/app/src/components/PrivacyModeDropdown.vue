@@ -33,8 +33,6 @@ function setData() {
 onMounted(setData);
 
 watch([enabled, multiplier], setData);
-
-const css = useCssModule();
 </script>
 
 <template>
@@ -64,7 +62,7 @@ const css = useCssModule();
         </MenuTooltipButton>
         <RuiButton
           data-cy="privacy-menu"
-          :class="css.expander"
+          :class="$style.expander"
           icon
           variant="text"
           v-bind="attrs"
@@ -117,7 +115,7 @@ const css = useCssModule();
         <div class="flex items-center border-t border-default p-4">
           <SettingsOption
             #default="{ updateImmediate: updateScramble }"
-            :class="css.scrambler__toggle"
+            :class="$style.scrambler__toggle"
             setting="scrambleData"
             session-setting
           >
@@ -138,7 +136,7 @@ const css = useCssModule();
           <SettingsOption
             #default="{ updateImmediate: updateMultiplier }"
             setting="scrambleMultiplier"
-            :class="css.scrambler__input"
+            :class="$style.scrambler__input"
             :error-message="t('frontend_settings.validation.scramble.error')"
             session-setting
           >

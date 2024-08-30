@@ -1236,8 +1236,10 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
     """This test tests that transactions with ignored assets are excluded when needed"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     db = rotki.data.db
-    db.add_to_ignored_assets(A_BTC)
-    db.add_to_ignored_assets(A_DAI)
+    with db.user_write() as write_cursor:
+        db.add_to_ignored_assets(write_cursor, A_BTC)
+        db.add_to_ignored_assets(write_cursor, A_DAI)
+
     dbevmtx = DBEvmTx(db)
     dbevents = DBHistoryEvents(db)
     tx1 = make_ethereum_transaction(timestamp=1)
@@ -1489,10 +1491,13 @@ def test_repulling_transaction_with_internal_txs(rotkehlchen_api_server: 'APISer
     tx_hash = deserialize_evm_tx_hash('0x4ea72ae535e32d5edc543a9ace5f736c7037cc63e4088de38511297c764049b5')  # noqa: E501
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     database = rotki.data.db
-    database.add_external_service_credentials([ExternalServiceApiCredentials(
-        service=ExternalService.THEGRAPH,
-        api_key=ApiKey(GRAPH_QUERY_CRED),
-    )])
+    with database.user_write() as write_cursor:
+        database.add_external_service_credentials(
+            write_cursor=write_cursor,
+            credentials=[ExternalServiceApiCredentials(
+                service=ExternalService.THEGRAPH,
+                api_key=ApiKey(GRAPH_QUERY_CRED),
+            )])
 
     dbevents = DBHistoryEvents(database)
     ethereum_inquirer = rotki.chains_aggregator.ethereum

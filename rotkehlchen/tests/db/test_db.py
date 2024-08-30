@@ -1751,9 +1751,11 @@ def test_get_external_service_credentials(database):
         assert not database.get_external_service_credentials(service)
 
     # add entries for all services
-    database.add_external_service_credentials(
-        [ExternalServiceApiCredentials(s, f'{s.name.lower()}_key') for s in ExternalService],
-    )
+    with database.user_write() as write_cursor:
+        database.add_external_service_credentials(
+            write_cursor=write_cursor,
+            credentials=[ExternalServiceApiCredentials(s, f'{s.name.lower()}_key') for s in ExternalService],  # noqa: E501
+        )
 
     # now make sure that they are returned individually
     for service in ExternalService:

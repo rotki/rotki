@@ -39,8 +39,6 @@ const { identifier, padding, size, resolutionOptions, showChain } = toRefs(props
 const error = ref<boolean>(false);
 const pending = ref<boolean>(true);
 
-const css = useCssModule();
-
 const { currencies } = useCurrencies();
 
 const mappedIdentifier = computed<string>(() => {
@@ -123,8 +121,8 @@ watch([symbol, identifier], () => {
         <div
           v-if="showChain && chain"
           :class="{
-            [css.circle]: true,
-            [css.chain]: true,
+            [$style.circle]: true,
+            [$style.chain]: true,
           }"
         >
           <EvmChainIcon
@@ -136,7 +134,7 @@ watch([symbol, identifier], () => {
         <div
           :style="styled"
           class="flex items-center justify-center cursor-pointer h-full w-full icon-bg"
-          :class="{ [css.circle]: circle }"
+          :class="{ [$style.circle]: circle }"
         >
           <RuiIcon
             v-if="!currency && pending"

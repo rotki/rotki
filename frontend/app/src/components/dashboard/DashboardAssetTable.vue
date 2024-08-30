@@ -17,7 +17,6 @@ const props = withDefaults(
 );
 
 const { t } = useI18n();
-const css = useCssModule();
 
 const { balances, title, tableType } = toRefs(props);
 const search = ref('');
@@ -186,7 +185,7 @@ watch(search, () => setPage(1));
         dense
         prepend-icon="search-line"
         :label="t('common.actions.search')"
-        :class="css['dashboard-asset-table__search']"
+        :class="$style['dashboard-asset-table__search']"
         hide-details
         clearable
         @click:clear="search = ''"
@@ -283,13 +282,12 @@ watch(search, () => setPage(1));
           :asset-padding="0.1"
         />
       </template>
-      <template #no-data>
+      <template
+        v-if="search.length > 0"
+        #no-data
+      >
         <span class="text-rui-text-secondary">
-          {{
-            t('dashboard_asset_table.no_search_result', {
-              search,
-            })
-          }}
+          {{ t('dashboard_asset_table.no_search_result', { search }) }}
         </span>
       </template>
       <template
@@ -300,7 +298,7 @@ watch(search, () => setPage(1));
           label-colspan="3"
           :label="t('common.total')"
           :right-patch-colspan="tableHeaders.length - 4"
-          :class-name="css['dashboard-asset-table__body-append']"
+          :class-name="$style['dashboard-asset-table__body-append']"
         >
           <AmountDisplay
             :fiat-currency="currencySymbol"

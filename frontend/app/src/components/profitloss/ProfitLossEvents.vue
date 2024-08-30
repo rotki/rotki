@@ -163,8 +163,6 @@ function isExpanded(id: number) {
 function expand(item: PnLItem) {
   set(expanded, isExpanded(item.id) ? [] : [item]);
 }
-
-const css = useCssModule();
 </script>
 
 <template>
@@ -198,15 +196,15 @@ const css = useCssModule();
           class="h-full !block"
         >
           <template #activator>
-            <div :class="css.group">
+            <div :class="$style.group">
               <div
                 v-if="row.groupLine.top"
-                :class="[css.group__line, css['group__line-top']]"
+                :class="[$style.group__line, $style['group__line-top']]"
               />
-              <div :class="css.group__dot" />
+              <div :class="$style.group__dot" />
               <div
                 v-if="row.groupLine.bottom"
-                :class="[css.group__line, css['group__line-bottom']]"
+                :class="[$style.group__line, $style['group__line-bottom']]"
               />
             </div>
           </template>

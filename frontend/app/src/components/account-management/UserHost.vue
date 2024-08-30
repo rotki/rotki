@@ -7,8 +7,6 @@ const { connectionFailure, connected, dockerRiskAccepted } = storeToRefs(useMain
 const isDocker = import.meta.env.VITE_DOCKER;
 const showDockerWarning = logicAnd(isDocker, logicNot(dockerRiskAccepted));
 const displayRouter = logicAnd(connected, logicNot(showDockerWarning), logicNot(restarting));
-
-const css = useCssModule();
 </script>
 
 <template>
@@ -21,7 +19,7 @@ const css = useCssModule();
   <div
     v-if="displayRouter"
     data-cy="account-management-forms"
-    :class="css.router"
+    :class="$style.router"
   >
     <slot />
   </div>

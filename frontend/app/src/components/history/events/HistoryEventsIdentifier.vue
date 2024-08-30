@@ -18,7 +18,6 @@ const evmOrDepositEvent = computed(() => get(isEvmEventRef(event)) || get(isEthD
 const blockEvent = isEthBlockEventRef(event);
 const withdrawEvent = isWithdrawalEventRef(event);
 
-const css = useCssModule();
 const { is2xlAndUp } = useBreakpoint();
 </script>
 
@@ -37,7 +36,7 @@ const { is2xlAndUp } = useBreakpoint();
       #blockNumber
     >
       <HashLink
-        :class="css.wrapper"
+        :class="$style.wrapper"
         :text="blockEvent.blockNumber.toString()"
         :show-icon="false"
         type="block"
@@ -49,7 +48,7 @@ const { is2xlAndUp } = useBreakpoint();
       #validatorIndex
     >
       <HashLink
-        :class="css.wrapper"
+        :class="$style.wrapper"
         :text="withdrawEvent.validatorIndex.toString()"
         :show-icon="false"
         :chain="Blockchain.ETH2"
@@ -62,7 +61,7 @@ const { is2xlAndUp } = useBreakpoint();
       #txHash
     >
       <HashLink
-        :class="css.wrapper"
+        :class="$style.wrapper"
         :text="evmOrDepositEvent.txHash"
         :show-icon="false"
         type="transaction"

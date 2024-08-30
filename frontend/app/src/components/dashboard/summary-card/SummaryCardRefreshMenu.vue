@@ -16,14 +16,11 @@ const emit = defineEmits<{
 }>();
 
 const refresh = () => emit('refresh');
-
-const slots = useSlots();
-const css = useCssModule();
 </script>
 
 <template>
   <RefreshButton
-    v-if="!slots.refreshMenu"
+    v-if="!$slots.refreshMenu"
     :loading="loading"
     :disabled="disabled"
     :tooltip="tooltip"
@@ -43,7 +40,7 @@ const css = useCssModule();
         />
         <RuiButton
           :disabled="disabled"
-          :class="css.expander"
+          :class="$style.expander"
           icon
           variant="text"
           size="sm"

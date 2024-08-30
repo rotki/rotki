@@ -204,9 +204,6 @@ const availableAddresses = computed(() =>
 function refresh() {
   emit('refresh', true);
 }
-
-const css = useCssModule();
-const slots = useSlots();
 </script>
 
 <template>
@@ -216,7 +213,7 @@ const slots = useSlots();
   >
     <template #buttons>
       <div class="flex items-center gap-3">
-        <div v-if="slots.modules">
+        <div v-if="$slots.modules">
           <slot name="modules" />
         </div>
         <RuiTooltip :open-delay="400">
@@ -284,13 +281,13 @@ const slots = useSlots();
             </div>
             <div
               class="ml-3 pl-4 pt-2"
-              :class="css['proxies-wrapper']"
+              :class="$style['proxies-wrapper']"
             >
               <div
                 v-for="proxy in proxies"
                 :key="proxy"
                 class="mb-1 flex"
-                :class="css['proxies-item']"
+                :class="$style['proxies-item']"
               >
                 <HashLink
                   :text="proxy"

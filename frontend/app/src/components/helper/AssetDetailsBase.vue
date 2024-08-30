@@ -27,7 +27,6 @@ const props = withDefaults(
 );
 
 const { asset, opensDetails, isCollectionParent } = toRefs(props);
-const rootAttrs = useAttrs();
 
 const symbol = computed<string>(() => get(asset).symbol ?? '');
 const name = computed<string>(() => get(asset).name ?? '');
@@ -63,7 +62,7 @@ const loading = computed<boolean>(() => get(isPending(get(asset).identifier)));
     no-padding
     no-hover
     class="max-w-[20rem]"
-    v-bind="rootAttrs"
+    v-bind="$attrs"
     :class="opensDetails ? 'cursor-pointer' : null"
     :size="dense ? 'sm' : 'md'"
     :loading="loading"
