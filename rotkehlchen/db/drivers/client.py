@@ -2,6 +2,7 @@
  https://github.com/gilesbrown/gsqlite3/blob/fef400f1c5bcbc546772c827d3992e578ea5f905/gsqlite3.py
 but heavily modified"""
 
+import logging
 import random
 import sqlite3
 from collections.abc import Callable, Generator, Sequence
@@ -16,13 +17,14 @@ import zmq
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.db.checks import sanity_check_impl
+from rotkehlchen.db.drivers import db_messages_pb2
 from rotkehlchen.db.drivers.server import (
     DB_CONNECTION_ADDRESS,
+    ENUM_TO_DB_ERROR,
     DBConnectionType,
-    DbMethod,
-    SerializedZMQReturnData,
-    ZMQCallData,
-    ZMQReturnData,
+    DBError,
+    DBMethod,
+    to_typed_data,
 )
 from rotkehlchen.db.minimized_schema import MINIMIZED_USER_DB_SCHEMA
 from rotkehlchen.globaldb.minimized_schema import MINIMIZED_GLOBAL_DB_SCHEMA
@@ -34,15 +36,17 @@ if TYPE_CHECKING:
 
 UnderlyingCursor: TypeAlias = sqlite3.Cursor | sqlcipher.Cursor  # pylint: disable=no-member
 UnderlyingConnection: TypeAlias = sqlite3.Connection | sqlcipher.Connection  # pylint: disable=no-member
+logger: 'RotkehlchenLogger' = logging.getLogger(__name__)  # type: ignore
 
 CONTEXT_SWITCH_WAIT = 1  # seconds to wait for a status change in a DB context switch
-import logging
-
-logger: 'RotkehlchenLogger' = logging.getLogger(__name__)  # type: ignore
 
 
 class ContextError(Exception):
     """Intended to be raised when something is wrong with db context management"""
+
+
+class UnknownDBError(Exception):
+    """Raised when we get an unknown error from the DB Writer process"""
 
 
 class DBCursor:
@@ -192,31 +196,44 @@ class DBWriterClient:
         self.lastrowid: int = 0
         self.cursor_name = cursor_name
         if cursor_name is not None:
-            self._send(DbMethod.OPEN_CURSOR, cursor_name=cursor_name)
+            self._send(DBMethod.OPEN_CURSOR, cursor_name=cursor_name)
 
-    def _send(self, method: DbMethod, cursor_name: str | None = None, *args: Any, **kwargs: Any) -> None:  # noqa: E501
-        self.zmq_connection.send_pyobj(ZMQCallData(
-            connection_type=self.connection_type,
-            db_path=self.db_path,
-            cursor_name=cursor_name,
-            method=method,
-            args=args,
-            kwargs=kwargs,
-        ))
-        response: SerializedZMQReturnData | None = self.zmq_connection.recv_pyobj()
-        if response is None:
+    def _send(self, method: db_messages_pb2.DBMethod, cursor_name: str | None = None, *args: Any, **kwargs: Any) -> None:  # type: ignore[name-defined]  # pylint: disable=no-member  # noqa: E501
+        call_data = db_messages_pb2.ZMQCallData()  # type: ignore[attr-defined]  # pylint: disable=no-member
+        call_data.connection_type = self.connection_type.value
+        call_data.db_path = self.db_path
+        if cursor_name is not None:
+            call_data.cursor_name = cursor_name
+
+        call_data.method = method
+        call_data.args.extend([to_typed_data(data) for data in args])
+        for key, value in kwargs.items():
+            typed_data = to_typed_data(value)
+            call_data.kwargs[key].type = typed_data.type
+            if typed_data.WhichOneof('data') == 'bytes':
+                call_data.kwargs[key].bytes = typed_data.bytes
+            elif typed_data.WhichOneof('data') == 'array':
+                call_data.kwargs[key].array.CopyFrom(typed_data.array)
+        self.zmq_connection.send(call_data.SerializeToString())
+        response_serialized = self.zmq_connection.recv()
+        if response_serialized == b'':
             return
-        result = ZMQReturnData.deserialize(response)
-        if result.error is not None:
-            raise result.error
-        if result.result is not None:
-            self.lastrowid = result.result['lastrowid']
-            self.rowcount = result.result['rowcount']
+        return_data = db_messages_pb2.ZMQReturnData()  # type: ignore[attr-defined]  # pylint: disable=no-member
+        return_data.ParseFromString(response_serialized)
+        if return_data.HasField('error'):
+            if return_data.error.name == DBError.UnknownError:
+                raise UnknownDBError(f'Got unknown DB error with message {return_data.error.message}')  # noqa: E501
+            # raise the same error that is raised by the DBWriter process
+            raise ENUM_TO_DB_ERROR[return_data.error.name](return_data.error.message)
+
+        if return_data.result is not None:
+            self.lastrowid = return_data.result.lastrowid
+            self.rowcount = return_data.result.rowcount
 
     def connect(self, *args: Any, **kwargs: Any) -> None:
         gevent.wait([gevent.spawn(
             self._send,
-            DbMethod.INITIALIZE,
+            DBMethod.INITIALIZE,
             *args,
             **kwargs | {'database': self.db_path},
         )])
@@ -225,11 +242,11 @@ class DBWriterClient:
         if __debug__:
             logger.trace(f'EXECUTE {statement}')
         try:
-            self._send(DbMethod.EXECUTE, self.cursor_name, statement, *bindings)
+            self._send(DBMethod.EXECUTE, self.cursor_name, statement, *bindings)
         except (sqlcipher.InterfaceError, sqlite3.InterfaceError):  # pylint: disable=no-member
             # Long story. Don't judge me. https://github.com/rotki/rotki/issues/5432
             logger.debug(f'{statement} with {bindings} failed due to https://github.com/rotki/rotki/issues/5432. Retrying')  # noqa: E501
-            self._send(DbMethod.EXECUTE, self.cursor_name, statement, *bindings)
+            self._send(DBMethod.EXECUTE, self.cursor_name, statement, *bindings)
 
         if __debug__:
             logger.trace(f'FINISH EXECUTE {statement}')
@@ -237,7 +254,7 @@ class DBWriterClient:
     def executemany(self, statement: str, *bindings: Sequence[Sequence]) -> None:
         if __debug__:
             logger.trace(f'EXECUTEMANY {statement}')
-        self._send(DbMethod.EXECUTEMANY, self.cursor_name, statement, *bindings)
+        self._send(DBMethod.EXECUTEMANY, self.cursor_name, statement, *bindings)
         if __debug__:
             logger.trace(f'FINISH EXECUTEMANY {statement}')
 
@@ -247,21 +264,21 @@ class DBWriterClient:
         """
         if __debug__:
             logger.trace(f'EXECUTESCRIPT {script}')
-        self._send(DbMethod.EXECUTESCRIPT, self.cursor_name, script)
+        self._send(DBMethod.EXECUTESCRIPT, self.cursor_name, script)
         if __debug__:
             logger.trace(f'FINISH EXECUTESCRIPT {script}')
 
     def rollback(self) -> None:
-        self._send(DbMethod.ROLLBACK)
+        self._send(DBMethod.ROLLBACK)
 
     def commit(self) -> None:
-        self._send(DbMethod.COMMIT)
+        self._send(DBMethod.COMMIT)
 
     def close(self) -> None:
-        self._send(DbMethod.CLOSE_CURSOR)
+        self._send(DBMethod.CLOSE_CURSOR)
 
     def close_connection(self) -> None:
-        self._send(DbMethod.CLOSE)
+        self._send(DBMethod.CLOSE)
 
     def switch_foreign_keys(
             self,

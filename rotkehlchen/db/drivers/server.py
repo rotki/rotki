@@ -3,100 +3,142 @@ import signal
 import sqlite3
 import sys
 from collections import defaultdict
-from collections.abc import Sequence
-from dataclasses import dataclass
 from enum import Enum, auto
 from types import FrameType
-from typing import Any, Final, TypeAlias, TypedDict
+from typing import Final, TypeAlias
 
 import zmq
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.args import app_args
-from rotkehlchen.utils.mixins.enums import SerializableEnumNameMixin
+from rotkehlchen.db.drivers import db_messages_pb2
+from rotkehlchen.fval import INT_MAX_PRECISION
 
 UnderlyingCursor: TypeAlias = sqlite3.Cursor | sqlcipher.Cursor  # pylint: disable=no-member
 UnderlyingConnection: TypeAlias = sqlite3.Connection | sqlcipher.Connection  # pylint: disable=no-member
+SerializableTypes: TypeAlias = list | tuple | bytes | str | bool | int | float | None
+DBMethod = db_messages_pb2.DBMethod  # type: ignore[attr-defined]  # pylint: disable=no-member
+DBError = db_messages_pb2.DBError  # type: ignore[attr-defined]  # pylint: disable=no-member
 
 
-class DBConnectionType(Enum):
-    USER = auto()
-    TRANSIENT = auto()
-    GLOBAL = auto()
+class DBWriteError(
+    sqlite3.DataError,
+    sqlite3.IntegrityError,
+    sqlite3.InterfaceError,
+    sqlite3.InternalError,
+    sqlite3.NotSupportedError,
+    sqlite3.OperationalError,
+    sqlite3.ProgrammingError,
+    sqlcipher.DataError,  # pylint: disable=no-member
+    sqlcipher.IntegrityError,  # pylint: disable=no-member
+    sqlcipher.InterfaceError,  # pylint: disable=no-member
+    sqlcipher.InternalError,  # pylint: disable=no-member
+    sqlcipher.NotSupportedError,  # pylint: disable=no-member
+    sqlcipher.OperationalError,  # pylint: disable=no-member
+    sqlcipher.ProgrammingError,  # pylint: disable=no-member
+):
+    """Raised when we get an error while writing to the DB"""
+
+
+class ComputationError(FloatingPointError, OverflowError, ZeroDivisionError, UnicodeError):
+    """Raised while calculating a value"""
+
+
+class ProgrammingError(
+    AssertionError,
+    AttributeError,
+    EOFError,
+    GeneratorExit,
+    NotImplementedError,
+    RecursionError,
+    ReferenceError,
+    TypeError,
+    ValueError,
+):
+    """Raised due to a mistake in the code by the programmer"""
+
+
+class HostSystemError(
+    KeyboardInterrupt,
+    BlockingIOError,
+    ConnectionError,
+    PermissionError,
+    TimeoutError,
+    SystemError,
+):
+    """Raised for errors related to the host system"""
+
+
+class MemoryUsageError(IndexError, KeyError, MemoryError, StopIteration):
+    """Raised when using the memory in a wrong way"""
 
 
 DB_CONNECTION_ADDRESS: Final = 'tcp://localhost'
 DEFAULT_DB_WRITER_PORT: Final = 5555
+DB_ERROR_TO_ENUM = {
+    MemoryUsageError: DBError.MemoryError,
+    HostSystemError: DBError.HostSystemError,
+    ProgrammingError: DBError.ProgrammingError,
+    ComputationError: DBError.ComputationError,
+    DBWriteError: DBError.DBWriteError,
+}
+ENUM_TO_DB_ERROR = {value: key for key, value in DB_ERROR_TO_ENUM.items()}
 
 
-class SerializedZMQCallData(TypedDict):
-    """Dictionary type for serialized ZMQ call data"""
-    connection_type: int
-    db_path: str
-    cursor_name: str | None
-    method: str
-    args: Sequence[Any]
-    kwargs: dict[str, Any]
+class DBConnectionType(Enum):
+    USER = 0  # start with 0 to keep consistent with protobuf enum
+    TRANSIENT = auto()
+    GLOBAL = auto()
 
 
-class SerializedDBWriteResult(TypedDict):
-    """Dictionary type for serialized DB write result"""
-    rowcount: int
-    lastrowid: int
+def to_typed_data(data: SerializableTypes) -> db_messages_pb2.TypedData:  # type: ignore[name-defined]  # pylint: disable=no-member
+    """Converts a python object to a protobuf TypedData object"""
+    typed_data = db_messages_pb2.TypedData()  # type: ignore[attr-defined]  # pylint: disable=no-member
+    if isinstance(data, list | tuple):
+        typed_data.type = 'array'
+        typed_array = db_messages_pb2.TypedArray()  # type: ignore[attr-defined]  # pylint: disable=no-member
+        typed_array.array.extend([to_typed_data(item) for item in data])
+        typed_data.array.CopyFrom(typed_array)
+    elif isinstance(data, bytes):
+        typed_data.type = 'bytes'
+        typed_data.bytes = data
+    elif isinstance(data, str):
+        typed_data.type = 'string'
+        typed_data.bytes = data.encode()
+    elif isinstance(data, bool):
+        typed_data.type = 'bool'
+        typed_data.bytes = data.to_bytes()
+    elif isinstance(data, int):
+        typed_data.type = 'int'
+        typed_data.bytes = data.to_bytes(length=INT_MAX_PRECISION, byteorder='big', signed=True)
+    elif isinstance(data, float):
+        typed_data.type = 'float'
+        typed_data.bytes = data.hex().encode()
+    elif data is None:
+        typed_data.type = 'null'
+        typed_data.bytes = b''
+    else:
+        raise NotImplementedError(f'Trying to send unsupported data {data}')
+    return typed_data
 
 
-class SerializedZMQReturnData(TypedDict):
-    """Dictionary type for serialized ZMQ return data"""
-    result: SerializedDBWriteResult | None
-    error: Any
-
-
-class DbMethod(SerializableEnumNameMixin):
-    INITIALIZE = auto()
-    OPEN_CURSOR = auto()
-    CLOSE_CURSOR = auto()
-    EXECUTE = auto()
-    EXECUTEMANY = auto()
-    EXECUTESCRIPT = auto()
-    ROLLBACK = auto()
-    COMMIT = auto()
-    CLOSE = auto()
-
-
-@dataclass
-class ZMQCallData:
-    """The data packet sent through ZMQ call"""
-    connection_type: DBConnectionType
-    db_path: str
-    cursor_name: str | None
-    method: DbMethod
-    args: Sequence[Any]
-    kwargs: dict[str, Any]
-
-
-class DBWriteResult(TypedDict):
-    rowcount: int
-    lastrowid: int
-
-
-@dataclass()
-class ZMQReturnData:
-    """The data packet received from ZMQ call"""
-    result: DBWriteResult | None
-    error: BaseException | None
-
-    def serialize(self) -> SerializedZMQReturnData:
-        return {
-            'result': self.result,
-            'error': self.error,
-        }
-
-    @classmethod
-    def deserialize(cls, data: SerializedZMQReturnData) -> 'ZMQReturnData':
-        return cls(
-            result=data['result'],
-            error=data['error'],
-        )
+def from_typed_data(data: db_messages_pb2.TypedData) -> SerializableTypes:  # type: ignore[name-defined]  # pylint: disable=no-member
+    """Converts a protobuf TypedData object to a python object"""
+    if data.type == 'array':
+        return [from_typed_data(item) for item in data.array.array]
+    if data.type == 'bytes':
+        return data.bytes
+    if data.type == 'string':
+        return data.bytes.decode()
+    if data.type == 'int':
+        return int.from_bytes(data.bytes, byteorder='big', signed=True)
+    if data.type == 'bool':
+        return bool.from_bytes(data.bytes)
+    if data.type == 'float':
+        return float.fromhex(data.bytes.decode())
+    if data.type == 'null':
+        return None
+    raise NotImplementedError(f'Receiving unsupported data {data}')
 
 
 class DBWriterServer:
@@ -117,15 +159,22 @@ class DBWriterServer:
         # to avoid sending back error from the server while terminating.
         self.shutting_down = False
 
-    def _handle_connection(self, call_data: ZMQCallData) -> None:
-        connect_func = sqlite3.connect if call_data.connection_type.value == DBConnectionType.GLOBAL.value else sqlcipher.connect  # noqa: E501  # pylint: disable=no-member
-        self.db_connections[call_data.db_path] = connect_func(*call_data.args, **call_data.kwargs)
+    def _handle_connection(
+            self,
+            call_data: db_messages_pb2.ZMQCallData,  # type: ignore[name-defined]  # pylint: disable=no-member
+            args: tuple[SerializableTypes, ...],
+            kwargs: dict[str, SerializableTypes],
+    ) -> None:
+        connect_func = sqlite3.connect if call_data.connection_type == db_messages_pb2.DBConnectionType.GLOBAL else sqlcipher.connect  # type: ignore[attr-defined]  # pylint: disable=no-member  # noqa: E501
+        self.db_connections[call_data.db_path] = connect_func(*args, **kwargs)
 
     def _handle_query(
             self,
             db_connection: UnderlyingConnection,
-            call_data: ZMQCallData,
-    ) -> ZMQReturnData:
+            call_data: db_messages_pb2.ZMQCallData,  # type: ignore[name-defined]  # pylint: disable=no-member
+            args: tuple[SerializableTypes, ...],
+            kwargs: dict[str, SerializableTypes],
+    ) -> db_messages_pb2.ZMQReturnData:  # type: ignore[name-defined]  # pylint: disable=no-member
         """Handle a query by getting the starting reference (cursor or connection)
         and calling the method on it.
 
@@ -134,7 +183,7 @@ class DBWriterServer:
             AttributeError: If the method is not found on the starting reference."""
         # Get the starting reference (cursor or connection).
         starting_reference: UnderlyingConnection | UnderlyingCursor
-        if call_data.cursor_name is not None:
+        if call_data.cursor_name != '':
             # If a cursor name is specified, get the cursor from db_cursors.
             starting_reference = self.db_cursors[call_data.db_path][call_data.cursor_name]
             if starting_reference is None:
@@ -144,57 +193,68 @@ class DBWriterServer:
             # If no cursor name is specified, use the database connection.
             starting_reference = db_connection
 
-        # Call the method on the starting reference with the specified arguments
-        return getattr(starting_reference, call_data.method.serialize())(*call_data.args, **call_data.kwargs)  # noqa: E501
+        return getattr(  # Call the method on the starting reference with the specified arguments
+            starting_reference,
+            DBMethod.Name(call_data.method).lower(),
+        )(*args, **kwargs)
 
     def listen(self) -> None:
         while True:
+            return_data = db_messages_pb2.ZMQReturnData()  # type: ignore[attr-defined]  # pylint: disable=no-member
             try:
-                call_data: ZMQCallData = self.zmq_connection.recv_pyobj()
-                if call_data.method.value == DbMethod.INITIALIZE.value:
-                    self._handle_connection(call_data)
-                    self.zmq_connection.send_pyobj(None)
+                call_data_serialized = self.zmq_connection.recv()
+                call_data = db_messages_pb2.ZMQCallData()  # type: ignore[attr-defined]  # pylint: disable=no-member
+                call_data.ParseFromString(call_data_serialized)
+                args = tuple(from_typed_data(data) for data in call_data.args)
+                kwargs = {key: from_typed_data(data) for key, data in call_data.kwargs.items()}
+                if call_data.method == DBMethod.INITIALIZE:
+                    self._handle_connection(call_data, args, kwargs)
+                    self.zmq_connection.send(b'')
                     continue
 
                 try:
                     db_connection = self.db_connections[call_data.db_path]
-                except KeyError:
-                    self.zmq_connection.send_pyobj(ZMQReturnData(
-                        result=None,
-                        error=KeyError(f'No DB connection for {call_data.connection_type} found'),
-                    ).serialize())
+                except KeyError as e:
+                    raise KeyError(f'No DB connection for {DBConnectionType(call_data.connection_type)} found') from e  # noqa: E501
+
+                cursor_name = call_data.cursor_name or 'default'
+                if call_data.method == DBMethod.OPEN_CURSOR:
+                    if self.db_cursors[call_data.db_path].get(cursor_name) is not None:
+                        raise KeyError(f'Cursor "{cursor_name}" for {call_data.db_path} already exists')  # noqa: E501
+                    self.db_cursors[call_data.db_path][cursor_name] = db_connection.cursor()
+                    self.zmq_connection.send(b'')
+                    continue
+                if call_data.method == DBMethod.CLOSE_CURSOR:
+                    self.db_cursors[call_data.db_path].pop(cursor_name, None)
+                    self.zmq_connection.send(b'')
                     continue
 
-                if call_data.method.value == DbMethod.OPEN_CURSOR.value:
-                    if self.db_cursors[call_data.db_path].get(call_data.cursor_name or 'default') is not None:  # noqa: E501
-                        raise KeyError(f'Cursor for {call_data.db_path} already exists')
-                    self.db_cursors[call_data.db_path][call_data.cursor_name or 'default'] = db_connection.cursor()  # noqa: E501
-                    self.zmq_connection.send_pyobj(None)
-                    continue
-                if call_data.method.value == DbMethod.CLOSE_CURSOR.value:
-                    del self.db_cursors[call_data.db_path][call_data.cursor_name or 'default']
-                    self.zmq_connection.send_pyobj(None)
-                    continue
-
-                result = self._handle_query(db_connection, call_data)
-
+                result = self._handle_query(db_connection, call_data, args, kwargs)
             except BaseException as e:
                 if self.shutting_down:
                     break  # The server is shutting down, don't try to send an error reply
-                self.zmq_connection.send_pyobj(ZMQReturnData(result=None, error=e).serialize())
+                db_writer_error = db_messages_pb2.DBWriterError()  # type: ignore[attr-defined]  # pylint: disable=no-member
+                for exception_type in DB_ERROR_TO_ENUM:
+                    if issubclass(exception_type, e.__class__):
+                        db_writer_error.name = DB_ERROR_TO_ENUM.get(exception_type, DBError.UnknownError)  # noqa: E501
+                        break
+                else:
+                    db_writer_error.name = DBError.UnknownError
+                db_writer_error.message = str(e)
+                return_data.error.CopyFrom(db_writer_error)
+                self.zmq_connection.send(return_data.SerializeToString())
 
             else:
-                return_data = ZMQReturnData(
-                    result=DBWriteResult(
-                        lastrowid=getattr(result, 'lastrowid', 0),
-                        rowcount=getattr(result, 'rowcount', 0),
-                    ),
-                    error=None,
-                )
-                if return_data.result is None and return_data.error is None:
-                    self.zmq_connection.send_pyobj(None)
+                db_writer_result = db_messages_pb2.DBWriteResult()  # type: ignore[attr-defined]  # pylint: disable=no-member
+                if (lastrowid := getattr(result, 'lastrowid', None)) is not None:
+                    db_writer_result.lastrowid = lastrowid
+                if (rowcount := getattr(result, 'rowcount', None)) is not None:
+                    db_writer_result.rowcount = rowcount
+                return_data.result.CopyFrom(db_writer_result)
+                if return_data.result is None and db_writer_result.error is None:
+                    self.zmq_connection.send(b'')
                 else:
-                    self.zmq_connection.send_pyobj(return_data.serialize())
+                    self.zmq_connection.send(return_data.SerializeToString())
 
     def shutdown(self, signum: int, frame: FrameType | None = None) -> None:  # pylint: disable=unused-argument
         if self.shutting_down:
