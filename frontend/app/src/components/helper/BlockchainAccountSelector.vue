@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { uniqBy } from 'lodash-es';
-import { Blockchain } from '@rotki/common';
+import { type Account, Blockchain } from '@rotki/common';
 import { getNonRootAttrs, getRootAttrs } from '@/utils/attrs';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
@@ -10,55 +10,52 @@ defineOptions({
   inheritAttrs: false,
 });
 
-const props = withDefaults(
-  defineProps<{
-    label?: string;
-    hint?: boolean;
-    loading?: boolean;
-    usableAddresses?: string[];
-    multiple?: boolean;
-    modelValue: AccountWithAddressData[];
-    chains?: string[];
-    outlined?: boolean;
-    dense?: boolean;
-    noPadding?: boolean;
-    hideOnEmptyUsable?: boolean;
-    multichain?: boolean;
-    unique?: boolean;
-    hideChainIcon?: boolean;
-    errorMessages?: string[];
-    showDetails?: boolean;
-    customHint?: string;
-  }>(),
-  {
-    label: '',
-    hint: false,
-    loading: false,
-    usableAddresses: () => [],
-    multiple: false,
-    chains: () => [],
-    outlined: false,
-    dense: false,
-    noPadding: false,
-    hideOnEmptyUsable: false,
-    multichain: false,
-    unique: false,
-    hideChainIcon: false,
-    errorMessages: () => [],
-    showDetails: false,
-    customHint: '',
-  },
-);
+const props = withDefaults(defineProps<{
+  label?: string;
+  hint?: boolean;
+  loading?: boolean;
+  usableAddresses?: string[];
+  multiple?: boolean;
+  chains?: string[];
+  outlined?: boolean;
+  dense?: boolean;
+  noPadding?: boolean;
+  hideOnEmptyUsable?: boolean;
+  multichain?: boolean;
+  unique?: boolean;
+  hideChainIcon?: boolean;
+  errorMessages?: string[];
+  showDetails?: boolean;
+  customHint?: string;
+}>(), {
+  label: '',
+  hint: false,
+  loading: false,
+  usableAddresses: () => [],
+  multiple: false,
+  chains: () => [],
+  outlined: false,
+  dense: false,
+  noPadding: false,
+  hideOnEmptyUsable: false,
+  multichain: false,
+  unique: false,
+  hideChainIcon: false,
+  errorMessages: () => [],
+  showDetails: false,
+  customHint: '',
+});
 
-const emit = defineEmits<{
-  (e: 'update:model-value', value: AccountWithAddressData[]): void;
-}>();
+const modelValue = defineModel<AccountWithAddressData[]>({ required: true });
 
 const { chains, usableAddresses, hideOnEmptyUsable, multiple, multichain, unique } = toRefs(props);
 
 const { t } = useI18n();
 
 const { accounts: accountsPerChain } = storeToRefs(useBlockchainStore());
+const { addressNameSelector } = useAddressesNamesStore();
+
+const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
 
 const accounts = computed<AccountWithAddressData[]>(() =>
   Object.values(get(accountsPerChain))
@@ -66,17 +63,13 @@ const accounts = computed<AccountWithAddressData[]>(() =>
     .filter(hasAccountAddress),
 );
 
-const internalValue = computed(() => {
-  const accounts = props.modelValue.map(item => ({
-    ...item,
-    address: getAccountAddress(item),
-    key: getAccountId(item),
-  }));
+const internalValue = computed<AccountWithAddressData | AccountWithAddressData[] | undefined>(() => {
+  const accounts = get(modelValue);
   if (get(multiple))
     return accounts;
 
   if (!accounts || accounts.length === 0)
-    return null;
+    return undefined;
 
   return accounts[0];
 });
@@ -89,10 +82,9 @@ const selectableAccounts = computed<AccountWithAddressData[]>(() => {
     ? uniqBy(accountData, account => getAccountAddress(account))
     : accountData;
 
-  const filteredAccounts
-    = filteredChains.length === 0
-      ? blockchainAccounts
-      : blockchainAccounts.filter(({ chain }) => chain === 'ALL' || filteredChains.includes(chain));
+  const filteredAccounts = filteredChains.length === 0
+    ? blockchainAccounts
+    : blockchainAccounts.filter(({ chain }) => chain === 'ALL' || filteredChains.includes(chain));
 
   if (get(multichain)) {
     const entries: Record<string, number> = {};
@@ -127,9 +119,9 @@ const selectableAccounts = computed<AccountWithAddressData[]>(() => {
   return filteredAccounts;
 });
 
-const hintText = computed(() => {
+const hintText = computed<string>(() => {
   const all = t('blockchain_account_selector.all');
-  const selection = props.modelValue;
+  const selection = get(modelValue);
   if (Array.isArray(selection))
     return selection.length > 0 ? selection.length.toString() : all;
 
@@ -148,8 +140,6 @@ const displayedAccounts = computed<AccountWithAddressData[]>(() => {
 
   return get(hideOnEmptyUsable) ? [] : accounts;
 });
-
-const { addressNameSelector } = useAddressesNamesStore();
 
 function filter(item: BlockchainAccount, queryText: string) {
   const chain = item.chain === 'ALL' ? Blockchain.ETH : item.chain;
@@ -181,8 +171,8 @@ function filterOutElements(
   return nextValue.filter(x => getAccountAddress(x) !== getAccountAddress(lastElement) || x.chain !== 'ALL');
 }
 
-function input(nextValue: null | AccountWithAddressData | AccountWithAddressData[]) {
-  const previousValue = props.modelValue;
+function input(nextValue?: AccountWithAddressData | AccountWithAddressData[]) {
+  const previousValue = get(modelValue);
   let result: AccountWithAddressData[];
   if (Array.isArray(nextValue)) {
     const lastElement = nextValue.at(-1);
@@ -194,10 +184,15 @@ function input(nextValue: null | AccountWithAddressData | AccountWithAddressData
     result = nextValue ? [nextValue] : [];
   }
 
-  emit('update:model-value', result);
+  set(modelValue, result);
 }
 
-const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
+function getAccount(account: AccountWithAddressData): Account {
+  return {
+    chain: account.chain,
+    address: getAccountAddress(account),
+  };
+}
 </script>
 
 <template>
@@ -219,7 +214,6 @@ const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
       :variant="outlined ? 'outlined' : 'default'"
       :outlined="outlined"
       :hint="customHint"
-      key-attr="key"
       :label="label || t('blockchain_account_selector.default_label')"
       class="blockchain-account-selector"
       :error-messages="errorMessages"
@@ -230,14 +224,14 @@ const [DefineAutocomplete, ReuseAutocomplete] = createReusableTemplate();
     >
       <template #selection="{ item }">
         <AccountDisplay
-          :account="item"
+          :account="getAccount(item)"
           :hide-chain-icon="hideChainIcon"
         />
       </template>
       <template #item="{ item }">
         <div class="grow py-1">
           <AccountDisplay
-            :account="item"
+            :account="getAccount(item)"
             :hide-chain-icon="hideChainIcon"
           />
           <TagDisplay

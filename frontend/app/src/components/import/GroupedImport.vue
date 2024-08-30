@@ -101,7 +101,7 @@ const selectedSource = ref<ImportSource>();
 
 const [DefineDisplay, ReuseDisplay] = createReusableTemplate<{
   logo?: string;
-  icon: RuiIcons;
+  icon?: RuiIcons;
   label: string;
 }>();
 </script>
@@ -137,7 +137,6 @@ const [DefineDisplay, ReuseDisplay] = createReusableTemplate<{
         :label="t('import_data.select_source.title')"
         :append-width="1.75"
         :options="sources"
-        key-attr="key"
         text-attr="label"
         hide-details
         return-object

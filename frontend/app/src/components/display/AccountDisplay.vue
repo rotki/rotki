@@ -2,23 +2,24 @@
 import { type Account, Blockchain } from '@rotki/common';
 import { truncateAddress } from '@/utils/truncate';
 
-const props = withDefaults(
-  defineProps<{
-    account: Account;
-    useAliasName?: boolean;
-    truncate?: boolean;
-    hideChainIcon?: boolean;
-  }>(),
-  {
-    useAliasName: true,
-    truncate: true,
-    hideChainIcon: false,
-  },
-);
+const props = withDefaults(defineProps<{
+  account: Account;
+  useAliasName?: boolean;
+  truncate?: boolean;
+  hideChainIcon?: boolean;
+}>(), {
+  useAliasName: true,
+  truncate: true,
+  hideChainIcon: false,
+});
 
 const { account, useAliasName } = toRefs(props);
-const { scrambleData, shouldShowAmount, scrambleAddress } = useScramble();
+
+const { t } = useI18n();
+
 const { addressNameSelector } = useAddressesNamesStore();
+
+const { scrambleData, shouldShowAmount, scrambleAddress } = useScramble();
 
 const address = computed<string>(() => {
   const address = get(account).address;
@@ -36,8 +37,6 @@ const aliasName = computed<string | null>(() => {
 
   return null;
 });
-
-const { t } = useI18n();
 </script>
 
 <template>
