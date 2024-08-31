@@ -10,6 +10,7 @@ on:
 jobs:
   linux:
     uses: ./.github/workflows/task_backend_tests.yml
+    if: ${{ github.repository == 'rotki/rotki' || github.event_name != 'schedule' }}
     with:
       os: ubuntu-20.04
       test_environment: nightly
@@ -17,7 +18,7 @@ jobs:
 
   macos:
     uses: ./.github/workflows/task_backend_tests.yml
-    if: ${{ always() }}
+    if: ${{ always() && (github.repository == 'rotki/rotki' || github.event_name != 'schedule') }}
     needs: ['linux']
     with:
       os: macos-latest
@@ -26,7 +27,7 @@ jobs:
 
   windows:
     uses: ./.github/workflows/task_backend_tests.yml
-    if: ${{ always() }}
+    if: ${{ always() && (github.repository == 'rotki/rotki' || github.event_name != 'schedule') }}
     with:
       os: windows-latest
       test_environment: nightly
@@ -34,21 +35,21 @@ jobs:
 
   e2e:
     uses: ./.github/workflows/task_e2e_tests.yml
-    if: ${{ always() }}
+    if: ${{ always() && (github.repository == 'rotki/rotki' || github.event_name != 'schedule') }}
     needs: [ 'macos' ]
     secrets: inherit
 
   unittest-frontend:
     uses: ./.github/workflows/task_fe_unit_tests.yml
-    if: ${{ always() }}
+    if: ${{ always() && (github.repository == 'rotki/rotki' || github.event_name != 'schedule') }}
 
   verify-link:
     uses: ./.github/workflows/task_fe_external_links_verification.yml
-    if: ${{ always() }}
+    if: ${{ always() && (github.repository == 'rotki/rotki' || github.event_name != 'schedule') }}
 
   notify:
     name: 'Success check'
-    if: ${{ always() }}
+    if: ${{ always() && (github.repository == 'rotki/rotki' || github.event_name != 'schedule') }}
     needs: [ 'linux', 'macos', 'windows' ]
     runs-on: ubuntu-latest
     steps:
