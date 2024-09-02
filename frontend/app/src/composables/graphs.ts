@@ -1,5 +1,12 @@
+import { Chart, type TooltipModel, registerables } from 'chart.js';
+import zoomPlugin from 'chartjs-plugin-zoom';
 import type { BigNumber, TooltipDisplayOption } from '@rotki/common';
-import type { TooltipModel } from 'chart.js';
+
+export function initGraph(): void {
+  Chart.defaults.font.family = 'Roboto';
+  Chart.register(...registerables);
+  Chart.register(zoomPlugin);
+}
 
 export function useGraph(canvasId: string) {
   const getCanvasCtx = (): CanvasRenderingContext2D => {
