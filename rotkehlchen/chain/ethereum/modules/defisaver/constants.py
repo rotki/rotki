@@ -2,7 +2,6 @@ from typing import Final
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
-
 CPT_DEFISAVER: Final = 'defisaver'
 SUB_STORAGE: Final = string_to_evm_address('0x1612fc28Ee0AB882eC99842Cde0Fc77ff0691e90')
 

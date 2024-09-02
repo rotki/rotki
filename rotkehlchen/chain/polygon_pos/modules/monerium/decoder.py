@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
+
 from rotkehlchen.chain.evm.decoding.monerium.decoder import MoneriumCommonDecoder
 from rotkehlchen.constants.assets import A_POLYGON_EURE
-
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer

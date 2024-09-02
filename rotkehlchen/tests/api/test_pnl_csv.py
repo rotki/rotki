@@ -1,3 +1,4 @@
+import _locale
 import csv
 import json
 import os
@@ -8,7 +9,6 @@ from http import HTTPStatus
 from pathlib import Path
 from unittest.mock import patch
 
-import _locale
 import pytest
 import requests
 

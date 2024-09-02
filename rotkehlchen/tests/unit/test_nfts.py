@@ -1,7 +1,7 @@
 import pytest
+
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.aggregator import ChainsAggregator
-
 from rotkehlchen.constants.assets import A_ETH, A_USDC
 from rotkehlchen.db.filtering import NFTFilterQuery
 from rotkehlchen.fval import FVal

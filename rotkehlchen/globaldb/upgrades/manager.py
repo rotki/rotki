@@ -4,8 +4,8 @@ import sqlite3
 import traceback
 from pathlib import Path
 from typing import TYPE_CHECKING
-from rotkehlchen.globaldb.upgrades.v6_v7 import migrate_to_v7
 
+from rotkehlchen.globaldb.upgrades.v6_v7 import migrate_to_v7
 from rotkehlchen.globaldb.upgrades.v7_v8 import migrate_to_v8
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import ts_now

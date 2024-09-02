@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING, Final
+
 from rotkehlchen.chain.evm.decoding.structures import DEFAULT_DECODING_OUTPUT
 from rotkehlchen.chain.evm.decoding.weth.decoder import WethDecoder as EthBaseWethDecoder
 

@@ -29,7 +29,6 @@ from .constants import (
     TOKEN_DESTINATIONS_APPROVED,
 )
 
-
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools

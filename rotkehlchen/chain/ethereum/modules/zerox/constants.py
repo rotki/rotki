@@ -2,7 +2,6 @@ from typing import Final
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
-
 ZEROX_ROUTER: Final = string_to_evm_address(
     '0xDef1C0ded9bec7F1a1670819833240f027b25EfF',
 )

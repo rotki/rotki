@@ -3,7 +3,6 @@ from collections import defaultdict
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, NamedTuple, TypedDict, cast
 
-
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance, BalanceSheet
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals

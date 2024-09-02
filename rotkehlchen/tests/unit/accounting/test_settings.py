@@ -1,4 +1,5 @@
 import os
+
 import pytest
 
 from rotkehlchen.accounting.accountant import Accountant

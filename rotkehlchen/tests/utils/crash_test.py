@@ -4,6 +4,7 @@ as a logic in a subprocess. This is done to simulate the behavior of crashing th
 """
 import os
 from uuid import uuid4
+
 from rotkehlchen.assets.asset import Asset, CustomAsset
 from rotkehlchen.config import default_data_directory
 from rotkehlchen.constants.assets import A_USD

@@ -6,9 +6,9 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
 
 from ..constants import CPT_ONEINCH_V2
 from .constants import ONEINCH_V2_MAINNET_ROUTER

@@ -1,5 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Any, Final
+
 from eth_abi import decode as decode_abi
 
 from rotkehlchen.accounting.structures.balance import Balance

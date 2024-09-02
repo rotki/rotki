@@ -1,4 +1,5 @@
 from typing import Final
+
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance

@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING
 
-
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.constants.misc import EXP18

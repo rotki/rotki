@@ -1,5 +1,6 @@
 import logging
 from typing import TYPE_CHECKING
+
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.decoding.structures import DEFAULT_DECODING_OUTPUT
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events

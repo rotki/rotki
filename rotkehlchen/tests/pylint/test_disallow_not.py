@@ -1,4 +1,5 @@
 import astroid
+
 from tools.pylint import NotBooleanChecker
 
 

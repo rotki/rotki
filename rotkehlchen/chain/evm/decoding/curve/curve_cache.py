@@ -51,6 +51,7 @@ from rotkehlchen.utils.network import request_get_dict
 
 if TYPE_CHECKING:
     from gevent import DBCursor
+
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.user_messages import MessagesAggregator

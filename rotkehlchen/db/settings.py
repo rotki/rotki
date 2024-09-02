@@ -24,6 +24,7 @@ from rotkehlchen.types import (
     SupportedBlockchain,
     Timestamp,
 )
+
 if TYPE_CHECKING:
     from rotkehlchen.user_messages import MessagesAggregator
 

@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+
 from rotkehlchen.chain.evm.decoding.drips.v1.decoder import Dripsv1CommonDecoder
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
