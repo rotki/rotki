@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` rotki will now decode the swaps done on velodrome v2 in the right order.
 * :bug:`-` ZKSync Era tokens will now have prices queried properly by defillama.
 * :bug:`8452` Fix Monerium integration after the v2 contracts upgrade.
 
