@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` ZKSync Era tokens will now have prices queried properly by defillama.
+* :bug:`-` rotki will now query TheGraph delegations only for the addresses that interacted with the protocol.
 * :bug:`8452` Fix Monerium integration after the v2 contracts upgrade.
 
 * :release:`1.34.3 <2024-08-20>`
