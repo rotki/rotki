@@ -234,7 +234,7 @@ async function save(): Promise<boolean> {
     },
     location: get(location),
     locationLabel: get(locationLabel) || null,
-    notes: usedNotes || undefined,
+    notes: usedNotes ? usedNotes.trim() : undefined,
   };
 
   return await saveHistoryEventHandler(
@@ -360,7 +360,7 @@ const locationLabelSuggestions = computed(() =>
     <RuiDivider class="mb-6 mt-2" />
 
     <RuiTextArea
-      v-model.trim="notes"
+      v-model="notes"
       prepend-icon="sticky-note-line"
       data-cy="notes"
       variant="outlined"
