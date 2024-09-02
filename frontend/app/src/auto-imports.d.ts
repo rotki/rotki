@@ -220,6 +220,7 @@ declare global {
   const hexToRgbPoints: typeof import('@rotki/common')['hexToRgbPoints']
   const ignorableWatch: typeof import('@vueuse/core')['ignorableWatch']
   const includes: typeof import('./utils/blockchain/accounts/common')['includes']
+  const initGraph: typeof import('./composables/graphs')['initGraph']
   const inject: typeof import('vue')['inject']
   const injectLocal: typeof import('@vueuse/core')['injectLocal']
   const invertColor: typeof import('@rotki/common')['invertColor']
@@ -512,6 +513,7 @@ declare global {
   const useConfirmDialog: typeof import('@vueuse/core')['useConfirmDialog']
   const useConfirmStore: typeof import('./store/confirm')['useConfirmStore']
   const useCopy: typeof import('./composables/copy')['useCopy']
+  const useCoreScroll: typeof import('./composables/use-core-scroll')['useCoreScroll']
   const useCostBasisMethod: typeof import('./composables/reports')['useCostBasisMethod']
   const useCounter: typeof import('@vueuse/core')['useCounter']
   const useCssModule: typeof import('vue')['useCssModule']
@@ -1076,6 +1078,7 @@ declare module 'vue' {
     readonly hexToRgbPoints: UnwrapRef<typeof import('@rotki/common')['hexToRgbPoints']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly includes: UnwrapRef<typeof import('./utils/blockchain/accounts/common')['includes']>
+    readonly initGraph: UnwrapRef<typeof import('./composables/graphs')['initGraph']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>
     readonly invertColor: UnwrapRef<typeof import('@rotki/common')['invertColor']>
@@ -1368,6 +1371,7 @@ declare module 'vue' {
     readonly useConfirmDialog: UnwrapRef<typeof import('@vueuse/core')['useConfirmDialog']>
     readonly useConfirmStore: UnwrapRef<typeof import('./store/confirm')['useConfirmStore']>
     readonly useCopy: UnwrapRef<typeof import('./composables/copy')['useCopy']>
+    readonly useCoreScroll: UnwrapRef<typeof import('./composables/use-core-scroll')['useCoreScroll']>
     readonly useCostBasisMethod: UnwrapRef<typeof import('./composables/reports')['useCostBasisMethod']>
     readonly useCounter: UnwrapRef<typeof import('@vueuse/core')['useCounter']>
     readonly useCssModule: UnwrapRef<typeof import('vue')['useCssModule']>
@@ -1913,6 +1917,7 @@ declare module '@vue/runtime-core' {
     readonly hexToRgbPoints: UnwrapRef<typeof import('@rotki/common')['hexToRgbPoints']>
     readonly ignorableWatch: UnwrapRef<typeof import('@vueuse/core')['ignorableWatch']>
     readonly includes: UnwrapRef<typeof import('./utils/blockchain/accounts/common')['includes']>
+    readonly initGraph: UnwrapRef<typeof import('./composables/graphs')['initGraph']>
     readonly inject: UnwrapRef<typeof import('vue')['inject']>
     readonly injectLocal: UnwrapRef<typeof import('@vueuse/core')['injectLocal']>
     readonly invertColor: UnwrapRef<typeof import('@rotki/common')['invertColor']>
@@ -2205,6 +2210,7 @@ declare module '@vue/runtime-core' {
     readonly useConfirmDialog: UnwrapRef<typeof import('@vueuse/core')['useConfirmDialog']>
     readonly useConfirmStore: UnwrapRef<typeof import('./store/confirm')['useConfirmStore']>
     readonly useCopy: UnwrapRef<typeof import('./composables/copy')['useCopy']>
+    readonly useCoreScroll: UnwrapRef<typeof import('./composables/use-core-scroll')['useCoreScroll']>
     readonly useCostBasisMethod: UnwrapRef<typeof import('./composables/reports')['useCostBasisMethod']>
     readonly useCounter: UnwrapRef<typeof import('@vueuse/core')['useCounter']>
     readonly useCssModule: UnwrapRef<typeof import('vue')['useCssModule']>
