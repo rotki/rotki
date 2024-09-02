@@ -1,4 +1,4 @@
-import type { Awaitable, SemiPartial } from '../index';
+import type { Awaitable, SemiPartial } from '../utils';
 
 export enum Severity {
   WARNING = 'warning',

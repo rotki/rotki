@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { AssetBalance, Balance, NumericString } from '../index';
+import { AssetBalance, Balance } from '../balances';
+import { NumericString } from '../numbers';
 
 const TimedEntry = z.object({ time: z.number().positive() });
 

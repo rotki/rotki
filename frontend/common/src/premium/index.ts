@@ -1,11 +1,13 @@
+import type { Theme, Themes } from '../settings/themes';
+import type { DebugSettings, FrontendSettingsPayload, TimeUnit } from '../settings/frontend';
+import type { LpType, ProfitLossModel } from '../defi/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { ComputedRef, Ref } from 'vue';
 import type { AssetInfo } from '../data';
-import type { LpType, ProfitLossModel } from '../defi';
 import type { BalancerBalance, BalancerProfitLoss } from '../defi/balancer';
 import type { XswapBalance, XswapPool, XswapPoolProfit } from '../defi/xswap';
-import type { AssetBalanceWithPrice, BigNumber } from '../index';
-import type { DebugSettings, FrontendSettingsPayload, Theme, Themes, TimeUnit } from '../settings';
+import type { BigNumber } from '../numbers';
+import type { AssetBalanceWithPrice } from '../balances';
 import type { LocationData, NetValue, OwnedAssets, TimedAssetBalances, TimedBalances } from '../statistics';
 
 export interface PremiumInterface {

@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import { AssetBalance, NumericString } from '../index';
+import { AssetBalance } from '../balances';
+import { NumericString } from '../numbers';
 
 const LiquityBalance = z.object({
   collateral: AssetBalance,
