@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { TimeUnit } from './index';
+import { TimeUnit } from './frontend';
 
 export enum TimeFramePeriod {
   ALL = 'All',

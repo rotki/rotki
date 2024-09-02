@@ -1,6 +1,7 @@
 import { z } from 'zod';
-import { Balance, type BigNumber, NumericString } from '../../index';
-import type { LpType } from '../index';
+import { Balance } from '../../balances';
+import { type BigNumber, NumericString } from '../../numbers';
+import type { LpType } from '../common';
 
 export const XswapAsset = z.object({
   asset: z.string(),

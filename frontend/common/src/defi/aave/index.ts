@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Balance } from '../../index';
+import { Balance } from '../../balances';
 
 export interface AaveBorrowingRates {
   readonly stableApr: string;
