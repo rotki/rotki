@@ -2,7 +2,6 @@ from typing import Final
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
-
 PARASWAP_AUGUSTUS_ROUTER: Final = string_to_evm_address(
     '0x59C7C832e96D2568bea6db468C1aAdcbbDa08A52',
 )

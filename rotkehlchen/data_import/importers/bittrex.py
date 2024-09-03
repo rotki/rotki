@@ -22,6 +22,7 @@ from rotkehlchen.types import AssetMovementCategory, Fee, Location, TradeType
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
     from rotkehlchen.db.dbhandler import DBHandler
 
 

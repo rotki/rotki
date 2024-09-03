@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING
 from rotkehlchen.chain.evm.decoding.aave.v3.decoder import Aavev3CommonDecoder
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
-
 if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools

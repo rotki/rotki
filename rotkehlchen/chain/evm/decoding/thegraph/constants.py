@@ -1,4 +1,5 @@
 from typing import Final
+
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 
 CPT_THEGRAPH: Final = 'thegraph'

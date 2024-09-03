@@ -21,7 +21,6 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import AssetMovementCategory, Location, Timestamp
 from rotkehlchen.utils.misc import ts_now
 
-
 UNSUPPORTED_GEMINI_PAIRS = {'btcgusdperp', 'ethgusdperp', 'pepegusdperp'}
 
 

@@ -5,9 +5,9 @@ from rotkehlchen.chain.evm.decoding.oneinch.v4.decoder import Oneinchv3n4Decoder
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
 
 from ..constants import CPT_ONEINCH_V3
 from .constants import ONEINCH_V3_MAINNET_ROUTER

@@ -17,7 +17,6 @@ from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_DEFISAVER, DEACTIVATE_SUB, SUB_STORAGE, SUBSCRIBE
 
-
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 

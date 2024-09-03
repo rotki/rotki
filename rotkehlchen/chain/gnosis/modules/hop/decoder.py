@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.hop.decoder import HopCommonDecoder
+
 from .constants import BRIDGES, REWARD_CONTRACTS
 
 if TYPE_CHECKING:

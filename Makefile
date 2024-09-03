@@ -1,11 +1,8 @@
 COMMON_LINT_PATHS = rotkehlchen/ rotkehlchen_mock/ package.py
 TOOLS_LINT_PATH = tools/
 ALL_LINT_PATHS = $(COMMON_LINT_PATHS) $(TOOLS_LINT_PATH)
-ISORT_PARAMS = --ignore-whitespace --skip-glob '*/node_modules/*' $(ALL_LINT_PATHS)
-ISORT_CHECK_PARAMS = --diff --check-only
 
 lint:
-	isort $(ISORT_PARAMS) $(ISORT_CHECK_PARAMS)
 	ruff check $(ALL_LINT_PATHS)
 	double-indent --dry-run $(ALL_LINT_PATHS)
 	mypy $(COMMON_LINT_PATHS) --install-types --non-interactive
@@ -14,7 +11,6 @@ lint:
 
 format:
 	ruff check $(ALL_LINT_PATHS) --fix
-	isort $(ISORT_PARAMS)
 	double-indent $(ALL_LINT_PATHS)
 
 

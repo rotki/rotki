@@ -13,6 +13,7 @@ from rotkehlchen.types import Price, Timestamp
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
     from more_itertools import peekable
 
     from rotkehlchen.accounting.mixins.event import AccountingEventMixin

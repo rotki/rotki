@@ -26,6 +26,7 @@ using ImageMagick:
 """
 
 import argparse
+
 # Improvements:
 # - Draw the composite graphs with matplotlib instead of using convert and make
 #   sure to aling all the points

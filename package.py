@@ -14,9 +14,8 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 from typing import Any
 
-from setuptools_scm import get_version
-
 from packaging import version
+from setuptools_scm import get_version
 
 rotki_version = get_version()
 

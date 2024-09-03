@@ -1,4 +1,5 @@
 from typing import TYPE_CHECKING
+
 from rotkehlchen.chain.arbitrum_one.modules.gearbox.constants import GEAR_STAKING_CONTRACT
 from rotkehlchen.chain.evm.decoding.gearbox.decoder import GearboxCommonDecoder
 

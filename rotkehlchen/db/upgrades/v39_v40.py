@@ -20,7 +20,7 @@ from rotkehlchen.types import Location
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.db.drivers.gevent import DBCursor, DBConnection
+    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
     from rotkehlchen.db.upgrade_manager import DBUpgradeProgressHandler
 
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
