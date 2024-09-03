@@ -1,16 +1,16 @@
-COMMON_LINT_PATHS = rotkehlchen/ rotkehlchen_mock/ package.py
+COMMON_LINT_PATHS = rotkehlchen/ rotkehlchen_mock/ package.py docs/conf.py packaging/docker/entrypoint.py
 TOOLS_LINT_PATH = tools/
 ALL_LINT_PATHS = $(COMMON_LINT_PATHS) $(TOOLS_LINT_PATH)
 
 lint:
-	ruff check $(ALL_LINT_PATHS)
+	ruff check .
 	double-indent --dry-run $(ALL_LINT_PATHS)
 	mypy $(COMMON_LINT_PATHS) --install-types --non-interactive
 	pylint --rcfile .pylint.rc $(ALL_LINT_PATHS)
 
 
 format:
-	ruff check $(ALL_LINT_PATHS) --fix
+	ruff check . --fix
 	double-indent $(ALL_LINT_PATHS)
 
 
