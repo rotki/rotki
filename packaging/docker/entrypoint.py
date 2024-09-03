@@ -4,10 +4,12 @@ import logging
 import os
 import shutil
 import subprocess
+import sys
 import time
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from signal import SIGINT, SIGQUIT, SIGTERM, signal
+from types import FrameType
 from typing import Any
 
 logger = logging.getLogger('monitor')
@@ -23,7 +25,7 @@ def can_delete(file: Path, cutoff: int) -> bool:
 def cleanup_tmp() -> None:
     logger.info('Preparing to cleanup tmp directory')
     tmp_dir = Path('/tmp/').glob('*')
-    cache_cutoff = datetime.today() - timedelta(hours=6)
+    cache_cutoff = datetime.now(tz=UTC) - timedelta(hours=6)
     cutoff_epoch = int(cache_cutoff.strftime('%s'))
     to_delete = filter(lambda x: can_delete(x, cutoff_epoch), tmp_dir)
 
@@ -57,13 +59,14 @@ def load_config_from_file() -> dict[str, Any] | None:
         logger.info('no config file provided')
         return None
 
-    with open(config_file) as file:
+    with open(config_file, encoding='utf-8') as file:
         try:
             data = json.load(file)
-            return data
         except json.JSONDecodeError as e:
             logger.error(e)
             return None
+        else:
+            return data
 
 
 def load_config_from_env() -> dict[str, Any]:
@@ -125,16 +128,13 @@ def load_config() -> list[str]:
         args.append('--logfromothermodules')
 
     if max_logfiles_num is not None:
-        args.append('--max-logfiles-num')
-        args.append(int(max_logfiles_num))
+        args.extend(('--max-logfiles-num', int(max_logfiles_num)))
 
     if max_size_in_mb_all_logs is not None:
-        args.append('--max-size-in-mb-all-logs')
-        args.append(int(max_size_in_mb_all_logs))
+        args.extend(('--max-size-in-mb-all-logs', int(max_size_in_mb_all_logs)))
 
     if sqlite_instructions is not None:
-        args.append('--sqlite-instructions')
-        args.append(int(sqlite_instructions))
+        args.extend(('--sqlite-instructions', int(sqlite_instructions)))
     return args
 
 
@@ -144,7 +144,7 @@ cleanup_tmp()
 colibri = subprocess.Popen(['/usr/sbin/colibri'])
 if colibri.returncode == 1:
     logger.error('Failed to start colibri')
-    exit(1)
+    sys.exit(1)
 
 base_args = [
     '/usr/sbin/rotki',
@@ -167,7 +167,7 @@ rotki = subprocess.Popen(cmd)
 
 if rotki.returncode == 1:
     logger.error('Failed to start rotki')
-    exit(1)
+    sys.exit(1)
 
 logger.info('starting nginx')
 
@@ -175,24 +175,24 @@ nginx = subprocess.Popen('nginx -g "daemon off;"', shell=True)
 
 if nginx.returncode == 1:
     logger.error('Failed to start nginx')
-    exit(1)
+    sys.exit(1)
 
 
 def terminate_process(process_name: str, process: subprocess.Popen) -> None:
     logger.info(f'Terminating {process_name}')
     if process.poll() is not None:
         logger.error(f'{process_name} was not running. This means that some error occurred.')
-        exit(1)
+        sys.exit(1)
 
     process.terminate()
     process.wait()  # wait untill the process terminates
 
 
-def graceful_exit(signal, frame):
-    logger.info(f'Received signal {signal}. Exiting gracefully')
+def graceful_exit(received_signal: int, _frame: FrameType | None) -> None:
+    logger.info(f'Received signal {received_signal}. Exiting gracefully')
     terminate_process('rotki', rotki)
     terminate_process('nginx', nginx)
-    exit(0)
+    sys.exit(0)
 
 
 # Handle exits via ctrl+c or via `docker stop` gracefully
@@ -206,10 +206,10 @@ while True:
 
     if rotki.poll() is not None:
         logger.error('rotki has terminated exiting')
-        exit(1)
+        sys.exit(1)
 
     if nginx.poll() is not None:
         logger.error('nginx was not running')
-        exit(1)
+        sys.exit(1)
 
     logger.info('OK: processes still running')

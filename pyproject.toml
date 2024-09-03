@@ -282,6 +282,14 @@ known-third-party = ["packaging"]  # packaging is otherwise detected as first-pa
     "S603",  # Script called by us. No variable input
     "S607",  # Script called by us. Partial executable path is fine.
 ]
+"docs/conf.py" = [
+    "ERA001",  # Lots of comments with text combined with commented-out example code
+    "INP001",  # no need for __init__ here
+]
+"packaging/docker/entrypoint.py" = [
+    "S",  # fixme
+]
+
 
 [tool.vulture]
 

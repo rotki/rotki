@@ -19,7 +19,7 @@
 # -- Project information -----------------------------------------------------
 
 project = 'rotki'
-copyright = '2018-2020, Eleftherios Karapetsas. 2020-2022, Rotki Solutions GmbH'
+project_copyright = '2018-2020, Eleftherios Karapetsas. 2020-2022, Rotki Solutions GmbH'
 author = 'The rotki team'
 
 # The short X.Y version
@@ -126,7 +126,7 @@ htmlhelp_basename = 'rotkidoc'
 
 # -- Options for LaTeX output ------------------------------------------------
 
-latex_elements = {
+latex_elements: dict[str, str] = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',
