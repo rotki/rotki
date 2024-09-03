@@ -443,11 +443,13 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
             cursor=write_cursor,
             address='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
             blockchain=SupportedBlockchain.POLYGON_POS,
+            token_exceptions=set(),
         ) == (None, None)
         eth_tokens, _ = data.db.get_tokens_for_address(
             cursor=write_cursor,
             address='0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
             blockchain=SupportedBlockchain.ETHEREUM,
+            token_exceptions=set(),
         )
         assert set(eth_tokens) == {A_DAI, A_USDC}
 

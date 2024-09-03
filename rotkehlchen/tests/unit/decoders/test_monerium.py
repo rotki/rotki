@@ -1,13 +1,19 @@
+from typing import TYPE_CHECKING
+
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.constants.assets import A_ETH_EURE, A_GNOSIS_EURE, A_POLYGON_EURE
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
 
 
 @pytest.mark.vcr
@@ -185,3 +191,29 @@ def test_burnfrom_monerium_on_gnosis(gnosis_inquirer, gnosis_accounts):
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0xA6Bf663Abd2c749ed479C383457b1a647dAB72E5']])
+def test_mint_v2_eure(
+        gnosis_inquirer: 'GnosisInquirer',
+        gnosis_accounts: list['ChecksumEvmAddress'],
+):
+    evmhash = deserialize_evm_tx_hash(val='0x859af3a118c2f2503dca9aba17421cfe46bfe1b9e2585988cded6cc3da0dc0f4')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        tx_hash=evmhash,
+    )
+    assert events == [EvmEvent(
+        tx_hash=evmhash,
+        sequence_index=1,
+        timestamp=TimestampMS(1725021845000),
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.NONE,
+        asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
+        balance=Balance(amount=FVal(50)),
+        location_label=gnosis_accounts[0],
+        notes='Mint 50 EURe',
+        counterparty=CPT_MONERIUM,
+    )]

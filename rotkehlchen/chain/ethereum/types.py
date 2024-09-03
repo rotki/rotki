@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal, Protocol
 
 if TYPE_CHECKING:
     # This is a list of all ethereum abi that are guaranteed to be returned
@@ -28,3 +28,11 @@ if TYPE_CHECKING:
         'GEARBOX_STAKING',
         'HOP_POOL',
     ]
+
+
+class LogIterationCallback(Protocol):
+    """Callback executed when querying onchain log events after finishing a range
+    of blocks
+    """
+    def __call__(self, last_block_queried: int, filters: dict[str, Any]) -> None:
+        ...

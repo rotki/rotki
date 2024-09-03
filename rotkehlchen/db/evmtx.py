@@ -670,3 +670,10 @@ class DBEvmTx:
         with self.db.conn.read_ctx() as cursor:
             cursor.execute(query, bindings)
             return cursor.fetchone()[0]
+
+    def get_transaction_block_by_hash(self, cursor: 'DBCursor', tx_hash: EVMTxHash) -> int | None:
+        """Return the block number of a transaction"""
+        cursor.execute('SELECT block_number FROM evm_transactions WHERE tx_hash=?', (tx_hash,))
+        if (result := cursor.fetchone()) is None:
+            return None
+        return result[0]

@@ -21,6 +21,7 @@ from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
     save_curve_data_to_cache,
 )
 from rotkehlchen.chain.evm.types import NodeName, string_to_evm_address
+from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_POL_HARDFORK
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import (
     A_1INCH,
@@ -32,11 +33,13 @@ from rotkehlchen.constants.assets import (
     A_EUR,
     A_KFEE,
     A_LINK,
+    A_POLYGON_POS_MATIC,
     A_USD,
     A_USDC,
     A_USDT,
     A_WETH_ARB,
 )
+from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address_to_identifier
 from rotkehlchen.db.custom_assets import DBCustomAssets
@@ -823,3 +826,26 @@ def test_recursion_decorator(inquirer: Inquirer):
     """Test that the decorator handle_recursion_error works properly"""
     with patch('rotkehlchen.inquirer.Inquirer._find_usd_price', side_effect=RecursionError):
         assert inquirer.find_usd_price(A_USDT) == ZERO
+
+
+@pytest.mark.freeze_time
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_matic_pol_hardforked_price(inquirer: Inquirer, freezer):
+    """Test that we return price of POL for MATIC after hardfork"""
+    before_hardfork = Timestamp(POLYGON_POS_POL_HARDFORK - 1)
+    after_hardfork = Timestamp(POLYGON_POS_POL_HARDFORK + 1)
+    assert GlobalDBHandler.add_manual_latest_price(  # set MATIC price ONE
+        from_asset=A_POLYGON_POS_MATIC,
+        to_asset=A_USD,
+        price=Price(ONE),
+    )
+    assert GlobalDBHandler.add_manual_latest_price(  # set POL price 2
+        from_asset=Asset('eip155:1/erc20:0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6'),
+        to_asset=A_USD,
+        price=Price(FVal(2)),
+    )
+
+    freezer.move_to(datetime.datetime.fromtimestamp(before_hardfork, tz=datetime.UTC))
+    assert inquirer.find_usd_price(A_POLYGON_POS_MATIC) == ONE  # MATIC price is ONE
+    freezer.move_to(datetime.datetime.fromtimestamp(after_hardfork, tz=datetime.UTC))
+    assert inquirer.find_usd_price(Asset('eip155:1/erc20:0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6')) == Price(FVal(2))  # POL price is 2  # noqa: E501

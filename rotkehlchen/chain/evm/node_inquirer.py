@@ -24,6 +24,7 @@ from web3.types import BlockIdentifier, FilterParams
 
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
+from rotkehlchen.chain.ethereum.types import LogIterationCallback
 from rotkehlchen.chain.ethereum.utils import MULTICALL_CHUNKS, should_update_protocol_cache
 from rotkehlchen.chain.evm.constants import (
     DEFAULT_TOKEN_DECIMALS,
@@ -114,6 +115,7 @@ def _query_web3_get_logs(
         event_name: str,
         argument_filters: dict[str, Any],
         initial_block_range: int,
+        log_iteration_cb: LogIterationCallback | None = None,
 ) -> list[dict[str, Any]]:
     until_block = web3.eth.block_number if to_block == 'latest' else to_block
     events: list[dict[str, Any]] = []
@@ -164,6 +166,9 @@ def _query_web3_get_logs(
             new_topics = [topic.hex() for topic in event['topics']]
             new_events_web3[e_idx]['topics'] = new_topics
             new_events_web3[e_idx]['transactionHash'] = event['transactionHash'].hex()
+
+        if log_iteration_cb is not None:
+            log_iteration_cb(last_block_queried=end_block, filters=argument_filters)
 
         start_block = end_block + 1
         events.extend(new_events_web3)
@@ -887,6 +892,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             from_block: int,
             to_block: int | Literal['latest'] = 'latest',
             call_order: Sequence[WeightedNode] | None = None,
+            log_iteration_cb: LogIterationCallback | None = None,
     ) -> list[dict[str, Any]]:
         if call_order is None:  # Default call order for logs
             call_order = [self.etherscan_node]
@@ -907,6 +913,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             argument_filters=argument_filters,
             from_block=from_block,
             to_block=to_block,
+            log_iteration_cb=log_iteration_cb,
         )
 
     def _get_logs(
@@ -918,6 +925,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             argument_filters: dict[str, Any],
             from_block: int,
             to_block: int | Literal['latest'] = 'latest',
+            log_iteration_cb: LogIterationCallback | None = None,
     ) -> list[dict[str, Any]]:
         """Queries logs of an evm contract
         May raise:
@@ -945,6 +953,8 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             filter_args['topics'] = filter_args['topics'][1:]
         events: list[dict[str, Any]] = []
         start_block = from_block
+
+        log.debug(f'Ready to query logs for {filter_args} at {contract_address} ({self.chain_id}) from {start_block} to {to_block}')  # noqa: E501
         if web3 is not None:
             events = _query_web3_get_logs(
                 web3=web3,
@@ -955,6 +965,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                 event_name=event_name,
                 argument_filters=argument_filters,
                 initial_block_range=self.logquery_block_range(web3=web3, contract_address=contract_address),  # noqa: E501
+                log_iteration_cb=log_iteration_cb,
             )
         else:  # etherscan
             until_block = (
@@ -1034,6 +1045,9 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                         raise RemoteError(
                             'Couldnt decode an etherscan event due to {str(e)}}',
                         ) from e
+
+                if log_iteration_cb is not None:
+                    log_iteration_cb(last_block_queried=end_block, filters=argument_filters)
 
                 # etherscan will only return 1000 events in one go. If more than 1000
                 # are returned such as when no filter args are provided then continue
