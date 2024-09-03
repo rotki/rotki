@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.globaldb.upgrades.v6_v7 import migrate_to_v7
 from rotkehlchen.globaldb.upgrades.v7_v8 import migrate_to_v8
+from rotkehlchen.globaldb.upgrades.v8_v9 import migrate_to_v9
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.upgrades import UpgradeRecord
@@ -48,6 +49,10 @@ UPGRADES_LIST = [
     UpgradeRecord(
         from_version=7,
         function=migrate_to_v8,
+    ),
+    UpgradeRecord(
+        from_version=8,
+        function=migrate_to_v9,
     ),
 ]
 
