@@ -2,9 +2,8 @@ mypy==1.11.2
 mypy-extensions==1.0.0
 pylint==3.2.6
 astroid==3.2.4  # engine of pylint, upgrade them together
-ruff==0.6.2
+ruff==0.6.3
 double-indent-rotki==0.1.7  # our fork of double indent
-isort==5.13.2
 
 # type packages used by mypy
 # pinned here so that we can have reproducible mypy runs
