@@ -2,6 +2,7 @@ import logging
 import re
 from typing import TYPE_CHECKING
 
+from rotkehlchen.db.upgrades.utils import fix_address_book_duplications
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 
 if TYPE_CHECKING:
@@ -63,6 +64,7 @@ def _remove_log_removed_column(write_cursor: 'DBCursor') -> None:
     )
 
 
+@enter_exit_debug_log()
 def _upgrade_account_tags(write_cursor: 'DBCursor') -> None:
     """Upgrade the object_reference references in tag_mappings to not
     depend on the supported blockchain since the format has changed in 1.35
@@ -88,19 +90,30 @@ def _upgrade_account_tags(write_cursor: 'DBCursor') -> None:
     )
 
 
+@enter_exit_debug_log()
+def _addressbook_schema_update(write_cursor: 'DBCursor') -> None:
+    """Make the blockchain column to a non nullable column for address_book"""
+    fix_address_book_duplications(write_cursor=write_cursor)
+
+
 @enter_exit_debug_log(name='UserDB v43->v44 upgrade')
 def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v42 to v43. This was in v1.35 release.
 
     - add usd_price to the nfts table
+    - update tags of accounts
+    - drop column removed from the transaction logs
+    - make the blockchain column not nullable since we use `NONE` as string
     """
-    progress_handler.set_total_steps(4)
+    progress_handler.set_total_steps(5)
     with db.user_write() as write_cursor:
         _update_nft_table(write_cursor)
         progress_handler.new_step()
         _remove_log_removed_column(write_cursor)
         progress_handler.new_step()
         _upgrade_account_tags(write_cursor)
+        progress_handler.new_step()
+        _addressbook_schema_update(write_cursor)
         progress_handler.new_step()
 
     db.conn.execute('VACUUM;')

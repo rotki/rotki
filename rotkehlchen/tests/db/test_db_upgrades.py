@@ -39,7 +39,13 @@ from rotkehlchen.tests.utils.database import (
     mock_dbhandler_sync_globaldb_assets,
     mock_dbhandler_update_owned_assets,
 )
-from rotkehlchen.types import ChainID, Location, SupportedBlockchain, deserialize_evm_tx_hash
+from rotkehlchen.types import (
+    ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,
+    ChainID,
+    Location,
+    SupportedBlockchain,
+    deserialize_evm_tx_hash,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.hexbytes import HexBytes
 from rotkehlchen.utils.misc import ts_now
@@ -2459,6 +2465,7 @@ def test_upgrade_db_43_to_44(user_data_dir, messages_aggregator):
         msg_aggregator=messages_aggregator,
         resume_from_backup=False,
     )
+    bad_address, tether_address = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58'  # noqa: E501
     with db_v43.conn.read_ctx() as cursor:
         assert cursor.execute(  # we have one entry with null values and two with the details
             'SELECT identifier, last_price, last_price_asset FROM nfts',
@@ -2476,8 +2483,15 @@ def test_upgrade_db_43_to_44(user_data_dir, messages_aggregator):
             ('ARBITRUM_ONE0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'safe'),
             ('GNOSIS0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'beefy'),
         }
-
         old_receipt_logs = cursor.execute('SELECT * from evmtx_receipt_logs').fetchall()
+        assert set(cursor.execute(
+            'SELECT * FROM address_book WHERE address IN (?, ?)',
+            (bad_address, tether_address),
+        ).fetchall()) == {
+            (tether_address, None, 'Black Tether'),
+            (bad_address, None, 'yabirgb.eth'),
+            (bad_address, None, 'yabir.eth'),
+        }
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2505,6 +2519,15 @@ def test_upgrade_db_43_to_44(user_data_dir, messages_aggregator):
             ('5', 'staked'),
             ('13', 'beefy'),
         }
+        # check that addressbook addresses got correctly migrated
+        assert set(cursor.execute(
+            'SELECT * FROM address_book WHERE address IN (?, ?)',
+            (bad_address, tether_address),
+        ).fetchall()) == {
+            (tether_address, ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, 'Black Tether'),
+            (bad_address, ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, 'yabirgb.eth'),
+        }
+
     db.logout()
 
 
