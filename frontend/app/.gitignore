@@ -39,3 +39,4 @@ package-lock.json
 components.d.ts
 .e2e
 .contract
+trace
