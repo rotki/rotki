@@ -1,7 +1,7 @@
 import { type HistoryEventsQueryData, HistoryEventsQueryStatus } from '@/types/websocket-messages';
 
 export const useEventsQueryStatusStore = defineStore('history/events-query-status', () => {
-  const createKey = ({ location, name }: HistoryEventsQueryData) => location + name;
+  const createKey = ({ location, name }: HistoryEventsQueryData): string => location + name;
 
   const isStatusFinished = (item: HistoryEventsQueryData): boolean =>
     item.status === HistoryEventsQueryStatus.QUERYING_EVENTS_FINISHED;

@@ -173,7 +173,7 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
       return applyExclusionFilter(account, excluded, groupId => getAccounts?.(groupId) ?? []);
     }).filter(nonNull);
 
-  const getSortElement = <T extends BlockchainAccountBalance>(key: keyof T, item: T) => {
+  const getSortElement = <T extends BlockchainAccountBalance>(key: keyof T, item: T): string | T[keyof T] => {
     if (key === 'label')
       return getLabel(getAccountAddress(item), getChain(item)) ?? item[key] ?? getAccountAddress(item);
 

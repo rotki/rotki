@@ -8,15 +8,15 @@ type StatusState = Partial<Record<Section, SectionStatus>>;
 
 const defaultSection = 'default';
 
-function isInitialLoadingStatus(status: Status) {
+function isInitialLoadingStatus(status: Status): boolean {
   return status !== Status.LOADED && status !== Status.PARTIALLY_LOADED && status !== Status.REFRESHING;
 }
 
-function isLoadingStatus(status: Status) {
+function isLoadingStatus(status: Status): boolean {
   return status === Status.LOADING || status === Status.PARTIALLY_LOADED || status === Status.REFRESHING;
 }
 
-function matchesStatus(statuses: SectionStatus, subsection: string, fn: (status: Status) => boolean) {
+function matchesStatus(statuses: SectionStatus, subsection: string, fn: (status: Status) => boolean): boolean {
   const subsectionStatus = statuses[subsection];
   if (subsection === defaultSection)
     return !subsectionStatus && !isEmpty(statuses) ? Object.values(statuses).some(fn) : fn(subsectionStatus);
@@ -37,7 +37,7 @@ export const useStatusStore = defineStore('status', () => {
     set(status, copy);
   };
 
-  const resetStatus = (section: Section, subsection: string = defaultSection) => {
+  const resetStatus = (section: Section, subsection: string = defaultSection): void => {
     const statuses = { ...get(status) };
     delete statuses[section]?.[subsection];
     if (isEmpty(statuses[section]))
@@ -69,23 +69,27 @@ export const useStatusStore = defineStore('status', () => {
   const getStatus = (section: Section, subsection: string = defaultSection): Status =>
     get(status)[section]?.[subsection] ?? Status.NONE;
 
-  const isLoading = (section: Section, subsection: string = defaultSection) =>
-    computed<boolean>(() => {
-      const statuses = get(status)[section];
-      if (!statuses)
-        return false;
+  const isLoading = (
+    section: Section,
+    subsection: string = defaultSection,
+  ): ComputedRef<boolean> => computed<boolean>(() => {
+    const statuses = get(status)[section];
+    if (!statuses)
+      return false;
 
-      return matchesStatus(statuses, subsection, isLoadingStatus);
-    });
+    return matchesStatus(statuses, subsection, isLoadingStatus);
+  });
 
-  const shouldShowLoadingScreen = (section: Section, subsection: string = defaultSection) =>
-    computed<boolean>(() => {
-      const statuses = get(status)[section];
-      if (!statuses)
-        return true;
+  const shouldShowLoadingScreen = (
+    section: Section,
+    subsection: string = defaultSection,
+  ): ComputedRef<boolean> => computed<boolean>(() => {
+    const statuses = get(status)[section];
+    if (!statuses)
+      return true;
 
-      return matchesStatus(statuses, subsection, isInitialLoadingStatus);
-    });
+    return matchesStatus(statuses, subsection, isInitialLoadingStatus);
+  });
 
   const detailsLoading = logicOr(
     isLoading(Section.BLOCKCHAIN),

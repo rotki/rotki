@@ -38,63 +38,62 @@ export const useDefiStore = defineStore('defi', () => {
     DefiProtocol.MAKERDAO_VAULTS | DefiProtocol.UNISWAP | DefiProtocol.LIQUITY
   >;
 
-  const defiAccounts = (protocols: DefiProtocol[]) =>
-    computed<DefiAccount[]>(() => {
-      const addresses: {
-        [key in DefiProtocols]: string[];
-      } = {
-        [DefiProtocol.MAKERDAO_DSR]: [],
-        [DefiProtocol.AAVE]: [],
-        [DefiProtocol.COMPOUND]: [],
-        [DefiProtocol.YEARN_VAULTS]: [],
-        [DefiProtocol.YEARN_VAULTS_V2]: [],
-      };
+  const defiAccounts = (protocols: DefiProtocol[]): ComputedRef<DefiAccount[]> => computed<DefiAccount[]>(() => {
+    const addresses: {
+      [key in DefiProtocols]: string[];
+    } = {
+      [DefiProtocol.MAKERDAO_DSR]: [],
+      [DefiProtocol.AAVE]: [],
+      [DefiProtocol.COMPOUND]: [],
+      [DefiProtocol.YEARN_VAULTS]: [],
+      [DefiProtocol.YEARN_VAULTS_V2]: [],
+    };
 
-      const noProtocolsSelected = protocols.length === 0;
+    const noProtocolsSelected = protocols.length === 0;
 
-      if (noProtocolsSelected || protocols.includes(DefiProtocol.MAKERDAO_DSR))
-        addresses[DefiProtocol.MAKERDAO_DSR] = get(makerDaoAddresses);
+    if (noProtocolsSelected || protocols.includes(DefiProtocol.MAKERDAO_DSR))
+      addresses[DefiProtocol.MAKERDAO_DSR] = get(makerDaoAddresses);
 
-      if (noProtocolsSelected || protocols.includes(DefiProtocol.AAVE))
-        addresses[DefiProtocol.AAVE] = get(aaveAddresses);
+    if (noProtocolsSelected || protocols.includes(DefiProtocol.AAVE))
+      addresses[DefiProtocol.AAVE] = get(aaveAddresses);
 
-      if (noProtocolsSelected || protocols.includes(DefiProtocol.COMPOUND))
-        addresses[DefiProtocol.COMPOUND] = get(compoundAddresses);
+    if (noProtocolsSelected || protocols.includes(DefiProtocol.COMPOUND))
+      addresses[DefiProtocol.COMPOUND] = get(compoundAddresses);
 
-      if (noProtocolsSelected || protocols.includes(DefiProtocol.YEARN_VAULTS))
-        addresses[DefiProtocol.YEARN_VAULTS] = get(yearnV1Addresses);
+    if (noProtocolsSelected || protocols.includes(DefiProtocol.YEARN_VAULTS))
+      addresses[DefiProtocol.YEARN_VAULTS] = get(yearnV1Addresses);
 
-      if (noProtocolsSelected || protocols.includes(DefiProtocol.YEARN_VAULTS_V2))
-        addresses[DefiProtocol.YEARN_VAULTS_V2] = get(yearnV2Addresses);
+    if (noProtocolsSelected || protocols.includes(DefiProtocol.YEARN_VAULTS_V2))
+      addresses[DefiProtocol.YEARN_VAULTS_V2] = get(yearnV2Addresses);
 
-      const accounts: Record<string, DefiAccount> = {};
-      for (const protocol in addresses) {
-        const selectedProtocol = protocol as DefiProtocols;
-        const perProtocolAddresses = addresses[selectedProtocol];
-        for (const address of perProtocolAddresses) {
-          if (accounts[address]) {
-            accounts[address].protocols.push(selectedProtocol);
-          }
-          else {
-            accounts[address] = {
-              data: {
-                type: 'address',
-                address,
-              },
-              chain: Blockchain.ETH,
-              protocols: [selectedProtocol],
-              nativeAsset: Blockchain.ETH.toUpperCase(),
-            };
-          }
+    const accounts: Record<string, DefiAccount> = {};
+    for (const protocol in addresses) {
+      const selectedProtocol = protocol as DefiProtocols;
+      const perProtocolAddresses = addresses[selectedProtocol];
+      for (const address of perProtocolAddresses) {
+        if (accounts[address]) {
+          accounts[address].protocols.push(selectedProtocol);
+        }
+        else {
+          accounts[address] = {
+            data: {
+              type: 'address',
+              address,
+            },
+            chain: Blockchain.ETH,
+            protocols: [selectedProtocol],
+            nativeAsset: Blockchain.ETH.toUpperCase(),
+          };
         }
       }
+    }
 
-      return Object.values(accounts);
-    });
+    return Object.values(accounts);
+  });
 
   const { setStatus, fetchDisabled } = useStatusUpdater(Section.DEFI_BALANCES);
 
-  const fetchDefiBalances = async (refresh: boolean) => {
+  const fetchDefiBalances = async (refresh: boolean): Promise<void> => {
     if (fetchDisabled(refresh))
       return;
 
@@ -124,7 +123,7 @@ export const useDefiStore = defineStore('defi', () => {
     setStatus(Status.LOADED);
   };
 
-  async function fetchAllDefi(refresh = false) {
+  async function fetchAllDefi(refresh = false): Promise<void> {
     const section = { section: Section.DEFI_OVERVIEW };
 
     if (fetchDisabled(refresh, section))
@@ -167,7 +166,7 @@ export const useDefiStore = defineStore('defi', () => {
     [Module.LIQUITY]: () => liquityStore.reset(),
   };
 
-  const resetState = (module: ResetStateParams) => {
+  const resetState = (module: ResetStateParams): void => {
     if (module === Purgeable.DECENTRALIZED_EXCHANGES) {
       DECENTRALIZED_EXCHANGES.map(mod => modules[mod]());
     }
@@ -183,7 +182,7 @@ export const useDefiStore = defineStore('defi', () => {
     }
   };
 
-  const reset = () => {
+  const reset = (): void => {
     set(allProtocols, {});
     resetState(Purgeable.DEFI_MODULES);
   };

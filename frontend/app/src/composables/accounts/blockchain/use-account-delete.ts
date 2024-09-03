@@ -82,7 +82,11 @@ function toPayload(params: ShowConfirmationParams): Payload {
   };
 }
 
-export function useAccountDelete() {
+interface UseAccountDeleteReturn {
+  showConfirmation: (params: ShowConfirmationParams, onComplete?: () => void) => void;
+}
+
+export function useAccountDelete(): UseAccountDeleteReturn {
   const { deleteEth2Validators } = useEthStaking();
   const { removeAccount, removeAgnosticAccount, deleteXpub } = useBlockchainAccounts();
   const { removeAccounts } = useBlockchainStore();

@@ -10,7 +10,7 @@ type SetupContextAttrsKeys = (keyof SetupContextAttrs)[];
  * @param {SetupContextAttrs} data
  * @returns {SetupContextAttrsKeys}
  */
-export function getRootKeys(data: SetupContextAttrs) {
+export function getRootKeys(data: SetupContextAttrs): SetupContextAttrsKeys {
   return Object.keys(data).filter(key =>
     key.startsWith('data-'),
   ) as SetupContextAttrsKeys;

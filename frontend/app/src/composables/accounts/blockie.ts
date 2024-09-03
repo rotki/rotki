@@ -1,6 +1,11 @@
 const CACHE_SIZE = 100;
 
-export const useBlockie = createSharedComposable(() => {
+interface UseBlockieReturn {
+  cache: Map<string, string>;
+  getBlockie: (address?: string | null) => string;
+}
+
+export const useBlockie = createSharedComposable((): UseBlockieReturn => {
   const cache: Map<string, string> = new Map();
 
   const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());

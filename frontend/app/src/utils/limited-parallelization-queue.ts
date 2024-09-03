@@ -52,7 +52,7 @@ export class LimitedParallelizationQueue {
     }
   }
 
-  setOnCompletion(onCompletion: OnCompletion) {
+  setOnCompletion(onCompletion: OnCompletion): void {
     this.onCompletion = onCompletion;
   }
 

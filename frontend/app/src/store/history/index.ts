@@ -16,7 +16,7 @@ export const useHistoryStore = defineStore('history', () => {
     Object.values(get(protocolCacheUpdateStatus)).filter(status => status.total > 0),
   );
 
-  const setUndecodedTransactionsStatus = (data: EvmUnDecodedTransactionsData) => {
+  const setUndecodedTransactionsStatus = (data: EvmUnDecodedTransactionsData): void => {
     set(receivingProtocolCacheStatus, false);
     set(undecodedTransactionsStatus, {
       ...get(undecodedTransactionsStatus),
@@ -34,7 +34,7 @@ export const useHistoryStore = defineStore('history', () => {
   const { isTaskRunning } = useTaskStore();
   const refreshProtocolCacheTaskRunning = isTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
 
-  const setProtocolCacheStatus = (data: ProtocolCacheUpdatesData) => {
+  const setProtocolCacheStatus = (data: ProtocolCacheUpdatesData): void => {
     set(receivingProtocolCacheStatus, true);
     const old = get(protocolCacheUpdateStatus);
     const filtered: Record<string, ProtocolCacheUpdatesData> = {};
@@ -53,11 +53,11 @@ export const useHistoryStore = defineStore('history', () => {
     });
   };
 
-  const resetUndecodedTransactionsStatus = () => {
+  const resetUndecodedTransactionsStatus = (): void => {
     set(undecodedTransactionsStatus, {});
   };
 
-  const resetProtocolCacheUpdatesStatus = () => {
+  const resetProtocolCacheUpdatesStatus = (): void => {
     set(protocolCacheUpdateStatus, {});
   };
 
@@ -68,7 +68,7 @@ export const useHistoryStore = defineStore('history', () => {
   const getUndecodedTransactionStatus = (): EvmUnDecodedTransactionsData[] =>
     Object.values(get(undecodedTransactionsStatus));
 
-  const fetchAssociatedLocations = async () => {
+  const fetchAssociatedLocations = async (): Promise<void> => {
     try {
       set(associatedLocations, await fetchAssociatedLocationsApi());
     }

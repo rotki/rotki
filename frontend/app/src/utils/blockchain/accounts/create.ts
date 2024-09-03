@@ -52,7 +52,7 @@ export function createAccount(data: BasicBlockchainAccount, extra: AccountExtraP
 export function createAccountWithBalance(
   account: BlockchainAccount,
   chainBalances: BlockchainAssetBalances,
-) {
+): BlockchainAccountWithBalance {
   const { balance, expansion } = getAccountBalance(account, chainBalances);
   const address = getAccountAddress(account);
 

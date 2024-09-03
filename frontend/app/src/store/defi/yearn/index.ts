@@ -18,61 +18,63 @@ export const useYearnStore = defineStore('defi/yearn', () => {
 
   const { setStatus, fetchDisabled } = useStatusUpdater(Section.DEFI_YEARN_VAULTS_BALANCES);
 
-  const yearnVaultsAssets = (addresses: string[], version: ProtocolVersion = ProtocolVersion.V1) =>
-    computed<YearnVaultAsset[]>(() => {
-      const vaultBalances = get(version === ProtocolVersion.V1 ? vaultsBalances : vaultsV2Balances);
-      const balances: Record<string, YearnVaultBalance[]> = {};
-      const allAddresses = addresses.length === 0;
-      for (const address in vaultBalances) {
-        if (!allAddresses && !addresses.includes(address))
+  const yearnVaultsAssets = (
+    addresses: string[],
+    version: ProtocolVersion = ProtocolVersion.V1,
+  ): ComputedRef<YearnVaultAsset[]> => computed<YearnVaultAsset[]>(() => {
+    const vaultBalances = get(version === ProtocolVersion.V1 ? vaultsBalances : vaultsV2Balances);
+    const balances: Record<string, YearnVaultBalance[]> = {};
+    const allAddresses = addresses.length === 0;
+    for (const address in vaultBalances) {
+      if (!allAddresses && !addresses.includes(address))
+        continue;
+
+      const vaults = vaultBalances[address];
+      for (const vault in vaults) {
+        let vaultName = vault;
+
+        if (vault.startsWith('0x')) {
+          const tokenSymbol = get(assetSymbol(vaults[vault].vaultToken));
+          vaultName = `${tokenSymbol} Vault`;
+        }
+
+        const balance = vaults[vault];
+        if (!balance)
           continue;
 
-        const vaults = vaultBalances[address];
-        for (const vault in vaults) {
-          let vaultName = vault;
-
-          if (vault.startsWith('0x')) {
-            const tokenSymbol = get(assetSymbol(vaults[vault].vaultToken));
-            vaultName = `${tokenSymbol} Vault`;
-          }
-
-          const balance = vaults[vault];
-          if (!balance)
-            continue;
-
-          if (!balances[vaultName])
-            balances[vaultName] = [balance];
-          else balances[vaultName].push(balance);
-        }
+        if (!balances[vaultName])
+          balances[vaultName] = [balance];
+        else balances[vaultName].push(balance);
       }
+    }
 
-      const vaultAssets: YearnVaultAsset[] = [];
-      for (const key in balances) {
-        const allBalances = balances[key];
-        const { underlyingToken, vaultToken, roi } = allBalances[0];
+    const vaultAssets: YearnVaultAsset[] = [];
+    for (const key in balances) {
+      const allBalances = balances[key];
+      const { underlyingToken, vaultToken, roi } = allBalances[0];
 
-        const underlyingValue = zeroBalance();
-        const vaultValue = zeroBalance();
-        const values = { underlyingValue, vaultValue };
-        const summary = allBalances.reduce(
-          (sum, current) => ({
-            vaultValue: balanceSum(sum.vaultValue, current.vaultValue),
-            underlyingValue: balanceSum(sum.underlyingValue, current.underlyingValue),
-          }),
-          values,
-        );
-        vaultAssets.push({
-          vault: key,
-          version,
-          underlyingToken,
-          underlyingValue: summary.underlyingValue,
-          vaultToken,
-          vaultValue: summary.vaultValue,
-          roi,
-        });
-      }
-      return vaultAssets;
-    });
+      const underlyingValue = zeroBalance();
+      const vaultValue = zeroBalance();
+      const values = { underlyingValue, vaultValue };
+      const summary = allBalances.reduce(
+        (sum, current) => ({
+          vaultValue: balanceSum(sum.vaultValue, current.vaultValue),
+          underlyingValue: balanceSum(sum.underlyingValue, current.underlyingValue),
+        }),
+        values,
+      );
+      vaultAssets.push({
+        vault: key,
+        version,
+        underlyingToken,
+        underlyingValue: summary.underlyingValue,
+        vaultToken,
+        vaultValue: summary.vaultValue,
+        roi,
+      });
+    }
+    return vaultAssets;
+  });
 
   async function fetchBalances(
     { refresh, version }: { refresh: boolean; version: ProtocolVersion } = {

@@ -139,7 +139,13 @@ export function editBlockchainAccount(account: BlockchainAccountBalance): Accoun
   }
 }
 
-export function useAccountManage() {
+interface UseAccountManageReturn {
+  pending: Ref<boolean>;
+  errorMessages: Ref<ValidationErrors>;
+  save: (state: AccountManageState) => Promise<boolean>;
+}
+
+export function useAccountManage(): UseAccountManageReturn {
   const pending = ref(false);
   const errorMessages = ref<ValidationErrors>({});
 

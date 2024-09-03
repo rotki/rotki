@@ -4,11 +4,11 @@ export function getAllBrowserWalletProviders(): Promise<EIP6963ProviderDetail[]>
   return new Promise((resolve) => {
     const providers: EIP6963ProviderDetail[] = [];
 
-    function handleProviderAnnouncement(event: EIP6963AnnounceProviderEvent) {
+    function handleProviderAnnouncement(event: EIP6963AnnounceProviderEvent): void {
       providers.push(event.detail);
     }
 
-    function cleanup() {
+    function cleanup(): void {
       window.removeEventListener('eip6963:announceProvider', handleProviderAnnouncement);
     }
 

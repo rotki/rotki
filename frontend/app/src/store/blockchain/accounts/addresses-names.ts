@@ -181,7 +181,7 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
   const addAddressBook = async (
     location: AddressBookLocation,
     entries: AddressBookEntries,
-  ) => {
+  ): Promise<boolean> => {
     const result = await addAddressBookCaller(location, entries);
 
     if (result)
@@ -193,7 +193,7 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
   const updateAddressBook = async (
     location: AddressBookLocation,
     entries: AddressBookEntries,
-  ) => {
+  ): Promise<boolean> => {
     const result = await updateAddressBookCaller(location, entries);
 
     if (result)
@@ -205,7 +205,7 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
   const deleteAddressBook = async (
     location: AddressBookLocation,
     addresses: AddressBookSimplePayload[],
-  ) => {
+  ): Promise<boolean> => {
     const result = await deleteAddressBookCaller(location, addresses);
 
     if (result)

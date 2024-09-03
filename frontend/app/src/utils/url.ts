@@ -31,12 +31,14 @@ export function getDomain(str: string): string {
   return domain;
 }
 
+interface ExternalUrl { external: string; route: RouteLocationRaw }
+
 /**
  * Returns the registration url of a specified Etherscan location and a path to the local page
  * @param {string} location
  * @returns {{external: string, route: RouteLocationRaw} | undefined}
  */
-export function getEtherScanRegisterUrl(location: string): { external: string; route: RouteLocationRaw } | undefined {
+export function getEtherScanRegisterUrl(location: string): ExternalUrl | undefined {
   const camelCaseLocation = camelCase(location);
 
   if (isEtherscanKey(camelCaseLocation)) {
@@ -51,7 +53,7 @@ export function getEtherScanRegisterUrl(location: string): { external: string; r
   return undefined;
 }
 
-export function getTheGraphRegisterUrl(): { external: string; route: RouteLocationRaw } {
+export function getTheGraphRegisterUrl(): ExternalUrl {
   return {
     external: externalLinks.applyTheGraphApiKey,
     route: { path: '/api-keys/external', hash: `#thegraph` },
@@ -64,7 +66,7 @@ export function getTheGraphRegisterUrl(): { external: string; route: RouteLocati
  * @param {string} location
  * @returns {undefined | {external: string, route: RouteLocationRaw}}
  */
-export function getServiceRegisterUrl(service: string, location: string) {
+export function getServiceRegisterUrl(service: string, location: string): ExternalUrl | undefined {
   switch (service) {
     case 'etherscan':
       return getEtherScanRegisterUrl(location);

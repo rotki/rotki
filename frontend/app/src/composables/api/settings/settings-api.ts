@@ -5,7 +5,13 @@ import { type SettingsUpdate, UserSettingsModel } from '@/types/user';
 import { BackendConfiguration } from '@/types/backend';
 import type { ActionResult } from '@rotki/common';
 
-export function useSettingsApi() {
+interface UseSettingApiReturn {
+  setSettings: (settings: SettingsUpdate) => Promise<UserSettingsModel>;
+  getSettings: () => Promise<UserSettingsModel>;
+  backendSettings: () => Promise<BackendConfiguration>;
+}
+
+export function useSettingsApi(): UseSettingApiReturn {
   const setSettings = async (settings: SettingsUpdate): Promise<UserSettingsModel> => {
     const response = await api.instance.put<ActionResult<UserSettingsModel>>(
       '/settings',

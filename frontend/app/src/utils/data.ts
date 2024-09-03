@@ -13,7 +13,7 @@ export function uniqueStrings<T = string>(value: T, index: number, array: T[]): 
   return array.indexOf(value) === index;
 }
 
-export function uniqueObjects<T>(arr: T[], getUniqueId: (item: T) => string) {
+export function uniqueObjects<T>(arr: T[], getUniqueId: (item: T) => string): T[] {
   return [...new Map(arr.map(item => [getUniqueId(item), item])).values()];
 }
 

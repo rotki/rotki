@@ -106,7 +106,7 @@ export const useReportsStore = defineStore('reports', () => {
 
   const { getProgress } = useHistoryApi();
 
-  const isLatestReport = (reportId: number) => computed<boolean>(() => get(lastGeneratedReport) === reportId);
+  const isLatestReport = (reportId: number): ComputedRef<boolean> => computed<boolean>(() => get(lastGeneratedReport) === reportId);
 
   const checkProgress = () => {
     const interval = setInterval(() => {
@@ -317,8 +317,8 @@ export const useReportsStore = defineStore('reports', () => {
     }
   };
 
-  const progress = computed(() => get(reportProgress).totalProgress);
-  const processingState = computed(() => get(reportProgress).processingState);
+  const progress = computed<string>(() => get(reportProgress).totalProgress);
+  const processingState = computed<string>(() => get(reportProgress).processingState);
 
   const clearError = (): void => {
     set(reportError, emptyError());
@@ -328,7 +328,7 @@ export const useReportsStore = defineStore('reports', () => {
     set(report, defaultReport());
   };
 
-  const reset = () => {
+  const reset = (): void => {
     set(reports, defaultReports());
     clearError();
     clearReport();

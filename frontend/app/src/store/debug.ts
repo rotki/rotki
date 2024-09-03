@@ -35,7 +35,7 @@ function isObject(data: any): boolean {
 
 const storage = sessionStorage;
 
-function getState(key: string) {
+function getState(key: string): any {
   const items = storage.getItem(PREFIX + key);
   if (!items)
     return null;
