@@ -2424,7 +2424,6 @@ def test_monerium_eure_v2(gnosis_inquirer, gnosis_accounts, load_global_caches):
     timestamp, pool_address, gas_fees, removed_amount, returned_amount = TimestampMS(1724679110000), string_to_evm_address('0x0CA1C1eC4EBf3CC67a9f545fF90a3795b318cA4a'), '0.0004379778', '0.019043275513941527', '0.01'  # noqa: E501
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        database=gnosis_inquirer.database,
         tx_hash=tx_hash,
         load_global_caches=load_global_caches,
     )
