@@ -64,10 +64,10 @@ async function updateImmediate(newValue: any) {
 
   if ('success' in result) {
     emit('updated');
-    setSuccess(result.success);
+    setSuccess(result.success, true);
   }
   else {
-    setError(result.error);
+    setError(result.error, true);
   }
   emit('finished');
 }

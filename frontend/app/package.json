@@ -21,7 +21,7 @@
     "link:verify": "tsx scripts/check-external-links.ts",
     "lint:style": "stylelint 'src/**/*.{vue,scss}'",
     "lint:style:fix": "stylelint --fix 'src/**/*.{vue,scss}'",
-    "postinstall": "electron-builder install-app-deps",
+    "postinstall": "electron-builder install-app-deps && node scripts/postinstall.js",
     "postuninstall": "electron-builder install-app-deps",
     "serve": "node scripts/serve.js --web",
     "serve:backend": "node scripts/start-backend.js",

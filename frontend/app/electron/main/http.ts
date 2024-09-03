@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import http, { type IncomingMessage, type OutgoingHttpHeaders, type Server, type ServerResponse } from 'node:http';
 import path from 'node:path';
 import { checkIfDevelopment } from '@shared/utils';
+import { assert } from '@rotki/common';
 import type { Buffer } from 'node:buffer';
 
 type Callback = (addresses: string[]) => void;
@@ -16,10 +17,10 @@ const STATUS_NOT_FOUND = 404;
 const STATUS_CONTENT_LENGTH_REQUIRED = 411;
 
 const FILE_WHITELIST = [
-  'metamask/img/alert.svg',
-  'metamask/img/done.svg',
-  'metamask/img/mm-logo.svg',
-  'metamask/img/rotki.svg',
+  'address-import/img/alert.svg',
+  'address-import/img/done.svg',
+  'address-import/img/rotki.svg',
+  'address-import/js/vue.global.prod.js',
   'apple-touch-icon.png',
 ];
 
@@ -122,7 +123,7 @@ function handleRequests(req: IncomingMessage, res: ServerResponse, cb: Callback)
   const basePath = checkIfDevelopment() ? path.join(dirname, '..', 'public') : dirname;
   const url = req.url ?? '';
   if (url === '/') {
-    okResponse(res, fs.readFileSync(path.join(basePath, 'metamask/import.html')), headersHtml);
+    okResponse(res, fs.readFileSync(path.join(basePath, 'address-import/import.html')), headersHtml);
   }
   else if (url === '/import' && req.method === 'POST') {
     handleAddresses(req, res, cb);
@@ -139,7 +140,7 @@ function handleRequests(req: IncomingMessage, res: ServerResponse, cb: Callback)
 export function startHttp(cb: Callback, port = 43432): number {
   if (!(server && server.listening)) {
     // eslint-disable-next-line no-console
-    console.log(`Metamask Import Server: Listening at: http://localhost:${port}`);
+    console.log(`Address Import Server: Listening at: http://localhost:${port}`);
     server = http.createServer((req, resp) => handleRequests(req, resp, cb));
     server.listen(port);
   }
@@ -151,7 +152,7 @@ export function startHttp(cb: Callback, port = 43432): number {
 
 export function stopHttp() {
   // eslint-disable-next-line no-console
-  console.log('Metamask Import Server: Stopped');
+  console.log('Address Import Server: Stopped');
   if (server && server.listening)
     server.close();
 }

@@ -3,6 +3,7 @@ import { helpers, requiredIf } from '@vuelidate/validators';
 import { isEmpty } from 'lodash-es';
 import useVuelidate from '@vuelidate/core';
 import { toMessages } from '@/utils/validation';
+import WalletAddressesImport from '@/components/accounts/blockchain/WalletAddressesImport.vue';
 import type { ValidationErrors } from '@/types/api/errors';
 
 const props = defineProps<{
@@ -10,7 +11,7 @@ const props = defineProps<{
   disabled: boolean;
   multi: boolean;
   errorMessages: ValidationErrors;
-  showMetamask?: boolean;
+  showWalletImport?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -154,7 +155,7 @@ defineExpose({
   validate,
 });
 
-function updateAddressesFromMetamask(addresses: string[]) {
+function updateAddressesFromWalletImport(addresses: string[]) {
   if (addresses.length > 1) {
     set(multiple, true);
     nextTick(() => {
@@ -212,10 +213,10 @@ function updateAddressesFromMetamask(addresses: string[]) {
         @blur="v$.userAddresses.$touch()"
         @paste="onPasteMulti($event)"
       />
-      <MetamaskAddressesImport
-        v-if="showMetamask"
+      <WalletAddressesImport
+        v-if="showWalletImport"
         :disabled="disabled"
-        @update:addresses="updateAddressesFromMetamask($event)"
+        @update:addresses="updateAddressesFromWalletImport($event)"
       />
     </div>
 

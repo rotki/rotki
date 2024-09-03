@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`8339` Users will be able to import addresses from browser wallets other than MetaMask, such as Rabby Wallet, Phantom, Rainbow, etc.
 * :feature:`7349` Rotki's CSV importers will now report the number of successfully imported and total entries, and each error message will include the line number of the problematic entry.
 * :feature:`8147` Users can now import data from Blockpit into rotki.
 * :feature:`-` Rotki will now decode interest earned from aave v3 as independent events.
@@ -15,7 +16,7 @@ Changelog
 * :feature:`4457` Rotki will show links to CoinGecko and CryptoCompare on the asset detail page if they exist.
 * :feature:`8101` Failed transactions will now be displayed as failed and not just show "burned gas" event only.
 * :feature:`-` Transactions claiming SAFE tokens from vesting will now be properly decoded.
-* :feature:`-` Transactions locking, unlocking and withdrawing SAFE tokens will now be properly decoded. Also any locked SAFE tokens will be automatically detected and their balance counted.  
+* :feature:`-` Transactions locking, unlocking and withdrawing SAFE tokens will now be properly decoded. Also any locked SAFE tokens will be automatically detected and their balance counted.
 
 * :release:`1.34.3 <2024-08-20>`
 * :feature:`-` Generic events can now be created or imported with location being bitcoin, bitcoin cash, polkadot and kusama.

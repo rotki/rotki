@@ -9,14 +9,9 @@ interface Permission {
   readonly parentCapability: string;
 }
 
-interface Provider {
-  readonly isMetaMask?: boolean;
-}
-
 declare global {
   interface Window {
     interop?: Interop;
-    ethereum?: Provider;
   }
 
   interface WindowEventMap {
@@ -38,10 +33,7 @@ export interface EIP6963ProviderDetail {
 }
 
 export interface EIP6963AnnounceProviderEvent {
-  detail: {
-    info: EIP6963ProviderInfo;
-    provider: Readonly<EIP1193Provider>;
-  };
+  detail: EIP6963ProviderDetail;
 }
 
 export interface EIP1193Provider {
