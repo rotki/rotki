@@ -3,12 +3,12 @@ import json
 import logging
 import os
 import shutil
-from signal import signal, SIGINT, SIGTERM, SIGQUIT
 import subprocess
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from signal import SIGINT, SIGQUIT, SIGTERM, signal
+from typing import Any
 
 logger = logging.getLogger('monitor')
 logging.basicConfig(level=logging.DEBUG)
@@ -24,7 +24,7 @@ def cleanup_tmp() -> None:
     logger.info('Preparing to cleanup tmp directory')
     tmp_dir = Path('/tmp/').glob('*')
     cache_cutoff = datetime.today() - timedelta(hours=6)
-    cutoff_epoch = int(cache_cutoff.strftime("%s"))
+    cutoff_epoch = int(cache_cutoff.strftime('%s'))
     to_delete = filter(lambda x: can_delete(x, cutoff_epoch), tmp_dir)
 
     deleted = 0
@@ -51,7 +51,7 @@ def cleanup_tmp() -> None:
     logger.info(f'Deleted {deleted} files or directories, skipped {skipped} from /tmp')
 
 
-def load_config_from_file() -> Optional[Dict[str, Any]]:
+def load_config_from_file() -> dict[str, Any] | None:
     config_file = Path('/config/rotki_config.json')
     if not config_file.exists():
         logger.info('no config file provided')
@@ -66,7 +66,7 @@ def load_config_from_file() -> Optional[Dict[str, Any]]:
             return None
 
 
-def load_config_from_env() -> Dict[str, Any]:
+def load_config_from_env() -> dict[str, Any]:
     loglevel = os.environ.get('LOGLEVEL')
     logfromothermodules = os.environ.get('LOGFROMOTHERMODDULES')
     max_size_in_mb_all_logs = os.environ.get('MAX_SIZE_IN_MB_ALL_LOGS')
@@ -82,7 +82,7 @@ def load_config_from_env() -> Dict[str, Any]:
     }
 
 
-def load_config() -> List[str]:
+def load_config() -> list[str]:
     env_config = load_config_from_env()
     file_config = load_config_from_file()
 

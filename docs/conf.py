@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Configuration file for the Sphinx documentation builder.
 #
@@ -49,8 +48,8 @@ extensions = [
 
 
 # 'releases' (changelog) settings
-releases_issue_uri = "https://github.com/rotki/rotki/issues/%s"
-releases_release_uri = "https://github.com/rotki/rotki/releases/tag/v%s"
+releases_issue_uri = 'https://github.com/rotki/rotki/issues/%s'
+releases_release_uri = 'https://github.com/rotki/rotki/releases/tag/v%s'
 # Enables 0.x.y releases to not be grouped into feature and bugfix releases
 # see: http://releases.readthedocs.io/en/latest/concepts.html#unstable-prehistory-mode
 # This needs to be kept enabled even once 1.0 has been reached!
@@ -160,7 +159,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     (master_doc, 'rotki', 'rotki Documentation',
-     [author], 1)
+     [author], 1),
 ]
 
 
