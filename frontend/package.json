@@ -30,7 +30,7 @@
     "test:integration": " pnpm run --filter rotki test:integration",
     "test:integration-ci": " pnpm run --filter rotki test:integration-ci",
     "dev:web": "node scripts/start-dev.js --web",
-    "setup:hooks": "cd .. && husky install frontend/.husky",
+    "setup:hooks": "cd .. && husky frontend/.husky",
     "lint-staged": "lint-staged"
   },
   "devDependencies": {
@@ -64,6 +64,6 @@
     }
   },
   "lint-staged": {
-    "*.{js,ts,vue,json,yml,md}": "eslint"
+    "*": "eslint"
   }
 }
