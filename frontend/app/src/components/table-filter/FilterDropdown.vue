@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref, computed, watch } from 'vue';
 import type { BaseSuggestion, SearchMatcher, Suggestion } from '@/types/filtering';
 
 const props = defineProps<{
@@ -12,6 +13,7 @@ const emit = defineEmits<{
   (e: 'click', item: SearchMatcher<any>): void;
   (e: 'suggest', item: Suggestion): void;
   (e: 'apply-filter', item: Suggestion): void;
+  (e: 'update:keyword', value: string): void;
 }>();
 
 const { keyword, selectedMatcher, selectedSuggestion } = toRefs(props);
@@ -20,6 +22,8 @@ const keywordSplited = computed(() => splitSearch(get(keyword)));
 
 const lastSuggestion = ref<Suggestion | null>(null);
 const suggested = ref<Suggestion[]>([]);
+const noSuggestionsForValue = ref(false);
+
 
 function updateSuggestion(value: Suggestion[], index: number) {
   set(lastSuggestion, value[index]);
@@ -36,8 +40,10 @@ function click(matcher: SearchMatcher<any>) {
 
 function applyFilter(item: Suggestion) {
   const value = typeof item.value === 'string' ? item.value : item.value.symbol;
-  if (value)
+  if (value) {
     emit('apply-filter', item);
+    emit('update:keyword', `${item.key}=`);
+  }
 }
 
 watch(selectedSuggestion, (index) => {
@@ -58,71 +64,68 @@ watch(suggested, (value) => {
 watch(
   [keyword, selectedMatcher],
   async ([keyword, selectedMatcher]) => {
-    if (!keyword || !selectedMatcher)
-      return [];
+    if (!keyword) return;
 
     const search = splitSearch(keyword);
-    const exclude = 'string' in selectedMatcher && !!selectedMatcher.allowExclusion && !!search.exclude;
-
-    const suggestedFilter = selectedMatcher.key;
-
     const searchString = search.value ?? '';
-
     let suggestedItems: BaseSuggestion[] = [];
 
-    if ('string' in selectedMatcher) {
-      suggestedItems = selectedMatcher.suggestions().map(item => ({
-        key: suggestedFilter,
-        value: item,
-        exclude,
-      }));
-    }
-    else if ('asset' in selectedMatcher) {
-      if (searchString) {
-        suggestedItems = (await selectedMatcher.suggestions(searchString)).map(asset => ({
-          key: suggestedFilter,
-          value: asset,
-          exclude,
+    const exactMatcher = props.matchers.find(m => m.key.toLowerCase() === keyword.toLowerCase());
+    if (exactMatcher) {
+      suggestedItems = [{
+        key: exactMatcher.key,
+        value: exactMatcher.key,
+      }];
+      noSuggestionsForValue.value = false;
+    } else if (selectedMatcher) {
+      if ('string' in selectedMatcher) {
+        const exclude = !!selectedMatcher.allowExclusion && !!search.exclude;
+        suggestedItems = selectedMatcher.suggestions().map(item => ({
+          key: selectedMatcher.key,
+          value: item,
         }));
-      }
-    }
-    else if ('boolean' in selectedMatcher) {
-      suggestedItems = [
-        {
-          key: suggestedFilter,
+      } else if ('asset' in selectedMatcher) {
+        if (searchString) {
+          suggestedItems = (await selectedMatcher.suggestions(searchString)).map(asset => ({
+            key: selectedMatcher.key,
+            value: asset,
+            exclude: false,
+          }));
+        }
+      } else if ('boolean' in selectedMatcher) {
+        suggestedItems = [{
+          key: selectedMatcher.key,
           value: true,
           exclude: false,
-        },
-      ];
-    }
-    else {
-      logger.debug('Matcher doesn\'t have asset=true, string=true, or boolean=true.', selectedMatcher);
+        }];
+      }
+      noSuggestionsForValue.value = suggestedItems.length === 0 && !!searchString;
+    } else {
+      noSuggestionsForValue.value = false;
     }
 
     const getItemText = (item: BaseSuggestion) =>
-      typeof item.value === 'string' ? item.value : `${item.value.symbol} ${item.value.evmChain}`;
+      typeof item.value === 'string' ? item.value : `${item.value.symbol} ${item.value.evmChain ?? ''}`;
 
     set(
       suggested,
       suggestedItems
-        .sort((a, b) => {
-          const aText = getItemText(a);
-          const bText = getItemText(b);
-          return compareTextByKeyword(aText, bText, searchString);
-        })
+        .sort((a, b) => compareTextByKeyword(getItemText(a), getItemText(b), searchString))
         .slice(0, 5)
-        .map((a, index) => ({
+        .map((item, index) => ({
           index,
-          key: a.key,
-          value: a.value,
-          asset: typeof a.value !== 'string',
+          key: item.key,
+          value: item.value,
+          asset: typeof item.value !== 'string',
           total: suggestedItems.length,
-          exclude,
+          exclude: item.exclude,
         })),
     );
   },
-  { immediate: true },
+  { immediate: true }
 );
+
+
 
 const { t } = useI18n();
 
@@ -136,105 +139,86 @@ watch(selectedSuggestion, async () => {
 });
 
 const highlightedTextClasses = 'text-subtitle-2 text-rui-text-secondary';
-</script>
 
+function handleEnter() {
+  const currentKeyword = get(keyword);
+  const matcher = props.matchers.find(m => m.key.toLowerCase() === currentKeyword.toLowerCase());
+
+  if (matcher) {
+    const exactSuggestion: Suggestion = {
+      key: matcher.key,
+      value: matcher.description,
+      index: 0,
+      total: 1,
+      asset: false,
+      exclude: false,
+    };
+
+    emit('update:keyword', `${matcher.key}=`);
+    emit('apply-filter', exactSuggestion);
+  } else if (get(suggested).length > 0) {
+    applyFilter(get(suggested)[get(selectedSuggestion)]);
+  }
+}
+
+</script>
 <template>
   <div class="px-4 py-1">
-    <div v-if="selectedMatcher">
-      <div
-        v-if="suggested.length > 0"
-        class="mb-2"
-        :class="$style.suggestions"
-        data-cy="suggestions"
-      >
-        <RuiButton
-          v-for="(item, index) in suggested"
-          :key="item.index"
-          :tabindex="index"
-          variant="text"
-          class="text-body-1 tracking-wide w-full justify-start text-left text-rui-text-secondary"
-          :class="{
+    <div v-if="selectedMatcher || suggested.length > 0">
+      <div v-if="suggested.length > 0" class="mb-2" :class="$style.suggestions" data-cy="suggestions">
+        <RuiButton v-for="(item, index) in suggested" :key="item.index" :tabindex="index" variant="text"
+          class="text-body-1 tracking-wide w-full justify-start text-left text-rui-text-secondary" :class="{
             ['!bg-rui-primary-lighter/20']: index === selectedSuggestion,
-          }"
-          @click="applyFilter(item)"
-        >
+          }" @click="applyFilter(item)" @keydown.enter="handleEnter">
           <SuggestedItem :suggestion="item" />
         </RuiButton>
       </div>
-      <div
-        v-else
-        class="pb-0"
-      >
+      <div v-else-if="noSuggestionsForValue" class="pb-0">
         <div class="text-rui-text-secondary">
-          <i18n-t
-            v-if="!('asset' in selectedMatcher)"
-            keypath="table_filter.no_suggestions"
-            tag="span"
-          >
+          <i18n-t v-if="selectedMatcher && !('asset' in selectedMatcher)" keypath="table_filter.no_suggestions"
+            tag="span">
             <template #search>
               <span class="font-medium text-rui-primary">
-                {{ keywordSplited.key }}
+                {{ keywordSplited.value }}
               </span>
             </template>
           </i18n-t>
-          <template v-else>
+          <template v-else-if="selectedMatcher && 'asset' in selectedMatcher">
             {{ t('table_filter.asset_suggestion') }}
           </template>
         </div>
       </div>
 
-      <div
-        v-if="'string' in selectedMatcher && selectedMatcher.allowExclusion"
-        :class="highlightedTextClasses"
-        class="font-light pt-2"
-      >
+      <div v-if="selectedMatcher && 'string' in selectedMatcher && selectedMatcher.allowExclusion"
+        :class="highlightedTextClasses" class="font-light pt-2">
         {{ t('table_filter.exclusion.description') }}
         <span class="font-medium">
           {{ t('table_filter.exclusion.example') }}
         </span>
       </div>
 
-      <div
-        v-if="selectedMatcher.hint"
-        :class="highlightedTextClasses"
-        class="text-wrap"
-      >
+      <div v-if="selectedMatcher && selectedMatcher.hint" :class="highlightedTextClasses" class="text-wrap">
         {{ selectedMatcher.hint }}
       </div>
     </div>
-    <div
-      v-else-if="keyword && matchers.length === 0"
-      class="pb-2"
-    >
+    <div v-else-if="keyword && matchers.length === 0" class="pb-2">
       <span>{{ t('table_filter.unsupported_filter') }}</span>
       <span class="font-medium ms-2">{{ keyword }}</span>
     </div>
-    <div v-if="!selectedMatcher && matchers.length > 0">
-      <div
-        :class="highlightedTextClasses"
-        class="uppercase font-bold"
-      >
+    <div v-else-if="!selectedMatcher && matchers.length > 0">
+      <div :class="highlightedTextClasses" class="uppercase font-bold">
         {{ t('table_filter.title') }}
       </div>
       <RuiDivider class="my-2" />
-      <div
-        :class="$style.suggestions"
-        data-cy="suggestions"
-      >
-        <FilterEntry
-          v-for="(matcher, index) in matchers"
-          :key="matcher.key"
-          :active="index === selectedSuggestion"
-          :matcher="matcher"
-          :class="{ highlightedMatcher: index === selectedSuggestion }"
-          @click="click($event)"
-        />
+      <div :class="$style.suggestions" data-cy="suggestions">
+        <FilterEntry v-for="(matcher, index) in matchers" :key="matcher.key" :active="index === selectedSuggestion"
+          :matcher="matcher" :class="{ highlightedMatcher: index === selectedSuggestion }" @click="click(matcher)"
+          @keydown.enter="handleEnter">
+          {{ matcher.description }}
+        </FilterEntry>
       </div>
     </div>
-    <div
-      :class="highlightedTextClasses"
-      class="font-light mt-2"
-    >
+    <div :class="highlightedTextClasses" class="font-light mt-2">
       <RuiDivider class="my-2" />
       <span>{{ t('table_filter.hint.description') }}</span>
       <span class="font-medium">

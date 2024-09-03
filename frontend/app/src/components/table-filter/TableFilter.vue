@@ -25,16 +25,23 @@ const props = withDefaults(
   },
 );
 
+
 const emit = defineEmits<{
   (e: 'update:matches', matches: MatchedKeywordWithBehaviour<any>): void;
 }>();
 
 const { matchers, matches } = toRefs(props);
 
+const exactMatchMatcher = computed(() => {
+  const searchLower = search.value.toLowerCase();
+  return props.matchers.find(m => m.key.toLowerCase() === searchLower);
+});
+
 const input = ref();
 const selection = ref<Suggestion[]>([]);
 
 const search = ref('');
+
 const selectedSuggestion = ref(0);
 const suggestedFilter = ref<Suggestion>({
   index: 0,
@@ -92,21 +99,26 @@ function setSearchToMatcherKey(matcher: SearchMatcher<any>) {
 }
 
 function updateMatches(pairs: Suggestion[]) {
+
   const matched: Partial<MatchedKeyword<any>> = {};
   const validPairs: Suggestion[] = [];
 
   for (const entry of pairs) {
     const key = entry.key;
     const matcher = matcherForKey(key);
-    if (!matcher)
+    if (!matcher) {
       continue;
+
+    }
 
     const valueKey = (matcher.keyValue || matcher.key) as string;
     let transformedKeyword: string | boolean = '';
 
     if ('string' in matcher) {
-      if (typeof entry.value !== 'string')
+      if (typeof entry.value !== 'string') {
         continue;
+
+      }
 
       if (matcher.validate(entry.value)) {
         transformedKeyword = matcher.serializer?.(entry.value) || entry.value;
@@ -126,7 +138,10 @@ function updateMatches(pairs: Suggestion[]) {
     }
 
     if (!transformedKeyword)
+    {
       continue;
+
+    }
 
     validPairs.push(entry);
 
@@ -158,7 +173,7 @@ function applyFilter(filter: Suggestion) {
   newSelection.push(filter);
 
   updateMatches(newSelection);
-  set(search, '');
+  set(search, `${filter.key}=`);
 }
 
 const filteredMatchers = computed<SearchMatcher<any>[]>(() => {
@@ -176,6 +191,11 @@ const filteredMatchers = computed<SearchMatcher<any>[]>(() => {
 
 async function applySuggestion() {
   const selectedIndex = get(selectedSuggestion);
+  const exactMatch = get(exactMatchMatcher);
+  if (exactMatch) {
+    set(search, `${exactMatch.key}=`);
+    return;
+  }
   if (!get(selectedMatcher)) {
     const filteredMatchersVal = get(filteredMatchers);
 
@@ -186,6 +206,7 @@ async function applySuggestion() {
   }
 
   const filter = get(suggestedFilter);
+
   if (filter.value) {
     await nextTick(() => applyFilter(filter));
   }
@@ -206,7 +227,6 @@ async function applySuggestion() {
       else if (!('boolean' in matcher)) {
         logger.debug('Matcher doesn\'t have asset=true, string=true, or boolean=true.', selectedMatcher);
       }
-
       if (suggestedItems.length === 0 && 'validate' in matcher && matcher.validate(keyword)) {
         await nextTick(() =>
           applyFilter({
@@ -221,7 +241,9 @@ async function applySuggestion() {
       }
     }
     if (!key)
-      get(input).blur();
+    if (get(input) && typeof get(input).blur === 'function') {
+  get(input).blur();
+}
   }
   set(selectedSuggestion, 0);
   set(search, '');
@@ -344,6 +366,15 @@ onMounted(() => {
 
 watch(matches, (matches) => {
   restoreSelection(matches);
+});
+
+watch(search, (newValue, oldValue) => {
+  if (!newValue.includes('=')) {
+    set(selectedMatcher, undefined);
+  } else {
+    const [key] = newValue.split('=');
+    set(selectedMatcher, matcherForKey(key));
+  }
 });
 
 const { t } = useI18n();
