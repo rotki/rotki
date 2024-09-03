@@ -128,6 +128,9 @@ select = [
     # "D",  # pydocstyle -- too many docstuff we don't use
     "N",
     "B",
+    "C4",
+    "T10",
+    "EXE",
     "G",
     # "EM",  #  our exceptions use f strings everywhere. Very little upside to this and I don't think it's cleaner code
     # "CPY",  # If we ever wanted to enforce copyright notice on each file
