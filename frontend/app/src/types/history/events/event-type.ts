@@ -1,12 +1,12 @@
 import { z } from 'zod';
-import { type RuiIcons, contextColors, isRuiIcon } from '@rotki/ui-library';
+import { RuiIcons, contextColors } from '@rotki/ui-library';
 import { HistoryEventEntryType } from '@rotki/common';
 
 const HistoryEventTypeMapping = z.record(z.record(z.string()));
 
 const RuiIcon = z.string().transform((icon) => {
-  if (isRuiIcon(icon))
-    return icon;
+  if (Array.prototype.includes.call(RuiIcons, icon))
+    return icon satisfies RuiIcons;
 
   console.warn(`${icon} returned from the backend does not match RuiIcons`);
   return 'question-line' satisfies RuiIcons;

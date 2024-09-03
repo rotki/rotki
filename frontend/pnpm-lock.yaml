@@ -62,8 +62,8 @@ importers:
         specifier: workspace:*
         version: link:../common
       '@rotki/ui-library':
-        specifier: 1.2.1
-        version: 1.2.1(@vueuse/core@11.0.3(vue@3.4.38(typescript@5.5.4)))(@vueuse/shared@11.0.3(vue@3.4.38(typescript@5.5.4)))(vue@3.4.38(typescript@5.5.4))
+        specifier: 1.2.3
+        version: 1.2.3(@vueuse/core@11.0.3(vue@3.4.38(typescript@5.5.4)))(@vueuse/shared@11.0.3(vue@3.4.38(typescript@5.5.4)))(vue@3.4.38(typescript@5.5.4))
       '@types/jsdom':
         specifier: 21.1.7
         version: 21.1.7
@@ -1896,8 +1896,8 @@ packages:
     peerDependencies:
       eslint: ^9.0.0
 
-  '@rotki/ui-library@1.2.1':
-    resolution: {integrity: sha512-Hthq81vuv3nO0V6pf/8y3iErhtfy+mZ/aeUnP+eURVkF0QdHezv8cewpiompkr/Lri0oJM5abOIZt39H94Ihtw==}
+  '@rotki/ui-library@1.2.3':
+    resolution: {integrity: sha512-613n7Ze/8HTbF1EiOrpL0AW34/sFkOXEknz0euNAYaT3uU760DgKgzTQ9XPnMQD/8waMHMeK31rUiAqSFDD0EA==}
     engines: {node: '>=20 <21', pnpm: '>=9 <10'}
     peerDependencies:
       '@vueuse/core': '>10.0.0'
@@ -8950,7 +8950,7 @@ snapshots:
       - supports-color
       - typescript
 
-  '@rotki/ui-library@1.2.1(@vueuse/core@11.0.3(vue@3.4.38(typescript@5.5.4)))(@vueuse/shared@11.0.3(vue@3.4.38(typescript@5.5.4)))(vue@3.4.38(typescript@5.5.4))':
+  '@rotki/ui-library@1.2.3(@vueuse/core@11.0.3(vue@3.4.38(typescript@5.5.4)))(@vueuse/shared@11.0.3(vue@3.4.38(typescript@5.5.4)))(vue@3.4.38(typescript@5.5.4))':
     dependencies:
       '@vueuse/core': 11.0.3(vue@3.4.38(typescript@5.5.4))
       '@vueuse/shared': 11.0.3(vue@3.4.38(typescript@5.5.4))
