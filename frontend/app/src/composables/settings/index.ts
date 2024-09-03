@@ -95,11 +95,11 @@ export function useClearableMessages() {
     return base;
   };
 
-  const setSuccess = (message: string, useBase = true) => {
+  const setSuccess = (message: string, useBase = false) => {
     set(success, formatMessage(useBase ? t('settings.saved') : '', message));
   };
 
-  const setError = (message: string, useBase = true) => {
+  const setError = (message: string, useBase = false) => {
     set(error, formatMessage(useBase ? t('settings.not_saved') : '', message));
   };
 

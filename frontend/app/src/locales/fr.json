@@ -2858,18 +2858,17 @@
     }
   },
   "input_mode_select": {
+    "import_from_wallet": {
+      "label": "Importer des adresses à partir du portefeuille du navigateur",
+      "missing": "Nous ne pouvons détecter aucun portefeuille dans ce navigateur",
+      "missing_tooltip": {
+        "wallet_is_not_installed": "Aucun portefeuille n'est installé dans ce navigateur. Vous pouvez aller dans le magasin d'extensions de votre navigateur et en installer un.",
+        "wallet_is_not_enabled": "L'extension pour le portefeuille est désactivée. Vous pouvez l'activer dans le menu Extensions/Add-Ons, en fonction de votre navigateur.",
+        "title": "Here are the common cause:"
+      }
+    },
     "manual_add": {
       "label": "Manuel"
-    },
-    "metamask_import": {
-      "missing": "L'importation d'adresses à partir de MetaMask est désactivée. MetaMask n'a pas pu être détecté.",
-      "missing_tooltip": {
-        "copy_url": "copier cette URL de page",
-        "metamask_is_not_enabled": "MetaMask n'est pas activé. Vous pouvez l'activer dans le menu 'Extensions / Composants complémentaires', selon votre navigateur.",
-        "metamask_is_not_installed": "Ce navigateur n'a pas MetaMask installé. Vous pouvez télécharger MetaMask {link}.",
-        "metamask_is_not_supported_by_browser": "Assurez-vous d'ouvrir cette page avec un navigateur compatible répertorié {link}. Si ce n'est pas le cas, {copy} et ouvrez-le manuellement dans un navigateur compatible.",
-        "title": "Voici les causes courantes :"
-      }
     },
     "xpub_add": {
       "label": "XPUB"

@@ -178,6 +178,8 @@ declare global {
   const getAccountLabel: typeof import('./utils/blockchain/accounts/utils')['getAccountLabel']
   const getActivePinia: typeof import('pinia')['getActivePinia']
   const getAddressFromEvmIdentifier: typeof import('@rotki/common')['getAddressFromEvmIdentifier']
+  const getAddressesFromWallet: typeof import('./utils/metamask')['getAddressesFromWallet']
+  const getAllBrowserWalletProviders: typeof import('./utils/metamask')['getAllBrowserWalletProviders']
   const getBackendUrl: typeof import('./utils/account-management')['getBackendUrl']
   const getBalances: typeof import('./utils/defi/xswap')['getBalances']
   const getChain: typeof import('./utils/blockchain/accounts/utils')['getChain']
@@ -195,7 +197,6 @@ declare global {
   const getGroupId: typeof import('./utils/blockchain/accounts/utils')['getGroupId']
   const getIdentifierFromSymbolMap: typeof import('@rotki/common')['getIdentifierFromSymbolMap']
   const getKeyType: typeof import('./utils/xpub')['getKeyType']
-  const getMetamaskAddresses: typeof import('./utils/metamask')['getMetamaskAddresses']
   const getNonRootAttrs: typeof import('./utils/attrs')['getNonRootAttrs']
   const getPlaceholderRule: typeof import('./utils/settings')['getPlaceholderRule']
   const getPoolProfit: typeof import('./utils/defi/xswap')['getPoolProfit']
@@ -1037,6 +1038,8 @@ declare module 'vue' {
     readonly getAccountLabel: UnwrapRef<typeof import('./utils/blockchain/accounts/utils')['getAccountLabel']>
     readonly getActivePinia: UnwrapRef<typeof import('pinia')['getActivePinia']>
     readonly getAddressFromEvmIdentifier: UnwrapRef<typeof import('@rotki/common')['getAddressFromEvmIdentifier']>
+    readonly getAddressesFromWallet: UnwrapRef<typeof import('./utils/metamask')['getAddressesFromWallet']>
+    readonly getAllBrowserWalletProviders: UnwrapRef<typeof import('./utils/metamask')['getAllBrowserWalletProviders']>
     readonly getBackendUrl: UnwrapRef<typeof import('./utils/account-management')['getBackendUrl']>
     readonly getBalances: UnwrapRef<typeof import('./utils/defi/xswap')['getBalances']>
     readonly getChain: UnwrapRef<typeof import('./utils/blockchain/accounts/utils')['getChain']>
@@ -1054,7 +1057,6 @@ declare module 'vue' {
     readonly getGroupId: UnwrapRef<typeof import('./utils/blockchain/accounts/utils')['getGroupId']>
     readonly getIdentifierFromSymbolMap: UnwrapRef<typeof import('@rotki/common')['getIdentifierFromSymbolMap']>
     readonly getKeyType: UnwrapRef<typeof import('./utils/xpub')['getKeyType']>
-    readonly getMetamaskAddresses: UnwrapRef<typeof import('./utils/metamask')['getMetamaskAddresses']>
     readonly getNonRootAttrs: UnwrapRef<typeof import('./utils/attrs')['getNonRootAttrs']>
     readonly getPlaceholderRule: UnwrapRef<typeof import('./utils/settings')['getPlaceholderRule']>
     readonly getPoolProfit: UnwrapRef<typeof import('./utils/defi/xswap')['getPoolProfit']>
@@ -1098,7 +1100,6 @@ declare module 'vue' {
     readonly isEvmEventType: UnwrapRef<typeof import('./utils/history/events')['isEvmEventType']>
     readonly isEvmIdentifier: UnwrapRef<typeof import('@rotki/common')['isEvmIdentifier']>
     readonly isFilterEnabled: UnwrapRef<typeof import('./utils/blockchain/accounts/common')['isFilterEnabled']>
-    readonly isMetaMaskSupported: UnwrapRef<typeof import('./utils/metamask')['isMetaMaskSupported']>
     readonly isMissingAccountingRule: UnwrapRef<typeof import('./utils/history/events')['isMissingAccountingRule']>
     readonly isNft: UnwrapRef<typeof import('./utils/nft')['isNft']>
     readonly isOfEnum: UnwrapRef<typeof import('./utils/index')['isOfEnum']>
@@ -1876,6 +1877,8 @@ declare module '@vue/runtime-core' {
     readonly getAccountLabel: UnwrapRef<typeof import('./utils/blockchain/accounts/utils')['getAccountLabel']>
     readonly getActivePinia: UnwrapRef<typeof import('pinia')['getActivePinia']>
     readonly getAddressFromEvmIdentifier: UnwrapRef<typeof import('@rotki/common')['getAddressFromEvmIdentifier']>
+    readonly getAddressesFromWallet: UnwrapRef<typeof import('./utils/metamask')['getAddressesFromWallet']>
+    readonly getAllBrowserWalletProviders: UnwrapRef<typeof import('./utils/metamask')['getAllBrowserWalletProviders']>
     readonly getBackendUrl: UnwrapRef<typeof import('./utils/account-management')['getBackendUrl']>
     readonly getBalances: UnwrapRef<typeof import('./utils/defi/xswap')['getBalances']>
     readonly getChain: UnwrapRef<typeof import('./utils/blockchain/accounts/utils')['getChain']>
@@ -1893,7 +1896,6 @@ declare module '@vue/runtime-core' {
     readonly getGroupId: UnwrapRef<typeof import('./utils/blockchain/accounts/utils')['getGroupId']>
     readonly getIdentifierFromSymbolMap: UnwrapRef<typeof import('@rotki/common')['getIdentifierFromSymbolMap']>
     readonly getKeyType: UnwrapRef<typeof import('./utils/xpub')['getKeyType']>
-    readonly getMetamaskAddresses: UnwrapRef<typeof import('./utils/metamask')['getMetamaskAddresses']>
     readonly getNonRootAttrs: UnwrapRef<typeof import('./utils/attrs')['getNonRootAttrs']>
     readonly getPlaceholderRule: UnwrapRef<typeof import('./utils/settings')['getPlaceholderRule']>
     readonly getPoolProfit: UnwrapRef<typeof import('./utils/defi/xswap')['getPoolProfit']>
@@ -1937,7 +1939,6 @@ declare module '@vue/runtime-core' {
     readonly isEvmEventType: UnwrapRef<typeof import('./utils/history/events')['isEvmEventType']>
     readonly isEvmIdentifier: UnwrapRef<typeof import('@rotki/common')['isEvmIdentifier']>
     readonly isFilterEnabled: UnwrapRef<typeof import('./utils/blockchain/accounts/common')['isFilterEnabled']>
-    readonly isMetaMaskSupported: UnwrapRef<typeof import('./utils/metamask')['isMetaMaskSupported']>
     readonly isMissingAccountingRule: UnwrapRef<typeof import('./utils/history/events')['isMissingAccountingRule']>
     readonly isNft: UnwrapRef<typeof import('./utils/nft')['isNft']>
     readonly isOfEnum: UnwrapRef<typeof import('./utils/index')['isOfEnum']>

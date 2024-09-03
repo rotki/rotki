@@ -5,3 +5,5 @@ dist
 .e2e
 .prettierrc
 app/tsconfig.tsbuildinfo
+
+app/public/address-import/js/*

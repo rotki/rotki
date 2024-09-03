@@ -3071,19 +3071,18 @@
     }
   },
   "input_mode_select": {
-    "manual_add": {
-      "label": "Manual"
-    },
-    "metamask_import": {
-      "label": "Import addresses from MetaMask",
-      "missing": "Importing addresses from MetaMask is disabled. MetaMask could not be detected.",
+    "import_from_wallet": {
+      "imported": "Your address(es) have been imported to the address input",
+      "label": "Import addresses from browser wallet",
+      "missing": "We can't detect any wallet in this browser.",
       "missing_tooltip": {
-        "copy_url": "copy this page URL",
-        "metamask_is_not_enabled": "The MetaMask is not enabled yet. You can enable it in menu Extension / Add Ons, depends on your browser.",
-        "metamask_is_not_installed": "This browser doesn't have MetaMask installed. You can download MetaMask {link}.",
-        "metamask_is_not_supported_by_browser": "Make sure you open this page with a supported browser listed {link}. If not, please {copy} and open it manually on supported browser.",
+        "wallet_is_not_installed": "This browser doesn't have any wallets installed. You can go to the extension store of your browser and install one.",
+        "wallet_is_not_enabled": "The extension for the wallet is disabled. You can enable it in the Extensions/Add-Ons menu, depending on your browser.",
         "title": "Here are the common cause:"
       }
+    },
+    "manual_add": {
+      "label": "Manual"
     },
     "xpub_add": {
       "label": "XPUB"

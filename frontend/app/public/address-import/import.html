@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>rotki: Import addresses</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Import page">
+    <meta name="author" content="Rotki Solutions GmbH">
+    <link rel="shortcut icon" href="/apple-touch-icon.png" />
+    <script src="address-import/js/vue.global.prod.js"></script>
+
+    <style>
+        * {
+            font-family: Helvetica, sans-serif;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: 78, 91, 166;
+        }
+
+        body {
+            height: 100vh;
+            margin: 0;
+            width: 100vw;
+        }
+
+        .flex {
+            display: flex;
+        }
+
+        .flex-column {
+            flex-direction: column;
+        }
+
+        .align-center {
+            align-items: center;
+        }
+
+        .justify-center {
+            justify-content: center;
+        }
+
+        .mt-8 {
+            padding-top: 2rem;
+        }
+
+        .container {
+            padding: 2rem 0;
+            min-height: 100%;
+            width: 100%;
+        }
+
+        .wrapper {
+            width: 320px;
+            background: #fff;
+            border-radius: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            max-width: 400px;
+            padding: 1rem;
+        }
+
+        .header {
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .text {
+            font-style: normal;
+            font-weight: normal;
+            line-height: 1.5;
+            color: #5a6166;
+        }
+
+        .logo {
+            max-height: 60px;
+            max-width: 60px;
+        }
+
+        .logo-wrapper {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .button-wrapper {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.5rem;
+        }
+
+        .button {
+            border-radius: 0.5rem;
+            border: 1px solid rgba(var(--primary), 0.5);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 1rem;
+            background: white;
+            cursor: pointer;
+            color: rgb(var(--primary));
+            font-weight: bold;
+            transition: 0.3s all;
+        }
+
+        .button:hover {
+            background: rgba(var(--primary), 0.05);
+        }
+
+        .button:active {
+            background: rgba(var(--primary), 0.1);
+        }
+
+        .button img {
+            width: 2rem;
+            height: 2rem;
+        }
+
+        .alert {
+            margin-top: 1rem;
+            padding: 1rem;
+            line-height: 1.5;
+            border-radius: 0.5rem;
+            color: white;
+            font-size: 0.875rem;
+        }
+
+        .alert img {
+            width: 32px;
+            height: 32px;
+        }
+
+        .alert-text {
+            padding-left: 0.5rem;
+        }
+
+        .alert.success {
+            background: #4caf50;
+        }
+
+        .alert.danger {
+            background: #ff5252;
+        }
+
+        .alert.warning {
+            background: #fb8c00;
+        }
+
+        ol {
+            padding-left: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="container flex-column flex align-center justify-center">
+            <div class="wrapper">
+                <div class="logo-wrapper">
+                    <img class="logo" src="address-import/img/rotki.svg"/>
+                </div>
+                <div v-if="loading" class="text header">
+                    Detecting your browser wallets...
+                </div>
+                <template v-else-if="providers.length > 0">
+                    <div class="text header">
+                        Choose the browser wallet to import your addresses
+                    </div>
+                    <div class="button-wrapper">
+                        <button
+                            :disabled="success"
+                            class="button"
+                            v-for="provider in providers"
+                            :key="provider.info.uuid"
+                            @click="getAddressesFromWallet(provider.provider)"
+                        >
+                            <img
+                                :src="provider.info.icon"
+                                :alt="provider.info.name"
+                            />
+                            {{ provider.info.name }}
+                        </button>
+                    </div>
+                </template>
+                <div v-else class="flex flex-column">
+                    <div class="flex alert warning align-center">
+                        <img src="address-import/img/alert.svg"/>
+                        <div class="alert-text">
+                            We can't detect any wallet in this browser
+                        </div>
+                    </div>
+                    <div class="text mt-8">
+                        Here are the common cause:
+                        <ol>
+                            <li>This browser doesn't have any wallets installed. You can go to the extension store of your browser and install one.</li>
+                            <li>The extension for the wallet is disabled. You can enable it in the Extensions/Add-Ons menu, depending on your browser.</li>
+                        </ol>
+                    </div>
+                </div>
+                <div v-if="success" class="flex alert success align-center">
+                    <img src="address-import/img/done.svg"/>
+                    <div class="alert-text">
+                        The selected addresses has been imported to rotki address input. You can open rotki again. <br/>
+                        This page will close automatically in several seconds, or you can safely close this page manually.
+                    </div>
+                </div>
+                <div v-if="errorMessage" class="flex alert danger align-center">
+                    <img src="address-import/img/alert.svg"/>
+                    <div class="alert-text" id="error-message">{{ errorMessage }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+<script type="text/javascript">
+  function getAllBrowserWalletProviders() {
+    return new Promise((resolve) => {
+      const providers = [];
+
+      function handleProviderAnnouncement(event) {
+        providers.push(event.detail);
+      }
+
+      function cleanup() {
+        window.removeEventListener('eip6963:announceProvider', handleProviderAnnouncement);
+      }
+
+      window.addEventListener('eip6963:announceProvider', handleProviderAnnouncement);
+      window.dispatchEvent(new Event('eip6963:requestProvider'));
+
+      setTimeout(() => {
+        cleanup();
+        resolve(providers);
+      }, 1000);
+    });
+  }
+
+  const { createApp, ref, reactive, onMounted, set} = Vue;
+
+  const app = createApp({
+    setup() {
+      const success = ref(false);
+      const loading = ref(true);
+      const errorMessage = ref('');
+
+      const providers = ref([]);
+
+      onMounted(async () => {
+        loading.value = true;
+        providers.value = await getAllBrowserWalletProviders();
+        loading.value = false;
+      });
+
+      async function post(addresses) {
+        const response = await fetch('/import', {
+          method: 'POST',
+          body: JSON.stringify({ addresses }),
+          headers: {
+            "Content-Type": 'application/json'
+          }
+        });
+
+        if (response.status !== 200) {
+          const json = await response.json();
+          errorMessage.value = json?.message ?? json;
+        } else {
+          success.value = true;
+          setTimeout(() => {
+            window.close();
+          }, 5000);
+        }
+      }
+
+      async function getAddressesFromWallet(provider) {
+        errorMessage.value = '';
+        success.value = false;
+
+        try {
+          const permissions = await provider.request({
+            method: 'wallet_requestPermissions',
+            params: [
+              {
+                eth_accounts: {},
+              },
+            ],
+          });
+
+          const accountPermission = permissions.find(
+            permission => typeof permission !== 'string' && permission.parentCapability === 'eth_accounts',
+          );
+
+          if (!accountPermission) {
+            errorMessage.value = 'Could not find the eth_accounts permission';
+            return;
+          }
+
+          const addresses = await provider.request({
+            method: 'eth_requestAccounts',
+            params: [],
+          });
+
+          if (addresses.length === 0) {
+            errorMessage.value = 'No address selected, please try again!';
+          }
+
+          await post(addresses);
+        } catch (e) {
+          errorMessage.value = e.message;
+        }
+      }
+
+      return {
+        success,
+        loading,
+        errorMessage,
+        providers,
+        getAddressesFromWallet
+      }
+    }
+  });
+
+  app.mount('#app');
+</script>
+</html>
