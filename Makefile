@@ -8,7 +8,6 @@ lint:
 	isort $(ISORT_PARAMS) $(ISORT_CHECK_PARAMS)
 	ruff check $(ALL_LINT_PATHS)
 	double-indent --dry-run $(ALL_LINT_PATHS)
-	flake8 $(ALL_LINT_PATHS)
 	mypy $(COMMON_LINT_PATHS) --install-types --non-interactive
 	pylint --rcfile .pylint.rc $(ALL_LINT_PATHS)
 
