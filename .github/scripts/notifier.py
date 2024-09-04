@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import sys
 from http import HTTPStatus
 
 import requests
@@ -48,9 +49,9 @@ def main() -> None:
         'content': msg,
     }
 
-    response = requests.post(url=url, data=data)
+    response = requests.post(url=url, data=data, timeout=30)
     if response.status_code != HTTPStatus.OK:
-        exit(1)
+        sys.exit(1)
 
 
 if __name__ == '__main__':
