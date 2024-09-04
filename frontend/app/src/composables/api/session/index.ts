@@ -5,7 +5,13 @@ import type { ActionResult } from '@rotki/common';
 import type { Messages, PeriodicClientQueryResult } from '@/types/session';
 import type { PendingTask } from '@/types/task';
 
-export function useSessionApi() {
+interface UseSessionApiReturn {
+  consumeMessages: () => Promise<Messages>;
+  fetchPeriodicData: () => Promise<PeriodicClientQueryResult>;
+  refreshGeneralCacheTask: () => Promise<PendingTask>;
+}
+
+export function useSessionApi(): UseSessionApiReturn {
   const consumeMessages = async (): Promise<Messages> => {
     const response = await api.instance.get<ActionResult<Messages>>('/messages');
 

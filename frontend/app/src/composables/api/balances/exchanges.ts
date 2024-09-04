@@ -18,7 +18,19 @@ import type { AxiosResponse } from 'axios';
 import type { ActionResult } from '@rotki/common';
 import type { PendingTask } from '@/types/task';
 
-export function useExchangeApi() {
+interface UseExchangeApiReturn {
+  queryRemoveExchange: ({ location, name }: Exchange) => Promise<boolean>;
+  queryExchangeBalances: (location: string, ignoreCache?: boolean) => Promise<PendingTask>;
+  querySetupExchange: (payload: ExchangePayload, edit: boolean) => Promise<boolean>;
+  getExchanges: () => Promise<Exchanges>;
+  queryBinanceMarkets: (location: string) => Promise<string[]>;
+  queryBinanceUserMarkets: (name: string, location: string) => Promise<string[]>;
+  deleteExchangeData: (name?: string) => Promise<boolean>;
+  getExchangeSavingsTask: (payload: ExchangeSavingsRequestPayload) => Promise<PendingTask>;
+  getExchangeSavings: (payload: ExchangeSavingsRequestPayload) => Promise<ExchangeSavingsCollectionResponse>;
+}
+
+export function useExchangeApi(): UseExchangeApiReturn {
   const queryRemoveExchange = async ({ location, name }: Exchange): Promise<boolean> => {
     const response = await api.instance.delete<ActionResult<boolean>>('/exchanges', {
       data: {

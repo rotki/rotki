@@ -16,7 +16,21 @@ import type { PendingTask } from '@/types/task';
 import type { CollectionResponse } from '@/types/collection';
 import type { ActionResult } from '@rotki/common';
 
-export function useAccountingApi() {
+interface UseAccountingApiReturn {
+  fetchAccountingRule: (payload: AccountingRuleRequestPayload, counterparty: string | null) => Promise<AccountingRuleEntry | null>;
+  fetchAccountingRules: (payload: AccountingRuleRequestPayload) => Promise<CollectionResponse<AccountingRuleEntry>>;
+  addAccountingRule: (payload: AccountingRule) => Promise<boolean>;
+  editAccountingRule: (payload: AccountingRuleEntry) => Promise<boolean>;
+  deleteAccountingRule: (identifier: number) => Promise<boolean>;
+  getAccountingRuleLinkedMapping: () => Promise<Record<string, string[]>>;
+  fetchAccountingRuleConflicts: (payload: AccountingRuleConflictRequestPayload) => Promise<CollectionResponse<AccountingRuleConflict>>;
+  resolveAccountingRuleConflicts: (payload: AccountingRuleConflictResolution) => Promise<boolean>;
+  exportAccountingRules: (directoryPath?: string) => Promise<PendingTask>;
+  importAccountingRulesData: (filepath: string) => Promise<PendingTask>;
+  uploadAccountingRulesData: (filepath: File) => Promise<PendingTask>;
+}
+
+export function useAccountingApi(): UseAccountingApiReturn {
   const fetchAccountingRule = async (
     payload: AccountingRuleRequestPayload,
     counterparty: string | null,

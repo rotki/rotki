@@ -12,7 +12,12 @@ function isBtcBalances(data?: BtcBalances | AssetBalances): data is BtcBalances 
   return !!data && (!!data.standalone || !!data.xpubs);
 }
 
-export function useBlockchainBalances() {
+interface UseBlockchainbalancesReturn {
+  fetchBlockchainBalances: (payload?: BlockchainBalancePayload, periodic?: boolean) => Promise<void>;
+  fetchLoopringBalances: (refresh: boolean) => Promise<void>;
+}
+
+export function useBlockchainBalances(): UseBlockchainbalancesReturn {
   const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
   const { queryBlockchainBalances } = useBlockchainBalancesApi();
@@ -89,7 +94,7 @@ export function useBlockchainBalances() {
     const { isLoading } = useStatusStore();
     const loading = isLoading(Section.BLOCKCHAIN, blockchain);
 
-    const call = () => handleFetch(blockchain, ignoreCache);
+    const call = (): Promise<void> => handleFetch(blockchain, ignoreCache);
 
     if (get(loading)) {
       if (periodic)
@@ -132,7 +137,7 @@ export function useBlockchainBalances() {
     }
   };
 
-  const fetchLoopringBalances = async (refresh: boolean) => {
+  const fetchLoopringBalances = async (refresh: boolean): Promise<void> => {
     if (!get(activeModules).includes(Module.LOOPRING))
       return;
 

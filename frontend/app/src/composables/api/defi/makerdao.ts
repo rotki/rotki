@@ -2,7 +2,14 @@ import { fetchExternalAsync } from '@/services/utils';
 import { api } from '@/services/rotkehlchen-api';
 import type { PendingTask } from '@/types/task';
 
-export function useMakerDaoApi() {
+interface UseMakerDaoApiReturn {
+  fetchDsrBalances: () => Promise<PendingTask>;
+  fetchDsrHistories: () => Promise<PendingTask>;
+  fetchMakerDAOVaults: () => Promise<PendingTask>;
+  fetchMakerDAOVaultDetails: () => Promise<PendingTask>;
+}
+
+export function useMakerDaoApi(): UseMakerDaoApiReturn {
   const fetchDsrBalances = (): Promise<PendingTask> => {
     const url = 'blockchains/eth/modules/makerdao/dsrbalance';
     return fetchExternalAsync(api.instance, url);

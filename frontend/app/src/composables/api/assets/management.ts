@@ -18,7 +18,21 @@ import {
 import type { Collection } from '@/types/collection';
 import type { MaybeRef } from '@vueuse/core';
 
-export function useAssetManagementApi() {
+interface UseAssetManagementApiReturn {
+  queryAllAssets: (payload: MaybeRef<AssetRequestPayload>) => Promise<Collection<SupportedAsset>>;
+  queryAllCustomAssets: (payload: MaybeRef<CustomAssetRequestPayload>) => Promise<Collection<CustomAsset>>;
+  queryOwnedAssets: () => Promise<string[]>;
+  addAsset: (asset: Omit<SupportedAsset, 'identifier'>) => Promise<AssetIdResponse>;
+  editAsset: (asset: SupportedAsset) => Promise<boolean>;
+  deleteAsset: (identifier: string) => Promise<boolean>;
+  getAssetTypes: () => Promise<string[]>;
+  getCustomAssetTypes: () => Promise<string[]>;
+  addCustomAsset: (asset: Omit<CustomAsset, 'identifier'>) => Promise<string>;
+  editCustomAsset: (asset: CustomAsset) => Promise<boolean>;
+  deleteCustomAsset: (identifier: string) => Promise<boolean>;
+}
+
+export function useAssetManagementApi(): UseAssetManagementApiReturn {
   const queryAllAssets = async (payload: MaybeRef<AssetRequestPayload>): Promise<Collection<SupportedAsset>> => {
     const response = await api.instance.post<ActionResult<SupportedAssets>>(
       '/assets/all',

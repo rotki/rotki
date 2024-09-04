@@ -12,7 +12,19 @@ import type { BlockchainBalances } from '@/types/blockchain/balances';
 import type { BlockchainMetadata } from '@/types/task';
 import type { EvmAccountsResult } from '@/types/api/accounts';
 
-export function useBlockchainAccounts() {
+interface UseBlockchainAccountsReturn {
+  addAccount: (chain: string, payload: AccountPayload[] | XpubAccountPayload) => Promise<string>;
+  addEvmAccount: ({ address, label, tags }: AccountPayload) => Promise<EvmAccountsResult>;
+  editAccount: (payload: AccountPayload | XpubAccountPayload, chain: string) => Promise<BlockchainAccount[]>;
+  editAgnosticAccount: (chainType: string, payload: AccountPayload) => Promise<boolean>;
+  removeAccount: (payload: DeleteBlockchainAccountParams) => Promise<void>;
+  removeAgnosticAccount: (chainType: string, address: string) => Promise<void>;
+  fetch: (blockchain: string) => Promise<void>;
+  deleteXpub: (params: DeleteXpubParams) => Promise<void>;
+  removeTag: (tag: string) => void;
+}
+
+export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
   const {
     addBlockchainAccount,
     removeBlockchainAccount,
@@ -120,7 +132,7 @@ export function useBlockchainAccounts() {
     return result;
   };
 
-  const removeAccount = async (payload: DeleteBlockchainAccountParams) => {
+  const removeAccount = async (payload: DeleteBlockchainAccountParams): Promise<void> => {
     const { accounts, chain } = payload;
     const { taskId } = await removeBlockchainAccount(chain, accounts);
     try {
@@ -152,7 +164,7 @@ export function useBlockchainAccounts() {
     }
   };
 
-  const removeAgnosticAccount = async (chainType: string, address: string) => {
+  const removeAgnosticAccount = async (chainType: string, address: string): Promise<void> => {
     const { taskId } = await removeAgnosticBlockchainAccount(chainType, [address]);
     try {
       const taskType = TaskType.REMOVE_ACCOUNT;
@@ -227,7 +239,7 @@ export function useBlockchainAccounts() {
     }
   };
 
-  const deleteXpub = async (params: DeleteXpubParams) => {
+  const deleteXpub = async (params: DeleteXpubParams): Promise<void> => {
     try {
       const taskType = TaskType.REMOVE_ACCOUNT;
       if (get(isTaskRunning(taskType)))

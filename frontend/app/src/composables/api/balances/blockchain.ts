@@ -11,7 +11,15 @@ import type { ActionResult, Nullable } from '@rotki/common';
 import type { Module } from '@/types/modules';
 import type { PendingTask } from '@/types/task';
 
-export function useBlockchainBalancesApi() {
+interface UseBlockchainBalancesApiReturn {
+  queryBlockchainBalances: (ignoreCache?: boolean, blockchain?: string) => Promise<PendingTask>;
+  queryLoopringBalances: () => Promise<PendingTask>;
+  fetchDetectedTokens: (chain: string, addresses: string[] | null) => Promise<EvmTokensRecord>;
+  fetchDetectedTokensTask: (chain: string, addresses: string[]) => Promise<PendingTask>;
+  deleteModuleData: (module?: Nullable<Module>) => Promise<boolean>;
+}
+
+export function useBlockchainBalancesApi(): UseBlockchainBalancesApiReturn {
   const queryLoopringBalances = async (): Promise<PendingTask> => {
     const response = await api.instance.get<ActionResult<PendingTask>>('blockchains/eth/modules/loopring/balances', {
       params: snakeCaseTransformer({ asyncQuery: true }),

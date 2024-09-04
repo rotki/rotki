@@ -5,7 +5,9 @@ import type { ActionResult } from '@rotki/common';
 import type { PendingTask } from '@/types/task';
 import type { AllBalancePayload } from '@/types/blockchain/accounts';
 
-export function useBalancesApi() {
+interface UseBalancesApiReturn { queryBalancesAsync: (payload: Partial<AllBalancePayload>) => Promise<PendingTask> }
+
+export function useBalancesApi(): UseBalancesApiReturn {
   const queryBalancesAsync = async (payload: Partial<AllBalancePayload>): Promise<PendingTask> => {
     const response = await api.instance.get<ActionResult<PendingTask>>('/balances', {
       params: snakeCaseTransformer({

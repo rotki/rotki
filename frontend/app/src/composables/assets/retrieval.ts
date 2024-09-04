@@ -11,7 +11,23 @@ export interface AssetResolutionOptions {
   collectionParent?: boolean;
 }
 
-export function useAssetInfoRetrieval() {
+interface AssetWithResolutionStatus extends AssetInfo {
+  resolved: boolean;
+};
+
+interface UseAssetInfoRetrievalReturn {
+  fetchTokenDetails: (payload: EvmChainAddress) => Promise<ERC20Token>;
+  getAssociatedAssetIdentifier: (identifier: string) => ComputedRef<string>;
+  getAssetAssociationIdentifiers: (identifier: string) => string[];
+  assetInfo: (identifier: MaybeRef<string | undefined>, options?: MaybeRef<AssetResolutionOptions>) => ComputedRef<AssetWithResolutionStatus | null>;
+  refetchAssetInfo: (key: string) => void;
+  assetSymbol: (identifier: MaybeRef<string | undefined>, enableAssociation?: MaybeRef<boolean>) => ComputedRef<string>;
+  assetName: (identifier: MaybeRef<string | undefined>, enableAssociation?: MaybeRef<boolean>) => ComputedRef<string>;
+  tokenAddress: (identifier: MaybeRef<string>, enableAssociation?: MaybeRef<boolean>) => ComputedRef<string>;
+  assetSearch: (keyword: string, limit?: number, searchNfts?: boolean, signal?: AbortSignal) => Promise<AssetsWithId>;
+}
+
+export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
   const { t } = useI18n();
   const { erc20details, assetSearch: assetSearchCaller } = useAssetInfoApi();
   const { retrieve, queueIdentifier } = useAssetCacheStore();
@@ -43,7 +59,7 @@ export function useAssetInfoRetrieval() {
     return assets;
   };
 
-  const getAssetNameFallback = (id: string) => {
+  const getAssetNameFallback = (id: string): string => {
     if (isEvmIdentifier(id)) {
       const address = getAddressFromEvmIdentifier(id);
       return `EVM Token: ${address}`;

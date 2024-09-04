@@ -4,7 +4,17 @@ import type { ActionStatus } from '@/types/action';
 
 const LIMIT_PER_LOCATION = 10;
 
-export function useSavedFilter(location: MaybeRef<SavedFilterLocation>, isAsset: (key: string) => boolean) {
+interface UseSavedFilterReturn {
+  savedFilters: ComputedRef<Suggestion[][]>;
+  addFilter: (newFilter: Suggestion[]) => Promise<ActionStatus>;
+  deleteFilter: (index: number) => Promise<void>;
+  saveFilters: (filters: BaseSuggestion[][]) => Promise<ActionStatus>;
+}
+
+export function useSavedFilter(
+  location: MaybeRef<SavedFilterLocation>,
+  isAsset: (key: string) => boolean,
+): UseSavedFilterReturn {
   const frontendStore = useFrontendSettingsStore();
   const { updateSetting } = frontendStore;
 
@@ -56,7 +66,7 @@ export function useSavedFilter(location: MaybeRef<SavedFilterLocation>, isAsset:
     return await saveFilters(newFilters);
   };
 
-  const deleteFilter = async (index: number) => {
+  const deleteFilter = async (index: number): Promise<void> => {
     const newFilters = [...get(savedFilters)];
     newFilters.splice(index, 1);
 

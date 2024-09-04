@@ -78,7 +78,7 @@ export const useBalances = createSharedComposable(() => {
     { debounce: 800, maxWait: 2000 },
   );
 
-  const fetchBalances = async (payload: Partial<AllBalancePayload> = {}) => {
+  const fetchBalances = async (payload: Partial<AllBalancePayload> = {}): Promise<void> => {
     const taskType = TaskType.QUERY_BALANCES;
     if (get(isTaskRunning(taskType)))
       return;
@@ -108,7 +108,7 @@ export const useBalances = createSharedComposable(() => {
     await Promise.allSettled([fetchManualBalances(), refreshAccounts(), fetchConnectedExchangeBalances()]);
   };
 
-  const autoRefresh = async () => {
+  const autoRefresh = async (): Promise<void> => {
     await Promise.allSettled([
       fetchManualBalances(),
       refreshAccounts(undefined, true),

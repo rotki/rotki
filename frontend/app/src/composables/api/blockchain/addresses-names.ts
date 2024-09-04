@@ -15,7 +15,19 @@ import type { ActionResult } from '@rotki/common';
 import type { PendingTask } from '@/types/task';
 import type { Collection, CollectionResponse } from '@/types/collection';
 
-export function useAddressesNamesApi() {
+interface UseAddressesNamesApiReturn {
+  getEnsNamesTask: (ethAddresses: string[]) => Promise<PendingTask>;
+  getEnsNames: (ethAddresses: string[]) => Promise<EthNames>;
+  fetchAddressBook: (location: AddressBookLocation, payload: AddressBookRequestPayload) => Promise<Collection<AddressBookEntry>>;
+  addAddressBook: (location: AddressBookLocation, entries: AddressBookEntries) => Promise<boolean>;
+  updateAddressBook: (location: AddressBookLocation, entries: AddressBookEntries) => Promise<boolean>;
+  deleteAddressBook: (location: AddressBookLocation, addresses: AddressBookSimplePayload[]) => Promise<boolean>;
+  getAddressesNames: (addresses: AddressBookSimplePayload[]) => Promise<AddressBookEntries>;
+  ensAvatarUrl: (ens: string, timestamp?: number) => string;
+  clearEnsAvatarCache: (listEns: string[] | null) => Promise<boolean>;
+}
+
+export function useAddressesNamesApi(): UseAddressesNamesApiReturn {
   const internalEnsNames = async <T>(ethereumAddresses: string[], asyncQuery = false): Promise<T> => {
     const response = await api.instance.post<ActionResult<T>>(
       '/names/ens/reverse',

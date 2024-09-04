@@ -12,7 +12,15 @@ import type { EntryWithMeta } from '@/types/history/meta';
 import type { ActionResult } from '@rotki/common';
 import type { PendingTask } from '@/types/task';
 
-export function useTradesApi() {
+interface UseTradesApiReturn {
+  getTradesTask: (payload: TradeRequestPayload) => Promise<PendingTask>;
+  getTrades: (payload: TradeRequestPayload) => Promise<CollectionResponse<EntryWithMeta<Trade>>>;
+  addExternalTrade: (trade: NewTrade) => Promise<Trade>;
+  editExternalTrade: (trade: Trade) => Promise<Trade>;
+  deleteExternalTrade: (tradesIds: string[]) => Promise<boolean>;
+}
+
+export function useTradesApi(): UseTradesApiReturn {
   const internalTrades = async <T>(payload: TradeRequestPayload, asyncQuery: boolean): Promise<T> => {
     const response = await api.instance.get<ActionResult<T>>('/trades', {
       params: snakeCaseTransformer({

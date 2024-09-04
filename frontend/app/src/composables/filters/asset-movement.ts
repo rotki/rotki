@@ -40,61 +40,52 @@ export function useAssetMovementFilters(): FilterSchema<Filters, Matcher> {
   const { assetSearch, assetInfo } = useAssetInfoRetrieval();
   const { t } = useI18n();
 
-  const matchers = computed<Matcher[]>(
-    () =>
-      [
-        {
-          key: AssetMovementFilterKeys.ASSET,
-          keyValue: AssetMovementFilterValueKeys.ASSET,
-          description: t('deposit_withdrawals.filter.asset'),
-          asset: true,
-          suggestions: assetSuggestions(assetSearch),
-          deserializer: assetDeserializer(assetInfo),
-        },
-        {
-          key: AssetMovementFilterKeys.ACTION,
-          keyValue: AssetMovementFilterValueKeys.ACTION,
-          description: t('deposit_withdrawals.filter.action'),
-          string: true,
-          suggestions: () => MovementCategory.options,
-          validate: type => (MovementCategory.options as string[]).includes(type),
-        },
-        {
-          key: AssetMovementFilterKeys.START,
-          keyValue: AssetMovementFilterValueKeys.START,
-          description: t('common.filter.start_date'),
-          string: true,
-          hint: t('common.filter.date_hint', {
-            format: getDateInputISOFormat(get(dateInputFormat)),
-          }),
-          suggestions: () => [],
-          validate: dateValidator(dateInputFormat),
-          serializer: dateSerializer(dateInputFormat),
-          deserializer: dateDeserializer(dateInputFormat),
-        },
-        {
-          key: AssetMovementFilterKeys.END,
-          keyValue: AssetMovementFilterValueKeys.END,
-          description: t('common.filter.end_date'),
-          hint: t('common.filter.date_hint', {
-            format: getDateInputISOFormat(get(dateInputFormat)),
-          }),
-          string: true,
-          suggestions: () => [],
-          validate: dateValidator(dateInputFormat),
-          serializer: dateSerializer(dateInputFormat),
-          deserializer: dateDeserializer(dateInputFormat),
-        },
-        {
-          key: AssetMovementFilterKeys.LOCATION,
-          keyValue: AssetMovementFilterValueKeys.LOCATION,
-          description: t('deposit_withdrawals.filter.location'),
-          string: true,
-          suggestions: () => get(associatedLocations),
-          validate: location => get(associatedLocations).includes(location),
-        },
-      ] satisfies Matcher[],
-  );
+  const matchers = computed<Matcher[]>(() => [{
+    key: AssetMovementFilterKeys.ASSET,
+    keyValue: AssetMovementFilterValueKeys.ASSET,
+    description: t('deposit_withdrawals.filter.asset'),
+    asset: true,
+    suggestions: assetSuggestions(assetSearch),
+    deserializer: assetDeserializer(assetInfo),
+  }, {
+    key: AssetMovementFilterKeys.ACTION,
+    keyValue: AssetMovementFilterValueKeys.ACTION,
+    description: t('deposit_withdrawals.filter.action'),
+    string: true,
+    suggestions: (): MovementCategory[] => MovementCategory.options,
+    validate: (type): boolean => (MovementCategory.options as string[]).includes(type),
+  }, {
+    key: AssetMovementFilterKeys.START,
+    keyValue: AssetMovementFilterValueKeys.START,
+    description: t('common.filter.start_date'),
+    string: true,
+    hint: t('common.filter.date_hint', {
+      format: getDateInputISOFormat(get(dateInputFormat)),
+    }),
+    suggestions: (): string[] => [],
+    validate: dateValidator(dateInputFormat),
+    serializer: dateSerializer(dateInputFormat),
+    deserializer: dateDeserializer(dateInputFormat),
+  }, {
+    key: AssetMovementFilterKeys.END,
+    keyValue: AssetMovementFilterValueKeys.END,
+    description: t('common.filter.end_date'),
+    hint: t('common.filter.date_hint', {
+      format: getDateInputISOFormat(get(dateInputFormat)),
+    }),
+    string: true,
+    suggestions: (): string[] => [],
+    validate: dateValidator(dateInputFormat),
+    serializer: dateSerializer(dateInputFormat),
+    deserializer: dateDeserializer(dateInputFormat),
+  }, {
+    key: AssetMovementFilterKeys.LOCATION,
+    keyValue: AssetMovementFilterValueKeys.LOCATION,
+    description: t('deposit_withdrawals.filter.location'),
+    string: true,
+    suggestions: (): string[] => get(associatedLocations),
+    validate: (location): boolean => get(associatedLocations).includes(location),
+  }] satisfies Matcher[]);
 
   const OptionalString = z.string().optional();
   const RouteFilterSchema = z.object({

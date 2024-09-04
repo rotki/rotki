@@ -9,7 +9,14 @@ import { type ManualBalance, ManualBalances, type RawManualBalance } from '@/typ
 import type { ActionResult } from '@rotki/common';
 import type { PendingTask } from '@/types/task';
 
-export function useManualBalancesApi() {
+interface UseManualBalancesApiReturn {
+  addManualBalances: (balances: RawManualBalance[]) => Promise<PendingTask>;
+  editManualBalances: (balances: ManualBalance[]) => Promise<PendingTask>;
+  deleteManualBalances: (ids: number[]) => Promise<ManualBalances>;
+  queryManualBalances: () => Promise<PendingTask>;
+}
+
+export function useManualBalancesApi(): UseManualBalancesApiReturn {
   const queryManualBalances = async (): Promise<PendingTask> => {
     const response = await api.instance.get<ActionResult<PendingTask>>('balances/manual', {
       params: snakeCaseTransformer({ asyncQuery: true }),

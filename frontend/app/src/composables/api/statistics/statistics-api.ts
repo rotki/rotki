@@ -3,7 +3,15 @@ import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
 
-export function useStatisticsApi() {
+interface UseStatisticsApiReturn {
+  queryNetValueData: (includeNfts: boolean) => Promise<NetValue>;
+  queryTimedBalancesData: (asset: string, fromTimestamp: number, toTimestamp: number, collectionId?: number) => Promise<TimedBalances>;
+  queryLatestLocationValueDistribution: () => Promise<LocationData>;
+  queryLatestAssetValueDistribution: () => Promise<TimedAssetBalances>;
+  queryStatisticsRenderer: () => Promise<string>;
+}
+
+export function useStatisticsApi(): UseStatisticsApiReturn {
   const queryNetValueData = async (includeNfts: boolean): Promise<NetValue> => {
     const response = await api.instance.get<ActionResult<NetValue>>('/statistics/netvalue', {
       params: snakeCaseTransformer({

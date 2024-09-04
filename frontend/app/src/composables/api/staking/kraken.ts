@@ -5,7 +5,12 @@ import { KrakenStakingEvents, type KrakenStakingPagination, emptyPagination } fr
 import type { ActionResult } from '@rotki/common';
 import type { PendingTask } from '@/types/task';
 
-export function useKrakenApi() {
+interface UseKrakenApiReturn {
+  refreshKrakenStaking: () => Promise<PendingTask>;
+  fetchKrakenStakingEvents: (pagination: KrakenStakingPagination) => Promise<KrakenStakingEvents>;
+}
+
+export function useKrakenApi(): UseKrakenApiReturn {
   const internalKrakenStaking = async <T>(pagination: KrakenStakingPagination, asyncQuery = false): Promise<T> => {
     const response = await api.instance.post<ActionResult<T>>(
       '/staking/kraken',

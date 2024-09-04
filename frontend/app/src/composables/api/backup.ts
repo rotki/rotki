@@ -7,7 +7,14 @@ import {
   DeleteDatabaseResponse,
 } from '@/types/backup';
 
-export function useBackupApi() {
+interface UseBackupApiReturn {
+  info: () => Promise<DatabaseInfo>;
+  createBackup: () => Promise<string>;
+  deleteBackup: (files: string[]) => Promise<boolean>;
+  fileUrl: (file: string) => string;
+}
+
+export function useBackupApi(): UseBackupApiReturn {
   const info = async (): Promise<DatabaseInfo> => {
     const response = await api.instance.get<DatabaseInfoResponse>('/database/info', {
       validateStatus: validWithSessionStatus,

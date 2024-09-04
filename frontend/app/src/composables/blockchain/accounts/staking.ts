@@ -8,7 +8,15 @@ import type { Eth2Validator } from '@/types/balances';
 import type { ActionStatus } from '@/types/action';
 import type { TaskMeta } from '@/types/task';
 
-export function useEthStaking() {
+interface UseEthStakingReturn {
+  fetchEthStakingValidators: () => Promise<void>;
+  addEth2Validator: (payload: Eth2Validator) => Promise<ActionStatus<ValidationErrors | string>>;
+  editEth2Validator: (payload: Eth2Validator) => Promise<ActionStatus<ValidationErrors | string>>;
+  deleteEth2Validators: (validators: string[]) => Promise<boolean>;
+  updateEthStakingOwnership: (publicKey: string, newOwnershipPercentage: BigNumber) => void;
+}
+
+export function useEthStaking(): UseEthStakingReturn {
   const {
     getEth2Validators,
     addEth2Validator: addEth2ValidatorCaller,
@@ -26,9 +34,9 @@ export function useEthStaking() {
   const { resetStatus } = useStatusUpdater(Section.STAKING_ETH2);
   const { getNativeAsset } = useSupportedChains();
 
-  const isEth2Enabled = () => get(activeModules).includes(Module.ETH2);
+  const isEth2Enabled = (): boolean => get(activeModules).includes(Module.ETH2);
 
-  const fetchEthStakingValidators = async () => {
+  const fetchEthStakingValidators = async (): Promise<void> => {
     if (!isEth2Enabled())
       return;
 

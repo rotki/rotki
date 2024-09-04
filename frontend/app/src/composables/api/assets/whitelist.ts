@@ -2,7 +2,13 @@ import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validWithoutSessionStatus } from '@/services/utils';
 import type { ActionResult } from '@rotki/common';
 
-export function useAssetWhitelistApi() {
+interface UseAssetWhitelistApiReturn {
+  getWhitelistedAssets: () => Promise<string[]>;
+  addAssetToWhitelist: (token: string) => Promise<boolean>;
+  removeAssetFromWhitelist: (token: string) => Promise<boolean>;
+}
+
+export function useAssetWhitelistApi(): UseAssetWhitelistApiReturn {
   const getWhitelistedAssets = async (): Promise<string[]> => {
     const response = await api.instance.get<ActionResult<string[]>>('/assets/ignored/whitelist', {
       validateStatus: validWithoutSessionStatus,

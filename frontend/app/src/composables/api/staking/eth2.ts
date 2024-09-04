@@ -10,7 +10,14 @@ import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validWithSessionAndExternalService } from '@/services/utils';
 import type { PendingTask } from '@/types/task';
 
-export function useEth2Api() {
+interface UseEth2ApiReturn {
+  fetchStakingPerformance: (payload: EthStakingPayload) => Promise<EthStakingPerformanceResponse>;
+  refreshStakingPerformance: (payload: EthStakingPayload) => Promise<PendingTask>;
+  refreshStakingStats: (payload: Eth2DailyStatsPayload) => Promise<PendingTask>;
+  fetchStakingStats: (payload: Eth2DailyStatsPayload) => Promise<Eth2DailyStats>;
+}
+
+export function useEth2Api(): UseEth2ApiReturn {
   const stakingPerformanceQuery = async <T extends EthStakingPerformanceResponse | PendingTask>(
     payload: EthStakingPayload & { ignoreCache: boolean },
     asyncQuery: boolean = false,
