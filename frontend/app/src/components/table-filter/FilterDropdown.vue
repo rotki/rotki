@@ -131,10 +131,8 @@ watch(
         })),
     );
   },
-  { immediate: true }
+  { immediate: true },
 );
-
-
 
 const { t } = useI18n();
 
@@ -178,6 +176,7 @@ function getDisplayValue(suggestion: Suggestion) {
   return suggestion.value.symbol;
 }
 </script>
+
 <template>
   <div class="px-4 py-1">
     <div v-if="selectedMatcher || suggested.length > 0">
@@ -281,7 +280,8 @@ function getDisplayValue(suggestion: Suggestion) {
         </FilterEntry>
       </div>
     </div>
-    <div :class="highlightedTextClasses" class="font-light mt-2">
+    <div :class="highlightedTextClasses" class="font-light mt-2"
+    >
       <RuiDivider class="my-2" />
       <span>{{ t('table_filter.hint.description') }}</span>
       <span class="font-medium">
