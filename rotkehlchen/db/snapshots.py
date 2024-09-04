@@ -8,6 +8,7 @@ from rotkehlchen.accounting.export.csv import CSVWriteError, dict_to_csv_file
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.constants.misc import NFT_DIRECTIVE
 from rotkehlchen.db.dbhandler import DBHandler
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.db.utils import DBAssetBalance, LocationData
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
@@ -171,14 +172,13 @@ class DBSnapshot:
         """Serializes the balances and location_data snapshots into a dictionary.
         It then writes the serialized data to a csv file.
         """
-        with self.db.conn.read_ctx() as cursor:
-            display_date_in_localtime = self.db.get_settings(cursor).display_date_in_localtime
+        settings = CachedSettings().get_settings()
 
         serialized_timed_balances = []
         for balance in timed_balances:
             serialized_timed_balance = balance.serialize(
                 currency_and_price=(main_currency, main_currency_price),
-                display_date_in_localtime=display_date_in_localtime,
+                display_date_in_localtime=settings.display_date_in_localtime,
             )
             serialized_timed_balances.append(serialized_timed_balance)
 
@@ -186,7 +186,7 @@ class DBSnapshot:
         serialized_timed_location_data = [
             loc_data.serialize(
                 currency_and_price=(main_currency, main_currency_price),
-                display_date_in_localtime=display_date_in_localtime,
+                display_date_in_localtime=settings.display_date_in_localtime,
             )
             for loc_data in timed_location_data
         ]
@@ -195,20 +195,24 @@ class DBSnapshot:
         try:
             directory.mkdir(parents=True, exist_ok=True)
             dict_to_csv_file(
-                directory / BALANCES_FILENAME,
-                serialized_timed_balances,
+                path=directory / BALANCES_FILENAME,
+                dictionary_list=serialized_timed_balances,
+                csv_delimiter=settings.csv_export_delimiter,
             )
             dict_to_csv_file(
-                directory / BALANCES_FOR_IMPORT_FILENAME,
-                serialized_timed_balances_for_import,
+                path=directory / BALANCES_FOR_IMPORT_FILENAME,
+                dictionary_list=serialized_timed_balances_for_import,
+                csv_delimiter=settings.csv_export_delimiter,
             )
             dict_to_csv_file(
-                directory / LOCATION_DATA_FILENAME,
-                serialized_timed_location_data,
+                path=directory / LOCATION_DATA_FILENAME,
+                dictionary_list=serialized_timed_location_data,
+                csv_delimiter=settings.csv_export_delimiter,
             )
             dict_to_csv_file(
-                directory / LOCATION_DATA_IMPORT_FILENAME,
-                serialized_timed_location_data_for_import,
+                path=directory / LOCATION_DATA_IMPORT_FILENAME,
+                dictionary_list=serialized_timed_location_data_for_import,
+                csv_delimiter=settings.csv_export_delimiter,
             )
         except (CSVWriteError, PermissionError) as e:
             return False, str(e)

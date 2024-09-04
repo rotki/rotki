@@ -205,6 +205,8 @@ def test_set_settings(rotkehlchen_api_server):
             value = CostBasisMethod.LIFO.serialize()
         elif setting == 'address_name_priority':
             value = ['hardcoded_mappings', 'ethereum_tokens']
+        elif setting == 'csv_export_delimiter':
+            value = ';'
         else:
             raise AssertionError(f'Unexpected setting {setting} encountered')
 

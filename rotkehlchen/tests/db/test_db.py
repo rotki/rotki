@@ -45,6 +45,7 @@ from rotkehlchen.db.settings import (
     DEFAULT_BTC_DERIVATION_GAP_LIMIT,
     DEFAULT_CALCULATE_PAST_COST_BASIS,
     DEFAULT_CONNECT_TIMEOUT,
+    DEFAULT_CSV_EXPORT_DELIMITER,
     DEFAULT_CURRENT_PRICE_ORACLES,
     DEFAULT_DATE_DISPLAY_FORMAT,
     DEFAULT_DISPLAY_DATE_IN_LOCALTIME,
@@ -529,6 +530,7 @@ def test_writing_fetching_data(data_dir, username, sql_vm_instructions_cb):
         'auto_create_calendar_reminders': DEFAULT_AUTO_CREATE_CALENDAR_REMINDERS,
         'ask_user_upon_size_discrepancy': DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY,
         'auto_detect_tokens': DEFAULT_AUTO_DETECT_TOKENS,
+        'csv_export_delimiter': DEFAULT_CSV_EXPORT_DELIMITER,
     }
     assert len(expected_dict) == len(dataclasses.fields(DBSettings)), 'One or more settings are missing'  # noqa: E501
 
