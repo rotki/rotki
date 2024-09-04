@@ -5,7 +5,17 @@ import { AccountSession, type CreateAccountPayload, type LoginCredentials } from
 import type { ActionResult } from '@rotki/common';
 import type { PendingTask } from '@/types/task';
 
-export function useUsersApi() {
+interface UseUserApiReturn {
+  createAccount: (payload: CreateAccountPayload) => Promise<PendingTask>;
+  login: (credentials: LoginCredentials) => Promise<PendingTask>;
+  checkIfLogged: (username: string) => Promise<boolean>;
+  loggedUsers: () => Promise<string[]>;
+  getUserProfiles: () => Promise<string[]>;
+  logout: (username: string) => Promise<boolean>;
+  changeUserPassword: (username: string, currentPassword: string, newPassword: string) => Promise<true>;
+}
+
+export function useUsersApi(): UseUserApiReturn {
   const getUsers = async (): Promise<AccountSession> => {
     const response = await api.instance.get<ActionResult<AccountSession>>(`/users`, {
       transformResponse: setupTransformer(true),

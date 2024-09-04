@@ -12,7 +12,20 @@ import type { LiquityLoan } from '@/types/defi/liquity';
 
 type NullableLoan = MakerDAOVaultModel | AaveLoan | CompoundLoan | LiquityLoan | null;
 
-export function useDefiLending() {
+interface UseDefiLendingReturn {
+  effectiveInterestRate: (protocols: DefiProtocol[], addresses: string[]) => ComputedRef<string>;
+  totalLendingDeposit: (protocols: DefiProtocol[], addresses: string[]) => ComputedRef<BigNumber>;
+  totalUsdEarned: (protocols: DefiProtocol[], addresses: string[]) => ComputedRef<BigNumber>;
+  aggregatedLendingBalances: (protocols: DefiProtocol[], addresses: string[]) => ComputedRef<BaseDefiBalance[]>;
+  loan: (identifier?: string) => ComputedRef<NullableLoan>;
+  loans: (protocols?: DefiProtocol[]) => ComputedRef<DefiLoan[]>;
+  loanSummary: (protocols?: DefiProtocol[]) => ComputedRef<LoanSummary>;
+  lendingBalances: (protocols: DefiProtocol[], addresses: string[]) => ComputedRef<DefiBalance[]>;
+  fetchLending: (refresh?: boolean) => Promise<void>;
+  fetchBorrowing: (refresh?: boolean) => Promise<void>;
+}
+
+export function useDefiLending(): UseDefiLendingReturn {
   const { assetInfo } = useAssetInfoRetrieval();
   const premium = usePremium();
 
@@ -579,13 +592,11 @@ export function useDefiLending() {
     const lendBalances = get(lendingBalances(protocols, addresses));
     let lendingDeposit = sum(lendBalances);
 
-    const getYearnDeposit = (version: ProtocolVersion) =>
-      computed<BigNumber>(() =>
-        get(yearnVaultsAssets(addresses, version)).reduce(
-          (sum, { underlyingValue: { usdValue } }) => sum.plus(usdValue),
-          Zero,
-        ),
-      );
+    const getYearnDeposit = (version: ProtocolVersion): ComputedRef<BigNumber> => computed<BigNumber>(() =>
+      get(yearnVaultsAssets(addresses, version)).reduce(
+        (sum, { underlyingValue: { usdValue } }) => sum.plus(usdValue),
+        Zero,
+      ));
 
     if (protocols.length === 0 || protocols.includes(DefiProtocol.YEARN_VAULTS))
       lendingDeposit = lendingDeposit.plus(get(getYearnDeposit(ProtocolVersion.V1)));

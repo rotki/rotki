@@ -3,7 +3,13 @@ import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { MaybeRef } from '@vueuse/core';
 import type { AssetBreakdown } from '@/types/blockchain/accounts';
 
-export function useBalancesBreakdown() {
+interface UseBalancesBreakdownReturn {
+  assetBreakdown: (asset: string) => ComputedRef<AssetBreakdown[]>;
+  locationBreakdown: (identifier: MaybeRef<string>) => ComputedRef<AssetBalanceWithPrice[]>;
+  balancesByLocation: ComputedRef<Record<string, BigNumber>>;
+}
+
+export function useBalancesBreakdown(): UseBalancesBreakdownReturn {
   const manualStore = useManualBalancesStore();
   const { manualBalanceByLocation } = storeToRefs(manualStore);
   const { getBreakdown: getManualBreakdown, getLocationBreakdown: getManualLocationBreakdown } = manualStore;
@@ -18,17 +24,16 @@ export function useBalancesBreakdown() {
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { toSortedAssetBalanceWithPrice } = useBalanceSorting();
 
-  const assetBreakdown = (asset: string) =>
-    computed<AssetBreakdown[]>(() =>
-      groupAssetBreakdown(
-        get(getBreakdown(asset))
-          .concat(get(getManualBreakdown(asset)))
-          .concat(get(getExchangeBreakdown(asset)))
-          .filter(item => !!item.amount && !item.amount.isZero()),
-      ),
-    );
+  const assetBreakdown = (asset: string): ComputedRef<AssetBreakdown[]> => computed<AssetBreakdown[]>(() =>
+    groupAssetBreakdown(
+      get(getBreakdown(asset))
+        .concat(get(getManualBreakdown(asset)))
+        .concat(get(getExchangeBreakdown(asset)))
+        .filter(item => !!item.amount && !item.amount.isZero()),
+    ),
+  );
 
-  const locationBreakdown = (identifier: MaybeRef<string>) =>
+  const locationBreakdown = (identifier: MaybeRef<string>): ComputedRef<AssetBalanceWithPrice[]> =>
     computed<AssetBalanceWithPrice[]>(() => {
       const id = get(identifier);
       let balances = mergeAssetBalances(get(getManualLocationBreakdown(id)), get(getExchangesLocationBreakdown(id)));

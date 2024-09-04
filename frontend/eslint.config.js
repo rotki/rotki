@@ -49,6 +49,6 @@ export default rotki({
 }, {
   files: ['**/src/**/*.ts'],
   rules: {
-    '@typescript-eslint/explicit-function-return-type': 'warn',
+    '@typescript-eslint/explicit-function-return-type': 'error',
   },
 });

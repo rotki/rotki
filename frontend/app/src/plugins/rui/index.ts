@@ -199,8 +199,13 @@ import {
   createRui,
 } from '@rotki/ui-library';
 import '@rotki/ui-library/style.css';
+import type { App } from 'vue';
 
-export function createRuiPlugin(defaults: Partial<RuiOptions['defaults']>) {
+interface RuiPlugin {
+  install: (app: App) => void;
+}
+
+export function createRuiPlugin(defaults: Partial<RuiOptions['defaults']>): RuiPlugin {
   return createRui({
     theme: {
       mode: ThemeMode.light,

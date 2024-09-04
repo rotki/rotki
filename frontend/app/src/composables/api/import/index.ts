@@ -4,7 +4,12 @@ import { api } from '@/services/rotkehlchen-api';
 import type { ActionResult } from '@rotki/common';
 import type { PendingTask } from '@/types/task';
 
-export function useImportDataApi() {
+interface UseImportDataApiReturn {
+  importDataFrom: (source: string, file: string, timestampFormat: string | null) => Promise<PendingTask>;
+  importFile: (data: FormData) => Promise<PendingTask>;
+}
+
+export function useImportDataApi(): UseImportDataApiReturn {
   const importDataFrom = async (source: string, file: string, timestampFormat: string | null): Promise<PendingTask> => {
     const response = await api.instance.put<ActionResult<PendingTask>>(
       '/import',

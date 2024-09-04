@@ -3,7 +3,12 @@ import { TaskType } from '@/types/task-type';
 import type { ActionResult } from '@rotki/common';
 import type { TaskMeta } from '@/types/task';
 
-export function useNfts() {
+interface UseNftsReturn {
+  fetchNfts: (ignoreCache: boolean) => Promise<ActionResult<NftResponse | null>>;
+  shouldRenderImage: (url: string) => boolean;
+}
+
+export function useNfts(): UseNftsReturn {
   const { awaitTask } = useTaskStore();
   const { t } = useI18n();
 
@@ -32,7 +37,7 @@ export function useNfts() {
     }
   };
 
-  const shouldRenderImage = (url: string) => {
+  const shouldRenderImage = (url: string): boolean => {
     if (get(renderAll))
       return true;
 

@@ -6,7 +6,13 @@ import type { ActionResult } from '@rotki/common';
 import type { PendingTask } from '@/types/task';
 import type { EvmChainAddress } from '@/types/history/events';
 
-export function useAssetInfoApi() {
+interface UseAssetInfoApiReturn {
+  assetMapping: (identifiers: string[]) => Promise<AssetMap>;
+  assetSearch: (keyword: string, limit?: number, searchNfts?: boolean, signal?: AbortSignal) => Promise<AssetsWithId>;
+  erc20details: (payload: EvmChainAddress) => Promise<PendingTask>;
+}
+
+export function useAssetInfoApi(): UseAssetInfoApiReturn {
   const assetMapping = async (identifiers: string[]): Promise<AssetMap> => {
     const response = await api.instance.post<ActionResult<AssetMap>>(
       '/assets/mappings',

@@ -3,7 +3,13 @@ import { handleResponse, validStatus, validWithSessionStatus } from '@/services/
 import type { ActionResult } from '@rotki/common';
 import type { QueriedAddressPayload, QueriedAddresses } from '@/types/session';
 
-export function useQueriedAddressApi() {
+interface UseQueriedAddressApiReturn {
+  queriedAddresses: () => Promise<QueriedAddresses>;
+  addQueriedAddress: (payload: QueriedAddressPayload) => Promise<QueriedAddresses>;
+  deleteQueriedAddress: (payload: QueriedAddressPayload) => Promise<QueriedAddresses>;
+}
+
+export function useQueriedAddressApi(): UseQueriedAddressApiReturn {
   const queriedAddresses = async (): Promise<QueriedAddresses> => {
     const response = await api.instance.get<ActionResult<QueriedAddresses>>('/queried_addresses', {
       validateStatus: validWithSessionStatus,

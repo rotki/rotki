@@ -4,7 +4,14 @@ import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
 import { type EvmRpcNode, EvmRpcNodeList } from '@/types/settings/rpc';
 
-export function useEvmNodesApi(chain: Ref<Blockchain> = ref(Blockchain.ETH)) {
+interface UseEvmNodesApiReturn {
+  fetchEvmNodes: () => Promise<EvmRpcNodeList>;
+  addEvmNode: (node: Omit<EvmRpcNode, 'identifier'>) => Promise<boolean>;
+  editEvmNode: (node: EvmRpcNode) => Promise<boolean>;
+  deleteEvmNode: (identifier: number) => Promise<boolean>;
+}
+
+export function useEvmNodesApi(chain: Ref<Blockchain> = ref(Blockchain.ETH)): UseEvmNodesApiReturn {
   const url = computed<string>(() => `/blockchains/${get(chain)}/nodes`);
 
   const fetchEvmNodes = async (): Promise<EvmRpcNodeList> => {

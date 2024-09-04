@@ -9,7 +9,17 @@ import {
 import { Snapshot, type SnapshotPayload } from '@/types/snapshots';
 import type { ActionResult } from '@rotki/common';
 
-export function useSnapshotApi() {
+interface UseSnapshotApiReturn {
+  getSnapshotData: (timestamp: number) => Promise<Snapshot>;
+  updateSnapshotData: (timestamp: number, payload: SnapshotPayload) => Promise<boolean>;
+  exportSnapshotCSV: ({ path, timestamp }: { path: string; timestamp: number }) => Promise<boolean>;
+  downloadSnapshot: (timestamp: number) => Promise<any>;
+  deleteSnapshot: (payload: { timestamp: number }) => Promise<boolean>;
+  importBalancesSnapshot: (balancesSnapshotFile: string, locationDataSnapshotFile: string) => Promise<boolean>;
+  uploadBalancesSnapshot: (balancesSnapshotFile: File, locationDataSnapshotFile: File) => Promise<boolean>;
+}
+
+export function useSnapshotApi(): UseSnapshotApiReturn {
   const getSnapshotData = async (timestamp: number): Promise<Snapshot> => {
     const response = await api.instance.get<ActionResult<Snapshot>>(`/snapshots/${timestamp}`, {
       validateStatus: validWithoutSessionStatus,

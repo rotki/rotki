@@ -2,7 +2,12 @@ import { groupBy } from 'lodash-es';
 import type { AssetBalance, AssetBalanceWithPrice, Balance, BigNumber } from '@rotki/common';
 import type { AssetBalances } from '@/types/balances';
 
-export function useBalanceSorting() {
+interface UseBalanceSortingReturn {
+  toSortedAssetBalanceArray: (ownedAssets: AssetBalances, isIgnored: (asset: string) => boolean, groupMultiChain?: boolean) => AssetBalance[];
+  toSortedAssetBalanceWithPrice: (ownedAssets: AssetBalances, isIgnored: (asset: string) => boolean, getPrice: (asset: string) => ComputedRef<BigNumber | null | undefined>, groupMultiChain?: boolean) => AssetBalanceWithPrice[];
+}
+
+export function useBalanceSorting(): UseBalanceSortingReturn {
   const { assetInfo } = useAssetInfoRetrieval();
   const { fetchedAssetCollections } = storeToRefs(useAssetCacheStore());
 

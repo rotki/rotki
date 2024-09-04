@@ -24,7 +24,7 @@ export const useRefresh = createSharedComposable(() => {
     await Promise.allSettled(pending);
   };
 
-  const handleBlockchainRefresh = async (blockchain?: MaybeRef<string>, forceRedetect = false) => {
+  const handleBlockchainRefresh = async (blockchain?: MaybeRef<string>, forceRedetect = false): Promise<void> => {
     const chain = get(blockchain);
     const behaviour = get(blockchainRefreshButtonBehaviour);
 
@@ -45,7 +45,7 @@ export const useRefresh = createSharedComposable(() => {
     }
   };
 
-  const refreshBalance = async (balanceSource: string) => {
+  const refreshBalance = async (balanceSource: string): Promise<void> => {
     if (balanceSource === 'blockchain')
       await handleBlockchainRefresh();
     else if (balanceSource === 'exchange')

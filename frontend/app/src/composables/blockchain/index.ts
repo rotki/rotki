@@ -8,7 +8,15 @@ import type { AccountPayload, AddAccountsPayload, XpubAccountPayload } from '@/t
 import type { TaskMeta } from '@/types/task';
 import type { AddressBookSimplePayload } from '@/types/eth-names';
 
-export function useBlockchains() {
+interface UseBlockchainsReturn {
+  addAccounts: (chain: string, data: AddAccountsPayload | XpubAccountPayload) => Promise<void>;
+  addEvmAccounts: (payload: AddAccountsPayload) => Promise<void>;
+  detectEvmAccounts: () => Promise<void>;
+  fetchAccounts: (blockchain?: string, refreshEns?: boolean) => Promise<void>;
+  refreshAccounts: (blockchain?: MaybeRef<string>, periodic?: boolean) => Promise<void>;
+}
+
+export function useBlockchains(): UseBlockchainsReturn {
   const { addAccount, fetch, addEvmAccount } = useBlockchainAccounts();
   const { fetchBlockchainBalances, fetchLoopringBalances } = useBlockchainBalances();
   const { fetchDetected } = useBlockchainTokensStore();
@@ -33,16 +41,13 @@ export function useBlockchains() {
     });
   };
 
-  const getChainsText = (chains: string[], explanation?: string) =>
-    chains
-      .map((chain) => {
-        let text = `- ${get(getChainName(chain))}`;
-        if (explanation)
-          text += ` (${explanation})`;
+  const getChainsText = (chains: string[], explanation?: string): string => chains.map((chain) => {
+    let text = `- ${get(getChainName(chain))}`;
+    if (explanation)
+      text += ` (${explanation})`;
 
-        return text;
-      })
-      .join('\n');
+    return text;
+  }).join('\n');
 
   const { fetchEnsNames } = useAddressesNamesStore();
 
@@ -64,7 +69,7 @@ export function useBlockchains() {
       startPromise(fetchEnsNames(namesPayload, refreshEns));
   };
 
-  const refreshAccounts = async (blockchain?: MaybeRef<string>, periodic = false) => {
+  const refreshAccounts = async (blockchain?: MaybeRef<string>, periodic = false): Promise<void> => {
     const chain = get(blockchain);
     await fetchAccounts(chain, true);
 
@@ -209,7 +214,7 @@ export function useBlockchains() {
       });
     }
 
-    const finishAddition = async ({ chain, address }: Account) => {
+    const finishAddition = async ({ chain, address }: Account): Promise<void> => {
       const modules = payload.modules;
       if (chain === Blockchain.ETH && modules) {
         await enableModule({
@@ -222,7 +227,7 @@ export function useBlockchains() {
         await fetchDetected(chain, [address]);
     };
 
-    const finish = async () => {
+    const finish = async (): Promise<void> => {
       resetDefi();
       resetDefiStatus();
       resetNftSectionStatus();
@@ -304,7 +309,7 @@ export function useBlockchains() {
     if (registeredAddresses.length <= 0)
       return;
 
-    const refresh = async () => {
+    const refresh = async (): Promise<void> => {
       if (chain === Blockchain.ETH) {
         if ('modules' in data && data.modules)
           await enableModule({ enable: data.modules, addresses: registeredAddresses });
@@ -339,15 +344,13 @@ export function useBlockchains() {
     }
   };
 
-  const detectEvmAccounts = async () => {
+  const detectEvmAccounts = async (): Promise<void> => {
     try {
       const taskType = TaskType.DETECT_EVM_ACCOUNTS;
       const { taskId } = await detectEvmAccountsCaller();
-      const { result } = await awaitTask<any, TaskMeta>(taskId, taskType, {
+      await awaitTask<unknown, TaskMeta>(taskId, taskType, {
         title: t('actions.detect_evm_accounts.task.title'),
       });
-
-      return result;
     }
     catch (error: any) {
       if (!isTaskCancelled(error)) {

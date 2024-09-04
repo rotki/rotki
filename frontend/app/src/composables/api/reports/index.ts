@@ -14,7 +14,21 @@ import type { ActionResult } from '@rotki/common';
 import type { ActionStatus } from '@/types/action';
 import type { PendingTask } from '@/types/task';
 
-export function useReportsApi() {
+interface UseReportsApi {
+  generateReport: ({ end, start }: ProfitLossReportPeriod) => Promise<PendingTask>;
+  exportReportCSV: (directoryPath: string) => Promise<boolean>;
+  downloadReportCSV: () => Promise<ActionStatus>;
+  importReportData: (filepath: string) => Promise<PendingTask>;
+  exportReportData: (payload: ProfitLossReportDebugPayload) => Promise<PendingTask>;
+  uploadReportData: (filepath: File) => Promise<PendingTask>;
+  fetchActionableItems: () => Promise<ReportActionableItem>;
+  fetchReports: () => Promise<Reports>;
+  fetchReport: (reportId: number) => Promise<ProfitLossOverview>;
+  fetchReportEvents: (reportId: number, page: { limit: number; offset: number }) => Promise<ProfitLossReportEvents>;
+  deleteReport: (reportId: number) => Promise<boolean>;
+}
+
+export function useReportsApi(): UseReportsApi {
   const generateReport = async ({ end, start }: ProfitLossReportPeriod): Promise<PendingTask> => {
     const response = await api.instance.get<ActionResult<PendingTask>>('/history', {
       params: snakeCaseTransformer({

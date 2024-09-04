@@ -5,7 +5,14 @@ import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import type { ActionStatus } from '@/types/action';
 import type { ActionResult } from '@rotki/common';
 
-export function useSkippedHistoryEventsApi() {
+interface UseSkippedHistoryEventsApiReturn {
+  getSkippedEventsSummary: () => Promise<SkippedHistoryEventsSummary>;
+  reProcessSkippedEvents: () => Promise<ProcessSkippedHistoryEventsResponse>;
+  exportSkippedEventsCSV: (directoryPath: string) => Promise<boolean>;
+  downloadSkippedEventsCSV: () => Promise<ActionStatus>;
+}
+
+export function useSkippedHistoryEventsApi(): UseSkippedHistoryEventsApiReturn {
   const getSkippedEventsSummary = async (): Promise<SkippedHistoryEventsSummary> => {
     const response = await api.instance.get<ActionResult<SkippedHistoryEventsSummary>>(
       '/history/skipped_external_events',

@@ -2,7 +2,12 @@ import { fetchExternalAsync } from '@/services/utils';
 import { api } from '@/services/rotkehlchen-api';
 import type { PendingTask } from '@/types/task';
 
-export function useAaveApi() {
+interface UseAaveApiReturn {
+  fetchAaveBalances: () => Promise<PendingTask>;
+  fetchAaveHistory: () => Promise<PendingTask>;
+}
+
+export function useAaveApi(): UseAaveApiReturn {
   const fetchAaveBalances = (): Promise<PendingTask> => {
     const url = '/blockchains/eth/modules/aave/balances';
     return fetchExternalAsync(api.instance, url);

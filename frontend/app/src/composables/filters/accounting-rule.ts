@@ -25,35 +25,31 @@ export function useAccountingRuleFilter(): FilterSchema<Filters, Matcher> {
   const { counterparties } = useHistoryEventCounterpartyMappings();
   const { t } = useI18n();
 
-  const matchers = computed<Matcher[]>(() => [
-    {
-      key: AccountingRuleFilterKeys.EVENT_TYPE,
-      keyValue: AccountingRuleFilterValueKeys.EVENT_TYPE,
-      description: t('accounting_settings.rule.filter.event_type'),
-      multiple: true,
-      string: true,
-      suggestions: () => get(historyEventTypes),
-      validate: (type: string) => !!type,
-    },
-    {
-      key: AccountingRuleFilterKeys.EVENT_SUBTYPE,
-      keyValue: AccountingRuleFilterValueKeys.EVENT_SUBTYPE,
-      description: t('accounting_settings.rule.filter.event_subtype'),
-      multiple: true,
-      string: true,
-      suggestions: () => get(historyEventSubTypes),
-      validate: (type: string) => !!type,
-    },
-    {
-      key: AccountingRuleFilterKeys.COUNTERPARTY,
-      keyValue: AccountingRuleFilterValueKeys.COUNTERPARTY,
-      description: t('accounting_settings.rule.filter.counterparty'),
-      multiple: true,
-      string: true,
-      suggestions: () => get(counterparties),
-      validate: (protocol: string) => !!protocol,
-    },
-  ]);
+  const matchers = computed<Matcher[]>(() => [{
+    key: AccountingRuleFilterKeys.EVENT_TYPE,
+    keyValue: AccountingRuleFilterValueKeys.EVENT_TYPE,
+    description: t('accounting_settings.rule.filter.event_type'),
+    multiple: true,
+    string: true,
+    suggestions: (): string[] => get(historyEventTypes),
+    validate: (type: string): boolean => !!type,
+  }, {
+    key: AccountingRuleFilterKeys.EVENT_SUBTYPE,
+    keyValue: AccountingRuleFilterValueKeys.EVENT_SUBTYPE,
+    description: t('accounting_settings.rule.filter.event_subtype'),
+    multiple: true,
+    string: true,
+    suggestions: (): string[] => get(historyEventSubTypes),
+    validate: (type: string): boolean => !!type,
+  }, {
+    key: AccountingRuleFilterKeys.COUNTERPARTY,
+    keyValue: AccountingRuleFilterValueKeys.COUNTERPARTY,
+    description: t('accounting_settings.rule.filter.counterparty'),
+    multiple: true,
+    string: true,
+    suggestions: (): string[] => get(counterparties),
+    validate: (protocol: string): boolean => !!protocol,
+  }]);
 
   const OptionalMultipleString = z
     .array(z.string())

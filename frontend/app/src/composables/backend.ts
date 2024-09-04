@@ -22,12 +22,26 @@ export const loadUserOptions: () => Partial<BackendOptions> = () => {
   }
 };
 
-export function saveUserOptions(config: Partial<BackendOptions>) {
+export function saveUserOptions(config: Partial<BackendOptions>): void {
   const options = JSON.stringify(config);
   localStorage.setItem(BACKEND_OPTIONS, options);
 }
 
-export function useBackendManagement(loaded: () => void = () => {}) {
+interface UseBackendManagementReturn {
+  logLevel: Ref<LogLevel>;
+  defaultLogLevel: ComputedRef<LogLevel>;
+  defaultLogDirectory: Ref<string>;
+  options: ComputedRef<Partial<BackendOptions>>;
+  fileConfig: Ref<Partial<BackendOptions>>;
+  saveOptions: (opts: Partial<BackendOptions>) => Promise<void>;
+  resetOptions: () => Promise<void>;
+  restartBackend: () => Promise<void>;
+  resetSessionBackend: () => Promise<void>;
+  setupBackend: () => Promise<void>;
+  backendChanged: (url: string | null) => Promise<void>;
+}
+
+export function useBackendManagement(loaded: () => void = () => {}): UseBackendManagementReturn {
   const interop = useInterop();
   const store = useMainStore();
   const { connected } = storeToRefs(store);
@@ -43,13 +57,13 @@ export function useBackendManagement(loaded: () => void = () => {}) {
     ...get(fileConfig),
   }));
 
-  const restartBackendWithOptions = async (options: Partial<BackendOptions>) => {
+  const restartBackendWithOptions = async (options: Partial<BackendOptions>): Promise<void> => {
     setConnected(false);
     await interop.restartBackend(options);
     connect();
   };
 
-  const load = async () => {
+  const load = async (): Promise<void> => {
     if (!interop.isPackaged)
       return;
 
@@ -60,13 +74,13 @@ export function useBackendManagement(loaded: () => void = () => {}) {
       set(defaultLogDirectory, logDirectory);
   };
 
-  const applyUserOptions = async (config: Partial<BackendOptions>) => {
+  const applyUserOptions = async (config: Partial<BackendOptions>): Promise<void> => {
     saveUserOptions(config);
     set(userOptions, config);
     await restartBackendWithOptions(get(options));
   };
 
-  const saveOptions = async (opts: Partial<BackendOptions>) => {
+  const saveOptions = async (opts: Partial<BackendOptions>): Promise<void> => {
     const { logDirectory, dataDirectory, loglevel } = get(userOptions);
     const updatedOptions = {
       logDirectory,
@@ -77,11 +91,11 @@ export function useBackendManagement(loaded: () => void = () => {}) {
     await applyUserOptions(updatedOptions);
   };
 
-  const resetOptions = async () => {
+  const resetOptions = async (): Promise<void> => {
     await applyUserOptions({});
   };
 
-  const restartBackend = async () => {
+  const restartBackend = async (): Promise<void> => {
     if (!interop.isPackaged)
       return;
 
@@ -89,7 +103,7 @@ export function useBackendManagement(loaded: () => void = () => {}) {
     await restartBackendWithOptions(get(options));
   };
 
-  const resetSessionBackend = async () => {
+  const resetSessionBackend = async (): Promise<void> => {
     const { sessionOnly } = getBackendUrl();
     if (sessionOnly) {
       deleteBackendUrl();
@@ -97,7 +111,7 @@ export function useBackendManagement(loaded: () => void = () => {}) {
     }
   };
 
-  const backendChanged = async (url: string | null) => {
+  const backendChanged = async (url: string | null): Promise<void> => {
     setConnected(false);
     if (!url)
       await restartBackend();
@@ -105,7 +119,7 @@ export function useBackendManagement(loaded: () => void = () => {}) {
     connect(url);
   };
 
-  const setupBackend = async () => {
+  const setupBackend = async (): Promise<void> => {
     if (get(connected))
       return;
 

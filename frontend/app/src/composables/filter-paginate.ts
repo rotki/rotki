@@ -19,6 +19,52 @@ export interface FilterSchema<F, M> {
 
 export type TableRowKey<T> = keyof T extends string ? keyof T : never;
 
+interface UsePaginationFiltersOptions<
+  T extends NonNullable<unknown>,
+  U = PaginationRequestPayload<T>,
+  V extends NonNullable<unknown> = T,
+  S extends Collection<V> = Collection<V>,
+> {
+  onUpdateFilters?: (query: LocationQuery) => void;
+  extraParams?: ComputedRef<RawLocationQuery>;
+  customPageParams?: ComputedRef<Partial<U>>;
+  defaultParams?: ComputedRef<Partial<U> | undefined>;
+  defaultCollection?: () => S;
+  defaultSortBy?: {
+    // If it's an array, then multiple sorts are applied; otherwise, it is a single sort.
+    key?: keyof V | (keyof V)[];
+    ascending?: boolean[];
+  };
+}
+
+interface UsePaginationFilterReturn<
+  T extends NonNullable<unknown>,
+  U = PaginationRequestPayload<T>,
+  V extends NonNullable<unknown> = T,
+  S extends Collection<V> = Collection<V>,
+  W extends MatchedKeywordWithBehaviour<string> | void = undefined,
+  X extends SearchMatcher<string, string> | void = undefined,
+> {
+  pageParams: ComputedRef<U>;
+  selected: Ref<V[]>;
+  openDialog: Ref<boolean>;
+  editableItem: Ref<V | undefined>;
+  itemsToDelete: Ref<V[]>;
+  confirmationMessage: Ref<string>;
+  expanded: Ref<V[]>;
+  isLoading: Ref<boolean>;
+  userAction: Ref<boolean>;
+  state: Ref<S>;
+  filters: WritableComputedRef<W>;
+  matchers: ComputedRef<X[]>;
+  sort: WritableComputedRef<DataTableSortData<V>>;
+  pagination: WritableComputedRef<TablePaginationData>;
+  setPage: (page: number, action?: boolean) => void;
+  applyRouteFilter: () => void;
+  fetchData: () => Promise<void>;
+  updateFilter: (newFilter: W) => void;
+}
+
 /**
  * Creates a universal pagination and filter structure
  * given the required fields, can manage pagination and filtering and data
@@ -42,30 +88,19 @@ export function usePaginationFilters<
   mainPage: MaybeRef<boolean>,
   filterSchema: () => FilterSchema<W, X>,
   fetchAssetData: (payload: MaybeRef<U>) => Promise<S>,
-  options: {
-    onUpdateFilters?: (query: LocationQuery) => void;
-    extraParams?: ComputedRef<RawLocationQuery>;
-    customPageParams?: ComputedRef<Partial<U>>;
-    defaultParams?: ComputedRef<Partial<U> | undefined>;
-    defaultCollection?: () => S;
-    defaultSortBy?: {
-      // If it's an array, then multiple sorts are applied; otherwise, it is a single sort.
-      key?: keyof V | (keyof V)[];
-      ascending?: boolean[];
-    };
-  } = {},
-) {
+  options: UsePaginationFiltersOptions<T, U, V, S> = {},
+): UsePaginationFilterReturn<T, U, V, S, W, X> {
   const { t } = useI18n();
   const { notify } = useNotificationsStore();
   const router = useRouter();
   const route = useRoute();
   const paginationOptions = ref(markRaw(defaultOptions<V>(options.defaultSortBy)));
-  const selected = ref<V[]>([]);
+  const selected = ref<V[]>([]) as Ref<V[]>;
   const openDialog = ref<boolean>(false);
-  const editableItem = ref<V | undefined>();
-  const itemsToDelete = ref<V[]>([]);
+  const editableItem = ref<V>();
+  const itemsToDelete = ref<V[]>([]) as Ref<V[]>;
   const confirmationMessage = ref<string>('');
-  const expanded = ref<V[]>([]);
+  const expanded = ref<V[]>([]) as Ref<V[]>;
   const userAction = ref<boolean>(false);
 
   const {
@@ -272,7 +307,7 @@ export function usePaginationFilters<
    * @template T
    * @param {TablePagination<T>} newOptions
    */
-  const setOptions = (newOptions: TablePagination<V>) => {
+  const setOptions = (newOptions: TablePagination<V>): void => {
     set(userAction, true);
     set(paginationOptions, newOptions);
   };
@@ -281,7 +316,7 @@ export function usePaginationFilters<
    * Triggered on route change and on component mount
    * sets the pagination and filters values from route query
    */
-  const applyRouteFilter = () => {
+  const applyRouteFilter = (): void => {
     if (!get(mainPage))
       return;
 
@@ -348,7 +383,7 @@ export function usePaginationFilters<
    * @param {number} page
    * @param {boolean} action
    */
-  const setPage = (page: number, action = true) => {
+  const setPage = (page: number, action = true): void => {
     if (action)
       set(userAction, true);
 
@@ -360,7 +395,7 @@ export function usePaginationFilters<
    * @template W
    * @param {W} newFilter
    */
-  const updateFilter = (newFilter: W) => {
+  const updateFilter = (newFilter: W): void => {
     set(filters, newFilter);
   };
 

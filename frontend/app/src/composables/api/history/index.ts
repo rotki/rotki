@@ -4,7 +4,13 @@ import { ReportProgress } from '@/types/reports';
 import type { ActionResult } from '@rotki/common';
 import type { AllLocationResponse } from '@/types/location';
 
-export function useHistoryApi() {
+interface UseHistoryApiReturn {
+  getProgress: () => Promise<ReportProgress>;
+  fetchAssociatedLocations: () => Promise<string[]>;
+  fetchAllLocations: () => Promise<AllLocationResponse>;
+}
+
+export function useHistoryApi(): UseHistoryApiReturn {
   const getProgress = async (): Promise<ReportProgress> => {
     const response = await api.instance.get<ActionResult<ReportProgress>>(`/history/status`, {
       validateStatus: validWithSessionStatus,

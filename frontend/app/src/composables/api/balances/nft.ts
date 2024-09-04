@@ -14,7 +14,13 @@ import {
 import type { ActionResult } from '@rotki/common';
 import type { PendingTask } from '@/types/task';
 
-export function useNftBalancesApi() {
+interface UseNftBalancesApiReturn {
+  fetchNfBalancesTask: (payload: NonFungibleBalancesRequestPayload) => Promise<PendingTask>;
+  fetchNfBalances: (payload: NonFungibleBalancesRequestPayload) => Promise<NonFungibleBalancesCollectionResponse>;
+  getNftBalanceById: (identifier: string) => Promise<NonFungibleBalance>;
+}
+
+export function useNftBalancesApi(): UseNftBalancesApiReturn {
   const internalNfBalances = async <T>(payload: NonFungibleBalancesRequestPayload, asyncQuery: boolean): Promise<T> => {
     const response = await api.instance.get<ActionResult<T>>('/nfts/balances', {
       params: snakeCaseTransformer({
