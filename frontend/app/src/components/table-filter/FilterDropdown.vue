@@ -205,8 +205,8 @@ function getDisplayValue(suggestion: Suggestion) {
           @click="applyFilter(item)"
           @keydown.enter="handleEnter()"
         >
-          <div class="flex items-center w-full px-3 py-2">
-            <span class="text-rui-primary font-bold min-w-[4rem] text-left">{{ item.key }}:</span>
+          <div class="flex items-center w-full px-1.5 py-1.5">
+            <span class="text-rui-primary">{{ item.key }}:</span>
             <span class="font-normal ml-2">{{ getDisplayValue(item) }}</span>
           </div>
         </RuiButton>
