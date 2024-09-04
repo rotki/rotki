@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
+import { get, set } from '@vueuse/core';
 import type { BaseSuggestion, SearchMatcher, Suggestion } from '@/types/filtering';
 
 const props = defineProps<{
@@ -23,7 +24,7 @@ const keywordSplited = computed(() => splitSearch(get(keyword)));
 const lastSuggestion = ref<Suggestion | null>(null);
 const suggested = ref<Suggestion[]>([]);
 const noSuggestionsForValue = ref(false);
-
+const isExactMatch = ref(false);
 
 function updateSuggestion(value: Suggestion[], index: number) {
   set(lastSuggestion, value[index]);
@@ -64,7 +65,8 @@ watch(suggested, (value) => {
 watch(
   [keyword, selectedMatcher],
   async ([keyword, selectedMatcher]) => {
-    if (!keyword) return;
+    if (!keyword)
+      return;
 
     const search = splitSearch(keyword);
     const searchString = search.value ?? '';
@@ -74,17 +76,20 @@ watch(
     if (exactMatcher) {
       suggestedItems = [{
         key: exactMatcher.key,
-        value: exactMatcher.key,
+        value: exactMatcher.description,
       }];
-      noSuggestionsForValue.value = false;
-    } else if (selectedMatcher) {
+      set(noSuggestionsForValue, false);
+      set(isExactMatch, true);
+    }
+    else if (selectedMatcher) {
       if ('string' in selectedMatcher) {
-        const exclude = !!selectedMatcher.allowExclusion && !!search.exclude;
+        const _exclude = !!selectedMatcher.allowExclusion && !!search.exclude;
         suggestedItems = selectedMatcher.suggestions().map(item => ({
           key: selectedMatcher.key,
           value: item,
         }));
-      } else if ('asset' in selectedMatcher) {
+      }
+      else if ('asset' in selectedMatcher) {
         if (searchString) {
           suggestedItems = (await selectedMatcher.suggestions(searchString)).map(asset => ({
             key: selectedMatcher.key,
@@ -92,16 +97,20 @@ watch(
             exclude: false,
           }));
         }
-      } else if ('boolean' in selectedMatcher) {
+      }
+      else if ('boolean' in selectedMatcher) {
         suggestedItems = [{
           key: selectedMatcher.key,
           value: true,
           exclude: false,
         }];
       }
-      noSuggestionsForValue.value = suggestedItems.length === 0 && !!searchString;
-    } else {
-      noSuggestionsForValue.value = false;
+      set(noSuggestionsForValue, suggestedItems.length === 0 && !!searchString);
+      set(isExactMatch, false);
+    }
+    else {
+      set(noSuggestionsForValue, false);
+      set(isExactMatch, false);
     }
 
     const getItemText = (item: BaseSuggestion) =>
@@ -122,10 +131,8 @@ watch(
         })),
     );
   },
-  { immediate: true }
+  { immediate: true },
 );
-
-
 
 const { t } = useI18n();
 
@@ -156,27 +163,58 @@ function handleEnter() {
 
     emit('update:keyword', `${matcher.key}=`);
     emit('apply-filter', exactSuggestion);
-  } else if (get(suggested).length > 0) {
+  }
+  else if (get(suggested).length > 0) {
     applyFilter(get(suggested)[get(selectedSuggestion)]);
   }
 }
 
+function getDisplayValue(suggestion: Suggestion) {
+  if (typeof suggestion.value === 'string') {
+    return suggestion.value;
+  }
+  return suggestion.value.symbol;
+}
 </script>
+
 <template>
   <div class="px-4 py-1">
     <div v-if="selectedMatcher || suggested.length > 0">
-      <div v-if="suggested.length > 0" class="mb-2" :class="$style.suggestions" data-cy="suggestions">
-        <RuiButton v-for="(item, index) in suggested" :key="item.index" :tabindex="index" variant="text"
-          class="text-body-1 tracking-wide w-full justify-start text-left text-rui-text-secondary" :class="{
+      <div
+        v-if="suggested.length > 0"
+        class="mb-2"
+        :class="$style.suggestions"
+        data-cy="suggestions"
+      >
+        <div :class="highlightedTextClasses" class="uppercase font-bold mb-2"
+        >
+          {{ t('table_filter.title') }}
+        </div>
+        <RuiButton
+          v-for="(item, index) in suggested"
+          :key="item.index"
+          :tabindex="index"
+          variant="text"
+          class="text-body-1 tracking-wide w-full justify-start text-left text-rui-text-secondary"
+          :class="{
             ['!bg-rui-primary-lighter/20']: index === selectedSuggestion,
-          }" @click="applyFilter(item)" @keydown.enter="handleEnter">
-          <SuggestedItem :suggestion="item" />
+          }"
+          @click="applyFilter(item)"
+          @keydown.enter="handleEnter"
+        >
+          <span class="font-bold text-rui-primary-main">{{ item.key }}:</span> {{ getDisplayValue(item) }}
         </RuiButton>
       </div>
-      <div v-else-if="noSuggestionsForValue" class="pb-0">
+      <div
+        v-else-if="noSuggestionsForValue"
+        class="pb-0"
+      >
         <div class="text-rui-text-secondary">
-          <i18n-t v-if="selectedMatcher && !('asset' in selectedMatcher)" keypath="table_filter.no_suggestions"
-            tag="span">
+          <i18n-t
+            v-if="selectedMatcher && !('asset' in selectedMatcher)"
+            keypath="table_filter.no_suggestions"
+            tag="span"
+          >
             <template #search>
               <span class="font-medium text-rui-primary">
                 {{ keywordSplited.value }}
@@ -189,36 +227,56 @@ function handleEnter() {
         </div>
       </div>
 
-      <div v-if="selectedMatcher && 'string' in selectedMatcher && selectedMatcher.allowExclusion"
-        :class="highlightedTextClasses" class="font-light pt-2">
+      <div
+        v-if="selectedMatcher && 'string' in selectedMatcher && selectedMatcher.allowExclusion"
+        :class="highlightedTextClasses"
+        class="font-light pt-2"
+      >
         {{ t('table_filter.exclusion.description') }}
         <span class="font-medium">
           {{ t('table_filter.exclusion.example') }}
         </span>
       </div>
 
-      <div v-if="selectedMatcher && selectedMatcher.hint" :class="highlightedTextClasses" class="text-wrap">
+      <div
+        v-if="selectedMatcher && selectedMatcher.hint"
+        :class="highlightedTextClasses"
+        class="text-wrap"
+      >
         {{ selectedMatcher.hint }}
       </div>
     </div>
-    <div v-else-if="keyword && matchers.length === 0" class="pb-2">
+    <div
+      v-else-if="keyword && matchers.length === 0"
+      class="pb-0"
+    >
       <span>{{ t('table_filter.unsupported_filter') }}</span>
       <span class="font-medium ms-2">{{ keyword }}</span>
     </div>
     <div v-else-if="!selectedMatcher && matchers.length > 0">
-      <div :class="highlightedTextClasses" class="uppercase font-bold">
+      <div
+        :class="highlightedTextClasses"
+        class="uppercase font-bold"
+      >
         {{ t('table_filter.title') }}
       </div>
       <RuiDivider class="my-2" />
       <div :class="$style.suggestions" data-cy="suggestions">
-        <FilterEntry v-for="(matcher, index) in matchers" :key="matcher.key" :active="index === selectedSuggestion"
-          :matcher="matcher" :class="{ highlightedMatcher: index === selectedSuggestion }" @click="click(matcher)"
-          @keydown.enter="handleEnter">
-          {{ matcher.description }}
+        <FilterEntry
+          v-for="(matcher, index) in matchers"
+          :key="matcher.key"
+          :active="index === selectedSuggestion"
+          :matcher="matcher"
+          :class="{ highlightedMatcher: index === selectedSuggestion }"
+          @click="click(matcher)"
+          @keydown.enter="handleEnter"
+        >
+          <span class="font-bold text-rui-primary-main">{{ matcher.key }}:</span> {{ matcher.description }}
         </FilterEntry>
       </div>
     </div>
-    <div :class="highlightedTextClasses" class="font-light mt-2">
+    <div :class="highlightedTextClasses" class="font-light mt-2"
+    >
       <RuiDivider class="my-2" />
       <span>{{ t('table_filter.hint.description') }}</span>
       <span class="font-medium">
@@ -226,6 +284,9 @@ function handleEnter() {
       </span>
       <div>
         {{ t('table_filter.hint_filter') }}
+      </div>
+      <div class="mt-1 text-rui-text-secondary-dark italic">
+        {{ t('table_filter.hint.edit_note') }}
       </div>
     </div>
   </div>
