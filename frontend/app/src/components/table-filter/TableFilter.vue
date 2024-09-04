@@ -25,12 +25,13 @@ const props = withDefaults(
   },
 );
 
-
 const emit = defineEmits<{
   (e: 'update:matches', matches: MatchedKeywordWithBehaviour<any>): void;
 }>();
 
 const { matchers, matches } = toRefs(props);
+
+const search = ref('');
 
 const exactMatchMatcher = computed(() => {
   const searchLower = search.value.toLowerCase();
@@ -39,8 +40,6 @@ const exactMatchMatcher = computed(() => {
 
 const input = ref();
 const selection = ref<Suggestion[]>([]);
-
-const search = ref('');
 
 const selectedSuggestion = ref(0);
 const suggestedFilter = ref<Suggestion>({
@@ -99,26 +98,21 @@ function setSearchToMatcherKey(matcher: SearchMatcher<any>) {
 }
 
 function updateMatches(pairs: Suggestion[]) {
-
   const matched: Partial<MatchedKeyword<any>> = {};
   const validPairs: Suggestion[] = [];
 
   for (const entry of pairs) {
     const key = entry.key;
     const matcher = matcherForKey(key);
-    if (!matcher) {
+    if (!matcher)
       continue;
-
-    }
 
     const valueKey = (matcher.keyValue || matcher.key) as string;
     let transformedKeyword: string | boolean = '';
 
     if ('string' in matcher) {
-      if (typeof entry.value !== 'string') {
+      if (typeof entry.value !== 'string')
         continue;
-
-      }
 
       if (matcher.validate(entry.value)) {
         transformedKeyword = matcher.serializer?.(entry.value) || entry.value;
@@ -138,10 +132,7 @@ function updateMatches(pairs: Suggestion[]) {
     }
 
     if (!transformedKeyword)
-    {
       continue;
-
-    }
 
     validPairs.push(entry);
 
@@ -240,10 +231,8 @@ async function applySuggestion() {
         );
       }
     }
-    if (!key)
-    if (get(input) && typeof get(input).blur === 'function') {
-  get(input).blur();
-}
+    if (!key && get(input) && typeof get(input).blur === 'function')
+      get(input).blur();
   }
   set(selectedSuggestion, 0);
   set(search, '');
@@ -368,10 +357,11 @@ watch(matches, (matches) => {
   restoreSelection(matches);
 });
 
-watch(search, (newValue, oldValue) => {
+watch(search, (newValue) => {
   if (!newValue.includes('=')) {
     set(selectedMatcher, undefined);
-  } else {
+  }
+  else {
     const [key] = newValue.split('=');
     set(selectedMatcher, matcherForKey(key));
   }

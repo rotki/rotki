@@ -170,9 +170,9 @@ function handleEnter() {
 }
 
 function getDisplayValue(suggestion: Suggestion) {
-  if (typeof suggestion.value === 'string') {
+  if (typeof suggestion.value === 'string')
     return suggestion.value;
-  }
+
   return suggestion.value.symbol;
 }
 </script>
@@ -181,28 +181,31 @@ function getDisplayValue(suggestion: Suggestion) {
   <div class="px-4 py-1">
     <div v-if="selectedMatcher || suggested.length > 0">
       <div
+        :class="highlightedTextClasses"
+        class="uppercase font-bold mb-2"
+      >
+        {{ t('table_filter.title') }}
+      </div>
+      <RuiDivider class="my-2" />
+      <div
         v-if="suggested.length > 0"
         class="mb-2"
         :class="$style.suggestions"
         data-cy="suggestions"
       >
-        <div :class="highlightedTextClasses" class="uppercase font-bold mb-2"
-        >
-          {{ t('table_filter.title') }}
-        </div>
         <RuiButton
           v-for="(item, index) in suggested"
           :key="item.index"
           :tabindex="index"
           variant="text"
-          class="text-body-1 tracking-wide w-full justify-start text-left text-rui-text-secondary"
+          class="text-body-1 tracking-wide w-full justify-start text-left text-rui-text-secondary p-2"
           :class="{
             ['!bg-rui-primary-lighter/20']: index === selectedSuggestion,
           }"
           @click="applyFilter(item)"
-          @keydown.enter="handleEnter"
+          @keydown.enter="handleEnter()"
         >
-          <span class="font-bold text-rui-primary-main">{{ item.key }}:</span> {{ getDisplayValue(item) }}
+          <span class="text-rui-primary font-bold mr-2">{{ item.key }}:</span>{{ getDisplayValue(item) }}
         </RuiButton>
       </div>
       <div
@@ -226,7 +229,6 @@ function getDisplayValue(suggestion: Suggestion) {
           </template>
         </div>
       </div>
-
       <div
         v-if="selectedMatcher && 'string' in selectedMatcher && selectedMatcher.allowExclusion"
         :class="highlightedTextClasses"
@@ -261,7 +263,10 @@ function getDisplayValue(suggestion: Suggestion) {
         {{ t('table_filter.title') }}
       </div>
       <RuiDivider class="my-2" />
-      <div :class="$style.suggestions" data-cy="suggestions">
+      <div
+        :class="$style.suggestions"
+        data-cy="suggestions"
+      >
         <FilterEntry
           v-for="(matcher, index) in matchers"
           :key="matcher.key"
@@ -269,13 +274,15 @@ function getDisplayValue(suggestion: Suggestion) {
           :matcher="matcher"
           :class="{ highlightedMatcher: index === selectedSuggestion }"
           @click="click(matcher)"
-          @keydown.enter="handleEnter"
+          @keydown.enter="handleEnter()"
         >
-          <span class="font-bold text-rui-primary-main">{{ matcher.key }}:</span> {{ matcher.description }}
+          <span class="font-bold text-rui-primary-main">{{ matcher.key }}:</span> {{ t(`table_filter.filter.${matcher.key}`) }}
         </FilterEntry>
       </div>
     </div>
-    <div :class="highlightedTextClasses" class="font-light mt-2"
+    <div
+      :class="highlightedTextClasses"
+      class="font-light mt-2"
     >
       <RuiDivider class="my-2" />
       <span>{{ t('table_filter.hint.description') }}</span>

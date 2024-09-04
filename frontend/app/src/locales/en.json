@@ -4313,7 +4313,6 @@
     },
     "hint_filter": "The combined filters will be applied at the same time",
     "label": "Combined filters",
-    "edit_note": "Double-click a filter to edit",
     "no_suggestions": "No suggestions found for {search}",
     "saved_filters": {
       "actions": {
