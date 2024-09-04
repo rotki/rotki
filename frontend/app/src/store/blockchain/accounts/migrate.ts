@@ -69,7 +69,7 @@ export const useAccountMigrationStore = defineStore('blockchain/accounts/migrati
     notifications.forEach(notify);
   };
 
-  const runMigrationIfPossible = (canRequestData: MaybeRef<boolean>) => {
+  const runMigrationIfPossible = (canRequestData: MaybeRef<boolean>): void => {
     const migrated = get(migratedAddresses);
     if (get(canRequestData) && migrated.length > 0)
       handleMigratedAccounts();

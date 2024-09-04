@@ -1,5 +1,11 @@
 import { BigNumber } from '@rotki/common';
 
+interface BnFormat {
+  groupSize: number;
+  groupSeparator: string;
+  decimalSeparator: string;
+}
+
 export const abbreviationList: [number, string][] = [
   [12, 'T'],
   [9, 'B'],
@@ -15,7 +21,7 @@ export class AmountFormatter {
     decimalSeparator: string,
     roundingMode?: BigNumber.RoundingMode,
     abbreviateNumber?: boolean,
-  ) {
+  ): string {
     const usedRoundingMode = roundingMode === undefined ? BigNumber.ROUND_DOWN : roundingMode;
 
     if (abbreviateNumber) {
@@ -38,7 +44,7 @@ export class AmountFormatter {
 
 export const displayAmountFormatter = new AmountFormatter();
 
-export function getBnFormat(thousandSeparator: string, decimalSeparator: string) {
+export function getBnFormat(thousandSeparator: string, decimalSeparator: string): BnFormat {
   return {
     groupSize: 3,
     groupSeparator: thousandSeparator,

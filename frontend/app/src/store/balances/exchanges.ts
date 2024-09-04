@@ -43,65 +43,66 @@ export const useExchangeBalancesStore = defineStore('balances/exchanges', () => 
     sumAssetBalances(Object.values(get(exchangeBalances)), getAssociatedAssetIdentifier),
   );
 
-  const getBreakdown = (asset: string) =>
-    computed<AssetBreakdown[]>(() => {
-      const breakdown: AssetBreakdown[] = [];
-      const cexBalances = get(exchangeBalances);
-      for (const exchange in cexBalances) {
-        const exchangeData = cexBalances[exchange];
-        for (const exchangeDataAsset in exchangeData) {
-          const associatedAsset = get(getAssociatedAssetIdentifier(exchangeDataAsset));
-          if (associatedAsset !== asset)
-            continue;
+  const getBreakdown = (asset: string): ComputedRef<AssetBreakdown[]> => computed<AssetBreakdown[]>(() => {
+    const breakdown: AssetBreakdown[] = [];
+    const cexBalances = get(exchangeBalances);
+    for (const exchange in cexBalances) {
+      const exchangeData = cexBalances[exchange];
+      for (const exchangeDataAsset in exchangeData) {
+        const associatedAsset = get(getAssociatedAssetIdentifier(exchangeDataAsset));
+        if (associatedAsset !== asset)
+          continue;
 
-          breakdown.push({
-            address: '',
-            location: exchange,
-            tags: [],
-            ...exchangeData[exchangeDataAsset],
-          });
-        }
+        breakdown.push({
+          address: '',
+          location: exchange,
+          tags: [],
+          ...exchangeData[exchangeDataAsset],
+        });
       }
-      return breakdown;
-    });
+    }
+    return breakdown;
+  });
 
-  const getBalances = (exchange: string, hideIgnored = true) =>
-    computed<AssetBalanceWithPrice[]>(() => {
-      const balances = get(exchangeBalances);
+  const getBalances = (
+    exchange: string,
+    hideIgnored = true,
+  ): ComputedRef<AssetBalanceWithPrice[]> => computed<AssetBalanceWithPrice[]>(() => {
+    const balances = get(exchangeBalances);
 
-      if (balances && balances[exchange]) {
-        return toSortedAssetBalanceWithPrice(
-          get(mergeAssociatedAssets(balances[exchange], getAssociatedAssetIdentifier)),
-          asset => hideIgnored && get(isAssetIgnored(asset)),
-          assetPrice,
-        );
-      }
+    if (balances && balances[exchange]) {
+      return toSortedAssetBalanceWithPrice(
+        get(mergeAssociatedAssets(balances[exchange], getAssociatedAssetIdentifier)),
+        asset => hideIgnored && get(isAssetIgnored(asset)),
+        assetPrice,
+      );
+    }
 
-      return [];
-    });
+    return [];
+  });
 
-  const getLocationBreakdown = (id: string): ComputedRef<AssetBalances> =>
-    computed(() => {
-      const assets: AssetBalances = {};
-      const exchange = get(connectedExchanges).find(({ location }) => id === location);
+  const getLocationBreakdown = (id: string): ComputedRef<AssetBalances> => computed(() => {
+    const assets: AssetBalances = {};
+    const exchange = get(connectedExchanges).find(({ location }) => id === location);
 
-      if (exchange) {
-        const balances = get(getBalances(exchange.location));
-        for (const balance of balances) appendAssetBalance(balance, assets, getAssociatedAssetIdentifier);
-      }
-      return assets;
-    });
+    if (exchange) {
+      const balances = get(getBalances(exchange.location));
+      for (const balance of balances) appendAssetBalance(balance, assets, getAssociatedAssetIdentifier);
+    }
+    return assets;
+  });
 
-  const getByLocationBalances = (convert: (bn: MaybeRef<BigNumber>) => MaybeRef<BigNumber>) =>
-    computed<Record<string, BigNumber>>(() => {
-      const balances: Record<string, BigNumber> = {};
-      for (const { location, total } of get(exchanges)) {
-        const balance = balances[location];
-        const value = get(convert(total));
-        balances[location] = !balance ? value : value.plus(balance);
-      }
-      return balances;
-    });
+  const getByLocationBalances = (
+    convert: (bn: MaybeRef<BigNumber>) => MaybeRef<BigNumber>,
+  ): ComputedRef<Record<string, BigNumber>> => computed<Record<string, BigNumber>>(() => {
+    const balances: Record<string, BigNumber> = {};
+    for (const { location, total } of get(exchanges)) {
+      const balance = balances[location];
+      const value = get(convert(total));
+      balances[location] = !balance ? value : value.plus(balance);
+    }
+    return balances;
+  });
 
   const fetchExchangeBalances = async (payload: ExchangeBalancePayload): Promise<void> => {
     const { location, ignoreCache } = payload;
@@ -163,7 +164,7 @@ export const useExchangeBalancesStore = defineStore('balances/exchanges', () => 
     }
   };
 
-  const updatePrices = (prices: MaybeRef<AssetPrices>) => {
+  const updatePrices = (prices: MaybeRef<AssetPrices>): void => {
     const exchanges = { ...get(exchangeBalances) };
     for (const exchange in exchanges) exchanges[exchange] = updateBalancesPrices(exchanges[exchange], prices);
 

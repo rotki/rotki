@@ -10,7 +10,7 @@ export const useBlockie = createSharedComposable((): UseBlockieReturn => {
 
   const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
 
-  const put = (address: string, image: string) => {
+  const put = (address: string, image: string): void => {
     const cacheSize = Math.max(CACHE_SIZE, 3 * get(itemsPerPage));
 
     if (cache.size === cacheSize) {
@@ -21,7 +21,7 @@ export const useBlockie = createSharedComposable((): UseBlockieReturn => {
     cache.set(address, image);
   };
 
-  const getBlockie = (address: string | null = '') => {
+  const getBlockie = (address: string | null = ''): string => {
     if (!address)
       return '';
 

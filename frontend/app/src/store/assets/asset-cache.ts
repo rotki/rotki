@@ -30,7 +30,7 @@ export const useAssetCacheStore = defineStore('assets/cache', () => {
   const { cache, isPending, retrieve, reset, deleteCacheKey, queueIdentifier } = useItemCache<AssetInfo>(
     async (keys: string[]) => {
       const response = await getAssetMappingHandler(keys);
-      return function* () {
+      return function* (): Generator<{ item: AssetInfo; key: string }, void> {
         for (const key of keys) {
           const { assetCollections, assets } = response;
           set(fetchedAssetCollections, {

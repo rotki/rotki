@@ -39,20 +39,20 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
 
   const lastRefreshedAvatar = ref<number>(0);
 
-  const setLastRefreshedAvatar = () => {
+  const setLastRefreshedAvatar = (): void => {
     set(lastRefreshedAvatar, Date.now());
   };
 
   setLastRefreshedAvatar();
 
-  const ensNameSelector = (address: MaybeRef<string>) => computed<string | null>(() => {
+  const ensNameSelector = (address: MaybeRef<string>): ComputedRef<string | null> => computed<string | null>(() => {
     if (!get(enableAliasNames))
       return null;
 
     return get(ensNames)[get(address)] || null;
   });
 
-  const getEnsAvatarUrl = (address: MaybeRef<string>) => computed<string | null>(() => {
+  const getEnsAvatarUrl = (address: MaybeRef<string>): ComputedRef<string | null> => computed<string | null>(() => {
     const ens = get(ensNameSelector(address));
     if (!ens)
       return null;
@@ -60,7 +60,7 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
     return ensAvatarUrl(ens, get(lastRefreshedAvatar));
   });
 
-  const createKey = (address: string, chain: string) => `${address}#${chain}`;
+  const createKey = (address: string, chain: string): string => `${address}#${chain}`;
 
   const fetchAddressesNames = async (keys: string[]) => {
     const payload: AddressNameRequestPayload[] = [];
@@ -85,7 +85,7 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
       result = [];
     }
 
-    return function* () {
+    return function* (): Generator<{ key: string; item: string }, void> {
       for (const entry of payload) {
         const key = createKey(entry.address, entry.blockchain);
 
@@ -108,7 +108,7 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
     reset: resetAddressesNames,
   } = useItemCache<string>(keys => fetchAddressesNames(keys));
 
-  const getAddressesWithoutNames = (blockchain?: MaybeRef<string | null>) => computed<string[]>(() => {
+  const getAddressesWithoutNames = (blockchain?: MaybeRef<string | null>): ComputedRef<string[]> => computed<string[]>(() => {
     const chain = get(blockchain);
     const entries = !chain ? [...unknown.keys()] : [...unknown.keys()].filter(entry => entry.endsWith(`#${chain}`));
     return entries
@@ -119,7 +119,7 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
   const addressNameSelector = (
     address: MaybeRef<string>,
     blockchain: MaybeRef<string> = Blockchain.ETH,
-  ) => computed<string | null>(() => {
+  ): ComputedRef<string | null> => computed<string | null>(() => {
     const addressVal = get(address);
     if (!get(enableAliasNames) || !addressVal)
       return null;
@@ -141,7 +141,7 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
     return cachedName || null;
   });
 
-  const resetAddressNamesData = (items: AddressBookSimplePayload[]) => {
+  const resetAddressNamesData = (items: AddressBookSimplePayload[]): void => {
     items.forEach((item) => {
       const chains: string[] = item.blockchain
         ? [item.blockchain]

@@ -1,4 +1,11 @@
-export function useQueryStatusStore<T>(isStatusFinished: (item: T) => boolean, createKey: (item: T) => string) {
+interface UseQueryStatusStoreReturn<T> {
+  queryStatus: Ref<Record<string, T>>;
+  isAllFinished: ComputedRef<boolean>;
+  removeQueryStatus: (key: string) => void;
+  resetQueryStatus: () => void;
+}
+
+export function useQueryStatusStore<T>(isStatusFinished: (item: T) => boolean, createKey: (item: T) => string): UseQueryStatusStoreReturn<T> {
   const queryStatus = ref<Record<string, T>>({});
 
   const resetQueryStatus = (): void => {

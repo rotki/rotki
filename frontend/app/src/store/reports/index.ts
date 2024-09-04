@@ -108,7 +108,7 @@ export const useReportsStore = defineStore('reports', () => {
 
   const isLatestReport = (reportId: number): ComputedRef<boolean> => computed<boolean>(() => get(lastGeneratedReport) === reportId);
 
-  const checkProgress = () => {
+  const checkProgress = (): NodeJS.Timeout => {
     const interval = setInterval(() => {
       getProgress()
         .then(progress => set(reportProgress, progress))

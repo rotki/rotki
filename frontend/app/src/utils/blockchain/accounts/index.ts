@@ -21,6 +21,11 @@ import type { Collection } from '@/types/collection';
 import type { Balance } from '@rotki/common';
 import type { AssetBalances } from '@/types/balances';
 
+interface AccountBalance {
+  balance: Balance;
+  expansion?: 'assets';
+}
+
 export function hasAccountAddress(data: BlockchainAccount): data is BlockchainAccount<AddressData> {
   return 'address' in data.data;
 }
@@ -279,7 +284,7 @@ export function hasTokens(nativeAsset: string, assetBalances?: AssetBalances): b
   return !isEmpty(objectOmit(assetBalances, [nativeAsset]));
 }
 
-export function getAccountBalance(account: BlockchainAccount, chainBalances: BlockchainAssetBalances) {
+export function getAccountBalance(account: BlockchainAccount, chainBalances: BlockchainAssetBalances): AccountBalance {
   const address = getAccountAddress(account);
   const accountBalances = chainBalances?.[address] ?? {};
   const assets = accountBalances?.assets;

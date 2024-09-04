@@ -157,7 +157,7 @@ export function useAccountManage(): UseAccountManageReturn {
   const { updateAccounts } = useBlockchainStore();
   const { setMessage } = useMessageStore();
 
-  function handleErrors(error: any, props: Record<string, any> = {}) {
+  function handleErrors(error: any, props: Record<string, any> = {}): void {
     logger.error(error);
     let errors = error.message;
 

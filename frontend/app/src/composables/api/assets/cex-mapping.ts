@@ -13,7 +13,14 @@ import type { MaybeRef } from '@vueuse/core';
 import type { Collection } from '@/types/collection';
 import type { ActionResult } from '@rotki/common';
 
-export function useAssetCexMappingApi() {
+interface UseAssetCexMappingApiReturn {
+  fetchAllCexMapping: (payload: MaybeRef<CexMappingRequestPayload>) => Promise<Collection<CexMapping>>;
+  addCexMapping: (payload: CexMapping) => Promise<boolean>;
+  editCexMapping: (payload: CexMapping) => Promise<boolean>;
+  deleteCexMapping: (payload: CexMappingDeletePayload) => Promise<boolean>;
+}
+
+export function useAssetCexMappingApi(): UseAssetCexMappingApiReturn {
   const fetchAllCexMapping = async (payload: MaybeRef<CexMappingRequestPayload>): Promise<Collection<CexMapping>> => {
     const response = await api.instance.post<ActionResult<SupportedAssets>>(
       '/assets/locationmappings',

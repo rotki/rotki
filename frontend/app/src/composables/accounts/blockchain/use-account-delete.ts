@@ -126,7 +126,7 @@ export function useAccountDelete(): UseAccountDeleteReturn {
     });
   }
 
-  function showConfirmation(params: ShowConfirmationParams, onComplete?: () => void) {
+  function showConfirmation(params: ShowConfirmationParams, onComplete?: () => void): void {
     const address = params.type === 'validator' ? params.data.publicKey : getAccountAddress(params.data);
 
     let message: string = t('account_balances.confirm_delete.description_address', { address });
