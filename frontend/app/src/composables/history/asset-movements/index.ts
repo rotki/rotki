@@ -6,7 +6,12 @@ import type { EntryWithMeta } from '@/types/history/meta';
 import type { AssetMovement, AssetMovementEntry, AssetMovementRequestPayload } from '@/types/history/asset-movements';
 import type { TaskMeta } from '@/types/task';
 
-export function useAssetMovements() {
+interface UseAssetMovementsReturn {
+  refreshAssetMovements: (userInitiated?: boolean, location?: string) => Promise<void>;
+  fetchAssetMovements: (payload: MaybeRef<AssetMovementRequestPayload>) => Promise<Collection<AssetMovementEntry>>;
+}
+
+export function useAssetMovements(): UseAssetMovementsReturn {
   const locationsStore = useHistoryStore();
   const { associatedLocations } = storeToRefs(locationsStore);
   const { fetchAssociatedLocations } = locationsStore;

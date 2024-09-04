@@ -1,7 +1,24 @@
 import type { MaybeRef } from '@vueuse/core';
 import type { HistoryEventsQueryData } from '@/types/websocket-messages';
 
-export function useEventsQueryStatus(locations: MaybeRef<string[]> = []) {
+type QueryTranslationKey = 'transactions.query_status_events.done_date_range'
+  | 'transactions.query_status_events.done_end_date'
+  | 'transactions.query_status_events.date_range'
+  | 'transactions.query_status_events.end_date';
+
+interface UseEventsQueryStatusReturn {
+  getItemTranslationKey: (item: HistoryEventsQueryData) => QueryTranslationKey;
+  isQueryFinished: (item: HistoryEventsQueryData) => boolean;
+  getKey: (item: HistoryEventsQueryData) => string;
+  resetQueryStatus: () => void;
+  isAllFinished: ComputedRef<boolean>;
+  sortedQueryStatus: Ref<HistoryEventsQueryData[]>;
+  filtered: ComputedRef<HistoryEventsQueryData[]>;
+  queryingLength: ComputedRef<number>;
+  length: ComputedRef<number>;
+}
+
+export function useEventsQueryStatus(locations: MaybeRef<string[]> = []): UseEventsQueryStatusReturn {
   const store = useEventsQueryStatusStore();
   const { isStatusFinished, resetQueryStatus } = store;
   const { queryStatus, isAllFinished } = storeToRefs(store);
@@ -17,7 +34,7 @@ export function useEventsQueryStatus(locations: MaybeRef<string[]> = []) {
 
   const { sortedQueryStatus, queryingLength, length, isQueryStatusRange } = useQueryStatus(filtered, isStatusFinished);
 
-  const getItemTranslationKey = (item: HistoryEventsQueryData) => {
+  const getItemTranslationKey = (item: HistoryEventsQueryData): QueryTranslationKey => {
     const isRange = isQueryStatusRange(item);
 
     if (isStatusFinished(item)) {
@@ -29,9 +46,9 @@ export function useEventsQueryStatus(locations: MaybeRef<string[]> = []) {
     return isRange ? 'transactions.query_status_events.date_range' : 'transactions.query_status_events.end_date';
   };
 
-  const getKey = (item: HistoryEventsQueryData) => item.location + item.name;
+  const getKey = (item: HistoryEventsQueryData): string => item.location + item.name;
 
-  const isQueryFinished = (item: HistoryEventsQueryData) => isStatusFinished(item);
+  const isQueryFinished = (item: HistoryEventsQueryData): boolean => isStatusFinished(item);
 
   return {
     getItemTranslationKey,

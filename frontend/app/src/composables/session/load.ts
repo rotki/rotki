@@ -1,7 +1,9 @@
 import { Blockchain } from '@rotki/common';
 import { Section, Status } from '@/types/status';
 
-export function useDataLoader() {
+interface UseDataLoaderReturn { load: () => void }
+
+export function useDataLoader(): UseDataLoaderReturn {
   const { shouldFetchData } = storeToRefs(useSessionAuthStore());
   const { fetchWatchers } = useWatchersStore();
   const { fetchTags } = useTagStore();

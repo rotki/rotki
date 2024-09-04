@@ -1,4 +1,4 @@
-export function useSessionStateCleaner() {
+export function useSessionStateCleaner(): void {
   const { logged } = storeToRefs(useSessionAuthStore());
   const { clearUploadStatus } = useSync();
   const { start, stop } = useMonitorStore();

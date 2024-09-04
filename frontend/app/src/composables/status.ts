@@ -5,7 +5,16 @@ interface Opts {
   subsection?: string;
 }
 
-export function useStatusUpdater(defaultSection: Section) {
+interface UseStatusUpdaterReturn {
+  loading: (opts?: Opts) => boolean;
+  isFirstLoad: (opts?: Opts) => boolean;
+  setStatus: (status: Status, opts?: Opts) => void;
+  getStatus: (opts?: Opts) => Status;
+  fetchDisabled: (refresh: boolean, opts?: Opts) => boolean;
+  resetStatus: (opts?: Opts) => void;
+}
+
+export function useStatusUpdater(defaultSection: Section): UseStatusUpdaterReturn {
   const { setStatus, getStatus, isLoading } = useStatusStore();
   const updateStatus = (status: Status, opts: Opts = {}): void => {
     const { section = defaultSection, subsection } = opts;

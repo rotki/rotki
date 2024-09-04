@@ -170,7 +170,7 @@ export const useHistoryEventMappings = createSharedComposable(() => {
         action: [
           {
             label: t('actions.history_events.fetch_mapping.actions.fetch_again'),
-            action: async () => await fetchMappings(),
+            action: async (): Promise<void> => await fetchMappings(),
             icon: 'refresh-line',
           },
         ],

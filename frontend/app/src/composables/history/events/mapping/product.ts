@@ -3,7 +3,7 @@ import type { HistoryEventProductData } from '@/types/history/events/event-type'
 export const useHistoryEventProductMappings = createSharedComposable(() => {
   const { getHistoryEventProductsData } = useHistoryEventsApi();
 
-  const defaultHistoryEventProductsData = () => ({
+  const defaultHistoryEventProductsData = (): HistoryEventProductData => ({
     mappings: {},
     products: [],
   });

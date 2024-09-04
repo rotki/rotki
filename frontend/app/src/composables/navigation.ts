@@ -1,9 +1,15 @@
 import { isEqual } from 'lodash-es';
 import { Routes } from '@/router/routes';
 
-export function useAppNavigation() {
+interface UseAppNavigationReturn {
+  navigateToDashboard: () => Promise<void>;
+  navigateToUserCreation: () => Promise<void>;
+  navigateToUserLogin: (disableNoUserRedirection?: boolean) => Promise<void>;
+}
+
+export function useAppNavigation(): UseAppNavigationReturn {
   const router = useRouter();
-  const navigateToUserLogin = async (disableNoUserRedirection: boolean = false) => {
+  const navigateToUserLogin = async (disableNoUserRedirection: boolean = false): Promise<void> => {
     const newQuery = disableNoUserRedirection ? { disableNoUserRedirection: '1' } : {};
     const { path, query } = get(router.currentRoute);
     if (path === Routes.USER_LOGIN && isEqual(query, newQuery))
@@ -15,11 +21,11 @@ export function useAppNavigation() {
     });
   };
 
-  const navigateToUserCreation = async () => {
+  const navigateToUserCreation = async (): Promise<void> => {
     await router.push(Routes.USER_CREATE);
   };
 
-  const navigateToDashboard = async () => {
+  const navigateToDashboard = async (): Promise<void> => {
     await router.push(Routes.DASHBOARD);
   };
 

@@ -15,13 +15,24 @@ interface CacheOptions {
   size: number;
 }
 
+interface UseItemCacheReturn<T> {
+  cache: Ref<Record<string, T | null>>;
+  unknown: Map<string, number>;
+  isPending: (identifier: MaybeRef<string>) => ComputedRef<boolean>;
+  retrieve: (key: string) => ComputedRef<T | null>;
+  reset: () => void;
+  refresh: (key: string) => void;
+  deleteCacheKey: (key: string) => void;
+  queueIdentifier: (key: string) => void;
+}
+
 export function useItemCache<T>(
   fetch: CacheFetch<T>,
   options: CacheOptions = {
     size: CACHE_SIZE,
     expiry: CACHE_EXPIRY,
   },
-) {
+): UseItemCacheReturn<T> {
   const recent: Map<string, number> = new Map();
   const unknown: Map<string, number> = new Map();
   const cache = ref<Record<string, T | null>>({});
@@ -144,7 +155,9 @@ export function useItemCache<T>(
     queueIdentifier(key);
   };
 
-  const isPending = (identifier: MaybeRef<string>) => computed<boolean>(() => get(pending)[get(identifier)] ?? false);
+  const isPending = (
+    identifier: MaybeRef<string>,
+  ): ComputedRef<boolean> => computed<boolean>(() => get(pending)[get(identifier)] ?? false);
 
   const reset = (): void => {
     set(pending, {});

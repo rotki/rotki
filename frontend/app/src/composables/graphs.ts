@@ -8,7 +8,17 @@ export function initGraph(): void {
   Chart.register(zoomPlugin);
 }
 
-export function useGraph(canvasId: string) {
+interface UseGraphReturn {
+  getCanvasCtx: () => CanvasRenderingContext2D;
+  baseColor: ComputedRef<string>;
+  gradient: ComputedRef<CanvasGradient>;
+  secondaryColor: ComputedRef<string>;
+  backgroundColor: ComputedRef<string>;
+  fontColor: ComputedRef<string>;
+  gridColor: ComputedRef<string>;
+}
+
+export function useGraph(canvasId: string): UseGraphReturn {
   const getCanvasCtx = (): CanvasRenderingContext2D => {
     const canvas = document.getElementById(canvasId);
     assert(canvas && canvas instanceof HTMLCanvasElement, 'Canvas could not be found');
@@ -58,7 +68,13 @@ export interface TooltipContent {
   readonly currentBalance?: boolean;
 }
 
-export function useTooltip(id: string) {
+interface UseTooltipReturn {
+  tooltipDisplayOption: Ref<TooltipDisplayOption>;
+  tooltipContent: Ref<TooltipContent>;
+  calculateTooltipPosition: (element: HTMLElement, tooltipModel: TooltipModel<'line'>) => Partial<TooltipDisplayOption>;
+}
+
+export function useTooltip(id: string): UseTooltipReturn {
   const getDefaultTooltipDisplayOption = (): TooltipDisplayOption => ({
     visible: false,
     left: 0,

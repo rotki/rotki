@@ -1,12 +1,14 @@
 import { ThemeColors } from '@rotki/common';
 import { CURRENT_DEFAULT_THEME_VERSION, DARK_COLORS, DEFAULT_THEME_HISTORIES, LIGHT_COLORS } from '@/plugins/theme';
 
-export function useThemeMigration() {
+interface UseThemeMigrationReturn { checkDefaultThemeVersion: () => void }
+
+export function useThemeMigration(): UseThemeMigrationReturn {
   const store = useFrontendSettingsStore();
   const { defaultThemeVersion, lightTheme, darkTheme } = storeToRefs(store);
   const { updateSetting } = store;
 
-  function checkDefaultThemeVersion() {
+  function checkDefaultThemeVersion(): void {
     const defaultThemeVersionSetting = get(defaultThemeVersion);
     if (defaultThemeVersionSetting >= CURRENT_DEFAULT_THEME_VERSION)
       return;

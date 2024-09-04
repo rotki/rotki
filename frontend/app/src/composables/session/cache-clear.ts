@@ -1,5 +1,11 @@
 import type { BaseMessage } from '@/types/messages';
 
+interface UseCacheClearReturn<T> {
+  status: Ref<BaseMessage | null>;
+  pending: Ref<boolean>;
+  showConfirmation: (source: T) => void;
+}
+
 export function useCacheClear<T>(
   clearable: { id: T; text: string }[],
   clearHandle: (source: T) => Promise<void>,
@@ -14,14 +20,14 @@ export function useCacheClear<T>(
     title: string;
     message: string;
   },
-) {
+): UseCacheClearReturn<T> {
   const status = ref<BaseMessage | null>(null);
   const confirm = ref<boolean>(false);
   const pending = ref<boolean>(false);
 
   const text = (source: T): string => clearable.find(({ id }) => id === source)?.text || '';
 
-  const clear = async (source: T) => {
+  const clear = async (source: T): Promise<void> => {
     set(confirm, false);
     try {
       set(pending, true);
@@ -44,7 +50,7 @@ export function useCacheClear<T>(
   };
 
   const { show } = useConfirmStore();
-  const showConfirmation = (source: T) => {
+  const showConfirmation = (source: T): void => {
     show(confirmText(text(source), source), () => clear(source));
     set(confirm, true);
   };
