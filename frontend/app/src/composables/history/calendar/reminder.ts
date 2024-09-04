@@ -11,7 +11,14 @@ import {
 import type { AddCalendarEventResponse } from '@/types/history/calendar';
 import type { ActionResult } from '@rotki/common';
 
-export function useCalendarReminderApi() {
+interface UseCalendarReminderApi {
+  fetchCalendarReminders: (filter: CalendarReminderRequestPayload) => Promise<CalendarReminderEntry[]>;
+  addCalendarReminder: (reminders: CalenderReminderPayload[]) => Promise<CalendarReminderAddResponse>;
+  editCalendarReminder: (payload: CalendarReminderEntry) => Promise<AddCalendarEventResponse>;
+  deleteCalendarReminder: (identifier: number) => Promise<boolean>;
+}
+
+export function useCalendarReminderApi(): UseCalendarReminderApi {
   const fetchCalendarReminders = async (filter: CalendarReminderRequestPayload): Promise<CalendarReminderEntry[]> => {
     const response = await api.instance.post<ActionResult<CalendarReminderEntries>>(
       '/calendar/reminders',

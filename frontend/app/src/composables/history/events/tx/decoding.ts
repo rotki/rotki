@@ -74,7 +74,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     await fetchUndecodedTransactionsBreakdown(TransactionChainType.EVMLIKE);
   };
 
-  const clearDependedSection = () => {
+  const clearDependedSection = (): void => {
     resetStatus({ section: Section.DEFI_LIQUITY_STAKING });
     resetStatus({ section: Section.DEFI_LIQUITY_STAKING_POOLS });
     resetStatus({ section: Section.DEFI_LIQUITY_STATISTICS });
@@ -118,7 +118,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     }
   };
 
-  const checkMissingEventsAndRedecodeHandler = async (type: TransactionChainType) => {
+  const checkMissingEventsAndRedecodeHandler = async (type: TransactionChainType): Promise<void> => {
     const isEvmType = type === TransactionChainType.EVM;
     const chains = getUndecodedTransactionStatus()
       .filter(({ total, processed, chain }) => {
@@ -135,7 +135,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     );
   };
 
-  const checkMissingEventsAndRedecode = async () => {
+  const checkMissingEventsAndRedecode = async (): Promise<void> => {
     resetUndecodedTransactionsStatus();
     await fetchUndecodedTransactionsStatus();
     await Promise.allSettled([

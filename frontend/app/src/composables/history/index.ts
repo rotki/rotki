@@ -18,11 +18,17 @@ interface CommonIgnoreAction<T extends EntryMeta> {
   toData: (t: T) => string;
 }
 
+interface UseIgnoreReturn<T extends EntryMeta> {
+  ignore: (ignored: boolean) => Promise<void>;
+  ignoreSingle: (item: T, ignored: boolean) => Promise<void>;
+  toggle: (item: T) => Promise<void>;
+}
+
 export function useIgnore<T extends EntryMeta>(
   { actionType, toData }: EvmTxIgnoreAction<T> | CommonIgnoreAction<T>,
   selected: Ref<T[]>,
   refresh: () => any,
-) {
+): UseIgnoreReturn<T> {
   const { setMessage } = useMessageStore();
   const { t } = useI18n();
   const api = useHistoryIgnoringApi();
@@ -65,7 +71,7 @@ export function useIgnore<T extends EntryMeta>(
   const unignoreActions = async (payload: IgnorePayload): Promise<ActionStatus> =>
     await ignoreInAccounting(payload, false);
 
-  const ignore = async (ignored: boolean) => {
+  const ignore = async (ignored: boolean): Promise<void> => {
     let payload: IgnorePayload;
 
     const data = get(selected).filter((item) => {
@@ -109,12 +115,12 @@ export function useIgnore<T extends EntryMeta>(
     }
   };
 
-  async function toggle(item: T) {
+  async function toggle(item: T): Promise<void> {
     set(selected, [item]);
     await ignore(!item.ignoredInAccounting);
   }
 
-  async function ignoreSingle(item: T, ignored: boolean) {
+  async function ignoreSingle(item: T, ignored: boolean): Promise<void> {
     set(selected, [item]);
     await ignore(ignored);
   }

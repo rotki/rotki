@@ -4,7 +4,16 @@ import { Section, Status } from '@/types/status';
 import type { Eth2DailyStats, Eth2DailyStatsPayload, EthStakingDailyStatData } from '@rotki/common';
 import type { TaskMeta } from '@/types/task';
 
-export function useEth2DailyStats() {
+interface UseEthStakingDailyStatsReturn {
+  pagination: Ref<Eth2DailyStatsPayload>;
+  dailyStats: ComputedRef<EthStakingDailyStatData>;
+  dailyStatsLoading: Ref<boolean>;
+  refresh: () => Promise<void>;
+  refreshStats: (userInitiated: boolean) => Promise<void>;
+  syncStakingStats: (userInitiated?: boolean) => Promise<boolean>;
+}
+
+export function useEth2DailyStats(): UseEthStakingDailyStatsReturn {
   const { itemsPerPage } = storeToRefs(useFrontendSettingsStore());
   const defaultPagination = (): Eth2DailyStatsPayload => ({
     limit: get(itemsPerPage),

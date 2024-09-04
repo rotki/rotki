@@ -24,11 +24,25 @@ export interface NoteFormat {
   showHashLink?: boolean;
 }
 
-export function useHistoryEventNote() {
+interface FormatNoteParams {
+  notes: MaybeRef<string>;
+  amount?: MaybeRef<BigNumber | undefined>;
+  assetId?: MaybeRef<string>;
+  noTxHash?: MaybeRef<boolean>;
+  validatorIndex?: MaybeRef<number | undefined>;
+  blockNumber?: MaybeRef<number | undefined>;
+  counterparty?: MaybeRef<string | undefined>;
+}
+
+interface UseHistoryEventsNoteReturn {
+  formatNotes: (params: FormatNoteParams) => ComputedRef<NoteFormat[]>;
+}
+
+export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
   const { assetSymbol } = useAssetInfoRetrieval();
   const { scrambleData, scrambleIdentifier } = useScramble();
 
-  function separateByPunctuation(word: string) {
+  function separateByPunctuation(word: string): string[] {
     // Use a regular expression to find trailing characters
     const trailingMatch = word.match(/\.+$/);
 
@@ -48,7 +62,7 @@ export function useHistoryEventNote() {
     return result;
   }
 
-  function findAndScrambleIBAN(notes: string) {
+  function findAndScrambleIBAN(notes: string): string {
     // Regex pattern to match IBANs in the text
     const ibanPattern = /\b[A-Z]{2}\d{2}(?:\s?[\dA-Z]{1,4}){1,7}\b/g;
 
@@ -87,167 +101,157 @@ export function useHistoryEventNote() {
     validatorIndex,
     blockNumber,
     counterparty,
-  }: {
-    notes: MaybeRef<string>;
-    amount?: MaybeRef<BigNumber | undefined>;
-    assetId?: MaybeRef<string>;
-    noTxHash?: MaybeRef<boolean>;
-    validatorIndex?: MaybeRef<number | undefined>;
-    blockNumber?: MaybeRef<number | undefined>;
-    counterparty?: MaybeRef<string | undefined>;
-  }): ComputedRef<NoteFormat[]> =>
-    computed(() => {
-      const asset = get(assetSymbol(assetId));
+  }: FormatNoteParams): ComputedRef<NoteFormat[]> => computed<NoteFormat[]>(() => {
+    const asset = get(assetSymbol(assetId));
 
-      let notesVal = get(notes);
-      if (!notesVal)
-        return [];
+    let notesVal = get(notes);
+    if (!notesVal)
+      return [];
 
-      const formats: NoteFormat[] = [];
-      let skip = false;
+    const formats: NoteFormat[] = [];
+    let skip = false;
 
-      // Check if we need to scramble IBAN
-      if (get(scrambleData) && get(counterparty) === 'monerium')
-        notesVal = findAndScrambleIBAN(notesVal);
+    // Check if we need to scramble IBAN
+    if (get(scrambleData) && get(counterparty) === 'monerium')
+      notesVal = findAndScrambleIBAN(notesVal);
 
-      // label each word from notes whether it is an address or not
-      const words = notesVal.split(/[\s,]+/);
+    // label each word from notes whether it is an address or not
+    const words = notesVal.split(/[\s,]+/);
 
-      words.forEach((wordItem, index) => {
-        if (skip) {
-          skip = false;
-          return;
-        }
+    words.forEach((wordItem, index) => {
+      if (skip) {
+        skip = false;
+        return;
+      }
 
-        const splitted = separateByPunctuation(wordItem);
+      const splitted = separateByPunctuation(wordItem);
 
-        if (splitted.length === 0)
+      if (splitted.length === 0)
+        return;
+
+      const word = splitted[0];
+
+      const putBackPunctuation = (): void => {
+        if (!splitted[1])
           return;
 
-        const word = splitted[0];
+        formats.push({
+          type: NoteType.WORD,
+          word: splitted[1],
+        });
+      };
 
-        const putBackPunctuation = () => {
-          if (!splitted[1])
-            return;
+      // Check if the word is ETH address
+      if (isValidEthAddress(word)) {
+        formats.push({
+          type: NoteType.ADDRESS,
+          address: word,
+          showIcon: true,
+          showHashLink: true,
+        });
+        return putBackPunctuation();
+      }
 
-          formats.push({
-            type: NoteType.WORD,
-            word: splitted[1],
-          });
-        };
+      // Check if the word is Tx Hash
+      if (isValidTxHash(word) && !get(noTxHash)) {
+        formats.push({
+          type: NoteType.TX,
+          address: word,
+          showHashLink: true,
+        });
+        return putBackPunctuation();
+      }
 
-        // Check if the word is ETH address
-        if (isValidEthAddress(word)) {
-          formats.push({
-            type: NoteType.ADDRESS,
-            address: word,
-            showIcon: true,
-            showHashLink: true,
-          });
-          return putBackPunctuation();
-        }
+      // Check if the word is ETH2 Validator Index
+      if (get(validatorIndex)?.toString() === word) {
+        formats.push({
+          type: NoteType.ADDRESS,
+          address: word,
+          chain: Blockchain.ETH2,
+          showHashLink: true,
+        });
+        return putBackPunctuation();
+      }
 
-        // Check if the word is Tx Hash
-        if (isValidTxHash(word) && !get(noTxHash)) {
-          formats.push({
-            type: NoteType.TX,
-            address: word,
-            showHashLink: true,
-          });
-          return putBackPunctuation();
-        }
+      // Check if the word is Block Number
+      if (get(blockNumber)?.toString() === word) {
+        formats.push({
+          type: NoteType.BLOCK,
+          address: word,
+          showHashLink: true,
+        });
+        return putBackPunctuation();
+      }
 
-        // Check if the word is ETH2 Validator Index
-        if (get(validatorIndex)?.toString() === word) {
-          formats.push({
-            type: NoteType.ADDRESS,
-            address: word,
-            chain: Blockchain.ETH2,
-            showHashLink: true,
-          });
-          return putBackPunctuation();
-        }
+      const amountVal = get(amount);
 
-        // Check if the word is Block Number
-        if (get(blockNumber)?.toString() === word) {
-          formats.push({
-            type: NoteType.BLOCK,
-            address: word,
-            showHashLink: true,
-          });
-          return putBackPunctuation();
-        }
+      const isAmount = amountVal
+        && !isNaN(Number.parseFloat(word))
+        && bigNumberify(word).eq(amountVal)
+        && amountVal.gt(0)
+        && index < words.length - 1
+        && words[index + 1] === asset;
 
-        const amountVal = get(amount);
+      if (isAmount) {
+        formats.push({
+          type: NoteType.AMOUNT,
+          amount: amountVal,
+          asset: get(assetId),
+        });
+        skip = true;
+        return putBackPunctuation();
+      }
 
-        const isAmount
-          = amountVal
-          && !isNaN(Number.parseFloat(word))
-          && bigNumberify(word).eq(amountVal)
-          && amountVal.gt(0)
-          && index < words.length - 1
-          && words[index + 1] === asset;
+      // Check if the word is Markdown link format
+      const markdownLinkRegex = /^\[(.+)]\((<?https?:\/\/.+>?)\)$/;
+      const markdownLinkMatch = word.match(markdownLinkRegex);
 
-        if (isAmount) {
-          formats.push({
-            type: NoteType.AMOUNT,
-            amount: amountVal,
-            asset: get(assetId),
-          });
-          skip = true;
-          return putBackPunctuation();
-        }
+      if (markdownLinkMatch) {
+        const text = markdownLinkMatch[1];
+        let url = markdownLinkMatch[2];
 
-        // Check if the word is Markdown link format
-        const markdownLinkRegex = /^\[(.+)]\((<?https?:\/\/.+>?)\)$/;
-        const markdownLinkMatch = word.match(markdownLinkRegex);
+        if (text && url) {
+          url = url.replace(/^<+/, '').replace(/>+$/, '');
 
-        if (markdownLinkMatch) {
-          const text = markdownLinkMatch[1];
-          let url = markdownLinkMatch[2];
-
-          if (text && url) {
-            url = url.replace(/^<+/, '').replace(/>+$/, '');
-
-            formats.push({
-              type: NoteType.URL,
-              word: text,
-              url,
-            });
-
-            return putBackPunctuation();
-          }
-        }
-
-        // Check if the word is URL
-        const urlRegex = /^(https?:\/\/.+)$/;
-
-        if (urlRegex.test(word)) {
           formats.push({
             type: NoteType.URL,
-            word,
-            url: word,
+            word: text,
+            url,
           });
 
           return putBackPunctuation();
         }
+      }
 
-        if (isEvmIdentifier(word)) {
-          const symbol = get(assetSymbol(word));
-          if (symbol) {
-            formats.push({
-              type: NoteType.WORD,
-              word: symbol,
-            });
-            return putBackPunctuation();
-          }
+      // Check if the word is URL
+      const urlRegex = /^(https?:\/\/.+)$/;
+
+      if (urlRegex.test(word)) {
+        formats.push({
+          type: NoteType.URL,
+          word,
+          url: word,
+        });
+
+        return putBackPunctuation();
+      }
+
+      if (isEvmIdentifier(word)) {
+        const symbol = get(assetSymbol(word));
+        if (symbol) {
+          formats.push({
+            type: NoteType.WORD,
+            word: symbol,
+          });
+          return putBackPunctuation();
         }
+      }
 
-        formats.push({ type: NoteType.WORD, word: splitted.join('') });
-      });
-
-      return formats;
+      formats.push({ type: NoteType.WORD, word: splitted.join('') });
     });
+
+    return formats;
+  });
 
   return {
     formatNotes,

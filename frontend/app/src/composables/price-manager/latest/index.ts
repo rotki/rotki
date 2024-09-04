@@ -4,7 +4,20 @@ import { Section } from '@/types/status';
 import { CURRENCY_USD } from '@/types/currencies';
 import type { ManualPrice, ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
 
-export function useLatestPrices(t: ReturnType<typeof useI18n>['t'], filter?: Ref<string | undefined>) {
+interface UseLatestPricesReturn {
+  items: ComputedRef<ManualPriceWithUsd[]>;
+  loading: Ref<boolean>;
+  refreshing: Ref<boolean>;
+  getLatestPrices: () => Promise<void>;
+  save: (data: ManualPriceFormPayload, update: boolean) => Promise<boolean>;
+  refreshCurrentPrices: (additionalAssets?: string[]) => Promise<void>;
+  deletePrice: ({ fromAsset }: { fromAsset: string }) => Promise<void>;
+}
+
+export function useLatestPrices(
+  t: ReturnType<typeof useI18n>['t'],
+  filter?: Ref<string | undefined>,
+): UseLatestPricesReturn {
   const latestPrices = ref<ManualPrice[]>([]);
   const loading = ref(false);
   const refreshing = ref(false);
@@ -43,7 +56,7 @@ export function useLatestPrices(t: ReturnType<typeof useI18n>['t'], filter?: Ref
     );
   });
 
-  const getLatestPrices = async () => {
+  const getLatestPrices = async (): Promise<void> => {
     set(loading, true);
     try {
       set(latestPrices, await fetchLatestPrices());
@@ -85,7 +98,7 @@ export function useLatestPrices(t: ReturnType<typeof useI18n>['t'], filter?: Ref
     }
   };
 
-  const refreshCurrentPrices = async (additionalAssets: string[] = []) => {
+  const refreshCurrentPrices = async (additionalAssets: string[] = []): Promise<void> => {
     await getLatestPrices();
     set(refreshing, true);
     const assetToRefresh = [...get(latestAssets), ...additionalAssets];
@@ -94,7 +107,7 @@ export function useLatestPrices(t: ReturnType<typeof useI18n>['t'], filter?: Ref
     set(refreshing, false);
   };
 
-  const deletePrice = async ({ fromAsset }: { fromAsset: string }) => {
+  const deletePrice = async ({ fromAsset }: { fromAsset: string }): Promise<void> => {
     try {
       await deleteLatestPrice(fromAsset);
       await refreshCurrentPrices([fromAsset]);

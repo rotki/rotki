@@ -13,7 +13,14 @@ import type {
 import type { AddressBookSimplePayload } from '@/types/eth-names';
 import type { ActionStatus } from '@/types/action';
 
-export function useHistoryEvents() {
+interface UseHistoryEventsReturn {
+  fetchHistoryEvents: (payload: MaybeRef<HistoryEventRequestPayload>) => Promise<Collection<HistoryEventEntry>>;
+  addHistoryEvent: (event: NewHistoryEventPayload) => Promise<ActionStatus<ValidationErrors | string>>;
+  editHistoryEvent: (event: EditHistoryEventPayload) => Promise<ActionStatus<ValidationErrors | string>>;
+  deleteHistoryEvent: (eventIds: number[], forceDelete?: boolean) => Promise<ActionStatus>;
+}
+
+export function useHistoryEvents(): UseHistoryEventsReturn {
   const { t } = useI18n();
   const { notify } = useNotificationsStore();
 

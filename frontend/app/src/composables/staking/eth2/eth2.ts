@@ -7,7 +7,15 @@ import { Section, Status } from '@/types/status';
 import { TaskType } from '@/types/task-type';
 import type { TaskMeta } from '@/types/task';
 
-export function useEth2Staking() {
+interface UseEthStakingReturn {
+  performance: ComputedRef<EthStakingPerformance>;
+  pagination: Ref<EthStakingPayload>;
+  performanceLoading: Ref<boolean>;
+  fetchPerformance: (payload: EthStakingPayload) => Promise<void>;
+  refreshPerformance: (userInitiated: boolean) => Promise<void>;
+}
+
+export function useEth2Staking(): UseEthStakingReturn {
   const defaultPagination = (): EthStakingPayload => ({
     limit: 10,
     offset: 0,

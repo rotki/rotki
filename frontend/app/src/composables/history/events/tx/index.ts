@@ -115,7 +115,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
   const { isModuleEnabled } = useModules();
   const isEth2Enabled = isModuleEnabled(Module.ETH2);
 
-  const queryOnlineEvent = async (queryType: OnlineHistoryEventsQueryType) => {
+  const queryOnlineEvent = async (queryType: OnlineHistoryEventsQueryType): Promise<void> => {
     const eth2QueryTypes = [
       OnlineHistoryEventsQueryType.ETH_WITHDRAWALS,
       OnlineHistoryEventsQueryType.BLOCK_PRODUCTIONS,
@@ -160,7 +160,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
   const refreshTransactionsHandler = async (
     addresses: EvmChainAddress[],
     type: TransactionChainType = TransactionChainType.EVM,
-  ) => {
+  ): Promise<void> => {
     const groupedByChains = Object.entries(groupBy(addresses, account => account.evmChain)).map(
       ([evmChain, data]) => ({
         evmChain,

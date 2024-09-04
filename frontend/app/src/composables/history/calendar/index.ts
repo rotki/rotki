@@ -12,7 +12,14 @@ import type { Collection } from '@/types/collection';
 import type { MaybeRef } from '@vueuse/core';
 import type { ActionResult } from '@rotki/common';
 
-export function useCalendarApi() {
+interface UseCalendarApiReturn {
+  fetchCalendarEvents: (filter: MaybeRef<CalendarEventRequestPayload>) => Promise<Collection<CalendarEvent>>;
+  addCalendarEvent: (payload: CalendarEventPayload) => Promise<AddCalendarEventResponse>;
+  editCalendarEvent: (payload: CalendarEvent) => Promise<AddCalendarEventResponse>;
+  deleteCalendarEvent: (identifier: number) => Promise<boolean>;
+}
+
+export function useCalendarApi(): UseCalendarApiReturn {
   const fetchCalendarEvents = async (
     filter: MaybeRef<CalendarEventRequestPayload>,
   ): Promise<Collection<CalendarEvent>> => {

@@ -8,7 +8,15 @@ import type { NewTrade, Trade, TradeEntry, TradeRequestPayload } from '@/types/h
 import type { TaskMeta } from '@/types/task';
 import type { ActionStatus } from '@/types/action';
 
-export function useTrades() {
+interface UseTradesReturn {
+  refreshTrades: (userInitiated?: boolean, location?: string) => Promise<void>;
+  fetchTrades: (payload: MaybeRef<TradeRequestPayload>) => Promise<Collection<TradeEntry>>;
+  addExternalTrade: (trade: NewTrade) => Promise<ActionStatus<ValidationErrors | string>>;
+  editExternalTrade: (trade: Trade) => Promise<ActionStatus<ValidationErrors | string>>;
+  deleteExternalTrade: (tradesIds: string[]) => Promise<ActionStatus>;
+}
+
+export function useTrades(): UseTradesReturn {
   const { fetchAssociatedLocations } = useHistoryStore();
   const { connectedExchanges } = storeToRefs(useExchangesStore());
   const { exchangeName } = useLocations();

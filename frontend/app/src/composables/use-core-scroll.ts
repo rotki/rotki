@@ -1,4 +1,9 @@
-export function useCoreScroll() {
+interface UseScrollReturn {
+  scrollToTop: () => void;
+  shouldShowScrollToTopButton: ComputedRef<boolean>;
+}
+
+export function useCoreScroll(): UseScrollReturn {
   const { y: scrollY } = useScroll(document.body);
 
   const shouldShowScrollToTopButton = computed<boolean>(() => get(scrollY) > 200);
