@@ -277,6 +277,7 @@ def test_flaky_binding_parameter_zero(
             )
     testing_thread.kill()
 
+
 @pytest.mark.parametrize('number_of_eth_accounts', [1])
 def test_old_curve_gauge(ethereum_inquirer: 'EthereumInquirer'):
     """Test that querying new and old gauges get the data correctly.

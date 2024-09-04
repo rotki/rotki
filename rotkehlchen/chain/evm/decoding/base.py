@@ -22,8 +22,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, EvmNodeInquirerWithDSProxy
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.client import DBCursor
-    from rotkehlchen.assets.asset import Asset
-    from rotkehlchen.assets.utils import TokenEncounterInfo
 
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
