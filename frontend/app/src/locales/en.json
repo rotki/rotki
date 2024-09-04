@@ -4308,7 +4308,7 @@
     "hint": {
       "description": "* type the filter and then press enter e.g.",
       "example": "start = 26/05/2022",
-      "edit_note": "Double-click a filter to edit"
+      "edit_note": "Click applied filter to edit the value"
 
     },
     "hint_filter": "The combined filters will be applied at the same time",

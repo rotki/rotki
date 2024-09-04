@@ -3612,8 +3612,7 @@
     },
     "hint": {
       "description": "* type the filter and then press enter e.g.",
-      "example": "start = 26/05/2022",
-      "edit_note": "Double-click a filter to edit"
+      "example": "start = 26/05/2022"
     },
     "hint_filter": "The combined filters will be applied at the same time",
     "no_suggestions": "No suggestions found for {search}",

@@ -4028,8 +4028,7 @@
     },
     "hint": {
       "description": "* tapez le filtre puis appuyez sur entrée, par exemple.",
-      "example": "start = 26/05/2022",
-      "edit_note": "Double-click a filter to edit"
+      "example": "start = 26/05/2022"
     },
     "hint_filter": "Les filtres combinés seront appliqués en même temps",
     "label": "Filtres disponibles",

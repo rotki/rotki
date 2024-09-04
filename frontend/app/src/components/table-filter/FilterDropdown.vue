@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
-import { get, set } from '@vueuse/core';
 import type { BaseSuggestion, SearchMatcher, Suggestion } from '@/types/filtering';
 
 const props = defineProps<{
@@ -213,7 +211,7 @@ function getDisplayValue(suggestion: Suggestion) {
       </div>
       <div
         v-else-if="noSuggestionsForValue"
-        class="pb-0 text-rui-text-secondary"
+        class="text-rui-text-secondary"
         data-cy="no-suggestions"
       >
         <i18n-t
@@ -252,9 +250,7 @@ function getDisplayValue(suggestion: Suggestion) {
       </div>
     </div>
     <div
-      v-else-if="keyword && matchers.length === 0"
-      class="pb-0"
-    >
+      v-else-if="keyword && matchers.length === 0">
       <span>{{ t('table_filter.unsupported_filter') }}</span>
       <span class="font-medium ms-2">{{ keyword }}</span>
     </div>
