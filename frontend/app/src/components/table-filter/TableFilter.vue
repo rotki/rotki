@@ -25,7 +25,6 @@ const props = withDefaults(
   },
 );
 
-
 const emit = defineEmits<{
   (e: 'update:matches', matches: MatchedKeywordWithBehaviour<any>): void;
 }>();
@@ -99,26 +98,21 @@ function setSearchToMatcherKey(matcher: SearchMatcher<any>) {
 }
 
 function updateMatches(pairs: Suggestion[]) {
-
   const matched: Partial<MatchedKeyword<any>> = {};
   const validPairs: Suggestion[] = [];
 
   for (const entry of pairs) {
     const key = entry.key;
     const matcher = matcherForKey(key);
-    if (!matcher) {
+    if (!matcher)
       continue;
-
-    }
 
     const valueKey = (matcher.keyValue || matcher.key) as string;
     let transformedKeyword: string | boolean = '';
 
     if ('string' in matcher) {
-      if (typeof entry.value !== 'string') {
+      if (typeof entry.value !== 'string')
         continue;
-
-      }
 
       if (matcher.validate(entry.value)) {
         transformedKeyword = matcher.serializer?.(entry.value) || entry.value;
@@ -138,10 +132,7 @@ function updateMatches(pairs: Suggestion[]) {
     }
 
     if (!transformedKeyword)
-    {
       continue;
-
-    }
 
     validPairs.push(entry);
 

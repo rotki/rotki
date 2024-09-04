@@ -280,7 +280,9 @@ function getDisplayValue(suggestion: Suggestion) {
         </FilterEntry>
       </div>
     </div>
-    <div :class="highlightedTextClasses" class="font-light mt-2"
+    <div
+      :class="highlightedTextClasses"
+      class="font-light mt-2"
     >
       <RuiDivider class="my-2" />
       <span>{{ t('table_filter.hint.description') }}</span>
