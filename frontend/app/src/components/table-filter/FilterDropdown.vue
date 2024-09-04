@@ -43,7 +43,7 @@ function applyFilter(item: Suggestion) {
   const value = typeof item.value === 'string' ? item.value : item.value.symbol;
   if (value) {
     emit('apply-filter', item);
-    emit('update:keyword', `${item.key}=`);
+    emit('update:keyword', `${item.key}=${value}`);
   }
 }
 
@@ -83,10 +83,11 @@ watch(
     }
     else if (selectedMatcher) {
       if ('string' in selectedMatcher) {
-        const _exclude = !!selectedMatcher.allowExclusion && !!search.exclude;
+        const exclude = !!selectedMatcher.allowExclusion && !!search.exclude;
         suggestedItems = selectedMatcher.suggestions().map(item => ({
           key: selectedMatcher.key,
           value: item,
+          exclude,
         }));
       }
       else if ('asset' in selectedMatcher) {
@@ -120,7 +121,6 @@ watch(
       suggested,
       suggestedItems
         .sort((a, b) => compareTextByKeyword(getItemText(a), getItemText(b), searchString))
-        .slice(0, 5)
         .map((item, index) => ({
           index,
           key: item.key,
@@ -198,37 +198,40 @@ function getDisplayValue(suggestion: Suggestion) {
           :key="item.index"
           :tabindex="index"
           variant="text"
-          class="text-body-1 tracking-wide w-full justify-start text-left text-rui-text-secondary p-2"
+          class="text-body-1 tracking-wide w-full justify-start text-left text-rui-text-secondary p-0"
           :class="{
             ['!bg-rui-primary-lighter/20']: index === selectedSuggestion,
           }"
           @click="applyFilter(item)"
           @keydown.enter="handleEnter()"
         >
-          <span class="text-rui-primary font-bold mr-2">{{ item.key }}:</span>{{ getDisplayValue(item) }}
+          <div class="flex items-center w-full px-3 py-2">
+            <span class="text-rui-primary font-bold min-w-[4rem] text-left">{{ item.key }}:</span>
+            <span class="font-normal ml-2">{{ getDisplayValue(item) }}</span>
+          </div>
         </RuiButton>
       </div>
       <div
         v-else-if="noSuggestionsForValue"
-        class="pb-0"
+        class="pb-0 text-rui-text-secondary"
+        data-cy="no-suggestions"
       >
-        <div class="text-rui-text-secondary">
-          <i18n-t
-            v-if="selectedMatcher && !('asset' in selectedMatcher)"
-            keypath="table_filter.no_suggestions"
-            tag="span"
-          >
-            <template #search>
-              <span class="font-medium text-rui-primary">
-                {{ keywordSplited.value }}
-              </span>
-            </template>
-          </i18n-t>
-          <template v-else-if="selectedMatcher && 'asset' in selectedMatcher">
-            {{ t('table_filter.asset_suggestion') }}
+        <i18n-t
+          v-if="selectedMatcher && !('asset' in selectedMatcher)"
+          keypath="table_filter.no_suggestions"
+          tag="span"
+        >
+          <template #search>
+            <span class="font-medium text-rui-primary">
+              {{ keywordSplited.value }}
+            </span>
           </template>
-        </div>
+        </i18n-t>
+        <template v-else-if="selectedMatcher && 'asset' in selectedMatcher">
+          {{ t('table_filter.asset_suggestion') }}
+        </template>
       </div>
+
       <div
         v-if="selectedMatcher && 'string' in selectedMatcher && selectedMatcher.allowExclusion"
         :class="highlightedTextClasses"
