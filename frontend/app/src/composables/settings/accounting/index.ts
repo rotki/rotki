@@ -13,7 +13,16 @@ import type { ActionStatus } from '@/types/action';
 import type { TaskMeta } from '@/types/task';
 import type { Message } from '@rotki/common';
 
-export function useAccountingSettings() {
+interface UseAccountingSettingReturn {
+  getAccountingRule: (payload: MaybeRef<AccountingRuleRequestPayload>, counterparty: string | null) => Promise<AccountingRuleEntry | undefined>;
+  getAccountingRules: (payload: MaybeRef<AccountingRuleRequestPayload>) => Promise<Collection<AccountingRuleEntry>>;
+  getAccountingRulesConflicts: (payload: MaybeRef<AccountingRuleConflictRequestPayload>) => Promise<Collection<AccountingRuleConflict>>;
+  resolveAccountingRuleConflicts: (payload: AccountingRuleConflictResolution) => Promise<ActionStatus>;
+  exportJSON: () => Promise<void>;
+  importJSON: (file: File) => Promise<ActionStatus | null>;
+}
+
+export function useAccountingSettings(): UseAccountingSettingReturn {
   const {
     fetchAccountingRule,
     fetchAccountingRules,
@@ -31,9 +40,9 @@ export function useAccountingSettings() {
   const getAccountingRule = async (
     payload: MaybeRef<AccountingRuleRequestPayload>,
     counterparty: string | null,
-  ): Promise<AccountingRuleEntry | null> => {
+  ): Promise<AccountingRuleEntry | undefined> => {
     try {
-      return await fetchAccountingRule(get(payload), counterparty);
+      return await fetchAccountingRule(get(payload), counterparty) ?? undefined;
     }
     catch (error: any) {
       logger.error(error);
@@ -47,7 +56,7 @@ export function useAccountingSettings() {
         display: true,
       });
 
-      return null;
+      return undefined;
     }
   };
 

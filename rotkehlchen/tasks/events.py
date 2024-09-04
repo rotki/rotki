@@ -1,6 +1,6 @@
 from typing import TYPE_CHECKING
-from rotkehlchen.db.cache import DBCacheStatic
 
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:

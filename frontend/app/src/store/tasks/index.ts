@@ -92,25 +92,23 @@ export const useTaskStore = defineStore('tasks', () => {
     unlock(taskId);
   };
 
-  const isTaskRunning = (type: TaskType, meta: Record<string, any> = {}) =>
-    computed<boolean>(
-      () =>
-        !!find(get(tasks), (item) => {
-          const sameType = item.type === type;
-          const keys = Object.keys(meta);
-          if (keys.length === 0)
-            return sameType;
+  const isTaskRunning = (type: TaskType, meta: Record<string, any> = {}): ComputedRef<boolean> => computed<boolean>(() =>
+    !!find(get(tasks), (item) => {
+      const sameType = item.type === type;
+      const keys = Object.keys(meta);
+      if (keys.length === 0)
+        return sameType;
 
-          return (
-            sameType
-            && keys.every(
-              key =>
-                // @ts-expect-error meta key has any type
-                key in item.meta && item.meta[key] === meta[key],
-            )
-          );
-        }),
-    );
+      return (
+        sameType
+        && keys.every(
+          key =>
+          // @ts-expect-error meta key has any type
+            key in item.meta && item.meta[key] === meta[key],
+        )
+      );
+    }),
+  );
 
   const metadata = <T extends TaskMeta>(type: TaskType): T | undefined => {
     const task = find(get(tasks), item => item.type === type);
@@ -236,7 +234,7 @@ export const useTaskStore = defineStore('tasks', () => {
     };
   };
 
-  function removeFromUnknownTasks(taskId: number) {
+  function removeFromUnknownTasks(taskId: number): void {
     const unknown = { ...get(unknownTasks) };
     if (!unknown[taskId])
       return;

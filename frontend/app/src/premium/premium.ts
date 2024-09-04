@@ -9,24 +9,21 @@ class AsyncLock {
 
   private locked: boolean = false;
 
-  get isLocked() {
+  get isLocked(): boolean {
     return this.locked;
   }
 
   constructor() {
-    this.disable = () => {};
+    this.disable = (): void => {};
     this.promise = Promise.resolve();
   }
 
-  enable() {
+  enable(): void {
     this.locked = true;
-    this.promise = new Promise(
-      resolve =>
-        (this.disable = () => {
-          this.locked = false;
-          resolve();
-        }),
-    );
+    this.promise = new Promise(resolve => (this.disable = (): void => {
+      this.locked = false;
+      resolve();
+    }));
   }
 }
 
@@ -81,7 +78,7 @@ async function loadComponents(): Promise<string[]> {
   }
 }
 
-export async function loadLibrary() {
+export async function loadLibrary(): Promise<any> {
   const [component] = await loadComponents();
   // @ts-expect-error component is dynamic and not added in the window type
   const library = window[component];

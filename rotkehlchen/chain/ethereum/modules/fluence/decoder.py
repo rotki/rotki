@@ -1,7 +1,7 @@
 import logging
 from typing import TYPE_CHECKING, Any
-from rotkehlchen.accounting.structures.balance import Balance
 
+from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.constants import ERC20_OR_ERC721_TRANSFER

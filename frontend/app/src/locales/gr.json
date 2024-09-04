@@ -2573,18 +2573,17 @@
     }
   },
   "input_mode_select": {
+    "import_from_wallet": {
+      "label": "Εισαγωγή διευθύνσεων από πορτοφόλι προγράμματος περιήγησης",
+      "missing": "Δεν μπορούμε να εντοπίσουμε κανένα πορτοφόλι σε αυτό το πρόγραμμα περιήγησης.",
+      "missing_tooltip": {
+        "wallet_is_not_installed": "Αυτό το πρόγραμμα περιήγησης δεν έχει εγκατεστημένα πορτοφόλια. Μπορείτε να μεταβείτε στο κατάστημα επεκτάσεων του προγράμματος περιήγησής σας και να εγκαταστήσετε ένα.",
+        "wallet_is_not_enabled": "Η επέκταση για το πορτοφόλι είναι απενεργοποιημένη. Μπορείτε να την ενεργοποιήσετε στο μενού Extensions/Add-Ons, ανάλογα με το πρόγραμμα περιήγησής σας.",
+        "title": "Εδώ είναι η κοινή αιτία:"
+      }
+    },
     "manual_add": {
       "label": "Manual"
-    },
-    "metamask_import": {
-      "missing": "Importing addresses from MetaMask is disabled. MetaMask could not be detected.",
-      "missing_tooltip": {
-        "copy_url": "copy this page URL",
-        "metamask_is_not_enabled": "The MetaMask is not enabled yet. You can enable it in menu Extension / Add Ons, depends on your browser.",
-        "metamask_is_not_installed": "This browser doesn't have MetaMask installed. You can download MetaMask {link}.",
-        "metamask_is_not_supported_by_browser": "Make sure you open this page with supported browser listed {link}. If not, please {copy} and open it manually on supported browser.",
-        "title": "Here are the common cause:"
-      }
     },
     "xpub_add": {
       "label": "XPUB"

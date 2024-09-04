@@ -3,7 +3,7 @@ import { isBlockchain } from '@/types/blockchain/chains';
 export const useAssetIconStore = defineStore('assets/icon', () => {
   const lastRefreshedAssetIcon = ref<number>(0);
 
-  const setLastRefreshedAssetIcon = () => {
+  const setLastRefreshedAssetIcon = (): void => {
     set(lastRefreshedAssetIcon, Date.now());
   };
 

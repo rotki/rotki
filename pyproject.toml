@@ -124,10 +124,13 @@ select = [
     "F",
     "W",
     "C",
-    # "I",  # isort -- not using since does not play well with running isort too
+    "I",  # isort
     # "D",  # pydocstyle -- too many docstuff we don't use
     "N",
     "B",
+    "C4",
+    "T10",
+    "EXE",
     "G",
     # "EM",  #  our exceptions use f strings everywhere. Very little upside to this and I don't think it's cleaner code
     # "CPY",  # If we ever wanted to enforce copyright notice on each file
@@ -236,6 +239,10 @@ docstring-quotes = "double"
 inline-quotes = "single"
 multiline-quotes = "double"
 
+[tool.ruff.lint.isort]
+combine-as-imports = true
+known-third-party = ["packaging"]  # packaging is otherwise detected as first-party due to the ./packaging folder
+
 [tool.ruff.lint.per-file-ignores]
 "tools/*" = [
     "T201",  # got prints in tools
@@ -275,17 +282,6 @@ multiline-quotes = "double"
     "S603",  # Script called by us. No variable input
     "S607",  # Script called by us. Partial executable path is fine.
 ]
-
-# -- isort config section --
-
-[tool.isort]
-line_length = 99
-known_future_library = "future"
-multi_line_output = "3"
-known_first_party = ["rotkehlchen"]
-include_trailing_comma = "1"
-default_section = "THIRDPARTY"
-combine_as_imports = "1"
 
 [tool.vulture]
 

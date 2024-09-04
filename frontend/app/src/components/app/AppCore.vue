@@ -1,23 +1,15 @@
 <script setup lang="ts">
-import { Chart, registerables } from 'chart.js';
-import zoomPlugin from 'chartjs-plugin-zoom';
-
 const visibilityStore = useAreaVisibilityStore();
 const { showDrawer, isMini } = storeToRefs(visibilityStore);
-
-const { isXlAndDown } = useBreakpoint();
-
-const expanded = logicAnd(showDrawer, logicNot(isXlAndDown));
 const { overall } = storeToRefs(useStatisticsStore());
 const { logged } = storeToRefs(useSessionAuthStore());
-
-const { updateTray } = useInterop();
-
 const toggleDrawer = visibilityStore.toggleDrawer;
 
-onMounted(() => {
-  set(showDrawer, !get(isXlAndDown));
-});
+const { isXlAndDown } = useBreakpoint();
+const { updateTray } = useInterop();
+const { shouldShowScrollToTopButton, scrollToTop } = useCoreScroll();
+
+const expanded = logicAnd(showDrawer, logicNot(isXlAndDown));
 
 watch(overall, (overall) => {
   if (overall.percentage === '-')
@@ -27,18 +19,12 @@ watch(overall, (overall) => {
 });
 
 onBeforeMount(() => {
-  Chart.defaults.font.family = 'Roboto';
-  Chart.register(...registerables);
-  Chart.register(zoomPlugin);
+  initGraph();
 });
 
-function scrollToTop() {
-  document.body.scrollTo(0, 0);
-}
-
-const { y: scrollY } = useScroll(document.body);
-
-const shouldShowScrollToTopButton = computed<boolean>(() => get(scrollY) > 200);
+onMounted(() => {
+  set(showDrawer, !get(isXlAndDown));
+});
 </script>
 
 <template>

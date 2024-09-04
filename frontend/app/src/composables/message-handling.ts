@@ -10,14 +10,10 @@ import dayjs from 'dayjs';
 import {
   type AccountingRuleConflictData,
   type BalanceSnapshotError,
-  type EvmTransactionQueryData,
-  type EvmUnDecodedTransactionsData,
-  type HistoryEventsQueryData,
   MESSAGE_WARNING,
   type MissingApiKey,
   type NewDetectedToken,
   type PremiumStatusUpdateData,
-  type ProtocolCacheUpdatesData,
   SocketMessageType,
   WebsocketMessage,
 } from '@/types/websocket-messages';
@@ -25,7 +21,9 @@ import { camelCaseTransformer } from '@/services/axios-tranformers';
 import { Routes } from '@/router/routes';
 import type { CalendarEventPayload } from '@/types/history/calendar';
 
-export function useMessageHandling() {
+interface UseMessageHandling { handleMessage: (data: string) => Promise<void>; consume: () => Promise<void> }
+
+export function useMessageHandling(): UseMessageHandling {
   const { setQueryStatus: setTxQueryStatus } = useTxQueryStatusStore();
   const { setQueryStatus: setEventsQueryStatus } = useEventsQueryStatusStore();
   const { updateDataMigrationStatus, updateDbUpgradeStatus } = useSessionAuthStore();
@@ -46,22 +44,6 @@ export function useMessageHandling() {
     message: t('notification_messages.snapshot_failed.message', data),
     display: true,
   });
-
-  const handleEvmTransactionsStatus = (data: EvmTransactionQueryData): void => {
-    setTxQueryStatus(data);
-  };
-
-  const handleUnDecodedTransaction = (data: EvmUnDecodedTransactionsData): void => {
-    setUndecodedTransactionsStatus(data);
-  };
-
-  const handleProtocolCacheUpdates = (data: ProtocolCacheUpdatesData): void => {
-    setProtocolCacheStatus(data);
-  };
-
-  const handleHistoryEventsStatus = (data: HistoryEventsQueryData): void => {
-    setEventsQueryStatus(data);
-  };
 
   const handleLegacyMessage = (message: string, isWarning: boolean): Notification => ({
     title: t('notification_messages.backend.title'),
@@ -200,7 +182,7 @@ export function useMessageHandling() {
       priority: Priority.ACTION,
       action: {
         label: t('notification_messages.accounting_rule_conflict.action'),
-        action: async () => {
+        action: async (): Promise<void> => {
           await router.push({
             path: '/settings/accounting',
             query: { resolveConflicts: 'true' },
@@ -244,7 +226,7 @@ export function useMessageHandling() {
       action: {
         label: t('notification_messages.reminder.open_calendar'),
         persist: true,
-        action: async () => {
+        action: async (): Promise<void> => {
           await router.push({
             path: '/calendar',
             query: { timestamp: timestamp.toString() },
@@ -260,7 +242,7 @@ export function useMessageHandling() {
 
     const notifications: Notification[] = [];
 
-    const addNotification = (notification: Notification | null) => {
+    const addNotification = (notification: Notification | null): void => {
       if (notification)
         notifications.push(notification);
     };
@@ -277,13 +259,13 @@ export function useMessageHandling() {
       notifications.push(handleLegacyMessage(data.value, isWarning));
     }
     else if (type === SocketMessageType.EVM_TRANSACTION_STATUS) {
-      handleEvmTransactionsStatus(message.data);
+      setTxQueryStatus(message.data);
     }
     else if (type === SocketMessageType.EVM_UNDECODED_TRANSACTIONS) {
-      handleUnDecodedTransaction(message.data);
+      setUndecodedTransactionsStatus(message.data);
     }
     else if (type === SocketMessageType.HISTORY_EVENTS_STATUS) {
-      handleHistoryEventsStatus(message.data);
+      setEventsQueryStatus(message.data);
     }
     else if (type === SocketMessageType.PREMIUM_STATUS_UPDATE) {
       addNotification(handlePremiumStatusUpdate(message.data));
@@ -327,7 +309,7 @@ export function useMessageHandling() {
       notifications.push(handleCalendarReminder(message.data));
     }
     else if (type === SocketMessageType.PROTOCOL_CACHE_UPDATES) {
-      handleProtocolCacheUpdates(message.data);
+      setProtocolCacheStatus(message.data);
     }
     else {
       logger.warn(`Unsupported socket message received: '${type}'`);
@@ -336,7 +318,7 @@ export function useMessageHandling() {
     notifications.forEach(notify);
   };
 
-  const handlePollingMessage = (message: string, isWarning: boolean) => {
+  const handlePollingMessage = (message: string, isWarning: boolean): void => {
     const notifications: Notification[] = [];
 
     try {
@@ -346,9 +328,9 @@ export function useMessageHandling() {
       else if (object.type === SocketMessageType.BALANCES_SNAPSHOT_ERROR)
         notifications.push(handleSnapshotError(object));
       else if (object.type === SocketMessageType.EVM_TRANSACTION_STATUS)
-        handleEvmTransactionsStatus(object);
+        setTxQueryStatus(object);
       else if (object.type === SocketMessageType.EVM_UNDECODED_TRANSACTIONS)
-        handleUnDecodedTransaction(object);
+        setUndecodedTransactionsStatus(object);
       else if (object.type === SocketMessageType.DB_UPGRADE_STATUS)
         updateDbUpgradeStatus(object);
       else if (object.type === SocketMessageType.DATA_MIGRATION_STATUS)

@@ -1,6 +1,6 @@
-import { type BigNumber, type NetValue, TimeUnit, timeframes } from '@rotki/common';
+import { type BigNumber, type NetValue, type TimeFramePeriod, TimeUnit, timeframes } from '@rotki/common';
 import dayjs from 'dayjs';
-import { CURRENCY_USD } from '@/types/currencies';
+import { CURRENCY_USD, type SupportedCurrency } from '@/types/currencies';
 
 function defaultNetValue(): NetValue {
   return {
@@ -9,83 +9,52 @@ function defaultNetValue(): NetValue {
   };
 }
 
+interface Overall {
+  currency: SupportedCurrency;
+  delta: string;
+  netWorth: string;
+  percentage: string;
+  period: TimeFramePeriod;
+  up?: boolean;
+}
+
 export const useStatisticsStore = defineStore('statistics', () => {
   const netValue = ref<NetValue>(defaultNetValue());
+
+  const { t } = useI18n();
 
   const settingsStore = useFrontendSettingsStore();
   const { nftsInNetValue } = storeToRefs(settingsStore);
   const { notify } = useNotificationsStore();
   const { currencySymbol, floatingPrecision } = storeToRefs(useGeneralSettingsStore());
-  const { balances, liabilities } = useAggregatedBalances();
   const { nonFungibleTotalValue } = storeToRefs(useNonFungibleBalancesStore());
   const { timeframe } = storeToRefs(useSessionSettingsStore());
   const { exchangeRate } = useBalancePricesStore();
 
+  const api = useStatisticsApi();
   const { lpTotal } = useLiquidityPosition();
+  const { balances, liabilities } = useAggregatedBalances();
 
-  const { t } = useI18n();
+  const calculateTotalValue = (includeNft = false): ComputedRef<BigNumber> => computed<BigNumber>(() => {
+    const aggregatedBalances = get(balances());
+    const totalLiabilities = get(liabilities());
+    const nftTotal = includeNft ? get(nonFungibleTotalValue) : 0;
 
-  const calculateTotalValue = (includeNft = false): ComputedRef<BigNumber> =>
-    computed(() => {
-      const aggregatedBalances = get(balances());
-      const totalLiabilities = get(liabilities());
-      const nftTotal = includeNft ? get(nonFungibleTotalValue) : 0;
+    const lpTotalBalance = get(lpTotal(false));
 
-      const lpTotalBalance = get(lpTotal(false));
+    const assetValue = aggregatedBalances.reduce((sum, value) => sum.plus(value.usdValue), Zero);
+    const liabilityValue = totalLiabilities.reduce((sum, value) => sum.plus(value.usdValue), Zero);
 
-      const assetValue = aggregatedBalances.reduce((sum, value) => sum.plus(value.usdValue), Zero);
+    return assetValue.plus(nftTotal).plus(lpTotalBalance).minus(liabilityValue);
+  });
 
-      const liabilityValue = totalLiabilities.reduce((sum, value) => sum.plus(value.usdValue), Zero);
-
-      return assetValue.plus(nftTotal).plus(lpTotalBalance).minus(liabilityValue);
-    });
-
-  const totalNetWorth = computed(() => {
+  const totalNetWorth = computed<BigNumber>(() => {
     const mainCurrency = get(currencySymbol);
     const rate = get(exchangeRate(mainCurrency)) ?? One;
     return get(calculateTotalValue(get(nftsInNetValue))).multipliedBy(rate);
   });
 
-  const totalNetWorthUsd = computed(() => get(calculateTotalValue(true)));
-
-  const getNetValue = (startingDate: number): ComputedRef<NetValue> =>
-    computed(() => {
-      const currency = get(currencySymbol);
-      const rate = get(exchangeRate(currency)) ?? One;
-
-      const convert = (value: BigNumber): BigNumber => (currency === CURRENCY_USD ? value : value.multipliedBy(rate));
-
-      const { times, data } = get(netValue);
-
-      const now = Math.floor(Date.now() / 1000);
-      const netWorth = get(totalNetWorth);
-
-      if (times.length === 0 && data.length === 0) {
-        const oneDayTimestamp = 24 * 60 * 60;
-
-        return {
-          times: [now - oneDayTimestamp, now],
-          data: [Zero, netWorth],
-        };
-      }
-
-      const nv: NetValue = { times: [], data: [] };
-
-      for (const [i, time] of times.entries()) {
-        if (time < startingDate)
-          continue;
-
-        nv.times.push(time);
-        nv.data.push(convert(data[i]));
-      }
-
-      return {
-        times: [...nv.times, now],
-        data: [...nv.data, netWorth],
-      };
-    });
-
-  const overall = computed(() => {
+  const overall = computed<Overall>(() => {
     const currency = get(currencySymbol);
     const rate = get(exchangeRate(currency)) ?? One;
     const selectedTimeframe = get(timeframe);
@@ -130,7 +99,46 @@ export const useStatisticsStore = defineStore('statistics', () => {
     };
   });
 
-  const api = useStatisticsApi();
+  const totalNetWorthUsd = calculateTotalValue(true);
+
+  function getNetValue(startingDate: number): ComputedRef<NetValue> {
+    return computed<NetValue>(() => {
+      const currency = get(currencySymbol);
+      const rate = get(exchangeRate(currency)) ?? One;
+
+      const convert = (value: BigNumber): BigNumber => (currency === CURRENCY_USD ? value : value.multipliedBy(rate));
+
+      const { times, data } = get(netValue);
+
+      const now = Math.floor(Date.now() / 1000);
+      const netWorth = get(totalNetWorth);
+
+      if (times.length === 0 && data.length === 0) {
+        const oneDayTimestamp = 24 * 60 * 60;
+
+        return {
+          times: [now - oneDayTimestamp, now],
+          data: [Zero, netWorth],
+        };
+      }
+
+      const nv: NetValue = { times: [], data: [] };
+
+      for (const [i, time] of times.entries()) {
+        if (time < startingDate)
+          continue;
+
+        nv.times.push(time);
+        nv.data.push(convert(data[i]));
+      }
+
+      return {
+        times: [...nv.times, now],
+        data: [...nv.data, netWorth],
+      };
+    });
+  }
+
   const fetchNetValue = async (): Promise<void> => {
     try {
       set(netValue, await api.queryNetValueData(get(nftsInNetValue)));

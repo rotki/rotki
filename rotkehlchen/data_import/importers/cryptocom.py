@@ -3,14 +3,19 @@ import functools
 import logging
 from collections import defaultdict
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.converters import asset_from_cryptocom
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.constants.prices import ZERO_PRICE
-from rotkehlchen.data_import.utils import BaseExchangeImporter, UnsupportedCSVEntry, hash_csv_row
+from rotkehlchen.data_import.utils import (
+    BaseExchangeImporter,
+    SkippedCSVEntry,
+    UnsupportedCSVEntry,
+    hash_csv_row,
+)
 from rotkehlchen.db.drivers.client import DBWriterClient
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
@@ -35,14 +40,28 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
 CRYPTOCOM_PREFIX = 'CCM_'
+INDEX = '_index'
+
+
+def hash_csv_row_without_index(csv_row: Any) -> str:
+    """Hash the CSV row excluding the INDEX"""
+    return hash_csv_row({k: v for k, v in csv_row.items() if k != INDEX})
 
 
 class CryptocomImporter(BaseExchangeImporter):
+    """Crypto.com CSV importer"""
+
+    def __init__(self, db: 'DBHandler') -> None:
+        super().__init__(db=db, name='Crypto.com')
+
     def _consume_cryptocom_entry(
             self,
             write_cursor: DBWriterClient,
@@ -270,19 +289,20 @@ class CryptocomImporter(BaseExchangeImporter):
             # supercharger actions
             'supercharger_deposit',
             'supercharger_withdrawal',
-            # already handled using _import_cryptocom_associated_entries
+            # The user has received an airdrop but can't claim it yet
+            'airdrop_locked',
+        }:
+            raise SkippedCSVEntry("Entry doesn't affect wallet balance")
+        elif row_type in {
             'dynamic_coin_swap_debited',
             'dynamic_coin_swap_credited',
             'dust_conversion_debited',
             'dust_conversion_credited',
             'interest_swap_credited',
             'interest_swap_debited',
-            # The user has received an airdrop but can't claim it yet
-            'airdrop_locked',
         }:
-            # those types are ignored because it doesn't affect the wallet balance
-            # or are not handled here
-            return
+            # already handled using _import_cryptocom_associated_entries
+            raise SkippedCSVEntry
         else:
             raise UnsupportedCSVEntry(
                 f'Unknown entrype type "{row_type}" encountered during '
@@ -314,17 +334,20 @@ class CryptocomImporter(BaseExchangeImporter):
         credited_row = None
         expects_debited = False
         credited_timestamp = None
-        for row in data:
+        for index, row in enumerate(data, start=1):
             log.debug(f'Processing cryptocom row at {row["Timestamp (UTC)"]} and type {tx_kind}')
+            row[INDEX] = index
             # If we don't have the corresponding debited entry ignore them
             # and warn the user
             if (
                 expects_debited is True and
                 row['Transaction Kind'] != f'{tx_kind}_debited'
             ):
-                self.db.msg_aggregator.add_warning(
-                    f'Error during cryptocom CSV import consumption. Found {tx_kind}_credited '
-                    f'but no amount debited afterwards at date {row["Timestamp (UTC)"]}',
+                self.send_message(
+                    row_index=index,
+                    csv_row=row,
+                    msg=f'Found {tx_kind}_credited but no amount debited afterwards at date {row["Timestamp (UTC)"]}',  # noqa: E501
+                    is_error=True,
                 )
                 # Pop the last credited event as it's invalid. We always assume to be at least
                 # one debited event and one credited event. If we don't find the debited event
@@ -340,9 +363,11 @@ class CryptocomImporter(BaseExchangeImporter):
                     location='cryptocom',
                 )
                 if expects_debited is False and timestamp != credited_timestamp:
-                    self.db.msg_aggregator.add_warning(
-                        f'Error during cryptocom CSV import consumption. Found {tx_kind}_debited'
-                        f' but no amount credited before at date {row["Timestamp (UTC)"]}',
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=f'Found {tx_kind}_debited but no amount credited before at date {row["Timestamp (UTC)"]}',  # noqa: E501
+                        is_error=True,
                     )
                     continue
                 if timestamp not in multiple_rows:
@@ -374,14 +399,22 @@ class CryptocomImporter(BaseExchangeImporter):
             # When we convert multiple assets dust to CRO
             # in one time, it will create multiple debited rows with
             # the same timestamp
+            debited_rows = []
             try:
                 debited_rows = m_row['debited']
                 credited_row = m_row['credited']
             except KeyError as e:
-                self.db.msg_aggregator.add_warning(
-                    f'Failed to get {e!s} event at timestamp {timestamp}.',
-                )
+                for row in debited_rows + [credited_row]:
+                    if row:
+                        self.send_message(
+                            row_index=row[INDEX],
+                            csv_row=row,
+                            msg=f'Failed to get {e!s} event at timestamp {timestamp}.',
+                            is_error=True,
+                        )
+
                 continue
+
             total_debited_usd = functools.reduce(
                 lambda acc, row:
                     acc +
@@ -395,6 +428,13 @@ class CryptocomImporter(BaseExchangeImporter):
             # if we have multiple debited rows, we can't import them
             # since we can't compute their dedicated rates, so we skip them
             if len(debited_rows) > 1 and total_debited_usd == 0:
+                for row in debited_rows:
+                    self.send_message(
+                        row_index=row[INDEX],
+                        csv_row=row,
+                        msg="Can't import multiple debited rows with value of 0.",
+                        is_error=True,
+                    )
                 return
 
             if credited_row is not None and len(debited_rows) != 0:
@@ -440,6 +480,9 @@ class CryptocomImporter(BaseExchangeImporter):
                         notes=notes,
                     )
                     self.add_trade(write_cursor, trade)
+
+                # Add total number of rows associated with trade (1 credited_row and 1 or more debited_rows)  # noqa: E501
+                self.imported_entries += 1 + len(debited_rows)
 
         # Compute investments profit
         if len(investments_withdrawals) != 0:
@@ -491,7 +534,7 @@ class CryptocomImporter(BaseExchangeImporter):
                     if profit >= ZERO:
                         last_date = withdrawal_date
                         event = HistoryEvent(
-                            event_identifier=f'{CRYPTOCOM_PREFIX}{hash_csv_row(withdrawal)}',
+                            event_identifier=f'{CRYPTOCOM_PREFIX}{hash_csv_row_without_index(withdrawal)}',
                             sequence_index=0,
                             timestamp=ts_sec_to_ms(withdrawal_date),
                             location=Location.CRYPTOCOM,
@@ -544,23 +587,38 @@ class CryptocomImporter(BaseExchangeImporter):
             except UnknownAsset as e:
                 raise InputError(f'Encountered unknown asset {e!s} at crypto.com csv import') from e  # noqa: E501
 
-            for row in data:
+            for index, row in enumerate(data, start=1):
                 try:
+                    self.total_entries += 1
                     self._consume_cryptocom_entry(write_cursor, row, **kwargs)
+                    self.imported_entries += 1
                 except UnknownAsset as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'During cryptocom CSV import found action with unknown '
-                        f'asset {e.identifier}. Ignoring entry',
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=f'Unknown asset {e.identifier}.',
+                        is_error=True,
                     )
-                    continue
                 except DeserializationError as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'Error during cryptocom CSV import deserialization. '
-                        f'Error was {e!s}. Ignoring entry',
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=f'Deserialization error: {e!s}.',
+                        is_error=True,
                     )
-                    continue
                 except UnsupportedCSVEntry as e:
-                    self.db.msg_aggregator.add_warning(str(e))
-                    continue
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=str(e),
+                        is_error=True,
+                    )
+                except SkippedCSVEntry as e:
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=str(e),
+                        is_error=False,
+                    )
                 except KeyError as e:
                     raise InputError(f'Could not find key {e!s} in csv row {row!s}') from e

@@ -2,7 +2,6 @@ import pytest
 
 from rotkehlchen.tests.utils.exchanges import create_test_okx
 
-
 OKX_API_KEY = 'f32f48d7-74ad-41ce-8028-fcc4e4589f9c'
 OKX_API_SECRET = b'3DC350723E8200C236792784644E17A0'
 OKX_PASSPHRASE = 'Rotki123!'

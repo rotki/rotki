@@ -49,7 +49,7 @@ export class RotkehlchenApi {
     this.setupAuthRedirect();
   }
 
-  setup(serverUrl: string) {
+  setup(serverUrl: string): void {
     this._serverUrl = serverUrl;
     this.axios = axios.create({
       baseURL: `${serverUrl}/api/1/`,
@@ -64,7 +64,7 @@ export class RotkehlchenApi {
     this.authFailureAction = action;
   }
 
-  private setupCancellation() {
+  private setupCancellation(): void {
     this.axios.interceptors.request.use(
       (request) => {
         request.cancelToken = this.signal.token;
@@ -79,7 +79,7 @@ export class RotkehlchenApi {
     );
   }
 
-  private setupAuthRedirect() {
+  private setupAuthRedirect(): void {
     this.axios.interceptors.response.use(
       (response) => {
         if (response.status === 401) {

@@ -1,18 +1,16 @@
 import csv
-import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_DAI, A_SAI
-from rotkehlchen.data_import.utils import BaseExchangeImporter
+from rotkehlchen.data_import.utils import BaseExchangeImporter, SkippedCSVEntry
 from rotkehlchen.db.drivers.client import DBWriterClient
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import Trade
-from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_fee,
@@ -23,16 +21,14 @@ from rotkehlchen.types import AssetAmount, Fee, Location, Price, TradeType
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
 
-logger = logging.getLogger(__name__)
-log = RotkehlchenLogsAdapter(logger)
-
 SAI_TIMESTAMP = 1574035200
 
 
 class ShapeshiftTradesImporter(BaseExchangeImporter):
+    """Shapeshift CSV importer"""
 
     def __init__(self, db: 'DBHandler'):
-        super().__init__(db=db)
+        super().__init__(db=db, name='ShapeShift')
         self.sai = A_SAI.resolve_to_evm_token()
 
     def _consume_shapeshift_trade(
@@ -73,11 +69,9 @@ Trade from ShapeShift with ShapeShift Deposit Address:
  Transaction ID: {csv_row['outputTxid']}.
 """
         if sold_amount == ZERO:
-            log.debug(f'Ignoring ShapeShift trade with sold_amount equal to zero. {csv_row}')
-            return
+            raise SkippedCSVEntry('Trade has sold_amount of zero.')
         if in_addr == '' or out_addr == '':
-            log.debug(f'Ignoring ShapeShift trade which was performed on DEX. {csv_row}')
-            return
+            raise SkippedCSVEntry('Trade was preformed on a DEX.')
         # Assuming that before launch of multi collateral dai everything was SAI.
         # Converting DAI to SAI in buy_asset and sell_asset.
         if buy_asset == A_DAI and timestamp <= SAI_TIMESTAMP:
@@ -85,8 +79,7 @@ Trade from ShapeShift with ShapeShift Deposit Address:
         if sold_asset == A_DAI and timestamp <= SAI_TIMESTAMP:
             sold_asset = self.sai
         if rate <= ZERO:
-            log.warning(f'shapeshift csv entry has negative or zero rate. Ignoring. {csv_row}')
-            return
+            raise SkippedCSVEntry('Entry has negative or zero rate.')
 
         # Fix the rate correctly (1 / rate) * (fee + buy_amount) = sell_amount
         trade = Trade(
@@ -111,21 +104,31 @@ Trade from ShapeShift with ShapeShift Deposit Address:
         - InputError if one of the rows is malformed
         """
         with open(filepath, encoding='utf-8-sig') as csvfile:
-            data = csv.DictReader(csvfile)
-            for row in data:
+            for index, row in enumerate(csv.DictReader(csvfile), start=1):
                 try:
+                    self.total_entries += 1
                     self._consume_shapeshift_trade(write_cursor, row, **kwargs)
+                    self.imported_entries += 1
                 except UnknownAsset as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'During ShapeShift CSV import found action with unknown '
-                        f'asset {e.identifier}. Ignoring entry',
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=f'Unknown asset {e.identifier}.',
+                        is_error=True,
                     )
-                    continue
                 except DeserializationError as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'Deserialization error during ShapeShift CSV import. '
-                        f'{e!s}. Ignoring entry',
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=f'Deserialization error: {e!s}.',
+                        is_error=True,
                     )
-                    continue
+                except SkippedCSVEntry as e:
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=str(e),
+                        is_error=False,
+                    )
                 except KeyError as e:
                     raise InputError(f'Could not find key {e!s} in csv row {row!s}') from e

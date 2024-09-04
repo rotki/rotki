@@ -1,4 +1,13 @@
-export function useScramble() {
+interface UseScrambleReturn {
+  scrambleData: ComputedRef<boolean>;
+  shouldShowAmount: ComputedRef<boolean>;
+  scrambleInteger: (number: number, min?: number, max?: number) => number;
+  scrambleIdentifier: (number: number | string, lowerBound?: number, upperBound?: number) => string;
+  scrambleAddress: (address: string) => string;
+  scrambleTimestamp: (timestamp: number, milliseconds?: boolean) => number;
+}
+
+export function useScramble(): UseScrambleReturn {
   const alphaNumerics = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
   const {
@@ -59,7 +68,7 @@ export function useScramble() {
     return scrambleInteger(parsed, min, max).toString();
   };
 
-  const scrambleTimestamp = (timestamp: number, milliseconds: boolean = false) => {
+  const scrambleTimestamp = (timestamp: number, milliseconds: boolean = false): number => {
     if (!get(scrambleData))
       return timestamp;
 

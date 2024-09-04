@@ -1,5 +1,4 @@
 import csv
-import logging
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from uuid import uuid4
@@ -13,11 +12,11 @@ from rotkehlchen.constants.assets import A_USD
 from rotkehlchen.data_import.importers.constants import BLOCKPIT_EVENT_PREFIX
 from rotkehlchen.data_import.utils import BaseExchangeImporter, UnsupportedCSVEntry
 from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.errors.misc import InputError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.history.events.structures.base import HistoryEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
     deserialize_asset_amount,
     deserialize_fee,
@@ -27,10 +26,8 @@ from rotkehlchen.types import AssetMovementCategory, Fee, Location, Price, Trade
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.client import DBWriterClient
-
-logger = logging.getLogger(__name__)
-log = RotkehlchenLogsAdapter(logger)
 
 
 def exchange_row_to_location(entry: str) -> Location:
@@ -52,6 +49,10 @@ def exchange_row_to_location(entry: str) -> Location:
 
 
 class BlockpitImporter(BaseExchangeImporter):
+    """Blockpit CSV importer"""
+
+    def __init__(self, db: 'DBHandler') -> None:
+        super().__init__(db=db, name='Blockpit')
 
     def _consume_blockpit_transaction(
             self,
@@ -167,7 +168,7 @@ class BlockpitImporter(BaseExchangeImporter):
                 event_type=event_type,
                 event_subtype=event_subtype,
                 asset=asset,
-                balance=Balance(amount, ZERO),
+                balance=Balance(amount),
                 notes=f'{event_description} {amount} {asset.symbol} in {location!s}',
             )
 
@@ -180,7 +181,7 @@ class BlockpitImporter(BaseExchangeImporter):
                     event_type=HistoryEventType.SPEND,
                     event_subtype=HistoryEventSubType.FEE,
                     asset=fee_currency,
-                    balance=Balance(fee_amount, ZERO),
+                    balance=Balance(fee_amount),
                     notes=f'Fee of {fee_amount} {fee_currency.symbol} in {location!s}',
                 )
                 self.add_history_events(write_cursor, [fee_event, event])
@@ -197,22 +198,31 @@ class BlockpitImporter(BaseExchangeImporter):
         usd = A_USD.resolve_to_asset_with_oracles()
         with open(filepath, encoding='utf-8-sig') as csvfile:
             data = csv.DictReader(csvfile, delimiter=';')
-            for row in data:
+            for index, row in enumerate(data, start=1):
                 try:
+                    self.total_entries += 1
                     self._consume_blockpit_transaction(write_cursor, row, usd, **kwargs)
+                    self.imported_entries += 1
                 except UnknownAsset as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'During Blockpit CSV import found action with unknown '
-                        f'asset {e.identifier}. Ignoring entry',
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=f'Unknown asset {e.identifier}.',
+                        is_error=True,
                     )
                 except DeserializationError as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'Deserialization error during Blockpit CSV import. '
-                        f'{e!s}. Ignoring entry',
-                    )
-                except KeyError as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'Could not find key {e!s} in csv row {row!s} {e!s}. Ignoring entry',
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=f'Deserialization error: {e!s}.',
+                        is_error=True,
                     )
                 except UnsupportedCSVEntry as e:
-                    self.db.msg_aggregator.add_warning(str(e))
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=str(e),
+                        is_error=True,
+                    )
+                except KeyError as e:
+                    raise InputError(f'Could not find key {e!s} in csv row {row!s}') from e

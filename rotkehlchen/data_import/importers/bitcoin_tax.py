@@ -1,12 +1,17 @@
 import csv
 import logging
 from pathlib import Path
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
 from rotkehlchen.assets.converters import LOCATION_TO_ASSET_MAPPING, asset_from_common_identifier
 from rotkehlchen.constants import ZERO
-from rotkehlchen.data_import.utils import BaseExchangeImporter, UnsupportedCSVEntry, hash_csv_row
+from rotkehlchen.data_import.utils import (
+    BaseExchangeImporter,
+    SkippedCSVEntry,
+    UnsupportedCSVEntry,
+    hash_csv_row,
+)
 from rotkehlchen.db.drivers.client import DBWriterClient
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import InputError
@@ -22,6 +27,9 @@ from rotkehlchen.types import Fee, Location, TimestampMS
 from rotkehlchen.utils.misc import ts_sec_to_ms
 
 from .constants import ROTKI_EVENT_PREFIX
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -51,6 +59,11 @@ def determine_csv_type(csv_data: csv.DictReader) -> CSVType:
 
 
 class BitcoinTaxImporter(BaseExchangeImporter):
+    """Bitcoin Tax CSV importer"""
+
+    def __init__(self, db: 'DBHandler') -> None:
+        super().__init__(db=db, name='Bitcoin Tax')
+
     def _consume_trade_event(
             self,
             write_cursor: DBWriterClient,
@@ -76,8 +89,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
             raise UnsupportedCSVEntry(f'Unsupported entry action type {action}. Data: {csv_row}')
         if action == 'SWAP':
             # The SWAP action is used by bitcoin tax when a crypto asset is renamed or forked.
-            log.info('SWAP action is skipped. Forks and renames are handled by rotki elsewhere.')
-            return
+            raise SkippedCSVEntry('SWAP action is skipped. Forks and renames are handled by rotki elsewhere.')  # noqa: E501
 
         # BUY action
         receive_asset_balance = base_asset_balance
@@ -191,7 +203,7 @@ class BitcoinTaxImporter(BaseExchangeImporter):
         - UnsupportedCSVEntry
         """
         if all(value == '' for value in csv_row.values()):
-            return  # skip empty rows
+            raise SkippedCSVEntry('Empty row.')
 
         # use a deterministic event_identifier to avoid duplicate events in case of reimport
         event_identifier = f'{ROTKI_EVENT_PREFIX}BTX_{hash_csv_row(csv_row)}'
@@ -262,20 +274,38 @@ class BitcoinTaxImporter(BaseExchangeImporter):
         with open(filepath, encoding='utf-8-sig') as csvfile:
             data = csv.DictReader(csvfile)
             csv_type = determine_csv_type(data)
-            for row in data:
+            for index, row in enumerate(data, start=1):
                 try:
+                    self.total_entries += 1
                     self._consume_event(write_cursor, row, csv_type, **kwargs)
+                    self.imported_entries += 1
                 except UnknownAsset as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'During Bitcoin_Tax csv import found action with unknown '
-                        f'asset {e.identifier}. Ignoring entry',
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=f'Unknown asset {e.identifier}.',
+                        is_error=True,
                     )
                 except DeserializationError as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'Deserialization error during Bitcoin_Tax csv import. '
-                        f'{e!s}. Ignoring entry',
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=f'Deserialization error: {e!s}.',
+                        is_error=True,
                     )
                 except UnsupportedCSVEntry as e:
-                    self.db.msg_aggregator.add_warning(str(e))
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=str(e),
+                        is_error=True,
+                    )
+                except SkippedCSVEntry as e:
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=str(e),
+                        is_error=False,
+                    )
                 except KeyError as e:
                     raise InputError(f'Could not find key {e!s} in csv row {row!s}') from e

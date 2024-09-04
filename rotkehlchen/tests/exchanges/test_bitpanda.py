@@ -12,7 +12,6 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import AssetMovementCategory, Location
 from rotkehlchen.utils.misc import ts_now
 
-
 WALLETS_RESPONSE = """{"data":[
 {"type":"wallet","attributes":{"cryptocoin_id":"1","cryptocoin_symbol":"BTC","balance":"0.00000000","is_default":true,"name":"BTC Wallet","pending_transactions_count":0,"deleted":false,"is_index":false},"id":"b52800aa-61f6-4251-a970-e53a864ebeaa"},
 {"type":"wallet","attributes":{"cryptocoin_id":"3","cryptocoin_symbol":"LTC","balance":"0.00000000","is_default":true,"name":"LTC Wallet","pending_transactions_count":0,"deleted":false,"is_index":false},"id":"6ab729ed-4983-44ba-ab54-2c30a20207ff"},

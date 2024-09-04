@@ -1,6 +1,14 @@
 import { TaskType } from '@/types/task-type';
 
-export const useAccountLoading = createSharedComposable(() => {
+interface UseAccountLoadingReturn {
+  pending: Ref<boolean>;
+  loading: ComputedRef<boolean>;
+  isQueryingBlockchain: ComputedRef<boolean>;
+  isBlockchainLoading: ComputedRef<boolean>;
+  isAccountOperationRunning: (blockchain?: string) => ComputedRef<boolean>;
+}
+
+export const useAccountLoading = createSharedComposable((): UseAccountLoadingReturn => {
   const pending = ref<boolean>(false);
 
   const { isTaskRunning } = useTaskStore();

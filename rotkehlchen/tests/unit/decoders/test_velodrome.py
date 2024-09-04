@@ -424,7 +424,7 @@ def test_swap_eth_to_token_v2(optimism_accounts, optimism_transaction_decoder, l
             notes=f'Swap 0.01 ETH in {CPT_VELODROME}',
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=83,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.OPTIMISM,
             event_type=HistoryEventType.TRADE,
@@ -481,7 +481,7 @@ def test_swap_eth_to_token_v1(optimism_accounts, optimism_transaction_decoder, l
             notes=f'Swap 0.0000857 ETH in {CPT_VELODROME}',
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=14,
+            sequence_index=2,
             timestamp=timestamp,
             location=Location.OPTIMISM,
             event_type=HistoryEventType.TRADE,
@@ -625,17 +625,17 @@ def test_swap_token_to_eth_v1(optimism_accounts, optimism_transaction_decoder, l
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('load_global_caches', [[CPT_VELODROME]])
-@pytest.mark.parametrize('optimism_accounts', [['0x78C13393Aee675DD7ED07ce992210750D1F5dB88']])
+@pytest.mark.parametrize('optimism_accounts', [['0x60583f22aDA7B1352bB2faF694b3eAaf942696DD']])
 def test_swap_tokens_v2(optimism_accounts, optimism_transaction_decoder, load_global_caches):
     """Check that swapping tokens in velodrome v2 is properly decoded."""
-    evmhash = deserialize_evm_tx_hash('0x0cca192bce4a72059c255e5000a0ba1e716f1059d2a388167165e41d9269aa24')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash('0x8c36e51bc4d3deec6a4c06a59179083adfd9caa8a5ad7e957e639d5792c9e139')  # noqa: E501
     user_address = optimism_accounts[0]
     events, _ = get_decoded_events_of_transaction(
         evm_inquirer=optimism_transaction_decoder.evm_inquirer,
         tx_hash=evmhash,
         load_global_caches=load_global_caches,
     )
-    timestamp = TimestampMS(1694638139000)
+    timestamp = TimestampMS(1697106165000)
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
@@ -645,48 +645,48 @@ def test_swap_tokens_v2(optimism_accounts, optimism_transaction_decoder, load_gl
             event_type=HistoryEventType.SPEND,
             event_subtype=HistoryEventSubType.FEE,
             asset=A_ETH,
-            balance=Balance(FVal('0.000051606343716023')),
+            balance=Balance(FVal('0.000034672969663309')),
             location_label=user_address,
             counterparty=CPT_GAS,
-            notes='Burned 0.000051606343716023 ETH for gas',
+            notes='Burned 0.000034672969663309 ETH for gas',
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=96,
+            sequence_index=92,
             timestamp=timestamp,
             location=Location.OPTIMISM,
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.APPROVE,
-            asset=A_OP,
+            asset=Asset('eip155:10/erc20:0x8aE125E8653821E851F12A49F7765db9a9ce7384'),
             balance=Balance(ZERO),
             location_label=user_address,
             address=ROUTER_V2,
-            notes=f'Revoke OP spending approval of {user_address} by {ROUTER_V2}',
+            notes=f'Revoke DOLA spending approval of {user_address} by {ROUTER_V2}',
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=97,
+            sequence_index=93,
             timestamp=timestamp,
             location=Location.OPTIMISM,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.SPEND,
-            asset=A_OP,
-            balance=Balance(FVal('1.5')),
+            asset=Asset('eip155:10/erc20:0x8aE125E8653821E851F12A49F7765db9a9ce7384'),
+            balance=Balance(FVal('1177.178869111912387354')),
             location_label=user_address,
             counterparty=CPT_VELODROME,
-            address=WETH_OP_POOL_ADDRESS,
-            notes=f'Swap 1.5 OP in {CPT_VELODROME}',
+            address=string_to_evm_address('0x1f8b46abe1EAbF5A60CbBB5Fb2e4a6A46fA0b6e6'),
+            notes=f'Swap 1177.178869111912387354 DOLA in {CPT_VELODROME}',
         ), EvmEvent(
             tx_hash=evmhash,
-            sequence_index=109,
+            sequence_index=94,
             timestamp=timestamp,
             location=Location.OPTIMISM,
             event_type=HistoryEventType.TRADE,
             event_subtype=HistoryEventSubType.RECEIVE,
-            asset=Asset(VELO_V2_TOKEN),
-            balance=Balance(FVal('50.633275729041219862')),
+            asset=Asset('eip155:10/erc20:0xb396b31599333739A97951b74652c117BE86eE1D'),
+            balance=Balance(FVal('1122.945013439390360367')),
             location_label=user_address,
             counterparty=CPT_VELODROME,
-            address=string_to_evm_address('0x0af32614EEa68B8D2232B9592FbdB6512ab6DA73'),
-            notes=f'Receive 50.633275729041219862 VELO as the result of a swap in {CPT_VELODROME}',
+            address=string_to_evm_address('0xBf75051F6e6dF9fEcF90d9bebbBB08a85950858C'),
+            notes=f'Receive 1122.945013439390360367 DUSD as the result of a swap in {CPT_VELODROME}',  # noqa: E501
         ),
     ]
     assert events == expected_events

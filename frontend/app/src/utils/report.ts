@@ -15,6 +15,6 @@ export function calculateTotalProfitLoss(item: Report | SelectedReport): ProfitL
 }
 
 // TODO: Figure out in the future, how to avoid hardcode
-export function isTransactionEvent(item: ProfitLossEvent) {
+export function isTransactionEvent(item: ProfitLossEvent): boolean {
   return item.type === 'transaction event';
 }

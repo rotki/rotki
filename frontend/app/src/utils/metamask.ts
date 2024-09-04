@@ -1,25 +1,14 @@
-import type { EIP1193Provider, EIP6963AnnounceProviderEvent } from '@/types';
+import type { EIP1193Provider, EIP6963AnnounceProviderEvent, EIP6963ProviderDetail } from '@/types';
 
-export function isMetaMaskSupported(): boolean {
-  return (
-    (!!window.interop || (window.ethereum && window.ethereum.isMetaMask))
-    ?? false
-  );
-}
-
-function getMetamaskProviderWithTimeout(timeout = 2000): Promise<EIP1193Provider | undefined> {
+export function getAllBrowserWalletProviders(): Promise<EIP6963ProviderDetail[]> {
   return new Promise((resolve) => {
-    let provider;
+    const providers: EIP6963ProviderDetail[] = [];
 
-    function handleProviderAnnouncement(event: EIP6963AnnounceProviderEvent) {
-      if (event.detail.info.rdns === 'io.metamask') {
-        provider = event.detail.provider;
-        cleanup();
-        resolve(provider);
-      }
+    function handleProviderAnnouncement(event: EIP6963AnnounceProviderEvent): void {
+      providers.push(event.detail);
     }
 
-    function cleanup() {
+    function cleanup(): void {
       window.removeEventListener('eip6963:announceProvider', handleProviderAnnouncement);
     }
 
@@ -28,18 +17,12 @@ function getMetamaskProviderWithTimeout(timeout = 2000): Promise<EIP1193Provider
 
     setTimeout(() => {
       cleanup();
-      resolve(undefined);
-    }, timeout);
+      resolve(uniqueObjects(providers, item => item.info.uuid));
+    }, 1000);
   });
 }
 
-export async function getMetamaskAddresses(): Promise<string[]> {
-  assert(window.ethereum);
-  assert(window.ethereum.isMetaMask);
-
-  const provider = await getMetamaskProviderWithTimeout();
-  assert(provider);
-
+export async function getAddressesFromWallet(provider: EIP1193Provider): Promise<string[]> {
   const permissions = await provider.request({
     method: 'wallet_requestPermissions',
     params: [

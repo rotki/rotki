@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from enum import Enum, auto
 from typing import Any, NamedTuple
 
-
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.constants.prices import ZERO_PRICE

@@ -13,7 +13,7 @@ export const useDefiOverviewStore = defineStore('defi/store', () => {
 
   const { getDefiIdentifierByName } = useDefiMetadata();
 
-  const shouldShowOverview = (summary: DefiProtocolSummary) => {
+  const shouldShowOverview = (summary: DefiProtocolSummary): boolean => {
     const lending = summary.totalLendingDepositUsd.gt(0);
     const debt = summary.totalDebtUsd.gt(0);
     const balance = summary.balanceUsd && summary.balanceUsd.gt(0);

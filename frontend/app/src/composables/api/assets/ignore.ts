@@ -4,7 +4,13 @@ import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { IgnoredAssetResponse } from '@/types/asset';
 import type { ActionResult } from '@rotki/common';
 
-export function useAssetIgnoreApi() {
+interface UseAssetIgnoreApiReturn {
+  getIgnoredAssets: () => Promise<string[]>;
+  addIgnoredAssets: (assets: string[]) => Promise<IgnoredAssetResponse>;
+  removeIgnoredAssets: (assets: string[]) => Promise<IgnoredAssetResponse>;
+}
+
+export function useAssetIgnoreApi(): UseAssetIgnoreApiReturn {
   const getIgnoredAssets = async (): Promise<string[]> => {
     const response = await api.instance.get<ActionResult<string[]>>('/assets/ignored', {
       validateStatus: validWithoutSessionStatus,

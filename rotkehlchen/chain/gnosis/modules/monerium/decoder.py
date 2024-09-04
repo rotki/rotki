@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING
+
 from rotkehlchen.chain.evm.decoding.monerium.decoder import MoneriumCommonDecoder
-from rotkehlchen.constants.assets import A_GNOSIS_EURE
+from rotkehlchen.chain.gnosis.modules.monerium.constants import GNOSIS_MONERIUM_ADDRESSES
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -20,5 +21,5 @@ class MoneriumDecoder(MoneriumCommonDecoder):
             evm_inquirer=ethereum_inquirer,
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
-            native_asset=A_GNOSIS_EURE,
+            monerium_token_addresses=GNOSIS_MONERIUM_ADDRESSES,
         )

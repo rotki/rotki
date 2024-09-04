@@ -6,9 +6,9 @@ export const useHistoryEventsForm = createSharedComposable(() => {
   const { editHistoryEvent, addHistoryEvent } = useHistoryEvents();
 
   const defaultNotes = ref<boolean>(false);
-  const getPayloadNotes = (newNotes?: string | null, oldNotes?: string | null) => {
+  const getPayloadNotes = (newNotes?: string | null, oldNotes?: string | null): undefined | string => {
     if (!get(defaultNotes) || newNotes !== oldNotes)
-      return newNotes;
+      return newNotes ?? undefined;
 
     return undefined;
   };
@@ -18,7 +18,7 @@ export const useHistoryEventsForm = createSharedComposable(() => {
     assetPriceForm: Ref<InstanceType<typeof HistoryEventAssetPriceForm> | undefined>,
     errorMessages: Ref<Record<string, string[]>>,
     reset: () => any,
-  ) => {
+  ): Promise<boolean> => {
     const submitPriceResult = await get(assetPriceForm)!.submitPrice(payload);
 
     if (!submitPriceResult.success) {

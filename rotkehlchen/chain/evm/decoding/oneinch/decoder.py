@@ -14,9 +14,9 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.types import ChecksumEvmAddress
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.user_messages import MessagesAggregator
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
 
 from .constants import CPT_ONEINCH, ONEINCH_ICON
 

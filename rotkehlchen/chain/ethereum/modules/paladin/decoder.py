@@ -18,7 +18,6 @@ from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int,
 
 from .constants import CLAIMED, CPT_PALADIN, PALADIN_MERKLE_DISTRIBUTOR_V2
 
-
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 

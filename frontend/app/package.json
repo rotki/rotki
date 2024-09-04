@@ -21,7 +21,7 @@
     "link:verify": "tsx scripts/check-external-links.ts",
     "lint:style": "stylelint 'src/**/*.{vue,scss}'",
     "lint:style:fix": "stylelint --fix 'src/**/*.{vue,scss}'",
-    "postinstall": "electron-builder install-app-deps",
+    "postinstall": "electron-builder install-app-deps && node scripts/postinstall.js",
     "postuninstall": "electron-builder install-app-deps",
     "serve": "node scripts/serve.js --web",
     "serve:backend": "node scripts/start-backend.js",
@@ -41,7 +41,7 @@
   },
   "dependencies": {
     "@rotki/common": "workspace:*",
-    "@rotki/ui-library": "1.1.2",
+    "@rotki/ui-library": "1.2.3",
     "@types/jsdom": "21.1.7",
     "@types/lodash-es": "4.17.12",
     "@vuelidate/core": "2.0.3",

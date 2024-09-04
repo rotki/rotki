@@ -1,6 +1,7 @@
 import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Final
+
 from eth_abi import decode as decode_abi
 
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value

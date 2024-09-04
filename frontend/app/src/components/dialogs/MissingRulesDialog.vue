@@ -2,90 +2,74 @@
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
 import type { EvmChainAndTxHash, HistoryEventEntry } from '@/types/history/events';
 
-const props = withDefaults(
-  defineProps<{
-    event: HistoryEventEntry;
-  }>(),
-  {
-    event: undefined,
-  },
-);
-
 const emit = defineEmits<{
-  (e: 're-decode', data: EvmChainAndTxHash): void;
-  (e: 'edit', event?: HistoryEventEntry): void;
-  (e: 'add-rule', data: Pick<AccountingRuleEntry, 'eventType' | 'eventSubtype' | 'counterparty'>): void;
+  'redecode': [data: EvmChainAndTxHash];
+  'edit-event': [event: HistoryEventEntry];
+  'add': [rule: Pick<AccountingRuleEntry, 'eventType' | 'eventSubtype' | 'counterparty'>];
+  'dismiss': [];
 }>();
+
+const modelValue = defineModel<HistoryEventEntry | undefined>({ required: true });
 
 const { t } = useI18n();
 
-const { event } = toRefs(props);
-
-const model = defineModel<boolean>({ required: true });
-
-const isEvm = computed(() => {
-  const entry = get(event);
-
-  if (!entry)
-    return false;
-
-  return isEvmEvent(entry);
-});
-
-function onRedecode() {
-  const entry = get(event);
-
-  if (!entry)
-    return false;
-
-  emit('re-decode', toEvmChainAndTxHash(entry));
-  close();
-}
-
-function onEdit() {
-  const entry = get(event);
-
-  if (!entry)
-    return false;
-
-  emit('edit', entry);
-  close();
-}
-
-function onAddRule() {
-  const entry = get(event);
-
-  if (!entry)
-    return false;
-
-  const { eventType, eventSubtype } = entry;
-
-  if ('counterparty' in entry) {
-    emit('add-rule', {
-      eventSubtype,
-      eventType,
-      counterparty: entry.counterparty,
-    });
-  }
-  else {
-    emit('add-rule', { eventSubtype, eventType, counterparty: null });
-  }
-
-  close();
-}
+const options = computed(() => [
+  {
+    icon: 'restart-line',
+    action: onRedecode,
+    label: t('actions.history_events.missing_rule.re_decode'),
+    show: isDefined(modelValue) ? isEvmEvent(get(modelValue)) : false,
+  },
+  {
+    icon: 'pencil-line',
+    action: onEdit,
+    label: t('actions.history_events.missing_rule.edit'),
+    show: true,
+  },
+  {
+    icon: 'add-line',
+    action: onAddRule,
+    label: t('actions.history_events.missing_rule.add_rule'),
+    show: true,
+  },
+] as const);
 
 function close() {
-  set(model, false);
+  emit('dismiss');
+}
+
+function onRedecode(event: HistoryEventEntry) {
+  emit('redecode', toEvmChainAndTxHash(event));
+  close();
+}
+
+function onEdit(event: HistoryEventEntry) {
+  emit('edit-event', event);
+  close();
+}
+
+function onAddRule(event: HistoryEventEntry) {
+  const { eventType, eventSubtype } = event;
+
+  emit('add', {
+    eventSubtype,
+    eventType,
+    counterparty: 'counterparty' in event ? event.counterparty : null,
+  });
+  close();
 }
 </script>
 
 <template>
   <RuiDialog
-    :model-value="model"
+    :model-value="!!modelValue"
     :max-width="500"
     @closed="close()"
   >
-    <RuiCard data-cy="missing-rules-dialog">
+    <RuiCard
+      v-if="modelValue"
+      data-cy="missing-rules-dialog"
+    >
       <template #header>
         {{ t('actions.history_events.missing_rule.title') }}
       </template>
@@ -95,49 +79,27 @@ function close() {
       </p>
 
       <div class="flex flex-col gap-1">
-        <RuiButton
-          v-if="isEvm"
-          size="lg"
-          class="justify-start"
-          variant="text"
-          @click="onRedecode()"
+        <template
+          v-for="{ action, icon, label, show } in options"
+          :key="icon"
         >
-          <template #prepend>
-            <RuiIcon
-              color="secondary"
-              name="restart-line"
-            />
-          </template>
-          {{ t('actions.history_events.missing_rule.re_decode') }}
-        </RuiButton>
-        <RuiButton
-          size="lg"
-          class="justify-start"
-          variant="text"
-          @click="onEdit()"
-        >
-          <template #prepend>
-            <RuiIcon
-              color="secondary"
-              name="pencil-line"
-            />
-          </template>
-          {{ t('actions.history_events.missing_rule.edit') }}
-        </RuiButton>
-        <RuiButton
-          size="lg"
-          class="justify-start"
-          variant="text"
-          @click="onAddRule()"
-        >
-          <template #prepend>
-            <RuiIcon
-              color="secondary"
-              name="add-line"
-            />
-          </template>
-          {{ t('actions.history_events.missing_rule.add_rule') }}
-        </RuiButton>
+          <RuiButton
+            v-if="show"
+            size="lg"
+            class="justify-start"
+            variant="text"
+            @click="action(modelValue)"
+          >
+            <template #prepend>
+              <RuiIcon
+                color="secondary"
+                :name="icon"
+              />
+            </template>
+
+            {{ label }}
+          </RuiButton>
+        </template>
       </div>
 
       <template #footer>

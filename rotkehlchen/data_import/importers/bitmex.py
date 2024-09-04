@@ -1,7 +1,7 @@
 import csv
 import logging
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import AssetBalance, Balance
 from rotkehlchen.constants import ZERO
@@ -23,11 +23,19 @@ from rotkehlchen.serialization.deserialize import (
 from rotkehlchen.types import AssetAmount, AssetMovementCategory, Fee, Location
 from rotkehlchen.utils.misc import satoshis_to_btc
 
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
 class BitMEXImporter(BaseExchangeImporter):
+    """BitMEX CSV importer"""
+
+    def __init__(self, db: 'DBHandler') -> None:
+        super().__init__(db=db, name='BitMEX')
+
     @staticmethod
     def _consume_realised_pnl(
             csv_row: dict[str, Any], timestamp_format: str = '%m/%d/%Y, %H:%M:%S %p',
@@ -111,9 +119,9 @@ class BitMEXImporter(BaseExchangeImporter):
         - InputError if a column we need is missing
         """
         with open(filepath, encoding='utf-8-sig') as csvfile:
-            data = csv.DictReader(csvfile)
-            for row in data:
+            for index, row in enumerate(csv.DictReader(csvfile), start=1):
                 try:
+                    self.total_entries += 1
                     if row['transactType'] == 'RealisedPNL':
                         margin_position = self._consume_realised_pnl(row, **kwargs)
                         self.add_margin_trade(write_cursor, margin_position)
@@ -126,10 +134,20 @@ class BitMEXImporter(BaseExchangeImporter):
                         raise UnsupportedCSVEntry(
                             f'transactType {row["transactType"]} is not currently supported',
                         )
+                    self.imported_entries += 1
                 except DeserializationError as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'Deserialization error during BitMEX CSV import. '
-                        f'{e!s}. Ignoring entry',
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=f'Deserialization error: {e!s}.',
+                        is_error=True,
+                    )
+                except UnsupportedCSVEntry as e:
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=str(e),
+                        is_error=True,
                     )
                 except KeyError as e:
                     raise InputError(f'Could not find key {e!s} in csv row {row!s}') from e

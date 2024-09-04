@@ -4,7 +4,12 @@ import { TaskType } from '@/types/task-type';
 import type { Module } from '@/types/modules';
 import type { TaskMeta } from '@/types/task';
 
-export function useSessionPurge() {
+interface UseSessionPurge {
+  purgeCache: (purgeable: Purgeable, value: string) => void;
+  refreshGeneralCache: () => Promise<void>;
+}
+
+export function useSessionPurge(): UseSessionPurge {
   const { resetState } = useDefiStore();
   const { refreshGeneralCacheTask } = useSessionApi();
   const { resetStatus } = useStatusStore();
@@ -39,7 +44,7 @@ export function useSessionPurge() {
   const { notify } = useNotificationsStore();
 
   const { resetProtocolCacheUpdatesStatus } = useHistoryStore();
-  const refreshGeneralCache = async () => {
+  const refreshGeneralCache = async (): Promise<void> => {
     resetProtocolCacheUpdatesStatus();
     const taskType = TaskType.REFRESH_GENERAL_CACHE;
     const { taskId } = await refreshGeneralCacheTask();

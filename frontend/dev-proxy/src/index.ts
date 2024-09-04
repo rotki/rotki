@@ -47,7 +47,7 @@ function manipulateResponse(res: Response, callback: (original: any) => any): vo
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const originalWrite = res.write;
 
-  res.write = (chunk: any) => {
+  res.write = (chunk: any): boolean => {
     const response = chunk.toString();
     try {
       const payload = JSON.stringify(callback(JSON.parse(response)));
@@ -222,7 +222,7 @@ function onProxyReq(proxyReq: http.ClientRequest, req: Request, _res: Response):
     return;
 
   const contentType = proxyReq.getHeader('Content-Type') ?? '';
-  const writeBody = (bodyData: string) => {
+  const writeBody = (bodyData: string): void => {
     proxyReq.setHeader('Content-Length', Buffer.byteLength(bodyData));
     proxyReq.write(bodyData);
   };
@@ -239,7 +239,7 @@ function mockPreflight(res: Response): void {
   // eslint-disable-next-line @typescript-eslint/unbound-method
   const originalWrite = res.write;
 
-  res.write = (chunk: any) => {
+  res.write = (chunk: any): boolean => {
     try {
       res.header('Access-Control-Allow-Origin', '*');
       res.header('Access-Control-Allow-Headers', 'X-Requested-With,content-type');

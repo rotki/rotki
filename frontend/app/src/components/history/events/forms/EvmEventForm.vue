@@ -235,7 +235,7 @@ async function save(): Promise<boolean> {
     location: get(location),
     address: get(address) || null,
     locationLabel: get(locationLabel) || null,
-    notes: usedNotes || undefined,
+    notes: usedNotes ? usedNotes.trim() : undefined,
     counterparty: get(counterparty) || null,
     product: get(product) || null,
     extraData: get(extraData) || null,
@@ -404,7 +404,7 @@ const addressSuggestions = computed(() => getAddresses(Blockchain.ETH));
     <RuiDivider class="mb-6 mt-2" />
 
     <RuiTextArea
-      v-model.trim="notes"
+      v-model="notes"
       prepend-icon="sticky-note-line"
       data-cy="notes"
       variant="outlined"

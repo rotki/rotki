@@ -34,8 +34,8 @@ export function useEthValidatorAccountFilter(t: ReturnType<typeof useI18n>['t'])
       description: t('common.validator_index'),
       multiple: true,
       string: true,
-      suggestions: () => [],
-      validate: () => true,
+      suggestions: (): string[] => [],
+      validate: (): boolean => true,
     },
     {
       key: EthValidatorAccountFilterKeys.PUBLIC_KEY,
@@ -43,8 +43,8 @@ export function useEthValidatorAccountFilter(t: ReturnType<typeof useI18n>['t'])
       description: t('eth2_input.public_key'),
       multiple: true,
       string: true,
-      suggestions: () => [],
-      validate: () => true,
+      suggestions: (): string[] => [],
+      validate: (): true => true,
     },
     {
       key: EthValidatorAccountFilterKeys.STATUS,
@@ -52,8 +52,8 @@ export function useEthValidatorAccountFilter(t: ReturnType<typeof useI18n>['t'])
       description: t('eth_validator_combined_filter.status'),
       multiple: true,
       string: true,
-      suggestions: () => validStatuses.filter(x => x !== 'all'),
-      validate: (status: string) => isValidStatus(status),
+      suggestions: (): ('exited' | 'active')[] => validStatuses.filter(x => x !== 'all'),
+      validate: (status: string): boolean => isValidStatus(status),
     },
   ]);
 

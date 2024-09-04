@@ -18,37 +18,36 @@ export const useAaveStore = defineStore('defi/aave', () => {
 
   const { resetStatus, setStatus, fetchDisabled } = useStatusUpdater(Section.DEFI_AAVE_BALANCES);
 
-  const aaveTotalEarned = (addresses: string[]) =>
-    computed(() => {
-      const earned: ProfitLossModel[] = [];
-      const aaveHistory = get(history);
+  const aaveTotalEarned = (addresses: string[]): ComputedRef<ProfitLossModel[]> => computed<ProfitLossModel[]>(() => {
+    const earned: ProfitLossModel[] = [];
+    const aaveHistory = get(history);
 
-      for (const address in aaveHistory) {
-        if (addresses.length > 0 && !addresses.includes(address))
-          continue;
+    for (const address in aaveHistory) {
+      if (addresses.length > 0 && !addresses.includes(address))
+        continue;
 
-        const totalEarned = aaveHistory[address].totalEarnedInterest;
-        for (const asset in totalEarned) {
-          const index = earned.findIndex(e => e.asset === asset);
-          if (index < 0) {
-            earned.push({
-              address: '',
-              asset,
-              value: totalEarned[asset],
-            });
-          }
-          else {
-            earned[index] = {
-              ...earned[index],
-              value: balanceSum(earned[index].value, totalEarned[asset]),
-            };
-          }
+      const totalEarned = aaveHistory[address].totalEarnedInterest;
+      for (const asset in totalEarned) {
+        const index = earned.findIndex(e => e.asset === asset);
+        if (index < 0) {
+          earned.push({
+            address: '',
+            asset,
+            value: totalEarned[asset],
+          });
+        }
+        else {
+          earned[index] = {
+            ...earned[index],
+            value: balanceSum(earned[index].value, totalEarned[asset]),
+          };
         }
       }
-      return earned;
-    });
+    }
+    return earned;
+  });
 
-  const fetchBalances = async (refresh = false) => {
+  const fetchBalances = async (refresh = false): Promise<void> => {
     if (!get(activeModules).includes(Module.AAVE))
       return;
 
@@ -83,7 +82,7 @@ export const useAaveStore = defineStore('defi/aave', () => {
     setStatus(Status.LOADED);
   };
 
-  const fetchHistory = async (payload: { refresh?: boolean }) => {
+  const fetchHistory = async (payload: { refresh?: boolean }): Promise<void> => {
     if (!get(activeModules).includes(Module.AAVE) || !get(premium))
       return;
 
@@ -124,7 +123,7 @@ export const useAaveStore = defineStore('defi/aave', () => {
     setStatus(Status.LOADED, section);
   };
 
-  const reset = () => {
+  const reset = (): void => {
     set(balances, {});
     set(history, {});
     resetStatus();

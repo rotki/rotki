@@ -14,10 +14,12 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, EvmNodeInquirerWithDSProxy
+    from rotkehlchen.assets.asset import Asset
+    from rotkehlchen.assets.utils import TokenEncounterInfo
     from rotkehlchen.chain.evm.l2_with_l1_fees.node_inquirer import (
         DSProxyL2WithL1FeesInquirerWithCacheData,
     )
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, EvmNodeInquirerWithDSProxy
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.client import DBCursor
     from rotkehlchen.assets.asset import Asset

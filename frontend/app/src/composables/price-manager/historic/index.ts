@@ -1,10 +1,18 @@
 import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common';
 import type { HistoricalPrice, HistoricalPriceFormPayload, ManualPricePayload } from '@/types/prices';
 
+interface UseHistoricPricesReturn {
+  items: Ref<HistoricalPrice[]>;
+  loading: Ref<boolean>;
+  save: (data: HistoricalPriceFormPayload, update: boolean) => Promise<boolean>;
+  deletePrice: (item: HistoricalPrice) => Promise<void>;
+  refresh: (payload?: { modified?: boolean; additionalEntry?: HistoricalPrice }) => Promise<void>;
+}
+
 export function useHistoricPrices(
   filter: Ref<{ fromAsset?: string; toAsset?: string }>,
   t: ReturnType<typeof useI18n>['t'],
-) {
+): UseHistoricPricesReturn {
   const loading = ref(false);
   const items = ref<HistoricalPrice[]>([]);
 
@@ -13,7 +21,7 @@ export function useHistoricPrices(
   const { setMessage } = useMessageStore();
   const { notify } = useNotificationsStore();
 
-  const fetchPrices = async (payload?: Partial<ManualPricePayload>) => {
+  const fetchPrices = async (payload?: Partial<ManualPricePayload>): Promise<void> => {
     set(loading, true);
     try {
       set(items, await fetchHistoricalPrices(payload));
@@ -35,7 +43,7 @@ export function useHistoricPrices(
     }
   };
 
-  const refresh = async (payload?: { modified?: boolean; additionalEntry?: HistoricalPrice }) => {
+  const refresh = async (payload?: { modified?: boolean; additionalEntry?: HistoricalPrice }): Promise<void> => {
     await fetchPrices(get(filter));
 
     if (payload?.modified) {
@@ -47,7 +55,7 @@ export function useHistoricPrices(
     }
   };
 
-  const save = async (data: HistoricalPriceFormPayload, update: boolean) => {
+  const save = async (data: HistoricalPriceFormPayload, update: boolean): Promise<boolean> => {
     try {
       if (update)
         return await editHistoricalPrice(data);
@@ -70,7 +78,7 @@ export function useHistoricPrices(
     }
   };
 
-  const deletePrice = async (item: HistoricalPrice) => {
+  const deletePrice = async (item: HistoricalPrice): Promise<void> => {
     const { price, ...payload } = item;
     try {
       await deleteHistoricalPrice(payload);

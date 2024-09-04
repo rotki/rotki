@@ -246,7 +246,7 @@ watch(visibleAssets, () => {
         {{ t('asset_select.no_results') }}
       </div>
     </template>
-    <template #prepend>
+    <template #selection.prepend>
       <slot name="prepend" />
     </template>
   </RuiAutoComplete>

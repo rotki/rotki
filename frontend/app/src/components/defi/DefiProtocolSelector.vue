@@ -1,44 +1,46 @@
 <script setup lang="ts">
-import { DefiProtocol, SUPPORTED_MODULES, isDefiProtocol } from '@/types/modules';
+import { DefiProtocol, SUPPORTED_MODULES, type SupportedModule, isDefiProtocol } from '@/types/modules';
+
+type SupportedProtocol = Omit<SupportedModule, 'identifier'> & { identifier: DefiProtocol };
 
 defineOptions({
   inheritAttrs: false,
 });
 
-const props = withDefaults(
-  defineProps<{
-    liabilities?: boolean;
-  }>(),
-  {
-    liabilities: false,
-  },
-);
+const props = withDefaults(defineProps<{
+  liabilities?: boolean;
+}>(), {
+  liabilities: false,
+});
 
 const model = defineModel<DefiProtocol | undefined>({ required: true });
 
-const dual = [DefiProtocol.AAVE, DefiProtocol.COMPOUND];
-const borrowing = [DefiProtocol.MAKERDAO_VAULTS, DefiProtocol.LIQUITY];
-const lending = [DefiProtocol.MAKERDAO_DSR, DefiProtocol.YEARN_VAULTS, DefiProtocol.YEARN_VAULTS_V2];
+const dual = [DefiProtocol.AAVE, DefiProtocol.COMPOUND] as const;
+const borrowing = [DefiProtocol.MAKERDAO_VAULTS, DefiProtocol.LIQUITY] as const;
+const lending = [DefiProtocol.MAKERDAO_DSR, DefiProtocol.YEARN_VAULTS, DefiProtocol.YEARN_VAULTS_V2] as const;
 
 const { liabilities } = toRefs(props);
 const search = ref<string>('');
 
 const { t } = useI18n();
 
-const protocols = computed<DefiProtocol[]>(() => {
-  if (get(liabilities))
-    return [...dual, ...borrowing];
+const protocols = computed<DefiProtocol[]>(() => get(liabilities) ? [...dual, ...borrowing] : [...dual, ...lending]);
 
-  return [...dual, ...lending];
-});
+const protocolsData = computed<SupportedProtocol[]>(() => {
+  const data: SupportedProtocol[] = [];
+  for (const module of SUPPORTED_MODULES) {
+    const identifier = module.identifier;
+    if (isDefiProtocol(identifier) && get(protocols).includes(identifier)) {
+      data.push({
+        ...module,
+        identifier,
+      });
+    }
+  }
 
-const protocolsData = computed(() =>
-  SUPPORTED_MODULES.filter(({ identifier }) => {
-    if (!isDefiProtocol(identifier))
-      return false;
+  return data;
+},
 
-    return get(protocols).includes(identifier);
-  }),
 );
 </script>
 

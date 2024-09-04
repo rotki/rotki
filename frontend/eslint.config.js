@@ -46,4 +46,9 @@ export default rotki({
   rules: {
     'perfectionist/sort-objects': 'error',
   },
+}, {
+  files: ['**/src/**/*.ts'],
+  rules: {
+    '@typescript-eslint/explicit-function-return-type': 'warn',
+  },
 });

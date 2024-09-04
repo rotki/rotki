@@ -35,7 +35,7 @@ export async function fetchExternalAsync(
   return handleResponse(result);
 }
 
-export function serialize(params: Record<string, any>) {
+export function serialize(params: Record<string, any>): string {
   const list = [];
   for (const [key, value] of Object.entries(params)) {
     if (value === null || value === undefined)

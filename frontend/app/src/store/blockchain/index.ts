@@ -15,7 +15,7 @@ import type {
 } from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
 import type { BlockchainTotal } from '@/types/blockchain';
-import type { BlockchainBalances } from '@/types/blockchain/balances';
+import type { BlockchainBalances, BlockchainTotals } from '@/types/blockchain/balances';
 import type { AssetPrices } from '@/types/prices';
 
 export const useBlockchainStore = defineStore('blockchain', () => {
@@ -150,7 +150,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     ),
   );
 
-  const removeTag = (tag: string) => {
+  const removeTag = (tag: string): void => {
     const copy = { ...get(accounts) };
     for (const chain in copy) {
       const accountData = copy[chain];
@@ -160,7 +160,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     set(accounts, copy);
   };
 
-  const updateAccounts = (chain: string, data: BlockchainAccount[]) => {
+  const updateAccounts = (chain: string, data: BlockchainAccount[]): void => {
     set(accounts, { ...get(accounts), [chain]: data });
   };
 
@@ -201,20 +201,20 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     set(balances, knownBalances);
   };
 
-  const updateBalances = (chain: string, { perAccount }: BlockchainBalances) => {
+  const updateBalances = (chain: string, { perAccount }: BlockchainBalances): void => {
     set(balances, {
       ...get(balances),
       [chain]: perAccount[camelCase(chain)] ?? {},
     });
   };
 
-  const updatePrices = (prices: MaybeRef<AssetPrices>) => {
+  const updatePrices = (prices: MaybeRef<AssetPrices>): void => {
     set(balances, updateBlockchainAssetBalances(balances, prices));
   };
 
   const getAccounts = (chain: string): BlockchainAccount[] => get(accounts)[chain] ?? [];
 
-  const getAddressBalances = (chain: string, address: string) =>
+  const getAddressBalances = (chain: string, address: string): BlockchainTotals =>
     get(balances)[chain]?.[address] ?? { assets: {}, liabilities: {} };
 
   const getAccountByAddress = (address: string, chain?: string): BlockchainAccount | undefined => {

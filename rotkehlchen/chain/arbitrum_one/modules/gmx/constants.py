@@ -1,6 +1,6 @@
 from typing import Final
-from rotkehlchen.chain.evm.types import string_to_evm_address
 
+from rotkehlchen.chain.evm.types import string_to_evm_address
 
 CPT_GMX: Final = 'gmx'
 

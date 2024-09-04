@@ -39,7 +39,6 @@ from .constants import (
     WITHDRAW,
 )
 
-
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer

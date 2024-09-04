@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useAppRoutes } from '@/router/routes';
+import type { RuiIcons } from '@rotki/ui-library';
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { Exchange } from '@/types/exchanges';
 import type { TradeLocationData } from '@/types/history/trade/location';
@@ -13,7 +14,7 @@ interface SearchItem {
   location?: TradeLocationData;
   price?: BigNumber;
   total?: BigNumber;
-  icon?: string;
+  icon?: RuiIcons;
   image?: string;
   route?: RouteLocationRaw;
   action?: () => void;
@@ -341,7 +342,10 @@ watch(open, (open) => {
   });
 });
 
-function change(index: number) {
+function change(index?: number) {
+  if (!index)
+    return;
+
   const item: SearchItem = get(visibleItems)[index];
   if (item) {
     if (item.route && get(router.currentRoute).fullPath !== item.route)
@@ -428,7 +432,6 @@ onBeforeMount(async () => {
                 v-else-if="item.image"
                 class="icon-bg"
                 :src="item.image"
-                :alt="item.location.name"
                 contain
                 size="26px"
               />

@@ -1,6 +1,6 @@
 import csv
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -20,6 +20,9 @@ from rotkehlchen.serialization.deserialize import deserialize_asset_amount
 
 from .constants import ROTKI_EVENT_PREFIX
 
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
+
 GENERIC_TYPE_TO_HISTORY_EVENT_TYPE_MAPPINGS = {
     'Deposit': (HistoryEventType.DEPOSIT, HistoryEventSubType.DEPOSIT_ASSET),
     'Withdrawal': (HistoryEventType.WITHDRAWAL, HistoryEventSubType.REMOVE_ASSET),
@@ -31,6 +34,11 @@ GENERIC_TYPE_TO_HISTORY_EVENT_TYPE_MAPPINGS = {
 
 
 class RotkiGenericEventsImporter(BaseExchangeImporter):
+    """Rotki generic events CSV importer"""
+
+    def __init__(self, db: 'DBHandler') -> None:
+        super().__init__(db=db, name='Rotki generic events')
+
     def _consume_rotki_event(
             self,
             write_cursor: DBWriterClient,
@@ -89,25 +97,32 @@ class RotkiGenericEventsImporter(BaseExchangeImporter):
         - InputError if one of the rows is malformed
         """
         with open(filepath, encoding='utf-8-sig') as csvfile:
-            data = csv.DictReader(csvfile)
-            for idx, row in enumerate(data):
+            for index, row in enumerate(csv.DictReader(csvfile), start=1):
                 try:
-                    kwargs['sequence_index'] = idx
+                    self.total_entries += 1
+                    kwargs['sequence_index'] = index - 1
                     self._consume_rotki_event(write_cursor, row, **kwargs)
+                    self.imported_entries += 1
                 except UnknownAsset as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'During rotki generic events CSV import, found action with unknown '
-                        f'asset {e.identifier}. Ignoring entry',
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=f'Unknown asset {e.identifier}.',
+                        is_error=True,
                     )
                 except DeserializationError as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'Deserialization error during rotki generic events CSV import. '
-                        f'{e!s}. Ignoring entry',
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=f'Deserialization error: {e!s}.',
+                        is_error=True,
                     )
                 except UnsupportedCSVEntry as e:
-                    self.db.msg_aggregator.add_warning(str(e))
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=str(e),
+                        is_error=True,
+                    )
                 except KeyError as e:
                     raise InputError(f'Could not find key {e!s} in csv row {row!s}') from e
-
-                # if more logic is ever added here,
-                # `continue` must be placed at the end of all the exceptions handlers

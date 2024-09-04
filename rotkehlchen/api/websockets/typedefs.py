@@ -27,6 +27,7 @@ class WSMessageType(Enum):
     EVM_UNDECODED_TRANSACTIONS = auto()
     CALENDAR_REMINDER = auto()
     PROTOCOL_CACHE_UPDATES = auto()
+    CSV_IMPORT_RESULT = auto()
 
     def __str__(self) -> str:
         return self.name.lower()  # pylint: disable=no-member

@@ -17,12 +17,12 @@ export const useSync = createSharedComposable(() => {
   });
   const uploadStatusAlreadyHandled = useSessionStorage<boolean>('rotki.upload_status.handled', false);
 
-  const showSyncConfirmation = (action: SyncAction) => {
+  const showSyncConfirmation = (action: SyncAction): void => {
     set(syncAction, action);
     set(displaySyncConfirmation, true);
   };
 
-  const cancelSync = () => {
+  const cancelSync = (): void => {
     set(displaySyncConfirmation, false);
     set(confirmChecked, false);
   };
@@ -80,7 +80,7 @@ export const useSync = createSharedComposable(() => {
     }
   };
 
-  const clearUploadStatus = () => {
+  const clearUploadStatus = (): void => {
     set(uploadStatus, null);
   };
 

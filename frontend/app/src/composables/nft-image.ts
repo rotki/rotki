@@ -1,6 +1,12 @@
 import { api } from '@/services/rotkehlchen-api';
 
-export function useNftImage(mediaUrl: Ref<string | null>) {
+interface UseNftImageReturnType {
+  shouldRender: ComputedRef<boolean>;
+  isVideo: Ref<boolean>;
+  renderedMedia: ComputedRef<string>;
+}
+
+export function useNftImage(mediaUrl: Ref<string | null>): UseNftImageReturnType {
   const { shouldRenderImage } = useNfts();
 
   const isMediaVideo = async (url: string): Promise<boolean> => {

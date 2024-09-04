@@ -1,7 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Any, NamedTuple
 
-
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import CryptoAsset, EvmToken
 from rotkehlchen.chain.evm.types import string_to_evm_address

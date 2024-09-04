@@ -2,7 +2,6 @@ from typing import Final
 
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
-
 CPT_EXTRAFI: Final = 'extrafi'
 VOTE_ESCROW: Final = string_to_evm_address('0xe0BeC4F45aEF64CeC9dCB9010d4beFfB13e91466')
 EXTRAFI_FARMING_CONTRACT = string_to_evm_address('0xf9cFB8a62f50e10AdDE5Aa888B44cF01C5957055')

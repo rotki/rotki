@@ -32,7 +32,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     return Object.fromEntries(get(txEvmChains).map(chain => [chain.id, addressesPerChain[chain.id] ?? []]));
   });
 
-  const setState = (chain: string, data: EvmTokensRecord) => {
+  const setState = (chain: string, data: EvmTokensRecord): void => {
     const tokensVal = { ...get(tokensState) };
     set(tokensState, {
       ...tokensVal,
@@ -43,7 +43,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     });
   };
 
-  const fetchDetectedTokens = async (chain: string, address: string | null = null) => {
+  const fetchDetectedTokens = async (chain: string, address: string | null = null): Promise<void> => {
     try {
       if (address) {
         const { awaitTask } = useTaskStore();
@@ -96,35 +96,37 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     );
   };
 
-  const getTokens = (balances: BlockchainAssetBalances, address: string) => {
+  const getTokens = (balances: BlockchainAssetBalances, address: string): string[] => {
     const assets = balances?.[address]?.assets ?? [];
     return Object.keys(assets).filter(id => !get(isAssetIgnored(id)));
   };
 
-  const getEthDetectedTokensInfo = (chain: MaybeRef<string>, address: MaybeRef<string | null>) =>
-    computed<EthDetectedTokensInfo>(() => {
-      const blockchain = get(chain);
-      if (!supportsTransactions(blockchain))
-        return noTokens();
+  const getEthDetectedTokensInfo = (
+    chain: MaybeRef<string>,
+    address: MaybeRef<string | null>,
+  ): ComputedRef<EthDetectedTokensInfo> => computed<EthDetectedTokensInfo>(() => {
+    const blockchain = get(chain);
+    if (!supportsTransactions(blockchain))
+      return noTokens();
 
-      const state = get(tokensState);
-      const detected: EvmTokensRecord | undefined = state[blockchain];
-      const addr = get(address);
+    const state = get(tokensState);
+    const detected: EvmTokensRecord | undefined = state[blockchain];
+    const addr = get(address);
 
-      if (!addr)
-        return noTokens();
+    if (!addr)
+      return noTokens();
 
-      const info = detected?.[addr];
-      if (!info)
-        return noTokens();
+    const info = detected?.[addr];
+    if (!info)
+      return noTokens();
 
-      const tokens: string[] = getTokens(get(balances)[blockchain], addr);
-      return {
-        tokens,
-        total: tokens.length,
-        timestamp: info.lastUpdateTimestamp || null,
-      };
-    });
+    const tokens: string[] = getTokens(get(balances)[blockchain], addr);
+    return {
+      tokens,
+      total: tokens.length,
+      timestamp: info.lastUpdateTimestamp || null,
+    };
+  });
 
   watch(monitoredAddresses, async (curr, prev) => {
     for (const chain in curr) {

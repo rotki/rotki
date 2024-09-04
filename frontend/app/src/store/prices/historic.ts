@@ -10,7 +10,7 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
   const { t } = useI18n();
   const { notify } = useNotificationsStore();
 
-  const createKey = (fromAsset: string, timestamp: number | string) => `${fromAsset}#${timestamp}`;
+  const createKey = (fromAsset: string, timestamp: number | string): string => `${fromAsset}#${timestamp}`;
 
   const fetchHistoricPrices = async (keys: string[]) => {
     const taskType = TaskType.FETCH_HISTORIC_PRICE;
@@ -61,7 +61,7 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
 
     const response = HistoricPrices.parse(data);
 
-    return function* () {
+    return function* (): Generator<{ key: string; item: BigNumber }, void> {
       for (const assetTimestamp of assetsTimestamp) {
         const [fromAsset, timestamp] = assetTimestamp;
         const key = createKey(fromAsset, timestamp);
@@ -86,7 +86,7 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
       return get(retrieve(key)) || NoPrice;
     });
 
-  const resetHistoricalPricesData = (items: { fromAsset: string; timestamp: number }[]) => {
+  const resetHistoricalPricesData = (items: { fromAsset: string; timestamp: number }[]): void => {
     items.forEach((item) => {
       const key = createKey(item.fromAsset, item.timestamp);
       deleteCacheKey(key);

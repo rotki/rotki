@@ -5,6 +5,7 @@ from rotkehlchen.types import SupportedBlockchain, Timestamp, deserialize_evm_tx
 
 POLYGON_POS_ETHERSCAN_NODE_NAME = 'polygon pos etherscan'
 POLYGON_POS_GENESIS = Timestamp(1590824836)
+POLYGON_POS_POL_HARDFORK = Timestamp(1725451200)
 POLYGON_POS_ETHERSCAN_NODE = WeightedNode(
     node_info=NodeName(
         name=POLYGON_POS_ETHERSCAN_NODE_NAME,

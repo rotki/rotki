@@ -41,69 +41,66 @@ export function useTradeFilters(): FilterSchema<Filters, Matcher> {
   const { assetSearch, assetInfo } = useAssetInfoRetrieval();
   const { t } = useI18n();
 
-  const matchers = computed<Matcher[]>(
-    () =>
-      [
-        {
-          key: TradeFilterKeys.BASE,
-          keyValue: TradeFilterValueKeys.BASE,
-          description: t('closed_trades.filter.base_asset'),
-          asset: true,
-          suggestions: assetSuggestions(assetSearch),
-          deserializer: assetDeserializer(assetInfo),
-        },
-        {
-          key: TradeFilterKeys.QUOTE,
-          keyValue: TradeFilterValueKeys.QUOTE,
-          description: t('closed_trades.filter.quote_asset'),
-          asset: true,
-          suggestions: assetSuggestions(assetSearch),
-          deserializer: assetDeserializer(assetInfo),
-        },
-        {
-          key: TradeFilterKeys.ACTION,
-          keyValue: TradeFilterValueKeys.ACTION,
-          description: t('closed_trades.filter.trade_type'),
-          string: true,
-          suggestions: () => TradeType.options,
-          validate: type => (TradeType.options as string[]).includes(type),
-        },
-        {
-          key: TradeFilterKeys.START,
-          keyValue: TradeFilterValueKeys.START,
-          description: t('closed_trades.filter.start_date'),
-          string: true,
-          suggestions: () => [],
-          hint: t('closed_trades.filter.date_hint', {
-            format: getDateInputISOFormat(get(dateInputFormat)),
-          }),
-          validate: dateValidator(dateInputFormat),
-          serializer: dateSerializer(dateInputFormat),
-          deserializer: dateDeserializer(dateInputFormat),
-        },
-        {
-          key: TradeFilterKeys.END,
-          keyValue: TradeFilterValueKeys.END,
-          description: t('closed_trades.filter.end_date'),
-          string: true,
-          suggestions: () => [],
-          hint: t('closed_trades.filter.date_hint', {
-            format: getDateInputISOFormat(get(dateInputFormat)),
-          }),
-          validate: dateValidator(dateInputFormat),
-          serializer: dateSerializer(dateInputFormat),
-          deserializer: dateDeserializer(dateInputFormat),
-        },
-        {
-          key: TradeFilterKeys.LOCATION,
-          keyValue: TradeFilterValueKeys.LOCATION,
-          description: t('closed_trades.filter.location'),
-          string: true,
-          suggestions: () => get(associatedLocations),
-          validate: location => get(associatedLocations).includes(location),
-        },
-      ] satisfies Matcher[],
-  );
+  const matchers = computed<Matcher[]>(() => [
+    {
+      key: TradeFilterKeys.BASE,
+      keyValue: TradeFilterValueKeys.BASE,
+      description: t('closed_trades.filter.base_asset'),
+      asset: true,
+      suggestions: assetSuggestions(assetSearch),
+      deserializer: assetDeserializer(assetInfo),
+    },
+    {
+      key: TradeFilterKeys.QUOTE,
+      keyValue: TradeFilterValueKeys.QUOTE,
+      description: t('closed_trades.filter.quote_asset'),
+      asset: true,
+      suggestions: assetSuggestions(assetSearch),
+      deserializer: assetDeserializer(assetInfo),
+    },
+    {
+      key: TradeFilterKeys.ACTION,
+      keyValue: TradeFilterValueKeys.ACTION,
+      description: t('closed_trades.filter.trade_type'),
+      string: true,
+      suggestions: (): TradeType[] => TradeType.options,
+      validate: (type): boolean => (TradeType.options as string[]).includes(type),
+    },
+    {
+      key: TradeFilterKeys.START,
+      keyValue: TradeFilterValueKeys.START,
+      description: t('closed_trades.filter.start_date'),
+      string: true,
+      suggestions: (): string[] => [],
+      hint: t('closed_trades.filter.date_hint', {
+        format: getDateInputISOFormat(get(dateInputFormat)),
+      }),
+      validate: dateValidator(dateInputFormat),
+      serializer: dateSerializer(dateInputFormat),
+      deserializer: dateDeserializer(dateInputFormat),
+    },
+    {
+      key: TradeFilterKeys.END,
+      keyValue: TradeFilterValueKeys.END,
+      description: t('closed_trades.filter.end_date'),
+      string: true,
+      suggestions: (): string[] => [],
+      hint: t('closed_trades.filter.date_hint', {
+        format: getDateInputISOFormat(get(dateInputFormat)),
+      }),
+      validate: dateValidator(dateInputFormat),
+      serializer: dateSerializer(dateInputFormat),
+      deserializer: dateDeserializer(dateInputFormat),
+    },
+    {
+      key: TradeFilterKeys.LOCATION,
+      keyValue: TradeFilterValueKeys.LOCATION,
+      description: t('closed_trades.filter.location'),
+      string: true,
+      suggestions: (): string[] => get(associatedLocations),
+      validate: (location): boolean => get(associatedLocations).includes(location),
+    },
+  ] satisfies Matcher[]);
 
   const OptionalString = z.string().optional();
   const RouteFilterSchema = z.object({

@@ -23,6 +23,8 @@ from rotkehlchen.types import AssetMovementCategory, Fee, Location, TradeType
 if TYPE_CHECKING:
     from collections.abc import Callable
 
+    from rotkehlchen.db.dbhandler import DBHandler
+
 
 class BittrexFileType(Enum):
     """The type of the file we are parsing"""
@@ -37,6 +39,11 @@ class BittrexFileType(Enum):
 
 
 class BittrexImporter(BaseExchangeImporter):
+    """Bittrex CSV importer"""
+
+    def __init__(self, db: 'DBHandler') -> None:
+        super().__init__(db=db, name='Bittrex')
+
     @staticmethod
     def _consume_trades(
             csv_row: dict[str, Any],
@@ -213,15 +220,18 @@ class BittrexImporter(BaseExchangeImporter):
                 raise InputError('The given bittrex CSV file format can not be recognized')
 
             csvfile.seek(saved_pos)  # go back to start of theline
-            data = csv.DictReader(csvfile)
-            for row in data:
+            for index, row in enumerate(csv.DictReader(csvfile), start=1):
                 try:
+                    self.total_entries += 1
                     event = consumer_fn(row, file_type, **kwargs)
                     save_fn(write_cursor, event)  # type: ignore  # checked by if above
+                    self.imported_entries += 1
                 except DeserializationError as e:
-                    self.db.msg_aggregator.add_warning(
-                        f'Deserialization error during Bittrex CSV import. '
-                        f'{e!s}. Ignoring entry',
+                    self.send_message(
+                        row_index=index,
+                        csv_row=row,
+                        msg=f'Deserialization error: {e!s}.',
+                        is_error=True,
                     )
                 except KeyError as e:
                     raise InputError(f'Could not find key {e!s} in bittrex csv row {row!s}') from e

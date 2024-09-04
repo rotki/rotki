@@ -13,7 +13,6 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import Location, TradeType
 from rotkehlchen.user_messages import MessagesAggregator
 
-
 ICONOMI_BALANCES_RESPONSE = """{"currency":"USD","daaList":[{"name":"CARUS-AR","ticker":"CAR","balance":"100.0","value":"1000.0"},{"name":"Strategy 2","ticker":"SCND","balance":"80.00000000","value":"0"}],"assetList":[{"name":"Aragon","ticker":"ANT","balance":"1000","value":"200.0"},{"name":"Ethereum","ticker":"ETH","balance":"32","value":"10000.031241234"},{"name":"Augur","ticker":"REP","balance":"0.5314532451","value":"0.8349030710000"}]}"""  # noqa: E501
 
 

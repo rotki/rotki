@@ -82,11 +82,11 @@ export enum SavedFilterLocation {
   ETH_VALIDATORS = 'ethValidators',
 }
 
-export function assetSuggestions(assetSearch: (keyword: string, limit: number) => Promise<AssetsWithId>) {
+export function assetSuggestions(assetSearch: (keyword: string, limit: number) => Promise<AssetsWithId>): (value: string) => Promise<AssetsWithId> {
   return async (value: string) => await assetSearch(value, 5);
 }
 
-export function assetDeserializer(assetInfo: (identifier: string) => ComputedRef<AssetInfo | null>) {
+export function assetDeserializer(assetInfo: (identifier: string) => ComputedRef<AssetInfo | null>): (identifier: string) => AssetInfoWithId | null {
   return (identifier: string): AssetInfoWithId | null => {
     const asset = get(assetInfo(identifier));
     if (!asset)
@@ -99,14 +99,14 @@ export function assetDeserializer(assetInfo: (identifier: string) => ComputedRef
   };
 }
 
-export function dateValidator(dateInputFormat: Ref<DateFormat>) {
+export function dateValidator(dateInputFormat: Ref<DateFormat>): (value: string) => boolean {
   return (value: string) => value.length > 0 && !isNaN(convertToTimestamp(value, get(dateInputFormat)));
 }
 
-export function dateSerializer(dateInputFormat: Ref<DateFormat>) {
+export function dateSerializer(dateInputFormat: Ref<DateFormat>): (date: string) => string {
   return (date: string) => convertToTimestamp(date, get(dateInputFormat)).toString();
 }
 
-export function dateDeserializer(dateInputFormat: Ref<DateFormat>) {
+export function dateDeserializer(dateInputFormat: Ref<DateFormat>): (timestamp: string) => string {
   return (timestamp: string) => convertFromTimestamp(parseInt(timestamp), get(dateInputFormat));
 }

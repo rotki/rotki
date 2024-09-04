@@ -30,7 +30,6 @@ from .constants import (
     CPT_BLUR,
 )
 
-
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 

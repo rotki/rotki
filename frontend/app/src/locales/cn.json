@@ -2627,18 +2627,17 @@
     }
   },
   "input_mode_select": {
+    "import_from_wallet": {
+      "label": "从浏览器钱包导入地址",
+      "missing": "我们无法在该浏览器中检测到任何钱包。",
+      "missing_tooltip": {
+        "wallet_is_not_installed": "该浏览器没有安装任何钱包。您可以到浏览器的扩展商店安装一个。",
+        "wallet_is_not_enabled": "钱包的扩展已禁用。您可以根据自己的浏览器，在 “扩展/附加组件 ”菜单中启用它。",
+        "title": "以下是常见的原因:"
+      }
+    },
     "manual_add": {
       "label": "手册"
-    },
-    "metamask_import": {
-      "missing": "从 MetaMask 导入地址被禁用。无法检测到 MetaMask。",
-      "missing_tooltip": {
-        "copy_url": "复制本页网址",
-        "metamask_is_not_enabled": "MetaMask 尚未启用。您可以在菜单扩展/附加组件中启用它，具体取决于您的浏览器。",
-        "metamask_is_not_installed": "此浏览器未安装 MetaMask。您可以下载 MetaMask {link}。",
-        "metamask_is_not_supported_by_browser": "确保您使用列出的受支持浏览器{link}打开此页面。如果不是，请{copy}并在受支持的浏览器上手动打开它。",
-        "title": "以下是常见原因："
-      }
     },
     "xpub_add": {
       "label": "XPUB"

@@ -2,7 +2,6 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING
 
-
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.graph import (
     GRAPH_QUERY_LIMIT,

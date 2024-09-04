@@ -5,8 +5,8 @@ from sqlite3 import OperationalError
 from typing import TYPE_CHECKING, Any
 
 import requests
-
 from packaging import version as pversion
+
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.spam_assets import update_spam_assets

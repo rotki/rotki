@@ -1,6 +1,6 @@
 from typing import Final
-from rotkehlchen.chain.evm.types import string_to_evm_address
 
+from rotkehlchen.chain.evm.types import string_to_evm_address
 
 UNISWAP_V3_NFT_MANAGER: Final = string_to_evm_address('0x03a520b32C04BF3bEEf7BEb72E919cf822Ed34f1')
 UNISWAP_AUTO_ROUTER_V1: Final = string_to_evm_address('0xE592427A0AEce92De3Edee1F18E0157C05861564')

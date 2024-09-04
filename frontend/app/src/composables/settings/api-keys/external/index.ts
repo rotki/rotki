@@ -1,7 +1,7 @@
 import type { Auth, ExternalServiceKey, ExternalServiceKeys, ExternalServiceName } from '@/types/user';
 import type { MaybeRef } from '@vueuse/core';
 
-function getName(name: ExternalServiceName, chain?: string) {
+function getName(name: ExternalServiceName, chain?: string): string {
   if (name === 'etherscan') {
     assert(chain, 'chain is missing for etherscan');
     if (chain === 'ethereum')
@@ -17,7 +17,18 @@ interface Status {
   success?: boolean;
 }
 
-export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof useI18n>['t']) => {
+interface UseExternalApiKeysReturn {
+  loading: Ref<boolean>;
+  getName: (name: ExternalServiceName, chain?: string) => string;
+  apiKey: (name: MaybeRef<ExternalServiceName>, chain?: MaybeRef<string>) => ComputedRef<string>;
+  credential: (name: MaybeRef<ExternalServiceName>) => ComputedRef<Auth | null>;
+  actionStatus: (name: MaybeRef<ExternalServiceName>, chain?: MaybeRef<string>) => ComputedRef<Status | undefined>;
+  load: () => Promise<void>;
+  save: (payload: ExternalServiceKey, postConfirmAction?: () => Promise<void> | void) => Promise<void>;
+  confirmDelete: (name: string, postConfirmAction?: () => Promise<void> | void) => void;
+}
+
+export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof useI18n>['t']): UseExternalApiKeysReturn => {
   const loading = ref(false);
   const keys = ref<ExternalServiceKeys>();
   const status = ref<Record<string, Status>>({});
@@ -25,63 +36,63 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
   const { show } = useConfirmStore();
   const { setExternalServices, deleteExternalServices, queryExternalServices } = useExternalServicesApi();
 
-  const apiKey = (name: MaybeRef<ExternalServiceName>, chain?: MaybeRef<string>): ComputedRef<string> =>
-    computed(() => {
-      const items = get(keys);
-      const service = get(name);
+  const apiKey = (
+    name: MaybeRef<ExternalServiceName>,
+    chain?: MaybeRef<string>,
+  ): ComputedRef<string> => computed(() => {
+    const items = get(keys);
+    const service = get(name);
 
-      if (!items)
-        return '';
-
-      if (service === 'etherscan') {
-        const itemService = items[service];
-        const chainId = get(chain);
-        assert(chainId, 'missing chain for etherscan');
-
-        const transformedChainId = transformCase(chainId, true);
-
-        if (itemService && transformedChainId in itemService) {
-          const chainData = itemService[transformedChainId];
-          if (chainData && 'apiKey' in chainData)
-            return chainData.apiKey || '';
-        }
-      }
-      else {
-        const itemService = items[service];
-
-        if (itemService && 'apiKey' in itemService)
-          return itemService.apiKey || '';
-      }
-
+    if (!items)
       return '';
-    });
 
-  const credential = (name: MaybeRef<ExternalServiceName>): ComputedRef<Auth | null> =>
-    computed(() => {
-      const items = get(keys);
-      const service = get(name);
+    if (service === 'etherscan') {
+      const itemService = items[service];
+      const chainId = get(chain);
+      assert(chainId, 'missing chain for etherscan');
 
-      if (!items || service === 'etherscan')
-        return null;
+      const transformedChainId = transformCase(chainId, true);
 
+      if (itemService && transformedChainId in itemService) {
+        const chainData = itemService[transformedChainId];
+        if (chainData && 'apiKey' in chainData)
+          return chainData.apiKey || '';
+      }
+    }
+    else {
       const itemService = items[service];
 
-      if (itemService && 'username' in itemService)
-        return itemService;
+      if (itemService && 'apiKey' in itemService)
+        return itemService.apiKey || '';
+    }
 
+    return '';
+  });
+
+  const credential = (name: MaybeRef<ExternalServiceName>): ComputedRef<Auth | null> => computed(() => {
+    const items = get(keys);
+    const service = get(name);
+
+    if (!items || service === 'etherscan')
       return null;
-    });
+
+    const itemService = items[service];
+
+    if (itemService && 'username' in itemService)
+      return itemService;
+
+    return null;
+  });
 
   const actionStatus = (
     name: MaybeRef<ExternalServiceName>,
     chain?: MaybeRef<string>,
-  ): ComputedRef<Status | undefined> =>
-    computed(() => {
-      const key = getName(get(name), get(chain));
-      return get(status)[key];
-    });
+  ): ComputedRef<Status | undefined> => computed(() => {
+    const key = getName(get(name), get(chain));
+    return get(status)[key];
+  });
 
-  const load = async () => {
+  const load = async (): Promise<void> => {
     set(loading, true);
     try {
       set(keys, await queryExternalServices());
@@ -94,12 +105,12 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
     }
   };
 
-  const resetStatus = (key: string) => {
+  const resetStatus = (key: string): void => {
     const { [key]: service, ...newStatus } = get(status);
     set(status, newStatus);
   };
 
-  const setStatus = (key: string, message: Status) => {
+  const setStatus = (key: string, message: Status): void => {
     setTimeout(() => resetStatus(key), 4500);
 
     set(status, {
@@ -108,7 +119,7 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
     });
   };
 
-  const save = async (payload: ExternalServiceKey, postConfirmAction?: () => Promise<void> | void) => {
+  const save = async (payload: ExternalServiceKey, postConfirmAction?: () => Promise<void> | void): Promise<void> => {
     const { name } = payload;
     const isPayloadWithCredential = 'username' in payload;
     resetStatus(name);
@@ -147,7 +158,7 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
     }
   };
 
-  const deleteService = async (name: string) => {
+  const deleteService = async (name: string): Promise<void> => {
     set(loading, true);
     try {
       set(keys, await deleteExternalServices(name));
@@ -164,7 +175,7 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
     }
   };
 
-  const confirmDelete = (name: string, postConfirmAction?: () => Promise<void> | void) => {
+  const confirmDelete = (name: string, postConfirmAction?: () => Promise<void> | void): void => {
     resetStatus(name);
     show(
       {

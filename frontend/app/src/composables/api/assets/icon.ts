@@ -2,7 +2,15 @@ import { api } from '@/services/rotkehlchen-api';
 import { handleResponse, validStatus } from '@/services/utils';
 import type { ActionResult } from '@rotki/common';
 
-export function useAssetIconApi() {
+interface UseAsetIconApiReturn {
+  assetImageUrl: (identifier: string, randomString?: string | number) => string;
+  uploadIcon: (identifier: string, file: File) => Promise<boolean>;
+  setIcon: (asset: string, file: string) => Promise<boolean>;
+  refreshIcon: (asset: string) => Promise<boolean>;
+  clearIconCache: (assets: string[] | null) => Promise<boolean>;
+}
+
+export function useAssetIconApi(): UseAsetIconApiReturn {
   const assetImageUrl = (identifier: string, randomString?: string | number): string => {
     let url = `${api.instance.defaults.baseURL}assets/icon?asset=${encodeURIComponent(identifier)}`;
 

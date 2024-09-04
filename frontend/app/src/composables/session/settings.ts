@@ -3,7 +3,11 @@ import { getBnFormat } from '@/data/amount-formatter';
 import type { Exchange } from '@/types/exchanges';
 import type { UserSettingsModel } from '@/types/user';
 
-export function useSessionSettings() {
+interface UseSessionSettingsReturn {
+  initialize: (model: UserSettingsModel, exchanges: Exchange[]) => void;
+}
+
+export function useSessionSettings(): UseSessionSettingsReturn {
   const { premium, premiumSync } = storeToRefs(usePremiumStore());
   const { update: updateFrontendSettings } = useFrontendSettingsStore();
   const { update: updateAccountingSettings } = useAccountingSettingsStore();

@@ -32,11 +32,12 @@ watch(search, (search) => {
   >
     <!-- Pass on all named slots -->
     <template
-      v-for="(_, name) in $slots"
+      v-for="(_, name, index) in ($slots as {})"
       #[name]="scope"
+      :key="index"
     >
       <slot
-        v-bind="scope"
+        v-bind="{ scope }"
         :name="name"
       />
     </template>

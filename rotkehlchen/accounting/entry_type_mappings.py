@@ -1,4 +1,5 @@
 from typing import Final
+
 from rotkehlchen.history.events.structures.base import HistoryBaseEntryType
 from rotkehlchen.history.events.structures.types import (
     EventCategory,

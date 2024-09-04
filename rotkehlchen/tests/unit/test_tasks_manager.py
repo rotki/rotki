@@ -10,10 +10,13 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
+from rotkehlchen.chain.ethereum.constants import LAST_GRAPH_DELEGATIONS
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
+from rotkehlchen.chain.ethereum.modules.thegraph.constants import CONTRACT_STAKING
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
+from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_COMP, A_DAI, A_LUSD, A_USDC, A_USDT, A_YFI
+from rotkehlchen.constants.assets import A_COMP, A_DAI, A_GRT, A_LUSD, A_USDC, A_USDT, A_YFI
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import evm_address_to_identifier
@@ -46,7 +49,9 @@ from rotkehlchen.tests.utils.premium import VALID_PREMIUM_KEY, VALID_PREMIUM_SEC
 from rotkehlchen.types import (
     SPAM_PROTOCOL,
     ChainID,
+    ChecksumEvmAddress,
     EvmTokenKind,
+    EvmTransaction,
     EVMTxHash,
     Location,
     SupportedBlockchain,
@@ -61,6 +66,7 @@ from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+    from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.exchanges.exchange import ExchangeInterface
     from rotkehlchen.exchanges.manager import ExchangeManager
@@ -405,6 +411,7 @@ def test_update_snapshot_balances(rotkehlchen_instance: 'Rotkehlchen'):
             cursor=cursor,
             address=accounts[1],
             blockchain=SupportedBlockchain.ETHEREUM,
+            token_exceptions=set(),
         )
         assert set(tokens or {}) == {A_COMP, A_LUSD, A_DAI}
 
@@ -1133,3 +1140,75 @@ def test_snapshots_dont_happen_always(rotkehlchen_api_server: 'APIServer') -> No
             gevent.joinall(rotki.greenlet_manager.greenlets)
 
         assert cursor.execute(query).fetchone()[0] == 2
+
+
+@pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])  # noqa: E501
+def test_graph_query_query_delegations(
+        eth_transactions: 'EthereumTransactions',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+):
+    """Check that log events for graph delegations are queried in chunks
+    and we save the range queried correctly. Also ensures that only addresses
+    that interacted with the L2 delegation are queried for logs.
+    """
+    target_block = 20661371
+    dbevents = DBHistoryEvents(eth_transactions.database)
+    contract_deployed_block = eth_transactions.evm_inquirer.contracts.contract(CONTRACT_STAKING).deployed_block  # noqa: E501
+    mock_block_lapse = 100_000
+    for timestamp in (1, 2):
+        with eth_transactions.database.user_write() as write_cursor:
+            dbevents.add_history_event(
+                write_cursor=write_cursor,
+                event=EvmEvent(
+                    tx_hash=(tx_hash := make_evm_tx_hash()),
+                    sequence_index=1,
+                    timestamp=TimestampMS(timestamp),
+                    location=Location.ETHEREUM,
+                    event_type=HistoryEventType.INFORMATIONAL,
+                    event_subtype=HistoryEventSubType.APPROVE,
+                    asset=A_GRT,
+                    balance=Balance(),
+                    location_label=ethereum_accounts[0],
+                    notes='Approve contract transfer',
+                    counterparty=CPT_THEGRAPH,
+                    address=string_to_evm_address('0x7D91717579885BfCFec3Cb4B4C4fe71c1EedD4dE'),
+                ),
+            )
+
+            DBEvmTx(eth_transactions.database).add_evm_transactions(
+                write_cursor=write_cursor,
+                evm_transactions=[EvmTransaction(  # fake event used to extract the block number for the query of events  # noqa: E501
+                    tx_hash=tx_hash,
+                    chain_id=ChainID.ETHEREUM,
+                    timestamp=Timestamp(timestamp),
+                    block_number=contract_deployed_block + mock_block_lapse * timestamp,
+                    from_address=ethereum_accounts[0],
+                    to_address=ethereum_accounts[0],
+                    value=0,
+                    gas=35000,
+                    gas_price=20000000000,
+                    gas_used=30981,
+                    input_data=b'',
+                    nonce=1,
+                )],
+                relevant_address=ethereum_accounts[0],
+            )
+
+    with (
+        patch('rotkehlchen.chain.evm.node_inquirer.EvmNodeInquirer.get_latest_block_number', return_value=target_block),  # noqa: E501
+        patch.object(eth_transactions, '_graph_delegation_callback', wraps=eth_transactions._graph_delegation_callback) as callback_patch,  # noqa: E501
+        patch('rotkehlchen.externalapis.etherscan.Etherscan.get_logs', return_value=[]) as get_logs,  # noqa: E501
+    ):
+        eth_transactions.query_for_graph_delegation_txns(addresses=ethereum_accounts)
+        assert callback_patch.call_count == 31  # math.ceil((target_block - from_block) / query_size)  # noqa: E501
+        with eth_transactions.database.conn.read_ctx() as cursor:
+            assert eth_transactions.database.get_dynamic_cache(
+                cursor=cursor,
+                name=DBCacheDynamic.LAST_BLOCK_ID,
+                location=eth_transactions.evm_inquirer.chain_name,
+                location_name=LAST_GRAPH_DELEGATIONS,
+                account_id=ethereum_accounts[0],
+            ) == target_block
+            # we expect only one address and not both tracked ones
+            assert cursor.execute('SELECT COUNT(*) FROM key_value_cache WHERE name LIKE "ethereum_GRAPH_DELEGATIONS%"').fetchone() == (1,)  # noqa: E501
+            assert get_logs.call_args_list[0].kwargs['from_block'] == contract_deployed_block + mock_block_lapse  # ensure that we query since the oldest appearance  # noqa: E501

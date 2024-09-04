@@ -6,7 +6,7 @@ interface SplitResult {
   exclude?: boolean;
 }
 
-function defaultSplitResult() {
+function defaultSplitResult(): SplitResult {
   return {
     key: '',
     value: '',

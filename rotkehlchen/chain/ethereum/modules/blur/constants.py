@@ -1,8 +1,7 @@
 from typing import Final
+
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
-
 from rotkehlchen.chain.evm.types import string_to_evm_address
-
 
 BLUR_STAKING_CONTRACT: Final = string_to_evm_address('0xeC2432a227440139DDF1044c3feA7Ae03203933E')
 BLUR_DEPOSITED: Final = b'\xe1\xff\xfc\xc4\x92=\x04\xb5Y\xf4\xd2\x9a\x8b\xfcl\xda\x04\xeb[\r<F\x07Q\xc2@,\\\\\xc9\x10\x9c'  # noqa: E501

@@ -17,54 +17,53 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
 
   const addresses = computed<string[]>(() => Object.keys(get(balances)));
 
-  const balancerBalances = (addresses: string[]) =>
-    computed<BalancerBalance[]>(() => {
-      const perAddressBalances = get(balances);
+  const balancerBalances = (addresses: string[]): ComputedRef<BalancerBalance[]> => computed<BalancerBalance[]>(() => {
+    const perAddressBalances = get(balances);
 
-      const aggregatedBalances: Record<string, Writeable<BalancerBalance>> = {};
+    const aggregatedBalances: Record<string, Writeable<BalancerBalance>> = {};
 
-      for (const account in perAddressBalances) {
-        if (addresses.length > 0 && !addresses.includes(account))
-          continue;
+    for (const account in perAddressBalances) {
+      if (addresses.length > 0 && !addresses.includes(account))
+        continue;
 
-        const accountBalances = cloneDeep(perAddressBalances)[account];
-        if (!accountBalances || accountBalances.length === 0)
-          continue;
+      const accountBalances = cloneDeep(perAddressBalances)[account];
+      if (!accountBalances || accountBalances.length === 0)
+        continue;
 
-        for (const { address, tokens, totalAmount, userBalance } of accountBalances) {
-          const balance = aggregatedBalances[address];
-          if (balance) {
-            const oldBalance = balance.userBalance;
-            balance.userBalance = balanceSum(oldBalance, userBalance);
+      for (const { address, tokens, totalAmount, userBalance } of accountBalances) {
+        const balance = aggregatedBalances[address];
+        if (balance) {
+          const oldBalance = balance.userBalance;
+          balance.userBalance = balanceSum(oldBalance, userBalance);
 
-            tokens.forEach((token) => {
-              const index = balance.tokens.findIndex(item => item.token === token.token);
-              if (index > -1) {
-                const existingAssetData = balance.tokens[index];
-                const userBalance = balanceSum(existingAssetData.userBalance, token.userBalance);
-                balance.tokens[index] = {
-                  ...existingAssetData,
-                  userBalance,
-                };
-              }
-              else {
-                balance.tokens.push(token);
-              }
-            });
-          }
-          else {
-            aggregatedBalances[address] = {
-              address,
-              tokens,
-              totalAmount,
-              userBalance,
-            };
-          }
+          tokens.forEach((token) => {
+            const index = balance.tokens.findIndex(item => item.token === token.token);
+            if (index > -1) {
+              const existingAssetData = balance.tokens[index];
+              const userBalance = balanceSum(existingAssetData.userBalance, token.userBalance);
+              balance.tokens[index] = {
+                ...existingAssetData,
+                userBalance,
+              };
+            }
+            else {
+              balance.tokens.push(token);
+            }
+          });
+        }
+        else {
+          aggregatedBalances[address] = {
+            address,
+            tokens,
+            totalAmount,
+            userBalance,
+          };
         }
       }
+    }
 
-      return Object.values(aggregatedBalances);
-    });
+    return Object.values(aggregatedBalances);
+  });
 
   const pools = computed<XswapPool[]>(() => {
     const pools: Record<string, XswapPool> = {};
@@ -83,11 +82,14 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
     return Object.values(pools);
   });
 
-  const profitLoss = (_addresses: string[] = []) =>
-    computed<BalancerProfitLoss[]>(() =>
-      // TODO: old pnl was based on the events which we removed because
-      [],
-    );
+  /**
+   * @deprecated
+   * @param _addresses
+   * TODO: old pnl was based on the events which we removed because
+   */
+  const profitLoss = (
+    _addresses: string[] = [],
+  ): ComputedRef<BalancerProfitLoss[]> => computed<BalancerProfitLoss[]>(() => []);
 
   const fetchBalances = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
@@ -102,28 +104,25 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
         }),
     };
 
-    await fetchDataAsync(
-      {
-        task: {
-          type: TaskType.BALANCER_BALANCES,
-          section: Section.DEFI_BALANCER_BALANCES,
-          query: async () => await fetchBalancerBalances(),
-          parser: data => BalancerBalances.parse(data),
-          meta,
-          onError,
-        },
-        requires: {
-          premium: true,
-          module: Module.BALANCER,
-        },
-        state: {
-          isPremium,
-          activeModules,
-        },
-        refresh,
+    await fetchDataAsync({
+      task: {
+        type: TaskType.BALANCER_BALANCES,
+        section: Section.DEFI_BALANCER_BALANCES,
+        query: async () => await fetchBalancerBalances(),
+        parser: data => BalancerBalances.parse(data),
+        meta,
+        onError,
       },
-      balances,
-    );
+      requires: {
+        premium: true,
+        module: Module.BALANCER,
+      },
+      state: {
+        isPremium,
+        activeModules,
+      },
+      refresh,
+    }, balances);
   };
 
   const reset = (): void => {

@@ -2,39 +2,35 @@
 import { TaskType } from '@/types/task-type';
 import type {
   EvmTransactionQueryData,
-  EvmUnDecodedTransactionsData,
   HistoryEventsQueryData,
 } from '@/types/websocket-messages';
 import type { Blockchain } from '@rotki/common';
 
-const props = withDefaults(
-  defineProps<{
-    colspan: number;
-    loading: boolean;
-    includeEvmEvents: boolean;
-    includeOnlineEvents: boolean;
-    onlyChains?: Blockchain[];
-    locations?: string[];
-    decodingStatus: EvmUnDecodedTransactionsData[];
-    decoding: boolean;
-    currentAction: 'decode' | 'query';
-  }>(),
-  {
-    onlyChains: () => [],
-    locations: () => [],
-    includeEvmEvents: false,
-    includeOnlineEvents: false,
-    loading: false,
-  },
-);
+const props = withDefaults(defineProps<{
+  colspan: number;
+  loading: boolean;
+  onlyChains?: Blockchain[];
+  locations?: string[];
+  decoding: boolean;
+}>(), {
+  onlyChains: () => [],
+  locations: () => [],
+  loading: false,
+});
 
 const emit = defineEmits<{
-  (e: 'show-decode-details'): void;
-  (e: 'show-protocol-refresh-details'): void;
-  (e: 'update:current-action', value: 'decode' | 'query'): void;
+  'show:dialog': [type: 'decode' | 'protocol-refresh'];
 }>();
-const { onlyChains, locations, currentAction } = toRefs(props);
+
+const currentAction = defineModel<'decode' | 'query'>('currentAction', { required: true });
+
+const { onlyChains, locations } = toRefs(props);
+
 const { t } = useI18n();
+
+const { resetUndecodedTransactionsStatus } = useHistoryStore();
+const { receivingProtocolCacheStatus, protocolCacheStatus } = storeToRefs(useHistoryStore());
+const { decodingStatus } = storeToRefs(useHistoryStore());
 
 const {
   sortedQueryStatus: transactions,
@@ -49,12 +45,9 @@ const {
   isQueryFinished: isEventQueryFinished,
   resetQueryStatus: resetEventsQueryStatus,
 } = useEventsQueryStatus(locations);
+const { isTaskRunning } = useTaskStore();
 
-const historyStore = useHistoryStore();
-const { resetUndecodedTransactionsStatus } = historyStore;
-
-const { receivingProtocolCacheStatus, protocolCacheStatus } = storeToRefs(historyStore);
-
+const refreshProtocolCacheTaskRunning = isTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
 const items = computed(() => [...get(transactions), ...get(events)]);
 const isQuery = computed(() => get(currentAction) === 'query');
 
@@ -76,11 +69,8 @@ function resetQueryStatus() {
   resetTransactionsQueryStatus();
   resetEventsQueryStatus();
   resetUndecodedTransactionsStatus();
-  emit('update:current-action', 'query');
+  set(currentAction, 'query');
 }
-
-const { isTaskRunning } = useTaskStore();
-const refreshProtocolCacheTaskRunning = isTaskRunning(TaskType.REFRESH_GENERAL_CACHE);
 </script>
 
 <template>
@@ -114,6 +104,7 @@ const refreshProtocolCacheTaskRunning = isTaskRunning(TaskType.REFRESH_GENERAL_C
         :get-key="getItemKey"
         :is-item-finished="isItemQueryFinished"
       />
+
       <RuiTooltip
         v-else
         :popper="{ placement: 'top' }"
@@ -126,9 +117,7 @@ const refreshProtocolCacheTaskRunning = isTaskRunning(TaskType.REFRESH_GENERAL_C
             icon
             size="sm"
             class="!p-2"
-            @click="
-              refreshProtocolCacheTaskRunning ? emit('show-protocol-refresh-details') : emit('show-decode-details')
-            "
+            @click="emit('show:dialog', refreshProtocolCacheTaskRunning ? 'protocol-refresh' : 'decode')"
           >
             <template #append>
               <RuiIcon name="information-line" />
