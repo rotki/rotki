@@ -9,7 +9,7 @@ export const truncationPoints: Record<string, number> = {
   '2xl': 30,
 };
 
-export function findAddressKnownPrefix(address: string) {
+export function findAddressKnownPrefix(address: string): string {
   const truncatePrefixExceptions = ['0x', ...Object.values(XpubPrefix)];
 
   let knownPrefix = '';

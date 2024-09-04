@@ -7,7 +7,7 @@ interface Opts {
 
 export function useStatusUpdater(defaultSection: Section) {
   const { setStatus, getStatus, isLoading } = useStatusStore();
-  const updateStatus = (status: Status, opts: Opts = {}) => {
+  const updateStatus = (status: Status, opts: Opts = {}): void => {
     const { section = defaultSection, subsection } = opts;
 
     setStatus({
@@ -17,7 +17,7 @@ export function useStatusUpdater(defaultSection: Section) {
     });
   };
 
-  const resetStatus = (opts: Opts = {}) => {
+  const resetStatus = (opts: Opts = {}): void => {
     const { section = defaultSection, subsection } = opts;
 
     setStatus({
@@ -27,19 +27,19 @@ export function useStatusUpdater(defaultSection: Section) {
     });
   };
 
-  const loading = (opts: Opts = {}) => {
+  const loading = (opts: Opts = {}): boolean => {
     const { section = defaultSection, subsection } = opts;
     return get(isLoading(section, subsection));
   };
 
-  const isFirstLoad = (opts: Opts = {}) => {
+  const isFirstLoad = (opts: Opts = {}): boolean => {
     const { section = defaultSection, subsection } = opts;
     return get(getStatus(section, subsection)) === Status.NONE;
   };
 
-  const fetchDisabled = (refresh: boolean, opts: Opts = {}) => !(isFirstLoad(opts) || refresh) || loading(opts);
+  const fetchDisabled = (refresh: boolean, opts: Opts = {}): boolean => !(isFirstLoad(opts) || refresh) || loading(opts);
 
-  const getSectionStatus = (opts: Opts = {}) => {
+  const getSectionStatus = (opts: Opts = {}): Status => {
     const { section = defaultSection, subsection } = opts;
     return get(getStatus(section, subsection));
   };

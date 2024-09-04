@@ -91,7 +91,7 @@ export class DateFormatter {
     return !!matches && matches.length > 0;
   }
 
-  format(date: Date, format: string) {
+  format(date: Date, format: string): string {
     let formattedString = format;
     let m;
 

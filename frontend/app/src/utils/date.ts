@@ -11,7 +11,7 @@ import utc from 'dayjs/plugin/utc';
 import { DateFormat } from '@/types/date-format';
 import { timezones } from '@/data/timezones';
 
-export function guessTimezone() {
+export function guessTimezone(): string {
   const guessedTimezone = dayjs.tz.guess();
   const offset = dayjs().utcOffset();
   const timezone = timezones.find(tz => tz === guessedTimezone);
@@ -144,7 +144,7 @@ export function isValidDate(date: string, dateFormat: string): boolean {
   return dayjs(date, dateFormat, true).isValid();
 }
 
-export function getDayNames(locale = 'en') {
+export function getDayNames(locale = 'en'): string[] {
   const format = new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'UTC' });
   const days = [];
   for (let day = 1; day <= 7; day++) {

@@ -38,10 +38,10 @@ export const useWhitelistedAssetsStore = defineStore('assets/whitelisted', () =>
     }
     catch (error: any) {
       notify({
-        title: t('ignore.whitelist.failed.whitelist_title').toString(),
+        title: t('ignore.whitelist.failed.whitelist_title'),
         message: t('ignore.whitelist.failed.whitelist_message', {
           message: error.message,
-        }).toString(),
+        }),
         display: true,
       });
       return { success: false, message: error.message };
@@ -67,11 +67,10 @@ export const useWhitelistedAssetsStore = defineStore('assets/whitelisted', () =>
     }
   };
 
-  const isAssetWhitelisted = (asset: MaybeRef<string>) =>
-    computed<boolean>(() => {
-      const selectedAsset = get(asset);
-      return get(whitelistedAssets).includes(selectedAsset);
-    });
+  const isAssetWhitelisted = (asset: MaybeRef<string>): ComputedRef<boolean> => computed<boolean>(() => {
+    const selectedAsset = get(asset);
+    return get(whitelistedAssets).includes(selectedAsset);
+  });
 
   return {
     whitelistedAssets,

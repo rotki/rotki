@@ -3,7 +3,7 @@ export function useCoreScroll() {
 
   const shouldShowScrollToTopButton = computed<boolean>(() => get(scrollY) > 200);
 
-  function scrollToTop() {
+  function scrollToTop(): void {
     document.body.scrollTo(0, 0);
   }
 

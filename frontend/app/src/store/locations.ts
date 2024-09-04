@@ -36,7 +36,7 @@ export const useLocationStore = defineStore('locations', () => {
 
   const tradeLocations = computed(() => toTradeLocationData(get(allLocations)));
 
-  const fetchAllTradeLocations = async () => {
+  const fetchAllTradeLocations = async (): Promise<void> => {
     const { locations } = await fetchAllLocations();
     set(allLocations, locations);
   };

@@ -89,39 +89,37 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
       .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
   });
 
-  const getBreakdown = (asset: string) =>
-    computed<AssetBreakdown[]>(() => {
-      const breakdown: AssetBreakdown[] = [];
-      const balances = get(manualBalances);
+  const getBreakdown = (asset: string): ComputedRef<AssetBreakdown[]> => computed<AssetBreakdown[]>(() => {
+    const breakdown: AssetBreakdown[] = [];
+    const balances = get(manualBalances);
 
-      for (const balance of balances) {
-        const associatedAsset = get(getAssociatedAssetIdentifier(balance.asset));
-        if (associatedAsset !== asset)
-          continue;
+    for (const balance of balances) {
+      const associatedAsset = get(getAssociatedAssetIdentifier(balance.asset));
+      if (associatedAsset !== asset)
+        continue;
 
-        breakdown.push({
-          address: '',
-          location: balance.location,
-          amount: balance.amount,
-          usdValue: balance.usdValue,
-          tags: balance.tags ?? undefined,
-        });
-      }
-      return breakdown;
-    });
+      breakdown.push({
+        address: '',
+        location: balance.location,
+        amount: balance.amount,
+        usdValue: balance.usdValue,
+        tags: balance.tags ?? undefined,
+      });
+    }
+    return breakdown;
+  });
 
-  const getLocationBreakdown = (id: string) =>
-    computed<AssetBalances>(() => {
-      const assets: AssetBalances = {};
-      const balances = get(manualBalances);
-      for (const balance of balances) {
-        if (balance.location !== id)
-          continue;
+  const getLocationBreakdown = (id: string): ComputedRef<AssetBalances> => computed<AssetBalances>(() => {
+    const assets: AssetBalances = {};
+    const balances = get(manualBalances);
+    for (const balance of balances) {
+      if (balance.location !== id)
+        continue;
 
-        appendAssetBalance(balance, assets, getAssociatedAssetIdentifier);
-      }
-      return assets;
-    });
+      appendAssetBalance(balance, assets, getAssociatedAssetIdentifier);
+    }
+    return assets;
+  });
 
   const { getStatus, setStatus, resetStatus, fetchDisabled } = useStatusUpdater(Section.MANUAL_BALANCES);
 
@@ -255,7 +253,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
      *
      * @param asset The asset for which we want the price
      */
-    resolveAssetPrice(asset: string) {
+    resolveAssetPrice(asset: string): BigNumber | undefined {
       const inCurrentCurrency = get(isAssetPriceInCurrentCurrency(asset));
       const price = get(assetPrice(asset));
       if (!price)

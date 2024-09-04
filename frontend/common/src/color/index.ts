@@ -38,7 +38,7 @@ function toHex(value: number): string {
   return Math.round(value).toString(16).padStart(2, '0').toUpperCase();
 }
 
-export function rgbPointsToHex(r: number, g: number, b: number) {
+export function rgbPointsToHex(r: number, g: number, b: number): string {
   return `${toHex(r)}${toHex(g)}${toHex(b)}`;
 }
 

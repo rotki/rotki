@@ -101,41 +101,43 @@ export const useStatisticsStore = defineStore('statistics', () => {
 
   const totalNetWorthUsd = calculateTotalValue(true);
 
-  const getNetValue = (startingDate: number): ComputedRef<NetValue> => computed<NetValue>(() => {
-    const currency = get(currencySymbol);
-    const rate = get(exchangeRate(currency)) ?? One;
+  function getNetValue(startingDate: number): ComputedRef<NetValue> {
+    return computed<NetValue>(() => {
+      const currency = get(currencySymbol);
+      const rate = get(exchangeRate(currency)) ?? One;
 
-    const convert = (value: BigNumber): BigNumber => (currency === CURRENCY_USD ? value : value.multipliedBy(rate));
+      const convert = (value: BigNumber): BigNumber => (currency === CURRENCY_USD ? value : value.multipliedBy(rate));
 
-    const { times, data } = get(netValue);
+      const { times, data } = get(netValue);
 
-    const now = Math.floor(Date.now() / 1000);
-    const netWorth = get(totalNetWorth);
+      const now = Math.floor(Date.now() / 1000);
+      const netWorth = get(totalNetWorth);
 
-    if (times.length === 0 && data.length === 0) {
-      const oneDayTimestamp = 24 * 60 * 60;
+      if (times.length === 0 && data.length === 0) {
+        const oneDayTimestamp = 24 * 60 * 60;
+
+        return {
+          times: [now - oneDayTimestamp, now],
+          data: [Zero, netWorth],
+        };
+      }
+
+      const nv: NetValue = { times: [], data: [] };
+
+      for (const [i, time] of times.entries()) {
+        if (time < startingDate)
+          continue;
+
+        nv.times.push(time);
+        nv.data.push(convert(data[i]));
+      }
 
       return {
-        times: [now - oneDayTimestamp, now],
-        data: [Zero, netWorth],
+        times: [...nv.times, now],
+        data: [...nv.data, netWorth],
       };
-    }
-
-    const nv: NetValue = { times: [], data: [] };
-
-    for (const [i, time] of times.entries()) {
-      if (time < startingDate)
-        continue;
-
-      nv.times.push(time);
-      nv.data.push(convert(data[i]));
-    }
-
-    return {
-      times: [...nv.times, now],
-      data: [...nv.data, netWorth],
-    };
-  });
+    });
+  }
 
   const fetchNetValue = async (): Promise<void> => {
     try {

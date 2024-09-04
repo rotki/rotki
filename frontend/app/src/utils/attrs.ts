@@ -10,7 +10,7 @@ type SetupContextAttrsKeys = (keyof SetupContextAttrs)[];
  * @param {SetupContextAttrs} data
  * @returns {SetupContextAttrsKeys}
  */
-export function getRootKeys(data: SetupContextAttrs) {
+export function getRootKeys(data: SetupContextAttrs): SetupContextAttrsKeys {
   return Object.keys(data).filter(key =>
     key.startsWith('data-'),
   ) as SetupContextAttrsKeys;
@@ -22,7 +22,7 @@ export function getRootKeys(data: SetupContextAttrs) {
  * @param {SetupContextAttrsKeys} include
  * @returns {Pick<SetupContextAttrs, any>}
  */
-export function getRootAttrs(data: SetupContextAttrs, include: SetupContextAttrsKeys = ['class']) {
+export function getRootAttrs(data: SetupContextAttrs, include: SetupContextAttrsKeys = ['class']): Pick<SetupContextAttrs, typeof include[number]> {
   return objectPick(data, [...getRootKeys(data), ...include]);
 }
 
@@ -32,6 +32,6 @@ export function getRootAttrs(data: SetupContextAttrs, include: SetupContextAttrs
  * @param {SetupContextAttrsKeys} exclude
  * @returns {Omit<SetupContextAttrs, any>}
  */
-export function getNonRootAttrs(data: SetupContextAttrs, exclude: SetupContextAttrsKeys = ['class']) {
+export function getNonRootAttrs(data: SetupContextAttrs, exclude: SetupContextAttrsKeys = ['class']): Omit<SetupContextAttrs, typeof exclude[number]> {
   return objectOmit(data, [...getRootKeys(data), ...exclude]);
 }

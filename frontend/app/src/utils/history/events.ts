@@ -60,7 +60,7 @@ export function isEthBlockEventRef(event: MaybeRef<HistoryEvent>): ComputedRef<E
   });
 }
 
-export function isOnlineHistoryEventType(type: HistoryEventEntryType) {
+export function isOnlineHistoryEventType(type: HistoryEventEntryType): boolean {
   return type === HistoryEventEntryType.HISTORY_EVENT;
 }
 

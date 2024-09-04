@@ -2,7 +2,15 @@ import type { CreateAccountPayload, LoginCredentials } from '@/types/login';
 
 export const useLoggedUserIdentifier = createSharedComposable(() => useSessionStorage<string | undefined>('rotki.logged_user_id', undefined));
 
-export function useAccountManagement() {
+interface UseAccountManagementReturn {
+  loading: Ref<boolean>;
+  error: Ref<string>;
+  errors: Ref<string[]>;
+  createNewAccount: (payload: CreateAccountPayload) => Promise<void>;
+  userLogin: ({ username, password, syncApproval, resumeFromBackup }: LoginCredentials) => Promise<void>;
+}
+
+export function useAccountManagement(): UseAccountManagementReturn {
   const { t } = useI18n();
   const loading = ref<boolean>(false);
   const error = ref<string>('');
@@ -20,7 +28,7 @@ export function useAccountManagement() {
   const { isDevelop } = storeToRefs(useMainStore());
   const loggedUserIdentifier = useLoggedUserIdentifier();
 
-  const createNewAccount = async (payload: CreateAccountPayload) => {
+  const createNewAccount = async (payload: CreateAccountPayload): Promise<void> => {
     set(loading, true);
     set(error, '');
     const username = payload.credentials.username;
@@ -84,7 +92,9 @@ export function useAccountManagement() {
   };
 }
 
-export function useAutoLogin() {
+interface UseAutoLoginReturn { autolog: Ref<boolean> }
+
+export function useAutoLogin(): UseAutoLoginReturn {
   const autolog = ref<boolean>(false);
 
   const sessionStore = useSessionStore();

@@ -1,7 +1,13 @@
 import { TaskType } from '@/types/task-type';
 import { Section } from '@/types/status';
 
-export function useBlockchainAccountLoading(refresh: () => Promise<void>) {
+interface UseBlockchainAccountLoadingReturn {
+  isDetectingTokens: ComputedRef<boolean>;
+  refreshDisabled: ComputedRef<boolean>;
+  deleteDisabled: ComputedRef<boolean>;
+}
+
+export function useBlockchainAccountLoading(refresh: () => Promise<void>): UseBlockchainAccountLoadingReturn {
   const { isTaskRunning } = useTaskStore();
   const { massDetecting } = storeToRefs(useBlockchainTokensStore());
   const { isLoading } = useStatusStore();
