@@ -382,10 +382,6 @@ class RestAPI:
     def __init__(self, rotkehlchen: Rotkehlchen) -> None:
         self.rotkehlchen = rotkehlchen
         self.stop_event = Event()
-        mainloop_greenlet = self.rotkehlchen.start()
-        mainloop_greenlet.link_exception(self._handle_killed_greenlets)
-        # Greenlets that will be waited for when we shutdown (just main loop)
-        self.waited_greenlets = [mainloop_greenlet]
         self.task_lock = Semaphore()
         self.login_lock = Semaphore()
         self.task_id = 0
@@ -459,9 +455,7 @@ class RestAPI:
     # - Public functions not exposed via the rest api
     def stop(self) -> None:
         self.rotkehlchen.shutdown()
-        log.debug('Waiting for greenlets')
-        gevent.wait(self.waited_greenlets)
-        log.debug('Waited for greenlets. Killing all other greenlets')
+        log.debug('Killing all greenlets')
         gevent.killall(self.rotkehlchen.api_task_greenlets)
         self.rotkehlchen.api_task_greenlets.clear()
         log.debug('Shutdown completed')
@@ -2689,16 +2683,16 @@ class RestAPI:
     def get_liquity_stats(self) -> dict[str, Any]:
         liquity_addresses = self.rotkehlchen.chains_aggregator.queried_addresses_for_module('liquity')  # noqa: E501
         # make sure that all the entries that need it have the usd value queried
-        task_manager = self.rotkehlchen.task_manager
-        if task_manager is not None:
-            history_events_db = DBHistoryEvents(task_manager.database)
+        task_manager_client = self.rotkehlchen.task_manager_client
+        if task_manager_client is not None:
+            history_events_db = DBHistoryEvents(self.rotkehlchen.data.db)
             entries_missing_prices = history_events_db.get_base_entries_missing_prices(
                 query_filter=EvmEventFilterQuery.make(counterparties=[CPT_LIQUITY]),
             )
             query_missing_prices_of_base_entries(
-                database=task_manager.database,
+                database=self.rotkehlchen.data.db,
                 entries_missing_prices=entries_missing_prices,
-                base_entries_ignore_set=task_manager.base_entries_ignore_set,
+                base_entries_ignore_set=task_manager_client.base_entries_ignore_set,
             )
 
         stats = get_liquity_stats(
@@ -2844,8 +2838,8 @@ class RestAPI:
         Repull data for a transaction and redecode all events. Also prices for
         the assets involed in these events are requeried.
         """
-        task_manager = self.rotkehlchen.task_manager
-        assert task_manager, 'task manager should have been initialized at this point'
+        task_manager_client = self.rotkehlchen.task_manager_client
+        assert task_manager_client, 'task manager client should have been initialized at this point'  # noqa: E501
         success, message, status_code = True, '', HTTPStatus.OK
         chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(evm_chain)
         with self.rotkehlchen.data.db.user_write() as write_cursor:
@@ -2884,12 +2878,12 @@ class RestAPI:
             events_filter = EvmEventFilterQuery.make(
                 tx_hashes=[tx_hash],  # always same hash
             )
-            history_events_db = DBHistoryEvents(task_manager.database)
+            history_events_db = DBHistoryEvents(self.rotkehlchen.data.db)
             entries = history_events_db.get_base_entries_missing_prices(events_filter)
             query_missing_prices_of_base_entries(
-                database=task_manager.database,
+                database=self.rotkehlchen.data.db,
                 entries_missing_prices=entries,
-                base_entries_ignore_set=task_manager.base_entries_ignore_set,
+                base_entries_ignore_set=task_manager_client.base_entries_ignore_set,
             )
         except (RemoteError, DeserializationError) as e:
             status_code = HTTPStatus.BAD_GATEWAY
@@ -2912,8 +2906,8 @@ class RestAPI:
         Repull all data and redecode events for a single emvlike transaction hash.
         Chain can only be zksync lite for now.
         """
-        task_manager = self.rotkehlchen.task_manager
-        assert task_manager, 'task manager should have been initialized at this point'
+        task_manager_client = self.rotkehlchen.task_manager_client
+        assert task_manager_client, 'task manager client should have been initialized at this point'  # noqa: E501
         success, message, status_code = True, '', HTTPStatus.OK
         tracked_addresses = self.rotkehlchen.chains_aggregator.accounts.zksync_lite
 
@@ -2958,12 +2952,12 @@ class RestAPI:
             )
             try:
                 # Trigger the task to query the missing prices for the decoded events
-                history_events_db = DBHistoryEvents(task_manager.database)
+                history_events_db = DBHistoryEvents(self.rotkehlchen.data.db)
                 entries = history_events_db.get_base_entries_missing_prices(events_filter)
                 query_missing_prices_of_base_entries(
-                    database=task_manager.database,
+                    database=self.rotkehlchen.data.db,
                     entries_missing_prices=entries,
-                    base_entries_ignore_set=task_manager.base_entries_ignore_set,
+                    base_entries_ignore_set=task_manager_client.base_entries_ignore_set,
                 )
             except (RemoteError, DeserializationError) as e:
                 status_code = HTTPStatus.BAD_GATEWAY
@@ -4396,7 +4390,8 @@ class RestAPI:
                     location=location,
                     filter_query=query_filter,
                     only_cache=only_cache,
-                    task_manager=self.rotkehlchen.task_manager,
+                    task_manager_client=self.rotkehlchen.task_manager_client,
+                    database=self.rotkehlchen.data.db,
                 )
             except sqlcipher.OperationalError as e:  # pylint: disable=no-member
                 return wrap_in_fail_result(

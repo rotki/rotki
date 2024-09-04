@@ -1497,6 +1497,7 @@ def _remove_blockchain_accounts_test_start(
 
 
 @pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('process', ['api_server'])
 @pytest.mark.parametrize('number_of_eth_accounts', [4])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('query_balances_before_first_modification', [True, False])
@@ -1741,6 +1742,7 @@ def test_remove_blockchain_account_with_tags_removes_mapping(rotkehlchen_api_ser
 
 
 @pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('process', ['api_server'])
 @pytest.mark.parametrize('ethereum_accounts', [[ADDRESS_MULTICHAIN, ADDRESS_ETH]])
 @pytest.mark.parametrize('optimism_accounts', [[ADDRESS_MULTICHAIN, ADDRESS_OP]])
 @pytest.mark.parametrize('gnosis_accounts', [[ADDRESS_MULTICHAIN]])

@@ -1,26 +1,26 @@
-from contextlib import suppress
-from dataclasses import dataclass
-from types import FrameType
+from gevent import Greenlet, lock, monkey, spawn, subprocess, wait
 
-import gevent
-from gevent import Greenlet, monkey
-
-import gevent.lock  # isort:skip
 monkey.patch_all()  # isort:skip
 
 import os
 import platform
-import signal
 import sys
 from collections.abc import Callable
+from contextlib import suppress
+from dataclasses import dataclass
 from enum import StrEnum, auto
-from subprocess import PIPE, Popen  # noqa: S404
+from types import FrameType
 
-from rotkehlchen.args import app_args  # isort:skip
+from rotkehlchen.args import app_args
+from rotkehlchen.logging import TRACE, add_logging_level
+from rotkehlchen.utils.misc import set_signal_handlers
+
+add_logging_level('TRACE', TRACE)
 
 
 class ProcessType(StrEnum):
     """The processes that are started by the orchestrator."""
+    BG_WORKER = auto()
     API_SERVER = auto()
     DB_WRITER = auto()
 
@@ -32,14 +32,19 @@ class ProcessData:
     process: Greenlet to handle the Popen instance that is started by the orchestrator."""
     entrypoint: Callable
     greenlet: Greenlet | None
-    process: Popen | None
+    process: subprocess.Popen | None
 
 
 class ProcessesManager:
     """Manages the processes that are started by the orchestrator."""
     def __init__(self) -> None:
-        self.active = gevent.lock.Semaphore(len(ProcessType))
+        self.active = lock.Semaphore(len(ProcessType))
         self.processes: dict[ProcessType, ProcessData] = {
+            ProcessType.BG_WORKER: ProcessData(
+                entrypoint=self.start_bg_worker,
+                greenlet=None,
+                process=None,
+            ),
             ProcessType.API_SERVER: ProcessData(
                 entrypoint=self.start_api_server,
                 greenlet=None,
@@ -60,6 +65,10 @@ class ProcessesManager:
         from rotkehlchen.db.drivers.server import main as db_writer   # isort:skip  # pylint: disable=import-outside-toplevel  # to make the orchestrator lighter
         db_writer()
 
+    def start_bg_worker(self) -> None:
+        from rotkehlchen.tasks.server import main as bg_worker  # isort:skip  # pylint: disable=import-outside-toplevel  # to make the orchestrator lighter
+        bg_worker()
+
     def _shutdown(self, signum: int) -> None:
         """Shut down the processes that are started by the orchestrator."""
         for process_type in ProcessType:
@@ -70,28 +79,14 @@ class ProcessesManager:
                     if platform.system() == 'Darwin':
                         os.killpg(os.getpgid(process.process.pid), signum)
                 process.process.terminate()
-                process.process.wait(timeout=10)
+                with suppress(subprocess.TimeoutExpired):
+                    process.process.wait(timeout=10)
                 process.process.kill()
             self.active.release()
 
     def shutdown(self, signum: int, frame: FrameType | None = None) -> None:  # pylint: disable=unused-argument
         """Start shutdown sequence asyncronously."""
-        gevent.spawn(self._shutdown, signum)
-
-
-def _set_signal_handlers(termination_callback: Callable) -> None:
-    """Set the signal handlers for the process that is started by the orchestrator."""
-    signal.signal(signal.SIGINT, termination_callback)
-    if os.name != 'nt':
-        signal.signal(signal.SIGTERM, termination_callback)
-        signal.signal(signal.SIGQUIT, termination_callback)
-    else:
-        # Handle the windows control signal as stated here: https://pyinstaller.org/en/stable/feature-notes.html#signal-handling-in-console-windows-applications-and-onefile-application-cleanup  # noqa: E501
-        # This logic handles the signal sent from the bootloader equivalent to sigterm in
-        # addition to the signals sent by windows's taskkill.
-        # Research documented in https://github.com/yabirgb/rotki-python-research
-        import win32api  # pylint: disable=import-outside-toplevel  # isort:skip
-        win32api.SetConsoleCtrlHandler(termination_callback, True)
+        spawn(self._shutdown, signum)
 
 
 def _start_process(
@@ -100,9 +95,9 @@ def _start_process(
         process_type: ProcessType,
 ) -> None:
     """Start a fault tolerant process."""
-    process = Popen(  # noqa: S603
+    process = subprocess.Popen(
         executable + ['--process', process_type.value],
-        stderr=PIPE,
+        stderr=subprocess.PIPE,
         universal_newlines=True,
     )
     manager.processes[process_type].process = process
@@ -125,15 +120,15 @@ def main() -> None:
         executable = [sys.executable] + sys.orig_argv[1:]
         for process_type, process_data in manager.processes.items():
             manager.active.acquire()
-            process_data.greenlet = gevent.spawn(
+            process_data.greenlet = spawn(
                 _start_process,
                 executable,
                 manager,
                 process_type,
             )
 
-        _set_signal_handlers(manager.shutdown)
-        gevent.wait([manager.active])
+        set_signal_handlers(manager.shutdown)
+        wait([manager.active])
     else:
         manager.processes[ProcessType(args.process)].entrypoint()
 

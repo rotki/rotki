@@ -57,7 +57,7 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
     p.add_argument(
         '--process',
         help='Choose the process to run',
-        choices=['all', 'api_server', 'db_writer'],
+        choices=['all', 'api_server', 'db_writer', 'bg_worker'],
         default='all',
     )
     p.add_argument(
@@ -82,6 +82,12 @@ def app_args(prog: str, description: str) -> argparse.ArgumentParser:
         help='The port on which the db writer process will listen',
         type=int,
         default=5555,
+    )
+    p.add_argument(
+        '--bg-worker-port',
+        help='The port on which the bg worker process will listen',
+        type=int,
+        default=5556,
     )
     p.add_argument(
         '--websockets-api-port',

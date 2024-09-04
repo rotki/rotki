@@ -198,6 +198,7 @@ def test_bridge_via_monerium(task_manager, database, monerium_credentials):  # p
     assert new_events == [gnosis_event, eth_event]
 
 
+@pytest.mark.parametrize('process', ['api_server'])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_query_info_on_redecode_request(rotkehlchen_api_server: APIServer):
     """Test that triggering a re-decode for a monerium transaction updates correctly the notes"""

@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+enum ErrorType {
+  MemoryError = 0;
+  HostSystemError = 1;
+  ProgrammingError = 2;
+  ComputationError = 3;
+  DBWriteError = 4;
+  UnknownError = 5;
+}
+
+enum SyncApproval {
+  YES = 0;
+  NO = 1;
+  UNKNOWN = 2;
+}
+
+message PremiumCredentials {
+  string api_key = 1;
+  string api_secret = 2;
+}
+
+message UnlockCall {
+  string username = 1;
+  string password = 2;
+  bool create_new = 3;
+  SyncApproval sync_approval = 4;
+  bool resume_from_backup = 5;
+  bool sync_database = 6;
+}
+
+message Error {
+  string message = 1;
+  ErrorType name = 2;
+}
+
+// using TypedArray because oneof doesn't allow repeated as label for their members
+// docs: https://protobuf.dev/programming-guides/proto3/#using-oneof
+message TypedArray {
+  repeated TypedData array = 1;
+}
+
+message TypedData {
+  string type = 1;
+  oneof data {
+    bytes bytes = 2;
+    TypedArray array = 3;
+  }
+}
+
+message Set {
+  string method = 2;
+  TypedData data = 3;
+}

@@ -511,6 +511,7 @@ def test_should_run_periodic_task(database: 'DBHandler') -> None:
 
 
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('process', ['api_server'])
 @pytest.mark.parametrize('max_tasks_num', [5])
 def test_maybe_kill_running_tx_query_tasks(rotkehlchen_api_server, ethereum_accounts):
     """Test that using maybe_kill_running_tx_query_tasks deletes greenlet from the running tasks

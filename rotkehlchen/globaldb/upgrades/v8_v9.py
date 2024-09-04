@@ -4,7 +4,7 @@ from rotkehlchen.db.upgrades.utils import fix_address_book_duplications
 from rotkehlchen.logging import enter_exit_debug_log
 
 if TYPE_CHECKING:
-    from rotkehlchen.db.drivers.gevent import DBConnection, DBCursor
+    from rotkehlchen.db.drivers.client import DBConnection, DBCursor
 
 
 @enter_exit_debug_log()
@@ -28,6 +28,6 @@ def migrate_to_v9(connection: 'DBConnection') -> None:
     - make the blockchain column not nullable since we use `NONE` as string
 
     This upgrade takes place in v1.35.0"""
-    with connection.write_ctx() as write_cursor:
+    with connection.read_write_ctx() as write_cursor:
         _addressbook_schema_update(write_cursor)
         _add_uniswap_to_price_history_source_types(write_cursor)

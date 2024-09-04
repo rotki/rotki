@@ -888,6 +888,7 @@ def test_query_vaults_usdc_strange(rotkehlchen_api_server, ethereum_accounts):
 
 
 @pytest.mark.vcr
+@pytest.mark.parametrize('process', ['api_server'])
 @pytest.mark.parametrize('ethereum_accounts', [[TEST_ADDRESS_1]])
 @pytest.mark.parametrize('ethereum_modules', [['makerdao_vaults']])
 @pytest.mark.parametrize('mocked_proxies', [{

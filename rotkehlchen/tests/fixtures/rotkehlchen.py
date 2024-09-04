@@ -2,8 +2,11 @@ import base64
 import json
 from collections.abc import Generator
 from contextlib import ExitStack
+from subprocess import Popen  # noqa: S404
+from sys import executable
 from unittest.mock import patch
 
+import gevent
 import pytest
 
 import rotkehlchen.tests.utils.exchanges as exchange_tests
@@ -17,6 +20,8 @@ from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.rotkehlchen import Rotkehlchen
+from rotkehlchen.tasks.manager import DEFAULT_MAX_TASKS_NUM, TaskManager
+from rotkehlchen.tasks.server import TaskManagerServer
 from rotkehlchen.tests.utils.api import create_api_server
 from rotkehlchen.tests.utils.args import default_args
 from rotkehlchen.tests.utils.blockchain import maybe_modify_rpc_nodes
@@ -40,7 +45,13 @@ from rotkehlchen.tests.utils.history import maybe_mock_historical_price_queries
 from rotkehlchen.tests.utils.inquirer import inquirer_inject_ethereum_set_order
 from rotkehlchen.tests.utils.mock import mock_proxies
 from rotkehlchen.tests.utils.substrate import wait_until_all_substrate_nodes_connected
-from rotkehlchen.types import AVAILABLE_MODULES_MAP, Location, SupportedBlockchain, Timestamp
+from rotkehlchen.types import (
+    AVAILABLE_MODULES_MAP,
+    ChecksumEvmAddress,
+    Location,
+    SupportedBlockchain,
+    Timestamp,
+)
 
 
 @pytest.fixture(name='should_mock_settings')
@@ -82,9 +93,14 @@ def fixture_max_size_in_mb_all_logs() -> int:
     return DEFAULT_MAX_LOG_SIZE_IN_MB
 
 
+@pytest.fixture(name='process')
+def fixture_process() -> str:
+    return 'bg_worker'
+
+
 @pytest.fixture(name='cli_args')
-def fixture_cli_args(data_dir, ethrpc_endpoint, max_size_in_mb_all_logs, db_writer_port):
-    return default_args(data_dir=data_dir, ethrpc_endpoint=ethrpc_endpoint, max_size_in_mb_all_logs=max_size_in_mb_all_logs, db_writer_port=db_writer_port)  # noqa: E501
+def fixture_cli_args(data_dir, ethrpc_endpoint, max_size_in_mb_all_logs, process):
+    return default_args(data_dir=data_dir, ethrpc_endpoint=ethrpc_endpoint, max_size_in_mb_all_logs=max_size_in_mb_all_logs, process=process)  # noqa: E501
 
 
 @pytest.fixture(name='perform_upgrades_at_unlock')
@@ -242,6 +258,11 @@ def patch_no_op_unlock(rotki, stack, should_mock_settings=True):
     )
 
 
+class MockTaskManagerServer:
+    def __init__(self, rotki: Rotkehlchen):
+        self.rotkehlchen = rotki
+
+
 def initialize_mock_rotkehlchen_instance(
         rotki,
         start_with_logged_in_user,
@@ -306,6 +327,8 @@ def initialize_mock_rotkehlchen_instance(
             initial_settings=initial_settings,
             resume_from_backup=resume_from_backup,
         )
+        if create_new:
+            rotki._perform_new_db_actions()
         add_settings_to_test_db(rotki.data.db, db_settings, ignored_assets, data_migration_version)
         maybe_include_etherscan_key(rotki.data.db, include_etherscan_key)
         maybe_include_cryptocompare_key(rotki.data.db, include_cryptocompare_key)
@@ -353,7 +376,33 @@ def initialize_mock_rotkehlchen_instance(
             resume_from_backup=False,
         )
 
+    if rotki.args.process != 'bg_worker':
+        rotki.task_manager = TaskManager(
+            max_tasks_num=DEFAULT_MAX_TASKS_NUM,
+            greenlet_manager=rotki.greenlet_manager,
+            database=rotki.data.db,
+            cryptocompare=rotki.cryptocompare,
+            premium_sync_manager=rotki.premium_sync_manager,
+            chains_aggregator=rotki.chains_aggregator,
+            exchange_manager=rotki.exchange_manager,
+            deactivate_premium=rotki.deactivate_premium_status,
+            activate_premium=rotki.activate_premium_status,
+            query_balances=rotki.query_balances,
+            msg_aggregator=rotki.msg_aggregator,
+            data_updater=rotki.data_updater,
+            username=username,
+        )
+        rotki.task_manager_client = rotki.task_manager
+        rotki.task_manager_client.logout = lambda: None  # type: ignore  # mock logout method of task manager client
+
+        def mock_maybe_kill_running_tx_query_tasks(addresses: list[ChecksumEvmAddress]):
+            mock_server = MockTaskManagerServer(rotki)
+            TaskManagerServer._maybe_kill_running_tx_query_tasks(mock_server, addresses)  # type: ignore[arg-type]  # we only need the .rotkehlchen attribute here
+
+        rotki.task_manager_client.maybe_kill_running_tx_query_tasks = mock_maybe_kill_running_tx_query_tasks  # type: ignore[attr-defined]  # attribute is present for task_manager_client  # noqa: E501
+
     rotki.task_manager.should_schedule = True
+    gevent.spawn(rotki.main_loop)
     inquirer_inject_ethereum_set_order(
         inquirer=Inquirer(),
         add_defi_oracles=False,
@@ -452,8 +501,15 @@ def fixture_uninitialized_rotkehlchen(cli_args, inquirer, asset_resolver, global
     Adding the AssetResolver as a requirement so that the first initialization happens here
     """
     rotki = Rotkehlchen(cli_args)
+    if cli_args.process != 'bg_worker':
+        bg_worker_process = Popen([executable, '-m', 'rotkehlchen.start', '--process', 'bg_worker'])  # noqa: S603,E501
     yield rotki
     rotki.data.logout()
+    if cli_args.process != 'bg_worker':
+        bg_worker_process.terminate()
+        bg_worker_process.wait(timeout=5)
+        if bg_worker_process.poll() is None:
+            bg_worker_process.kill()
 
 
 @pytest.fixture(name='mocked_proxies')

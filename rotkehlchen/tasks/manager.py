@@ -110,7 +110,6 @@ class TaskManager:
             self,
             max_tasks_num: int,
             greenlet_manager: 'GreenletManager',
-            api_task_greenlets: list[gevent.Greenlet],
             database: 'DBHandler',
             cryptocompare: 'Cryptocompare',
             premium_sync_manager: Optional['PremiumSyncManager'],
@@ -126,7 +125,6 @@ class TaskManager:
         self.should_schedule = False
         self.max_tasks_num = max_tasks_num
         self.greenlet_manager = greenlet_manager
-        self.api_task_greenlets = api_task_greenlets
         self.database = database
         self.cryptocompare = cryptocompare
         self.exchange_manager = exchange_manager
@@ -918,7 +916,7 @@ class TaskManager:
             for method, greenlets in self.running_greenlets.items()
             if not all(greenlet.dead for greenlet in greenlets)
         }
-        current_greenlets = len(self.greenlet_manager.greenlets) + len(self.api_task_greenlets)
+        current_greenlets = len(self.greenlet_manager.greenlets)
         not_proceed = current_greenlets >= self.max_tasks_num
         log.debug(
             f'At task scheduling. Current greenlets: {current_greenlets} '
