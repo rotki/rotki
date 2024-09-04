@@ -199,9 +199,6 @@ class TimestampField(fields.Field):
 
 class TimestampMSField(fields.Field):
 
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-
     def _deserialize(
             self,
             value: str,
