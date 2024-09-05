@@ -19,6 +19,7 @@ Changelog
 * :feature:`8101` Failed transactions will now be displayed as failed and not just show "burned gas" event only.
 * :feature:`-` Transactions claiming SAFE tokens from vesting will now be properly decoded.
 * :feature:`-` Transactions locking, unlocking and withdrawing SAFE tokens will now be properly decoded. Also any locked SAFE tokens will be automatically detected and their balance counted.
+* :bug:`8477` rotki will now properly decode very old Arbitrum bridge withdrawals.
 * :bug:`-` rotki will now decode the swaps done on velodrome v2 in the right order.
 * :bug:`-` ZKSync Era tokens will now have prices queried properly by defillama.
 * :bug:`-` rotki will now query TheGraph delegations only for the addresses that interacted with the protocol.

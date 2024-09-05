@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Final
 
 from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_CPT_DETAILS, CPT_ARBITRUM_ONE
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
@@ -31,14 +31,15 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-BRIDGE_ADDRESS_MAINNET = string_to_evm_address('0x8315177aB297bA92A06054cE80a67Ed4DBd7ed3a')
-L1_GATEWAY_ROUTER = string_to_evm_address('0x72Ce9c846789fdB6fC1f34aC4AD25Dd9ef7031ef')
-DELAYED_INBOX = string_to_evm_address('0x4Dbd4fc535Ac27206064B68FfCf827b0A60BAB3f')
-ERC20_DEPOSIT_INITIATED = b'\xb8\x91\x0b\x99`\xc4C\xaa\xc3$\x0b\x98XS\x84\xe3\xa6\xf1\t\xfb\xf6\x96\x9e&L?\x18=i\xab\xa7\xe1'  # noqa: E501
-ERC20_WITHDRAWAL_FINALIZED = b'\x89\x1a\xfe\x02\x9cu\xc4\xf8\xc5\x85_\xc3H\x05\x98\xbcZSs\x93D\xf6\xaeW[\xdb~\xa2\xa7\x9fV\xb3'  # noqa: E501
-MESSAGE_DELIVERED = b'^<\x13\x11\xeaD&d\xe8\xb1a\x1b\xfa\xbe\xf6Y\x12\x0e\xa7\xa0\xa2\xcf\xc0fw\x00\xbe\xbci\xcb\xff\xe1'  # noqa: E501
-INBOX_MESSAGE_DELIVERED = b'\xffd\x90_s\xa6\x7f\xb5\x94\xe0\xf9@\xa8\x07Z\x86\r\xb4\x89\xad\x99\x1e\x03/H\xc8\x11#\xebR\xd6\x0b'  # noqa: E501
-BRIDGE_CALL_TRIGGERED = b'-\x9d\x11^\xf3\xe4\xa6\x06\xd6\x98\x91;\x1e\xae\x83\x1a<\xdf\xe2\r\x9a\x83\xd4\x80\x07\xb0RgI\xc3\xd4f'  # noqa: E501
+OLD_BRIDGE_ADDRESS_MAINNET: Final = string_to_evm_address('0x011B6E24FfB0B5f5fCc564cf4183C5BBBc96D515')  # noqa: E501
+BRIDGE_ADDRESS_MAINNET: Final = string_to_evm_address('0x8315177aB297bA92A06054cE80a67Ed4DBd7ed3a')
+L1_GATEWAY_ROUTER: Final = string_to_evm_address('0x72Ce9c846789fdB6fC1f34aC4AD25Dd9ef7031ef')
+DELAYED_INBOX: Final = string_to_evm_address('0x4Dbd4fc535Ac27206064B68FfCf827b0A60BAB3f')
+ERC20_DEPOSIT_INITIATED: Final = b'\xb8\x91\x0b\x99`\xc4C\xaa\xc3$\x0b\x98XS\x84\xe3\xa6\xf1\t\xfb\xf6\x96\x9e&L?\x18=i\xab\xa7\xe1'  # noqa: E501
+ERC20_WITHDRAWAL_FINALIZED: Final = b'\x89\x1a\xfe\x02\x9cu\xc4\xf8\xc5\x85_\xc3H\x05\x98\xbcZSs\x93D\xf6\xaeW[\xdb~\xa2\xa7\x9fV\xb3'  # noqa: E501
+MESSAGE_DELIVERED: Final = b'^<\x13\x11\xeaD&d\xe8\xb1a\x1b\xfa\xbe\xf6Y\x12\x0e\xa7\xa0\xa2\xcf\xc0fw\x00\xbe\xbci\xcb\xff\xe1'  # noqa: E501
+INBOX_MESSAGE_DELIVERED: Final = b'\xffd\x90_s\xa6\x7f\xb5\x94\xe0\xf9@\xa8\x07Z\x86\r\xb4\x89\xad\x99\x1e\x03/H\xc8\x11#\xebR\xd6\x0b'  # noqa: E501
+BRIDGE_CALL_TRIGGERED: Final = b'-\x9d\x11^\xf3\xe4\xa6\x06\xd6\x98\x91;\x1e\xae\x83\x1a<\xdf\xe2\r\x9a\x83\xd4\x80\x07\xb0RgI\xc3\xd4f'  # noqa: E501
 
 
 class ArbitrumOneBridgeDecoder(DecoderInterface):
@@ -176,6 +177,7 @@ class ArbitrumOneBridgeDecoder(DecoderInterface):
         return {
             DELAYED_INBOX: (self._decode_eth_deposit_withdraw,),
             BRIDGE_ADDRESS_MAINNET: (self._decode_asset_deposit_withdraw,),
+            OLD_BRIDGE_ADDRESS_MAINNET: (self._decode_asset_deposit_withdraw,),
         }
 
     @staticmethod
