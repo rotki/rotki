@@ -388,3 +388,43 @@ def test_receive_erc20_on_ethereum(database, ethereum_inquirer, ethereum_account
             address=string_to_evm_address('0x6A23F4940BD5BA117Da261f98aae51A8BFfa210A'),
         ),
     ]
+
+
+@pytest.mark.vcr()
+@pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
+def test_receive_erc20_on_ethereum_old_bridge(database, ethereum_inquirer, ethereum_accounts):
+    evmhash = deserialize_evm_tx_hash('0xdd71f6b50a24b2f6704819579cb4c0d27cf3d56bd3ba03fe8a7a9f9dc56eea52')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        database=database,
+        tx_hash=evmhash,
+    )
+    user_address, timestamp, gas, withdraw_amount = ethereum_accounts[0], TimestampMS(1655573929000), '0.003627235640125152', '39566.332611058195231384'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=user_address,
+            notes=f'Burned {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=278,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.WITHDRAWAL,
+            event_subtype=HistoryEventSubType.BRIDGE,
+            asset=Asset('eip155:1/erc20:0x6B175474E89094C44Da98b954EedeAC495271d0F'),
+            balance=Balance(amount=FVal(withdraw_amount)),
+            location_label=user_address,
+            notes=f'Bridge {withdraw_amount} DAI from Arbitrum One to Ethereum via Arbitrum One bridge',  # noqa: E501
+            counterparty=CPT_ARBITRUM_ONE,
+            address=string_to_evm_address('0xA10c7CE4b876998858b1a9E12b10092229539400'),
+        ),
+    ]
