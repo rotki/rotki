@@ -39,7 +39,6 @@ from rotkehlchen.constants.assets import (
     A_USDT,
     A_WETH_ARB,
 )
-from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address_to_identifier
 from rotkehlchen.db.custom_assets import DBCustomAssets
@@ -829,23 +828,20 @@ def test_recursion_decorator(inquirer: Inquirer):
 
 
 @pytest.mark.freeze_time()
+@pytest.mark.vcr()
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_matic_pol_hardforked_price(inquirer: Inquirer, freezer):
     """Test that we return price of POL for MATIC after hardfork"""
     before_hardfork = Timestamp(POLYGON_POS_POL_HARDFORK - 1)
     after_hardfork = Timestamp(POLYGON_POS_POL_HARDFORK + 1)
-    assert GlobalDBHandler.add_manual_latest_price(  # set MATIC price ONE
-        from_asset=A_POLYGON_POS_MATIC,
-        to_asset=A_USD,
-        price=Price(ONE),
-    )
-    assert GlobalDBHandler.add_manual_latest_price(  # set POL price 2
-        from_asset=Asset('eip155:1/erc20:0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6'),
-        to_asset=A_USD,
-        price=Price(FVal(2)),
-    )
 
-    freezer.move_to(datetime.datetime.fromtimestamp(before_hardfork, tz=datetime.UTC))
-    assert inquirer.find_usd_price(A_POLYGON_POS_MATIC) == ONE  # MATIC price is ONE
-    freezer.move_to(datetime.datetime.fromtimestamp(after_hardfork, tz=datetime.UTC))
-    assert inquirer.find_usd_price(Asset('eip155:1/erc20:0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6')) == Price(FVal(2))  # POL price is 2  # noqa: E501
+    with patch(
+        'rotkehlchen.externalapis.coingecko.Coingecko.query_current_price',
+        wraps=inquirer._coingecko.query_current_price,
+    ) as patched_gecko:
+        freezer.move_to(datetime.datetime.fromtimestamp(before_hardfork, tz=datetime.UTC))
+        inquirer.find_usd_price(A_POLYGON_POS_MATIC, ignore_cache=True)
+        assert patched_gecko.call_args.kwargs['from_asset'] == A_POLYGON_POS_MATIC
+        freezer.move_to(datetime.datetime.fromtimestamp(after_hardfork, tz=datetime.UTC))
+        inquirer.find_usd_price(A_POLYGON_POS_MATIC, ignore_cache=True)
+        assert patched_gecko.call_args.kwargs['from_asset'] == Asset('eip155:1/erc20:0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6')  # POL token  # noqa: E501
