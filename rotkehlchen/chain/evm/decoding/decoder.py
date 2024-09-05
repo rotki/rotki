@@ -14,7 +14,6 @@ from gevent.lock import Semaphore
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
@@ -49,7 +48,14 @@ from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tasks.assets import maybe_detect_new_tokens
-from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction, EVMTxHash, Location
+from rotkehlchen.types import (
+    ChainID,
+    ChecksumEvmAddress,
+    EvmTokenKind,
+    EvmTransaction,
+    EVMTxHash,
+    Location,
+)
 from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address, hex_or_bytes_to_int
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
@@ -67,6 +73,7 @@ from .structures import (
 from .utils import maybe_reshuffle_events
 
 if TYPE_CHECKING:
+    from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer, EvmNodeInquirerWithDSProxy
     from rotkehlchen.chain.evm.transactions import EvmTransactions
     from rotkehlchen.db.dbhandler import DBHandler
@@ -83,7 +90,7 @@ class EventDecoderFunction(Protocol):
 
     def __call__(
             self,
-            token: EvmToken | None,
+            token: 'EvmToken | None',
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
             decoded_events: list['EvmEvent'],
@@ -133,12 +140,13 @@ class EVMTransactionDecoder(ABC):
             database: 'DBHandler',
             evm_inquirer: 'EvmNodeInquirer',
             transactions: 'EvmTransactions',
-            value_asset: AssetWithOracles,
+            value_asset: 'AssetWithOracles',
             event_rules: list[EventDecoderFunction],
             misc_counterparties: list[CounterpartyDetails],
             base_tools: BaseDecoderTools,
             dbevmtx_class: type[DBEvmTx] = DBEvmTx,
             addresses_exceptions: dict[ChecksumEvmAddress, int] | None = None,
+            exceptions_mappings: dict[str, 'Asset'] | None = None,
     ):
         """
         Initialize an evm chain transaction decoder module for a particular chain.
@@ -155,6 +163,10 @@ class EVMTransactionDecoder(ABC):
         `addresses_exceptions` is a dict of address to the block number at which we should start
         ignoring transfers for that address. It was introduced to ignore events for monerium
         legacy tokens.
+
+        `exceptions_mappings` also introduced to handle the monerium exceptions. It maps the v1
+        tokens to the v2 tokens and it's later used during the decoding to change the asset in
+        events from v1 tokens to v2 tokens.
         """
         self.database = database
         self.misc_counterparties = [CounterpartyDetails(identifier=CPT_GAS, label='gas', icon='fire-line')] + misc_counterparties  # noqa: E501
@@ -182,6 +194,7 @@ class EVMTransactionDecoder(ABC):
         self.value_asset = value_asset
         self.decoders: dict[str, DecoderInterface] = {}
         self.addresses_exceptions = addresses_exceptions or {}
+        self.exceptions_mappings = exceptions_mappings or {}
 
         # Add the built-in decoders
         self._add_builtin_decoders(self.rules)
@@ -325,7 +338,7 @@ class EVMTransactionDecoder(ABC):
 
     def try_all_rules(
             self,
-            token: EvmToken | None,
+            token: 'EvmToken | None',
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
             decoded_events: list['EvmEvent'],
@@ -434,9 +447,22 @@ class EVMTransactionDecoder(ABC):
         # Check if any rules should run due to the 4bytes signature of the input data
         fourbytes = transaction.input_data[:4]
         input_data_rules = self.rules.input_data_rules.get(fourbytes)
+        monerium_special_handling_event = False
 
         # decode transaction logs from the receipt
         for tx_log in tx_receipt.logs:
+            if (
+                monerium_special_handling_event is False and
+                self.evm_inquirer.chain_id in {ChainID.GNOSIS, ChainID.POLYGON_POS} and
+                (block_number := self.addresses_exceptions.get(tx_log.address)) is not None and
+                block_number < transaction.block_number
+            ):
+                # for the special case of monerium tokens detect while iterating over the log
+                # events if we have in the transaction a legacy transfer and set the flag.
+                # We use this flag to avoid iterating twice over the events searching
+                # for legacy transfers.
+                monerium_special_handling_event = True
+
             context = DecoderContext(
                 tx_log=tx_log,
                 transaction=transaction,
@@ -492,6 +518,24 @@ class EVMTransactionDecoder(ABC):
             all_logs=tx_receipt.logs,
             counterparties=counterparties,
         )
+
+        if monerium_special_handling_event is True:
+            # When events that need special handling exist iterate over the decoded events and
+            # exchange the legacy assets by the v2 assets. Also delete v2 events to
+            # avoid duplications. In the case of this exception handling, v2 events exist only
+            # for the case of interacting with the v1 tokens since interacting
+            # with v2 doesn't emit v1 transfers.
+            new_events = []  # we create a new list to avoid remove operations and modifying while iterating  # noqa: E501
+            replacements = self.exceptions_mappings.values()
+            for event in events:
+                if (replacement := self.exceptions_mappings.get(event.asset.identifier)) is not None:  # noqa: E501
+                    event.asset = replacement
+                elif event.asset.identifier in replacements:
+                    continue  # skip the duplicated event
+
+                new_events.append(event)
+
+            events = new_events
 
         if len(events) == 0 and (eth_event := self._get_eth_transfer_event(transaction)) is not None:  # noqa: E501
             events = [eth_event]
@@ -739,7 +783,7 @@ class EVMTransactionDecoder(ABC):
 
     def _maybe_decode_erc20_approve(
             self,
-            token: EvmToken | None,
+            token: 'EvmToken | None',
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
             decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
@@ -867,7 +911,7 @@ class EVMTransactionDecoder(ABC):
 
     def _maybe_decode_erc20_721_transfer(
             self,
-            token: EvmToken | None,
+            token: 'EvmToken | None',
             tx_log: EvmTxReceiptLog,
             transaction: EvmTransaction,
             decoded_events: list['EvmEvent'],  # pylint: disable=unused-argument
@@ -899,13 +943,6 @@ class EVMTransactionDecoder(ABC):
                 return DEFAULT_DECODING_OUTPUT  # ignore non token transfers for now
         else:
             found_token = token
-
-        if (
-            (block_number := self.addresses_exceptions.get(found_token.evm_address)) is not None and  # noqa: E501
-            block_number < transaction.block_number
-        ):
-            # ignore transfers of token exceptions after the set timestamp
-            return DEFAULT_DECODING_OUTPUT
 
         transfer = self.base.decode_erc20_721_transfer(
             token=found_token,
@@ -1078,7 +1115,7 @@ class EVMTransactionDecoderWithDSProxy(EVMTransactionDecoder, ABC):
             database: 'DBHandler',
             evm_inquirer: 'EvmNodeInquirerWithDSProxy',
             transactions: 'EvmTransactions',
-            value_asset: AssetWithOracles,
+            value_asset: 'AssetWithOracles',
             event_rules: list[EventDecoderFunction],
             misc_counterparties: list[CounterpartyDetails],
             base_tools: BaseDecoderToolsWithDSProxy,
