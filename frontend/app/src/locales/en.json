@@ -4306,12 +4306,12 @@
       "example": "type != evm event"
     },
     "hint": {
-      "description": "* type the filter and then press enter e.g.",
+      "description": "Type the filter and then press enter e.g.",
+      "edit_note": "Click applied filter to edit the value",
       "example": "start = 26/05/2022"
     },
-    "hint_filter": "The combined filters will be applied at the same time",
     "label": "Combined filters",
-    "no_suggestions": "No suggestions found for {search}",
+    "no_suggestions": "Type the value for the {search} filter",
     "saved_filters": {
       "actions": {
         "add": "Save current filter to list",

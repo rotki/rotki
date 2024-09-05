@@ -47,6 +47,12 @@ const validKeys = computed(() => get(matchers).map(({ key }) => key));
 
 const selectedMatcher = computed(() => {
   const searchKey = splitSearch(get(search));
+
+  // If searchKey.exclude is not defined it means user hasn't put any matcher symbol
+  // So we shouldn't set the selectedMatcher yet.
+  if (searchKey.exclude === undefined)
+    return undefined;
+
   const key = get(validKeys).find(value => value === searchKey.key);
   return matcherForKey(key) ?? undefined;
 });
@@ -85,8 +91,7 @@ function setSearchToMatcherKey(matcher: SearchMatcher<any>) {
     });
     return;
   }
-  const allowExclusion = 'string' in matcher && matcher.allowExclusion;
-  const filter = `${matcher.key}${allowExclusion ? '' : '='}`;
+  const filter = `${matcher.key}=`;
   set(search, filter);
   get(input)?.focus?.();
 }
@@ -401,7 +406,7 @@ const { t } = useI18n();
           </template>
           <template #no-data>
             <FilterDropdown
-              class="py-4"
+              :matches="matches"
               :matchers="filteredMatchers"
               :keyword="search"
               :selected-matcher="selectedMatcher"

@@ -84,6 +84,10 @@ describe('table-filter/TableFilter.vue', () => {
     expect(wrapper.find('[data-cy=suggestions] > button:first-child').text()).toBe(
       `${matchers[1].key}: ${matchers[1].description}`,
     );
+
+    await wrapper.find('[data-cy=suggestions] > button:first-child').trigger('click');
+    await nextTick();
+    expect((wrapper.find('input').element as HTMLInputElement).value).toBe(`${matchers[1].key}=`);
   });
 
   it('choose suggestions', async () => {
@@ -104,7 +108,12 @@ describe('table-filter/TableFilter.vue', () => {
     await wrapper.find('input').setValue('type');
     await nextTick();
 
+    // When no symbol, then we don't show the suggestions yet
+    expect(wrapper.findAll('[data-cy=suggestions] > button')).toHaveLength(1);
+
     // Suggestions for `type`
+    await wrapper.find('input').setValue('type=');
+    await nextTick();
     const suggestions = matchers[1].suggestions();
     expect(wrapper.findAll('[data-cy=suggestions] > button')).toHaveLength(suggestions.length);
 

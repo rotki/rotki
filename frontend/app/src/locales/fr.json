@@ -4027,12 +4027,11 @@
       "example": "type != evm event"
     },
     "hint": {
-      "description": "* tapez le filtre puis appuyez sur entrée, par exemple.",
+      "description": "Tapez le filtre puis appuyez sur entrée, par exemple.",
       "example": "start = 26/05/2022"
     },
-    "hint_filter": "Les filtres combinés seront appliqués en même temps",
     "label": "Filtres disponibles",
-    "no_suggestions": "Aucune suggestion trouvée pour {search}",
+    "no_suggestions": "Saisissez la valeur du filtre {search}",
     "saved_filters": {
       "actions": {
         "add": "Enregistrer le filtre actuel dans la liste",
