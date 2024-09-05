@@ -43,6 +43,7 @@ describe('table-filter/FilterDropdown.vue', () => {
 
   it('show all matchers options', () => {
     const props = {
+      matches: {},
       matchers,
       selectedSuggestion: 1,
       keyword: '',
@@ -58,6 +59,7 @@ describe('table-filter/FilterDropdown.vue', () => {
 
   it('show unsupported filter message', () => {
     const props = {
+      matches: {},
       matchers: [],
       keyword: 'wrong_filter',
       selectedSuggestion: 0,
@@ -72,6 +74,7 @@ describe('table-filter/FilterDropdown.vue', () => {
 
   it('show suggestions', async () => {
     const props = {
+      matches: {},
       matchers,
       selectedSuggestion: 0,
       keyword: '',
@@ -113,6 +116,7 @@ describe('table-filter/FilterDropdown.vue', () => {
 
   it('show no suggestion message', async () => {
     const props = {
+      matches: {},
       matchers,
       selectedSuggestion: 0,
       keyword: '',

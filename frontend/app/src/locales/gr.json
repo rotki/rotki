@@ -3634,11 +3634,10 @@
       "example": "type != evm event"
     },
     "hint": {
-      "description": "* type the filter and then press enter e.g.",
+      "description": "Type the filter and then press enter e.g.",
       "example": "start = 26/05/2022"
     },
-    "hint_filter": "The combined filters will be applied at the same time",
-    "no_suggestions": "No suggestions found for {search}",
+    "no_suggestions": "Πληκτρολογήστε την τιμή για το φίλτρο {search}",
     "saved_filters": {
       "actions": {
         "add": "Save current filter to list",

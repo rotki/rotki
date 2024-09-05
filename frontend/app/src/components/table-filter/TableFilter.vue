@@ -31,16 +31,10 @@ const emit = defineEmits<{
 
 const { matchers, matches } = toRefs(props);
 
-const search = ref('');
-
-const exactMatchMatcher = computed(() => {
-  const searchLower = search.value.toLowerCase();
-  return props.matchers.find(m => m.key.toLowerCase() === searchLower);
-});
-
 const input = ref();
 const selection = ref<Suggestion[]>([]);
 
+const search = ref('');
 const selectedSuggestion = ref(0);
 const suggestedFilter = ref<Suggestion>({
   index: 0,
@@ -53,6 +47,12 @@ const validKeys = computed(() => get(matchers).map(({ key }) => key));
 
 const selectedMatcher = computed(() => {
   const searchKey = splitSearch(get(search));
+
+  // If searchKey.exclude is not defined it means user hasn't put any matcher symbol
+  // So we shouldn't set the selectedMatcher yet.
+  if (searchKey.exclude === undefined)
+    return undefined;
+
   const key = get(validKeys).find(value => value === searchKey.key);
   return matcherForKey(key) ?? undefined;
 });
@@ -91,8 +91,7 @@ function setSearchToMatcherKey(matcher: SearchMatcher<any>) {
     });
     return;
   }
-  const allowExclusion = 'string' in matcher && matcher.allowExclusion;
-  const filter = `${matcher.key}${allowExclusion ? '' : '='}`;
+  const filter = `${matcher.key}=`;
   set(search, filter);
   get(input)?.focus?.();
 }
@@ -164,7 +163,7 @@ function applyFilter(filter: Suggestion) {
   newSelection.push(filter);
 
   updateMatches(newSelection);
-  set(search, `${filter.key}=`);
+  set(search, '');
 }
 
 const filteredMatchers = computed<SearchMatcher<any>[]>(() => {
@@ -182,11 +181,6 @@ const filteredMatchers = computed<SearchMatcher<any>[]>(() => {
 
 async function applySuggestion() {
   const selectedIndex = get(selectedSuggestion);
-  const exactMatch = get(exactMatchMatcher);
-  if (exactMatch) {
-    set(search, `${exactMatch.key}=`);
-    return;
-  }
   if (!get(selectedMatcher)) {
     const filteredMatchersVal = get(filteredMatchers);
 
@@ -197,7 +191,6 @@ async function applySuggestion() {
   }
 
   const filter = get(suggestedFilter);
-
   if (filter.value) {
     await nextTick(() => applyFilter(filter));
   }
@@ -218,6 +211,7 @@ async function applySuggestion() {
       else if (!('boolean' in matcher)) {
         logger.debug('Matcher doesn\'t have asset=true, string=true, or boolean=true.', selectedMatcher);
       }
+
       if (suggestedItems.length === 0 && 'validate' in matcher && matcher.validate(keyword)) {
         await nextTick(() =>
           applyFilter({
@@ -231,7 +225,7 @@ async function applySuggestion() {
         );
       }
     }
-    if (!key && get(input) && typeof get(input).blur === 'function')
+    if (!key)
       get(input).blur();
   }
   set(selectedSuggestion, 0);
@@ -357,16 +351,6 @@ watch(matches, (matches) => {
   restoreSelection(matches);
 });
 
-watch(search, (newValue) => {
-  if (!newValue.includes('=')) {
-    set(selectedMatcher, undefined);
-  }
-  else {
-    const [key] = newValue.split('=');
-    set(selectedMatcher, matcherForKey(key));
-  }
-});
-
 const { t } = useI18n();
 </script>
 
@@ -422,7 +406,7 @@ const { t } = useI18n();
           </template>
           <template #no-data>
             <FilterDropdown
-              class="py-4"
+              :matches="matches"
               :matchers="filteredMatchers"
               :keyword="search"
               :selected-matcher="selectedMatcher"
