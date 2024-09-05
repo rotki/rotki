@@ -483,7 +483,7 @@ class Inquirer:
         price, used_main_currency, is_error = ZERO_PRICE, False, True
 
         if from_asset == A_POLYGON_POS_MATIC and ts_now() > POLYGON_POS_POL_HARDFORK:  # after hardfork, we use different oracles  # noqa: E501
-            from_asset = AssetWithOracles('eip155:1/erc20:0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6')  # POL token  # noqa: E501
+            from_asset = Asset('eip155:1/erc20:0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6').resolve_to_asset_with_oracles()  # POL token  # noqa: E501
         try:
             price, used_main_currency, is_error = *oracle_instance.query_current_price(
                 from_asset=from_asset,
