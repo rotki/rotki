@@ -1,5 +1,6 @@
 import pytest
 
+from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
 from rotkehlchen.externalapis.coingecko import Coingecko
 from rotkehlchen.externalapis.cryptocompare import Cryptocompare
 from rotkehlchen.externalapis.defillama import Defillama
@@ -22,6 +23,16 @@ def fixture_session_coingecko():
 @pytest.fixture(scope='session', name='session_defillama')
 def fixture_defillama():
     return Defillama()
+
+
+@pytest.fixture(name='uniswapv2_inquirer')
+def fixture_uniswapv2(ethereum_inquirer):
+    return UniswapV2Oracle(ethereum_inquirer=ethereum_inquirer)
+
+
+@pytest.fixture(name='uniswapv3_inquirer')
+def fixture_uniswapv3(ethereum_inquirer):
+    return UniswapV3Oracle(ethereum_inquirer=ethereum_inquirer)
 
 
 @pytest.fixture(name='historical_price_oracles_order')
@@ -48,6 +59,8 @@ def price_historian(
         cryptocompare,
         session_coingecko,
         session_defillama,
+        uniswapv2_inquirer,
+        uniswapv3_inquirer,
         default_mock_price_value,
         historical_price_oracles_order,
         dont_mock_price_for,
@@ -61,6 +74,8 @@ def price_historian(
         cryptocompare=cryptocompare,
         coingecko=session_coingecko,
         defillama=session_defillama,
+        uniswapv2=uniswapv2_inquirer,
+        uniswapv3=uniswapv3_inquirer,
     )
     historian.set_oracles_order(historical_price_oracles_order)
     maybe_mock_historical_price_queries(

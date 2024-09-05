@@ -22,6 +22,7 @@ from rotkehlchen.types import Price, Timestamp
 from .types import HistoricalPriceOracle, HistoricalPriceOracleInstance
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
     from rotkehlchen.externalapis.coingecko import Coingecko
     from rotkehlchen.externalapis.cryptocompare import Cryptocompare
     from rotkehlchen.externalapis.defillama import Defillama
@@ -80,6 +81,8 @@ class PriceHistorian:
     _cryptocompare: 'Cryptocompare'
     _coingecko: 'Coingecko'
     _defillama: 'Defillama'
+    _uniswapv2: 'UniswapV2Oracle'
+    _uniswapv3: 'UniswapV3Oracle'
     _manual: ManualPriceOracle  # This is used when iterating through all oracles
     _oracles: Sequence[HistoricalPriceOracle] | None = None
     _oracle_instances: list[HistoricalPriceOracleInstance] | None = None
@@ -90,6 +93,8 @@ class PriceHistorian:
             cryptocompare: Optional['Cryptocompare'] = None,
             coingecko: Optional['Coingecko'] = None,
             defillama: Optional['Defillama'] = None,
+            uniswapv2: Optional['UniswapV2Oracle'] = None,
+            uniswapv3: Optional['UniswapV3Oracle'] = None,
     ) -> 'PriceHistorian':
         if PriceHistorian.__instance is not None:
             return PriceHistorian.__instance
@@ -99,11 +104,15 @@ class PriceHistorian:
         assert cryptocompare, error_msg
         assert coingecko, error_msg
         assert defillama, error_msg
+        assert uniswapv2, error_msg
+        assert uniswapv3, error_msg
 
         PriceHistorian.__instance = object.__new__(cls)
         PriceHistorian._cryptocompare = cryptocompare
         PriceHistorian._coingecko = coingecko
         PriceHistorian._defillama = defillama
+        PriceHistorian._uniswapv2 = uniswapv2
+        PriceHistorian._uniswapv3 = uniswapv3
         PriceHistorian._manual = ManualPriceOracle()
 
         return PriceHistorian.__instance

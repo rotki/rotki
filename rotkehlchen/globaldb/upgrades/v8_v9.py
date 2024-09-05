@@ -13,6 +13,15 @@ def _addressbook_schema_update(write_cursor: 'DBCursor') -> None:
     fix_address_book_duplications(write_cursor=write_cursor)
 
 
+@enter_exit_debug_log()
+def _add_uniswap_to_price_history_source_types(write_cursor: 'DBCursor') -> None:
+    """Add entries for Uniswap V2 and V3 to price_history_source_types table"""
+    write_cursor.executemany(
+        'INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES (?, ?);',
+        [('G', 7), ('H', 8)],
+    )
+
+
 @enter_exit_debug_log(name='globaldb v8->v9 upgrade')
 def migrate_to_v9(connection: 'DBConnection') -> None:
     """This globalDB upgrade does the following:
@@ -21,3 +30,4 @@ def migrate_to_v9(connection: 'DBConnection') -> None:
     This upgrade takes place in v1.35.0"""
     with connection.write_ctx() as write_cursor:
         _addressbook_schema_update(write_cursor)
+        _add_uniswap_to_price_history_source_types(write_cursor)

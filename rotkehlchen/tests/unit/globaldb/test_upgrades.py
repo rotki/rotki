@@ -808,6 +808,9 @@ def test_upgrade_v8_v9(globaldb: GlobalDBHandler):
             (tether_address, ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, 'Black Tether'),
             (bad_address, ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, 'yabirgb.eth'),
         ]
+        assert len(cursor.execute(
+            "SELECT * FROM price_history_source_types WHERE type IN ('G', 'H') AND seq IN (7, 8);",
+        ).fetchall()) == 2
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])

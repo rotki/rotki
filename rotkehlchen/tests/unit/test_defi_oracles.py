@@ -10,10 +10,11 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_1INCH, A_BTC, A_DOGE, A_ETH, A_LINK, A_USDC, A_WETH
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.defi import DefiPoolError
-from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
+from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import CurrentPriceOracle
+from rotkehlchen.tests.utils.ethereum import INFURA_ETH_NODE
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import ChainID, EvmTokenKind, Price
 
@@ -49,6 +50,48 @@ def test_uniswap_oracles_asset_to_asset(inquirer_defi, socket_enabled):  # pylin
         alink = Asset(A_LINK.identifier)
         price_as_assets, _ = price_instance.query_current_price(a1inch, alink, False)
         assert price_as_assets.is_close(price, max_diff='0.01')
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+@pytest.mark.parametrize('ethereum_manager_connect_at_start', [(INFURA_ETH_NODE,)])
+def test_uniswap_oracles_historic_price(inquirer_defi, socket_enabled):  # pylint: disable=unused-argument
+    """Test that the uniswap oracles return correct historical prices."""
+    inquirer_defi.set_oracles_order(oracles=[CurrentPriceOracle.UNISWAPV3])
+    assert inquirer_defi._uniswapv3.query_historical_price(
+        from_asset=A_1INCH,
+        to_asset=A_LINK,
+        timestamp=1653454800,
+    ) == Price(FVal('0.139152791117568194371010708385710558327124437415165328415539849552333178019986'))  # noqa: E501
+
+    with pytest.raises(NoPriceForGivenTimestamp):
+        inquirer_defi._uniswapv3.query_historical_price(
+            from_asset=A_WETH,
+            to_asset=A_USDC,
+            timestamp=1601557200,  # before V3 contract was created
+        )
+
+    inquirer_defi.set_oracles_order(oracles=[CurrentPriceOracle.UNISWAPV2])
+    assert inquirer_defi._uniswapv2.query_historical_price(
+        from_asset=A_WETH,
+        to_asset=A_USDC,
+        timestamp=1610150400,
+    ) == Price(FVal('1218.87080719990345367447708023135690417334776916278271419773639287665690749300'))  # noqa: E501
+
+    with pytest.raises(NoPriceForGivenTimestamp):
+        inquirer_defi._uniswapv2.query_historical_price(
+            from_asset=A_WETH,
+            to_asset=A_USDC,
+            timestamp=1571230800,  # before V2 contract was created
+        )
+
+    with pytest.raises(PriceQueryUnsupportedAsset):
+        inquirer_defi._uniswapv2.query_historical_price(
+            from_asset=A_BTC,  # non eth tokens
+            to_asset=A_DOGE,
+            timestamp=1653454800,
+        )
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
