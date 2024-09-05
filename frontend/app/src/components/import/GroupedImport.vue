@@ -141,7 +141,8 @@ const [DefineDisplay, ReuseDisplay] = createReusableTemplate<{
         hide-details
         return-object
         variant="outlined"
-      >
+        key-attr="key"
+        >
         <template #selection="{ item }">
           <ReuseDisplay v-bind="item" />
         </template>
