@@ -2493,6 +2493,12 @@ def test_upgrade_db_43_to_44(user_data_dir, messages_aggregator):
             (bad_address, None, 'yabir.eth'),
         }
 
+    with db_v43.conn.write_ctx() as cursor:
+        cursor.execute(
+            'INSERT INTO settings(name, value) VALUES(?, ?)',
+            ('historical_price_oracles', '["manual", "cryptocompare", "coingecko", "defillama"]'),
+        )
+
     # Execute upgrade
     db = _init_db_with_target_version(
         target_version=44,
@@ -2527,6 +2533,9 @@ def test_upgrade_db_43_to_44(user_data_dir, messages_aggregator):
             (tether_address, ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, 'Black Tether'),
             (bad_address, ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, 'yabirgb.eth'),
         }
+        assert cursor.execute(
+            'SELECT value FROM settings WHERE name="historical_price_oracles"',
+        ).fetchone()[0] == '["manual", "cryptocompare", "coingecko", "defillama", "uniswapv3", "uniswapv2"]'  # noqa: E501
 
     db.logout()
 

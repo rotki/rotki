@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`2217` Users will now be able to use Uniswap V2 and V3 as historical price oracles.
 * :bug:`-` Fixed the “Show More Events” button to properly render additional events when there are more than 6, allowing it to load more as expected.
 * :bug:`-` Improve the filtering UI when there are no suggestions for a filter.
 * :feature:`8117` Rotki will now create calendar reminders for the end of the lock period of CRV in vote escrow.

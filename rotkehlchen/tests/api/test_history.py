@@ -12,6 +12,7 @@ from rotkehlchen.accounting.constants import FREE_PNL_EVENTS_LIMIT, FREE_REPORTS
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import ActionType
+from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_BTC, A_DAI, A_EUR
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -499,6 +500,8 @@ def test_missing_prices_in_pnl_report(rotkehlchen_api_server):
         cryptocompare=MagicMock(spec=Cryptocompare),
         coingecko=Coingecko(),
         defillama=MagicMock(spec=Defillama),
+        uniswapv2=MagicMock(spec=UniswapV2Oracle),
+        uniswapv3=MagicMock(spec=UniswapV3Oracle),
     )
     price_historian.set_oracles_order([HistoricalPriceOracle.COINGECKO])
     coingecko_api_calls = 0

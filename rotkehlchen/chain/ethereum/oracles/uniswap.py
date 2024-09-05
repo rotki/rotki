@@ -2,35 +2,46 @@ import abc
 import logging
 from functools import reduce
 from operator import mul
-from typing import TYPE_CHECKING, NamedTuple
+from typing import TYPE_CHECKING, Final, NamedTuple
 
 from eth_utils import to_checksum_address
 from web3.types import BlockIdentifier
 
-from rotkehlchen.assets.asset import AssetWithOracles, EvmToken
+from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE, ZERO
-from rotkehlchen.constants.assets import A_DAI, A_ETH, A_USD, A_USDC, A_USDT, A_WETH
+from rotkehlchen.constants.assets import (
+    A_DAI,
+    A_ETH,
+    A_ETH_EURE,
+    A_EUR,
+    A_USD,
+    A_USDC,
+    A_USDT,
+    A_WETH,
+)
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.constants.resolver import ChainID, ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.defi import DefiPoolError
-from rotkehlchen.errors.price import PriceQueryUnsupportedAsset
+from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.interfaces import CurrentPriceOracleInterface
+from rotkehlchen.interfaces import HistoricalPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, Price
+from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, Price, Timestamp
 from rotkehlchen.utils.mixins.cacheable import CacheableMixIn, cache_response_timewise
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
-UNISWAP_FACTORY_DEPLOYED_BLOCK = 12369621
-SINGLE_SIDE_USD_POOL_LIMIT = 5000
+UNISWAPV3_FACTORY_DEPLOYED_BLOCK: Final = 12369621
+UNISWAPV2_FACTORY_DEPLOYED_BLOCK: Final = 10000835
+MULTICALL_DEPLOYED_BLOCK: Final = 14353601
+SINGLE_SIDE_USD_POOL_LIMIT: Final = 5000
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -49,13 +60,13 @@ class PoolPrice(NamedTuple):
         )
 
 
-class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
+class UniswapOracle(HistoricalPriceOracleInterface, CacheableMixIn):
     """
     Provides shared logic between Uniswap V2 and Uniswap V3 to use them as price oracles.
     """
     def __init__(self, ethereum_inquirer: 'EthereumInquirer', version: int):
         CacheableMixIn.__init__(self)
-        CurrentPriceOracleInterface.__init__(self, oracle_name=f'Uniswap V{version} oracle')
+        HistoricalPriceOracleInterface.__init__(self, oracle_name=f'Uniswap V{version} oracle')
         self.ethereum = ethereum_inquirer
         self.weth = A_WETH.resolve_to_evm_token()
         self.routing_assets = [
@@ -88,6 +99,13 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
         token1 of the pool.
         May raise:
         - DefiPoolError
+        """
+
+    @abc.abstractmethod
+    def is_before_contract_creation(self, block_identifier: BlockIdentifier) -> bool:
+        """Check if block_identifier is before the creation of the uniswap version's contract.
+        When querying current prices block_identifier will be 'latest' instead of a block number,
+        so return False if block_identifier is not an int.
         """
 
     def _find_pool_for(
@@ -183,9 +201,11 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
             from_asset: AssetWithOracles,
             to_asset: AssetWithOracles,
             block_identifier: BlockIdentifier,
+            timestamp: Timestamp | None = None,
     ) -> Price:
         """
         Return the price of from_asset to to_asset at the block block_identifier.
+        Timestamp enables properly raising NoPriceForGivenTimestamp during historical price queries
 
         Can raise:
         - DefiPoolError
@@ -195,6 +215,13 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
             f'Searching price for {from_asset} to {to_asset} at '
             f'{block_identifier!r} with {self.name}',
         )
+
+        if timestamp is not None and self.is_before_contract_creation(block_identifier):
+            raise NoPriceForGivenTimestamp(
+                from_asset=from_asset,
+                to_asset=to_asset,
+                time=timestamp,
+            )
 
         # Uniswap V2 and V3 use in their contracts WETH instead of ETH
         if from_asset == A_ETH:
@@ -252,6 +279,20 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
         price = FVal(reduce(mul, [item.price for item in prices_and_tokens], 1))
         return Price(price)
 
+    def _resolve_assets(self, assets: tuple[Asset, Asset]) -> list[AssetWithOracles]:
+        """Ensure assets are resolved to AssetWithOracles."""
+        return [asset.resolve_to_asset_with_oracles() for asset in assets]
+
+    def _replace_fiat_with_stablecoin(self, assets: list[AssetWithOracles]) -> list[AssetWithOracles]:  # noqa: E501
+        """Replace fiat assets with their stablecoin equivalents."""
+        for index, asset in enumerate(assets):
+            if asset == A_USD:
+                assets[index] = A_USDC.resolve_to_asset_with_oracles()
+            elif asset == A_EUR:
+                assets[index] = A_ETH_EURE.resolve_to_asset_with_oracles()
+
+        return assets
+
     def query_current_price(
             self,
             from_asset: AssetWithOracles,
@@ -260,18 +301,13 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
     ) -> tuple[Price, bool]:
         """
         This method gets the current price for two ethereum tokens finding a pool
-        or a path of pools in the uniswap protocol. The special case of USD as asset
-        is handled using USDC instead of USD since is one of the most used stables
-        right now for pools.
+        or a path of pools in the uniswap protocol.
         Returns:
         1. The price of from_asset at the current timestamp
         for the current oracle
         2. False value, since it never tries to match main currency
         """
-        if to_asset == A_USD:
-            to_asset = A_USDC.resolve_to_asset_with_oracles()
-        elif from_asset == A_USD:
-            from_asset = A_USDC.resolve_to_asset_with_oracles()
+        to_asset, from_asset = self._replace_fiat_with_stablecoin([to_asset, from_asset])
 
         price = self.get_price(
             from_asset=from_asset,
@@ -279,6 +315,73 @@ class UniswapOracle(CurrentPriceOracleInterface, CacheableMixIn):
             block_identifier='latest',
         )
         return price, False
+
+    def _call_methods(
+            self,
+            pool_contract: EvmContract,
+            methods: list[str],
+            block_identifier: BlockIdentifier,
+    ) -> dict:
+        """Call methods on the pool contract using multicall if block_identifier
+        is since the multicall contract creation, otherwise use individual calls.
+        Returns a dict that maps method names to responses.
+        """
+        if (
+            (isinstance(block_identifier, str) and block_identifier == 'latest') or
+            (isinstance(block_identifier, int) and block_identifier > MULTICALL_DEPLOYED_BLOCK)
+        ):
+            response = self.ethereum.multicall(
+                calls=[
+                    (
+                        pool_contract.address,
+                        pool_contract.encode(method_name=method_name),
+                    )
+                    for method_name in methods
+                ],
+                require_success=True,
+                block_identifier=block_identifier,
+            )
+            output = {}
+            for index, method_name in enumerate(methods):
+                data = pool_contract.decode(response[index], method_name)
+                output[method_name] = data[0] if len(data) == 1 else data
+        else:
+            output = {
+                method_name: self.ethereum.call_contract(
+                    contract_address=pool_contract.address,
+                    abi=pool_contract.abi,
+                    method_name=method_name,
+                    block_identifier=block_identifier,
+                )
+                for method_name in methods
+            }
+        return output
+
+    def can_query_history(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            timestamp: Timestamp,
+            seconds: int | None = None,
+    ) -> bool:
+        """Here to comply with price historian interface."""
+        return self.is_before_contract_creation(self.ethereum.get_blocknumber_by_time(timestamp))
+
+    def query_historical_price(
+            self,
+            from_asset: Asset,
+            to_asset: Asset,
+            timestamp: Timestamp,
+    ) -> Price:
+        to_asset, from_asset = self._replace_fiat_with_stablecoin(
+            self._resolve_assets((to_asset, from_asset)),
+        )
+        return self.get_price(
+            from_asset=from_asset.resolve_to_asset_with_oracles(),
+            to_asset=to_asset.resolve_to_asset_with_oracles(),
+            block_identifier=self.ethereum.get_blocknumber_by_time(timestamp),
+            timestamp=timestamp,
+        )
 
 
 class UniswapV3Oracle(UniswapOracle):
@@ -313,7 +416,7 @@ class UniswapV3Oracle(UniswapOracle):
             pool_contract = EvmContract(
                 address=pool_address,
                 abi=self.uniswap_v3_pool_abi,
-                deployed_block=UNISWAP_FACTORY_DEPLOYED_BLOCK,
+                deployed_block=UNISWAPV3_FACTORY_DEPLOYED_BLOCK,
             )
             pool_liquidity = pool_contract.call(
                 node_inquirer=self.ethereum,
@@ -344,27 +447,15 @@ class UniswapV3Oracle(UniswapOracle):
         pool_contract = EvmContract(
             address=pool_addr,
             abi=self.uniswap_v3_pool_abi,
-            deployed_block=UNISWAP_FACTORY_DEPLOYED_BLOCK,
+            deployed_block=UNISWAPV3_FACTORY_DEPLOYED_BLOCK,
         )
-        calls = [
-            (
-                pool_contract.address,
-                pool_contract.encode(method_name='slot0'),
-            ), (
-                pool_contract.address,
-                pool_contract.encode(method_name='token0'),
-            ), (
-                pool_contract.address,
-                pool_contract.encode(method_name='token1'),
-            ),
-        ]
-        output = self.ethereum.multicall(
-            calls=calls,
-            require_success=True,
+        output = self._call_methods(
+            pool_contract=pool_contract,
+            methods=['slot0', 'token0', 'token1'],
             block_identifier=block_identifier,
         )
-        token_0_address = pool_contract.decode(output[1], 'token0')[0]  # pylint:disable=unsubscriptable-object
-        token_1_address = pool_contract.decode(output[2], 'token1')[0]  # pylint:disable=unsubscriptable-object
+        token_0_address = output['token0']
+        token_1_address = output['token1']
         try:
             token_0 = EvmToken(
                 ethaddress_to_identifier(to_checksum_address(token_0_address)),
@@ -375,7 +466,7 @@ class UniswapV3Oracle(UniswapOracle):
         except (UnknownAsset, WrongAssetType) as e:
             raise DefiPoolError(f'Failed to read token from address {token_0_address} or {token_1_address} as ERC-20 token') from e  # noqa: E501
 
-        sqrt_price_x96, _, _, _, _, _, _ = pool_contract.decode(output[0], 'slot0')
+        sqrt_price_x96, _, _, _, _, _, _ = output['slot0']
         if token_0.decimals is None:
             raise DefiPoolError(f'Token {token_0} has None as decimals')
         if token_1.decimals is None:
@@ -389,11 +480,15 @@ class UniswapV3Oracle(UniswapOracle):
 
         return PoolPrice(price=price, token_0=token_0, token_1=token_1)
 
+    def is_before_contract_creation(self, current_block: BlockIdentifier) -> bool:
+        """Check if current_block is before creation of uniswap v3 factory contract"""
+        return current_block < UNISWAPV3_FACTORY_DEPLOYED_BLOCK if isinstance(current_block, int) else False  # noqa: E501
+
 
 class UniswapV2Oracle(UniswapOracle):
 
     def __init__(self, ethereum_inquirer: 'EthereumInquirer'):
-        super().__init__(ethereum_inquirer=ethereum_inquirer, version=3)
+        super().__init__(ethereum_inquirer=ethereum_inquirer, version=2)
         self.uniswap_v2_lp_abi = self.ethereum.contracts.abi('UNISWAP_V2_LP')
         self.uniswap_v2_factory = self.ethereum.contracts.contract(string_to_evm_address('0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f'))  # noqa: E501
 
@@ -427,28 +522,15 @@ class UniswapV2Oracle(UniswapOracle):
         pool_contract = EvmContract(
             address=pool_addr,
             abi=self.uniswap_v2_lp_abi,
-            deployed_block=10000835,  # Factory deployment block
+            deployed_block=UNISWAPV2_FACTORY_DEPLOYED_BLOCK,
         )
-        calls = [
-            (
-                pool_contract.address,
-                pool_contract.encode(method_name='getReserves'),
-            ), (
-                pool_contract.address,
-                pool_contract.encode(method_name='token0'),
-            ), (
-                pool_contract.address,
-                pool_contract.encode(method_name='token1'),
-            ),
-        ]
-        output = self.ethereum.multicall(
-            calls=calls,
-            require_success=True,
+        output = self._call_methods(
+            pool_contract=pool_contract,
+            methods=['getReserves', 'token0', 'token1'],
             block_identifier=block_identifier,
         )
-
-        token_0_address = pool_contract.decode(output[1], 'token0')[0]  # pylint:disable=unsubscriptable-object
-        token_1_address = pool_contract.decode(output[2], 'token1')[0]  # pylint:disable=unsubscriptable-object
+        token_0_address = output['token0']
+        token_1_address = output['token1']
 
         try:
             token_0 = EvmToken(
@@ -468,7 +550,7 @@ class UniswapV2Oracle(UniswapOracle):
             raise DefiPoolError(f'Token {token_0} has None as decimals')
         if token_1.decimals is None:
             raise DefiPoolError(f'Token {token_1} has None as decimals')
-        reserve_0, reserve_1, _ = pool_contract.decode(output[0], 'getReserves')
+        reserve_0, reserve_1, _ = output['getReserves']
         decimals_constant = 10**(token_0.decimals - token_1.decimals)
 
         if ZERO in (reserve_0, reserve_1):
@@ -485,3 +567,7 @@ class UniswapV2Oracle(UniswapOracle):
 
         price = FVal((reserve_1 / reserve_0) * decimals_constant)
         return PoolPrice(price=price, token_0=token_0, token_1=token_1)
+
+    def is_before_contract_creation(self, current_block: BlockIdentifier) -> bool:
+        """Check if current_block is before creation of uniswap v2 factory contract"""
+        return current_block < UNISWAPV2_FACTORY_DEPLOYED_BLOCK if isinstance(current_block, int) else False  # noqa: E501
