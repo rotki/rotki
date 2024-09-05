@@ -92,7 +92,12 @@ const visibleAssets = computed<AssetInfoWithId[]>(() => {
 async function searchAssets(keyword: string, signal: AbortSignal): Promise<void> {
   set(loading, true);
   try {
-    const fetchedAssets = await assetSearch(keyword, 50, get(includeNfts), signal);
+    const fetchedAssets = await assetSearch({
+      value: keyword,
+      limit: 50,
+      searchNfts: get(includeNfts),
+      signal,
+    });
     if (get(modelValue))
       await retainSelectedValueInOptions(fetchedAssets);
     else set(assets, fetchedAssets);

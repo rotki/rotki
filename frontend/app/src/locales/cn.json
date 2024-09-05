@@ -3751,7 +3751,6 @@
       "description": "输入过滤器，然后按回车键，例如。",
       "example": "开始 = 26/05/2022"
     },
-    "no_suggestions": "输入 {search} 过滤器的值",
     "saved_filters": {
       "actions": {
         "add": "将当前过滤器保存到列表",
@@ -3766,6 +3765,7 @@
         "title": "未能保存过滤器"
       }
     },
+    "start_typing": "输入 {search} 过滤器的值",
     "title": "可用过滤器",
     "unsupported_filter": "不支持的过滤器："
   },

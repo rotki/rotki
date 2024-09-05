@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { HistoryEventEntryType } from '@rotki/common';
+import { isEqual } from 'lodash-es';
 import {
   type MatchedKeywordWithBehaviour,
   type SearchMatcher,
@@ -69,6 +70,9 @@ export function useHistoryEventFilter(
   const { t } = useI18n();
 
   const matchers = computed<Matcher[]>(() => {
+    let selectedLocation = get(filters)?.location;
+    if (Array.isArray(selectedLocation))
+      selectedLocation = selectedLocation[0] || undefined;
     const data: Matcher[] = [
       ...(disabled?.period
         ? []
@@ -105,7 +109,7 @@ export function useHistoryEventFilter(
         keyValue: HistoryEventFilterValueKeys.ASSET,
         description: t('transactions.filter.asset'),
         asset: true,
-        suggestions: assetSuggestions(assetSearch),
+        suggestions: assetSuggestions(assetSearch, selectedLocation?.toString()),
         deserializer: assetDeserializer(assetInfo),
       },
     ];
@@ -210,13 +214,15 @@ export function useHistoryEventFilter(
         if (!Array.isArray(selectedEventSubtypes))
           selectedEventSubtypes = [`${selectedEventSubtypes}`];
 
-        if (selectedEventSubtypes && selectedEventSubtypes.length > 0) {
+        if (selectedEventSubtypes.length > 0) {
           const filteredEventSubtypes = selectedEventSubtypes.filter(item => globalMappingKeys.includes(item));
 
-          set(filters, {
-            ...get(filters),
-            eventSubtypes: filteredEventSubtypes.length > 0 ? filteredEventSubtypes : undefined,
-          });
+          if (!isEqual(filteredEventSubtypes, selectedEventSubtypes)) {
+            set(filters, {
+              ...get(filters),
+              eventSubtypes: filteredEventSubtypes.length > 0 ? filteredEventSubtypes : undefined,
+            });
+          }
         }
 
         data.push({

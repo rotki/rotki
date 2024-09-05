@@ -35,6 +35,8 @@ const dimensions = computed<Dimension>(() => {
 const wrapperStyle = computed<Style>(() => ({
   width: get(size),
   height: get(size),
+  minWidth: get(size),
+  minHeight: get(size),
 }));
 
 const text = computed<string>(() => {
@@ -48,7 +50,7 @@ const textStyle = computed<Style>(() => {
   const length = get(text).length;
   const { value } = get(dimensions);
 
-  const fontSize = value / length + (length - 3) * 5;
+  const fontSize = (value - 2) / length;
 
   return {
     fontSize: `${fontSize}px`,

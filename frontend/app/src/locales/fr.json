@@ -4031,7 +4031,6 @@
       "example": "start = 26/05/2022"
     },
     "label": "Filtres disponibles",
-    "no_suggestions": "Saisissez la valeur du filtre {search}",
     "saved_filters": {
       "actions": {
         "add": "Enregistrer le filtre actuel dans la liste",
@@ -4046,6 +4045,7 @@
         "title": "Échec de l'enregistrement du filtre"
       }
     },
+    "start_typing": "Saisissez la valeur du filtre {search}",
     "title": "Filtres disponibles",
     "unsupported_filter": "Filtre non pris en charge:"
   },

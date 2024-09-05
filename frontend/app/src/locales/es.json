@@ -3614,7 +3614,6 @@
       "description": "Type the filter and then press enter e.g.",
       "example": "start = 26/05/2022"
     },
-    "no_suggestions": "Escriba el valor del filtro {search}.",
     "saved_filters": {
       "actions": {
         "add": "Save current filter to list",
@@ -3629,6 +3628,7 @@
         "title": "Failed to save filter"
       }
     },
+    "start_typing": "Escriba el valor del filtro {search}.",
     "title": "Available filters",
     "unsupported_filter": "Unsupported filter:"
   },

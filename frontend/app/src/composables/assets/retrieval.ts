@@ -1,10 +1,12 @@
 import { type AssetInfo, NotificationGroup, Severity } from '@rotki/common';
+import { isCancel } from 'axios';
 import { type AssetsWithId, CUSTOM_ASSET } from '@/types/asset';
 import { TaskType } from '@/types/task-type';
 import type { MaybeRef } from '@vueuse/core';
 import type { ERC20Token } from '@/types/blockchain/accounts';
 import type { TaskMeta } from '@/types/task';
 import type { EvmChainAddress } from '@/types/history/events';
+import type { AssetSearchParams } from '@/composables/api/assets/info';
 
 export interface AssetResolutionOptions {
   associate?: boolean;
@@ -24,7 +26,7 @@ interface UseAssetInfoRetrievalReturn {
   assetSymbol: (identifier: MaybeRef<string | undefined>, enableAssociation?: MaybeRef<boolean>) => ComputedRef<string>;
   assetName: (identifier: MaybeRef<string | undefined>, enableAssociation?: MaybeRef<boolean>) => ComputedRef<string>;
   tokenAddress: (identifier: MaybeRef<string>, enableAssociation?: MaybeRef<boolean>) => ComputedRef<string>;
-  assetSearch: (keyword: string, limit?: number, searchNfts?: boolean, signal?: AbortSignal) => Promise<AssetsWithId>;
+  assetSearch: (params: AssetSearchParams) => Promise<AssetsWithId>;
 }
 
 export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
@@ -34,6 +36,8 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
   const { treatEth2AsEth } = storeToRefs(useGeneralSettingsStore());
   const { notify } = useNotificationsStore();
   const { awaitTask } = useTaskStore();
+
+  const { isEvm } = useSupportedChains();
 
   const assetAssociationMap = computed<Record<string, string>>(() => {
     const associationMap: Record<string, string> = {};
@@ -171,16 +175,15 @@ export function useAssetInfoRetrieval(): UseAssetInfoRetrievalReturn {
     }
   };
 
-  const assetSearch = async (
-    keyword: string,
-    limit = 25,
-    searchNfts = false,
-    signal?: AbortSignal,
-  ): Promise<AssetsWithId> => {
+  const assetSearch = async (params: AssetSearchParams): Promise<AssetsWithId> => {
     try {
-      return await assetSearchCaller(keyword, limit, searchNfts, signal);
+      const evmChain = params.evmChain && get(isEvm(params.evmChain)) ? params.evmChain : undefined;
+      return await assetSearchCaller({ ...params, evmChain });
     }
     catch (error: any) {
+      if (isCancel(error))
+        return [];
+
       notify({
         title: t('asset_search.error.title'),
         message: t('asset_search.error.message', {

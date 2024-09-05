@@ -6,9 +6,18 @@ import type { ActionResult } from '@rotki/common';
 import type { PendingTask } from '@/types/task';
 import type { EvmChainAddress } from '@/types/history/events';
 
+export interface AssetSearchParams {
+  value: string;
+  evmChain?: string;
+  address?: string;
+  limit?: number;
+  searchNfts?: boolean;
+  signal?: AbortSignal;
+}
+
 interface UseAssetInfoApiReturn {
   assetMapping: (identifiers: string[]) => Promise<AssetMap>;
-  assetSearch: (keyword: string, limit?: number, searchNfts?: boolean, signal?: AbortSignal) => Promise<AssetsWithId>;
+  assetSearch: (params: AssetSearchParams) => Promise<AssetsWithId>;
   erc20details: (payload: EvmChainAddress) => Promise<PendingTask>;
 }
 
@@ -24,18 +33,23 @@ export function useAssetInfoApi(): UseAssetInfoApiReturn {
     return AssetMap.parse(handleResponse(response));
   };
 
-  const assetSearch = async (
-    keyword: string,
-    limit = 25,
-    searchNfts = false,
-    signal?: AbortSignal,
-  ): Promise<AssetsWithId> => {
+  const assetSearch = async (params: AssetSearchParams): Promise<AssetsWithId> => {
+    const {
+      value,
+      evmChain,
+      limit,
+      searchNfts,
+      signal,
+      address,
+    } = params;
     const response = await api.instance.post<ActionResult<AssetsWithId>>(
       '/assets/search/levenshtein',
       snakeCaseTransformer({
-        value: keyword,
-        limit,
+        value,
+        evmChain,
+        limit: limit || 25,
         searchNfts,
+        address,
       }),
       {
         validateStatus: validStatus,

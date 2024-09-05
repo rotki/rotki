@@ -64,7 +64,7 @@ const accounts = computed<AccountWithAddressData[]>(() =>
 );
 
 const internalValue = computed<AccountWithAddressData | AccountWithAddressData[] | undefined>(() => {
-  const accounts = get(modelValue);
+  const accounts = get(modelValue).map(item => ({ ...item, address: getAccountAddress(item) }));
   if (get(multiple))
     return accounts;
 
@@ -201,7 +201,7 @@ function getAccount(account: AccountWithAddressData): Account {
       :model-value="internalValue"
       :options="displayedAccounts"
       :filter="filter"
-      key-attr="key"
+      key-attr="address"
       auto-select-first
       :loading="loading"
       :disabled="loading"

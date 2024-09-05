@@ -13,16 +13,19 @@ const props = withDefaults(
     noTooltip?: boolean;
     circle?: boolean;
     padding?: string;
+    chainIconPadding?: string;
     enableAssociation?: boolean;
     showChain?: boolean;
     flat?: boolean;
     resolutionOptions?: AssetResolutionOptions;
+    chainIconSize?: string;
   }>(),
   {
     styled: undefined,
     noTooltip: false,
     circle: false,
     padding: '2px',
+    chainIconPadding: '1px',
     enableAssociation: true,
     showChain: true,
     flat: false,
@@ -34,7 +37,7 @@ const emit = defineEmits<{ (e: 'click'): void }>();
 
 const { t } = useI18n();
 
-const { identifier, padding, size, resolutionOptions, showChain } = toRefs(props);
+const { identifier, padding, size, resolutionOptions, showChain, chainIconSize } = toRefs(props);
 
 const error = ref<boolean>(false);
 const pending = ref<boolean>(true);
@@ -86,10 +89,9 @@ const tooltip = computed(() => {
 
 const url = reactify(getAssetImageUrl)(mappedIdentifier);
 
-const chainIconSize = computed(() => `${(Number.parseInt(get(size)) * 50) / 100}px`);
-const chainWrapperSize = computed(() => `${Number.parseInt(get(chainIconSize)) + 4}px`);
-const chainIconMargin = computed(() => `-${get(chainIconSize)}`);
-const chainIconPosition = computed(() => `${(Number.parseInt(get(chainIconSize)) * 50) / 100}px`);
+const usedChainIconSize = computed(() => get(chainIconSize) || `${(Number.parseInt(get(size)) * 50) / 100}px`);
+const chainIconMargin = computed(() => `-${get(usedChainIconSize)}`);
+const chainIconPosition = computed(() => `${(Number.parseInt(get(usedChainIconSize)) * 50) / 100}px`);
 
 const placeholderStyle = computed(() => {
   const pad = get(padding);
@@ -120,6 +122,7 @@ watch([symbol, identifier], () => {
       >
         <div
           v-if="showChain && chain"
+          class="chain"
           :class="{
             [$style.circle]: true,
             [$style.chain]: true,
@@ -127,7 +130,7 @@ watch([symbol, identifier], () => {
         >
           <EvmChainIcon
             :chain="chain"
-            :size="chainIconSize"
+            :size="usedChainIconSize"
           />
         </div>
 
@@ -183,7 +186,6 @@ watch([symbol, identifier], () => {
   margin-left: v-bind(chainIconMargin);
   top: v-bind(chainIconPosition);
   left: v-bind(chainIconPosition);
-  width: v-bind(chainWrapperSize);
-  height: v-bind(chainWrapperSize);
+  padding: v-bind(chainIconPadding);
 }
 </style>

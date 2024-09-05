@@ -14,13 +14,46 @@ const props = withDefaults(
 
 const { suggestion } = toRefs(props);
 
-const { assetInfo } = useAssetInfoRetrieval();
-
 const isBoolean = computed(() => {
   const item = get(suggestion);
   const value = item.value;
 
   return typeof value === 'boolean';
+});
+
+const { assetInfo } = useAssetInfoRetrieval();
+const { getChainName } = useSupportedChains();
+
+const asset = computed<{ identifier: string; symbol: string } | undefined>(() => {
+  const item = get(suggestion);
+  const value = item.value;
+
+  if (!item.asset)
+    return undefined;
+
+  let usedAsset, identifier;
+  if (typeof value === 'string') {
+    identifier = value;
+    usedAsset = get(assetInfo(value));
+  }
+  else {
+    identifier = value.identifier;
+    usedAsset = value;
+  }
+
+  if (!usedAsset)
+    return undefined;
+
+  let symbol = usedAsset.symbol;
+  if (usedAsset.evmChain && !props.chip)
+    symbol += ` (${get(getChainName(usedAsset.evmChain))})`;
+  else if (usedAsset.isCustomAsset)
+    symbol = usedAsset.name;
+
+  return {
+    identifier,
+    symbol,
+  };
 });
 
 const displayValue = computed(() => {
@@ -30,20 +63,7 @@ const displayValue = computed(() => {
   if (get(isBoolean))
     return `${value}`;
 
-  if (!item.asset)
-    return value;
-
-  let usedAsset = value;
-  if (typeof usedAsset === 'string')
-    usedAsset = get(assetInfo(value));
-
-  if (!usedAsset)
-    return value;
-
-  if (usedAsset.evmChain)
-    return `${usedAsset.symbol} (${usedAsset.evmChain})`;
-
-  return usedAsset.isCustomAsset ? usedAsset.name : usedAsset.symbol;
+  return value;
 });
 </script>
 
@@ -62,7 +82,26 @@ const displayValue = computed(() => {
       >
         <span>{{ suggestion.exclude ? '!=' : '=' }}</span>
       </span>
-      <span class="font-normal">
+      <div
+        v-if="suggestion.asset && asset"
+        class="flex items-center gap-2"
+        :class="{ 'ml-2': !chip }"
+      >
+        <AssetIcon
+          :identifier="asset.identifier"
+          padding="1.5px"
+          :size="chip ? '16px' : '18px'"
+          :chain-icon-size="chip ? '9px' : '11px'"
+          chain-icon-padding="0.5px"
+        />
+        <span class="font-normal text-sm">
+          {{ asset.symbol }}
+        </span>
+      </div>
+      <span
+        v-else-if="displayValue"
+        class="font-normal"
+      >
         {{ truncateAddress(displayValue, 10) }}
       </span>
     </template>

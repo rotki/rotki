@@ -4300,7 +4300,7 @@
     }
   },
   "table_filter": {
-    "asset_suggestion": "Type the asset symbol to search.",
+    "asset_suggestion": "Type the asset symbol or address to search.",
     "exclusion": {
       "description": "Use operator `!=` to filter out option, e.g.",
       "example": "type != evm event"
@@ -4311,7 +4311,6 @@
       "example": "start = 26/05/2022"
     },
     "label": "Combined filters",
-    "no_suggestions": "Type the value for the {search} filter",
     "saved_filters": {
       "actions": {
         "add": "Save current filter to list",
@@ -4326,6 +4325,7 @@
         "title": "Failed to save filter"
       }
     },
+    "start_typing": "Type the value for the {search} filter",
     "title": "Available filters",
     "unsupported_filter": "Unsupported filter:"
   },
