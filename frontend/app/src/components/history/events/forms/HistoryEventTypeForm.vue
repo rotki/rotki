@@ -8,12 +8,14 @@ const props = withDefaults(
     eventType: string;
     eventSubtype: string;
     counterparty?: string | null;
+    location?: string | null;
     v$: Validation;
     disableWarning?: boolean;
   }>(),
   {
     disableWarning: false,
     counterparty: null,
+    location: null,
   },
 );
 
@@ -22,7 +24,7 @@ const emit = defineEmits<{
   (e: 'update:event-subtype', eventSubtype: string): void;
 }>();
 
-const { eventType, eventSubtype, counterparty, v$ } = toRefs(props);
+const { eventType, eventSubtype, counterparty, location, v$ } = toRefs(props);
 
 const eventTypeModel = computed({
   get() {
@@ -55,6 +57,7 @@ const historyTypeCombination = computed(() =>
         eventType: get(eventType),
         eventSubtype: get(eventSubtype),
         counterparty: get(counterparty),
+        location: get(location),
       },
       false,
     ),

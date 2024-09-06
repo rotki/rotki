@@ -330,6 +330,7 @@ const locationLabelSuggestions = computed(() =>
     <HistoryEventTypeForm
       :event-type.sync="eventType"
       :event-subtype.sync="eventSubtype"
+      :location="location"
       :v$="v$"
     />
 

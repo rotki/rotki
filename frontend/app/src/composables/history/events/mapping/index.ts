@@ -12,12 +12,15 @@ type Event = MaybeRef<{
   eventType: string;
   eventSubtype: string;
   counterparty?: string | null;
+  location?: string | null;
   entryType?: string;
   isExit?: boolean;
 }>;
 
 export const useHistoryEventMappings = createSharedComposable(() => {
   const { t, te } = useI18n();
+
+  const { allExchanges } = storeToRefs(useLocationStore());
 
   const {
     getTransactionTypeMappings,
@@ -136,22 +139,28 @@ export const useHistoryEventMappings = createSharedComposable(() => {
   });
 
   const getEventType = (event: Event): ComputedRef<string | undefined> => computed(() => {
-    const { eventType, eventSubtype, entryType, isExit } = get(event);
+    const { eventType, eventSubtype, entryType, isExit, location } = get(event);
 
-    let byEntryType;
-    if (
-      entryType
-      && entryType === HistoryEventEntryType.ETH_WITHDRAWAL_EVENT
-    ) {
-      byEntryType = get(historyEventTypeByEntryTypeMapping)[entryType]?.[
+    if (entryType === HistoryEventEntryType.ETH_WITHDRAWAL_EVENT) {
+      const withdrawalEntryType = get(historyEventTypeByEntryTypeMapping)[entryType]?.[
         eventType
       ]?.[eventSubtype]?.[isExit ? 'isExit' : 'notExit'];
+
+      if (withdrawalEntryType)
+        return withdrawalEntryType;
     }
 
-    return (
-      byEntryType
-      || get(historyEventTypeGlobalMapping)[eventType]?.[eventSubtype]
-    );
+    const isExchange = !!location && get(allExchanges).includes(location);
+
+    const mapping = get(historyEventTypeGlobalMapping)[eventType]?.[eventSubtype];
+
+    if (!mapping)
+      return undefined;
+
+    if (!isExchange)
+      return mapping.default;
+
+    return mapping.exchange || mapping.default;
   });
 
   function getFallbackData(
