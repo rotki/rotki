@@ -10,7 +10,7 @@ import dayjs from 'dayjs';
 import {
   type AccountingRuleConflictData,
   type BalanceSnapshotError,
-  type CsvImportError,
+  type CsvImportResult,
   MESSAGE_WARNING,
   type MissingApiKey,
   type NewDetectedToken,

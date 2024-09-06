@@ -2589,8 +2589,7 @@
     "only_files": "Only {fileFilter} files are allowed",
     "replace_file": "Replace file",
     "task": {
-      "title": "Importing csv for source: {source}",
-      "error": "Failed"
+      "title": "Importing csv for source: {source}"
     }
   },
   "frontend_settings": {
