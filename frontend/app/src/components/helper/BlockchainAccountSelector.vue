@@ -201,6 +201,7 @@ function getAccount(account: AccountWithAddressData): Account {
       :model-value="internalValue"
       :options="displayedAccounts"
       :filter="filter"
+      key-attr="key"
       auto-select-first
       :loading="loading"
       :disabled="loading"
