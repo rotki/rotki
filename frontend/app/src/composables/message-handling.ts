@@ -10,13 +10,13 @@ import dayjs from 'dayjs';
 import {
   type AccountingRuleConflictData,
   type BalanceSnapshotError,
+  type CsvImportError,
   MESSAGE_WARNING,
   type MissingApiKey,
   type NewDetectedToken,
   type PremiumStatusUpdateData,
   SocketMessageType,
   WebsocketMessage,
-  type CsvImportError,
 } from '@/types/websocket-messages';
 import { camelCaseTransformer } from '@/services/axios-tranformers';
 import { Routes } from '@/router/routes';
