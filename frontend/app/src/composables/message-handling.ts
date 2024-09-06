@@ -243,10 +243,7 @@ export function useMessageHandling(): UseMessageHandling {
     if (messages.length > 0) {
       messageBody = `${messageBody}\n\n${t('notification_messages.csv_import_result.errors')}`;
       messages.forEach((error, index) => {
-        const rowInfo = error.rows
-          ? t('notification_messages.csv_import_result.rows', { rows: error.rows.join(', ') })
-          : '';
-        messageBody = `${messageBody}\n${index + 1}. ${error.msg} ${rowInfo}`;
+        messageBody = `${messageBody}\n${index + 1}. ${error.msg}`;
       });
     }
     return {
