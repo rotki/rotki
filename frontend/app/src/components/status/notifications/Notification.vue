@@ -209,50 +209,60 @@ function getIcon(action: NotificationAction): RuiIcons {
         v-if="showExpandArrow"
         :class="$style.expand"
       >
-        <RuiButton
-          class="!p-0.5"
-          :class="$style['expand-button']"
-          @click.stop="buttonClicked()"
-        >
-          <RuiIcon
-            :name="expanded ? 'arrow-up-s-line' : 'arrow-down-s-line'"
-            :class="{ 'invisible opacity-0 group-hover:translate-y-1': !expanded }"
-            class="transition-all group-hover:visible group-hover:opacity-100 group-hover:-translate-y-1 text-rui-text-secondary"
-            size="20"
-          />
-        </RuiButton>
       </div>
     </div>
-    <div class="flex mt-1 gap-2 mx-0.5">
+    <div class="flex mt-1 gap-2 mx-0.5 justify-between">
+      <div class="flex gap-2">
+        <RuiButton
+          v-for="(action, index) in actions"
+          :key="index"
+          color="primary"
+          variant="text"
+          size="sm"
+          @click="doAction(notification.id, action)"
+        >
+          {{ action.label }}
+          <template #append>
+            <RuiIcon
+              :name="getIcon(action)"
+              size="16"
+            />
+          </template>
+        </RuiButton>
+        <RuiButton
+          color="primary"
+          variant="text"
+          size="sm"
+          @click="copy()"
+        >
+          {{ t('common.actions.copy') }}
+          <template #append>
+            <RuiIcon
+              name="file-copy-line"
+              size="16"
+            />
+          </template>
+        </RuiButton>
+      </div>
       <RuiButton
-        v-for="(action, index) in actions"
-        :key="index"
+        v-if="showExpandArrow"
         color="primary"
         variant="text"
         size="sm"
-        @click="doAction(notification.id, action)"
+        @click.stop="buttonClicked()"
+        style="display: flex; align-items: center;"
+
       >
-        {{ action.label }}
-        <template #append>
+        <template #prepend>
           <RuiIcon
-            :name="getIcon(action)"
+            :name="expanded ? 'arrow-up-s-line' : 'arrow-down-s-line'"
             size="16"
+            color="primary"
+            class="transition-all text-rui-text-secondary"
+            style="margin-right: 2px;"
           />
         </template>
-      </RuiButton>
-      <RuiButton
-        color="primary"
-        variant="text"
-        size="sm"
-        @click="copy()"
-      >
-        {{ t('common.actions.copy') }}
-        <template #append>
-          <RuiIcon
-            name="file-copy-line"
-            size="16"
-          />
-        </template>
+        {{ expanded ? t('common.actions.read_less') : t('common.actions.read_more') }}
       </RuiButton>
     </div>
   </RuiCard>

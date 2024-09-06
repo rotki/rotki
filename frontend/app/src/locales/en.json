@@ -1702,6 +1702,8 @@
       "ok": "OK",
       "pull": "Pull",
       "push": "Push",
+      "read_less": "Hide",
+      "read_more": "Show",
       "save": "Save",
       "save_continue": "Save & continue",
       "search": "Search",
