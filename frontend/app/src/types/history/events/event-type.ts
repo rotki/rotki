@@ -4,6 +4,11 @@ import { HistoryEventEntryType } from '@rotki/common/lib/history/events';
 
 const HistoryEventTypeMapping = z.record(z.record(z.string()));
 
+const HistoryEventTypeGlobalMapping = z.record(z.record(z.object({
+  default: z.string(),
+  exchange: z.string().optional(),
+})));
+
 const HistoryEventCategoryDetail = z.object({
   label: z.string(),
   icon: z.string(),
@@ -34,7 +39,7 @@ export type HistoryEventCategoryMapping = z.infer<
 >;
 
 export const HistoryEventTypeData = z.object({
-  globalMappings: HistoryEventTypeMapping,
+  globalMappings: HistoryEventTypeGlobalMapping,
   eventCategoryDetails: HistoryEventCategoryMapping,
   accountingEventsIcons: z.record(z.string()),
   entryTypeMappings: z.record(
