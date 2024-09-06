@@ -208,8 +208,7 @@ function getIcon(action: NotificationAction): RuiIcons {
       <div
         v-if="showExpandArrow"
         :class="$style.expand"
-      >
-      </div>
+      />
     </div>
     <div class="flex mt-1 gap-2 mx-0.5 justify-between">
       <div class="flex gap-2">
@@ -250,8 +249,6 @@ function getIcon(action: NotificationAction): RuiIcons {
         variant="text"
         size="sm"
         @click.stop="buttonClicked()"
-        style="display: flex; align-items: center;"
-
       >
         <template #prepend>
           <RuiIcon
@@ -259,7 +256,6 @@ function getIcon(action: NotificationAction): RuiIcons {
             size="16"
             color="primary"
             class="transition-all text-rui-text-secondary"
-            style="margin-right: 2px;"
           />
         </template>
         {{ expanded ? t('common.actions.read_less') : t('common.actions.read_more') }}
