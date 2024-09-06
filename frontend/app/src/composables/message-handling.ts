@@ -16,6 +16,7 @@ import {
   type PremiumStatusUpdateData,
   SocketMessageType,
   WebsocketMessage,
+  type CsvImportError,
 } from '@/types/websocket-messages';
 import { camelCaseTransformer } from '@/services/axios-tranformers';
 import { Routes } from '@/router/routes';
@@ -236,6 +237,14 @@ export function useMessageHandling(): UseMessageHandling {
     };
   };
 
+  const handleCsvImportError = (data: CsvImportError): Notification => ({
+    title: t('notification_messages.csv_import_error.title'),
+    message: t('notification_messages.csv_import_error.message', { error: data.error }),
+    display: true,
+    severity: Severity.ERROR,
+    priority: Priority.HIGH,
+  });
+
   const handleMessage = async (data: string): Promise<void> => {
     const message: WebsocketMessage = WebsocketMessage.parse(camelCaseTransformer(JSON.parse(data)));
     const type = message.type;
@@ -310,6 +319,9 @@ export function useMessageHandling(): UseMessageHandling {
     }
     else if (type === SocketMessageType.PROTOCOL_CACHE_UPDATES) {
       setProtocolCacheStatus(message.data);
+    }
+    else if (type === SocketMessageType.CSV_IMPORT_ERROR) {
+      notifications.push(handleCsvImportError(message.data));
     }
     else {
       logger.warn(`Unsupported socket message received: '${type}'`);

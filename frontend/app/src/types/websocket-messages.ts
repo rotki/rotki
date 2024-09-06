@@ -156,6 +156,12 @@ export const ProtocolCacheUpdatesData = EvmUnDecodedTransactionsData.extend({
 
 export type ProtocolCacheUpdatesData = z.infer<typeof ProtocolCacheUpdatesData>;
 
+export const CsvImportError = z.object({
+  error: z.string(),
+});
+
+export type CsvImportError = z.infer<typeof CsvImportError>;
+
 export const SocketMessageType = {
   LEGACY: 'legacy',
   BALANCES_SNAPSHOT_ERROR: 'balance_snapshot_error',
@@ -173,6 +179,7 @@ export const SocketMessageType = {
   ACCOUNTING_RULE_CONFLICT: 'accounting_rule_conflict',
   CALENDAR_REMINDER: 'calendar_reminder',
   PROTOCOL_CACHE_UPDATES: 'protocol_cache_updates',
+   CSV_IMPORT_ERROR: 'csv_import_error',
 } as const;
 
 export type SocketMessageType = (typeof SocketMessageType)[keyof typeof SocketMessageType];
@@ -257,6 +264,12 @@ const ProtocolCacheUpdatesMessage = z.object({
   data: ProtocolCacheUpdatesData,
 });
 
+const CsvImportErrorMessage = z.object({
+  type: z.literal(SocketMessageType.CSV_IMPORT_ERROR),
+  data: CsvImportError,
+});
+
+
 export const WebsocketMessage = z.union([
   UnknownWebsocketMessage,
   LegacyWebsocketMessage,
@@ -274,6 +287,7 @@ export const WebsocketMessage = z.union([
   AccountingRuleConflictMessage,
   CalendarReminderMessage,
   ProtocolCacheUpdatesMessage,
+  CsvImportErrorMessage,
 ]);
 
 export type WebsocketMessage = z.infer<typeof WebsocketMessage>;

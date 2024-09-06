@@ -3625,6 +3625,10 @@
     "snapshot_failed": {
       "message": "Could not save the balance snapshot at {location}. {error}",
       "title": "Balance Snapshot failed"
+    },
+    "csv_import_error": {
+      "title": "CSV Import Error",
+      "message": "An error occurred during CSV import: {error}"
     }
   },
   "notification_popup": {
