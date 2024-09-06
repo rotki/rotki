@@ -270,6 +270,7 @@ const locationLabelSuggestions = computed(() =>
     <HistoryEventTypeForm
       v-model:event-type="eventType"
       v-model:event-subtype="eventSubtype"
+      :location="location"
       :v$="v$"
     />
 

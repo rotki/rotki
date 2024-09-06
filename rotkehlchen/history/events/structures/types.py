@@ -164,6 +164,8 @@ class EventCategory(Enum):
     RECEIVE_PAYMENT = 41, EventDirection.IN
     RECEIVE_GRANT = 42, EventDirection.IN
     INTEREST = 43, EventDirection.IN
+    CEX_DEPOSIT = 44, EventDirection.IN
+    CEX_WITHDRAWAL = 45, EventDirection.OUT
 
     @property
     def direction(self) -> EventDirection:

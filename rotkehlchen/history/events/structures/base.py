@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from enum import auto
 from typing import TYPE_CHECKING, Any, TypedDict, TypeVar
 
-from rotkehlchen.accounting.constants import EVENT_CATEGORY_MAPPINGS
+from rotkehlchen.accounting.constants import DEFAULT, EVENT_CATEGORY_MAPPINGS, EXCHANGE
 from rotkehlchen.accounting.mixins.event import AccountingEventMixin, AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.accounting.structures.types import ActionType
@@ -12,6 +12,7 @@ from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.constants import SHAPPELA_TIMESTAMP
 from rotkehlchen.constants.assets import A_ETH2
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import (
     EventDirection,
@@ -320,7 +321,13 @@ class HistoryBaseEntry(AccountingEventMixin, ABC):
         If the combination of type/subtype is invalid return `None`.
         """
         try:
-            return EVENT_CATEGORY_MAPPINGS[self.event_type][self.event_subtype].direction
+            category_mapping = EVENT_CATEGORY_MAPPINGS[self.event_type][self.event_subtype]
+            if EXCHANGE in category_mapping and self.location in ALL_SUPPORTED_EXCHANGES:
+                return category_mapping[EXCHANGE].direction
+
+            # else
+            return category_mapping[DEFAULT].direction
+
         except KeyError:
             return None
 

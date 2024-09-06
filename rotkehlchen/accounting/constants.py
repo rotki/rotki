@@ -3,89 +3,108 @@ from typing import Final
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.history.events.structures.types import (
-    EventCategory,
-    EventCategoryDetails,
-    HistoryEventSubType,
-    HistoryEventType,
+                                                         EventCategory,
+                                                         EventCategoryDetails,
+                                                         HistoryEventSubType,
+                                                         HistoryEventType,
 )
 
-FREE_PNL_EVENTS_LIMIT = 1000
-FREE_REPORTS_LOOKUP_LIMIT = 20
+FREE_PNL_EVENTS_LIMIT: Final = 1000
+FREE_REPORTS_LOOKUP_LIMIT: Final = 20
 DEFAULT: Final = 'default'
+EXCHANGE: Final = 'exchange'
 
 EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mapped to their event category  # noqa: E501
     HistoryEventType.INFORMATIONAL: {
-        HistoryEventSubType.NONE: EventCategory.INFORMATIONAL,
-        HistoryEventSubType.GOVERNANCE: EventCategory.GOVERNANCE,
-        HistoryEventSubType.REMOVE_ASSET: EventCategory.INFORMATIONAL,
-        HistoryEventSubType.PLACE_ORDER: EventCategory.PLACE_ORDER,
-        HistoryEventSubType.CREATE: EventCategory.CREATE_PROJECT,
-        HistoryEventSubType.UPDATE: EventCategory.UPDATE_PROJECT,
-        HistoryEventSubType.APPLY: EventCategory.APPLY,
-        HistoryEventSubType.APPROVE: EventCategory.APPROVAL,
-        HistoryEventSubType.ATTEST: EventCategory.ATTEST,
-    }, HistoryEventType.RECEIVE: {
-        HistoryEventSubType.REWARD: EventCategory.CLAIM_REWARD,
-        HistoryEventSubType.RECEIVE_WRAPPED: EventCategory.RECEIVE,
-        HistoryEventSubType.GENERATE_DEBT: EventCategory.BORROW,
-        HistoryEventSubType.RETURN_WRAPPED: EventCategory.RECEIVE,
-        HistoryEventSubType.AIRDROP: EventCategory.AIRDROP,
-        HistoryEventSubType.DONATE: EventCategory.RECEIVE_DONATION,
-        HistoryEventSubType.NONE: EventCategory.RECEIVE,
-        HistoryEventSubType.LIQUIDATE: EventCategory.LIQUIDATION_REWARD,
-        HistoryEventSubType.PAYMENT: EventCategory.RECEIVE_PAYMENT,
-        HistoryEventSubType.GRANT: EventCategory.RECEIVE_GRANT,
-        HistoryEventSubType.INTEREST: EventCategory.INTEREST,
-    }, HistoryEventType.DEPOSIT: {
-        HistoryEventSubType.DEPOSIT_ASSET: EventCategory.DEPOSIT,
-        HistoryEventSubType.BRIDGE: EventCategory.BRIDGE_DEPOSIT,
-        HistoryEventSubType.PLACE_ORDER: EventCategory.DEPOSIT,
-        HistoryEventSubType.FEE: EventCategory.FEE,
-    }, HistoryEventType.SPEND: {
-        HistoryEventSubType.RETURN_WRAPPED: EventCategory.SEND,
-        HistoryEventSubType.LIQUIDATE: EventCategory.LIQUIDATION_LOSS,
-        HistoryEventSubType.PAYBACK_DEBT: EventCategory.REPAY,
-        HistoryEventSubType.FEE: EventCategory.FEE,
-        HistoryEventSubType.DONATE: EventCategory.DONATE,
-        HistoryEventSubType.PAYMENT: EventCategory.PAY,
-        HistoryEventSubType.NONE: EventCategory.SEND,
-    }, HistoryEventType.WITHDRAWAL: {
-        HistoryEventSubType.REMOVE_ASSET: EventCategory.WITHDRAW,
-        HistoryEventSubType.BRIDGE: EventCategory.BRIDGE_WITHDRAWAL,
-        HistoryEventSubType.CANCEL_ORDER: EventCategory.CANCEL_ORDER,
-        HistoryEventSubType.REFUND: EventCategory.REFUND,
-        HistoryEventSubType.GENERATE_DEBT: EventCategory.BORROW,
-        HistoryEventSubType.FEE: EventCategory.FEE,
-    }, HistoryEventType.TRADE: {
-        HistoryEventSubType.SPEND: EventCategory.SWAP_OUT,
-        HistoryEventSubType.RECEIVE: EventCategory.SWAP_IN,
-        HistoryEventSubType.NONE: EventCategory.INFORMATIONAL,
-        HistoryEventSubType.FEE: EventCategory.FEE,
-    }, HistoryEventType.RENEW: {
-        HistoryEventSubType.NONE: EventCategory.RENEW,
-    }, HistoryEventType.STAKING: {
-        HistoryEventSubType.DEPOSIT_ASSET: EventCategory.STAKE_DEPOSIT,
-        HistoryEventSubType.REWARD: EventCategory.STAKING_REWARD,
-        HistoryEventSubType.REMOVE_ASSET: EventCategory.UNSTAKE,
-        HistoryEventSubType.BLOCK_PRODUCTION: EventCategory.CREATE_BLOCK,
-        HistoryEventSubType.MEV_REWARD: EventCategory.MEV_REWARD,
-        HistoryEventSubType.FEE: EventCategory.FEE,
-    }, HistoryEventType.TRANSFER: {
-        HistoryEventSubType.DONATE: EventCategory.DONATE,
-        HistoryEventSubType.NONE: EventCategory.TRANSFER,
-        HistoryEventSubType.FEE: EventCategory.FEE,
-    }, HistoryEventType.ADJUSTMENT: {
-        HistoryEventSubType.SPEND: EventCategory.SEND,
-        HistoryEventSubType.RECEIVE: EventCategory.RECEIVE,
-    }, HistoryEventType.DEPLOY: {
-        HistoryEventSubType.NONE: EventCategory.DEPLOY,
-        HistoryEventSubType.SPEND: EventCategory.DEPLOY_WITH_SPEND,
-        HistoryEventSubType.NFT: EventCategory.DEPLOY,
-    }, HistoryEventType.MIGRATE: {
-        HistoryEventSubType.SPEND: EventCategory.MIGRATE_OUT,
-        HistoryEventSubType.RECEIVE: EventCategory.MIGRATE_IN,
-    }, HistoryEventType.FAIL: {
-        HistoryEventSubType.FEE: EventCategory.FAIL,
+        HistoryEventSubType.NONE: {DEFAULT: EventCategory.INFORMATIONAL},
+        HistoryEventSubType.GOVERNANCE: {DEFAULT: EventCategory.GOVERNANCE},
+        HistoryEventSubType.REMOVE_ASSET: {DEFAULT: EventCategory.INFORMATIONAL},
+        HistoryEventSubType.PLACE_ORDER: {DEFAULT: EventCategory.PLACE_ORDER},
+        HistoryEventSubType.CREATE: {DEFAULT: EventCategory.CREATE_PROJECT},
+        HistoryEventSubType.UPDATE: {DEFAULT: EventCategory.UPDATE_PROJECT},
+        HistoryEventSubType.APPLY: {DEFAULT: EventCategory.APPLY},
+        HistoryEventSubType.APPROVE: {DEFAULT: EventCategory.APPROVAL},
+        HistoryEventSubType.ATTEST: {DEFAULT: EventCategory.ATTEST},
+    },
+    HistoryEventType.RECEIVE: {
+        HistoryEventSubType.REWARD: {DEFAULT: EventCategory.CLAIM_REWARD},
+        HistoryEventSubType.RECEIVE_WRAPPED: {DEFAULT: EventCategory.RECEIVE},
+        HistoryEventSubType.GENERATE_DEBT: {DEFAULT: EventCategory.BORROW},
+        HistoryEventSubType.RETURN_WRAPPED: {DEFAULT: EventCategory.RECEIVE},
+        HistoryEventSubType.AIRDROP: {DEFAULT: EventCategory.AIRDROP},
+        HistoryEventSubType.DONATE: {DEFAULT: EventCategory.RECEIVE_DONATION},
+        HistoryEventSubType.NONE: {DEFAULT: EventCategory.RECEIVE},
+        HistoryEventSubType.LIQUIDATE: {DEFAULT: EventCategory.LIQUIDATION_REWARD},
+        HistoryEventSubType.PAYMENT: {DEFAULT: EventCategory.RECEIVE_PAYMENT},
+        HistoryEventSubType.GRANT: {DEFAULT: EventCategory.RECEIVE_GRANT},
+        HistoryEventSubType.INTEREST: {DEFAULT: EventCategory.INTEREST},
+    },
+    HistoryEventType.DEPOSIT: {
+        HistoryEventSubType.DEPOSIT_ASSET: {
+            DEFAULT: EventCategory.DEPOSIT,
+            EXCHANGE: EventCategory.CEX_DEPOSIT,
+        },
+        HistoryEventSubType.BRIDGE: {DEFAULT: EventCategory.BRIDGE_DEPOSIT},
+        HistoryEventSubType.PLACE_ORDER: {DEFAULT: EventCategory.DEPOSIT},
+        HistoryEventSubType.FEE: {DEFAULT: EventCategory.FEE},
+    },
+    HistoryEventType.SPEND: {
+        HistoryEventSubType.RETURN_WRAPPED: {DEFAULT: EventCategory.SEND},
+        HistoryEventSubType.LIQUIDATE: {DEFAULT: EventCategory.LIQUIDATION_LOSS},
+        HistoryEventSubType.PAYBACK_DEBT: {DEFAULT: EventCategory.REPAY},
+        HistoryEventSubType.FEE: {DEFAULT: EventCategory.FEE},
+        HistoryEventSubType.DONATE: {DEFAULT: EventCategory.DONATE},
+        HistoryEventSubType.PAYMENT: {DEFAULT: EventCategory.PAY},
+        HistoryEventSubType.NONE: {DEFAULT: EventCategory.SEND},
+    },
+    HistoryEventType.WITHDRAWAL: {
+        HistoryEventSubType.REMOVE_ASSET: {
+            DEFAULT: EventCategory.WITHDRAW,
+            EXCHANGE: EventCategory.CEX_WITHDRAWAL,
+        },
+        HistoryEventSubType.BRIDGE: {DEFAULT: EventCategory.BRIDGE_WITHDRAWAL},
+        HistoryEventSubType.CANCEL_ORDER: {DEFAULT: EventCategory.CANCEL_ORDER},
+        HistoryEventSubType.REFUND: {DEFAULT: EventCategory.REFUND},
+        HistoryEventSubType.GENERATE_DEBT: {DEFAULT: EventCategory.BORROW},
+        HistoryEventSubType.FEE: {DEFAULT: EventCategory.FEE},
+    },
+    HistoryEventType.TRADE: {
+        HistoryEventSubType.SPEND: {DEFAULT: EventCategory.SWAP_OUT},
+        HistoryEventSubType.RECEIVE: {DEFAULT: EventCategory.SWAP_IN},
+        HistoryEventSubType.NONE: {DEFAULT: EventCategory.INFORMATIONAL},
+        HistoryEventSubType.FEE: {DEFAULT: EventCategory.FEE},
+    },
+    HistoryEventType.RENEW: {
+        HistoryEventSubType.NONE: {DEFAULT: EventCategory.RENEW},
+    },
+    HistoryEventType.STAKING: {
+        HistoryEventSubType.DEPOSIT_ASSET: {DEFAULT: EventCategory.STAKE_DEPOSIT},
+        HistoryEventSubType.REWARD: {DEFAULT: EventCategory.STAKING_REWARD},
+        HistoryEventSubType.REMOVE_ASSET: {DEFAULT: EventCategory.UNSTAKE},
+        HistoryEventSubType.BLOCK_PRODUCTION: {DEFAULT: EventCategory.CREATE_BLOCK},
+        HistoryEventSubType.MEV_REWARD: {DEFAULT: EventCategory.MEV_REWARD},
+        HistoryEventSubType.FEE: {DEFAULT: EventCategory.FEE},
+    },
+    HistoryEventType.TRANSFER: {
+        HistoryEventSubType.DONATE: {DEFAULT: EventCategory.DONATE},
+        HistoryEventSubType.NONE: {DEFAULT: EventCategory.TRANSFER},
+        HistoryEventSubType.FEE: {DEFAULT: EventCategory.FEE},
+    },
+    HistoryEventType.ADJUSTMENT: {
+        HistoryEventSubType.SPEND: {DEFAULT: EventCategory.SEND},
+        HistoryEventSubType.RECEIVE: {DEFAULT: EventCategory.RECEIVE},
+    },
+    HistoryEventType.DEPLOY: {
+        HistoryEventSubType.NONE: {DEFAULT: EventCategory.DEPLOY},
+        HistoryEventSubType.SPEND: {DEFAULT: EventCategory.DEPLOY_WITH_SPEND},
+        HistoryEventSubType.NFT: {DEFAULT: EventCategory.DEPLOY},
+    },
+    HistoryEventType.MIGRATE: {
+        HistoryEventSubType.SPEND: {DEFAULT: EventCategory.MIGRATE_OUT},
+        HistoryEventSubType.RECEIVE: {DEFAULT: EventCategory.MIGRATE_IN},
+    },
+    HistoryEventType.FAIL: {
+        HistoryEventSubType.FEE: {DEFAULT: EventCategory.FAIL},
     },
 }
 
@@ -126,6 +145,13 @@ EVENT_CATEGORY_DETAILS = {
         color='success',
     )}, EventCategory.WITHDRAW: {DEFAULT: EventCategoryDetails(
         label='withdraw',
+        icon='download-line',
+    )}, EventCategory.CEX_DEPOSIT: {DEFAULT: EventCategoryDetails(
+        label='exchange deposit',
+        icon='upload-line',
+        color='success',
+    )}, EventCategory.CEX_WITHDRAWAL: {DEFAULT: EventCategoryDetails(
+        label='exchange withdraw',
         icon='download-line',
     )}, EventCategory.AIRDROP: {DEFAULT: EventCategoryDetails(
         label='airdrop',

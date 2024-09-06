@@ -12,6 +12,11 @@ const RuiIcon = z.string().transform((icon) => {
   return 'question-line' satisfies RuiIcons;
 });
 
+const HistoryEventTypeGlobalMapping = z.record(z.record(z.object({
+  default: z.string(),
+  exchange: z.string().optional(),
+})));
+
 const HistoryEventCategoryDetail = z.object({
   label: z.string(),
   icon: RuiIcon,
@@ -37,7 +42,7 @@ export const HistoryEventCategoryMapping = z.record(HistoryEventCategory);
 export type HistoryEventCategoryMapping = z.infer<typeof HistoryEventCategoryMapping>;
 
 export const HistoryEventTypeData = z.object({
-  globalMappings: HistoryEventTypeMapping,
+  globalMappings: HistoryEventTypeGlobalMapping,
   eventCategoryDetails: HistoryEventCategoryMapping,
   accountingEventsIcons: z.record(RuiIcon),
   entryTypeMappings: z.record(z.nativeEnum(HistoryEventEntryType), z.record(HistoryEventTypeMapping)),
