@@ -64,26 +64,27 @@ def _search_only_assets_levenstein(
                 continue
 
             lev_dist_min = 100
-            if entry[1] is not None:
-                lev_dist_min = min(
-                    lev_dist_min,
-                    levenshtein(filter_query.substring_search, entry[1].casefold()),
-                )
-            if entry[2] is not None:
-                lev_dist_min = min(
-                    lev_dist_min,
-                    levenshtein(filter_query.substring_search, entry[2].casefold()),
-                )
-            if treat_eth2_as_eth is True and entry[0] in (A_ETH.identifier, A_ETH2.identifier):
-                if found_eth is False:
-                    search_result.append((lev_dist_min, {
-                        'identifier': 'ETH',
-                        'name': 'Ethereum',
-                        'symbol': 'ETH',
-                        'asset_type': AssetType.OWN_CHAIN.serialize(),
-                    }))
-                    found_eth = True
-                continue
+            if filter_query.substring_search is not None:  # we search for address only
+                if entry[1] is not None:
+                    lev_dist_min = min(
+                        lev_dist_min,
+                        levenshtein(filter_query.substring_search, entry[1].casefold()),
+                    )
+                if entry[2] is not None:
+                    lev_dist_min = min(
+                        lev_dist_min,
+                        levenshtein(filter_query.substring_search, entry[2].casefold()),
+                    )
+                if treat_eth2_as_eth is True and entry[0] in (A_ETH.identifier, A_ETH2.identifier):
+                    if found_eth is False:
+                        search_result.append((lev_dist_min, {
+                            'identifier': 'ETH',
+                            'name': 'Ethereum',
+                            'symbol': 'ETH',
+                            'asset_type': AssetType.OWN_CHAIN.serialize(),
+                        }))
+                        found_eth = True
+                    continue
 
             entry_info = {
                 'identifier': entry[0],

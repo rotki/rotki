@@ -3380,12 +3380,17 @@ Search for assets(Levenshtein)
       }
 
    :reqjson int limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
-   :reqjson string value: A string to be used to search the assets. Required.
+   :reqjson string value: A string to be used to search the assets. Optional.
+   :reqjson string address: An address to be used to search for. Optional.
    :reqjson int[optional] chain_id: Chain id of a supported EVM chain used to filter the result
    :reqjson list[string][optional] owner_addresses: A list of evm addresses. If provided, only nfts owned by these addresses will be returned.
    :reqjson string[optional] name: Optional nfts name to filter by.
    :reqjson string[optional] collection_name: Optional nfts collection_name to filter by.
    :reqjson string[optional] ignored_assets_handling: A flag to specify how to handle ignored assets. Possible values are `'none'`, `'exclude'` and `'show_only'`. You can write 'none' in order to not handle them in any special way (meaning to show them too). This is the default. You can write 'exclude' if you want to exclude them from the result. And you can write 'show_only' if you want to only see the ignored assets in the result.
+
+   .. note::
+      Either value or address need to be provided when calling this endpoint.
+
 
    **Example Response**:
 
