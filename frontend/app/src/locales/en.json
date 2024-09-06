@@ -3629,8 +3629,7 @@
     "csv_import_result": {
       "title": "CSV Import Result: {sourceName}",
       "summary": "Imported {imported}/{total} entries successfully.",
-      "errors": "The following errors occurred during import:",
-      "rows": "Rows: {rows}"
+      "errors": "The following errors occurred during import:"
     }
   },
   "notification_popup": {
