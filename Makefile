@@ -3,14 +3,14 @@ TOOLS_LINT_PATH = tools/
 ALL_LINT_PATHS = $(COMMON_LINT_PATHS) $(TOOLS_LINT_PATH)
 
 lint:
-	ruff check .
+	ruff check $(ALL_LINT_PATHS)
 	double-indent --dry-run $(ALL_LINT_PATHS)
 	mypy $(COMMON_LINT_PATHS) --install-types --non-interactive
 	pylint --rcfile .pylint.rc $(ALL_LINT_PATHS)
 
 
 format:
-	ruff check . --fix
+	ruff check $(ALL_LINT_PATHS) --fix
 	double-indent $(ALL_LINT_PATHS)
 
 
