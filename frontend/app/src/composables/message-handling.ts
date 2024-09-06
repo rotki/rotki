@@ -236,14 +236,33 @@ export function useMessageHandling(): UseMessageHandling {
       },
     };
   };
-//need to update it
-  const handleCsvImportError = (data: CsvImportResult): Notification => ({
-    title: t('notification_messages.csv_import_error.title'),
-    message: t('notification_messages.csv_import_error.message', { error: data.error }),
-    display: true,
-    severity: Severity.ERROR,
-    priority: Priority.HIGH,
-  });
+
+  const handleCsvImportResult = (data: CsvImportResult): Notification => {
+    const { sourceName, totalEntries, importedEntries, messages } = data;
+    const title = t('notification_messages.csv_import_result.title', { sourceName });
+    let messageBody = t('notification_messages.csv_import_result.summary', {
+      imported: importedEntries,
+      total: totalEntries,
+    });
+  
+    if (messages.length > 0) {
+      messageBody = `${messageBody}\n\n${t('notification_messages.csv_import_result.errors')}`;
+      messages.forEach((error, index) => {
+        const rowInfo = error.rows
+          ? t('notification_messages.csv_import_result.rows', { rows: error.rows.join(', ') })
+          : '';
+        messageBody = `${messageBody}\n${index + 1}. ${error.msg} ${rowInfo}`;
+      });
+    }
+  
+    return {
+      title,
+      message: messageBody,
+      display: true,
+      severity: importedEntries < totalEntries ? Severity.WARNING : Severity.INFO,
+      priority: Priority.HIGH,
+    };
+  };
 
   const handleMessage = async (data: string): Promise<void> => {
     const message: WebsocketMessage = WebsocketMessage.parse(camelCaseTransformer(JSON.parse(data)));
@@ -321,7 +340,7 @@ export function useMessageHandling(): UseMessageHandling {
       setProtocolCacheStatus(message.data);
     }
     else if (type === SocketMessageType.CSV_IMPORT_RESULT) {
-      notifications.push(handleCsvImportError(message.data));
+      notifications.push(handleCsvImportResult(message.data));
     }
     else {
       logger.warn(`Unsupported socket message received: '${type}'`);

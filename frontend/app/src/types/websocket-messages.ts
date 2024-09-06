@@ -157,7 +157,14 @@ export const ProtocolCacheUpdatesData = EvmUnDecodedTransactionsData.extend({
 export type ProtocolCacheUpdatesData = z.infer<typeof ProtocolCacheUpdatesData>;
 
 export const CsvImportResult = z.object({
-  error: z.string(),
+  sourceName: z.string(),
+  totalEntries: z.number(),
+  importedEntries: z.number(),
+  messages: z.array(z.object({
+    is_error: z.boolean(),
+    msg: z.string(),
+    rows: z.array(z.number()).optional(),
+  })),
 });
 
 export type CsvImportResult = z.infer<typeof CsvImportResult>;
