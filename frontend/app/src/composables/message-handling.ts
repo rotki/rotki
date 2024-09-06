@@ -146,7 +146,6 @@ export function useMessageHandling(): UseMessageHandling {
       service: toHumanReadable(service, 'capitalize'),
       location: toHumanReadable(locationName, 'capitalize'),
     };
-
     const theGraphWarning = service === 'thegraph';
 
     return {
@@ -206,19 +205,16 @@ export function useMessageHandling(): UseMessageHandling {
       const relativeTime = eventTime.from(now);
       title = `"${name}" ${relativeTime}`;
     }
-
     let message = '';
     if (data.address && data.blockchain) {
       const address = get(addressNameSelector(data.address)) || data.address;
       message += `${t('common.account')}: ${address} (${get(getChainName(data.blockchain))}) \n`;
     }
-
     if (data.counterparty)
       message += `${t('common.counterparty')}: ${data.counterparty} \n`;
 
     if (data.description)
       message += data.description;
-
     return {
       title,
       message,
@@ -244,7 +240,6 @@ export function useMessageHandling(): UseMessageHandling {
       imported: importedEntries,
       total: totalEntries,
     });
-  
     if (messages.length > 0) {
       messageBody = `${messageBody}\n\n${t('notification_messages.csv_import_result.errors')}`;
       messages.forEach((error, index) => {
@@ -254,7 +249,6 @@ export function useMessageHandling(): UseMessageHandling {
         messageBody = `${messageBody}\n${index + 1}. ${error.msg} ${rowInfo}`;
       });
     }
-  
     return {
       title,
       message: messageBody,
@@ -267,7 +261,6 @@ export function useMessageHandling(): UseMessageHandling {
   const handleMessage = async (data: string): Promise<void> => {
     const message: WebsocketMessage = WebsocketMessage.parse(camelCaseTransformer(JSON.parse(data)));
     const type = message.type;
-
     const notifications: Notification[] = [];
 
     const addNotification = (notification: Notification | null): void => {
@@ -373,14 +366,11 @@ export function useMessageHandling(): UseMessageHandling {
     }
     notifications.forEach(notify);
   };
-
   const consume = async (): Promise<void> => {
     if (isRunning)
       return;
-
     isRunning = true;
     const title = t('actions.notifications.consume.message_title');
-
     try {
       const messages = await backoff(3, () => consumeMessages(), 10000);
       const existing = get(notifications).map(({ message }) => message);
@@ -403,7 +393,6 @@ export function useMessageHandling(): UseMessageHandling {
       isRunning = false;
     }
   };
-
   return {
     handleMessage,
     consume,
