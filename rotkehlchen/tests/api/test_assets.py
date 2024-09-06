@@ -837,15 +837,17 @@ def test_search_assets(rotkehlchen_api_server):
 def test_search_assets_with_levenshtein(rotkehlchen_api_server):
     """Test that searching for assets using a keyword works(levenshtein approach)."""
     globaldb = GlobalDBHandler()
+    # search by address
     response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'assetssearchlevenshteinresource',
-        ),
-        json={
-            'value': 'Bitcoin',
-            'limit': 50,
-        },
+        api_url_for(rotkehlchen_api_server, 'assetssearchlevenshteinresource'),
+        json={'address': '0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83', 'limit': 10},
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert len(result) == 1 and result[0]['identifier'] == 'eip155:100/erc20:0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83'  # noqa: E501  # USDC on gnosis
+
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'assetssearchlevenshteinresource'),
+        json={'value': 'Bitcoin', 'limit': 50},
     )
     result = assert_proper_sync_response_with_result(response)
     assert len(result) <= 50
@@ -873,14 +875,8 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
         asset_type=AssetType.OWN_CHAIN,
     ))
     response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'assetssearchlevenshteinresource',
-        ),
-        json={
-            'value': 'ETH',
-            'limit': 50,
-        },
+        api_url_for(rotkehlchen_api_server, 'assetssearchlevenshteinresource'),
+        json={'value': 'ETH', 'limit': 50},
     )
     result = assert_proper_sync_response_with_result(response)
     assert len(result) <= 50
@@ -898,14 +894,8 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
         db.set_settings(cursor, ModifiableDBSettings(treat_eth2_as_eth=True))
 
     response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'assetssearchlevenshteinresource',
-        ),
-        json={
-            'value': 'ETH',
-            'limit': 50,
-        },
+        api_url_for(rotkehlchen_api_server, 'assetssearchlevenshteinresource'),
+        json={'value': 'ETH', 'limit': 50},
     )
     result = assert_proper_sync_response_with_result(response)
     assert len(result) <= 50
@@ -916,33 +906,20 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
 
     # check that searching for a non-existent asset returns nothing
     response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'assetssearchlevenshteinresource',
-        ),
-        json={
-            'value': 'idontexist',
-            'limit': 50,
-        },
+        api_url_for(rotkehlchen_api_server, 'assetssearchlevenshteinresource'),
+        json={'value': 'idontexist', 'limit': 50},
     )
     result = assert_proper_sync_response_with_result(response)
     assert len(result) == 0
 
     # check that using evm_chain filter works.
     response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'assetssearchlevenshteinresource',
-        ),
-        json={
-            'value': 'dai',
-            'limit': 50,
-            'evm_chain': 'ethereum',
-        },
+        api_url_for(rotkehlchen_api_server, 'assetssearchlevenshteinresource'),
+        json={'value': 'dai', 'limit': 50, 'evm_chain': 'ethereum'},
     )
     result = assert_proper_sync_response_with_result(response)
     assert 50 >= len(result) > 10
-    assert all(entry['evm_chain'] == 'ethereum' and entry['asset_type'] != 'custom asset' and 'custom_asset_type' not in entry for entry in result)  # noqa: E501
+    assert all(entry['evm_chain'] == 'ethereum' and entry['asset_type'] != 'custom asset' and 'custom_asset_type' not in entry for entry in result if 'evm_chain' in entry)  # noqa: E501
 
     assert_substring_in_search_result(result, 'dai')
     # check that Dai(DAI) appears at the top of result.
@@ -963,14 +940,8 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
         custom_asset_type='random',
     ))
     response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'assetssearchlevenshteinresource',
-        ),
-        json={
-            'value': 'my custom',
-            'limit': 50,
-        },
+        api_url_for(rotkehlchen_api_server, 'assetssearchlevenshteinresource'),
+        json={'value': 'my custom', 'limit': 50},
     )
     result = assert_proper_sync_response_with_result(response)
     assert_substring_in_search_result(result, 'my custom')
@@ -978,17 +949,18 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
 
     # check that using an unsupported evm_chain fails
     response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'assetssearchlevenshteinresource',
-        ),
-        json={
-            'value': 'dai',
-            'limit': 50,
-            'evm_chain': 'charlesfarm',
-        },
+        api_url_for(rotkehlchen_api_server, 'assetssearchlevenshteinresource'),
+        json={'value': 'dai', 'limit': 50, 'evm_chain': 'charlesfarm'},
     )
     assert_error_response(response, contained_in_msg='Failed to deserialize evm chain value charlesfarm')  # noqa: E501
+
+    # check that filtering by chain does include assets without chain
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server, 'assetssearchlevenshteinresource'),
+        json={'value': 'eth', 'limit': 50, 'evm_chain': 'optimism'},
+    )
+    result = assert_proper_sync_response_with_result(response)
+    assert 'ETH' in {x['identifier'] for x in result}
 
 
 def test_search_nfts_with_levenshtein(rotkehlchen_api_server):
