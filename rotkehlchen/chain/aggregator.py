@@ -51,6 +51,9 @@ from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
 from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
+from rotkehlchen.chain.optimism.modules.extrafi.balances import (
+    ExtrafiBalances as ExtrafiBalancesOp,
+)
 from rotkehlchen.chain.optimism.modules.gearbox.balances import (
     GearboxBalances as GearboxBalancesOptimism,
 )
@@ -206,7 +209,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         BlurBalances,
         GearboxBalances,
     ),
-    ChainID.OPTIMISM: (VelodromeBalances, HopBalances, GearboxBalancesOptimism),
+    ChainID.OPTIMISM: (VelodromeBalances, HopBalances, GearboxBalancesOptimism, ExtrafiBalancesOp),
     ChainID.BASE: (Compoundv3Balances, AerodromeBalances, HopBalances),
     ChainID.ARBITRUM_ONE: (Compoundv3Balances, GmxBalances, ThegraphBalancesArbitrumOne, HopBalances, GearboxBalancesArbitrumOne),  # noqa: E501
     ChainID.POLYGON_POS: (Compoundv3Balances, HopBalances),
