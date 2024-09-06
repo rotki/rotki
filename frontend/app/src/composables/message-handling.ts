@@ -236,8 +236,8 @@ export function useMessageHandling(): UseMessageHandling {
       },
     };
   };
-
-  const handleCsvImportError = (data: CsvImportError): Notification => ({
+//need to update it
+  const handleCsvImportError = (data: CsvImportResult): Notification => ({
     title: t('notification_messages.csv_import_error.title'),
     message: t('notification_messages.csv_import_error.message', { error: data.error }),
     display: true,
@@ -320,7 +320,7 @@ export function useMessageHandling(): UseMessageHandling {
     else if (type === SocketMessageType.PROTOCOL_CACHE_UPDATES) {
       setProtocolCacheStatus(message.data);
     }
-    else if (type === SocketMessageType.CSV_IMPORT_ERROR) {
+    else if (type === SocketMessageType.CSV_IMPORT_RESULT) {
       notifications.push(handleCsvImportError(message.data));
     }
     else {

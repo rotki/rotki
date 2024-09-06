@@ -16,7 +16,6 @@ const uploaded = ref(false);
 const errorMessage = ref('');
 const formatHelp = ref<boolean>(false);
 const file = ref<File>();
-const importResult = ref();
 
 const { t } = useI18n();
 const { getPath } = useInterop();
@@ -65,8 +64,10 @@ async function uploadPackaged(file: string) {
       title: t('file_upload.task.title', { source: sourceVal }),
       source: sourceVal,
     };
-    const { result } = await awaitTask<any, TaskMeta>(taskId, taskType, taskMeta, true);
-      if (result)
+
+    const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
+
+    if (result)
       set(uploaded, true);
   }
   catch (error: any) {
@@ -97,38 +98,15 @@ async function uploadFile() {
           title: t('file_upload.task.title', { source: get(source) }),
           source: get(source),
         };
-        const { result } = await awaitTask<any, TaskMeta>(taskId, taskType, taskMeta);
+        const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta);
 
-        handleImportResult(result);
+        if (result)
+          set(uploaded, true);
       }
       catch (error: any) {
         if (!isTaskCancelled(error))
           set(errorMessage, error.message);
       }
-    }
-  }
-}
-
-function handleImportResult(result: any) {
-  if (result && typeof result === 'object') {
-    set(importResult, {
-      totalEntries: result.total_entries,
-      importedEntries: result.imported_entries,
-      messages: result.messages.map((msg: any) => ({
-        isError: msg.is_error,
-        msg: msg.msg,
-        rows: msg.rows,
-      })),
-    });
-
-    if (result.imported_entries === result.total_entries) {
-      set(uploaded, true);
-    } else {
-      const errorMessages = result.messages
-        .filter((msg: any) => msg.is_error)
-        .map((msg: any) => `${msg.msg} (Rows: ${msg.rows.join(', ')})`)
-        .join('\n');
-      set(errorMessage, errorMessages);
     }
   }
 }
@@ -154,7 +132,6 @@ const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
         :loading="loading"
         :uploaded="uploaded"
         :source="source"
-        :import-result="importResult"
         @update:uploaded="uploaded = $event"
       />
       <RuiSwitch
@@ -213,6 +190,7 @@ const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
     <DateFormatHelp v-model="formatHelp" />
   </div>
 </template>
+
 <style module lang="scss">
 .image {
   padding: 10px;

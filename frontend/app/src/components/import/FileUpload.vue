@@ -9,22 +9,12 @@ const props = withDefaults(
     fileFilter?: string;
     uploaded?: boolean;
     errorMessage?: string;
-    importResult?: {
-      totalEntries: number;
-      importedEntries: number;
-      messages: Array<{
-        isError: boolean;
-        msg: string;
-        rows: number[];
-      }>;
-    };
   }>(),
   {
     loading: false,
     fileFilter: '.csv',
     uploaded: false,
     errorMessage: '',
-    importResult: undefined,
   },
 );
 
@@ -32,7 +22,7 @@ const emit = defineEmits<{
   (e: 'update:uploaded', uploaded: boolean): void;
   (e: 'update:error-message', message: string): void;
 }>();
-const { source, fileFilter, uploaded, errorMessage, importResult } = toRefs(props);
+const { source, fileFilter, uploaded, errorMessage } = toRefs(props);
 
 const file = defineModel<File | undefined>({ required: true });
 
@@ -41,20 +31,6 @@ const wrapper = ref<HTMLDivElement>();
 const error = ref('');
 const select = ref<HTMLInputElement>();
 const { t } = useI18n();
-
-watch(importResult, (newResult) => {
-  if (newResult) {
-    if (newResult.importedEntries === newResult.totalEntries) {
-      updateUploaded(true);
-    } else {
-      const errorMessages = newResult.messages
-        .filter(msg => msg.isError)
-        .map(msg => `${msg.msg} (Rows: ${msg.rows.join(', ')})`)
-        .join('\n');
-      onError(errorMessages);
-    }
-  }
-});
 
 function isValidFile(file: File, acceptString: string) {
   // Extract the file extension
@@ -279,34 +255,26 @@ function formatFileFilter(fileFilter: string) {
           </i18n-t>
 
           <div class="text-body-2 text-center font-normal">
-        <div
-          v-if="uploaded && (!importResult || importResult.importedEntries === importResult.totalEntries)"
-          class="text-rui-success"
-        >
-          {{ t('file_upload.import_complete') }}
-        </div>
-        <div
-          v-else-if="error || errorMessage || (importResult && importResult.importedEntries !== importResult.totalEntries)"
-          class="text-rui-error"
-        >
-          <div v-if="error || errorMessage">{{ error || errorMessage }}</div>
-          <div v-else-if="importResult">
-            {{ t('file_upload.import_partial', { imported: importResult.importedEntries, total: importResult.totalEntries }) }}
-            <ul class="text-left mt-2">
-              <li v-for="(msg, index) in importResult.messages.filter(m => m.isError)" :key="index">
-                {{ msg.msg }} ({{ t('file_upload.rows') }}: {{ msg.rows.join(', ') }})
-              </li>
-            </ul>
+            <div
+              v-if="uploaded"
+              class="text-rui-success"
+            >
+              {{ t('file_upload.import_complete') }}
+            </div>
+            <div
+              v-else-if="error"
+              class="text-rui-error"
+            >
+              {{ error }}
+            </div>
+            <div
+              v-else
+              class="uppercase text-rui-text-secondary"
+            >
+              {{ formatFileFilter(fileFilter) }}
+            </div>
           </div>
         </div>
-        <div
-          v-else
-          class="uppercase text-rui-text-secondary"
-        >
-          {{ formatFileFilter(fileFilter) }}
-        </div>
-      </div>
-    </div>
 
         <input
           ref="select"
