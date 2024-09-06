@@ -4791,9 +4791,10 @@ class RestAPI:
                 file_path = Path(temp_dir) / FILENAME_HISTORY_EVENTS_CSV
                 try:
                     dict_to_csv_file(
-                        file_path,
-                        serialized_history_events,
-                        headers.keys(),
+                        path=file_path,
+                        dictionary_list=serialized_history_events,
+                        csv_delimiter=settings.csv_export_delimiter,
+                        headers=headers.keys(),
                     )
                     return send_file(
                         path_or_file=file_path,
@@ -4816,9 +4817,10 @@ class RestAPI:
             directory_path.mkdir(parents=True, exist_ok=True)
             file_path = directory_path / FILENAME_HISTORY_EVENTS_CSV
             dict_to_csv_file(
-                file_path,
-                serialized_history_events,
-                headers.keys(),
+                path=file_path,
+                dictionary_list=serialized_history_events,
+                csv_delimiter=settings.csv_export_delimiter,
+                headers=headers.keys(),
             )
         except (CSVWriteError, PermissionError) as e:
             return wrap_in_fail_result(message=str(e), status_code=HTTPStatus.CONFLICT)

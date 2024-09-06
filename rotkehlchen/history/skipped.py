@@ -9,6 +9,7 @@ from rotkehlchen.accounting.export.csv import (
     FILENAME_SKIPPED_EXTERNAL_EVENTS_CSV,
     dict_to_csv_file,
 )
+from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Location
 
@@ -60,7 +61,11 @@ def export_skipped_external_events(rotki: 'Rotkehlchen', directory: Path | None)
         filepath.touch(exist_ok=True)
         newfilepath = filepath
 
-    dict_to_csv_file(path=newfilepath, dictionary_list=data)
+    dict_to_csv_file(
+        path=newfilepath,
+        dictionary_list=data,
+        csv_delimiter=CachedSettings().get_settings().csv_export_delimiter,
+    )
     return Path(newfilepath)
 
 

@@ -54,6 +54,7 @@ class CSVWriteError(Exception):
 def dict_to_csv_file(
         path: Path,
         dictionary_list: list,
+        csv_delimiter: str,
         headers: Collection | None = None,
 ) -> None:
     """Takes a filepath and a list of dictionaries representing the rows and writes them
@@ -68,7 +69,7 @@ def dict_to_csv_file(
         return
 
     with open(path, 'w', newline='', encoding='utf-8') as f:
-        w = DictWriter(f, fieldnames=dictionary_list[0].keys() if headers is None else headers)
+        w = DictWriter(f, fieldnames=dictionary_list[0].keys() if headers is None else headers, delimiter=csv_delimiter)  # noqa: E501
         w.writeheader()
         try:
             for dic in dictionary_list:
@@ -333,8 +334,9 @@ class CSVExporter(CustomizableDateMixin):
         try:
             directory.mkdir(parents=True, exist_ok=True)
             dict_to_csv_file(
-                directory / FILENAME_ALL_CSV,
-                serialized_events,
+                path=directory / FILENAME_ALL_CSV,
+                dictionary_list=serialized_events,
+                csv_delimiter=self.settings.csv_export_delimiter,
             )
         except (CSVWriteError, PermissionError) as e:
             return False, str(e)
