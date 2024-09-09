@@ -2,6 +2,7 @@ import importlib
 import logging
 import operator
 import pkgutil
+import traceback
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Sequence
 from contextlib import suppress
@@ -384,6 +385,7 @@ class EVMTransactionDecoder(ABC):
             else:
                 result = method(context, *mapping_result[1:])
         except (DeserializationError, ConversionError, UnknownAsset, WrongAssetType) as e:
+            log.error(traceback.format_exc())
             self.msg_aggregator.add_error(
                 f'Decoding tx log with index {context.tx_log.log_index} of transaction '
                 f'{context.transaction.tx_hash.hex()} through {method.__name__} failed due to {e!s}')  # noqa: E501

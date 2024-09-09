@@ -80,10 +80,9 @@ class ExtrafiDecoder(DecoderInterface):
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.location_label == user
             ):
-                token = event.asset.resolve_to_evm_token()
-                if token_normalized_value(
-                    token_amount=token_amount,
-                    token=token,
+                if asset_normalized_value(
+                    amount=token_amount,
+                    asset=(asset := event.asset.resolve_to_crypto_asset()),
                 ) != event.balance.amount:
                     continue
 
@@ -91,7 +90,7 @@ class ExtrafiDecoder(DecoderInterface):
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_EXTRAFI
                 event.extra_data = {'reserve_index': hex_or_bytes_to_int(context.tx_log.topics[1])}  # index of the extrafi position. Used to query for balances later  # noqa: E501
-                event.notes = f'Deposit {event.balance.amount} {token.symbol} into Extrafi'
+                event.notes = f'Deposit {event.balance.amount} {asset.symbol} into Extrafi'
                 if on_behalf_of != user:
                     event.notes += f' on behalf of {on_behalf_of}'
 
