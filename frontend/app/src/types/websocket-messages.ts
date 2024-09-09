@@ -161,7 +161,7 @@ export const CsvImportResult = z.object({
   totalEntries: z.number(),
   importedEntries: z.number(),
   messages: z.array(z.object({
-    is_error: z.boolean(),
+    isError: z.boolean(),
     msg: z.string(),
     rows: z.array(z.number()).optional(),
   })),

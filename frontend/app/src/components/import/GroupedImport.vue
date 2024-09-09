@@ -140,6 +140,7 @@ const [DefineDisplay, ReuseDisplay] = createReusableTemplate<{
         text-attr="label"
         hide-details
         return-object
+        auto-select-first
         variant="outlined"
         key-attr="key"
       >

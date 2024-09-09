@@ -1702,8 +1702,6 @@
       "ok": "OK",
       "pull": "Pull",
       "push": "Push",
-      "read_less": "Hide",
-      "read_more": "Show",
       "save": "Save",
       "save_continue": "Save & continue",
       "search": "Search",
@@ -3629,9 +3627,10 @@
       "title": "Balance Snapshot failed"
     },
     "csv_import_result": {
-      "title": "CSV Import Result: {sourceName}",
+      "errors": "The following errors occurred during import:",
+      "rows": "(Rows: {rows})",
       "summary": "Imported {imported}/{total} entries successfully.",
-      "errors": "The following errors occurred during import:"
+      "title": "CSV Import Result: {sourceName}"
     }
   },
   "notification_popup": {
