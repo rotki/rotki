@@ -33,7 +33,8 @@ const { eventGroup, allEvents } = toRefs(props);
 const events = computed<HistoryEventEntry[]>(() => {
   const all = get(allEvents);
   const eventHeader = get(eventGroup);
-  if (all.length === 0) return [eventHeader];
+  if (all.length === 0)
+    return [eventHeader];
   const eventIdentifierHeader = eventHeader.eventIdentifier;
   return all
     .filter(({ eventIdentifier, hidden }) => eventIdentifier === eventIdentifierHeader && !hidden)
@@ -70,27 +71,31 @@ function handleMoreClick() {
   const oldLimit = currentLimit.value;
   if (oldLimit === 0) {
     currentLimit.value = PER_BATCH;
-  } else if (oldLimit >= eventsLength) {
+  }
+  else if (oldLimit >= eventsLength) {
     currentLimit.value = 0;
     scrollToTop();
-  } else {
+  }
+  else {
     currentLimit.value = Math.min(oldLimit + PER_BATCH, eventsLength);
   }
 }
 
 const buttonText = computed(() => {
-  if (currentLimit.value === 0) {
+  if (currentLimit.value === 0)
     return t('transactions.events.view.show', { length: events.value.length });
-  } else if (!hasMoreEvents.value) {
+  else if (!hasMoreEvents.value)
     return t('transactions.events.view.hide');
-  } else {
+  else
     return t('transactions.events.view.load_more', { length: events.value.length - currentLimit.value });
-  }
 });
 </script>
 
 <template>
-  <div ref="containerRef" :class="{ 'pl-[3.125rem]': hasIgnoredEvent }">
+  <div
+    ref="containerRef"
+    :class="{ 'pl-[3.125rem]': hasIgnoredEvent }"
+  >
     <HistoryEventsListTable
       :event-group="eventGroup"
       :events="limitedEvents"
@@ -105,7 +110,7 @@ const buttonText = computed(() => {
       color="primary"
       variant="text"
       class="text-rui-primary font-bold my-2"
-      @click="handleMoreClick"
+      @click="handleMoreClick()"
     >
       {{ buttonText }}
       <template #append>
