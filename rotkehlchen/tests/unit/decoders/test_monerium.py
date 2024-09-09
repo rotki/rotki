@@ -217,3 +217,33 @@ def test_mint_v2_eure(
         notes='Mint 50 EURe',
         counterparty=CPT_MONERIUM,
     )]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0x9c6c56700F4952d45896757ac098968E97695A55']])
+def test_burn_v2_eure_gnosis(
+        gnosis_inquirer: 'GnosisInquirer',
+        gnosis_accounts: list['ChecksumEvmAddress'],
+):
+    evmhash = deserialize_evm_tx_hash(val='0xeaf8521348335bce75863507c48dd48c36ebbd43e2f774524a0d5b3cfa5d594e')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        tx_hash=evmhash,
+    )
+    amount_str = '905.02'
+    expected_events = [
+        EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=27,
+            timestamp=TimestampMS(1725912575000),
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
+            balance=Balance(amount=FVal(amount_str)),
+            location_label=gnosis_accounts[0],
+            notes=f'Burn {amount_str} EURe',
+            counterparty=CPT_MONERIUM,
+        ),
+    ]
+    assert events == expected_events
