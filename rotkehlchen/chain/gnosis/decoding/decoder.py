@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
 from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
+from rotkehlchen.chain.gnosis.modules.monerium.constants import V1_TO_V2_MONERIUM_MAPPINGS
 from rotkehlchen.chain.gnosis.tokens import GNOSIS_MONERIUM_LEGACY_ADDRESSES
 from rotkehlchen.constants.assets import A_XDAI
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -41,6 +42,7 @@ class GnosisTransactionDecoder(EVMTransactionDecoder):
                 address_is_exchange_fn=self._address_is_exchange,
             ),
             addresses_exceptions=dict.fromkeys(GNOSIS_MONERIUM_LEGACY_ADDRESSES, MONERIUM_V2_CONTRACTS_BLOCK),  # noqa: E501
+            exceptions_mappings=V1_TO_V2_MONERIUM_MAPPINGS,
         )
 
     # -- methods that need to be implemented by child classes --

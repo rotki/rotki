@@ -2457,7 +2457,7 @@ def test_monerium_eure_v2(gnosis_inquirer, gnosis_accounts, load_global_caches):
             extra_data={'withdrawal_events_num': 2},
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=2,
+            sequence_index=11,
             timestamp=timestamp,
             location=Location.GNOSIS,
             event_type=HistoryEventType.WITHDRAWAL,

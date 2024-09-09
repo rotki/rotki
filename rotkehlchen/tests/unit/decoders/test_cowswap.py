@@ -8,6 +8,7 @@ from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.cowswap.constants import CPT_COWSWAP
 from rotkehlchen.chain.evm.decoding.cowswap.decoder import GPV2_SETTLEMENT_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
 from rotkehlchen.constants.assets import (
     A_ARB,
     A_ETH,
@@ -23,7 +24,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.types import ChecksumEvmAddress, Location, TimestampMS, deserialize_evm_tx_hash
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -978,3 +979,41 @@ def test_swap_token_to_token_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+def test_gnosis_eure_v2(
+        gnosis_inquirer: GnosisInquirer,
+        gnosis_accounts: list[ChecksumEvmAddress],
+):
+    tx_hash = deserialize_evm_tx_hash('0xf751e1aa988888ab9edfa14ac98022c7d8241664f481fde40a418723b0fed009')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
+    timestamp, swap_amount, received_amount, user_address = TimestampMS(1725445370000), '0.0001', '0.254038701346779266', gnosis_accounts[0]  # noqa: E501
+    assert events == [EvmEvent(
+        sequence_index=33,
+        timestamp=timestamp,
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.SPEND,
+        asset=Asset('eip155:100/erc20:0x6C76971f98945AE98dD7d4DFcA8711ebea946eA6'),
+        balance=Balance(FVal(swap_amount)),
+        location_label=user_address,
+        notes=f'Swap {swap_amount} wstETH in cowswap',
+        tx_hash=tx_hash,
+        counterparty=CPT_COWSWAP,
+        address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
+    ), EvmEvent(
+        sequence_index=34,
+        timestamp=timestamp,
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.RECEIVE,
+        asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
+        balance=Balance(FVal(received_amount)),
+        location_label=user_address,
+        notes=f'Receive {received_amount} EURe as the result of a swap in cowswap',
+        tx_hash=tx_hash,
+        counterparty=CPT_COWSWAP,
+        address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
+    )]
