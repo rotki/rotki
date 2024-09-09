@@ -777,6 +777,7 @@ def test_connect_rpc_with_hex_chainid(ethereum_inquirer: EthereumInquirer):
     """Test that connecting to an RPC that returns the chain id as an hex value
     instead of an integer works correcly
     """
+    ethereum_inquirer.etherscan_block = ethereum_inquirer.query_highest_block()
     success, msg = ethereum_inquirer.attempt_connect(
         node=NodeName(
             name='reth',
