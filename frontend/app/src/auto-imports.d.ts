@@ -214,6 +214,7 @@ declare global {
   const getValidSelectorFromEvmAddress: typeof import('@rotki/common')['getValidSelectorFromEvmAddress']
   const getValidatorData: typeof import('./utils/blockchain/accounts/index')['getValidatorData']
   const groupAssetBreakdown: typeof import('./utils/balances')['groupAssetBreakdown']
+  const groupConsecutiveNumbers: typeof import('./utils/text')['groupConsecutiveNumbers']
   const guessTimezone: typeof import('./utils/date')['guessTimezone']
   const h: typeof import('vue')['h']
   const hasAccountAddress: typeof import('./utils/blockchain/accounts/index')['hasAccountAddress']
@@ -1073,6 +1074,7 @@ declare module 'vue' {
     readonly getTimeframeByRange: UnwrapRef<typeof import('@rotki/common')['getTimeframeByRange']>
     readonly getValidSelectorFromEvmAddress: UnwrapRef<typeof import('@rotki/common')['getValidSelectorFromEvmAddress']>
     readonly groupAssetBreakdown: UnwrapRef<typeof import('./utils/balances')['groupAssetBreakdown']>
+    readonly groupConsecutiveNumbers: UnwrapRef<typeof import('./utils/text')['groupConsecutiveNumbers']>
     readonly guessTimezone: UnwrapRef<typeof import('./utils/date')['guessTimezone']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly hasAccountAddress: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['hasAccountAddress']>
@@ -1912,6 +1914,7 @@ declare module '@vue/runtime-core' {
     readonly getTimeframeByRange: UnwrapRef<typeof import('@rotki/common')['getTimeframeByRange']>
     readonly getValidSelectorFromEvmAddress: UnwrapRef<typeof import('@rotki/common')['getValidSelectorFromEvmAddress']>
     readonly groupAssetBreakdown: UnwrapRef<typeof import('./utils/balances')['groupAssetBreakdown']>
+    readonly groupConsecutiveNumbers: UnwrapRef<typeof import('./utils/text')['groupConsecutiveNumbers']>
     readonly guessTimezone: UnwrapRef<typeof import('./utils/date')['guessTimezone']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly hasAccountAddress: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['hasAccountAddress']>

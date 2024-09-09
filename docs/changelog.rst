@@ -2,7 +2,6 @@
 Changelog
 =========
 
-* :feature:`7349` Improved CSV import error reporting. Rotki now provides detailed feedback on import results, including the number of successfully imported entries and specific error messages for any failed imports.
 * :bug:`-` Improve the filtering UI when there are no suggestions for a filter.
 * :feature:`8117` Rotki will now create calendar reminders for the end of the lock period of CRV in vote escrow
 * :feature:`8339` Users will be able to import addresses from browser wallets other than MetaMask, such as Rabby Wallet, Phantom, Rainbow, etc.
