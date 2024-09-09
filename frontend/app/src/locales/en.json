@@ -3628,7 +3628,7 @@
     },
     "csv_import_result": {
       "errors": "The following errors occurred during import:",
-      "rows": "(Rows: {rows})",
+      "rows": "(Row: {rows}) | (Rows: {rows})",
       "summary": "Imported {imported}/{total} entries successfully.",
       "title": "CSV Import Result: {sourceName}"
     }

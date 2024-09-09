@@ -28,7 +28,7 @@ const rules = {
     ),
     validDate: helpers.withMessage(
       t('general_settings.date_display.validation.invalid'),
-      (v: string | null): boolean => v === null || displayDateFormatter.containsValidDirectives(v),
+      (v: string | undefined): boolean => v === undefined || displayDateFormatter.containsValidDirectives(v),
     ),
   },
 };
@@ -112,9 +112,9 @@ async function uploadFile() {
 }
 
 function changeShouldCustomDateFormat() {
-  if (get(dateInputFormat) === null)
+  if (!isDefined(dateInputFormat))
     set(dateInputFormat, DateFormat.DateMonthYearHourMinuteSecond);
-  else set(dateInputFormat, null);
+  else set(dateInputFormat, undefined);
 }
 
 const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
@@ -138,13 +138,13 @@ const isRotkiCustomImport = computed(() => get(source).startsWith('rotki_'));
         v-if="!isRotkiCustomImport"
         color="primary"
         class="mt-4"
-        :model-value="dateInputFormat !== null"
+        :model-value="dateInputFormat !== undefined"
         @update:model-value="changeShouldCustomDateFormat()"
       >
         {{ t('file_upload.date_input_format.switch_label') }}
       </RuiSwitch>
       <RuiTextField
-        v-if="dateInputFormat !== null"
+        v-if="dateInputFormat !== undefined"
         v-model="dateInputFormat"
         class="mt-2"
         variant="outlined"

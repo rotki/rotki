@@ -182,7 +182,7 @@ function getIcon(action: NotificationAction): RuiIcons {
       </RuiButton>
     </div>
     <div
-      class="mt-1 px-2 break-words text-rui-text-secondary text-body-2 leading-2 group"
+      class="mt-1 px-2 break-words text-rui-text-secondary text-body-2 leading-2 group overflow-hidden"
       :class="[
         $style.message,
         {
@@ -193,7 +193,12 @@ function getIcon(action: NotificationAction): RuiIcons {
       :style="messageWrapperStyle"
       @click="messageClicked()"
     >
-      <div ref="message">
+      <div
+        ref="message"
+        :class="{
+          'max-h-[calc(100vh-15rem)] overflow-auto': popup && expanded,
+        }"
+      >
         <MissingKeyNotification
           v-if="notification.i18nParam"
           :params="notification.i18nParam"

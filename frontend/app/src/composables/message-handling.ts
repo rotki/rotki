@@ -249,9 +249,8 @@ export function useMessageHandling(): UseMessageHandling {
       messageBody = `${messageBody}\n\n${t('notification_messages.csv_import_result.errors')}`;
       messages.forEach((error, index) => {
         messageBody = `${messageBody}\n${index + 1}. ${error.msg}`;
-        const rows = error.rows?.join(', ');
-        if (rows)
-          messageBody = `${messageBody}\n${t('notification_messages.csv_import_result.rows', { rows })}`;
+        if (error.rows)
+          messageBody = `${messageBody}\n${t('notification_messages.csv_import_result.rows', { rows: groupConsecutiveNumbers(error.rows) }, error.rows.length)}`;
       });
     }
     return {
