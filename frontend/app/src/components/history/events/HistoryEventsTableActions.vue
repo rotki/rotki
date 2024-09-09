@@ -79,7 +79,6 @@ const txChainIds = useArrayMap(txChains, x => x.id);
       dense
       :label="t('transactions.filter.account')"
       outlined
-      no-padding
       multichain
       hide-chain-icon
       unique

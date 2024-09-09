@@ -209,7 +209,6 @@ setSubmitFunc(save);
     <BlockchainAccountSelector
       v-model="accounts"
       outlined
-      no-padding
       :label="t('common.account')"
       :error-messages="toMessages(v$.accounts)"
       show-details

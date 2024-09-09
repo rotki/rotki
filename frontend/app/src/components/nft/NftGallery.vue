@@ -248,7 +248,6 @@ function sortNfts(
             :chains="chains"
             dense
             outlined
-            no-padding
             :usable-addresses="availableAddresses"
           />
 

@@ -43,7 +43,7 @@ const availableTagsList = computed<Tag[]>(() => {
       <RuiChip
         tile
         size="sm"
-        class="font-medium !leading-3"
+        class="font-medium !leading-4"
         :bg-color="`#${item.backgroundColor}`"
         :text-color="`#${item.foregroundColor}`"
         closeable
