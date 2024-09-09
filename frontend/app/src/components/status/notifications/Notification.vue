@@ -246,6 +246,7 @@ function getIcon(action: NotificationAction): RuiIcons {
         </template>
       </RuiButton>
       <RuiButton
+        v-if="notification.severity === Severity.ERROR"
         color="primary"
         variant="text"
         size="sm"
