@@ -242,7 +242,6 @@ function refresh() {
         class="md:w-[25rem]"
         dense
         outlined
-        no-padding
         :usable-addresses="availableAddresses"
       />
 

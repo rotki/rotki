@@ -36,10 +36,10 @@ watch(accounts, accounts => updateAccounts(accounts));
   <BlockchainAccountSelector
     v-if="'accounts' in modelValue"
     v-model="accounts"
-    no-padding
     dense
     outlined
     :chains="[chain]"
+    class="!bg-transparent"
     :label="t('eth2_validator_filter.label')"
   />
   <ValidatorFilterInput

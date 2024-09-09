@@ -210,7 +210,6 @@ watch([status, selectedAccounts], () => {
         <BlockchainAccountSelector
           v-model="selectedAccounts"
           class="w-full flex-1 !shadow-none !border-none !p-0"
-          no-padding
           dense
           outlined
           :chains="[ETH]"

@@ -19,7 +19,6 @@ const props = withDefaults(defineProps<{
   chains?: string[];
   outlined?: boolean;
   dense?: boolean;
-  noPadding?: boolean;
   hideOnEmptyUsable?: boolean;
   multichain?: boolean;
   unique?: boolean;
@@ -36,7 +35,6 @@ const props = withDefaults(defineProps<{
   chains: () => [],
   outlined: false,
   dense: false,
-  noPadding: false,
   hideOnEmptyUsable: false,
   multichain: false,
   unique: false,
