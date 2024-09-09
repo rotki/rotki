@@ -131,6 +131,6 @@ describe('table-filter/FilterDropdown.vue', () => {
 
     await nextTick();
 
-    expect(wrapper.find('i18n-t-stub').attributes('keypath')).toBe('table_filter.no_suggestions');
+    expect(wrapper.find('i18n-t-stub').attributes('keypath')).toBe('table_filter.start_typing');
   });
 });

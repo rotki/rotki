@@ -70,9 +70,9 @@ watch(
     let suggestedItems: BaseSuggestion[] = [];
 
     let exclude = false;
+    let asset = false;
     if ('string' in selectedMatcher) {
       exclude = !!selectedMatcher.allowExclusion && !!search.exclude;
-
       suggestedItems = selectedMatcher.suggestions().map(item => ({
         key: suggestedFilter,
         value: item,
@@ -81,6 +81,7 @@ watch(
     }
     else if ('asset' in selectedMatcher) {
       if (searchString) {
+        asset = true;
         suggestedItems = (await selectedMatcher.suggestions(searchString)).map(asset => ({
           key: suggestedFilter,
           value: asset,
@@ -108,7 +109,7 @@ watch(
       suggested,
       suggestedItems
         .sort((a, b) => compareTextByKeyword(getItemText(a), getItemText(b), searchString))
-        .slice(0, 5)
+        .slice(0, asset ? 10 : 5)
         .map((a, index) => ({
           index,
           key: a.key,
@@ -125,9 +126,6 @@ watch(
 const { t } = useI18n();
 
 watch(selectedSuggestion, async () => {
-  if (get(selectedMatcher))
-    return;
-
   await nextTick(() => {
     document.getElementsByClassName('highlightedMatcher')[0]?.scrollIntoView?.({ block: 'nearest' });
   });
@@ -154,7 +152,7 @@ const highlightedTextClasses = 'text-subtitle-2 text-rui-text-secondary';
           variant="text"
           class="text-body-1 tracking-wide w-full justify-start text-left text-rui-text-secondary"
           :class="{
-            ['!bg-rui-primary-lighter/20']: index === selectedSuggestion,
+            ['!bg-rui-primary-lighter/20 highlightedMatcher']: index === selectedSuggestion,
           }"
           @click="applyFilter(item)"
         >
@@ -167,7 +165,7 @@ const highlightedTextClasses = 'text-subtitle-2 text-rui-text-secondary';
       >
         <i18n-t
           v-if="!('asset' in selectedMatcher)"
-          keypath="table_filter.no_suggestions"
+          keypath="table_filter.start_typing"
           tag="div"
         >
           <template #search>
@@ -238,9 +236,11 @@ const highlightedTextClasses = 'text-subtitle-2 text-rui-text-secondary';
           name="input-field"
           size="16"
         />
-        <span>{{ t('table_filter.hint.description') }}</span>
-        <span class="font-medium">
-          {{ t('table_filter.hint.example') }}
+        <span>
+          <span>{{ t('table_filter.hint.description') }}</span>
+          <span class="font-medium">
+            {{ t('table_filter.hint.example') }}
+          </span>
         </span>
       </div>
       <div

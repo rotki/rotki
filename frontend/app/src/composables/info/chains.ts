@@ -133,9 +133,9 @@ export const useSupportedChains = createSharedComposable(() => {
       const locationVal = get(location);
       const chain = getChain(locationVal, null);
       if (!chain)
-        return locationVal;
+        return toSentenceCase(locationVal);
 
-      return get(getChainInfoById(chain))?.name || locationVal;
+      return get(getChainInfoById(chain))?.name || toSentenceCase(locationVal);
     });
 
   const getChainImageUrl = (chain: MaybeRef<string>): ComputedRef<string> => computed<string>(() => {

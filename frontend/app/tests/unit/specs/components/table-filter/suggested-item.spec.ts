@@ -1,6 +1,8 @@
 import { type VueWrapper, mount } from '@vue/test-utils';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { setActivePinia } from 'pinia';
 import SuggestedItem from '@/components/table-filter/SuggestedItem.vue';
+import { createCustomPinia } from '../../../utils/create-pinia';
 import type { Suggestion } from '@/types/filtering';
 
 vi.mock('@/composables/assets/retrieval', () => ({
@@ -17,12 +19,18 @@ vi.mock('@/composables/assets/retrieval', () => ({
 
 describe('table-filter/SuggestedItem.vue', () => {
   let wrapper: VueWrapper<InstanceType<typeof SuggestedItem>>;
-  const createWrapper = (props: { suggestion: Suggestion; chip?: boolean }) =>
-    mount(SuggestedItem, {
+  const createWrapper = (props: { suggestion: Suggestion; chip?: boolean }) => {
+    const pinia = createCustomPinia();
+    setActivePinia(pinia);
+    return mount(SuggestedItem, {
+      global: {
+        plugins: [pinia],
+      },
       props: {
         ...props,
       },
     });
+  };
 
   const key = 'start';
   const value = '12/12/2012';
@@ -67,7 +75,7 @@ describe('table-filter/SuggestedItem.vue', () => {
       wrapper = createWrapper({ suggestion });
 
       expect(wrapper.find('span > span:nth-child(1)').text()).toBe(key);
-      expect(wrapper.find('span > span:nth-child(3)').text()).toBe(`${asset.symbol} (${asset.evmChain})`);
+      expect(wrapper.find('span > div span').text()).toBe(`${asset.symbol} (${toSentenceCase(asset.evmChain)})`);
     });
 
     it('asset = true, send only the id', () => {
@@ -81,7 +89,7 @@ describe('table-filter/SuggestedItem.vue', () => {
       wrapper = createWrapper({ suggestion });
 
       expect(wrapper.find('span > span:nth-child(1)').text()).toBe(key);
-      expect(wrapper.find('span > span:nth-child(3)').text()).toBe('SYMBOL 2 (ethereum)');
+      expect(wrapper.find('span > div span').text()).toBe('SYMBOL 2 (Ethereum)');
     });
   });
 
