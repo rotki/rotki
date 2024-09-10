@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :bug:`-` Fixed the “Show More Events” button to properly render additional events when there are more than 6, allowing it to load more as expected.
+* :bug:`-` Improve the filtering UI when there are no suggestions for a filter.
 * :feature:`8117` Rotki will now create calendar reminders for the end of the lock period of CRV in vote escrow
 * :feature:`8339` Users will be able to import addresses from browser wallets other than MetaMask, such as Rabby Wallet, Phantom, Rainbow, etc.
 * :feature:`7349` Rotki's CSV importers will now report the number of successfully imported and total entries, and each error message will include the line number of the problematic entry.

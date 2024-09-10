@@ -44,50 +44,52 @@ const events = computed<HistoryEventEntry[]>(() => {
 const ignoredInAccounting = computed(() => !!get(eventGroup).ignoredInAccounting);
 
 const showDropdown = computed(() => {
-  const length = events.value.length;
-  return (ignoredInAccounting.value || length > PER_BATCH) && length > 0;
+  const length = get(events).length;
+  return (get(ignoredInAccounting) || length > PER_BATCH) && length > 0;
 });
 
 watch([eventGroup, ignoredInAccounting], ([current, currentIgnored], [old, oldIgnored]) => {
   if (current.eventIdentifier !== old.eventIdentifier || currentIgnored !== oldIgnored)
-    currentLimit.value = currentIgnored ? 0 : PER_BATCH;
+    set(currentLimit, currentIgnored ? 0 : PER_BATCH);
 });
 
 const limitedEvents = computed(() => {
-  const limit = currentLimit.value;
-  return limit === 0 ? [] : events.value.slice(0, limit);
+  const limit = get(currentLimit);
+  return limit === 0 ? [] : get(events).slice(0, limit);
 });
 
-const hasMoreEvents = computed(() => currentLimit.value < events.value.length);
+const hasMoreEvents = computed(() => get(currentLimit) < get(events).length);
 
 const containerRef = ref<HTMLElement | null>(null);
 
 function scrollToTop() {
-  containerRef.value?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  get(containerRef)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function handleMoreClick() {
-  const eventsLength = events.value.length;
-  const oldLimit = currentLimit.value;
+  const eventsLength = get(events).length;
+  const oldLimit = get(currentLimit);
   if (oldLimit === 0) {
-    currentLimit.value = PER_BATCH;
+    set(currentLimit, PER_BATCH);
   }
   else if (oldLimit >= eventsLength) {
-    currentLimit.value = 0;
+    set(currentLimit, 0);
     scrollToTop();
   }
   else {
-    currentLimit.value = Math.min(oldLimit + PER_BATCH, eventsLength);
+    set(currentLimit, Math.min(oldLimit + PER_BATCH, eventsLength));
   }
 }
 
 const buttonText = computed(() => {
-  if (currentLimit.value === 0)
-    return t('transactions.events.view.show', { length: events.value.length });
-  else if (!hasMoreEvents.value)
+  const limit = get(currentLimit);
+  const eventsLength = get(events).length;
+  if (limit === 0)
+    return t('transactions.events.view.show', { length: eventsLength });
+  else if (!get(hasMoreEvents))
     return t('transactions.events.view.hide');
   else
-    return t('transactions.events.view.load_more', { length: events.value.length - currentLimit.value });
+    return t('transactions.events.view.load_more', { length: eventsLength - limit });
 });
 </script>
 
