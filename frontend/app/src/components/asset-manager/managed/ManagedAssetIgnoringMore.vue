@@ -60,7 +60,7 @@ function toggleSpam() {
               class="-mr-2"
               color="primary"
               hide-details
-              :value="isWhitelisted"
+              :model-value="isWhitelisted"
             />
           </template>
           {{ t('ignore.whitelist.action.add') }}
@@ -75,7 +75,7 @@ function toggleSpam() {
               class="-mr-2"
               color="primary"
               hide-details
-              :value="isSpam"
+              :model-value="isSpam"
             />
           </template>
           {{ t('ignore.spam.action.add') }}
