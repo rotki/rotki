@@ -35,7 +35,8 @@ from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_VELODROME
 from rotkehlchen.chain.evm.tokens import TokenBalancesType
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.chain.optimism.modules.extrafi.balances import ExtrafiBalances
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
 from rotkehlchen.constants.assets import (
     A_AAVE,
@@ -63,6 +64,7 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EvmTokenKind,
     Price,
+    SupportedBlockchain,
     deserialize_evm_tx_hash,
 )
 
@@ -900,3 +902,57 @@ def test_safe_locked(
         amount=amount,
         usd_value=amount * FVal(1.5),
     )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.parametrize('optimism_manager_connect_at_start', [(WeightedNode(
+    node_info=NodeName(
+        name='optimism rpc',
+        endpoint='https://mainnet.optimism.io',
+        owned=True,
+        blockchain=SupportedBlockchain.OPTIMISM,
+    ),
+    active=True,
+    weight=ONE,
+),)])
+@pytest.mark.parametrize('optimism_accounts', [[
+    '0x4ba257EC214BA1e6a3b4E46Bd7C4654b9E81CED3',
+    '0xf34743D4F4C2f9276ED6dda070CB695ebB24aA62',
+]])
+def test_extrafi_lending_balances(
+        optimism_inquirer: 'EthereumInquirer',
+        optimism_transaction_decoder: 'EthereumTransactionDecoder',
+        optimism_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Check that balances for extrafi both for lending and locking extra are queried correctly"""
+    for tx_hash in (
+        '0x1886c8169b096df75061e2fec93df029c42325f2f7066535ecc07a504efc5e92',  # lock extra
+        '0x81a87d2f8a9752ac4889ec92d6ec553417e3b4cc709a240718cf423f362e89b1',  # deposit velo for lending  # noqa: E501
+    ):
+        tx_hex = deserialize_evm_tx_hash(tx_hash)
+        _, tx_decoder = get_decoded_events_of_transaction(
+            evm_inquirer=optimism_inquirer,
+            tx_hash=tx_hex,
+        )
+    protocol_balances_inquirer = ExtrafiBalances(
+        database=optimism_transaction_decoder.database,
+        evm_inquirer=optimism_inquirer,
+        tx_decoder=tx_decoder,
+    )
+    protocol_balances = protocol_balances_inquirer.query_balances()
+    assert protocol_balances == {
+        optimism_accounts[0]: BalanceSheet(
+            assets={Asset('eip155:10/erc20:0x9560e827aF36c94D2Ac33a39bCE1Fe78631088Db'): Balance(  # type: ignore
+                amount=(velo_amount := FVal('363337.382980149613103286')),
+                usd_value=(velo_amount * FVal(1.5)),
+            ),
+        }),
+        optimism_accounts[1]: BalanceSheet(
+            assets={Asset('eip155:10/erc20:0x2dAD3a13ef0C6366220f989157009e501e7938F8'): Balance(  # type: ignore
+                amount=(extra_amount := FVal('6405.478041239509217895')),
+                usd_value=(extra_amount * FVal(1.5)),
+            ),
+        }),
+    }
