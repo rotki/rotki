@@ -1,6 +1,6 @@
 import sqlite3
 from collections.abc import Generator
-from contextlib import contextmanager
+from contextlib import contextmanager, suppress
 from typing import TYPE_CHECKING
 
 from pysqlcipher3 import dbapi2
@@ -109,9 +109,26 @@ class DBAddressbook:
             book_type: AddressbookType,
             entries: list[AddressbookEntry],
     ) -> None:
-        """Updates names of addressbook entries."""
+        """Updates names of addressbook entries.
+        If blockchain is None then make sure that the same address doesn't appear in combination
+        with other blockchain values.
+        """
         with self.write_ctx(book_type) as write_cursor:
             for entry in entries:
+                if (
+                    entry.blockchain is None and
+                    write_cursor.execute(
+                        'SELECT COUNT(*) FROM address_book WHERE address = ? AND blockchain IS NOT ?',  # noqa: E501
+                        (entry.address, ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE),
+                    ).fetchone()[0] > 0
+                ):
+                    with suppress(InputError):
+                        # Use add_addressbook_entries to delete blockchain specific entries
+                        # and replace them with a single entry.
+                        self.add_addressbook_entries(write_cursor, [entry])
+                        continue  # skip update query, we just added a new entry instead
+                    # InputError: single entry already exists, it must be updated using query below
+
                 query = 'UPDATE address_book SET name = ? WHERE address = ? AND blockchain IS ?'
                 bindings = (entry.name, entry.address, entry.blockchain.value if entry.blockchain else ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE)  # noqa: E501
                 write_cursor.execute(query, bindings)

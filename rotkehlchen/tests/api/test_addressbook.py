@@ -29,6 +29,7 @@ from rotkehlchen.types import (
     AddressbookEntry,
     AddressbookType,
     BTCAddress,
+    ChainType,
     OptionalChainAddress,
     SupportedBlockchain,
     Timestamp,
@@ -839,3 +840,41 @@ def test_insert_into_addressbook_no_blockchain(
             result = cursor.fetchall()
 
     assert result == [(test_address, ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, 'my address')]
+
+
+def test_edit_multichain_address_label(rotkehlchen_api_server: 'APIServer') -> None:
+    """Check that editing the label of a multichain evm address works correctly"""
+    test_address = to_checksum_address('0xc37b40ABdB939635068d3c5f13E7faF686F03B65')
+    db_addressbook = DBAddressbook(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
+    with db_addressbook.write_ctx(book_type=AddressbookType.PRIVATE) as write_cursor:
+        db_addressbook.add_addressbook_entries(
+            write_cursor=write_cursor,
+            entries=[AddressbookEntry(
+                address=test_address,
+                name='original name',
+                blockchain=None,
+            )],
+        )
+
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'chaintypeaccountresource',
+            chain_type=ChainType.EVM.serialize(),
+        ),
+        json={
+            'accounts': [{
+                'address': test_address,
+                'label': 'new name',
+            }],
+        },
+    )
+    assert_proper_sync_response_with_result(response)
+
+    with db_addressbook.read_ctx(book_type=AddressbookType.PRIVATE) as cursor:
+        entries = db_addressbook.get_addressbook_entries(cursor, AddressbookFilterQuery.make())[0]
+        assert entries == [AddressbookEntry(
+            address=test_address,
+            name='new name',
+            blockchain=None,
+        )]
