@@ -41,14 +41,18 @@ const isEth2Enabled = isModuleEnabled(Module.ETH2);
 
 const { unifyAccountsTable } = storeToRefs(useFrontendSettingsStore());
 const { supportedChains } = useSupportedChains();
+const { groups } = storeToRefs(useBlockchainStore());
 
 const categories = computed(() => {
   if (get(unifyAccountsTable))
     return ['all'];
 
+  const categoriesWithData = get(groups).map(item => item.category);
+
   return get(supportedChains)
     .map(item => item.type)
-    .filter((value, index, array) => !['eth2', 'evmlike'].includes(value) && uniqueStrings(value, index, array));
+    .filter((value, index, array) => !['eth2', 'evmlike'].includes(value) && uniqueStrings(value, index, array))
+    .filter(item => item === 'evm' || categoriesWithData.includes(item));
 });
 
 function goToFirstCategory() {
@@ -72,9 +76,9 @@ function getTabLink(category: string): RouteLocationRaw {
   };
 }
 
-watch(unifyAccountsTable, () => {
+watch([unifyAccountsTable, categories], () => {
   const tab = props.tab;
-  if (tab && !get(categories).includes(tab))
+  if (tab && tab !== 'validators' && !get(categories).includes(tab))
     goToFirstCategory();
 });
 

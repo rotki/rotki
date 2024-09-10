@@ -49,10 +49,10 @@ describe('blockchain balances', () => {
   });
 
   it('add a BTC account and view the account balance', () => {
-    blockchainBalancesPage.openTab('bitcoin');
     cy.get('[data-cy="add-blockchain-balance"]').should('be.visible');
     cy.get('[data-cy="add-blockchain-balance"]').click();
     blockchainBalancesPage.addBalance(blockchainBalances[1]);
+    blockchainBalancesPage.openTab('bitcoin');
     blockchainBalancesPage.isEntryVisible(0, blockchainBalances[1]);
   });
 

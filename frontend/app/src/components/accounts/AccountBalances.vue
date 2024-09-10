@@ -26,6 +26,7 @@ const visibleTags = ref<string[]>([]);
 const chainExclusionFilter = ref<Record<string, string[]>>({});
 const accountTable = ref<ComponentExposed<typeof AccountBalancesTable>>();
 const detailsTable = ref<ComponentExposed<typeof AccountGroupDetails>>();
+const tab = ref<number>(0);
 
 const blockchainStore = useBlockchainStore();
 const { fetchAccounts: fetchAccountsPage } = blockchainStore;
@@ -191,6 +192,7 @@ defineExpose({
         <AccountGroupDetails
           v-if="row.expansion === 'accounts'"
           ref="detailsTable"
+          v-model.tab="tab"
           :chains="getChains(row)"
           :tags="visibleTags"
           :group-id="getGroupId(row)"

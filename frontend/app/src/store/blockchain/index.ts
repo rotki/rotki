@@ -309,8 +309,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
           return get(addressNameSelector(address, chain));
         },
       },
-    ),
-    );
+    ));
   });
 
   const fetchGroupAccounts = async (
