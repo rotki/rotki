@@ -419,6 +419,7 @@ onUnmounted(() => {
         :export-params="pageParams"
         :hide-account-selector="useExternalAccountFilter"
         @update:accounts="onFilterAccountsChanged($event)"
+        @redecode="redecodeAllEvents()"
       />
 
       <HistoryEventsTable
