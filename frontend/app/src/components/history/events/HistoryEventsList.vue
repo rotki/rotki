@@ -26,10 +26,8 @@ const emit = defineEmits<{
 }>();
 
 const PER_BATCH = 6;
-const currentLimit = ref<number>(0);
-
+const currentLimit = ref<number>(PER_BATCH);
 const { t } = useI18n();
-
 const { eventGroup, allEvents } = toRefs(props);
 
 const events = computed<HistoryEventEntry[]>(() => {
@@ -37,19 +35,13 @@ const events = computed<HistoryEventEntry[]>(() => {
   const eventHeader = get(eventGroup);
   if (all.length === 0)
     return [eventHeader];
-
   const eventIdentifierHeader = eventHeader.eventIdentifier;
-  const filtered = all
+  return all
     .filter(({ eventIdentifier, hidden }) => eventIdentifier === eventIdentifierHeader && !hidden)
     .sort((a, b) => Number(a.sequenceIndex) - Number(b.sequenceIndex));
-
-  if (filtered.length > 0)
-    return filtered;
-
-  return [eventHeader];
 });
 
-const ignoredInAccounting = useRefMap(eventGroup, ({ ignoredInAccounting }) => !!ignoredInAccounting);
+const ignoredInAccounting = computed(() => !!get(eventGroup).ignoredInAccounting);
 
 const showDropdown = computed(() => {
   const length = get(events).length;
@@ -61,51 +53,60 @@ watch([eventGroup, ignoredInAccounting], ([current, currentIgnored], [old, oldIg
     set(currentLimit, currentIgnored ? 0 : PER_BATCH);
 });
 
-const [DefineTable, ReuseTable] = createReusableTemplate<{ data: HistoryEventEntry[] }>();
-
-const limitedEvents = computed<HistoryEventEntry[]>(() => {
+const limitedEvents = computed(() => {
   const limit = get(currentLimit);
-  if (limit === 0)
-    return [];
-
-  return [...get(events)].slice(0, limit);
+  return limit === 0 ? [] : get(events).slice(0, limit);
 });
 
-function handleMoreClick() {
-  const limit = get(currentLimit);
-  if (limit < get(events).length)
-    set(currentLimit, limit + PER_BATCH);
-  else set(currentLimit, 0);
+const hasMoreEvents = computed(() => get(currentLimit) < get(events).length);
+
+const containerRef = ref<HTMLElement | null>(null);
+
+function scrollToTop() {
+  get(containerRef)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
+
+function handleMoreClick() {
+  const eventsLength = get(events).length;
+  const oldLimit = get(currentLimit);
+  if (oldLimit === 0) {
+    set(currentLimit, PER_BATCH);
+  }
+  else if (oldLimit >= eventsLength) {
+    set(currentLimit, 0);
+    scrollToTop();
+  }
+  else {
+    set(currentLimit, Math.min(oldLimit + PER_BATCH, eventsLength));
+  }
+}
+
+const buttonText = computed(() => {
+  const limit = get(currentLimit);
+  const eventsLength = get(events).length;
+  if (limit === 0)
+    return t('transactions.events.view.show', { length: eventsLength });
+  else if (!get(hasMoreEvents))
+    return t('transactions.events.view.hide');
+  else
+    return t('transactions.events.view.load_more', { length: eventsLength - limit });
+});
 </script>
 
 <template>
-  <div :class="{ 'pl-[3.125rem]': hasIgnoredEvent }">
-    <DefineTable #default="{ data }">
-      <HistoryEventsListTable
-        :event-group="eventGroup"
-        :events="data"
-        :total="events.length"
-        :loading="loading"
-        @delete-event="emit('delete-event', $event)"
-        @show:missing-rule-action="emit('show:missing-rule-action', $event)"
-        @edit-event="emit('edit-event', $event)"
-      />
-    </DefineTable>
-    <ReuseTable
-      v-if="!showDropdown"
-      :data="events"
+  <div
+    ref="containerRef"
+    :class="{ 'pl-[3.125rem]': hasIgnoredEvent }"
+  >
+    <HistoryEventsListTable
+      :event-group="eventGroup"
+      :events="limitedEvents"
+      :total="events.length"
+      :loading="loading"
+      @delete-event="emit('delete-event', $event)"
+      @show:missing-rule-action="emit('show:missing-rule-action', $event)"
+      @edit-event="emit('edit-event', $event)"
     />
-    <RuiAccordions
-      v-else
-      :value="0"
-    >
-      <RuiAccordion eager>
-        <template #default>
-          <ReuseTable :data="limitedEvents" />
-        </template>
-      </RuiAccordion>
-    </RuiAccordions>
     <RuiButton
       v-if="showDropdown"
       color="primary"
@@ -113,28 +114,12 @@ function handleMoreClick() {
       class="text-rui-primary font-bold my-2"
       @click="handleMoreClick()"
     >
-      <template v-if="currentLimit === 0">
-        {{
-          t('transactions.events.view.show', {
-            length: events.length,
-          })
-        }}
-      </template>
-      <template v-else-if="currentLimit >= events.length">
-        {{ t('transactions.events.view.hide') }}
-      </template>
-      <template v-else>
-        {{
-          t('transactions.events.view.load_more', {
-            length: events.length - currentLimit,
-          })
-        }}
-      </template>
+      {{ buttonText }}
       <template #append>
         <RuiIcon
           class="transition-all"
           name="arrow-down-s-line"
-          :class="{ 'transform -rotate-180': currentLimit >= events.length }"
+          :class="{ 'transform -rotate-180': !hasMoreEvents }"
         />
       </template>
     </RuiButton>
