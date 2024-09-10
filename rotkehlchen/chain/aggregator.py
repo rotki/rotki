@@ -25,6 +25,9 @@ from rotkehlchen.chain.arbitrum_one.modules.thegraph.balances import (
 )
 from rotkehlchen.chain.avalanche.manager import AvalancheManager
 from rotkehlchen.chain.base.modules.aerodrome.balances import AerodromeBalances
+from rotkehlchen.chain.base.modules.extrafi.balances import (
+    ExtrafiBalances as ExtrafiBalancesBase,
+)
 from rotkehlchen.chain.bitcoin import get_bitcoin_addresses_balances
 from rotkehlchen.chain.bitcoin.bch import get_bitcoin_cash_addresses_balances
 from rotkehlchen.chain.bitcoin.bch.utils import force_address_to_legacy_address
@@ -210,7 +213,7 @@ CHAIN_TO_BALANCE_PROTOCOLS = {
         GearboxBalances,
     ),
     ChainID.OPTIMISM: (VelodromeBalances, HopBalances, GearboxBalancesOptimism, ExtrafiBalancesOp),
-    ChainID.BASE: (Compoundv3Balances, AerodromeBalances, HopBalances),
+    ChainID.BASE: (Compoundv3Balances, AerodromeBalances, HopBalances, ExtrafiBalancesBase),
     ChainID.ARBITRUM_ONE: (Compoundv3Balances, GmxBalances, ThegraphBalancesArbitrumOne, HopBalances, GearboxBalancesArbitrumOne),  # noqa: E501
     ChainID.POLYGON_POS: (Compoundv3Balances, HopBalances),
     ChainID.GNOSIS: (HopBalances,),

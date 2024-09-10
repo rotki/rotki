@@ -29,6 +29,7 @@ if TYPE_CHECKING:
         'HOP_POOL',
         'EXTRAFI_LOCK',
         'EXTRAFI_LENDING',
+        'EXTRAFI_FARM',
     ]
 
 
