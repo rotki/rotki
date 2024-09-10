@@ -3072,6 +3072,7 @@
   },
   "input_mode_select": {
     "import_from_wallet": {
+      "only_metamask": "* Currently, only MetaMask supports multiple address selections. Other wallets only allow active address to be imported.",
       "imported": "Your address(es) have been imported to the address input",
       "label": "Import addresses from browser wallet",
       "missing": "We can't detect any wallet in this browser.",

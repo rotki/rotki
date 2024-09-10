@@ -67,6 +67,12 @@
             text-align: center;
         }
 
+        .disclaimer {
+            padding-top: 1.5rem;
+            text-align: center;
+            font-size: 0.875rem;
+        }
+
         .text {
             font-style: normal;
             font-weight: normal;
@@ -185,6 +191,11 @@
                             />
                             {{ provider.info.name }}
                         </button>
+                    </div>
+
+                    <div class="text disclaimer">
+                        * Currently, only MetaMask supports multiple address selections.
+                        Other wallets only allow active address to be imported.
                     </div>
                 </template>
                 <div v-else class="flex flex-column">
