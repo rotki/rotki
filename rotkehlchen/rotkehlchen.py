@@ -840,19 +840,18 @@ class Rotkehlchen:
         )
 
         address_book_db = DBAddressbook(db_handler=self.data.db)
-        with address_book_db.write_ctx(book_type=AddressbookType.PRIVATE) as write_cursor:
-            for account in account_data:
-                if account.label is None:
-                    continue
+        for account in account_data:
+            if account.label is None:
+                continue
 
-                address_book_db.add_addressbook_entries(
-                    write_cursor=write_cursor,
-                    entries=[AddressbookEntry(
-                        address=account.address,
-                        name=account.label,
-                        blockchain=None,
-                    )],
-                )
+            address_book_db.update_addressbook_entries(
+                book_type=AddressbookType.PRIVATE,
+                entries=[AddressbookEntry(
+                    address=account.address,
+                    name=account.label,
+                    blockchain=None,
+                )],
+            )
 
         with self.data.db.user_write() as write_cursor:
             replace_tag_mappings(
