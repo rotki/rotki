@@ -20,7 +20,7 @@ const rules = {
 const v$ = useVuelidate(rules, { csvExportDelimiter }, { $autoDirty: true });
 const { callIfValid } = useValidation(v$);
 
-function callIfcsvExportDelimiterValid(value: string, method: (value: string) => void) {
+function callIfCsvExportDelimiterValid(value: string, method: (value: string) => void) {
   const validator = get(v$);
   callIfValid(value, method, () => validator.csvExportDelimiter.$error);
 }
@@ -52,7 +52,7 @@ onMounted(() => {
       type="text"
       :success-messages="success"
       :error-messages="error || toMessages(v$.csvExportDelimiter)"
-      @update:model-value="callIfcsvExportDelimiterValid($event, updateImmediate)"
+      @update:model-value="callIfCsvExportDelimiterValid($event, updateImmediate)"
     />
   </SettingsOption>
 </template>
