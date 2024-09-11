@@ -2721,6 +2721,7 @@
       "force_saved_language_setting_in_machine_hint": "This setting is saved on your user settings. Activate this to keep this setting when you logged out.",
       "ksm_rpc_endpoint": "Kusama Node RPC Endpoint",
       "language": "Selected language",
+      "csv_delimiter": "CSV Delimiter",
       "treat_eth2_as_eth": "Should treat ETH2 (Staked ETH) as ETH",
       "version_update_check": "Set the version update check period while in app",
       "version_update_check_enabled": "Enabled",
@@ -2791,6 +2792,12 @@
       "btc_derivation_gap": {
         "error": "Error setting the BTC derivation gap limit",
         "success": "The BTC derivation gap limit was successfully changed to {limit}"
+      },
+      "csv_delimiter": {
+        "empty": "CSV delimiter cannot be empty.",
+        "single_character": "CSV delimiter must be a single character.",
+        "error": "Please provide a valid delimiter.",
+        "success": "CSV delimiter {delimiter} has been successfully set."
       },
       "currency": {
         "error": "Error setting the main currency",
