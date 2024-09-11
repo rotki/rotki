@@ -1,13 +1,10 @@
 <script setup lang="ts">
 import useVuelidate from '@vuelidate/core';
 import { helpers, maxLength, required } from '@vuelidate/validators';
-import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { toMessages } from '@/utils/validation';
 
-const settingsStore = useFrontendSettingsStore();
-const csvSeparator = computed(() => settingsStore.settings.csvSeparator);
-const csvDelimiter = ref(get(csvSeparator));
-
+const csvDelimiter = ref<string>('');
+const { csvDelimiter: delimiter } = storeToRefs(useFrontendSettingsStore());
 const { t } = useI18n();
 
 const rules = {
@@ -24,11 +21,13 @@ const v$ = useVuelidate(rules, { csvDelimiter }, { $autoDirty: true });
 const { callIfValid } = useValidation(v$);
 
 function resetCsvDelimiter() {
-  set(csvDelimiter, get(csvSeparator));
+  set(csvDelimiter, get(delimiter));
 }
 
-function successMessage(delimiter: string) {
-  return t('general_settings.validation.csv_delimiter.success', { delimiter });
+function successMessage(delimiterValue: string) {
+  return t('general_settings.validation.csv_delimiter.success', {
+    delimiter: delimiterValue,
+  });
 }
 
 onMounted(() => {
@@ -39,7 +38,7 @@ onMounted(() => {
 <template>
   <SettingsOption
     #default="{ error, success, updateImmediate }"
-    setting="csvSeparator"
+    setting="csvDelimiter"
     frontend-setting
     :error-message="t('general_settings.validation.csv_delimiter.error')"
     :success-message="successMessage"

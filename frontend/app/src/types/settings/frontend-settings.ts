@@ -141,7 +141,7 @@ export const FrontendSettings = z.object({
   ),
   shouldRefreshValidatorDailyStats: z.boolean().default(false),
   unifyAccountsTable: z.boolean().default(false),
-  csvSeparator: z.string().max(1).default(Defaults.DEFAULT_CSV_EXPORT_DELIMITER),
+  csvDelimiter: z.string().max(1).default(Defaults.DEFAULT_CSV_EXPORT_DELIMITER),
   savedFilters: z
     .record(SavedFilterLocationEnum, z.array(z.array(BaseSuggestion)))
     .default({})
