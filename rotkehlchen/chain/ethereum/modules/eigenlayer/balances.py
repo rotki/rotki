@@ -9,7 +9,6 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.misc import ZERO
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.fval import FVal
@@ -77,12 +76,10 @@ def _read_underlying_assets(
 class EigenlayerBalances(ProtocolWithBalance):
     def __init__(
             self,
-            database: DBHandler,
             evm_inquirer: 'EthereumInquirer',
             tx_decoder: 'EthereumTransactionDecoder',
     ):
         super().__init__(
-            database=database,
             evm_inquirer=evm_inquirer,
             tx_decoder=tx_decoder,
             counterparty=CPT_EIGENLAYER,

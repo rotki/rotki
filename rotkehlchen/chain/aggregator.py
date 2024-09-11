@@ -1109,7 +1109,6 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
         existing_balances: defaultdict[ChecksumEvmAddress, BalanceSheet] = self.balances.get(chain)
         for protocol in CHAIN_TO_BALANCE_PROTOCOLS[chain_id]:
             protocol_with_balance: ProtocolWithBalance = protocol(
-                database=self.database,
                 evm_inquirer=chain_manager.node_inquirer,  # type: ignore  # mypy can't match all possibilities here
                 tx_decoder=chain_manager.transactions_decoder,  # type: ignore  # mypy can't match all possibilities here
             )
