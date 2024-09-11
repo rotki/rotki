@@ -78,7 +78,7 @@ function toggleSelection() {
 
 function getIdentifiers(identifiers?: string | string[]): string [] {
   return identifiers
-    ? (Array.isArray(identifiers) ? identifiers : [identifiers])
+    ? arrayify(identifiers)
     : get(selected);
 }
 

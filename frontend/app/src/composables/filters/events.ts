@@ -279,7 +279,7 @@ export function useHistoryEventFilter(
   const OptionalMultipleString = z
     .array(z.string())
     .or(z.string())
-    .transform(val => (Array.isArray(val) ? val : [val]))
+    .transform(arrayify)
     .optional();
 
   const RouteFilterSchema = z.object({

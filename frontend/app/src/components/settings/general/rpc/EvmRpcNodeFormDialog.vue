@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { omit } from 'lodash-es';
 import { Blockchain } from '@rotki/common';
-import { ApiValidationError } from '@/types/api/errors';
+import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 import { isBlockchain } from '@/types/blockchain/chains';
 import EvmRpcNodeForm from '@/components/settings/general/rpc/EvmRpcNodeForm.vue';
 import type { EvmRpcNodeManageState } from '@/types/settings/rpc';
@@ -18,7 +18,7 @@ function resetForm() {
 
 const { t } = useI18n();
 
-const errorMessages = ref<Record<string, string[] | string>>({});
+const errorMessages = ref<ValidationErrors>({});
 const submitting = ref<boolean>(false);
 const form = ref<InstanceType<typeof EvmRpcNodeForm>>();
 

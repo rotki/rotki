@@ -23,10 +23,8 @@ const actions = computed<NotificationAction[]>(() => {
 
   if (!action)
     return [];
-  if (!Array.isArray(action))
-    return [action];
 
-  return action;
+  return arrayify(action);
 });
 
 function dismiss(id: number) {

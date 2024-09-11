@@ -227,7 +227,7 @@ export function usePaginationFilters<
       ...nonEmptyProperties(get(customPageParams) ?? {}),
     };
 
-    const orderByAttributes = sortBy?.length > 0 ? sortBy : [defaultSortBy?.key ?? 'timestamp'];
+    const orderByAttributes = sortBy?.length > 0 ? sortBy : arrayify(defaultSortBy?.key ?? 'timestamp');
 
     // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
     return {

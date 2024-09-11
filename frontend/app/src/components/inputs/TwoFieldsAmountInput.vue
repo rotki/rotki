@@ -63,7 +63,7 @@ const aggregatedErrorMessages = computed(() => {
   const primary = val?.primary || [];
   const secondary = val?.secondary || [];
 
-  return [...(Array.isArray(primary) ? primary : [primary]), ...(Array.isArray(secondary) ? secondary : [secondary])];
+  return [...arrayify(primary), ...arrayify(secondary)];
 });
 
 const focused = ref<boolean>(false);

@@ -28,7 +28,7 @@ export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
 
   const ignoreAsset = async (assets: string[] | string): Promise<ActionStatus> => {
     try {
-      const { successful, noAction } = await addIgnoredAssets(Array.isArray(assets) ? assets : [assets]);
+      const { successful, noAction } = await addIgnoredAssets(arrayify(assets));
       set(ignoredAssets, [...get(ignoredAssets), ...successful, ...noAction].filter(uniqueStrings));
       return { success: true };
     }
@@ -47,7 +47,7 @@ export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
 
   const unignoreAsset = async (assets: string[] | string): Promise<ActionStatus> => {
     try {
-      const { successful, noAction } = await removeIgnoredAssets(Array.isArray(assets) ? assets : [assets]);
+      const { successful, noAction } = await removeIgnoredAssets(arrayify(assets));
       set(
         ignoredAssets,
         get(ignoredAssets).filter(asset => ![...successful, ...noAction].includes(asset)),
