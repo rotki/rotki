@@ -81,6 +81,7 @@ describe('settings:frontend', () => {
             shouldRefreshValidatorDailyStats: false,
             unifyAccountsTable: false,
             savedFilters: {},
+            csvSeparator: Defaults.DEFAULT_CSV_EXPORT_DELIMITER,
           }),
         ),
       }),
@@ -157,6 +158,7 @@ describe('settings:frontend', () => {
       shouldRefreshValidatorDailyStats: false,
       unifyAccountsTable: false,
       savedFilters: {},
+      csvSeparator: '|',
     };
 
     store.update(state);
@@ -219,5 +221,6 @@ describe('settings:frontend', () => {
     expect(store.enableAliasNames).toBe(true);
     expect(store.blockchainRefreshButtonBehaviour).toBe(BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES);
     expect(store.savedFilters).toMatchObject({});
+    expect(store.csvSeparator).toBe('|');
   });
 });

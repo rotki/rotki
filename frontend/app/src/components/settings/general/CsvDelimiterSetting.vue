@@ -5,8 +5,8 @@ import { useFrontendSettingsStore } from '@/store/settings/frontend';
 import { toMessages } from '@/utils/validation';
 
 const settingsStore = useFrontendSettingsStore();
-const csvExportDelimiter = computed(() => settingsStore.settings.csv_export_delimiter);
-const csvDelimiter = ref(get(csvExportDelimiter));
+const csvSeparator = computed(() => settingsStore.settings.csvSeparator);
+const csvDelimiter = ref(get(csvSeparator));
 
 const { t } = useI18n();
 
@@ -24,7 +24,7 @@ const v$ = useVuelidate(rules, { csvDelimiter }, { $autoDirty: true });
 const { callIfValid } = useValidation(v$);
 
 function resetCsvDelimiter() {
-  set(csvDelimiter, get(csvExportDelimiter));
+  set(csvDelimiter, get(csvSeparator));
 }
 
 function successMessage(delimiter: string) {
@@ -40,27 +40,26 @@ function focusInput(event: Event) {
   input.setSelectionRange(input.value.length, input.value.length);
 }
 </script>
-
 <template>
-  <SettingsOption
-    #default="{ error, success, updateImmediate }"
-    setting="csv_export_delimiter"
-    frontend-setting
-    :error-message="t('general_settings.validation.csv_delimiter.error')"
-    :success-message="successMessage"
-    @finished="resetCsvDelimiter()"
-  >
-    <RuiTextField
-      v-model="csvDelimiter"
-      variant="outlined"
-      color="primary"
-      maxlength="1"
-      class="general-settings__fields__csv-delimiter"
-      :label="t('general_settings.labels.csv_delimiter')"
-      :success-messages="success ? [success] : []"
-      :error-messages="error ? [error] : toMessages(v$.csvDelimiter)"
-      @update:model-value="callIfValid($event, updateImmediate)"
-      @focus="focusInput"
-    />
-  </SettingsOption>
-</template>
+    <SettingsOption
+      #default="{ error, success, updateImmediate }"
+      setting="csvSeparator"
+      frontend-setting
+      :error-message="t('general_settings.validation.csv_delimiter.error')"
+      :success-message="successMessage"
+      @finished="resetCsvDelimiter()"
+    >
+      <RuiTextField
+        v-model="csvDelimiter"
+        variant="outlined"
+        color="primary"
+        maxlength="1"
+        class="general-settings__fields__csv-delimiter"
+        :label="t('general_settings.labels.csv_delimiter')"
+        :success-messages="success ? [success] : []"
+        :error-messages="error ? [error] : toMessages(v$.csvDelimiter)"
+        @update:model-value="callIfValid($event, updateImmediate)"
+        @focus="focusInput"
+      />
+    </SettingsOption>
+  </template>
