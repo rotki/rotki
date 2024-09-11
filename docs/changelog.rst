@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` rotki will now decode the events of all the velodrome pools which were getting skipped before.
 * :bug:`8477` rotki will now properly decode very old Arbitrum bridge withdrawals.
 * :bug:`-` rotki will now decode the swaps done on velodrome v2 in the right order.
 * :bug:`-` ZKSync Era tokens will now have prices queried properly by defillama.
