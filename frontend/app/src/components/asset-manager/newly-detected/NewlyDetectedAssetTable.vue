@@ -212,10 +212,13 @@ async function markAsSpam(identifiers?: string | string[]): Promise<void> {
       </template>
 
       <template #item.actions="{ row }">
-        <RuiButtonGroup variant="text">
+        <RuiButtonGroup
+          :key="row.tokenIdentifier"
+          variant="text"
+          class="dark:!divide-rui-grey-800"
+        >
           <RuiButton
             color="success"
-            variant="text"
             icon
             class="m-auto"
             @click="removeTokens(row.tokenIdentifier)"
@@ -224,7 +227,6 @@ async function markAsSpam(identifiers?: string | string[]): Promise<void> {
           </RuiButton>
           <RuiButton
             color="error"
-            variant="text"
             icon
             class="m-auto"
             @click="markAsSpam(row.tokenIdentifier)"
