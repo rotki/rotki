@@ -1217,8 +1217,10 @@
       "started": "Started"
     },
     "newly_detected": {
+      "accept": "Accept token",
       "accept_selected": "Accept selected tokens",
-      "mark_as_spam": "Mark selected tokens as spam",
+      "mark_as_spam": "Mark token as spam",
+      "mark_selected_as_spam": "Mark selected tokens as spam",
       "seen_during": "Seen during",
       "select_deselect_all_tokens": "Select/deselect all tokens",
       "subtitle": "Inspect the list of newly detected tokens and add any assets to the spam tokens list"
