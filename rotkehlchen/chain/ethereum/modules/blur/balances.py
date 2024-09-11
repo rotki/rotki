@@ -21,7 +21,6 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
-    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.types import ChecksumEvmAddress
 
 logger = logging.getLogger(__name__)
@@ -31,12 +30,10 @@ log = RotkehlchenLogsAdapter(logger)
 class BlurBalances(ProtocolWithBalance):
     def __init__(
             self,
-            database: 'DBHandler',
             evm_inquirer: 'EvmNodeInquirer',
             tx_decoder: 'EthereumTransactionDecoder',
     ):
         super().__init__(
-            database=database,
             evm_inquirer=evm_inquirer,
             tx_decoder=tx_decoder,
             counterparty=CPT_BLUR,

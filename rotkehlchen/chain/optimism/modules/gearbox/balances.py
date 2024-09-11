@@ -9,18 +9,15 @@ from rotkehlchen.chain.optimism.modules.gearbox.constants import (
 if TYPE_CHECKING:
     from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
-    from rotkehlchen.db.dbhandler import DBHandler
 
 
 class GearboxBalances(GearboxCommonBalances):
     def __init__(
             self,
-            database: 'DBHandler',
             evm_inquirer: 'OptimismInquirer',
             tx_decoder: 'OptimismTransactionDecoder',
     ) -> None:
         super().__init__(
-            database=database,
             evm_inquirer=evm_inquirer,
             tx_decoder=tx_decoder,
             staking_contract=GEAR_STAKING_CONTRACT,
