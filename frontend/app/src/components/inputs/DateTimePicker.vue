@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import IMask, { type InputMask, MaskedRange } from 'imask';
 import useVuelidate from '@vuelidate/core';
 import { helpers, required } from '@vuelidate/validators';
+import { isEmpty } from 'lodash-es';
 import { DateFormat } from '@/types/date-format';
 import { toMessages } from '@/utils/validation';
 import { timezones } from '@/data/timezones';
@@ -137,6 +138,11 @@ const v$ = useVuelidate(
     $externalResults: computed(() => ({ date: get(errorMessages) })),
   },
 );
+
+watch(errorMessages, (errors) => {
+  if (!isEmpty(errors))
+    get(v$).$validate();
+});
 
 function onValueChange(value: string) {
   const imaskVal = get(imask)!;

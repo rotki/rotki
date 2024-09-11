@@ -4,7 +4,7 @@ import { omit } from 'lodash-es';
 import { objectOmit } from '@vueuse/core';
 import { type AccountingRuleEntry, AccountingTreatment } from '@/types/settings/accounting';
 import { toMessages } from '@/utils/validation';
-import { ApiValidationError } from '@/types/api/errors';
+import { ApiValidationError, type ValidationErrors } from '@/types/api/errors';
 
 const props = withDefaults(
   defineProps<{
@@ -44,7 +44,7 @@ const { t } = useI18n();
 
 const { setValidation, setSubmitFunc } = useAccountingRuleForm();
 
-const errorMessages = ref<Record<string, string[] | string>>({});
+const errorMessages = ref<ValidationErrors>({});
 
 const v$ = setValidation(rules, state, {
   $autoDirty: true,

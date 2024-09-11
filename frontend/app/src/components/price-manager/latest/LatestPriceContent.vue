@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { objectOmit } from '@vueuse/core';
 import { isNft } from '@/utils/nft';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
@@ -69,10 +70,10 @@ function showDeleteConfirmation(item: ManualPriceWithUsd) {
 function openForm(selectedEntry: ManualPriceWithUsd | null = null) {
   set(editMode, !!selectedEntry);
   if (selectedEntry) {
-    set(price, {
+    set(price, objectOmit({
       ...selectedEntry,
       price: selectedEntry.price.toFixed() ?? '',
-    });
+    }, ['id', 'usdPrice']));
   }
   else {
     set(price, {

@@ -86,6 +86,12 @@ const v$ = setValidation(
         :error-messages="toMessages(v$.toAsset)"
       />
     </div>
+    <DateTimePicker
+      v-model="date"
+      :label="t('common.datetime')"
+      :disabled="edit"
+      :error-messages="toMessages(v$.date)"
+    />
     <AmountInput
       v-model="price"
       variant="outlined"
@@ -117,11 +123,5 @@ const v$ = setValidation(
         </strong>
       </template>
     </i18n-t>
-    <DateTimePicker
-      v-model="date"
-      :label="t('common.datetime')"
-      :disabled="edit"
-      :error-messages="toMessages(v$.date)"
-    />
   </form>
 </template>
