@@ -44,7 +44,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
   const shouldRefreshValidatorDailyStats = useComputedRef(settings, 'shouldRefreshValidatorDailyStats');
   const unifyAccountsTable = useComputedRef(settings, 'unifyAccountsTable');
   const savedFilters = useComputedRef(settings, 'savedFilters');
-  const csvDelimiter = useComputedRef(settings, 'csvDelimiter');
+  const csvExportDelimiter = useComputedRef(settings, 'csvExportDelimiter');
 
   const globalItemsPerPage = useItemsPerPage();
 
@@ -143,7 +143,7 @@ export const useFrontendSettingsStore = defineStore('settings/frontend', () => {
     unifyAccountsTable,
     savedFilters,
     settings,
-    csvDelimiter,
+    csvExportDelimiter,
     updateSetting,
     update,
   };

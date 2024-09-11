@@ -3,12 +3,12 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, maxLength, required } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
 
-const csvDelimiter = ref<string>('');
-const { csvDelimiter: delimiter } = storeToRefs(useFrontendSettingsStore());
+const csvExportDelimiter = ref<string>('');
+const { csvExportDelimiter: delimiter } = storeToRefs(useGeneralSettingsStore());
 const { t } = useI18n();
 
 const rules = {
-  csvDelimiter: {
+  csvExportDelimiter: {
     required: helpers.withMessage(t('general_settings.validation.csv_delimiter.empty'), required),
     singleCharacter: helpers.withMessage(
       t('general_settings.validation.csv_delimiter.single_character'),
@@ -17,11 +17,12 @@ const rules = {
   },
 };
 
-const v$ = useVuelidate(rules, { csvDelimiter }, { $autoDirty: true });
+const v$ = useVuelidate(rules, { csvExportDelimiter }, { $autoDirty: true });
 const { callIfValid } = useValidation(v$);
 
-function resetCsvDelimiter() {
-  set(csvDelimiter, get(delimiter));
+function callIfcsvExportDelimiterValid(value: string, method: (value: string) => void) {
+  const validator = get(v$);
+  callIfValid(value, method, () => validator.csvExportDelimiter.$error);
 }
 
 function successMessage(delimiterValue: string) {
@@ -31,29 +32,27 @@ function successMessage(delimiterValue: string) {
 }
 
 onMounted(() => {
-  resetCsvDelimiter();
+  set(csvExportDelimiter, get(delimiter));
 });
 </script>
 
 <template>
   <SettingsOption
     #default="{ error, success, updateImmediate }"
-    setting="csvDelimiter"
-    frontend-setting
+    setting="csvExportDelimiter"
     :error-message="t('general_settings.validation.csv_delimiter.error')"
     :success-message="successMessage"
-    @finished="resetCsvDelimiter()"
   >
     <RuiTextField
-      v-model="csvDelimiter"
+      v-model="csvExportDelimiter"
       variant="outlined"
       color="primary"
       maxlength="1"
-      class="general-settings__fields__csv-delimiter"
       :label="t('general_settings.labels.csv_delimiter')"
-      :success-messages="success ? [success] : []"
-      :error-messages="error ? [error] : toMessages(v$.csvDelimiter)"
-      @update:model-value="callIfValid($event, updateImmediate)"
+      type="text"
+      :success-messages="success"
+      :error-messages="error || toMessages(v$.csvExportDelimiter)"
+      @update:model-value="callIfcsvExportDelimiterValid($event, updateImmediate)"
     />
   </SettingsOption>
 </template>

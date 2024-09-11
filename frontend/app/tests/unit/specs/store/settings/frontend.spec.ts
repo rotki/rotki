@@ -80,7 +80,7 @@ describe('settings:frontend', () => {
             blockchainRefreshButtonBehaviour: BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES,
             shouldRefreshValidatorDailyStats: false,
             unifyAccountsTable: false,
-            csvDelimiter: Defaults.DEFAULT_CSV_EXPORT_DELIMITER,
+            csvExportDelimiter: Defaults.DEFAULT_CSV_EXPORT_DELIMITER,
             savedFilters: {},
           }),
         ),
@@ -158,7 +158,7 @@ describe('settings:frontend', () => {
       shouldRefreshValidatorDailyStats: false,
       unifyAccountsTable: false,
       savedFilters: {},
-      csvDelimiter: ',',
+      csvExportDelimiter: ',',
     };
 
     store.update(state);
@@ -221,6 +221,6 @@ describe('settings:frontend', () => {
     expect(store.enableAliasNames).toBe(true);
     expect(store.blockchainRefreshButtonBehaviour).toBe(BlockchainRefreshButtonBehaviour.ONLY_REFRESH_BALANCES);
     expect(store.savedFilters).toMatchObject({});
-    expect(store.csvDelimiter).toBe(',');
+    expect(store.csvExportDelimiter).toBe(',');
   });
 });
