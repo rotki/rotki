@@ -100,6 +100,7 @@ defineExpose({
         variant="outlined"
         placeholder="100"
         :disabled="disabled"
+        color="primary"
         :label="t('eth2_input.ownership_percentage')"
         :hint="t('eth2_input.ownership.hint')"
         :error-messages="toMessages(v$.ownershipPercentage)"

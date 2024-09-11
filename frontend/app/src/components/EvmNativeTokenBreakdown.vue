@@ -1,7 +1,7 @@
 <script setup lang="ts">
+import { type AssetBalance, type BigNumber, Blockchain } from '@rotki/common';
 import { CURRENCY_USD } from '@/types/currencies';
 import type { AssetBreakdown } from '@/types/blockchain/accounts';
-import type { AssetBalance, BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 
 const props = withDefaults(
@@ -166,13 +166,17 @@ function getAssets(location: string): AssetBalance[] {
       <AmountDisplay :value="row.amount" />
     </template>
     <template #item.usdValue="{ row }">
-      <AmountDisplay
-        show-currency="symbol"
-        :amount="row.amount"
-        :price-asset="identifier"
-        fiat-currency="USD"
-        :value="row.usdValue"
-      />
+      <div class="flex items-center justify-end gap-2">
+        <Eth2ValidatorLimitTooltip v-if="row.location === Blockchain.ETH2" />
+
+        <AmountDisplay
+          show-currency="symbol"
+          :amount="row.amount"
+          :price-asset="identifier"
+          fiat-currency="USD"
+          :value="row.usdValue"
+        />
+      </div>
     </template>
     <template #item.percentage="{ row }">
       <PercentageDisplay

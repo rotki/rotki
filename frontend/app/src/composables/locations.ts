@@ -22,7 +22,7 @@ export const useLocations = createSharedComposable(() => {
     const blockchainId = id.split(' ').join('_');
 
     if (isBlockchain(blockchainId)) {
-      const type = blockchainId === Blockchain.ETH ? 'validators' : getChainAccountType(blockchainId);
+      const type = blockchainId === Blockchain.ETH2 ? 'validators' : getChainAccountType(blockchainId);
       return {
         name: get(getChainName(blockchainId)),
         identifier: blockchainId,

@@ -2293,6 +2293,7 @@
     "label": "Select Withdrawal address"
   },
   "eth2_validator_limit_row": {
+    "complete": "Only showing balances for {limit} out of {total} validators. Click {button} to purchase rotki Premium and view the complete validator balances.",
     "label": "Validators"
   },
   "evm_rpc_node_manager": {

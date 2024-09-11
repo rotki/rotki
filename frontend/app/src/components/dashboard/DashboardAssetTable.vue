@@ -29,8 +29,8 @@ const sort = ref<DataTableSortData<AssetBalanceWithPrice>>({
 });
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
-
 const { exchangeRate } = useBalancePricesStore();
+
 const totalInUsd = computed(() => aggregateTotal(get(balances), CURRENCY_USD, One));
 const total = computed(() => {
   const mainCurrency = get(currencySymbol);
