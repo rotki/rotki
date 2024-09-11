@@ -2493,8 +2493,8 @@ def test_upgrade_db_43_to_44(user_data_dir, messages_aggregator):
             (bad_address, None, 'yabir.eth'),
         }
 
-    with db_v43.conn.write_ctx() as cursor:
-        cursor.execute(
+    with db_v43.conn.write_ctx() as write_cursor:
+        write_cursor.execute(
             'INSERT INTO settings(name, value) VALUES(?, ?)',
             ('historical_price_oracles', '["manual", "cryptocompare", "coingecko", "defillama"]'),
         )

@@ -279,10 +279,6 @@ class UniswapOracle(HistoricalPriceOracleInterface, CacheableMixIn):
         price = FVal(reduce(mul, [item.price for item in prices_and_tokens], 1))
         return Price(price)
 
-    def _resolve_assets(self, assets: tuple[Asset, Asset]) -> list[AssetWithOracles]:
-        """Ensure assets are resolved to AssetWithOracles."""
-        return [asset.resolve_to_asset_with_oracles() for asset in assets]
-
     def _replace_fiat_with_stablecoin(self, assets: list[AssetWithOracles]) -> list[AssetWithOracles]:  # noqa: E501
         """Replace fiat assets with their stablecoin equivalents."""
         for index, asset in enumerate(assets):
@@ -373,9 +369,10 @@ class UniswapOracle(HistoricalPriceOracleInterface, CacheableMixIn):
             to_asset: Asset,
             timestamp: Timestamp,
     ) -> Price:
-        to_asset, from_asset = self._replace_fiat_with_stablecoin(
-            self._resolve_assets((to_asset, from_asset)),
-        )
+        to_asset, from_asset = self._replace_fiat_with_stablecoin([
+            to_asset.resolve_to_asset_with_oracles(),
+            from_asset.resolve_to_asset_with_oracles(),
+        ])
         return self.get_price(
             from_asset=from_asset.resolve_to_asset_with_oracles(),
             to_asset=to_asset.resolve_to_asset_with_oracles(),
