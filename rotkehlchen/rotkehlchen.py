@@ -501,15 +501,6 @@ class Rotkehlchen:
         )
 
         self.migration_manager.maybe_migrate_data()
-        self.greenlet_manager.spawn_and_track(
-            after_seconds=5,
-            task_name='periodically_query_icons_until_all_cached',
-            exception_is_error=False,
-            method=self.icon_manager.periodically_query_icons_until_all_cached,
-            batch_size=ICONS_BATCH_SIZE,
-            sleep_time_secs=ICONS_QUERY_SLEEP,
-        )
-
         self.assets_updater = AssetsUpdater(self.msg_aggregator)
         self.greenlet_manager.spawn_and_track(
             after_seconds=None,

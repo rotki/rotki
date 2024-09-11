@@ -1199,6 +1199,7 @@ def test_snapshots_dont_happen_always(rotkehlchen_api_server: 'APIServer') -> No
             'rotkehlchen.db.dbhandler.DBHandler.get_last_balance_save_time',
             return_value=Timestamp(0),
         ):
+            gevent.sleep(1)  # wait for 1 second to save the next timestamp
             task_manager.schedule()
             gevent.joinall(rotki.greenlet_manager.greenlets)
 

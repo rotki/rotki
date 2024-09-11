@@ -2,6 +2,7 @@
 Changelog
 =========
 
+
 * :feature:`2217` Users will now be able to use Uniswap V2 and V3 as historical price oracles.
 * :bug:`-` Fixed the “Show More Events” button to properly render additional events when there are more than 6, allowing it to load more as expected.
 * :bug:`-` Improve the filtering UI when there are no suggestions for a filter.
@@ -21,6 +22,7 @@ Changelog
 * :feature:`8101` Failed transactions will now be displayed as failed and not just show "burned gas" event only.
 * :feature:`-` Transactions claiming SAFE tokens from vesting will now be properly decoded.
 * :feature:`-` Transactions locking, unlocking and withdrawing SAFE tokens will now be properly decoded. Also any locked SAFE tokens will be automatically detected and their balance counted.
+* :bug:`-` rotki will now decode the events of all the velodrome pools which were getting skipped before.
 * :bug:`8477` rotki will now properly decode very old Arbitrum bridge withdrawals.
 * :bug:`-` rotki will now decode the swaps done on velodrome v2 in the right order.
 * :bug:`-` ZKSync Era tokens will now have prices queried properly by defillama.
