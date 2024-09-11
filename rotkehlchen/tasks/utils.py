@@ -72,7 +72,7 @@ def query_missing_prices_of_base_entries(
                 timestamp=timestamp,
             )
         except (NoPriceForGivenTimestamp, RemoteError) as e:
-            log.error(
+            log.debug(
                 f'Failed to find price for {asset} at {timestamp} in history '
                 f'event with {identifier=}. {e!s}.',
             )

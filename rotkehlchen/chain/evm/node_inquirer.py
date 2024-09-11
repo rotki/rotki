@@ -214,7 +214,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         self.database = database
         self.blockchain = blockchain
         self.etherscan = etherscan
-        self.etherscan_block: BlockNumber = BlockNumber(0)  # caches highest block for checking sync while connecting to nodes  # noqa: E501
+        self.etherscan_block = BlockNumber(0)  # caches highest block for checking sync while connecting to nodes  # noqa: E501
         self.etherscan_node = etherscan_node
         self.etherscan_node_name = etherscan_node_name
         self.contracts = contracts
