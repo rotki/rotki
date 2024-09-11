@@ -1,6 +1,7 @@
 import datetime
 import json
 from contextlib import suppress
+from typing import TYPE_CHECKING
 from unittest.mock import _Call, call, patch
 
 import pytest
@@ -8,6 +9,7 @@ import requests
 from freezegun import freeze_time
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
     query_convex_data,
@@ -49,6 +51,10 @@ from rotkehlchen.types import (
     EvmTokenKind,
     SupportedBlockchain,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
+
 
 CURVE_EXPECTED_LP_TOKENS_TO_POOLS = {
     # first 2 are registry pools
@@ -236,6 +242,40 @@ def test_velodrome_cache(optimism_inquirer):
     assert all((identifier,) in asset_identifiers for identifier in VELODROME_SOME_EXPECTED_ASSETS)
 
     assert mock_notify.call_args_list == [make_call_object(CPT_VELODROME, ChainID.OPTIMISM, 0, 0)]
+
+
+class MockEvmContract:
+    """A mock contract class that returns a desired result for a `call` function.
+    Used for `test_velodrome_cache_with_no_symbol`."""
+    def call(self, **kwargs):
+        if kwargs['arguments'][1] == 0:
+            return [{
+                0: '0x3241738149B24C9164dA14Fa2040159FFC6Dd237',
+                1: '',
+                2: 18,
+                4: 10,
+                7: '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85',
+                10: '0xdFA46478F9e5EA86d57387849598dbFB2e964b02',
+                13: '0xBe3235e341393e43949aAd6F073982F67BFF412f',
+            }]
+        else:
+            return []
+
+
+def test_velodrome_cache_with_no_symbol(optimism_inquirer: 'OptimismInquirer'):
+    """Test a case when a queried pool is not a valid ERC20 token,
+    in such case the symbol should fallback to the form `CL{tick}-{token0}/{token1}`."""
+    def mock_contract(*args, **kwargs):  # pylint: disable=unused-argument
+        return MockEvmContract()
+
+    with patch('rotkehlchen.chain.evm.contracts.EvmContracts.contract', mock_contract):
+        query_velodrome_like_data(
+            inquirer=optimism_inquirer,
+            cache_type=CacheType.VELODROME_POOL_ADDRESS,
+            msg_aggregator=optimism_inquirer.database.msg_aggregator,
+        )
+
+    assert EvmToken('eip155:10/erc20:0x3241738149B24C9164dA14Fa2040159FFC6Dd237').symbol == 'CL10-USDC/MAI'  # noqa: E501
 
 
 @pytest.mark.vcr()
