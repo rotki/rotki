@@ -2721,7 +2721,7 @@
       "force_saved_language_setting_in_machine_hint": "This setting is saved on your user settings. Activate this to keep this setting when you logged out.",
       "ksm_rpc_endpoint": "Kusama Node RPC Endpoint",
       "language": "Selected language",
-      "csv_delimiter": "CSV Delimiter",
+      "csv_delimiter": "CSV export delimiter",
       "treat_eth2_as_eth": "Should treat ETH2 (Staked ETH) as ETH",
       "version_update_check": "Set the version update check period while in app",
       "version_update_check_enabled": "Enabled",
