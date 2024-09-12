@@ -83,17 +83,21 @@ watch([unifyAccountsTable, categories], () => {
 });
 
 onMounted(() => {
-  const { query, params } = get(route);
+  const { query } = get(route);
 
   if (query.add) {
     startPromise(nextTick(() => {
       set(account, createNewBlockchainAccount());
     }));
   }
+});
+
+watchImmediate(route, (route) => {
+  const { params } = route;
 
   if (!params.tab)
     goToFirstCategory();
-});
+}, { deep: true });
 </script>
 
 <template>

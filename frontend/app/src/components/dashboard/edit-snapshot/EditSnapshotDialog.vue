@@ -193,7 +193,7 @@ const steps = computed(() => [
           class="py-4 border-b-2 border-default"
         />
         <RuiTabItems v-model="step">
-          <RuiTabItem :model-value="1">
+          <RuiTabItem :value="1">
             <EditBalancesSnapshotTable
               v-model="snapshotData"
               :timestamp="timestamp"
@@ -201,7 +201,7 @@ const steps = computed(() => [
               @update:model-value="save()"
             />
           </RuiTabItem>
-          <RuiTabItem :model-value="2">
+          <RuiTabItem :value="2">
             <EditLocationDataSnapshotTable
               :model-value="locationDataSnapshot"
               :timestamp="timestamp"
@@ -209,7 +209,7 @@ const steps = computed(() => [
               @update:model-value="updateAndSave($event)"
             />
           </RuiTabItem>
-          <RuiTabItem :model-value="3">
+          <RuiTabItem :value="3">
             <EditSnapshotTotal
               v-if="step === 3"
               :model-value="locationDataSnapshot"

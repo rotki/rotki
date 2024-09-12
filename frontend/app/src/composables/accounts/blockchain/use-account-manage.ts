@@ -111,6 +111,7 @@ export function editBlockchainAccount(account: BlockchainAccountBalance): Accoun
   }
   else if (account.type === 'group' && account.chains.length > 1) {
     assert(account.category);
+    const address = getAccountAddress(account);
     return {
       mode: 'edit',
       type: 'group',
@@ -118,22 +119,23 @@ export function editBlockchainAccount(account: BlockchainAccountBalance): Accoun
       chain: undefined,
       data: {
         tags: account.tags ?? null,
-        label: account.label,
-        address: account.data.address,
+        label: account.label === address ? undefined : account.label,
+        address,
       },
     } satisfies AccountAgnosticManage;
   }
   else {
     const chain = getChain(account);
     assert(chain);
+    const address = getAccountAddress(account);
     return {
       mode: 'edit',
       type: 'account',
       chain,
       data: {
         tags: account.tags ?? null,
-        label: account.label,
-        address: account.data.address,
+        label: account.label === address ? undefined : account.label,
+        address,
       },
     } satisfies AccountManageEdit;
   }
