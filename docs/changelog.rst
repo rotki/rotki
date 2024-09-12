@@ -33,6 +33,7 @@ Changelog
 * :bug:`-` rotki will now decode the swaps done on velodrome v2 in the right order.
 * :bug:`-` ZKSync Era tokens will now have prices queried properly by defillama.
 * :bug:`-` rotki will now query TheGraph delegations only for the addresses that interacted with the protocol.
+* :bug:`-` rotki will now process all the kraken events during PnL report.
 * :bug:`-` Fixes a bug that was causing rotki to always query curve for new pools.
 * :bug:`8452` Fix Monerium integration after the v2 contracts upgrade.
 

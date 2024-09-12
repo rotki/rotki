@@ -492,29 +492,36 @@ class HistoryEvent(HistoryBaseEntry):
             events_iterator: "peekable['AccountingEventMixin']",  # pylint: disable=unused-argument
     ) -> int:
         if self.location == Location.KRAKEN:
-            if (  # LEF: Why the heck do we have this here? Perhaps to ignore all the ledger events that comprise the trades  # noqa: E501
-                self.event_type != HistoryEventType.STAKING or
-                self.event_subtype != HistoryEventSubType.REWARD
+            if self.event_type in (  # ignore trades and asset movements to avoid duplicates
+                HistoryEventType.TRADE,
+                HistoryEventType.DEPOSIT,
+                HistoryEventType.WITHDRAWAL,
             ):
                 return 1
 
-            timestamp = self.get_timestamp_in_sec()
-            # This omits every acquisition event of `ETH2` if `eth_staking_taxable_after_withdrawal_enabled`  # noqa: E501
-            # setting is set to `True` until ETH2 withdrawals were enabled
-            if self.asset == A_ETH2 and accounting.settings.eth_staking_taxable_after_withdrawal_enabled is True and timestamp < SHAPPELA_TIMESTAMP:  # noqa: E501
+            if self.event_type == HistoryEventType.STAKING:
+                if self.event_subtype != HistoryEventSubType.REWARD:
+                    return 1  # ignore asset movements between spot and staking
+
+                timestamp = self.get_timestamp_in_sec()
+                # This omits every acquisition event of `ETH2` if `eth_staking_taxable_after_withdrawal_enabled`  # noqa: E501
+                # setting is set to `True` until ETH2 withdrawals were enabled
+                if self.asset == A_ETH2 and accounting.settings.eth_staking_taxable_after_withdrawal_enabled is True and timestamp < SHAPPELA_TIMESTAMP:  # noqa: E501
+                    return 1
+
+                # otherwise it's kraken staking
+                accounting.add_in_event(
+                    event_type=AccountingEventType.STAKING,
+                    notes=f'Kraken {self.asset.resolve_to_asset_with_symbol().symbol} staking',
+                    location=self.location,
+                    timestamp=timestamp,
+                    asset=self.asset,
+                    amount=self.balance.amount,
+                    taxable=True,
+                )
                 return 1
 
-            # otherwise it's kraken staking
-            accounting.add_in_event(
-                event_type=AccountingEventType.STAKING,
-                notes=f'Kraken {self.asset.resolve_to_asset_with_symbol().symbol} staking',
-                location=self.location,
-                timestamp=timestamp,
-                asset=self.asset,
-                amount=self.balance.amount,
-                taxable=True,
-            )
-            return 1
+            # else let the common logic process the events
 
         return accounting.events_accountant.process(event=self, events_iterator=events_iterator)
 
