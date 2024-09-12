@@ -1,4 +1,4 @@
-COMMON_LINT_PATHS = rotkehlchen/ rotkehlchen_mock/ package.py
+COMMON_LINT_PATHS = rotkehlchen/ rotkehlchen_mock/ package.py docs/conf.py packaging/docker/entrypoint.py
 TOOLS_LINT_PATH = tools/
 ALL_LINT_PATHS = $(COMMON_LINT_PATHS) $(TOOLS_LINT_PATH)
 

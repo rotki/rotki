@@ -3,7 +3,12 @@ import { handleResponse } from '@/services/utils';
 import { EvmChainEntries, SupportedChains } from '@/types/api/chains';
 import type { ActionResult } from '@rotki/common';
 
-export function useSupportedChainsApi() {
+interface UseSupportedChainsApiReturn {
+  fetchSupportedChains: () => Promise<SupportedChains>;
+  fetchAllEvmChains: () => Promise<EvmChainEntries>;
+}
+
+export function useSupportedChainsApi(): UseSupportedChainsApiReturn {
   const fetchSupportedChains = async (): Promise<SupportedChains> => {
     const response = await api.instance.get<ActionResult<SupportedChains>>(`/blockchains/supported`);
     return SupportedChains.parse(handleResponse(response));

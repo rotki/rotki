@@ -98,7 +98,7 @@ export function defaultOptions<T extends NonNullable<unknown>>(defaultSortBy?: {
   return {
     page: 1,
     itemsPerPage,
-    sortBy: sortByKey ? (Array.isArray(sortByKey) ? sortByKey : [sortByKey]) : ['timestamp' as keyof T],
+    sortBy: arrayify(sortByKey || 'timestamp' as keyof T),
     sortDesc: defaultSortBy?.ascending ? defaultSortBy?.ascending.map(bool => !bool) : [true],
     singleSort: sortByKey ? !Array.isArray(sortByKey) : false,
   };

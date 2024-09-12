@@ -2188,6 +2188,7 @@ def test_vote_escrow_deposit(ethereum_transaction_decoder, ethereum_accounts):
             notes=f'Lock {amount} CRV in vote escrow until {timestamp_to_date(locktime, formatstr="%d/%m/%Y %H:%M:%S")}',  # noqa: E501
             counterparty=CPT_CURVE,
             address=VOTING_ESCROW,
+            extra_data={'locktime': 1778112000},
         ),
     ]
     assert events == expected_events
@@ -2461,7 +2462,7 @@ def test_monerium_eure_v2(gnosis_inquirer, gnosis_accounts, load_global_caches):
             extra_data={'withdrawal_events_num': 2},
         ), EvmEvent(
             tx_hash=tx_hash,
-            sequence_index=2,
+            sequence_index=11,
             timestamp=timestamp,
             location=Location.GNOSIS,
             event_type=HistoryEventType.WITHDRAWAL,

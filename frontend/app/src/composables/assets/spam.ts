@@ -1,6 +1,11 @@
 import type { ActionStatus } from '@/types/action';
 
-export function useSpamAsset() {
+interface UseSpamAssetReturn {
+  markAssetsAsSpam: (tokens: string[]) => Promise<ActionStatus>;
+  removeAssetFromSpamList: (token: string) => Promise<ActionStatus>;
+}
+
+export function useSpamAsset(): UseSpamAssetReturn {
   const { notify } = useNotificationsStore();
   const { t } = useI18n();
 

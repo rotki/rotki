@@ -6,7 +6,17 @@ import type { ActionStatus } from '@/types/action';
 import type { ConflictResolution } from '@/types/asset';
 import type { PendingTask } from '@/types/task';
 
-export function useAssetsApi() {
+interface UseAssetApiReturn {
+  checkForAssetUpdate: () => Promise<PendingTask>;
+  performUpdate: (version: number, conflicts?: ConflictResolution) => Promise<PendingTask>;
+  mergeAssets: (sourceIdentifier: string, targetAsset: string) => Promise<true>;
+  restoreAssetsDatabase: (reset: 'hard' | 'soft', ignoreWarnings: boolean) => Promise<PendingTask>;
+  importCustom: (file: File | string) => Promise<PendingTask>;
+  exportCustom: (directory?: string) => Promise<ActionStatus>;
+  fetchNfts: (ignoreCache: boolean) => Promise<PendingTask>;
+}
+
+export function useAssetsApi(): UseAssetApiReturn {
   const checkForAssetUpdate = async (): Promise<PendingTask> => {
     const response = await api.instance.get<ActionResult<PendingTask>>('/assets/updates', {
       params: snakeCaseTransformer({ asyncQuery: true }),

@@ -8,7 +8,14 @@ import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { type Watcher, Watchers } from '@/types/session';
 import type { ActionResult } from '@rotki/common';
 
-export function useWatchersApi() {
+interface UseWatcherApiReturn {
+  watchers: () => Promise<Watchers>;
+  addWatcher: (watchers: Omit<Watcher, 'identifier'>[]) => Promise<Watchers>;
+  editWatcher: (watchers: Watchers) => Promise<Watchers>;
+  deleteWatcher: (identifiers: string[]) => Promise<Watchers>;
+}
+
+export function useWatchersApi(): UseWatcherApiReturn {
   const watchers = async (): Promise<Watchers> => {
     const response = await api.instance.get<ActionResult<Watchers>>('/watchers', {
       validateStatus: validWithSessionAndExternalService,

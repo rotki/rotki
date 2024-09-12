@@ -1328,6 +1328,7 @@ class ModifiableSettingsSchema(Schema):
     auto_create_calendar_reminders = fields.Boolean(load_default=None)
     ask_user_upon_size_discrepancy = fields.Boolean(load_default=None)
     auto_detect_tokens = fields.Boolean(load_default=None)
+    csv_export_delimiter = fields.String(load_default=None)
 
     @validates_schema
     def validate_settings_schema(
@@ -1390,6 +1391,7 @@ class ModifiableSettingsSchema(Schema):
             auto_create_calendar_reminders=data['auto_create_calendar_reminders'],
             ask_user_upon_size_discrepancy=data['ask_user_upon_size_discrepancy'],
             auto_detect_tokens=data['auto_detect_tokens'],
+            csv_export_delimiter=data['csv_export_delimiter'],
         )
 
 
@@ -2195,14 +2197,24 @@ class AssetsPostSchema(DBPaginationSchema, DBOrderBySchema):
 
 
 class AssetsSearchLevenshteinSchema(Schema):
-    value = fields.String(required=True)
+    value = fields.String(load_default=None)
     evm_chain = EvmChainNameField(load_default=None)
+    address = EvmAddressField(load_default=None)
     limit = fields.Integer(required=True)
     search_nfts = fields.Boolean(load_default=False)
 
     def __init__(self, db: 'DBHandler') -> None:
         super().__init__()
         self.db = db
+
+    @validates_schema
+    def validate_schema(
+            self,
+            data: dict[str, Any],
+            **_kwargs: Any,
+    ) -> None:
+        if data['value'] is None and data['address'] is None:
+            raise ValidationError('Either value or address need to be provided')
 
     @post_load
     def make_levenshtein_search_query(
@@ -2212,8 +2224,9 @@ class AssetsSearchLevenshteinSchema(Schema):
     ) -> dict[str, Any]:
         filter_query = LevenshteinFilterQuery.make(
             and_op=True,
-            substring_search=data['value'].strip().casefold(),
+            substring_search=data['value'].strip().casefold() if data['value'] else None,
             chain_id=data['evm_chain'],
+            address=data['address'],
             ignored_assets_handling=IgnoredAssetsHandling.EXCLUDE,  # do not check ignored assets at search  # noqa: E501
         )
         return {

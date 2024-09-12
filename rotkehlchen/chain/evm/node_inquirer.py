@@ -214,6 +214,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         self.database = database
         self.blockchain = blockchain
         self.etherscan = etherscan
+        self.etherscan_block = BlockNumber(0)  # caches highest block for checking sync while connecting to nodes  # noqa: E501
         self.etherscan_node = etherscan_node
         self.etherscan_node_name = etherscan_node_name
         self.contracts = contracts
@@ -460,13 +461,13 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                         current_block = web3.eth.block_number  # pylint: disable=no-member
                         if isinstance(current_block, int) is False:  # Check for https://github.com/rotki/rotki/issues/6350  # TODO: Check if web3.py v6 has a check for this # noqa: E501
                             raise RemoteError(f'Found non-int current block:{current_block}')
-                        latest_block = self.query_highest_block()
                     except (requests.exceptions.RequestException, RemoteError) as e:
                         msg = f'Could not query latest block due to {e!s}'
                         log.warning(msg)
                         synchronized = False
                     else:
-                        synchronized, msg = _is_synchronized(current_block, latest_block)
+                        assert self.etherscan_block != 0
+                        synchronized, msg = _is_synchronized(current_block, self.etherscan_block)
             except (Web3Exception, ValueError) as e:
                 message = (
                     f'Failed to connect to {self.chain_name} node {node} at endpoint '
@@ -504,10 +505,16 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
 
     def connect_to_multiple_nodes(self, nodes: Sequence[WeightedNode]) -> None:
         self.web3_mapping = {}
-        for weighted_node in nodes:
-            if weighted_node.node_info.name == self.etherscan_node_name:
-                continue
 
+        # Remove etherscan nodes and return if all nodes use etherscan,
+        # so we don't query the highest block unnecessarily.
+        nodes = [node for node in nodes if node.node_info.name != self.etherscan_node_name]
+        if len(nodes) == 0:
+            return
+
+        # only query highest block once before attempting to connect to nodes
+        self.etherscan_block = self.query_highest_block()
+        for weighted_node in nodes:
             task_name = f'{_connect_task_prefix(self.chain_name)} {weighted_node.node_info.name!s}'
             self.greenlet_manager.spawn_and_track(
                 after_seconds=None,

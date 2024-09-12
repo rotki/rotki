@@ -34,6 +34,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
   const autoCreateCalendarReminders = useComputedRef(settings, 'autoCreateCalendarReminders');
   const askUserUponSizeDiscrepancy = useComputedRef(settings, 'askUserUponSizeDiscrepancy');
   const autoDetectTokens = useComputedRef(settings, 'autoDetectTokens');
+  const csvExportDelimiter = useComputedRef(settings, 'csvExportDelimiter');
 
   const currencySymbol = computed<SupportedCurrency>(() => {
     const currency = get(mainCurrency);
@@ -77,6 +78,7 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     autoCreateCalendarReminders,
     askUserUponSizeDiscrepancy,
     autoDetectTokens,
+    csvExportDelimiter,
     settings,
     update,
   };

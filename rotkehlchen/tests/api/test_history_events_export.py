@@ -19,6 +19,7 @@ def assert_csv_export_response(
         expected_count: int = 9,
         is_download: bool = False,
         includes_extra_headers: bool = True,
+        csv_delimiter: str = ',',
 ):
     """
     Asserts that a CSV export response meets certain criteria.
@@ -66,7 +67,7 @@ def assert_csv_export_response(
 
     # check the csv files were generated succesfully
     with open(os.path.join(csv_dir, FILENAME_HISTORY_EVENTS_CSV), newline='', encoding='utf-8') as csvfile:  # noqa: E501
-        reader = csv.DictReader(csvfile)
+        reader = csv.DictReader(csvfile, delimiter=csv_delimiter)
         count = 0
         for row in reader:
             assert tuple(row.keys())[:len(base_headers)] == base_headers, 'order of columns does not match'  # noqa: E501
@@ -119,6 +120,26 @@ def test_history_export_download_csv(
     temp_csv_file = Path(download_dir, FILENAME_HISTORY_EVENTS_CSV)
     temp_csv_file.write_bytes(response.content)
     assert_csv_export_response(response, download_dir, is_download=True)
+
+
+@pytest.mark.parametrize('db_settings', [{'csv_export_delimiter': ';'}])
+def test_history_export_csv_custom_delimiter(
+        rotkehlchen_api_server_with_exchanges,
+        tmpdir_factory,
+):
+    """Test that using a custom csv delimiter works correctly."""
+    database = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen.data.db
+    add_entries(events_db=DBHistoryEvents(database=database))
+
+    with database.conn.read_ctx() as cursor:
+        csv_delimiter = database.get_settings(cursor).csv_export_delimiter
+
+    csv_dir = str(tmpdir_factory.mktemp('test_csv_dir'))
+    response = requests.post(
+        api_url_for(rotkehlchen_api_server_with_exchanges, 'exporthistoryeventresource'),
+        json={'async_query': False, 'directory_path': csv_dir},
+    )
+    assert_csv_export_response(response, csv_dir, csv_delimiter=csv_delimiter)
 
 
 def test_history_export_csv_errors(

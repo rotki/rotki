@@ -353,14 +353,6 @@ class Rotkehlchen:
                 should_submit=settings.submit_usage_analytics,
             )
             self.beaconchain = BeaconChain(database=self.data.db, msg_aggregator=self.msg_aggregator)  # noqa: E501
-            # Initialize the price historian singleton
-            PriceHistorian(
-                data_directory=self.data_dir,
-                cryptocompare=self.cryptocompare,
-                coingecko=self.coingecko,
-                defillama=self.defillama,
-            )
-            PriceHistorian().set_oracles_order(settings.historical_price_oracles)
 
             exchange_credentials = self.data.db.get_exchange_credentials(cursor)
             self.exchange_manager.initialize_exchanges(
@@ -432,6 +424,17 @@ class Rotkehlchen:
 
         uniswap_v2_oracle = UniswapV2Oracle(ethereum_inquirer)
         uniswap_v3_oracle = UniswapV3Oracle(ethereum_inquirer)
+
+        price_historian = PriceHistorian(  # Initialize the price historian singleton
+            data_directory=self.data_dir,
+            cryptocompare=self.cryptocompare,
+            coingecko=self.coingecko,
+            defillama=self.defillama,
+            uniswapv2=uniswap_v2_oracle,
+            uniswapv3=uniswap_v3_oracle,
+        )
+        price_historian.set_oracles_order(settings.historical_price_oracles)
+
         Inquirer().add_defi_oracles(
             uniswap_v2=uniswap_v2_oracle,
             uniswap_v3=uniswap_v3_oracle,
@@ -500,15 +503,6 @@ class Rotkehlchen:
         )
 
         self.migration_manager.maybe_migrate_data()
-        self.greenlet_manager.spawn_and_track(
-            after_seconds=5,
-            task_name='periodically_query_icons_until_all_cached',
-            exception_is_error=False,
-            method=self.icon_manager.periodically_query_icons_until_all_cached,
-            batch_size=ICONS_BATCH_SIZE,
-            sleep_time_secs=ICONS_QUERY_SLEEP,
-        )
-
         self.assets_updater = AssetsUpdater(self.msg_aggregator)
         self.greenlet_manager.spawn_and_track(
             after_seconds=None,

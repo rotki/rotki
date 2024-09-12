@@ -1,7 +1,10 @@
+import json
 import logging
 import re
 from typing import TYPE_CHECKING
 
+from rotkehlchen.db.upgrades.utils import fix_address_book_duplications
+from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 
 if TYPE_CHECKING:
@@ -63,6 +66,7 @@ def _remove_log_removed_column(write_cursor: 'DBCursor') -> None:
     )
 
 
+@enter_exit_debug_log()
 def _upgrade_account_tags(write_cursor: 'DBCursor') -> None:
     """Upgrade the object_reference references in tag_mappings to not
     depend on the supported blockchain since the format has changed in 1.35
@@ -88,19 +92,56 @@ def _upgrade_account_tags(write_cursor: 'DBCursor') -> None:
     )
 
 
+@enter_exit_debug_log()
+def _addressbook_schema_update(write_cursor: 'DBCursor') -> None:
+    """Make the blockchain column to a non nullable column for address_book"""
+    fix_address_book_duplications(write_cursor=write_cursor)
+
+
+@enter_exit_debug_log()
+def _add_uniswap_to_historical_oracles(cursor: 'DBCursor') -> None:
+    """Add uniswapv2 and uniswapv3 to the list of historical price oracles."""
+    cursor.execute('SELECT value FROM settings WHERE name=?', ('historical_price_oracles',))
+    if (price_oracles := cursor.fetchone()) is None:
+        return
+
+    try:
+        oracles = json.loads(price_oracles[0])
+    except json.JSONDecodeError as e:
+        log.error(f'Failed to parse {price_oracles[0]} as JSON due to {e}')
+        return
+
+    oracles.extend([
+        HistoricalPriceOracle.UNISWAPV3.serialize(),
+        HistoricalPriceOracle.UNISWAPV2.serialize(),
+    ])
+
+    cursor.execute(
+        'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+        ('historical_price_oracles', json.dumps(oracles)),
+    )
+
+
 @enter_exit_debug_log(name='UserDB v43->v44 upgrade')
 def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v42 to v43. This was in v1.35 release.
 
     - add usd_price to the nfts table
+    - update tags of accounts
+    - drop column removed from the transaction logs
+    - make the blockchain column not nullable since we use `NONE` as string
     """
-    progress_handler.set_total_steps(4)
+    progress_handler.set_total_steps(6)
     with db.user_read_write() as write_cursor:
         _update_nft_table(write_cursor)
         progress_handler.new_step()
         _remove_log_removed_column(write_cursor)
         progress_handler.new_step()
         _upgrade_account_tags(write_cursor)
+        progress_handler.new_step()
+        _addressbook_schema_update(write_cursor)
+        progress_handler.new_step()
+        _add_uniswap_to_historical_oracles(write_cursor)
         progress_handler.new_step()
 
     db.conn.execute('VACUUM;')

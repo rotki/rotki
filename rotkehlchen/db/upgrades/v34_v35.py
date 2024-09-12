@@ -12,7 +12,7 @@ from rotkehlchen.constants.resolver import (
 )
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.globaldb.upgrades.v2_v3 import OTHER_EVM_CHAINS_ASSETS
-from rotkehlchen.history.types import DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER, HistoricalPriceOracle
+from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
 from rotkehlchen.oracles.structures import DEFAULT_CURRENT_PRICE_ORACLES_ORDER, CurrentPriceOracle
 from rotkehlchen.types import EvmTokenKind, OracleSource, SupportedBlockchain
@@ -359,7 +359,7 @@ def _add_defillama_to_oracles(cursor: 'DBCursor', setting_name: Literal['current
         default_oracles: Sequence[OracleSource] = DEFAULT_CURRENT_PRICE_ORACLES_ORDER
     else:
         oracle_cls = HistoricalPriceOracle
-        default_oracles = DEFAULT_HISTORICAL_PRICE_ORACLES_ORDER
+        default_oracles = [oracle_cls.MANUAL, oracle_cls.CRYPTOCOMPARE, oracle_cls.COINGECKO, oracle_cls.DEFILLAMA]  # noqa: E501
 
     oracles = [oracle.serialize() for oracle in default_oracles]
     if price_oracles is not None:

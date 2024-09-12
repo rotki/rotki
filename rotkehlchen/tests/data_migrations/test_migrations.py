@@ -33,7 +33,6 @@ from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
 from rotkehlchen.tests.utils.exchanges import check_saved_events_for_exchange
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
-    ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     ChainID,
     ChecksumEvmAddress,
@@ -627,44 +626,27 @@ def test_migration_16(rotkehlchen_api_server: 'APIServer', globaldb: 'GlobalDBHa
 
 
 @pytest.mark.parametrize('data_migration_version', [16])
-@pytest.mark.parametrize('perform_upgrades_at_unlock', [True])
-def test_migration_17(rotkehlchen_api_server: 'APIServer', globaldb: 'GlobalDBHandler') -> None:
-    """Test migration 17
-
-    - Test that address that appear more than once get de-duplicated and all
-    of them get the new "special" value for blockchain
-    """
-    bad_address, tether_address = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58'  # noqa: E501
-    inserted_rows = [
-        (bad_address, 'yabir.eth', None),
-        (bad_address, 'yabirgb.eth', None),
-        (tether_address, 'Black Tether', None),
-    ]
-
-    for conn in (
-        rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn,
-        globaldb.conn,
-    ):
-        with conn.write_ctx() as write_cursor:
-            write_cursor.executemany(
-                'INSERT INTO address_book (address, name, blockchain) VALUES (?, ?, ?)',
-                inserted_rows,
-            )
-
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+@pytest.mark.parametrize('custom_globaldb', ['v7_global.db'])
+@pytest.mark.parametrize('use_custom_database', ['v43_rotkehlchen.db'])
+@pytest.mark.parametrize('target_globaldb_version', [8])
+def test_migration_17(rotkehlchen_api_server: 'APIServer') -> None:
     with patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
         new=[MIGRATION_LIST[10]],
     ):
         DataMigrationManager(rotkehlchen_api_server.rest_api.rotkehlchen).maybe_migrate_data()
-
-    with globaldb.conn.read_ctx() as cursor:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    with rotki.data.db.conn.read_ctx() as cursor:
         assert cursor.execute(
-            'SELECT * FROM address_book WHERE address IN (?, ?)',
-            (bad_address, tether_address),
-        ).fetchall() == [
-            (tether_address, ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, 'Black Tether'),
-            (bad_address, ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, 'yabirgb.eth'),
-        ]
+            'SELECT COUNT(*) FROM location WHERE location IN (?, ?, ?, ?)',
+            (
+                Location.BITCOIN.serialize_for_db(),
+                Location.BITCOIN_CASH.serialize_for_db(),
+                Location.POLKADOT.serialize_for_db(),
+                Location.KUSAMA.serialize_for_db(),
+            ),
+        ).fetchone()[0] == 4
 
 
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])

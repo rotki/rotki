@@ -1,7 +1,13 @@
 import type { AssetBalance, AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 import type { AssetBalances } from '@/types/balances';
 
-export function useBlockchainAggregatedBalances() {
+interface UseBlockchainAggregatedBalancesReturn {
+  blockchainTotal: ComputedRef<BigNumber>;
+  blockchainAssets: ComputedRef<AssetBalanceWithPrice[]>;
+  locationBreakdown: ComputedRef<AssetBalances>;
+}
+
+export function useBlockchainAggregatedBalances(): UseBlockchainAggregatedBalancesReturn {
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { getAssociatedAssetIdentifier } = useAssetInfoRetrieval();
   const { assetPrice } = useBalancePricesStore();

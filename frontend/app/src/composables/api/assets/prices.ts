@@ -14,7 +14,18 @@ import {
 } from '@/types/prices';
 import type { ActionResult } from '@rotki/common';
 
-export function useAssetPricesApi() {
+interface UseAssetPriceApiReturn {
+  fetchHistoricalPrices: (payload?: Partial<ManualPricePayload>) => Promise<HistoricalPrice[]>;
+  addHistoricalPrice: (price: HistoricalPriceFormPayload) => Promise<boolean>;
+  editHistoricalPrice: (price: HistoricalPriceFormPayload) => Promise<boolean>;
+  deleteHistoricalPrice: (payload: HistoricalPriceDeletePayload) => Promise<boolean>;
+  fetchLatestPrices: (payload?: Partial<ManualPricePayload>) => Promise<ManualPrice[]>;
+  addLatestPrice: (payload: ManualPriceFormPayload) => Promise<boolean>;
+  deleteLatestPrice: (asset: string) => Promise<boolean>;
+  fetchNftsPrices: () => Promise<NftPriceArray>;
+}
+
+export function useAssetPricesApi(): UseAssetPriceApiReturn {
   const fetchHistoricalPrices = async (payload?: Partial<ManualPricePayload>): Promise<HistoricalPrice[]> => {
     const response = await api.instance.get<ActionResult<HistoricalPrice[]>>('/assets/prices/historical', {
       params: payload ? snakeCaseTransformer(nonEmptyProperties(payload, true)) : null,

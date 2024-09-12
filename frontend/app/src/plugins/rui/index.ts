@@ -110,7 +110,9 @@ import {
   RiHome3Line,
   RiImageLine,
   RiInboxArchiveLine,
+  RiInformation2Line,
   RiInformationLine,
+  RiInputField,
   RiKeyLine,
   RiLayoutGridLine,
   RiLeafLine,
@@ -199,8 +201,13 @@ import {
   createRui,
 } from '@rotki/ui-library';
 import '@rotki/ui-library/style.css';
+import type { App } from 'vue';
 
-export function createRuiPlugin(defaults: Partial<RuiOptions['defaults']>) {
+interface RuiPlugin {
+  install: (app: App) => void;
+}
+
+export function createRuiPlugin(defaults: Partial<RuiOptions['defaults']>): RuiPlugin {
   return createRui({
     theme: {
       mode: ThemeMode.light,
@@ -406,6 +413,8 @@ export function createRuiPlugin(defaults: Partial<RuiOptions['defaults']>) {
         RiSpamLine,
         RiFundsLine,
         RiWalletLine,
+        RiInformation2Line,
+        RiInputField,
       ],
     },
     defaults,

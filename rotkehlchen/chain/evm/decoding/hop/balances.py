@@ -23,7 +23,6 @@ from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.decoder import EVMTransactionDecoder
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
-    from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -32,12 +31,10 @@ log = RotkehlchenLogsAdapter(logger)
 class HopBalances(ProtocolWithBalance):
     def __init__(
             self,
-            database: 'DBHandler',
             evm_inquirer: 'EvmNodeInquirer',
             tx_decoder: 'EVMTransactionDecoder',
     ):
         super().__init__(
-            database=database,
             evm_inquirer=evm_inquirer,
             tx_decoder=tx_decoder,
             counterparty=CPT_HOP,

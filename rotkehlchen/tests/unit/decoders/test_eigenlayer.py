@@ -419,7 +419,6 @@ def test_lst_create_delayed_withdrawals(database, ethereum_inquirer, ethereum_ac
 
     # Also check that the balances are seen by the balance inquirer
     balances_inquirer = EigenlayerBalances(
-        database=database,
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
@@ -507,7 +506,6 @@ def test_lst_complete_delayed_withdrawals(database, ethereum_inquirer, ethereum_
     # Finally check that the balances of this withdrawal are not seen by the balance inquirer
     # since we have completed the withdrawal and marked the event as such
     balances_inquirer = EigenlayerBalances(
-        database=database,
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )

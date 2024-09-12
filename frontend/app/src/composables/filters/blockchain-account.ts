@@ -24,7 +24,7 @@ export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], c
 
   const { supportedChains: allChains } = useSupportedChains();
 
-  const chainIds = computed(() => {
+  const chainIds = computed<string[]>(() => {
     const chains = get(allChains);
     const categoryVal = get(category);
     if (categoryVal === 'all')
@@ -39,8 +39,8 @@ export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], c
       keyValue: BlockchainAccountFilterValueKeys.ADDRESS,
       description: t('common.address'),
       string: true,
-      suggestions: () => [],
-      validate: () => true,
+      suggestions: (): string[] => [],
+      validate: (): true => true,
     },
     {
       key: BlockchainAccountFilterKeys.CHAIN,
@@ -48,23 +48,23 @@ export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], c
       description: t('common.chain'),
       multiple: true,
       string: true,
-      suggestions: () => get(chainIds),
-      validate: (id: string) => get(chainIds).some(chainId => chainId.toLocaleLowerCase() === id.toLocaleLowerCase()),
+      suggestions: (): string[] => get(chainIds),
+      validate: (id: string): boolean => get(chainIds).some(chainId => chainId.toLocaleLowerCase() === id.toLocaleLowerCase()),
     },
     {
       key: BlockchainAccountFilterKeys.LABEL,
       keyValue: BlockchainAccountFilterValueKeys.LABEL,
       description: t('common.label'),
       string: true,
-      suggestions: () => [],
-      validate: () => true,
+      suggestions: (): string[] => [],
+      validate: (): boolean => true,
     },
   ]);
 
   const OptionalMultipleString = z
     .array(z.string())
     .or(z.string())
-    .transform(val => (Array.isArray(val) ? val : [val]))
+    .transform(arrayify)
     .optional();
 
   const RouteFilterSchema = z.object({
@@ -81,8 +81,7 @@ export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], c
 }
 
 export const AccountExternalFilterSchema = z.object({
-  tags: z
-    .string()
+  tags: z.string()
     .optional()
     .transform(val => (val ? val.split(',') : [])),
 });

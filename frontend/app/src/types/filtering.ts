@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { AssetInfoWithId, type AssetsWithId } from '@/types/asset';
 import type { AssetInfo } from '@rotki/common';
 import type { DateFormat } from '@/types/date-format';
+import type { AssetSearchParams } from '@/composables/api/assets/info';
 
 export enum FilterBehaviour {
   INCLUDE = 'include',
@@ -82,8 +83,36 @@ export enum SavedFilterLocation {
   ETH_VALIDATORS = 'ethValidators',
 }
 
-export function assetSuggestions(assetSearch: (keyword: string, limit: number) => Promise<AssetsWithId>): (value: string) => Promise<AssetsWithId> {
-  return async (value: string) => await assetSearch(value, 5);
+export function assetSuggestions(assetSearch: (params: AssetSearchParams) => Promise<AssetsWithId>, evmChain?: string): (value: string) => Promise<AssetsWithId> {
+  let pending: AbortController | null = null;
+
+  // eslint-disable-next-line @typescript-eslint/no-misused-promises
+  return useDebounceFn(async (value: string) => {
+    if (pending) {
+      pending.abort();
+      pending = null;
+    }
+
+    pending = new AbortController();
+
+    let keyword = value;
+    let address;
+
+    if (isValidEthAddress(value)) {
+      keyword = '';
+      address = value;
+    }
+
+    const result = await assetSearch({
+      value: keyword,
+      address,
+      limit: 10,
+      evmChain,
+      signal: pending.signal,
+    });
+    pending = null;
+    return result;
+  }, 200);
 }
 
 export function assetDeserializer(assetInfo: (identifier: string) => ComputedRef<AssetInfo | null>): (identifier: string) => AssetInfoWithId | null {

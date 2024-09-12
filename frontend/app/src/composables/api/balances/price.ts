@@ -13,7 +13,17 @@ import type { PriceOracle } from '@/types/settings/price-oracle';
 import type { HistoricPricesPayload, OracleCacheMeta } from '@/types/prices';
 import type { PendingTask } from '@/types/task';
 
-export function usePriceApi() {
+interface UsePriceApiReturn {
+  queryPrices: (assets: string[], targetAsset: string, ignoreCache: boolean) => Promise<PendingTask>;
+  queryFiatExchangeRates: (currencies: SupportedCurrency[]) => Promise<PendingTask>;
+  queryHistoricalRate: (fromAsset: string, toAsset: string, timestamp: number) => Promise<PendingTask>;
+  queryHistoricalRates: (payload: HistoricPricesPayload) => Promise<PendingTask>;
+  getPriceCache: (source: PriceOracle) => Promise<OracleCacheMeta[]>;
+  createPriceCache: (source: PriceOracle, fromAsset: string, toAsset: string, purgeOld?: boolean) => Promise<PendingTask>;
+  deletePriceCache: (source: PriceOracle, fromAsset: string, toAsset: string) => Promise<boolean>;
+}
+
+export function usePriceApi(): UsePriceApiReturn {
   const createPriceCache = async (
     source: PriceOracle,
     fromAsset: string,

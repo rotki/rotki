@@ -14,6 +14,7 @@ from rotkehlchen.chain.ethereum.constants import LAST_GRAPH_DELEGATIONS
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.chain.ethereum.modules.thegraph.constants import CONTRACT_STAKING
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
+from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_COMP, A_DAI, A_GRT, A_LUSD, A_USDC, A_USDT, A_YFI
@@ -33,7 +34,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, SubscriptionStatus
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
-from rotkehlchen.tasks.calendar import ENS_CALENDAR_COLOR
+from rotkehlchen.tasks.calendar import CRV_CALENDAR_COLOR, ENS_CALENDAR_COLOR
 from rotkehlchen.tasks.manager import PREMIUM_STATUS_CHECK, TaskManager
 from rotkehlchen.tasks.utils import should_run_periodic_task
 from rotkehlchen.tests.fixtures.websockets import WebsocketReader
@@ -994,7 +995,7 @@ def test_calendar_entries_get_deleted(
     ],
     {'ens2qr.eth': 1712756435, 'karapetsas.eth': 1849443293},
 )])
-def test_maybe_create_calendar_reminder(
+def test_maybe_create_ens_calendar_reminders(
         task_manager: TaskManager,
         ethereum_inquirer: 'EthereumInquirer',
         db_settings: dict[str, Any],
@@ -1052,6 +1053,72 @@ def test_maybe_create_calendar_reminder(
         assert reminders[0].event_id == reminders[1].event_id == calendar_entry.identifier
         assert reminders[0].secs_before == DAY_IN_SECONDS
         assert reminders[1].secs_before == WEEK_IN_SECONDS
+
+    with task_manager.database.conn.read_ctx() as cursor:
+        assert (last_ran_ts := task_manager.database.get_static_cache(
+            cursor=cursor, name=DBCacheStatic.LAST_CREATE_REMINDER_CHECK_TS,
+        )) is not None and last_ran_ts - ts_now() < 5  # executed recently
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('max_tasks_num', [5])
+@pytest.mark.freeze_time('2024-01-01 00:00:00 GMT')
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0x510B0068C0756bBEFCBaffB6567e467d661291FE',
+    '0x8093c1958Ea5CEBF1eFeAABAB7498A49f2937Fed',
+]])
+@pytest.mark.parametrize('crv_tx_hashes', [[
+    deserialize_evm_tx_hash('0x2675807cf1950b8a8fbd64e1a0fe0ec3b894ba88fbb8e544ddf279aff12c6d55'),
+    deserialize_evm_tx_hash('0x15bdc063daef0b1d8d61e9d3f4af5abf50d1ec28421cfc6be1b91b8acbd037e7'),
+]])
+def test_maybe_create_locked_crv_calendar_reminders(
+        task_manager: TaskManager,
+        ethereum_inquirer: 'EthereumInquirer',
+        crv_tx_hashes: list['EVMTxHash'],
+) -> None:
+    """Test that reminders are created at lock period end of CRV in vote escrow."""
+    database = task_manager.database
+    calendar_db = DBCalendar(database)
+    customizable_date = CustomizableDateMixin(database=database)
+    all_calendar_entries = calendar_db.query_calendar_entry(CalendarFilterQuery.make())
+    assert all_calendar_entries['entries_total'] == 0
+
+    crv_events = [
+        next(x for x in get_decoded_events_of_transaction(
+            evm_inquirer=ethereum_inquirer,
+            tx_hash=crv_tx_hash,
+        )[0] if x.extra_data is not None) for crv_tx_hash in crv_tx_hashes
+    ]
+
+    task_manager.potential_tasks = [task_manager._maybe_create_calendar_reminder]
+    task_manager.schedule()
+    gevent.joinall(task_manager.running_greenlets[task_manager._maybe_create_calendar_reminder])
+
+    new_calendar_entries = calendar_db.query_calendar_entry(CalendarFilterQuery.make())
+    assert new_calendar_entries['entries_found'] == len(crv_tx_hashes)
+
+    for idx, calendar_entry in enumerate(new_calendar_entries['entries']):
+        assert crv_events[idx].extra_data is not None
+        assert crv_events[idx].location_label is not None
+        locktime = Timestamp(crv_events[idx].extra_data['locktime'])  # type: ignore[index]  # extra_data is not None, checked above
+
+        assert calendar_entry == CalendarEntry(  # calendar entry is created for expiry
+            identifier=idx + 1,
+            name='CRV vote escrow lock period ends',
+            timestamp=locktime,
+            description=f'Lock period for {crv_events[idx].balance.amount} CRV in vote escrow ends on {customizable_date.timestamp_to_date(locktime)}',  # noqa: E501
+            counterparty=CPT_CURVE,
+            address=crv_events[idx].location_label,  # type: ignore[arg-type]  # location_label is not None, checked above
+            blockchain=ChainID.deserialize(crv_events[idx].location.to_chain_id()).to_blockchain(),
+            color=CRV_CALENDAR_COLOR,
+            auto_delete=True,
+        )
+
+        # one reminder is created at the time of the calendar entry
+        reminders = calendar_db.query_reminder_entry(event_id=calendar_entry.identifier)['entries']
+        assert len(reminders) == 1
+        assert reminders[0].event_id == calendar_entry.identifier
+        assert reminders[0].secs_before == 0
 
     with task_manager.database.conn.read_ctx() as cursor:
         assert (last_ran_ts := task_manager.database.get_static_cache(
@@ -1136,6 +1203,7 @@ def test_snapshots_dont_happen_always(rotkehlchen_api_server: 'APIServer') -> No
             'rotkehlchen.db.dbhandler.DBHandler.get_last_balance_save_time',
             return_value=Timestamp(0),
         ):
+            gevent.sleep(1)  # wait for 1 second to save the next timestamp
             task_manager.schedule()
             gevent.joinall(rotki.greenlet_manager.greenlets)
 

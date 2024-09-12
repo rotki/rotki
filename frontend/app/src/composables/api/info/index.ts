@@ -5,7 +5,12 @@ import { BackendInfo } from '@/types/backend';
 import type { PendingTask } from '@/types/task';
 import type { ActionResult } from '@rotki/common';
 
-export function useInfoApi() {
+interface UseInfoApiReturn {
+  info: (checkForUpdates?: boolean) => Promise<BackendInfo>;
+  ping: () => Promise<PendingTask>;
+}
+
+export function useInfoApi(): UseInfoApiReturn {
   const info = async (checkForUpdates = false): Promise<BackendInfo> => {
     const response = await api.instance.get<ActionResult<BackendInfo>>('/info', {
       params: snakeCaseTransformer({

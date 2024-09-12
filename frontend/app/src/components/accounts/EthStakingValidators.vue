@@ -17,10 +17,13 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const { fetchValidators } = useBlockchainStore();
+const blockchainStore = useBlockchainStore();
+const { fetchValidators } = blockchainStore;
+const { ethStakingValidators } = storeToRefs(blockchainStore);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { showConfirmation } = useAccountDelete();
 const { fetchEthStakingValidators } = useEthStaking();
+const { exchangeRate } = useBalancePricesStore();
 
 const {
   filters,
@@ -125,19 +128,15 @@ function edit(account: EthereumValidator) {
   emit('edit', state);
 }
 
+const colorMap: Record<string, ContextColorsType | undefined> = {
+  active: 'success',
+  pending: 'info',
+  exiting: 'warning',
+  exited: 'error',
+};
+
 function getColor(status: string): ContextColorsType | undefined {
-  switch (status) {
-    case 'active':
-      return 'success';
-    case 'pending':
-      return 'info';
-    case 'exiting':
-      return 'warning';
-    case 'exited':
-      return 'error';
-    default:
-      return undefined;
-  }
+  return colorMap[status] ?? undefined;
 }
 
 function getOwnershipPercentage(row: EthereumValidator): string {
@@ -153,12 +152,15 @@ function confirmDelete(item: EthereumValidator) {
   showConfirmation({
     type: 'validator',
     data: item,
-  }, () => {
-    startPromise(fetchData());
   });
 }
 
-onMounted(async () => {
+const total = computed(() => {
+  const mainCurrency = get(currencySymbol);
+  return (get(rows).totalUsdValue || Zero).multipliedBy(get(exchangeRate(mainCurrency)) ?? One);
+});
+
+watchImmediate(ethStakingValidators, async () => {
   await fetchData();
 });
 </script>
@@ -256,6 +258,23 @@ onMounted(async () => {
       </template>
       <template #body.prepend="{ colspan }">
         <Eth2ValidatorLimitRow :colspan="colspan" />
+      </template>
+      <template
+        v-if="ethStakingValidators.length > 0"
+        #body.append
+      >
+        <RowAppend
+          label-colspan="4"
+          :label="t('common.total')"
+          :right-patch-colspan="cols.length - 2"
+          class-name="[&>td]:p-4 text-sm"
+        >
+          <AmountDisplay
+            :fiat-currency="currencySymbol"
+            :value="total"
+            show-currency="symbol"
+          />
+        </RowAppend>
       </template>
     </RuiDataTable>
   </RuiCard>

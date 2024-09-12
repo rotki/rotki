@@ -239,7 +239,10 @@ function getActions(keyword: string): SearchItemWithoutValue[] {
 }
 
 async function getAssets(keyword: string): Promise<SearchItemWithoutValue[]> {
-  const matches = await assetSearch(keyword, 5);
+  const matches = await assetSearch({
+    value: keyword,
+    limit: 5,
+  });
   const assetBalances = get(balances()) as AssetBalanceWithPrice[];
   const map: Record<string, string> = {};
   for (const match of matches) map[match.identifier] = match.symbol ?? match.name ?? '';

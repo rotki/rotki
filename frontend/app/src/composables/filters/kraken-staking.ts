@@ -27,7 +27,7 @@ export function useKrakenStakingFilter(): FilterSchema<Filters, Matcher> {
   const { krakenStakingEventTypeData } = useKrakenStakingEventTypes();
   const { t } = useI18n();
 
-  const getEventTypeIdentifier = (label: string) =>
+  const getEventTypeIdentifier = (label: string): string =>
     get(krakenStakingEventTypeData).find(data => data.label === label)?.identifier ?? label;
 
   const matchers = computed<Matcher[]>(() => {
@@ -46,9 +46,9 @@ export function useKrakenStakingFilter(): FilterSchema<Filters, Matcher> {
         keyValue: KrakenStakingValueKeys.TYPE,
         description: t('kraken_staking_events.filter.type').toString(),
         string: true,
-        suggestions: () => krakenStakingEventTypeValues,
-        validate: (option: string) => krakenStakingEventTypeValues.includes(option as any),
-        transformer: (type: string) => getEventTypeIdentifier(type),
+        suggestions: (): string[] => krakenStakingEventTypeValues,
+        validate: (option: string): boolean => krakenStakingEventTypeValues.includes(option as any),
+        transformer: (type: string): string => getEventTypeIdentifier(type),
       },
       {
         key: KrakenStakingKeys.START,
@@ -58,9 +58,9 @@ export function useKrakenStakingFilter(): FilterSchema<Filters, Matcher> {
           format: getDateInputISOFormat(get(dateInputFormat)),
         }),
         string: true,
-        suggestions: () => [],
-        validate: value => value.length > 0 && !isNaN(convertToTimestamp(value, get(dateInputFormat))),
-        transformer: (date: string) => convertToTimestamp(date, get(dateInputFormat)).toString(),
+        suggestions: (): string[] => [],
+        validate: (value): boolean => value.length > 0 && !isNaN(convertToTimestamp(value, get(dateInputFormat))),
+        transformer: (date: string): string => convertToTimestamp(date, get(dateInputFormat)).toString(),
       },
       {
         key: KrakenStakingKeys.END,
@@ -70,9 +70,9 @@ export function useKrakenStakingFilter(): FilterSchema<Filters, Matcher> {
           format: getDateInputISOFormat(get(dateInputFormat)),
         }),
         string: true,
-        suggestions: () => [],
-        validate: value => value.length > 0 && !isNaN(convertToTimestamp(value, get(dateInputFormat))),
-        transformer: (date: string) => convertToTimestamp(date, get(dateInputFormat)).toString(),
+        suggestions: (): string[] => [],
+        validate: (value): boolean => value.length > 0 && !isNaN(convertToTimestamp(value, get(dateInputFormat))),
+        transformer: (date: string): string => convertToTimestamp(date, get(dateInputFormat)).toString(),
       },
     ];
   });

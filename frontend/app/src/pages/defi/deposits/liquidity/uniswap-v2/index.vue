@@ -124,7 +124,6 @@ const refreshTooltip = computed<string>(() =>
         :usable-addresses="addresses"
         dense
         outlined
-        no-padding
       />
       <LiquidityPoolSelector
         v-model="selectedPools"

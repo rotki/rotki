@@ -17,6 +17,8 @@ const emit = defineEmits<{
   (e: 'edit', account: AccountManageState): void;
 }>();
 
+const tab = defineModel<number>({ required: true });
+
 const { fetchGroupAccounts } = useBlockchainStore();
 
 const {
@@ -51,7 +53,6 @@ defineExpose({
   refresh: fetchData,
 });
 
-const tab = ref(0);
 const { t } = useI18n();
 
 const [DefineAccounts, ReuseAccounts] = createReusableTemplate();

@@ -59,25 +59,27 @@ onBeforeMount(async () => {
         class="w-[113px] h-[84px]"
       />
     </div>
-    <div
-      v-else-if="providers.length > 0"
-      class="grid grid-cols-2 gap-2"
-    >
-      <RuiButton
-        v-for="provider in providers"
-        :key="provider.info.uuid"
-        variant="outlined"
-        color="primary"
-        class="flex-col text-center text-rui-text-secondary text-sm py-3"
-        @click="importAddressesWithProvider(provider.provider)"
-      >
-        <img
-          :src="provider.info.icon"
-          :alt="provider.info.name"
-          class="w-8 h-8 mx-auto mb-2"
-        />
-        {{ provider.info.name }}
-      </RuiButton>
+    <div v-else-if="providers.length > 0">
+      <div class="grid grid-cols-2 gap-2">
+        <RuiButton
+          v-for="provider in providers"
+          :key="provider.info.uuid"
+          variant="outlined"
+          color="primary"
+          class="flex-col text-center text-rui-text-secondary text-sm py-3"
+          @click="importAddressesWithProvider(provider.provider)"
+        >
+          <img
+            :src="provider.info.icon"
+            :alt="provider.info.name"
+            class="w-8 h-8 mx-auto mb-2"
+          />
+          {{ provider.info.name }}
+        </RuiButton>
+      </div>
+      <div class="pt-3 text-xs text-rui-text-secondary">
+        {{ t('input_mode_select.import_from_wallet.only_metamask') }}
+      </div>
     </div>
     <template v-else>
       <div class="font-bold mb-2">

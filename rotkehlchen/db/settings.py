@@ -64,6 +64,7 @@ DEFAULT_AUTO_DELETE_CALENDAR_ENTRIES = True
 DEFAULT_AUTO_CREATE_CALENDAR_REMINDERS = True
 DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY = True
 DEFAULT_AUTO_DETECT_TOKENS = True
+DEFAULT_CSV_EXPORT_DELIMITER = ','
 
 JSON_KEYS = (
     'current_price_oracles',
@@ -110,6 +111,7 @@ STRING_KEYS = (
     'beacon_rpc_endpoint',
     'date_display_format',
     'frontend_settings',
+    'csv_export_delimiter',
 )
 
 UPDATE_TYPES_VERSIONS = {x.serialize() for x in UpdateType}
@@ -219,6 +221,7 @@ class DBSettings:
     auto_create_calendar_reminders: bool = DEFAULT_AUTO_CREATE_CALENDAR_REMINDERS
     ask_user_upon_size_discrepancy: bool = DEFAULT_ASK_USER_UPON_SIZE_DISCREPANCY
     auto_detect_tokens: bool = DEFAULT_AUTO_DETECT_TOKENS
+    csv_export_delimiter: str = DEFAULT_CSV_EXPORT_DELIMITER
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}
@@ -279,6 +282,7 @@ class ModifiableDBSettings(NamedTuple):
     auto_create_calendar_reminders: bool | None = None
     ask_user_upon_size_discrepancy: bool | None = None
     auto_detect_tokens: bool | None = None
+    csv_export_delimiter: str | None = None
 
     def serialize(self) -> dict[str, Any]:
         settings_dict = {}

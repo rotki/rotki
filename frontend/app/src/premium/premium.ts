@@ -106,7 +106,7 @@ const PremiumLoading = defineAsyncComponent(() => import('@/components/premium/P
 const PremiumLoadingError = defineAsyncComponent(() => import('@/components/premium/PremiumLoadingError.vue'));
 const ThemeSwitchLock = defineAsyncComponent(() => import('@/components/premium/ThemeSwitchLock.vue'));
 
-function createFactory(component: string, options?: { loading?: Component; error?: Component }) {
+function createFactory(component: string, options?: { loading?: Component; error?: Component }): Component {
   return defineAsyncComponent({
     loader: () => load(component),
     loadingComponent: options?.loading ?? PremiumLoading,

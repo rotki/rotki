@@ -669,7 +669,7 @@ CREATE TABLE IF NOT EXISTS ens_mappings (
 DB_CREATE_ADDRESS_BOOK = """
 CREATE TABLE IF NOT EXISTS address_book (
     address TEXT NOT NULL,
-    blockchain TEXT,
+    blockchain TEXT NOT NULL,
     name TEXT NOT NULL,
     PRIMARY KEY(address, blockchain)
 );

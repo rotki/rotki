@@ -35,7 +35,8 @@ from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_VELODROME
 from rotkehlchen.chain.evm.tokens import TokenBalancesType
-from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.evm.types import NodeName, WeightedNode, string_to_evm_address
+from rotkehlchen.chain.optimism.modules.extrafi.balances import ExtrafiBalances
 from rotkehlchen.chain.optimism.modules.velodrome.balances import VelodromeBalances
 from rotkehlchen.constants.assets import (
     A_AAVE,
@@ -63,6 +64,7 @@ from rotkehlchen.types import (
     ChecksumEvmAddress,
     EvmTokenKind,
     Price,
+    SupportedBlockchain,
     deserialize_evm_tx_hash,
 )
 
@@ -89,7 +91,6 @@ def test_curve_balances(
         load_global_caches: list[str],
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
 ) -> None:
-    database = ethereum_transaction_decoder.database
     tx_hex = deserialize_evm_tx_hash('0x09b67a0846ce2f6bea50221cfb5ac67f5b2f55b89300e45f58bf2f69dc589d43')  # noqa: E501
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -97,7 +98,6 @@ def test_curve_balances(
         load_global_caches=load_global_caches,
     )
     curve_balances_inquirer = CurveBalances(
-        database=database,
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
@@ -118,14 +118,12 @@ def test_convex_gauges_balances(
         ethereum_accounts: list[ChecksumEvmAddress],
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
 ) -> None:
-    database = ethereum_transaction_decoder.database
     tx_hex = deserialize_evm_tx_hash('0x0d8863fb26d57ca11dc11c694dbf6a13ef03920e39d0482081aa88b0b20ba61b')  # noqa: E501
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=tx_hex,
     )
     convex_balances_inquirer = ConvexBalances(
-        database=database,
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
@@ -147,7 +145,6 @@ def test_convex_staking_balances(
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
 ) -> None:
     """Check Convex balance query for CSV locked and staked"""
-    database = ethereum_transaction_decoder.database
     tx_hex = deserialize_evm_tx_hash('0x0d8863fb26d57ca11dc11c694dbf6a13ef03920e39d0482081aa88b0b20ba61b')  # noqa: E501
     get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -159,7 +156,6 @@ def test_convex_staking_balances(
         tx_hash=tx_hex,
     )
     convex_balances_inquirer = ConvexBalances(
-        database=database,
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
@@ -186,14 +182,12 @@ def test_convex_staking_balances_without_gauges(
     balances returned from the gauges and those balances before this test were
     not a defaultdict and could lead to a failure.
     """
-    database = ethereum_transaction_decoder.database
     tx_hex = deserialize_evm_tx_hash('0x38bd199803e7cb065c809ce07957afc0647a41da4c0610d1209a843d9b045cd6')  # noqa: E501
     _, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
         tx_hash=tx_hex,
     )
     convex_balances_inquirer = ConvexBalances(
-        database=database,
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
@@ -216,7 +210,6 @@ def test_velodrome_v2_staking_balances(
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
 ) -> None:
     """Check that balances of velodrome v2 gauges are properly queried."""
-    database = optimism_transaction_decoder.database
     tx_hex = deserialize_evm_tx_hash('0xed7e13e4941bba33edbbd70c4f48c734629fd67fe4eac43ce1bed3ef8f3da7df')  # transaction that interacts with the gauge address  # noqa: E501
     _, tx_decoder = get_decoded_events_of_transaction(  # decode events that interact with the gauge address  # noqa: E501
         evm_inquirer=optimism_inquirer,
@@ -224,7 +217,6 @@ def test_velodrome_v2_staking_balances(
         load_global_caches=load_global_caches,
     )
     balances_inquirer = VelodromeBalances(
-        database=database,
         evm_inquirer=optimism_inquirer,
         tx_decoder=tx_decoder,
     )
@@ -245,7 +237,6 @@ def test_velodrome_v2_staking_balances(
 @pytest.mark.parametrize('ethereum_accounts', [['0x72296d54B83491c59236E45F19b6fdE8a2B2771b']])
 def test_thegraph_balances(
         ethereum_inquirer: 'EthereumInquirer',
-        ethereum_transaction_decoder: 'EthereumTransactionDecoder',
         ethereum_accounts: list[ChecksumEvmAddress],
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
 ) -> None:
@@ -257,7 +248,6 @@ def test_thegraph_balances(
         tx_hash=tx_hex,
     )
     thegraph_balances_inquirer = ThegraphBalances(
-        database=ethereum_transaction_decoder.database,
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
@@ -274,7 +264,6 @@ def test_thegraph_balances(
 @pytest.mark.parametrize('arbitrum_one_manager_connect_at_start', [(get_arbitrum_allthatnode(weight=ONE, owned=True),)])  # noqa: E501
 def test_thegraph_balances_arbitrum_one(
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_transaction_decoder: 'ArbitrumOneTransactionDecoder',
         arbitrum_one_accounts: list[ChecksumEvmAddress],
         arbitrum_one_manager_connect_at_start,
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
@@ -291,7 +280,6 @@ def test_thegraph_balances_arbitrum_one(
         tx_hash=tx_hex,
     )
     thegraph_balances_inquirer = ThegraphBalancesArbitrumOne(
-        database=arbitrum_one_transaction_decoder.database,
         evm_inquirer=arbitrum_one_inquirer,
         tx_decoder=tx_decoder,
     )
@@ -352,7 +340,6 @@ def test_thegraph_balances_vested_arbitrum_one(
         new=mock_process_staking_events,
     ) as mock_process_staking_events:
         thegraph_balances_inquirer = ThegraphBalancesArbitrumOne(
-            database=arbitrum_one_transaction_decoder.database,
             evm_inquirer=arbitrum_one_inquirer,
             tx_decoder=arbitrum_one_transaction_decoder,
         )
@@ -379,7 +366,6 @@ def test_octant_balances(
         tx_hash=tx_hex,
     )
     octant_balances_inquirer = OctantBalances(
-        database=ethereum_transaction_decoder.database,
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
@@ -396,7 +382,6 @@ def test_eigenlayer_balances(
         ethereum_accounts: list[ChecksumEvmAddress],
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
 ) -> None:
-    database = ethereum_transaction_decoder.database
     tx_hex = deserialize_evm_tx_hash('0x89981857ab9f31369f954ae332ffd910e1f3c8efe531efde5f26666316855591')  # noqa: E501
     events, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -404,7 +389,6 @@ def test_eigenlayer_balances(
     )
     assert len(events) == 2
     balances_inquirer = EigenlayerBalances(
-        database=database,
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
@@ -423,7 +407,6 @@ def test_eigenpod_balances(
         ethereum_accounts: list[ChecksumEvmAddress],
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
 ) -> None:
-    database = ethereum_transaction_decoder.database
     tx_hex = deserialize_evm_tx_hash('0xb6fa282227916f9b16df953f79a5859ba80b8bc3b9c6adc01f262070d3c9e3d5')  # noqa: E501
     events, tx_decoder = get_decoded_events_of_transaction(
         evm_inquirer=ethereum_inquirer,
@@ -431,7 +414,6 @@ def test_eigenpod_balances(
     )
     assert len(events) == 2
     balances_inquirer = EigenlayerBalances(
-        database=database,
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
@@ -457,7 +439,6 @@ def test_eigenpod_balances(
 @pytest.mark.parametrize('should_mock_current_price_queries', [True])
 def test_gmx_balances(
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_transaction_decoder: 'ArbitrumOneTransactionDecoder',
         arbitrum_one_accounts: list[ChecksumEvmAddress],
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
 ) -> None:
@@ -477,7 +458,6 @@ def test_gmx_balances(
         )
 
     balances_inquirer = GmxBalances(
-        database=arbitrum_one_transaction_decoder.database,
         evm_inquirer=arbitrum_one_inquirer,
         tx_decoder=tx_decoder,
     )
@@ -528,7 +508,6 @@ def test_gmx_balances(
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
 def test_gmx_balances_staking(
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_transaction_decoder: 'ArbitrumOneTransactionDecoder',
         arbitrum_one_accounts: list[ChecksumEvmAddress],
         arbitrum_one_manager_connect_at_start,
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
@@ -545,7 +524,6 @@ def test_gmx_balances_staking(
         tx_hash=deserialize_evm_tx_hash('0x25160bf17e5a77935c7661933c045739dba44606859a20f00f187ef291e56a8f'),
     )
     balances_inquirer = GmxBalances(
-        database=arbitrum_one_transaction_decoder.database,
         evm_inquirer=arbitrum_one_inquirer,
         tx_decoder=tx_decoder,
     )
@@ -562,7 +540,6 @@ def test_gmx_balances_staking(
 @pytest.mark.parametrize('ethereum_accounts', [['0x6A61Ea7832f84C3096c70f042aB88D9a56732D7B']])
 def test_aave_balances_staking(
         ethereum_inquirer: 'EthereumInquirer',
-        ethereum_transaction_decoder: 'EthereumTransactionDecoder',
         ethereum_accounts: list[ChecksumEvmAddress],
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
 ) -> None:
@@ -574,7 +551,6 @@ def test_aave_balances_staking(
         tx_hash=deserialize_evm_tx_hash('0xfaf96358784483a96a61db6aa4ecf4ac87294b841671ca208de6b5d8f83edf17'),
     )
     balances_inquirer = AaveBalances(
-        database=ethereum_transaction_decoder.database,
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
@@ -690,7 +666,6 @@ def test_compound_v3_token_balances_liabilities(
             ],
         )
     compound_v3_balances = Compoundv3Balances(
-        database=blockchain.database,
         evm_inquirer=blockchain.ethereum.node_inquirer,
         tx_decoder=blockchain.ethereum.transactions_decoder,
     )
@@ -732,7 +707,6 @@ def test_compound_v3_token_balances_liabilities(
 @pytest.mark.parametrize('ethereum_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D']])
 def test_blur_balances(
         ethereum_inquirer: 'EthereumInquirer',
-        ethereum_transaction_decoder: 'EthereumTransactionDecoder',
         ethereum_accounts: list[ChecksumEvmAddress],
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
 ) -> None:
@@ -744,7 +718,6 @@ def test_blur_balances(
         tx_hash=tx_hex,
     )
     blur_balances_inquirer = BlurBalances(
-        database=ethereum_transaction_decoder.database,
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
@@ -760,7 +733,6 @@ def test_blur_balances(
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D']])
 def test_hop_balances_staking(
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_transaction_decoder: 'ArbitrumOneTransactionDecoder',
         arbitrum_one_accounts: list[ChecksumEvmAddress],
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
 ) -> None:
@@ -772,7 +744,6 @@ def test_hop_balances_staking(
         tx_hash=deserialize_evm_tx_hash('0x6329984b82cb85903fee9fef61fb77cdf848ff6344056156da2e66676ad91473'),
     )
     balances_inquirer = HopBalances(
-        database=arbitrum_one_transaction_decoder.database,
         evm_inquirer=arbitrum_one_inquirer,
         tx_decoder=tx_decoder,
     )
@@ -791,7 +762,6 @@ def test_hop_balances_staking(
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D']])
 def test_hop_balances_staking_2(
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_transaction_decoder: 'ArbitrumOneTransactionDecoder',
         arbitrum_one_accounts: list[ChecksumEvmAddress],
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
 ) -> None:
@@ -803,7 +773,6 @@ def test_hop_balances_staking_2(
         tx_hash=deserialize_evm_tx_hash('0xe0c1f6f152422784a4e4346d84af7d32fda95eab17da257f3fdc5121f4a6fbc8'),
     )
     balances_inquirer = HopBalances(
-        database=arbitrum_one_transaction_decoder.database,
         evm_inquirer=arbitrum_one_inquirer,
         tx_decoder=tx_decoder,
     )
@@ -822,7 +791,6 @@ def test_hop_balances_staking_2(
 @pytest.mark.parametrize('ethereum_accounts', [['0x0e414c1c4780df6c09c2f1070990768D44B70b1D']])
 def test_gearbox_balances(
         ethereum_inquirer: 'EthereumInquirer',
-        ethereum_transaction_decoder: 'EthereumTransactionDecoder',
         ethereum_accounts: list[ChecksumEvmAddress],
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
 ) -> None:
@@ -834,7 +802,6 @@ def test_gearbox_balances(
         tx_hash=tx_hex,
     )
     protocol_balances_inquirer = GearboxBalances(
-        database=ethereum_transaction_decoder.database,
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
@@ -850,7 +817,6 @@ def test_gearbox_balances(
 @pytest.mark.parametrize('arbitrum_one_accounts', [['0xc8474089b8A428a32d938f5C28FB7eC8534D6FD1']])
 def test_gearbox_balances_arb(
         arbitrum_one_inquirer: 'ArbitrumOneInquirer',
-        arbitrum_one_transaction_decoder: 'EthereumTransactionDecoder',
         arbitrum_one_accounts: list[ChecksumEvmAddress],
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
 ) -> None:
@@ -862,7 +828,6 @@ def test_gearbox_balances_arb(
         tx_hash=tx_hex,
     )
     protocol_balances_inquirer = GearboxBalancesArbitrumOne(
-        database=arbitrum_one_transaction_decoder.database,
         evm_inquirer=arbitrum_one_inquirer,
         tx_decoder=tx_decoder,
     )
@@ -878,7 +843,6 @@ def test_gearbox_balances_arb(
 @pytest.mark.parametrize('ethereum_accounts', [['0xA76C44d0adD77F9403715D8B6F47AD4e6515EC8c']])
 def test_safe_locked(
         ethereum_inquirer: 'EthereumInquirer',
-        ethereum_transaction_decoder: 'EthereumTransactionDecoder',
         ethereum_accounts: list[ChecksumEvmAddress],
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
 ) -> None:
@@ -890,7 +854,6 @@ def test_safe_locked(
         tx_hash=tx_hex,
     )
     protocol_balances_inquirer = SafeBalances(
-        database=ethereum_transaction_decoder.database,
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
@@ -900,3 +863,55 @@ def test_safe_locked(
         amount=amount,
         usd_value=amount * FVal(1.5),
     )
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.parametrize('optimism_manager_connect_at_start', [(WeightedNode(
+    node_info=NodeName(
+        name='optimism rpc',
+        endpoint='https://mainnet.optimism.io',
+        owned=True,
+        blockchain=SupportedBlockchain.OPTIMISM,
+    ),
+    active=True,
+    weight=ONE,
+),)])
+@pytest.mark.parametrize('optimism_accounts', [[
+    '0x4ba257EC214BA1e6a3b4E46Bd7C4654b9E81CED3',
+    '0xf34743D4F4C2f9276ED6dda070CB695ebB24aA62',
+]])
+def test_extrafi_lending_balances(
+        optimism_inquirer: 'EthereumInquirer',
+        optimism_accounts: list[ChecksumEvmAddress],
+        inquirer: 'Inquirer',  # pylint: disable=unused-argument
+) -> None:
+    """Check that balances for extrafi both for lending and locking extra are queried correctly"""
+    for tx_hash in (
+        '0x1886c8169b096df75061e2fec93df029c42325f2f7066535ecc07a504efc5e92',  # lock extra
+        '0x81a87d2f8a9752ac4889ec92d6ec553417e3b4cc709a240718cf423f362e89b1',  # deposit velo for lending  # noqa: E501
+    ):
+        tx_hex = deserialize_evm_tx_hash(tx_hash)
+        _, tx_decoder = get_decoded_events_of_transaction(
+            evm_inquirer=optimism_inquirer,
+            tx_hash=tx_hex,
+        )
+    protocol_balances_inquirer = ExtrafiBalances(
+        evm_inquirer=optimism_inquirer,
+        tx_decoder=tx_decoder,
+    )
+    protocol_balances = protocol_balances_inquirer.query_balances()
+    assert protocol_balances == {
+        optimism_accounts[0]: BalanceSheet(
+            assets={Asset('eip155:10/erc20:0x9560e827aF36c94D2Ac33a39bCE1Fe78631088Db'): Balance(  # type: ignore
+                amount=(velo_amount := FVal('363337.382980149613103286')),
+                usd_value=(velo_amount * FVal(1.5)),
+            ),
+        }),
+        optimism_accounts[1]: BalanceSheet(
+            assets={Asset('eip155:10/erc20:0x2dAD3a13ef0C6366220f989157009e501e7938F8'): Balance(  # type: ignore
+                amount=(extra_amount := FVal('6405.478041239509217895')),
+                usd_value=(extra_amount * FVal(1.5)),
+            ),
+        }),
+    }

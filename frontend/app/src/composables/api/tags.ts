@@ -4,7 +4,14 @@ import { handleResponse, validStatus, validWithSessionStatus } from '@/services/
 import { type Tag, Tags } from '@/types/tags';
 import type { ActionResult } from '@rotki/common';
 
-export function useTagsApi() {
+interface UseTagsApiReturn {
+  queryTags: () => Promise<Tags>;
+  queryAddTag: (tag: Tag) => Promise<Tags>;
+  queryEditTag: (tag: Tag) => Promise<Tags>;
+  queryDeleteTag: (tagName: string) => Promise<Tags>;
+}
+
+export function useTagsApi(): UseTagsApiReturn {
   const queryTags = async (): Promise<Tags> => {
     const response = await api.instance.get<ActionResult<Tags>>('/tags', {
       validateStatus: validWithSessionStatus,

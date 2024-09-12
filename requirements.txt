@@ -20,7 +20,7 @@ beautifulsoup4==4.12.3
 maxminddb==2.6.2
 pywin32==306; sys_platform == 'win32'
 miniupnpc==2.2.7
-cryptography==42.0.8
+cryptography==43.0.1
 py-machineid==0.6.0
 more-itertools==10.4.0  # for peekable iterators
 regex==2024.7.24  # used for unicode information in detection of spam tokens
@@ -29,11 +29,11 @@ polars-lts-cpu==1.6.0
 pyzmq==26.0.3
 
 # For the rest api
-flask-cors==4.0.1
+flask-cors==5.0.0
 flask==3.0.3
 marshmallow==3.22.0
 webargs==8.4.0
-werkzeug==3.0.3
+werkzeug==3.0.4
 
 # for icon validation
 filetype==1.2.0

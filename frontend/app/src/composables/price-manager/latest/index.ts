@@ -1,5 +1,4 @@
 import { NotificationCategory, type NotificationPayload, Severity } from '@rotki/common';
-import { omit } from 'lodash-es';
 import { Section } from '@/types/status';
 import { CURRENCY_USD } from '@/types/currencies';
 import type { ManualPrice, ManualPriceFormPayload, ManualPriceWithUsd } from '@/types/prices';
@@ -80,7 +79,7 @@ export function useLatestPrices(
 
   const save = async (data: ManualPriceFormPayload, update: boolean): Promise<boolean> => {
     try {
-      return await addLatestPrice(omit(data, 'usdPrice'));
+      return await addLatestPrice(data);
     }
     catch (error: any) {
       const values = { message: error.message };

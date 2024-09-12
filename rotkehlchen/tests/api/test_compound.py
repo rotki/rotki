@@ -112,7 +112,6 @@ def test_query_compound_v3_balances(
         ],
     )
     compound_v3_balances = Compoundv3Balances(
-        database=chain_aggregator.database,
         evm_inquirer=chain_aggregator.ethereum.node_inquirer,
         tx_decoder=chain_aggregator.ethereum.transactions_decoder,
     )

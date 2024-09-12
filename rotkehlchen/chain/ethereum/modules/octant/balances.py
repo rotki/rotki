@@ -7,7 +7,6 @@ from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, Pr
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_GLM
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.inquirer import Inquirer
@@ -26,12 +25,10 @@ log = RotkehlchenLogsAdapter(logger)
 class OctantBalances(ProtocolWithBalance):
     def __init__(
             self,
-            database: DBHandler,
             evm_inquirer: 'EthereumInquirer',
             tx_decoder: 'EthereumTransactionDecoder',
     ):
         super().__init__(
-            database=database,
             evm_inquirer=evm_inquirer,
             tx_decoder=tx_decoder,
             counterparty=CPT_OCTANT,

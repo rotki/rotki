@@ -4,6 +4,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+from rotkehlchen.chain.ethereum.oracles.uniswap import UniswapV2Oracle, UniswapV3Oracle
 from rotkehlchen.constants.assets import A_BTC, A_USD
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
@@ -37,6 +38,8 @@ def fixture_fake_price_historian(historical_price_oracles_order):
         cryptocompare=MagicMock(spec=Cryptocompare),
         coingecko=MagicMock(spec=Coingecko),
         defillama=MagicMock(spec=Defillama),
+        uniswapv2=MagicMock(spec=UniswapV2Oracle),
+        uniswapv3=MagicMock(spec=UniswapV3Oracle),
     )
     price_historian.set_oracles_order(historical_price_oracles_order)
     return price_historian
@@ -54,6 +57,10 @@ def test_all_common_methods_implemented():
             instance = Defillama
         elif oracle == HistoricalPriceOracle.MANUAL:
             instance = ManualPriceOracle
+        elif oracle == HistoricalPriceOracle.UNISWAPV2:
+            instance = UniswapV2Oracle
+        elif oracle == HistoricalPriceOracle.UNISWAPV3:
+            instance = UniswapV3Oracle
         else:
             raise AssertionError(
                 f'Unexpected historical price oracle: {oracle}. Update this test',
@@ -196,9 +203,8 @@ def test_manual_oracle_correctly_returns_price(globaldb, fake_price_historian):
     # Make the other oracles fail
     expected_price = Price(FVal('30000'))
     oracle_instances = price_historian._oracle_instances
-    oracle_instances[1].query_historical_price.side_effect = PriceQueryUnsupportedAsset('bitcoin')
-    oracle_instances[2].query_historical_price.side_effect = PriceQueryUnsupportedAsset('bitcoin')
-    oracle_instances[3].query_historical_price.side_effect = PriceQueryUnsupportedAsset('bitcoin')
+    for i in range(1, len(oracle_instances)):
+        oracle_instances[i].query_historical_price.side_effect = PriceQueryUnsupportedAsset('bitcoin')  # noqa: E501
     # Query price, should return the manual price
     price = price_historian.query_historical_price(
         from_asset=A_BTC,

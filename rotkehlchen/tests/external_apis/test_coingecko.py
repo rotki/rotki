@@ -65,12 +65,6 @@ def test_coingecko_historical_price(session_coingecko):
     assert price == Price(FVal('2065.603754353392'))
 
 
-def test_assets_with_icons(icon_manager):
-    """Checks that _assets_with_coingecko_id returns a proper result"""
-    x = icon_manager._assets_with_coingecko_id()
-    assert len(x) > 1000
-
-
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_asset_icons_for_collections(icon_manager: IconManager) -> None:
     """

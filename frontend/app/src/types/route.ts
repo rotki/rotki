@@ -18,13 +18,13 @@ export const RouterPaginationOptionsSchema = z.object({
   sortBy: z
     .array(z.string())
     .or(z.string())
-    .transform(val => (Array.isArray(val) ? val : [val]))
+    .transform(arrayify)
     .optional(),
   sortDesc: z
     .array(z.string())
     .or(z.string())
     .transform((val) => {
-      const arr = Array.isArray(val) ? val : [val];
+      const arr = arrayify(val);
       return arr.map(entry => entry === 'true');
     })
     .optional(),
@@ -35,7 +35,7 @@ export const RouterAccountsSchema = z.object({
     .array(z.string())
     .or(z.string())
     .transform((val) => {
-      const arr = Array.isArray(val) ? val : [val];
+      const arr = arrayify(val);
       const mapped: Account[] = [];
       arr.forEach((entry) => {
         const parsed = entry.split('#');

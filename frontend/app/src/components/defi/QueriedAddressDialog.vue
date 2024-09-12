@@ -116,7 +116,6 @@ function close() {
           v-model="selectedAccounts"
           outlined
           dense
-          no-padding
           hide-on-empty-usable
           max-width="340px"
           :usable-addresses="usableAddresses"

@@ -4027,12 +4027,10 @@
       "example": "type != evm event"
     },
     "hint": {
-      "description": "* tapez le filtre puis appuyez sur entrée, par exemple.",
+      "description": "Tapez le filtre puis appuyez sur entrée, par exemple.",
       "example": "start = 26/05/2022"
     },
-    "hint_filter": "Les filtres combinés seront appliqués en même temps",
     "label": "Filtres disponibles",
-    "no_suggestions": "Aucune suggestion trouvée pour {search}",
     "saved_filters": {
       "actions": {
         "add": "Enregistrer le filtre actuel dans la liste",
@@ -4047,6 +4045,7 @@
         "title": "Échec de l'enregistrement du filtre"
       }
     },
+    "start_typing": "Saisissez la valeur du filtre {search}",
     "title": "Filtres disponibles",
     "unsupported_filter": "Filtre non pris en charge:"
   },

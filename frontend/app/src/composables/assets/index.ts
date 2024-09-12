@@ -11,7 +11,16 @@ import type {
 import type { TaskMeta } from '@/types/task';
 import type { ActionStatus } from '@/types/action';
 
-export function useAssets() {
+interface UseAssetsReturn {
+  checkForUpdate: () => Promise<AssetUpdateCheckResult>;
+  applyUpdates: (payload: AssetUpdatePayload) => Promise<ApplyUpdateResult>;
+  mergeAssets: (payload: AssetMergePayload) => Promise<ActionStatus<string | ValidationErrors>>;
+  importCustomAssets: (file: File) => Promise<ActionStatus>;
+  exportCustomAssets: () => Promise<ActionStatus>;
+  restoreAssetsDatabase: (resetType: 'hard' | 'soft') => Promise<ActionStatus>;
+}
+
+export function useAssets(): UseAssetsReturn {
   const { awaitTask } = useTaskStore();
   const { t } = useI18n();
   const { appSession, getPath, openDirectory } = useInterop();

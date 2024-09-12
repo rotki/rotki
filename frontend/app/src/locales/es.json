@@ -3611,11 +3611,9 @@
       "example": "type != evm event"
     },
     "hint": {
-      "description": "* type the filter and then press enter e.g.",
+      "description": "Type the filter and then press enter e.g.",
       "example": "start = 26/05/2022"
     },
-    "hint_filter": "The combined filters will be applied at the same time",
-    "no_suggestions": "No suggestions found for {search}",
     "saved_filters": {
       "actions": {
         "add": "Save current filter to list",
@@ -3630,6 +3628,7 @@
         "title": "Failed to save filter"
       }
     },
+    "start_typing": "Escriba el valor del filtro {search}.",
     "title": "Available filters",
     "unsupported_filter": "Unsupported filter:"
   },

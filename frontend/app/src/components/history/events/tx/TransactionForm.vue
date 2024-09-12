@@ -100,7 +100,6 @@ setSubmitFunc(save);
       v-model="accounts"
       :chains="txChains"
       outlined
-      no-padding
       :label="t('transactions.form.account.label')"
       :error-messages="toMessages(v$.associatedAddress)"
     />

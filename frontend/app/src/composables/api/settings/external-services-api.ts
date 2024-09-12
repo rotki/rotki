@@ -4,7 +4,13 @@ import { handleResponse, validStatus, validWithSessionStatus } from '@/services/
 import { type ExternalServiceKey, ExternalServiceKeys } from '@/types/user';
 import type { ActionResult } from '@rotki/common';
 
-export function useExternalServicesApi() {
+interface UseExternalServicesApiReturn {
+  queryExternalServices: () => Promise<ExternalServiceKeys>;
+  setExternalServices: (keys: ExternalServiceKey[]) => Promise<ExternalServiceKeys>;
+  deleteExternalServices: (serviceToDelete: string) => Promise<ExternalServiceKeys>;
+}
+
+export function useExternalServicesApi(): UseExternalServicesApiReturn {
   const queryExternalServices = async (): Promise<ExternalServiceKeys> => {
     const response = await api.instance.get<ActionResult<ExternalServiceKeys>>('/external_services', {
       validateStatus: validWithSessionStatus,

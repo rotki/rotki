@@ -15,12 +15,13 @@ import type {
 } from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
 import type { BlockchainTotal } from '@/types/blockchain';
-import type { BlockchainBalances, BlockchainTotals } from '@/types/blockchain/balances';
+import type { BlockchainAssetBalances, BlockchainBalances, BlockchainTotals } from '@/types/blockchain/balances';
 import type { AssetPrices } from '@/types/prices';
 
 export const useBlockchainStore = defineStore('blockchain', () => {
   const accounts = ref<Accounts>({});
   const balances = ref<Balances>({});
+  const eth2Balances = ref<BlockchainAssetBalances>({});
 
   const stakingValidatorsLimits = ref<{
     limit: number;
@@ -202,10 +203,16 @@ export const useBlockchainStore = defineStore('blockchain', () => {
   };
 
   const updateBalances = (chain: string, { perAccount }: BlockchainBalances): void => {
-    set(balances, {
-      ...get(balances),
-      [chain]: perAccount[camelCase(chain)] ?? {},
-    });
+    const data = perAccount[camelCase(chain)] ?? {};
+    if (chain === Blockchain.ETH2) {
+      set(eth2Balances, data);
+    }
+    else {
+      set(balances, {
+        ...get(balances),
+        [chain]: data,
+      });
+    }
   };
 
   const updatePrices = (prices: MaybeRef<AssetPrices>): void => {
@@ -309,8 +316,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
           return get(addressNameSelector(address, chain));
         },
       },
-    ),
-    );
+    ));
   });
 
   const fetchGroupAccounts = async (
@@ -336,10 +342,25 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     },
   );
 
+  watch([accounts, eth2Balances], ([accounts, eth2Balances]) => {
+    const eth2Accounts = accounts[Blockchain.ETH2] || [];
+
+    const validatorPublicKeys = eth2Accounts.map(item => getAccountAddress(item));
+    const filteredEth2Balances = Object.fromEntries(
+      Object.entries(eth2Balances).filter(([key]) => validatorPublicKeys.includes(key)),
+    );
+
+    set(balances, {
+      ...get(balances),
+      [Blockchain.ETH2]: filteredEth2Balances,
+    });
+  });
+
   return {
     accounts,
     addresses,
     balances,
+    eth2Balances,
     groups,
     stakingValidatorsLimits,
     ethStakingValidators,

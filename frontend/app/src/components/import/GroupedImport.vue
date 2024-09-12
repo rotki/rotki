@@ -9,91 +9,91 @@ const sources = computed<ImportSource[]>(() => [
     key: 'cointracking.info',
     label: t('import_data.cointracking.name'),
     logo: './assets/images/protocols/cointracking.svg',
-    form: defineAsyncComponent(() => import('@/components/import/CointrackingImport.vue')),
+    form: markRaw(defineAsyncComponent(() => import('@/components/import/CointrackingImport.vue'))),
   },
   {
     key: 'cryptocom',
     label: t('import_data.cryptocom.name'),
     logo: './assets/images/protocols/crypto_com.svg',
-    form: defineAsyncComponent(() => import('@/components/import/CryptoComImport.vue')),
+    form: markRaw(defineAsyncComponent(() => import('@/components/import/CryptoComImport.vue'))),
   },
   {
     key: 'blockfi',
     label: t('import_data.blockfi.name'),
     logo: './assets/images/protocols/blockfi.svg',
-    form: defineAsyncComponent(() => import('@/components/import/BlockFiImport.vue')),
+    form: markRaw(defineAsyncComponent(() => import('@/components/import/BlockFiImport.vue'))),
   },
   {
     key: 'nexo',
     label: t('import_data.nexo.name'),
     logo: './assets/images/protocols/nexo.svg',
-    form: defineAsyncComponent(() => import('@/components/import/NexoImport.vue')),
+    form: markRaw(defineAsyncComponent(() => import('@/components/import/NexoImport.vue'))),
   },
   {
     key: 'shapeshift-trades',
     label: t('import_data.shapeshift.name'),
     logo: './assets/images/protocols/shapeshift.svg',
-    form: defineAsyncComponent(() => import('@/components/import/ShapeshiftImport.vue')),
+    form: markRaw(defineAsyncComponent(() => import('@/components/import/ShapeshiftImport.vue'))),
   },
   {
     key: 'uphold',
     label: t('import_data.uphold.name'),
     logo: './assets/images/protocols/uphold.svg',
-    form: defineAsyncComponent(() => import('@/components/import/UpholdImport.vue')),
+    form: markRaw(defineAsyncComponent(() => import('@/components/import/UpholdImport.vue'))),
   },
   {
     key: 'bitmex',
     label: t('import_data.bitmex.name'),
     logo: './assets/images/protocols/bitmex.svg',
-    form: defineAsyncComponent(() => import('@/components/import/BitMexImport.vue')),
+    form: markRaw(defineAsyncComponent(() => import('@/components/import/BitMexImport.vue'))),
   },
   {
     key: 'bittrex',
     label: t('import_data.bittrex.name'),
     logo: './assets/images/protocols/bittrex.svg',
-    form: defineAsyncComponent(() => import('@/components/import/BittrexImport.vue')),
+    form: markRaw(defineAsyncComponent(() => import('@/components/import/BittrexImport.vue'))),
   },
   {
     key: 'bisq',
     label: t('import_data.bisq.name'),
     logo: './assets/images/protocols/bisq.svg',
-    form: defineAsyncComponent(() => import('@/components/import/BisqImport.vue')),
+    form: markRaw(defineAsyncComponent(() => import('@/components/import/BisqImport.vue'))),
   },
   {
     key: 'binance',
     label: t('import_data.binance.name'),
     logo: './assets/images/protocols/binance.svg',
-    form: defineAsyncComponent(() => import('@/components/import/BinanceImport.vue')),
+    form: markRaw(defineAsyncComponent(() => import('@/components/import/BinanceImport.vue'))),
   },
   {
     key: 'bitcoin_tax',
     label: t('import_data.bitcoin_tax.name'),
     logo: './assets/images/protocols/bitcointax.png',
-    form: defineAsyncComponent(() => import('@/components/import/BitcoinImport.vue')),
+    form: markRaw(defineAsyncComponent(() => import('@/components/import/BitcoinImport.vue'))),
   },
   {
     key: 'bitstamp',
     label: t('import_data.bitstamp.name'),
     logo: './assets/images/protocols/bitstamp.svg',
-    form: defineAsyncComponent(() => import('@/components/import/BitstampImport.vue')),
+    form: markRaw(defineAsyncComponent(() => import('@/components/import/BitstampImport.vue'))),
   },
   {
     key: 'kucoin',
     label: t('import_data.kucoin.name'),
     logo: './assets/images/protocols/kucoin.svg',
-    form: defineAsyncComponent(() => import('@/components/import/KucoinImport.vue')),
+    form: markRaw(defineAsyncComponent(() => import('@/components/import/KucoinImport.vue'))),
   },
   {
     key: 'blockpit',
     label: t('import_data.blockpit.name'),
     logo: './assets/images/protocols/blockpit.png',
-    form: defineAsyncComponent(() => import('@/components/import/BlockpitImport.vue')),
+    form: markRaw(defineAsyncComponent(() => import('@/components/import/BlockpitImport.vue'))),
   },
   {
     key: 'custom',
     label: t('import_data.custom.name'),
     icon: 'file-text-line',
-    form: defineAsyncComponent(() => import('@/components/import/CustomImport.vue')),
+    form: markRaw(defineAsyncComponent(() => import('@/components/import/CustomImport.vue'))),
   },
 ]);
 
@@ -140,7 +140,9 @@ const [DefineDisplay, ReuseDisplay] = createReusableTemplate<{
         text-attr="label"
         hide-details
         return-object
+        auto-select-first
         variant="outlined"
+        key-attr="key"
       >
         <template #selection="{ item }">
           <ReuseDisplay v-bind="item" />

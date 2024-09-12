@@ -42,6 +42,7 @@ from rotkehlchen.globaldb.utils import GLOBAL_DB_VERSION
 from rotkehlchen.tests.fixtures.globaldb import create_globaldb
 from rotkehlchen.tests.utils.globaldb import patch_for_globaldb_upgrade_to
 from rotkehlchen.types import (
+    ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE,
     YEARN_VAULTS_V1_PROTOCOL,
     CacheType,
     ChainID,
@@ -762,6 +763,56 @@ def test_upgrade_v7_v8(globaldb: GlobalDBHandler):
         write_cursor.execute(
             'INSERT INTO contract_abi(id, value, name) SELECT 100, value, "yabir" FROM contract_abi WHERE id=1',  # noqa: E501
         )  # test that raises unique error when trying to copy an existing abi
+
+
+@pytest.mark.parametrize('custom_globaldb', ['v7_global.db'])
+@pytest.mark.parametrize('target_globaldb_version', [8])
+@pytest.mark.parametrize('reload_user_assets', [False])
+def test_upgrade_v8_v9(globaldb: GlobalDBHandler):
+    bad_address, tether_address = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58'  # noqa: E501
+    inserted_rows = [
+        (bad_address, 'yabir.eth', None),
+        (bad_address, 'yabirgb.eth', None),
+        (tether_address, 'Black Tether', None),
+    ]
+    with globaldb.conn.write_ctx() as write_cursor:
+        write_cursor.executemany(
+            'INSERT INTO address_book (address, name, blockchain) VALUES (?, ?, ?)',
+            inserted_rows,
+        )
+
+    with ExitStack() as stack:
+        patch_for_globaldb_upgrade_to(stack, 9)
+        maybe_upgrade_globaldb(
+            connection=globaldb.conn,
+            global_dir=globaldb._data_directory / GLOBALDIR_NAME,  # type: ignore
+            db_filename=GLOBALDB_NAME,
+        )
+
+    assert globaldb.get_setting_value('version', 0) == 9
+    with globaldb.conn.read_ctx() as cursor:
+        assert table_exists(
+            cursor=cursor,
+            name='address_book',
+            schema="""
+            CREATE TABLE IF NOT EXISTS address_book (
+                address TEXT NOT NULL,
+                blockchain TEXT NOT NULL,
+                name TEXT NOT NULL,
+                PRIMARY KEY(address, blockchain)
+            );
+            """,
+        )
+        assert cursor.execute(
+            'SELECT * FROM address_book WHERE address IN (?, ?)',
+            (bad_address, tether_address),
+        ).fetchall() == [
+            (tether_address, ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, 'Black Tether'),
+            (bad_address, ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE, 'yabirgb.eth'),
+        ]
+        assert len(cursor.execute(
+            "SELECT * FROM price_history_source_types WHERE type IN ('G', 'H') AND seq IN (7, 8);",
+        ).fetchall()) == 2
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])

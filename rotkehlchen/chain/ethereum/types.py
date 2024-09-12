@@ -27,6 +27,8 @@ if TYPE_CHECKING:
         'GEARBOX_FARMING_POOL',
         'GEARBOX_STAKING',
         'HOP_POOL',
+        'EXTRAFI_LOCK',
+        'EXTRAFI_LENDING',
     ]
 
 

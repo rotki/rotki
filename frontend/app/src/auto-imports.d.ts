@@ -92,6 +92,7 @@ declare global {
   const aggregateTotal: typeof import('./utils/calculation')['aggregateTotal']
   const aggregateTotals: typeof import('./utils/blockchain/accounts/index')['aggregateTotals']
   const appendAssetBalance: typeof import('./utils/balances')['appendAssetBalance']
+  const arrayify: typeof import('./utils/array')['arrayify']
   const assert: typeof import('@rotki/common')['assert']
   const assetSum: typeof import('./utils/calculation')['assetSum']
   const assetSymbolToIdentifierMap: typeof import('@rotki/common')['assetSymbolToIdentifierMap']
@@ -214,6 +215,7 @@ declare global {
   const getValidSelectorFromEvmAddress: typeof import('@rotki/common')['getValidSelectorFromEvmAddress']
   const getValidatorData: typeof import('./utils/blockchain/accounts/index')['getValidatorData']
   const groupAssetBreakdown: typeof import('./utils/balances')['groupAssetBreakdown']
+  const groupConsecutiveNumbers: typeof import('./utils/text')['groupConsecutiveNumbers']
   const guessTimezone: typeof import('./utils/date')['guessTimezone']
   const h: typeof import('vue')['h']
   const hasAccountAddress: typeof import('./utils/blockchain/accounts/index')['hasAccountAddress']
@@ -952,6 +954,7 @@ declare module 'vue' {
     readonly aggregateTotal: UnwrapRef<typeof import('./utils/calculation')['aggregateTotal']>
     readonly aggregateTotals: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['aggregateTotals']>
     readonly appendAssetBalance: UnwrapRef<typeof import('./utils/balances')['appendAssetBalance']>
+    readonly arrayify: UnwrapRef<typeof import('./utils/array')['arrayify']>
     readonly assert: UnwrapRef<typeof import('@rotki/common')['assert']>
     readonly assetSum: UnwrapRef<typeof import('./utils/calculation')['assetSum']>
     readonly assetSymbolToIdentifierMap: UnwrapRef<typeof import('@rotki/common')['assetSymbolToIdentifierMap']>
@@ -1073,6 +1076,7 @@ declare module 'vue' {
     readonly getTimeframeByRange: UnwrapRef<typeof import('@rotki/common')['getTimeframeByRange']>
     readonly getValidSelectorFromEvmAddress: UnwrapRef<typeof import('@rotki/common')['getValidSelectorFromEvmAddress']>
     readonly groupAssetBreakdown: UnwrapRef<typeof import('./utils/balances')['groupAssetBreakdown']>
+    readonly groupConsecutiveNumbers: UnwrapRef<typeof import('./utils/text')['groupConsecutiveNumbers']>
     readonly guessTimezone: UnwrapRef<typeof import('./utils/date')['guessTimezone']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly hasAccountAddress: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['hasAccountAddress']>
@@ -1791,6 +1795,7 @@ declare module '@vue/runtime-core' {
     readonly aggregateTotal: UnwrapRef<typeof import('./utils/calculation')['aggregateTotal']>
     readonly aggregateTotals: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['aggregateTotals']>
     readonly appendAssetBalance: UnwrapRef<typeof import('./utils/balances')['appendAssetBalance']>
+    readonly arrayify: UnwrapRef<typeof import('./utils/array')['arrayify']>
     readonly assert: UnwrapRef<typeof import('@rotki/common')['assert']>
     readonly assetSum: UnwrapRef<typeof import('./utils/calculation')['assetSum']>
     readonly assetSymbolToIdentifierMap: UnwrapRef<typeof import('@rotki/common')['assetSymbolToIdentifierMap']>
@@ -1912,6 +1917,7 @@ declare module '@vue/runtime-core' {
     readonly getTimeframeByRange: UnwrapRef<typeof import('@rotki/common')['getTimeframeByRange']>
     readonly getValidSelectorFromEvmAddress: UnwrapRef<typeof import('@rotki/common')['getValidSelectorFromEvmAddress']>
     readonly groupAssetBreakdown: UnwrapRef<typeof import('./utils/balances')['groupAssetBreakdown']>
+    readonly groupConsecutiveNumbers: UnwrapRef<typeof import('./utils/text')['groupConsecutiveNumbers']>
     readonly guessTimezone: UnwrapRef<typeof import('./utils/date')['guessTimezone']>
     readonly h: UnwrapRef<typeof import('vue')['h']>
     readonly hasAccountAddress: UnwrapRef<typeof import('./utils/blockchain/accounts/index')['hasAccountAddress']>

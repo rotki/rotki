@@ -1217,8 +1217,10 @@
       "started": "Started"
     },
     "newly_detected": {
+      "accept": "Accept token",
       "accept_selected": "Accept selected tokens",
-      "mark_as_spam": "Mark selected tokens as spam",
+      "mark_as_spam": "Mark token as spam",
+      "mark_selected_as_spam": "Mark selected tokens as spam",
       "seen_during": "Seen during",
       "select_deselect_all_tokens": "Select/deselect all tokens",
       "subtitle": "Inspect the list of newly detected tokens and add any assets to the spam tokens list"
@@ -1718,7 +1720,7 @@
     "available_to_premium": "only available to premium users.",
     "balance": "Balance",
     "category": "Category",
-    "chain": "Chain",
+    "chain": "Chains",
     "claimed": "Claimed",
     "counterparty": "Counterparty",
     "datetime": "Date/Time",
@@ -2291,6 +2293,7 @@
     "label": "Select Withdrawal address"
   },
   "eth2_validator_limit_row": {
+    "complete": "Only showing balances for {limit} out of {total} validators. Click {button} to purchase rotki Premium and view the complete validator balances.",
     "label": "Validators"
   },
   "evm_rpc_node_manager": {
@@ -2719,6 +2722,7 @@
       "force_saved_language_setting_in_machine_hint": "This setting is saved on your user settings. Activate this to keep this setting when you logged out.",
       "ksm_rpc_endpoint": "Kusama Node RPC Endpoint",
       "language": "Selected language",
+      "csv_delimiter": "CSV export delimiter",
       "treat_eth2_as_eth": "Should treat ETH2 (Staked ETH) as ETH",
       "version_update_check": "Set the version update check period while in app",
       "version_update_check_enabled": "Enabled",
@@ -2789,6 +2793,12 @@
       "btc_derivation_gap": {
         "error": "Error setting the BTC derivation gap limit",
         "success": "The BTC derivation gap limit was successfully changed to {limit}"
+      },
+      "csv_delimiter": {
+        "empty": "CSV delimiter cannot be empty.",
+        "single_character": "CSV delimiter must be a single character.",
+        "error": "Please provide a valid delimiter.",
+        "success": "CSV delimiter {delimiter} has been successfully set."
       },
       "currency": {
         "error": "Error setting the main currency",
@@ -3072,6 +3082,7 @@
   },
   "input_mode_select": {
     "import_from_wallet": {
+      "only_metamask": "* Currently, only MetaMask supports multiple address selections. Other wallets only allow active address to be imported.",
       "imported": "Your address(es) have been imported to the address input",
       "label": "Import addresses from browser wallet",
       "missing": "We can't detect any wallet in this browser.",
@@ -3625,6 +3636,12 @@
     "snapshot_failed": {
       "message": "Could not save the balance snapshot at {location}. {error}",
       "title": "Balance Snapshot failed"
+    },
+    "csv_import_result": {
+      "errors": "The following errors occurred during import:",
+      "rows": "(Row: {rows}) | (Rows: {rows})",
+      "summary": "Imported {imported}/{total} entries successfully.",
+      "title": "CSV Import Result: {sourceName}"
     }
   },
   "notification_popup": {
@@ -4300,18 +4317,17 @@
     }
   },
   "table_filter": {
-    "asset_suggestion": "Type the asset symbol to search.",
+    "asset_suggestion": "Type the asset symbol or address to search.",
     "exclusion": {
       "description": "Use operator `!=` to filter out option, e.g.",
       "example": "type != evm event"
     },
     "hint": {
-      "description": "* type the filter and then press enter e.g.",
+      "description": "Type the filter and then press enter e.g.",
+      "edit_note": "Click applied filter to edit the value",
       "example": "start = 26/05/2022"
     },
-    "hint_filter": "The combined filters will be applied at the same time",
     "label": "Combined filters",
-    "no_suggestions": "No suggestions found for {search}",
     "saved_filters": {
       "actions": {
         "add": "Save current filter to list",
@@ -4326,6 +4342,7 @@
         "title": "Failed to save filter"
       }
     },
+    "start_typing": "Type the value for the {search} filter",
     "title": "Available filters",
     "unsupported_filter": "Unsupported filter:"
   },

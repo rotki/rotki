@@ -1,4 +1,6 @@
-export function useAssetPageNavigation(asset: Ref<string>) {
+interface UseAssetPageNavigationReturn { navigateToDetails: () => Promise<void> }
+
+export function useAssetPageNavigation(asset: Ref<string>): UseAssetPageNavigationReturn {
   const router = useRouter();
   const navigateToDetails = async (): Promise<void> => {
     await router.push({

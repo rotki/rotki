@@ -3380,12 +3380,17 @@ Search for assets(Levenshtein)
       }
 
    :reqjson int limit: This signifies the limit of records to return as per the `sql spec <https://www.sqlite.org/lang_select.html#limitoffset>`__.
-   :reqjson string value: A string to be used to search the assets. Required.
+   :reqjson string value: A string to be used to search the assets. Optional.
+   :reqjson string address: An address to be used to search for. Optional.
    :reqjson int[optional] chain_id: Chain id of a supported EVM chain used to filter the result
    :reqjson list[string][optional] owner_addresses: A list of evm addresses. If provided, only nfts owned by these addresses will be returned.
    :reqjson string[optional] name: Optional nfts name to filter by.
    :reqjson string[optional] collection_name: Optional nfts collection_name to filter by.
    :reqjson string[optional] ignored_assets_handling: A flag to specify how to handle ignored assets. Possible values are `'none'`, `'exclude'` and `'show_only'`. You can write 'none' in order to not handle them in any special way (meaning to show them too). This is the default. You can write 'exclude' if you want to exclude them from the result. And you can write 'show_only' if you want to only see the ignored assets in the result.
+
+   .. note::
+      Either value or address need to be provided when calling this endpoint.
+
 
    **Example Response**:
 
@@ -12490,7 +12495,7 @@ Event Mappings
 
 .. http:get:: /api/(version)/history/events/type_mappings
 
-  Doing a GET on this endpoint will return a mapping of history events types and subtypes to a ``EventCategory`` representation. We also return properties such ``icon``, ``label`` and ``color`` for event types.
+  Doing a GET on this endpoint will return a mapping of history events types and subtypes to a mapping of ``EventCategory`` representations. We also return properties such ``icon``, ``label`` and ``color`` for event types.
 
   **Example Request**
 
@@ -12511,11 +12516,18 @@ Event Mappings
         "result":{
           "global_mappings":{
             "spend":{
-              "fee":"gas",
-              "return wrapped":"send",
-              "donate":"donate",
-              "none":"send"
-            }
+              "fee": {"default": "gas"},
+              "return wrapped": {"default": "send"},
+              "donate": {"default": "donate"},
+              "none":"{"default": send"},
+            },
+	    "deposit":{
+	      "deposit asset": {
+	          "default": "deposit",
+		  "exchange": "exchange deposit"
+	      },
+	      "bridge": {"default": "bridge deposit"}
+	    }
           },
           "entry_type_mappings":{
             "eth withdrawal event":{
@@ -12592,7 +12604,7 @@ Event Mappings
         }
       }
 
-  :resjson object global_mappings: keys of this object are the history event types names and values are mappings of subtypes' names to the ``EventCategory`` name. Contains mappings that should be applied if there is no a specific protocol rule.
+  :resjson object global_mappings: keys of this object are the history event types names and values are mappings of subtypes' names to the ``EventCategory`` mapping. Each mapping is either a simple {"default": "send"}, or a different one depending on specific string values. Such as "exchange". At the moment the only such possible values are "default" and "exchange".
   :resjson object type_mappings: the keys of this mapping are entry types and it contains the combinations of event type and subtype that would overwritte the information in ``global_mappings`` only for that entry type.
   :resjson object per_protocol_mappings: same as global_mappings but contains specific mappings per chain and protocol.
   :resjson object event_category_details: This is a mapping of ``EventCategory`` to its direction and mapping of counterparty to details. For all the ``EventCategoryDetails`` mapping there is a ``"default"`` key mapping to the default details. For some exceptions there is also other keys which are counterparties. Such as for spend/fee and counterparty gas.

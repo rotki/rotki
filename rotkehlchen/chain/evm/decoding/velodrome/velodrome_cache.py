@@ -47,6 +47,8 @@ AERODROME_SUGAR_V2_CONTRACT = string_to_evm_address('0xC301856B4262E49E9239ec8a2
 class VelodromePoolData(NamedTuple):
     pool_address: ChecksumEvmAddress
     pool_name: str
+    pool_decimals: int
+    tick_spacing: int
     token0_address: ChecksumEvmAddress
     token1_address: ChecksumEvmAddress
     gauge_address: ChecksumEvmAddress | None
@@ -198,7 +200,7 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
         pool_data.extend(pool_data_chunk)
         offset += limit
 
-    deserialized_pools = []
+    deserialized_pools: list[VelodromePoolData] = []
     # first gather all pool data, and prepare a multicall for token information
     addresses, all_pools_length = [], len(pool_data)
     for idx, pool in enumerate(pool_data):
@@ -237,6 +239,8 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
         deserialized_pools.append(VelodromePoolData(
             pool_address=pool_address,
             pool_name=pool[1],
+            pool_decimals=pool[2],
+            tick_spacing=pool[4],
             token0_address=token0_address,
             token1_address=token1_address,
             gauge_address=gauge_address if gauge_address != ZERO_ADDRESS else None,
@@ -247,8 +251,8 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
 
     returned_pools = []
     for entry in deserialized_pools:
-        for token in (entry.token0_address, entry.token1_address, entry.pool_address):  # create the tokens for the new pools. Keep in mind that the pool address is the address of the lp token received when depositing to the pool  # noqa: E501
-            try:
+        try:
+            token0, token1 = (
                 get_or_create_evm_token(
                     userdb=inquirer.database,
                     evm_address=token,
@@ -258,15 +262,32 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
                         description='Querying velodrome pools',
                         should_notify=False,
                     ),
-                    protocol=protocol if token == pool_address else None,  # mark the lp tokens with the protocol to identify them for special treatment for price calculation  # noqa: E501
-                )
-            except NotERC20Conformant as e:
-                log.error(
-                    f'Skipping velodrome token {token} because it is not a valid ERC20 token. {e}',
-                )
-                break
-        else:
-            returned_pools.append(entry)
+                )  # create the tokens for the new pools. Keep in mind that the pool address is the address of the lp token received when depositing to the pool  # noqa: E501
+                for token in (entry.token0_address, entry.token1_address)
+            )
+        except NotERC20Conformant as e:
+            log.error(
+                f'Skipping velodrome pool {entry.pool_address} '
+                f'because its tokens are not valid ERC20 tokens. {e}',
+            )
+            continue
+
+        pool_name = f'CL{entry.tick_spacing}-{token0.symbol}/{token1.symbol}' if entry.pool_name == '' else entry.pool_name  # noqa: E501
+        get_or_create_evm_token(  # this will not raise NotERC20Conformant because we give fallback info  # noqa: E501
+            userdb=inquirer.database,
+            evm_address=entry.pool_address,
+            chain_id=inquirer.chain_id,
+            evm_inquirer=inquirer,
+            encounter=TokenEncounterInfo(
+                description='Querying velodrome pools',
+                should_notify=False,
+            ),
+            protocol=protocol,  # mark the lp tokens with the protocol to identify them for special treatment for price calculation  # noqa: E501
+            fallback_decimals=entry.pool_decimals,
+            fallback_name=f'{pool_name} Pool',
+            fallback_symbol=pool_name,
+        )
+        returned_pools.append(entry)
 
     return returned_pools
 

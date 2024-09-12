@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import {
   type Blockchain,
   type Notification,
@@ -10,6 +11,7 @@ import dayjs from 'dayjs';
 import {
   type AccountingRuleConflictData,
   type BalanceSnapshotError,
+  type CsvImportResult,
   MESSAGE_WARNING,
   type MissingApiKey,
   type NewDetectedToken,
@@ -236,6 +238,30 @@ export function useMessageHandling(): UseMessageHandling {
     };
   };
 
+  const handleCsvImportResult = (data: CsvImportResult): Notification => {
+    const { sourceName, totalEntries, importedEntries, messages } = data;
+    const title = t('notification_messages.csv_import_result.title', { sourceName });
+    let messageBody = t('notification_messages.csv_import_result.summary', {
+      imported: importedEntries,
+      total: totalEntries,
+    });
+    if (messages.length > 0) {
+      messageBody = `${messageBody}\n\n${t('notification_messages.csv_import_result.errors')}`;
+      messages.forEach((error, index) => {
+        messageBody = `${messageBody}\n${index + 1}. ${error.msg}`;
+        if (error.rows)
+          messageBody = `${messageBody}\n${t('notification_messages.csv_import_result.rows', { rows: groupConsecutiveNumbers(error.rows) }, error.rows.length)}`;
+      });
+    }
+    return {
+      title,
+      message: messageBody,
+      display: true,
+      severity: importedEntries < totalEntries ? Severity.WARNING : Severity.INFO,
+      priority: Priority.HIGH,
+    };
+  };
+
   const handleMessage = async (data: string): Promise<void> => {
     const message: WebsocketMessage = WebsocketMessage.parse(camelCaseTransformer(JSON.parse(data)));
     const type = message.type;
@@ -310,6 +336,9 @@ export function useMessageHandling(): UseMessageHandling {
     }
     else if (type === SocketMessageType.PROTOCOL_CACHE_UPDATES) {
       setProtocolCacheStatus(message.data);
+    }
+    else if (type === SocketMessageType.CSV_IMPORT_RESULT) {
+      notifications.push(handleCsvImportResult(message.data));
     }
     else {
       logger.warn(`Unsupported socket message received: '${type}'`);

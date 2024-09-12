@@ -4,7 +4,6 @@ from rotkehlchen.chain.ethereum.interfaces.balances import (
     PROTOCOLS_WITH_BALANCES,
     ProtocolWithGauges,
 )
-from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress
 
@@ -24,13 +23,11 @@ class VelodromeLikeBalances(ProtocolWithGauges):
 
     def __init__(
             self,
-            database: DBHandler,
             evm_inquirer: 'OptimismInquirer | BaseInquirer',
             tx_decoder: 'OptimismTransactionDecoder | BaseTransactionDecoder',
             counterparty: PROTOCOLS_WITH_BALANCES,
     ):
         super().__init__(
-            database=database,
             evm_inquirer=evm_inquirer,
             tx_decoder=tx_decoder,
             counterparty=counterparty,

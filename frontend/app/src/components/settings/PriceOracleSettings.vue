@@ -24,13 +24,13 @@ const baseAvailableOraclesTyped: Array<PrioritizedListItemData<PrioritizedListId
   CRYPTOCOMPARE_PRIO_LIST_ITEM,
   COINGECKO_PRIO_LIST_ITEM,
   DEFILAMA_PRIO_LIST_ITEM,
+  UNISWAP2_PRIO_LIST_ITEM,
+  UNISWAP3_PRIO_LIST_ITEM,
 ];
 
 function availableCurrentOracles(): PrioritizedListData<PrioritizedListId> {
   const itemData: Array<PrioritizedListItemData<PrioritizedListId>> = [
     ...baseAvailableOraclesTyped,
-    UNISWAP2_PRIO_LIST_ITEM,
-    UNISWAP3_PRIO_LIST_ITEM,
     MANUALCURRENT_PRIO_LIST_ITEM,
   ];
 

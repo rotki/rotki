@@ -52,7 +52,25 @@ function payloadToData({ address, label, tags }: Omit<BlockchainAccountPayload, 
   };
 }
 
-export function useBlockchainAccountsApi() {
+interface UseBlockchainAccountsApiReturn {
+  addBlockchainAccount: (chain: string, pay: XpubAccountPayload | AccountPayload[]) => Promise<PendingTask>;
+  addEvmAccount: (payload: Omit<BlockchainAccountPayload, 'blockchain'>) => Promise<PendingTask>;
+  detectEvmAccounts: () => Promise<PendingTask>;
+  removeAgnosticBlockchainAccount: (chainType: string, accounts: string[]) => Promise<PendingTask>;
+  removeBlockchainAccount: (blockchain: string, accounts: string[]) => Promise<PendingTask>;
+  editBlockchainAccount: (payload: AccountPayload, chain: string) => Promise<BlockchainAccounts>;
+  editAgnosticBlockchainAccount: (chainType: string, payload: AccountPayload) => Promise<boolean>;
+  editBtcAccount: (payload: AccountPayload | XpubAccountPayload, chain: string) => Promise<BitcoinAccounts>;
+  queryAccounts: (blockchain: string) => Promise<BlockchainAccounts>;
+  queryBtcAccounts: (blockchain: BtcChains) => Promise<BitcoinAccounts>;
+  deleteXpub: ({ chain, derivationPath, xpub }: DeleteXpubParams) => Promise<PendingTask>;
+  getEth2Validators: (payload?: EthValidatorFilter) => Promise<Eth2Validators>;
+  addEth2Validator: (payload: Eth2Validator) => Promise<PendingTask>;
+  editEth2Validator: ({ ownershipPercentage, validatorIndex }: Eth2Validator) => Promise<boolean>;
+  deleteEth2Validators: (validators: Eth2ValidatorEntry[]) => Promise<boolean>;
+}
+
+export function useBlockchainAccountsApi(): UseBlockchainAccountsApiReturn {
   const addBlockchainAccount = (chain: string, pay: XpubAccountPayload | AccountPayload[]): Promise<PendingTask> => {
     const url = !Array.isArray(pay) ? `/blockchains/${chain}/xpub` : `/blockchains/${chain}/accounts`;
     const payload = Array.isArray(pay) ? { accounts: pay } : { ...objectOmit(pay, ['xpub']), ...pay.xpub };

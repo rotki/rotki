@@ -4,8 +4,8 @@ import { DashboardSchema, type VisibilityPeriod, WelcomeSchema } from '@/types/d
 import { camelCaseTransformer } from '@/services/axios-tranformers';
 
 export const serializer = {
-  read: (v: any) => (v ? JSON.parse(v) : null),
-  write: (v: any) => JSON.stringify(v),
+  read: (v: any): any => (v ? JSON.parse(v) : null),
+  write: (v: any): string => JSON.stringify(v),
 };
 
 export const useDynamicMessages = createSharedComposable(() => {
@@ -60,7 +60,7 @@ export const useDynamicMessages = createSharedComposable(() => {
     return getValidMessages(get(dashboardMessages));
   });
 
-  const getData = <T>(response: AxiosResponse<T>) => {
+  const getData = <T>(response: AxiosResponse<T>): T => {
     if (typeof response.data === 'string')
       return camelCaseTransformer(JSON.parse(response.data));
 
@@ -97,7 +97,7 @@ export const useDynamicMessages = createSharedComposable(() => {
     }
   };
 
-  const fetchMessages = async () => {
+  const fetchMessages = async (): Promise<void> => {
     set(welcomeMessages, await getWelcomeData());
     set(dashboardMessages, await getDashboardData());
   };

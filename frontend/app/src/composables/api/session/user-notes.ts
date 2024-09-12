@@ -6,7 +6,14 @@ import type { MaybeRef } from '@vueuse/core';
 import type { Collection } from '@/types/collection';
 import type { ActionResult } from '@rotki/common';
 
-export function useUserNotesApi() {
+interface UseUserNotesApiReturn {
+  fetchUserNotes: (filter: MaybeRef<UserNotesRequestPayload>) => Promise<Collection<UserNote>>;
+  addUserNote: (payload: Partial<UserNote>) => Promise<number>;
+  updateUserNote: (payload: Partial<UserNote>) => Promise<boolean>;
+  deleteUserNote: (identifier: number) => Promise<boolean>;
+}
+
+export function useUserNotesApi(): UseUserNotesApiReturn {
   const fetchUserNotes = async (filter: MaybeRef<UserNotesRequestPayload>): Promise<Collection<UserNote>> => {
     const response = await api.instance.post<ActionResult<Collection<UserNote>>>(
       '/notes',

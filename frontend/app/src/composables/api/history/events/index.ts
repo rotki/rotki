@@ -28,7 +28,26 @@ import type { PendingTask } from '@/types/task';
 import type { ActionResult } from '@rotki/common';
 import type { ActionDataEntry } from '@/types/action';
 
-export function useHistoryEventsApi() {
+interface UseHistoryEventsApiReturn {
+  fetchTransactionsTask: (payload: TransactionRequestPayload, type?: TransactionChainType) => Promise<PendingTask>;
+  deleteTransactions: (chain: string, txHash?: string) => Promise<boolean>;
+  pullAndRecodeTransactionRequest: (payload: ChainAndTxHash | EvmChainAndTxHash, type?: TransactionChainType) => Promise<PendingTask>;
+  getUndecodedTransactionsBreakdown: (type?: TransactionChainType) => Promise<PendingTask>;
+  decodeTransactions: (chains: string[], type?: TransactionChainType, ignoreCache?: boolean) => Promise<PendingTask>;
+  addHistoryEvent: (event: NewHistoryEventPayload) => Promise<{ identifier: number }>;
+  editHistoryEvent: (event: EditHistoryEventPayload) => Promise<boolean>;
+  deleteHistoryEvent: (identifiers: number[], forceDelete?: boolean) => Promise<boolean>;
+  getEventDetails: (identifier: number) => Promise<HistoryEventDetail>;
+  addTransactionHash: (payload: AddTransactionHashPayload) => Promise<boolean>;
+  getTransactionTypeMappings: () => Promise<HistoryEventTypeData>;
+  getHistoryEventCounterpartiesData: () => Promise<ActionDataEntry[]>;
+  getHistoryEventProductsData: () => Promise<HistoryEventProductData>;
+  fetchHistoryEvents: (payload: HistoryEventRequestPayload) => Promise<CollectionResponse<HistoryEventEntryWithMeta>>;
+  queryOnlineHistoryEvents: (payload: OnlineHistoryEventsRequestPayload) => Promise<PendingTask>;
+  exportHistoryEventsCSV: (filters: HistoryEventRequestPayload, directoryPath?: string) => Promise<PendingTask>;
+}
+
+export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
   const internalTransactions = async <T>(
     payload: TransactionRequestPayload,
     asyncQuery: boolean,

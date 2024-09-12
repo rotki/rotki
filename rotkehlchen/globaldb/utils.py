@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 # Whenever you upgrade the global DB make sure to:
 # 1. Go to assets repo and tweak the min/max schema of the updates
 # 2. Tweak ASSETS_FILE_IMPORT_ACCEPTED_GLOBALDB_VERSIONS
-GLOBAL_DB_VERSION = 8
+GLOBAL_DB_VERSION = 9
 ASSETS_FILE_IMPORT_ACCEPTED_GLOBALDB_VERSIONS = (3, GLOBAL_DB_VERSION)
 MIN_SUPPORTED_GLOBAL_DB_VERSION = 2
 

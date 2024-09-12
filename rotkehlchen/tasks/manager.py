@@ -48,7 +48,7 @@ from rotkehlchen.tasks.assets import (
 from rotkehlchen.tasks.calendar import (
     CalendarNotification,
     delete_past_calendar_entries,
-    maybe_create_ens_reminders,
+    maybe_create_calendar_reminders,
     notify_reminders,
 )
 from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries, should_run_periodic_task
@@ -832,9 +832,9 @@ class TaskManager:
 
         return [self.greenlet_manager.spawn_and_track(
             after_seconds=None,
-            task_name='Maybe create ENS reminders',
+            task_name='Maybe create calendar reminders',
             exception_is_error=True,
-            method=maybe_create_ens_reminders,
+            method=maybe_create_calendar_reminders,
             database=self.database,
         )]
 
@@ -957,7 +957,8 @@ class TaskManager:
             return
 
         with self.schedule_lock:
-            self._schedule()
+            if self.should_schedule:  # adding this check here to protect against going to schedule during logout/shutdown once task manager has been cleared and DB has been deleted  # noqa: E501
+                self._schedule()
 
     def clear(self) -> None:
         """Ensure that no task is kept referenced. Used when removing the task manager"""
@@ -965,3 +966,4 @@ class TaskManager:
             gevent.killall(task_list)
 
         self.running_greenlets.clear()
+        self.should_schedule = False

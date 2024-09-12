@@ -11,7 +11,12 @@ import type { EntryWithMeta } from '@/types/history/meta';
 import type { ActionResult } from '@rotki/common';
 import type { PendingTask } from '@/types/task';
 
-export function useAssetMovementsApi() {
+interface UseAssetMovementsApiReturn {
+  getAssetMovements: (payload: AssetMovementRequestPayload) => Promise<CollectionResponse<EntryWithMeta<AssetMovement>>>;
+  getAssetMovementsTask: (payload: AssetMovementRequestPayload) => Promise<PendingTask>;
+}
+
+export function useAssetMovementsApi(): UseAssetMovementsApiReturn {
   const internalAssetMovements = async <T>(payload: AssetMovementRequestPayload, asyncQuery: boolean): Promise<T> => {
     const response = await api.instance.get<ActionResult<T>>('/asset_movements', {
       params: snakeCaseTransformer({

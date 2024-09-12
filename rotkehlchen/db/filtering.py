@@ -561,16 +561,24 @@ class DBTypeFilter(DBFilter):
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class DBEqualsFilter(DBFilter):
-    """Filter a column by comparing its column to its value for equality."""
+    """Filter a column by comparing its column to its value for equality.
+    For nullable columns that's where we want to include the null rows set
+    include_null_values to true.
+    """
     column: str
     value: str | (bytes | (int | bool))
     alias: str | None = None
+    include_null_values: bool = False
 
     def prepare(self) -> tuple[list[str], list[Any]]:
         key_name = self.column
         if self.alias is not None:
             key_name = f'{self.alias}.{key_name}'
-        return [f'{key_name}=?'], [self.value]
+
+        if self.include_null_values is False:
+            return [f'{key_name}=?'], [self.value]
+
+        return [f'{key_name}=? OR ({key_name} IS NULL)'], [self.value]
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -1808,20 +1816,22 @@ class MultiTableFilterQuery:
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class LevenshteinFilterQuery(MultiTableFilterQuery):
     """
-    Filter query for levenshtein search. Accepts a substring to filter by and a chain id.
-    Is used for querying both assets and nfts.
+    Filter query for levenshtein search. Accepts a substring or an address to filter by and a
+    chain id. Is used for querying both assets and nfts.
     """
-    substring_search: str
+    substring_search: str | None
     ignored_assets_handling: IgnoredAssetsHandling = IgnoredAssetsHandling.NONE
 
     @classmethod
     def make(
             cls,
             and_op: bool = True,
-            substring_search: str = '',  # substring is always required for levenstein
+            substring_search: str | None = None,
             chain_id: ChainID | None = None,
+            address: ChecksumEvmAddress | None = None,
             ignored_assets_handling: IgnoredAssetsHandling = IgnoredAssetsHandling.NONE,
     ) -> 'LevenshteinFilterQuery':
+        assert substring_search is not None or address is not None  # substring search and address can't be none at the same time  # noqa: E501
         filter_query = LevenshteinFilterQuery(
             and_op=and_op,
             filters=[],
@@ -1829,44 +1839,56 @@ class LevenshteinFilterQuery(MultiTableFilterQuery):
         )
         filter_query.ignored_assets_handling = ignored_assets_handling
         filters: list[tuple[DBFilter, str]] = []  # filter + table name for which to use it.
-
-        name_filter = DBSubStringFilter(
-            and_op=True,
-            field='name',
-            search_string=substring_search,
-        )
-        assets_substring_filter = DBNestedFilter(
-            and_op=False,
-            filters=[
-                name_filter,
-                DBSubStringFilter(
-                    and_op=True,
-                    field='symbol',
-                    search_string=substring_search,
-                ),
-            ],
-        )
-        filters.append((assets_substring_filter, 'assets'))
-        nfts_substring_filter = DBNestedFilter(
-            and_op=False,
-            filters=[
-                name_filter,
-                DBSubStringFilter(
-                    and_op=True,
-                    field='collection_name',
-                    search_string=substring_search,
-                ),
-            ],
-        )
-        filters.append((nfts_substring_filter, 'nfts'))
+        if substring_search is not None:
+            name_filter = DBSubStringFilter(
+                and_op=True,
+                field='name',
+                search_string=substring_search,
+            )
+            assets_substring_filter = DBNestedFilter(
+                and_op=False,
+                filters=[
+                    name_filter,
+                    DBSubStringFilter(
+                        and_op=True,
+                        field='symbol',
+                        search_string=substring_search,
+                    ),
+                ],
+            )
+            filters.append((assets_substring_filter, 'assets'))
+            nfts_substring_filter = DBNestedFilter(
+                and_op=False,
+                filters=[
+                    name_filter,
+                    DBSubStringFilter(
+                        and_op=True,
+                        field='collection_name',
+                        search_string=substring_search,
+                    ),
+                ],
+            )
+            filters.append((nfts_substring_filter, 'nfts'))
 
         if chain_id is not None:
-            new_filter = DBEqualsFilter(
-                and_op=True,
-                column='chain',
-                value=chain_id.serialize_for_db(),
+            nested_filter = DBNestedFilter(
+                and_op=False,
+                filters=[
+                    DBEqualsFilter(
+                        and_op=True,
+                        column='chain',
+                        value=chain_id.serialize_for_db(),
+                        include_null_values=True,
+                    ),
+                    DBNullFilter(and_op=True, columns=['chain'], verb='IS'),
+                ],
             )
-            filters.append((new_filter, 'assets'))
+            filters.append((nested_filter, 'assets'))
+
+        if address is not None:
+            filters.append(
+                (DBEqualsFilter(and_op=True, column='address', value=address), 'assets'),
+            )
 
         filter_query.filters = filters
         return filter_query

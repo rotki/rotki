@@ -31,6 +31,7 @@ const { t } = useI18n();
     dense
     auto-select-first
     return-object
+    key-attr="publicKey"
     text-attr="index"
     :item-height="68"
     variant="outlined"

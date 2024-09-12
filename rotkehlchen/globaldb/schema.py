@@ -212,6 +212,10 @@ INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('D', 4);
 INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('E', 5);
 /* DEFILLAMA */
 INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('F', 6);
+/* UNISWAPV2 */
+INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('G', 7);
+/* UNISWAPV3 */
+INSERT OR IGNORE INTO price_history_source_types(type, seq) VALUES ('H', 8);
 """
 
 DB_CREATE_PRICE_HISTORY = """
@@ -242,7 +246,7 @@ CREATE TABLE IF NOT EXISTS binance_pairs (
 DB_CREATE_ADDRESS_BOOK = """
 CREATE TABLE IF NOT EXISTS address_book (
     address TEXT NOT NULL,
-    blockchain TEXT,
+    blockchain TEXT NOT NULL,
     name TEXT NOT NULL,
     PRIMARY KEY(address, blockchain)
 );

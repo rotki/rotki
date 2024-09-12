@@ -5,7 +5,9 @@ import type { ActionResult } from '@rotki/common';
 import type { SyncAction } from '@/types/session/sync';
 import type { PendingTask } from '@/types/task';
 
-export function useSyncApi() {
+interface UseSyncApiReturn { forceSync: (action: SyncAction) => Promise<PendingTask> }
+
+export function useSyncApi(): UseSyncApiReturn {
   const forceSync = async (action: SyncAction): Promise<PendingTask> => {
     const response = await api.instance.put<ActionResult<PendingTask>>(
       '/premium/sync',

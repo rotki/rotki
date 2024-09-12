@@ -17,7 +17,12 @@ function toAssetBalances(balances: ManualBalanceWithValue[]): AssetBalances {
   return ownedAssets;
 }
 
-export function useManualAssetBalances() {
+interface UseManualAssetBalancesReturn {
+  balances: ComputedRef<AssetBalances>;
+  liabilities: ComputedRef<AssetBalances>;
+}
+
+export function useManualAssetBalances(): UseManualAssetBalancesReturn {
   const { manualBalances, manualLiabilities } = storeToRefs(useManualBalancesStore());
 
   const balances = computed<AssetBalances>(() => toAssetBalances(get(manualBalances)));

@@ -21,26 +21,23 @@ export function useAddressBookFilter(): FilterSchema<Filters, Matcher> {
 
   const { t } = useI18n();
 
-  const matchers = computed<Matcher[]>(() => [
-    {
-      key: AddressBookFilterKeys.NAME,
-      keyValue: AddressBookFilterValueKeys.NAME,
-      description: t('assets.filter.name'),
-      hint: t('assets.filter.name_hint'),
-      string: true,
-      suggestions: () => [],
-      validate: () => true,
-    },
-    {
-      key: AddressBookFilterKeys.ADDRESS,
-      keyValue: AddressBookFilterValueKeys.ADDRESS,
-      description: t('assets.filter.address'),
-      string: true,
-      multiple: true,
-      suggestions: () => [],
-      validate: (address: string) => isValidEthAddress(address),
-    },
-  ]);
+  const matchers = computed<Matcher[]>(() => [{
+    key: AddressBookFilterKeys.NAME,
+    keyValue: AddressBookFilterValueKeys.NAME,
+    description: t('assets.filter.name'),
+    hint: t('assets.filter.name_hint'),
+    string: true,
+    suggestions: (): string[] => [],
+    validate: (): boolean => true,
+  }, {
+    key: AddressBookFilterKeys.ADDRESS,
+    keyValue: AddressBookFilterValueKeys.ADDRESS,
+    description: t('assets.filter.address'),
+    string: true,
+    multiple: true,
+    suggestions: (): string[] => [],
+    validate: (address: string): boolean => isValidEthAddress(address),
+  }]);
 
   const OptionalString = z.string().optional();
   const RouteFilterSchema = z.object({

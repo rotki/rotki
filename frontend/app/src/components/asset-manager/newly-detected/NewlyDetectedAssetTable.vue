@@ -78,7 +78,7 @@ function toggleSelection() {
 
 function getIdentifiers(identifiers?: string | string[]): string [] {
   return identifiers
-    ? (Array.isArray(identifiers) ? identifiers : [identifiers])
+    ? arrayify(identifiers)
     : get(selected);
 }
 
@@ -162,7 +162,7 @@ async function markAsSpam(identifiers?: string | string[]): Promise<void> {
                 </RuiButton>
               </template>
 
-              {{ t('asset_table.newly_detected.mark_as_spam') }}
+              {{ t('asset_table.newly_detected.mark_selected_as_spam') }}
             </RuiTooltip>
           </div>
         </div>
@@ -212,25 +212,44 @@ async function markAsSpam(identifiers?: string | string[]): Promise<void> {
       </template>
 
       <template #item.actions="{ row }">
-        <RuiButtonGroup variant="text">
-          <RuiButton
-            color="success"
-            variant="text"
-            icon
-            class="m-auto"
-            @click="removeTokens(row.tokenIdentifier)"
+        <RuiButtonGroup
+          :key="row.tokenIdentifier"
+          class="dark:!divide-rui-grey-800"
+        >
+          <RuiTooltip
+            :open-delay="300"
+            :close-delay="0"
           >
-            <RuiIcon name="check-line" />
-          </RuiButton>
-          <RuiButton
-            color="error"
-            variant="text"
-            icon
-            class="m-auto"
-            @click="markAsSpam(row.tokenIdentifier)"
+            <template #activator>
+              <RuiButton
+                color="success"
+                icon
+                variant="text"
+                class="m-auto !rounded-none"
+                @click="removeTokens(row.tokenIdentifier)"
+              >
+                <RuiIcon name="check-line" />
+              </RuiButton>
+            </template>
+            {{ t('asset_table.newly_detected.accept') }}
+          </RuiTooltip>
+          <RuiTooltip
+            :open-delay="300"
+            :close-delay="0"
           >
-            <RuiIcon name="spam-line" />
-          </RuiButton>
+            <template #activator>
+              <RuiButton
+                color="error"
+                icon
+                variant="text"
+                class="m-auto !rounded-none"
+                @click="markAsSpam(row.tokenIdentifier)"
+              >
+                <RuiIcon name="spam-line" />
+              </RuiButton>
+            </template>
+            {{ t('asset_table.newly_detected.mark_as_spam') }}
+          </RuiTooltip>
         </RuiButtonGroup>
       </template>
     </RuiDataTable>

@@ -7,7 +7,13 @@ import { ApiValidationError } from '@/types/api/errors';
 import type { AxiosRequestConfig, AxiosResponseTransformer } from 'axios';
 import type { ActionResult } from '@rotki/common';
 
-export function useTaskApi() {
+interface UseTaskApiReturn {
+  queryTasks: () => Promise<TaskStatus>;
+  queryTaskResult: <T>(id: number, transformer?: AxiosResponseTransformer[]) => Promise<ActionResult<T>>;
+  cancelAsyncTask: (id: number) => Promise<boolean>;
+}
+
+export function useTaskApi(): UseTaskApiReturn {
   const queryTasks = async (): Promise<TaskStatus> => {
     const response = await api.instance.get<ActionResult<TaskStatus>>(`/tasks`, {
       validateStatus: validTaskStatus,
