@@ -520,13 +520,16 @@ class Rotkehlchen:
         log.info('Logging out user', user=user)
 
         self.deactivate_premium_status()
-        self.greenlet_manager.clear()
         del self.chains_aggregator
         self.exchange_manager.delete_all_exchanges()
 
         del self.accountant
         del self.history_querying_manager
         del self.data_importer
+
+        self.task_manager.clear()  # type: ignore  # task_manager is not None here
+        self.task_manager = None
+        self.greenlet_manager.clear()
 
         self.data.logout()
         self.cryptocompare.unset_database()
@@ -535,8 +538,6 @@ class Rotkehlchen:
         # Make sure no messages leak to other user sessions
         self.msg_aggregator.consume_errors()
         self.msg_aggregator.consume_warnings()
-        self.task_manager.clear()  # type: ignore  # task_manager is not None here
-        self.task_manager = None
 
         # We have locks in the chain aggregator that gets removed in this
         # function and in the db connections. The user db gets replaced but the globaldb
