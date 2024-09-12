@@ -4,7 +4,12 @@ from unittest.mock import MagicMock
 import pytest
 
 from rotkehlchen.chain.substrate.manager import SubstrateManager
-from rotkehlchen.chain.substrate.types import BlockNumber, KusamaNodeName, NodeNameAttributes
+from rotkehlchen.chain.substrate.types import (
+    BlockNumber,
+    KusamaNodeName,
+    NodeNameAttributes,
+    PolkadotNodeName,
+)
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_KSM
 from rotkehlchen.errors.misc import RemoteError
@@ -144,3 +149,18 @@ def test_set_available_nodes_call_order(kusama_manager):
 ])
 def test_format_own_rpc_endpoint(endpoint, formatted_endpoint):
     assert formatted_endpoint == SubstrateManager._format_own_rpc_endpoint(endpoint)
+
+
+def test_connect_to_own_node(polkadot_manager: 'SubstrateManager'):
+    polkadot_manager.connect_at_start = [PolkadotNodeName.OWN, PolkadotNodeName.PARITY]
+    polkadot_manager.own_rpc_endpoint = ''
+    polkadot_manager.attempt_connections()
+    assert [task.task_name for task in polkadot_manager.greenlet_manager.greenlets] == ['polkadot manager connection to parity node']  # noqa: E501
+    polkadot_manager.greenlet_manager.clear()
+    polkadot_manager.greenlet_manager.greenlets = []
+    polkadot_manager.own_rpc_endpoint = 'http://localhost:1234'
+    polkadot_manager.attempt_connections()
+    assert [task.task_name for task in polkadot_manager.greenlet_manager.greenlets] == [
+        'polkadot manager connection to own node node',
+        'polkadot manager connection to parity node',
+    ]

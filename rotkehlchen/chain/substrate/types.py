@@ -48,6 +48,9 @@ class KusamaNodeName(Enum):
             return 'https://kusama.elara.patract.io'
         raise AssertionError(f'Unexpected KusamaNodeName: {self}')
 
+    def is_owned(self) -> bool:
+        return self.value == 0
+
 
 class PolkadotNodeName(Enum):
     """Public nodes for Polkadot.
@@ -84,6 +87,9 @@ class PolkadotNodeName(Enum):
         if self == PolkadotNodeName.ELARA:
             return 'https://polkadot.elara.patract.io'
         raise AssertionError(f'Unexpected PolkadotNodeName: {self}')
+
+    def is_owned(self) -> bool:
+        return self.value == 0
 
 
 NodeName = KusamaNodeName | PolkadotNodeName

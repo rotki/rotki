@@ -671,7 +671,7 @@ def _make_substrate_manager(
         rpc_endpoint if rpc_endpoint is not None else KUSAMA_DEFAULT_OWN_RPC_ENDPOINT
     )
     substrate_manager = SubstrateManager(
-        chain=SupportedBlockchain.KUSAMA,
+        chain=chain_type,
         msg_aggregator=messages_aggregator,
         greenlet_manager=greenlet_manager,
         connect_at_start=connect_at_start,
