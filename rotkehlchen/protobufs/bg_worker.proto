@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+import "all_common.proto";
+
+enum SchedulerMethod {
+  SCHEDULE = 0;
+  CLEAR = 1;
+  REFRESH_PREMIUM = 2;
+}
+
+message BGCallData {
+	oneof data {
+		SchedulerMethod method = 1;
+		bool should_schedule = 2;
+		UnlockCall unlock = 3;
+		TypedArray maybe_kill_tx_query = 4;
+		Set base_entries_ignore_set = 5;
+	}
+}
+
+message BGReturnData {
+	optional Error error = 1;
+}

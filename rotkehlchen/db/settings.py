@@ -297,6 +297,10 @@ class ModifiableDBSettings(NamedTuple):
                 settings_dict[setting] = serialized_value
         return settings_dict
 
+    @staticmethod
+    def deserialize(settings_dict: dict[str, Any]) -> 'ModifiableDBSettings':
+        return ModifiableDBSettings(**settings_dict)
+
 
 def read_boolean(value: str | bool) -> bool:
     if isinstance(value, bool):

@@ -295,6 +295,7 @@ def remove_added_event_fields(returned_events):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('process', ['api_server'])
 @pytest.mark.freeze_time('2024-02-07 23:00:00 GMT')
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[
@@ -370,6 +371,7 @@ def test_query_transactions(rotkehlchen_api_server):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('process', ['api_server'])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 def test_request_transaction_decoding_errors(rotkehlchen_api_server):
@@ -568,6 +570,7 @@ def test_query_transactions_errors(rotkehlchen_api_server):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'], allow_playback_repeats=True)
+@pytest.mark.parametrize('process', ['api_server'])
 @pytest.mark.freeze_time('2024-02-07 23:00:00 GMT')
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[  # just 2 random addresses
@@ -1279,6 +1282,7 @@ def test_ignored_assets(rotkehlchen_api_server, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('have_decoders', [True])
+@pytest.mark.parametrize('process', ['api_server'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x59ABf3837Fa962d6853b4Cc0a19513AA031fd32b']])
 @patch.object(EthereumTransactions, '_get_internal_transactions_for_ranges', lambda *args, **kargs: None)  # noqa: E501
 @patch.object(EthereumTransactions, '_get_erc20_transfers_for_ranges', lambda *args, **kargs: None)
@@ -1481,6 +1485,7 @@ def test_count_transactions_missing_decoding(rotkehlchen_api_server: 'APIServer'
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('process', ['api_server'])
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
 @pytest.mark.parametrize('should_mock_price_queries', [True])

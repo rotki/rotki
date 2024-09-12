@@ -23,18 +23,12 @@ def fixture_max_tasks_num() -> int:
     return -1
 
 
-@pytest.fixture(name='api_task_greenlets')
-def fixture_api_task_greenlets() -> list:
-    return []
-
-
 @pytest.fixture(name='task_manager')
 def fixture_task_manager(
         database,
         blockchain,
         max_tasks_num,
         greenlet_manager,
-        api_task_greenlets,
         cryptocompare,
         exchange_manager,
         messages_aggregator,
@@ -43,7 +37,6 @@ def fixture_task_manager(
     task_manager = TaskManager(
         max_tasks_num=max_tasks_num,
         greenlet_manager=greenlet_manager,
-        api_task_greenlets=api_task_greenlets,
         database=database,
         cryptocompare=cryptocompare,
         premium_sync_manager=MockPremiumSyncManager(),  # type: ignore

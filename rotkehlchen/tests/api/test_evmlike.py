@@ -224,6 +224,7 @@ def compare_events_without_id(e1: dict, e2: dict) -> None:
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('process', ['api_server'])
 @pytest.mark.parametrize('should_mock_price_queries', [True])
 @pytest.mark.parametrize('default_mock_price_value', [ONE])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])

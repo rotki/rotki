@@ -86,6 +86,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_create_and_verify
 from rotkehlchen.premium.sync import PremiumSyncManager
+from rotkehlchen.tasks.client import TaskManagerClient
 from rotkehlchen.tasks.manager import DEFAULT_MAX_TASKS_NUM, TaskManager
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
@@ -156,7 +157,6 @@ class Rotkehlchen:
             raise SystemPermissionError(
                 f'The given data directory {self.data_dir} is not readable or writable',
             )
-        self.main_loop_spawned = False
         self.api_task_greenlets: list[gevent.Greenlet] = []
         self.msg_aggregator = MessagesAggregator()
         self.greenlet_manager = GreenletManager(msg_aggregator=self.msg_aggregator)
@@ -201,6 +201,7 @@ class Rotkehlchen:
         # Initialize EVM Contracts common abis
         EvmContracts.initialize_common_abis()
         self.task_manager: TaskManager | None = None
+        self.task_manager_client: TaskManagerClient | None = None
         self.shutdown_event = gevent.event.Event()
         self.migration_manager = DataMigrationManager(self)
 
@@ -211,7 +212,7 @@ class Rotkehlchen:
     ) -> None:
         """Checks for running greenlets related to transactions query for the given
         addresses and kills them if they exist"""
-        assert self.task_manager is not None, 'task manager should have been initialized at this point'  # noqa: E501
+        assert self.task_manager_client is not None, 'task manager client should have been initialized at this point'  # noqa: E501
 
         for address in addresses:
             account_tuple = (address, blockchain.to_chain_id())
@@ -229,10 +230,7 @@ class Rotkehlchen:
                 ):
                     greenlet.kill(exception=GreenletKilledError('Killed due to request for evm address removal'))  # noqa: E501
 
-            tx_query_task_greenlets = self.task_manager.running_greenlets.get(self.task_manager._maybe_query_evm_transactions, [])  # noqa: E501
-            for greenlet in tx_query_task_greenlets:
-                if greenlet.dead is False and greenlet.kwargs['address'] in addresses:
-                    greenlet.kill(exception=GreenletKilledError('Killed due to request for evm address removal'))  # noqa: E501
+        self.task_manager_client.maybe_kill_running_tx_query_tasks(addresses)
 
     def reset_after_failed_account_creation_or_login(self) -> None:
         """If the account creation or login failed make sure that the rotki instance is clear
@@ -301,14 +299,15 @@ class Rotkehlchen:
         )
         # Run the DB integrity check due to https://github.com/rotki/rotki/issues/3010
         # TODO: Hopefully once 3010 is handled this can go away
-        self.greenlet_manager.spawn_and_track(
-            after_seconds=None,
-            task_name='user DB data integrity check',
-            exception_is_error=False,
-            method=self.data.db.ensure_data_integrity,
-        )
-        if create_new:
-            self._perform_new_db_actions()
+        if self.args.process == 'api_server':
+            self.greenlet_manager.spawn_and_track(
+                after_seconds=None,
+                task_name='user DB data integrity check',
+                exception_is_error=False,
+                method=self.data.db.ensure_data_integrity,
+            )
+            if create_new:
+                self._perform_new_db_actions()
 
         self.data_importer = CSVDataImporter(db=self.data.db)
         self.premium_sync_manager = PremiumSyncManager(
@@ -344,14 +343,15 @@ class Rotkehlchen:
         with self.data.db.conn.read_ctx() as cursor:
             settings = self.get_settings(cursor)
             CachedSettings().initialize(settings)  # initialize with saved DB settings
-            self.greenlet_manager.spawn_and_track(
-                after_seconds=None,
-                task_name='submit_usage_analytics',
-                exception_is_error=False,
-                method=maybe_submit_usage_analytics,
-                data_dir=self.data_dir,
-                should_submit=settings.submit_usage_analytics,
-            )
+            if self.args.process == 'api_server':
+                self.greenlet_manager.spawn_and_track(
+                    after_seconds=None,
+                    task_name='submit_usage_analytics',
+                    exception_is_error=False,
+                    method=maybe_submit_usage_analytics,
+                    data_dir=self.data_dir,
+                    should_submit=settings.submit_usage_analytics,
+                )
             self.beaconchain = BeaconChain(database=self.data.db, msg_aggregator=self.msg_aggregator)  # noqa: E501
 
             exchange_credentials = self.data.db.get_exchange_credentials(cursor)
@@ -485,32 +485,41 @@ class Rotkehlchen:
             msg_aggregator=self.msg_aggregator,
             user_db=self.data.db,
         )
-        self.task_manager = TaskManager(
-            max_tasks_num=DEFAULT_MAX_TASKS_NUM,
-            greenlet_manager=self.greenlet_manager,
-            api_task_greenlets=self.api_task_greenlets,
-            database=self.data.db,
-            cryptocompare=self.cryptocompare,
-            premium_sync_manager=self.premium_sync_manager,
-            chains_aggregator=self.chains_aggregator,
-            exchange_manager=self.exchange_manager,
-            deactivate_premium=self.deactivate_premium_status,
-            activate_premium=self.activate_premium_status,
-            query_balances=self.query_balances,
-            msg_aggregator=self.msg_aggregator,
-            data_updater=self.data_updater,
-            username=user,
-        )
+        if self.args.process == 'bg_worker':
+            self.task_manager = TaskManager(
+                max_tasks_num=DEFAULT_MAX_TASKS_NUM,
+                greenlet_manager=self.greenlet_manager,
+                database=self.data.db,
+                cryptocompare=self.cryptocompare,
+                premium_sync_manager=self.premium_sync_manager,
+                chains_aggregator=self.chains_aggregator,
+                exchange_manager=self.exchange_manager,
+                deactivate_premium=self.deactivate_premium_status,
+                activate_premium=self.activate_premium_status,
+                query_balances=self.query_balances,
+                msg_aggregator=self.msg_aggregator,
+                data_updater=self.data_updater,
+                username=user,
+            )
+        elif self.args.process == 'api_server':
+            self.task_manager_client = TaskManagerClient(self.args.bg_worker_port)
+            self.task_manager_client.unlock(
+                user=user,
+                password=password,
+                sync_approval=sync_approval,
+                resume_from_backup=resume_from_backup,
+                sync_database=sync_database,
+            )
+            self.start()
+            self.migration_manager.maybe_migrate_data()
+            self.greenlet_manager.spawn_and_track(
+                after_seconds=None,
+                task_name='Check data updates',
+                exception_is_error=False,
+                method=self.data_updater.check_for_updates,
+            )
 
-        self.migration_manager.maybe_migrate_data()
         self.assets_updater = AssetsUpdater(self.msg_aggregator)
-        self.greenlet_manager.spawn_and_track(
-            after_seconds=None,
-            task_name='Check data updates',
-            exception_is_error=False,
-            method=self.data_updater.check_for_updates,
-        )
-
         self.addressbook_prioritizer = NamePrioritizer(self.data.db)  # Initialize here since it's reused by the api for addressbook endpoints.  # noqa: E501
         self.user_is_logged_in = True
         log.debug('User unlocking complete')
@@ -537,8 +546,12 @@ class Rotkehlchen:
         # Make sure no messages leak to other user sessions
         self.msg_aggregator.consume_errors()
         self.msg_aggregator.consume_warnings()
-        self.task_manager.clear()  # type: ignore  # task_manager is not None here
-        self.task_manager = None
+        if self.task_manager is not None:
+            self.task_manager.clear()
+            self.task_manager = None
+        if self.task_manager_client is not None:
+            self.task_manager_client.logout()
+            self.task_manager_client = None
 
         # We have locks in the chain aggregator that gets removed in this
         # function and in the db connections. The user db gets replaced but the globaldb
@@ -548,7 +561,9 @@ class Rotkehlchen:
         log.info('User successfully logged out', user=user)
 
     def logout(self) -> None:
-        if self.task_manager is None:  # no user logged in?
+        if self.task_manager_client is not None:
+            self.task_manager_client.logout()
+        if self.task_manager is None:  # no user logged in? or not in the bg process
             return
 
         with self.task_manager.schedule_lock:
@@ -577,6 +592,8 @@ class Rotkehlchen:
         self.chains_aggregator.activate_premium_status(self.premium)
 
         self.data.db.set_rotkehlchen_premium(credentials)
+        if self.task_manager_client is not None:
+            self.task_manager_client.refresh_premium_credentials()
 
     def deactivate_premium_status(self) -> None:
         """Deactivate premium in the current session"""
@@ -602,11 +619,9 @@ class Rotkehlchen:
         self.deactivate_premium_status()
         return success, msg
 
-    def start(self) -> gevent.Greenlet:
-        assert not self.main_loop_spawned, 'Tried to spawn the main loop twice'
-        greenlet = gevent.spawn(self.main_loop)
-        self.main_loop_spawned = True
-        return greenlet
+    def start(self) -> None:
+        assert self.task_manager_client is not None, 'Task manager not initialized'
+        self.task_manager_client.main_loop()
 
     def main_loop(self) -> None:
         """rotki main loop that fires often and runs the task manager's scheduler"""
@@ -1139,7 +1154,8 @@ class Rotkehlchen:
         # start scheduling tasks. This means that the user has logged in and seen
         # the dashboard. This is to avoid scheduling tasks during DB upgrade,
         # migrations and asset updates.
-        self.task_manager.should_schedule = True  # type: ignore[union-attr]  # should exist here
+        if self.task_manager_client is not None:  # only if we are in the api_server process
+            self.task_manager_client.should_schedule(True)
         return result_dict
 
     def set_settings(self, settings: ModifiableDBSettings) -> tuple[bool, str]:

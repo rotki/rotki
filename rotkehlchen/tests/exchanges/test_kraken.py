@@ -742,6 +742,7 @@ def test_timestamp_deserialization():
         deserialize_timestamp_from_floatstr('')
 
 
+@pytest.mark.parametrize('process', ['api_server'])
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('added_exchanges', [(Location.KRAKEN,)])

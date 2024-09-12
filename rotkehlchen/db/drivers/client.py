@@ -1,7 +1,3 @@
-"""Original code taken from here:
- https://github.com/gilesbrown/gsqlite3/blob/fef400f1c5bcbc546772c827d3992e578ea5f905/gsqlite3.py
-but heavily modified"""
-
 import logging
 import random
 import sqlite3
@@ -17,18 +13,17 @@ import zmq
 from pysqlcipher3 import dbapi2 as sqlcipher
 
 from rotkehlchen.db.checks import sanity_check_impl
-from rotkehlchen.db.drivers import db_messages_pb2
-from rotkehlchen.db.drivers.server import (
-    DB_CONNECTION_ADDRESS,
-    ENUM_TO_DB_ERROR,
-    DBConnectionType,
-    DBError,
-    DBMethod,
-    to_typed_data,
-)
+from rotkehlchen.db.drivers.server import DBConnectionType, DBMethod
 from rotkehlchen.db.minimized_schema import MINIMIZED_USER_DB_SCHEMA
 from rotkehlchen.globaldb.minimized_schema import MINIMIZED_GLOBAL_DB_SCHEMA
 from rotkehlchen.greenlets.utils import get_greenlet_name
+from rotkehlchen.protobufs import db_messages_pb2
+from rotkehlchen.protobufs.serialization import (
+    ENUM_TO_PROCESS_ERROR,
+    PROCESS_CONNECTION_ADDRESS,
+    ErrorType,
+    to_typed_data,
+)
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -199,7 +194,7 @@ class DBWriterClient:
             self._send(DBMethod.OPEN_CURSOR, cursor_name=cursor_name)
 
     def _send(self, method: db_messages_pb2.DBMethod, cursor_name: str | None = None, *args: Any, **kwargs: Any) -> None:  # type: ignore[name-defined]  # pylint: disable=no-member  # noqa: E501
-        call_data = db_messages_pb2.ZMQCallData()  # type: ignore[attr-defined]  # pylint: disable=no-member
+        call_data = db_messages_pb2.DBCallData()  # type: ignore[attr-defined]  # pylint: disable=no-member
         call_data.connection_type = self.connection_type.value
         call_data.db_path = self.db_path
         if cursor_name is not None:
@@ -218,13 +213,13 @@ class DBWriterClient:
         response_serialized = self.zmq_connection.recv()
         if response_serialized == b'':
             return
-        return_data = db_messages_pb2.ZMQReturnData()  # type: ignore[attr-defined]  # pylint: disable=no-member
+        return_data = db_messages_pb2.DBReturnData()  # type: ignore[attr-defined]  # pylint: disable=no-member
         return_data.ParseFromString(response_serialized)
         if return_data.HasField('error'):
-            if return_data.error.name == DBError.UnknownError:
+            if return_data.error.name == ErrorType.UnknownError:
                 raise UnknownDBError(f'Got unknown DB error with message {return_data.error.message}')  # noqa: E501
             # raise the same error that is raised by the DBWriter process
-            raise ENUM_TO_DB_ERROR[return_data.error.name](return_data.error.message)
+            raise ENUM_TO_PROCESS_ERROR[return_data.error.name](return_data.error.message)
 
         if return_data.result is not None:
             self.lastrowid = return_data.result.lastrowid
@@ -394,7 +389,7 @@ class DBConnection:
         elif connection_type == DBConnectionType.GLOBAL:
             self.minimized_schema = MINIMIZED_GLOBAL_DB_SCHEMA
         self.zmq_connection = zmq.Context().socket(zmq.REQ)
-        self.zmq_connection.connect(f'{DB_CONNECTION_ADDRESS}:{db_writer_port}')
+        self.zmq_connection.connect(f'{PROCESS_CONNECTION_ADDRESS}:{db_writer_port}')
         DBWriterClient(
             connection_type=self.connection_type,
             db_path=self.db_path,
