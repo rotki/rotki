@@ -29,6 +29,7 @@ class GreenletManager:
     def clear(self) -> None:
         """Clears all tracked greenlets. To be called when logging out or shutting down"""
         gevent.killall(self.greenlets)
+        self.greenlets.clear()
 
     def clear_finished(self) -> None:
         """Remove all finished tracked greenlets from the list"""
