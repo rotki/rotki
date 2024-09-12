@@ -342,13 +342,13 @@ class GlobalDBHandler:
         May raise:
         - DeserializationError
         """
-        assets_info, limit = {}, None
+        assets_info, offset, limit = {}, None, None
         if filter_query.pagination is not None and filter_query.pagination.limit is not None:
-            # we don't apply limit yet, but after skipping the ignored assets below
+            # we don't apply pagination yet, but after skipping the ignored assets below
             limit = filter_query.pagination.limit
-            filter_query.pagination = filter_query.pagination._replace(limit=None)
+            offset = filter_query.pagination.offset
 
-        prepared_filter_query, bindings = filter_query.prepare()
+        prepared_filter_query, bindings = filter_query.prepare(with_pagination=False)
         parent_query = """
         SELECT A.identifier AS identifier, A.type, B.address, B.decimals, A.name, C.symbol,
         C.started, C.forked, C.swapped_for, C.coingecko, C.cryptocompare, B.protocol, B.chain,
@@ -367,6 +367,9 @@ class GlobalDBHandler:
             cursor.execute(query, bindings)
             for entry in cursor:
                 if should_skip(entry[0], ignored_assets):
+                    continue
+                if offset is not None and offset > 0:
+                    offset -= 1  # keep track of the skipped rows to respect the offset
                     continue
 
                 asset_type = AssetType.deserialize_from_db(entry[1])
