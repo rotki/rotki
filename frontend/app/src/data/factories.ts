@@ -32,6 +32,7 @@ export function defaultGeneralSettings(mainCurrency: Currency): GeneralSettings 
     autoCreateCalendarReminders: true,
     askUserUponSizeDiscrepancy: true,
     autoDetectTokens: true,
+    csvExportDelimiter: Defaults.DEFAULT_CSV_EXPORT_DELIMITER,
   };
 }
 

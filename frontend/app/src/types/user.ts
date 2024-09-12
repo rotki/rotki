@@ -57,6 +57,7 @@ const GeneralSettings = z.object({
   autoCreateCalendarReminders: z.boolean(),
   askUserUponSizeDiscrepancy: z.boolean(),
   autoDetectTokens: z.boolean(),
+  csvExportDelimiter: z.string().max(1),
 });
 
 export type GeneralSettings = z.infer<typeof GeneralSettings>;
@@ -163,6 +164,7 @@ function getGeneralSettings(settings: UserSettings): GeneralSettings {
     autoCreateCalendarReminders: settings.autoCreateCalendarReminders,
     askUserUponSizeDiscrepancy: settings.askUserUponSizeDiscrepancy,
     autoDetectTokens: settings.autoDetectTokens,
+    csvExportDelimiter: settings.csvExportDelimiter,
   };
 }
 
