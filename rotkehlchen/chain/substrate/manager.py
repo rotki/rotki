@@ -419,7 +419,7 @@ class SubstrateManager:
         return BlockNumber(last_block)
 
     def _get_node_endpoint(self, node: NodeName) -> str:
-        if node.value == 0:  # KusamaNodeName/PolkadotNodeName.OWN
+        if node.is_owned():
             return self._format_own_rpc_endpoint(self.own_rpc_endpoint)
         return node.endpoint()
 
@@ -533,6 +533,9 @@ class SubstrateManager:
 
     def attempt_connections(self) -> None:
         for node in self.connect_at_start:
+            if node.is_owned() and len(self.own_rpc_endpoint) == 0:
+                continue
+
             self.greenlet_manager.spawn_and_track(
                 after_seconds=None,
                 task_name=f'{self.chain} manager connection to {node} node',
