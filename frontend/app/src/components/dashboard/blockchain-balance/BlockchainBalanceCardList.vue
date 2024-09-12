@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Blockchain } from '@rotki/common';
 import { Routes } from '@/router/routes';
 import { type BlockchainTotal, SupportedSubBlockchainProtocolData } from '@/types/blockchain';
 import type { RouteLocationRaw } from 'vue-router';
@@ -60,13 +61,18 @@ function childData(identifier: string): ActionDataEntry | null {
         </template>
         <div class="flex flex-wrap justify-between gap-1 text-rui-text">
           {{ toSentenceCase(name) }}
-          <AmountDisplay
-            show-currency="symbol"
-            fiat-currency="USD"
-            :value="amount"
-            :loading="loading"
-            class="font-medium"
-          />
+
+          <div class="flex gap-2 items-center">
+            <Eth2ValidatorLimitTooltip v-if="chain === Blockchain.ETH2" />
+
+            <AmountDisplay
+              show-currency="symbol"
+              fiat-currency="USD"
+              :value="amount"
+              :loading="loading"
+              class="font-medium"
+            />
+          </div>
         </div>
       </ListItem>
     </RouterLink>

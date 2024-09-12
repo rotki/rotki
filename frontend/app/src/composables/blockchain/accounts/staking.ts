@@ -9,6 +9,7 @@ import type { ActionStatus } from '@/types/action';
 import type { TaskMeta } from '@/types/task';
 
 interface UseEthStakingReturn {
+  validatorsLimitInfo: ComputedRef<{ showWarning: boolean; limit: number; total: number }>;
   fetchEthStakingValidators: () => Promise<void>;
   addEth2Validator: (payload: Eth2Validator) => Promise<ActionStatus<ValidationErrors | string>>;
   editEth2Validator: (payload: Eth2Validator) => Promise<ActionStatus<ValidationErrors | string>>;
@@ -25,8 +26,9 @@ export function useEthStaking(): UseEthStakingReturn {
   } = useBlockchainAccountsApi();
   const blockchainStore = useBlockchainStore();
   const { updateAccounts, getAccounts, updateBalances } = blockchainStore;
-  const { stakingValidatorsLimits, ethStakingValidators, balances } = storeToRefs(blockchainStore);
+  const { stakingValidatorsLimits, ethStakingValidators, eth2Balances } = storeToRefs(blockchainStore);
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
+  const { premium } = storeToRefs(usePremiumStore());
   const { awaitTask } = useTaskStore();
   const { notify } = useNotificationsStore();
   const { setMessage } = useMessageStore();
@@ -135,10 +137,15 @@ export function useEthStaking(): UseEthStakingReturn {
       const pendingRemoval = get(ethStakingValidators).filter(account => validators.includes(account.publicKey));
       const success = await deleteEth2ValidatorsCaller(pendingRemoval);
       if (success) {
-        const remainingValidators = getAccounts(Blockchain.ETH2).filter(
-          ({ data }) => 'publicKey' in data && !validators.includes(data.publicKey),
-        );
-        updateAccounts(Blockchain.ETH2, remainingValidators);
+        if (get(premium)) {
+          const remainingValidators = getAccounts(Blockchain.ETH2).filter(
+            ({ data }) => 'publicKey' in data && !validators.includes(data.publicKey),
+          );
+          updateAccounts(Blockchain.ETH2, remainingValidators);
+        }
+        else {
+          await fetchEthStakingValidators();
+        }
       }
       return success;
     }
@@ -177,7 +184,7 @@ export function useEthStaking(): UseEthStakingReturn {
 
     updateAccounts(Blockchain.ETH2, validators);
 
-    const { eth2 } = get(balances);
+    const eth2 = get(eth2Balances);
     if (!eth2[publicKey])
       return;
 
@@ -222,7 +229,30 @@ export function useEthStaking(): UseEthStakingReturn {
     });
   };
 
+  watch(premium, async () => {
+    await fetchEthStakingValidators();
+  });
+
+  const validatorsLimitInfo = computed(() => {
+    const limits = get(stakingValidatorsLimits);
+    if (!limits) {
+      return {
+        showWarning: false,
+        total: 0,
+        limit: 0,
+      };
+    }
+
+    const { limit, total } = limits;
+    return {
+      showWarning: limit > 0 && limit <= total,
+      total,
+      limit,
+    };
+  });
+
   return {
+    validatorsLimitInfo,
     fetchEthStakingValidators,
     addEth2Validator,
     editEth2Validator,
