@@ -235,6 +235,7 @@ const highlightedTextClasses = 'text-subtitle-2 text-rui-text-secondary';
         <RuiIcon
           name="input-field"
           size="16"
+          class="min-w-4"
         />
         <span>
           <span>{{ t('table_filter.hint.description') }}</span>
@@ -250,6 +251,7 @@ const highlightedTextClasses = 'text-subtitle-2 text-rui-text-secondary';
         <RuiIcon
           name="information-2-line"
           size="16"
+          class="min-w-4"
         />
         {{ t('table_filter.hint.edit_note') }}
       </div>

@@ -43,7 +43,7 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
 
-  const { resetAddressNamesData } = useAddressesNamesStore();
+  const { resetAddressNamesData, deleteAddressBook } = useAddressesNamesStore();
   const { t } = useI18n();
   const { getNativeAsset } = useSupportedChains();
 
@@ -97,20 +97,43 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
     }
   };
 
+  const resetAddressesData = async (chain: string | null, payload: AccountPayload): Promise<void> => {
+    try {
+      const addressBookPayload = {
+        address: payload.address,
+        blockchain: chain,
+      };
+
+      if (!payload.label) {
+        await deleteAddressBook('private', [addressBookPayload]);
+      }
+      else {
+        resetAddressNamesData([
+          addressBookPayload,
+        ]);
+      }
+    }
+    catch (error: any) {
+      logger.error(error);
+    }
+  };
+
   const editAccount = async (
     payload: AccountPayload | XpubAccountPayload,
     chain: string,
   ): Promise<BlockchainAccount[]> => {
-    if (isBtcChain(chain) || 'xpub' in payload)
-      return convertBtcAccounts(getNativeAsset, chain, await editBtcAccount(payload, chain));
+    if (isBtcChain(chain) || 'xpub' in payload) {
+      const response = convertBtcAccounts(getNativeAsset, chain, await editBtcAccount(payload, chain));
+
+      if (!('xpub' in payload))
+        await resetAddressesData(chain, payload);
+
+      return response;
+    }
 
     const result = await editBlockchainAccount(payload, chain);
-    resetAddressNamesData([
-      {
-        ...payload,
-        blockchain: chain,
-      },
-    ]);
+
+    await resetAddressesData(chain, payload);
 
     const chainInfo = {
       nativeAsset: getNativeAsset(chain),
@@ -122,13 +145,7 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
 
   const editAgnosticAccount = async (chainType: string, payload: AccountPayload): Promise<boolean> => {
     const result = await editAgnosticBlockchainAccount(chainType, payload);
-    resetAddressNamesData([
-      {
-        ...payload,
-        blockchain: null,
-      },
-    ]);
-
+    await resetAddressesData(null, payload);
     return result;
   };
 

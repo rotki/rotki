@@ -200,8 +200,8 @@ function formatFileFilter(fileFilter: string) {
           'opacity-0': loading,
         }"
       >
-        <div class="h-10 bg-rui-primary/[0.12] rounded-full flex items-center justify-center">
-          <div class="w-10 h-10 flex items-center justify-center">
+        <div class="h-10 bg-rui-primary/[0.12] rounded-full flex items-center justify-center max-w-full overflow-hidden">
+          <div class="w-10 h-10 min-w-[10] flex items-center justify-center">
             <RuiIcon
               name="file-upload-line"
               color="primary"
@@ -211,10 +211,13 @@ function formatFileFilter(fileFilter: string) {
             <div
               v-if="file"
               key="file"
-              class="flex items-center gap-2 ml-1"
+              class="flex items-center gap-2 ml-1 flex-1 overflow-hidden"
             >
-              <div>
-                <div class="text-subtitle-1 !text-sm !leading-5">
+              <div class="flex-1 overflow-hidden">
+                <div
+                  class="text-subtitle-1 !text-sm !leading-5 text-truncate"
+                  :title="file.name"
+                >
                   {{ file.name }}
                 </div>
                 <div class="text-rui-text-secondary text-xs !leading-3">

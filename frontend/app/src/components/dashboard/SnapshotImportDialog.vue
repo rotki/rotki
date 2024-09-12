@@ -45,7 +45,7 @@ const complete = logicAnd(balanceFile, locationFile);
 <template>
   <RuiDialog
     v-model="model"
-    max-width="600"
+    max-width="650"
     :persistent="persistent"
   >
     <template #activator="{ attrs }">
@@ -66,7 +66,7 @@ const complete = logicAnd(balanceFile, locationFile);
         {{ t('snapshot_import_dialog.title') }}
       </template>
 
-      <div class="flex flex-row gap-2">
+      <div class="grid grid-cols-2 gap-2">
         <div>
           <div class="font-bold">
             {{ t('snapshot_import_dialog.balance_snapshot_file') }}
