@@ -13,11 +13,16 @@ from eth_utils import is_checksum_address
 from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset, EvmToken, FiatAsset, Nft
 from rotkehlchen.assets.converters import asset_from_nexo
 from rotkehlchen.assets.types import AssetType
-from rotkehlchen.assets.utils import get_or_create_evm_token, symbol_to_evm_token
+from rotkehlchen.assets.utils import (
+    IgnoredAssetsHandling,
+    get_or_create_evm_token,
+    symbol_to_evm_token,
+)
 from rotkehlchen.constants.assets import A_DAI, A_USDT
 from rotkehlchen.constants.misc import GLOBALDB_NAME
 from rotkehlchen.constants.resolver import evm_address_to_identifier, strethaddress_to_identifier
 from rotkehlchen.db.custom_assets import DBCustomAssets
+from rotkehlchen.db.filtering import AssetsFilterQuery
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.externalapis.coingecko import DELISTED_ASSETS, Coingecko
@@ -866,3 +871,29 @@ def test_spam_detection_respects_whitelist(globaldb: 'GlobalDBHandler', database
     autodetect_spam_assets_in_db(database)
     assert token.resolve_to_evm_token().protocol != SPAM_PROTOCOL
     assert Asset(new_token_whitelisted.identifier).resolve_to_evm_token().protocol != SPAM_PROTOCOL
+
+
+def test_all_assets_pagination(globaldb: 'GlobalDBHandler', database: 'DBHandler'):
+    """Test the pagination by OFFSET and LIMIT parameters in the assets retrieval function.
+    With page1 having un-ignored assets from 0-10 and page2 having un-ignored assets from 10-20,
+    page1 and page2 should be different, and page1 + page2 should return assets from 0-20."""
+    page1, page2 = (globaldb.retrieve_assets(
+        userdb=database,
+        filter_query=AssetsFilterQuery.make(
+            and_op=True,
+            limit=10,
+            offset=offset,
+            ignored_assets_handling=IgnoredAssetsHandling.EXCLUDE,
+        ),
+    ) for offset in (10, 20))
+    both_pages = globaldb.retrieve_assets(
+        userdb=database,
+        filter_query=AssetsFilterQuery.make(
+            and_op=True,
+            limit=20,
+            offset=10,
+            ignored_assets_handling=IgnoredAssetsHandling.EXCLUDE,
+        ),
+    )
+    assert page1[0] != page2[0]
+    assert page1[0] + page2[0] == both_pages[0]
