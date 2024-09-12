@@ -64,7 +64,8 @@
     "autoDeleteCalendarEntries": true,
     "autoCreateCalendarReminders": true,
     "askUserUponSizeDiscrepancy": true,
-    "autoDetectTokens": true
+    "autoDetectTokens": true,
+    "csvExportDelimiter": ","
   },
   "message": ""
 }

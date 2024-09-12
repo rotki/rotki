@@ -78,8 +78,8 @@ export const useGeneralSettingsStore = defineStore('settings/general', () => {
     autoCreateCalendarReminders,
     askUserUponSizeDiscrepancy,
     autoDetectTokens,
-    settings,
     csvExportDelimiter,
+    settings,
     update,
   };
 });

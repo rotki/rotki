@@ -28,7 +28,7 @@ const { t } = useI18n();
         <DateDisplayFormatSetting />
         <DateInputFormatSetting />
         <DisplayDateInLocaltimeSetting />
-        <CSVExportDelimiterSetting />
+        <CsvExportDelimiterSetting />
         <BtcDerivationGapLimitSetting />
         <TreatEthAsEth2Setting />
         <EvmChainsToIgnoreSettings />

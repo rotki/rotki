@@ -59,7 +59,6 @@ describe('settings:utils', () => {
       shouldRefreshValidatorDailyStats: false,
       unifyAccountsTable: false,
       savedFilters: {},
-      csvExportDelimiter: Defaults.DEFAULT_CSV_EXPORT_DELIMITER,
     });
   });
 });

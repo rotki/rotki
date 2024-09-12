@@ -77,7 +77,6 @@ describe('types/user', () => {
       shouldRefreshValidatorDailyStats: false,
       unifyAccountsTable: false,
       savedFilters: {},
-      csvExportDelimiter: ',',
     };
 
     const raw = {
