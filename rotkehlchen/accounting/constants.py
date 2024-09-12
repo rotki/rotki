@@ -38,6 +38,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
         HistoryEventSubType.PAYMENT: {DEFAULT: EventCategory.RECEIVE_PAYMENT},
         HistoryEventSubType.GRANT: {DEFAULT: EventCategory.RECEIVE_GRANT},
         HistoryEventSubType.INTEREST: {DEFAULT: EventCategory.INTEREST},
+        HistoryEventSubType.CASHBACK: {DEFAULT: EventCategory.CASHBACK},
     },
     HistoryEventType.DEPOSIT: {
         HistoryEventSubType.DEPOSIT_ASSET: {
@@ -262,6 +263,9 @@ EVENT_CATEGORY_DETAILS = {
     )}, EventCategory.INTEREST: {DEFAULT: EventCategoryDetails(
         label='receive interest',
         icon='funds-line',
+    )}, EventCategory.CASHBACK: {DEFAULT: EventCategoryDetails(
+        label='Cashback',
+        icon='exchange-dollar-line',
     )},
 }
 
