@@ -196,15 +196,15 @@ def globaldb_get_general_cache_last_queried_ts_by_key(
     Get the last_queried_ts of the oldest stored element by key_parts. If there is no such
     element returns Timestamp(0)
     """
-    cache_key = compute_cache_key(key_parts)
     cursor.execute(
         'SELECT last_queried_ts FROM general_cache WHERE key=? '
-        'ORDER BY last_queried_ts ASC',
-        (cache_key,),
+        'ORDER BY last_queried_ts DESC',
+        (compute_cache_key(key_parts),),
     )
-    result = cursor.fetchone()
-    if result is None:
+
+    if (result := cursor.fetchone()) is None:
         return Timestamp(0)
+
     return Timestamp(result[0])
 
 
@@ -216,15 +216,15 @@ def globaldb_get_unique_cache_last_queried_ts_by_key(
     Get the last_queried_ts of the oldest stored element by key_parts. If there is no such
     element returns Timestamp(0)
     """
-    cache_key = compute_cache_key(key_parts)
     cursor.execute(
         'SELECT last_queried_ts FROM unique_cache WHERE key=? '
-        'ORDER BY last_queried_ts ASC',
-        (cache_key,),
+        'ORDER BY last_queried_ts DESC',
+        (compute_cache_key(key_parts),),
     )
-    result = cursor.fetchone()
-    if result is None:
+
+    if (result := cursor.fetchone()) is None:
         return Timestamp(0)
+
     return Timestamp(result[0])
 
 
