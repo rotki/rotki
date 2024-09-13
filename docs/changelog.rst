@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`-` Gnosis Pay cashback events will now be properly recognized in the history view.
+* :feature:`8492` Eigenlayer PEPE upgrade changes will now be properly understood by rotki. That means AVS rewards claiming, ability to restake beacon chain staked ETH and new batched withdrawals directly to the eigenpod. For more read here: https://docs.eigenlayer.xyz/eigenlayer/restaking-guides/restaking-developer-guide#pepe-release
 * :bug:`-` The Manage Assets / Assets page will now show the correct assets on every page.
 * :feature:`7536` Added the ability to customize the CSV delimiter in the frontend settings. Users can now choose their preferred delimiter for CSV exports.
 * :feature:`2217` Users will now be able to use Uniswap V2 and V3 as historical price oracles.
