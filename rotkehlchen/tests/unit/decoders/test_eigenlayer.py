@@ -13,17 +13,19 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     EIGENLAYER_STRATEGY_MANAGER,
     EIGENPOD_DELAYED_WITHDRAWAL_ROUTER,
     EIGENPOD_MANAGER,
+    REWARDS_COORDINATOR,
 )
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_ETH, A_STETH
+from rotkehlchen.constants.assets import A_ETH, A_STETH, A_WETH
 from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.tests.utils.eigenlayer import add_create_eigenpod_event
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
@@ -596,4 +598,154 @@ def test_native_restake_delegate(ethereum_inquirer, ethereum_accounts):
             counterparty=CPT_EIGENLAYER,
             address=EIGENPOD_MANAGER,
         )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0x574c25d8e5fF25377a5D2E319f4ADeAeDD66539a',  # proof submitter
+    '0xefF584E8336dA7A23EE32ea19a937b016D69d589']])  # eigenpod owner
+def test_eigenpod_start_checkpoint(ethereum_inquirer, ethereum_accounts):
+    """Note: The address we track here is the proof submitter of the eigenpod.
+    It's not possible to have multiple. By default pod owner is also submitter but
+    this can also be changed."""
+    add_create_eigenpod_event(
+        database=ethereum_inquirer.database,
+        eigenpod_owner=ethereum_accounts[1],
+        eigenpod_address=(eigenpod_address := string_to_evm_address('0xA6f93249580EC3F08016cD3d4154AADD70aC3C96')),  # noqa: E501
+    )
+    tx_hash = deserialize_evm_tx_hash('0xc1f4bf3fc591b7bd116fbccff4985425b4823612a052fe6b9553ce664d10f464')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    timestamp, gas, user_address = TimestampMS(1725469127000), '0.000975571949515495', ethereum_accounts[0]  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=user_address,
+            notes=f'Burned {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(amount=ZERO),
+            location_label=user_address,
+            notes='Start an eigenpod checkpoint of 1 validators at beacon blockroot 0xc806c37b64cf6a791bafd7087f464674d2e1b205e27cedca32017f321c34d558',  # noqa: E501
+            counterparty=CPT_EIGENLAYER,
+            address=eigenpod_address,
+        )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0x574c25d8e5fF25377a5D2E319f4ADeAeDD66539a',  # proof submitter
+    '0xefF584E8336dA7A23EE32ea19a937b016D69d589']])  # eigenpod owner
+def test_eigenpod_verify_checkpoint_proofs(ethereum_inquirer, ethereum_accounts):
+    add_create_eigenpod_event(
+        database=ethereum_inquirer.database,
+        eigenpod_owner=(eigenpod_owner := ethereum_accounts[1]),
+        eigenpod_address=(eigenpod_address := string_to_evm_address('0xA6f93249580EC3F08016cD3d4154AADD70aC3C96')),  # noqa: E501
+    )
+    tx_hash = deserialize_evm_tx_hash('0xdf949beee9e8b8e56f2ed294251800edc0af3c48cfd8e0662ebf9f0a49f61db0')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    timestamp, gas, user_address = TimestampMS(1725469151000), '0.001280636519396161', ethereum_accounts[0]  # noqa: E501
+    expected_events = [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(gas)),
+            location_label=user_address,
+            notes=f'Burned {gas} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=1,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes='Update validator 425303 restaking balance to 32.008137863',
+            counterparty=CPT_EIGENLAYER,
+            address=eigenpod_address,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=2,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=eigenpod_owner,
+            notes='Restake 0.000074488 ETH for 0xefF584E8336dA7A23EE32ea19a937b016D69d589',
+            counterparty=CPT_EIGENLAYER,
+            address=EIGENPOD_MANAGER,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=3,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=user_address,
+            notes='Finalize an eigenpod checkpoint and add 0.000074488 ETH for restaking across all validators',  # noqa: E501
+            counterparty=CPT_EIGENLAYER,
+            address=eigenpod_address,
+        )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0x8ccF35F1A937205fe20353DE42cFAdE8f34cE7E1']])
+def test_avs_rewards_claim(ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x652b479994529e11f1331864739312e643e912a78cf1dca05403aa1d33c4ac46')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    timestamp, gas_amount, rewards_amount, user_address = TimestampMS(1726209683000), '0.000290353368116672', '0.000010159378047479', ethereum_accounts[0]  # noqa: E501
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas_amount)),
+        location_label=user_address,
+        notes=f'Burned {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=126,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.REWARD,
+        asset=A_WETH,
+        balance=Balance(amount=FVal(rewards_amount)),
+        location_label=user_address,
+        notes=f'Claim {rewards_amount} WETH as AVS restaking reward',
+        counterparty=CPT_EIGENLAYER,
+        address=REWARDS_COORDINATOR,
+    )]
     assert events == expected_events

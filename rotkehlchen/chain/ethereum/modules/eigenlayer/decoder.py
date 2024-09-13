@@ -1,5 +1,5 @@
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import AssetWithSymbol
@@ -7,6 +7,8 @@ from rotkehlchen.assets.utils import TokenEncounterInfo
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     BEACON_ETH_STRATEGY,
+    CHECKPOINT_CREATED,
+    CHECKPOINT_FINALIZED,
     CPT_EIGENLAYER,
     DELAYED_WITHDRAWALS_CLAIMED,
     DELAYED_WITHDRAWALS_CREATED,
@@ -25,11 +27,15 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     PARTIAL_WITHDRAWAL_REDEEMED,
     POD_DEPLOYED,
     POD_SHARES_UPDATED,
+    REWARDS_CLAIMED,
+    REWARDS_COORDINATOR,
     STRATEGY_ABI,
     STRATEGY_WITHDRAWAL_COMPLETE_TOPIC,
+    VALIDATOR_BALANCE_UPDATED,
     WITHDRAWAL_COMPLETED,
     WITHDRAWAL_QUEUED,
 )
+from rotkehlchen.chain.ethereum.modules.eigenlayer.utils import get_eigenpods_to_owners_mapping
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.clique.decoder import CliqueAirdropDecoderInterface
@@ -49,12 +55,18 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, Location
 from rotkehlchen.utils.misc import (
+    from_gwei,
     from_wei,
     hex_or_bytes_to_address,
     hex_or_bytes_to_int,
     hex_or_bytes_to_str,
     pairwise,
 )
+
+if TYPE_CHECKING:
+    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -77,6 +89,19 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
 
     That event is in DelegationManager.
     """
+
+    def __init__(
+            self,
+            evm_inquirer: 'EvmNodeInquirer',
+            base_tools: 'BaseDecoderTools',
+            msg_aggregator: 'MessagesAggregator',
+    ) -> None:
+        super().__init__(
+            evm_inquirer=evm_inquirer,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+        )
+        self.eigenpod_owner_mapping = get_eigenpods_to_owners_mapping(self.base.database)
 
     def _decode_deposit(self, context: DecoderContext) -> DecodingOutput:
         depositor = hex_or_bytes_to_address(context.tx_log.data[0:32])
@@ -504,16 +529,117 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
 
         return DecodingOutput(event=event)
 
+    def _decode_start_checkpoint(self, context: DecoderContext) -> DecodingOutput:
+        beacon_blockroot = '0x' + context.tx_log.topics[2].hex()
+        validators_num = hex_or_bytes_to_int(context.tx_log.data)
+        event = self.base.make_event_next_index(
+            tx_hash=context.transaction.tx_hash,
+            timestamp=context.transaction.timestamp,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=context.transaction.from_address,
+            notes=f'Start an eigenpod checkpoint of {validators_num} validators at beacon blockroot {beacon_blockroot}',  # noqa: E501
+            counterparty=CPT_EIGENLAYER,
+            address=context.tx_log.address,
+        )
+        return DecodingOutput(event=event)
+
+    def _decode_finalize_checkpoint(self, context: DecoderContext) -> DecodingOutput:
+        total_shares_delta = from_wei(hex_or_bytes_to_int(context.tx_log.data))
+        if total_shares_delta >= 0:
+            action = f'add {total_shares_delta} ETH for'
+        else:
+            action = f'remove {-total_shares_delta} ETH from'
+        event = self.base.make_event_next_index(
+            tx_hash=context.transaction.tx_hash,
+            timestamp=context.transaction.timestamp,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=context.transaction.from_address,
+            notes=f'Finalize an eigenpod checkpoint and {action} restaking across all validators',
+            counterparty=CPT_EIGENLAYER,
+            address=context.tx_log.address,
+        )
+        return DecodingOutput(event=event)
+
+    def _decode_validator_balance_updated(self, context: DecoderContext) -> DecodingOutput:
+        validator_index = hex_or_bytes_to_int(context.tx_log.data[0:32])
+        validator_balance = from_gwei(hex_or_bytes_to_int(context.tx_log.data[64:96]))
+
+        event = self.base.make_event_next_index(
+            tx_hash=context.transaction.tx_hash,
+            timestamp=context.transaction.timestamp,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_ETH,
+            balance=Balance(),
+            location_label=context.transaction.from_address,
+            notes=f'Update validator {validator_index} restaking balance to {validator_balance}',
+            counterparty=CPT_EIGENLAYER,
+            address=context.tx_log.address,
+        )
+        return DecodingOutput(event=event)
+
+    def decode_eigenpod_events(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] == CHECKPOINT_CREATED:
+            return self._decode_start_checkpoint(context)
+        elif context.tx_log.topics[0] == CHECKPOINT_FINALIZED:
+            return self._decode_finalize_checkpoint(context)
+        elif context.tx_log.topics[0] == VALIDATOR_BALANCE_UPDATED:
+            return self._decode_validator_balance_updated(context)
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def decode_rewards_coordinator(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] != REWARDS_CLAIMED:
+            return DEFAULT_DECODING_OUTPUT
+
+        earner = hex_or_bytes_to_address(context.tx_log.topics[1])
+        claimer = hex_or_bytes_to_address(context.tx_log.topics[2])
+        recipient = hex_or_bytes_to_address(context.tx_log.topics[2])
+        if not self.base.any_tracked([earner, claimer, recipient]):
+            return DEFAULT_DECODING_OUTPUT
+
+        token_address = hex_or_bytes_to_address(context.tx_log.data[32:64])
+        token = self.base.get_or_create_evm_token(
+            address=token_address,
+            encounter=TokenEncounterInfo(
+                description='Eigenlayer AVS reward claim',
+                should_notify=False,
+            ),
+        )
+        amount_raw = hex_or_bytes_to_int(context.tx_log.data[64:96])
+        amount = token_normalized_value(token_amount=amount_raw, token=token)
+
+        for event in context.decoded_events:
+            if event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE and event.asset == token and event.balance.amount == amount:  # noqa: E501
+                event.event_subtype = HistoryEventSubType.REWARD
+                event.counterparty = CPT_EIGENLAYER
+                verb = 'Claim' if self.base.is_tracked(claimer) else 'Receive'
+                event.notes = f'{verb} {amount} {token.symbol} as AVS restaking reward'
+                break
+
+        else:
+            log.error(f'During decoding eigenlayer AVS reward claiming for {context.transaction} could not find the token transfer')  # noqa: E501
+
+        return DEFAULT_DECODING_OUTPUT
+
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
-        return {
+        eigenpod_mappings = dict.fromkeys(self.eigenpod_owner_mapping.keys(), (self.decode_eigenpod_events,))  # noqa: E501
+        return eigenpod_mappings | {
             EIGENLAYER_STRATEGY_MANAGER: (self.decode_event,),
             EIGENLAYER_AIRDROP_S1_PHASE1_DISTRIBUTOR: (self.decode_airdrop, 'eigen_s1_phase1', 'season 1 phase 1'),  # noqa: E501
             EIGENLAYER_AIRDROP_S1_PHASE2_DISTRIBUTOR: (self.decode_airdrop, 'eigen_s1_phase2', 'season 1 phase 2'),  # noqa: E501
             EIGENPOD_MANAGER: (self.decode_eigenpod_manager_events,),
             EIGENPOD_DELAYED_WITHDRAWAL_ROUTER: (self.decode_eigenpod_delayed_withdrawals,),
             EIGENLAYER_DELEGATION: (self.decode_delegation,),
+            REWARDS_COORDINATOR: (self.decode_rewards_coordinator,),
         }
 
     @staticmethod

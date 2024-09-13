@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Final
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
+from rotkehlchen.chain.ethereum.modules.eigenlayer.utils import get_eigenpods_to_owners_mapping
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.constants.assets import A_ETH
@@ -187,26 +188,14 @@ class EigenlayerBalances(ProtocolWithBalance):
 
     def _query_eigenpod_balances(self, balances: 'BalancesSheetType') -> 'BalancesSheetType':
         """Queries the balance of ETH in the eigenpod and in the Delayed Withdrawal router"""
-        if len(eigenpod_data := self.addresses_with_activity(
-            event_types={(HistoryEventType.INFORMATIONAL, HistoryEventSubType.CREATE)},
-        )) == 0:
+        eigenpod_to_owner = get_eigenpods_to_owners_mapping(self.event_db.db)
+        if len(eigenpod_to_owner) == 0:
             return balances
 
-        owner_mapping = {}
-        for events in eigenpod_data.values():
-            # here we are not taking the eigenpod deployment event location label as the owner
-            # since that is not guaranteed to be the owner
-            for event in events:
-                if event.extra_data is None or (owner := event.extra_data.get('eigenpod_owner')) is None or (eigenpod := event.extra_data.get('eigenpod_address')) is None:  # noqa: E501
-                    log.error(f'Expected to find extra data with owner and eigenpod in {event}. Skipping.')  # noqa: E501
-                    continue
-
-                owner_mapping[eigenpod] = owner
-
         eth_price = Inquirer.find_usd_price(A_ETH)  # now query all eigenpod balances and add it
-        for eigenpod_address, amount in self.evm_inquirer.get_multi_balance(accounts=list(owner_mapping.keys())).items():  # noqa: E501
+        for eigenpod_address, amount in self.evm_inquirer.get_multi_balance(accounts=list(eigenpod_to_owner.keys())).items():  # noqa: E501
             if amount > ZERO:
-                balances[owner_mapping[eigenpod_address]].assets[A_ETH] += Balance(
+                balances[eigenpod_to_owner[eigenpod_address]].assets[A_ETH] += Balance(
                     amount=amount,
                     usd_value=eth_price * amount,
                 )
@@ -217,7 +206,7 @@ class EigenlayerBalances(ProtocolWithBalance):
             abi=EIGENPOD_DELAYED_WITHDRAWAL_ROUTER_ABI,
             deployed_block=17445565,
         )
-        owners = list(owner_mapping.values())
+        owners = list(eigenpod_to_owner.values())
         calls = [
             (contract.address, contract.encode(method_name='getUserDelayedWithdrawals', arguments=[address]))  # noqa: E501
             for address in owners
