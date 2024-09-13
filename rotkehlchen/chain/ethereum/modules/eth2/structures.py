@@ -20,7 +20,7 @@ if TYPE_CHECKING:
     from rotkehlchen.accounting.pot import AccountingPot
     from rotkehlchen.assets.asset import Asset
 
-    VALIDATOR_DETAILS_DB_TUPLE = tuple[int | None, Eth2PubKey, str, ChecksumEvmAddress | None, Timestamp | None, Timestamp | None]  # noqa: E501
+    VALIDATOR_DETAILS_DB_TUPLE = tuple[int | None, Eth2PubKey, str, ChecksumEvmAddress | None, Timestamp | None, Timestamp | None, Timestamp | None]  # noqa: E501
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
@@ -165,6 +165,7 @@ class ValidatorDetails:
     withdrawal_address: ChecksumEvmAddress | None = None  # only set if user has 0x1 credentials
     activation_timestamp: Timestamp | None = None  # activation timestamp. None if not activated yet.  # noqa: E501
     withdrawable_timestamp: Timestamp | None = None  # the timestamp from which on a full withdrawal can happen. None if not exited and fully withdrawable yet  # noqa: E501
+    exited_timestamp: Timestamp | None = None  # the timestamp at which the validator exited. None if we don't know it yet  # noqa: E501
     ownership_proportion: FVal = ONE  # [0, 1] proportion of ownership user has on the validator
 
     def __hash__(self) -> int:
@@ -194,6 +195,7 @@ class ValidatorDetails:
             self.withdrawal_address,
             self.activation_timestamp,
             self.withdrawable_timestamp,
+            self.exited_timestamp,
         )
 
     @classmethod
@@ -205,6 +207,7 @@ class ValidatorDetails:
             withdrawal_address=result[3],
             activation_timestamp=result[4],
             withdrawable_timestamp=result[5],
+            exited_timestamp=result[6],
         )
 
 
