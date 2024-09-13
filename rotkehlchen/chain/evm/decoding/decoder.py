@@ -591,17 +591,15 @@ class EVMTransactionDecoder(ABC):
                 )
             log.debug(f'Finished task to process undecoded transactions for {self.evm_inquirer.chain_name} with {limit=}')  # noqa: E501
 
-    def decode_transaction_hashes(
+    def decode_and_get_transaction_hashes(
             self,
             ignore_cache: bool,
-            tx_hashes: list[EVMTxHash] | None,
+            tx_hashes: list[EVMTxHash],
             send_ws_notifications: bool = False,
             delete_customized: bool = False,
     ) -> list['EvmEvent']:
-        """Make sure that receipts are pulled + events decoded for the given transaction hashes.
-        If delete_customized is True then also customized events are deleted before redecoding.
-
-        The transaction hashes must exist in the DB at the time of the call
+        """
+        Thin wrapper around _decode_transaction_hashes that returns the decoded events.
 
         May raise:
         - DeserializationError if there is a problem with contacting a remote to get receipts
@@ -609,17 +607,61 @@ class EVMTransactionDecoder(ABC):
         - InputError if the transaction hash is not found in the DB
         """
         events: list[EvmEvent] = []
-        refresh_balances = False
+        self._decode_transaction_hashes(
+            ignore_cache=ignore_cache,
+            tx_hashes=tx_hashes,
+            events=events,
+            send_ws_notifications=send_ws_notifications,
+            delete_customized=delete_customized,
+        )
+        return events
+
+    def decode_transaction_hashes(
+            self,
+            ignore_cache: bool,
+            tx_hashes: list[EVMTxHash],
+            send_ws_notifications: bool = False,
+            delete_customized: bool = False,
+    ) -> None:
+        """
+        Thin wrapper around _decode_transaction_hashes that ignores decoded events
+
+        May raise:
+        - DeserializationError if there is a problem with contacting a remote to get receipts
+        - RemoteError if there is a problem with contacting a remote to get receipts
+        - InputError if the transaction hash is not found in the DB
+        """
+        self._decode_transaction_hashes(
+            ignore_cache=ignore_cache,
+            tx_hashes=tx_hashes,
+            events=None,
+            send_ws_notifications=send_ws_notifications,
+            delete_customized=delete_customized,
+        )
+
+    def _decode_transaction_hashes(
+            self,
+            ignore_cache: bool,
+            tx_hashes: list[EVMTxHash],
+            events: list['EvmEvent'] | None = None,
+            send_ws_notifications: bool = False,
+            delete_customized: bool = False,
+    ) -> None:
+        """Make sure that receipts are pulled + events decoded for the given transaction hashes.
+        If delete_customized is True then also customized events are deleted before redecoding.
+
+        The transaction hashes must exist in the DB at the time of the call.
+        This logic modifies the `events` argument if it isn't none.
+
+        May raise:
+        - DeserializationError if there is a problem with contacting a remote to get receipts
+        - RemoteError if there is a problem with contacting a remote to get receipts
+        - InputError if the transaction hash is not found in the DB
+        """
         with self.database.conn.read_ctx() as cursor:
             self.reload_data(cursor)
-            # If no transaction hashes are passed, decode all transactions.
-            if tx_hashes is None:
-                cursor.execute(
-                    'SELECT tx_hash FROM evm_transactions WHERE chain_id=?',
-                    (self.evm_inquirer.chain_id.serialize_for_db(),),
-                )
-                tx_hashes = [EVMTxHash(x[0]) for x in cursor]
 
+        refresh_balances = False
         total_transactions = len(tx_hashes)
         for tx_index, tx_hash in enumerate(tx_hashes):
             if send_ws_notifications and tx_index % 10 == 0:
@@ -649,7 +691,10 @@ class EVMTransactionDecoder(ABC):
                 ignore_cache=ignore_cache,
                 delete_customized=delete_customized,
             )
-            events.extend(new_events)
+
+            if events is not None:
+                events.extend(new_events)
+
             if new_refresh_balances is True:
                 refresh_balances = True
 
@@ -665,7 +710,6 @@ class EVMTransactionDecoder(ABC):
 
         self._post_process(refresh_balances=refresh_balances)
         maybe_detect_new_tokens(self.database)
-        return events
 
     def _get_or_decode_transaction_events(
             self,
