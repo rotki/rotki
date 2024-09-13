@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Sequence
 from http import HTTPStatus
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional
@@ -127,11 +128,12 @@ def generate_address_via_create2(
     return to_checksum_address(contract_address)
 
 
-def should_update_protocol_cache(cache_key: CacheType, *args: str) -> bool:
+def should_update_protocol_cache(cache_key: CacheType, args: Sequence[str] | None = None) -> bool:
     """
     Checks if the last time the cache_key was queried is far enough to trigger
     the process of querying it again.
     """
+    args = args if args is not None else []
     with GlobalDBHandler().conn.read_ctx() as cursor:
         if cache_key in UNIQUE_CACHE_KEYS:
             last_update_ts = globaldb_get_unique_cache_last_queried_ts_by_key(

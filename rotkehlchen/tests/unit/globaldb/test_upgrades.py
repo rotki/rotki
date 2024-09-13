@@ -763,10 +763,14 @@ def test_upgrade_v7_v8(globaldb: GlobalDBHandler):
         )  # test that raises unique error when trying to copy an existing abi
 
 
-@pytest.mark.parametrize('custom_globaldb', ['v7_global.db'])
+@pytest.mark.parametrize('custom_globaldb', ['v8_global.db'])
 @pytest.mark.parametrize('target_globaldb_version', [8])
 @pytest.mark.parametrize('reload_user_assets', [False])
 def test_upgrade_v8_v9(globaldb: GlobalDBHandler):
+    """We use version 8 of the globaldb at 1.34.3 and we set the
+    target_globaldb_version to version 8 to avoid an automatic update of the globaldb
+    and insert some data in it before updating to v9.
+    """
     bad_address, tether_address = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '0x94b008aA00579c1307B0EF2c499aD98a8ce58e58'  # noqa: E501
     inserted_rows = [
         (bad_address, 'yabir.eth', None),
@@ -778,6 +782,11 @@ def test_upgrade_v8_v9(globaldb: GlobalDBHandler):
             'INSERT INTO address_book (address, name, blockchain) VALUES (?, ?, ?)',
             inserted_rows,
         )
+        write_cursor.execute(
+            'INSERT OR REPLACE INTO general_cache ("key", "value", "last_queried_ts") '
+            'VALUES (?, ?, ?);',
+            ('CURVE_LP_TOKENS1', '0xEd4064f376cB8d68F770FB1Ff088a3d0F3FF5c4d', 0),
+        )  # entry to ensure that cache with wrong entries gets cleared correctly
 
     with ExitStack() as stack:
         patch_for_globaldb_upgrade_to(stack, 9)
@@ -811,6 +820,10 @@ def test_upgrade_v8_v9(globaldb: GlobalDBHandler):
         assert len(cursor.execute(
             "SELECT * FROM price_history_source_types WHERE type IN ('G', 'H') AND seq IN (7, 8);",
         ).fetchall()) == 2
+        assert cursor.execute(
+            'SELECT last_queried_ts FROM general_cache WHERE key LIKE "CURVE_LP_TOKENS%" '
+            'ORDER BY last_queried_ts ASC LIMIT 2',
+        ).fetchall() == [(1718795451,), (1718795451,)]
 
 
 @pytest.mark.parametrize('custom_globaldb', ['v2_global.db'])

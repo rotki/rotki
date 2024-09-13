@@ -72,7 +72,7 @@ class CurveManagerMixin:
             query_method=query_curve_data,
             save_method=save_curve_data_to_cache,
             chain_id=node_inquirer.chain_id,
-            cache_key_parts=(str(node_inquirer.chain_id.serialize_for_db())),
+            cache_key_parts=(str(node_inquirer.chain_id.serialize_for_db()),),
         ) is False:
             return
 

@@ -22,6 +22,16 @@ def _add_uniswap_to_price_history_source_types(write_cursor: 'DBCursor') -> None
     )
 
 
+@enter_exit_debug_log()
+def _remove_bad_cache_entries(write_cursor: 'DBCursor') -> None:
+    """Removes entries from the globaldb cache for curve pools that might be keeping
+    an invalid last_queried_ts.
+    """
+    write_cursor.execute(
+        'DELETE FROM general_cache WHERE last_queried_ts=0 AND key LIKE "CURVE_LP_TOKENS%"',
+    )
+
+
 @enter_exit_debug_log(name='globaldb v8->v9 upgrade')
 def migrate_to_v9(connection: 'DBConnection') -> None:
     """This globalDB upgrade does the following:
@@ -31,3 +41,4 @@ def migrate_to_v9(connection: 'DBConnection') -> None:
     with connection.write_ctx() as write_cursor:
         _addressbook_schema_update(write_cursor)
         _add_uniswap_to_price_history_source_types(write_cursor)
+        _remove_bad_cache_entries(write_cursor)

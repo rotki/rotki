@@ -6,6 +6,7 @@ Changelog
 * :feature:`8492` Eigenlayer PEPE upgrade changes will now be properly understood by rotki. That means AVS rewards claiming, ability to restake beacon chain staked ETH and new batched withdrawals directly to the eigenpod. For more read here: https://docs.eigenlayer.xyz/eigenlayer/restaking-guides/restaking-developer-guide#pepe-release
 * :bug:`-` The Manage Assets / Assets page will now show the correct assets on every page.
 * :feature:`7536` Added the ability to customize the CSV delimiter in the frontend settings. Users can now choose their preferred delimiter for CSV exports.
+* :feature:`8013` Added support in Optimism and Base for Extra Finance.
 * :feature:`2217` Users will now be able to use Uniswap V2 and V3 as historical price oracles.
 * :bug:`-` Fixed the “Show More Events” button to properly render additional events when there are more than 6, allowing it to load more as expected.
 * :bug:`-` Improve the filtering UI when there are no suggestions for a filter.
@@ -30,6 +31,7 @@ Changelog
 * :bug:`-` rotki will now decode the swaps done on velodrome v2 in the right order.
 * :bug:`-` ZKSync Era tokens will now have prices queried properly by defillama.
 * :bug:`-` rotki will now query TheGraph delegations only for the addresses that interacted with the protocol.
+* :bug:`-` Fixes a bug that was causing rotki to always query curve for new pools.
 * :bug:`8452` Fix Monerium integration after the v2 contracts upgrade.
 
 * :release:`1.34.3 <2024-08-20>`
