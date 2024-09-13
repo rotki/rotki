@@ -203,6 +203,7 @@ class BeaconInquirer:
         withdrawal_credentials_key = 'withdrawalcredentials'
         activation_epoch_key = 'activationepoch'
         withdrawable_epoch_key = 'withdrawableepoch'
+        queried_beaconchain = False
         if self.node is not None:
             try:
                 node_results = self.node.query_chunked(
@@ -212,6 +213,7 @@ class BeaconInquirer:
             except RemoteError as e:  # log and try beaconcha.in
                 log.error(f'Querying validator data via a beacon node failed due to {e!s}')
                 node_results = self.beaconchain.get_validator_data(indices_or_pubkeys)
+                queried_beaconchain = True
             else:  # succesfull beacon node query. Set keys
                 index_key = 'index'
                 valuegetter = lambda x, y: x['validator'][y]  # don't want to turn this into a def, and can't find a way to do this with functools # noqa: E501, E731
@@ -220,12 +222,14 @@ class BeaconInquirer:
                 withdrawable_epoch_key = 'withdrawable_epoch'
         else:  # query beaconcha.in since no node is connected
             node_results = self.beaconchain.get_validator_data(indices_or_pubkeys)
+            queried_beaconchain = True
 
         details = []
-        for entry in node_results:
+        indices_mapping_to_query_beaconchain = {}
+        for idx, entry in enumerate(node_results):
             activation_epoch = deserialize_int(valuegetter(entry, activation_epoch_key))
             withdrawable_epoch = deserialize_int(valuegetter(entry, withdrawable_epoch_key))
-            activation_ts, withdrawable_ts = None, None
+            activation_ts, withdrawable_ts, exited_ts = None, None, None
             if activation_epoch < BEACONCHAIN_MAX_EPOCH:
                 activation_ts = epoch_to_timestamp(activation_epoch)
             if withdrawable_epoch < BEACONCHAIN_MAX_EPOCH:
@@ -239,13 +243,27 @@ class BeaconInquirer:
                 except DeserializationError:
                     log.error(f'Could not deserialize 0x01 withdrawal credentials for {entry}')
 
+            if queried_beaconchain:
+                if withdrawable_ts is not None and (exit_epoch := entry.get('exit_epoch', 0)) != 0:
+                    exited_ts = epoch_to_timestamp(exit_epoch)
+
+            elif withdrawable_ts is not None:  # query this index from beaconchain to see if exited
+                indices_mapping_to_query_beaconchain[entry[index_key]] = idx
+
             details.append(ValidatorDetails(
                 validator_index=deserialize_int(entry[index_key]),
                 public_key=Eth2PubKey(deserialize_str(valuegetter(entry, 'pubkey'))),
                 withdrawal_address=withdrawal_address,
                 activation_timestamp=activation_ts,
                 withdrawable_timestamp=withdrawable_ts,
+                exited_timestamp=exited_ts,
             ))
+
+        if len(indices_mapping_to_query_beaconchain) != 0:  # if needed check beaconchain for exit
+            node_results = self.beaconchain.get_validator_data(list(indices_mapping_to_query_beaconchain))  # noqa: E501
+            for entry in node_results:
+                if (exit_epoch := entry.get('exit_epoch', 0)) != 0:
+                    details[indices_mapping_to_query_beaconchain[entry[index_key]]].exited_timestamp = epoch_to_timestamp(exit_epoch)  # noqa: E501
 
         return details
 

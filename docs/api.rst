@@ -8557,21 +8557,20 @@ Getting tracked Eth2 validators
               "public_key":"0xa1d1ad0714035353258038e964ae9675dc0252ee22cea896825c01458e1807bfad2f9969338798548d9858a571f7425c",
 	      "withdrawal_address": "0x23a3283f9f538a54d49139cd35c2fe0443cad3db",
 	      "status": "pending",
-            },
-            {
+            }, {
               "index":1532,
               "public_key":"0xa509dec619e5b3484bf4bc1c33baa4c2cdd5ac791876f4add6117f7eded966198ab77862ec2913bb226bdf855cc6d6ed",
               "ownership_percentage": "50",
 	      "activation_timestamp": 1701971000,
 	      "status": "active"
-            },
-            {
+            }, {
               "index":5421,
               "public_key":"0xa64722f93f37c7da8da67ee36fd2a763103897efc274e3accb4cd172382f7a170f064b81552ae77cdbe440208a1b897e",
               "ownership_percentage": "25.75",
 	      "withdrawal_address": "0xfa13283f9e538a84d49139cd35c2fe0443caa34f",
 	      "activation_timestamp": 1701972000,
 	      "withdrawable_timestamp": 1702572000,
+	      "exited_timestamp": 1702584000,
 	      "status": "exited"
             }
           ],
@@ -8589,6 +8588,7 @@ Getting tracked Eth2 validators
    :resjson string[optional] withdrawal_address: The withdrawal address for the validator if set.
    :resjson integer[optional] activation_timestamp: If existing this is the timestamp the validator will (or has been) activate/d. If not then this is a pending validator not yet fully deposited or not yet processed by the consensus layer.
    :resjson integer[optional] withdrawable_timestamp: If existing this is the timestamp the validator will (or has been) able to be completely withdrawn. In other words from which point on a full exit will happen next time it's skimmed by withdrawals. If this key exists this mean we are dealing with a validator that is exiting or has exited.
+   :resjson integer[optional] exited_timestamp: If existing this is the timestamp the validator has exited the beaconchain.
 
    :statuscode 200: Eth2 validator defaults successfully returned.
    :statuscode 401: User is not logged in.

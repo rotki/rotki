@@ -550,7 +550,8 @@ CREATE TABLE IF NOT EXISTS eth2_validators (
     ownership_proportion TEXT NOT NULL,
     withdrawal_address TEXT,
     activation_timestamp INTEGER,
-    withdrawable_timestamp INTEGER
+    withdrawable_timestamp INTEGER,
+    exited_timestamp INTEGER
 );
 """
 

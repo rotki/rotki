@@ -122,6 +122,12 @@ def _add_uniswap_to_historical_oracles(cursor: 'DBCursor') -> None:
     )
 
 
+@enter_exit_debug_log()
+def _add_exited_timestamp(cursor: 'DBCursor') -> None:
+    """Add exited_timestamp column to the eth2_validators table"""
+    cursor.execute('ALTER TABLE eth2_validators ADD COLUMN exited_timestamp INTEGER')
+
+
 @enter_exit_debug_log(name='UserDB v43->v44 upgrade')
 def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v42 to v43. This was in v1.35 release.
@@ -130,6 +136,7 @@ def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     - update tags of accounts
     - drop column removed from the transaction logs
     - make the blockchain column not nullable since we use `NONE` as string
+    - add exited_timestamp to the eth2_validators table
     """
     progress_handler.set_total_steps(6)
     with db.user_write() as write_cursor:
@@ -142,6 +149,8 @@ def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _addressbook_schema_update(write_cursor)
         progress_handler.new_step()
         _add_uniswap_to_historical_oracles(write_cursor)
+        progress_handler.new_step()
+        _add_exited_timestamp(write_cursor)
         progress_handler.new_step()
 
     db.conn.execute('VACUUM;')
