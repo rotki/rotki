@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`8528` Rotki will now limit the number of validators queried for balances for non-premium users.
 * :feature:`-` Gnosis Pay cashback events will now be properly recognized in the history view.
 * :feature:`8492` Eigenlayer PEPE upgrade changes will now be properly understood by rotki. That means AVS rewards claiming, ability to restake beacon chain staked ETH and new batched withdrawals directly to the eigenpod. For more read here: https://docs.eigenlayer.xyz/eigenlayer/restaking-guides/restaking-developer-guide#pepe-release
 * :bug:`-` The Manage Assets / Assets page will now show the correct assets on every page.
