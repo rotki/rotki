@@ -254,14 +254,12 @@ export function useMessageHandling(): UseMessageHandling {
       });
     }
     let severity: Severity;
-    if (importedEntries === 0) {
+    if (importedEntries === 0)
       severity = Severity.ERROR;
-    } else if (importedEntries < totalEntries) {
+    else if (importedEntries < totalEntries)
       severity = Severity.WARNING;
-    } else {
+    else
       severity = Severity.INFO;
-    }
-
     return {
       title,
       message: messageBody,
