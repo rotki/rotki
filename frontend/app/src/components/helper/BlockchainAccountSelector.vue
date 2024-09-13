@@ -126,7 +126,7 @@ const hintText = computed<string>(() => {
   return selection ? '1' : all;
 });
 
-const displayedAccounts = computed<AccountWithAddressData[]>(() => {
+const displayedAccounts = computed<(AccountWithAddressData & { address: string })[]>(() => {
   const addresses = get(usableAddresses);
   const accounts = [...get(selectableAccounts)].map(item => ({
     ...item,
