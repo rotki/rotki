@@ -253,11 +253,18 @@ export function useMessageHandling(): UseMessageHandling {
           messageBody = `${messageBody}\n${t('notification_messages.csv_import_result.rows', { rows: groupConsecutiveNumbers(error.rows) }, error.rows.length)}`;
       });
     }
+    let severity: Severity;
+    if (importedEntries === 0)
+      severity = Severity.ERROR;
+    else if (importedEntries < totalEntries)
+      severity = Severity.WARNING;
+    else
+      severity = Severity.INFO;
     return {
       title,
       message: messageBody,
       display: true,
-      severity: importedEntries < totalEntries ? Severity.WARNING : Severity.INFO,
+      severity,
       priority: Priority.HIGH,
     };
   };
