@@ -211,7 +211,6 @@ const steps = computed(() => [
           </RuiTabItem>
           <RuiTabItem :value="3">
             <EditSnapshotTotal
-              v-if="step === 3"
               :model-value="locationDataSnapshot"
               :balances-snapshot="balancesSnapshot"
               :timestamp="timestamp"

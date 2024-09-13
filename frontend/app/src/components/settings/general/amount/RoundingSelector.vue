@@ -11,7 +11,7 @@ const { t } = useI18n();
 
 const modelValue = defineModel<RoundingMode>({ required: true });
 
-const selections = [
+const selections: { value: RoundingMode; text: string; description: string }[] = [
   {
     value: BigNumber.ROUND_UP,
     text: t('rounding_settings.round.up'),
