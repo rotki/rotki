@@ -183,8 +183,7 @@ jobs:
 
   lint-backend:
     name: 'Backend lint'
-    needs: ['check-changes']
-    if: ${{ github.event_name != 'push' && needs.check-changes.outputs.backend_tasks }}
+    if: ${{ github.event_name != 'push' }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -206,8 +205,14 @@ jobs:
           uv pip install --system -r requirements_lint.txt
           uv pip install --system -e .
           git rev-parse HEAD
+      - uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pre-commit
+            .mypy_cache
+          key: pre-commit-3|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml', 'requirements_lint.txt') }}
       - name: Lint
-        run: make lint
+        run: make pre-commit
 
   test-backend:
     if: ${{ github.event_name != 'push' && needs.check-changes.outputs.backend_tasks }}

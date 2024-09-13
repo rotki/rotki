@@ -1,0 +1,46 @@
+# Apply to all files without committing:
+#   pre-commit run --all-files
+# Update this file:
+#   pre-commit autoupdate
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.6.4
+    hooks:
+      # lint & attempt to correct failures (e.g. pyupgrade)
+      - id: ruff
+        args: [--fix, --show-fixes]
+  - repo: local
+    hooks:
+      - id: mypy
+        name: mypy
+        entry: mypy --install-types --non-interactive
+        types: [python]
+        exclude: ^tools/
+        language: system
+        require_serial: true
+  - repo: https://github.com/LefterisJP/double-indent
+    # there is no version tag (yet) to use instead
+    rev: 8cecc0e3d92ad8ceb24a6e29ca75ed0c430e427a
+    hooks:
+      - id: double-indent
+  - repo: https://github.com/jumanjihouse/pre-commit-hook-yamlfmt
+    rev: 0.2.3
+    hooks:
+      - id: yamlfmt
+        args: [--mapping, '2', --offset, '2', --sequence, '4', --implicit_start]
+        exclude: ^(.github|frontend)/
+  - repo: https://github.com/python-jsonschema/check-jsonschema
+    rev: 0.29.2
+    hooks:
+      - id: check-github-workflows
+      - id: check-readthedocs
+  - repo: https://github.com/pylint-dev/pylint
+    rev: v3.2.7
+    hooks:
+      - id: pylint
+        args: [--rcfile=.pylint.rc]
+        additional_dependencies: [astroid==3.2.4]
+  - repo: meta
+    hooks:
+      - id: check-hooks-apply
+      - id: check-useless-excludes

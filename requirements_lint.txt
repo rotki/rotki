@@ -1,9 +1,9 @@
+pre-commit==3.8.0
+
 mypy==1.11.2
 mypy-extensions==1.0.0
-pylint==3.2.7
+pylint==3.2.7   # required for the pylint plugins unit tests
 astroid==3.2.4  # engine of pylint, upgrade them together
-ruff==0.6.4
-double-indent-rotki==0.1.7  # our fork of double indent
 
 # type packages used by mypy
 # pinned here so that we can have reproducible mypy runs
