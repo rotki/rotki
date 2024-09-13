@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Gnosis Pay cashback events will now be properly recognized in the history view.
 * :bug:`-` The Manage Assets / Assets page will now show the correct assets on every page.
 * :feature:`7536` Added the ability to customize the CSV delimiter in the frontend settings. Users can now choose their preferred delimiter for CSV exports.
 * :feature:`2217` Users will now be able to use Uniswap V2 and V3 as historical price oracles.
