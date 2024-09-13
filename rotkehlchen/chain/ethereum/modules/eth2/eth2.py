@@ -122,7 +122,10 @@ class Eth2(EthereumModule):
         if len(pubkey_to_ownership) == []:
             return {}  # nothing detected
 
-        balances = self.beacon_inquirer.get_balances(indices_or_pubkeys=list(pubkey_to_ownership.keys()))  # noqa: E501
+        balances = self.beacon_inquirer.get_balances(
+            indices_or_pubkeys=list(pubkey_to_ownership.keys()),
+            has_premium=self.premium is not None,
+        )
         for pubkey, balance in balances.items():
             if (ownership_proportion := pubkey_to_ownership.get(pubkey, ONE)) != ONE:
                 balances[pubkey] = balance * ownership_proportion
@@ -247,6 +250,7 @@ class Eth2(EthereumModule):
         if now - to_ts <= DAY_IN_SECONDS:
             balances = self.beacon_inquirer.get_balances(
                 indices_or_pubkeys=list(to_query_indices),
+                has_premium=self.premium is not None,
             )
             for pubkey, balance in balances.items():
                 entry = pnls[pubkey_to_index[pubkey]]

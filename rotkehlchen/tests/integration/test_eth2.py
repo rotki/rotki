@@ -407,7 +407,7 @@ def test_beacon_node_rpc_queries(eth2: 'Eth2'):
     validators = [Eth2PubKey('0xa2f870e998e823e5c53527407dd4d17ca80de5416fc756154cd68862a0a8ada2910e4b2bf2c7a5152bd20e5e06900b7e')] + indices  # noqa: E501
 
     with patch.object(eth2.beacon_inquirer.beaconchain, '_query', wraps=eth2.beacon_inquirer.beaconchain._query) as beaconchain_query:  # noqa: E501
-        balances = eth2.beacon_inquirer.get_balances(indices_or_pubkeys=validators)
+        balances = eth2.beacon_inquirer.get_balances(indices_or_pubkeys=validators, has_premium=True)  # noqa: E501
         assert beaconchain_query.call_count == 0, 'beaconcha.in should not have been queried'
         assert len(balances) == len(validators)
         assert all(x.amount > 32 for x in balances.values())

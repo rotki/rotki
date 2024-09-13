@@ -19,6 +19,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2
 from rotkehlchen.constants.timing import DAY_IN_SECONDS
+from rotkehlchen.db.eth2 import DBEth2
 from rotkehlchen.db.filtering import HistoryEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
@@ -997,6 +998,30 @@ def test_query_eth2_balances(rotkehlchen_api_server, query_all_balances):
     assert len(totals['assets']) == 1
     assert len(totals['liabilities']) == 0
     assert FVal(totals['assets']['ETH2']['amount']) >= 2 * base_amount + amount_proportion
+
+
+@pytest.mark.vcr(match_on=['beaconchain_matcher'])
+@pytest.mark.freeze_time('2024-09-13 00:00:00 GMT')
+@pytest.mark.parametrize('network_mocking', [False])
+@pytest.mark.parametrize('number_of_eth_accounts', [0])
+@pytest.mark.parametrize('ethereum_modules', [['eth2']])
+def test_query_eth2_balances_without_premium(rotkehlchen_api_server, eth2):
+    """Check that without premium the number of validators queried for balances
+    is limited to FREE_VALIDATORS_LIMIT.
+    """
+    dbeth2 = DBEth2(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
+    for i in range(FREE_VALIDATORS_LIMIT + 1):
+        result = eth2.beacon_inquirer.get_validator_data(indices_or_pubkeys=[i])
+        result[0].ownership_proportion = 0.25
+        with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as write_cursor:
+            dbeth2.add_or_update_validators(write_cursor, [result[0]])
+
+    response = requests.get(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainbalancesresource',
+    ))
+    result = assert_proper_sync_response_with_result(response)
+    assert len(result['per_account']['eth2']) == FREE_VALIDATORS_LIMIT
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

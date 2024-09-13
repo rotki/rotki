@@ -24,7 +24,7 @@ from rotkehlchen.types import ChecksumEvmAddress, Eth2PubKey, Timestamp
 from rotkehlchen.utils.misc import from_gwei
 from rotkehlchen.utils.serialization import jsonloads_dict
 
-from .constants import BEACONCHAIN_MAX_EPOCH, DEFAULT_VALIDATOR_CHUNK_SIZE
+from .constants import BEACONCHAIN_MAX_EPOCH, DEFAULT_VALIDATOR_CHUNK_SIZE, FREE_VALIDATORS_LIMIT
 from .structures import ValidatorDailyStats, ValidatorDetails, ValidatorID
 from .utils import calculate_query_chunks, epoch_to_timestamp
 
@@ -146,6 +146,7 @@ class BeaconInquirer:
     def get_balances(
             self,
             indices_or_pubkeys: Sequence[int | Eth2PubKey],
+            has_premium: bool,
     ) -> dict[Eth2PubKey, Balance]:
         """Returns a mapping of validator public key to eth balance.
 
@@ -155,6 +156,10 @@ class BeaconInquirer:
         May Raise:
         - RemoteError
         """
+        if not has_premium and len(indices_or_pubkeys) > FREE_VALIDATORS_LIMIT:
+            # Limit number of validators queried for balances for non-premium users
+            indices_or_pubkeys = indices_or_pubkeys[:FREE_VALIDATORS_LIMIT]
+
         usd_price = Inquirer.find_usd_price(A_ETH)
         balance_mapping: dict[Eth2PubKey, Balance] = defaultdict(Balance)
         if self.node is not None:
