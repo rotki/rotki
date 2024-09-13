@@ -20,16 +20,13 @@ def get_eigenpods_to_owners_mapping(db: DBHandler) -> dict[ChecksumEvmAddress, C
         event_types=[HistoryEventType.INFORMATIONAL],
         event_subtypes=[HistoryEventSubType.CREATE],
     )
-    dbevents = DBHistoryEvents(db)
     with db.conn.read_ctx() as cursor:
-        events = dbevents.get_history_events(
+        if len(events := DBHistoryEvents(db).get_history_events(
             cursor=cursor,
             filter_query=db_filter,
             has_premium=True,
-        )
-
-    if len(events) == 0:
-        return {}
+        )) == 0:
+            return {}
 
     eigenpod_owner_mapping = {}
     for event in events:

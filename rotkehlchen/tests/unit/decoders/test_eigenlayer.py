@@ -638,7 +638,7 @@ def test_eigenpod_start_checkpoint(ethereum_inquirer, ethereum_accounts):
             event_type=HistoryEventType.INFORMATIONAL,
             event_subtype=HistoryEventSubType.NONE,
             asset=A_ETH,
-            balance=Balance(amount=ZERO),
+            balance=Balance(),
             location_label=user_address,
             notes='Start an eigenpod checkpoint of 1 validators at beacon blockroot 0xc806c37b64cf6a791bafd7087f464674d2e1b205e27cedca32017f321c34d558',  # noqa: E501
             counterparty=CPT_EIGENLAYER,

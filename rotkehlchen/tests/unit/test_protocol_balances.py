@@ -419,11 +419,11 @@ def test_eigenpod_balances(
         evm_inquirer=ethereum_inquirer,
         tx_decoder=tx_decoder,
     )
-    eigenpod_balance, delayed_withdrawals = FVal('0.054506232'), FVal('0.007164493')
+    eigenpod_balance = FVal('0.054506232')
     balances = balances_inquirer.query_balances()
     assert balances[ethereum_accounts[0]].assets[A_ETH] == Balance(
-        amount=eigenpod_balance + delayed_withdrawals,
-        usd_value=FVal('1.5') * (eigenpod_balance + delayed_withdrawals),
+        amount=eigenpod_balance,
+        usd_value=FVal('1.5') * eigenpod_balance,
     )
 
 
