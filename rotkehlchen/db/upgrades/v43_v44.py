@@ -138,7 +138,7 @@ def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     - make the blockchain column not nullable since we use `NONE` as string
     - add exited_timestamp to the eth2_validators table
     """
-    progress_handler.set_total_steps(6)
+    progress_handler.set_total_steps(7)
     with db.user_write() as write_cursor:
         _update_nft_table(write_cursor)
         progress_handler.new_step()

@@ -196,7 +196,6 @@ class BeaconInquirer:
         - DeserializationError if any of the entry data could not be
           deserialized due to unexpected format
         """
-
         # Beaconcha.in only keys
         index_key = 'validatorindex'
         valuegetter = operator.getitem
@@ -243,12 +242,11 @@ class BeaconInquirer:
                 except DeserializationError:
                     log.error(f'Could not deserialize 0x01 withdrawal credentials for {entry}')
 
-            if queried_beaconchain:
-                if withdrawable_ts is not None and (exit_epoch := entry.get('exit_epoch', 0)) != 0:
+            if withdrawable_ts is not None:
+                if queried_beaconchain and (exit_epoch := entry.get('exitepoch', 0)) != 0:
                     exited_ts = epoch_to_timestamp(exit_epoch)
-
-            elif withdrawable_ts is not None:  # query this index from beaconchain to see if exited
-                indices_mapping_to_query_beaconchain[entry[index_key]] = idx
+                else:  # query this index from beaconchain to see if exited
+                    indices_mapping_to_query_beaconchain[entry[index_key]] = idx
 
             details.append(ValidatorDetails(
                 validator_index=deserialize_int(entry[index_key]),
@@ -262,7 +260,7 @@ class BeaconInquirer:
         if len(indices_mapping_to_query_beaconchain) != 0:  # if needed check beaconchain for exit
             node_results = self.beaconchain.get_validator_data(list(indices_mapping_to_query_beaconchain))  # noqa: E501
             for entry in node_results:
-                if (exit_epoch := entry.get('exit_epoch', 0)) != 0:
+                if (exit_epoch := entry.get('exitepoch', 0)) != 0:
                     details[indices_mapping_to_query_beaconchain[entry[index_key]]].exited_timestamp = epoch_to_timestamp(exit_epoch)  # noqa: E501
 
         return details
