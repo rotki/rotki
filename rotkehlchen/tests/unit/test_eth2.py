@@ -1091,11 +1091,8 @@ def test_validator_daily_stats_empty(database):
 
 
 def test_get_active_validator_indices(database):
-    dbevents = DBHistoryEvents(database)
-    dbeth2 = DBEth2(database)
     active_index, exited_index, noevents_index = 1, 575645, 4242
-    active_address, exited_address = string_to_evm_address('0x15F4B914A0cCd14333D850ff311d6DafbFbAa32b'), string_to_evm_address('0x08DeB6278D671E2a1aDc7b00839b402B9cF3375d')  # noqa: E501
-
+    dbeth2 = DBEth2(database)
     with database.user_write() as write_cursor:
         dbeth2.add_or_update_validators(write_cursor, [
             ValidatorDetails(
@@ -1105,37 +1102,10 @@ def test_get_active_validator_indices(database):
                 validator_index=exited_index,
                 public_key=Eth2PubKey('0x800041b1eff8af7a583caa402426ffe8e5da001615f5ce00ba30ea8e3e627491e0aa7f8c0417071d5c1c7eb908962d8e'),
                 withdrawable_timestamp=Timestamp(1699801559),
+                exited_timestamp=Timestamp(1699976207000),
             ), ValidatorDetails(
                 validator_index=noevents_index,
                 public_key=Eth2PubKey('0xb02c42a2cda10f06441597ba87e87a47c187cd70e2b415bef8dc890669efe223f551a2c91c3d63a5779857d3073bf288'),
-            ),
-        ])
-
-        dbevents.add_history_events(write_cursor, history=[
-            EthWithdrawalEvent(
-                validator_index=active_index,
-                timestamp=TimestampMS(1699319051000),
-                balance=Balance(FVal('0.017197')),
-                withdrawal_address=active_address,
-                is_exit=False,
-            ), EthWithdrawalEvent(
-                validator_index=active_index,
-                timestamp=TimestampMS(1699976207000),
-                balance=Balance(FVal('0.017250')),
-                withdrawal_address=active_address,
-                is_exit=False,
-            ), EthWithdrawalEvent(
-                validator_index=exited_index,
-                timestamp=TimestampMS(1699648427000),
-                balance=Balance(FVal('0.017073')),
-                withdrawal_address=exited_address,
-                is_exit=False,
-            ), EthWithdrawalEvent(
-                validator_index=exited_index,
-                timestamp=TimestampMS(1699976207000),
-                balance=Balance(FVal('32.007250')),
-                withdrawal_address=exited_address,
-                is_exit=True,
             ),
         ])
 
@@ -1181,8 +1151,8 @@ def test_refresh_validator_data_after_v40_v41_upgrade(eth2):
 
     with eth2.database.conn.read_ctx() as cursor:
         assert cursor.execute('SELECT * from eth2_validators').fetchall() == [
-            (1, 42, '0xb0fee189ffa7ddb3326ef685c911f3416e15664ff1825f3b8e542ba237bd3900f960cd6316ef5f8a5adbaf4903944013', '1.0', '0x42751916BD8e4ef1966ca033D4EA1FA2a8563f88', 1606824023, None),  # noqa: E501
-            (2, 1232, '0xa15f29dd50327bc53b02d34d7db28f175ffc21d7ffbb2646c8b1b82bb6bca553333a19fd4b9890174937d434cc115ace', '0.35', '0x009Ec7D76feBECAbd5c73CB13f6d0FB83e45D450', 1606824023, None),  # noqa: E501
-            (3, 5231, '0xb052a2b421770b99c2348b652fbdc770b2a27a87bf56993dff212d839556d70e7b68f5d953133624e11774b8cb81129d', '1.0', '0x5675801e9346eA8165e7Eb80dcCD01dCa65c0f3A', 1606824023, None),  # noqa: E501
+            (1, 42, '0xb0fee189ffa7ddb3326ef685c911f3416e15664ff1825f3b8e542ba237bd3900f960cd6316ef5f8a5adbaf4903944013', '1.0', '0x42751916BD8e4ef1966ca033D4EA1FA2a8563f88', 1606824023, None, None),  # noqa: E501
+            (2, 1232, '0xa15f29dd50327bc53b02d34d7db28f175ffc21d7ffbb2646c8b1b82bb6bca553333a19fd4b9890174937d434cc115ace', '0.35', '0x009Ec7D76feBECAbd5c73CB13f6d0FB83e45D450', 1606824023, None, None),  # noqa: E501
+            (3, 5231, '0xb052a2b421770b99c2348b652fbdc770b2a27a87bf56993dff212d839556d70e7b68f5d953133624e11774b8cb81129d', '1.0', '0x5675801e9346eA8165e7Eb80dcCD01dCa65c0f3A', 1606824023, None, None),  # noqa: E501
         ]
         assert cursor.execute('SELECT COUNT(*) from eth2_daily_staking_details').fetchone()[0] == 3
