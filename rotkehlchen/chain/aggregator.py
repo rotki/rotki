@@ -342,6 +342,14 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
             if hasattr(module, 'premium') is True and module.premium is not None:  # type: ignore
                 module.premium = None  # type: ignore
 
+        # Also flush the cache of anything that is touched by eth2 validators since
+        # without premium we have a limit
+        self.flush_cache('query_eth2_balances')
+        self.flush_cache('query_balances')
+        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN)
+        self.flush_cache('query_balances', blockchain=None, ignore_cache=False)
+        self.flush_cache('query_balances', blockchain=SupportedBlockchain.ETHEREUM_BEACONCHAIN, ignore_cache=False)  # noqa: E501
+
     def process_new_modules_list(self, module_names: list[ModuleName]) -> None:
         """Processes a new list of active modules
 
