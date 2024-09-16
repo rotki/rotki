@@ -166,7 +166,7 @@ def test_uniswap_v3_swap_by_aggregator(ethereum_inquirer):
             asset=Asset('eip155:1/erc20:0xd9Fcd98c322942075A5C3860693e9f4f03AAE07b'),
             balance=Balance(amount=FVal('213.775675238143698145')),
             location_label=ADDY_3,
-            notes='Swap 213.775675238143698145 EUL in cowswap',
+            notes='Swap 213.775675238143698145 EUL in a cowswap market order',
             counterparty=CPT_COWSWAP,
             address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
         ), EvmEvent(
@@ -179,7 +179,7 @@ def test_uniswap_v3_swap_by_aggregator(ethereum_inquirer):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.738572737905232914')),
             location_label=ADDY_3,
-            notes='Receive 0.738572737905232914 ETH as the result of a swap in cowswap',
+            notes='Receive 0.738572737905232914 ETH as the result of a cowswap market order',
             address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
             counterparty=CPT_COWSWAP,
         ), EvmEvent(
