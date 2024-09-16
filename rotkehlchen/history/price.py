@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Optional
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_POL_HARDFORK
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_KFEE, A_POLYGON_POS_MATIC, A_USD
+from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_KFEE, A_POLYGON_POS_MATIC, A_USD
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
@@ -149,6 +149,13 @@ class PriceHistorian:
         - NoPriceForGivenTimestamp if we can't find a price for the asset in the given
         timestamp from the external service.
         """
+        if from_asset == A_ETH2:
+            return PriceHistorian.query_historical_price(
+                from_asset=A_ETH,
+                to_asset=to_asset,
+                timestamp=timestamp,
+            )
+
         if from_asset == A_KFEE:
             # For KFEE the price is fixed at 0.01$
             usd_price = Price(FVal(0.01))
@@ -161,6 +168,7 @@ class PriceHistorian:
                 timestamp=timestamp,
             )
             return Price(usd_price * price_mapping)
+
         if from_asset == A_POLYGON_POS_MATIC and timestamp > POLYGON_POS_POL_HARDFORK:
             return PriceHistorian.query_historical_price(
                 from_asset=Asset('eip155:1/erc20:0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6'),  # POL token  # noqa: E501,

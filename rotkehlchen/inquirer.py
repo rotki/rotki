@@ -37,6 +37,7 @@ from rotkehlchen.constants.assets import (
     A_CRVP_RENWSBTC,
     A_DAI,
     A_ETH,
+    A_ETH2,
     A_FARM_CRVRENWBTC,
     A_FARM_DAI,
     A_FARM_RENBTC,
@@ -743,6 +744,8 @@ class Inquirer:
         """
         if asset == A_USD:
             return Price(ONE), CurrentPriceOracle.FIAT, False
+        elif asset == A_ETH2:
+            asset = A_ETH
 
         cache_key = (asset, A_USD)
         if ignore_cache is False:
