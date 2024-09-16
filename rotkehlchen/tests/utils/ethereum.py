@@ -458,5 +458,5 @@ def get_decoded_events_of_transaction(
 
     transactions.get_or_query_transaction_receipt(tx_hash=tx_hash)
     with patch_decoder_reload_data(load_global_caches):
-        result = decoder.decode_transaction_hashes(ignore_cache=True, tx_hashes=[tx_hash])
+        result = decoder.decode_and_get_transaction_hashes(ignore_cache=True, tx_hashes=[tx_hash])
     return result, decoder

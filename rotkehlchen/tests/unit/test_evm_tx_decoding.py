@@ -224,16 +224,6 @@ def test_query_and_decode_transactions_works_with_different_chains(
     hashes = dbevmtx.get_transaction_hashes_not_decoded(chain_id=ChainID.ETHEREUM, limit=None)
     assert len(hashes) == 1
 
-    # decode evm transactions using the optimism decoder and without providing any tx hash
-    optimism_transaction_decoder.decode_transaction_hashes(ignore_cache=False, tx_hashes=None)
-
-    # verify that the optimism transactions got decoded but not the
-    # ethereum one (would raise an error if tried)
-    hashes = dbl2withl1feestx.get_transaction_hashes_not_decoded(chain_id=ChainID.OPTIMISM, limit=None)  # noqa: E501
-    assert len(hashes) == 0
-    hashes = dbevmtx.get_transaction_hashes_not_decoded(chain_id=ChainID.ETHEREUM, limit=None)
-    assert len(hashes) == 1
-
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('ethereum_accounts', [[

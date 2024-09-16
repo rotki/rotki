@@ -96,7 +96,7 @@ def test_duplicate_balances(
 ):
     """Checks that we don't have duplicate balances for NFTs in balances.
 
-    If a NFT is tracked only as a token and not in the NFT table we query it
+    If an NFT is tracked only as a token and not in the NFT table we query it
     but if we track them from opensea as NFTs from the NFT module we avoid
     having duplicates.
     """

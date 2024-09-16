@@ -345,7 +345,7 @@ class EvmTokens(ABC):
                 if saved_list is None:
                     continue  # Do not query if we know the address has no tokens
 
-                # get NFT tokens for address and ignores them from the query to avoid duplicates
+                # get NFT tokens for address and ignore them from the query to avoid duplicates
                 cursor.execute(
                     'SELECT identifier, blockchain FROM nfts WHERE owner_address=?',
                     (address,),

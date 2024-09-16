@@ -234,7 +234,7 @@ def test_query_info_on_redecode_request(rotkehlchen_api_server: APIServer):
     response_txt = '[{"id":"YYYY","profile":"PP","accountId":"PP","address":"0xbCCeE6Ff2bCAfA95300D222D316A29140c4746da","kind":"redeem","amount":"2353.57","currency":"eur","totalFee":"0","fees":[],"counterpart":{"details":{"name":"Yabir Benchakhtir","country":"ES","lastName":"Benchakhtir","firstName":"Yabir"},"identifier":{"iban":"ESXX KKKK OOOO IIII KKKK LLLL","standard":"iban"}},"memo":"Venta inversion","supportingDocumentId":"","chain":"gnosis","network":"mainnet","txHashes":["0x10d953610921f39d9d20722082077e03ec8db8d9c75e4b301d0d552119fd0354"],"meta":{"state":"processed","placedBy":"ii","placedAt":"2024-04-19T13:45:00.287212Z","processedAt":"2024-04-19T13:45:00.287212Z","approvedAt":"2024-04-19T13:45:00.287212Z","confirmedAt":"2024-04-19T13:45:00.287212Z","receivedAmount":"2353.57","sentAmount":"2353.57"}}]'  # noqa: E501
     with (
         patch('requests.Session.get', side_effect=lambda *args, **kwargs: MockResponse(200, response_txt)),  # noqa: E501
-        patch('rotkehlchen.chain.evm.decoding.decoder.EVMTransactionDecoder.decode_transaction_hashes', new=add_event),  # noqa: E501
+        patch('rotkehlchen.chain.evm.decoding.decoder.EVMTransactionDecoder.decode_and_get_transaction_hashes', new=add_event),  # noqa: E501
         patch('rotkehlchen.chain.evm.transactions.EvmTransactions.get_or_query_transaction_receipt', return_value=None),  # noqa: E501
     ):
         response = requests.put(

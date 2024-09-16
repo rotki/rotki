@@ -2869,7 +2869,7 @@ class RestAPI:
             }
 
         try:
-            events = chain_manager.transactions_decoder.decode_transaction_hashes(
+            events = chain_manager.transactions_decoder.decode_and_get_transaction_hashes(
                 tx_hashes=[tx_hash],
                 send_ws_notifications=True,
                 ignore_cache=True,  # always redecode from here
