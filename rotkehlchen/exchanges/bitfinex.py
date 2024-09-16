@@ -436,13 +436,19 @@ class Bitfinex(ExchangeInterface):
                     f'Failed to deserialize a {self.name} {case} result. '
                     f'Check logs for details. Ignoring it.',
                 )
-            except (UnknownAsset, UnsupportedAsset) as e:
+            except UnsupportedAsset as e:
                 msg = (
-                    f'Found {self.name} {case} with unknown/unsupported '
+                    f'Found {self.name} {case} with unsupported '
                     f'asset {e.identifier}'
                 )
                 log.warning(f'{msg}. raw_data={raw_result}')
                 self.msg_aggregator.add_warning(f'{msg}. Ignoring {case}')
+                continue
+            except UnknownAsset as e:
+                self.send_unknown_asset_message(
+                    asset_identifier=e.identifier,
+                    details=case,
+                )
                 continue
 
             results.append(result)  # type: ignore
@@ -891,11 +897,16 @@ class Bitfinex(ExchangeInterface):
 
             try:
                 asset = asset_from_bitfinex(bitfinex_name=wallet[currency_index])
-            except (UnknownAsset, UnsupportedAsset) as e:
-                asset_tag = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
+            except UnsupportedAsset as e:
                 self.msg_aggregator.add_warning(
-                    f'Found {asset_tag} {self.name} asset {e.identifier} due to: {e!s}. '
+                    f'Found unsupported {self.name} asset {e.identifier} due to: {e!s}. '
                     f'Ignoring its balance query.',
+                )
+                continue
+            except UnknownAsset as e:
+                self.send_unknown_asset_message(
+                    asset_identifier=e.identifier,
+                    details='balance query',
                 )
                 continue
 

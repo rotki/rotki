@@ -346,9 +346,9 @@ class Bitmex(ExchangeInterface):
                     link=str(movement['transactID']),
                 ))
             except UnknownAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found bitmex deposit/withdrawal with unknown asset '
-                    f'{e.identifier}. Ignoring it.',
+                self.send_unknown_asset_message(
+                    asset_identifier=e.identifier,
+                    details='deposit/withdrawal',
                 )
                 continue
             except (DeserializationError, KeyError) as e:

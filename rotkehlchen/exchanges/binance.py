@@ -513,9 +513,9 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                     )
                 continue
             except UnknownAsset as e:
-                log.error(
-                    f'Found unknown {self.name} asset {e.identifier}. '
-                    f'Ignoring its balance query.',
+                self.send_unknown_asset_message(
+                    asset_identifier=e.identifier,
+                    details='balance query',
                 )
                 continue
             except DeserializationError:
@@ -637,10 +637,16 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                         continue
 
                     asset = asset_from_binance(entry['asset'])
-                except (UnknownAsset, UnsupportedAsset) as e:
+                except UnsupportedAsset as e:
                     log.error(
-                        f'Found un{"known" if isinstance(e, UnknownAsset) else "supported"} '
-                        f'{self.name} asset {e.identifier}. Ignoring its lending balance query.',
+                        f'Found unsupported {self.name} asset {e.identifier}. '
+                        'Ignoring its lending balance query.',
+                    )
+                    continue
+                except UnknownAsset as e:
+                    self.send_unknown_asset_message(
+                        asset_identifier=e.identifier,
+                        details='lending balance query',
                     )
                     continue
                 except (DeserializationError, KeyError) as e:
@@ -748,11 +754,16 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
 
                     try:
                         asset = asset_from_binance(entry['asset'])
-                    except (UnsupportedAsset, UnknownAsset) as e:
-                        error_type = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
+                    except UnsupportedAsset as e:
                         log.error(
-                            f'Found {error_type} {self.name} asset {e.identifier}. '
+                            f'Found unsupported {self.name} asset {e.identifier}. '
                             f'Ignoring its lending interest history query.',
+                        )
+                        continue
+                    except UnknownAsset as e:
+                        self.send_unknown_asset_message(
+                            asset_identifier=e.identifier,
+                            details='lending interest history query',
                         )
                         continue
 
@@ -833,11 +844,16 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
 
                 try:
                     asset = asset_from_binance(entry['asset'])
-                except (UnsupportedAsset, UnknownAsset) as e:
-                    error_type = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
+                except UnsupportedAsset as e:
                     log.error(
-                        f'Found {error_type} {self.name} asset {e.identifier}. '
+                        f'Found unsupported {self.name} asset {e.identifier}. '
                         f'Ignoring its lending interest history query.',
+                    )
+                    continue
+                except UnknownAsset as e:
+                    self.send_unknown_asset_message(
+                        asset_identifier=e.identifier,
+                        details='lending interest history query',
                     )
                     continue
 
@@ -912,9 +928,9 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                     )
                     continue
                 except UnknownAsset as e:
-                    log.error(
-                        f'Found unknown {self.name} asset {e.identifier}. '
-                        f'Ignoring its futures balance query.',
+                    self.send_unknown_asset_message(
+                        asset_identifier=e.identifier,
+                        details='futures balance query',
                     )
                     continue
                 except DeserializationError:
@@ -988,9 +1004,9 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                     )
                     continue
                 except UnknownAsset as e:
-                    log.error(
-                        f'Found unknown {self.name} asset {e.identifier}. '
-                        f'Ignoring its margined futures balance query.',
+                    self.send_unknown_asset_message(
+                        asset_identifier=e.identifier,
+                        details='margined futures balance query',
                     )
                     continue
                 except DeserializationError:
@@ -1045,9 +1061,9 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                 )
                 return None
             except UnknownAsset as e:
-                log.error(
-                    f'Found unknown {self.name} asset {asset_name}. '
-                    f'Ignoring its {self.name} pool balance query. {e!s}',
+                self.send_unknown_asset_message(
+                    asset_identifier=e.identifier,
+                    details='pool balance query',
                 )
                 return None
             except DeserializationError as e:
@@ -1196,9 +1212,9 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
                     location=self.location,
                 )
             except UnknownAsset as e:
-                log.error(
-                    f'Found {self.name} trade with unknown asset '
-                    f'{e.identifier}. Ignoring it.',
+                self.send_unknown_asset_message(
+                    asset_identifier=e.identifier,
+                    details='trade',
                 )
                 continue
             except UnsupportedAsset as e:
@@ -1297,9 +1313,9 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             )
             rate = deserialize_price(raw_data['price'])
         except UnknownAsset as e:
-            log.error(
-                f'Found {self.location!s} fiat payment with unknown asset '
-                f'{e.identifier}. Ignoring it.',
+            self.send_unknown_asset_message(
+                asset_identifier=e.identifier,
+                details='fiat payment',
             )
         except UnsupportedAsset as e:
             log.error(
@@ -1361,9 +1377,9 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             amount = deserialize_asset_amount_force_positive(raw_data['amount'])
             address = deserialize_asset_movement_address(raw_data, 'address', asset)
         except UnknownAsset as e:
-            log.error(
-                f'Found {self.location!s} fiat deposit/withdrawal with unknown asset '
-                f'{e.identifier}. Ignoring it.',
+            self.send_unknown_asset_message(
+                asset_identifier=e.identifier,
+                details='fiat deposit/withdrawal',
             )
         except UnsupportedAsset as e:
             log.error(
@@ -1426,9 +1442,9 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             address = deserialize_asset_movement_address(raw_data, 'address', asset)
             amount = deserialize_asset_amount_force_positive(raw_data['amount'])
         except UnknownAsset as e:
-            log.error(
-                f'Found {self.location!s} deposit/withdrawal with unknown asset '
-                f'{e.identifier}. Ignoring it.',
+            self.send_unknown_asset_message(
+                asset_identifier=e.identifier,
+                details='deposit/withdrawal',
             )
         except UnsupportedAsset as e:
             log.error(

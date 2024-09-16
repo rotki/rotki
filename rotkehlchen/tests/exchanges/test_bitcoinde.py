@@ -26,25 +26,23 @@ def test_location():
     assert exchange.name == 'bitcoinde1'
 
 
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 def test_bitcoinde_query_balances_unknown_asset(function_scope_bitcoinde):
     """Test that if a bitcoinde balance query returns unknown asset no exception
-    is raised and a warning is generated. Same for unsupported assets"""
+    is raised and a message is sent to the frontend."""
     bitcoinde = function_scope_bitcoinde
 
     def mock_unknown_asset_return(url, **kwargs):  # pylint: disable=unused-argument
-        return MockResponse(200, BITCOINDE_BALANCES_RESPONSE)
+        return MockResponse(200, BITCOINDE_BALANCES_RESPONSE.replace('btc', 'abcdef'))
 
     with patch.object(bitcoinde.session, 'get', side_effect=mock_unknown_asset_return):
         # Test that after querying the assets only ETH and BTC are there
         balances, msg = bitcoinde.query_balances()
 
     assert msg == ''
-    assert len(balances) == 6
+    assert len(balances) == 5
     assert balances[A_ETH].amount == FVal('32.0')
-    assert balances[A_BTC].amount == FVal('0.5')
-
-    warnings = bitcoinde.msg_aggregator.consume_warnings()
-    assert len(warnings) == 0
+    assert len(bitcoinde.msg_aggregator.rotki_notifier.messages) == 1
 
 
 def test_query_trade_history(function_scope_bitcoinde):

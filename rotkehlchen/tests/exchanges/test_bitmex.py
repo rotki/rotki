@@ -12,6 +12,13 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import AssetMovementCategory
 from rotkehlchen.utils.misc import ts_now
 
+TEST_BITMEX_WITHDRAWAL = """[{
+"transactID": "b6c6fd2c-4d0c-b101-a41c-fa5aa1ce7ef1", "account": 126541, "currency": "XBt",
+ "transactType": "Withdrawal", "amount": 16960386, "fee": 800, "transactStatus": "Completed",
+ "address": "", "tx": "", "text": "", "transactTime": "2018-09-15T12:30:56.475Z",
+ "walletBalance": 103394923, "marginBalance": null,
+ "timestamp": "2018-09-15T12:30:56.475Z"}]"""
+
 
 def test_name():
     exchange = Bitmex('bitmex1', 'a', b'a', object(), object())
@@ -121,13 +128,7 @@ def test_bitmex_api_withdrawals_deposit_and_query_after_subquery(sandbox_bitmex)
 
 def test_bitmex_api_withdrawals_deposit_unexpected_data(sandbox_bitmex):
     """Test getting unexpected data in bitmex withdrawals deposit query is handled gracefully"""
-
-    original_input = """[{
-"transactID": "b6c6fd2c-4d0c-b101-a41c-fa5aa1ce7ef1", "account": 126541, "currency": "XBt",
- "transactType": "Withdrawal", "amount": 16960386, "fee": 800, "transactStatus": "Completed",
- "address": "", "tx": "", "text": "", "transactTime": "2018-09-15T12:30:56.475Z",
- "walletBalance": 103394923, "marginBalance": null,
- "timestamp": "2018-09-15T12:30:56.475Z"}]"""
+    original_input = TEST_BITMEX_WITHDRAWAL
     now = ts_now()
 
     def query_bitmex_and_test(input_str, expected_warnings_num, expected_errors_num):
@@ -160,10 +161,6 @@ def test_bitmex_api_withdrawals_deposit_unexpected_data(sandbox_bitmex):
     given_input = original_input.replace('"XBt"', '[]')
     query_bitmex_and_test(given_input, expected_warnings_num=0, expected_errors_num=1)
 
-    # unknown asset
-    given_input = original_input.replace('"XBt"', '"dadsdsa"')
-    query_bitmex_and_test(given_input, expected_warnings_num=1, expected_errors_num=0)
-
     # invalid amount
     given_input = original_input.replace('16960386', 'null')
     query_bitmex_and_test(given_input, expected_warnings_num=0, expected_errors_num=1)
@@ -183,6 +180,23 @@ def test_bitmex_api_withdrawals_deposit_unexpected_data(sandbox_bitmex):
     # check that if 'transactType` key is missing things still work
     given_input = original_input.replace('"transactType": "Withdrawal",', '')
     query_bitmex_and_test(given_input, expected_warnings_num=0, expected_errors_num=1)
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_bitmex_api_withdrawals_deposit_unknown_asset(mock_bitmex):
+    """Test getting unknown asset in bitmex withdrawals deposit query is handled gracefully"""
+
+    def mock_get_response(url, data, **kwargs):  # pylint: disable=unused-argument
+        return MockResponse(200, TEST_BITMEX_WITHDRAWAL.replace('"XBt"', '"dadsdsa"'))
+
+    with patch.object(mock_bitmex.session, 'get', side_effect=mock_get_response):
+        movements = mock_bitmex.query_online_deposits_withdrawals(
+            start_ts=0,
+            end_ts=ts_now(),
+        )
+
+    assert len(movements) == 0
+    assert len(mock_bitmex.msg_aggregator.rotki_notifier.messages) == 1
 
 
 @pytest.mark.vcr

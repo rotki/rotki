@@ -366,9 +366,9 @@ class Independentreserve(ExchangeInterface):
                 amount = deserialize_asset_amount(entry['TotalBalance'])
                 account_guids.append(entry['AccountGuid'])
             except UnknownAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found IndependentReserve balance result with unknown asset '
-                    f'{e.identifier}. Ignoring it.',
+                self.send_unknown_asset_message(
+                    asset_identifier=e.identifier,
+                    details='balance query',
                 )
                 continue
             except RemoteError as e:  # raised only by find_usd_price
@@ -439,9 +439,9 @@ class Independentreserve(ExchangeInterface):
                     continue
                 trades.append(trade)
             except UnknownAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found IndependentReserve trade with unknown asset '
-                    f'{e.identifier}. Ignoring it.',
+                self.send_unknown_asset_message(
+                    asset_identifier=e.identifier,
+                    details='trade',
                 )
                 continue
             except (DeserializationError, KeyError) as e:
@@ -498,9 +498,9 @@ class Independentreserve(ExchangeInterface):
                     if movement:
                         movements.append(movement)
                 except UnknownAsset as e:
-                    self.msg_aggregator.add_warning(
-                        f'Found unknown IndependentReserve asset {e.identifier}. '
-                        f'Ignoring the deposit/withdrawal containing it.',
+                    self.send_unknown_asset_message(
+                        asset_identifier=e.identifier,
+                        details='deposit/withdrawal',
                     )
                     continue
                 except (DeserializationError, KeyError) as e:

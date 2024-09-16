@@ -1,6 +1,7 @@
 import warnings as test_warnings
 from unittest.mock import patch
 
+import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -284,6 +285,7 @@ def query_coinbase_and_test(
         expected_errors_num=0,
         # Since this test only mocks as breaking only one of the two actions by default
         expected_actions_num=1,
+        expected_ws_messages_num=0,
 ):
     now = ts_now()
 
@@ -307,6 +309,8 @@ def query_coinbase_and_test(
     assert len(actions) == expected_actions_num
     assert len(errors) == expected_errors_num
     assert len(warnings) == expected_warnings_num
+    if expected_ws_messages_num != 0:
+        assert len(coinbase.msg_aggregator.rotki_notifier.messages) == expected_ws_messages_num
 
 
 def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
@@ -329,16 +333,6 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
         transactions_response=broken_response,
         expected_warnings_num=0,
         expected_errors_num=1,
-    )
-
-    # unknown asset
-    broken_response = TRANSACTIONS_RESPONSE.replace('"ETH"', '"dsadsad"')
-    query_coinbase_and_test(
-        coinbase=coinbase,
-        transactions_response=broken_response,
-        expected_warnings_num=4,
-        expected_errors_num=0,
-        expected_actions_num=0,
     )
 
     # invalid asset format
@@ -387,6 +381,19 @@ def test_coinbase_query_trade_history_unexpected_data(function_scope_coinbase):
         expected_warnings_num=0,
         expected_errors_num=2,
         expected_actions_num=0,
+    )
+
+
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_query_trade_history_unknown_asset(function_scope_coinbase):
+    """Test that coinbase trade history query handles unknown asset properly"""
+    query_coinbase_and_test(
+        coinbase=function_scope_coinbase,
+        transactions_response=TRANSACTIONS_RESPONSE.replace('"ETH"', '"dsadsad"'),
+        expected_warnings_num=0,
+        expected_errors_num=0,
+        expected_actions_num=0,
+        expected_ws_messages_num=4,
     )
 
 

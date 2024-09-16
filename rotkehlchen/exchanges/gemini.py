@@ -330,9 +330,9 @@ class Gemini(ExchangeInterface):
                     usd_value=amount * usd_price,
                 )
             except UnknownAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found gemini balance result with unknown asset '
-                    f'{e.identifier}. Ignoring it.',
+                self.send_unknown_asset_message(
+                    asset_identifier=e.identifier,
+                    details='balance query',
                 )
                 continue
             except UnsupportedAsset as e:
@@ -474,9 +474,9 @@ class Gemini(ExchangeInterface):
                     )
                     continue
                 except UnknownAsset as e:
-                    self.msg_aggregator.add_warning(
-                        f'Found unknown Gemini asset {e.identifier}. '
-                        f'Ignoring the trade.',
+                    self.send_unknown_asset_message(
+                        asset_identifier=e.identifier,
+                        details='trade',
                     )
                     continue
                 except (DeserializationError, KeyError) as e:
@@ -527,9 +527,9 @@ class Gemini(ExchangeInterface):
                     link=str(entry['eid']),
                 )
             except UnknownAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found gemini deposit/withdrawal with unknown asset '
-                    f'{e.identifier}. Ignoring it.',
+                self.send_unknown_asset_message(
+                    asset_identifier=e.identifier,
+                    details='deposit/withdrawal',
                 )
                 continue
             except UnsupportedAsset as e:

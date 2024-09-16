@@ -196,8 +196,9 @@ class Htx(ExchangeInterface):
                 try:
                     asset = asset_from_htx(balance_info['currency'])
                 except UnknownAsset as e:
-                    log.error(
-                        f'Found unknown asset {balance_info["currency"]} in HTX. Skipping. {e}',
+                    self.send_unknown_asset_message(
+                        asset_identifier=e.identifier,
+                        details='balance query',
                     )
                     continue
 
@@ -316,8 +317,11 @@ class Htx(ExchangeInterface):
 
                 log.error(f'{e} when reading movement for HTX deposit {movement}. Skipping...')
                 continue
-            except UnknownAsset:
-                log.error(f'Could not read assets from trade pair {movement["currency"]}. Skipping...')  # noqa: E501
+            except UnknownAsset as e:
+                self.send_unknown_asset_message(
+                    asset_identifier=e.identifier,
+                    details='deposit/withdrawal',
+                )
                 continue
 
         return movements

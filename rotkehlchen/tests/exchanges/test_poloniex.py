@@ -1,9 +1,11 @@
+import json
 import warnings as test_warnings
 from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_poloniex
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH
@@ -203,10 +205,6 @@ def test_query_trade_history_unexpected_data(poloniex):
     given_input = input_trades.replace('"ETH_BTC"', '"0"')
     mock_poloniex_and_query(given_input, expected_warnings_num=0, expected_errors_num=1)
 
-    # symbol with unknown asset
-    given_input = input_trades.replace('"ETH_BTC"', '"ETH_SDSDSD"')
-    mock_poloniex_and_query(given_input, expected_warnings_num=1, expected_errors_num=0)
-
     # symbol with unsupported asset
     given_input = input_trades.replace('"ETH_BTC"', '"ETH_BALLS"')
     mock_poloniex_and_query(given_input, expected_warnings_num=1, expected_errors_num=0)
@@ -232,6 +230,24 @@ def test_query_trade_history_unexpected_data(poloniex):
     mock_poloniex_and_query(given_input, expected_warnings_num=0, expected_errors_num=0)
 
 
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
+def test_query_trade_history_unknown_asset(poloniex):
+    """Test that poloniex trade history querying returning unknown asset is handled correctly"""
+    TEST_POLO_TRADE['symbol'] = 'ETH_SDSDSD'
+
+    def mock_api_return(url, **kwargs):  # pylint: disable=unused-argument
+        return MockResponse(200, json.dumps([TEST_POLO_TRADE]))
+
+    with patch.object(poloniex.session, 'get', side_effect=mock_api_return):
+        trades, _ = poloniex.query_online_trade_history(
+            start_ts=0,
+            end_ts=1565732120,
+        )
+
+    assert len(trades) == 0
+    assert len(poloniex.msg_aggregator.rotki_notifier.messages) == 1
+
+
 def test_poloniex_assets_are_known(poloniex: 'Poloniex', globaldb: 'GlobalDBHandler'):
     for asset in get_exchange_asset_symbols(Location.POLONIEX):
         assert globaldb.is_asset_symbol_unsupported(Location.POLONIEX, asset) is False, f'Poloniex assets {asset} should not be unsupported'  # noqa: E501
@@ -249,6 +265,7 @@ def test_poloniex_assets_are_known(poloniex: 'Poloniex', globaldb: 'GlobalDBHand
                 ))
 
 
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_poloniex_query_balances_unknown_asset(poloniex):
     """Test that if a poloniex balance query returns unknown asset no exception
@@ -268,12 +285,13 @@ def test_poloniex_query_balances_unknown_asset(poloniex):
     assert balances[A_ETH].amount == FVal('11.0')
     assert balances[A_ETH].usd_value == FVal('16.5')
 
-    warnings = poloniex.msg_aggregator.consume_warnings()
-    assert len(warnings) == 2
-    assert 'unknown poloniex asset IDONTEXIST' in warnings[0]
-    assert 'unsupported poloniex asset CNOTE' in warnings[1]
+    messages = poloniex.msg_aggregator.rotki_notifier.messages
+    assert len(messages) == 2
+    assert messages[0].message_type == WSMessageType.EXCHANGE_UNKNOWN_ASSET
+    assert 'unsupported poloniex asset CNOTE' in messages[1].data['value']
 
 
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
 def test_poloniex_deposits_withdrawal_unknown_asset(poloniex):
     """Test that if a poloniex asset movement query returns unknown asset no exception
@@ -294,12 +312,12 @@ def test_poloniex_deposits_withdrawal_unknown_asset(poloniex):
         )
     assert_poloniex_asset_movements(to_check_list=asset_movements, deserialized=False)
 
-    warnings = poloniex.msg_aggregator.consume_warnings()
-    assert len(warnings) == 4
-    assert 'Found withdrawal of unknown poloniex asset IDONTEXIST' in warnings[0]
-    assert 'Found withdrawal of unsupported poloniex asset DIS' in warnings[1]
-    assert 'Found deposit of unknown poloniex asset IDONTEXIST' in warnings[2]
-    assert 'Found deposit of unsupported poloniex asset EBT' in warnings[3]
+    messages = poloniex.msg_aggregator.rotki_notifier.messages
+    assert len(messages) == 4
+    assert messages[0].message_type == WSMessageType.EXCHANGE_UNKNOWN_ASSET
+    assert 'Found withdrawal of unsupported poloniex asset DIS' in messages[1].data['value']
+    assert messages[2].message_type == WSMessageType.EXCHANGE_UNKNOWN_ASSET
+    assert 'Found deposit of unsupported poloniex asset EBT' in messages[3].data['value']
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -382,10 +400,6 @@ def test_poloniex_deposits_withdrawal_unexpected_data(poloniex):
         # invalid currency type
         movements = given_input.replace('"FAC"', '[]')
         mock_poloniex_and_query(movements, expected_warnings_num=0, expected_errors_num=1)
-
-        # unknown currency
-        movements = given_input.replace('"FAC"', '"DSDSDSD"')
-        mock_poloniex_and_query(movements, expected_warnings_num=1, expected_errors_num=0)
 
         # missing key error
         movements = given_input.replace('"timestamp": 1478994442,', '')
