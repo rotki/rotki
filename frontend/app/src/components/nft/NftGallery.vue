@@ -89,7 +89,7 @@ const items = computed(() => {
   const accounts = get(selectedAccounts);
   const selection = get(selectedCollection);
   const hasAccounts = accounts.length > 0;
-  const allNfts = get(nfts);
+  const allNfts = [...get(nfts)];
 
   if (hasAccounts || selection) {
     return allNfts

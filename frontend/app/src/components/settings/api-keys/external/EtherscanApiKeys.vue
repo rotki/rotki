@@ -12,8 +12,10 @@ function setActiveTab(hash: string) {
   const evmChain = hash?.slice(1);
   const chains: EvmChainInfo[] = get(txEvmChains);
   const index = chains.findIndex(x => x.evmChainName === evmChain);
-  if (index >= 0)
-    set(tabIndex, index);
+  nextTick(() => {
+    if (index >= 0)
+      set(tabIndex, index);
+  });
 }
 
 watch(route, ({ hash }) => {
