@@ -216,7 +216,7 @@ watch(loading, async (isLoading, wasLoading) => {
           </TableStatusFilter>
           <TableFilter
             v-model:matches="filters"
-            class="min-w-full sm:min-w-[20rem]"
+            class="min-w-full sm:min-w-[26rem]"
             :matchers="matchers"
             :location="SavedFilterLocation.HISTORY_DEPOSITS_WITHDRAWALS"
           />

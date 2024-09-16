@@ -59,6 +59,7 @@ const link = computed(() => {
     :status="status"
     @save="save($event, removeEtherscanNotification)"
     @delete-key="confirmDelete($event)"
+    class="pt-2"
   >
     <i18n-t
       v-if="link"
