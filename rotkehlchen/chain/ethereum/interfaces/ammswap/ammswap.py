@@ -32,7 +32,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import Premium
+from rotkehlchen.premium.premium import Premium, has_premium_check
 from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, Timestamp
 
@@ -206,7 +206,7 @@ class AMMSwapPlatform:
                 events = db.get_history_events(
                     cursor=cursor,
                     filter_query=dbfilter,
-                    has_premium=self.premium is not None,
+                    has_premium=has_premium_check(self.premium),
                     group_by_event_ids=False,
                 )
 

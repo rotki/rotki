@@ -84,7 +84,12 @@ from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.icons import IconManager
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import Premium, PremiumCredentials, premium_create_and_verify
+from rotkehlchen.premium.premium import (
+    Premium,
+    PremiumCredentials,
+    has_premium_check,
+    premium_create_and_verify,
+)
 from rotkehlchen.premium.sync import PremiumSyncManager
 from rotkehlchen.tasks.manager import DEFAULT_MAX_TASKS_NUM, TaskManager
 from rotkehlchen.types import (
@@ -940,7 +945,7 @@ class Rotkehlchen:
         error_or_empty, events = self.history_querying_manager.get_history(
             start_ts=start_ts,
             end_ts=end_ts,
-            has_premium=self.premium is not None,
+            has_premium=has_premium_check(self.premium),
         )
         report_id = self.accountant.process_history(
             start_ts=start_ts,

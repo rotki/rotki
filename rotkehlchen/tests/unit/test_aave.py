@@ -13,7 +13,6 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
-from rotkehlchen.premium.premium import Premium, PremiumCredentials
 from rotkehlchen.tests.utils.aave import ATOKENV1_TO_ASSET
 from rotkehlchen.types import ChainID, Timestamp, deserialize_evm_tx_hash
 from rotkehlchen.utils.misc import ts_now
@@ -24,6 +23,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.price import PriceHistorian
     from rotkehlchen.inquirer import Inquirer
+    from rotkehlchen.premium.premium import Premium
 
 
 def test_aave_reserve_mapping():
@@ -47,7 +47,7 @@ def test_aave_v1_events_stats(
         database: 'DBHandler',
         ethereum_inquirer: 'EthereumInquirer',
         ethereum_transaction_decoder: 'EthereumTransactionDecoder',
-        rotki_premium_credentials: 'PremiumCredentials',
+        rotki_premium_object: 'Premium',
         username: str,
         inquirer: 'Inquirer',  # pylint: disable=unused-argument
         price_historian: 'PriceHistorian',  # pylint: disable=unused-argument
@@ -75,7 +75,7 @@ def test_aave_v1_events_stats(
     aave = Aave(
         ethereum_inquirer=ethereum_inquirer,
         database=database,
-        premium=Premium(credentials=rotki_premium_credentials, username=username),
+        premium=rotki_premium_object,
         msg_aggregator=database.msg_aggregator,
     )
     stats = aave.get_stats_for_addresses(

@@ -16,6 +16,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType
 from rotkehlchen.history.price import query_usd_price_zero_if_error
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.premium.premium import has_premium_check
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
 from rotkehlchen.utils.interfaces import EthereumModule
 from rotkehlchen.utils.misc import ts_ms_to_sec
@@ -208,7 +209,7 @@ class Compound(EthereumModule, CompoundV2, CompoundV3):
             events = db.get_history_events(
                 cursor=cursor,
                 filter_query=query_filter,
-                has_premium=self.premium is not None,
+                has_premium=has_premium_check(self.premium),
                 group_by_event_ids=False,
             )
         profit, loss, liquidation, rewards = self._process_events(
