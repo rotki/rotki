@@ -10,6 +10,7 @@ import requests
 from flask import Response, make_response
 
 from rotkehlchen.assets.asset import Asset, AssetWithNameAndType
+from rotkehlchen.constants.assets import A_WETH
 from rotkehlchen.constants.misc import (
     ALLASSETIMAGESDIR_NAME,
     ASSETIMAGESDIR_NAME,
@@ -206,7 +207,20 @@ class IconManager:
             return None, False
 
         # check if the asset is in a collection
-        collection_main_asset_id = GlobalDBHandler.get_collection_main_asset(asset.identifier)
+        collection_main_asset_id: str | None
+        if asset.identifier in (
+            'eip155:1/erc20:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2',
+            'eip155:10/erc20:0x4200000000000000000000000000000000000006',
+            'eip155:100/erc20:0x6A023CCd1ff6F2045C3309768eAd9E68F978f6e1',
+            'eip155:8453/erc20:0x4200000000000000000000000000000000000006',
+            'eip155:534352/erc20:0x5300000000000000000000000000000000000004',
+            'eip155:137/erc20:0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619',
+            'eip155:42161/erc20:0x82aF49447D8a07e3bd95BD0d56f35241523fBab1',
+        ):
+            # handle weth as special case since it is in the ethereum group
+            collection_main_asset_id = A_WETH.identifier
+        else:
+            collection_main_asset_id = GlobalDBHandler.get_collection_main_asset(asset.identifier)
         asset_to_query_icon = asset
 
         if collection_main_asset_id is not None:
