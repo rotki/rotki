@@ -11,7 +11,7 @@ export const useWatchersStore = defineStore('session/watchers', () => {
     return get(watchers).filter(watcher => loanWatcherTypes.includes(watcher.type));
   });
 
-  const { premium } = storeToRefs(usePremiumStore());
+  const premium = usePremium();
   const { notify } = useNotificationsStore();
   const api = useWatchersApi();
 

@@ -2,7 +2,7 @@
 import { ThemeChecker } from '@/premium/premium';
 
 const { showAbout } = storeToRefs(useAreaVisibilityStore());
-const { premium } = storeToRefs(usePremiumStore());
+const premium = usePremium();
 const { isPackaged } = useInterop();
 const { updateDarkMode } = useDarkMode();
 const { load } = useDataLoader();

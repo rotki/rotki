@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ThemeManager } from '@/premium/premium';
 
-const { premium } = storeToRefs(usePremiumStore());
+const premium = usePremium();
 
 const { t } = useI18n();
 </script>

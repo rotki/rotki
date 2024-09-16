@@ -19,54 +19,25 @@ interface UseEthStakingReturn {
 
 export function useEthStaking(): UseEthStakingReturn {
   const {
-    getEth2Validators,
     addEth2Validator: addEth2ValidatorCaller,
     editEth2Validator: editEth2ValidatorCaller,
     deleteEth2Validators: deleteEth2ValidatorsCaller,
   } = useBlockchainAccountsApi();
   const blockchainStore = useBlockchainStore();
   const { updateAccounts, getAccounts, updateBalances } = blockchainStore;
-  const { stakingValidatorsLimits, ethStakingValidators, eth2Balances } = storeToRefs(blockchainStore);
+  const { balances } = storeToRefs(blockchainStore);
+
+  const blockchainValidatorsStore = useBlockchainValidatorsStore();
+  const { stakingValidatorsLimits, ethStakingValidators } = storeToRefs(blockchainValidatorsStore);
+  const { fetchEthStakingValidators } = blockchainValidatorsStore;
   const { activeModules } = storeToRefs(useGeneralSettingsStore());
-  const { premium } = storeToRefs(usePremiumStore());
+  const premium = usePremium();
   const { awaitTask } = useTaskStore();
-  const { notify } = useNotificationsStore();
   const { setMessage } = useMessageStore();
   const { t } = useI18n();
   const { resetStatus } = useStatusUpdater(Section.STAKING_ETH2);
-  const { getNativeAsset } = useSupportedChains();
 
   const isEth2Enabled = (): boolean => get(activeModules).includes(Module.ETH2);
-
-  const fetchEthStakingValidators = async (): Promise<void> => {
-    if (!isEth2Enabled())
-      return;
-
-    try {
-      const validators = await getEth2Validators();
-      updateAccounts(
-        Blockchain.ETH2,
-        validators.entries.map(validator =>
-          createValidatorAccount(validator, {
-            chain: Blockchain.ETH2,
-            nativeAsset: getNativeAsset(Blockchain.ETH2),
-          }),
-        ),
-      );
-      set(stakingValidatorsLimits, { limit: validators.entriesLimit, total: validators.entriesFound });
-    }
-    catch (error: any) {
-      logger.error(error);
-      notify({
-        title: t('actions.get_accounts.error.title'),
-        message: t('actions.get_accounts.error.description', {
-          blockchain: Blockchain.ETH2,
-          message: error.message,
-        }),
-        display: true,
-      });
-    }
-  };
 
   const addEth2Validator = async (payload: Eth2Validator): Promise<ActionStatus<ValidationErrors | string>> => {
     if (!isEth2Enabled()) {
@@ -184,7 +155,7 @@ export function useEthStaking(): UseEthStakingReturn {
 
     updateAccounts(Blockchain.ETH2, validators);
 
-    const eth2 = get(eth2Balances);
+    const eth2 = get(balances)[Blockchain.ETH2];
     if (!eth2[publicKey])
       return;
 
@@ -228,10 +199,6 @@ export function useEthStaking(): UseEthStakingReturn {
       },
     });
   };
-
-  watch(premium, async () => {
-    await fetchEthStakingValidators();
-  });
 
   const validatorsLimitInfo = computed(() => {
     const limits = get(stakingValidatorsLimits);

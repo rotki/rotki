@@ -15,7 +15,7 @@ const { t } = useI18n();
 const chain = Blockchain.ETH;
 const accounts = ref<BlockchainAccount<AddressData>[]>([]);
 
-const { ethStakingValidators } = storeToRefs(useBlockchainStore());
+const { ethStakingValidators } = storeToRefs(useBlockchainValidatorsStore());
 
 function updateValidators(validators: Eth2ValidatorEntry[]) {
   emit('update:model-value', { validators });

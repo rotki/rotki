@@ -490,6 +490,7 @@ declare global {
   const useBlockchainBalancesApi: typeof import('./composables/api/balances/blockchain')['useBlockchainBalancesApi']
   const useBlockchainStore: typeof import('./store/blockchain/index')['useBlockchainStore']
   const useBlockchainTokensStore: typeof import('./store/blockchain/tokens')['useBlockchainTokensStore']
+  const useBlockchainValidatorsStore: typeof import('./store/blockchain/validators')['useBlockchainValidatorsStore']
   const useBlockchains: typeof import('./composables/blockchain/index')['useBlockchains']
   const useBlockie: typeof import('./composables/accounts/blockie')['useBlockie']
   const useBluetooth: typeof import('@vueuse/core')['useBluetooth']
@@ -1350,6 +1351,7 @@ declare module 'vue' {
     readonly useBlockchainBalancesApi: UnwrapRef<typeof import('./composables/api/balances/blockchain')['useBlockchainBalancesApi']>
     readonly useBlockchainStore: UnwrapRef<typeof import('./store/blockchain/index')['useBlockchainStore']>
     readonly useBlockchainTokensStore: UnwrapRef<typeof import('./store/blockchain/tokens')['useBlockchainTokensStore']>
+    readonly useBlockchainValidatorsStore: UnwrapRef<typeof import('./store/blockchain/validators')['useBlockchainValidatorsStore']>
     readonly useBlockchains: UnwrapRef<typeof import('./composables/blockchain/index')['useBlockchains']>
     readonly useBlockie: UnwrapRef<typeof import('./composables/accounts/blockie')['useBlockie']>
     readonly useBluetooth: UnwrapRef<typeof import('@vueuse/core')['useBluetooth']>
@@ -2191,6 +2193,7 @@ declare module '@vue/runtime-core' {
     readonly useBlockchainBalancesApi: UnwrapRef<typeof import('./composables/api/balances/blockchain')['useBlockchainBalancesApi']>
     readonly useBlockchainStore: UnwrapRef<typeof import('./store/blockchain/index')['useBlockchainStore']>
     readonly useBlockchainTokensStore: UnwrapRef<typeof import('./store/blockchain/tokens')['useBlockchainTokensStore']>
+    readonly useBlockchainValidatorsStore: UnwrapRef<typeof import('./store/blockchain/validators')['useBlockchainValidatorsStore']>
     readonly useBlockchains: UnwrapRef<typeof import('./composables/blockchain/index')['useBlockchains']>
     readonly useBlockie: UnwrapRef<typeof import('./composables/accounts/blockie')['useBlockie']>
     readonly useBluetooth: UnwrapRef<typeof import('@vueuse/core')['useBluetooth']>
