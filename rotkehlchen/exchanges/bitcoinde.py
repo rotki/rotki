@@ -263,10 +263,11 @@ class Bitcoinde(ExchangeInterface):
             try:
                 asset = asset_from_bitcoinde(currency)
             except UnknownAsset as e:
-                self.msg_aggregator.add_error(
-                    f'Failed to read balance for asset {e.identifier} at Bitcoin.de. Please '
-                    f'report this error.',
+                self.send_unknown_asset_message(
+                    asset_identifier=e.identifier,
+                    details='balance query',
                 )
+                continue
             try:
                 usd_price = Inquirer.find_usd_price(asset=asset)
             except RemoteError as e:
@@ -332,9 +333,9 @@ class Bitcoinde(ExchangeInterface):
                 log.debug(f'Deserialized trade from Bitcoin.de: {converted_trade}')
                 trades.append(converted_trade)
             except UnknownAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found bitcoin.de trade with unknown asset '
-                    f'{e.identifier}. Ignoring it.',
+                self.send_unknown_asset_message(
+                    asset_identifier=e.identifier,
+                    details='trade',
                 )
                 continue
             except (DeserializationError, KeyError) as e:

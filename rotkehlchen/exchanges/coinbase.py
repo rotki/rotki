@@ -514,9 +514,9 @@ class Coinbase(ExchangeInterface):
                     usd_value=amount * usd_price,
                 )
             except UnknownAsset as e:
-                log.warning(
-                    f'Found coinbase balance result with unknown asset '
-                    f'{e.identifier}. Ignoring it.',
+                self.send_unknown_asset_message(
+                    asset_identifier=e.identifier,
+                    details='balance query',
                 )
                 continue
             except UnsupportedAsset as e:
@@ -687,9 +687,9 @@ class Coinbase(ExchangeInterface):
                     trades.append(trade)
 
             except UnknownAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found coinbase conversion with unknown asset '
-                    f'{e.identifier}. Ignoring it.',
+                self.send_unknown_asset_message(
+                    asset_identifier=e.identifier,
+                    details='conversion',
                 )
                 continue
             except UnsupportedAsset as e:
@@ -739,9 +739,9 @@ class Coinbase(ExchangeInterface):
                 return self._process_advanced_trade(event, timestamp)
 
         except UnknownAsset as e:
-            self.msg_aggregator.add_warning(
-                f'Found coinbase transaction with unknown asset '
-                f'{e.identifier}. Ignoring it.',
+            self.send_unknown_asset_message(
+                asset_identifier=e.identifier,
+                details='transaction',
             )
         except UnsupportedAsset as e:
             self.msg_aggregator.add_warning(
@@ -946,9 +946,9 @@ class Coinbase(ExchangeInterface):
                 movement_category = AssetMovementCategory.DEPOSIT
 
         except UnknownAsset as e:
-            self.msg_aggregator.add_warning(
-                f'Found coinbase deposit/withdrawal with unknown asset '
-                f'{e.identifier}. Ignoring it.',
+            self.send_unknown_asset_message(
+                asset_identifier=e.identifier,
+                details='deposit/withdrawal',
             )
         except UnsupportedAsset as e:
             self.msg_aggregator.add_warning(
@@ -1040,9 +1040,9 @@ class Coinbase(ExchangeInterface):
             )
 
         except UnknownAsset as e:
-            self.msg_aggregator.add_warning(
-                f'Found coinbase transaction with unknown asset '
-                f'{e.identifier}. Ignoring it.',
+            self.send_unknown_asset_message(
+                asset_identifier=e.identifier,
+                details='transaction',
             )
         except UnsupportedAsset as e:
             self.msg_aggregator.add_warning(

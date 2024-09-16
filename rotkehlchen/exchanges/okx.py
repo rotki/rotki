@@ -251,9 +251,9 @@ class Okx(ExchangeInterface):
             try:
                 asset = asset_from_okx(okx_name=currency_data['ccy'])
             except UnknownAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found {self.name} balance with unknown asset '
-                    f'{e.identifier}. Ignoring it.',
+                self.send_unknown_asset_message(
+                    asset_identifier=e.identifier,
+                    details='balance query',
                 )
                 continue
             except UnsupportedAsset as e:
@@ -402,9 +402,9 @@ class Okx(ExchangeInterface):
             fee_asset = asset_from_okx(raw_trade['feeCcy'])
             link = raw_trade['ordId']
         except UnknownAsset as e:
-            self.msg_aggregator.add_warning(
-                f'Found {self.name} trade with unknown asset '
-                f'{e.identifier}. Ignoring it.',
+            self.send_unknown_asset_message(
+                asset_identifier=e.identifier,
+                details='trade',
             )
         except UnsupportedAsset as e:
             self.msg_aggregator.add_warning(
@@ -472,9 +472,9 @@ class Okx(ExchangeInterface):
                 link=tx_hash,
             )
         except UnknownAsset as e:
-            self.msg_aggregator.add_warning(
-                f'Found {self.name} deposit/withdrawal with unknown asset '
-                f'{e.identifier}. Ignoring it.',
+            self.send_unknown_asset_message(
+                asset_identifier=e.identifier,
+                details='deposit/withdrawal',
             )
         except UnsupportedAsset as e:
             self.msg_aggregator.add_warning(

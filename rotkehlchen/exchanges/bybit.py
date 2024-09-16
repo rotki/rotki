@@ -453,9 +453,9 @@ class Bybit(ExchangeInterface):
                         usd_price = Inquirer.find_usd_price(asset=asset)
                         usd_value = usd_price * amount
                 except UnknownAsset as e:
-                    self.msg_aggregator.add_warning(
-                        f'Found Bybit balance result with unknown asset '
-                        f'{e.identifier}. Ignoring it.',
+                    self.send_unknown_asset_message(
+                        asset_identifier=e.identifier,
+                        details='balance query',
                     )
                     continue
                 except (DeserializationError, KeyError) as e:

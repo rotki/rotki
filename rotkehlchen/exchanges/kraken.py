@@ -408,9 +408,9 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
 
                 our_asset = asset_from_kraken(kraken_name)
             except UnknownAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found unsupported/unknown kraken asset {e.identifier}. '
-                    f' Ignoring its balance query.',
+                self.send_unknown_asset_message(
+                    asset_identifier=e.identifier,
+                    details='balance query',
                 )
                 continue
             except DeserializationError as e:
@@ -646,9 +646,9 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
                     link=movement.event_identifier,
                 ))
             except UnknownAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found unknown kraken asset {e.identifier}. '
-                    f'Ignoring its deposit/withdrawals query.',
+                self.send_unknown_asset_message(
+                    asset_identifier=e.identifier,
+                    details='deposit/withdrawal',
                 )
                 continue
             except (DeserializationError, KeyError) as e:

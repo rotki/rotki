@@ -397,9 +397,9 @@ class Poloniex(ExchangeInterface):
                         )
                         continue
                     except UnknownAsset as e:
-                        self.msg_aggregator.add_warning(
-                            f'Found unknown poloniex asset {e.identifier}. '
-                            f'Ignoring its balance query.',
+                        self.send_unknown_asset_message(
+                            asset_identifier=e.identifier,
+                            details='balance query',
                         )
                         continue
                     except DeserializationError:
@@ -472,9 +472,9 @@ class Poloniex(ExchangeInterface):
                 )
                 continue
             except UnknownAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found poloniex trade with unknown asset'
-                    f' {e.identifier}. Ignoring it.',
+                self.send_unknown_asset_message(
+                    asset_identifier=e.identifier,
+                    details='trade',
                 )
                 continue
             except (UnprocessableTradePair, DeserializationError) as e:
@@ -535,9 +535,9 @@ class Poloniex(ExchangeInterface):
                 f'{e.identifier}. Ignoring it.',
             )
         except UnknownAsset as e:
-            self.msg_aggregator.add_warning(
-                f'Found {movement_type!s} of unknown poloniex asset '
-                f'{e.identifier}. Ignoring it.',
+            self.send_unknown_asset_message(
+                asset_identifier=e.identifier,
+                details='asset movement',
             )
         except (DeserializationError, KeyError) as e:
             msg = str(e)

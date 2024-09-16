@@ -129,8 +129,9 @@ class Woo(ExchangeInterface):
                 )
                 continue
             except UnknownAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found unknown Woo asset {e.identifier}. Ignoring it in the balance query.',
+                self.send_unknown_asset_message(
+                    asset_identifier=e.identifier,
+                    details='balance query',
                 )
                 continue
             except RemoteError as e:
@@ -334,10 +335,16 @@ class Woo(ExchangeInterface):
             for entry in entries:
                 try:
                     result = deserialization_method(entry)
-                except (DeserializationError, UnknownAsset, KeyError) as e:
+                except (DeserializationError, KeyError) as e:
                     msg = f'Missing key {e}' if isinstance(e, KeyError) else str(e)
                     log.error(f'Woo {endpoint} {msg}: {entry}')
                     self.msg_aggregator.add_error(msg)
+                    continue
+                except UnknownAsset as e:
+                    self.send_unknown_asset_message(
+                        asset_identifier=e.identifier,
+                        details=f'{endpoint} query',
+                    )
                     continue
                 results.append(result)
 

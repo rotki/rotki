@@ -105,9 +105,9 @@ class Bitpanda(ExchangeInterface):
                 coin_id = entry['attributes'][id_key]
                 asset = asset_from_bitpanda(entry['attributes'][symbol_key])
             except UnknownAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found unsupported/unknown Bitpanda asset {e.identifier}. '
-                    f' Not adding asset to mapping during first connection.',
+                self.send_unknown_asset_message(
+                    asset_identifier=e.identifier,
+                    details='first connection, so not adding asset to mapping',
                 )
                 continue
             except (DeserializationError, KeyError) as e:
@@ -487,9 +487,9 @@ class Bitpanda(ExchangeInterface):
                 amount = deserialize_asset_amount(entry['attributes']['balance'])
                 asset = asset_from_bitpanda(entry['attributes'][symbol_key])
             except UnknownAsset as e:
-                self.msg_aggregator.add_warning(
-                    f'Found unsupported/unknown Bitpanda asset {e.identifier}. '
-                    f' Ignoring its balance query.',
+                self.send_unknown_asset_message(
+                    asset_identifier=e.identifier,
+                    details='balance query',
                 )
                 continue
             except (DeserializationError, KeyError) as e:

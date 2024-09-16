@@ -11,6 +11,7 @@ import requests
 
 from rotkehlchen.accounting.mixins.event import AccountingEventType
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.assets.converters import asset_from_kraken
 from rotkehlchen.constants import ONE, ZERO
@@ -299,9 +300,10 @@ def test_kraken_to_world_pair(kraken):
         kraken_to_world_pair('GABOOBABOO')
 
 
+@pytest.mark.parametrize('function_scope_initialize_mock_rotki_notifier', [True])
 def test_kraken_query_balances_unknown_asset(kraken):
     """Test that if a kraken balance query returns unknown asset no exception
-    is raised and a warning is generated"""
+    is raised and a message is generated"""
     kraken.random_balance_data = False
     balances, msg = kraken.query_balances()
 
@@ -312,9 +314,10 @@ def test_kraken_query_balances_unknown_asset(kraken):
     assert balances[A_ETH].amount == FVal('10.0')
     assert balances[A_ETH].usd_value == FVal('15.0')
 
-    warnings = kraken.msg_aggregator.consume_warnings()
-    assert len(warnings) == 1
-    assert 'unsupported/unknown kraken asset NOTAREALASSET' in warnings[0]
+    messages = kraken.msg_aggregator.rotki_notifier.messages
+    assert len(messages) == 1
+    assert messages[0].message_type == WSMessageType.EXCHANGE_UNKNOWN_ASSET
+    assert messages[0].data['identifier'] == 'NOTAREALASSET'
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])

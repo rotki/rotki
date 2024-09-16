@@ -200,11 +200,16 @@ class Bitstamp(ExchangeInterface):
                     'Check logs for details. Ignoring it.',
                 )
                 continue
-            except (UnknownAsset, UnsupportedAsset) as e:
+            except UnsupportedAsset as e:
                 log.error(str(e))
-                asset_tag = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
                 self.msg_aggregator.add_warning(
-                    f'Found {asset_tag} Bistamp asset {e.identifier}. Ignoring its balance query.',
+                    f'Found unsupported Bistamp asset {e.identifier}. Ignoring its balance query.',
+                )
+                continue
+            except UnknownAsset as e:
+                self.send_unknown_asset_message(
+                    asset_identifier=e.identifier,
+                    details='balance query',
                 )
                 continue
             try:

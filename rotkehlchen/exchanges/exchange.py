@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import AssetWithOracles
 from rotkehlchen.db.filtering import (
     AssetMovementsFilterQuery,
@@ -34,6 +35,7 @@ from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_l
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.history.events.structures.base import HistoryEvent
+    from rotkehlchen.user_messages import MessagesAggregator
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -509,3 +511,25 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             )
         except RemoteError as e:
             fail_callback(str(e))
+
+    def send_unknown_asset_message(
+            self,
+            asset_identifier: str,
+            details: str,
+    ) -> None:
+        """Log warning and send WS message to notify user of unknown asset found on an exchange.
+        Args:
+            asset_identifier (str): Asset identifier of the unknown asset.
+            details (str): Details about what type of event was being processed
+                when the unknown asset was encountered.
+        """
+        log.warning(f'Found unknown {self.location.serialize()} {self.name} asset {asset_identifier} in {details}.')  # noqa: E501
+        self.msg_aggregator.add_message(
+            message_type=WSMessageType.EXCHANGE_UNKNOWN_ASSET,
+            data={
+                'location': self.location.serialize(),
+                'name': self.name,
+                'identifier': asset_identifier,
+                'details': details,
+            },
+        )

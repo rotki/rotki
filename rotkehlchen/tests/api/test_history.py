@@ -67,7 +67,8 @@ if TYPE_CHECKING:
     {'include_fees_in_cost_basis': False},
 ])
 @pytest.mark.parametrize('initialize_accounting_rules', [True])
-def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
+@pytest.mark.parametrize('legacy_messages_via_websockets', [True])
+def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts, websocket_connection):  # noqa: E501
     """Test that the history processing REST API endpoint works. Similar to test_history.py
 
     Both a test for full and limited time range.
@@ -131,22 +132,20 @@ def test_query_history(rotkehlchen_api_server_with_exchanges, start_ts, end_ts):
     #       they are assumed correct if the overview is correct
     assert len(events_result['entries']) == entries_length
 
-    # And now make sure that warnings have also been generated for the query of
+    # And now make sure that messages have also been generated for the query of
     # the unsupported/unknown assets
-    rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
-    warnings = rotki.msg_aggregator.consume_warnings()
-    assert len(warnings) == 6
-    assert 'poloniex trade with unknown asset NOEXISTINGASSET' in warnings[0]
-    assert 'poloniex trade with unsupported asset BALLS' in warnings[1]
-    assert 'withdrawal of unknown poloniex asset IDONTEXIST' in warnings[2]
-    assert 'withdrawal of unsupported poloniex asset DIS' in warnings[3]
-    assert 'deposit of unknown poloniex asset IDONTEXIST' in warnings[4]
-    assert 'deposit of unsupported poloniex asset EBT' in warnings[5]
-
-    errors = rotki.msg_aggregator.consume_errors()
-    assert len(errors) == 2
-    assert 'Failed to read ledger event from kraken' in errors[0]
-    assert 'Failed to read ledger event from kraken ' in errors[1]
+    websocket_connection.wait_until_messages_num(num=8, timeout=10)
+    for expected_message in [
+        {'type': 'exchange_unknown_asset', 'data': {'location': 'poloniex', 'name': 'poloniex', 'identifier': 'NOEXISTINGASSET', 'details': 'trade'}},  # noqa: E501
+        {'type': 'legacy', 'data': {'verbosity': 'warning', 'value': 'Found poloniex trade with unsupported asset BALLS. Ignoring it.'}},  # noqa: E501
+        {'type': 'exchange_unknown_asset', 'data': {'location': 'poloniex', 'name': 'poloniex', 'identifier': 'IDONTEXIST', 'details': 'asset movement'}},  # noqa: E501
+        {'type': 'legacy', 'data': {'verbosity': 'warning', 'value': 'Found withdrawal of unsupported poloniex asset DIS. Ignoring it.'}},  # noqa: E501
+        {'type': 'exchange_unknown_asset', 'data': {'location': 'poloniex', 'name': 'poloniex', 'identifier': 'IDONTEXIST', 'details': 'asset movement'}},  # noqa: E501
+        {'type': 'legacy', 'data': {'verbosity': 'warning', 'value': 'Found deposit of unsupported poloniex asset EBT. Ignoring it.'}},  # noqa: E501
+        {'type': 'legacy', 'data': {'verbosity': 'error', 'value': "Failed to read ledger event from kraken {'refid': 'D3', 'time': 1408994442, 'type': 'deposit', 'subtype': '', 'aclass': 'currency', 'asset': 'IDONTEXISTEITHER', 'amount': '10', 'fee': '0', 'balance': '100'} due to Unknown asset IDONTEXISTEITHER provided."}},  # noqa: E501
+        {'type': 'legacy', 'data': {'verbosity': 'error', 'value': "Failed to read ledger event from kraken {'refid': 'W3', 'time': 1408994442, 'type': 'withdrawal', 'subtype': '', 'aclass': 'currency', 'asset': 'IDONTEXISTEITHER', 'amount': '-10', 'fee': '0.11', 'balance': '100'} due to Unknown asset IDONTEXISTEITHER provided."}},  # noqa: E501
+    ]:
+        assert expected_message == websocket_connection.pop_message()
 
     response = requests.get(
         api_url_for(

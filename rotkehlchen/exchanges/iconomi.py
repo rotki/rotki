@@ -249,11 +249,16 @@ class Iconomi(ExchangeInterface):
                     amount=amount,
                     usd_value=usd_value,
                 )
-            except (UnknownAsset, UnsupportedAsset) as e:
-                asset_tag = 'unknown' if isinstance(e, UnknownAsset) else 'unsupported'
+            except UnsupportedAsset:
                 self.msg_aggregator.add_warning(
-                    f'Found {asset_tag} ICONOMI asset {ticker}. '
+                    f'Found unsupported ICONOMI asset {ticker}. '
                     f' Ignoring its balance query.',
+                )
+                continue
+            except UnknownAsset as e:
+                self.send_unknown_asset_message(
+                    asset_identifier=e.identifier,
+                    details='balance query',
                 )
                 continue
 
@@ -335,9 +340,10 @@ class Iconomi(ExchangeInterface):
                 try:
                     trades.append(trade_from_iconomi(tx))
                 except UnknownAsset as e:
-                    self.msg_aggregator.add_warning(
-                        f'Ignoring an iconomi transaction because of unsupported '
-                        f'asset {e!s}')
+                    self.send_unknown_asset_message(
+                        asset_identifier=e.identifier,
+                        details='transaction',
+                    )
                 except (DeserializationError, KeyError) as e:
                     msg = str(e)
                     if isinstance(e, KeyError):

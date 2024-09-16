@@ -368,3 +368,27 @@ Whenever a protocol cache is being updated for protocols like Curve, Convex, Gea
 
 
 - ``data``: Contains the information of the progress of the process of updating the cache, that is: protocol, chain, processed, and total.
+
+
+Unknown asset on exchange
+============================
+
+If an unknown asset is encountered on an exchange we emit a message with the following format.
+
+::
+
+    {
+        "type": "exchange_unknown_asset",
+        "data": {
+            "location": "bybit",
+            "name": "Bybit 1",
+            "identifier": "ENA",
+            "details": "balance query",
+        }
+    }
+
+
+- ``location``: Exchange where the asset was found.
+- ``name``: Differentiates between multiple instances of the same location.
+- ``identifier``: Asset identifier of the unknown asset.
+- ``details``: Details about what type of event was being processed when the unknown asset was encountered.
