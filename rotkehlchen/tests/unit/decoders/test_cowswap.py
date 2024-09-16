@@ -50,7 +50,7 @@ def test_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
             asset=A_WBTC,
             balance=Balance(amount=FVal(raw_amount)),
             location_label=user_address,
-            notes=f'Swap {raw_amount} WBTC in cowswap',
+            notes=f'Swap {raw_amount} WBTC in a cowswap market order',
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmEvent(
@@ -63,7 +63,7 @@ def test_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
             asset=Asset('eip155:1/erc20:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48'),
             balance=Balance(amount=FVal('3800')),
             location_label=user_address,
-            notes='Receive 3800 USDC as the result of a swap in cowswap',
+            notes='Receive 3800 USDC as the result of a cowswap market order',
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmEvent(
@@ -82,6 +82,70 @@ def test_swap_token_to_token(ethereum_inquirer, ethereum_accounts):
         ),
     ]
     assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xC8842a6aE1fDEAb2213821B5267d072547aa7A1f']])
+def test_swap_token_to_token_limit_order(ethereum_inquirer, ethereum_accounts):
+    tx_hex = deserialize_evm_tx_hash('0x7674d6e3b8905cc4c6bc525d6cfa12dbb52de3093be0fe68038dfa7dafbdd849')  # noqa: E501
+    evmhash = deserialize_evm_tx_hash(tx_hex)
+    user_address = ethereum_accounts[0]
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
+    timestamp, spend_amount, receive_amount, fee_amount, a_pendle = TimestampMS(1726757699000), '300', '1145.856590417709400049', '4.833981233668562588', Asset('eip155:1/erc20:0x808507121B80c02388fAd14726482e061B8da827')  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_hash=tx_hex,
+            sequence_index=222,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.INFORMATIONAL,
+            event_subtype=HistoryEventSubType.APPROVE,
+            asset=a_pendle,
+            balance=Balance(amount=FVal('21255')),
+            location_label=user_address,
+            notes=f'Set PENDLE spending approval of {user_address} by 0xC92E8bdf79f0507f65a392b0ab4667716BFE0110 to 21255',  # noqa: E501
+            address='0xC92E8bdf79f0507f65a392b0ab4667716BFE0110',
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=223,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.SPEND,
+            asset=a_pendle,
+            balance=Balance(amount=FVal(spend_amount)),
+            location_label=user_address,
+            notes=f'Swap {spend_amount} PENDLE in a cowswap limit order',
+            counterparty=CPT_COWSWAP,
+            address=GPV2_SETTLEMENT_ADDRESS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=224,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.RECEIVE,
+            asset=Asset('eip155:1/erc20:0x22Fc5A29bd3d6CCe19a06f844019fd506fCe4455'),
+            balance=Balance(amount=FVal(receive_amount)),
+            location_label=user_address,
+            notes=f'Receive {receive_amount} ePendle as the result of a cowswap limit order',
+            counterparty=CPT_COWSWAP,
+            address=GPV2_SETTLEMENT_ADDRESS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=225,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=a_pendle,
+            balance=Balance(amount=FVal(fee_amount)),
+            location_label=user_address,
+            notes=f'Spend {fee_amount} PENDLE as a cowswap fee',
+            counterparty=CPT_COWSWAP,
+            address=GPV2_SETTLEMENT_ADDRESS,
+        ),
+    ]
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -107,7 +171,7 @@ def test_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
             asset=A_USDT,
             balance=Balance(amount=FVal(raw_amount)),
             location_label=user_address,
-            notes=f'Swap {raw_amount} USDT in cowswap',
+            notes=f'Swap {raw_amount} USDT in a cowswap market order',
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmEvent(
@@ -120,7 +184,7 @@ def test_swap_token_to_eth(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.053419767450716028')),
             location_label=user_address,
-            notes='Receive 0.053419767450716028 ETH as the result of a swap in cowswap',
+            notes='Receive 0.053419767450716028 ETH as the result of a cowswap market order',
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmEvent(
@@ -150,7 +214,7 @@ def test_swap_token_to_eth_with_other_trade(ethereum_inquirer, ethereum_accounts
     evmhash = deserialize_evm_tx_hash(tx_hex)
     user_address = ethereum_accounts[0]
     events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hex)
-    timestamp, approval, amount_out, amount_in = TimestampMS(1718357603000), '115792089237316195423570985008687907853269984665640564039457.584007913129639935', '5000', '0.861165556733956932'  # noqa: E501
+    timestamp, approval, amount_out, amount_in, fee_amount = TimestampMS(1718357603000), '115792089237316195423570985008687907853269984665640564039457.584007913129639935', '5000', '0.861165556733956932', '12.168486608328488389'  # noqa: E501
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
@@ -174,7 +238,7 @@ def test_swap_token_to_eth_with_other_trade(ethereum_inquirer, ethereum_accounts
             asset=EvmToken('eip155:1/erc20:0x236501327e701692a281934230AF0b6BE8Df3353'),
             balance=Balance(amount=FVal(amount_out)),
             location_label=user_address,
-            notes=f'Swap {amount_out} FLT in cowswap',
+            notes=f'Swap {amount_out} FLT in a cowswap market order',
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmEvent(
@@ -187,7 +251,20 @@ def test_swap_token_to_eth_with_other_trade(ethereum_inquirer, ethereum_accounts
             asset=A_ETH,
             balance=Balance(amount=FVal(amount_in)),
             location_label=user_address,
-            notes=f'Receive {amount_in} ETH as the result of a swap in cowswap',
+            notes=f'Receive {amount_in} ETH as the result of a cowswap market order',
+            counterparty=CPT_COWSWAP,
+            address=GPV2_SETTLEMENT_ADDRESS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=4,
+            timestamp=timestamp,
+            location=Location.ETHEREUM,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=EvmToken('eip155:1/erc20:0x236501327e701692a281934230AF0b6BE8Df3353'),
+            balance=Balance(amount=FVal(fee_amount)),
+            location_label=user_address,
+            notes=f'Spend {fee_amount} FLT as a cowswap fee',
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ),
@@ -218,7 +295,7 @@ def test_swap_eth_to_token(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal(raw_amount)),
             location_label=user_address,
-            notes=f'Swap {raw_amount} ETH in cowswap',
+            notes=f'Swap {raw_amount} ETH in a cowswap market order',
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmEvent(
@@ -231,7 +308,7 @@ def test_swap_eth_to_token(ethereum_inquirer, ethereum_accounts):
             asset=A_USDC,
             balance=Balance(amount=FVal('40690.637506')),
             location_label=user_address,
-            notes='Receive 40690.637506 USDC as the result of a swap in cowswap',
+            notes='Receive 40690.637506 USDC as the result of a cowswap market order',
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmEvent(
@@ -301,7 +378,7 @@ def test_2_decoded_swaps(ethereum_inquirer, ethereum_accounts):
             asset=asset_fund,
             balance=Balance(amount=FVal(raw_amount1)),
             location_label=user_address_1,
-            notes=f'Swap {raw_amount1} FUND in cowswap',
+            notes=f'Swap {raw_amount1} FUND in a cowswap market order',
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmEvent(
@@ -314,7 +391,7 @@ def test_2_decoded_swaps(ethereum_inquirer, ethereum_accounts):
             asset=A_WETH,
             balance=Balance(amount=FVal('4.870994011222719015')),
             location_label=user_address_1,
-            notes='Receive 4.870994011222719015 WETH as the result of a swap in cowswap',
+            notes='Receive 4.870994011222719015 WETH as the result of a cowswap market order',
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmEvent(
@@ -340,7 +417,7 @@ def test_2_decoded_swaps(ethereum_inquirer, ethereum_accounts):
             asset=A_USDT,
             balance=Balance(amount=FVal(raw_amount2)),
             location_label=user_address_2,
-            notes=f'Swap {raw_amount2} USDT in cowswap',
+            notes=f'Swap {raw_amount2} USDT in a cowswap market order',
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmEvent(
@@ -353,7 +430,7 @@ def test_2_decoded_swaps(ethereum_inquirer, ethereum_accounts):
             asset=A_ETH,
             balance=Balance(amount=FVal('0.053419767450716028')),
             location_label=user_address_2,
-            notes='Receive 0.053419767450716028 ETH as the result of a swap in cowswap',
+            notes='Receive 0.053419767450716028 ETH as the result of a cowswap market order',
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmEvent(
@@ -595,7 +672,7 @@ def test_swap_gnosis_tokens(gnosis_inquirer, gnosis_accounts):
             asset=Asset('eip155:100/erc20:0xDDAfbb505ad214D7b80b1f830fcCc89B60fb7A83'),
             balance=Balance(amount=FVal(raw_amount)),
             location_label=user_address,
-            notes=f'Swap {raw_amount} USDC in cowswap',
+            notes=f'Swap {raw_amount} USDC in a cowswap market order',
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmEvent(
@@ -608,7 +685,7 @@ def test_swap_gnosis_tokens(gnosis_inquirer, gnosis_accounts):
             asset=Asset('eip155:100/erc20:0x9C58BAcC331c9aa871AFD802DB6379a98e80CEdb'),
             balance=Balance(amount=FVal('0.531598728938365724')),
             location_label=user_address,
-            notes='Receive 0.531598728938365724 GNO as the result of a swap in cowswap',
+            notes='Receive 0.531598728938365724 GNO as the result of a cowswap market order',
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmEvent(
@@ -935,7 +1012,7 @@ def test_swap_token_to_token_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
         evm_inquirer=arbitrum_one_inquirer,
         tx_hash=tx_hex,
     )
-    swapped_amount, received_amount, timestamp = '0.219694007376947474', '0.228831', TimestampMS(1717523107000)  # noqa: E501
+    swapped_amount, received_amount, fee_amount, timestamp = '0.219694007376947474', '0.228831', '0.011665366552986548', TimestampMS(1717523107000)  # noqa: E501
     expected_events = [
         EvmEvent(  # approval
             tx_hash=evmhash,
@@ -960,7 +1037,7 @@ def test_swap_token_to_token_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
             asset=A_ARB,
             balance=Balance(amount=FVal(swapped_amount)),
             location_label=user_address,
-            notes=f'Swap {swapped_amount} ARB in cowswap',
+            notes=f'Swap {swapped_amount} ARB in a cowswap market order',
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ), EvmEvent(
@@ -973,7 +1050,20 @@ def test_swap_token_to_token_arb(arbitrum_one_inquirer, arbitrum_one_accounts):
             asset=Asset('eip155:42161/erc20:0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9'),
             balance=Balance(amount=FVal(received_amount)),
             location_label=user_address,
-            notes=f'Receive {received_amount} USDT as the result of a swap in cowswap',
+            notes=f'Receive {received_amount} USDT as the result of a cowswap market order',
+            counterparty=CPT_COWSWAP,
+            address=GPV2_SETTLEMENT_ADDRESS,
+        ), EvmEvent(
+            tx_hash=evmhash,
+            sequence_index=9,
+            timestamp=timestamp,
+            location=Location.ARBITRUM_ONE,
+            event_type=HistoryEventType.TRADE,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ARB,
+            balance=Balance(amount=FVal(fee_amount)),
+            location_label=user_address,
+            notes=f'Spend {fee_amount} ARB as a cowswap fee',
             counterparty=CPT_COWSWAP,
             address=GPV2_SETTLEMENT_ADDRESS,
         ),
@@ -989,7 +1079,7 @@ def test_gnosis_eure_v2(
 ):
     tx_hash = deserialize_evm_tx_hash('0xf751e1aa988888ab9edfa14ac98022c7d8241664f481fde40a418723b0fed009')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=gnosis_inquirer, tx_hash=tx_hash)
-    timestamp, swap_amount, received_amount, user_address = TimestampMS(1725445370000), '0.0001', '0.254038701346779266', gnosis_accounts[0]  # noqa: E501
+    timestamp, swap_amount, received_amount, fee_amount, user_address = TimestampMS(1725445370000), '0.0001', '0.254038701346779266', '0.00000025134485375', gnosis_accounts[0]  # noqa: E501
     assert events == [EvmEvent(
         sequence_index=33,
         timestamp=timestamp,
@@ -999,7 +1089,7 @@ def test_gnosis_eure_v2(
         asset=Asset('eip155:100/erc20:0x6C76971f98945AE98dD7d4DFcA8711ebea946eA6'),
         balance=Balance(FVal(swap_amount)),
         location_label=user_address,
-        notes=f'Swap {swap_amount} wstETH in cowswap',
+        notes=f'Swap {swap_amount} wstETH in a cowswap market order',
         tx_hash=tx_hash,
         counterparty=CPT_COWSWAP,
         address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
@@ -1012,8 +1102,21 @@ def test_gnosis_eure_v2(
         asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
         balance=Balance(FVal(received_amount)),
         location_label=user_address,
-        notes=f'Receive {received_amount} EURe as the result of a swap in cowswap',
+        notes=f'Receive {received_amount} EURe as the result of a cowswap market order',
         tx_hash=tx_hash,
         counterparty=CPT_COWSWAP,
         address=string_to_evm_address('0x9008D19f58AAbD9eD0D60971565AA8510560ab41'),
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=35,
+        timestamp=timestamp,
+        location=Location.GNOSIS,
+        event_type=HistoryEventType.TRADE,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=Asset('eip155:100/erc20:0x6C76971f98945AE98dD7d4DFcA8711ebea946eA6'),
+        balance=Balance(amount=FVal(fee_amount)),
+        location_label=user_address,
+        notes=f'Spend {fee_amount} wstETH as a cowswap fee',
+        counterparty=CPT_COWSWAP,
+        address=GPV2_SETTLEMENT_ADDRESS,
     )]

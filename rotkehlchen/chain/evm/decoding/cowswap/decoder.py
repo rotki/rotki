@@ -1,10 +1,13 @@
 import abc
 import logging
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, Final, Literal, Optional
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any, Final, Literal, Optional, cast
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
+from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
 from rotkehlchen.chain.evm.constants import ETH_SPECIAL_ADDRESS
 from rotkehlchen.chain.evm.decoding.airdrops import match_airdrop_claim
@@ -18,10 +21,13 @@ from rotkehlchen.chain.evm.decoding.structures import (
 )
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
-from rotkehlchen.chain.evm.structures import EvmTxReceiptLog, SwapData
+from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
+from rotkehlchen.chain.gnosis.node_inquirer import GnosisInquirer
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.resolver import evm_address_to_identifier
+from rotkehlchen.errors.misc import RemoteError
+from rotkehlchen.externalapis.cowswap import SUPPORTED_COWSWAP_BLOCKCHAIN, CowswapAPI
 from rotkehlchen.history.events.structures.types import (
     EventDirection,
     HistoryEventSubType,
@@ -29,11 +35,14 @@ from rotkehlchen.history.events.structures.types import (
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTransaction
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import (
+    hex_or_bytes_to_address,
+    hex_or_bytes_to_int,
+    hex_or_bytes_to_str,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
-    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.fval import FVal
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
     from rotkehlchen.user_messages import MessagesAggregator
@@ -52,11 +61,23 @@ NATIVE_ASSET_FLOW_ADDRESS: Final = string_to_evm_address('0x40A50cf069e992AA4536
 CLAIMED: Final = b'\xd46\xe9\x97=\x1eD\xd4\r\xb4\xd4\x11\x9e<w<\xad\xb12;&9\x81\x96\x8c\x14\xd3\xd1\x91\xc0\xe1H'  # noqa: E501
 
 
+@dataclass
+class CowswapSwapData:
+    """Data class that holds information about a cowswap swap"""
+    from_asset: Asset
+    from_amount: 'FVal'
+    to_asset: Asset
+    to_amount: 'FVal'
+    fee_amount: 'FVal'
+    order_uid: str
+    order_type: str = 'market'
+
+
 class CowswapCommonDecoder(DecoderInterface, abc.ABC):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
+            evm_inquirer: EthereumInquirer | ArbitrumOneInquirer | GnosisInquirer,
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             native_asset: Asset,
@@ -71,6 +92,10 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
         self.wrapped_native_asset = wrapped_native_asset.resolve_to_evm_token()
         self.settlement_address = GPV2_SETTLEMENT_ADDRESS
         self.native_asset_flow_address = NATIVE_ASSET_FLOW_ADDRESS
+        self.cowswap_api = CowswapAPI(
+            database=self.evm_inquirer.database,
+            chain=cast(SUPPORTED_COWSWAP_BLOCKCHAIN, self.evm_inquirer.blockchain),
+        )
 
     def _decode_native_asset_orders(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == PLACE_NATIVE_ASSET_ORDER_SIGNATURE:
@@ -111,7 +136,7 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
 
     # --- Aggregator methods ---
 
-    def _find_trades(self, all_logs: list[EvmTxReceiptLog]) -> list[SwapData]:
+    def _find_trades(self, all_logs: list[EvmTxReceiptLog]) -> list[CowswapSwapData]:
         """
         Finds the emitted Trade events and decodes them.
         Also handles special cases when native asset is swapped.
@@ -131,6 +156,7 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
             raw_from_amount = hex_or_bytes_to_int(tx_log.data[64:96])
             raw_to_amount = hex_or_bytes_to_int(tx_log.data[96:128])
             raw_fee_amount = hex_or_bytes_to_int(tx_log.data[128:160])
+            order_uid = hex_or_bytes_to_str(tx_log.data[224:280])
 
             if (
                 from_token_address == self.wrapped_native_asset.evm_address and
@@ -154,12 +180,13 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
             from_amount = asset_normalized_value(amount=raw_from_amount, asset=from_asset)
             to_amount = asset_normalized_value(amount=raw_to_amount, asset=to_asset)
 
-            trades.append(SwapData(
+            trades.append(CowswapSwapData(
                 from_asset=from_asset,
                 from_amount=from_amount - fee_amount,  # fee is taken as part of from asset
                 to_asset=to_asset,
                 to_amount=to_amount,
                 fee_amount=fee_amount,
+                order_uid=order_uid,
             ))
 
         return trades
@@ -167,20 +194,21 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
     def _detect_relevant_trades(
             self,
             transaction: EvmTransaction,
-            all_swap_data: list[SwapData],
+            all_swap_data: list[CowswapSwapData],
             decoded_events: list['EvmEvent'],
-    ) -> list[tuple['EvmEvent', 'EvmEvent', Optional['EvmEvent'], SwapData]]:
+    ) -> list[tuple['EvmEvent', 'EvmEvent', Optional['EvmEvent'], CowswapSwapData]]:
         """
         This function does the following
         1. Detect trades that are relevant to the tracked accounts.
         2. For each trade, find the corresponding spend event and receive event. For swaps where
         native asset is spent creates a new native asset spend event.
+        3. Create a fee event, using either the onchain fee data, or by querying the cowswap API.
 
         Each relevant trade has an optional spend event (since sometimes native asset is spent,
         and in these cases there is no spend event) and a mandatory receive event, so to detect
         relevant trades we check which trades have a decoded native_asset/token receive event.
 
-        Returns a list of pairs (spend_event, receive_event, swap_data)
+        Returns a list of pairs (spend_event, receive_event, fee_event, swap_data)
         which represent the relevant trades.
         """
         related_transfer_events: dict[tuple[EventDirection, Asset, FVal], EvmEvent] = {}
@@ -198,7 +226,7 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
 
                 related_transfer_events[direction, event.asset, event.balance.amount] = event
 
-        trades_events: list[tuple[EvmEvent, EvmEvent, EvmEvent | None, SwapData]] = []
+        trades_events: list[tuple[EvmEvent, EvmEvent, EvmEvent | None, CowswapSwapData]] = []
         for swap_data in all_swap_data:
             receive_event = related_transfer_events.get((EventDirection.IN, swap_data.to_asset, swap_data.to_amount))  # noqa: E501
             if receive_event is None:
@@ -228,6 +256,18 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
                 )
                 decoded_events.append(spend_event)
 
+            if swap_data.fee_amount == ZERO:
+                try:
+                    raw_fee_amount, swap_data.order_type = self.cowswap_api.get_order_data(swap_data.order_uid)  # noqa: E501
+                except RemoteError as e:
+                    log.error(f'Failed to get fee and order type from cowswap API for transaction {transaction} due to {e!s}. Will proceed without them.')  # noqa: E501
+                    raw_fee_amount = 0
+
+                swap_data.fee_amount = asset_normalized_value(
+                    amount=raw_fee_amount,
+                    asset=swap_data.from_asset.resolve_to_crypto_asset(),
+                )
+
             fee_event = None
             if swap_data.fee_amount != ZERO:
                 fee_event = self.base.make_event_next_index(
@@ -238,7 +278,7 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
                     asset=swap_data.from_asset,
                     balance=Balance(amount=swap_data.fee_amount),
                     location_label=receive_event.location_label,
-                    notes=f'Spend {swap_data.fee_amount} {spend_event.asset.symbol_or_name()} as a cowswap fee',  # noqa: E501
+                    notes=f'Spend {swap_data.fee_amount} {swap_data.from_asset.symbol_or_name()} as a cowswap fee',  # noqa: E501
                     counterparty=CPT_COWSWAP,
                     address=transaction.to_address,
                 )
@@ -286,8 +326,8 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
             receive_event.event_type = HistoryEventType.TRADE
             spend_event.event_subtype = HistoryEventSubType.SPEND
             receive_event.event_subtype = HistoryEventSubType.RECEIVE
-            spend_event.notes = f'Swap {spend_event.balance.amount} {spend_event.asset.symbol_or_name()} in cowswap'  # noqa: E501
-            receive_event.notes = f'Receive {receive_event.balance.amount} {receive_event.asset.symbol_or_name()} as the result of a swap in cowswap'  # noqa: E501
+            spend_event.notes = f'Swap {spend_event.balance.amount} {spend_event.asset.symbol_or_name()} in a cowswap {swap_data.order_type} order'  # noqa: E501
+            receive_event.notes = f'Receive {receive_event.balance.amount} {receive_event.asset.symbol_or_name()} as the result of a cowswap {swap_data.order_type} order'  # noqa: E501
             maybe_reshuffle_events(
                 ordered_events=[spend_event, receive_event, fee_event],
                 events_list=decoded_events,
@@ -316,7 +356,7 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
 
     def __init__(
             self,
-            evm_inquirer: 'EvmNodeInquirer',
+            evm_inquirer: EthereumInquirer | ArbitrumOneInquirer | GnosisInquirer,
             base_tools: 'BaseDecoderTools',
             msg_aggregator: 'MessagesAggregator',
             native_asset: Asset,

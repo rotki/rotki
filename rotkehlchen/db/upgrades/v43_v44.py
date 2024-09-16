@@ -147,6 +147,16 @@ def _add_exited_timestamp(cursor: 'DBCursor') -> None:
     cursor.execute('ALTER TABLE eth2_validators ADD COLUMN exited_timestamp INTEGER')
 
 
+@enter_exit_debug_log()
+def _add_cowswap_orders_table(write_cursor: 'DBCursor') -> None:
+    write_cursor.execute("""
+    CREATE TABLE IF NOT EXISTS cowswap_orders (
+        identifier TEXT NOT NULL PRIMARY KEY,
+        order_type TEXT NOT NULL,
+        raw_fee_amount TEXT NOT NULL
+    );""")
+
+
 @enter_exit_debug_log(name='UserDB v43->v44 upgrade')
 def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v42 to v43. This was in v1.35 release.
@@ -157,7 +167,7 @@ def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     - make the blockchain column not nullable since we use `NONE` as string
     - add exited_timestamp to the eth2_validators table
     """
-    progress_handler.set_total_steps(7)
+    progress_handler.set_total_steps(8)
     with db.user_write() as write_cursor:
         _update_nft_table(write_cursor)
         progress_handler.new_step()
@@ -170,6 +180,8 @@ def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _add_uniswap_to_historical_oracles(write_cursor)
         progress_handler.new_step()
         _add_exited_timestamp(write_cursor)
+        progress_handler.new_step()
+        _add_cowswap_orders_table(write_cursor)
         progress_handler.new_step()
 
     db.conn.execute('VACUUM;')
