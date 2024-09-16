@@ -532,3 +532,8 @@ def premium_create_and_verify(credentials: PremiumCredentials, username: str) ->
         return premium
 
     raise PremiumAuthenticationError('rotki API key was rejected by server')
+
+
+def has_premium_check(premium: Premium | None) -> bool:
+    """Helper function to check if we have premium"""
+    return premium is not None and premium.is_active()

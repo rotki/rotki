@@ -15,7 +15,7 @@ from rotkehlchen.db.updates import RotkiDataUpdater
 from rotkehlchen.exchanges.constants import EXCHANGES_WITH_PASSPHRASE
 from rotkehlchen.history.price import PriceHistorian
 from rotkehlchen.inquirer import Inquirer
-from rotkehlchen.premium.premium import Premium, PremiumCredentials
+from rotkehlchen.premium.premium import Premium, PremiumCredentials, SubscriptionStatus
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.tests.utils.api import create_api_server
 from rotkehlchen.tests.utils.args import default_args
@@ -70,6 +70,14 @@ def fixture_rotki_premium_credentials() -> PremiumCredentials:
         given_api_key=base64.b64encode(make_random_b64bytes(128)).decode(),
         given_api_secret=base64.b64encode(make_random_b64bytes(128)).decode(),
     )
+
+
+@pytest.fixture(name='rotki_premium_object')
+def fixture_rotki_premium_object(rotki_premium_credentials, username) -> Premium:
+    """Create an active rotki premium object with valid credentials"""
+    premium = Premium(credentials=rotki_premium_credentials, username=username)
+    premium.status = SubscriptionStatus.ACTIVE
+    return premium
 
 
 @pytest.fixture(name='data_migration_version', scope='session')
@@ -247,7 +255,7 @@ def initialize_mock_rotkehlchen_instance(
         start_with_logged_in_user,
         start_with_valid_premium,
         db_password,
-        rotki_premium_credentials,
+        rotki_premium_object,
         username,
         blockchain_accounts,
         include_etherscan_key,
@@ -383,7 +391,7 @@ def initialize_mock_rotkehlchen_instance(
             evm_nodes_wait.append((evm_manager.node_inquirer, connect_at_start))
 
     if start_with_valid_premium:
-        rotki.premium = Premium(credentials=rotki_premium_credentials, username=username)
+        rotki.premium = rotki_premium_object
         rotki.premium_sync_manager.premium = rotki.premium
         rotki.chains_aggregator.premium = rotki.premium
         # Add premium to all the modules
@@ -468,7 +476,7 @@ def fixture_rotkehlchen_api_server(
         start_with_logged_in_user,
         start_with_valid_premium,
         db_password,
-        rotki_premium_credentials,
+        rotki_premium_object,
         username,
         blockchain_accounts,
         include_etherscan_key,
@@ -520,7 +528,7 @@ def fixture_rotkehlchen_api_server(
         start_with_logged_in_user=start_with_logged_in_user,
         start_with_valid_premium=start_with_valid_premium,
         db_password=db_password,
-        rotki_premium_credentials=rotki_premium_credentials,
+        rotki_premium_object=rotki_premium_object,
         username=username,
         blockchain_accounts=blockchain_accounts,
         include_etherscan_key=include_etherscan_key,
@@ -593,7 +601,7 @@ def rotkehlchen_instance(
         start_with_logged_in_user,
         start_with_valid_premium,
         db_password,
-        rotki_premium_credentials,
+        rotki_premium_object,
         username,
         blockchain_accounts,
         include_etherscan_key,
@@ -636,7 +644,7 @@ def rotkehlchen_instance(
         start_with_logged_in_user=start_with_logged_in_user,
         start_with_valid_premium=start_with_valid_premium,
         db_password=db_password,
-        rotki_premium_credentials=rotki_premium_credentials,
+        rotki_premium_object=rotki_premium_object,
         username=username,
         blockchain_accounts=blockchain_accounts,
         include_etherscan_key=include_etherscan_key,

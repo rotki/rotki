@@ -215,7 +215,7 @@ from rotkehlchen.icons import (
 )
 from rotkehlchen.inquirer import CurrentPriceOracle, Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.premium.premium import PremiumCredentials
+from rotkehlchen.premium.premium import PremiumCredentials, has_premium_check
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.serialize import process_result, process_result_list
 from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries
@@ -1616,7 +1616,7 @@ class RestAPI:
         error_or_empty, events = self.rotkehlchen.history_querying_manager.get_history(
             start_ts=from_timestamp,
             end_ts=to_timestamp,
-            has_premium=self.rotkehlchen.premium is not None,
+            has_premium=has_premium_check(self.rotkehlchen.premium),
         )
         if error_or_empty != '':
             return wrap_in_fail_result(error_or_empty, status_code=HTTPStatus.CONFLICT)
@@ -3761,7 +3761,7 @@ class RestAPI:
         dbevents = DBHistoryEvents(self.rotkehlchen.data.db)
         has_premium = False
         entries_limit = FREE_HISTORY_EVENTS_LIMIT
-        if self.rotkehlchen.premium is not None:
+        if has_premium_check(self.rotkehlchen.premium):
             has_premium = True
             entries_limit = - 1
 
@@ -4203,7 +4203,7 @@ class RestAPI:
             user_notes, entries_found = self.rotkehlchen.data.db.get_user_notes_and_limit_info(
                 filter_query=filter_query,
                 cursor=cursor,
-                has_premium=self.rotkehlchen.premium is not None,
+                has_premium=has_premium_check(self.rotkehlchen.premium),
             )
             user_notes_total = self.rotkehlchen.data.db.get_entries_count(
                 cursor=cursor,

@@ -17,6 +17,7 @@ from rotkehlchen.exchanges.manager import SUPPORTED_EXCHANGES, ExchangeManager
 from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.base import HistoryBaseEntry, HistoryEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
+from rotkehlchen.premium.premium import has_premium_check
 from rotkehlchen.tasks.manager import TaskManager
 from rotkehlchen.tasks.utils import query_missing_prices_of_base_entries
 from rotkehlchen.types import EVM_CHAINS_WITH_TRANSACTIONS, Location, Timestamp
@@ -141,7 +142,7 @@ class HistoryQueryingManager:
         if only_cache is False:
             self._query_services_for_trades(filter_query=filter_query)
 
-        has_premium = self.chains_aggregator.premium is not None
+        has_premium = has_premium_check(self.chains_aggregator.premium)
         with self.db.conn.read_ctx() as cursor:
             trades, filter_total_found = self.db.get_trades_and_limit_info(
                 cursor=cursor,
@@ -226,7 +227,7 @@ class HistoryQueryingManager:
         if only_cache is False:
             self._query_services_for_asset_movements(filter_query=filter_query)
 
-        has_premium = self.chains_aggregator.premium is not None
+        has_premium = has_premium_check(self.chains_aggregator.premium)
         asset_movements, filter_total_found = self.db.get_asset_movements_and_limit_info(
             filter_query=filter_query,
             has_premium=has_premium,
@@ -281,7 +282,7 @@ class HistoryQueryingManager:
                 entries_missing_prices=entries,
                 base_entries_ignore_set=task_manager.base_entries_ignore_set,
             )
-        has_premium = self.chains_aggregator.premium is not None
+        has_premium = has_premium_check(self.chains_aggregator.premium)
         events, filter_total_found, _ = db.get_history_events_and_limit_info(
             cursor=cursor,
             filter_query=filter_query,
