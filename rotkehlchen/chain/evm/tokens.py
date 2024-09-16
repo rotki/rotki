@@ -4,14 +4,14 @@ from collections import defaultdict
 from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
-from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.asset import EvmToken, Nft
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.types import WeightedNode, asset_id_is_evm_token
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChecksumEvmAddress, Price, Timestamp
+from rotkehlchen.types import ChecksumEvmAddress, Price, SupportedBlockchain, Timestamp
 from rotkehlchen.utils.misc import combine_dicts, get_chunks
 
 if TYPE_CHECKING:
@@ -344,8 +344,19 @@ class EvmTokens(ABC):
                 )
                 if saved_list is None:
                     continue  # Do not query if we know the address has no tokens
-                all_tokens.update(saved_list)
-                addresses_to_tokens[address] = saved_list
+
+                # get NFT tokens for address and ignores them from the query to avoid duplicates
+                cursor.execute(
+                    'SELECT identifier, blockchain FROM nfts WHERE owner_address=?',
+                    (address,),
+                )
+                excluded_addresses = {
+                    Nft(row[0]).evm_address for row in cursor
+                    if SupportedBlockchain.deserialize(row[1]) == self.evm_inquirer.blockchain
+                }
+                token_list = [x for x in saved_list if x.evm_address not in excluded_addresses]
+                all_tokens.update(token_list)
+                addresses_to_tokens[address] = token_list
 
         multicall_chunks = generate_multicall_chunks(
             addresses_to_tokens=addresses_to_tokens,
