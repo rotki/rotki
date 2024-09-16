@@ -204,7 +204,7 @@ watch(chartData, () => {
   prepareData();
 });
 
-const { getCanvasCtx, baseColor, gradient, fontColor, backgroundColor } = useGraph(chartId);
+const { getCanvasCtx, baseColor, gradient, fontColor, backgroundColor, gridColor } = useGraph(chartId);
 const { getCanvasCtx: getRangeCanvasCtx } = useGraph(rangeId);
 
 function createDatasets(isRange = false) {
@@ -232,6 +232,10 @@ function createDatasets(isRange = false) {
 function createScales(isRange = false) {
   const x: any = {
     type: 'time',
+    border: {
+      display: true,
+      color: () => get(gridColor),
+    },
     grid: {
       display: false,
       drawBorder: !isRange,

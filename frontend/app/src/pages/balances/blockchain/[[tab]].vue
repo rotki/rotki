@@ -141,7 +141,10 @@ watchImmediate(route, (route) => {
         />
       </RuiCard>
 
-      <div class="flex items-center -mb-4 justify-between gap-2">
+      <div
+        id="accounts-section"
+        class="flex items-center -mb-4 justify-between gap-2"
+      >
         <div class="flex-1 overflow-hidden">
           <RuiTabs
             color="primary"

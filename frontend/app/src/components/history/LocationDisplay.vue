@@ -29,7 +29,10 @@ const route = computed<RouteLocationRaw>(() => {
     return { path: details };
   }
   else if (tradeLocation?.detailPath) {
-    return { path: tradeLocation.detailPath };
+    return {
+      path: tradeLocation.detailPath,
+      hash: '#accounts-section',
+    };
   }
   else if (tradeLocation) {
     return {
