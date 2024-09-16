@@ -4,6 +4,8 @@ from dataclasses import InitVar, dataclass, field
 from functools import total_ordering
 from typing import Any, NamedTuple, Optional, Union
 
+from eth_utils import to_checksum_address
+
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.aave.v3.constants import DEBT_TOKEN_SYMBOL_REGEX
@@ -584,7 +586,7 @@ class Nft(EvmToken):
         identifier_parts = self.identifier[len(NFT_DIRECTIVE):].split('_')
         if len(identifier_parts) == 0 or len(identifier_parts[0]) == 0:
             raise UnknownAsset(self.identifier)
-        address = identifier_parts[0]
+        address = to_checksum_address(identifier_parts[0])
         object.__setattr__(self, 'asset_type', AssetType.EVM_TOKEN)
         object.__setattr__(self, 'name', f'nft with id {self.identifier}')
         object.__setattr__(self, 'symbol', self.identifier[len(NFT_DIRECTIVE):])

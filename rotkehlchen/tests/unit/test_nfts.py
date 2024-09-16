@@ -1,11 +1,14 @@
 import pytest
 
+from rotkehlchen.api.server import APIServer
 from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.aggregator import ChainsAggregator
+from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_USDC
 from rotkehlchen.db.filtering import NFTFilterQuery
 from rotkehlchen.fval import FVal
-from rotkehlchen.types import ChecksumEvmAddress
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
 
 TEST_ACC1 = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'  # yabir.eth
 TEST_ACC2 = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'  # lefteris.eth
@@ -79,3 +82,61 @@ def test_sorting_nfts(blockchain: ChainsAggregator):
     balances = nft_module.get_db_nft_balances(filter_query=NFTFilterQuery.make(order_by_rules=[('usd_price', False)]))['entries']  # type: ignore  # noqa: E501
     assert balances[0]['id'] == '_nft_0xfd9d8036f899ed5a9fd8cac7968e5f24d3db2a64_1_0xc37b40ABdB939635068d3c5f13E7faF686F03B65'  # gashawk with higher price first # noqa: E501
     assert balances[1]['id'] == '_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041'  # noqa: E501
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xA2a6D337e042009EbAC0f0c398Fef08Dc1074f19']])
+@pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+@pytest.mark.parametrize('start_with_valid_premium', [True])
+@pytest.mark.parametrize('ethereum_modules', [['nfts']])
+def test_duplicate_balances(
+        rotkehlchen_api_server: APIServer,
+        ethereum_accounts,
+        gnosis_accounts,
+):
+    """Checks that we don't have duplicate balances for NFTs in balances.
+
+    If a NFT is tracked only as a token and not in the NFT table we query it
+    but if we track them from opensea as NFTs from the NFT module we avoid
+    having duplicates.
+    """
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    blockchain = rotki.chains_aggregator
+    nft_token = get_or_create_evm_token(  # penguins NFT
+        userdb=blockchain.database,
+        evm_address=string_to_evm_address('0x524cAB2ec69124574082676e6F654a18df49A048'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC721,
+    )
+    gnosis_pay_nft_token = get_or_create_evm_token(  # gnosis OG NFT
+        userdb=blockchain.database,
+        evm_address=string_to_evm_address('0x88997988a6A5aAF29BA973d298D276FE75fb69ab'),
+        chain_id=ChainID.GNOSIS,
+        token_kind=EvmTokenKind.ERC721,
+    )
+    with blockchain.database.user_write() as write_cursor:
+        blockchain.database.save_tokens_for_address(
+            write_cursor=write_cursor,
+            address=ethereum_accounts[0],
+            blockchain=blockchain.ethereum.node_inquirer.chain_id.to_blockchain(),
+            tokens=[nft_token],
+        )
+        blockchain.database.save_tokens_for_address(
+            write_cursor=write_cursor,
+            address=gnosis_accounts[0],
+            blockchain=blockchain.gnosis.node_inquirer.chain_id.to_blockchain(),
+            tokens=[gnosis_pay_nft_token],
+        )
+    nft_module = blockchain.get_module('nfts')
+    assert nft_module is not None
+    nft_module.query_balances(
+        addresses=ethereum_accounts,
+        uniswap_nfts=None,
+    )
+    balances = rotki.query_balances()
+    assert Asset('eip155:1/erc721:0x524cAB2ec69124574082676e6F654a18df49A048') not in balances['assets']  # noqa: E501
+    assert Asset('_nft_0x524cab2ec69124574082676e6f654a18df49a048_7535') in balances['assets']
+    assert Asset('_nft_0x524cab2ec69124574082676e6f654a18df49a048_14235') in balances['assets']
+    assert Asset('_nft_0x524cab2ec69124574082676e6f654a18df49a048_13990') in balances['assets']
+    assert Asset('_nft_0x524cab2ec69124574082676e6f654a18df49a048_10346') in balances['assets']
+    assert Asset('eip155:100/erc721:0x88997988a6A5aAF29BA973d298D276FE75fb69ab') in balances['assets']  # noqa: E501

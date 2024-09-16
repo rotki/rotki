@@ -16,7 +16,7 @@ from rotkehlchen.accounting.accountant import Accountant
 from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.api.websockets.notifier import RotkiNotifier
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.assets.asset import Asset, AssetWithOracles, CryptoAsset
+from rotkehlchen.assets.asset import Asset, AssetWithOracles, Nft
 from rotkehlchen.balances.manual import (
     account_for_manually_tracked_asset_balances,
     get_manually_tracked_balances,
@@ -1050,17 +1050,31 @@ class Rotkehlchen:
                 )
             else:
                 if len(nft_balances) != 0:
-                    if str(Location.BLOCKCHAIN) not in balances:
+                    if (blockchain_location := str(Location.BLOCKCHAIN)) not in balances:
                         balances[str(Location.BLOCKCHAIN)] = {}
 
                     for balance_entry in nft_balances:
                         if balance_entry['usd_price'] == ZERO:
                             continue
-                        balances[str(Location.BLOCKCHAIN)][CryptoAsset(
-                            balance_entry['id'])] = Balance(
-                            amount=ONE,
-                            usd_value=balance_entry['usd_price'],
-                        )
+
+                        # It can happen that the asset was manually added
+                        # as a token and we don't want to ignore NFTs from the token query since
+                        # they might not be tracked by Opensea. In case of them being already
+                        # in the chain balances we update the price and continue
+                        blockchain_balances = balances[blockchain_location]
+                        nft = Nft(balance_entry['id'])
+                        nft_as_token = GlobalDBHandler.get_evm_token(
+                            address=nft.evm_address,
+                            chain_id=nft.chain_id,
+                        )  # we need the eip155 identifier instead of the _nft_ one.
+
+                        if nft_as_token in blockchain_balances:
+                            blockchain_balances[nft_as_token].usd_value = balance_entry['usd_price']  # noqa: E501
+                        else:
+                            blockchain_balances[nft] = Balance(
+                                amount=ONE,
+                                usd_value=balance_entry['usd_price'],
+                            )
 
         balances = account_for_manually_tracked_asset_balances(db=self.data.db, balances=balances)
 
