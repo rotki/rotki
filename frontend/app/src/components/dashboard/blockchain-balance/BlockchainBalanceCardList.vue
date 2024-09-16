@@ -35,6 +35,7 @@ const navTarget = computed<RouteLocationRaw>(() => {
 
   return {
     path: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN}/${target}`,
+    hash: '#accounts-section',
   };
 });
 

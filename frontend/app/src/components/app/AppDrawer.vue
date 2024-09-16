@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { Routes } from '@/router/routes';
+
 const { isMini, showDrawer } = storeToRefs(useAreaVisibilityStore());
 const { appVersion } = storeToRefs(useMainStore());
 
@@ -30,10 +32,12 @@ watch(route, () => {
           'px-0 [&>div]:h-8 justify-center': isMini,
         }"
       >
-        <RotkiLogo
-          :text="!isMini"
-          :size="isMini ? 1.625 : 3"
-        />
+        <RouterLink :to="Routes.DASHBOARD">
+          <RotkiLogo
+            :text="!isMini"
+            :size="isMini ? 1.625 : 3"
+          />
+        </RouterLink>
       </div>
       <NavigationMenu :is-mini="isMini" />
     </div>
