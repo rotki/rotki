@@ -2840,6 +2840,7 @@ class RestAPI:
             self,
             evm_chain: SUPPORTED_CHAIN_IDS,
             tx_hash: EVMTxHash,
+            delete_custom: bool,
     ) -> dict[str, Any]:
         """
         Repull data for a transaction and redecode all events. Also prices for
@@ -2873,7 +2874,7 @@ class RestAPI:
                 tx_hashes=[tx_hash],
                 send_ws_notifications=True,
                 ignore_cache=True,  # always redecode from here
-                delete_customized=True,  # also delete customized events from here
+                delete_customized=delete_custom,
             )
             if (
                 any(event.counterparty == CPT_MONERIUM for event in events) and

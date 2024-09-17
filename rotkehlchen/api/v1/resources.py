@@ -639,11 +639,13 @@ class EvmTransactionsResource(BaseMethodView):
             async_query: bool,
             evm_chain: SUPPORTED_CHAIN_IDS,
             tx_hash: EVMTxHash,
+            delete_custom: bool,
     ) -> Response:
         return self.rest_api.decode_evm_transaction(
             async_query=async_query,
             evm_chain=evm_chain,
             tx_hash=tx_hash,
+            delete_custom=delete_custom,
         )
 
 

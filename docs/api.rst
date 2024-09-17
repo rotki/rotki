@@ -2526,7 +2526,7 @@ Request specific EVM transaction repulling and event decoding
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a PUT on the evm transactions endpoint will request a decoding of the given transaction and generation of decoded events. That basically entails deleteing and re-querying all the transaction data. Transaction, internal transactions, receipts and all log for each hash and then decoding all events. Also requeries prices for assets involved in these events.
+   Doing a PUT on the evm transactions endpoint will request a decoding of the given transaction and generation of decoded events. That basically entails deleting and re-querying all the transaction data. Transaction, internal transactions, receipts and all log for each hash and then decoding all events. Also requeries prices for assets involved in these events.
 
    **Example Request**:
 
@@ -2539,11 +2539,13 @@ Request specific EVM transaction repulling and event decoding
       {
           "async_query": true,
           "evm_chain": "ethereum",
-          "tx_hash": "0xe33041d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9742"
+          "tx_hash": "0xe33041d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9742",
+          "delete_custom": true
       }
 
    :reqjson str evm_chain: A string specifying the evm chain for which the transaction is.
    :reqjson str tx_hash: The transaction hash whose data to repull and redecode events
+   :reqjson bool delete_custom: Boolean denoting whether to delete any customized events of the transaction or not. Default is false
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
 
 

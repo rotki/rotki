@@ -55,6 +55,7 @@ def assert_editing_works(
         events_db: 'DBHistoryEvents',
         sequence_index: int,
         autoedited: dict[str, Any] | None = None,
+        also_redecode: bool = False,
 ):
     """A function to assert editing works per entry type. If autoedited is given
     then we check that some fields, given in autoedited, were automatically edited
@@ -69,7 +70,24 @@ def assert_editing_works(
             assert hasattr(entry, attr), f'No {attr} in entry'
             setattr(entry, attr, value)
 
-    """Assert that editing any subclass of history base entry is successfully done"""
+    def assert_event_got_edited(entry: 'HistoryBaseEntry'):
+        with events_db.db.conn.read_ctx() as cursor:
+            events = events_db.get_history_events(
+                cursor=cursor,
+                filter_query=HistoryEventFilterQuery.make(event_identifiers=[entry.event_identifier]),
+                has_premium=True,
+                group_by_event_ids=False,
+            )
+
+        # now that actual edit happened, tweak autoedited fields for the equality check
+        if autoedited:
+            for key, value in autoedited.items():
+                setattr(entry, key, value)
+
+        for event in events:
+            if event.identifier == entry.identifier:
+                assert event == entry
+
     entry.timestamp = TimestampMS(entry.timestamp + 2)
     entry.balance = Balance(amount=FVal('1500.1'), usd_value=FVal('1499.45'))
     edit_entry('event_type', HistoryEventType.DEPOSIT)
@@ -89,24 +107,24 @@ def assert_editing_works(
     )
     assert_simple_ok_response(response)
     assert entry.identifier is not None
-    with events_db.db.conn.read_ctx() as cursor:
-        events = events_db.get_history_events(
-            cursor=cursor,
-            filter_query=HistoryEventFilterQuery.make(event_identifiers=[entry.event_identifier]),
-            has_premium=True,
-            group_by_event_ids=False,
-        )
+    assert_event_got_edited(entry)
 
-    # now that actual edit happened, tweak autoedited fields for the equality check
-    if autoedited:
-        for key, value in autoedited.items():
-            setattr(entry, key, value)
+    if not also_redecode:
+        return
 
-    for event in events:
-        if event.identifier == entry.identifier:
-            assert event == entry
+    assert isinstance(entry, EvmEvent)  # should be an evm event for redeocding
+
+    # also redecode without custom deletion and see the custom events
+    # are still correctly shown and not deleted
+    response = requests.put(
+        api_url_for(rotkehlchen_api_server, 'evmtransactionsresource'),
+        json={'evm_chain': 'ethereum', 'tx_hash': entry.tx_hash.hex(), 'delete_custom': False},
+    )
+    assert_simple_ok_response(response)
+    assert_event_got_edited(entry)
 
 
+@pytest.mark.parametrize('have_decoders', [True])  # so we can run redecode after add/edit/delete
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -171,7 +189,7 @@ def test_add_edit_delete_entries(rotkehlchen_api_server: 'APIServer'):
         contained_in_msg='Failed to add event to the DB. It already exists',
         status_code=HTTPStatus.CONFLICT,
     )
-    assert_editing_works(entry, rotkehlchen_api_server, db, 4)  # evm event
+    assert_editing_works(entry, rotkehlchen_api_server, db, 4, also_redecode=True)  # evm event
     assert_editing_works(entries[5], rotkehlchen_api_server, db, 5)  # history event
     assert_editing_works(entries[6], rotkehlchen_api_server, db, 6, {'notes': 'Exited validator 1001 with 1500.1 ETH', 'event_identifier': 'EW_1001_19460'})  # eth withdrawal event  # noqa: E501
     assert_editing_works(entries[7], rotkehlchen_api_server, db, 7, {'notes': 'Deposit 1500.1 ETH to validator 1001'})  # eth deposit event  # noqa: E501
