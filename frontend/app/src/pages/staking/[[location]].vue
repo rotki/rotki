@@ -60,30 +60,35 @@ const page = computed(() => {
   return selectedLocation ? pages[selectedLocation] : null;
 });
 
-function updateLocation(newLocation: NavType | undefined) {
-  if (newLocation) {
-    set(location, newLocation);
-    set(lastLocation, newLocation);
-  }
-};
+const locationComputed = computed({
+  get() {
+    return get(location);
+  },
+  set(newLocation: NavType | undefined) {
+    if (newLocation) {
+      set(location, newLocation);
+      set(lastLocation, newLocation);
+    }
+  },
+});
 
-watchImmediate(lastLocation, async (location) => {
-  if (!location)
+watchImmediate(lastLocation, async (newLocation) => {
+  if (!newLocation)
     return;
+
+  set(locationComputed, newLocation as NavType);
 
   await nextTick(() => {
     router.push({
       name: '/staking/[[location]]',
-      params: { location },
+      params: { location: newLocation },
     });
   });
 });
 
 watch(() => props.location, (newLocation) => {
-  if (newLocation) {
-    set(location, newLocation as NavType);
-    set(lastLocation, newLocation);
-  }
+  if (newLocation)
+    set(locationComputed, newLocation as NavType);
 });
 </script>
 
@@ -104,14 +109,13 @@ watch(() => props.location, (newLocation) => {
         </AdaptiveWrapper>
       </DefineIcon>
       <RuiMenuSelect
-        v-model="location"
+        v-model="locationComputed"
         :options="staking"
         :label="t('staking_page.dropdown_label')"
         key-attr="id"
         text-attr="name"
         hide-details
         variant="outlined"
-        @update:model-value="updateLocation"
       >
         <template #selection="{ item: { image, name } }">
           <div class="flex items-center gap-3">
