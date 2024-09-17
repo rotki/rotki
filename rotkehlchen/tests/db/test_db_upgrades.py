@@ -2472,7 +2472,7 @@ def test_upgrade_db_43_to_44(user_data_dir, messages_aggregator):
         ).fetchall() == [
             ('_nft_0xfd9d8036f899ed5a9fd8cac7968e5f24d3db2a64_1_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '0', 'ETH'),  # noqa: E501
             ('_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041', '0.00059', 'ETH'),  # noqa: E501
-            ('_nft_sdfdsfsdf_1_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', None, None),
+            ('_nft_0x88997988a6a5aaf29ba973d298d276fe75fb69ab_1_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', None, None),  # noqa: E501
         ]
         assert set(cursor.execute('SELECT object_reference, tag_name FROM tag_mappings').fetchall()) == {  # noqa: E501
             ('ETH0xc37b40ABdB939635068d3c5f13E7faF686F03B65', 'safe'),
@@ -2513,9 +2513,9 @@ def test_upgrade_db_43_to_44(user_data_dir, messages_aggregator):
         assert cursor.execute(  # we have one entry with null values and two with the details
             'SELECT identifier, last_price, last_price_asset FROM nfts',
         ).fetchall() == [
-            ('_nft_0xfd9d8036f899ed5a9fd8cac7968e5f24d3db2a64_1_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '0', 'ETH'),  # noqa: E501
-            ('_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041', '0.00059', 'ETH'),  # noqa: E501
-            ('_nft_sdfdsfsdf_1_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '0', 'ETH'),
+            ('_nft_0xfd9d8036F899ed5a9fD8cac7968E5F24D3db2A64_1_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '0', 'ETH'),  # noqa: E501
+            ('_nft_0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85_26612040215479394739615825115912800930061094786769410446114278812336794170041', '0.00059', 'ETH'),  # noqa: E501
+            ('_nft_0x88997988a6A5aAF29BA973d298D276FE75fb69ab_1_0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '0', 'ETH'),  # noqa: E501
         ]
         new_receipt_logs = cursor.execute('SELECT * from evmtx_receipt_logs').fetchall()
         assert new_receipt_logs == [(x[0], x[1], x[2], x[3], x[4]) for x in old_receipt_logs]

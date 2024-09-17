@@ -135,8 +135,8 @@ def test_duplicate_balances(
     )
     balances = rotki.query_balances()
     assert Asset('eip155:1/erc721:0x524cAB2ec69124574082676e6F654a18df49A048') not in balances['assets']  # noqa: E501
-    assert Asset('_nft_0x524cab2ec69124574082676e6f654a18df49a048_7535') in balances['assets']
-    assert Asset('_nft_0x524cab2ec69124574082676e6f654a18df49a048_14235') in balances['assets']
-    assert Asset('_nft_0x524cab2ec69124574082676e6f654a18df49a048_13990') in balances['assets']
-    assert Asset('_nft_0x524cab2ec69124574082676e6f654a18df49a048_10346') in balances['assets']
+    assert Asset('_nft_0x524cAB2ec69124574082676e6F654a18df49A048_7535') in balances['assets']
+    assert Asset('_nft_0x524cAB2ec69124574082676e6F654a18df49A048_14235') in balances['assets']
+    assert Asset('_nft_0x524cAB2ec69124574082676e6F654a18df49A048_13990') in balances['assets']
+    assert Asset('_nft_0x524cAB2ec69124574082676e6F654a18df49A048_10346') in balances['assets']
     assert Asset('eip155:100/erc721:0x88997988a6A5aAF29BA973d298D276FE75fb69ab') in balances['assets']  # noqa: E501

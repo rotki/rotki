@@ -2,7 +2,7 @@ import logging
 from typing import TYPE_CHECKING, Any, Literal
 
 from eth_abi import encode as encode_abi
-from eth_utils import to_checksum_address, to_hex, to_normalized_address
+from eth_utils import to_checksum_address, to_hex
 from web3 import Web3
 from web3.exceptions import Web3Exception
 
@@ -474,7 +474,7 @@ def _decode_uniswap_v3_result(
 
     Edge cases whereby a token does not conform to ERC20 standard,the user balance is set to ZERO.
     """
-    nft_id = NFT_DIRECTIVE + to_normalized_address(uniswap_v3_nft_manager_address) + '_' + str(data[0])  # noqa: E501
+    nft_id = NFT_DIRECTIVE + to_checksum_address(uniswap_v3_nft_manager_address) + '_' + str(data[0])  # noqa: E501
     pool_token = data[1]
     token0 = _decode_uniswap_v3_token(data[4])
     token1 = _decode_uniswap_v3_token(data[5])
