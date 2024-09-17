@@ -60,22 +60,9 @@ const page = computed(() => {
   return selectedLocation ? pages[selectedLocation] : null;
 });
 
-const locationComputed = computed({
-  get() {
-    return get(location);
-  },
-  set(newLocation: NavType | undefined) {
-    if (newLocation) {
-      set(location, newLocation);
-      set(lastLocation, newLocation);
-    }
-  },
-});
-
 watchImmediate(lastLocation, async (newLocation) => {
-  if (!newLocation) {
+  if (!newLocation)
     return;
-  }
 
   set(location, newLocation as NavType);
 
@@ -138,7 +125,10 @@ watch(() => props.location, (newLocation) => {
     >
       <Component :is="page" />
     </div>
-    <div v-else>
+    <div
+      v-else
+      class="flex flex-col h-[calc(100vh-200px)]"
+    >
       <div class="flex items-center justify-center md:justify-end mt-2 md:mr-6 text-rui-text-secondary gap-2">
         <RuiIcon
           class="shrink-0"
@@ -148,8 +138,8 @@ watch(() => props.location, (newLocation) => {
           {{ t('staking_page.dropdown_hint') }}
         </div>
       </div>
-      <FullSizeContent>
-        <div class="flex flex-col h-full items-center justify-center gap-6">
+      <div class="flex-grow flex items-center justify-center">
+        <div class="flex flex-col items-center justify-center gap-6">
           <span class="font-bold text-h5">
             {{ t('staking_page.page.title') }}
           </span>
@@ -181,7 +171,7 @@ watch(() => props.location, (newLocation) => {
             {{ t('staking_page.page.description') }}
           </div>
         </div>
-      </FullSizeContent>
+      </div>
     </div>
   </div>
 </template>
