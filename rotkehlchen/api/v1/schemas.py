@@ -380,6 +380,7 @@ class EventsOnlineQuerySchema(AsyncQueryArgumentSchema):
 class EvmTransactionDecodingSchema(AsyncQueryArgumentSchema):
     evm_chain = EvmChainNameField(required=True)
     tx_hash = EVMTransactionHashField(required=True)
+    delete_custom = fields.Boolean(load_default=False)
 
 
 class EvmlikeTransactionDecodingSchema(AsyncQueryArgumentSchema):
