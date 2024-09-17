@@ -38,3 +38,32 @@ def test_gnosis_pay_cashback(gnosis_inquirer, gnosis_accounts):
             address=GNOSIS_PAY_CASHBACK_ADDRESS,
         ),
     ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [[
+    '0xF4a1fB1689104479De1EcADfA472A9B866D08B16',  # user's gnosis pay safe
+]])
+def test_gnosis_pay_spend(gnosis_inquirer, gnosis_accounts):
+    tx_hash = deserialize_evm_tx_hash('0xe8d666d6acf22e5a50dfea7ece1473558a854dfa04441ea9b3d0898843364ad8')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        tx_hash=tx_hash,
+    )
+    amount = '8.5'
+    assert events == [
+        EvmEvent(
+            sequence_index=29,
+            timestamp=TimestampMS(1726590745000),
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.PAYMENT,
+            asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
+            balance=Balance(amount=FVal(amount)),
+            location_label=gnosis_accounts[0],
+            notes=f'Spend {amount} EURe via Gnosis Pay',
+            tx_hash=tx_hash,
+            counterparty=CPT_GNOSIS_PAY,
+            address='0x4822521E6135CD2599199c83Ea35179229A172EE',
+        ),
+    ]
