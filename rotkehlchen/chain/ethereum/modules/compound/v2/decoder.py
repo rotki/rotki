@@ -285,6 +285,7 @@ class Compoundv2Decoder(DecoderInterface):
                 event.balance.amount == seized_collateral_amount and
                 event.asset == collateral_ctoken
             ):
+                event.event_type = HistoryEventType.LOSS
                 event.event_subtype = HistoryEventSubType.LIQUIDATE
                 event.notes = f'Lost {seized_collateral_amount} {collateral_ctoken.symbol} in a compound forced liquidation to repay {repaid_amount} {repaying_asset.symbol}'  # noqa: E501
                 event.counterparty = CPT_COMPOUND

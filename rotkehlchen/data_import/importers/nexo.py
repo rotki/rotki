@@ -160,7 +160,7 @@ class NexoImporter(BaseExchangeImporter):
                 sequence_index=0,
                 timestamp=ts_sec_to_ms(timestamp),
                 location=Location.NEXO,
-                event_type=HistoryEventType.SPEND,
+                event_type=HistoryEventType.LOSS,
                 event_subtype=HistoryEventSubType.LIQUIDATE,
                 balance=Balance(amount=input_amount),
                 asset=input_asset,

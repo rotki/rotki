@@ -1,4 +1,3 @@
-
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -551,7 +550,7 @@ def test_aave_v3_liquidation(ethereum_inquirer, ethereum_accounts) -> None:
             sequence_index=247,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.SPEND,
+            event_type=HistoryEventType.LOSS,
             event_subtype=HistoryEventSubType.LIQUIDATE,
             asset=EvmToken('eip155:1/erc20:0x4d5F47FA6A74757f35C14fD3a6Ef8E3C9BC514E8'),
             balance=Balance(amount=FVal(liquidation_amount)),

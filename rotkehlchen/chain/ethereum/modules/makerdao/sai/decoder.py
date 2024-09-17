@@ -300,7 +300,7 @@ class MakerdaosaiDecoder(DecoderInterface):
 
         for event in context.decoded_events:
             if (
-                event.event_type == HistoryEventType.SPEND and
+                event.event_type == HistoryEventType.LOSS and
                 event.event_subtype == HistoryEventSubType.LIQUIDATE and
                 event.asset == self.peth and
                 event.counterparty == CPT_SAI
@@ -322,7 +322,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                 event = self.base.make_event_from_transaction(
                     transaction=context.transaction,
                     tx_log=context.tx_log,
-                    event_type=HistoryEventType.SPEND,
+                    event_type=HistoryEventType.LOSS,
                     event_subtype=HistoryEventSubType.LIQUIDATE,
                     asset=self.peth,
                     balance=Balance(amount=amount),

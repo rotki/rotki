@@ -95,6 +95,7 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
             asset = event.asset.resolve_to_evm_token()
             if amounts[1] == event.balance.amount and event.address == ZERO_ADDRESS:
                 # we are transfering the debt token
+                event.event_type = HistoryEventType.LOSS
                 event.event_subtype = HistoryEventSubType.LIQUIDATE
                 event.notes = f'An {self.label} position got liquidated for {event.balance.amount} {asset.symbol}'  # noqa: E501
                 event.counterparty = CPT_AAVE_V3
