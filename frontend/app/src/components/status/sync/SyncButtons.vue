@@ -9,7 +9,7 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const { premium } = storeToRefs(usePremiumStore());
+const premium = usePremium();
 const UPLOAD: SyncAction = SYNC_UPLOAD;
 const DOWNLOAD: SyncAction = SYNC_DOWNLOAD;
 

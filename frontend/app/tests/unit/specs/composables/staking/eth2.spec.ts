@@ -5,7 +5,7 @@ describe('composables::staking/eth2/eth2', () => {
   setActivePinia(createPinia());
 
   beforeEach(() => {
-    const { premium } = storeToRefs(usePremiumStore());
+    const premium = usePremium();
     set(premium, true);
     vi.clearAllMocks();
   });

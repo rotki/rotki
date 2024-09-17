@@ -17,13 +17,14 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const blockchainStore = useBlockchainStore();
-const { fetchValidators } = blockchainStore;
-const { ethStakingValidators } = storeToRefs(blockchainStore);
+const blockchainValidatorsStore = useBlockchainValidatorsStore();
+const { fetchValidators } = blockchainValidatorsStore;
+const { ethStakingValidators } = storeToRefs(blockchainValidatorsStore);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const { showConfirmation } = useAccountDelete();
 const { fetchEthStakingValidators } = useEthStaking();
 const { exchangeRate } = useBalancePricesStore();
+const { fetchBlockchainBalances } = useBlockchainBalances();
 
 const {
   filters,
@@ -145,7 +146,10 @@ function getOwnershipPercentage(row: EthereumValidator): string {
 
 async function refresh() {
   await fetchEthStakingValidators();
-  await fetchData();
+  await fetchBlockchainBalances({
+    ignoreCache: true,
+    blockchain: Blockchain.ETH2,
+  });
 }
 
 function confirmDelete(item: EthereumValidator) {

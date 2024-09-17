@@ -60,7 +60,7 @@ describe('premiumSettings.vue', () => {
   });
 
   it('updates premium status upon removing keys', async () => {
-    const { premium } = storeToRefs(usePremiumStore());
+    const premium = usePremium();
     set(premium, true);
 
     await nextTick();

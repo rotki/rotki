@@ -61,7 +61,7 @@ const refreshing = logicOr(
 
 const { getEth2Validators } = useBlockchainAccountsApi();
 const { fetchEthStakingValidators } = useEthStaking();
-const { ethStakingValidators, stakingValidatorsLimits } = storeToRefs(useBlockchainStore());
+const { ethStakingValidators, stakingValidatorsLimits } = storeToRefs(useBlockchainValidatorsStore());
 const { fetchBlockchainBalances } = useBlockchainBalances();
 
 const premium = usePremium();

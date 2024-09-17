@@ -6,7 +6,7 @@ const props = defineProps<{
   vault: MakerDAOVaultModel;
 }>();
 
-const { premium } = storeToRefs(usePremiumStore());
+const premium = usePremium();
 const { t } = useI18n();
 
 const totalInterestOwed = computed<BigNumber>(() => {

@@ -31,7 +31,7 @@ export function useEth2DailyStats(): UseEthStakingDailyStatsReturn {
 
   const api = useEth2Api();
 
-  const { ethStakingValidators } = storeToRefs(useBlockchainStore());
+  const { ethStakingValidators } = storeToRefs(useBlockchainValidatorsStore());
 
   const syncStakingStats = async (userInitiated = false): Promise<boolean> => {
     if (!get(premium))

@@ -1,6 +1,6 @@
 import { camelCase, isEmpty } from 'lodash-es';
 import { type AssetBalance, type Balance, Blockchain } from '@rotki/common';
-import { type MaybeRef, objectOmit, objectPick } from '@vueuse/core';
+import { type MaybeRef, objectOmit } from '@vueuse/core';
 import type {
   Accounts,
   AssetBreakdown,
@@ -10,23 +10,15 @@ import type {
   BlockchainAccountGroupWithBalance,
   BlockchainAccountRequestPayload,
   BlockchainAccountWithBalance,
-  EthereumValidator,
-  EthereumValidatorRequestPayload,
 } from '@/types/blockchain/accounts';
 import type { Collection } from '@/types/collection';
 import type { BlockchainTotal } from '@/types/blockchain';
-import type { BlockchainAssetBalances, BlockchainBalances, BlockchainTotals } from '@/types/blockchain/balances';
+import type { BlockchainBalances, BlockchainTotals } from '@/types/blockchain/balances';
 import type { AssetPrices } from '@/types/prices';
 
 export const useBlockchainStore = defineStore('blockchain', () => {
   const accounts = ref<Accounts>({});
   const balances = ref<Balances>({});
-  const eth2Balances = ref<BlockchainAssetBalances>({});
-
-  const stakingValidatorsLimits = ref<{
-    limit: number;
-    total: number;
-  }>();
 
   const { addressNameSelector } = useAddressesNamesStore();
   const { getChainAccountType } = useSupportedChains();
@@ -124,14 +116,6 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     return Object.fromEntries(entries);
   });
 
-  const ethStakingValidators = computed<EthereumValidator[]>(() => {
-    const validatorAccounts = get(blockchainAccounts)[Blockchain.ETH2] ?? [];
-    return validatorAccounts.filter(isAccountWithBalanceValidator).map(validator => ({
-      ...objectPick(validator, ['usdValue', 'amount']),
-      ...validator.data,
-    }));
-  });
-
   const blockchainTotals = computed<BlockchainTotal[]>(() =>
     Object.entries(get(blockchainAccounts))
       .map(([chain, accounts]) => ({
@@ -204,15 +188,10 @@ export const useBlockchainStore = defineStore('blockchain', () => {
 
   const updateBalances = (chain: string, { perAccount }: BlockchainBalances): void => {
     const data = perAccount[camelCase(chain)] ?? {};
-    if (chain === Blockchain.ETH2) {
-      set(eth2Balances, data);
-    }
-    else {
-      set(balances, {
-        ...get(balances),
-        [chain]: data,
-      });
-    }
+    set(balances, {
+      ...get(balances),
+      [chain]: data,
+    });
   };
 
   const updatePrices = (prices: MaybeRef<AssetPrices>): void => {
@@ -331,39 +310,11 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     }));
   });
 
-  const fetchValidators = async (
-    payload: MaybeRef<EthereumValidatorRequestPayload>,
-  ): Promise<Collection<EthereumValidator>> => await new Promise(
-    (resolve) => {
-      resolve(sortAndFilterValidators(
-        get(ethStakingValidators),
-        get(payload),
-      ));
-    },
-  );
-
-  watch([accounts, eth2Balances], ([accounts, eth2Balances]) => {
-    const eth2Accounts = accounts[Blockchain.ETH2] || [];
-
-    const validatorPublicKeys = eth2Accounts.map(item => getAccountAddress(item));
-    const filteredEth2Balances = Object.fromEntries(
-      Object.entries(eth2Balances).filter(([key]) => validatorPublicKeys.includes(key)),
-    );
-
-    set(balances, {
-      ...get(balances),
-      [Blockchain.ETH2]: filteredEth2Balances,
-    });
-  });
-
   return {
     accounts,
     addresses,
     balances,
-    eth2Balances,
     groups,
-    stakingValidatorsLimits,
-    ethStakingValidators,
     aggregatedTotals,
     aggregatedLiabilities,
     blockchainAccounts,
@@ -383,7 +334,6 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     updatePrices,
     removeAccounts,
     removeTag,
-    fetchValidators,
   };
 });
 
