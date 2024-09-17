@@ -187,6 +187,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     const newPayload: ChainAndTxHash | EvmChainAndTxHash = {
       ...(type === TransactionChainType.EVM ? { evmChain: transaction.evmChain } : { chain }),
       txHash: transaction.txHash,
+      deleteCustom: transaction.deleteCustom,
     };
 
     try {

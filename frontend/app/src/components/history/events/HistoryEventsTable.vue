@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import { groupBy } from 'lodash-es';
 import { IgnoreActionType } from '@/types/history/ignored';
 import { Section } from '@/types/status';
-import type { EvmChainAndTxHash, EvmHistoryEvent, HistoryEventEntry, ShowEventHistoryForm } from '@/types/history/events';
+import type { EvmChainAndTxHash, HistoryEventEntry, ShowEventHistoryForm } from '@/types/history/events';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
 import type { Collection } from '@/types/collection';
 
@@ -104,29 +105,13 @@ const events: Ref<HistoryEventEntry[]> = asyncComputed(async () => {
   evaluating: eventsLoading,
 });
 
+const eventsGroupedByEventIdentifier = computed<Record<string, HistoryEventEntry[]>>(() => groupBy(get(events), item => item.eventIdentifier));
+
 const loading = refDebounced(logicOr(groupLoading, eventsLoading), 300);
 const hasIgnoredEvent = useArraySome(events, event => event.ignoredInAccounting);
 
 function getItemClass(item: HistoryEventEntry): '' | 'opacity-50' {
   return item.ignoredInAccounting ? 'opacity-50' : '';
-}
-
-async function onConfirmReset(data: EvmHistoryEvent): Promise<void> {
-  const eventIds = get(events)
-    .filter(event => isEvmEvent(event) && event.txHash === data.txHash && event.customized)
-    .map(event => event.identifier);
-
-  if (eventIds.length > 0)
-    await deleteHistoryEvent(eventIds, true);
-
-  emit('refresh', toEvmChainAndTxHash(data));
-}
-
-function confirmReset(data: EvmHistoryEvent): void {
-  show({
-    title: t('transactions.events.confirmation.reset.title'),
-    message: t('transactions.events.confirmation.reset.message'),
-  }, () => onConfirmReset(data));
 }
 
 function confirmDelete({ item, canDelete }: { item: HistoryEventEntry; canDelete: boolean }): void {
@@ -170,7 +155,7 @@ async function onConfirmDelete(): Promise<void> {
     if (!success)
       return;
 
-    emit('refresh', toEvmChainAndTxHash(event));
+    emit('refresh');
   }
 }
 
@@ -215,6 +200,37 @@ function confirmTxAndEventsDelete(payload: EvmChainAndTxHash): void {
     title: t('transactions.dialog.delete.title'),
     message: t('transactions.dialog.delete.message'),
   }, () => onConfirmTxAndEventDelete(payload));
+}
+
+const showRedecodeConfirmation = ref<boolean>(false);
+const deleteCustom = ref<boolean>(false);
+const redecodePayload = ref<EvmChainAndTxHash>();
+
+function redecode(payload: EvmChainAndTxHash, eventIdentifier: string): void {
+  const childEvents = get(eventsGroupedByEventIdentifier)[eventIdentifier] || [];
+  const isAnyCustom = childEvents.some(item => item.customized);
+
+  if (!isAnyCustom) {
+    emit('refresh', payload);
+  }
+  else {
+    set(redecodePayload, payload);
+    set(showRedecodeConfirmation, true);
+    set(deleteCustom, false);
+  }
+}
+
+function forceRedecode(): void {
+  const payload = get(redecodePayload);
+  if (payload) {
+    emit('refresh', {
+      ...payload,
+      deleteCustom: get(deleteCustom),
+    });
+  }
+  set(showRedecodeConfirmation, false);
+  set(deleteCustom, false);
+  set(redecodePayload, undefined);
 }
 </script>
 
@@ -282,8 +298,7 @@ function confirmTxAndEventsDelete(payload: EvmChainAndTxHash): void {
                 },
               })"
               @toggle-ignore="toggle($event)"
-              @redecode="emit('refresh', $event)"
-              @reset="confirmReset($event)"
+              @redecode="redecode($event, row.eventIdentifier)"
               @delete-tx="confirmTxAndEventsDelete($event)"
             />
           </LazyLoader>
@@ -293,7 +308,7 @@ function confirmTxAndEventsDelete(payload: EvmChainAndTxHash): void {
           <HistoryEventsList
             class="-my-4"
             :class="{ 'opacity-50': row.ignoredInAccounting }"
-            :all-events="events"
+            :all-events="eventsGroupedByEventIdentifier[row.eventIdentifier] || []"
             :event-group="row"
             :loading="sectionLoading || eventsLoading"
             :has-ignored-event="hasIgnoredEvent"
@@ -334,4 +349,39 @@ function confirmTxAndEventsDelete(payload: EvmChainAndTxHash): void {
       </RuiDataTable>
     </template>
   </CollectionHandler>
+  <RuiDialog
+    v-model="showRedecodeConfirmation"
+    :max-width="500"
+  >
+    <RuiCard
+      class="[&>div:first-child]:pb-0"
+    >
+      <template #header>
+        {{ t('transactions.actions.redecode_events') }}
+      </template>
+      <div class="mb-2">
+        {{ t('transactions.events.confirmation.reset.message') }}
+      </div>
+      <RuiRadioGroup
+        v-model="deleteCustom"
+        color="primary"
+      >
+        <RuiRadio :value="false">
+          {{ t('transactions.events.confirmation.reset.options.keep_custom_events') }}
+        </RuiRadio>
+        <RuiRadio :value="true">
+          {{ t('transactions.events.confirmation.reset.options.remove_custom_events') }}
+        </RuiRadio>
+      </RuiRadioGroup>
+      <template #footer>
+        <div class="grow" />
+        <RuiButton
+          color="primary"
+          @click="forceRedecode()"
+        >
+          {{ t('common.actions.proceed') }}
+        </RuiButton>
+      </template>
+    </RuiCard>
+  </RuiDialog>
 </template>

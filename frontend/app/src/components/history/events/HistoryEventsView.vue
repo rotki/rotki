@@ -262,7 +262,7 @@ async function forceRedecodeEvmEvents(data: EvmChainAndTxHash): Promise<void> {
 const { setOpenDialog, setPostSubmitFunc } = useHistoryEventsForm();
 
 setPostSubmitFunc(() => {
-  fetchAndRedecodeEvents(isDefined(selectedGroup) ? toEvmChainAndTxHash(get(selectedGroup)) : undefined);
+  fetchAndRedecodeEvents();
 });
 
 function showForm(payload: ShowEventHistoryForm): void {

@@ -20,7 +20,7 @@ function getTotal({ totalAmount, usdPrice }: XswapAsset) {
     v-model="details"
     max-width="450px"
   >
-    <template #activator>
+    <template #activator="{ attrs }">
       <RuiTooltip
         :popper="{ placement: 'top' }"
         :open-delay="400"
@@ -30,6 +30,7 @@ function getTotal({ totalAmount, usdPrice }: XswapAsset) {
             variant="text"
             color="primary"
             icon
+            v-bind="attrs"
           >
             <RuiIcon name="external-link-line" />
           </RuiButton>

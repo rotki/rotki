@@ -3701,7 +3701,6 @@
     "actions": {
       "add_event": "Add a new event",
       "redecode_events": "Redecode events",
-      "reset_customized_events": "Reset customized events",
       "delete_transaction": "Διαγραφή συναλλαγών και συμβάντων"
     },
     "dialog": {
@@ -3731,8 +3730,11 @@
           "title": "Cannot Delete Event"
         },
         "reset": {
-          "message": "Είστε σίγουροι ότι θέλετε να επαναφέρετε τα συμβάντα αυτής της συναλλαγής; Αυτή η ενέργεια θα διαγράψει όλα τα προσαρμοσμένα συμβάντα αυτής της συναλλαγής και θα τα αποκωδικοποιήσει εκ νέου.",
-          "title": "Reset events"
+          "message": "Υπάρχουν προσαρμοσμένα συμβάντα σε αυτή τη συναλλαγή",
+          "options": {
+            "keep_custom_events": "Μην αφαιρείτε τα προσαρμοσμένα συμβάντα μου",
+            "remove_custom_events": "Αφαίρεση προσαρμοσμένων συμβάντων και επανακωδικοποίηση της συναλλαγής"
+          }
         }
       },
       "customized_event": "Customized event",

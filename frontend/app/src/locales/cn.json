@@ -3815,7 +3815,6 @@
     "actions": {
       "add_event": "添加新事件",
       "redecode_events": "重新解码事件",
-      "reset_customized_events": "重置自定义事件",
       "delete_transaction": "删除交易和事件"
     },
     "dialog": {
@@ -3845,8 +3844,11 @@
           "title": "无法删除事件"
         },
         "reset": {
-          "message": "您确定要重置此事务的事件吗？此操作将删除此事务的所有自定义事件并重新解码。",
-          "title": "重置事件"
+          "message": "该事务中有自定义事件",
+          "options": {
+            "keep_custom_events": "不要删除我的自定义事件",
+            "remove_custom_events": "移除自定义事件并重新解码事务"
+          }
         }
       },
       "customized_event": "自定义事件",
