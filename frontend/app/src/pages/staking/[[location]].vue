@@ -32,14 +32,7 @@ const { t } = useI18n();
 
 const lastLocation = useLocalStorage('rotki.staking.last_location', '');
 
-const location = computed({
-  get() {
-    return props.location ? props.location : undefined;
-  },
-  set(value?: NavType) {
-    set(lastLocation, value);
-  },
-});
+const location = ref<NavType | undefined>(props.location as NavType | undefined);
 
 const staking = computed<StakingInfo[]>(() => [
   {
@@ -67,6 +60,13 @@ const page = computed(() => {
   return selectedLocation ? pages[selectedLocation] : null;
 });
 
+function updateLocation(newLocation: NavType | undefined) {
+  if (newLocation) {
+    set(location, newLocation);
+    set(lastLocation, newLocation);
+  }
+};
+
 watchImmediate(lastLocation, async (location) => {
   if (!location)
     return;
@@ -77,6 +77,13 @@ watchImmediate(lastLocation, async (location) => {
       params: { location },
     });
   });
+});
+
+watch(() => props.location, (newLocation) => {
+  if (newLocation) {
+    set(location, newLocation as NavType);
+    set(lastLocation, newLocation);
+  }
 });
 </script>
 
@@ -104,6 +111,7 @@ watchImmediate(lastLocation, async (location) => {
         text-attr="name"
         hide-details
         variant="outlined"
+        @update:model-value="updateLocation"
       >
         <template #selection="{ item: { image, name } }">
           <div class="flex items-center gap-3">
