@@ -50,6 +50,7 @@ class HistoryEventType(SerializableEnumNameMixin):
     RENEW = auto()
     DEPLOY = auto()
     FAIL = auto()
+    LOSS = auto()
 
 
 class HistoryEventSubType(SerializableEnumNameMixin):
@@ -89,6 +90,7 @@ class HistoryEventSubType(SerializableEnumNameMixin):
     GRANT = auto()
     INTEREST = auto()
     CASHBACK = auto()
+    HACK = auto()
 
     def serialize_or_none(self) -> str | None:
         return self.serialize()
@@ -168,6 +170,7 @@ class EventCategory(Enum):
     CEX_DEPOSIT = 44, EventDirection.IN
     CEX_WITHDRAWAL = 45, EventDirection.OUT
     CASHBACK = 46, EventDirection.IN
+    HACK_LOSS = 47, EventDirection.OUT
 
     @property
     def direction(self) -> EventDirection:

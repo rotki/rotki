@@ -64,6 +64,7 @@ class Aavev2CommonDecoder(Commonv2v3Decoder):
                 asset=asset,
             ) == event.balance.amount and asset.protocol == CPT_AAVE_V2:
                 # we are transfering the aTOKEN
+                event.event_type = HistoryEventType.LOSS
                 event.event_subtype = HistoryEventSubType.LIQUIDATE
                 event.notes = f'An {self.label} position got liquidated for {event.balance.amount} {asset.symbol}'  # noqa: E501
                 event.counterparty = CPT_AAVE_V2

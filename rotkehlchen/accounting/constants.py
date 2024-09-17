@@ -51,12 +51,15 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
     },
     HistoryEventType.SPEND: {
         HistoryEventSubType.RETURN_WRAPPED: {DEFAULT: EventCategory.SEND},
-        HistoryEventSubType.LIQUIDATE: {DEFAULT: EventCategory.LIQUIDATION_LOSS},
         HistoryEventSubType.PAYBACK_DEBT: {DEFAULT: EventCategory.REPAY},
         HistoryEventSubType.FEE: {DEFAULT: EventCategory.FEE},
         HistoryEventSubType.DONATE: {DEFAULT: EventCategory.DONATE},
         HistoryEventSubType.PAYMENT: {DEFAULT: EventCategory.PAY},
         HistoryEventSubType.NONE: {DEFAULT: EventCategory.SEND},
+    },
+    HistoryEventType.LOSS: {
+        HistoryEventSubType.LIQUIDATE: {DEFAULT: EventCategory.LIQUIDATION_LOSS},
+        HistoryEventSubType.HACK: {DEFAULT: EventCategory.HACK_LOSS},
     },
     HistoryEventType.WITHDRAWAL: {
         HistoryEventSubType.REMOVE_ASSET: {
@@ -266,6 +269,9 @@ EVENT_CATEGORY_DETAILS = {
     )}, EventCategory.CASHBACK: {DEFAULT: EventCategoryDetails(
         label='Cashback',
         icon='exchange-dollar-line',
+    )}, EventCategory.HACK_LOSS: {DEFAULT: EventCategoryDetails(
+        label='Hack',
+        icon='skull-line',
     )},
 }
 

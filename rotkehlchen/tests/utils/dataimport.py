@@ -804,7 +804,7 @@ def assert_nexo_results(rotki: Rotkehlchen, websocket_connection: WebsocketReade
         sequence_index=0,
         timestamp=TimestampMS(1649462400000),
         location=Location.NEXO,
-        event_type=HistoryEventType.SPEND,
+        event_type=HistoryEventType.LOSS,
         event_subtype=HistoryEventSubType.LIQUIDATE,
         balance=Balance(FVal('710.82000000')),
         asset=A_GBP,

@@ -931,7 +931,7 @@ def test_makerdao_sai_liquidation(ethereum_transaction_decoder):
             sequence_index=24,
             timestamp=1513952436000,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.SPEND,
+            event_type=HistoryEventType.LOSS,
             event_subtype=HistoryEventSubType.LIQUIDATE,
             asset=A_PETH,
             balance=Balance(amount=FVal('0.041523220093200014')),

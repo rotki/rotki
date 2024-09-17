@@ -815,7 +815,7 @@ def test_aave_v2_liquidation(
             sequence_index=11,
             timestamp=timestamp,
             location=Location.ETHEREUM,
-            event_type=HistoryEventType.SPEND,
+            event_type=HistoryEventType.LOSS,
             event_subtype=HistoryEventSubType.LIQUIDATE,
             asset=EvmToken('eip155:1/erc20:0x030bA81f1c18d280636F32af80b9AAd02Cf0854e'),
             balance=Balance(amount=FVal('0.956418919660594328')),
