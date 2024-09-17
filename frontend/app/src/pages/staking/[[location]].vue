@@ -73,10 +73,11 @@ const locationComputed = computed({
 });
 
 watchImmediate(lastLocation, async (newLocation) => {
-  if (!newLocation)
+  if (!newLocation) {
     return;
+  }
 
-  set(locationComputed, newLocation as NavType);
+  set(location, newLocation as NavType);
 
   await nextTick(() => {
     router.push({
@@ -87,9 +88,11 @@ watchImmediate(lastLocation, async (newLocation) => {
 });
 
 watch(() => props.location, (newLocation) => {
-  if (newLocation)
-    set(locationComputed, newLocation as NavType);
-});
+  if (newLocation) {
+    set(location, newLocation as NavType);
+    set(lastLocation, newLocation);
+  }
+}, { immediate: true });
 </script>
 
 <template>
@@ -109,7 +112,7 @@ watch(() => props.location, (newLocation) => {
         </AdaptiveWrapper>
       </DefineIcon>
       <RuiMenuSelect
-        v-model="locationComputed"
+        v-model="location"
         :options="staking"
         :label="t('staking_page.dropdown_label')"
         key-attr="id"
