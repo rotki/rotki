@@ -1703,6 +1703,7 @@
       "no": "No",
       "ok": "OK",
       "pull": "Pull",
+      "proceed": "Proceed",
       "push": "Push",
       "save": "Save",
       "save_continue": "Save & continue",
@@ -4393,7 +4394,6 @@
       "add_event": "Add new event",
       "add_event_here": "Add new event here",
       "redecode_events": "Redecode events",
-      "reset_customized_events": "Reset customized events",
       "delete_transaction": "Delete transaction & events"
     },
     "cache_refresh": {
@@ -4426,8 +4426,11 @@
           "title": "Cannot Delete Event"
         },
         "reset": {
-          "message": "Are you sure you want to reset this transaction's events? This action will delete all the customized events of this transaction and re-decode them.",
-          "title": "Reset events"
+          "message": "There are custom events in this transaction",
+          "options": {
+            "keep_custom_events": "Don't remove my custom events",
+            "remove_custom_events": "Remove custom events and redecode the transaction"
+          }
         }
       },
       "customized_event": "Customized event",

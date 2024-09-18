@@ -37,6 +37,7 @@ export interface ChainAndTxHash {
 export interface EvmChainAndTxHash {
   readonly evmChain: string;
   readonly txHash: string;
+  readonly deleteCustom?: boolean;
 }
 
 export interface AddTransactionHashPayload extends EvmChainAndTxHash {

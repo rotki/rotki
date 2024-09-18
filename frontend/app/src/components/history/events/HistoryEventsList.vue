@@ -35,9 +35,9 @@ const events = computed<HistoryEventEntry[]>(() => {
   const eventHeader = get(eventGroup);
   if (all.length === 0)
     return [eventHeader];
-  const eventIdentifierHeader = eventHeader.eventIdentifier;
+
   return all
-    .filter(({ eventIdentifier, hidden }) => eventIdentifier === eventIdentifierHeader && !hidden)
+    .filter(({ hidden }) => !hidden)
     .sort((a, b) => Number(a.sequenceIndex) - Number(b.sequenceIndex));
 });
 

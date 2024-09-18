@@ -147,7 +147,7 @@ watch(errorMessages, (errors) => {
 function onValueChange(value: string) {
   const imaskVal = get(imask)!;
 
-  if (!value)
+  if (!value && imaskVal)
     imaskVal.value = '';
 
   const millisecondsVal = get(milliseconds);

@@ -4096,7 +4096,6 @@
       "add_event": "Ajouter un nouvel événement",
       "add_event_here": "Ajouter un nouvel événement ici",
       "redecode_events": "Recoder les événements",
-      "reset_customized_events": "Réinitialiser les événements personnalisés",
       "delete_transaction": "Supprimer une transaction et des événements"
     },
     "dialog": {
@@ -4126,8 +4125,11 @@
           "title": "Impossible de Supprimer Événement"
         },
         "reset": {
-          "message": "Êtes-vous sûr de vouloir réinitialiser les événements de cette transaction ? Cette action supprimera tous les événements personnalisés de cette transaction et les redécodera.",
-          "title": "Réinitialiser événements"
+          "message": "Cette transaction comporte des événements personnalisés",
+          "options": {
+            "keep_custom_events": "Ne supprimez pas mes événements personnalisés",
+            "remove_custom_events": "Supprimer les événements personnalisés et redécoder la transaction"
+          }
         }
       },
       "customized_event": "Événement personnalisé",

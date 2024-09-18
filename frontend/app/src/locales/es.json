@@ -3678,7 +3678,6 @@
     "actions": {
       "add_event": "Añadir un nuevo evento",
       "redecode_events": "Releer eventos",
-      "reset_customized_events": "Restablecer eventos personalizados",
       "delete_transaction": "Borrar transacciones y eventos"
     },
     "dialog": {
@@ -3708,8 +3707,11 @@
           "title": "Cannot Delete Event"
         },
         "reset": {
-          "message": "¿Está seguro de que desea restablecer los eventos de esta transacción? Esta acción borrará todos los eventos personalizados de esta transacción y los volverá a decodificar.",
-          "title": "Reset events"
+          "message": "Hay eventos personalizados en esta transacción",
+          "options": {
+            "keep_custom_events": "No elimines mis eventos personalizados",
+            "remove_custom_events": "Eliminar los eventos personalizados y volver a codificar la transacción"
+          }
         }
       },
       "customized_event": "Customized event",

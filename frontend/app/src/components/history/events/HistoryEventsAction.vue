@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { toEvmChainAndTxHash } from '@/utils/history';
+import { TaskType } from '@/types/task-type';
 import type { EvmChainAndTxHash, EvmHistoryEvent, HistoryEventEntry } from '@/types/history/events';
 
 const props = defineProps<{
@@ -11,9 +12,11 @@ const emit = defineEmits<{
   (e: 'add-event', event: HistoryEventEntry): void;
   (e: 'toggle-ignore', event: HistoryEventEntry): void;
   (e: 'redecode', data: EvmChainAndTxHash): void;
-  (e: 'reset', event: EvmHistoryEvent): void;
   (e: 'delete-tx', data: EvmChainAndTxHash): void;
 }>();
+
+const { isTaskRunning } = useTaskStore();
+const eventTaskLoading = isTaskRunning(TaskType.TRANSACTIONS_DECODING);
 
 const { event } = toRefs(props);
 
@@ -25,7 +28,6 @@ const { t } = useI18n();
 const addEvent = (event: HistoryEventEntry) => emit('add-event', event);
 const toggleIgnore = (event: HistoryEventEntry) => emit('toggle-ignore', event);
 const redecode = (data: EvmChainAndTxHash) => emit('redecode', data);
-const resetEvent = (event: EvmHistoryEvent) => emit('reset', event);
 
 function deleteTxAndEvents({ txHash, location }: EvmHistoryEvent) {
   return emit('delete-tx', { txHash, evmChain: getChain(location) });
@@ -75,23 +77,13 @@ function deleteTxAndEvents({ txHash, location }: EvmHistoryEvent) {
         <template v-if="evmEvent">
           <RuiButton
             variant="list"
-            :disabled="loading"
+            :disabled="loading || eventTaskLoading"
             @click="redecode(toEvmChainAndTxHash(evmEvent))"
           >
             <template #prepend>
               <RuiIcon name="restart-line" />
             </template>
             {{ t('transactions.actions.redecode_events') }}
-          </RuiButton>
-          <RuiButton
-            variant="list"
-            :disabled="loading"
-            @click="resetEvent(evmEvent)"
-          >
-            <template #prepend>
-              <RuiIcon name="file-edit-line" />
-            </template>
-            {{ t('transactions.actions.reset_customized_events') }}
           </RuiButton>
           <RuiButton
             variant="list"

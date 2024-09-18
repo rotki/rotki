@@ -80,7 +80,7 @@ const v$ = useVuelidate(
   { $autoDirty: false },
 );
 
-watch(v$, ({ $invalid }) => {
+watchImmediate(v$, ({ $invalid }) => {
   updateValid(!$invalid);
 });
 </script>
