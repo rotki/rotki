@@ -69,10 +69,10 @@ class Bitpanda(ExchangeInterface):
             api_key=api_key,
             secret=secret,
             database=database,
+            msg_aggregator=msg_aggregator,
         )
         self.uri = 'https://api.bitpanda.com/v1'
         self.session.headers.update({'X-API-KEY': self.api_key})
-        self.msg_aggregator = msg_aggregator
         self.cryptocoin_map: dict[str, AssetWithOracles] = {}
         # AssetWithOracles instead of FiatAsset to comply with cryptocoin_map
         self.fiat_map: dict[str, AssetWithOracles] = {}

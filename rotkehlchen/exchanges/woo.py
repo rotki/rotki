@@ -79,9 +79,9 @@ class Woo(ExchangeInterface):
             api_key=api_key,
             secret=secret,
             database=database,
+            msg_aggregator=msg_aggregator,
         )
         self.base_uri = 'https://api.woo.org'
-        self.msg_aggregator = msg_aggregator
         # NB: x-api-signature & x-api-timestamp change per request
         # x-api-key is constant
         self.session.headers.update({

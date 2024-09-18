@@ -155,6 +155,7 @@ class Kucoin(ExchangeInterface):
             api_key=api_key,
             secret=secret,
             database=database,
+            msg_aggregator=msg_aggregator,
         )
         self.base_uri = base_uri
         self.api_passphrase = passphrase
@@ -163,7 +164,6 @@ class Kucoin(ExchangeInterface):
             'KC-API-KEY': self.api_key,
             'KC-API-KEY-VERSION': '2',
         })
-        self.msg_aggregator = msg_aggregator
 
     def update_passphrase(self, new_passphrase: str) -> None:
         self.api_passphrase = new_passphrase

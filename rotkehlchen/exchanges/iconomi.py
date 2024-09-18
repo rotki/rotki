@@ -104,9 +104,9 @@ class Iconomi(ExchangeInterface):
             api_key=api_key,
             secret=secret,
             database=database,
+            msg_aggregator=msg_aggregator,
         )
         self.uri = 'https://api.iconomi.com'
-        self.msg_aggregator = msg_aggregator
         self.aust = A_AUST.resolve_to_asset_with_oracles()
 
     def _generate_signature(self, request_type: str, request_path: str, timestamp: str) -> str:

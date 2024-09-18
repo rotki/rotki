@@ -113,10 +113,10 @@ class Bitmex(ExchangeInterface):
             api_key=api_key,
             secret=secret,
             database=database,
+            msg_aggregator=msg_aggregator,
         )
         self.uri = 'https://bitmex.com'
         self.session.headers.update({'api-key': api_key})
-        self.msg_aggregator = msg_aggregator
         self.btc = A_BTC.resolve_to_crypto_asset()
 
     def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:

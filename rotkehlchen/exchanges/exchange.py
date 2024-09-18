@@ -75,6 +75,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
             api_key: ApiKey,
             secret: ApiSecret,
             database: 'DBHandler',
+            msg_aggregator: 'MessagesAggregator',
     ):
         assert isinstance(api_key, T_ApiKey), (
             f'api key for {name} should be a string'
@@ -88,6 +89,7 @@ class ExchangeInterface(CacheableMixIn, LockableQueryMixIn):
         self.db = database
         self.api_key = api_key
         self.secret = secret
+        self.msg_aggregator = msg_aggregator
         self.first_connection_made = False
         self.session = requests.session()
         set_user_agent(self.session)

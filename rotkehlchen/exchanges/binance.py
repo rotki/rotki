@@ -220,13 +220,13 @@ class Binance(ExchangeInterface, ExchangeWithExtras):
             api_key=api_key,
             secret=secret,
             database=database,
+            msg_aggregator=msg_aggregator,
         )
         self.uri = uri
         self.session.headers.update({
             'Accept': 'application/json',
             'X-MBX-APIKEY': self.api_key,
         })
-        self.msg_aggregator = msg_aggregator
         self.offset_ms = 0
         self.selected_pairs = binance_selected_trade_pairs
 

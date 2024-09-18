@@ -129,11 +129,11 @@ class Poloniex(ExchangeInterface):
             api_key=api_key,
             secret=secret,
             database=database,
+            msg_aggregator=msg_aggregator,
         )
 
         self.uri = 'https://api.poloniex.com'
         self.session.headers.update({'key': self.api_key})
-        self.msg_aggregator = msg_aggregator
 
     def first_connection(self) -> None:
         if self.first_connection_made:

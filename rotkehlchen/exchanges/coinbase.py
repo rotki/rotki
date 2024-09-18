@@ -171,6 +171,7 @@ class Coinbase(ExchangeInterface):
             api_key=api_key,
             secret=secret,
             database=database,
+            msg_aggregator=msg_aggregator,
         )
         try:
             self.is_legacy_api_key = self.is_legacy_key(api_key)
@@ -183,7 +184,6 @@ class Coinbase(ExchangeInterface):
 
         self.apiversion = 'v2'
         self.base_uri = 'https://api.coinbase.com'
-        self.msg_aggregator = msg_aggregator
         self.host = 'api.coinbase.com'
 
     def is_legacy_key(self, api_key: str) -> bool:

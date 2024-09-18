@@ -242,9 +242,9 @@ class Independentreserve(ExchangeInterface):
             api_key=api_key,
             secret=secret,
             database=database,
+            msg_aggregator=msg_aggregator,
         )
         self.uri = 'https://api.independentreserve.com'
-        self.msg_aggregator = msg_aggregator
         self.session.headers.update({'Content-Type': 'application/json'})
         self.account_guids: list | None = None
 
