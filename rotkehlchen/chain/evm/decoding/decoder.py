@@ -8,7 +8,7 @@ from collections.abc import Callable, Sequence
 from contextlib import suppress
 from dataclasses import dataclass
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Final, Optional, Protocol
+from typing import TYPE_CHECKING, Any, Optional, Protocol
 
 from gevent.lock import Semaphore
 

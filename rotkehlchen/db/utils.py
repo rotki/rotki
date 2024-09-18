@@ -1,9 +1,8 @@
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, NamedTuple, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, Union
 
 from eth_utils import is_checksum_address
-from typing_extensions import ParamSpec
 
 from rotkehlchen.accounting.structures.balance import BalanceType
 from rotkehlchen.assets.asset import Asset, AssetWithOracles
@@ -27,8 +26,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.xpub import XpubData
     from rotkehlchen.db.drivers.gevent import DBCursor
 
-P = ParamSpec('P')
-T_co = TypeVar('T_co', covariant=True)
 TAG_REFENCE_ENTRY_TYPE = Union[
     'ManuallyTrackedBalance',
     BlockchainAccountData,

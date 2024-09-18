@@ -25,8 +25,6 @@ OPERATOR_SHARES_DECREASED: Final = b'i\t`\x007\xb7]{G3\xae\xdd\x81TB\xb5\xec\x01
 WITHDRAWAL_QUEUED: Final = b'\x90\t\xab\x15>\x80\x14\xfb\xfb\x02\xf2!\x7f\\\xdez\xa7\xf9\xadsJ\xe8\\\xa3\xee?L\xa2\xfd\xd4\x99\xf9'  # noqa: E501
 WITHDRAWAL_COMPLETED: Final = b'\xc9p\x98\xc2\xf6X\x80\x0bM\xf2\x90\x01R\x7fs$\xbc\xdf\xfc\xf6\xe8u\x1ai\x9a\xb9 \xa1\xec\xed[\x1d'  # noqa: E501
 POD_SHARES_UPDATED: Final = b'N+y\x1d\xed\xcc\xd9\xfb0\x14\x1b\x08\x8c\xab\xf5\xc1J\x89\x12\xb5/Y7\\\x95\xc0\x10p\x0b\x8ca\x93'  # noqa: E501
-START_CHECKPOINT: Final = b'\x88gl\xad'
-VERIFY_CHECKPOINT_PROOFS: Final = b'\xf0t\xbab'
 CHECKPOINT_CREATED: Final = b'WW\x96\x13;\xbe\xd37\xe5\xb3\x9a\xa4\x9a0\xdc%V\xa9\x1e\x0cl*\xf4\xb7\xb8\x86\xaew\xeb\xef\x10v'  # noqa: E501
 CHECKPOINT_FINALIZED: Final = b'RT\x08\xc2\x01\xbc\x15v\xebD\x11odx\xf1\xc2\xa5Gu\xb1\x9a\x04;\xcf\xdcp\x83d\xf7O\x8eD'  # noqa: E501
 VALIDATOR_BALANCE_UPDATED = b'\x0e_\xac\x17[\x83\x17|\xc0G8\x1e\x03\r\x8f\xb3\xb4+7\xbd\x1c\x02^"\xc2\x80\xfa\xca\xd6,2\xdf'  # noqa: E501
@@ -40,5 +38,4 @@ EIGENLAYER_CPT_DETAILS: Final = CounterpartyDetails(
 EIGEN_TOKEN_ID: Final = 'eip155:1/erc20:0xec53bF9167f50cDEB3Ae105f56099aaaB9061F83'
 
 # not the full ABIs, just the functions we call for each contract
-EIGENPOD_DELAYED_WITHDRAWAL_ROUTER_ABI: Final = [{'inputs': [{'internalType': 'address', 'name': 'user', 'type': 'address'}], 'name': 'getUserDelayedWithdrawals', 'outputs': [{'components': [{'internalType': 'uint224', 'name': 'amount', 'type': 'uint224'}, {'internalType': 'uint32', 'name': 'blockCreated', 'type': 'uint32'}], 'internalType': 'struct IDelayedWithdrawalRouter.DelayedWithdrawal[]', 'name': '', 'type': 'tuple[]'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
 STRATEGY_ABI: Final = [{'inputs': [{'internalType': 'uint256', 'name': 'amountShares', 'type': 'uint256'}], 'name': 'sharesToUnderlyingView', 'outputs': [{'internalType': 'uint256', 'name': '', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'underlyingToken', 'outputs': [{'internalType': 'contract IERC20', 'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501

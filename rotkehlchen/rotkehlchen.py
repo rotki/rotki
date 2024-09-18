@@ -128,10 +128,6 @@ log = RotkehlchenLogsAdapter(logger)
 MAIN_LOOP_SECS_DELAY = 10
 
 
-ICONS_BATCH_SIZE = 3
-ICONS_QUERY_SLEEP = 60
-
-
 class Rotkehlchen:
     def __init__(self, args: argparse.Namespace) -> None:
         """Initialize the Rotkehlchen object

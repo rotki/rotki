@@ -8,7 +8,7 @@ from rotkehlchen.errors.serialization import ConversionError
 AcceptableFValInitInput = Union[float, bytes, Decimal, int, str, 'FVal']
 AcceptableFValOtherInput = Union[int, 'FVal']
 
-DefaultContext.prec = ceil(log10(2 ** 256))  # support upto uint256 max value
+DefaultContext.prec = ceil(log10(2 ** 256))  # support up to uint256 max value
 setcontext(DefaultContext)
 
 
