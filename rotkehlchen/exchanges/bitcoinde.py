@@ -139,10 +139,10 @@ class Bitcoinde(ExchangeInterface):
             api_key=api_key,
             secret=secret,
             database=database,
+            msg_aggregator=msg_aggregator,
         )
         self.uri = 'https://api.bitcoin.de'
         self.session.headers.update({'x-api-key': api_key})
-        self.msg_aggregator = msg_aggregator
 
     def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
         changed = super().edit_exchange_credentials(credentials)

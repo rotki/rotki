@@ -117,10 +117,10 @@ class Bitfinex(ExchangeInterface):
             api_key=api_key,
             secret=secret,
             database=database,
+            msg_aggregator=msg_aggregator,
         )
         self.base_uri = 'https://api.bitfinex.com'
         self.session.headers.update({'bfx-apikey': self.api_key})
-        self.msg_aggregator = msg_aggregator
         self.nonce_lock = Semaphore()
 
     def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:

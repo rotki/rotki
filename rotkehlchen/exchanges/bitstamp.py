@@ -134,9 +134,9 @@ class Bitstamp(ExchangeInterface):
             api_key=api_key,
             secret=secret,
             database=database,
+            msg_aggregator=msg_aggregator,
         )
         self.base_uri = 'https://www.bitstamp.net/api'
-        self.msg_aggregator = msg_aggregator
         # NB: X-Auth-Signature, X-Auth-Nonce, X-Auth-Timestamp & Content-Type change per request
         # X-Auth and X-Auth-Version are constant
         self.session.headers.update({

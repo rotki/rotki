@@ -100,9 +100,9 @@ class Gemini(ExchangeInterface):
             api_key=api_key,
             secret=secret,
             database=database,
+            msg_aggregator=msg_aggregator,
         )
         self.base_uri = base_uri
-        self.msg_aggregator = msg_aggregator
 
         self.session.headers.update({
             'Content-Type': 'text/plain',

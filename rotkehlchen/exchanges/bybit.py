@@ -117,9 +117,9 @@ class Bybit(ExchangeInterface):
             api_key=api_key,
             secret=secret,
             database=database,
+            msg_aggregator=msg_aggregator,
         )
         self.uri = 'https://api.bybit.com/v5'
-        self.msg_aggregator = msg_aggregator
         self.session.headers.update({
             'Content-Type': 'application/json',
             'X-BAPI-SIGN-TYPE': '2',

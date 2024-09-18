@@ -192,8 +192,8 @@ class Kraken(ExchangeInterface, ExchangeWithExtras):
             api_key=api_key,
             secret=secret,
             database=database,
+            msg_aggregator=msg_aggregator,
         )
-        self.msg_aggregator = msg_aggregator
         self.session.headers.update({'API-Key': self.api_key})
         self.set_account_type(kraken_account_type)
         self.call_counter = 0

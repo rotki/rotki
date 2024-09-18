@@ -79,8 +79,8 @@ class Htx(ExchangeInterface):
             api_key=api_key,
             secret=secret,
             database=database,
+            msg_aggregator=msg_aggregator,
         )
-        self.msg_aggregator = msg_aggregator
 
     def validate_api_key(self) -> tuple[bool, str]:
         """Validates that the HTX API key is good for usage in rotki"""

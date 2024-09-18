@@ -68,10 +68,10 @@ class Okx(ExchangeInterface):
             api_key=api_key,
             secret=secret,
             database=database,
+            msg_aggregator=msg_aggregator,
         )
         self.passphrase = passphrase
         self.base_uri = 'https://www.okx.com/'
-        self.msg_aggregator = msg_aggregator
         self.session.headers.update({
             'OK-ACCESS-KEY': self.api_key,
             'OK-ACCESS-PASSPHRASE': self.passphrase,
