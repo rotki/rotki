@@ -185,9 +185,6 @@ class ExternalServiceApiCredentials(NamedTuple):
 T_TradePair = str
 TradePair = NewType('TradePair', T_TradePair)
 
-T_EvmAddres = str
-EvmAddress = NewType('EvmAddress', T_EvmAddres)
-
 ChecksumEvmAddress = ChecksumAddress
 
 T_EVMTxHash = HexBytes
