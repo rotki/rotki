@@ -9,6 +9,7 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     EIGEN_TOKEN_ID,
     EIGENLAYER_AIRDROP_S1_PHASE1_DISTRIBUTOR,
     EIGENLAYER_AIRDROP_S1_PHASE2_DISTRIBUTOR,
+    EIGENLAYER_AIRDROP_S2_DISTRIBUTOR,
     EIGENLAYER_DELEGATION,
     EIGENLAYER_STRATEGY_MANAGER,
     EIGENPOD_DELAYED_WITHDRAWAL_ROUTER,
@@ -747,5 +748,41 @@ def test_avs_rewards_claim(ethereum_inquirer, ethereum_accounts):
         notes=f'Claim {rewards_amount} WETH as AVS restaking reward',
         counterparty=CPT_EIGENLAYER,
         address=REWARDS_COORDINATOR,
+    )]
+    assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('ethereum_accounts', [['0xA8aF03ceEB1F63805c09C8497a877cb4788b115d']])
+def test_airdrop_claim_s2(ethereum_inquirer, ethereum_accounts):
+    tx_hash = deserialize_evm_tx_hash('0xc939c3ccdb19a4cdc27d00f2010cd45f652e0553efc663ae6050fa2eed74db8a')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    timestamp, gas_amount, claim_amount = TimestampMS(1726667207000), '0.00109526054949798', '4.556109113437771'  # noqa: E501
+    expected_events = [EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=0,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.SPEND,
+        event_subtype=HistoryEventSubType.FEE,
+        asset=A_ETH,
+        balance=Balance(amount=FVal(gas_amount)),
+        location_label=ethereum_accounts[0],
+        notes=f'Burned {gas_amount} ETH for gas',
+        counterparty=CPT_GAS,
+    ), EvmEvent(
+        tx_hash=tx_hash,
+        sequence_index=154,
+        timestamp=timestamp,
+        location=Location.ETHEREUM,
+        event_type=HistoryEventType.RECEIVE,
+        event_subtype=HistoryEventSubType.AIRDROP,
+        asset=Asset(EIGEN_TOKEN_ID),
+        balance=Balance(amount=FVal(claim_amount)),
+        location_label=ethereum_accounts[0],
+        notes=f'Claim {claim_amount} EIGEN from the Eigenlayer airdrop season 2',
+        counterparty=CPT_EIGENLAYER,
+        address=EIGENLAYER_AIRDROP_S2_DISTRIBUTOR,
+        extra_data={AIRDROP_IDENTIFIER_KEY: 'eigen_s2'},
     )]
     assert events == expected_events
