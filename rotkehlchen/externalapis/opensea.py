@@ -303,9 +303,16 @@ class Opensea(ExternalServiceWithApiKey):
                 price_asset = A_ETH
                 price_in_usd = last_price_in_usd
 
-            token_id = entry['contract'] + '_' + entry['identifier']
+            try:
+                token_id = f'{to_checksum_address(entry["contract"])}_{entry["identifier"]}'
+            except (ValueError, TypeError) as e:
+                raise DeserializationError(
+                    f'Failed to checksum NFT contract address for {entry}',
+                ) from e
+
             if entry['token_standard'] == 'erc1155':
                 token_id += f'_{owner_address!s}'
+
             return NFT(  # can raise KeyError due to arg init
                 token_identifier=NFT_DIRECTIVE + token_id,
                 background_color=None,

@@ -33,15 +33,15 @@ TEST_ACC3 = '0xC21A5ee89D306353e065a6dd5779470DE395DBaC'
 TEST_ACC4 = '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'  # yabir.eth, gashawk nft
 TEST_ACC5 = '0x4bBa290826C253BD854121346c370a9886d1bC26'  # nebolax.eth
 TEST_ACC6 = '0x3e649c5Eac6BBEE8a4F2A2945b50d8e582faB3bf'  # contains uniswap-v3 nft
-NFT_ID_FOR_TEST_ACC4 = '_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041'  # noqa: E501
-NFT_ID_FOR_TEST_ACC4_2 = '_nft_0xfd9d8036f899ed5a9fd8cac7968e5f24d3db2a64_1_0xc37b40ABdB939635068d3c5f13E7faF686F03B65'  # noqa: E501
-NFT_ID_FOR_TEST_ACC5 = '_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_73552724610198397480670284492690114609730214421511097849210414928326607694469'  # noqa: E501
-NFT_ID_FOR_TEST_ACC6_1 = '_nft_0xc36442b4a4522e871399cd717abdd847ab11fe88_360680'
-NFT_ID_FOR_TEST_ACC6_2 = '_nft_0xc36442b4a4522e871399cd717abdd847ab11fe88_360762'
-NFT_ID_FOR_TEST_ACC6_3 = '_nft_0xc36442b4a4522e871399cd717abdd847ab11fe88_530086'
+NFT_ID_FOR_TEST_ACC4 = '_nft_0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85_26612040215479394739615825115912800930061094786769410446114278812336794170041'  # noqa: E501
+NFT_ID_FOR_TEST_ACC4_2 = '_nft_0xfd9d8036F899ed5a9fD8cac7968E5F24D3db2A64_1_0xc37b40ABdB939635068d3c5f13E7faF686F03B65'  # noqa: E501
+NFT_ID_FOR_TEST_ACC5 = '_nft_0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85_73552724610198397480670284492690114609730214421511097849210414928326607694469'  # noqa: E501
+NFT_ID_FOR_TEST_ACC6_1 = '_nft_0xC36442b4a4522E871399CD717aBDD847Ab11FE88_360680'
+NFT_ID_FOR_TEST_ACC6_2 = '_nft_0xC36442b4a4522E871399CD717aBDD847Ab11FE88_360762'
+NFT_ID_FOR_TEST_ACC6_3 = '_nft_0xC36442b4a4522E871399CD717aBDD847Ab11FE88_530086'
 
 TEST_NFT_NEBOLAX_ETH = NFT(
-    token_identifier='_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_73552724610198397480670284492690114609730214421511097849210414928326607694469',
+    token_identifier='_nft_0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85_73552724610198397480670284492690114609730214421511097849210414928326607694469',
     background_color=None,
     image_url='https://openseauserdata.com/files/8fd18b22e4c81aff3998956e7a712d93.svg',
     name='nebolax.eth',
@@ -61,7 +61,7 @@ TEST_NFT_NEBOLAX_ETH = NFT(
 )
 
 TEST_NFT_YABIR_ETH = NFT(
-    token_identifier='_nft_0x57f1887a8bf19b14fc0df6fd9b2acc9af147ea85_26612040215479394739615825115912800930061094786769410446114278812336794170041',
+    token_identifier='_nft_0x57f1887a8BF19b14fC0dF6Fd9B2acc9Af147eA85_26612040215479394739615825115912800930061094786769410446114278812336794170041',
     background_color=None,
     image_url='https://openseauserdata.com/files/3f7c0c7d1ba51e61fe05ef53875f9f7e.svg',
     name='yabir.eth',
@@ -115,7 +115,7 @@ def test_nft_query(rotkehlchen_api_server, start_with_valid_premium):
     nfts = result['addresses'][TEST_ACC1]
     nft_found = False
     for entry in nfts:
-        if entry['token_identifier'] == '_nft_0xc3f733ca98e0dad0386979eb96fb1722a1a05e69_129':
+        if entry['token_identifier'] == '_nft_0xc3f733ca98E0daD0386979Eb96fb1722A1A05E69_129':
             assert entry['name'] == 'MoonCat #129: 0x0082206dcb'
             assert entry['external_link'] == 'https://api.mooncat.community/traits/129'
             assert 'image_url' in entry
@@ -192,7 +192,7 @@ def test_nft_ids_are_unique(rotkehlchen_api_server):
     ids_1 = [nft['token_identifier'] for nft in result['addresses'][TEST_ACC2]]
     ids_2 = [nft['token_identifier'] for nft in result['addresses'][TEST_ACC3]]
     # Check that two possible duplicates are between the NFT ids
-    expected_id = '_nft_0xfaff15c6cdaca61a4f87d329689293e07c98f578_1'
+    expected_id = '_nft_0xFAFf15C6cDAca61a4F87D329689293E07c98f578_1'
     assert any(expected_id in nft_id for nft_id in ids_1)
     assert any(expected_id in nft_id for nft_id in ids_2)
     all_ids = ids_1 + ids_2
@@ -630,7 +630,7 @@ def test_nft_no_price(rotkehlchen_api_server):
     assert result == {
         'entries': [
             {
-                'id': '_nft_0x7522dc5a357891b4daec194e285551ea5ea66d09_336510496872176433120578',
+                'id': '_nft_0x7522dC5A357891B4dAEC194E285551EA5ea66d09_336510496872176433120578',
                 'name': 'Devcon VI Souvenir',
                 'price_in_asset': '0',
                 'price_asset': 'ETH',
@@ -660,7 +660,7 @@ def test_lp_nfts_filtering(rotkehlchen_api_server):
             '0xc37b40ABdB939635068d3c5f13E7faF686F03B65': [TEST_NFT_YABIR_ETH],
             '0x3e649c5Eac6BBEE8a4F2A2945b50d8e582faB3bf': [
                 NFT(
-                    token_identifier='_nft_0xc36442b4a4522e871399cd717abdd847ab11fe88_360762',
+                    token_identifier='_nft_0xC36442b4a4522E871399CD717aBDD847Ab11FE88_360762',
                     background_color=None,
                     image_url='https://openseauserdata.com/files/99b67e38e2d1abc16d6d843f478b5224.svg',
                     name='Uniswap - 0.3% - SHIB/WETH - 79010000<>166260000',
@@ -678,7 +678,7 @@ def test_lp_nfts_filtering(rotkehlchen_api_server):
                     ),
                 ),
                 NFT(
-                    token_identifier='_nft_0xc36442b4a4522e871399cd717abdd847ab11fe88_360680',
+                    token_identifier='_nft_0xC36442b4a4522E871399CD717aBDD847Ab11FE88_360680',
                     background_color=None,
                     image_url='https://openseauserdata.com/files/53f418fceab543a174d22efd0a55782c.svg',
                     name='Uniswap - 0.3% - USDT/WETH - 224.56<>2445.5',
@@ -728,7 +728,7 @@ def test_lp_nfts_filtering(rotkehlchen_api_server):
                         amount=ZERO,
                         usd_value=FVal(297.0392367052748141486963890),
                     ),
-                    nft_id='_nft_0xc36442b4a4522e871399cd717abdd847ab11fe88_360680',
+                    nft_id='_nft_0xC36442b4a4522E871399CD717aBDD847Ab11FE88_360680',
                     price_range=(
                         FVal(0.0004089111961461131970577658069),
                         FVal(0.004453201773423214426045068107),
@@ -760,7 +760,7 @@ def test_lp_nfts_filtering(rotkehlchen_api_server):
                         amount=ZERO,
                         usd_value=FVal(22489551.72233307186978042562),
                     ),
-                    nft_id='_nft_0xc36442b4a4522e871399cd717abdd847ab11fe88_360762',
+                    nft_id='_nft_0xC36442b4a4522E871399CD717aBDD847Ab11FE88_360762',
                     price_range=(
                         FVal(79010456.35648359278851139208),
                         FVal(166258366.8407051322948007978),

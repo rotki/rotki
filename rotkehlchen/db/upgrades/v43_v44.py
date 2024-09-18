@@ -1,7 +1,9 @@
 import json
 import logging
 import re
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Final
+
+from eth_utils import to_checksum_address
 
 from rotkehlchen.db.upgrades.utils import fix_address_book_duplications
 from rotkehlchen.history.types import HistoricalPriceOracle
@@ -14,6 +16,8 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+
+NFT_DIRECTIVE: Final = '_nft_'
 
 
 @enter_exit_debug_log()
@@ -40,8 +44,19 @@ def _update_nft_table(write_cursor: 'DBCursor') -> None:
         'is_lp, image_url, collection_name, usd_price FROM nfts',
     )
     final_rows = []
+    assets_updates = []
     for row in write_cursor:
         final_row = list(row)
+        try:  # update the identifier to ensure that the addresses are checksumed
+            nft_address = final_row[0][len(NFT_DIRECTIVE):].split('_')[0]
+            new_id = final_row[0].replace(nft_address, to_checksum_address(nft_address))
+        except (ValueError, KeyError, TypeError):
+            log.error(f'Failed to process nft address while upgrading row {row}')
+            continue
+
+        assets_updates.append((new_id, final_row[0]))
+        final_row[0] = new_id
+
         if row[2] is None:
             final_row[2] = 0  # set last_price to a default of 0
         if row[3] is None:
@@ -49,6 +64,10 @@ def _update_nft_table(write_cursor: 'DBCursor') -> None:
 
         final_rows.append(final_row)
 
+    write_cursor.executemany(
+        'UPDATE assets SET identifier=? WHERE identifier=?',
+        assets_updates,
+    )
     write_cursor.executemany(
         'INSERT OR IGNORE INTO nfts_new(identifier, name, last_price, last_price_asset, '
         'manual_price, owner_address, is_lp, image_url, collection_name, usd_price) '
