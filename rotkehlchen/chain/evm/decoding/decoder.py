@@ -84,7 +84,6 @@ if TYPE_CHECKING:
 
     from .interfaces import DecoderInterface
 
-SPAM_LOG_EVENTS_THRESHOLD: Final = 100
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -440,13 +439,13 @@ class EVMTransactionDecoder(ABC):
         """
         Detect spam transactions that can be heavy to process by the decoding logic.
 
-        We focus on airdrops where we have a huge number of log events all of them transfers.
+        We focus on airdrops that have a huge number of log events, all of them transfers.
         First check if we are above the SPAM threshold, then we check if all the events are
         transfers (we do it in sqlite for better performance) and lastly we check if the
         transferred token is marked as spam. For example the OP airdrops have such transactions
         and we do check the protocol to avoid false positives.
         """
-        if len(tx_receipt.logs) < SPAM_LOG_EVENTS_THRESHOLD:
+        if len(tx_receipt.logs) < 50:  # don't go into the logic for smaller amount of logs
             return False
 
         with self.database.conn.read_ctx() as cursor:
@@ -467,9 +466,9 @@ class EVMTransactionDecoder(ABC):
                             WHEN topic_count.count = 1 AND EXISTS (  -- If we have a single pair it means we have all the events with the same address
                                 SELECT 1  -- emitting the log event and it's the same topic for all the log events.
                                 FROM transfer_data
-                                WHERE topic = ?  -- check that the only topic is a ERC20 transfer
+                                WHERE topic = ?  -- check that the only topic is an ERC20 transfer
                             )
-                            THEN (SELECT address FROM transfer_data LIMIT 1)  -- return the address of the contract emitting
+                            THEN (SELECT address FROM transfer_data LIMIT 1)  -- return the address of the emitting token contract
                             ELSE NULL  -- Otherwise return NULL
                         END as contract_address
                     FROM topic_count
