@@ -8,7 +8,7 @@ from collections.abc import Callable, Sequence
 from contextlib import suppress
 from dataclasses import dataclass
 from types import ModuleType
-from typing import TYPE_CHECKING, Any, Optional, Protocol
+from typing import TYPE_CHECKING, Any, Final, Optional, Protocol
 
 from gevent.lock import Semaphore
 
@@ -50,6 +50,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.tasks.assets import maybe_detect_new_tokens
 from rotkehlchen.types import (
+    SPAM_PROTOCOL,
     ChainID,
     ChecksumEvmAddress,
     EvmTokenKind,
@@ -83,6 +84,7 @@ if TYPE_CHECKING:
 
     from .interfaces import DecoderInterface
 
+SPAM_LOG_EVENTS_THRESHOLD: Final = 100
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
@@ -430,6 +432,64 @@ class EVMTransactionDecoder(ABC):
 
         return decoded_events
 
+    def _is_spam_airdrop(
+            self,
+            transaction: EvmTransaction,
+            tx_receipt: EvmTxReceipt,
+    ) -> bool:
+        """
+        Detect spam transactions that can be heavy to process by the decoding logic.
+
+        We focus on airdrops where we have a huge number of log events all of them transfers.
+        First check if we are above the SPAM threshold, then we check if all the events are
+        transfers (we do it in sqlite for better performance) and lastly we check if the
+        transferred token is marked as spam. For example the OP airdrops have such transactions
+        and we do check the protocol to avoid false positives.
+        """
+        if len(tx_receipt.logs) < SPAM_LOG_EVENTS_THRESHOLD:
+            return False
+
+        with self.database.conn.read_ctx() as cursor:
+            tx_id = transaction.get_or_query_db_id(cursor)
+            cursor.execute(  # if there is only transfer events for this transaction get the transferred token. Else return NULL  # noqa: E501
+                """
+                WITH transfer_data AS (  -- unique pairs (address, topics[0]) from the logs of the transaction
+                    SELECT DISTINCT l.address, t.topic
+                    FROM evmtx_receipt_logs l
+                    JOIN evmtx_receipt_log_topics t ON l.identifier = t.log
+                    WHERE l.tx_id = ?
+                    AND t.topic_index = 0
+                ),
+                topic_count AS (SELECT COUNT(*) as count FROM transfer_data),  -- count how many unique pairs we have
+                erc_transfer_check AS (
+                    SELECT
+                        CASE
+                            WHEN topic_count.count = 1 AND EXISTS (  -- If we have a single pair it means we have all the events with the same address
+                                SELECT 1  -- emitting the log event and it's the same topic for all the log events.
+                                FROM transfer_data
+                                WHERE topic = ?  -- check that the only topic is a ERC20 transfer
+                            )
+                            THEN (SELECT address FROM transfer_data LIMIT 1)  -- return the address of the contract emitting
+                            ELSE NULL  -- Otherwise return NULL
+                        END as contract_address
+                    FROM topic_count
+                )
+                SELECT contract_address
+                FROM erc_transfer_check
+                """,  # noqa: E501
+                (tx_id, ERC20_OR_ERC721_TRANSFER),
+            )
+
+            if (result := cursor.fetchone()) is not None:
+                token = GlobalDBHandler.get_evm_token(
+                    address=result[0],
+                    chain_id=self.evm_inquirer.chain_id,
+                )
+                if token is not None and token.protocol == SPAM_PROTOCOL:
+                    return True
+
+        return False
+
     def _decode_transaction(
             self,
             transaction: EvmTransaction,
@@ -439,6 +499,10 @@ class EVMTransactionDecoder(ABC):
         Decodes an evm transaction and its receipt and saves result in the DB.
         Returns the list of decoded events and a flag which is True if balances refresh is needed.
         """
+        if self._is_spam_airdrop(transaction, tx_receipt):
+            log.info(f'Not decoding {transaction} because it was detected as a spam airdrop')
+            return [], False
+
         self.base.reset_sequence_counter()
         # check if any eth transfer happened in the transaction, including in internal transactions
         events = self._maybe_decode_simple_transactions(transaction, tx_receipt)
