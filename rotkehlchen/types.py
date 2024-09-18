@@ -136,6 +136,7 @@ class ExternalService(SerializableEnumNameMixin):
     BLOCKSCOUT = auto()
     MONERIUM = auto()
     THEGRAPH = auto()
+    GNOSIS_PAY = auto()
 
     def get_chain_for_etherscan(self) -> Optional['ChainID']:
         """If the service is an etherscan service return its chain"""
@@ -155,6 +156,9 @@ class ExternalService(SerializableEnumNameMixin):
             return ChainID.SCROLL
 
         return None
+
+    def premium_only(self) -> bool:
+        return self in {ExternalService.GNOSIS_PAY, ExternalService.MONERIUM}
 
 
 class ExternalServiceApiCredentials(NamedTuple):
