@@ -84,7 +84,7 @@ watchImmediate(lastLocation, async (location) => {
 
 <template>
   <div class="container">
-    <RuiCard>
+    <RuiCard class="[&>div:first-child]:flex">
       <DefineIcon #default="{ image }">
         <AdaptiveWrapper
           width="1.5rem"

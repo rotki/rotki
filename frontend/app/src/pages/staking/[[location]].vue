@@ -32,7 +32,16 @@ const { t } = useI18n();
 
 const lastLocation = useLocalStorage('rotki.staking.last_location', '');
 
-const location = ref<NavType | undefined>(props.location as NavType | undefined);
+const location = computed({
+  get() {
+    return props.location || undefined;
+  },
+  set(value?: NavType) {
+    set(lastLocation, value);
+    if (value)
+      startPromise(redirect(value));
+  },
+});
 
 const staking = computed<StakingInfo[]>(() => [
   {
@@ -55,49 +64,32 @@ const staking = computed<StakingInfo[]>(() => [
 const router = useRouter();
 const [DefineIcon, ReuseIcon] = createReusableTemplate<{ image: string }>();
 
+async function redirect(location: string) {
+  await nextTick(() => {
+    router.push({
+      name: '/staking/[[location]]',
+      params: { location },
+    });
+  });
+}
+
 const page = computed(() => {
   const selectedLocation = get(location);
   return selectedLocation ? pages[selectedLocation] : null;
 });
 
-watchImmediate(lastLocation, async (newLocation) => {
-  if (!newLocation)
+onMounted(async () => {
+  const location = get(lastLocation);
+  if (!location)
     return;
 
-  set(location, newLocation as NavType);
-
-  await nextTick(() => {
-    router.push({
-      name: '/staking/[[location]]',
-      params: { location: newLocation },
-    });
-  });
-});
-
-watch(() => props.location, (newLocation) => {
-  if (newLocation) {
-    set(location, newLocation as NavType);
-    set(lastLocation, newLocation);
-  }
-  else if (get(lastLocation)) {
-    set(location, get(lastLocation) as NavType);
-  }
-}, { immediate: true });
-
-watch(location, (newLocation) => {
-  if (newLocation)
-    set(lastLocation, newLocation);
-});
-
-onMounted(() => {
-  if (!props.location && get(lastLocation))
-    set(location, get(lastLocation) as NavType);
+  await redirect(location);
 });
 </script>
 
 <template>
   <div class="container">
-    <RuiCard>
+    <RuiCard class="[&>div:first-child]:flex">
       <DefineIcon #default="{ image }">
         <AdaptiveWrapper
           width="1.5rem"
@@ -138,10 +130,7 @@ onMounted(() => {
     >
       <Component :is="page" />
     </div>
-    <div
-      v-else
-      class="flex flex-col h-[calc(100vh-200px)]"
-    >
+    <div v-else>
       <div class="flex items-center justify-center md:justify-end mt-2 md:mr-6 text-rui-text-secondary gap-2">
         <RuiIcon
           class="shrink-0"
@@ -151,8 +140,8 @@ onMounted(() => {
           {{ t('staking_page.dropdown_hint') }}
         </div>
       </div>
-      <div class="flex-grow flex items-center justify-center">
-        <div class="flex flex-col items-center justify-center gap-6">
+      <FullSizeContent>
+        <div class="flex flex-col h-full items-center justify-center gap-6">
           <span class="font-bold text-h5">
             {{ t('staking_page.page.title') }}
           </span>
@@ -184,7 +173,7 @@ onMounted(() => {
             {{ t('staking_page.page.description') }}
           </div>
         </div>
-      </div>
+      </FullSizeContent>
     </div>
   </div>
 </template>
