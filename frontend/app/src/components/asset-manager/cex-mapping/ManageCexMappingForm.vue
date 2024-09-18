@@ -6,16 +6,18 @@ import type { CexMapping } from '@/types/asset';
 
 const props = withDefaults(
   defineProps<{
-    editableItem?: CexMapping | null;
+    editMode?: boolean;
+    form?: Partial<CexMapping> | null;
     selectedLocation?: string;
   }>(),
   {
-    editableItem: null,
+    editMode: false,
+    form: null,
     selectedLocation: undefined,
   },
 );
 
-const { selectedLocation, editableItem } = toRefs(props);
+const { selectedLocation, form } = toRefs(props);
 
 const emptyMapping: () => CexMapping = () => ({
   location: get(selectedLocation) || '',
@@ -40,11 +42,11 @@ const location = computed<string>({
 
 const forAllExchanges = ref<boolean>(false);
 
-function checkEditableItem() {
-  const form = get(editableItem);
-  if (form) {
-    set(forAllExchanges, !form.location);
-    set(formData, form);
+function checkPassedForm() {
+  const data = get(form);
+  if (data) {
+    set(forAllExchanges, !data.location);
+    set(formData, data);
   }
   else {
     set(forAllExchanges, false);
@@ -52,7 +54,7 @@ function checkEditableItem() {
   }
 }
 
-watchImmediate(editableItem, checkEditableItem);
+watchImmediate(form, checkPassedForm);
 
 const { t } = useI18n();
 
@@ -92,7 +94,7 @@ const { addCexMapping, editCexMapping } = useAssetCexMappingApi();
 async function save(): Promise<boolean> {
   const data = get(formData);
   let success = false;
-  const editMode = get(editableItem);
+  const editMode = props.editMode;
   const payload = {
     ...data,
     location: get(forAllExchanges) ? null : data.location,
@@ -122,7 +124,7 @@ setSubmitFunc(save);
   <div class="flex flex-col gap-2">
     <RuiSwitch
       v-model="forAllExchanges"
-      :disabled="!!editableItem"
+      :disabled="editMode"
       color="primary"
     >
       {{ t('asset_management.cex_mapping.save_for_all') }}
@@ -130,7 +132,7 @@ setSubmitFunc(save);
     <ExchangeInput
       v-model="location"
       :label="t('asset_management.cex_mapping.exchange')"
-      :disabled="!!editableItem || forAllExchanges"
+      :disabled="editMode || forAllExchanges"
       clearable
       :error-messages="toMessages(v$.location)"
     />
@@ -139,7 +141,7 @@ setSubmitFunc(save);
       data-cy="locationSymbol"
       variant="outlined"
       color="primary"
-      :disabled="!!editableItem"
+      :disabled="editMode"
       clearable
       :label="t('asset_management.cex_mapping.location_symbol')"
       :error-messages="toMessages(v$.locationSymbol)"

@@ -3634,6 +3634,13 @@
     "reminder": {
       "open_calendar": "Open Calendar"
     },
+    "unknown_asset_mapping": {
+      "title": "Unknown asset from {location}",
+      "message": "Found unknown asset \"{identifier}\" from {location} ({name}). \n Ignoring its {details}.",
+      "actions": {
+        "add_mapping": "Add Mapping"
+      }
+    },
     "snapshot_failed": {
       "message": "Could not save the balance snapshot at {location}. {error}",
       "title": "Balance Snapshot failed"

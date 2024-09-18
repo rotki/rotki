@@ -77,7 +77,7 @@ function setPage(page: number) {
           clearable
         />
         <RuiTextField
-          :value="symbol"
+          :model-value="symbol"
           class="w-full sm:max-w-72"
           variant="outlined"
           color="primary"

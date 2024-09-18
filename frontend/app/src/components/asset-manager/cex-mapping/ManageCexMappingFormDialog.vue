@@ -5,17 +5,19 @@ const props = withDefaults(
   defineProps<{
     title: string;
     subtitle?: string;
-    editableItem?: CexMapping | null;
+    editMode?: boolean;
+    form?: Partial<CexMapping> | null;
     selectedLocation?: string;
   }>(),
   {
     subtitle: '',
-    editableItem: null,
+    editMode: false,
+    form: null,
     selectedLocation: undefined,
   },
 );
 
-const { editableItem } = toRefs(props);
+const { form } = toRefs(props);
 const { t } = useI18n();
 
 const { openDialog, submitting, closeDialog, trySubmit } = useCexMappingForm();
@@ -32,7 +34,8 @@ const { openDialog, submitting, closeDialog, trySubmit } = useCexMappingForm();
     @cancel="closeDialog()"
   >
     <ManageCexMappingForm
-      :editable-item="editableItem"
+      :edit-mode="editMode"
+      :form="form"
       :selected-location="selectedLocation"
     />
   </BigDialog>

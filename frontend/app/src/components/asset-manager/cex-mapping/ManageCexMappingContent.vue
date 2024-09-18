@@ -4,11 +4,15 @@ import type { CexMapping, CexMappingRequestPayload } from '@/types/asset';
 import type { Collection } from '@/types/collection';
 
 const { t } = useI18n();
+const router = useRouter();
+const route = useRoute();
 
 const { fetchAllCexMapping, deleteCexMapping } = useAssetCexMappingApi();
 
 const selectedLocation = ref<string>('');
 const selectedSymbol = ref<string>('');
+
+const editMode = ref<boolean>(false);
 
 const extraParams = computed(() => {
   const location = get(selectedLocation);
@@ -42,19 +46,30 @@ const {
 );
 
 onMounted(async () => {
+  const { query } = get(route);
+  if (query.add) {
+    await router.replace({ query: {} });
+    add({
+      location: (query.location as string) || '',
+      locationSymbol: (query.locationSymbol as string) || '',
+    });
+  }
+
   await fetchData();
 });
 
 const { setOpenDialog, setPostSubmitFunc } = useCexMappingForm();
 setPostSubmitFunc(fetchData);
 
-function add() {
-  set(editableItem, null);
+function add(payload?: Partial<CexMapping>) {
+  set(editableItem, payload || null);
+  set(editMode, false);
   setOpenDialog(true);
 }
 
 function edit(editMapping: CexMapping) {
   set(editableItem, editMapping);
+  set(editMode, true);
   setOpenDialog(true);
 }
 
@@ -90,7 +105,7 @@ function showDeleteConfirmation(item: CexMapping) {
 }
 
 const dialogTitle = computed<string>(() =>
-  get(editableItem) ? t('asset_management.cex_mapping.edit_title') : t('asset_management.cex_mapping.add_title'),
+  get(editMode) ? t('asset_management.cex_mapping.edit_title') : t('asset_management.cex_mapping.add_title'),
 );
 </script>
 
@@ -136,7 +151,8 @@ const dialogTitle = computed<string>(() =>
       />
       <ManageCexMappingFormDialog
         :title="dialogTitle"
-        :editable-item="editableItem"
+        :edit-mode="editMode"
+        :form="editableItem"
         :selected-location="selectedLocation"
       />
     </RuiCard>
