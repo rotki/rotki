@@ -16,6 +16,7 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     EIGEN_TOKEN_ID,
     EIGENLAYER_AIRDROP_S1_PHASE1_DISTRIBUTOR,
     EIGENLAYER_AIRDROP_S1_PHASE2_DISTRIBUTOR,
+    EIGENLAYER_AIRDROP_S2_DISTRIBUTOR,
     EIGENLAYER_CPT_DETAILS,
     EIGENLAYER_DELEGATION,
     EIGENLAYER_STRATEGY_MANAGER,
@@ -636,6 +637,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
             EIGENLAYER_STRATEGY_MANAGER: (self.decode_event,),
             EIGENLAYER_AIRDROP_S1_PHASE1_DISTRIBUTOR: (self.decode_airdrop, 'eigen_s1_phase1', 'season 1 phase 1'),  # noqa: E501
             EIGENLAYER_AIRDROP_S1_PHASE2_DISTRIBUTOR: (self.decode_airdrop, 'eigen_s1_phase2', 'season 1 phase 2'),  # noqa: E501
+            EIGENLAYER_AIRDROP_S2_DISTRIBUTOR: (self.decode_airdrop, 'eigen_s2', 'season 2'),
             EIGENPOD_MANAGER: (self.decode_eigenpod_manager_events,),
             EIGENPOD_DELAYED_WITHDRAWAL_ROUTER: (self.decode_eigenpod_delayed_withdrawals,),
             EIGENLAYER_DELEGATION: (self.decode_delegation,),
