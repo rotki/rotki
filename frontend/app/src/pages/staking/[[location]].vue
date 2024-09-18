@@ -79,7 +79,20 @@ watch(() => props.location, (newLocation) => {
     set(location, newLocation as NavType);
     set(lastLocation, newLocation);
   }
+  else if (get(lastLocation)) {
+    set(location, get(lastLocation) as NavType);
+  }
 }, { immediate: true });
+
+watch(location, (newLocation) => {
+  if (newLocation)
+    set(lastLocation, newLocation);
+});
+
+onMounted(() => {
+  if (!props.location && get(lastLocation))
+    set(location, get(lastLocation) as NavType);
+});
 </script>
 
 <template>
