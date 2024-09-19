@@ -98,6 +98,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Safemultisig',
         'ScrollBridge',
         'Shutter',
+        'Sky',
         'SocketBridgeDecoder',
         'Stakedao',
         'Sushiswap',
@@ -203,6 +204,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'defisaver',
         'odos-v1',
         'odos-v2',
+        'sky',
     }
 
 
