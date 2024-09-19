@@ -171,6 +171,11 @@ def _add_new_tables(write_cursor: 'DBCursor') -> None:
     );""")
 
 
+@enter_exit_debug_log()
+def _remove_zksynclite_used_query_ranges(write_cursor: 'DBCursor') -> None:
+    write_cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "zksynclitetxs_%"')
+
+
 @enter_exit_debug_log(name='UserDB v43->v44 upgrade')
 def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v42 to v43. This was in v1.35 release.
@@ -181,7 +186,7 @@ def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
     - make the blockchain column not nullable since we use `NONE` as string
     - add exited_timestamp to the eth2_validators table
     """
-    progress_handler.set_total_steps(8)
+    progress_handler.set_total_steps(9)
     with db.user_write() as write_cursor:
         _update_nft_table(write_cursor)
         progress_handler.new_step()
@@ -196,6 +201,8 @@ def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _add_exited_timestamp(write_cursor)
         progress_handler.new_step()
         _add_new_tables(write_cursor)
+        progress_handler.new_step()
+        _remove_zksynclite_used_query_ranges(write_cursor)
         progress_handler.new_step()
 
     db.conn.execute('VACUUM;')
