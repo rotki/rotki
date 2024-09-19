@@ -675,6 +675,7 @@ declare global {
   const useNavigatorLanguage: typeof import('@vueuse/core')['useNavigatorLanguage']
   const useNetwork: typeof import('@vueuse/core')['useNetwork']
   const useNewTokenDetectedHandler: typeof import('./composables/message-handling/new-token-detected')['useNewTokenDetectedHandler']
+  const useNewTokenDetectedHanduseNewTokenDetectedHandlerler: typeof import('./composables/message-handling/new-token-detected')['useNewTokenDetectedHanduseNewTokenDetectedHandlerler']
   const useNewlyDetectedTokens: typeof import('./composables/assets/newly-detected-tokens')['useNewlyDetectedTokens']
   const useNftBalancesApi: typeof import('./composables/api/balances/nft')['useNftBalancesApi']
   const useNftImage: typeof import('./composables/nft-image')['useNftImage']

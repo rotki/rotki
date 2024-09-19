@@ -3,14 +3,14 @@ import { Routes } from '@/router/routes';
 import type { NewDetectedToken } from '@/types/websocket-messages';
 
 interface UseNewTokenDetectedHandler {
-  handle: (notifications: Notification[], data: NewDetectedToken) => Notification | null;
+  handle: (data: NewDetectedToken, notifications: Notification[]) => Notification | null;
 }
 
 export function useNewTokenDetectedHandler(t: ReturnType<typeof useI18n>['t']): UseNewTokenDetectedHandler {
   const { addNewDetectedToken } = useNewlyDetectedTokens();
   const router = useRouter();
 
-  const handle = (notifications: Notification[], data: NewDetectedToken): Notification | null => {
+  const handle = (data: NewDetectedToken, notifications: Notification[]): Notification | null => {
     const notification = notifications.find(({ group }) => group === NotificationGroup.NEW_DETECTED_TOKENS);
 
     const countAdded = addNewDetectedToken(data);

@@ -17,7 +17,10 @@ import { useCsvImportResultHandler } from '@/composables/message-handling/csv-im
 import { useNewTokenDetectedHandler } from '@/composables/message-handling/new-token-detected';
 import { useExchangeUnknownAssetHandler } from '@/composables/message-handling/exchange-unknown-asset';
 
-interface UseMessageHandling { handleMessage: (data: string) => Promise<void>; consume: () => Promise<void> }
+interface UseMessageHandling {
+  handleMessage: (data: string) => Promise<void>;
+  consume: () => Promise<void>;
+}
 
 export function useMessageHandling(): UseMessageHandling {
   const { setQueryStatus: setTxQueryStatus } = useTxQueryStatusStore();
@@ -150,7 +153,7 @@ export function useMessageHandling(): UseMessageHandling {
       setUpgradedAddresses(message.data);
     }
     else if (type === SocketMessageType.NEW_EVM_TOKEN_DETECTED) {
-      addNotification(handleNewTokenDetectedMessage(notifications, message.data));
+      addNotification(handleNewTokenDetectedMessage(message.data, notifications));
     }
     else if (type === SocketMessageType.REFRESH_BALANCES) {
       await refreshBalance(message.data.blockchain);

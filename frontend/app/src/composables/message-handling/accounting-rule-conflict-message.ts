@@ -1,11 +1,7 @@
 import { type Notification, Priority, Severity } from '@rotki/common';
-import type { AccountingRuleConflictData } from '@/types/websocket-messages';
+import type { AccountingRuleConflictData, CommonMessageHandler } from '@/types/websocket-messages';
 
-interface UseAccountingRuleConflictMessageHandler {
-  handle: (data: AccountingRuleConflictData) => Notification;
-}
-
-export function useAccountingRuleConflictMessageHandler(t: ReturnType<typeof useI18n>['t']): UseAccountingRuleConflictMessageHandler {
+export function useAccountingRuleConflictMessageHandler(t: ReturnType<typeof useI18n>['t']): CommonMessageHandler<AccountingRuleConflictData> {
   const router = useRouter();
 
   const handle = (data: AccountingRuleConflictData): Notification => {

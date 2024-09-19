@@ -1,11 +1,7 @@
 import { type Blockchain, type Notification, type NotificationAction, Priority, Severity } from '@rotki/common';
-import type { MissingApiKey } from '@/types/websocket-messages';
+import type { CommonMessageHandler, MissingApiKey } from '@/types/websocket-messages';
 
-interface UseHandleMissingApiKeyHandler {
-  handle: (data: MissingApiKey) => Notification;
-}
-
-export function useMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t']): UseHandleMissingApiKeyHandler {
+export function useMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t']): CommonMessageHandler<MissingApiKey> {
   const { getChainName } = useSupportedChains();
   const router = useRouter();
 

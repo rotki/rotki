@@ -1,12 +1,8 @@
 import { type Notification, Severity } from '@rotki/common';
 import { Routes } from '@/router/routes';
-import type { ExchangeUnknownAssetData } from '@/types/websocket-messages';
+import type { CommonMessageHandler, ExchangeUnknownAssetData } from '@/types/websocket-messages';
 
-interface UseExchangeUnknownAssetHandler {
-  handle: (data: ExchangeUnknownAssetData) => Notification;
-}
-
-export function useExchangeUnknownAssetHandler(t: ReturnType<typeof useI18n>['t']): UseExchangeUnknownAssetHandler {
+export function useExchangeUnknownAssetHandler(t: ReturnType<typeof useI18n>['t']): CommonMessageHandler<ExchangeUnknownAssetData> {
   const router = useRouter();
 
   const handle = (data: ExchangeUnknownAssetData): Notification => {

@@ -1,12 +1,9 @@
 import dayjs from 'dayjs';
 import { type Notification, Severity } from '@rotki/common';
 import type { CalendarEventPayload } from '@/types/history/calendar';
+import type { CommonMessageHandler } from '@/types/websocket-messages';
 
-interface UseCalendarReminderHandler {
-  handle: (data: CalendarEventPayload) => Notification;
-}
-
-export function useCalendarReminderHandler(t: ReturnType<typeof useI18n>['t']): UseCalendarReminderHandler {
+export function useCalendarReminderHandler(t: ReturnType<typeof useI18n>['t']): CommonMessageHandler<CalendarEventPayload> {
   const { getChainName } = useSupportedChains();
   const { addressNameSelector } = useAddressesNamesStore();
   const router = useRouter();

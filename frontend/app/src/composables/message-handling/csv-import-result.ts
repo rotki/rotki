@@ -1,11 +1,7 @@
 import { type Notification, Priority, Severity } from '@rotki/common';
-import type { CsvImportResult } from '@/types/websocket-messages';
+import type { CommonMessageHandler, CsvImportResult } from '@/types/websocket-messages';
 
-interface UseCsvImportResultHandler {
-  handle: (data: CsvImportResult) => Notification;
-}
-
-export function useCsvImportResultHandler(t: ReturnType<typeof useI18n>['t']): UseCsvImportResultHandler {
+export function useCsvImportResultHandler(t: ReturnType<typeof useI18n>['t']): CommonMessageHandler<CsvImportResult> {
   const handle = (data: CsvImportResult): Notification => {
     const { sourceName, totalEntries, importedEntries, messages } = data;
     const title = t('notification_messages.csv_import_result.title', { sourceName });
