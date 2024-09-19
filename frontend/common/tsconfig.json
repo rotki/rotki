@@ -1,24 +1,14 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "lib": [
-      "esnext",
-      "dom"
-    ],
-    "rootDir": "src",
-    "module": "ESNext",
-    "moduleResolution": "node",
-    "strict": true,
-    "strictPropertyInitialization": false,
-    "noImplicitAny": false,
-    "declaration": true,
-    "emitDeclarationOnly": true,
-    "outDir": "lib",
-    "esModuleInterop": true,
-    "skipLibCheck": true
+    "module": "NodeNext"
   },
-  "include": [
-    "src/**/*",
-    "lib/index.d.ts" // declaration file path
-  ]
+  "references": [
+    {
+      "path": "tsconfig.lib.json"
+    },
+    {
+      "path": "tsconfig.node.json"
+    }
+  ],
+  "files": []
 }
