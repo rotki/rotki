@@ -1,9 +1,15 @@
-<script setup>
-const props = defineProps({
-  iso: { type: String, default: null },
-  title: { type: String, default: null },
-  squared: { type: Boolean, default: true },
-});
+<script setup lang="ts">
+const props = withDefaults(
+  defineProps<{
+    iso: string;
+    title?: string;
+    squared?: boolean;
+  }>(),
+  {
+    title: '',
+    squared: true,
+  },
+);
 
 const flagIconClass = computed(() =>
   `fi-${props.iso.toLowerCase()} ${props.squared ? 'fis ' : ''}`,

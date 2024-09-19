@@ -1,15 +1,19 @@
 <script setup lang="ts">
 const { t } = useI18n();
+
 const understand = ref<boolean>(false);
+
 const name = 'gnosis_pay';
 const { loading, apiKey, actionStatus, save, confirmDelete } = useExternalApiKeys(t);
+const premium = usePremium();
+
 const key = apiKey(name);
 const status = actionStatus(name);
+
 watchImmediate(key, (value) => {
   if (value)
     set(understand, true);
 });
-const premium = usePremium();
 </script>
 
 <template>

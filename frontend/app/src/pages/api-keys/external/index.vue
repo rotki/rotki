@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import GnosisPayAuth from '@/components/settings/api-keys/external/GnosisPayAuth.vue';
-
 const { t } = useI18n();
 const { load } = useExternalApiKeys(t);
 

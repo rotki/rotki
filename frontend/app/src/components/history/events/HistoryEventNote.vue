@@ -33,6 +33,8 @@ const { notes, amount, asset, noTxHash, validatorIndex, blockNumber, counterpart
 
 const { formatNotes } = useHistoryEventNote();
 
+const isGnosisPay = computed(() => counterparty.value === 'gnosis pay');
+
 const formattedNotes: ComputedRef<NoteFormat[]> = formatNotes({
   notes,
   amount,
@@ -57,14 +59,14 @@ function isLinkType(t: any): t is keyof ExplorerUrls {
       v-for="(note, index) in formattedNotes"
       :key="index"
     >
-      <template v-if="note.type === 'word' && note.word">
-        <template v-if="note.word.includes(':country:')">
-          <Flag
-            :iso="note.word.split(':country:')[1].split(':')[0].toLowerCase()"
-            class="mr-1"
-          />
-        </template>
-        <span :key="`span-${index}`">{{ note.word.replace(/:country:[A-Z]{2}:/, '') }}</span>
+      <template v-if="note.type === NoteType.FLAG && note.countryCode && isGnosisPay">
+        <Flag
+          :iso="note.countryCode.toLowerCase()"
+          class="mr-1"
+        />
+      </template>
+      <template v-else-if="note.type === NoteType.WORD && note.word">
+        <span :key="`span-${index}`">{{ note.word }}</span>
       </template>
       <HashLink
         v-else-if="note.showHashLink && isLinkType(note.type)"
@@ -79,14 +81,12 @@ function isLinkType(t: any): t is keyof ExplorerUrls {
         :chain="note.chain ?? chain"
         :show-icon="!!note.showIcon"
       />
-
       <AmountDisplay
         v-else-if="note.type === NoteType.AMOUNT && note.amount"
         :key="`${index}-amount`"
         :asset="note.asset"
         :value="note.amount"
       />
-
       <ExternalLink
         v-else-if="note.type === NoteType.URL && note.url"
         :key="`${index}-link`"
@@ -96,7 +96,6 @@ function isLinkType(t: any): t is keyof ExplorerUrls {
         color="primary"
         custom
       />
-
       <template v-else>
         {{ `${note.word} ` }}
       </template>
