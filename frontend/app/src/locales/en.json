@@ -2490,7 +2490,7 @@
       "non_premium": "Gnosis Pay integration is only available for premium users.",
       "api_key_label": "Session Token",
       "api_key_hint": "Enter your Gnosis Pay session token",
-      "session_token_instructions": "To get your Gnosis Pay session token: 1) Log in to Gnosis Pay, 2) Open browser developer tools, 3) Go to the Application -> Storage -> Cookies, 4) Copy the value of '__Secure-authjs.session-token'."
+      "session_token_instructions": "To get your Gnosis Pay session token: Log in to Gnosis Pay -> Open browser developer tools -> Go to the Application -> Storage -> Cookies -> Copy the value of   '__Secure-authjs.session-token'."
     },
     "monerium": {
       "delete_tooltip": "Deletes the Monerium credentials",

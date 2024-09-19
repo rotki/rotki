@@ -53,9 +53,21 @@ function isLinkType(t: any): t is keyof ExplorerUrls {
     v-bind="$attrs"
     class="inline-flex items-center gap-x-1 flex-wrap"
   >
-    <template v-for="(note, index) in formattedNotes">
+    <template
+      v-for="(note, index) in formattedNotes"
+      :key="index"
+    >
+      <template v-if="note.type === 'word' && note.word">
+        <template v-if="note.word.includes(':country:')">
+          <Flag
+            :iso="note.word.split(':country:')[1].split(':')[0].toLowerCase()"
+            class="mr-1"
+          />
+        </template>
+        <span :key="`span-${index}`">{{ note.word.replace(/:country:[A-Z]{2}:/, '') }}</span>
+      </template>
       <HashLink
-        v-if="note.showHashLink && isLinkType(note.type)"
+        v-else-if="note.showHashLink && isLinkType(note.type)"
         :key="index"
         class="inline-flex"
         :class="{

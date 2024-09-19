@@ -2,6 +2,7 @@
 import { createPinia } from 'pinia';
 import 'roboto-fontface/css/roboto/roboto-fontface.css';
 import 'typeface-roboto-mono';
+import 'flag-icons/css/flag-icons.min.css';
 import { usePremiumApi } from '@/premium/setup-interface';
 import App from '@/App.vue';
 import { attemptPolyfillResizeObserver } from '@/utils/cypress';
