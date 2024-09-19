@@ -31,7 +31,6 @@ from rotkehlchen.chain.bitcoin.xpub import (
 )
 from rotkehlchen.chain.evm.types import NodeName, WeightedNode
 from rotkehlchen.chain.substrate.types import SubstrateAddress
-from rotkehlchen.chain.zksync_lite.constants import ZKSYNCLITE_TX_SAVEPREFIX
 from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_USD
 from rotkehlchen.constants.limits import (
@@ -2124,7 +2123,6 @@ class DBHandler:
             loopring = DBLoopring(self)
             loopring.remove_accountid_mapping(write_cursor, address)
 
-        write_cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'{ZKSYNCLITE_TX_SAVEPREFIX}{address}',))  # noqa: E501
         write_cursor.execute(
             'DELETE FROM evm_accounts_details WHERE account=? AND chain_id=?',
             (address, blockchain.to_chain_id().serialize_for_db()),
@@ -2151,7 +2149,6 @@ class DBHandler:
             cursor=write_cursor,
             blockchain=SupportedBlockchain.ZKSYNC_LITE,
         )
-        write_cursor.execute('DELETE FROM used_query_ranges WHERE name = ?', (f'{ZKSYNCLITE_TX_SAVEPREFIX}{address}',))  # noqa: E501
         other_addresses.remove(address)  # exclude the address in question so it's only the others
 
         # delete events by tx_hash

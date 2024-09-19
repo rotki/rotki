@@ -44,6 +44,7 @@ from rotkehlchen.types import (
     ChainID,
     Location,
     SupportedBlockchain,
+    Timestamp,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.user_messages import MessagesAggregator
@@ -2498,6 +2499,12 @@ def test_upgrade_db_43_to_44(user_data_dir, messages_aggregator):
             'INSERT INTO settings(name, value) VALUES(?, ?)',
             ('historical_price_oracles', '["manual", "cryptocompare", "coingecko", "defillama"]'),
         )
+        db_v43.update_used_query_range(
+            write_cursor=write_cursor,
+            name='zksynclitetxs_0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
+            start_ts=Timestamp(0),
+            end_ts=ts_now(),
+        )
 
     # Execute upgrade
     db = _init_db_with_target_version(
@@ -2536,6 +2543,9 @@ def test_upgrade_db_43_to_44(user_data_dir, messages_aggregator):
         assert cursor.execute(
             'SELECT value FROM settings WHERE name="historical_price_oracles"',
         ).fetchone()[0] == '["manual", "cryptocompare", "coingecko", "defillama", "uniswapv3", "uniswapv2"]'  # noqa: E501
+        assert cursor.execute(
+            'SELECT * FROM used_query_ranges WHERE name LIKE "zksynclitetxs_%"',
+        ).fetchone() is None
 
     db.logout()
 

@@ -7,7 +7,6 @@ from eth_utils import to_checksum_address
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.chain.zksync_lite.constants import ZKSYNCLITE_TX_SAVEPREFIX
 from rotkehlchen.constants.assets import A_DAI, A_ETH, A_GNO
 from rotkehlchen.constants.misc import ONE, ZERO
 from rotkehlchen.fval import FVal
@@ -38,7 +37,8 @@ def test_evmlike_transactions_refresh(
     integration/test_zksynclite.py::test_get_transactions"""
     now = ts_now()
 
-    def mock_fetch_transactions(address, start_ts, end_ts) -> None:
+    # Timestamps are optional args here since zksynclite doesn't use them
+    def mock_fetch_transactions(address, start_ts=0, end_ts=now) -> None:
         assert to_checksum_address(address)
         assert start_ts == 0
         assert end_ts >= now
@@ -423,10 +423,6 @@ def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite
     # now let's check the DB contains the entries we will check against when deleting
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     with rotki.data.db.conn.read_ctx() as cursor:
-        assert cursor.execute(
-            'SELECT COUNT(*) FROM used_query_ranges WHERE name=?',
-            (f'{ZKSYNCLITE_TX_SAVEPREFIX}{user_address}',),
-        ).fetchone()[0] == 1
         assert cursor.execute('SELECT COUNT(*) FROM zksynclite_transactions').fetchone()[0] == 16
         assert cursor.execute('SELECT COUNT(*) FROM zksynclite_swaps').fetchone()[0] == 0
         assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 17
@@ -442,10 +438,6 @@ def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite
 
     # finally check all related DB data got deleted
     with rotki.data.db.conn.read_ctx() as cursor:
-        assert cursor.execute(
-            'SELECT COUNT(*) FROM used_query_ranges WHERE name=?',
-            (f'{ZKSYNCLITE_TX_SAVEPREFIX}{user_address}',),
-        ).fetchone()[0] == 0
         assert cursor.execute('SELECT COUNT(*) FROM zksynclite_transactions').fetchone()[0] == 0
         assert cursor.execute('SELECT COUNT(*) FROM zksynclite_swaps').fetchone()[0] == 0
         assert cursor.execute('SELECT COUNT(*) FROM history_events').fetchone()[0] == 0

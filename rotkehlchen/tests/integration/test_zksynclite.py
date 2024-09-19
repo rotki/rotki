@@ -29,17 +29,13 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.constants import A_PAN, CURRENT_PRICE_MOCK
 from rotkehlchen.types import Fee, Location, Timestamp, deserialize_evm_tx_hash
-from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
+from rotkehlchen.utils.misc import ts_sec_to_ms
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.freeze_time('2024-03-24 00:00:00 GMT')
 def test_fetch_transactions(zksync_lite_manager):
-    zksync_lite_manager.fetch_transactions(
-        address=string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'),
-        start_ts=Timestamp(0),
-        end_ts=ts_now(),
-    )
+    zksync_lite_manager.fetch_transactions(string_to_evm_address('0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'))
     transactions = []
     with zksync_lite_manager.database.conn.read_ctx() as cursor:
         cursor.execute(
@@ -176,11 +172,7 @@ def test_decode_fullexit(zksync_lite_manager, inquirer):  # pylint: disable=unus
     tx_hash = deserialize_evm_tx_hash('0xd61d5f242022a43b5a11c84b350cdf8b2923221bf4a89ef091d51a1494d36007')  # noqa: E501
     address = string_to_evm_address('0xd6dfD811E06267b25472753c4e57C0B28652bFB8')
     timestamp = Timestamp(1592248320)
-    zksync_lite_manager.fetch_transactions(  # timerange is not really respected
-        address=address,
-        start_ts=Timestamp(1592248200),  # 15/06/2020 - 19:10
-        end_ts=Timestamp(1592248800),  # 15/06/2020 - 19:20
-    )
+    zksync_lite_manager.fetch_transactions(address)
     transactions = zksync_lite_manager.get_db_transactions(
         queryfilter=' WHERE tx_hash=?', bindings=(tx_hash,),
     )
@@ -228,11 +220,7 @@ def test_decode_forcedexit(zksync_lite_manager, inquirer):  # pylint: disable=un
     tx_hash = deserialize_evm_tx_hash('0xfa3d59c21b709f4ffd9b0e6c7e2dfe4579d7dd5e85325575d381ad88e50a64f1')  # noqa: E501
     address = string_to_evm_address('0x4676b83307A2A4A1556cdfC4d0c21097B584f3cF')
     timestamp = Timestamp(1712296398)
-    zksync_lite_manager.fetch_transactions(  # timerange is not really respected
-        address=address,
-        start_ts=0,
-        end_ts=ts_now(),
-    )
+    zksync_lite_manager.fetch_transactions(address)
     transactions = zksync_lite_manager.get_db_transactions(
         queryfilter=' WHERE tx_hash=?', bindings=(tx_hash,),
     )
@@ -280,11 +268,7 @@ def test_decode_swap(zksync_lite_manager, inquirer):  # pylint: disable=unused-a
     tx_hash = deserialize_evm_tx_hash('0x62819dad5d0d99dc5de633ecb95629c1073bcb80a8af15464ca4b0bc95b394b9')  # noqa: E501
     address = string_to_evm_address('0x721AF5c931BAA2415428064e5F71A251F30152B1')
     timestamp = Timestamp(1710752106)
-    zksync_lite_manager.fetch_transactions(  # timerange is not really respected
-        address=address,
-        start_ts=0,
-        end_ts=ts_now(),
-    )
+    zksync_lite_manager.fetch_transactions(address)
     transactions = zksync_lite_manager.get_db_transactions(
         queryfilter=' WHERE tx_hash=?', bindings=(tx_hash,),
     )

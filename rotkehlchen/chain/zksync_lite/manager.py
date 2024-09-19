@@ -19,7 +19,6 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.db.history_events import DBHistoryEvents
-from rotkehlchen.db.ranges import DBQueryRanges
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
@@ -37,7 +36,6 @@ from rotkehlchen.types import (
     EVMTxHash,
     Fee,
     Location,
-    Timestamp,
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import iso8601ts_to_timestamp, set_user_agent, ts_sec_to_ms
@@ -48,7 +46,7 @@ if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
 
-from .constants import ZKL_IDENTIFIER, ZKSYNCLITE_MAX_LIMIT, ZKSYNCLITE_TX_SAVEPREFIX
+from .constants import ZKL_IDENTIFIER, ZKSYNCLITE_MAX_LIMIT
 from .structures import ZKSyncLiteSwapData, ZKSyncLiteTransaction, ZKSyncLiteTXType
 
 logger = logging.getLogger(__name__)
@@ -165,26 +163,29 @@ class ZksyncLiteManager:
 
         return result
 
-    def _query_and_save_transactions_for_range(
+    def _query_and_save_transactions_from_hash(
             self,
             address: ChecksumEvmAddress,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
             from_hash: str,
             direction: Literal['older', 'newer'],
     ) -> None:
-        """Save transactions in a timerange. Timerange is not really respected.
-        Just saved in the DB range."""
-        ranges = DBQueryRanges(self.database)
-        location = f'{ZKSYNCLITE_TX_SAVEPREFIX}{address}'
-        current_start_ts = start_ts
-        current_end_ts = end_ts
+        """Query and save transactions before or since the transaction specified with from_hash."""
         input_transactions: set[ZKSyncLiteTransaction] = set()
         for new_transactions in self._query_zksync_api_transactions(
                 address=address,
                 from_hash=from_hash,
                 direction=direction,
         ):
+            if (
+                from_hash != 'latest' and
+                len(new_transactions) != 0 and
+                new_transactions[0].tx_hash.hex() == from_hash
+            ):
+                # When there are already transactions in the database, and new ones are queried
+                # using from_hash, the API includes the from_hash transaction in its response,
+                # so it must be removed to avoid adding duplicate entries to the database.
+                new_transactions.pop(0)
+
             if len(new_transactions) == 0:
                 continue
 
@@ -198,15 +199,6 @@ class ZksyncLiteManager:
                 self._add_zksynctxs_db(
                     write_cursor=write_cursor,
                     transactions=unique_transactions,
-                )
-                if direction == 'older':
-                    current_start_ts = new_transactions[-1].timestamp
-                else:  # direction -> newer
-                    current_end_ts = new_transactions[-1].timestamp
-                ranges.update_used_query_range(
-                    write_cursor=write_cursor,
-                    location_string=location,
-                    queried_ranges=[(current_start_ts, current_end_ts)],
                 )
 
             input_transactions |= unique_transactions
@@ -536,66 +528,33 @@ class ZksyncLiteManager:
     def fetch_transactions(
             self,
             address: ChecksumEvmAddress,
-            start_ts: Timestamp,
-            end_ts: Timestamp,
     ) -> None:
-        """Fetch all zksync transactions for an address in the given time range and save in DB"""
-        location = f'zksynctxs_{address}'
-        min_tx_hash = max_tx_hash = 'latest'
-        min_timestamp = start_ts
-        max_timestamp = end_ts
+        """Fetch zksync transactions for an address and save in DB.
+        Get only new transactions if there are existing ones, otherwise get all transactions.
+        """
+        max_tx_hash = None
         with self.database.conn.read_ctx() as cursor:
-            queried_range = self.database.get_used_query_range(cursor, location)
-
-            cursor.execute('SELECT tx_hash, min(timestamp) from zksynclite_transactions;')
-            if (result := cursor.fetchone()) is not None and result[0] is not None:
-                min_tx_hash = '0x' + result[0].hex()
-                min_timestamp = result[1]
-
             cursor.execute('SELECT tx_hash, max(timestamp) from zksynclite_transactions;')
-            result_hash = cursor.fetchone()[0]
-
-            if result is not None and (result_hash := cursor.fetchone()) is not None and result_hash[0] is not None:  # noqa: E501
-                max_tx_hash = '0x' + result_hash[0].hex()
-                max_timestamp = result[1]
+            if (max_result := cursor.fetchone()) is not None and max_result[0] is not None:
+                max_tx_hash = '0x' + max_result[0].hex()
 
         try:
-            if queried_range is None:  # no previous query, just go backwards
-                self._query_and_save_transactions_for_range(
+            if max_tx_hash is None:  # no existing entries, query all
+                self._query_and_save_transactions_from_hash(
                     address=address,
-                    start_ts=start_ts,
-                    end_ts=end_ts,
                     from_hash='latest',
                     direction='older',
                 )
-            elif queried_range[0] != 0:  # somehow oldest range is not 0, so go to zero
-                self._query_and_save_transactions_for_range(
-                    address=address,
-                    start_ts=start_ts,
-                    end_ts=min_timestamp,
-                    from_hash=min_tx_hash,
-                    direction='older',
-                )
-                self._query_and_save_transactions_for_range(
-                    address=address,
-                    start_ts=max_timestamp,
-                    end_ts=end_ts,
-                    from_hash=max_tx_hash,
-                    direction='newer',
-                )
             else:  # get the new transactions
-                self._query_and_save_transactions_for_range(
+                self._query_and_save_transactions_from_hash(
                     address=address,
-                    start_ts=max_timestamp,
-                    end_ts=end_ts,
                     from_hash=max_tx_hash,
                     direction='newer',
                 )
         except RemoteError as e:
             log.error(
                 f'Got error "{e!s}" while querying zksync lite transactions '
-                f'from zksync api. Transactions not added to the DB. '
-                f'{address=}, {start_ts=}, {end_ts=} ',
+                f'from zksync api. Transactions not added to the DB. {address=}',
             )
 
     def get_balances(

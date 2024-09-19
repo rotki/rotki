@@ -2766,21 +2766,19 @@ class RestAPI:
     @async_api_call()
     def refresh_evmlike_transactions(
             self,
-            from_timestamp: Timestamp,
-            to_timestamp: Timestamp,
+            from_timestamp: Timestamp,  # pylint: disable=unused-argument
+            to_timestamp: Timestamp,  # pylint: disable=unused-argument
             accounts: list[EvmlikeAccount] | None,
             chain: EvmlikeChain | None,  # pylint: disable=unused-argument
     ) -> dict[str, Any]:
-        """Refresh evmlike chain transactions. The chain is unused arg since only for zksynclite"""
+        """Refresh evmlike chain transactions.
+        The chain and timestamps are unused args since this is currently only for zksynclite,
+        and zksynclite's API doesn't support queries by timestamp."""
         message, status_code = '', HTTPStatus.OK
         # lazy mode. At the moment this can only be ZKSYnc lite
         addresses = [x.address for x in accounts] if accounts else self.rotkehlchen.chains_aggregator.accounts.zksync_lite  # noqa: E501
         for address in addresses:
-            self.rotkehlchen.chains_aggregator.zksync_lite.fetch_transactions(
-                address=address,
-                start_ts=from_timestamp,
-                end_ts=to_timestamp,
-            )
+            self.rotkehlchen.chains_aggregator.zksync_lite.fetch_transactions(address)
 
         return {'result': True, 'message': message, 'status_code': status_code}
 
