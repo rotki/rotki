@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
@@ -25,29 +25,11 @@ from .constants import (
     STAKEDAO_CLAIMER_OLD,
 )
 
-if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
-    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
-    from rotkehlchen.user_messages import MessagesAggregator
-
-
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
 class StakedaoDecoder(DecoderInterface):
-
-    def __init__(
-            self,
-            ethereum_inquirer: 'EthereumInquirer',
-            base_tools: 'BaseDecoderTools',
-            msg_aggregator: 'MessagesAggregator',
-    ) -> None:
-        super().__init__(
-            evm_inquirer=ethereum_inquirer,
-            base_tools=base_tools,
-            msg_aggregator=msg_aggregator,
-        )
 
     def _decode_claim(
             self,

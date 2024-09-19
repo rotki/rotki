@@ -4,7 +4,12 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import CryptoAsset
 from rotkehlchen.chain.ethereum.constants import RAY_DIGITS
 from rotkehlchen.chain.ethereum.defi.defisaver_proxy import HasDSProxy
-from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_normalized_value
+from rotkehlchen.chain.ethereum.utils import (
+    asset_normalized_value,
+    token_normalized_value,
+    token_normalized_value_decimals,
+)
+from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.decoding.constants import (
     CPT_SDAI,
     ERC20_OR_ERC721_TRANSFER,
@@ -36,6 +41,7 @@ from rotkehlchen.constants.assets import (
     A_LINK,
     A_LRC,
     A_MANA,
+    A_MKR,
     A_PAX,
     A_RENBTC,
     A_SAI,
@@ -62,6 +68,7 @@ from .constants import (
     MAKERDAO_ICON,
     MAKERDAO_LABEL,
     MAKERDAO_MIGRATION_ADDRESS,
+    MKR_ADDRESS,
 )
 
 if TYPE_CHECKING:
@@ -79,6 +86,8 @@ POT_EXIT = b'\x7f\x86a\xa1\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x
 NEWCDP = b"\xd6\xbe\x0b\xc1xe\x8a8/\xf4\xf9\x1c\x8ch\xb5B\xaakqh[\x8f\xe4'\x96k\x87t\\>\xa7\xa2"
 CDPMANAGER_MOVE = b'\xf9\xf3\r\xb6\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'  # noqa: E501
 CDPMANAGER_FROB = b'E\xe6\xbd\xcd\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'  # noqa: E501
+
+BURN_MKR = b'\xcc\x16\xf5\xdb\xb4\x872\x80\x81\\\x1e\xe0\x9d\xbd\x06sl\xff\xcc\x18D\x12\xcfzq\xa0\xfd\xb7]9|\xa5'  # noqa: E501
 
 
 class MakerdaoDecoder(DecoderInterface, HasDSProxy):
@@ -553,6 +562,28 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
 
         return DEFAULT_DECODING_OUTPUT
 
+    def _decode_burn_event(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] != BURN_MKR:
+            return DEFAULT_DECODING_OUTPUT
+
+        amount = token_normalized_value_decimals(
+            token_amount=hex_or_bytes_to_int(context.tx_log.data[0:32]),
+            token_decimals=DEFAULT_TOKEN_DECIMALS,
+        )
+        event = self.base.make_event_from_transaction(
+            transaction=context.transaction,
+            tx_log=context.tx_log,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.NONE,
+            asset=A_MKR,
+            balance=Balance(amount=amount),
+            location_label=hex_or_bytes_to_address(context.tx_log.topics[1]),
+            notes=f'Burn {amount} MKR tokens',
+            address=MKR_ADDRESS,
+            counterparty=CPT_MAKERDAO_MIGRATION,
+        )
+        return DecodingOutput(event=event)
+
     # -- DecoderInterface methods
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
@@ -588,6 +619,8 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             string_to_evm_address('0x89d24A6b4CcB1B6fAA2625fE562bDD9a23260359'): (self.decode_saidai_migration,),  # noqa: E501
             self.makerdao_cdp_manager.address: (self.decode_cdp_manager_events,),
             self.sdai.evm_address: (self.decode_sdai_events,),
+            MKR_ADDRESS: (self._decode_burn_event,),
+
         }
 
     @staticmethod

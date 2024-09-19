@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="SKY-Coin" xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1000 1000">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: url(#radial-gradient-8);
+      }
+
+      .cls-1, .cls-2, .cls-3, .cls-4, .cls-5, .cls-6, .cls-7, .cls-8, .cls-9, .cls-10, .cls-11, .cls-12 {
+        stroke-width: 0px;
+      }
+
+      .cls-2 {
+        fill: url(#radial-gradient-2);
+      }
+
+      .cls-3 {
+        fill: url(#radial-gradient-7);
+      }
+
+      .cls-4 {
+        fill: url(#radial-gradient-5);
+      }
+
+      .cls-5 {
+        fill: url(#radial-gradient);
+      }
+
+      .cls-6 {
+        fill: url(#radial-gradient-10);
+      }
+
+      .cls-7 {
+        fill: #fff;
+      }
+
+      .cls-8 {
+        fill: url(#radial-gradient-6);
+      }
+
+      .cls-9 {
+        fill: url(#radial-gradient-9);
+      }
+
+      .cls-10 {
+        fill: url(#radial-gradient-3);
+      }
+
+      .cls-11 {
+        fill: url(#radial-gradient-11);
+      }
+
+      .cls-12 {
+        fill: url(#radial-gradient-4);
+      }
+    </style>
+    <radialGradient id="radial-gradient" cx="-578.6211933" cy="414.7735993" fx="-578.6211933" fy="414.7735993" r="1.7" gradientTransform="translate(-185691.9026489 133979.7821655) rotate(-180) scale(321.7999878)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#6d28ff"/>
+      <stop offset="1" stop-color="#f7a7f9"/>
+    </radialGradient>
+    <radialGradient id="radial-gradient-2" cx="-569.2439303" cy="416.4422724" fx="-569.2439303" fy="416.4422724" r="1.7" gradientTransform="translate(103489.1013336 141289.996994) rotate(90) scale(247.3000031)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffcd6b"/>
+      <stop offset="1" stop-color="#eb5edf"/>
+    </radialGradient>
+    <radialGradient id="radial-gradient-3" cx="500" cy="-416" fx="500" fy="-416" r="416.8999939" gradientTransform="translate(0 84) scale(1 -1)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#a273ff"/>
+      <stop offset=".5" stop-color="#9faeff"/>
+      <stop offset="1" stop-color="#aaf2e1"/>
+    </radialGradient>
+    <radialGradient id="radial-gradient-4" cx="500" cy="-415.9000244" fx="500" fy="-415.9000244" r="446.3999939" gradientTransform="translate(0 84) scale(1 -1)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffd2b9"/>
+      <stop offset=".3" stop-color="#c99bed"/>
+      <stop offset="1" stop-color="#0075ff"/>
+    </radialGradient>
+    <radialGradient id="radial-gradient-5" cx="-583.1571013" cy="422.265491" fx="-583.1571013" fy="422.265491" r="1.7" gradientTransform="translate(-125250.3007393 -125638.8554115) rotate(-98.9999997) scale(247.3999998)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#f7a7f9"/>
+      <stop offset="1" stop-color="#00ddfb"/>
+    </radialGradient>
+    <radialGradient id="radial-gradient-6" cx="-582.8575475" cy="423.1578308" fx="-582.8575475" fy="423.1578308" r="1.7" gradientTransform="translate(-104073.5151672 -143522.493988) rotate(-90) scale(247.1000061)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#a273ff"/>
+      <stop offset=".5" stop-color="#9faeff"/>
+      <stop offset="1" stop-color="#aaf2e1"/>
+    </radialGradient>
+    <radialGradient id="radial-gradient-7" cx="-579.2935914" cy="413.4080253" fx="-579.2935914" fy="413.4080253" r="1.7" gradientTransform="translate(-142933.400238 102859.5151672) rotate(-180) scale(247.6000061)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#fff3d0"/>
+      <stop offset="1" stop-color="#ffc044"/>
+    </radialGradient>
+    <radialGradient id="radial-gradient-8" cx="-569.2439303" cy="416.4422724" fx="-569.2439303" fy="416.4422724" r="1.7" gradientTransform="translate(103489.1013336 141289.996994) rotate(90) scale(247.3000031)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffcd6b"/>
+      <stop offset="1" stop-color="#eb5edf"/>
+    </radialGradient>
+    <radialGradient id="radial-gradient-9" cx="-572.0792952" cy="414.7550838" fx="-572.0792952" fy="414.7550838" r="1.7" gradientTransform="translate(38574.4148941 183684.3902359) rotate(114.1999964) scale(264.7999892)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#ffd2b9"/>
+      <stop offset=".3" stop-color="#c99bed"/>
+      <stop offset="1" stop-color="#0075ff"/>
+    </radialGradient>
+    <radialGradient id="radial-gradient-10" cx="-569.1484469" cy="416.7427029" fx="-569.1484469" fy="416.7427029" r="1.7" gradientTransform="translate(103832.6879578 141594.693512) rotate(90) scale(247.8999939)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#d4faff"/>
+      <stop offset="1" stop-color="#00ddfb"/>
+    </radialGradient>
+    <radialGradient id="radial-gradient-11" cx="-569.5047131" cy="423.440335" fx="-569.5047131" fy="423.440335" r="1.7000614" gradientTransform="translate(175353.1642151 -1427.7746582) rotate(35.999999) scale(246.3999896)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0075ff"/>
+      <stop offset="1" stop-color="#00ddfb"/>
+    </radialGradient>
+  </defs>
+  <g id="SKY-Coin-2">
+    <circle id="White_Background" data-name="White Background" class="cls-7" cx="500" cy="500" r="500"/>
+    <g id="SKY-Coin-3">
+      <path id="Element" class="cls-5" d="M112.5,626c-13.1999969-40.7000122-20-83.2000122-20-126l3-2.2999878,393,.7999878,11.5,1.5-387.5,126Z"/>
+      <path id="Element-2" class="cls-2" d="M625.9000244,887.5c-61.2000122,19.9000244-126.1000061,25-189.7000122,14.9000244l-3-4.5999756,65.3999939-392.6000061,1.2999878-5.2000122,125.8999939,387.4999695h.1000366Z"/>
+      <path id="Element-3" class="cls-10" d="M907.5,500c0,42.7999878-6.7000122,85.2000122-19.9000244,125.9000244h-8.7999878l-376.6000061-124.3999939-2.1000061-1.5h407.5l-.0999756-.0000305Z"/>
+      <path id="Element-4" class="cls-12" d="M170.3999939,260.5c12.5-17.3000031,26.3999939-33.5,41.5-48.6000061l3.3999939,1,282.7999878,283.8999939,1.8999939,3.2000122-329.6000061-239.5h.0000305Z"/>
+      <path id="Element-5" class="cls-4" d="M211.8999939,211.8999939c60.7999878-60.8000031,139.3999939-100.9000015,224.3999939-114.3000031l1.7999878,3,61.8999939,392.9000092v6.5L211.8999939,211.8999939Z"/>
+      <path id="Element-6" class="cls-8" d="M436.2000122,97.5999985c63.5-10.0999985,128.5-5,189.7000122,14.9000015l-125.8999939,387.5-63.7999878-402.3999939h0l-.0000305-.0000076Z"/>
+      <path id="Element-7" class="cls-3" d="M92.5,500c0-42.7999878,6.6999969-85.2000122,19.9000015-125.8999939l387.4999924,125.8999939H92.5Z"/>
+      <path id="Element-8" class="cls-1" d="M739.5,170.3999939c69.5999756,50.6000061,121.4000244,121.8999939,148,203.6999817l-387.5,125.8999939,239.5-329.6000061h0v.0000305Z"/>
+      <path id="Element-9" class="cls-9" d="M260.5,829.5999756c-34.6000061-25.0999756-65-55.5999756-90.1000061-90.0999756l329.6000061-239.5-239.5,329.5999756Z"/>
+      <path id="Element-10" class="cls-6" d="M436.2999878,902.4000244c-21.1000061-3.2999878-41.8999939-8.2999878-62.2000122-14.9000244l125.8999939-387.5-63.7000122,402.4000244h.0000305Z"/>
+      <path id="Element-11" class="cls-11" d="M887.5,625.9000244c-26.5999756,81.7999878-78.4000244,153.2000122-148,203.7000122l-239.5-329.6000061,387.5,125.8999939Z"/>
+    </g>
+  </g>
+</svg>
