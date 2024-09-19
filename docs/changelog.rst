@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`7817` Users will be able to add CEX mapping for unknown assets from exchange notifications.
 * :feature:`8528` Rotki will now limit the number of validators queried for balances for non-premium users.
 * :feature:`-` Gnosis Pay cashback events will now be properly recognized in the history view.
 * :feature:`8492` Eigenlayer PEPE upgrade changes will now be properly understood by rotki. That means AVS rewards claiming, ability to restake beacon chain staked ETH and new batched withdrawals directly to the eigenpod. For more read here: https://docs.eigenlayer.xyz/eigenlayer/restaking-guides/restaking-developer-guide#pepe-release
@@ -28,7 +29,7 @@ Changelog
 * :feature:`8101` Failed transactions will now be displayed as failed and not just show "burned gas" event only.
 * :feature:`-` Transactions claiming SAFE tokens from vesting will now be properly decoded.
 * :feature:`-` Transactions locking, unlocking and withdrawing SAFE tokens will now be properly decoded. Also any locked SAFE tokens will be automatically detected and their balance counted.
-* :bug:`8535` Users won't see their total net worth duplicated when tracking NFTs as tokens.  
+* :bug:`8535` Users won't see their total net worth duplicated when tracking NFTs as tokens.
 * :bug:`-` rotki will now decode the events of all the velodrome pools which were getting skipped before.
 * :bug:`8477` rotki will now properly decode very old Arbitrum bridge withdrawals.
 * :bug:`-` rotki will now decode the swaps done on velodrome v2 in the right order.

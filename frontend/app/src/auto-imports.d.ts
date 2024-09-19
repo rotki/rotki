@@ -418,6 +418,7 @@ declare global {
   const useAccountManagement: typeof import('./composables/user/account')['useAccountManagement']
   const useAccountMigrationStore: typeof import('./store/blockchain/accounts/migrate')['useAccountMigrationStore']
   const useAccountingApi: typeof import('./composables/api/settings/accounting-api')['useAccountingApi']
+  const useAccountingRuleConflictMessageHandler: typeof import('./composables/message-handling/accounting-rule-conflict-message')['useAccountingRuleConflictMessageHandler']
   const useAccountingRuleFilter: typeof import('./composables/filters/accounting-rule')['useAccountingRuleFilter']
   const useAccountingRuleForm: typeof import('./composables/settings/accounting/form')['useAccountingRuleForm']
   const useAccountingRuleMappings: typeof import('./composables/settings/accounting/rule-mapping')['useAccountingRuleMappings']
@@ -503,6 +504,7 @@ declare global {
   const useCalendarApi: typeof import('./composables/history/calendar/index')['useCalendarApi']
   const useCalendarEventForm: typeof import('./composables/calendar/form')['useCalendarEventForm']
   const useCalendarReminderApi: typeof import('./composables/history/calendar/reminder')['useCalendarReminderApi']
+  const useCalendarReminderHandler: typeof import('./composables/message-handling/calendar-reminder')['useCalendarReminderHandler']
   const useCeil: typeof import('@vueuse/math')['useCeil']
   const useCexMappingForm: typeof import('./composables/assets/forms/cex-mapping-form')['useCexMappingForm']
   const useClamp: typeof import('@vueuse/math')['useClamp']
@@ -523,6 +525,7 @@ declare global {
   const useCssModule: typeof import('vue')['useCssModule']
   const useCssVar: typeof import('@vueuse/core')['useCssVar']
   const useCssVars: typeof import('vue')['useCssVars']
+  const useCsvImportResultHandler: typeof import('./composables/message-handling/csv-import-result')['useCsvImportResultHandler']
   const useCurrentElement: typeof import('@vueuse/core')['useCurrentElement']
   const useCustomAssetFilter: typeof import('./composables/filters/custom-assets')['useCustomAssetFilter']
   const useCustomAssetForm: typeof import('./composables/assets/forms/custom-asset-form')['useCustomAssetForm']
@@ -572,6 +575,7 @@ declare global {
   const useExchangeApi: typeof import('./composables/api/balances/exchanges')['useExchangeApi']
   const useExchangeApiKeysForm: typeof import('./composables/settings/api-keys/exchanges/form')['useExchangeApiKeysForm']
   const useExchangeBalancesStore: typeof import('./store/balances/exchanges')['useExchangeBalancesStore']
+  const useExchangeUnknownAssetHandler: typeof import('./composables/message-handling/exchange-unknown-asset')['useExchangeUnknownAssetHandler']
   const useExchangesStore: typeof import('./store/exchanges/index')['useExchangesStore']
   const useExternalApiKeys: typeof import('./composables/settings/api-keys/external/index')['useExternalApiKeys']
   const useExternalServicesApi: typeof import('./composables/api/settings/external-services-api')['useExternalServicesApi']
@@ -657,9 +661,10 @@ declare global {
   const useMediaQuery: typeof import('@vueuse/core')['useMediaQuery']
   const useMemoize: typeof import('@vueuse/core')['useMemoize']
   const useMemory: typeof import('@vueuse/core')['useMemory']
-  const useMessageHandling: typeof import('./composables/message-handling')['useMessageHandling']
+  const useMessageHandling: typeof import('./composables/message-handling/index')['useMessageHandling']
   const useMessageStore: typeof import('./store/message')['useMessageStore']
   const useMin: typeof import('@vueuse/math')['useMin']
+  const useMissingApiKeyHandler: typeof import('./composables/message-handling/missing-api-key')['useMissingApiKeyHandler']
   const useModules: typeof import('./composables/session/modules')['useModules']
   const useMonitorStore: typeof import('./store/monitor')['useMonitorStore']
   const useMounted: typeof import('@vueuse/core')['useMounted']
@@ -669,6 +674,8 @@ declare global {
   const useMutationObserver: typeof import('@vueuse/core')['useMutationObserver']
   const useNavigatorLanguage: typeof import('@vueuse/core')['useNavigatorLanguage']
   const useNetwork: typeof import('@vueuse/core')['useNetwork']
+  const useNewTokenDetectedHandler: typeof import('./composables/message-handling/new-token-detected')['useNewTokenDetectedHandler']
+  const useNewTokenDetectedHanduseNewTokenDetectedHandlerler: typeof import('./composables/message-handling/new-token-detected')['useNewTokenDetectedHanduseNewTokenDetectedHandlerler']
   const useNewlyDetectedTokens: typeof import('./composables/assets/newly-detected-tokens')['useNewlyDetectedTokens']
   const useNftBalancesApi: typeof import('./composables/api/balances/nft')['useNftBalancesApi']
   const useNftImage: typeof import('./composables/nft-image')['useNftImage']
@@ -1279,6 +1286,7 @@ declare module 'vue' {
     readonly useAccountManagement: UnwrapRef<typeof import('./composables/user/account')['useAccountManagement']>
     readonly useAccountMigrationStore: UnwrapRef<typeof import('./store/blockchain/accounts/migrate')['useAccountMigrationStore']>
     readonly useAccountingApi: UnwrapRef<typeof import('./composables/api/settings/accounting-api')['useAccountingApi']>
+    readonly useAccountingRuleConflictMessageHandler: UnwrapRef<typeof import('./composables/message-handling/accounting-rule-conflict-message')['useAccountingRuleConflictMessageHandler']>
     readonly useAccountingRuleFilter: UnwrapRef<typeof import('./composables/filters/accounting-rule')['useAccountingRuleFilter']>
     readonly useAccountingRuleForm: UnwrapRef<typeof import('./composables/settings/accounting/form')['useAccountingRuleForm']>
     readonly useAccountingRuleMappings: UnwrapRef<typeof import('./composables/settings/accounting/rule-mapping')['useAccountingRuleMappings']>
@@ -1364,6 +1372,7 @@ declare module 'vue' {
     readonly useCalendarApi: UnwrapRef<typeof import('./composables/history/calendar/index')['useCalendarApi']>
     readonly useCalendarEventForm: UnwrapRef<typeof import('./composables/calendar/form')['useCalendarEventForm']>
     readonly useCalendarReminderApi: UnwrapRef<typeof import('./composables/history/calendar/reminder')['useCalendarReminderApi']>
+    readonly useCalendarReminderHandler: UnwrapRef<typeof import('./composables/message-handling/calendar-reminder')['useCalendarReminderHandler']>
     readonly useCeil: UnwrapRef<typeof import('@vueuse/math')['useCeil']>
     readonly useCexMappingForm: UnwrapRef<typeof import('./composables/assets/forms/cex-mapping-form')['useCexMappingForm']>
     readonly useClamp: UnwrapRef<typeof import('@vueuse/math')['useClamp']>
@@ -1384,6 +1393,7 @@ declare module 'vue' {
     readonly useCssModule: UnwrapRef<typeof import('vue')['useCssModule']>
     readonly useCssVar: UnwrapRef<typeof import('@vueuse/core')['useCssVar']>
     readonly useCssVars: UnwrapRef<typeof import('vue')['useCssVars']>
+    readonly useCsvImportResultHandler: UnwrapRef<typeof import('./composables/message-handling/csv-import-result')['useCsvImportResultHandler']>
     readonly useCurrentElement: UnwrapRef<typeof import('@vueuse/core')['useCurrentElement']>
     readonly useCustomAssetFilter: UnwrapRef<typeof import('./composables/filters/custom-assets')['useCustomAssetFilter']>
     readonly useCustomAssetForm: UnwrapRef<typeof import('./composables/assets/forms/custom-asset-form')['useCustomAssetForm']>
@@ -1433,6 +1443,7 @@ declare module 'vue' {
     readonly useExchangeApi: UnwrapRef<typeof import('./composables/api/balances/exchanges')['useExchangeApi']>
     readonly useExchangeApiKeysForm: UnwrapRef<typeof import('./composables/settings/api-keys/exchanges/form')['useExchangeApiKeysForm']>
     readonly useExchangeBalancesStore: UnwrapRef<typeof import('./store/balances/exchanges')['useExchangeBalancesStore']>
+    readonly useExchangeUnknownAssetHandler: UnwrapRef<typeof import('./composables/message-handling/exchange-unknown-asset')['useExchangeUnknownAssetHandler']>
     readonly useExchangesStore: UnwrapRef<typeof import('./store/exchanges/index')['useExchangesStore']>
     readonly useExternalApiKeys: UnwrapRef<typeof import('./composables/settings/api-keys/external/index')['useExternalApiKeys']>
     readonly useExternalServicesApi: UnwrapRef<typeof import('./composables/api/settings/external-services-api')['useExternalServicesApi']>
@@ -1518,9 +1529,10 @@ declare module 'vue' {
     readonly useMediaQuery: UnwrapRef<typeof import('@vueuse/core')['useMediaQuery']>
     readonly useMemoize: UnwrapRef<typeof import('@vueuse/core')['useMemoize']>
     readonly useMemory: UnwrapRef<typeof import('@vueuse/core')['useMemory']>
-    readonly useMessageHandling: UnwrapRef<typeof import('./composables/message-handling')['useMessageHandling']>
+    readonly useMessageHandling: UnwrapRef<typeof import('./composables/message-handling/index')['useMessageHandling']>
     readonly useMessageStore: UnwrapRef<typeof import('./store/message')['useMessageStore']>
     readonly useMin: UnwrapRef<typeof import('@vueuse/math')['useMin']>
+    readonly useMissingApiKeyHandler: UnwrapRef<typeof import('./composables/message-handling/missing-api-key')['useMissingApiKeyHandler']>
     readonly useModules: UnwrapRef<typeof import('./composables/session/modules')['useModules']>
     readonly useMonitorStore: UnwrapRef<typeof import('./store/monitor')['useMonitorStore']>
     readonly useMounted: UnwrapRef<typeof import('@vueuse/core')['useMounted']>
@@ -1530,6 +1542,7 @@ declare module 'vue' {
     readonly useMutationObserver: UnwrapRef<typeof import('@vueuse/core')['useMutationObserver']>
     readonly useNavigatorLanguage: UnwrapRef<typeof import('@vueuse/core')['useNavigatorLanguage']>
     readonly useNetwork: UnwrapRef<typeof import('@vueuse/core')['useNetwork']>
+    readonly useNewTokenDetectedHandler: UnwrapRef<typeof import('./composables/message-handling/new-token-detected')['useNewTokenDetectedHandler']>
     readonly useNewlyDetectedTokens: UnwrapRef<typeof import('./composables/assets/newly-detected-tokens')['useNewlyDetectedTokens']>
     readonly useNftBalancesApi: UnwrapRef<typeof import('./composables/api/balances/nft')['useNftBalancesApi']>
     readonly useNftImage: UnwrapRef<typeof import('./composables/nft-image')['useNftImage']>
@@ -2121,6 +2134,7 @@ declare module '@vue/runtime-core' {
     readonly useAccountManagement: UnwrapRef<typeof import('./composables/user/account')['useAccountManagement']>
     readonly useAccountMigrationStore: UnwrapRef<typeof import('./store/blockchain/accounts/migrate')['useAccountMigrationStore']>
     readonly useAccountingApi: UnwrapRef<typeof import('./composables/api/settings/accounting-api')['useAccountingApi']>
+    readonly useAccountingRuleConflictMessageHandler: UnwrapRef<typeof import('./composables/message-handling/accounting-rule-conflict-message')['useAccountingRuleConflictMessageHandler']>
     readonly useAccountingRuleFilter: UnwrapRef<typeof import('./composables/filters/accounting-rule')['useAccountingRuleFilter']>
     readonly useAccountingRuleForm: UnwrapRef<typeof import('./composables/settings/accounting/form')['useAccountingRuleForm']>
     readonly useAccountingRuleMappings: UnwrapRef<typeof import('./composables/settings/accounting/rule-mapping')['useAccountingRuleMappings']>
@@ -2206,6 +2220,7 @@ declare module '@vue/runtime-core' {
     readonly useCalendarApi: UnwrapRef<typeof import('./composables/history/calendar/index')['useCalendarApi']>
     readonly useCalendarEventForm: UnwrapRef<typeof import('./composables/calendar/form')['useCalendarEventForm']>
     readonly useCalendarReminderApi: UnwrapRef<typeof import('./composables/history/calendar/reminder')['useCalendarReminderApi']>
+    readonly useCalendarReminderHandler: UnwrapRef<typeof import('./composables/message-handling/calendar-reminder')['useCalendarReminderHandler']>
     readonly useCeil: UnwrapRef<typeof import('@vueuse/math')['useCeil']>
     readonly useCexMappingForm: UnwrapRef<typeof import('./composables/assets/forms/cex-mapping-form')['useCexMappingForm']>
     readonly useClamp: UnwrapRef<typeof import('@vueuse/math')['useClamp']>
@@ -2226,6 +2241,7 @@ declare module '@vue/runtime-core' {
     readonly useCssModule: UnwrapRef<typeof import('vue')['useCssModule']>
     readonly useCssVar: UnwrapRef<typeof import('@vueuse/core')['useCssVar']>
     readonly useCssVars: UnwrapRef<typeof import('vue')['useCssVars']>
+    readonly useCsvImportResultHandler: UnwrapRef<typeof import('./composables/message-handling/csv-import-result')['useCsvImportResultHandler']>
     readonly useCurrentElement: UnwrapRef<typeof import('@vueuse/core')['useCurrentElement']>
     readonly useCustomAssetFilter: UnwrapRef<typeof import('./composables/filters/custom-assets')['useCustomAssetFilter']>
     readonly useCustomAssetForm: UnwrapRef<typeof import('./composables/assets/forms/custom-asset-form')['useCustomAssetForm']>
@@ -2275,6 +2291,7 @@ declare module '@vue/runtime-core' {
     readonly useExchangeApi: UnwrapRef<typeof import('./composables/api/balances/exchanges')['useExchangeApi']>
     readonly useExchangeApiKeysForm: UnwrapRef<typeof import('./composables/settings/api-keys/exchanges/form')['useExchangeApiKeysForm']>
     readonly useExchangeBalancesStore: UnwrapRef<typeof import('./store/balances/exchanges')['useExchangeBalancesStore']>
+    readonly useExchangeUnknownAssetHandler: UnwrapRef<typeof import('./composables/message-handling/exchange-unknown-asset')['useExchangeUnknownAssetHandler']>
     readonly useExchangesStore: UnwrapRef<typeof import('./store/exchanges/index')['useExchangesStore']>
     readonly useExternalApiKeys: UnwrapRef<typeof import('./composables/settings/api-keys/external/index')['useExternalApiKeys']>
     readonly useExternalServicesApi: UnwrapRef<typeof import('./composables/api/settings/external-services-api')['useExternalServicesApi']>
@@ -2360,9 +2377,10 @@ declare module '@vue/runtime-core' {
     readonly useMediaQuery: UnwrapRef<typeof import('@vueuse/core')['useMediaQuery']>
     readonly useMemoize: UnwrapRef<typeof import('@vueuse/core')['useMemoize']>
     readonly useMemory: UnwrapRef<typeof import('@vueuse/core')['useMemory']>
-    readonly useMessageHandling: UnwrapRef<typeof import('./composables/message-handling')['useMessageHandling']>
+    readonly useMessageHandling: UnwrapRef<typeof import('./composables/message-handling/index')['useMessageHandling']>
     readonly useMessageStore: UnwrapRef<typeof import('./store/message')['useMessageStore']>
     readonly useMin: UnwrapRef<typeof import('@vueuse/math')['useMin']>
+    readonly useMissingApiKeyHandler: UnwrapRef<typeof import('./composables/message-handling/missing-api-key')['useMissingApiKeyHandler']>
     readonly useModules: UnwrapRef<typeof import('./composables/session/modules')['useModules']>
     readonly useMonitorStore: UnwrapRef<typeof import('./store/monitor')['useMonitorStore']>
     readonly useMounted: UnwrapRef<typeof import('@vueuse/core')['useMounted']>
@@ -2372,6 +2390,7 @@ declare module '@vue/runtime-core' {
     readonly useMutationObserver: UnwrapRef<typeof import('@vueuse/core')['useMutationObserver']>
     readonly useNavigatorLanguage: UnwrapRef<typeof import('@vueuse/core')['useNavigatorLanguage']>
     readonly useNetwork: UnwrapRef<typeof import('@vueuse/core')['useNetwork']>
+    readonly useNewTokenDetectedHandler: UnwrapRef<typeof import('./composables/message-handling/new-token-detected')['useNewTokenDetectedHandler']>
     readonly useNewlyDetectedTokens: UnwrapRef<typeof import('./composables/assets/newly-detected-tokens')['useNewlyDetectedTokens']>
     readonly useNftBalancesApi: UnwrapRef<typeof import('./composables/api/balances/nft')['useNftBalancesApi']>
     readonly useNftImage: UnwrapRef<typeof import('./composables/nft-image')['useNftImage']>

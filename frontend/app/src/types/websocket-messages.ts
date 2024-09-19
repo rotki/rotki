@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { Blockchain } from '@rotki/common';
+import { Blockchain, type Notification } from '@rotki/common';
 import { EvmChainAddress, EvmChainLikeAddress } from '@/types/history/events';
 import { CalendarEventPayload } from '@/types/history/calendar';
 
@@ -169,6 +169,15 @@ export const CsvImportResult = z.object({
 
 export type CsvImportResult = z.infer<typeof CsvImportResult>;
 
+export const ExchangeUnknownAssetData = z.object({
+  details: z.string(),
+  identifier: z.string(),
+  location: z.string(),
+  name: z.string(),
+});
+
+export type ExchangeUnknownAssetData = z.infer<typeof ExchangeUnknownAssetData>;
+
 export const SocketMessageType = {
   LEGACY: 'legacy',
   BALANCES_SNAPSHOT_ERROR: 'balance_snapshot_error',
@@ -187,6 +196,7 @@ export const SocketMessageType = {
   CALENDAR_REMINDER: 'calendar_reminder',
   PROTOCOL_CACHE_UPDATES: 'protocol_cache_updates',
   CSV_IMPORT_RESULT: 'csv_import_result',
+  EXCHANGE_UNKNOWN_ASSET: 'exchange_unknown_asset',
 } as const;
 
 export type SocketMessageType = (typeof SocketMessageType)[keyof typeof SocketMessageType];
@@ -276,6 +286,11 @@ const CsvImportResultMessage = z.object({
   data: CsvImportResult,
 });
 
+const ExchangeUnknownAssetMessage = z.object({
+  type: z.literal(SocketMessageType.EXCHANGE_UNKNOWN_ASSET),
+  data: ExchangeUnknownAssetData,
+});
+
 export const WebsocketMessage = z.union([
   UnknownWebsocketMessage,
   LegacyWebsocketMessage,
@@ -294,6 +309,11 @@ export const WebsocketMessage = z.union([
   CalendarReminderMessage,
   ProtocolCacheUpdatesMessage,
   CsvImportResultMessage,
+  ExchangeUnknownAssetMessage,
 ]);
 
 export type WebsocketMessage = z.infer<typeof WebsocketMessage>;
+
+export interface CommonMessageHandler<T> {
+  handle: (data: T) => Notification;
+}
