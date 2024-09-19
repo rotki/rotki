@@ -37,6 +37,9 @@ importers:
       eslint-plugin-cypress:
         specifier: 3.5.0
         version: 3.5.0(eslint@9.10.0(jiti@1.21.6))
+      flag-icons:
+        specifier: 7.2.3
+        version: 7.2.3
       husky:
         specifier: 9.1.6
         version: 9.1.6
@@ -3992,6 +3995,9 @@ packages:
   find-up@7.0.0:
     resolution: {integrity: sha512-YyZM99iHrqLKjmt4LJDj58KI+fYyufRLBSYcqycxf//KpBk9FoewoGX0450m9nB44qrZnovzC2oeP5hUibxc/g==}
     engines: {node: '>=18'}
+
+  flag-icons@7.2.3:
+    resolution: {integrity: sha512-X2gUdteNuqdNqob2KKTJTS+ZCvyWeLCtDz9Ty8uJP17Y4o82Y+U/Vd4JNrdwTAjagYsRznOn9DZ+E/Q52qbmqg==}
 
   flat-cache@4.0.1:
     resolution: {integrity: sha512-f7ccFPK3SXFHpx15UIGyRJ/FJQctuKZ0zVuN3frBo4HnK3cay9VEW0R6yPYFHC0AgqhukPzKjq22t5DmAyqGyw==}
@@ -11687,6 +11693,8 @@ snapshots:
       locate-path: 7.2.0
       path-exists: 5.0.0
       unicorn-magic: 0.1.0
+
+  flag-icons@7.2.3: {}
 
   flat-cache@4.0.1:
     dependencies:

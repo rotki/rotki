@@ -8,6 +8,7 @@ export const NoteType = {
   AMOUNT: 'amount',
   WORD: 'word',
   URL: 'url',
+  FLAG: 'flag',
 } as const;
 
 export type NoteType = (typeof NoteType)[keyof typeof NoteType];
@@ -22,6 +23,7 @@ export interface NoteFormat {
   chain?: Blockchain;
   showIcon?: boolean;
   showHashLink?: boolean;
+  countryCode?: string;
 }
 
 interface FormatNoteParams {
@@ -245,6 +247,16 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
           });
           return putBackPunctuation();
         }
+      }
+      // Check if the word is a country flag
+      const countryFlagRegex = /:country:([A-Z]{2}):/;
+      const countryFlagMatch = word.match(countryFlagRegex);
+      if (countryFlagMatch) {
+        formats.push({
+          type: NoteType.FLAG,
+          countryCode: countryFlagMatch[1],
+        });
+        return putBackPunctuation();
       }
 
       formats.push({ type: NoteType.WORD, word: splitted.join('') });

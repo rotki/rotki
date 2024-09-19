@@ -27,5 +27,6 @@ onMounted(async () => {
     <OpenSeaApiKey />
     <MoneriumAuth />
     <TheGraphApiKey />
+    <GnosisPayAuth />
   </TablePageLayout>
 </template>
