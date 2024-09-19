@@ -223,6 +223,7 @@ export const ExternalServiceKeys = z.object({
   blockscout: ApiKey.optional(),
   monerium: Auth.optional(),
   thegraph: ApiKey.optional(),
+  gnosis_pay: ApiKey.optional(),
 });
 
 export type ExternalServiceKeys = z.infer<typeof ExternalServiceKeys>;

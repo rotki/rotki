@@ -2481,6 +2481,17 @@
       "settings": "Settings",
       "title": "Loopring"
     },
+    "gnosispay": {
+      "title": "Gnosis Pay",
+      "description": "Add your Gnosis Pay session token to integrate Gnosis Pay transactions.",
+      "warning": "Gnosis Pay integration is experimental. The session token provides read-only access to your Gnosis Pay data.",
+      "understand": "I understand",
+      "delete_tooltip": "Delete Gnosis Pay session token",
+      "non_premium": "Gnosis Pay integration is only available for premium users.",
+      "api_key_label": "Session Token",
+      "api_key_hint": "Enter your Gnosis Pay session token",
+      "session_token_instructions": "To get your Gnosis Pay session token: 1) Log in to Gnosis Pay, 2) Open browser developer tools, 3) Go to the Application -> Storage -> Cookies, 4) Copy the value of '__Secure-authjs.session-token'."
+    },
     "monerium": {
       "delete_tooltip": "Deletes the Monerium credentials",
       "description": "Used to augment Monerium EVM transactions with banking information.",
