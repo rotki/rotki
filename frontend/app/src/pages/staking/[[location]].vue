@@ -34,10 +34,12 @@ const lastLocation = useLocalStorage('rotki.staking.last_location', '');
 
 const location = computed({
   get() {
-    return props.location ? props.location : undefined;
+    return props.location || undefined;
   },
   set(value?: NavType) {
     set(lastLocation, value);
+    if (value)
+      startPromise(redirect(value));
   },
 });
 
@@ -62,27 +64,32 @@ const staking = computed<StakingInfo[]>(() => [
 const router = useRouter();
 const [DefineIcon, ReuseIcon] = createReusableTemplate<{ image: string }>();
 
-const page = computed(() => {
-  const selectedLocation = get(location);
-  return selectedLocation ? pages[selectedLocation] : null;
-});
-
-watchImmediate(lastLocation, async (location) => {
-  if (!location)
-    return;
-
+async function redirect(location: string) {
   await nextTick(() => {
     router.push({
       name: '/staking/[[location]]',
       params: { location },
     });
   });
+}
+
+const page = computed(() => {
+  const selectedLocation = get(location);
+  return selectedLocation ? pages[selectedLocation] : null;
+});
+
+onMounted(async () => {
+  const location = get(lastLocation);
+  if (!location)
+    return;
+
+  await redirect(location);
 });
 </script>
 
 <template>
   <div class="container">
-    <RuiCard>
+    <RuiCard class="[&>div:first-child]:flex">
       <DefineIcon #default="{ image }">
         <AdaptiveWrapper
           width="1.5rem"
