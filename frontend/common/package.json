@@ -15,8 +15,8 @@
   "types": "lib/index.d.ts",
   "scripts": {
     "postinstall": "pnpm run build",
-    "build": "tsup",
-    "watch": "tsup --watch"
+    "build": "tsup --tsconfig tsconfig.lib.json",
+    "watch": "tsup --watch --tsconfig tsconfig.lib.json"
   },
   "peerDependencies": {
     "@vueuse/core": ">=10.11.0",

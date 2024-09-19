@@ -2,22 +2,13 @@ import path from 'node:path';
 import rotki from '@rotki/eslint-config';
 
 export default rotki({
-  vue: {
-    vueVersion: 3,
-    overrides: {
-      'vue/no-deprecated-model-definition': ['error'],
-      'vue/no-deprecated-v-bind-sync': 'error',
-    },
-  },
+  vue: true,
   typescript: {
     tsconfigPath: 'tsconfig.json',
   },
   stylistic: true,
   rotki: {
     overrides: {
-      '@rotki/no-deprecated-components': 'warn',
-      '@rotki/no-deprecated-props': 'warn',
-      '@rotki/no-legacy-library-import': 'warn',
       '@rotki/consistent-ref-type-annotation': ['error', {
         allowInference: true,
       }],
@@ -25,6 +16,11 @@ export default rotki({
   },
   cypress: {
     testDirectory: path.join('app', 'tests', 'e2e'),
+  },
+  imports: {
+    overrides: {
+      'import/no-cycle': 'off',
+    },
   },
   vueI18n: {
     src: path.join('app', 'src'),
@@ -37,6 +33,7 @@ export default rotki({
       '/transactions.events.headers.*/',
     ],
     overrides: {
+      '@intlify/vue-i18n/no-unused-keys': 'off',
       '@intlify/vue-i18n/no-i18n-t-path-prop': 'error',
       '@intlify/vue-i18n/no-deprecated-i18n-component': 'error',
     },
@@ -50,5 +47,10 @@ export default rotki({
   files: ['**/src/**/*.ts'],
   rules: {
     '@typescript-eslint/explicit-function-return-type': 'error',
+  },
+}, {
+  files: ['**/*'],
+  rules: {
+    'import/no-cycle': 'off',
   },
 });

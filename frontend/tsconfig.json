@@ -1,22 +1,14 @@
 {
-  "compilerOptions": {
-    "target": "es2020",
-    "jsx": "preserve",
-    "lib": ["es2020", "dom", "dom.iterable", "scripthost"],
-    "experimentalDecorators": true,
-    "module": "esnext",
-    "moduleResolution": "Bundler",
-    "resolveJsonModule": true,
-    "allowJs": false,
-    "strict": true,
-    "strictNullChecks": true,
-    "noUnusedLocals": true,
-    "sourceMap": true,
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "forceConsistentCasingInFileNames": true,
-    "isolatedModules": true,
-    "skipLibCheck": true
-  },
-  "exclude": ["node_modules/**", "**/.*", "cypress"]
+  "references": [
+    {
+      "path": "app/tsconfig.json"
+    },
+    {
+      "path": "common/tsconfig.json"
+    },
+    {
+      "path": "dev-proxy/tsconfig.json"
+    }
+  ],
+  "files": []
 }

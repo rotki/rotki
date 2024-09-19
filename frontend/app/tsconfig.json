@@ -11,6 +11,9 @@
     },
     {
       "path": "./tsconfig.vitest.json"
+    },
+    {
+      "path": "./tests/e2e/specs/tsconfig.json"
     }
   ],
   "files": []

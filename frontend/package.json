@@ -16,7 +16,9 @@
     "build:app": "pnpm run --filter @rotki/common build && pnpm run --filter rotki build:app",
     "build:preview": "pnpm run --filter rotki build:preview",
     "docker:build": "pnpm run --filter @rotki/common build && pnpm run --filter rotki build --mode docker",
-    "lint": "eslint . && pnpm run -r lint:style",
+    "lint": "eslint .",
+    "lint:all": "run-p lint \"lint:style {@}\" --",
+    "lint:style": "pnpm run --filter rotki lint:style",
     "lint:fix": "eslint . --fix",
     "check": "pnpm run lint && pnpm run build && pnpm run test:unit",
     "check:all": "pnpm run lint && pnpm run build && pnpm run --filter @rotki/common test:unit --w app && pnpm run --filter rotki test:integration-ci && pnpm run --filter rotki test:contract",
@@ -35,7 +37,7 @@
   },
   "devDependencies": {
     "@intlify/eslint-plugin-vue-i18n": "3.0.0",
-    "@rotki/eslint-config": "2.9.1",
+    "@rotki/eslint-config": "3.2.1",
     "@rotki/eslint-plugin": "0.5.0",
     "argparse": "2.0.1",
     "consola": "3.2.3",
@@ -46,6 +48,7 @@
     "husky": "9.1.6",
     "jsdom": "25.0.0",
     "lint-staged": "15.2.10",
+    "npm-run-all2": "6.2.3",
     "rimraf": "6.0.1",
     "semver": "7.6.3",
     "typescript": "5.5.4"

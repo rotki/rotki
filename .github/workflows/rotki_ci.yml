@@ -124,7 +124,7 @@ jobs:
           fi
       - name: Lint code
         working-directory: ./frontend
-        run: pnpm run lint
+        run: pnpm run lint:all
 
   unittest-frontend:
     name: 'Frontend unit tests'
