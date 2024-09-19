@@ -389,6 +389,6 @@ If an unknown asset is encountered on an exchange we emit a message with the fol
 
 
 - ``location``: Exchange where the asset was found.
-- ``name``: Differentiates between multiple instances of the same location.
+- ``name``: Differentiates between multiple instances of the same exchange.
 - ``identifier``: Asset identifier of the unknown asset.
 - ``details``: Details about what type of event was being processed when the unknown asset was encountered.
