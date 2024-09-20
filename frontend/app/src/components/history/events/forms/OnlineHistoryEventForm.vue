@@ -263,7 +263,7 @@ const locationLabelSuggestions = computed(() =>
       :v$="v$"
     />
 
-    <RuiDivider class="my-10" />
+    <RuiDivider class="mb-6 mt-2" />
 
     <HistoryEventAssetPriceForm
       ref="assetPriceForm"

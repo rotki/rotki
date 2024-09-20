@@ -164,9 +164,14 @@ async function fetchHistoricPrices() {
   }
 }
 
-watch([datetime, asset], async () => {
-  await fetchHistoricPrices();
-});
+watch(
+  [() => props.datetime, () => props.asset, () => props.hidePriceFields],
+  ([newDatetime, newAsset, newHidePriceFields], [oldDatetime, oldAsset, oldHidePriceFields]) => {
+    if (newDatetime !== oldDatetime || newAsset !== oldAsset || (oldHidePriceFields && !newHidePriceFields))
+      fetchHistoricPrices();
+  },
+  { immediate: true },
+);
 
 watch(fetchedAssetToUsdPrice, (price) => {
   set(assetToUsdPrice, price);
@@ -246,6 +251,10 @@ async function submitPrice(payload: NewHistoryEventPayload): Promise<ActionStatu
 function reset() {
   set(fetchedAssetToUsdPrice, '');
   set(fetchedAssetToFiatPrice, '');
+  set(assetToUsdPrice, '');
+  set(assetToFiatPrice, '');
+  set(fiatValue, '');
+  emit('update:usd-value', '');
 }
 
 defineExpose({

@@ -348,7 +348,7 @@ const addressSuggestions = computed(() => getAddresses(Blockchain.ETH));
       :hide-price-fields="isInformationalEvent"
     />
 
-    <RuiDivider class="my-10" />
+    <RuiDivider class="mb-6 mt-2" />
 
     <div class="grid md:grid-cols-2 gap-4">
       <AutoCompleteWithSearchSync
