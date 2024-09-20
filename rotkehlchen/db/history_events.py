@@ -26,6 +26,7 @@ from rotkehlchen.db.filtering import (
     DBEqualsFilter,
     DBIgnoredAssetsFilter,
     DBIgnoreValuesFilter,
+    DBNotEqualFilter,
     EthDepositEventFilterQuery,
     EthWithdrawalFilterQuery,
     EvmEventFilterQuery,
@@ -46,6 +47,7 @@ from rotkehlchen.history.events.structures.eth2 import (
     EthWithdrawalEvent,
 )
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
+from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import (
@@ -597,6 +599,13 @@ class DBHistoryEvents:
         new_query_filter = copy.deepcopy(query_filter)
         new_query_filter.filters.append(
             DBEqualsFilter(and_op=True, column='usd_value', value='0'),
+        )
+        new_query_filter.filters.append(  # exclude informational events
+            DBNotEqualFilter(
+                and_op=True,
+                column='type',
+                value=HistoryEventType.INFORMATIONAL.serialize(),
+            ),
         )
         if ignored_assets is not None:
             new_query_filter.filters.append(

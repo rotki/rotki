@@ -560,21 +560,33 @@ class DBTypeFilter(DBFilter):
 
 
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
-class DBEqualsFilter(DBFilter):
-    """Filter a column by comparing its column to its value for equality.
-    For nullable columns that's where we want to include the null rows set
-    include_null_values to true.
-    """
+class DBNotEqualFilter(DBFilter):
+    """Filter a column by comparing its column to its value for inequality"""
     column: str
     value: str | (bytes | (int | bool))
     alias: str | None = None
-    include_null_values: bool = False
 
-    def prepare(self) -> tuple[list[str], list[Any]]:
+    def key_name(self) -> str:
         key_name = self.column
         if self.alias is not None:
             key_name = f'{self.alias}.{key_name}'
 
+        return key_name
+
+    def prepare(self) -> tuple[list[str], list[Any]]:
+        return [f'{self.key_name()}!=?'], [self.value]
+
+
+@dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
+class DBEqualsFilter(DBNotEqualFilter):
+    """Filter a column by comparing its column to its value for equality.
+    For nullable columns that's where we want to include the null rows set
+    include_null_values to true.
+    """
+    include_null_values: bool = False
+
+    def prepare(self) -> tuple[list[str], list[Any]]:
+        key_name = self.key_name()
         if self.include_null_values is False:
             return [f'{key_name}=?'], [self.value]
 
