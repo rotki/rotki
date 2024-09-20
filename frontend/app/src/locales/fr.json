@@ -296,7 +296,6 @@
             "existed": "A déjà été ajouté auparavant",
             "is_contract": "Est une adresse de contrat ETH"
           },
-          "description": "Échec de l'ajout de {addresses} nouveaux comptes {blockchain} : {error}",
           "failed_list_description": "Échec de l'ajout de {addresses} nouveaux comptes {blockchain}. Veuillez vérifier à nouveau si ces compte(s) sont valides :\n {list}"
         },
         "success": {
