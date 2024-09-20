@@ -32,7 +32,7 @@ const emit = defineEmits<{
   (e: 'update:usd-value', usdValue: string): void;
 }>();
 
-const { datetime, amount, usdValue, asset, disableAsset } = toRefs(props);
+const { datetime, amount, usdValue, asset, disableAsset, hidePriceFields } = toRefs(props);
 
 const assetModel = computed({
   get() {
@@ -121,6 +121,9 @@ function onFiatValueChange() {
 }
 
 async function fetchHistoricPrices() {
+  if (get(hidePriceFields))
+    return;
+
   const datetimeVal = get(datetime);
   const assetVal = get(asset);
   if (!datetimeVal || !assetVal)
@@ -162,6 +165,8 @@ async function fetchHistoricPrices() {
 }
 
 watch([datetime, asset], async () => {
+  if (get(hidePriceFields))
+    return;
   await fetchHistoricPrices();
 });
 
@@ -203,6 +208,9 @@ watch(amount, () => {
 });
 
 async function submitPrice(payload: NewHistoryEventPayload): Promise<ActionStatus<ValidationErrors | string>> {
+  if (get(hidePriceFields))
+    return { success: true };
+
   const assetVal = get(asset);
   const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond);
 

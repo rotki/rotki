@@ -232,7 +232,7 @@ async function save(): Promise<boolean> {
     asset: get(asset),
     balance: get(isInformationalEvent)
       ? {
-          amount: Zero,
+          amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
           usdValue: Zero,
         }
       : {
