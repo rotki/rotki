@@ -39,6 +39,7 @@ Changelog
 * :bug:`-` rotki will now query TheGraph delegations only for the addresses that interacted with the protocol.
 * :bug:`-` rotki will now process all the kraken events during PnL report.
 * :bug:`-` Fixes a bug that was causing rotki to always query curve for new pools.
+* :bug:`8043` Informational events won't trigger price queries.
 * :bug:`8452` Fix Monerium integration after the v2 contracts upgrade.
 
 * :release:`1.34.3 <2024-08-20>`
