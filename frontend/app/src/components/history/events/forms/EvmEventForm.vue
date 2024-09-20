@@ -229,7 +229,7 @@ async function save(): Promise<boolean> {
     timestamp,
     eventType: get(eventType),
     eventSubtype: get(eventSubtype),
-    asset: isInformationalEvent.value ? 'ETH' : get(asset),
+    asset: get(asset),
     balance: isInformationalEvent.value
       ? {
           amount: Zero,
