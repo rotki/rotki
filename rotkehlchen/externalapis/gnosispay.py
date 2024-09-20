@@ -295,7 +295,7 @@ class GnosisPay:
         Then search for our events and if there is a matching event overlay the
         merchant data on top.
         """
-        log.debug(f'Starting task to query for gnosis pay merchant transaction data')
+        log.debug('Starting task to query for gnosis pay merchant transaction data')
         with self.database.conn.write_ctx() as write_cursor:
             write_cursor.execute(  # remember last time task ran
                 'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
