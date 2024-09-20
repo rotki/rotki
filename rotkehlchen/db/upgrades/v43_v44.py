@@ -148,12 +148,26 @@ def _add_exited_timestamp(cursor: 'DBCursor') -> None:
 
 
 @enter_exit_debug_log()
-def _add_cowswap_orders_table(write_cursor: 'DBCursor') -> None:
+def _add_new_tables(write_cursor: 'DBCursor') -> None:
     write_cursor.execute("""
     CREATE TABLE IF NOT EXISTS cowswap_orders (
         identifier TEXT NOT NULL PRIMARY KEY,
         order_type TEXT NOT NULL,
         raw_fee_amount TEXT NOT NULL
+    );""")
+    write_cursor.execute("""
+    CREATE TABLE IF NOT EXISTS gnosispay_data (
+        identifier INTEGER PRIMARY KEY NOT NULL,
+        tx_hash BLOB NOT NULL UNIQUE,
+        timestamp INTEGER NOT NULL,
+        merchant_name TEXT NOT NULL,
+        merchant_city TEXT,
+        country TEXT NOT NULL,
+        mcc INTEGER NOT NULL,
+        transaction_symbol TEXT NOT NULL,
+        transaction_amount TEXT NOT NULL,
+        billing_symbol TEXT,
+        billing_amount TEXT
     );""")
 
 
@@ -181,7 +195,7 @@ def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         progress_handler.new_step()
         _add_exited_timestamp(write_cursor)
         progress_handler.new_step()
-        _add_cowswap_orders_table(write_cursor)
+        _add_new_tables(write_cursor)
         progress_handler.new_step()
 
     db.conn.execute('VACUUM;')

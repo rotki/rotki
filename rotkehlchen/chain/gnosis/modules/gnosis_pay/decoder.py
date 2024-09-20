@@ -1,7 +1,9 @@
-from typing import Any
+import logging
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -15,12 +17,41 @@ from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import (
     GNOSIS_PAY_SPENDER_ADDRESS,
     SPEND,
 )
+from rotkehlchen.externalapis.gnosispay import init_gnosis_pay
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
+from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
 
+if TYPE_CHECKING:
+    from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
+    from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
+    from rotkehlchen.user_messages import MessagesAggregator
 
-class GnosisPayDecoder(DecoderInterface):
+
+logger = logging.getLogger(__name__)
+log = RotkehlchenLogsAdapter(logger)
+
+
+class GnosisPayDecoder(DecoderInterface, ReloadableDecoderMixin):
+
+    def __init__(
+            self,
+            evm_inquirer: 'EvmNodeInquirer',
+            base_tools: 'BaseDecoderTools',
+            msg_aggregator: 'MessagesAggregator',
+    ) -> None:
+        super().__init__(
+            evm_inquirer=evm_inquirer,
+            base_tools=base_tools,
+            msg_aggregator=msg_aggregator,
+        )
+        self.gnosispay_api = init_gnosis_pay(self.base.database)
+
+    def reload_data(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]] | None:
+        """Reload the gnosis pay api from the DB with the credentials"""
+        self.gnosispay_api = init_gnosis_pay(self.base.database)
+        return self.addresses_to_decoders()
 
     def decode_cashback_events(self, context: DecoderContext) -> DecodingOutput:
         for event in context.decoded_events:
@@ -60,6 +91,20 @@ class GnosisPayDecoder(DecoderInterface):
                 event.counterparty = CPT_GNOSIS_PAY
                 event.event_subtype = HistoryEventSubType.PAYMENT
                 event.notes = f'Spend {event.balance.amount} {token.symbol} via Gnosis Pay'
+                if (
+                        self.gnosispay_api is not None and
+                        (
+                            new_notes := self.gnosispay_api.get_data_for_transaction(
+                                tx_hash=context.transaction.tx_hash,
+                                tx_timestamp=context.transaction.timestamp,
+                            )) is not None
+                ):
+                    event.notes = new_notes
+
+                break
+
+        else:
+            log.error(f'Could not find gnosis pay spend event in {context.transaction}')
 
         return DEFAULT_DECODING_OUTPUT
 

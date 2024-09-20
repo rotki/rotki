@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -10,7 +12,15 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
-from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
+from rotkehlchen.tests.utils.mock import MockResponse
+from rotkehlchen.types import (
+    ApiKey,
+    ExternalService,
+    ExternalServiceApiCredentials,
+    Location,
+    TimestampMS,
+    deserialize_evm_tx_hash,
+)
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -46,12 +56,14 @@ def test_gnosis_pay_cashback(gnosis_inquirer, gnosis_accounts):
 ]])
 def test_gnosis_pay_spend(gnosis_inquirer, gnosis_accounts):
     tx_hash = deserialize_evm_tx_hash('0xe8d666d6acf22e5a50dfea7ece1473558a854dfa04441ea9b3d0898843364ad8')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
+    events, gnosis_txs_decoder = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
         tx_hash=tx_hash,
     )
+    gnosispay_decoder = gnosis_txs_decoder.decoders.get('GnosisPay')
+
     amount = '8.5'
-    assert events == [
+    expected_events = [
         EvmEvent(
             sequence_index=29,
             timestamp=TimestampMS(1726590745000),
@@ -67,3 +79,71 @@ def test_gnosis_pay_spend(gnosis_inquirer, gnosis_accounts):
             address='0x4822521E6135CD2599199c83Ea35179229A172EE',
         ),
     ]
+    assert events == expected_events
+
+    with gnosis_inquirer.database.user_write() as write_cursor:
+        gnosis_inquirer.database.add_external_service_credentials(
+            write_cursor=write_cursor,
+            credentials=[ExternalServiceApiCredentials(service=ExternalService.GNOSIS_PAY, api_key=ApiKey('foo'))],  # noqa: E501
+        )
+    gnosispay_decoder.reload_data()
+
+    def mock_gnosispay_api(url, **kwargs):  # pylint: disable=unused-argument
+        return MockResponse(200, """[{
+        "createdAt": "2024-09-17T16:32:25.0000Z",
+        "transactionAmount": "850",
+        "transactionCurrency": {
+            "symbol": "EUR",
+            "code": "978",
+            "decimals": 2,
+            "name": "Euro"
+        },
+        "billingAmount": "850",
+        "billingCurrency": {
+            "symbol": "EUR",
+            "code": "978",
+            "decimals": 2,
+            "name": "Euro"
+        },
+        "mcc": "5411",
+        "merchant": {
+            "name": "Lidl sagt Danke          ",
+            "city": "Berlin       ",
+            "country": {
+                "name": "Germany",
+                "numeric": "276",
+                "alpha2": "DE",
+                "alpha3": "DEU"
+            }
+        },
+        "country": {
+            "name": "Germany",
+            "numeric": "276",
+            "alpha2": "DE",
+            "alpha3": "DEU"
+        },
+        "transactions": [
+            {
+                "status": "ExecSuccess",
+                "to": "0xbooooooooo",
+                "value": "0",
+                "data": "0xfooooooooooo",
+                "hash": "0xe8d666d6acf22e5a50dfea7ece1473558a854dfa04441ea9b3d0898843364ad8"
+            }
+        ],
+        "kind": "Payment",
+        "status": "Approved"
+        }]""")
+
+    with patch.object(
+            gnosis_txs_decoder,  # do not reload data since this overwrites the api object
+            'reload_data',
+            lambda x: None,
+    ), patch.object(
+            gnosispay_decoder.gnosispay_api.session,  # mock api response
+            'get',
+            wraps=mock_gnosispay_api,
+    ):
+        events = gnosis_txs_decoder.decode_and_get_transaction_hashes(ignore_cache=True, tx_hashes=[tx_hash])  # noqa: E501
+        expected_events[0].notes = 'Pay 8.5 EUR to Lidl sagt Danke in Berlin :country:DE:'
+        assert events == expected_events

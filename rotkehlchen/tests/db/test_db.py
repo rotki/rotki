@@ -167,6 +167,7 @@ TABLES_AT_INIT = [
     'zksynclite_swaps',
     'calendar_reminders',
     'cowswap_orders',
+    'gnosispay_data',
 ]
 
 
