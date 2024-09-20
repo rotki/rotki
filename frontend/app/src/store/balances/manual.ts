@@ -109,6 +109,9 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
     return breakdown;
   });
 
+  const assetBreakdown = (asset: string): ComputedRef<AssetBreakdown[]> => getBreakdown(asset);
+  const liabilityBreakdown = (asset: string): ComputedRef<AssetBreakdown[]> => getBreakdown(asset, true);
+
   const getLocationBreakdown = (id: string): ComputedRef<AssetBalances> => computed<AssetBalances>(() => {
     const assets: AssetBalances = {};
     const balances = get(manualBalances);
@@ -285,7 +288,8 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
     manualLiabilities,
     manualLabels,
     manualBalanceByLocation,
-    getBreakdown,
+    assetBreakdown,
+    liabilityBreakdown,
     getLocationBreakdown,
     fetchManualBalances,
     addManualBalance,

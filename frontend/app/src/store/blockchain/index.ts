@@ -257,6 +257,10 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     return breakdown;
   };
 
+  const assetBreakdown = (asset: string, chains?: string[], groupId?: string): AssetBreakdown[] => getBreakdown(asset, false, chains, groupId);
+
+  const liabilityBreakdown = (asset: string): AssetBreakdown[] => getBreakdown(asset, true);
+
   const getAccountDetails = (
     chain: string,
     address: string,
@@ -328,7 +332,8 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     getAccountDetails,
     getAddresses,
     getAddressBalances,
-    getBreakdown,
+    assetBreakdown,
+    liabilityBreakdown,
     updateAccounts,
     updateBalances,
     updatePrices,

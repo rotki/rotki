@@ -28,8 +28,8 @@ const props = withDefaults(
 const { t } = useI18n();
 
 const { blockchainOnly, showPercentage, total } = toRefs(props);
-const { getBreakdown } = useBlockchainStore();
-const { assetBreakdown } = useBalancesBreakdown();
+const { assetBreakdown: blockchainAssetBreakdown, liabilityBreakdown: blockchainLiabilityBreakdown } = useBlockchainStore();
+const { assetBreakdown, liabilityBreakdown } = useBalancesBreakdown();
 const { getChain } = useSupportedChains();
 
 const breakdown = computed<Record<string, AssetBreakdown[]>>(() => {
@@ -39,12 +39,14 @@ const breakdown = computed<Record<string, AssetBreakdown[]>>(() => {
   for (const asset of assets) {
     const details = props.details;
     const isLiability = props.isLiability;
-    if (details)
-      breakdown[asset] = get(getBreakdown(asset, isLiability, details.chains, details.groupId));
-    else if (get(blockchainOnly))
-      breakdown[asset] = get(getBreakdown(asset, isLiability));
-    else
-      breakdown[asset] = get(assetBreakdown(asset, isLiability));
+    if (details || get(blockchainOnly)) {
+      const func = !isLiability ? blockchainAssetBreakdown : blockchainLiabilityBreakdown;
+      breakdown[asset] = get(func(asset, details?.chains, details?.groupId));
+    }
+    else {
+      const func = !isLiability ? assetBreakdown : liabilityBreakdown;
+      breakdown[asset] = get(func(asset));
+    }
   }
 
   return breakdown;

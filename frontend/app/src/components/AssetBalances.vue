@@ -19,6 +19,7 @@ const props = withDefaults(
     hideTotal?: boolean;
     hideBreakdown?: boolean;
     stickyHeader?: boolean;
+    isLiability?: boolean;
   }>(),
   {
     loading: false,
@@ -26,6 +27,7 @@ const props = withDefaults(
     hideBreakdown: false,
     stickyHeader: false,
     details: undefined,
+    isLiability: false,
   },
 );
 
@@ -173,6 +175,7 @@ function getAssets(item: AssetBalanceWithPrice): string[] {
         :assets="getAssets(row)"
         :details="details"
         :identifier="row.asset"
+        :is-liability="isLiability"
         class="bg-white dark:bg-[#1E1E1E] my-2"
       />
       <AssetBalances

@@ -116,8 +116,20 @@ describe('store::balances/manual', () => {
       ]);
     });
 
-    it('getBreakdown', () => {
-      expect(get(store.getBreakdown('BTC'))).toMatchObject([
+    it('liabilityBreakdown', () => {
+      expect(get(store.liabilityBreakdown('EUR'))).toMatchObject([
+        {
+          address: '',
+          location: TRADE_LOCATION_BANKS,
+          amount: bigNumberify(60),
+          usdValue: bigNumberify(60),
+          tags: [],
+        },
+      ]);
+    });
+
+    it('assetBreakdown', () => {
+      expect(get(store.assetBreakdown('BTC'))).toMatchObject([
         {
           address: '',
           location: TRADE_LOCATION_BLOCKCHAIN,
@@ -127,7 +139,7 @@ describe('store::balances/manual', () => {
         },
       ]);
 
-      expect(get(store.getBreakdown('DAI'))).toMatchObject([
+      expect(get(store.assetBreakdown('DAI'))).toMatchObject([
         {
           address: '',
           location: TRADE_LOCATION_BLOCKCHAIN,
@@ -138,22 +150,12 @@ describe('store::balances/manual', () => {
       ]);
 
       // Breakdown for liabilities
-      expect(get(store.getBreakdown('EUR'))).toMatchObject([]);
-
-      expect(get(store.getBreakdown('EUR', true))).toMatchObject([
-        {
-          address: '',
-          location: TRADE_LOCATION_BANKS,
-          amount: bigNumberify(60),
-          usdValue: bigNumberify(60),
-          tags: [],
-        },
-      ]);
+      expect(get(store.assetBreakdown('EUR'))).toMatchObject([]);
 
       const { manualBalancesData } = storeToRefs(store);
       set(manualBalancesData, ethAndEth2Balances);
 
-      const breakdown = store.getBreakdown('ETH');
+      const breakdown = store.assetBreakdown('ETH');
 
       updateGeneralSettings({
         treatEth2AsEth: false,
