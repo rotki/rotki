@@ -113,8 +113,10 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
     const formats: NoteFormat[] = [];
     let skip = false;
 
+    const counterpartyVal = get(counterparty);
+
     // Check if we need to scramble IBAN
-    if (get(scrambleData) && get(counterparty) === 'monerium')
+    if (get(scrambleData) && counterpartyVal === 'monerium')
       notesVal = findAndScrambleIBAN(notesVal);
 
     // label each word from notes whether it is an address or not
@@ -251,10 +253,10 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
       // Check if the word is a country flag
       const countryFlagRegex = /:country:([A-Z]{2}):/;
       const countryFlagMatch = word.match(countryFlagRegex);
-      if (countryFlagMatch) {
+      if (countryFlagMatch && counterpartyVal === 'gnosis pay') {
         formats.push({
           type: NoteType.FLAG,
-          countryCode: countryFlagMatch[1],
+          countryCode: countryFlagMatch[1]?.toLowerCase(),
         });
         return putBackPunctuation();
       }
