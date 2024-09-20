@@ -253,7 +253,7 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
       // Check if the word is a country flag
       const countryFlagRegex = /:country:([A-Z]{2}):/;
       const countryFlagMatch = word.match(countryFlagRegex);
-      if (countryFlagMatch && counterpartyVal === 'gnosis pay') {
+      if (countryFlagMatch && counterpartyVal === 'gnosis_pay') {
         formats.push({
           type: NoteType.FLAG,
           countryCode: countryFlagMatch[1]?.toLowerCase(),

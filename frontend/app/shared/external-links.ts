@@ -27,6 +27,7 @@ export const externalLinks = {
     dockerWarning: `${USAGE_GUIDE_URL}using-rotki-from-mobile#docker`,
     addingAnExchange: `${USAGE_GUIDE_URL}importing-data#adding-an-exchange`,
     theGraphApiKey: `${USAGE_GUIDE_URL}importing-data#the-graph`,
+    gnosisPayKey: `${USAGE_GUIDE_URL}importing-data#gnosis-pay`,
   },
   coingeckoAsset: `https://www.coingecko.com/en/coins/$symbol`,
   cryptocompareAsset: `https://www.cryptocompare.com/coins/$symbol/overview`,

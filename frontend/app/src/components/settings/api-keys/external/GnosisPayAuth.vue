@@ -10,6 +10,8 @@ const premium = usePremium();
 const key = apiKey(name);
 const status = actionStatus(name);
 
+const link = externalLinks.usageGuideSection.gnosisPayKey;
+
 watchImmediate(key, (value) => {
   if (value)
     set(understand, true);
@@ -53,9 +55,20 @@ watchImmediate(key, (value) => {
         @save="save($event)"
         @delete-key="confirmDelete($event)"
       >
-        <p class="text-sm text-gray-600 mt-2">
-          {{ t('external_services.gnosispay.session_token_instructions') }}
-        </p>
+        <i18n-t
+          tag="div"
+          class="text-rui-text-secondary text-body-2"
+          keypath="external_services.gnosispay.session_token_instructions"
+        >
+          <template #link>
+            <ExternalLink
+              color="primary"
+              :url="link"
+            >
+              {{ t('common.here') }}
+            </ExternalLink>
+          </template>
+        </i18n-t>
       </ServiceKey>
     </template>
     <template v-else>
