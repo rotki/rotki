@@ -412,6 +412,7 @@ declare global {
   const useAaveApi: typeof import('./composables/api/defi/aave')['useAaveApi']
   const useAaveStore: typeof import('./store/defi/aave/index')['useAaveStore']
   const useAbs: typeof import('@vueuse/math')['useAbs']
+  const useAccountAdditionNotifications: typeof import('./composables/blockchain/use-account-addition-notifications')['useAccountAdditionNotifications']
   const useAccountDelete: typeof import('./composables/accounts/blockchain/use-account-delete')['useAccountDelete']
   const useAccountLoading: typeof import('./composables/accounts/loading')['useAccountLoading']
   const useAccountManage: typeof import('./composables/accounts/blockchain/use-account-manage')['useAccountManage']
@@ -1280,6 +1281,7 @@ declare module 'vue' {
     readonly useAaveApi: UnwrapRef<typeof import('./composables/api/defi/aave')['useAaveApi']>
     readonly useAaveStore: UnwrapRef<typeof import('./store/defi/aave/index')['useAaveStore']>
     readonly useAbs: UnwrapRef<typeof import('@vueuse/math')['useAbs']>
+    readonly useAccountAdditionNotifications: UnwrapRef<typeof import('./composables/blockchain/use-account-addition-notifications')['useAccountAdditionNotifications']>
     readonly useAccountDelete: UnwrapRef<typeof import('./composables/accounts/blockchain/use-account-delete')['useAccountDelete']>
     readonly useAccountLoading: UnwrapRef<typeof import('./composables/accounts/loading')['useAccountLoading']>
     readonly useAccountManage: UnwrapRef<typeof import('./composables/accounts/blockchain/use-account-manage')['useAccountManage']>
@@ -2128,6 +2130,7 @@ declare module '@vue/runtime-core' {
     readonly useAaveApi: UnwrapRef<typeof import('./composables/api/defi/aave')['useAaveApi']>
     readonly useAaveStore: UnwrapRef<typeof import('./store/defi/aave/index')['useAaveStore']>
     readonly useAbs: UnwrapRef<typeof import('@vueuse/math')['useAbs']>
+    readonly useAccountAdditionNotifications: UnwrapRef<typeof import('./composables/blockchain/use-account-addition-notifications')['useAccountAdditionNotifications']>
     readonly useAccountDelete: UnwrapRef<typeof import('./composables/accounts/blockchain/use-account-delete')['useAccountDelete']>
     readonly useAccountLoading: UnwrapRef<typeof import('./composables/accounts/loading')['useAccountLoading']>
     readonly useAccountManage: UnwrapRef<typeof import('./composables/accounts/blockchain/use-account-manage')['useAccountManage']>
