@@ -18,9 +18,11 @@ const props = withDefaults(
     usdValue: string;
     disableAsset?: boolean;
     v$: Validation;
+    hidePriceFields: boolean;
   }>(),
   {
     disableAsset: false,
+    hidePriceFields: false,
   },
 );
 
@@ -269,46 +271,47 @@ defineExpose({
         @blur="v$.amount.$touch()"
       />
     </div>
+    <template v-if="!hidePriceFields">
+      <TwoFieldsAmountInput
+        v-if="isCurrentCurrencyUsd"
+        v-model:primary-value="assetToUsdPrice"
+        v-model:secondary-value="usdValueModel"
+        class="mb-5"
+        :loading="fetching"
+        :disabled="fetching"
+        :label="{
+          primary: t('transactions.events.form.asset_price.label', {
+            symbol: currencySymbol,
+          }),
+          secondary: t('common.value_in_symbol', {
+            symbol: currencySymbol,
+          }),
+        }"
+        :error-messages="{
+          primary: toMessages(v$.usdValue),
+          secondary: toMessages(v$.usdValue),
+        }"
+        :hint="t('transactions.events.form.asset_price.hint')"
+        @update:reversed="fiatValueFocused = $event"
+      />
 
-    <TwoFieldsAmountInput
-      v-if="isCurrentCurrencyUsd"
-      v-model:primary-value="assetToUsdPrice"
-      v-model:secondary-value="usdValueModel"
-      class="mb-5"
-      :loading="fetching"
-      :disabled="fetching"
-      :label="{
-        primary: t('transactions.events.form.asset_price.label', {
-          symbol: currencySymbol,
-        }),
-        secondary: t('common.value_in_symbol', {
-          symbol: currencySymbol,
-        }),
-      }"
-      :error-messages="{
-        primary: toMessages(v$.usdValue),
-        secondary: toMessages(v$.usdValue),
-      }"
-      :hint="t('transactions.events.form.asset_price.hint')"
-      @update:reversed="fiatValueFocused = $event"
-    />
-
-    <TwoFieldsAmountInput
-      v-else
-      v-model:primary-value="assetToFiatPrice"
-      v-model:secondary-value="fiatValue"
-      class="mb-5"
-      :loading="fetching"
-      :disabled="fetching"
-      :label="{
-        primary: t('transactions.events.form.asset_price.label', {
-          symbol: currencySymbol,
-        }),
-        secondary: t('common.value_in_symbol', {
-          symbol: currencySymbol,
-        }),
-      }"
-      @update:reversed="fiatValueFocused = $event"
-    />
+      <TwoFieldsAmountInput
+        v-else
+        v-model:primary-value="assetToFiatPrice"
+        v-model:secondary-value="fiatValue"
+        class="mb-5"
+        :loading="fetching"
+        :disabled="fetching"
+        :label="{
+          primary: t('transactions.events.form.asset_price.label', {
+            symbol: currencySymbol,
+          }),
+          secondary: t('common.value_in_symbol', {
+            symbol: currencySymbol,
+          }),
+        }"
+        @update:reversed="fiatValueFocused = $event"
+      />
+    </template>
   </div>
 </template>

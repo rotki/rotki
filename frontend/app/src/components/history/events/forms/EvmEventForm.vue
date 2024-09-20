@@ -344,13 +344,13 @@ const addressSuggestions = computed(() => getAddresses(Blockchain.ETH));
     <RuiDivider class="mb-6 mt-2" />
 
     <HistoryEventAssetPriceForm
-      v-if="!isInformationalEvent"
       ref="assetPriceForm"
       v-model:asset="asset"
       v-model:amount="amount"
       v-model:usd-value="usdValue"
       :v$="v$"
       :datetime="datetime"
+      :hide-price-fields="isInformationalEvent"
     />
 
     <RuiDivider class="my-10" />
