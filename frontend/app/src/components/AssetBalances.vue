@@ -184,6 +184,7 @@ function getAssets(item: AssetBalanceWithPrice): string[] {
         hide-total
         :balances="row.breakdown ?? []"
         :sticky-header="false"
+        :is-liability="isLiability"
         class="bg-white dark:bg-[#1E1E1E] my-2"
       />
     </template>
