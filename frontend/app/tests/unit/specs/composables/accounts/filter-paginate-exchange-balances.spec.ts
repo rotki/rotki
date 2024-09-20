@@ -97,6 +97,7 @@ describe('composables::history/filter-paginate', () => {
       fetchData().catch(() => {});
       expect(get(isLoading)).toBe(true);
       await flushPromises();
+      await flushPromises();
       expect(get(isLoading)).toBe(false);
       expect(get(state).total).toEqual(260);
     });

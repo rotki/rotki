@@ -57,8 +57,8 @@ describe('store::balances/manual', () => {
     },
     {
       identifier: 3,
-      usdValue: bigNumberify(50),
-      amount: bigNumberify(50),
+      usdValue: bigNumberify(60),
+      amount: bigNumberify(60),
       asset: 'EUR',
       label: 'My Bank Account',
       tags: [],
@@ -133,6 +133,19 @@ describe('store::balances/manual', () => {
           location: TRADE_LOCATION_BLOCKCHAIN,
           amount: bigNumberify(50),
           usdValue: bigNumberify(50),
+          tags: [],
+        },
+      ]);
+
+      // Breakdown for liabilities
+      expect(get(store.getBreakdown('EUR'))).toMatchObject([]);
+
+      expect(get(store.getBreakdown('EUR', true))).toMatchObject([
+        {
+          address: '',
+          location: TRADE_LOCATION_BANKS,
+          amount: bigNumberify(60),
+          usdValue: bigNumberify(60),
           tags: [],
         },
       ]);
@@ -227,8 +240,8 @@ describe('store::balances/manual', () => {
       },
       {
         identifier: 3,
-        usdValue: '50',
-        amount: '50',
+        usdValue: '60',
+        amount: '60',
         asset: 'EUR',
         label: 'My Bank Account',
         tags: [],
@@ -272,7 +285,7 @@ describe('store::balances/manual', () => {
 
       expect(get(manualBalancesData)[1].usdValue).toEqual(bigNumberify(30).multipliedBy(3));
 
-      expect(get(manualBalancesData)[2].usdValue).toEqual(bigNumberify(50).multipliedBy(1));
+      expect(get(manualBalancesData)[2].usdValue).toEqual(bigNumberify(60).multipliedBy(1));
     });
   });
 

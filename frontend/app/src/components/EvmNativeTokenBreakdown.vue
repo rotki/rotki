@@ -15,11 +15,13 @@ const props = withDefaults(
     blockchainOnly?: boolean;
     showPercentage?: boolean;
     total?: BigNumber;
+    isLiability?: boolean;
   }>(),
   {
     blockchainOnly: false,
     showPercentage: false,
     total: undefined,
+    isLiability: false,
   },
 );
 
@@ -36,12 +38,13 @@ const breakdown = computed<Record<string, AssetBreakdown[]>>(() => {
 
   for (const asset of assets) {
     const details = props.details;
+    const isLiability = props.isLiability;
     if (details)
-      breakdown[asset] = get(getBreakdown(asset, details.chains, details.groupId));
+      breakdown[asset] = get(getBreakdown(asset, isLiability, details.chains, details.groupId));
     else if (get(blockchainOnly))
-      breakdown[asset] = get(getBreakdown(asset));
+      breakdown[asset] = get(getBreakdown(asset, isLiability));
     else
-      breakdown[asset] = get(assetBreakdown(asset));
+      breakdown[asset] = get(assetBreakdown(asset, isLiability));
   }
 
   return breakdown;

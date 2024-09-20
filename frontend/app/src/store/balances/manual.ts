@@ -89,9 +89,9 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
       .sort((a, b) => sortDesc(a.usdValue, b.usdValue));
   });
 
-  const getBreakdown = (asset: string): ComputedRef<AssetBreakdown[]> => computed<AssetBreakdown[]>(() => {
+  const getBreakdown = (asset: string, isLiability = false): ComputedRef<AssetBreakdown[]> => computed<AssetBreakdown[]>(() => {
     const breakdown: AssetBreakdown[] = [];
-    const balances = get(manualBalances);
+    const balances = isLiability ? get(manualLiabilities) : get(manualBalances);
 
     for (const balance of balances) {
       const associatedAsset = get(getAssociatedAssetIdentifier(balance.asset));

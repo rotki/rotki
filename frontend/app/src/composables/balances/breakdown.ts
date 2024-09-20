@@ -4,7 +4,7 @@ import type { MaybeRef } from '@vueuse/core';
 import type { AssetBreakdown } from '@/types/blockchain/accounts';
 
 interface UseBalancesBreakdownReturn {
-  assetBreakdown: (asset: string) => ComputedRef<AssetBreakdown[]>;
+  assetBreakdown: (asset: string, isLiability?: boolean) => ComputedRef<AssetBreakdown[]>;
   locationBreakdown: (identifier: MaybeRef<string>) => ComputedRef<AssetBalanceWithPrice[]>;
   balancesByLocation: ComputedRef<Record<string, BigNumber>>;
 }
@@ -24,10 +24,10 @@ export function useBalancesBreakdown(): UseBalancesBreakdownReturn {
   const { isAssetIgnored } = useIgnoredAssetsStore();
   const { toSortedAssetBalanceWithPrice } = useBalanceSorting();
 
-  const assetBreakdown = (asset: string): ComputedRef<AssetBreakdown[]> => computed<AssetBreakdown[]>(() =>
+  const assetBreakdown = (asset: string, isLiability = false): ComputedRef<AssetBreakdown[]> => computed<AssetBreakdown[]>(() =>
     groupAssetBreakdown(
-      get(getBreakdown(asset))
-        .concat(get(getManualBreakdown(asset)))
+      get(getBreakdown(asset, isLiability))
+        .concat(get(getManualBreakdown(asset, isLiability)))
         .concat(get(getExchangeBreakdown(asset)))
         .filter(item => !!item.amount && !item.amount.isZero()),
     ),
