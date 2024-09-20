@@ -20,6 +20,7 @@ const props = withDefaults(
     hideBreakdown?: boolean;
     stickyHeader?: boolean;
     isLiability?: boolean;
+    allBreakdown?: boolean;
   }>(),
   {
     loading: false,
@@ -28,6 +29,7 @@ const props = withDefaults(
     stickyHeader: false,
     details: undefined,
     isLiability: false,
+    allBreakdown: false,
   },
 );
 
@@ -171,7 +173,7 @@ function getAssets(item: AssetBalanceWithPrice): string[] {
     <template #expanded-item="{ row }">
       <EvmNativeTokenBreakdown
         v-if="!hideBreakdown && isEvmNativeToken(row.asset)"
-        blockchain-only
+        :blockchain-only="!allBreakdown"
         :assets="getAssets(row)"
         :details="details"
         :identifier="row.asset"
@@ -185,6 +187,7 @@ function getAssets(item: AssetBalanceWithPrice): string[] {
         :balances="row.breakdown ?? []"
         :sticky-header="false"
         :is-liability="isLiability"
+        :all-breakdown="allBreakdown"
         class="bg-white dark:bg-[#1E1E1E] my-2"
       />
     </template>

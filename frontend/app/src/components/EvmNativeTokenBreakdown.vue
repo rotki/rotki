@@ -35,10 +35,10 @@ const { getChain } = useSupportedChains();
 const breakdown = computed<Record<string, AssetBreakdown[]>>(() => {
   const assets = props.assets.length > 0 ? props.assets : [props.identifier];
   const breakdown: Record<string, AssetBreakdown[]> = {};
+  const details = props.details;
+  const isLiability = props.isLiability;
 
   for (const asset of assets) {
-    const details = props.details;
-    const isLiability = props.isLiability;
     if (details || get(blockchainOnly)) {
       const func = !isLiability ? blockchainAssetBreakdown : blockchainLiabilityBreakdown;
       breakdown[asset] = get(func(asset, details?.chains, details?.groupId));
@@ -163,6 +163,7 @@ function getAssets(location: string): AssetBalance[] {
     </template>
     <template #item.tokens="{ row }">
       <IconTokenDisplay
+        show-chain
         :assets="getAssets(row.location)"
         :loading="false"
       />

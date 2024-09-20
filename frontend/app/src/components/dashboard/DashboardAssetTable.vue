@@ -322,6 +322,7 @@ watch(search, () => setPage(1));
           hide-total
           v-bind="props"
           :balances="row.breakdown ?? []"
+          all-breakdown
           :is-liability="tableType === DashboardTableType.LIABILITIES"
           class="bg-white dark:bg-[#1E1E1E] my-2"
         />

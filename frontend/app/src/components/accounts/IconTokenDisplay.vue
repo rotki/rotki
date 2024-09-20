@@ -7,9 +7,11 @@ const props = withDefaults(defineProps<{
   loading: boolean;
   visible?: number;
   resolutionOptions?: AssetResolutionOptions;
+  showChain?: boolean;
 }>(), {
   visible: 3,
   resolutionOptions: () => ({ collectionParent: false }),
+  showChain: false,
 });
 
 const { assets, visible } = toRefs(props);
@@ -30,7 +32,7 @@ const showMore = computed<number>(() => get(assets).length - get(visible));
         <template #activator>
           <div
             data-cy="top-asset"
-            class="rounded-full w-8 h-8 bg-rui-grey-300 dark:bg-white flex items-center justify-center border-2 border-white dark:border-rui-grey-300 -ml-2 cursor-pointer overflow-hidden"
+            class="rounded-full w-8 h-8 bg-rui-grey-300 dark:bg-white flex items-center justify-center border-2 border-white dark:border-rui-grey-300 -ml-2 cursor-pointer"
           >
             <AssetIcon
               no-tooltip
@@ -38,8 +40,8 @@ const showMore = computed<number>(() => get(assets).length - get(visible));
               :identifier="asset.asset"
               :resolution-options="resolutionOptions"
               size="24px"
-              class="[&_.icon-bg>div]:!rounded-full [&_.icon-bg>div]:!overflow-hidden"
-              :show-chain="false"
+              class="[&_.icon-bg]:!rounded-full [&_.icon-bg]:!overflow-hidden"
+              :show-chain="showChain"
             />
           </div>
         </template>
