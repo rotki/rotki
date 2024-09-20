@@ -33,8 +33,6 @@ const { notes, amount, asset, noTxHash, validatorIndex, blockNumber, counterpart
 
 const { formatNotes } = useHistoryEventNote();
 
-const isGnosisPay = computed(() => counterparty.value === 'gnosis pay');
-
 const formattedNotes: ComputedRef<NoteFormat[]> = formatNotes({
   notes,
   amount,
@@ -59,9 +57,9 @@ function isLinkType(t: any): t is keyof ExplorerUrls {
       v-for="(note, index) in formattedNotes"
       :key="index"
     >
-      <template v-if="note.type === NoteType.FLAG && note.countryCode && isGnosisPay">
+      <template v-if="note.type === NoteType.FLAG && note.countryCode">
         <Flag
-          :iso="note.countryCode.toLowerCase()"
+          :iso="note.countryCode"
           class="mr-1"
         />
       </template>
