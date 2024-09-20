@@ -9,7 +9,7 @@ from collections import defaultdict
 from collections.abc import Callable, Sequence
 from http import HTTPStatus
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Optional, get_args, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, cast, get_args, overload
 from zipfile import BadZipFile, ZipFile
 
 import gevent
@@ -94,6 +94,7 @@ from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
 from rotkehlchen.chain.evm.names import find_ens_mappings, search_for_addresses_names
 from rotkehlchen.chain.evm.types import EvmlikeAccount, WeightedNode
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
+from rotkehlchen.chain.gnosis.modules.gnosis_pay.decoder import GnosisPayDecoder
 from rotkehlchen.chain.zksync_lite.constants import ZKL_IDENTIFIER
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_USD
@@ -612,19 +613,30 @@ class RestAPI:
         return self._return_external_services_response()
 
     def add_external_services(self, services: list[ExternalServiceApiCredentials]) -> Response:
-
+        updates_gnosispay = False
         for x in services:
             if x.service.premium_only() and not has_premium_check(self.rotkehlchen.premium):
                 return api_response(
                     wrap_in_fail_result(f'You can only use {x.service} with rotki premium'),
                     status_code=HTTPStatus.FORBIDDEN,
             )
+            if x.service == ExternalService.GNOSIS_PAY:
+                updates_gnosispay = True
 
         with self.rotkehlchen.data.db.user_write() as write_cursor:
             self.rotkehlchen.data.db.add_external_service_credentials(
                 write_cursor=write_cursor,
                 credentials=services,
             )
+
+        if (
+                updates_gnosispay and
+                (gnosispay_decoder := cast(
+                    GnosisPayDecoder,
+                    self.rotkehlchen.chains_aggregator.get_evm_manager(ChainID.GNOSIS).transactions_decoder.decoders.get('GnosisPay'),
+                )) is not None
+        ):
+            gnosispay_decoder.reload_data()
 
         return self._return_external_services_response()
 
@@ -2889,9 +2901,8 @@ class RestAPI:
                 any(event.counterparty == CPT_GNOSIS_PAY for event in events) and
                 (gnosis_pay := init_gnosis_pay(self.rotkehlchen.data.db)) is not None
             ):
-                gnosis_pay.get_and_process_transactions(
-                    after_ts=Timestamp(ts_ms_to_sec(events[0].timestamp) - 10),
-                    tx_hash=tx_hash,
+                gnosis_pay.query_remote_for_tx_and_update_events(
+                    tx_timestamp=ts_ms_to_sec(events[0].timestamp),
                 )
 
             # Trigger the task to query the missing prices for the decoded events

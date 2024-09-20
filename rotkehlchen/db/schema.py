@@ -764,12 +764,27 @@ CREATE TABLE IF NOT EXISTS calendar_reminders (
 );
 """
 
-
 DB_CREATE_COWSWAP_ORDERS = """
 CREATE TABLE IF NOT EXISTS cowswap_orders (
     identifier TEXT NOT NULL PRIMARY KEY,
     order_type TEXT NOT NULL,
     raw_fee_amount TEXT NOT NULL
+);
+"""
+
+DB_CREATE_GNOSISPAY_DATA = """
+CREATE TABLE IF NOT EXISTS gnosispay_data (
+    identifier INTEGER PRIMARY KEY NOT NULL,
+    tx_hash BLOB NOT NULL UNIQUE,
+    timestamp INTEGER NOT NULL,
+    merchant_name TEXT NOT NULL,
+    merchant_city TEXT,
+    country TEXT NOT NULL,
+    mcc INTEGER NOT NULL,
+    transaction_symbol TEXT NOT NULL,
+    transaction_amount TEXT NOT NULL,
+    billing_symbol TEXT,
+    billing_amount TEXT
 );
 """
 
@@ -832,6 +847,7 @@ BEGIN TRANSACTION;
 {DB_CREATE_CALENDAR}
 {DB_CREATE_CALENDAR_REMINDERS}
 {DB_CREATE_COWSWAP_ORDERS}
+{DB_CREATE_GNOSISPAY_DATA}
 COMMIT;
 PRAGMA foreign_keys=on;
 """

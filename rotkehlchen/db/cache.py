@@ -25,6 +25,7 @@ class DBCacheStatic(Enum):
     LAST_DELETE_PAST_CALENDAR_EVENTS: Final = 'last_delete_past_calendar_events'
     LAST_CREATE_REMINDER_CHECK_TS: Final = 'last_create_reminder_check_ts'
     LAST_GRAPH_DELEGATIONS_CHECK_TS: Final = 'last_graph_delegations_check_ts'
+    LAST_GNOSISPAY_QUERY_TS: Final = 'last_gnosispay_query_ts'
 
 
 class LabeledLocationArgsType(TypedDict):

@@ -34,8 +34,12 @@ def mock_monerium_and_run_periodic_task(task_manager, contents):
     def mock_monerium(url, **kwargs):  # pylint: disable=unused-argument
         return MockResponse(200, contents)
 
+    class MockPremium:
+        def is_active(self):
+            return True
+
     timeout = 4
-    task_manager.chains_aggregator.premium = object()  # mock premium existence for monerium
+    task_manager.chains_aggregator.premium = MockPremium()
     task_manager.potential_tasks = [task_manager._maybe_query_monerium]
     with gevent.Timeout(timeout), patch('requests.Session.get', side_effect=mock_monerium):
         try:
