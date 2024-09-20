@@ -55,7 +55,7 @@ const errorMessages = ref<Record<string, string[]>>({});
 
 const externalServerValidation = () => true;
 
-const isInformationalEvent = computed(() => eventType.value === 'informational');
+const isInformationalEvent = computed(() => get(eventType) === 'informational');
 
 const historyEventLimitedProducts = computed<string[]>(() => {
   const counterpartyVal = get(counterparty);
@@ -230,7 +230,7 @@ async function save(): Promise<boolean> {
     eventType: get(eventType),
     eventSubtype: get(eventSubtype),
     asset: get(asset),
-    balance: isInformationalEvent.value
+    balance: get(isInformationalEvent)
       ? {
           amount: Zero,
           usdValue: Zero,
@@ -334,6 +334,15 @@ const addressSuggestions = computed(() => getAddresses(Blockchain.ETH));
 
     <RuiDivider class="mb-6 mt-2" />
 
+    <HistoryEventTypeForm
+      v-model:event-type="eventType"
+      v-model:event-subtype="eventSubtype"
+      :counterparty="counterparty"
+      :v$="v$"
+    />
+
+    <RuiDivider class="mb-6 mt-2" />
+
     <HistoryEventAssetPriceForm
       v-if="!isInformationalEvent"
       ref="assetPriceForm"
@@ -345,15 +354,6 @@ const addressSuggestions = computed(() => getAddresses(Blockchain.ETH));
     />
 
     <RuiDivider class="my-10" />
-
-    <HistoryEventTypeForm
-      v-model:event-type="eventType"
-      v-model:event-subtype="eventSubtype"
-      :counterparty="counterparty"
-      :v$="v$"
-    />
-
-    <RuiDivider class="mb-6 mt-2" />
 
     <div class="grid md:grid-cols-2 gap-4">
       <AutoCompleteWithSearchSync
