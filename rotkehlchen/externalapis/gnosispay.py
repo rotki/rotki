@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING, Any, Literal
 import requests
 
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
@@ -13,7 +14,12 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EVMTxHash, Location, Timestamp, deserialize_evm_tx_hash
-from rotkehlchen.utils.misc import iso8601ts_to_timestamp, set_user_agent, timestamp_to_iso8601
+from rotkehlchen.utils.misc import (
+    iso8601ts_to_timestamp,
+    set_user_agent,
+    timestamp_to_iso8601,
+    ts_now,
+)
 from rotkehlchen.utils.serialization import jsonloads_list
 
 if TYPE_CHECKING:
@@ -81,7 +87,7 @@ class GnosisPay:
         - RemoteError if there is a problem querying the API
         """
         querystr = 'https://app.gnosispay.com/api/v1/' + endpoint
-        log.debug(f'Querying Gnosis PAy API  {querystr}')
+        log.debug(f'Querying Gnosis Pay API {querystr} with {params=}')
         timeout = CachedSettings().get_timeout_tuple()
         try:
             response = self.session.get(
@@ -221,8 +227,8 @@ class GnosisPay:
             data = self._query(
                 endpoint='transactions',
                 params={
-                    'after': timestamp_to_iso8601(Timestamp(tx_timestamp - 1)),
-                    'before': timestamp_to_iso8601(Timestamp(tx_timestamp + 1)),
+                    'after': timestamp_to_iso8601(Timestamp(tx_timestamp - 10)),
+                    'before': timestamp_to_iso8601(Timestamp(tx_timestamp + 10)),
                 },
             )
         except RemoteError as e:
@@ -289,6 +295,12 @@ class GnosisPay:
         Then search for our events and if there is a matching event overlay the
         merchant data on top.
         """
+        log.debug(f'Starting task to query for gnosis pay merchant transaction data')
+        with self.database.conn.write_ctx() as write_cursor:
+            write_cursor.execute(  # remember last time task ran
+                'INSERT OR REPLACE INTO key_value_cache (name, value) VALUES (?, ?)',
+                (DBCacheStatic.LAST_GNOSISPAY_QUERY_TS.value, str(ts_now())),
+            )
         data = self._query(
             endpoint='transactions',
             params={'after': timestamp_to_iso8601(after_ts)},  # after is exclusive
