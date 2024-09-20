@@ -2,11 +2,22 @@ import { type Account, Blockchain, Severity } from '@rotki/common';
 import { TaskType } from '@/types/task-type';
 import { isBlockchain } from '@/types/blockchain/chains';
 import { Section } from '@/types/status';
-import type { EvmAccountsResult } from '@/types/api/accounts';
 import type { MaybeRef } from '@vueuse/core';
 import type { AccountPayload, AddAccountsPayload, XpubAccountPayload } from '@/types/blockchain/accounts';
 import type { TaskMeta } from '@/types/task';
 import type { AddressBookSimplePayload } from '@/types/eth-names';
+import type { Module } from '@/types/modules';
+
+interface EvmAccountAdditionSuccess {
+  type: 'success';
+  accounts: Account[];
+}
+
+interface EvmAccountAdditionFailure {
+  type: 'error';
+  error: Error;
+  account: AccountPayload;
+}
 
 interface UseBlockchainsReturn {
   addAccounts: (chain: string, data: AddAccountsPayload | XpubAccountPayload) => Promise<void>;
@@ -16,10 +27,18 @@ interface UseBlockchainsReturn {
   refreshAccounts: (blockchain?: MaybeRef<string>, periodic?: boolean) => Promise<void>;
 }
 
+function CHAIN_ORDER_COMPARATOR(chains: string[]): (a: Account, b: Account) => number {
+  return (
+    a: Account,
+    b: Account,
+  ): number => chains.indexOf(a.chain) - chains.indexOf(b.chain);
+}
+
 export function useBlockchains(): UseBlockchainsReturn {
   const { addAccount, fetch, addEvmAccount } = useBlockchainAccounts();
   const { fetchBlockchainBalances, fetchLoopringBalances } = useBlockchainBalances();
   const { fetchDetected } = useBlockchainTokensStore();
+  const { fetchEnsNames } = useAddressesNamesStore();
   const { enableModule } = useSettingsStore();
   const { reset: resetDefi } = useDefiStore();
   const { resetDefiStatus } = useStatusStore();
@@ -32,6 +51,7 @@ export function useBlockchains(): UseBlockchainsReturn {
   const { t } = useI18n();
 
   const { resetStatus: resetNftSectionStatus } = useStatusUpdater(Section.NON_FUNGIBLE_BALANCES);
+  const { notifyUser, createFailureNotification } = useAccountAdditionNotifications();
 
   const getNewAccountPayload = (chain: string, payload: AccountPayload[]): AccountPayload[] => {
     const knownAddresses: string[] = getAddresses(chain);
@@ -40,16 +60,6 @@ export function useBlockchains(): UseBlockchainsReturn {
       return !knownAddresses.includes(key);
     });
   };
-
-  const getChainsText = (chains: string[], explanation?: string): string => chains.map((chain) => {
-    let text = `- ${get(getChainName(chain))}`;
-    if (explanation)
-      text += ` (${explanation})`;
-
-    return text;
-  }).join('\n');
-
-  const { fetchEnsNames } = useAddressesNamesStore();
 
   const fetchAccounts = async (blockchain?: string, refreshEns: boolean = false): Promise<void> => {
     const chains = blockchain ? [blockchain] : get(supportedChains).map(chain => chain.id);
@@ -88,123 +98,107 @@ export function useBlockchains(): UseBlockchainsReturn {
     await Promise.allSettled(pending);
   };
 
-  function notifyFailed(
-    { noActivity, existed, ethContracts, failed }: EvmAccountsResult,
-    title: string,
-    account: AccountPayload,
-  ): void {
-    const listOfFailureText: string[] = [];
-    if (noActivity) {
-      listOfFailureText.push(
-        getChainsText(
-          Object.values(noActivity)[0],
-          t('actions.balances.blockchain_accounts_add.error.failed_reason.no_activity'),
-        ),
-      );
-    }
+  const resetStatuses = (): void => {
+    resetDefi();
+    resetDefiStatus();
+    resetNftSectionStatus();
+  };
 
-    if (existed) {
-      listOfFailureText.push(
-        getChainsText(
-          Object.values(existed)[0],
-          t('actions.balances.blockchain_accounts_add.error.failed_reason.existed'),
-        ),
-      );
-    }
+  const completeAccountAddition = async (addedAccounts: Account[], modulesToEnable?: Module[]): Promise<void> => {
+    resetStatuses();
 
-    if (ethContracts) {
-      listOfFailureText.push(
-        getChainsText(
-          [t('actions.balances.blockchain_accounts_add.error.non_eth')],
-          t('actions.balances.blockchain_accounts_add.error.failed_reason.is_contract'),
-        ),
-      );
-    }
+    await refreshAccounts();
+    const chains = get(supportedChains).map(chain => chain.id);
+    // Sort accounts by chain, so they are called in order
+    const sortedAccounts = addedAccounts.sort(CHAIN_ORDER_COMPARATOR(chains));
 
-    if (failed)
-      listOfFailureText.push(getChainsText(Object.values(failed)[0]));
-
-    if (listOfFailureText.length <= 0)
-      return;
-
-    notify({
-      title,
-      message: t('actions.balances.blockchain_accounts_add.error.failed', {
-        address: account.address,
-        list: listOfFailureText.join('\n'),
-      }),
-      display: true,
-    });
-  }
-
-  const addEvmAccounts = async (payload: AddAccountsPayload): Promise<void> => {
-    const blockchain = 'EVM';
-
-    const title = t('actions.balances.blockchain_accounts_add.task.title', { blockchain });
-
-    const failedAddition: AccountPayload[] = [];
-    const successfulAddition: Account[] = [];
-
-    const singleAddition = payload.payload.length === 1;
-
-    const addSingleAddress = async (account: AccountPayload): Promise<void> => {
-      try {
-        const result = await addEvmAccount(account);
-        const { added } = result;
-
-        if (added) {
-          const [address, chains] = Object.entries(added)[0];
-          const isAll = chains.length === 1 && chains[0] === 'all';
-          const usedChains = isAll ? get(evmChains) : chains;
-
-          usedChains.forEach((chain) => {
-            if (!isBlockchain(chain)) {
-              logger.error(`${chain} was not a valid blockchain`);
-              return;
-            }
-
-            successfulAddition.push({
-              chain,
-              address,
-            });
-          });
-
-          notify({
-            title,
-            message: t(
-              'actions.balances.blockchain_accounts_add.success.description',
-              {
-                address: account.address,
-                list: !isAll ? getChainsText(chains) : '',
-              },
-              isAll ? 1 : 2,
-            ),
-            severity: Severity.INFO,
-            display: true,
+    await awaitParallelExecution(
+      sortedAccounts,
+      item => item.address + item.chain,
+      async (account) => {
+        const { chain, address }: Account = account;
+        if (chain === Blockchain.ETH && modulesToEnable) {
+          await enableModule({
+            enable: modulesToEnable,
+            addresses: [address],
           });
         }
 
-        notifyFailed(result, title, account);
-      }
-      catch (error: any) {
-        logger.error(error.message);
-        failedAddition.push(account);
-        // if there is only a single account do normal form validation
-        if (payload.payload.length === 1)
-          throw error;
-      }
-    };
+        if (supportsTransactions(chain))
+          await fetchDetected(chain, [address]);
+      },
+      2,
+    );
+  };
 
-    if (singleAddition)
-      await addSingleAddress(payload.payload[0]);
-    else await Promise.allSettled(payload.payload.map(addSingleAddress));
+  const addSingleEvmAddress = async (account: AccountPayload): Promise<EvmAccountAdditionSuccess | EvmAccountAdditionFailure> => {
+    const title = t('actions.balances.blockchain_accounts_add.task.title', { blockchain: 'EVM' });
+    const addedAccounts: Account[] = [];
 
-    if (failedAddition.length > 0) {
-      const title = t('actions.balances.blockchain_accounts_add.task.title', { blockchain });
+    try {
+      const { added, ...result } = await addEvmAccount(account);
+
+      if (added) {
+        const [address, chains] = Object.entries(added)[0];
+        const isAll = chains.length === 1 && chains[0] === 'all';
+        const usedChains = isAll ? get(evmChains) : chains;
+
+        usedChains.forEach((chain) => {
+          if (!isBlockchain(chain)) {
+            logger.error(`${chain} was not a valid blockchain`);
+            return;
+          }
+
+          addedAccounts.push({
+            chain,
+            address,
+          });
+        });
+
+        notifyUser({ title, account, isAll, chains });
+      }
+
+      createFailureNotification(result, title, account);
+
+      return {
+        type: 'success',
+        accounts: addedAccounts,
+      };
+    }
+    catch (error: any) {
+      logger.error(error.message);
+      return {
+        type: 'error',
+        error,
+        account,
+      };
+    }
+  };
+
+  const addMultipleEvmAccounts = async (payload: AddAccountsPayload): Promise<void> => {
+    const addedAccounts: Account[] = [];
+    const failedToAddAccounts: AccountPayload[] = [];
+
+    await awaitParallelExecution(
+      payload.payload,
+      account => account.address,
+      async (account) => {
+        const result = await addSingleEvmAddress(account);
+        if (result.type === 'success')
+          addedAccounts.push(...result.accounts);
+
+        else
+          failedToAddAccounts.push(result.account);
+      }
+      , 2,
+    );
+
+    if (failedToAddAccounts.length > 0) {
+      const title = t('actions.balances.blockchain_accounts_add.task.title', { blockchain: 'EVM' });
       const message = t('actions.balances.blockchain_accounts_add.error.failed_list_description', {
-        list: failedAddition.map(({ address }) => `- ${address}`).join('\n'),
+        list: failedToAddAccounts.map(({ address }) => `- ${address}`).join('\n'),
         address: payload.payload.length,
-        blockchain,
+        blockchain: 'EVM',
       });
 
       notify({
@@ -214,33 +208,20 @@ export function useBlockchains(): UseBlockchainsReturn {
       });
     }
 
-    const finishAddition = async ({ chain, address }: Account): Promise<void> => {
-      const modules = payload.modules;
-      if (chain === Blockchain.ETH && modules) {
-        await enableModule({
-          enable: payload.modules,
-          addresses: [address],
-        });
-      }
+    startPromise(completeAccountAddition(addedAccounts, payload.modules));
+  };
 
-      if (supportsTransactions(chain))
-        await fetchDetected(chain, [address]);
-    };
+  const addEvmAccounts = async (payload: AddAccountsPayload): Promise<void> => {
+    if (payload.payload.length === 1) {
+      const addResult = await addSingleEvmAddress(payload.payload[0]);
+      if (addResult.type === 'error')
+        throw addResult.error;
 
-    const finish = async (): Promise<void> => {
-      resetDefi();
-      resetDefiStatus();
-      resetNftSectionStatus();
-      await refreshAccounts();
-
-      const chains = get(supportedChains).map(chain => chain.id);
-
-      // Sort accounts by chain, so they are called in order
-      const accounts = successfulAddition.sort((a, b) => chains.indexOf(a.chain) - chains.indexOf(b.chain));
-      await awaitParallelExecution(accounts, item => item.address + item.chain, finishAddition, 2);
-    };
-
-    startPromise(finish());
+      startPromise(completeAccountAddition(addResult.accounts, payload.modules));
+    }
+    else {
+      startPromise(addMultipleEvmAccounts(payload));
+    }
   };
 
   const addAccounts = async (chain: string, data: AddAccountsPayload | XpubAccountPayload): Promise<void> => {
@@ -314,9 +295,7 @@ export function useBlockchains(): UseBlockchainsReturn {
         if ('modules' in data && data.modules)
           await enableModule({ enable: data.modules, addresses: registeredAddresses });
 
-        resetDefi();
-        resetDefiStatus();
-        resetNftSectionStatus();
+        resetStatuses();
       }
 
       await refreshAccounts(chain);
