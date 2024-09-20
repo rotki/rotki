@@ -18,7 +18,7 @@ const props = withDefaults(
     usdValue: string;
     disableAsset?: boolean;
     v$: Validation;
-    hidePriceFields: boolean;
+    hidePriceFields?: boolean;
   }>(),
   {
     disableAsset: false,
