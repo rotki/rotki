@@ -230,15 +230,10 @@ async function save(): Promise<boolean> {
     eventType: get(eventType),
     eventSubtype: get(eventSubtype),
     asset: get(asset),
-    balance: get(isInformationalEvent)
-      ? {
-          amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
-          usdValue: Zero,
-        }
-      : {
-          amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
-          usdValue: get(numericUsdValue).isNaN() ? Zero : get(numericUsdValue),
-        },
+    balance: {
+      amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
+      usdValue: get(numericUsdValue).isNaN() || get(isInformationalEvent) ? Zero : get(numericUsdValue),
+    },
     location: get(location),
     address: get(address) || null,
     locationLabel: get(locationLabel) || null,

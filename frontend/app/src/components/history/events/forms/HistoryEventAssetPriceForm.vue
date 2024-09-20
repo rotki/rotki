@@ -165,8 +165,6 @@ async function fetchHistoricPrices() {
 }
 
 watch([datetime, asset], async () => {
-  if (get(hidePriceFields))
-    return;
   await fetchHistoricPrices();
 });
 
