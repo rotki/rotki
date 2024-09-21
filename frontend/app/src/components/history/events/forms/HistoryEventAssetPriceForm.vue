@@ -14,8 +14,6 @@ const props = withDefaults(
   defineProps<{
     datetime: string;
     asset: string;
-    amount: string;
-    usdValue: string;
     disableAsset?: boolean;
     v$: Validation;
     hidePriceFields?: boolean;
@@ -28,11 +26,9 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   (e: 'update:asset', asset: string): void;
-  (e: 'update:amount', amount: string): void;
-  (e: 'update:usd-value', usdValue: string): void;
 }>();
 
-const { datetime, amount, usdValue, asset, disableAsset, hidePriceFields } = toRefs(props);
+const { datetime, asset, disableAsset, hidePriceFields } = toRefs(props);
 
 const assetModel = computed({
   get() {
@@ -46,23 +42,8 @@ const assetModel = computed({
   },
 });
 
-const amountModel = computed({
-  get() {
-    return get(amount);
-  },
-  set(amount: string) {
-    emit('update:amount', amount);
-  },
-});
-
-const usdValueModel = computed({
-  get() {
-    return get(usdValue);
-  },
-  set(usdValue: string) {
-    emit('update:usd-value', usdValue);
-  },
-});
+const amount = defineModel<string>('amount', { required: true });
+const usdValue = defineModel<string>('usdValue', { required: true });
 
 const { t } = useI18n();
 
@@ -102,7 +83,7 @@ const numericUsdValue = bigNumberifyFromRef(usdValue);
 
 function onAssetToUsdPriceChange(forceUpdate = false) {
   if (get(amount) && get(assetToUsdPrice) && (!get(fiatValueFocused) || forceUpdate))
-    set(usdValueModel, get(numericAmount).multipliedBy(get(numericAssetToUsdPrice)).toFixed());
+    set(usdValue, get(numericAmount).multipliedBy(get(numericAssetToUsdPrice)).toFixed());
 }
 
 function onAssetToFiatPriceChanged(forceUpdate = false) {
@@ -121,9 +102,6 @@ function onFiatValueChange() {
 }
 
 async function fetchHistoricPrices() {
-  if (get(hidePriceFields))
-    return;
-
   const datetimeVal = get(datetime);
   const assetVal = get(asset);
   if (!datetimeVal || !assetVal)
@@ -165,12 +143,11 @@ async function fetchHistoricPrices() {
 }
 
 watch(
-  [() => props.datetime, () => props.asset, () => props.hidePriceFields],
-  ([newDatetime, newAsset, newHidePriceFields], [oldDatetime, oldAsset, oldHidePriceFields]) => {
-    if (newDatetime !== oldDatetime || newAsset !== oldAsset || (oldHidePriceFields && !newHidePriceFields))
-      fetchHistoricPrices();
+  [datetime, asset, hidePriceFields],
+  async ([datetime, asset, hidePriceFields], [oldDatetime, oldAsset, oldHidePriceFields]) => {
+    if (datetime !== oldDatetime || asset !== oldAsset || (oldHidePriceFields && !hidePriceFields))
+      await fetchHistoricPrices();
   },
-  { immediate: true },
 );
 
 watch(fetchedAssetToUsdPrice, (price) => {
@@ -254,7 +231,7 @@ function reset() {
   set(assetToUsdPrice, '');
   set(assetToFiatPrice, '');
   set(fiatValue, '');
-  emit('update:usd-value', '');
+  set(usdValue, '');
 }
 
 defineExpose({
@@ -278,7 +255,7 @@ defineExpose({
         @blur="v$.asset.$touch()"
       />
       <AmountInput
-        v-model="amountModel"
+        v-model="amount"
         variant="outlined"
         data-cy="amount"
         :label="t('common.amount')"
@@ -290,7 +267,7 @@ defineExpose({
       <TwoFieldsAmountInput
         v-if="isCurrentCurrencyUsd"
         v-model:primary-value="assetToUsdPrice"
-        v-model:secondary-value="usdValueModel"
+        v-model:secondary-value="usdValue"
         class="mb-5"
         :loading="fetching"
         :disabled="fetching"

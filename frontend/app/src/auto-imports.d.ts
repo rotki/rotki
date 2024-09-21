@@ -243,7 +243,6 @@ declare global {
   const isEvmEventType: typeof import('./utils/history/events')['isEvmEventType']
   const isEvmIdentifier: typeof import('@rotki/common')['isEvmIdentifier']
   const isFilterEnabled: typeof import('./utils/blockchain/accounts/common')['isFilterEnabled']
-  const isInformationalEvent: typeof import('./utils/history/events')['isInformationalEvent']
   const isMetaMaskSupported: typeof import('./utils/metamask')['isMetaMaskSupported']
   const isMissingAccountingRule: typeof import('./utils/history/events')['isMissingAccountingRule']
   const isNft: typeof import('./utils/nft')['isNft']
