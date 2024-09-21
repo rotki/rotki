@@ -256,6 +256,15 @@ const locationLabelSuggestions = computed(() =>
 
     <RuiDivider class="mb-6 mt-2" />
 
+    <HistoryEventTypeForm
+      v-model:event-type="eventType"
+      v-model:event-subtype="eventSubtype"
+      :location="location"
+      :v$="v$"
+    />
+
+    <RuiDivider class="mb-6 mt-2" />
+
     <HistoryEventAssetPriceForm
       ref="assetPriceForm"
       v-model:asset="asset"
@@ -263,15 +272,6 @@ const locationLabelSuggestions = computed(() =>
       v-model:usd-value="usdValue"
       :v$="v$"
       :datetime="datetime"
-    />
-
-    <RuiDivider class="my-10" />
-
-    <HistoryEventTypeForm
-      v-model:event-type="eventType"
-      v-model:event-subtype="eventSubtype"
-      :location="location"
-      :v$="v$"
     />
 
     <RuiDivider class="mb-6 mt-2" />

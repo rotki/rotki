@@ -14,23 +14,21 @@ const props = withDefaults(
   defineProps<{
     datetime: string;
     asset: string;
-    amount: string;
-    usdValue: string;
     disableAsset?: boolean;
     v$: Validation;
+    hidePriceFields?: boolean;
   }>(),
   {
     disableAsset: false,
+    hidePriceFields: false,
   },
 );
 
 const emit = defineEmits<{
   (e: 'update:asset', asset: string): void;
-  (e: 'update:amount', amount: string): void;
-  (e: 'update:usd-value', usdValue: string): void;
 }>();
 
-const { datetime, amount, usdValue, asset, disableAsset } = toRefs(props);
+const { datetime, asset, disableAsset, hidePriceFields } = toRefs(props);
 
 const assetModel = computed({
   get() {
@@ -44,23 +42,8 @@ const assetModel = computed({
   },
 });
 
-const amountModel = computed({
-  get() {
-    return get(amount);
-  },
-  set(amount: string) {
-    emit('update:amount', amount);
-  },
-});
-
-const usdValueModel = computed({
-  get() {
-    return get(usdValue);
-  },
-  set(usdValue: string) {
-    emit('update:usd-value', usdValue);
-  },
-});
+const amount = defineModel<string>('amount', { required: true });
+const usdValue = defineModel<string>('usdValue', { required: true });
 
 const { t } = useI18n();
 
@@ -100,7 +83,7 @@ const numericUsdValue = bigNumberifyFromRef(usdValue);
 
 function onAssetToUsdPriceChange(forceUpdate = false) {
   if (get(amount) && get(assetToUsdPrice) && (!get(fiatValueFocused) || forceUpdate))
-    set(usdValueModel, get(numericAmount).multipliedBy(get(numericAssetToUsdPrice)).toFixed());
+    set(usdValue, get(numericAmount).multipliedBy(get(numericAssetToUsdPrice)).toFixed());
 }
 
 function onAssetToFiatPriceChanged(forceUpdate = false) {
@@ -159,9 +142,13 @@ async function fetchHistoricPrices() {
   }
 }
 
-watch([datetime, asset], async () => {
-  await fetchHistoricPrices();
-});
+watch(
+  [datetime, asset, hidePriceFields],
+  async ([datetime, asset, hidePriceFields], [oldDatetime, oldAsset, oldHidePriceFields]) => {
+    if (datetime !== oldDatetime || asset !== oldAsset || (oldHidePriceFields && !hidePriceFields))
+      await fetchHistoricPrices();
+  },
+);
 
 watch(fetchedAssetToUsdPrice, (price) => {
   set(assetToUsdPrice, price);
@@ -201,6 +188,9 @@ watch(amount, () => {
 });
 
 async function submitPrice(payload: NewHistoryEventPayload): Promise<ActionStatus<ValidationErrors | string>> {
+  if (get(hidePriceFields))
+    return { success: true };
+
   const assetVal = get(asset);
   const timestamp = convertToTimestamp(get(datetime), DateFormat.DateMonthYearHourMinuteSecond);
 
@@ -238,6 +228,10 @@ async function submitPrice(payload: NewHistoryEventPayload): Promise<ActionStatu
 function reset() {
   set(fetchedAssetToUsdPrice, '');
   set(fetchedAssetToFiatPrice, '');
+  set(assetToUsdPrice, '');
+  set(assetToFiatPrice, '');
+  set(fiatValue, '');
+  set(usdValue, '');
 }
 
 defineExpose({
@@ -261,7 +255,7 @@ defineExpose({
         @blur="v$.asset.$touch()"
       />
       <AmountInput
-        v-model="amountModel"
+        v-model="amount"
         variant="outlined"
         data-cy="amount"
         :label="t('common.amount')"
@@ -269,46 +263,47 @@ defineExpose({
         @blur="v$.amount.$touch()"
       />
     </div>
+    <template v-if="!hidePriceFields">
+      <TwoFieldsAmountInput
+        v-if="isCurrentCurrencyUsd"
+        v-model:primary-value="assetToUsdPrice"
+        v-model:secondary-value="usdValue"
+        class="mb-5"
+        :loading="fetching"
+        :disabled="fetching"
+        :label="{
+          primary: t('transactions.events.form.asset_price.label', {
+            symbol: currencySymbol,
+          }),
+          secondary: t('common.value_in_symbol', {
+            symbol: currencySymbol,
+          }),
+        }"
+        :error-messages="{
+          primary: toMessages(v$.usdValue),
+          secondary: toMessages(v$.usdValue),
+        }"
+        :hint="t('transactions.events.form.asset_price.hint')"
+        @update:reversed="fiatValueFocused = $event"
+      />
 
-    <TwoFieldsAmountInput
-      v-if="isCurrentCurrencyUsd"
-      v-model:primary-value="assetToUsdPrice"
-      v-model:secondary-value="usdValueModel"
-      class="mb-5"
-      :loading="fetching"
-      :disabled="fetching"
-      :label="{
-        primary: t('transactions.events.form.asset_price.label', {
-          symbol: currencySymbol,
-        }),
-        secondary: t('common.value_in_symbol', {
-          symbol: currencySymbol,
-        }),
-      }"
-      :error-messages="{
-        primary: toMessages(v$.usdValue),
-        secondary: toMessages(v$.usdValue),
-      }"
-      :hint="t('transactions.events.form.asset_price.hint')"
-      @update:reversed="fiatValueFocused = $event"
-    />
-
-    <TwoFieldsAmountInput
-      v-else
-      v-model:primary-value="assetToFiatPrice"
-      v-model:secondary-value="fiatValue"
-      class="mb-5"
-      :loading="fetching"
-      :disabled="fetching"
-      :label="{
-        primary: t('transactions.events.form.asset_price.label', {
-          symbol: currencySymbol,
-        }),
-        secondary: t('common.value_in_symbol', {
-          symbol: currencySymbol,
-        }),
-      }"
-      @update:reversed="fiatValueFocused = $event"
-    />
+      <TwoFieldsAmountInput
+        v-else
+        v-model:primary-value="assetToFiatPrice"
+        v-model:secondary-value="fiatValue"
+        class="mb-5"
+        :loading="fetching"
+        :disabled="fetching"
+        :label="{
+          primary: t('transactions.events.form.asset_price.label', {
+            symbol: currencySymbol,
+          }),
+          secondary: t('common.value_in_symbol', {
+            symbol: currencySymbol,
+          }),
+        }"
+        @update:reversed="fiatValueFocused = $event"
+      />
+    </template>
   </div>
 </template>

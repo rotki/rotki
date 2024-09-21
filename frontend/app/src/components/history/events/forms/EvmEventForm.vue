@@ -55,6 +55,8 @@ const errorMessages = ref<Record<string, string[]>>({});
 
 const externalServerValidation = () => true;
 
+const isInformationalEvent = computed(() => get(eventType) === 'informational');
+
 const historyEventLimitedProducts = computed<string[]>(() => {
   const counterpartyVal = get(counterparty);
   const mapping = get(historyEventProductsMapping);
@@ -230,7 +232,7 @@ async function save(): Promise<boolean> {
     asset: get(asset),
     balance: {
       amount: get(numericAmount).isNaN() ? Zero : get(numericAmount),
-      usdValue: get(numericUsdValue).isNaN() ? Zero : get(numericUsdValue),
+      usdValue: get(numericUsdValue).isNaN() || get(isInformationalEvent) ? Zero : get(numericUsdValue),
     },
     location: get(location),
     address: get(address) || null,
@@ -327,6 +329,15 @@ const addressSuggestions = computed(() => getAddresses(Blockchain.ETH));
 
     <RuiDivider class="mb-6 mt-2" />
 
+    <HistoryEventTypeForm
+      v-model:event-type="eventType"
+      v-model:event-subtype="eventSubtype"
+      :counterparty="counterparty"
+      :v$="v$"
+    />
+
+    <RuiDivider class="mb-6 mt-2" />
+
     <HistoryEventAssetPriceForm
       ref="assetPriceForm"
       v-model:asset="asset"
@@ -334,15 +345,7 @@ const addressSuggestions = computed(() => getAddresses(Blockchain.ETH));
       v-model:usd-value="usdValue"
       :v$="v$"
       :datetime="datetime"
-    />
-
-    <RuiDivider class="my-10" />
-
-    <HistoryEventTypeForm
-      v-model:event-type="eventType"
-      v-model:event-subtype="eventSubtype"
-      :counterparty="counterparty"
-      :v$="v$"
+      :hide-price-fields="isInformationalEvent"
     />
 
     <RuiDivider class="mb-6 mt-2" />

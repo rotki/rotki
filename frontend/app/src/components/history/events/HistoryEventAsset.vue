@@ -9,12 +9,7 @@ const props = defineProps<{
 const { event } = toRefs(props);
 const { assetSymbol } = useAssetInfoRetrieval();
 
-const { getEventType } = useHistoryEventMappings();
-
-const showBalance = computed<boolean>(() => {
-  const type = get(getEventType(event));
-  return !type || !['approval', 'informational'].includes(type);
-});
+const showBalance = computed<boolean>(() => get(event).eventType !== 'informational');
 
 const eventAsset = useRefMap(event, ({ asset }) => asset);
 
