@@ -202,7 +202,7 @@ def test_maybe_schedule_ethereum_txreceipts(
         database,
         one_receipt_in_db,
 ):
-    task_manager.potential_tasks = [task_manager._maybe_schedule_evm_txreceipts]  # pylint: disable=protected-member
+    task_manager.potential_tasks = [task_manager._maybe_schedule_evm_txreceipts]
     _, receipts = setup_ethereum_transactions_test(
         database=database,
         transaction_already_queried=True,
@@ -213,7 +213,7 @@ def test_maybe_schedule_ethereum_txreceipts(
     timeout = 10
     tx_hash_1 = hexstring_to_bytes('0x692f9a6083e905bdeca4f0293f3473d7a287260547f8cbccc38c5cb01591fcda')  # noqa: E501
     tx_hash_2 = hexstring_to_bytes('0x6beab9409a8f3bd11f82081e99e856466a7daf5f04cca173192f79e78ed53a77')  # noqa: E501
-    receipt_get_patch = patch.object(ethereum_manager.node_inquirer, 'get_transaction_receipt', wraps=ethereum_manager.node_inquirer.get_transaction_receipt)  # pylint: disable=protected-member  # noqa: E501
+    receipt_get_patch = patch.object(ethereum_manager.node_inquirer, 'get_transaction_receipt', wraps=ethereum_manager.node_inquirer.get_transaction_receipt)  # noqa: E501
     queried_receipts = set()
     try:
         with gevent.Timeout(timeout), receipt_get_patch as receipt_task_mock, mock_evm_chains_with_transactions():  # noqa: E501
