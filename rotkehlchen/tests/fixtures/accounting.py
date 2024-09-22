@@ -338,7 +338,7 @@ def _create_inquirer(
                 coming_from_latest_price=False,
         ):
             if from_asset.identifier in ignore_mocked_prices_for:
-                return inquirer.find_price_old(  # pylint: disable=no-member - dynamic attribute
+                return inquirer.find_price_old(  # pylint: disable=no-member # dynamic attribute
                     from_asset=from_asset,
                     to_asset=to_asset,
                     ignore_cache=ignore_cache,
@@ -357,7 +357,7 @@ def _create_inquirer(
                 coming_from_latest_price=False,
         ):
             if asset.identifier in ignore_mocked_prices_for:
-                return inquirer.find_usd_price_old(  # pylint: disable=no-member  dynamic attribute
+                return inquirer.find_usd_price_old(  # pylint: disable=no-member # dynamic attribute
                     asset=asset,
                     ignore_cache=ignore_cache,
                     coming_from_latest_price=coming_from_latest_price,
@@ -370,7 +370,7 @@ def _create_inquirer(
 
         def mock_prices_with_oracles(from_asset, to_asset, ignore_cache=False, coming_from_latest_price=False, match_main_currency=False):  # noqa: E501
             if from_asset.identifier in ignore_mocked_prices_for:
-                return inquirer.find_price_and_oracle_old(  # pylint: disable=no-member - dynamic attribute
+                return inquirer.find_price_and_oracle_old(  # pylint: disable=no-member # dynamic attribute
                     from_asset=from_asset,
                     to_asset=to_asset,
                     ignore_cache=ignore_cache,
@@ -390,7 +390,7 @@ def _create_inquirer(
 
         def mock_usd_prices_with_oracles(asset, ignore_cache=False, coming_from_latest_price=False, match_main_currency=False):  # noqa: E501
             if asset.identifier in ignore_mocked_prices_for:
-                return inquirer.find_usd_price_and_oracle_old(  # pylint: disable=no-member - dynamic attribute
+                return inquirer.find_usd_price_and_oracle_old(  # pylint: disable=no-member # dynamic attribute
                     asset=asset,
                     ignore_cache=ignore_cache,
                     coming_from_latest_price=coming_from_latest_price,

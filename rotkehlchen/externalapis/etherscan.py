@@ -182,7 +182,7 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
         ...
 
     @overload
-    def _query(  # pylint: disable=no-self-use
+    def _query(
             self,
             module: str,
             action: Literal[
@@ -194,7 +194,7 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
         ...
 
     @overload
-    def _query(  # pylint: disable=no-self-use
+    def _query(
             self,
             module: str,
             action: Literal[
