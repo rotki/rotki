@@ -54,8 +54,7 @@ def asset_from_kraken(kraken_name: str) -> AssetWithOracles:
             while kraken_name[-1].isdigit():  # get rid of bonded number days assets
                 kraken_name = kraken_name[:-1]  # see https://github.com/rotki/rotki/issues/6587
 
-    if kraken_name.endswith('.HOLD'):
-        kraken_name = kraken_name[:-5]
+    kraken_name = kraken_name.removesuffix('.HOLD')
 
     # Some names are not in the map since kraken can have multiple representations
     # depending on the pair for the same asset. For example XXBT and XBT, XETH and ETH,
