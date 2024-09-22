@@ -39,6 +39,7 @@ EVENT_CATEGORY_MAPPINGS = {  # possible combinations of types and subtypes mappe
         HistoryEventSubType.GRANT: {DEFAULT: EventCategory.RECEIVE_GRANT},
         HistoryEventSubType.INTEREST: {DEFAULT: EventCategory.INTEREST},
         HistoryEventSubType.CASHBACK: {DEFAULT: EventCategory.CASHBACK},
+        HistoryEventSubType.REFUND: {DEFAULT: EventCategory.REFUND},
     },
     HistoryEventType.DEPOSIT: {
         HistoryEventSubType.DEPOSIT_ASSET: {

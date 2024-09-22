@@ -29,6 +29,9 @@ class CurrentPriceOracleInterface(abc.ABC):
     def __init__(self, oracle_name: str) -> None:
         self.name = oracle_name
 
+    def __str__(self) -> str:
+        return self.name
+
     @abc.abstractmethod
     def rate_limited_in_last(
             self,
