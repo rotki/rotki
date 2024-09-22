@@ -578,8 +578,7 @@ class Bitfinex(ExchangeInterface):
     @staticmethod
     def _process_bfx_pair(raw_pair: str) -> str:
         bfx_pair = raw_pair.replace(':', '')
-        if bfx_pair.startswith('t'):
-            bfx_pair = bfx_pair[1:]
+        bfx_pair = bfx_pair.removeprefix('t')
 
         return bfx_pair
 
