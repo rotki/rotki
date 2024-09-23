@@ -38,6 +38,7 @@
     },
     "chain_filter": {
       "add": "Add \"{chain}\" to filter",
+      "clear": "Enable all chains",
       "remove": "Remove \"{chain}\" from filter"
     },
     "data_table": {

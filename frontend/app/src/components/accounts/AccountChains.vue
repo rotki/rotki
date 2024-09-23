@@ -5,6 +5,8 @@ const props = defineProps<{ row: Row }>();
 
 const chainFilter = defineModel<Record<string, string[]>>('chainFilter', { required: true });
 
+const { t } = useI18n();
+
 const chains = computed<string[]>(() => {
   const row = props.row;
   return 'chains' in row ? row.chains : [row.chain];
@@ -40,10 +42,40 @@ function updateChain(chain: string, enabled: boolean) {
     set(chainFilter, updatedFilter);
   }
 }
+
+const anyDisabled = computed(() => get(chainStatus).some(item => !item.enabled));
+
+function reset() {
+  set(chainFilter, {
+    ...get(chainFilter),
+    [props.row.id]: [],
+  });
+}
 </script>
 
 <template>
-  <div class="flex flex-row-reverse justify-end pl-2">
+  <div class="flex flex-row-reverse justify-end pl-2 group">
+    <RuiTooltip
+      :disabled="!anyDisabled"
+      :open-delay="400"
+      :close-delay="0"
+    >
+      <template #activator>
+        <RuiButton
+          size="sm"
+          icon
+          class="opacity-0 transition invisible"
+          :class="{
+            'group-hover:opacity-100 group-hover:visible': anyDisabled,
+          }"
+          variant="text"
+          @click="reset()"
+        >
+          <RuiIcon name="close-line" />
+        </RuiButton>
+      </template>
+      {{ t('account_balances.chain_filter.clear') }}
+    </RuiTooltip>
     <template
       v-for="item in chainStatus"
       :key="item.chain"

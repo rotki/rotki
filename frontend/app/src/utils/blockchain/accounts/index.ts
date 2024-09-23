@@ -92,7 +92,7 @@ function applyExclusionFilter<T extends BlockchainAccountBalance>(
 
   return {
     ...account,
-    usdValue: sum(selectedAccounts),
+    includedUsdValue: sum(selectedAccounts),
   };
 }
 
@@ -163,11 +163,13 @@ export function sortAndFilterAccounts<T extends BlockchainAccountBalance>(
           const chains = matches.map(match => match.chain).filter(uniqueStrings);
           const groupId = getGroupId({ data: account.data, chains });
           const exclusion = excluded[groupId];
-          const usdValue = exclusion ? sum(matches.filter(match => !exclusion.includes(match.chain))) : sum(matches);
+          const usdValue = sum(matches);
+          const includedUsdValue = exclusion ? sum(matches.filter(match => !exclusion.includes(match.chain))) : undefined;
 
           return {
             ...account,
             usdValue,
+            includedUsdValue,
             tags: matches.flatMap(match => match.tags ?? []).filter(uniqueStrings),
             chains,
             expansion: matches.length === 1 ? matches[0].expansion : 'accounts',

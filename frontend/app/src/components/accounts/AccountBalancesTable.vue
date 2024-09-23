@@ -271,12 +271,27 @@ defineExpose({
       />
     </template>
     <template #item.usdValue="{ row }">
-      <AmountDisplay
-        fiat-currency="USD"
-        :value="row.usdValue"
-        show-currency="symbol"
-        :loading="isRowLoading(row)"
-      />
+      <div class="flex flex-col items-end justify-end">
+        <div
+          v-if="row.includedUsdValue && !isRowLoading(row)"
+          class="text-xs"
+        >
+          <AmountDisplay
+            v-if="row.includedUsdValue"
+            fiat-currency="USD"
+            :value="row.includedUsdValue"
+            show-currency="symbol"
+          />
+          /
+        </div>
+        <AmountDisplay
+          class="font-medium"
+          fiat-currency="USD"
+          :value="row.usdValue"
+          show-currency="symbol"
+          :loading="isRowLoading(row)"
+        />
+      </div>
     </template>
     <template #item.actions="{ row }">
       <div class="flex justify-end mr-2">
