@@ -1,4 +1,5 @@
 import { groupBy } from 'lodash-es';
+import { EvmNativeToken } from '@/types/asset';
 import type { AssetBalance, AssetBalanceWithPrice, Balance, BigNumber } from '@rotki/common';
 import type { AssetBalances } from '@/types/balances';
 
@@ -47,8 +48,14 @@ export function useBalanceSorting(): UseBalanceSortingReturn {
           zeroBalance(),
         );
 
+        // If it's a native asset (e.g., ETH), it should be used rather than the wrapped version (e.g., WETH)
+        let parentAsset = grouped[0];
+        const nativeAsset = grouped.find(item => EvmNativeToken.includes(item.asset));
+        if (nativeAsset)
+          parentAsset = nativeAsset;
+
         const parent: T = {
-          ...grouped[0],
+          ...parentAsset,
           ...sumBalance,
           breakdown: grouped,
         };

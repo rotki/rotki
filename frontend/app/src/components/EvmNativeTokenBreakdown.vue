@@ -15,33 +15,38 @@ const props = withDefaults(
     blockchainOnly?: boolean;
     showPercentage?: boolean;
     total?: BigNumber;
+    isLiability?: boolean;
   }>(),
   {
     blockchainOnly: false,
     showPercentage: false,
     total: undefined,
+    isLiability: false,
   },
 );
 
 const { t } = useI18n();
 
 const { blockchainOnly, showPercentage, total } = toRefs(props);
-const { getBreakdown } = useBlockchainStore();
-const { assetBreakdown } = useBalancesBreakdown();
+const { assetBreakdown: blockchainAssetBreakdown, liabilityBreakdown: blockchainLiabilityBreakdown } = useBlockchainStore();
+const { assetBreakdown, liabilityBreakdown } = useBalancesBreakdown();
 const { getChain } = useSupportedChains();
 
 const breakdown = computed<Record<string, AssetBreakdown[]>>(() => {
   const assets = props.assets.length > 0 ? props.assets : [props.identifier];
   const breakdown: Record<string, AssetBreakdown[]> = {};
+  const details = props.details;
+  const isLiability = props.isLiability;
 
   for (const asset of assets) {
-    const details = props.details;
-    if (details)
-      breakdown[asset] = get(getBreakdown(asset, details.chains, details.groupId));
-    else if (get(blockchainOnly))
-      breakdown[asset] = get(getBreakdown(asset));
-    else
-      breakdown[asset] = get(assetBreakdown(asset));
+    if (details || get(blockchainOnly)) {
+      const func = !isLiability ? blockchainAssetBreakdown : blockchainLiabilityBreakdown;
+      breakdown[asset] = get(func(asset, details?.chains, details?.groupId));
+    }
+    else {
+      const func = !isLiability ? assetBreakdown : liabilityBreakdown;
+      breakdown[asset] = get(func(asset));
+    }
   }
 
   return breakdown;
@@ -158,6 +163,7 @@ function getAssets(location: string): AssetBalance[] {
     </template>
     <template #item.tokens="{ row }">
       <IconTokenDisplay
+        show-chain
         :assets="getAssets(row.location)"
         :loading="false"
       />

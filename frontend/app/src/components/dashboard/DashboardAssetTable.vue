@@ -2,9 +2,9 @@
 import { CURRENCY_USD } from '@/types/currencies';
 import { TableColumn } from '@/types/table-column';
 import { isEvmNativeToken } from '@/types/asset';
+import { DashboardTableType } from '@/types/settings/frontend-settings';
 import type { AssetBalance, AssetBalanceWithPrice, BigNumber, Nullable } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@rotki/ui-library';
-import type { DashboardTableType } from '@/types/settings/frontend-settings';
 
 const props = withDefaults(
   defineProps<{
@@ -314,6 +314,7 @@ watch(search, () => setPage(1));
           :total="row.usdValue"
           :assets="getAssets(row)"
           :identifier="row.asset"
+          :is-liability="tableType === DashboardTableType.LIABILITIES"
           class="bg-white dark:bg-[#1E1E1E] my-2"
         />
         <AssetBalances
@@ -321,6 +322,8 @@ watch(search, () => setPage(1));
           hide-total
           v-bind="props"
           :balances="row.breakdown ?? []"
+          all-breakdown
+          :is-liability="tableType === DashboardTableType.LIABILITIES"
           class="bg-white dark:bg-[#1E1E1E] my-2"
         />
       </template>

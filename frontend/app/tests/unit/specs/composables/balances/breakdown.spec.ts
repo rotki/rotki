@@ -19,7 +19,7 @@ vi.mock('@/composables/assets/retrieval', () => ({
 vi.mock('@/store/balances/manual', () => ({
   useManualBalancesStore: vi.fn().mockReturnValue({
     manualBalanceByLocation: ref([]),
-    getBreakdown: vi.fn().mockReturnValue(
+    assetBreakdown: vi.fn().mockReturnValue(
       computed(() => [
         {
           location: 'external',
@@ -91,7 +91,7 @@ vi.mock('@/store/balances/exchanges', () => ({
 
 vi.mock('@/store/blockchain/index', () => ({
   useBlockchainStore: vi.fn().mockReturnValue({
-    getBreakdown: vi.fn().mockReturnValue(
+    assetBreakdown: vi.fn().mockReturnValue(
       computed(() => [
         {
           location: 'ethereum',

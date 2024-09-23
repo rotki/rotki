@@ -5,6 +5,7 @@ import type { AssetBreakdown } from '@/types/blockchain/accounts';
 
 interface UseBalancesBreakdownReturn {
   assetBreakdown: (asset: string) => ComputedRef<AssetBreakdown[]>;
+  liabilityBreakdown: (asset: string) => ComputedRef<AssetBreakdown[]>;
   locationBreakdown: (identifier: MaybeRef<string>) => ComputedRef<AssetBalanceWithPrice[]>;
   balancesByLocation: ComputedRef<Record<string, BigNumber>>;
 }
@@ -12,13 +13,13 @@ interface UseBalancesBreakdownReturn {
 export function useBalancesBreakdown(): UseBalancesBreakdownReturn {
   const manualStore = useManualBalancesStore();
   const { manualBalanceByLocation } = storeToRefs(manualStore);
-  const { getBreakdown: getManualBreakdown, getLocationBreakdown: getManualLocationBreakdown } = manualStore;
+  const { assetBreakdown: manualAssetBreakdown, liabilityBreakdown: manualLiabilityBreakdown, getLocationBreakdown: getManualLocationBreakdown } = manualStore;
   const {
     getBreakdown: getExchangeBreakdown,
     getLocationBreakdown: getExchangesLocationBreakdown,
     getByLocationBalances: getExchangesByLocationBalances,
   } = useExchangeBalancesStore();
-  const { getBreakdown } = useBlockchainStore();
+  const { assetBreakdown: blockchainAssetBreakdown, liabilityBreakdown: blockchainLiabilityBreakdown } = useBlockchainStore();
   const { locationBreakdown: blockchainLocationBreakdown, blockchainTotal } = useBlockchainAggregatedBalances();
   const { toSelectedCurrency, assetPrice } = useBalancePricesStore();
   const { isAssetIgnored } = useIgnoredAssetsStore();
@@ -26,9 +27,17 @@ export function useBalancesBreakdown(): UseBalancesBreakdownReturn {
 
   const assetBreakdown = (asset: string): ComputedRef<AssetBreakdown[]> => computed<AssetBreakdown[]>(() =>
     groupAssetBreakdown(
-      get(getBreakdown(asset))
-        .concat(get(getManualBreakdown(asset)))
+      get(blockchainAssetBreakdown(asset))
+        .concat(get(manualAssetBreakdown(asset)))
         .concat(get(getExchangeBreakdown(asset)))
+        .filter(item => !!item.amount && !item.amount.isZero()),
+    ),
+  );
+
+  const liabilityBreakdown = (asset: string): ComputedRef<AssetBreakdown[]> => computed<AssetBreakdown[]>(() =>
+    groupAssetBreakdown(
+      get(blockchainLiabilityBreakdown(asset))
+        .concat(get(manualLiabilityBreakdown(asset)))
         .filter(item => !!item.amount && !item.amount.isZero()),
     ),
   );
@@ -67,6 +76,7 @@ export function useBalancesBreakdown(): UseBalancesBreakdownReturn {
 
   return {
     assetBreakdown,
+    liabilityBreakdown,
     locationBreakdown,
     balancesByLocation,
   };
