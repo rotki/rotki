@@ -6,6 +6,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import (
     CPT_GNOSIS_PAY,
     GNOSIS_PAY_CASHBACK_ADDRESS,
+    GNOSIS_PAY_SPENDING_COLLECTOR,
 )
 from rotkehlchen.constants.assets import Asset
 from rotkehlchen.fval import FVal
@@ -76,7 +77,7 @@ def test_gnosis_pay_spend(gnosis_inquirer, gnosis_accounts):
             notes=f'Spend {amount} EURe via Gnosis Pay',
             tx_hash=tx_hash,
             counterparty=CPT_GNOSIS_PAY,
-            address='0x4822521E6135CD2599199c83Ea35179229A172EE',
+            address=GNOSIS_PAY_SPENDING_COLLECTOR,
         ),
     ]
     assert events == expected_events
@@ -147,3 +148,34 @@ def test_gnosis_pay_spend(gnosis_inquirer, gnosis_accounts):
         events = gnosis_txs_decoder.decode_and_get_transaction_hashes(ignore_cache=True, tx_hashes=[tx_hash])  # noqa: E501
         expected_events[0].notes = 'Pay 8.5 EUR to Lidl sagt Danke in Berlin :country:DE:'
         assert events == expected_events
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [[
+    '0x49e52a677BD19E50beE3642a8050A5A08a6EC697',  # user's gnosis pay safe
+]])
+def test_gnosis_pay_refund(gnosis_inquirer, gnosis_accounts):
+    tx_hash = deserialize_evm_tx_hash('0x5f659bbc5214b358ffa5474c4209fad0587b7a9735b5965e7475c2bcb893ad38')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        tx_hash=tx_hash,
+    )
+
+    amount = '2.35'
+    expected_events = [
+        EvmEvent(
+            sequence_index=10,
+            timestamp=TimestampMS(1726832020000),
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REFUND,
+            asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
+            balance=Balance(amount=FVal(amount)),
+            location_label=gnosis_accounts[0],
+            notes=f'Receive refund of {amount} EURe from Gnosis Pay',
+            tx_hash=tx_hash,
+            counterparty=CPT_GNOSIS_PAY,
+            address=GNOSIS_PAY_SPENDING_COLLECTOR,
+        ),
+    ]
+    assert events == expected_events

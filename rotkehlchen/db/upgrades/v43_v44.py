@@ -5,6 +5,11 @@ from typing import TYPE_CHECKING, Final
 
 from eth_utils import to_checksum_address
 
+from rotkehlchen.db.constants import (
+    HISTORY_MAPPING_KEY_STATE,
+    HISTORY_MAPPING_STATE_CUSTOMIZED,
+    HISTORY_MAPPING_STATE_DECODED,
+)
 from rotkehlchen.db.upgrades.utils import fix_address_book_duplications
 from rotkehlchen.history.types import HistoricalPriceOracle
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
@@ -167,7 +172,10 @@ def _add_new_tables(write_cursor: 'DBCursor') -> None:
         transaction_symbol TEXT NOT NULL,
         transaction_amount TEXT NOT NULL,
         billing_symbol TEXT,
-        billing_amount TEXT
+        billing_amount TEXT,
+        reversal_symbol TEXT,
+        reversal_amount TEXT,
+        reversal_tx_hash BLOB UNIQUE
     );""")
 
 
@@ -176,17 +184,46 @@ def _remove_zksynclite_used_query_ranges(write_cursor: 'DBCursor') -> None:
     write_cursor.execute('DELETE FROM used_query_ranges WHERE name LIKE "zksynclitetxs_%"')
 
 
+@enter_exit_debug_log()
+def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
+    """Reset all decoded evm events except for the customized ones and those in zksync lite."""
+    if write_cursor.execute('SELECT COUNT(*) FROM evm_transactions').fetchone()[0] > 0:
+        customized_events = write_cursor.execute(
+            'SELECT COUNT(*) FROM history_events_mappings WHERE name=? AND value=?',
+            (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED),
+        ).fetchone()[0]
+        querystr = (
+            'DELETE FROM history_events WHERE identifier IN ('
+            'SELECT H.identifier from history_events H INNER JOIN evm_events_info E '
+            'ON H.identifier=E.identifier AND E.tx_hash IN '
+            '(SELECT tx_hash FROM evm_transactions) AND H.location != "o")'  # location 'o' is zksync lite  # noqa: E501
+        )
+        bindings: tuple = ()
+        if customized_events != 0:
+            querystr += ' AND identifier NOT IN (SELECT parent_identifier FROM history_events_mappings WHERE name=? AND value=?)'  # noqa: E501
+            bindings = (HISTORY_MAPPING_KEY_STATE, HISTORY_MAPPING_STATE_CUSTOMIZED)
+
+        write_cursor.execute(querystr, bindings)
+        write_cursor.execute(
+            'DELETE from evm_tx_mappings WHERE tx_id IN (SELECT identifier FROM evm_transactions) AND value=?',  # noqa: E501
+            (HISTORY_MAPPING_STATE_DECODED,),
+        )
+
+
 @enter_exit_debug_log(name='UserDB v43->v44 upgrade')
 def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHandler') -> None:
     """Upgrades the DB from v42 to v43. This was in v1.35 release.
 
-    - add usd_price to the nfts table
+    - last_price and last_price asset are no longer optional in the nfts table
     - update tags of accounts
     - drop column removed from the transaction logs
     - make the blockchain column not nullable since we use `NONE` as string
+    - add uniswap v2 and v3 as historical oracles
     - add exited_timestamp to the eth2_validators table
+    - add new tables: cowswap orders and gnosis pay data
+    - reset decoded evm events except for zksync lite and custom ones
     """
-    progress_handler.set_total_steps(9)
+    progress_handler.set_total_steps(10)
     with db.user_write() as write_cursor:
         _update_nft_table(write_cursor)
         progress_handler.new_step()
@@ -203,6 +240,8 @@ def upgrade_v43_to_v44(db: 'DBHandler', progress_handler: 'DBUpgradeProgressHand
         _add_new_tables(write_cursor)
         progress_handler.new_step()
         _remove_zksynclite_used_query_ranges(write_cursor)
+        progress_handler.new_step()
+        _reset_decoded_events(write_cursor)
         progress_handler.new_step()
 
     db.conn.execute('VACUUM;')

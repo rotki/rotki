@@ -520,7 +520,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         try:
             self.etherscan_block = self.query_highest_block()
         except RemoteError as e:
-            log.error(f'Failed to query {self.chain_name} etherscan for lates block due to {e!s}')
+            log.error(f'Failed to query {self.chain_name} etherscan for latest block due to {e!s}')
 
         for weighted_node in nodes:
             task_name = f'{_connect_task_prefix(self.chain_name)} {weighted_node.node_info.name!s}'
