@@ -17,8 +17,8 @@ from rotkehlchen.accounting.structures.balance import Balance, BalanceType
 from rotkehlchen.accounting.structures.types import ActionType
 from rotkehlchen.accounting.types import SchemaEventType
 from rotkehlchen.assets.asset import Asset, AssetWithNameAndType, AssetWithOracles, EvmToken
+from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
 from rotkehlchen.assets.types import AssetType
-from rotkehlchen.assets.utils import IgnoredAssetsHandling
 from rotkehlchen.balances.manual import ManuallyTrackedBalance
 from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_ETHERSCAN_NODE_NAME
 from rotkehlchen.chain.base.constants import BASE_ETHERSCAN_NODE_NAME
