@@ -43,7 +43,7 @@ class GreenletManager:
             method: Callable,
             **kwargs: Any,
     ) -> gevent.Greenlet:
-        log.debug('Spawning task manager task "{task_name}"')
+        log.debug(f'Spawning task manager task "{task_name}"')
         if after_seconds is None:
             greenlet = gevent.spawn(method, **kwargs)
         else:
