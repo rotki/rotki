@@ -1354,3 +1354,18 @@ class Inquirer:
         raise RemoteError(
             f'Could not find a current {base.identifier} price for {quote.identifier}',
         )
+
+    @staticmethod
+    def clear() -> None:
+        """
+        ensure that we don't have oracles that depend on the logged
+        in user. Calling `set_oracles_order` if we want to use the Inquirer
+        again is required.
+        """
+        inquirer = Inquirer()
+        inquirer._uniswapv2 = None
+        inquirer._uniswapv3 = None
+        del inquirer._oracle_instances
+        del inquirer._oracles
+        del inquirer._oracle_instances_not_onchain
+        del inquirer._oracles_not_onchain
