@@ -75,9 +75,22 @@ class GnosisPayDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.event_type == HistoryEventType.RECEIVE and
                 event.event_subtype == HistoryEventSubType.NONE
             ):
+                asset = event.asset.resolve_to_asset_with_symbol()
                 event.counterparty = CPT_GNOSIS_PAY
                 event.event_subtype = HistoryEventSubType.REFUND
-                event.notes = f'Receive refund of {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from Gnosis Pay'  # noqa: E501
+                event.notes = f'Receive refund of {event.balance.amount} {asset.symbol} from Gnosis Pay'  # noqa: E501
+
+                if (
+                        self.gnosispay_api is not None and
+                        (
+                            new_notes := self.gnosispay_api.maybe_find_update_refund(
+                                tx_hash=context.transaction.tx_hash,
+                                tx_timestamp=context.transaction.timestamp,
+                                amount=event.balance.amount,
+                                asset=asset,
+                            )) is not None
+                ):
+                    event.notes = new_notes
 
         return DEFAULT_DECODING_OUTPUT
 
