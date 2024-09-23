@@ -146,8 +146,9 @@ def test_gnosis_pay_spend(gnosis_inquirer, gnosis_accounts):
             wraps=mock_gnosispay_api,
     ):
         events = gnosis_txs_decoder.decode_and_get_transaction_hashes(ignore_cache=True, tx_hashes=[tx_hash])  # noqa: E501
-        expected_events[0].notes = 'Pay 8.5 EUR to Lidl sagt Danke in Berlin :country:DE:'
-        assert events == expected_events
+
+    expected_events[0].notes = 'Pay 8.5 EUR to Lidl sagt Danke in Berlin :country:DE:'
+    assert events == expected_events
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -156,10 +157,11 @@ def test_gnosis_pay_spend(gnosis_inquirer, gnosis_accounts):
 ]])
 def test_gnosis_pay_refund(gnosis_inquirer, gnosis_accounts):
     tx_hash = deserialize_evm_tx_hash('0x5f659bbc5214b358ffa5474c4209fad0587b7a9735b5965e7475c2bcb893ad38')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(
+    events, gnosis_txs_decoder = get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
         tx_hash=tx_hash,
     )
+    gnosispay_decoder = gnosis_txs_decoder.decoders.get('GnosisPay')
 
     amount = '2.35'
     expected_events = [
@@ -179,3 +181,40 @@ def test_gnosis_pay_refund(gnosis_inquirer, gnosis_accounts):
         ),
     ]
     assert events == expected_events
+
+    # and now let's mock the api having gnosis pay refund data in the DB matching the
+    with gnosis_inquirer.database.user_write() as write_cursor:
+        gnosis_inquirer.database.add_external_service_credentials(
+            write_cursor=write_cursor,
+            credentials=[ExternalServiceApiCredentials(service=ExternalService.GNOSIS_PAY, api_key=ApiKey('foo'))],  # noqa: E501
+        )
+        gnosispay_decoder.reload_data()
+        write_cursor.execute(
+            'INSERT OR REPLACE INTO gnosispay_data(tx_hash, timestamp, merchant_name, '
+            'merchant_city, country, mcc, transaction_symbol, transaction_amount, '
+            'billing_symbol, billing_amount, reversal_symbol, reversal_amount) '
+            'VALUES(?, ?, ?, ?, ? ,?, ?, ?, ?, ?, ?, ?)',
+            (
+                deserialize_evm_tx_hash('0xb3be0391a753de5ef54b6b43c716240e1cb2a4a0a1120420f5ce168fdd08f17c'),
+                1726712020, 'Acme Inc.',
+                'Sevillla', 'ES', 6666,
+                'EUR', '42.24',
+                None, None,
+                'EUR', '2.35',
+            ),
+        )
+        identifier = write_cursor.lastrowid
+
+    with patch.object(
+            gnosis_txs_decoder,  # do not reload data since this overwrites the api object
+            'reload_data',
+            lambda x: None,
+    ):
+        events = gnosis_txs_decoder.decode_and_get_transaction_hashes(ignore_cache=True, tx_hashes=[tx_hash])  # noqa: E501
+
+    expected_events[0].notes = 'Receive refund of 2.35 EUR from Acme Inc. in Sevillla :country:ES:'
+    assert events == expected_events
+
+    with gnosis_inquirer.database.conn.read_ctx() as cursor:  # also check refund tx hash updated
+        cursor.execute('SELECT reversal_tx_hash FROM gnosispay_data WHERE identifier=?', (identifier,))  # noqa: E501
+        assert deserialize_evm_tx_hash(cursor.fetchone()[0]) == tx_hash

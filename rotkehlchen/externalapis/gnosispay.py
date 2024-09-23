@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any, Literal
 
 import requests
 
+from rotkehlchen.assets.asset import AssetWithSymbol
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import CPT_GNOSIS_PAY
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.filtering import EvmEventFilterQuery
@@ -13,7 +14,6 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
-from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval
 from rotkehlchen.types import EVMTxHash, Location, Timestamp, deserialize_evm_tx_hash
@@ -135,13 +135,10 @@ class GnosisPay:
             else:
                 billing_currency_symbol, billing_currency_amount = None, None
 
-            reversal_currency_symbol, reversal_amount, reversal_tx_hash = None, None, None
+            reversal_currency_symbol, reversal_amount = None, None
             if kind in ('Reversal', 'PartialReversal'):
                 reversal_currency_symbol = data['reversalCurrency']['symbol']
                 reversal_amount = deserialize_fval(value=data['reversalAmount'], name='reversal_amount', location='gnosis pay data') / FVal(10 ** data['reversalCurrency']['decimals'])  # noqa: E501
-                # assumption. There is two transactions in the list and second one is the refund.
-                if len(data['transactions']) >= 2:
-                    reversal_tx_hash = deserialize_evm_tx_hash(data['transactions'][1]['hash'])
 
             return GnosisPayTransaction(
                 tx_hash=deserialize_evm_tx_hash(data['transactions'][0]['hash']),
@@ -156,7 +153,7 @@ class GnosisPay:
                 billing_amount=billing_currency_amount,
                 reversal_symbol=reversal_currency_symbol,
                 reversal_amount=reversal_amount,
-                reversal_tx_hash=reversal_tx_hash,
+                reversal_tx_hash=None,  # atm does not appear in the API
             )
 
         except KeyError as e:
@@ -182,6 +179,75 @@ class GnosisPay:
                  str(transaction.reversal_amount) if transaction.reversal_amount else None),
             )
 
+    def find_db_data(
+            self,
+            wherestatement: str,
+            bindings: tuple,
+            with_identifier: bool = False,
+    ) -> tuple[GnosisPayTransaction | None, int | None]:
+        """Return the gnosis pay data matching the given DB data"""
+        with self.database.conn.read_ctx() as cursor:
+            cursor.execute(
+                f'SELECT tx_hash, timestamp, merchant_name, merchant_city, country, mcc, '
+                f'transaction_symbol, transaction_amount, billing_symbol, billing_amount, '
+                f'reversal_symbol, reversal_amount, reversal_tx_hash '
+                f'{", identifier " if with_identifier else ""}'
+                f'FROM gnosispay_data WHERE {wherestatement}', bindings,
+            )
+            if (result := cursor.fetchone()) is None:
+                return None, None
+
+        billing_symbol, billing_amount = None, None
+        if result[8] is not None:
+            billing_symbol, billing_amount = result[8], FVal(result[9])
+
+        reversal_symbol, reversal_amount = None, None
+        if result[10] is not None:
+            reversal_symbol, reversal_amount = result[10], FVal(result[11])
+
+        return GnosisPayTransaction(
+            tx_hash=deserialize_evm_tx_hash(result[0]),
+            timestamp=Timestamp(result[1]),
+            merchant_name=result[2],
+            merchant_city=result[3],
+            country=result[4],
+            mcc=result[5],
+            transaction_symbol=result[6],
+            transaction_amount=FVal(result[7]),
+            billing_symbol=billing_symbol,
+            billing_amount=billing_amount,
+            reversal_symbol=reversal_symbol,
+            reversal_amount=reversal_amount,
+            reversal_tx_hash=deserialize_evm_tx_hash(result[12]) if result[12] is not None else None,  # noqa: E501
+        ), result[13] if with_identifier else None
+
+    def maybe_find_update_refund(
+            self,
+            tx_hash: EVMTxHash,
+            tx_timestamp: Timestamp,
+            amount: FVal,
+            asset: AssetWithSymbol,
+    ) -> str | None:
+        transaction, identifier = self.find_db_data(
+            wherestatement='reversal_amount=? AND reversal_symbol=? AND timestamp<?',
+            bindings=(
+                str(amount),
+                asset.resolve_to_asset_with_symbol().symbol[:-1],  # API shows normal EUR, GBP
+                tx_timestamp,
+            ),
+            with_identifier=True,
+        )
+        if transaction is None:
+            return None
+
+        with self.database.user_write() as write_cursor:
+            write_cursor.execute(
+                'UPDATE gnosispay_data SET reversal_tx_hash=? WHERE identifier=?',
+                (tx_hash, identifier),
+            )
+
+        return self.create_notes_for_transaction(transaction, is_refund=True)
+
     def get_data_for_transaction(
             self,
             tx_hash: EVMTxHash,
@@ -191,42 +257,15 @@ class GnosisPay:
 
         Either from the DB or by querying the API
         """
-        with self.database.conn.read_ctx() as cursor:
-            cursor.execute(
-                'SELECT tx_hash, timestamp, merchant_name, merchant_city, country, mcc, '
-                'transaction_symbol, transaction_amount, billing_symbol, billing_amount '
-                'reversal_symbol, reversal_amount, reversal_tx_hash '
-                'FROM gnosispay_data WHERE tx_hash=? OR reversal_tx_hash=?',
-                (tx_hash, tx_hash),
+        transaction, _ = self.find_db_data(
+            wherestatement='tx_hash=? OR reversal_tx_hash=?',
+            bindings=(tx_hash, tx_hash),
+        )
+        if transaction:
+            return self.create_notes_for_transaction(
+                transaction=transaction,
+                is_refund=False,
             )
-
-            if (result := cursor.fetchone()) is not None:
-                billing_symbol, billing_amount = None, None
-                if result[8] is not None:
-                    billing_symbol, billing_amount = result[8], FVal(result[9])
-
-                reversal_symbol, reversal_amount = None, None
-                if result[10] is not None:
-                    reversal_symbol, reversal_amount = result[10], FVal(result[11])
-
-                return self.create_notes_for_transaction(
-                    transaction=GnosisPayTransaction(
-                        tx_hash=(saved_tx_hash := deserialize_evm_tx_hash(result[0])),
-                        timestamp=Timestamp(result[1]),
-                        merchant_name=result[2],
-                        merchant_city=result[3],
-                        country=result[4],
-                        mcc=result[5],
-                        transaction_symbol=result[6],
-                        transaction_amount=FVal(result[7]),
-                        billing_symbol=billing_symbol,
-                        billing_amount=billing_amount,
-                        reversal_symbol=reversal_symbol,
-                        reversal_amount=reversal_amount,
-                        reversal_tx_hash=deserialize_evm_tx_hash(result[12]) if result[12] is not None else None,  # noqa: E501
-                    ),
-                    is_refund=tx_hash != saved_tx_hash,
-                )
 
         # else we need to query the API
         try:
@@ -243,20 +282,17 @@ class GnosisPay:
 
         # since this probably contains more transactions than the one we need dont
         # let the query go to waste and update data for all and return only the one we need
-        result_tx, is_refund = None, False
+        result_tx = None
         for entry in data:
             if (transaction := self.maybe_deserialize_transaction(entry)) is None:
                 continue
 
             if tx_hash == transaction.tx_hash:
                 result_tx = transaction
-            elif tx_hash == transaction.reversal_tx_hash:
-                result_tx = transaction
-                is_refund = True
             else:
                 self.maybe_update_event_with_api_data(transaction)
 
-        return self.create_notes_for_transaction(result_tx, is_refund) if result_tx else None
+        return self.create_notes_for_transaction(result_tx, is_refund=False) if result_tx else None
 
     def query_remote_for_tx_and_update_events(self, tx_timestamp: Timestamp) -> None:
         """Query the API for a single transaction and update the events if found"""
@@ -293,7 +329,7 @@ class GnosisPay:
 
         if is_refund:
             preposition = 'from'
-            notes = f'Receive refund of {transaction.reversal_amount} {transaction.reversal_symbol} '  # noqa: E501
+            notes = f'Receive refund of {transaction.reversal_amount} {transaction.reversal_symbol}'  # noqa: E501
         else:
             notes = f'{verb} {transaction.transaction_amount} {transaction.transaction_symbol}'
             if transaction.billing_symbol:
@@ -330,35 +366,6 @@ class GnosisPay:
             write_cursor.execute(
                 'UPDATE history_events SET notes=? WHERE identifier=?',
                 (notes, events[0].identifier),
-            )
-
-        if not transaction.reversal_tx_hash:
-            return
-
-        # else try to find and update the refund
-        with self.database.conn.read_ctx() as cursor:
-            events = dbevents.get_history_events(
-                cursor=cursor,
-                filter_query=EvmEventFilterQuery.make(
-                    tx_hashes=[transaction.reversal_tx_hash],  # do not query CPT here as this tx can only be the refund payment (hopefully)  # noqa: E501
-                    location=Location.GNOSIS,
-                ),
-                has_premium=True,
-            )
-
-        if len(events) != 1:
-            log.error(f'Could not find gnosis pay refund event corresponding to {transaction.reversal_tx_hash.hex()} in the DB. Skipping.')  # pylint: disable=no-member # noqa: E501
-            return
-
-        notes = self.create_notes_for_transaction(transaction, is_refund=True)
-        with self.database.user_write() as write_cursor:
-            write_cursor.execute(
-                'UPDATE history_events SET notes=?, type=?, subtype=? WHERE identifier=?',
-                (notes, HistoryEventType.RECEIVE.serialize(), HistoryEventSubType.REFUND, events[0].identifier),  # noqa: E501
-            )
-            write_cursor.execute(
-                'UPDATE evm_events_info SET counterparty=? WHERE identifier=?',
-                (CPT_GNOSIS_PAY, events[0].identifier),
             )
 
     def get_and_process_transactions(
