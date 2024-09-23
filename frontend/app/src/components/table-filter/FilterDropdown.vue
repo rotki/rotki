@@ -56,72 +56,74 @@ watch(suggested, (value) => {
   }
 });
 
-watch(
-  [keyword, selectedMatcher],
-  async ([keyword, selectedMatcher]) => {
-    if (!keyword || !selectedMatcher)
-      return [];
+watch([keyword, selectedMatcher], async ([keyword, selectedMatcher]) => {
+  if (!keyword || !selectedMatcher)
+    return [];
 
-    const search = splitSearch(keyword);
-    const suggestedFilter = selectedMatcher.key;
+  const search = splitSearch(keyword);
+  const suggestedFilter = selectedMatcher.key;
 
-    const searchString = search.value ?? '';
+  const searchString = search.value ?? '';
 
-    let suggestedItems: BaseSuggestion[] = [];
+  let suggestedItems: BaseSuggestion[] = [];
 
-    let exclude = false;
-    let asset = false;
-    if ('string' in selectedMatcher) {
-      exclude = !!selectedMatcher.allowExclusion && !!search.exclude;
-      suggestedItems = selectedMatcher.suggestions().map(item => ({
-        key: suggestedFilter,
-        value: item,
-        exclude,
-      }));
-    }
-    else if ('asset' in selectedMatcher) {
-      if (searchString) {
-        asset = true;
-        suggestedItems = (await selectedMatcher.suggestions(searchString)).map(asset => ({
-          key: suggestedFilter,
-          value: asset,
-          exclude,
-        }));
+  let exclude = false;
+  let asset = false;
+  if ('string' in selectedMatcher) {
+    exclude = !!selectedMatcher.allowExclusion && !!search.exclude;
+    suggestedItems = selectedMatcher.suggestions().map(item => ({
+      key: suggestedFilter,
+      value: item,
+      exclude,
+    }));
+  }
+  else if ('asset' in selectedMatcher) {
+    if (searchString) {
+      asset = true;
+      try {
+        const suggestions = await selectedMatcher.suggestions(searchString);
+        if (suggestions) {
+          suggestedItems = suggestions.map(asset => ({
+            key: suggestedFilter,
+            value: asset,
+            exclude,
+          }));
+        }
+      }
+      catch (error) {
+        logger.error(error);
+        suggestedItems = [];
       }
     }
-    else if ('boolean' in selectedMatcher) {
-      suggestedItems = [
-        {
-          key: suggestedFilter,
-          value: true,
-          exclude: false,
-        },
-      ];
-    }
-    else {
-      logger.debug('Matcher doesn\'t have asset=true, string=true, or boolean=true.', selectedMatcher);
-    }
+  }
+  else if ('boolean' in selectedMatcher) {
+    suggestedItems = [
+      {
+        key: suggestedFilter,
+        value: true,
+        exclude: false,
+      },
+    ];
+  }
+  else {
+    logger.debug('Matcher doesn\'t have asset=true, string=true, or boolean=true.', selectedMatcher);
+  }
 
-    const getItemText = (item: BaseSuggestion) =>
-      typeof item.value === 'string' ? item.value : `${item.value.symbol} ${item.value.evmChain}`;
+  const getItemText = (item: BaseSuggestion) =>
+    typeof item.value === 'string' ? item.value : `${item.value.symbol} ${item.value.evmChain}`;
 
-    set(
-      suggested,
-      suggestedItems
-        .sort((a, b) => compareTextByKeyword(getItemText(a), getItemText(b), searchString))
-        .slice(0, asset ? 10 : 5)
-        .map((a, index) => ({
-          index,
-          key: a.key,
-          value: a.value,
-          asset: typeof a.value !== 'string',
-          total: suggestedItems.length,
-          exclude,
-        })),
-    );
-  },
-  { immediate: true },
-);
+  set(suggested, suggestedItems
+    .sort((a, b) => compareTextByKeyword(getItemText(a), getItemText(b), searchString))
+    .slice(0, asset ? 10 : 5)
+    .map((a, index) => ({
+      index,
+      key: a.key,
+      value: a.value,
+      asset: typeof a.value !== 'string',
+      total: suggestedItems.length,
+      exclude,
+    })));
+}, { immediate: true });
 
 const { t } = useI18n();
 
