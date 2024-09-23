@@ -80,7 +80,7 @@ class CowswapAPI:
             ).fetchone()
 
         if result is not None:
-            return int(result[0]), result[1]
+            return int(result[1]), result[0]
 
         # else, we need to query the API
         data = self._query(f'orders/{order_uid}')
