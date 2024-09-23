@@ -1,26 +1,31 @@
 <script setup lang="ts">
 import { CostBasisMethod } from '@/types/user';
+import type { ActionDataEntry } from '@/types/action';
 
 const costBasisMethod = ref<CostBasisMethod>(CostBasisMethod.FIFO);
 const { costBasisMethod: method } = storeToRefs(useAccountingSettingsStore());
 
+const { t } = useI18n();
+
+function getSuccessMessage(method: ActionDataEntry<CostBasisMethod>) {
+  return t('account_settings.messages.cost_basis_method.success', {
+    method: method.identifier.toUpperCase(),
+  });
+}
+
+function getErrorMessage(method: ActionDataEntry<CostBasisMethod>) {
+  return t('account_settings.messages.cost_basis_method.error', {
+    method: method.identifier.toUpperCase(),
+  });
+}
+
+function transformMethod(method: ActionDataEntry<CostBasisMethod>) {
+  return method.identifier;
+}
+
 onMounted(() => {
   set(costBasisMethod, get(method));
 });
-
-const { t } = useI18n();
-
-function getSuccessMessage(method: string) {
-  return t('account_settings.messages.cost_basis_method.success', {
-    method: method.toUpperCase(),
-  });
-}
-
-function getErrorMessage(method: string) {
-  return t('account_settings.messages.cost_basis_method.error', {
-    method: method.toUpperCase(),
-  });
-}
 </script>
 
 <template>
@@ -29,6 +34,7 @@ function getErrorMessage(method: string) {
     setting="costBasisMethod"
     :success-message="getSuccessMessage"
     :error-message="getErrorMessage"
+    :transform="transformMethod"
   >
     <CostBasisMethodSettings
       v-model="costBasisMethod"
