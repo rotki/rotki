@@ -152,58 +152,60 @@ onMounted(async () => {
 </script>
 
 <template>
-  <AssetUpdateSetting
-    v-if="!headless"
-    :loading="checking || applying"
-    :skipped="skipped"
-    @check="check()"
-  />
-  <div v-else-if="headless">
-    <AssetUpdateStatus
-      v-if="status"
-      :status="status"
-      :remote-version="changes.upToVersion"
-    />
-    <AssetUpdateInlineConfirm
-      v-if="inlineConfirm"
-      class="max-w-[32rem] mx-auto"
-      :remote-version="changes.upToVersion"
-      @confirm="updateComplete()"
-    />
-  </div>
-  <div v-if="showUpdateDialog">
-    <RuiDialog
+  <div>
+    <AssetUpdateSetting
       v-if="!headless"
-      value
-      max-width="500"
-      persistent
-    >
+      :loading="checking || applying"
+      :skipped="skipped"
+      @check="check()"
+    />
+    <template v-else-if="headless">
+      <AssetUpdateStatus
+        v-if="status"
+        :status="status"
+        :remote-version="changes.upToVersion"
+      />
+      <AssetUpdateInlineConfirm
+        v-if="inlineConfirm"
+        class="max-w-[32rem] mx-auto"
+        :remote-version="changes.upToVersion"
+        @confirm="updateComplete()"
+      />
+    </template>
+    <template v-if="showUpdateDialog">
+      <RuiDialog
+        v-if="!headless"
+        :model-value="true"
+        max-width="500"
+        persistent
+      >
+        <AssetUpdateMessage
+          :headless="headless"
+          :versions="changes"
+          @update:versions="changes = $event"
+          @confirm="updateAssets()"
+          @dismiss="skip($event)"
+        />
+      </RuiDialog>
       <AssetUpdateMessage
+        v-else
+        class="max-w-[32rem] mx-auto"
         :headless="headless"
         :versions="changes"
         @update:versions="changes = $event"
         @confirm="updateAssets()"
         @dismiss="skip($event)"
       />
-    </RuiDialog>
-    <AssetUpdateMessage
-      v-else
-      class="max-w-[32rem] mx-auto"
-      :headless="headless"
-      :versions="changes"
-      @update:versions="changes = $event"
-      @confirm="updateAssets()"
-      @dismiss="skip($event)"
+    </template>
+
+    <AssetConflictDialog
+      v-if="showConflictDialog"
+      v-model="showConflictDialog"
+      :conflicts="conflicts"
+      @cancel="skip(false)"
+      @resolve="updateAssets($event)"
     />
   </div>
-
-  <AssetConflictDialog
-    v-if="showConflictDialog"
-    v-model="showConflictDialog"
-    :conflicts="conflicts"
-    @cancel="skip(false)"
-    @resolve="updateAssets($event)"
-  />
 </template>
 
 <style scoped lang="scss">

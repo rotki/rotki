@@ -57,7 +57,7 @@ const { t } = useI18n();
 <template>
   <div v-if="needRefresh">
     <RuiDialog
-      value
+      :model-value="true"
       persistent
       max-width="500"
     >
