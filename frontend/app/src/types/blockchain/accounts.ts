@@ -58,6 +58,7 @@ export interface BlockchainAccountWithBalance<T extends BlockchainAccountData = 
   readonly category?: string;
   readonly amount: BigNumber;
   readonly usdValue: BigNumber;
+  readonly includedUsdValue?: BigNumber;
 }
 
 export type EthereumValidator = ValidatorData & Balance;
@@ -73,6 +74,7 @@ export interface BlockchainAccountGroupWithBalance<T extends BlockchainAccountDa
   readonly category?: string;
   readonly amount?: BigNumber;
   readonly usdValue: BigNumber;
+  readonly includedUsdValue?: BigNumber;
   readonly nativeAsset?: string;
   readonly aggregatedAssets?: AssetBalance[];
   readonly chains: string[];
