@@ -507,15 +507,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         log.warning(message)
         return False, message
 
-    def connect_to_multiple_nodes(self, nodes: Sequence[WeightedNode]) -> None:
-        self.web3_mapping = {}
-
-        # Remove etherscan nodes and return if all nodes use etherscan,
-        # so we don't query the highest block unnecessarily.
-        nodes = [node for node in nodes if node.node_info.name != self.etherscan_node_name]
-        if len(nodes) == 0:
-            return
-
+    def _connect_to_web3_nodes(self, nodes: Sequence[WeightedNode]) -> None:
         # only query highest block once before attempting to connect to nodes
         try:
             self.etherscan_block = self.query_highest_block()
@@ -532,6 +524,23 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                 node=weighted_node.node_info,
                 connectivity_check=True,
             )
+
+    def connect_to_multiple_nodes(self, nodes: Sequence[WeightedNode]) -> None:
+        self.web3_mapping = {}
+
+        # Remove etherscan nodes and return if all nodes use etherscan,
+        # so we don't query the highest block unnecessarily.
+        nodes = [node for node in nodes if node.node_info.name != self.etherscan_node_name]
+        if len(nodes) == 0:
+            return
+
+        self.greenlet_manager.spawn_and_track(
+            after_seconds=None,
+            task_name='Attempt connection to web3 nodes.',
+            exception_is_error=True,
+            method=self._connect_to_web3_nodes,
+            nodes=nodes,
+        )
 
     def _query(self, method: Callable, call_order: Sequence[WeightedNode], **kwargs: Any) -> Any:
         """Queries evm related data by performing a query of the provided method to all given nodes
