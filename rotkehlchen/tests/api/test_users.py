@@ -17,6 +17,8 @@ from rotkehlchen.constants.misc import USERDB_NAME, USERSDIR_NAME
 from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.drivers.gevent import DBConnection, DBConnectionType
 from rotkehlchen.db.settings import ROTKEHLCHEN_DB_VERSION, DBSettings
+from rotkehlchen.history.price import PriceHistorian
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.premium.premium import PremiumCredentials
 from rotkehlchen.tests.fixtures.rotkehlchen import patch_no_op_unlock
 from rotkehlchen.tests.utils.api import (
@@ -553,7 +555,11 @@ def test_user_password_change(rotkehlchen_api_server, username, db_password):
     assert users_data[username] == 'loggedin'
 
 
-def test_user_logout(rotkehlchen_api_server, username, db_password):
+def test_user_logout(
+        rotkehlchen_api_server: 'APIServer',
+        username: str,
+        db_password: str,
+):
     """Test that user logout works succesfully and that common errors are handled"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
@@ -596,12 +602,16 @@ def test_user_logout(rotkehlchen_api_server, username, db_password):
     )
     assert_simple_ok_response(response)
     assert rotki.user_is_logged_in is False
-    assert rotki.data.db.password == ''
+    assert rotki.data.db.password == ''  # type: ignore  # TODO: mypy for some reason says that this statement is unreachable. Not sure why.
 
     # Check that task isn't pending anymore
     assert requests.get(
         api_url_for(rotkehlchen_api_server, 'specific_async_tasks_resource', task_id=task_id),
     ).json()['result']['status'] == 'not-found'
+    assert Inquirer._uniswapv2 is None
+    assert Inquirer._uniswapv3 is None
+    with pytest.raises(AssertionError):
+        PriceHistorian()  # raises error because we don't have any instance and we aren't providing the init arguments here.  # noqa: E501
 
     # Now try to log out of the same user again
     response = requests.patch(

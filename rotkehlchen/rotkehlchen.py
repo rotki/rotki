@@ -539,6 +539,8 @@ class Rotkehlchen:
         # Make sure no messages leak to other user sessions
         self.msg_aggregator.consume_errors()
         self.msg_aggregator.consume_warnings()
+        PriceHistorian._PriceHistorian__instance = None  # type: ignore  #  has no attribute "_PriceHistorian__instance" but is the name used by python
+        Inquirer.clear()
 
         # We have locks in the chain aggregator that gets removed in this
         # function and in the db connections. The user db gets replaced but the globaldb
