@@ -15,6 +15,7 @@ from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import (
     GNOSIS_PAY_CASHBACK_ADDRESS,
     GNOSIS_PAY_CPT_DETAILS,
     GNOSIS_PAY_SPENDER_ADDRESS,
+    GNOSIS_PAY_SPENDING_COLLECTOR,
     SPEND,
 )
 from rotkehlchen.externalapis.gnosispay import init_gnosis_pay
@@ -54,6 +55,7 @@ class GnosisPayDecoder(DecoderInterface, ReloadableDecoderMixin):
         return self.addresses_to_decoders()
 
     def decode_cashback_events(self, context: DecoderContext) -> DecodingOutput:
+        """Cashback events are simple transfers from cashback collector to user's safe"""
         for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.RECEIVE and
@@ -63,6 +65,19 @@ class GnosisPayDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.counterparty = CPT_GNOSIS_PAY
                 event.event_subtype = HistoryEventSubType.CASHBACK
                 event.notes = f'Receive cashback of {event.balance.amount} GNO from Gnosis Pay'
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def decode_refund_events(self, context: DecoderContext) -> DecodingOutput:
+        """Refund events are simple transfers from spending collector's safe to user's safe"""
+        for event in context.decoded_events:
+            if (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE
+            ):
+                event.counterparty = CPT_GNOSIS_PAY
+                event.event_subtype = HistoryEventSubType.REFUND
+                event.notes = f'Receive refund of {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from Gnosis Pay'  # noqa: E501
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -112,6 +127,7 @@ class GnosisPayDecoder(DecoderInterface, ReloadableDecoderMixin):
         return {
             GNOSIS_PAY_CASHBACK_ADDRESS: (self.decode_cashback_events,),
             GNOSIS_PAY_SPENDER_ADDRESS: (self.decode_spend,),
+            GNOSIS_PAY_SPENDING_COLLECTOR: (self.decode_refund_events,),
         }
 
     @staticmethod

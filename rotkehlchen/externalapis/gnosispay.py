@@ -123,7 +123,7 @@ class GnosisPay:
 
     def maybe_deserialize_transaction(self, data: dict[str, Any]) -> GnosisPayTransaction | None:
         try:
-            if (kind := data['kind']) == 'Payment' and data['status'] in ('Approved', 'Reversal'):
+            if (kind := data['kind']) == 'Payment' and data['status'] not in ('Approved', 'Reversal', 'PartialReversal'):  # noqa: E501
                 return None  # only use Approved/Reversal for payments
 
             if (city := data['merchant']['city'].rstrip()).startswith('+') or city.isdigit():
@@ -136,7 +136,7 @@ class GnosisPay:
                 billing_currency_symbol, billing_currency_amount = None, None
 
             reversal_currency_symbol, reversal_amount, reversal_tx_hash = None, None, None
-            if kind == 'Reversal':
+            if kind in ('Reversal', 'PartialReversal'):
                 reversal_currency_symbol = data['reversalCurrency']['symbol']
                 reversal_amount = deserialize_fval(value=data['reversalAmount'], name='reversal_amount', location='gnosis pay data') / FVal(10 ** data['reversalCurrency']['decimals'])  # noqa: E501
                 # assumption. There is two transactions in the list and second one is the refund.
@@ -340,7 +340,7 @@ class GnosisPay:
             events = dbevents.get_history_events(
                 cursor=cursor,
                 filter_query=EvmEventFilterQuery.make(
-                    tx_hashes=[transaction.reversal_tx_hash],  # do not query CPT here as the only way to detect refund is via API  # noqa: E501
+                    tx_hashes=[transaction.reversal_tx_hash],  # do not query CPT here as this tx can only be the refund payment (hopefully)  # noqa: E501
                     location=Location.GNOSIS,
                 ),
                 has_premium=True,
