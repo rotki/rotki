@@ -20,6 +20,7 @@ export const useBalances = createSharedComposable(() => {
   const { t } = useI18n();
   const { currencySymbol, currency } = storeToRefs(useGeneralSettingsStore());
   const { fetchNetValue } = useStatisticsStore();
+  const { logged } = storeToRefs(useSessionAuthStore());
 
   const adjustPrices = (prices: MaybeRef<AssetPrices>): void => {
     const pricesConvertedToUsd = { ...get(prices) };
@@ -121,6 +122,9 @@ export const useBalances = createSharedComposable(() => {
 
   // TODO: This is temporary fix for double conversion issue. Future solutions should try to eliminate this part.
   watch(currency, async () => {
+    if (!get(logged))
+      return;
+
     await refreshPrices(true);
   });
 
