@@ -12,9 +12,9 @@ from eth_utils import is_checksum_address
 
 from rotkehlchen.assets.asset import Asset, CryptoAsset, CustomAsset, EvmToken, FiatAsset, Nft
 from rotkehlchen.assets.converters import asset_from_nexo
+from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
 from rotkehlchen.assets.types import AssetType
 from rotkehlchen.assets.utils import (
-    IgnoredAssetsHandling,
     get_or_create_evm_token,
     symbol_to_evm_token,
 )
@@ -897,3 +897,33 @@ def test_all_assets_pagination(globaldb: 'GlobalDBHandler', database: 'DBHandler
     )
     assert page1[0] != page2[0]
     assert page1[0] + page2[0] == both_pages[0]
+
+    # test that we calculate the entries found correctly
+    _, found_without_ignored = globaldb.retrieve_assets(
+        userdb=database,
+        filter_query=AssetsFilterQuery.make(
+            and_op=True,
+            limit=10,
+            offset=0,
+            ignored_assets_handling=IgnoredAssetsHandling.EXCLUDE,
+        ),
+    )
+    _, found_all = globaldb.retrieve_assets(
+        userdb=database,
+        filter_query=AssetsFilterQuery.make(
+            and_op=True,
+            limit=10,
+            offset=0,
+            ignored_assets_handling=IgnoredAssetsHandling.NONE,
+        ),
+    )
+    _, found_ignored = globaldb.retrieve_assets(
+        userdb=database,
+        filter_query=AssetsFilterQuery.make(
+            and_op=True,
+            limit=10,
+            offset=0,
+            ignored_assets_handling=IgnoredAssetsHandling.SHOW_ONLY,
+        ),
+    )
+    assert found_ignored < found_without_ignored < found_all

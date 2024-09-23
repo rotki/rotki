@@ -17,6 +17,7 @@ from rotkehlchen.assets.asset import (
     Nft,
     UnderlyingToken,
 )
+from rotkehlchen.assets.ignored_assets_handling import IgnoredAssetsHandling
 from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.types import AssetData, AssetType
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -439,10 +440,21 @@ class GlobalDBHandler:
                     UnderlyingToken.deserialize_from_db((entry[1], entry[2], entry[3])).serialize(),  # noqa: E501
                 )
 
-            # get `entries_found`
+            # get `entries_found`. In the case of handling the ignored assets we need to manually
+            # count the assets found since the information needed is both in the
+            # userdb (ignored assets) and the globaldb (filtered identifiers)
             query, bindings = filter_query.prepare(with_pagination=False)
-            total_found_query = f'SELECT COUNT(*) FROM ({parent_query}) ' + query
-            entries_found = cursor.execute(total_found_query, bindings).fetchone()[0]
+            if filter_query.ignored_assets_handling == IgnoredAssetsHandling.NONE:
+                total_found_query = f'SELECT COUNT(*) FROM ({parent_query}) ' + query
+                entries_found = cursor.execute(total_found_query, bindings).fetchone()[0]
+            else:
+                total_found_query = f'SELECT identifier FROM ({parent_query}) ' + query
+                cursor.execute(total_found_query, bindings)
+                identifiers = {row[0] for row in cursor}
+                if filter_query.ignored_assets_handling == IgnoredAssetsHandling.EXCLUDE:
+                    entries_found = len(identifiers.difference(ignored_assets))
+                else:  # IgnoredAssetsHandling.SHOW_ONLY
+                    entries_found = len(identifiers.intersection(ignored_assets))
 
         return list(assets_info.values()), entries_found
 
