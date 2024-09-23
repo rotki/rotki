@@ -466,8 +466,12 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                         log.warning(msg)
                         synchronized = False
                     else:
-                        assert self.etherscan_block != 0
-                        synchronized, msg = _is_synchronized(current_block, self.etherscan_block)
+                        if self.etherscan_block != 0:
+                            synchronized, msg = _is_synchronized(
+                                current_block=current_block,
+                                latest_block=self.etherscan_block,
+                            )
+
             except (Web3Exception, ValueError) as e:
                 message = (
                     f'Failed to connect to {self.chain_name} node {node} at endpoint '
@@ -513,7 +517,11 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             return
 
         # only query highest block once before attempting to connect to nodes
-        self.etherscan_block = self.query_highest_block()
+        try:
+            self.etherscan_block = self.query_highest_block()
+        except RemoteError as e:
+            log.error(f'Failed to query {self.chain_name} etherscan for lates block due to {e!s}')
+
         for weighted_node in nodes:
             task_name = f'{_connect_task_prefix(self.chain_name)} {weighted_node.node_info.name!s}'
             self.greenlet_manager.spawn_and_track(
