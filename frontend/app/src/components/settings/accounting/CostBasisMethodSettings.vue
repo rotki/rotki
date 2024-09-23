@@ -25,6 +25,7 @@ const { costBasisMethodData } = useCostBasisMethod();
     :error-messages="errorMessages"
     :options="costBasisMethodData"
     variant="outlined"
+    key-attr="identifier"
   >
     <template #selection="{ item }">
       <span class="font-medium uppercase">{{ item.identifier }}</span>
