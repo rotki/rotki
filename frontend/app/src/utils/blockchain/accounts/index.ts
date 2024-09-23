@@ -239,13 +239,16 @@ export function convertBtcBalances(
   totals: BlockchainTotals,
   perAccountData: BtcBalances,
 ): BlockchainBalances {
-  const chainBalances = Object.fromEntries(Object.entries({
+  const chainBalances: BlockchainAssetBalances = Object.fromEntries(Object.entries({
     ...perAccountData.standalone,
     ...perAccountData.xpubs?.map(x => x.addresses).reduce((previousValue, currentValue) => ({
       ...previousValue,
       ...currentValue,
     }), {}),
-  }).map(([address, value]) => [address, { assets: { [chain.toUpperCase()]: value } }]));
+  }).map(([address, value]) => [address, {
+    assets: { [chain.toUpperCase()]: value },
+    liabilities: {},
+  } satisfies EthBalance]));
   return {
     totals,
     perAccount: { [chain]: chainBalances },
