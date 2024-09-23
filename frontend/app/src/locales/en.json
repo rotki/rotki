@@ -336,7 +336,6 @@
             "existed": "Has been added before",
             "is_contract": "Is ETH contract address"
           },
-          "description": "Failed to add {addresses} new {blockchain} accounts: {error}",
           "failed_list_description": "Failed to add {addresses} new {blockchain} accounts. Please check again if these account(s) are valid:\n {list}"
         },
         "success": {

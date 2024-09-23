@@ -2,15 +2,15 @@ import { Severity } from '@rotki/common';
 import type { EvmAccountsResult } from '@/types/api/accounts';
 import type { AccountPayload } from '@/types/blockchain/accounts';
 
-interface NotificationParams { title: string; account: AccountPayload; isAll: boolean; chains: string[] }
+interface NotificationParams { account: AccountPayload; isAll: boolean; chains: string[] }
 
 interface UseAccountAdditionNotificationsReturn {
   createFailureNotification: (
     failures: Omit<EvmAccountsResult, 'added'>,
-    title: string,
     account: AccountPayload
   ) => void;
-  notifyUser: ({ title, account, isAll, chains }: NotificationParams) => void;
+  notifyUser: (params: NotificationParams) => void;
+  notifyFailedToAddAddress: (accounts: AccountPayload[], address: number, blockchain?: string) => void;
 }
 
 export function useAccountAdditionNotifications(): UseAccountAdditionNotificationsReturn {
@@ -26,9 +26,9 @@ export function useAccountAdditionNotifications(): UseAccountAdditionNotificatio
     return text;
   }).join('\n');
 
-  const notifyUser = ({ title, account, isAll, chains }: NotificationParams): void => {
+  const notifyUser = ({ account, isAll, chains }: NotificationParams): void => {
     notify({
-      title,
+      title: t('actions.balances.blockchain_accounts_add.task.title', { blockchain: 'EVM' }),
       message: t('actions.balances.blockchain_accounts_add.success.description', {
         address: account.address,
         list: !isAll ? getChainsText(chains) : '',
@@ -38,9 +38,23 @@ export function useAccountAdditionNotifications(): UseAccountAdditionNotificatio
     });
   };
 
+  const notifyFailedToAddAddress = (accounts: AccountPayload[], address: number, blockchain: string = 'EVM'): void => {
+    const title = t('actions.balances.blockchain_accounts_add.task.title', { blockchain });
+    const message = t('actions.balances.blockchain_accounts_add.error.failed_list_description', {
+      list: accounts.map(({ address }) => `- ${address}`).join('\n'),
+      address,
+      blockchain,
+    });
+
+    notify({
+      title,
+      message,
+      display: true,
+    });
+  };
+
   function createFailureNotification(
     { noActivity, existed, ethContracts, failed }: Omit<EvmAccountsResult, 'added'>,
-    title: string,
     account: AccountPayload,
   ): void {
     const listOfFailureText: string[] = [];
@@ -61,7 +75,7 @@ export function useAccountAdditionNotifications(): UseAccountAdditionNotificatio
       return;
 
     notify({
-      title,
+      title: t('actions.balances.blockchain_accounts_add.task.title', { blockchain: 'EVM' }),
       message: t('actions.balances.blockchain_accounts_add.error.failed', {
         address: account.address,
         list: listOfFailureText.join('\n'),
@@ -73,5 +87,6 @@ export function useAccountAdditionNotifications(): UseAccountAdditionNotificatio
   return {
     createFailureNotification,
     notifyUser,
+    notifyFailedToAddAddress,
   };
 }
