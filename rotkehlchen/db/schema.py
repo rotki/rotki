@@ -784,7 +784,10 @@ CREATE TABLE IF NOT EXISTS gnosispay_data (
     transaction_symbol TEXT NOT NULL,
     transaction_amount TEXT NOT NULL,
     billing_symbol TEXT,
-    billing_amount TEXT
+    billing_amount TEXT,
+    reversal_symbol TEXT,
+    reversal_amount TEXT,
+    reversal_tx_hash BLOB UNIQUE
 );
 """
 

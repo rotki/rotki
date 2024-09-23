@@ -173,6 +173,9 @@ def _add_new_tables(write_cursor: 'DBCursor') -> None:
         transaction_amount TEXT NOT NULL,
         billing_symbol TEXT,
         billing_amount TEXT
+        reversal_symbol TEXT,
+        reversal_amount TEXT,
+        reversal_tx_hash BLOB UNIQUE
     );""")
 
 
