@@ -8,15 +8,15 @@ import {
 } from '@/services/utils';
 import { EvmTokensRecord } from '@/types/balances';
 import type { ActionResult, Nullable } from '@rotki/common';
-import type { Module } from '@/types/modules';
 import type { PendingTask } from '@/types/task';
+import type { PurgeableModule } from '@/types/modules';
 
 interface UseBlockchainBalancesApiReturn {
   queryBlockchainBalances: (ignoreCache?: boolean, blockchain?: string) => Promise<PendingTask>;
   queryLoopringBalances: () => Promise<PendingTask>;
   fetchDetectedTokens: (chain: string, addresses: string[] | null) => Promise<EvmTokensRecord>;
   fetchDetectedTokensTask: (chain: string, addresses: string[]) => Promise<PendingTask>;
-  deleteModuleData: (module?: Nullable<Module>) => Promise<boolean>;
+  deleteModuleData: (module?: Nullable<PurgeableModule>) => Promise<boolean>;
 }
 
 export function useBlockchainBalancesApi(): UseBlockchainBalancesApiReturn {
@@ -72,7 +72,7 @@ export function useBlockchainBalancesApi(): UseBlockchainBalancesApiReturn {
     return EvmTokensRecord.parse(response);
   };
 
-  const deleteModuleData = async (module: Nullable<Module> = null): Promise<boolean> => {
+  const deleteModuleData = async (module: Nullable<PurgeableModule> = null): Promise<boolean> => {
     const url = module ? `/blockchains/eth/modules/${module}/data` : `/blockchains/eth/modules/data`;
     const response = await api.instance.delete<ActionResult<boolean>>(url, {
       validateStatus: validStatus,

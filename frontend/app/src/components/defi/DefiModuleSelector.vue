@@ -1,25 +1,39 @@
 <script setup lang="ts">
-import { type Module, SUPPORTED_MODULES, type SupportedModule } from '@/types/modules';
+import {
+  type PurgeableModule,
+  PurgeableOnlyModule,
+  SUPPORTED_MODULES,
+  type SupportedModule,
+} from '@/types/modules';
+
+type PurgeableModuleEntry = Omit<SupportedModule, 'identifier'> & { identifier: PurgeableModule };
 
 defineOptions({
   inheritAttrs: false,
 });
 
-const props = withDefaults(
-  defineProps<{
-    items?: Module[];
-  }>(),
-  {
-    items: () => [],
-  },
-);
+const props = withDefaults(defineProps<{
+  items?: PurgeableModule[];
+}>(), {
+  items: () => [],
+});
 
-const model = defineModel<string>({ required: true });
+const model = defineModel<string | undefined>({ required: true });
 
-const modules = computed<SupportedModule[]>(() => {
+const modules = computed<PurgeableModuleEntry[]>(() => {
   const items = props.items;
 
-  return SUPPORTED_MODULES.filter(item => (items && items.length > 0 ? items.includes(item.identifier) : true));
+  const modules: PurgeableModuleEntry[] = [...SUPPORTED_MODULES, {
+    identifier: PurgeableOnlyModule.COWSWAP,
+    name: 'Cowswap',
+    icon: './assets/images/protocols/cowswap.jpg',
+  }, {
+    identifier: PurgeableOnlyModule.GNOSIS_PAY,
+    name: 'Gnosis Pay',
+    icon: './assets/images/protocols/gnosis_pay.png',
+  }];
+
+  return modules.filter(item => (items && items.length > 0 ? items.includes(item.identifier) : true));
 });
 </script>
 

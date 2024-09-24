@@ -17,6 +17,13 @@ export enum Module {
   LIQUITY = 'liquity',
 }
 
+export enum PurgeableOnlyModule {
+  COWSWAP = 'cowswap',
+  GNOSIS_PAY = 'gnosis_pay',
+}
+
+export type PurgeableModule = Module | PurgeableOnlyModule;
+
 export const ModuleEnum = z.nativeEnum(Module);
 
 export type ModuleEnum = z.infer<typeof ModuleEnum>;
