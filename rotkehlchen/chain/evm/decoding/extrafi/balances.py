@@ -76,21 +76,21 @@ class ExtrafiCommonBalances(ProtocolWithBalance):
                         (event.extra_data['vault_id'], event.extra_data['vault_position']),
                     )
 
-                if len(unique_reserves) != 0:
-                    lending_reserves = self.query_lending_reserves(address, list(unique_reserves))
-                    for reserve_token, balance_amount in lending_reserves.items():
-                        price = Inquirer.find_usd_price(asset=reserve_token)
-                        balances[address].assets[reserve_token] += Balance(
-                            amount=balance_amount,
-                            usd_value=balance_amount * price,
-                        )
-
-                if len(farm_positions) != 0:
-                    self._query_farm_positions(
-                        address=address,
-                        farm_positions=list(farm_positions),
-                        balances=balances,
+            if len(unique_reserves) != 0:
+                lending_reserves = self.query_lending_reserves(address, list(unique_reserves))
+                for reserve_token, balance_amount in lending_reserves.items():
+                    price = Inquirer.find_usd_price(asset=reserve_token)
+                    balances[address].assets[reserve_token] += Balance(
+                        amount=balance_amount,
+                        usd_value=balance_amount * price,
                     )
+
+            if len(farm_positions) != 0:
+                self._query_farm_positions(
+                    address=address,
+                    farm_positions=list(farm_positions),
+                    balances=balances,
+                )
 
         if len(locked_extra_addresses := list(self.addresses_with_deposits(
             products=[EvmProduct.STAKING],
