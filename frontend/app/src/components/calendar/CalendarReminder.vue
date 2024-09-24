@@ -266,7 +266,7 @@ defineExpose({
           {{ t('calendar.reminder.add_reminder') }}
         </RuiButton>
       </div>
-      <RuiAccordions :value="showReminders ? 0 : -1">
+      <RuiAccordions :model-value="showReminders ? 0 : -1">
         <RuiAccordion eager>
           <template #default>
             <div
