@@ -167,15 +167,16 @@ const { setValidation } = useExchangeApiKeysForm();
 
 const v$ = setValidation(rules, modelValue, { $autoDirty: true });
 
-function onExchangeChange(exchange: string) {
+function onExchangeChange(exchange?: string) {
+  const name = exchange ?? '';
   updateModelValue({
-    name: suggestedName(exchange),
+    name: suggestedName(name),
     newName: null,
-    location: exchange,
+    location: name,
     apiKey: null,
-    apiSecret: get(exchangesWithoutApiSecret).includes(exchange) ? '' : null,
+    apiSecret: get(exchangesWithoutApiSecret).includes(name) ? '' : null,
     passphrase: null,
-    krakenAccountType: exchange === 'kraken' ? 'starter' : null,
+    krakenAccountType: name === 'kraken' ? 'starter' : null,
     binanceMarkets: null,
   });
 
