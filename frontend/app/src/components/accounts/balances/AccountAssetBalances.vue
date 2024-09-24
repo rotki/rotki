@@ -10,7 +10,7 @@ const props = withDefaults(
   defineProps<{
     assets: AssetBalance[];
     title: string;
-    flat: boolean;
+    flat?: boolean;
   }>(),
   {
     flat: false,
