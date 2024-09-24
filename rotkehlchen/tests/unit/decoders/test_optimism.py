@@ -14,6 +14,7 @@ from rotkehlchen.chain.optimism.modules.airdrops.decoder import (
 )
 from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
 from rotkehlchen.constants.assets import A_ETH, A_OP
+from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.utils import set_token_spam_protocol
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -165,6 +166,12 @@ def test_spam_detection(optimism_inquirer: OptimismInquirer):
     tx_hash = deserialize_evm_tx_hash('0x4070092c79530835efe9a75eaf1e289da0f38bbb17cd224390bca0a756b7cea4')  # noqa: E501
     events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
     assert len(events) == 0
+
+    undecoded_hashes = DBEvmTx(optimism_inquirer.database).get_transaction_hashes_not_decoded(
+        chain_id=optimism_inquirer.chain_id,
+        limit=None,
+    )
+    assert len(undecoded_hashes) == 0
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
