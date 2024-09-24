@@ -93,7 +93,7 @@
     "dotenv": "16.4.5",
     "dotenv-cli": "7.4.2",
     "electron": "32.1.2",
-    "electron-builder": "24.13.3",
+    "electron-builder": "25.0.5",
     "electron-store": "8.2.0",
     "eslint": "9.10.0",
     "flush-promises": "1.0.2",
