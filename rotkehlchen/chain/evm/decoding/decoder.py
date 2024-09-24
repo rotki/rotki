@@ -30,7 +30,7 @@ from rotkehlchen.chain.evm.decoding.weth.constants import (
 from rotkehlchen.chain.evm.decoding.weth.decoder import WethDecoder
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants import ZERO
-from rotkehlchen.db.constants import HISTORY_MAPPING_STATE_DECODED
+from rotkehlchen.db.constants import HISTORY_MAPPING_STATE_DECODED, HISTORY_MAPPING_STATE_SPAM
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -498,8 +498,17 @@ class EVMTransactionDecoder(ABC):
         Decodes an evm transaction and its receipt and saves result in the DB.
         Returns the list of decoded events and a flag which is True if balances refresh is needed.
         """
+        with self.database.conn.read_ctx() as read_cursor:
+            tx_id = transaction.get_or_query_db_id(read_cursor)
+
         if self._is_spam_airdrop(transaction, tx_receipt):
             log.info(f'Not decoding {transaction} because it was detected as a spam airdrop')
+            with self.database.user_write() as write_cursor:
+                write_cursor.execute(
+                    'INSERT OR IGNORE INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
+                    (tx_id, HISTORY_MAPPING_STATE_SPAM),
+                )
+
             return [], False
 
         self.base.reset_sequence_counter()
@@ -620,7 +629,7 @@ class EVMTransactionDecoder(ABC):
                         action_type=ActionType.HISTORY_EVENT,
                         identifiers=[transaction.identifier],
                     )
-            tx_id = transaction.get_or_query_db_id(write_cursor)
+
             write_cursor.execute(
                 'INSERT OR IGNORE INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
                 (tx_id, HISTORY_MAPPING_STATE_DECODED),
@@ -797,14 +806,14 @@ class EVMTransactionDecoder(ABC):
                     delete_customized=delete_customized,
                 )
                 write_cursor.execute(
-                    'DELETE from evm_tx_mappings WHERE tx_id=? AND value=?',
-                    (tx_id, HISTORY_MAPPING_STATE_DECODED),
+                    'DELETE from evm_tx_mappings WHERE tx_id=? AND value IN (?, ?)',
+                    (tx_id, HISTORY_MAPPING_STATE_DECODED, HISTORY_MAPPING_STATE_SPAM),
                 )
         else:  # see if events are already decoded and return them
             with self.database.conn.read_ctx() as cursor:
                 cursor.execute(
-                    'SELECT COUNT(*) from evm_tx_mappings WHERE tx_id=? AND value=?',
-                    (tx_id, HISTORY_MAPPING_STATE_DECODED),
+                    'SELECT COUNT(*) from evm_tx_mappings WHERE tx_id=? AND value IN (?, ?)',
+                    (tx_id, HISTORY_MAPPING_STATE_DECODED, HISTORY_MAPPING_STATE_SPAM),
                 )
                 if cursor.fetchone()[0] != 0:  # already decoded and in the DB
                     events = self.dbevents.get_history_events(
