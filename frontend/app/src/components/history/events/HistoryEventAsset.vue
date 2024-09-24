@@ -13,7 +13,9 @@ const showBalance = computed<boolean>(() => get(event).eventType !== 'informatio
 
 const eventAsset = useRefMap(event, ({ asset }) => asset);
 
-const symbol = assetSymbol(eventAsset);
+const symbol = assetSymbol(eventAsset, {
+  collectionParent: false,
+});
 const { navigateToDetails } = useAssetPageNavigation(eventAsset);
 </script>
 
@@ -22,6 +24,9 @@ const { navigateToDetails } = useAssetPageNavigation(eventAsset);
     <AssetIcon
       size="32px"
       :identifier="event.asset"
+      :resolution-options="{
+        collectionParent: false,
+      }"
       @click="navigateToDetails()"
     />
     <div
@@ -31,6 +36,9 @@ const { navigateToDetails } = useAssetPageNavigation(eventAsset);
       <AmountDisplay
         :value="event.balance.amount"
         :asset="event.asset"
+        :resolution-options="{
+          collectionParent: false,
+        }"
       />
       <AmountDisplay
         :key="event.timestamp"

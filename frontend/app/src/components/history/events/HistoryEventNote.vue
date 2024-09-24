@@ -85,6 +85,9 @@ function isLinkType(t: any): t is keyof ExplorerUrls {
         no-truncate
         :asset="note.asset"
         :value="note.amount"
+        :resolution-options="{
+          collectionParent: false,
+        }"
       />
       <ExternalLink
         v-else-if="note.type === NoteType.URL && note.url"
