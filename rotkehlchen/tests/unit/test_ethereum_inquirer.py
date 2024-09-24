@@ -315,6 +315,7 @@ def _test_get_blocknumber_by_time(ethereum_inquirer):
     assert result == 9193265
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_get_blocknumber_by_time_blockscout(ethereum_inquirer):
     """Queries blockscout api for known block times"""
     with patch(
@@ -324,6 +325,7 @@ def test_get_blocknumber_by_time_blockscout(ethereum_inquirer):
         _test_get_blocknumber_by_time(ethereum_inquirer)
 
 
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_get_blocknumber_by_time_etherscan(ethereum_inquirer):
     """Queries etherscan for known block times"""
     _test_get_blocknumber_by_time(ethereum_inquirer)
