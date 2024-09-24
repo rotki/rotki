@@ -4765,7 +4765,7 @@ class RestAPI:
             history_events, _, _ = dbevents.get_history_events_and_limit_info(
                 cursor=cursor,
                 filter_query=filter_query,
-                has_premium=True,
+                has_premium=has_premium_check(self.rotkehlchen.premium),
                 entries_limit=None,
             )
 
