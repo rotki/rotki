@@ -123,10 +123,15 @@ class GnosisPay:
 
     def maybe_deserialize_transaction(self, data: dict[str, Any]) -> GnosisPayTransaction | None:
         try:
-            if (kind := data['kind']) == 'Payment' and data['status'] not in ('Approved', 'Reversal', 'PartialReversal'):  # noqa: E501
+            if (
+                    (kind := data['kind']) == 'Payment' and
+                    # status is missing for kind == Reversal so None is also valid here
+                    data.get('status') not in ('Approved', 'Reversal', 'PartialReversal')
+            ):
+                log.debug(f'Ignoring gnosis pay data entry {data}')
                 return None  # only use Approved/Reversal for payments
 
-            if (city := data['merchant']['city'].rstrip()).startswith('+') or city.isdigit():
+            if (city := data['merchant']['city'].rstrip()).startswith('+') or city.replace('-', '').isdigit():  # noqa: E501
                 city = None
             tx_currency_symbol = data['transactionCurrency']['symbol']
             tx_currency_amount = deserialize_fval(value=data['transactionAmount'], name='currency_amount', location='gnosis pay data') / FVal(10 ** data['transactionCurrency']['decimals'])  # noqa: E501
@@ -164,6 +169,17 @@ class GnosisPay:
         return None
 
     def write_txdata_to_db(self, transaction: GnosisPayTransaction) -> None:
+        with self.database.conn.read_ctx() as cursor:
+            existing_result = cursor.execute(
+                'SELECT reversal_amount FROM gnosispay_data WHERE tx_hash=?',
+                (transaction.tx_hash,),
+            ).fetchone()
+
+        if existing_result and existing_result[0] is not None:
+            return  # already existing and has a reversal amount. Don't overwrite
+
+        # else it either does not exist in the DB or exists with normal data so
+        # even if overwriting we should not lose any data
         with self.database.user_write() as write_cursor:
             write_cursor.execute(
                 'INSERT OR REPLACE INTO gnosispay_data(tx_hash, timestamp, merchant_name, '
@@ -291,6 +307,8 @@ class GnosisPay:
                 result_tx = transaction
             else:
                 self.maybe_update_event_with_api_data(transaction)
+
+            self.write_txdata_to_db(transaction)
 
         return self.create_notes_for_transaction(result_tx, is_refund=False) if result_tx else None
 
