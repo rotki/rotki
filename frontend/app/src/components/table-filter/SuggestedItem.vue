@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { getAddressFromEvmIdentifier, isEvmIdentifier } from '@rotki/common';
 import { truncateAddress } from '@/utils/truncate';
 import type { Suggestion } from '@/types/filtering';
 
@@ -97,6 +98,20 @@ const displayValue = computed(() => {
         <span class="font-normal text-sm">
           {{ asset.symbol }}
         </span>
+        <RuiTooltip
+          :popper="{ placement: 'right' }"
+          :open-delay="200"
+          :close-delay="0"
+        >
+          <template #activator>
+            <RuiIcon
+              class="cursor-pointer p-1 -ml-1"
+              name="information-line"
+              size="20"
+            />
+          </template>
+          {{ (isEvmIdentifier(asset.identifier) ? getAddressFromEvmIdentifier(asset.identifier) : asset.identifier) }}
+        </RuiTooltip>
       </div>
       <span
         v-else-if="displayValue"
