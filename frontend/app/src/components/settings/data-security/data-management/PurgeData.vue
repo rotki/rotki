@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { DECENTRALIZED_EXCHANGES, Module } from '@/types/modules';
+import { DECENTRALIZED_EXCHANGES, Module, PurgeableOnlyModule } from '@/types/modules';
 import { Purgeable } from '@/types/session/purge';
 
-const modules = Object.values(Module);
+const purgeableOnlyModules = Object.values(PurgeableOnlyModule);
+const purgeableModules = [...Object.values(Module), ...purgeableOnlyModules];
 const { allExchanges } = storeToRefs(useLocationStore());
 const { txChains } = useSupportedChains();
 
@@ -58,10 +59,15 @@ async function purgeSource(source: Purgeable) {
   else if (source === Purgeable.DECENTRALIZED_EXCHANGES) {
     if (value)
       await deleteModuleData(value as Module);
-    else await Promise.all(DECENTRALIZED_EXCHANGES.map(deleteModuleData));
+    else
+      await Promise.all(DECENTRALIZED_EXCHANGES.map(deleteModuleData));
   }
 
-  await purgeCache(source, value);
+  // Purgeable only modules don't have some cache that needs reset.
+  if (Array.prototype.includes.call(purgeableOnlyModules, value))
+    return;
+
+  purgeCache(source, value);
 }
 
 const { status, pending, showConfirmation } = useCacheClear<Purgeable>(
@@ -162,7 +168,7 @@ const chainsSelection = useArrayMap(txChains, item => item.id);
           v-else-if="source === Purgeable.DEFI_MODULES"
           v-model="moduleToClear"
           class="flex-1"
-          :items="modules"
+          :items="purgeableModules"
           :label="t('purge_selector.defi_module_to_clear.label')"
           :hint="t('purge_selector.defi_module_to_clear.hint')"
         />
