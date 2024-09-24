@@ -259,6 +259,7 @@ from rotkehlchen.types import (
     ModuleName,
     OptionalChainAddress,
     Price,
+    PurgableModuleName,
     SubstrateAddress,
     SupportedBlockchain,
     Timestamp,
@@ -2462,7 +2463,7 @@ class RestAPI:
         manager.node_inquirer.connect_to_multiple_nodes(nodes_to_connect)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 
-    def purge_module_data(self, module_name: ModuleName | None) -> Response:
+    def purge_module_data(self, module_name: PurgableModuleName | None) -> Response:
         self.rotkehlchen.data.db.purge_module_data(module_name)
         return api_response(OK_RESULT, status_code=HTTPStatus.OK)
 

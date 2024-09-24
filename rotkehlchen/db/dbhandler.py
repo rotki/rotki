@@ -140,7 +140,7 @@ from rotkehlchen.types import (
     HexColorCode,
     ListOfBlockchainAddresses,
     Location,
-    ModuleName,
+    PurgableModuleName,
     SupportedBlockchain,
     Timestamp,
     UserNote,
@@ -1021,17 +1021,35 @@ class DBHandler:
         """Delete all historical ETH2 eth2_daily_staking_details data"""
         write_cursor.execute('DELETE FROM eth2_daily_staking_details;')
 
-    def purge_module_data(self, module_name: ModuleName | None) -> None:
+    def delete_cowswap_trade_data(self, write_cursor: 'DBCursor') -> None:
+        """Delete all cowswap trade/orders data from the DB"""
+        write_cursor.execute('DELETE FROM cowswap_orders;')
+
+    def delete_gnosispay_data(self, write_cursor: 'DBCursor') -> None:
+        """Delete all saved gnosispay merchant data from the DB"""
+        write_cursor.execute(
+            'DELETE FROM key_value_cache WHERE name=?;',
+            (DBCacheStatic.LAST_GNOSISPAY_QUERY_TS.value,),
+        )
+        write_cursor.execute('DELETE FROM gnosispay_data;')
+
+    def purge_module_data(self, module_name: PurgableModuleName | None) -> None:
         with self.user_write() as cursor:
             if module_name is None:
                 self.delete_loopring_data(cursor)
                 self.delete_eth2_daily_stats(cursor)
+                self.delete_cowswap_trade_data(cursor)
+                self.delete_gnosispay_data(cursor)
                 log.debug('Purged all module data from the DB')
                 return
             elif module_name == 'loopring':
                 self.delete_loopring_data(cursor)
             elif module_name == 'eth2':
                 self.delete_eth2_daily_stats(cursor)
+            elif module_name == 'cowswap':
+                self.delete_cowswap_trade_data(cursor)
+            elif module_name == 'gnosis_pay':
+                self.delete_gnosispay_data(cursor)
             else:
                 log.debug(f'Requested to purge {module_name} data from the DB but nothing to do')
                 return
