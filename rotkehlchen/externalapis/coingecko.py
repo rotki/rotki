@@ -450,7 +450,7 @@ DELISTED_ASSETS = {
     evm_address_to_identifier(address='0xCB5A05beF3257613E984C17DbcF039952B6d883F', chain_id=ChainID.ETHEREUM, token_type=EvmTokenKind.ERC20),  # noqa: E501
 }
 
-COINGECKO_SIMPLE_VS_CURRENCIES = [
+COINGECKO_SIMPLE_VS_CURRENCIES = {
     'btc',
     'eth',
     'ltc',
@@ -509,7 +509,7 @@ COINGECKO_SIMPLE_VS_CURRENCIES = [
     'xdr',
     'xag',
     'xau',
-]
+}
 
 
 class Coingecko(HistoricalPriceOracleWithCoinListInterface, PenalizablePriceOracleMixin):
