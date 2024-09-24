@@ -104,7 +104,9 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
     blockNumber,
     counterparty,
   }: FormatNoteParams): ComputedRef<NoteFormat[]> => computed<NoteFormat[]>(() => {
-    const asset = get(assetSymbol(assetId));
+    const asset = get(assetSymbol(assetId, {
+      collectionParent: false,
+    }));
 
     let notesVal = get(notes);
     if (!notesVal)
