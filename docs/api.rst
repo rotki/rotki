@@ -2079,7 +2079,7 @@ Purging locally saved data for ethereum modules
 
       {}
 
-   :reqjson string name: The name of the module whose data to delete. Can be one of the supported ethereum modules. The name can be omitted by doing a ``DELETE`` on ``/api/(version)/blockchains/eth/modules/data`` in which case all module data will be purged.
+   :reqjson string name: The name of the module whose data to delete. Can be one of the supported ethereum modules. The name can be omitted by doing a ``DELETE`` on ``/api/(version)/blockchains/eth/modules/data`` in which case all module data will be purged. Apart from the standard modules we have 2 virtual modules for purging DB data. They are "gnosis_pay" and "cowswap".
 
 
    **Example Response**:

@@ -1,3 +1,5 @@
+import typing
+
 import pytest
 import requests
 
@@ -9,6 +11,7 @@ from rotkehlchen.chain.zksync_lite.structures import (
 )
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_DAI, A_ETH
+from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.fval import FVal
@@ -18,7 +21,15 @@ from rotkehlchen.tests.utils.exchanges import (
     mock_exchange_data_in_db,
 )
 from rotkehlchen.tests.utils.factories import make_evm_address, make_evm_tx_hash
-from rotkehlchen.types import ChainID, EvmTransaction, Fee, Location, SupportedBlockchain
+from rotkehlchen.types import (
+    ChainID,
+    EvmTransaction,
+    Fee,
+    Location,
+    ModuleName,
+    OnlyPurgableModuleName,
+    SupportedBlockchain,
+)
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
@@ -168,3 +179,78 @@ def test_purge_blockchain_transaction_data(rotkehlchen_api_server):
     assert_simple_ok_response(response)
     with rotki.data.db.conn.read_ctx() as cursor:
         _assert_zksynclite_txs_num(cursor, tx_num=0, swap_num=0)
+
+
+def test_purge_module_data(rotkehlchen_api_server):
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+
+    def populate_data():
+        with rotki.data.db.user_write() as write_cursor:
+            write_cursor.execute(
+                'INSERT INTO multisettings(name, value) VALUES(?, ?)',
+                ('loopring_0xfoo_account_id', '42'),
+            )
+            write_cursor.execute(
+                'INSERT OR IGNORE INTO eth2_validators(validator_index, '
+                'public_key, ownership_proportion) VALUES(?, ?, ?)',
+                (42, '0xfoo', '1.0'),
+            )
+            write_cursor.execute(
+                'INSERT INTO eth2_daily_staking_details(validator_index, timestamp, pnl) '
+                'VALUES(?, ?, ?)',
+                (42, 1727172416, '42'),
+            )
+            write_cursor.execute(
+                'INSERT INTO cowswap_orders(identifier, order_type, raw_fee_amount) '
+                'VALUES(?, ?, ?)',
+                ('foo', 'valid_type', '42'),
+            )
+            write_cursor.execute(
+                'INSERT OR REPLACE INTO key_value_cache(name, value) VALUES(?, ?)',
+                (DBCacheStatic.LAST_GNOSISPAY_QUERY_TS.value, '42'),
+            )
+            write_cursor.execute(
+                'INSERT OR REPLACE INTO gnosispay_data(tx_hash, timestamp, merchant_name, '
+                'merchant_city, country, mcc, transaction_symbol, transaction_amount, '
+                'billing_symbol, billing_amount, reversal_symbol, reversal_amount) '
+                'VALUES(?, ?, ?, ?, ? ,?, ?, ?, ?, ?, ?, ?)',
+                (make_evm_tx_hash(), 1727172416, 'foo', 'foo', 'ES', 4242, 'EUR', '1', None, None, None, None),  # noqa: E501
+            )
+
+    def check_data(name, before):
+        with rotki.data.db.conn.read_ctx() as cursor:
+            if not name or name == 'loopring':
+                assert cursor.execute('SELECT COUNT(*) FROM multisettings').fetchone()[0] == (221 if before else 220)  # noqa: E501
+            if not name or name == 'eth2':
+                assert cursor.execute('SELECT COUNT(*) FROM eth2_daily_staking_details').fetchone()[0] == (1 if before else 0)  # noqa: E501
+            if not name or name == 'cowswap':
+                assert cursor.execute('SELECT COUNT(*) FROM cowswap_orders').fetchone()[0] == (1 if before else 0)  # noqa: E501
+            if not name or name == 'gnosis_pay':
+                assert cursor.execute('SELECT COUNT(*) FROM gnosispay_data').fetchone()[0] == (1 if before else 0)  # noqa: E501
+                assert cursor.execute('SELECT COUNT(*) FROM key_value_cache').fetchone()[0] == (1 if before else 0)  # noqa: E501
+
+    populate_data()
+    check_data(name=None, before=True)
+    valid_names = typing.get_args(ModuleName) + typing.get_args(OnlyPurgableModuleName)
+    for name in valid_names:
+        response = requests.delete(
+            api_url_for(
+                rotkehlchen_api_server,
+                'namedethereummoduledataresource',
+                module_name=name,
+            ),
+        )
+        assert_simple_ok_response(response)
+        check_data(name=name, before=False)
+
+    # now recheck that no module name purges all
+    populate_data()
+    check_data(name=None, before=True)
+    response = requests.delete(
+        api_url_for(
+            rotkehlchen_api_server,
+            'ethereummoduledataresource',
+        ),
+    )
+    assert_simple_ok_response(response)
+    check_data(name=None, before=False)

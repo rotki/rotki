@@ -119,6 +119,8 @@ from rotkehlchen.types import (
     Location,
     LocationAssetMappingDeleteEntry,
     LocationAssetMappingUpdateEntry,
+    ModuleName,
+    OnlyPurgableModuleName,
     OptionalBlockchainAddress,
     OptionalChainAddress,
     SupportedBlockchain,
@@ -2547,7 +2549,7 @@ class AssetResetRequestSchema(AsyncQueryArgumentSchema):
 
 class NamedEthereumModuleDataSchema(Schema):
     module_name = fields.String(
-        validate=webargs.validate.OneOf(choices=list(AVAILABLE_MODULES_MAP.keys())),
+        validate=webargs.validate.OneOf(choices=list(typing.get_args(ModuleName) + typing.get_args(OnlyPurgableModuleName))),  # noqa: E501
     )
 
 
