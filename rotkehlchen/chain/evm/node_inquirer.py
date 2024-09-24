@@ -83,26 +83,6 @@ def _connect_task_prefix(chain_name: str) -> str:
     return f'Attempt connection to {chain_name} node'
 
 
-def _is_synchronized(current_block: int, latest_block: int) -> tuple[bool, str]:
-    """ Validate that the evm node is synchronized
-            within 20 blocks of the latest block
-
-        Returns a tuple (results, message)
-            - result: Boolean for confirmation of synchronized
-            - message: A message containing information on what the status is.
-    """
-    message = ''
-    if current_block < (latest_block - 20):
-        message = (
-            f'Found evm node but it is out of sync. {current_block} / '
-            f'{latest_block}. Will use etherscan.'
-        )
-        log.warning(message)
-        return False, message
-
-    return True, message
-
-
 WEB3_LOGQUERY_BLOCK_RANGE = 250000
 
 
@@ -214,7 +194,6 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         self.database = database
         self.blockchain = blockchain
         self.etherscan = etherscan
-        self.etherscan_block = BlockNumber(0)  # caches highest block for checking sync while connecting to nodes  # noqa: E501
         self.etherscan_node = etherscan_node
         self.etherscan_node_name = etherscan_node_name
         self.contracts = contracts
@@ -434,7 +413,6 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
 
         if is_connected:
             # Also make sure we are actually connected to the right network
-            synchronized = True
             msg = ''
             try:
                 if connectivity_check:
@@ -464,13 +442,6 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                     except (requests.exceptions.RequestException, RemoteError) as e:
                         msg = f'Could not query latest block due to {e!s}'
                         log.warning(msg)
-                        synchronized = False
-                    else:
-                        if self.etherscan_block != 0:
-                            synchronized, msg = _is_synchronized(
-                                current_block=current_block,
-                                latest_block=self.etherscan_block,
-                            )
 
             except (Web3Exception, ValueError) as e:
                 message = (
@@ -478,13 +449,6 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                     f'{rpc_endpoint} due to {e!s}'
                 )
                 return False, message
-
-            if not synchronized:
-                log.warning(
-                    f'We could not verify that {self.chain_name} node {node} is '
-                    'synchronized with the network. Balances and other queries '
-                    'may be incorrect.',
-                )
 
             if node.endpoint.endswith('llamarpc.com'):  # temporary. Seems to sometimes switch
                 is_pruned, is_archive = True, False  # between pruned and non-pruned nodes
@@ -515,12 +479,6 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         nodes = [node for node in nodes if node.node_info.name != self.etherscan_node_name]
         if len(nodes) == 0:
             return
-
-        # only query highest block once before attempting to connect to nodes
-        try:
-            self.etherscan_block = self.query_highest_block()
-        except RemoteError as e:
-            log.error(f'Failed to query {self.chain_name} etherscan for latest block due to {e!s}')
 
         for weighted_node in nodes:
             task_name = f'{_connect_task_prefix(self.chain_name)} {weighted_node.node_info.name!s}'
