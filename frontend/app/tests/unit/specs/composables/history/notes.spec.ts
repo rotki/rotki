@@ -26,11 +26,7 @@ describe('composables::history/notes', () => {
     const expected: NoteFormat[] = [
       {
         type: NoteType.WORD,
-        word: 'Normal',
-      },
-      {
-        type: NoteType.WORD,
-        word: 'text',
+        word: 'Normal text',
       },
     ];
 
@@ -183,11 +179,7 @@ describe('composables::history/notes', () => {
       const expected: NoteFormat[] = [
         {
           type: NoteType.WORD,
-          word: 'TxHash',
-        },
-        {
-          type: NoteType.WORD,
-          word: txHash,
+          word: `TxHash ${txHash}`,
         },
       ];
 
@@ -300,11 +292,7 @@ describe('composables::history/notes', () => {
     const expected: NoteFormat[] = [
       {
         type: NoteType.WORD,
-        word: 'Sell',
-      },
-      {
-        type: NoteType.WORD,
-        word: 'USDC',
+        word: 'Sell USDC',
       },
     ];
 
@@ -314,7 +302,7 @@ describe('composables::history/notes', () => {
   it('scramble IBAN', () => {
     store.update({ scrambleData: false });
     const iban = 'DE88 5678 9012 1234 345 67';
-    const notes = `Send 8,325.00 EURe via bank transfer to Rotki Solutions GmbH (${iban}) with memo "for salaries and insurance`;
+    const notes = `Send 8,325.00 EURe via bank transfer to Rotki Solutions GmbH (${iban}) with memo "for salaries and insurance"`;
 
     const notesData = formatNotes({ notes, counterparty: 'monerium' });
     let formatted = get(notesData);
@@ -322,9 +310,8 @@ describe('composables::history/notes', () => {
       .filter(item => item.type === NoteType.WORD)
       .map(item => item.word)
       .join('');
-    let included = notesToString.includes(iban.split(' ').join(''));
 
-    expect(included).toBeTruthy();
+    expect(notesToString).toContain(iban);
 
     store.update({ scrambleData: true });
     formatted = get(notesData);
@@ -332,9 +319,8 @@ describe('composables::history/notes', () => {
       .filter(item => item.type === NoteType.WORD)
       .map(item => item.word)
       .join('');
-    included = notesToString.includes(iban.split(' ').join(''));
 
-    expect(included).toBeFalsy();
+    expect(notesToString).not.toContain(iban);
   });
 
   it('works with punctuation', () => {
@@ -362,15 +348,7 @@ describe('composables::history/notes', () => {
       },
       {
         type: NoteType.WORD,
-        word: '.',
-      },
-      {
-        type: NoteType.WORD,
-        word: 'Some',
-      },
-      {
-        type: NoteType.WORD,
-        word: 'sentence.',
+        word: '. Some sentence.',
       },
     ];
 
