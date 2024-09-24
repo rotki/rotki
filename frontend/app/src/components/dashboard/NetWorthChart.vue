@@ -418,8 +418,10 @@ function setup() {
   chart?.destroy();
   clearData();
   chart = createChart();
-  if (get(showGraphRangeSelector))
+  if (get(showGraphRangeSelector)) {
+    range?.destroy();
     range = createRange();
+  }
 
   prepareData();
 }
@@ -596,6 +598,10 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   window.removeEventListener('mouseup', mouseup);
+  chart?.destroy();
+  chart = null;
+  range?.destroy();
+  range = null;
 });
 </script>
 
