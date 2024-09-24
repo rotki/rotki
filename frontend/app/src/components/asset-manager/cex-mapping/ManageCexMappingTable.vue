@@ -46,7 +46,7 @@ const tableHeaders = computed<DataTableColumn<CexMapping>[]>(() => [
   },
 ]);
 
-const locationModel = defineModel<string>('location', { required: true });
+const locationModel = defineModel<string | undefined>('location', { required: true });
 const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
 
 const edit = (mapping: CexMapping) => emit('edit', mapping);
