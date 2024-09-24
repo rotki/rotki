@@ -57,6 +57,26 @@ describe('composables::history/notes', () => {
     expect(formatted).toMatchObject(expected);
   });
 
+  it('with amount and asset (multi-word)', () => {
+    const notes = 'Receive 100 Spectral Token';
+
+    const formatted = get(formatNotes({ notes, amount: bigNumberify(100), assetId: 'Spectral Token' }));
+
+    const expected: NoteFormat[] = [
+      {
+        type: NoteType.WORD,
+        word: 'Receive',
+      },
+      {
+        type: NoteType.AMOUNT,
+        amount: bigNumberify(100),
+        asset: 'Spectral Token',
+      },
+    ];
+
+    expect(formatted).toMatchObject(expected);
+  });
+
   it('with ETH address', () => {
     const address = '0xCb2286d9471cc185281c4f763d34A962ED212962';
     const notes = `Address ${address}`;

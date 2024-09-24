@@ -119,10 +119,22 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
     if (get(scrambleData) && counterpartyVal === 'monerium')
       notesVal = findAndScrambleIBAN(notesVal);
 
-    // label each word from notes whether it is an address or not
     const words = notesVal.split(/[\s,]+/);
+    const assetWords = asset ? asset.split(/\s+/) : [];
+    const processedWords: string[] = [];
 
-    words.forEach((wordItem, index) => {
+    for (let i = 0; i < words.length; i++) {
+      if (i + assetWords.length <= words.length
+        && words.slice(i, i + assetWords.length).join(' ') === asset) {
+        processedWords.push(asset);
+        i += assetWords.length - 1;
+      }
+      else {
+        processedWords.push(words[i]);
+      }
+    }
+
+    processedWords.forEach((wordItem, index) => {
       if (skip) {
         skip = false;
         return;
@@ -193,8 +205,8 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
         && !isNaN(Number.parseFloat(word))
         && bigNumberify(word).eq(amountVal)
         && amountVal.gt(0)
-        && index < words.length - 1
-        && words[index + 1] === asset;
+        && index < processedWords.length - 1
+        && processedWords[index + 1] === asset;
 
       if (isAmount) {
         formats.push({

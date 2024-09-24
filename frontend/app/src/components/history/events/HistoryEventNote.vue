@@ -82,6 +82,7 @@ function isLinkType(t: any): t is keyof ExplorerUrls {
       <AmountDisplay
         v-else-if="note.type === NoteType.AMOUNT && note.amount"
         :key="`${index}-amount`"
+        no-truncate
         :asset="note.asset"
         :value="note.amount"
       />
