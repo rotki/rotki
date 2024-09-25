@@ -64,7 +64,7 @@ function isLinkType(t: any): t is keyof ExplorerUrls {
         />
       </template>
       <template v-else-if="note.type === NoteType.WORD && note.word">
-        <span :key="`span-${index}`">{{ note.word }}</span>
+        {{ note.word }}
       </template>
       <HashLink
         v-else-if="note.showHashLink && isLinkType(note.type)"

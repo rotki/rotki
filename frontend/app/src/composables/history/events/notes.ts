@@ -95,6 +95,35 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
     return notes;
   }
 
+  /**
+   * Merges sequential "WORD" type entries in an array of NoteFormat objects.
+   *
+   * @param {NoteFormat[]} formats - The array of existing NoteFormat objects.
+   * @param {NoteFormat} current - The current NoteFormat object to be added or merged.
+   * @returns {NoteFormat[]} The updated array of NoteFormat objects.
+   *
+   * This function checks if the last entry in the 'formats' array and the 'current' entry
+   * are both of type 'WORD'. If so, it merges the 'current' word with the last entry's word.
+   * Otherwise, it simply adds the 'current' entry to the 'formats' array.
+   *
+   * This is done to avoid rendering each word as a single text node.
+   */
+  const mergeSequentialWords = (formats: NoteFormat[], current: NoteFormat): NoteFormat[] => {
+    const lastFormatEntry = formats.at(-1);
+    if (!lastFormatEntry) {
+      formats.push(current);
+      return formats;
+    }
+    if (current.type === NoteType.WORD && lastFormatEntry.type === NoteType.WORD) {
+      lastFormatEntry.word += ` ${current.word}`;
+      return formats;
+    }
+    else {
+      formats.push(current);
+      return formats;
+    }
+  };
+
   const formatNotes = ({
     notes,
     amount,
@@ -278,7 +307,7 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
       formats.push({ type: NoteType.WORD, word: splitted.join('') });
     });
 
-    return formats;
+    return formats.reduce(mergeSequentialWords, new Array<NoteFormat>());
   });
 
   return {
