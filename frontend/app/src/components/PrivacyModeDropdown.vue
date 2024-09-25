@@ -45,7 +45,6 @@ watch([enabled, multiplier], setData);
         <MenuTooltipButton
           :tooltip="t('user_dropdown.change_privacy_mode.label')"
           class-name="privacy-mode-dropdown"
-          v-bind="attrs"
           @click="togglePrivacyMode()"
         >
           <RuiBadge

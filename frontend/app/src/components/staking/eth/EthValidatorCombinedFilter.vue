@@ -8,9 +8,15 @@ import {
 } from '@/types/filtering';
 import type { EthStakingCombinedFilter } from '@rotki/common';
 
-const props = defineProps<{
-  filter: EthStakingCombinedFilter | undefined;
-}>();
+const props = withDefaults(
+  defineProps<{
+    filter?: EthStakingCombinedFilter;
+    disableStatus?: boolean;
+  }>(),
+  {
+    disableStatus: false,
+  },
+);
 
 const emit = defineEmits<{
   (e: 'update:filter', value?: EthStakingCombinedFilter): void;
@@ -73,15 +79,19 @@ const matchers = computed<Matcher[]>(
         serializer: dateSerializer(dateInputFormat),
         deserializer: dateDeserializer(dateInputFormat),
       },
-      {
-        key: Eth2StakingFilterKeys.STATUS,
-        keyValue: Eth2StakingFilterValueKeys.STATUS,
-        description: t('eth_validator_combined_filter.status'),
-        string: true,
-        suggestions: () => validStatuses.filter(x => x !== 'all'),
-        validate: (status: string) => isValidStatus(status),
-      },
-    ] satisfies Matcher[],
+      ...(props.disableStatus
+        ? []
+        : [
+          {
+            key: Eth2StakingFilterKeys.STATUS,
+            keyValue: Eth2StakingFilterValueKeys.STATUS,
+            description: t('eth_validator_combined_filter.status'),
+            string: true,
+            suggestions: () => validStatuses.filter(x => x !== 'all'),
+            validate: (status: string) => isValidStatus(status),
+          },
+        ] satisfies Matcher[]),
+    ],
 );
 
 function updateFilters(updatedFilters: Filters) {
