@@ -315,6 +315,8 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
                     if status == 0:
                         if result == 'Contract source code not verified':
                             return None
+                        if 'Max daily rate limit reached' in result:
+                            raise RemoteError('Etherscan max daily rate limit reached.')
                         if 'rate limit reached' in result:
                             log.debug(
                                 f'Got response: {response.text} from {self.chain} etherscan.'

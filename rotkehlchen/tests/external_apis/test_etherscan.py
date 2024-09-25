@@ -13,6 +13,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
+from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.externalapis.etherscan import EtherscanHasChainActivity
 from rotkehlchen.globaldb.migrations.migration1 import ILK_REGISTRY_ABI
 from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
@@ -57,16 +58,13 @@ def fixture_temp_etherscan(function_scope_messages_aggregator, tmpdir_factory, s
     return etherscan
 
 
-def patch_etherscan(etherscan):
+def patch_etherscan(etherscan, response_msg):
     count = 0
 
     def mock_requests_get(_url, timeout):  # pylint: disable=unused-argument
         nonlocal count
         if count == 0:
-            response = (
-                '{"status":"0","message":"NOTOK",'
-                '"result":"Max rate limit reached, please use API Key for higher rate limit"}'
-            )
+            response = f'{{"status":"0","message":"NOTOK","result":"{response_msg}"}}'
         else:
             response = '{"jsonrpc":"2.0","id":1,"result":"0x1337"}'
 
@@ -82,17 +80,32 @@ def test_maximum_rate_limit_reached(temp_etherscan, **kwargs):  # pylint: disabl
 
     Regression test for https://github.com/rotki/rotki/issues/772"
     """
-    etherscan = temp_etherscan
-
-    etherscan_patch = patch_etherscan(etherscan)
+    etherscan_patch = patch_etherscan(
+        etherscan=temp_etherscan,
+        response_msg='Max rate limit reached, please use API Key for higher rate limit',
+    )
 
     with etherscan_patch:
-        result = etherscan.eth_call(
+        result = temp_etherscan.eth_call(
             '0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4',
             '0xc455279100000000000000000000000027a2eaaa8bebea8d23db486fb49627c165baacb5',
         )
 
     assert result == '0x1337'
+
+
+def test_maximum_daily_rate_limit_reached(temp_etherscan, **kwargs):  # pylint: disable=unused-argument
+    """Test that etherscan's daily rate limit raises a RemoteError"""
+    etherscan_patch = patch_etherscan(
+        etherscan=temp_etherscan,
+        response_msg='Max daily rate limit reached. 110000 (100%) of 100000 day/limit',
+    )
+
+    with pytest.raises(RemoteError), etherscan_patch:
+        temp_etherscan.eth_call(
+            '0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4',
+            '0xc455279100000000000000000000000027a2eaaa8bebea8d23db486fb49627c165baacb5',
+        )
 
 
 def test_deserialize_transaction_from_etherscan():
