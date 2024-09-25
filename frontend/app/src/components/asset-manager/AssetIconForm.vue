@@ -13,6 +13,7 @@ const preview = computed<string | null>(() => get(identifier) ?? null);
 const icon = ref<File>();
 
 const refreshIconLoading = ref<boolean>(false);
+const refreshKey = ref<number>(0);
 const { notify } = useNotificationsStore();
 const { getPath } = useInterop();
 const { setMessage } = useMessageStore();
@@ -23,10 +24,14 @@ const { t } = useI18n();
 const { setLastRefreshedAssetIcon } = useAssetIconStore();
 
 async function refreshIcon() {
+  if (get(refreshIconLoading))
+    return;
+
   set(refreshIconLoading, true);
   const identifierVal = get(identifier);
   try {
     await refresh(identifierVal);
+    set(refreshKey, get(refreshKey) + 1);
   }
   catch (error: any) {
     notify({
@@ -125,6 +130,7 @@ defineExpose({
         />
         <AssetIcon
           v-else-if="preview"
+          :key="refreshKey"
           :identifier="preview"
           size="72px"
           changeable
