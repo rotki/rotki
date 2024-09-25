@@ -51,9 +51,13 @@ if TYPE_CHECKING:
 
 from rotkehlchen.constants.limits import FREE_ETH_TX_LIMIT
 
+# This is only used in get_transaction_hashes_not_decoded and count_hashes_not_decoded
+# in conjuction with TransactionsNotDecodedFilterQuery. In that filter query we also
+# make sure to check that the evmtx_mapping value is that of the decoded attribute
+# The reason it happens there is that it needs to be in the WHERE
 TRANSACTIONS_MISSING_DECODING_QUERY = (
     'evmtx_receipts AS A LEFT OUTER JOIN evm_tx_mappings AS B ON A.tx_id=B.tx_id '
-    'LEFT JOIN evm_transactions AS C on A.tx_id=C.identifier '
+    'LEFT JOIN evm_transactions AS C ON A.tx_id=C.identifier '
 )
 
 
@@ -529,7 +533,7 @@ class DBEvmTx:
             'DELETE FROM evm_transactions WHERE tx_hash=? AND chain_id=? AND tx_hash NOT IN (SELECT tx_hash FROM evm_events_info)',  # noqa: E501
             [(x, chain_id_serialized) for x in tx_hashes],
         )
-        # Delete all remaining evm_tx_mappings so decoding can happen again for customized events
+        # Delete all remaining evm_tx_mappings so decoding can happen again
         write_cursor.executemany(
             'DELETE FROM evm_tx_mappings WHERE tx_id=? AND value IN (?, ?)',
             [(x, HISTORY_MAPPING_STATE_DECODED, HISTORY_MAPPING_STATE_SPAM) for x in tx_ids],

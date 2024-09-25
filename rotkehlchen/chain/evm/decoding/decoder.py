@@ -504,9 +504,9 @@ class EVMTransactionDecoder(ABC):
         if self._is_spam_airdrop(transaction, tx_receipt):
             log.info(f'Not decoding {transaction} because it was detected as a spam airdrop')
             with self.database.user_write() as write_cursor:
-                write_cursor.execute(
+                write_cursor.executemany(  # both spam marker but also count as decoded
                     'INSERT OR IGNORE INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
-                    (tx_id, HISTORY_MAPPING_STATE_SPAM),
+                    [(tx_id, HISTORY_MAPPING_STATE_DECODED), (tx_id, HISTORY_MAPPING_STATE_SPAM)],
                 )
 
             return [], False
@@ -812,8 +812,8 @@ class EVMTransactionDecoder(ABC):
         else:  # see if events are already decoded and return them
             with self.database.conn.read_ctx() as cursor:
                 cursor.execute(
-                    'SELECT COUNT(*) from evm_tx_mappings WHERE tx_id=? AND value IN (?, ?)',
-                    (tx_id, HISTORY_MAPPING_STATE_DECODED, HISTORY_MAPPING_STATE_SPAM),
+                    'SELECT COUNT(*) from evm_tx_mappings WHERE tx_id=? AND value=?',
+                    (tx_id, HISTORY_MAPPING_STATE_DECODED),
                 )
                 if cursor.fetchone()[0] != 0:  # already decoded and in the DB
                     events = self.dbevents.get_history_events(

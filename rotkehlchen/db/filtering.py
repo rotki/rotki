@@ -18,6 +18,7 @@ from rotkehlchen.db.constants import (
     HISTORY_BASE_ENTRY_FIELDS,
     HISTORY_MAPPING_KEY_STATE,
     HISTORY_MAPPING_STATE_CUSTOMIZED,
+    HISTORY_MAPPING_STATE_DECODED,
 )
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -195,12 +196,15 @@ class DBTransactionsPendingDecodingFilter(DBFilter):
     """
     This filter is used to find the ethereum transactions that have not been decoded yet
     using the query in `TRANSACTIONS_MISSING_DECODING_QUERY`. It allows filtering by chain.
+
+    Due to the joining we need to check for either value being NULL (meaning no entry
+    in evm_tx_mappings) or not having the DECODED value.
     """
     chain_id: ChainID | None
 
     def prepare(self) -> tuple[list[str], list[Any]]:
-        query_filters = ['B.tx_id is NULL']
-        bindings: list[int] = []
+        query_filters = ['(B.tx_id IS NULL OR B.tx_id NOT IN (SELECT tx_id FROM evm_tx_mappings WHERE value=?))']  # noqa: E501
+        bindings: list[int] = [HISTORY_MAPPING_STATE_DECODED]
         if self.chain_id is not None:
             bindings.append(self.chain_id.serialize_for_db())
             query_filters.append('C.chain_id=?')

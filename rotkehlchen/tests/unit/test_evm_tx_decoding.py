@@ -11,6 +11,7 @@ from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.chain.evm.types import EvmAccount, string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_SAI
+from rotkehlchen.db.constants import HISTORY_MAPPING_STATE_DECODED, HISTORY_MAPPING_STATE_SPAM
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -218,9 +219,31 @@ def test_query_and_decode_transactions_works_with_different_chains(
     optimism_transactions.get_receipts_for_transactions_missing_them()
     assert dbevmtx.get_transaction_hashes_no_receipt(tx_filter_query=None, limit=None) == [evmhash_eth_yabir]  # noqa: E501
 
-    # check that the transactions have not been decoded
     hashes = dbl2withl1feestx.get_transaction_hashes_not_decoded(chain_id=ChainID.OPTIMISM, limit=None)  # noqa: E501
     assert len(hashes) == 1
+    hashes = dbevmtx.get_transaction_hashes_not_decoded(chain_id=ChainID.ETHEREUM, limit=None)
+    assert len(hashes) == 1
+
+    # get the receipts for the last address, which should mark 1 more transaction as not decoded
+    eth_transactions.get_receipts_for_transactions_missing_them(addresses=[ethereum_accounts[1]])
+    hashes = dbevmtx.get_transaction_hashes_not_decoded(chain_id=ChainID.ETHEREUM, limit=None)
+    assert len(hashes) == 2
+
+    # see that setting the spam attribute alone does not count it as decoded
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
+            (3, HISTORY_MAPPING_STATE_SPAM),
+        )
+    hashes = dbevmtx.get_transaction_hashes_not_decoded(chain_id=ChainID.ETHEREUM, limit=None)
+    assert len(hashes) == 2
+
+    # see that setting the decoded attribute counts properly
+    with database.user_write() as write_cursor:
+        write_cursor.execute(
+            'INSERT INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
+            (3, HISTORY_MAPPING_STATE_DECODED),
+        )
     hashes = dbevmtx.get_transaction_hashes_not_decoded(chain_id=ChainID.ETHEREUM, limit=None)
     assert len(hashes) == 1
 
