@@ -20,7 +20,6 @@ from rotkehlchen.chain.ethereum.modules.convex.constants import (
 from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
     query_convex_data,
     read_convex_data_from_cache,
-    save_convex_data_to_cache,
 )
 from rotkehlchen.chain.ethereum.utils import asset_normalized_value
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -72,7 +71,6 @@ class ConvexDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             evm_inquirer=ethereum_inquirer,
             cache_type_to_check_for_freshness=CacheType.CONVEX_POOL_ADDRESS,
             query_data_method=query_convex_data,
-            save_data_to_cache_method=save_convex_data_to_cache,
             read_data_from_cache_method=read_convex_data_from_cache,
         )
         self.cvx = A_CVX.resolve_to_evm_token()

@@ -12,7 +12,6 @@ from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     GearboxPoolData,
     query_gearbox_data,
     read_gearbox_data_from_cache,
-    save_gearbox_data_to_cache,
 )
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableCacheDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -66,7 +65,6 @@ class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             evm_inquirer=evm_inquirer,
             cache_type_to_check_for_freshness=CacheType.GEARBOX_POOL_ADDRESS,
             query_data_method=query_gearbox_data,
-            save_data_to_cache_method=save_gearbox_data_to_cache,
             read_data_from_cache_method=read_gearbox_data_from_cache,
             chain_id=self.evm_inquirer.chain_id,
         )

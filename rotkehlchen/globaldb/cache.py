@@ -6,6 +6,7 @@ from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.types import (
+    UNIQUE_CACHE_KEYS,
     CacheType,
     ChainID,
     ChecksumEvmAddress,
@@ -226,6 +227,19 @@ def globaldb_get_unique_cache_last_queried_ts_by_key(
         return Timestamp(0)
 
     return Timestamp(result[0])
+
+
+def globaldb_update_cache_last_ts(
+        write_cursor: DBCursor,
+        cache_type: UniqueCacheType | GeneralCacheType,
+        key_parts: Iterable[str] | None,
+) -> None:
+    args = key_parts if key_parts is not None else []
+    table = 'unique_cache' if cache_type in UNIQUE_CACHE_KEYS else 'general_cache'
+    write_cursor.execute(
+        f'UPDATE {table} SET last_queried_ts=? WHERE key LIKE ?',
+        (ts_now(), compute_cache_key((cache_type, *args))),
+    )
 
 
 def read_curve_pool_tokens(

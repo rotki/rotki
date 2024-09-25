@@ -1,4 +1,5 @@
 import warnings as test_warnings
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -37,7 +38,11 @@ def test_query_all_protocol_balances_for_account(
     )
     inquirer.inject_evm_managers(((ChainID.ETHEREUM, ethereum_manager),))
     zerion = ZerionSDK(ethereum_manager.node_inquirer, function_scope_messages_aggregator, database)  # noqa: E501
-    balances = zerion.all_balances_for_account('0xf753beFE986e8Be8EBE7598C9d2b6297D9DD6662')
+    with patch(
+        'rotkehlchen.chain.evm.decoding.curve.curve_cache._query_curve_data_from_api',
+        new=MagicMock(return_value=[]),
+    ):
+        balances = zerion.all_balances_for_account('0xf753beFE986e8Be8EBE7598C9d2b6297D9DD6662')
 
     if len(balances) == 0:
         test_warnings.warn(UserWarning('Test account for DeFi balances has no balances'))

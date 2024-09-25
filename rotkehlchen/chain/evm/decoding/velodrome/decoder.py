@@ -26,7 +26,6 @@ from rotkehlchen.chain.evm.decoding.velodrome.constants import (
 )
 from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     query_velodrome_like_data,
-    save_velodrome_data_to_cache,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
@@ -70,7 +69,6 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
             evm_inquirer=evm_inquirer,
             cache_type_to_check_for_freshness=pool_cache_type,
             query_data_method=query_velodrome_like_data,
-            save_data_to_cache_method=save_velodrome_data_to_cache,
             read_data_from_cache_method=read_fn,
         )
         self.counterparty = counterparty

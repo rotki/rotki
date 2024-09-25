@@ -18,7 +18,6 @@ from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
     CurvePoolData,
     _query_curve_data_from_api,
     query_curve_data,
-    save_curve_data_to_cache,
 )
 from rotkehlchen.chain.evm.types import NodeName, string_to_evm_address
 from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_POL_HARDFORK
@@ -474,7 +473,6 @@ def test_find_curve_lp_token_price(inquirer: 'Inquirer', blockchain: 'ChainsAggr
             manager.node_inquirer.ensure_cache_data_is_updated(
                 cache_type=CacheType.CURVE_LP_TOKENS,
                 query_method=query_curve_data,
-                save_method=save_curve_data_to_cache,
                 chain_id=manager.node_inquirer.chain_id,
                 cache_key_parts=(str(manager.node_inquirer.chain_id.serialize_for_db()),),
             )

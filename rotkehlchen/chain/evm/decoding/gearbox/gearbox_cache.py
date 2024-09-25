@@ -1,6 +1,6 @@
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal, Optional
+from typing import TYPE_CHECKING, Any, Literal
 
 from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
@@ -29,6 +29,7 @@ from rotkehlchen.globaldb.cache import (
     globaldb_get_unique_cache_value,
     globaldb_set_general_cache_values,
     globaldb_set_unique_cache_value,
+    globaldb_update_cache_last_ts,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -37,7 +38,6 @@ from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress, EvmTokenKi
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
-    from rotkehlchen.db.dbhandler import DBHandler
     from rotkehlchen.db.drivers.gevent import DBCursor
     from rotkehlchen.user_messages import MessagesAggregator
 
@@ -75,36 +75,35 @@ def get_existing_pools(
 
 
 def save_gearbox_data_to_cache(
-        write_cursor: 'DBCursor',
-        database: Optional['DBHandler'],  # pylint: disable=unused-argument
         new_data: list[GearboxPoolData],
         chain_id: ChainID,
 ) -> None:
     """Stores data about gearbox pools and their names in the global db cache tables."""
-    for pool in new_data:
-        str_chain_id = str(chain_id.serialize())
-        globaldb_set_general_cache_values(
-            write_cursor=write_cursor,
-            key_parts=(CacheType.GEARBOX_POOL_ADDRESS, str_chain_id),
-            values=[pool.pool_address],
-        )
-        globaldb_set_unique_cache_value(
-            write_cursor=write_cursor,
-            key_parts=(CacheType.GEARBOX_POOL_NAME, pool.pool_address, str_chain_id),
-            value=pool.pool_name,
-        )
-        globaldb_set_unique_cache_value(
-            write_cursor=write_cursor,
-            key_parts=(CacheType.GEARBOX_POOL_FARMING_TOKEN, pool.pool_address, str_chain_id),
-            value=pool.farming_pool_token,
-        )
-        if pool.lp_tokens is not None:
-            for idx, lp_token in enumerate(pool.lp_tokens):
-                globaldb_set_general_cache_values(
-                    write_cursor=write_cursor,
-                    key_parts=(CacheType.GEARBOX_POOL_LP_TOKENS, pool.pool_address, str_chain_id, str(idx)),  # noqa: E501
-                    values=[lp_token],
-                )
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        for pool in new_data:
+            str_chain_id = str(chain_id.serialize())
+            globaldb_set_general_cache_values(
+                write_cursor=write_cursor,
+                key_parts=(CacheType.GEARBOX_POOL_ADDRESS, str_chain_id),
+                values=[pool.pool_address],
+            )
+            globaldb_set_unique_cache_value(
+                write_cursor=write_cursor,
+                key_parts=(CacheType.GEARBOX_POOL_NAME, pool.pool_address, str_chain_id),
+                value=pool.pool_name,
+            )
+            globaldb_set_unique_cache_value(
+                write_cursor=write_cursor,
+                key_parts=(CacheType.GEARBOX_POOL_FARMING_TOKEN, pool.pool_address, str_chain_id),
+                value=pool.farming_pool_token,
+            )
+            if pool.lp_tokens is not None:
+                for idx, lp_token in enumerate(pool.lp_tokens):
+                    globaldb_set_general_cache_values(
+                        write_cursor=write_cursor,
+                        key_parts=(CacheType.GEARBOX_POOL_LP_TOKENS, pool.pool_address, str_chain_id, str(idx)),  # noqa: E501
+                        values=[lp_token],
+                    )
 
 
 def read_gearbox_data_from_cache(chain_id: ChainID | None) -> tuple[dict[ChecksumEvmAddress, Any]]:
@@ -389,6 +388,13 @@ def query_gearbox_data(
             existing_pools=existing_pools,
             msg_aggregator=msg_aggregator,
         )) is None:
+            with GlobalDBHandler().conn.write_ctx() as write_cursor:
+                globaldb_update_cache_last_ts(  # update the last_queried_ts of db entries
+                    write_cursor=write_cursor,
+                    cache_type=cache_type,
+                    key_parts=(str(inquirer.chain_id.serialize_for_db())),
+                )
+
             return None
     except RemoteError as err:
         log.error(f'Could not query chain for {inquirer.chain_name} gearbox pools due to: {err}')
@@ -398,5 +404,10 @@ def query_gearbox_data(
         evm_inquirer=inquirer,
         all_pools=pools_data,
         msg_aggregator=msg_aggregator,
+    )
+
+    save_gearbox_data_to_cache(
+        new_data=verified_pools,
+        chain_id=inquirer.chain_id,
     )
     return verified_pools

@@ -47,7 +47,6 @@ from rotkehlchen.errors.misc import (
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import (
@@ -1399,7 +1398,6 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             self,
             cache_type: CacheType,
             query_method: Callable,
-            save_method: Callable,
             force_refresh: bool = False,
             chain_id: ChainID | None = None,
             cache_key_parts: Sequence[str] | None = None,
@@ -1421,6 +1419,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             should_update_protocol_cache(cache_type, cache_key_parts) is False and
             force_refresh is False
         ):
+            log.debug(f'Not refreshing cache {cache_type}. Queried recently')
             return False
 
         new_data = query_method(
@@ -1428,18 +1427,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             cache_type=cache_type,
             msg_aggregator=self.database.msg_aggregator,
         )
-        if new_data is None:
-            return False
-        with GlobalDBHandler().conn.write_ctx() as write_cursor:
-            save_method_kwargs = {
-                'write_cursor': write_cursor,
-                'database': self.database,
-                'new_data': new_data,
-            }
-            if chain_id is not None:
-                save_method_kwargs['chain_id'] = chain_id
-            save_method(**save_method_kwargs)
-        return True
+        return new_data is not None
 
 
 class EvmNodeInquirerWithDSProxy(EvmNodeInquirer):
