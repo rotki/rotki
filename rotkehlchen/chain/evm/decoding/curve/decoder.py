@@ -26,7 +26,6 @@ from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
     get_lp_and_gauge_token_addresses,
     query_curve_data,
     read_curve_pools_and_gauges,
-    save_curve_data_to_cache,
 )
 from rotkehlchen.chain.evm.decoding.interfaces import (
     DecoderInterface,
@@ -87,9 +86,8 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
         ReloadablePoolsAndGaugesDecoderMixin.__init__(
             self,
             evm_inquirer=evm_inquirer,
-            cache_type_to_check_for_freshness=CacheType.CURVE_POOL_ADDRESS,
+            cache_type_to_check_for_freshness=CacheType.CURVE_LP_TOKENS,
             query_data_method=query_curve_data,
-            save_data_to_cache_method=save_curve_data_to_cache,
             read_data_from_cache_method=read_curve_pools_and_gauges,
             chain_id=evm_inquirer.chain_id,
         )

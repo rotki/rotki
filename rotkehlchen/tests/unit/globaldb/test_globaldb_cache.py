@@ -1,8 +1,8 @@
 import datetime
 import json
 from contextlib import suppress
-from typing import TYPE_CHECKING
-from unittest.mock import _Call, call, patch
+from typing import TYPE_CHECKING, cast
+from unittest.mock import MagicMock, _Call, call, patch
 
 import pytest
 import requests
@@ -11,11 +11,13 @@ from freezegun import freeze_time
 from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.resolver import AssetResolver
+from rotkehlchen.chain.aggregator import ChainsAggregator
 from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
     query_convex_data,
     read_convex_data_from_cache,
-    save_convex_data_to_cache,
 )
+from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
+from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.chain.evm.decoding.curve.constants import (
     CPT_CURVE,
     CURVE_ADDRESS_PROVIDER,
@@ -28,13 +30,12 @@ from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     get_gearbox_pool_tokens,
     query_gearbox_data,
     read_gearbox_data_from_cache,
-    save_gearbox_data_to_cache,
 )
+from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_VELODROME
 from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     query_velodrome_like_data,
     read_velodrome_pools_and_gauges_from_cache,
-    save_velodrome_data_to_cache,
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.resolver import evm_address_to_identifier
@@ -43,6 +44,7 @@ from rotkehlchen.db.addressbook import DBAddressbook
 from rotkehlchen.db.filtering import AddressbookFilterQuery
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     AddressbookEntry,
@@ -232,7 +234,6 @@ def test_velodrome_cache(optimism_inquirer):
         optimism_inquirer.ensure_cache_data_is_updated(
             cache_type=CacheType.VELODROME_POOL_ADDRESS,
             query_method=query_velodrome_like_data,
-            save_method=save_velodrome_data_to_cache,
         )  # populates cache, addressbook and assets tables
     pools, gauges = read_velodrome_pools_and_gauges_from_cache()
     assert pools >= VELODROME_SOME_EXPECTED_POOLS
@@ -298,7 +299,6 @@ def test_convex_cache(ethereum_inquirer):
     ethereum_inquirer.ensure_cache_data_is_updated(
         cache_type=CacheType.CONVEX_POOL_ADDRESS,
         query_method=query_convex_data,
-        save_method=save_convex_data_to_cache,
         force_refresh=True,
     )  # populates convex caches
     assert len(read_convex_data_from_cache()[0].items() & convex_expected_pools) == 4
@@ -426,7 +426,7 @@ def test_curve_cache(rotkehlchen_instance, use_curve_api, globaldb):
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-def test_gearbox_cache(ethereum_inquirer):
+def test_gearbox_cache(ethereum_inquirer: EthereumInquirer):
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
         # make sure that gearbox cache is clear of expected pools and gauges
         for pool in GEARBOX_SOME_EXPECTED_POOLS:
@@ -453,7 +453,6 @@ def test_gearbox_cache(ethereum_inquirer):
         ethereum_inquirer.ensure_cache_data_is_updated(
             cache_type=CacheType.GEARBOX_POOL_ADDRESS,
             query_method=query_gearbox_data,
-            save_method=save_gearbox_data_to_cache,
             chain_id=ChainID.ETHEREUM,
         )  # populates cache, addressbook and assets tables
     pools, = read_gearbox_data_from_cache(ChainID.ETHEREUM)
@@ -463,3 +462,34 @@ def test_gearbox_cache(ethereum_inquirer):
         make_call_object(CPT_GEARBOX, ChainID.ETHEREUM, processed=0, total=0),
         make_call_object(CPT_GEARBOX, ChainID.ETHEREUM, processed=1, total=5),
     ]
+
+
+@pytest.mark.parametrize('optimism_accounts', [[make_evm_address()]])
+@pytest.mark.parametrize('number_of_eth_accounts', [1])
+def test_reload_cache_timestamps(blockchain: ChainsAggregator, freezer):
+    """Ensure that if we don't have new data the cache for curve updates the last queried ts"""
+    freezer.move_to(
+        datetime.datetime(year=2024, month=9, day=25, hour=15, minute=30, tzinfo=datetime.UTC),
+    )
+    assert should_update_protocol_cache(
+        cache_key=CacheType.CURVE_LP_TOKENS,
+        args=(str(ChainID.ETHEREUM.serialize_for_db()),),
+    ) is True
+
+    curve = cast(
+        ReloadableDecoderMixin,
+        blockchain.ethereum.transactions_decoder.decoders['Curve'],
+    )
+    with patch(
+        'rotkehlchen.chain.evm.decoding.curve.curve_cache._query_curve_data_from_api',
+        new=MagicMock(return_value=[]),
+    ):
+        curve.reload_data()
+
+    freezer.move_to(
+        datetime.datetime(year=2024, month=9, day=26, hour=15, minute=30, tzinfo=datetime.UTC),
+    )
+    assert should_update_protocol_cache(
+        cache_key=CacheType.CURVE_LP_TOKENS,
+        args=(str(ChainID.ETHEREUM.serialize_for_db()),),
+    ) is False

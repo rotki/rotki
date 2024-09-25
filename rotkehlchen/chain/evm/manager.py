@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING
 
 from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
     query_curve_data,
-    save_curve_data_to_cache,
 )
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
@@ -70,7 +69,6 @@ class CurveManagerMixin:
         if node_inquirer.ensure_cache_data_is_updated(
             cache_type=CacheType.CURVE_LP_TOKENS,
             query_method=query_curve_data,
-            save_method=save_curve_data_to_cache,
             chain_id=node_inquirer.chain_id,
             cache_key_parts=(str(node_inquirer.chain_id.serialize_for_db()),),
         ) is False:

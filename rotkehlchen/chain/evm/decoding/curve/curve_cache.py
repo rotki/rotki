@@ -33,6 +33,7 @@ from rotkehlchen.globaldb.cache import (
     globaldb_get_unique_cache_value,
     globaldb_set_general_cache_values,
     globaldb_set_unique_cache_value,
+    globaldb_update_cache_last_ts,
     read_curve_pool_tokens,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
@@ -50,7 +51,6 @@ from rotkehlchen.types import (
 from rotkehlchen.utils.network import request_get_dict
 
 if TYPE_CHECKING:
-    from gevent import DBCursor
 
     from rotkehlchen.chain.evm.node_inquirer import EvmNodeInquirer
     from rotkehlchen.db.dbhandler import DBHandler
@@ -281,8 +281,7 @@ def _ensure_curve_tokens_existence(
     return verified_pools
 
 
-def save_curve_data_to_cache(
-        write_cursor: 'DBCursor',
+def _save_curve_data_to_cache(
         database: 'DBHandler',
         new_data: list[CurvePoolData],
         chain_id: ChainID,
@@ -302,38 +301,44 @@ def save_curve_data_to_cache(
                 name=f'Curve gauge for {pool.pool_name}',
                 blockchain=chain_id.to_blockchain(),
             ))
-        try:
-            db_addressbook.add_addressbook_entries(
-                write_cursor=write_cursor,
-                entries=addresbook_entries,
-            )
-        except InputError as e:
-            log.debug(
-                f'Curve address book names for pool {pool.pool_address} were not added. '
-                f'Probably names were added by the user earlier. {e}')
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            try:
+                db_addressbook.add_addressbook_entries(
+                    write_cursor=write_cursor,
+                    entries=addresbook_entries,
+                )
+            except InputError as e:
+                log.debug(
+                    f'Curve address book names for pool {pool.pool_address} were not added. '
+                    f'Probably names were added by the user earlier. {e}')
 
-        globaldb_set_general_cache_values(
-            write_cursor=write_cursor,
-            key_parts=(CacheType.CURVE_LP_TOKENS, chain_id_str),
-            values=[pool.lp_token_address],  # keys of pools_mapping are lp tokens
-        )
-        globaldb_set_unique_cache_value(
-            write_cursor=write_cursor,
-            key_parts=(CacheType.CURVE_POOL_ADDRESS, chain_id_str, pool.lp_token_address),
-            value=pool.pool_address,
-        )
-        for idx, coin in enumerate(pool.coins):
             globaldb_set_general_cache_values(
                 write_cursor=write_cursor,
-                key_parts=(CacheType.CURVE_POOL_TOKENS, chain_id_str, pool.pool_address, str(idx)),
-                values=[coin],
+                key_parts=(CacheType.CURVE_LP_TOKENS, chain_id_str),
+                values=[pool.lp_token_address],  # keys of pools_mapping are lp tokens
             )
-        if pool.gauge_address is not None:
             globaldb_set_unique_cache_value(
                 write_cursor=write_cursor,
-                key_parts=(CacheType.CURVE_GAUGE_ADDRESS, chain_id_str, pool.pool_address),
-                value=pool.gauge_address,
+                key_parts=(CacheType.CURVE_POOL_ADDRESS, chain_id_str, pool.lp_token_address),
+                value=pool.pool_address,
             )
+            for idx, coin in enumerate(pool.coins):
+                globaldb_set_general_cache_values(
+                    write_cursor=write_cursor,
+                    key_parts=(
+                        CacheType.CURVE_POOL_TOKENS,
+                        chain_id_str,
+                        pool.pool_address,
+                        str(idx),
+                    ),
+                    values=[coin],
+                )
+            if pool.gauge_address is not None:
+                globaldb_set_unique_cache_value(
+                    write_cursor=write_cursor,
+                    key_parts=(CacheType.CURVE_GAUGE_ADDRESS, chain_id_str, pool.pool_address),
+                    value=pool.gauge_address,
+                )
 
 
 def _query_curve_data_from_api(
@@ -392,7 +397,7 @@ def _query_curve_data_from_chain(
         evm_inquirer: 'EvmNodeInquirer',
         existing_pools: set[ChecksumEvmAddress],
         msg_aggregator: 'MessagesAggregator',
-) -> list[CurvePoolData] | None:
+) -> list[CurvePoolData]:
     """
     Query all curve information(lp tokens, pools, gagues, pool coins) from metaregistry.
 
@@ -408,7 +413,7 @@ def _query_curve_data_from_chain(
         ))
     except DeserializationError as e:
         log.error(f'Curve address provider returned an invalid address for metaregistry. {e}')
-        return None
+        return []
 
     metaregistry = EvmContract(
         address=metaregistry_address,
@@ -489,10 +494,10 @@ def _query_curve_data_from_chain(
 
 def query_curve_data(
         inquirer: 'EvmNodeInquirer',
-        cache_type: Literal[CacheType.CURVE_POOL_ADDRESS],
+        cache_type: Literal[CacheType.CURVE_LP_TOKENS],
         msg_aggregator: 'MessagesAggregator',
 ) -> list[CurvePoolData] | None:
-    """Query curve lp tokens, curve pools and curve gauges.
+    """Query curve lp tokens, curve pools and curve gauges and saves them in the database.
     First tries to find data via curve api and if fails to do so, queries the chain (metaregistry).
 
     Returns list of pools if either api or chain query was successful, otherwise None.
@@ -505,12 +510,12 @@ def query_curve_data(
             string_to_evm_address(address[0])
             for address in cursor.execute(
                 'SELECT value FROM unique_cache WHERE key LIKE ?',
-                (f'{compute_cache_key((cache_type, str(inquirer.chain_id.serialize_for_db())))}%',),  # noqa: E501
+                (f'{compute_cache_key((CacheType.CURVE_POOL_ADDRESS, str(inquirer.chain_id.serialize_for_db())))}%',),  # noqa: E501
             )
         }
 
     try:
-        pools_data: list[CurvePoolData] | None = _query_curve_data_from_api(
+        pools_data: list[CurvePoolData] = _query_curve_data_from_api(
             chain_id=inquirer.chain_id,
             existing_pools=existing_pools,
         )
@@ -526,13 +531,26 @@ def query_curve_data(
             log.error(f'Could not query chain for curve pools due to: {err}')
             return None
 
-    if pools_data is None:
+    if len(pools_data) == 0:
+        # if no new pools update the last_queried_ts of db entries
+        with GlobalDBHandler().conn.write_ctx() as write_cursor:
+            globaldb_update_cache_last_ts(
+                write_cursor=write_cursor,
+                cache_type=cache_type,
+                key_parts=(str(inquirer.chain_id.serialize_for_db()),),
+            )
         return None
 
     verified_pools = _ensure_curve_tokens_existence(
         evm_inquirer=inquirer,
         all_pools=pools_data,
         msg_aggregator=msg_aggregator,
+    )
+
+    _save_curve_data_to_cache(
+        database=inquirer.database,
+        new_data=verified_pools,
+        chain_id=inquirer.chain_id,
     )
     return verified_pools
 

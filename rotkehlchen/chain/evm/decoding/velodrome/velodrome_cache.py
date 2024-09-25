@@ -10,13 +10,13 @@ from rotkehlchen.chain.evm.utils import (
     maybe_notify_new_pools_status,
 )
 from rotkehlchen.db.addressbook import DBAddressbook
-from rotkehlchen.db.drivers.gevent import DBCursor
 from rotkehlchen.errors.misc import InputError, NotERC20Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.cache import (
     globaldb_get_general_cache_like,
     globaldb_get_general_cache_values,
     globaldb_set_general_cache_values,
+    globaldb_update_cache_last_ts,
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -56,9 +56,8 @@ class VelodromePoolData(NamedTuple):
 
 
 def save_velodrome_data_to_cache(
-        write_cursor: DBCursor,
         database: 'DBHandler',
-        new_data: list[VelodromePoolData],
+        pools_data: list[VelodromePoolData],
 ) -> None:
     """
     Stores data about velodrome pools and gauges in the global db cache tables.
@@ -68,7 +67,8 @@ def save_velodrome_data_to_cache(
     VELOG/AEROG -> {gauge address}
     """
     db_addressbook = DBAddressbook(db_handler=database)
-    for pool in new_data:
+    globaldb = GlobalDBHandler()
+    for pool in pools_data:
         protocol_name = 'Velodrome' if pool.chain_id == ChainID.OPTIMISM else 'Aerodrome'
         addresbook_entries = [AddressbookEntry(
             address=pool.pool_address,
@@ -81,34 +81,36 @@ def save_velodrome_data_to_cache(
                 name=f'Gauge for {protocol_name} pool {pool.pool_name}',
                 blockchain=pool.chain_id.to_blockchain(),
             ))
-        try:
-            db_addressbook.add_addressbook_entries(
-                write_cursor=write_cursor,
-                entries=addresbook_entries,
-            )
-        except InputError as e:
-            log.debug(
-                f'Velodrome address book names for pool {pool.pool_address} were not added. '
-                f'Probably names were added by the user earlier. {e}')
 
-        if pool.chain_id == ChainID.OPTIMISM:
-            pool_key = (CacheType.VELODROME_POOL_ADDRESS,)
-            gauge_key = (CacheType.VELODROME_GAUGE_ADDRESS,)
-        else:
-            pool_key = (CacheType.AERODROME_POOL_ADDRESS,)
-            gauge_key = (CacheType.AERODROME_GAUGE_ADDRESS,)
+        with globaldb.conn.write_ctx() as write_cursor:
+            try:
+                db_addressbook.add_addressbook_entries(
+                    write_cursor=write_cursor,
+                    entries=addresbook_entries,
+                )
+            except InputError as e:
+                log.debug(
+                    f'Velodrome address book names for pool {pool.pool_address} were not added. '
+                    f'Probably names were added by the user earlier. {e}')
 
-        globaldb_set_general_cache_values(
-            write_cursor=write_cursor,
-            key_parts=pool_key,  # type: ignore
-            values=[pool.pool_address],
-        )
-        if pool.gauge_address is not None:
+            if pool.chain_id == ChainID.OPTIMISM:
+                pool_key = (CacheType.VELODROME_POOL_ADDRESS,)
+                gauge_key = (CacheType.VELODROME_GAUGE_ADDRESS,)
+            else:
+                pool_key = (CacheType.AERODROME_POOL_ADDRESS,)
+                gauge_key = (CacheType.AERODROME_GAUGE_ADDRESS,)
+
             globaldb_set_general_cache_values(
                 write_cursor=write_cursor,
-                key_parts=gauge_key,  # type: ignore
-                values=[pool.gauge_address],
+                key_parts=pool_key,  # type: ignore
+                values=[pool.pool_address],
             )
+            if pool.gauge_address is not None:
+                globaldb_set_general_cache_values(
+                    write_cursor=write_cursor,
+                    key_parts=gauge_key,  # type: ignore
+                    values=[pool.gauge_address],
+                )
 
 
 def read_velodrome_like_pools_and_gauges_from_cache(
@@ -158,7 +160,7 @@ def query_velodrome_data_from_chain_and_maybe_create_tokens(
         inquirer: 'OptimismInquirer | BaseInquirer',
         existing_pools: list[ChecksumEvmAddress],
         msg_aggregator: 'MessagesAggregator',
-) -> list[VelodromePoolData] | None:
+) -> list[VelodromePoolData]:
     """
     Queries velodrome data from chain from the Velodrome Finance LP Sugar v2 contract.
     If new pools are found their tokens are created and the pools are returned.
@@ -315,6 +317,19 @@ def query_velodrome_like_data(
         )
     except RemoteError as err:
         log.error(f'Could not query chain for velodrome pools due to: {err}')
-        pools_data = None
+        pools_data = []
+
+    if len(pools_data) != 0:
+        save_velodrome_data_to_cache(
+            database=inquirer.database,
+            pools_data=pools_data,
+        )
+
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        globaldb_update_cache_last_ts(  # update the last_queried_ts of db entries
+            write_cursor=write_cursor,
+            cache_type=cache_type,
+            key_parts=None,
+        )
 
     return pools_data

@@ -53,12 +53,12 @@ CACHE_QUERY_METHOD_TYPE = (
         ],
         list['VelodromePoolData'] | None] |
     Callable[
-        ['EthereumInquirer', Literal[CacheType.CURVE_POOL_ADDRESS], 'MessagesAggregator'],
+        ['EthereumInquirer', Literal[CacheType.CURVE_LP_TOKENS], 'MessagesAggregator'],
         list | None,
     ] |
     Callable[
         ['EthereumInquirer', Literal[CacheType.CONVEX_POOL_ADDRESS], 'MessagesAggregator'],
-        list | None,
+        dict | None,
     ] |
     Callable[
         ['EthereumInquirer', Literal[CacheType.GEARBOX_POOL_ADDRESS], 'MessagesAggregator'],
@@ -415,7 +415,6 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, ABC):
             evm_inquirer: 'EvmNodeInquirer',
             cache_type_to_check_for_freshness: CacheType,
             query_data_method: CACHE_QUERY_METHOD_TYPE,
-            save_data_to_cache_method: Callable[['DBCursor', 'DBHandler', list], None],
             read_data_from_cache_method: Callable[[], tuple[dict[ChecksumEvmAddress, Any] | set[ChecksumEvmAddress], ...]],  # noqa: E501
     ) -> None:
         ...
@@ -426,7 +425,6 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, ABC):
             evm_inquirer: 'EvmNodeInquirer',
             cache_type_to_check_for_freshness: CacheType,
             query_data_method: CACHE_QUERY_METHOD_TYPE,
-            save_data_to_cache_method: Callable[['DBCursor', 'DBHandler', list, ChainID], None],
             read_data_from_cache_method: Callable[[ChainID], tuple[dict[ChecksumEvmAddress, Any] | set[ChecksumEvmAddress], ...]],  # noqa: E501
             chain_id: ChainID,
     ) -> None:
@@ -437,24 +435,21 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, ABC):
             evm_inquirer: 'EvmNodeInquirer',
             cache_type_to_check_for_freshness: CacheType,
             query_data_method: CACHE_QUERY_METHOD_TYPE,
-            save_data_to_cache_method: SAVE_CACHE_DATA_METHOD_TYPE,
             read_data_from_cache_method: Callable[..., tuple[dict[ChecksumEvmAddress, Any] | set[ChecksumEvmAddress], ...]],  # noqa: E501
             chain_id: ChainID | None = None,
     ) -> None:
         """
         :param evm_inquirer: The evm inquirer used to query the remote data source.
         :param cache_type_to_check_for_freshness: The cache type that is checked for freshness.
-        :param query_data_method: The method that queries the remote source for data.
-        :param save_data_to_cache_method: The method that saves the data to the cache tables.
-        :param read_data_from_cache_method: The method that reads the data from the
+        :param query_data_method: The method that queries the remote source
+        for data and saves the new information.
+        :param read_data_from_cache_method: The method that reads the data from the local cache.
         :param chain_id: The optional chain id of the data to read from the cache tables.
-        cache tables. This function returns a tuple of values, because subclasses may return
-        more than a set of caches (example: different set of pools).
+        cache tables.
         """
         self.evm_inquirer = evm_inquirer
         self.cache_type_to_check_for_freshness = cache_type_to_check_for_freshness
         self.query_data_method = query_data_method
-        self.save_data_to_cache_method = save_data_to_cache_method
         self.read_data_from_cache_method = read_data_from_cache_method
         self.chain_id = chain_id
         self.cache_data: tuple[dict[ChecksumEvmAddress, Any] | set[ChecksumEvmAddress], ...] = ()
@@ -477,7 +472,6 @@ class ReloadableCacheDecoderMixin(ReloadableDecoderMixin, ABC):
         self.evm_inquirer.ensure_cache_data_is_updated(
             cache_type=self.cache_type_to_check_for_freshness,
             query_method=self.query_data_method,
-            save_method=self.save_data_to_cache_method,
             chain_id=self.chain_id,
             cache_key_parts=(str(self.chain_id.serialize_for_db()),) if self.chain_id else None,
         )

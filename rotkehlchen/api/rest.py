@@ -65,7 +65,6 @@ from rotkehlchen.chain.ethereum.airdrops import check_airdrops, fetch_airdrops_m
 from rotkehlchen.chain.ethereum.defi.protocols import DEFI_PROTOCOLS
 from rotkehlchen.chain.ethereum.modules.convex.convex_cache import (
     query_convex_data,
-    save_convex_data_to_cache,
 )
 from rotkehlchen.chain.ethereum.modules.eth2.constants import FREE_VALIDATORS_LIMIT
 from rotkehlchen.chain.ethereum.modules.eth2.structures import PerformanceStatusFilter
@@ -80,16 +79,13 @@ from rotkehlchen.chain.ethereum.utils import try_download_ens_avatar
 from rotkehlchen.chain.evm.accounting.aggregator import EVMAccountingAggregators
 from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
     query_curve_data,
-    save_curve_data_to_cache,
 )
 from rotkehlchen.chain.evm.decoding.gearbox.gearbox_cache import (
     query_gearbox_data,
-    save_gearbox_data_to_cache,
 )
 from rotkehlchen.chain.evm.decoding.monerium.constants import CPT_MONERIUM
 from rotkehlchen.chain.evm.decoding.velodrome.velodrome_cache import (
     query_velodrome_like_data,
-    save_velodrome_data_to_cache,
 )
 from rotkehlchen.chain.evm.names import find_ens_mappings, search_for_addresses_names
 from rotkehlchen.chain.evm.types import EvmlikeAccount, WeightedNode
@@ -4641,8 +4637,8 @@ class RestAPI:
         arbitrum_inquirer = self.rotkehlchen.chains_aggregator.arbitrum_one.node_inquirer
         gnosis_inquirer = self.rotkehlchen.chains_aggregator.gnosis.node_inquirer
         polygon_inquirer = self.rotkehlchen.chains_aggregator.polygon_pos.node_inquirer
-        for (cache, cache_type, query_method, save_method, chain_id, inquirer) in [
-            ('curve pools', CacheType.CURVE_LP_TOKENS, query_curve_data, save_curve_data_to_cache, chain_id, node_inquirer)  # noqa: E501
+        for (cache, cache_type, query_method, chain_id, inquirer) in [
+            ('curve pools', CacheType.CURVE_LP_TOKENS, query_curve_data, chain_id, node_inquirer)
             for chain_id, node_inquirer in (
                 (ChainID.ETHEREUM, eth_node_inquirer),
                 (ChainID.OPTIMISM, optimism_inquirer),
@@ -4652,15 +4648,14 @@ class RestAPI:
                 (ChainID.POLYGON_POS, polygon_inquirer),
             )
         ] + [
-            ('convex pools', CacheType.CONVEX_POOL_ADDRESS, query_convex_data, save_convex_data_to_cache, None, eth_node_inquirer),  # noqa: E501
-            ('velodrome pools', CacheType.VELODROME_POOL_ADDRESS, query_velodrome_like_data, save_velodrome_data_to_cache, None, optimism_inquirer),  # noqa: E501
-            ('aerodrome pools', CacheType.AERODROME_POOL_ADDRESS, query_velodrome_like_data, save_velodrome_data_to_cache, None, base_inquirer),  # noqa: E501
-            ('gearbox pools', CacheType.GEARBOX_POOL_ADDRESS, query_gearbox_data, save_gearbox_data_to_cache, ChainID.ETHEREUM, eth_node_inquirer),  # noqa: E501
+            ('convex pools', CacheType.CONVEX_POOL_ADDRESS, query_convex_data, None, eth_node_inquirer),  # noqa: E501
+            ('velodrome pools', CacheType.VELODROME_POOL_ADDRESS, query_velodrome_like_data, None, optimism_inquirer),  # noqa: E501
+            ('aerodrome pools', CacheType.AERODROME_POOL_ADDRESS, query_velodrome_like_data, None, base_inquirer),  # noqa: E501
+            ('gearbox pools', CacheType.GEARBOX_POOL_ADDRESS, query_gearbox_data, ChainID.ETHEREUM, eth_node_inquirer),  # noqa: E501
         ]:
             if inquirer.ensure_cache_data_is_updated(
                 cache_type=cache_type,
                 query_method=query_method,
-                save_method=save_method,
                 chain_id=chain_id,
                 cache_key_parts=[] if chain_id is None else (str(chain_id.serialize_for_db()),),
                 force_refresh=True,
