@@ -22,7 +22,6 @@ const { href, onLinkClick } = useLinks(url);
         size="sm"
         variant="text"
         :icon="!text"
-        :text="!!text"
         color="primary"
         tag="a"
         :href="href"
