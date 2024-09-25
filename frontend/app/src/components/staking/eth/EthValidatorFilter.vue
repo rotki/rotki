@@ -9,6 +9,11 @@ const filterType = ref<EthStakingFilterType>('validator');
 watch(filterType, type => set(model, type === 'validator' ? { validators: [] } : { accounts: [] }));
 
 const { t } = useI18n();
+
+const disableStatus = computed<boolean>(() => {
+  const modelFilter = get(model);
+  return 'validators' in modelFilter && modelFilter.validators.length > 0;
+});
 </script>
 
 <template>
@@ -46,7 +51,10 @@ const { t } = useI18n();
         v-model="model"
         :filter-type="filterType"
       />
-      <EthValidatorCombinedFilter v-model:filter="filterModel" />
+      <EthValidatorCombinedFilter
+        v-model:filter="filterModel"
+        :disable-status="disableStatus"
+      />
     </div>
   </div>
 </template>

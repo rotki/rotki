@@ -26,8 +26,7 @@ withDefaults(
       <AppImage
         v-if="tag.icon"
         class="mr-2"
-        :width="1.25"
-        :height="1.25"
+        :size="1.25"
         :src="tag.icon"
       />
       {{ tag.name }}

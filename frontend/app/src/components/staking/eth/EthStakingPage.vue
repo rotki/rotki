@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { type BigNumber, Blockchain, type
-Eth2ValidatorEntry, type
-Eth2Validators, type
-EthStakingCombinedFilter, type
-EthStakingFilter } from '@rotki/common';
+import {
+  type BigNumber,
+  Blockchain,
+  type Eth2ValidatorEntry,
+  type Eth2Validators,
+  type EthStakingCombinedFilter,
+  type EthStakingFilter,
+  type EthValidatorStatus,
+} from '@rotki/common';
 import { objectOmit } from '@vueuse/core';
 import { isEmpty } from 'lodash-es';
 import dayjs from 'dayjs';
@@ -23,6 +27,7 @@ const filter = ref<EthStakingCombinedFilter>({
 const selection = ref<EthStakingFilter>({
   validators: [],
 });
+const savedStatus = ref<EthValidatorStatus>();
 
 const total = ref<BigNumber>(Zero);
 
@@ -117,6 +122,26 @@ function setTotal(validators?: Eth2Validators['entries']) {
 
 watch([selection, filter], async () => {
   await fetchValidatorsWithFilter();
+});
+
+watch(selection, (selection) => {
+  const currentFilter = { ...get(filter) };
+  if ('validators' in selection && selection.validators.length > 0) {
+    if (currentFilter.status) {
+      set(savedStatus, currentFilter.status);
+      set(filter, {
+        ...currentFilter,
+        status: undefined,
+      });
+    }
+  }
+  else if (!currentFilter.status && get(savedStatus)) {
+    set(filter, {
+      ...currentFilter,
+      status: get(savedStatus),
+    });
+    set(savedStatus, undefined);
+  }
 });
 
 async function fetchValidatorsWithFilter() {
