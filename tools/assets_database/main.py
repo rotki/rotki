@@ -15,10 +15,13 @@ Args:
     --help
 
 - Use one of `--start-db-version`, `--start-db-hash` or `--start-db-path` to specify the starting DB.
-- Use `--target-version` to specify the version until which assets update should be applied.
+- Use `--target-version` to specify the target assets version for the update.
 - Use `--assets-branch` to specify the branch to pull the asset DB from.
 - Use `--target-directory` to specify the directory to write the file in. Default is current directory.
 - Use `--update-mode` to specify the update mode to use. "assets" will apply only the assets updates, "remote" will apply only remote data updates, "all" will apply both.
+
+Example command:
+python -m tools.assets_database.main --start-db-path /<path to last release's db>/global.db --target-version 28 --assets-branch develop --update-mode all
 """  # noqa: E501
 from gevent import monkey
 
