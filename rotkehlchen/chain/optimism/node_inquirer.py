@@ -1,8 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Literal, cast
 
-from eth_typing import BlockNumber
-
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.l2_with_l1_fees.node_inquirer import (
@@ -68,11 +66,6 @@ class OptimismInquirer(DSProxyL2WithL1FeesInquirerWithCacheData):
         self.etherscan = cast(OptimismEtherscan, self.etherscan)
 
     # -- Implementation of EvmNodeInquirer base methods --
-
-    def query_highest_block(self) -> BlockNumber:
-        block_number = self.etherscan.get_latest_block_number()
-        log.debug('Optimism highest block result', block=block_number)
-        return BlockNumber(block_number)
 
     def _get_pruned_check_tx_hash(self) -> EVMTxHash:
         return PRUNED_NODE_CHECK_TX_HASH

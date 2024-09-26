@@ -10,7 +10,6 @@ from hexbytes import HexBytes
 from rotkehlchen.types import SupportedBlockchain
 
 original_requests_get = requests.get
-MOCK_WEB3_LAST_BLOCK_INT = 16210873
 MOCK_WEB3_LAST_BLOCK_HEX = '0xf75bb9'
 
 MOCK_ROOT = Path(__file__).resolve().parent.parent / 'data' / 'mocks'

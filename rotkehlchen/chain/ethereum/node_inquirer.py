@@ -3,12 +3,11 @@ from collections.abc import Sequence
 from contextlib import suppress
 from typing import TYPE_CHECKING, Literal, overload
 
-import requests
 from ens.abis import PUBLIC_RESOLVER_2 as ENS_RESOLVER_ABI
 from ens.constants import ENS_MAINNET_ADDR
 from ens.exceptions import InvalidName
 from ens.utils import is_none_or_zero_address, normal_name_to_hash, normalize_name
-from eth_typing import BlockNumber, HexStr
+from eth_typing import HexStr
 from web3 import Web3
 
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
@@ -26,7 +25,7 @@ from rotkehlchen.chain.evm.node_inquirer import (
 )
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
-from rotkehlchen.errors.misc import InputError, RemoteError, UnableToDecryptRemoteData
+from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.fval import FVal
@@ -41,7 +40,6 @@ from rotkehlchen.types import (
     Timestamp,
 )
 from rotkehlchen.utils.misc import get_chunks
-from rotkehlchen.utils.network import request_get_dict
 
 from .constants import ETH2_DEPOSIT_ADDRESS, ETHEREUM_ETHERSCAN_NODE_NAME, WeightedNode
 from .etherscan import EthereumEtherscan
@@ -253,24 +251,6 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
         return deserialized_resolver_addr, normal_name
 
     # -- Implementation of EvmNodeInquirer base methods --
-
-    def query_highest_block(self) -> BlockNumber:
-        log.debug('Querying blockcypher for ETH highest block', url=BLOCKCYPHER_URL)
-        eth_resp: dict[str, str] | None
-        try:
-            eth_resp = request_get_dict(BLOCKCYPHER_URL)
-        except (RemoteError, UnableToDecryptRemoteData, requests.exceptions.RequestException):
-            eth_resp = None
-
-        block_number: int | None
-        if eth_resp and 'height' in eth_resp:
-            block_number = int(eth_resp['height'])
-            log.debug('ETH highest block result', block=block_number)
-        else:
-            block_number = self.etherscan.get_latest_block_number()
-            log.debug('ETH highest block result', block=block_number)
-
-        return BlockNumber(block_number)
 
     def _get_pruned_check_tx_hash(self) -> EVMTxHash:
         return PRUNED_NODE_CHECK_TX_HASH

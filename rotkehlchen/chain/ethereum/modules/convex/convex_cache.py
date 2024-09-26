@@ -1,5 +1,5 @@
 import logging
-from typing import TYPE_CHECKING, Literal, NamedTuple
+from typing import TYPE_CHECKING, Literal
 
 from rotkehlchen.chain.ethereum.modules.convex.constants import BOOSTER
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
@@ -25,12 +25,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
-
-
-class ConvexPoolData(NamedTuple):
-    """Mapping of convex pool rewards address to underlying pool name"""
-    pool_address: ChecksumEvmAddress
-    pool_name: str
 
 
 def get_existing_pools(

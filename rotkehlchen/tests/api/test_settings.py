@@ -212,17 +212,12 @@ def test_set_settings(rotkehlchen_api_server):
 
         new_settings[setting] = value
 
-    # modify the settings
-    block_query = patch(
-        'rotkehlchen.chain.ethereum.node_inquirer.EthereumInquirer.query_highest_block',
-        return_value=0,
-    )
     mock_web3 = patch('rotkehlchen.chain.ethereum.node_inquirer.Web3', MockWeb3)
     ksm_connect_node = patch(
         'rotkehlchen.chain.substrate.manager.SubstrateManager._connect_node',
         return_value=(True, ''),
     )
-    with block_query, mock_web3, ksm_connect_node:
+    with mock_web3, ksm_connect_node:
         response = requests.put(
             api_url_for(rotkehlchen_api_server, 'settingsresource'),
             json={'settings': new_settings},

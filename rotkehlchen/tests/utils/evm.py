@@ -1,8 +1,6 @@
-from unittest.mock import patch
 
 from rotkehlchen.chain.evm.types import Web3Node
 from rotkehlchen.tests.utils.mock import (
-    MOCK_WEB3_LAST_BLOCK_INT,
     patch_etherscan_request,
     patch_web3_request,
 )
@@ -28,8 +26,3 @@ def maybe_mock_evm_inquirer(
             is_archive=True,
         )
         parent_stack.enter_context(patch_web3_request(web3, mock_data))
-    parent_stack.enter_context(patch.object(
-        evm_inquirer,
-        'query_highest_block',
-        return_value=MOCK_WEB3_LAST_BLOCK_INT,
-    ))
