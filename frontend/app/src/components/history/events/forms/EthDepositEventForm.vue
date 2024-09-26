@@ -30,7 +30,7 @@ const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 const assetPriceForm = ref<InstanceType<typeof HistoryEventAssetPriceForm>>();
 
 const txHash = ref<string>('');
-const eventIdentifier = ref<string | undefined>();
+const eventIdentifier = ref<string>('');
 const datetime = ref<string>('');
 const amount = ref<string>('');
 const usdValue = ref<string>('');

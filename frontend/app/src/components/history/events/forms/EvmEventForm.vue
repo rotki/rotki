@@ -35,7 +35,7 @@ const lastLocation = useLocalStorage('rotki.history_event.location', TRADE_LOCAT
 const assetPriceForm = ref<InstanceType<typeof HistoryEventAssetPriceForm>>();
 
 const txHash = ref<string>('');
-const eventIdentifier = ref<string>();
+const eventIdentifier = ref<string>('');
 const sequenceIndex = ref<string>('');
 const datetime = ref<string>('');
 const location = ref<string>('');
