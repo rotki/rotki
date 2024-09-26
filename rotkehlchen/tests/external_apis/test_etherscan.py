@@ -82,7 +82,7 @@ def test_maximum_rate_limit_reached(temp_etherscan, **kwargs):  # pylint: disabl
     """
     etherscan_patch = patch_etherscan(
         etherscan=temp_etherscan,
-        response_msg='Max rate limit reached, please use API Key for higher rate limit',
+        response_msg='Max calls per sec rate limit reached (5/sec)',
     )
 
     with etherscan_patch:
