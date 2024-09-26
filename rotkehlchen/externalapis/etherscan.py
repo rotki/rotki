@@ -258,8 +258,9 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
 
         query_str += f'&apikey={api_key}'
         backoff = 1
-        backoff_limit = 33
-        timeout = timeout or CachedSettings().get_timeout_tuple()
+        cached_settings = CachedSettings()
+        timeout = timeout or cached_settings.get_timeout_tuple()
+        backoff_limit = cached_settings.get_query_retry_limit()  # max time spent trying to get a response from etherscan in case of rate limits  # noqa: E501
         while backoff < backoff_limit:
             response = None
             log.debug(f'Querying {self.chain} etherscan: {query_str}')
@@ -315,20 +316,17 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
                     if status == 0:
                         if result == 'Contract source code not verified':
                             return None
-                        if 'Max daily rate limit reached' in result:
-                            raise RemoteError('Etherscan max daily rate limit reached.')
-                        if 'rate limit reached' in result:
-                            log.debug(
-                                f'Got response: {response.text} from {self.chain} etherscan.'
-                                f' Will backoff for {backoff} seconds.',
-                            )
-                            gevent.sleep(backoff)
-                            # Continue increasing backoff until limit is reached.
-                            # If limit is reached then keep sleeping with the limit.
-                            # Etherscan will let the query go through eventually
-                            if backoff * 2 < backoff_limit:
+                        if json_ret.get('message', '') == 'NOTOK':
+                            if result.startswith(('Max calls per sec rate', 'Max rate limit reached')):  # different variants of the same message found in the different versions. Sent when there is a short 5 secs rate limit.  # noqa: E501
+                                log.debug(
+                                    f'Got response: {response.text} from {self.chain} etherscan.'
+                                    f' Will backoff for {backoff} seconds.',
+                                )
+                                gevent.sleep(backoff)
                                 backoff *= 2
-                            continue
+                                continue
+                            elif result.startswith('Max daily'):
+                                raise RemoteError('Etherscan max daily rate limit reached.')
 
                     transaction_endpoint_and_none_found = (
                         status == 0 and

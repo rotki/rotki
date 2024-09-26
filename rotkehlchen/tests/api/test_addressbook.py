@@ -436,7 +436,6 @@ def test_update_addressbook(
     assert all(entry in entries_after_update for entry in new_entries)
 
     # test that updating an entry with a blank label deletes the entry
-
     entry_to_delete = new_entries[0]
     blank_name_entry = AddressbookEntry(
         address=entry_to_delete.address,
