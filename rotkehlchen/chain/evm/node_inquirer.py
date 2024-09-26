@@ -45,6 +45,7 @@ from rotkehlchen.errors.misc import (
     RemoteError,
 )
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.externalapis.etherscan import Etherscan
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
@@ -188,6 +189,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             contract_multicall: 'EvmContract',
             native_token: CryptoAsset,
             rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
+            blockscout: Blockscout | None = None,
     ) -> None:
         self.greenlet_manager = greenlet_manager
         self.database = database
@@ -205,6 +207,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         self.contract_scan = contract_scan
         # Multicall from MakerDAO: https://github.com/makerdao/multicall/
         self.contract_multicall = contract_multicall
+        self.blockscout = blockscout
 
         # A cache for erc20 and erc721 contract info to not requery the info
         self.contract_info_erc20_cache: LRUCacheWithRemove[ChecksumEvmAddress, dict[str, Any]] = LRUCacheWithRemove(maxsize=1024)  # noqa: E501
@@ -1445,6 +1448,7 @@ class EvmNodeInquirerWithDSProxy(EvmNodeInquirer):
             dsproxy_registry: 'EvmContract',
             native_token: CryptoAsset,
             rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
+            blockscout: Blockscout | None = None,
     ) -> None:
         super().__init__(
             greenlet_manager=greenlet_manager,
@@ -1458,6 +1462,7 @@ class EvmNodeInquirerWithDSProxy(EvmNodeInquirer):
             contract_multicall=contract_multicall,
             rpc_timeout=rpc_timeout,
             native_token=native_token,
+            blockscout=blockscout,
         )
         self.proxies_inquirer = EvmProxiesInquirer(
             node_inquirer=self,
@@ -1484,6 +1489,7 @@ class DSProxyInquirerWithCacheData(EvmNodeInquirerWithDSProxy):
             dsproxy_registry: 'EvmContract',
             native_token: CryptoAsset,
             rpc_timeout: int = DEFAULT_EVM_RPC_TIMEOUT,
+            blockscout: Blockscout | None = None,
     ) -> None:
         super().__init__(
             greenlet_manager=greenlet_manager,
@@ -1498,4 +1504,5 @@ class DSProxyInquirerWithCacheData(EvmNodeInquirerWithDSProxy):
             rpc_timeout=rpc_timeout,
             native_token=native_token,
             dsproxy_registry=dsproxy_registry,
+            blockscout=blockscout,
         )

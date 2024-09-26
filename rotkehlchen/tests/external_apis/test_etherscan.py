@@ -14,7 +14,7 @@ from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
 from rotkehlchen.errors.misc import RemoteError
-from rotkehlchen.externalapis.etherscan import EtherscanHasChainActivity
+from rotkehlchen.externalapis.etherscan import HasChainActivity
 from rotkehlchen.globaldb.migrations.migration1 import ILK_REGISTRY_ABI
 from rotkehlchen.serialization.deserialize import deserialize_evm_transaction
 from rotkehlchen.tests.utils.mock import MockResponse
@@ -241,8 +241,8 @@ def test_etherscan_get_contract_abi(temp_etherscan):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 def test_has_activity(temp_etherscan):
     """Test to check if an address has any activity on ethereum mainnet"""
-    assert temp_etherscan.has_activity('0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5') == EtherscanHasChainActivity.TRANSACTIONS  # noqa: E501
-    assert temp_etherscan.has_activity('0x725E35e01bbEDadd6ac13cE1c4a98bA4Cf00dF21') == EtherscanHasChainActivity.TRANSACTIONS  # noqa: E501
-    assert temp_etherscan.has_activity('0x3C69Bc9B9681683890ad82953Fe67d13Cd91D5EE') == EtherscanHasChainActivity.BALANCE  # noqa: E501
-    assert temp_etherscan.has_activity('0x014cd0535b2Ea668150a681524392B7633c8681c') == EtherscanHasChainActivity.TOKENS  # noqa: E501
-    assert temp_etherscan.has_activity('0x6c66149E65c517605e0a2e4F707550ca342f9c1B') == EtherscanHasChainActivity.NONE  # noqa: E501
+    assert temp_etherscan.has_activity('0x95222290DD7278Aa3Ddd389Cc1E1d165CC4BAfe5') == HasChainActivity.TRANSACTIONS  # noqa: E501
+    assert temp_etherscan.has_activity('0x725E35e01bbEDadd6ac13cE1c4a98bA4Cf00dF21') == HasChainActivity.TRANSACTIONS  # noqa: E501
+    assert temp_etherscan.has_activity('0x3C69Bc9B9681683890ad82953Fe67d13Cd91D5EE') == HasChainActivity.BALANCE  # noqa: E501
+    assert temp_etherscan.has_activity('0x014cd0535b2Ea668150a681524392B7633c8681c') == HasChainActivity.TOKENS  # noqa: E501
+    assert temp_etherscan.has_activity('0x6c66149E65c517605e0a2e4F707550ca342f9c1B') == HasChainActivity.NONE  # noqa: E501

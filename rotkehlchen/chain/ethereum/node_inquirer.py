@@ -82,10 +82,15 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
             contract_scan=contracts.contract(string_to_evm_address('0x86F25b64e1Fe4C5162cDEeD5245575D32eC549db')),
             dsproxy_registry=contracts.contract(string_to_evm_address('0x4678f0a6958e4D2Bc4F1BAF7Bc52E8F3564f3fE4')),
             native_token=A_ETH.resolve_to_crypto_asset(),
+            blockscout=Blockscout(
+                blockchain=SupportedBlockchain.ETHEREUM,
+                database=database,
+                msg_aggregator=database.msg_aggregator,
+            ),
         )
         self.etherscan: EthereumEtherscan
         self.ens_reverse_records = self.contracts.contract(string_to_evm_address('0x3671aE578E63FdF66ad4F3E12CC0c0d71Ac7510C'))  # noqa: E501
-        self.blockscout = Blockscout(database=database, msg_aggregator=database.msg_aggregator)
+        self.blockscout: Blockscout
 
     def ens_reverse_lookup(self, addresses: list[ChecksumEvmAddress]) -> dict[ChecksumEvmAddress, str | None]:  # noqa: E501
         """Performs a reverse ENS lookup on a list of addresses

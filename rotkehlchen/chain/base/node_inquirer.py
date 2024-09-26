@@ -8,6 +8,7 @@ from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.l2_with_l1_fees.node_inquirer import L2WithL1FeesInquirer
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH
+from rotkehlchen.externalapis.blockscout import Blockscout
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -55,6 +56,11 @@ class BaseInquirer(L2WithL1FeesInquirer):
             contract_multicall=contracts.contract(string_to_evm_address('0xeDF6D2a16e8081F777eB623EeB4411466556aF3d')),
             contract_scan=contracts.contract(string_to_evm_address('0x2d26d6b698f6494efdB908A2A4f11ae5Fee86099')),
             native_token=A_ETH.resolve_to_crypto_asset(),
+            blockscout=Blockscout(
+                blockchain=SupportedBlockchain.BASE,
+                database=database,
+                msg_aggregator=database.msg_aggregator,
+            ),
         )
         self.etherscan = cast(BaseEtherscan, self.etherscan)
 

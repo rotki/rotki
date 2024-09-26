@@ -144,6 +144,11 @@ class ExternalService(SerializableEnumNameMixin):
     MONERIUM = auto()
     THEGRAPH = auto()
     GNOSIS_PAY = auto()
+    OPTIMISM_BLOCKSCOUT = auto()
+    POLYGON_POS_BLOCKSCOUT = auto()
+    ARBITRUM_ONE_BLOCKSCOUT = auto()
+    BASE_BLOCKSCOUT = auto()
+    GNOSIS_BLOCKSCOUT = auto()
 
     def get_chain_for_etherscan(self) -> Optional['ChainID']:
         """If the service is an etherscan service return its chain"""
@@ -163,6 +168,23 @@ class ExternalService(SerializableEnumNameMixin):
             return ChainID.SCROLL
 
         return None
+
+    @classmethod
+    def chain_to_blockscout(cls, chain_id: 'ChainID') -> 'ExternalService':
+        if chain_id == ChainID.ETHEREUM:
+            return ExternalService.BLOCKSCOUT
+        elif chain_id == ChainID.ARBITRUM_ONE:
+            return ExternalService.ARBITRUM_ONE_BLOCKSCOUT
+        elif chain_id == ChainID.BASE:
+            return ExternalService.BASE_BLOCKSCOUT
+        elif chain_id == ChainID.OPTIMISM:
+            return ExternalService.OPTIMISM_BLOCKSCOUT
+        elif chain_id == ChainID.GNOSIS:
+            return ExternalService.GNOSIS_BLOCKSCOUT
+        elif chain_id == ChainID.POLYGON_POS:
+            return ExternalService.POLYGON_POS_BLOCKSCOUT
+
+        raise NotImplementedError(f'Blockscout service not implemented for {chain_id}')
 
     def premium_only(self) -> bool:
         return self in {ExternalService.GNOSIS_PAY, ExternalService.MONERIUM}

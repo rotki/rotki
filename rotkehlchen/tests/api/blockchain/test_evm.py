@@ -396,6 +396,7 @@ def test_detect_evm_accounts(
         {'chain': SupportedBlockchain.ARBITRUM_ONE.serialize(), 'address': ethereum_accounts[0]},
         {'chain': SupportedBlockchain.BASE.serialize(), 'address': ethereum_accounts[0]},
         {'chain': SupportedBlockchain.GNOSIS.serialize(), 'address': ethereum_accounts[0]},
+        {'chain': SupportedBlockchain.SCROLL.serialize(), 'address': ethereum_accounts[0]},
         {'chain': SupportedBlockchain.ZKSYNC_LITE.serialize(), 'address': ethereum_accounts[0]},
     ], key=operator.itemgetter('chain', 'address'))
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
