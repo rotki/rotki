@@ -78,8 +78,8 @@ const cols = computed<DataTableColumn<DataRow>[]>(() => {
           label: '',
           key: 'expand',
           sortable: false,
-          class: '!py-0 !pr-0',
-          cellClass: '!py-0 !pr-0',
+          class: '!py-0 !pr-0 !pl-3',
+          cellClass: '!py-0 !pr-0 !pl-3',
         }]
       : []),
     ...(isEvm
@@ -87,13 +87,15 @@ const cols = computed<DataTableColumn<DataRow>[]>(() => {
       : [{
           label: t('common.account'),
           key: 'label',
-          cellClass: 'py-0',
+          class: '!px-3',
+          cellClass: 'py-0 !px-3',
           sortable: true,
         }]),
     {
       label: t('common.chain'),
       key: 'chain',
-      cellClass: 'py-0',
+      cellClass: 'py-0 !pr-0',
+      class: '!pr-0',
       sortable: false,
     },
     ...(isEvm
@@ -107,7 +109,8 @@ const cols = computed<DataTableColumn<DataRow>[]>(() => {
     {
       label: t('common.assets'),
       key: 'assets',
-      cellClass: 'py-0',
+      cellClass: 'py-0 !pr-0 !pl-2',
+      class: '!pr-0 !pl-2',
       align: 'end',
     },
     {
