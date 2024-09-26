@@ -156,7 +156,7 @@ export function useAccountManage(): UseAccountManageReturn {
   const { addAccounts, addEvmAccounts, fetchAccounts, refreshAccounts } = useBlockchains();
   const { addEth2Validator, editEth2Validator, updateEthStakingOwnership } = useEthStaking();
   const { editAccount, editAgnosticAccount } = useBlockchainAccounts();
-  const { updateAccounts } = useBlockchainStore();
+  const { updateAccounts, updateAccountData } = useBlockchainStore();
   const { setMessage } = useMessageStore();
 
   function handleErrors(error: any, props: Record<string, any> = {}): void {
@@ -186,7 +186,6 @@ export function useAccountManage(): UseAccountManageReturn {
       set(pending, true);
       if (edit) {
         updateAccounts(state.chain, await editAccount(state.data, state.chain));
-        startPromise(fetchAccounts(state.chain));
       }
       else {
         if (state.evm) {
@@ -217,7 +216,7 @@ export function useAccountManage(): UseAccountManageReturn {
     try {
       set(pending, true);
       await editAgnosticAccount(state.category, state.data);
-      startPromise(fetchAccounts());
+      updateAccountData(state.data);
     }
     catch (error: any) {
       handleErrors(error);

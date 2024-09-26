@@ -2,10 +2,12 @@ import { camelCase, isEmpty } from 'lodash-es';
 import { type AssetBalance, type Balance, Blockchain } from '@rotki/common';
 import { type MaybeRef, objectOmit } from '@vueuse/core';
 import type {
+  AccountPayload,
   Accounts,
   AssetBreakdown,
   Balances,
   BlockchainAccount,
+  BlockchainAccountData,
   BlockchainAccountGroupRequestPayload,
   BlockchainAccountGroupWithBalance,
   BlockchainAccountRequestPayload,
@@ -147,6 +149,29 @@ export const useBlockchainStore = defineStore('blockchain', () => {
 
   const updateAccounts = (chain: string, data: BlockchainAccount[]): void => {
     set(accounts, { ...get(accounts), [chain]: data });
+  };
+
+  const updateAccountData = (data: AccountPayload): void => {
+    const allAccounts = { ...get(accounts) };
+    const { address, label, tags } = data;
+
+    for (const chain in allAccounts) {
+      const accounts: BlockchainAccount<BlockchainAccountData>[] = [];
+      for (const account of allAccounts[chain]) {
+        if (getAccountAddress(account) !== address) {
+          accounts.push(account);
+        }
+        else {
+          accounts.push({
+            ...account,
+            label,
+            tags: tags || [],
+          });
+        }
+      }
+      allAccounts[chain] = accounts;
+    }
+    set(accounts, allAccounts);
   };
 
   const removeAccounts = ({ addresses, chains }: { addresses: string[]; chains: string[] }): void => {
@@ -335,6 +360,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
     assetBreakdown,
     liabilityBreakdown,
     updateAccounts,
+    updateAccountData,
     updateBalances,
     updatePrices,
     removeAccounts,
