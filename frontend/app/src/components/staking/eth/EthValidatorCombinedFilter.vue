@@ -79,19 +79,15 @@ const matchers = computed<Matcher[]>(
         serializer: dateSerializer(dateInputFormat),
         deserializer: dateDeserializer(dateInputFormat),
       },
-      ...(props.disableStatus
-        ? []
-        : [
-          {
-            key: Eth2StakingFilterKeys.STATUS,
-            keyValue: Eth2StakingFilterValueKeys.STATUS,
-            description: t('eth_validator_combined_filter.status'),
-            string: true,
-            suggestions: () => validStatuses.filter(x => x !== 'all'),
-            validate: (status: string) => isValidStatus(status),
-          },
-        ] satisfies Matcher[]),
-    ],
+      {
+        key: Eth2StakingFilterKeys.STATUS,
+        keyValue: Eth2StakingFilterValueKeys.STATUS,
+        description: t('eth_validator_combined_filter.status'),
+        string: true,
+        suggestions: () => validStatuses.filter(x => x !== 'all'),
+        validate: (status: string) => isValidStatus(status),
+      },
+    ] satisfies Matcher[],
 );
 
 function updateFilters(updatedFilters: Filters) {
