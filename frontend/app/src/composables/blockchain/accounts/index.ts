@@ -43,7 +43,7 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
   const { awaitTask, isTaskRunning } = useTaskStore();
   const { notify } = useNotificationsStore();
 
-  const { resetAddressNamesData, deleteAddressBook } = useAddressesNamesStore();
+  const { resetAddressNamesData } = useAddressesNamesStore();
   const { t } = useI18n();
   const { getNativeAsset } = useSupportedChains();
 
@@ -104,14 +104,9 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
         blockchain: chain,
       };
 
-      if (!payload.label) {
-        await deleteAddressBook('private', [addressBookPayload]);
-      }
-      else {
-        resetAddressNamesData([
-          addressBookPayload,
-        ]);
-      }
+      resetAddressNamesData([
+        addressBookPayload,
+      ]);
     }
     catch (error: any) {
       logger.error(error);
