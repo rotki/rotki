@@ -407,7 +407,7 @@ def test_kyber_aggregator_swap_polygon(polygon_pos_inquirer, polygon_pos_account
             asset=A_POLYGON_POS_MATIC,
             balance=Balance(amount=FVal(gas)),
             location_label=polygon_pos_accounts[0],
-            notes=f'Burned {gas} MATIC for gas',
+            notes=f'Burned {gas} POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,

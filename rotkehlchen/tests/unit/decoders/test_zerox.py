@@ -758,7 +758,7 @@ def test_swap_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
         asset=A_POLYGON_POS_MATIC,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=polygon_pos_accounts[0],
-        notes=f'Burned {gas_fees} MATIC for gas',
+        notes=f'Burned {gas_fees} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -770,7 +770,7 @@ def test_swap_on_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
         asset=A_POLYGON_POS_MATIC,
         balance=Balance(amount=FVal(swap_amount)),
         location_label=polygon_pos_accounts[0],
-        notes=f'Swap {swap_amount} MATIC via the 0x protocol',
+        notes=f'Swap {swap_amount} POL via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
     ), EvmEvent(
@@ -1110,7 +1110,7 @@ def test_swap_on_quickswap(polygon_pos_inquirer, polygon_pos_accounts):
         asset=A_POLYGON_POS_MATIC,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=polygon_pos_accounts[0],
-        notes=f'Burned {gas_fees} MATIC for gas',
+        notes=f'Burned {gas_fees} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -1122,7 +1122,7 @@ def test_swap_on_quickswap(polygon_pos_inquirer, polygon_pos_accounts):
         asset=A_POLYGON_POS_MATIC,
         balance=Balance(amount=FVal(swap_amount)),
         location_label=polygon_pos_accounts[0],
-        notes=f'Swap {swap_amount} MATIC via the 0x protocol',
+        notes=f'Swap {swap_amount} POL via the 0x protocol',
         counterparty=CPT_ZEROX,
         address=ZEROX_ROUTER,
     ), EvmEvent(

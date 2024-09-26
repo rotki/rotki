@@ -232,7 +232,7 @@ def test_swap_matic_to_token_polygon(polygon_pos_inquirer, polygon_pos_accounts)
         asset=A_POLYGON_POS_MATIC,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=polygon_pos_accounts[0],
-        notes=f'Burned {gas_fees} MATIC for gas',
+        notes=f'Burned {gas_fees} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -244,7 +244,7 @@ def test_swap_matic_to_token_polygon(polygon_pos_inquirer, polygon_pos_accounts)
         asset=A_POLYGON_POS_MATIC,
         balance=Balance(amount=FVal(swap_amount)),
         location_label=polygon_pos_accounts[0],
-        notes=f'Swap {swap_amount} MATIC in Odos v1',
+        notes=f'Swap {swap_amount} POL in Odos v1',
         counterparty=CPT_ODOS_V1,
         address=POL_ROUTER,
     ), EvmEvent(

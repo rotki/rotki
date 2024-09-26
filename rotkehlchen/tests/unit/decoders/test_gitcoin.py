@@ -157,7 +157,7 @@ def test_polygon_bulkcheckout_receive_matic(polygon_pos_inquirer, polygon_pos_ac
         asset=A_POLYGON_POS_MATIC,
         balance=Balance(amount=FVal(amount)),
         location_label=user_address,
-        notes=f'Receive donation of {amount} MATIC from {donor} via gitcoin',
+        notes=f'Receive donation of {amount} POL from {donor} via gitcoin',
         counterparty=CPT_GITCOIN,
         address=donor,
     )]

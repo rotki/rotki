@@ -128,7 +128,7 @@ def test_deposit_usdc_from_polygon_to_arbitrum_one(
             asset=A_POLYGON_POS_MATIC,
             balance=Balance(amount=FVal(gas)),
             location_label=polygon_pos_accounts[0],
-            notes=f'Burned {gas} MATIC for gas',
+            notes=f'Burned {gas} POL for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(

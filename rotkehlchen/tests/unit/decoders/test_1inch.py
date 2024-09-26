@@ -612,7 +612,7 @@ def test_1inch_swap_polygon(polygon_pos_inquirer, polygon_pos_accounts):
             asset=A_POLYGON_POS_MATIC,
             balance=Balance(amount=FVal('0.0579902')),
             location_label=user_addy,
-            notes='Burned 0.0579902 MATIC for gas',
+            notes='Burned 0.0579902 POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -921,7 +921,7 @@ def test_1inchv4_swap_on_polygon(polygon_pos_inquirer, polygon_pos_accounts):
             asset=A_POLYGON_POS_MATIC,
             balance=Balance(amount=FVal(gas)),
             location_label=user,
-            notes=f'Burned {gas} MATIC for gas',
+            notes=f'Burned {gas} POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,

@@ -970,7 +970,7 @@ def test_aave_v2_borrow_polygon(polygon_pos_inquirer, polygon_pos_accounts) -> N
             asset=A_POLYGON_POS_MATIC,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=polygon_pos_accounts[0],
-            notes=f'Burned {gas_fees} MATIC for gas',
+            notes=f'Burned {gas_fees} POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -1333,7 +1333,7 @@ def test_polygon_incentives(polygon_pos_inquirer: 'PolygonPOSInquirer', polygon_
             asset=A_POLYGON_POS_MATIC,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=user,
-            notes=f'Burned {gas_fees} MATIC for gas',
+            notes=f'Burned {gas_fees} POL for gas',
             tx_hash=tx_hash,
             counterparty=CPT_GAS,
         ), EvmEvent(

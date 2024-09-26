@@ -612,6 +612,10 @@ def test_get_assets_mappings(rotkehlchen_api_server):
             'name': 'Multi Collateral Dai',
             'symbol': 'DAI',
         },
+        '40': {
+            'name': 'Wrapped Bitcoin',
+            'symbol': 'WBTC',
+        },
     }
 
     # check that providing an invalid identifier returns only valid ones if any.

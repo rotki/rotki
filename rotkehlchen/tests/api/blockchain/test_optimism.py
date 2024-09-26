@@ -1,7 +1,9 @@
+from unittest.mock import patch
+
 import pytest
 import requests
 
-from rotkehlchen.assets.asset import Asset
+from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.fval import FVal
@@ -57,22 +59,26 @@ def test_add_optimism_blockchain_account(rotkehlchen_api_server):
 
     now = ts_now()
     # now check that detecting tokens works
-    response = requests.post(
-        api_url_for(
-            rotkehlchen_api_server,
-            'detecttokensresource',
-            blockchain=optimism_chain_key,
-        ),
-    )
-    result = assert_proper_sync_response_with_result(response)
-    optimism_tokens = {
-        Asset('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
-        Asset('eip155:10/erc20:0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85'),
-        Asset('eip155:10/erc20:0xDA10009cBd5D07dd0CeCc66161FC93D7c9000da1'),
+    optimism_tokens = (
         Asset('eip155:10/erc20:0x4F604735c1cF31399C6E711D5962b2B3E0225AD3'),
-    }
+        Asset('eip155:10/erc20:0x94b008aA00579c1307B0EF2c499aD98a8ce58e58'),
+    )
+    # patch get_evm_tokens return value to just a few tokens
+    # to prevent issues when the asset database changes
+    with patch('rotkehlchen.chain.evm.tokens.GlobalDBHandler.get_evm_tokens', return_value=[
+        EvmToken('eip155:10/erc20:0x7F5c764cBc14f9669B88837ca1490cCa17c31607'),
+        EvmToken('eip155:10/erc20:0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85'),
+    ] + [token.resolve_to_evm_token() for token in optimism_tokens]):
+        response = requests.post(
+            api_url_for(
+                rotkehlchen_api_server,
+                'detecttokensresource',
+                blockchain=optimism_chain_key,
+            ),
+        )
+    result = assert_proper_sync_response_with_result(response)
     assert result[TEST_ADDY]['last_update_timestamp'] >= now
-    assert set(result[TEST_ADDY]['tokens']) == optimism_tokens
+    assert set(result[TEST_ADDY]['tokens']) == set(optimism_tokens)
 
     # and query balances again to see tokens also appear
     response = requests.get(

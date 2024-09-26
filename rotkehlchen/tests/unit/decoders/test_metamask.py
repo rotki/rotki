@@ -539,7 +539,7 @@ def test_metamask_swap_polygon(polygon_pos_inquirer, polygon_pos_accounts):
         asset=A_POLYGON_POS_MATIC,
         balance=Balance(amount=FVal(gas_fees)),
         location_label=user_address,
-        notes=f'Burned {gas_fees} MATIC for gas',
+        notes=f'Burned {gas_fees} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=tx_hash,
@@ -576,7 +576,7 @@ def test_metamask_swap_polygon(polygon_pos_inquirer, polygon_pos_accounts):
         asset=A_POLYGON_POS_MATIC,
         balance=Balance(amount=FVal(received_amount)),
         location_label=user_address,
-        notes=f'Receive {received_amount} MATIC as the result of a metamask swap',
+        notes=f'Receive {received_amount} POL as the result of a metamask swap',
         counterparty=CPT_METAMASK_SWAPS,
         address=METAMASK_ROUTER_MATIC,
     ), EvmEvent(
