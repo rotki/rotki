@@ -11,7 +11,6 @@ from urllib.parse import urlparse
 import requests
 from ens import ENS
 from eth_abi.exceptions import DecodingError
-from eth_typing import BlockNumber
 from requests import RequestException
 from web3 import HTTPProvider, Web3
 from web3._utils.abi import get_abi_output_types

@@ -1,4 +1,3 @@
-from unittest.mock import patch
 
 from rotkehlchen.chain.evm.types import Web3Node
 from rotkehlchen.tests.utils.mock import (

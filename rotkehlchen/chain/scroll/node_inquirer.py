@@ -1,8 +1,6 @@
 import logging
 from typing import TYPE_CHECKING, Literal, cast
 
-from eth_typing import BlockNumber
-
 from rotkehlchen.chain.constants import DEFAULT_EVM_RPC_TIMEOUT
 from rotkehlchen.chain.evm.contracts import EvmContracts
 from rotkehlchen.chain.evm.l2_with_l1_fees.node_inquirer import L2WithL1FeesInquirer
