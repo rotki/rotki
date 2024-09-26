@@ -325,6 +325,7 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
                                 gevent.sleep(backoff)
                                 backoff *= 2
                                 continue
+
                             elif result.startswith('Max daily'):
                                 raise RemoteError('Etherscan max daily rate limit reached.')
 
