@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { objectOmit } from '@vueuse/core';
 import type AddressInput from '@/components/accounts/blockchain/AddressInput.vue';
 import type { AccountAgnosticManage } from '@/composables/accounts/blockchain/use-account-manage';
 import type { ValidationErrors } from '@/types/api/errors';
@@ -40,12 +39,11 @@ const label = computed<string>({
   },
   set(label: string) {
     const model = get(modelValue);
-    const labelData = label ? { label } : {};
     set(modelValue, {
       ...model,
       data: {
-        ...objectOmit(model.data, ['label']),
-        ...labelData,
+        ...model.data,
+        label,
       },
     });
   },

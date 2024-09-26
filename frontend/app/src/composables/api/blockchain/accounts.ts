@@ -45,7 +45,7 @@ function payloadToData({ address, label, tags }: Omit<BlockchainAccountPayload, 
     accounts: [
       {
         address,
-        label: label || null,
+        label: isDefined(label) ? label : null,
         tags,
       },
     ],

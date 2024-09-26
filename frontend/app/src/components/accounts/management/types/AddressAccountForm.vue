@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { Blockchain } from '@rotki/common';
-import { objectOmit } from '@vueuse/core';
 import AddressInput from '@/components/accounts/blockchain/AddressInput.vue';
 import type { ValidationErrors } from '@/types/api/errors';
 import type { Module } from '@/types/modules';
@@ -53,20 +52,19 @@ const label = computed<string>({
   },
   set(label: string) {
     const model = get(modelValue);
-    const labelData = label ? { label } : {};
     if (model.mode === 'edit') {
       set(modelValue, {
         ...model,
         data: {
-          ...objectOmit(model.data, ['label']),
-          ...labelData,
+          ...model.data,
+          label,
         },
       });
     }
     else {
       set(modelValue, {
         ...model,
-        data: [...model.data.map(item => ({ ...objectOmit(item, ['label']), ...labelData }))],
+        data: [...model.data.map(item => ({ ...item, label }))],
       });
     }
   },
@@ -97,7 +95,7 @@ const addresses = computed<string[]>({
         data: addresses.map(address => ({
           address,
           tags: accountTags.length > 0 ? accountTags : null,
-          ...(accountLabel ? { label: accountLabel } : {}),
+          label: accountLabel,
         })),
       });
     }

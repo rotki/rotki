@@ -12,6 +12,7 @@ const { t } = useI18n();
 <template>
   <RuiTextField
     v-model="labelModel"
+    clearable
     data-cy="account-label-field"
     color="primary"
     variant="outlined"
