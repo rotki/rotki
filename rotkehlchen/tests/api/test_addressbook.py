@@ -405,40 +405,55 @@ def test_update_addressbook(
     )
     assert_proper_response(response=response)
     expected_entries = entries_to_update + generated_entries[2:-1]
-
-    # test editing entries that don't exist in the database
     with db_addressbook.read_ctx(book_type) as cursor:
         assert set(db_addressbook.get_addressbook_entries(cursor, filter_query=AddressbookFilterQuery.make())[0]) == set(expected_entries)  # noqa: E501
 
-        nonexistent_entries = [
-            AddressbookEntry(
-                address=ADDRESS_ETH,
-                name='Hola amigos!',
-                blockchain=SupportedBlockchain.ETHEREUM,
-            ),
-            AddressbookEntry(
-                address=string_to_evm_address('0x79B598976bD83a47CD8B428C824C8474311267b8'),
-                name='Have a good day, friend!',
-                blockchain=SupportedBlockchain.ETHEREUM,
-            ),
-        ]
+    # test that editing nonexistent entries adds them to the database
+    new_entries = [
+        AddressbookEntry(
+            address=ADDRESS_ETH,
+            name='Hola amigos!',
+            blockchain=SupportedBlockchain.ETHEREUM,
+        ),
+        AddressbookEntry(
+            address=string_to_evm_address('0x79B598976bD83a47CD8B428C824C8474311267b8'),
+            name='Have a good day, friend!',
+            blockchain=SupportedBlockchain.ETHEREUM,
+        ),
+    ]
 
-        entries_in_db_before_bad_patch = db_addressbook.get_addressbook_entries(cursor, filter_query=AddressbookFilterQuery.make())[0]  # noqa: E501
-        response = requests.patch(
-            api_url_for(
-                rotkehlchen_api_server,
-                'addressbookresource',
-                book_type=book_type,
-            ),
-            json={
-                'entries': [entry.serialize() for entry in nonexistent_entries],
-            },
-        )
-        assert_error_response(
-            response=response,
-            contained_in_msg='address "0x79B598976bD83a47CD8B428C824C8474311267b8" and blockchain ethereum doesn\'t exist in the address book',  # noqa: E501
-            status_code=HTTPStatus.CONFLICT)
-        assert db_addressbook.get_addressbook_entries(cursor, filter_query=AddressbookFilterQuery.make())[0] == entries_in_db_before_bad_patch  # noqa: E501
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'addressbookresource',
+            book_type=book_type,
+        ),
+        json={'entries': [entry.serialize() for entry in new_entries]},
+    )
+    assert_proper_sync_response_with_result(response)
+    with db_addressbook.read_ctx(book_type) as cursor:
+        entries_after_update = db_addressbook.get_addressbook_entries(cursor, filter_query=AddressbookFilterQuery.make())[0]  # noqa: E501
+    assert all(entry in entries_after_update for entry in new_entries)
+
+    # test that updating an entry with a blank label deletes the entry
+
+    entry_to_delete = new_entries[0]
+    blank_name_entry = AddressbookEntry(
+        address=entry_to_delete.address,
+        name='',
+        blockchain=entry_to_delete.blockchain,
+    )
+    response = requests.patch(
+        api_url_for(
+            rotkehlchen_api_server,
+            'addressbookresource',
+            book_type=book_type,
+        ),
+        json={'entries': [blank_name_entry.serialize()]},
+    )
+    assert_proper_sync_response_with_result(response)
+    with db_addressbook.read_ctx(book_type) as cursor:
+        assert entry_to_delete not in db_addressbook.get_addressbook_entries(cursor, filter_query=AddressbookFilterQuery.make())[0]  # noqa: E501
 
     # add a new entry with no blockchain assigned
     new_entry = AddressbookEntry(

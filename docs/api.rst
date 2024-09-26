@@ -11644,7 +11644,7 @@ Update mappings in the addressbook
 
 .. http:patch:: /api/(version)/names/addressbook
 
-    Doing a PATCH on the addressbook endpoint with either /global or /private postfix with a list of entries, each entry containing address and a name will updates these entries' names in the addressbook
+    Doing a PATCH on the addressbook endpoint with either /global or /private postfix with a list of entries, each entry containing address and a name will update these entries' names in the addressbook, or add them if they do not already exist. Setting a blank name will delete the entry.
 
     **Example Request**
 

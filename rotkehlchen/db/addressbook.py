@@ -110,11 +110,13 @@ class DBAddressbook:
             entries: list[AddressbookEntry],
     ) -> None:
         """Updates names of addressbook entries.
+        Add entry if it doesn't exist. Delete entry if the name is blank
         If blockchain is None then make sure that the same address doesn't appear in combination
         with other blockchain values.
         """
         with self.write_ctx(book_type) as write_cursor:
             for entry in entries:
+                entry_bockchain_value = entry.blockchain.value if entry.blockchain else ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE  # noqa: E501
                 if (
                     entry.blockchain is None and
                     write_cursor.execute(
@@ -128,9 +130,21 @@ class DBAddressbook:
                         self.add_addressbook_entries(write_cursor, [entry])
                         continue  # skip update query, we just added a new entry instead
                     # InputError: single entry already exists, it must be updated using query below
+                elif (
+                    write_cursor.execute(
+                        'SELECT COUNT(*) FROM address_book WHERE address = ? AND blockchain = ?',
+                        (entry.address, entry_bockchain_value),
+                    ).fetchone()[0] == 0
+                ):  # Add entry if it doesn't exist
+                    self.add_addressbook_entries(write_cursor, [entry])
 
-                query = 'UPDATE address_book SET name = ? WHERE address = ? AND blockchain IS ?'
-                bindings = (entry.name, entry.address, entry.blockchain.value if entry.blockchain else ANY_BLOCKCHAIN_ADDRESSBOOK_VALUE)  # noqa: E501
+                if entry.name == '':
+                    query = 'DELETE FROM address_book where address=? AND blockchain=?'
+                    bindings = [entry.address, entry_bockchain_value]
+                else:
+                    query = 'UPDATE address_book SET name=? WHERE address=? AND blockchain=?'
+                    bindings = [entry.name, entry.address, entry_bockchain_value]
+
                 write_cursor.execute(query, bindings)
                 if write_cursor.rowcount == 0:
                     raise InputError(
