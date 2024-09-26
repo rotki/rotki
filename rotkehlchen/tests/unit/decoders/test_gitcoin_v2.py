@@ -373,7 +373,7 @@ def test_polygon_donation_matic_received(polygon_pos_inquirer, polygon_pos_accou
         asset=A_POLYGON_POS_MATIC,
         balance=Balance(amount=FVal(amount_str)),
         location_label=user_address,
-        notes=f'Receive a gitcoin donation of {amount_str} MATIC from 0x6017B1d17f4D7547dC4aac88fbD0AA1826e7e6CE',  # noqa: E501
+        notes=f'Receive a gitcoin donation of {amount_str} POL from 0x6017B1d17f4D7547dC4aac88fbD0AA1826e7e6CE',  # noqa: E501
         counterparty=CPT_GITCOIN,
         address='0x03e50B688beB7c0E5e90F51188D0fa38c9152f9d',
     )]
@@ -431,7 +431,7 @@ def test_polygon_apply_to_round(polygon_pos_inquirer, polygon_pos_accounts):
         asset=A_POLYGON_POS_MATIC,
         balance=Balance(amount=FVal(gas_str)),
         location_label=user_address,
-        notes=f'Burned {gas_str} MATIC for gas',
+        notes=f'Burned {gas_str} POL for gas',
         counterparty=CPT_GAS,
     ), EvmEvent(
         tx_hash=evmhash,

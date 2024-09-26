@@ -597,7 +597,7 @@ def test_aave_v3_enable_collateral_polygon(polygon_pos_inquirer, polygon_pos_acc
             asset=A_POLYGON_POS_MATIC,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=polygon_pos_accounts[0],
-            notes=f'Burned {gas_fees} MATIC for gas',
+            notes=f'Burned {gas_fees} POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=tx_hash,
@@ -1010,7 +1010,7 @@ def test_aave_v3_events_with_approval(polygon_pos_inquirer, polygon_pos_accounts
             asset=A_POLYGON_POS_MATIC,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=polygon_pos_accounts[0],
-            notes=f'Burned {gas_fees} MATIC for gas',
+            notes=f'Burned {gas_fees} POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=142,
@@ -1179,7 +1179,7 @@ def test_aave_v3_withdraw_matic(polygon_pos_inquirer, polygon_pos_accounts) -> N
             asset=A_POLYGON_POS_MATIC,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=polygon_pos_accounts[0],
-            notes=f'Burned {gas_fees} MATIC for gas',
+            notes=f'Burned {gas_fees} POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             sequence_index=1223,
@@ -1229,7 +1229,7 @@ def test_aave_v3_withdraw_matic(polygon_pos_inquirer, polygon_pos_accounts) -> N
             asset=A_POLYGON_POS_MATIC,  # aPolUSDT
             balance=Balance(amount=FVal(withdrawn_amount)),
             location_label=polygon_pos_accounts[0],
-            notes=f'Withdraw {withdrawn_amount} MATIC from AAVE v3',
+            notes=f'Withdraw {withdrawn_amount} POL from AAVE v3',
             counterparty=CPT_AAVE_V3,
             address=gateway_address,
         ),

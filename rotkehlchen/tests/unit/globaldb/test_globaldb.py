@@ -26,7 +26,16 @@ from rotkehlchen.chain.ethereum.modules.compound.constants import CPT_COMPOUND
 from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_BAT, A_CRV, A_DAI, A_ETH, A_LUSD, A_PICKLE, A_USD
+from rotkehlchen.constants.assets import (
+    A_BAT,
+    A_CRV,
+    A_DAI,
+    A_DOGE,
+    A_ETH,
+    A_LUSD,
+    A_PICKLE,
+    A_USD,
+)
 from rotkehlchen.constants.misc import GLOBALDB_NAME, GLOBALDIR_NAME, NFT_DIRECTIVE
 from rotkehlchen.constants.resolver import ethaddress_to_identifier, evm_address_to_identifier
 from rotkehlchen.db.custom_assets import DBCustomAssets
@@ -1283,7 +1292,7 @@ def test_assets_in_same_collection(globaldb: GlobalDBHandler):
     )
 
     # check an asset with no related assets
-    assert globaldb.get_assets_in_same_collection(identifier=A_ETH.identifier) == (A_ETH,)
+    assert globaldb.get_assets_in_same_collection(identifier=A_DOGE.identifier) == (A_DOGE,)
 
 
 def test_check_wal_mode_of_package_db(globaldb: GlobalDBHandler) -> None:

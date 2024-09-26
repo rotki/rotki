@@ -893,7 +893,7 @@ def test_wmatic_deposit_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
             asset=A_POLYGON_POS_MATIC,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=polygon_pos_accounts[0],
-            notes=f'Burned {gas_fees} MATIC for gas',
+            notes=f'Burned {gas_fees} POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -905,7 +905,7 @@ def test_wmatic_deposit_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts):
             asset=A_POLYGON_POS_MATIC,
             balance=Balance(amount=FVal(amount)),
             location_label=polygon_pos_accounts[0],
-            notes=f'Wrap {amount} MATIC in WMATIC',
+            notes=f'Wrap {amount} POL in WMATIC',
             counterparty=CPT_WMATIC,
             address=WMATIC_ADDRESS,
         ), EvmEvent(
@@ -947,7 +947,7 @@ def test_wmatic_withdraw_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts)
             asset=A_POLYGON_POS_MATIC,
             balance=Balance(amount=FVal(gas_fees)),
             location_label=polygon_pos_accounts[0],
-            notes=f'Burned {gas_fees} MATIC for gas',
+            notes=f'Burned {gas_fees} POL for gas',
             counterparty=CPT_GAS,
         ), EvmEvent(
             tx_hash=evmhash,
@@ -972,7 +972,7 @@ def test_wmatic_withdraw_polygon_pos(polygon_pos_inquirer, polygon_pos_accounts)
             asset=A_POLYGON_POS_MATIC,
             balance=Balance(amount=FVal(amount)),
             location_label=polygon_pos_accounts[0],
-            notes=f'Receive {amount} MATIC',
+            notes=f'Receive {amount} POL',
             counterparty=CPT_WMATIC,
             address=WMATIC_ADDRESS,
         ),
