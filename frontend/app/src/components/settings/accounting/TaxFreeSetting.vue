@@ -3,7 +3,7 @@ import useVuelidate from '@vuelidate/core';
 import { helpers, minValue, requiredIf } from '@vuelidate/validators';
 import { toMessages } from '@/utils/validation';
 
-const taxFreeAfterPeriod = ref<string>();
+const taxFreeAfterPeriod = ref<string>('');
 const taxFreePeriod = ref(false);
 
 const { t } = useI18n();

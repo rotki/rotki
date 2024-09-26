@@ -7,7 +7,7 @@ const modelValue = defineModel<Partial<UserNote>>({ required: true });
 
 const { t } = useI18n();
 
-const title = useRefPropVModel(modelValue, 'title');
+const title = refOptional(useRefPropVModel(modelValue, 'title'), '');
 const content = refOptional(useRefPropVModel(modelValue, 'content'), '');
 
 const { setValidation } = useUserNotesForm();
