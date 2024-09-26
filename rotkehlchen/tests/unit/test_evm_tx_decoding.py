@@ -11,7 +11,7 @@ from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.l2_with_l1_fees.types import L2WithL1FeesTransaction
 from rotkehlchen.chain.evm.types import EvmAccount, string_to_evm_address
 from rotkehlchen.constants.assets import A_ETH, A_SAI
-from rotkehlchen.db.constants import HISTORY_MAPPING_STATE_DECODED, HISTORY_MAPPING_STATE_SPAM
+from rotkehlchen.db.constants import EVMTX_DECODED, EVMTX_SPAM
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery, EvmTransactionsFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -233,7 +233,7 @@ def test_query_and_decode_transactions_works_with_different_chains(
     with database.user_write() as write_cursor:
         write_cursor.execute(
             'INSERT INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
-            (3, HISTORY_MAPPING_STATE_SPAM),
+            (3, EVMTX_SPAM),
         )
     hashes = dbevmtx.get_transaction_hashes_not_decoded(chain_id=ChainID.ETHEREUM, limit=None)
     assert len(hashes) == 2
@@ -242,7 +242,7 @@ def test_query_and_decode_transactions_works_with_different_chains(
     with database.user_write() as write_cursor:
         write_cursor.execute(
             'INSERT INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
-            (3, HISTORY_MAPPING_STATE_DECODED),
+            (3, EVMTX_DECODED),
         )
     hashes = dbevmtx.get_transaction_hashes_not_decoded(chain_id=ChainID.ETHEREUM, limit=None)
     assert len(hashes) == 1

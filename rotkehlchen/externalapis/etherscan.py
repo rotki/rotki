@@ -15,7 +15,7 @@ from rotkehlchen.api.websockets.typedefs import WSMessageType
 from rotkehlchen.chain.evm.constants import GENESIS_HASH, ZERO_ADDRESS
 from rotkehlchen.chain.scroll.constants import SCROLL_GENESIS
 from rotkehlchen.chain.structures import TimestampOrBlockRange
-from rotkehlchen.db.constants import HISTORY_MAPPING_STATE_DECODED
+from rotkehlchen.db.constants import EVMTX_DECODED
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
@@ -486,7 +486,7 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
                             write_cursor.execute(
                                 'DELETE from evm_tx_mappings WHERE tx_id=(SELECT identifier FROM '
                                 'evm_transactions WHERE tx_hash=? AND chain_id=?) AND value=?',
-                                (GENESIS_HASH, self.chain.to_chain_id().serialize_for_db(), HISTORY_MAPPING_STATE_DECODED),  # noqa: E501
+                                (GENESIS_HASH, self.chain.to_chain_id().serialize_for_db(), EVMTX_DECODED),  # noqa: E501
                             )
                 except DeserializationError as e:
                     self.msg_aggregator.add_warning(f'{e!s}. Skipping transaction')

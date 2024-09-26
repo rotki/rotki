@@ -15,10 +15,10 @@ from rotkehlchen.chain.evm.types import EvmAccount
 from rotkehlchen.db.constants import (
     ETH_STAKING_EVENT_FIELDS,
     EVM_EVENT_FIELDS,
+    EVMTX_DECODED,
     HISTORY_BASE_ENTRY_FIELDS,
     HISTORY_MAPPING_KEY_STATE,
     HISTORY_MAPPING_STATE_CUSTOMIZED,
-    HISTORY_MAPPING_STATE_DECODED,
 )
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
@@ -204,7 +204,7 @@ class DBTransactionsPendingDecodingFilter(DBFilter):
 
     def prepare(self) -> tuple[list[str], list[Any]]:
         query_filters = ['(B.tx_id IS NULL OR B.tx_id NOT IN (SELECT tx_id FROM evm_tx_mappings WHERE value=?))']  # noqa: E501
-        bindings: list[int] = [HISTORY_MAPPING_STATE_DECODED]
+        bindings: list[int] = [EVMTX_DECODED]
         if self.chain_id is not None:
             bindings.append(self.chain_id.serialize_for_db())
             query_filters.append('C.chain_id=?')

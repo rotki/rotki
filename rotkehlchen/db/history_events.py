@@ -14,11 +14,11 @@ from rotkehlchen.db.constants import (
     ETH_STAKING_FIELD_LENGTH,
     EVM_EVENT_FIELDS,
     EVM_FIELD_LENGTH,
+    EVMTX_DECODED,
     HISTORY_BASE_ENTRY_FIELDS,
     HISTORY_BASE_ENTRY_LENGTH,
     HISTORY_MAPPING_KEY_STATE,
     HISTORY_MAPPING_STATE_CUSTOMIZED,
-    HISTORY_MAPPING_STATE_DECODED,
 )
 from rotkehlchen.db.filtering import (
     ALL_EVENTS_DATA_JOIN,
@@ -246,7 +246,7 @@ class DBHistoryEvents:
         if location != Location.ZKSYNC_LITE and len(transaction_hashes) != 0:
             write_cursor.executemany(
                 'DELETE from evm_tx_mappings WHERE tx_id IN (SELECT identifier FROM evm_transactions WHERE tx_hash=? AND chain_id=?) AND value=?',  # noqa: E501
-                [(x[0], location.to_chain_id(), HISTORY_MAPPING_STATE_DECODED) for x in transaction_hashes],  # noqa: E501
+                [(x[0], location.to_chain_id(), EVMTX_DECODED) for x in transaction_hashes],
             )
 
     def delete_events_by_tx_hash(

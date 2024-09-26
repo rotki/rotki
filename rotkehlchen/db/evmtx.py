@@ -14,9 +14,9 @@ from rotkehlchen.chain.optimism.constants import OPTIMISM_GENESIS
 from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_GENESIS
 from rotkehlchen.chain.scroll.constants import SCROLL_GENESIS
 from rotkehlchen.db.constants import (
+    EVMTX_DECODED,
+    EVMTX_SPAM,
     EXTRAINTERNALTXPREFIX,
-    HISTORY_MAPPING_STATE_DECODED,
-    HISTORY_MAPPING_STATE_SPAM,
 )
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery, TransactionsNotDecodedFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -536,7 +536,7 @@ class DBEvmTx:
         # Delete all remaining evm_tx_mappings so decoding can happen again
         write_cursor.executemany(
             'DELETE FROM evm_tx_mappings WHERE tx_id=? AND value IN (?, ?)',
-            [(x, HISTORY_MAPPING_STATE_DECODED, HISTORY_MAPPING_STATE_SPAM) for x in tx_ids],
+            [(x, EVMTX_DECODED, EVMTX_SPAM) for x in tx_ids],
         )
         # Delete any key_value_cache entries
         write_cursor.executemany(

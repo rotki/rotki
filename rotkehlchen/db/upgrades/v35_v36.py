@@ -7,7 +7,6 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
     HISTORY_MAPPING_STATE_CUSTOMIZED,
-    HISTORY_MAPPING_STATE_DECODED,
 )
 from rotkehlchen.db.settings import DEFAULT_ACTIVE_MODULES
 from rotkehlchen.db.utils import table_exists, update_table_schema
@@ -578,7 +577,7 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
     write_cursor.executemany(querystr, bindings)
     write_cursor.executemany(
         'DELETE from evm_tx_mappings WHERE tx_hash=? AND chain_id=? AND value=?',
-        [(tx_hash, ChainID.ETHEREUM.serialize_for_db(), HISTORY_MAPPING_STATE_DECODED) for tx_hash in tx_hashes],  # noqa: E501
+        [(tx_hash, ChainID.ETHEREUM.serialize_for_db(), 0) for tx_hash in tx_hashes],  # 0 -> decoded tx state # noqa: E501
     )
 
 

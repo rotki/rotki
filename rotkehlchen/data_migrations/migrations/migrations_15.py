@@ -5,7 +5,6 @@ from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
     HISTORY_MAPPING_STATE_CUSTOMIZED,
-    HISTORY_MAPPING_STATE_DECODED,
 )
 from rotkehlchen.errors.misc import InputError, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
@@ -55,7 +54,7 @@ def data_migration_15(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
             write_cursor.execute('DELETE FROM history_events WHERE identifier=?', (identifier,))
             write_cursor.execute(
                 'DELETE from evm_tx_mappings WHERE tx_id=? AND value=?',
-                (identifier, HISTORY_MAPPING_STATE_DECODED),
+                (identifier, 0),  # decoded value
             )
 
     for _, tx_hash, location in event_data:  # redecode them
