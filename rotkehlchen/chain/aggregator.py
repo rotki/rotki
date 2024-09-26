@@ -78,7 +78,7 @@ from rotkehlchen.errors.misc import (
     ModuleInitializationFailure,
     RemoteError,
 )
-from rotkehlchen.externalapis.etherscan import EtherscanHasChainActivity
+from rotkehlchen.externalapis.etherscan import HasChainActivity
 from rotkehlchen.fval import FVal
 from rotkehlchen.greenlets.manager import GreenletManager
 from rotkehlchen.inquirer import Inquirer
@@ -1509,12 +1509,23 @@ class ChainsAggregator(CacheableMixIn, LockableQueryMixIn):
                             continue  # do not add the address for the chain
 
                 else:
-                    etherscan_activity = chain_manager.node_inquirer.etherscan.has_activity(address)  # noqa: E501
+                    if (blockscout := chain_manager.node_inquirer.blockscout) is not None:
+                        try:
+                            chain_activity = blockscout.has_activity(address)
+                        except RemoteError as e:
+                            log.debug(
+                                'Failed to check activity using blockscout '
+                                f'for {chain} due to {e}',
+                            )
+                            chain_activity = chain_manager.node_inquirer.etherscan.has_activity(address)  # noqa: E501
+                    else:
+                        chain_activity = chain_manager.node_inquirer.etherscan.has_activity(address)  # noqa: E501
+
                     only_token_spam = (
-                        etherscan_activity == EtherscanHasChainActivity.TOKENS and
+                        chain_activity == HasChainActivity.TOKENS and
                         chain_manager.transactions.address_has_been_spammed(address=address)
                     )
-                    if only_token_spam or etherscan_activity == EtherscanHasChainActivity.NONE:
+                    if only_token_spam or chain_activity == HasChainActivity.NONE:
                         continue  # do not add the address for the chain
             except RemoteError as e:
                 log.error(f'{e!s} when checking if {address} is active at {chain}')

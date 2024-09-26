@@ -1,7 +1,7 @@
 import logging
 import sys
 from json.decoder import JSONDecodeError
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 import gevent
 import requests
@@ -12,11 +12,19 @@ from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
+from rotkehlchen.externalapis.etherscan import HasChainActivity
 from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
 from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
-from rotkehlchen.types import ChecksumEvmAddress, ExternalService, Timestamp
+from rotkehlchen.types import (
+    SUPPORTED_EVM_CHAINS_TYPE,
+    ChainID,
+    ChecksumEvmAddress,
+    ExternalService,
+    SupportedBlockchain,
+    Timestamp,
+)
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import from_wei, iso8601ts_to_timestamp, set_user_agent, ts_sec_to_ms
 from rotkehlchen.utils.serialization import jsonloads_dict
@@ -31,13 +39,36 @@ log = RotkehlchenLogsAdapter(logger)
 class Blockscout(ExternalServiceWithApiKey):
     """Blockscout API handler https://eth.blockscout.com/api-docs"""
 
-    def __init__(self, database: 'DBHandler', msg_aggregator: MessagesAggregator) -> None:
-        super().__init__(database=database, service_name=ExternalService.BLOCKSCOUT)
+    def __init__(
+            self,
+            blockchain: SUPPORTED_EVM_CHAINS_TYPE,
+            database: 'DBHandler',
+            msg_aggregator: MessagesAggregator,
+    ) -> None:
+        self.chain_id = blockchain.to_chain_id()
+        super().__init__(
+            database=database,
+            service_name=ExternalService.chain_to_blockscout(self.chain_id),
+        )
         self.db: DBHandler  # specifying DB is not optional
         self.msg_aggregator = msg_aggregator
         self.session = requests.session()
         set_user_agent(self.session)
-        self.url = 'https://eth.blockscout.com/api'
+        match blockchain:
+            case SupportedBlockchain.ETHEREUM:
+                self.url = 'https://eth.blockscout.com/api'
+            case SupportedBlockchain.OPTIMISM:
+                self.url = 'https://optimism.blockscout.com/api'
+            case SupportedBlockchain.BASE:
+                self.url = 'https://base.blockscout.com/api'
+            case SupportedBlockchain.ARBITRUM_ONE:
+                self.url = 'https://arbitrum.blockscout.com/api'
+            case SupportedBlockchain.GNOSIS:
+                self.url = 'https://gnosis.blockscout.com/api'
+            case SupportedBlockchain.POLYGON_POS:
+                self.url = 'https://polygon.blockscout.com/api'
+            case _:
+                raise NotImplementedError(f'Blockscout not implement for {blockchain}')
 
     def _query_and_process(
             self,
@@ -93,24 +124,65 @@ class Blockscout(ExternalServiceWithApiKey):
                 f'Blockscout API returned invalid JSON response: {response.text}',
             ) from e
 
-        return json_ret
+        return json_ret  # 'txlistinternal', 'txlist', 'tokentx
 
+    @overload
+    def _query_v1(
+            self,
+            module: Literal['account'],
+            action: Literal['txlistinternal', 'txlist', 'tokentx'],
+            query_args: dict[str, Any] | None = None,
+    ) -> list[Any]:
+        ...
+
+    @overload
+    def _query_v1(
+            self,
+            module: Literal['account'],
+            action: Literal['balance'],
+            query_args: dict[str, Any] | None = None,
+    ) -> int:
+        ...
+
+    @overload
     def _query_v1(
             self,
             module: Literal['block'],
             action: Literal['getblocknobytime'],
             query_args: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
+        ...
+
+    @overload
+    def _query_v1(
+            self,
+            module: str,
+            action: str,
+            query_args: dict[str, Any] | None = None,
+    ) -> dict[str, Any] | list[Any] | int:
+        ...
+
+    def _query_v1(
+            self,
+            module: str,
+            action: str,
+            query_args: dict[str, Any] | None = None,
+    ) -> dict[str, Any] | list[Any] | int:
         query_args = {} if query_args is None else query_args
         query_args |= {'module': module, 'action': action}
         if (api_key := self._get_api_key()) is not None:
             query_args['apikey'] = api_key
-
         response = self._query_and_process(
             query_str=self.url,
             params=query_args,
         )
-        if response.get('message') != 'OK':
+        if (
+            (message := response.get('message')) is not None and
+            message.startswith('No') and
+            message.endswith('found')
+        ):  # tokentx "No token transfers found", "No internal transactions found" and "No transactions found"  # noqa: E501
+            return []
+        elif message != 'OK':
             raise RemoteError(f'Non ok response from blockscout v1 with {query_args}: {response}')
 
         return response['result']
@@ -260,3 +332,39 @@ class Blockscout(ExternalServiceWithApiKey):
             raise RemoteError(
                 f'Failed to deserialize timestamp from blockscout response {response}',
             ) from e
+
+    def has_activity(self, account: ChecksumEvmAddress) -> HasChainActivity:
+        """Queries native asset balance, transactions, internal_txs and tokentx for an address
+        just to quickly determine if the account has had any activity in the chain.
+        We make a distinction between transactions and ERC20 transfers since ERC20
+        are often spammed. If there was no activity at all we return the enum value
+        NONE.
+
+        May raise: RemoteError
+        """
+        options = {'address': str(account), 'page': 1}
+        result = self._query_v1(module='account', action='txlist', query_args=options)
+        if len(result) != 0:
+            return HasChainActivity.TRANSACTIONS
+
+        result = self._query_v1(module='account', action='txlistinternal', query_args=options)
+        if len(result) != 0:
+            return HasChainActivity.TRANSACTIONS
+
+        result = self._query_v1(module='account', action='tokentx', query_args=options)
+        if len(result) != 0:
+            return HasChainActivity.TOKENS
+
+        if self.chain_id in {ChainID.ETHEREUM, ChainID.GNOSIS, ChainID.POLYGON_POS}:
+            # since ethereum, gnosis and polygon have a lot of spam transactions for addresses
+            # that were never used we add as requirement that in those chains the user must have
+            # some balance.
+            balance = self._query_v1(
+                module='account',
+                action='balance',
+                query_args={'address': account},
+            )
+            if int(balance) != 0:
+                return HasChainActivity.BALANCE
+
+        return HasChainActivity.NONE

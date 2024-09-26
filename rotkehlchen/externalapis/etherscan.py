@@ -56,13 +56,13 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class EtherscanHasChainActivity(Enum):
+class HasChainActivity(Enum):
     """
-    Classify the type of transaction first found in etherscan. TRANSACTIONS means that the endpoint
-    for transactions/internal transactions had entries, TOKENS means that the tokens endpoint had
-    entries, BALANCE means that the address has a non-zero native asset balance and
-    NONE means that no activity was found.
-    """
+    Classify the type of transaction first found in blockscout/etherscan.
+    TRANSACTIONS means that the endpoint for transactions/internal transactions
+    had entries, TOKENS means that the tokens endpoint had entries, BALANCE means
+    that the address has a non-zero native asset balance and NONE means that no
+    activity was found."""
     TRANSACTIONS = auto()
     TOKENS = auto()
     BALANCE = auto()
@@ -553,7 +553,7 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
 
         yield _hashes_tuple_to_list(hashes)
 
-    def has_activity(self, account: ChecksumEvmAddress) -> EtherscanHasChainActivity:
+    def has_activity(self, account: ChecksumEvmAddress) -> HasChainActivity:
         """Queries native asset balance, transactions, internal_txs and tokentx for an address
         with limit=1 just to quickly determine if the account has had any activity in the chain.
         We make a distinction between transactions and ERC20 transfers since ERC20
@@ -563,18 +563,18 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
         options = {'address': str(account), 'page': 1, 'offset': 1}
         result = self._query(module='account', action='txlist', options=options)
         if len(result) != 0:
-            return EtherscanHasChainActivity.TRANSACTIONS
+            return HasChainActivity.TRANSACTIONS
         result = self._query(module='account', action='txlistinternal', options=options)
         if len(result) != 0:
-            return EtherscanHasChainActivity.TRANSACTIONS
+            return HasChainActivity.TRANSACTIONS
         result = self._query(module='account', action='tokentx', options=options)
         if len(result) != 0:
-            return EtherscanHasChainActivity.TOKENS
+            return HasChainActivity.TOKENS
         if self.chain in {SupportedBlockchain.ETHEREUM, SupportedBlockchain.GNOSIS}:
             balance = self._query(module='account', action='balance', options={'address': account})
             if int(balance) != 0:
-                return EtherscanHasChainActivity.BALANCE
-        return EtherscanHasChainActivity.NONE
+                return HasChainActivity.BALANCE
+        return HasChainActivity.NONE
 
     def get_latest_block_number(self) -> int:
         """Gets the latest block number

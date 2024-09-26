@@ -16,7 +16,7 @@ from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.externalapis.beaconchain.service import BeaconChain
-from rotkehlchen.externalapis.etherscan import Etherscan, EtherscanHasChainActivity
+from rotkehlchen.externalapis.etherscan import Etherscan, HasChainActivity
 from rotkehlchen.fval import FVal
 from rotkehlchen.rotkehlchen import Rotkehlchen
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
@@ -653,7 +653,7 @@ def setup_evm_addresses_activity_mock(
 
     def mock_chain_has_activity(account: ChecksumEvmAddress, chain: SUPPORTED_EVM_CHAINS_TYPE):
         addresses = saved_locals[f'{chain.to_chain_id().to_name()}_addresses']
-        return EtherscanHasChainActivity.TRANSACTIONS if addresses is not None and account in addresses else EtherscanHasChainActivity.NONE  # noqa: E501
+        return HasChainActivity.TRANSACTIONS if addresses is not None and account in addresses else HasChainActivity.NONE  # noqa: E501
 
     stack.enter_context(patch.object(
         chains_aggregator.ethereum.node_inquirer,
@@ -677,11 +677,18 @@ def setup_evm_addresses_activity_mock(
     ))
 
     for chain in EVM_CHAINS_WITH_TRANSACTIONS:
+        manager = chains_aggregator.get_evm_manager(chain.to_chain_id())  # type: ignore  # chain id is of the expected type here
         stack.enter_context(patch.object(
-            chains_aggregator.get_evm_manager(chain.to_chain_id()).node_inquirer.etherscan,  # type: ignore  # chain id is of the expected type here
+            manager.node_inquirer.etherscan,
             'has_activity',
             side_effect=lambda account, i_chain=chain: mock_chain_has_activity(account, i_chain),  # use i_chain to avoid the problem with the lambda late binding  # noqa: E501
         ))
+        if manager.node_inquirer.blockscout is not None:
+            stack.enter_context(patch.object(
+                manager.node_inquirer.blockscout,
+                'has_activity',
+                side_effect=lambda account, i_chain=chain: mock_chain_has_activity(account, i_chain),  # noqa: E501
+            ))
 
     return stack
 
