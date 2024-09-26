@@ -191,8 +191,8 @@ class Eth2(EthereumModule):
                 else:  # can only be EXITED
                     got_indices = dbeth2.get_exited_validator_indices(cursor)
 
-            to_filter_indices = got_indices if to_filter_indices is None else to_filter_indices | got_indices  # noqa: E501
-            to_query_indices = got_indices if to_query_indices is None else to_query_indices | got_indices  # noqa: E501
+            to_filter_indices = got_indices if to_filter_indices is None else to_filter_indices & got_indices  # noqa: E501
+            to_query_indices = got_indices if to_query_indices is None else to_query_indices & got_indices  # noqa: E501
 
         if addresses is not None:
             with self.database.conn.read_ctx() as cursor:
@@ -200,7 +200,7 @@ class Eth2(EthereumModule):
                     cursor=cursor,
                     addresses=addresses,
                 )
-            to_query_indices = associated_indices if to_query_indices is None else to_query_indices | associated_indices  # noqa: E501
+            to_query_indices = associated_indices if to_query_indices is None else to_query_indices & associated_indices  # noqa: E501
             # also add the to_filter_indices since this will enable deposit association
             # to validator index by address. We need to do this instead of adding
             # addresses to filter arguments since then we would be ANDing the filters

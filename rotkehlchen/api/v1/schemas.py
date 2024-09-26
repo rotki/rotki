@@ -2413,7 +2413,10 @@ class EthStakingCommonFilterSchema(Schema):
         What's more it's important to note that status Pending would only count from
         the moment they are seen by the beacon chain as that's when a validator index exists.
         """
-        validator_indices, associated_indices, status_indices = set(), set(), set()
+        with self.database.conn.read_ctx() as cursor:
+            all_validators = {x[0] for x in cursor.execute('SELECT validator_index FROM eth2_validators')}  # noqa: E501
+
+        validator_indices, associated_indices, status_indices = all_validators, all_validators, all_validators  # noqa: E501
         no_filter = True
         if given_indices:
             validator_indices = set(given_indices)
@@ -2437,7 +2440,7 @@ class EthStakingCommonFilterSchema(Schema):
 
             no_filter = False
 
-        return None if no_filter else validator_indices | associated_indices | status_indices
+        return None if no_filter else validator_indices & associated_indices & status_indices
 
 
 class ExchangeRatesSchema(AsyncQueryArgumentSchema):

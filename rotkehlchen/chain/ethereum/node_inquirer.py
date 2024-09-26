@@ -88,7 +88,7 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
         )
         self.etherscan: EthereumEtherscan
         self.ens_reverse_records = self.contracts.contract(string_to_evm_address('0x3671aE578E63FdF66ad4F3E12CC0c0d71Ac7510C'))  # noqa: E501
-        self.blockscout: Blockscout
+        self.blockscout: Blockscout  # for ethereum blockscout is never None since it's used for the withdrawals  # noqa: E501
 
     def ens_reverse_lookup(self, addresses: list[ChecksumEvmAddress]) -> dict[ChecksumEvmAddress, str | None]:  # noqa: E501
         """Performs a reverse ENS lookup on a list of addresses
