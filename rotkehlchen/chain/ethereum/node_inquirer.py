@@ -249,24 +249,6 @@ class EthereumInquirer(DSProxyInquirerWithCacheData):
 
     # -- Implementation of EvmNodeInquirer base methods --
 
-    def query_highest_block(self) -> BlockNumber:
-        log.debug('Querying blockcypher for ETH highest block', url=BLOCKCYPHER_URL)
-        eth_resp: dict[str, str] | None
-        try:
-            eth_resp = request_get_dict(BLOCKCYPHER_URL)
-        except (RemoteError, UnableToDecryptRemoteData, requests.exceptions.RequestException):
-            eth_resp = None
-
-        block_number: int | None
-        if eth_resp and 'height' in eth_resp:
-            block_number = int(eth_resp['height'])
-            log.debug('ETH highest block result', block=block_number)
-        else:
-            block_number = self.etherscan.get_latest_block_number()
-            log.debug('ETH highest block result', block=block_number)
-
-        return BlockNumber(block_number)
-
     def _get_pruned_check_tx_hash(self) -> EVMTxHash:
         return PRUNED_NODE_CHECK_TX_HASH
 

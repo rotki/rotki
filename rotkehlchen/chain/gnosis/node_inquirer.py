@@ -60,11 +60,6 @@ class GnosisInquirer(EvmNodeInquirer):
 
     # -- Implementation of EvmNodeInquirer base methods --
 
-    def query_highest_block(self) -> BlockNumber:
-        block_number = self.etherscan.get_latest_block_number()
-        log.debug('Gnosis highest block result', block=block_number)
-        return BlockNumber(block_number)
-
     def _get_pruned_check_tx_hash(self) -> EVMTxHash:
         return PRUNED_NODE_CHECK_TX_HASH
 

@@ -161,7 +161,6 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
     """Class containing generic functionality for querying evm nodes
 
     The child class must implement the following methods:
-    - query_highest_block
     - _have_archive
     - _is_pruned
     - get_blocknumber_by_time
@@ -1322,16 +1321,6 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         return transaction.block_number
 
     # -- methods to be implemented by child classes --
-
-    @abstractmethod
-    def query_highest_block(self) -> BlockNumber:
-        """
-        Attempts to query an external service for the block height
-
-        Returns the highest blockNumber
-
-        May Raise RemoteError if querying fails
-        """
 
     def get_blocknumber_by_time(
             self,
