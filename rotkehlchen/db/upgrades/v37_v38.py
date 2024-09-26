@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING
 from rotkehlchen.db.constants import (
     HISTORY_MAPPING_KEY_STATE,
     HISTORY_MAPPING_STATE_CUSTOMIZED,
-    HISTORY_MAPPING_STATE_DECODED,
 )
 from rotkehlchen.db.utils import update_table_schema
 from rotkehlchen.logging import enter_exit_debug_log
@@ -108,7 +107,7 @@ def _reset_decoded_events(write_cursor: 'DBCursor') -> None:
     write_cursor.execute(querystr, bindings)
     write_cursor.execute(
         'DELETE from evm_tx_mappings WHERE tx_hash IN (SELECT tx_hash FROM evm_transactions) AND value=?',  # noqa: E501
-        (HISTORY_MAPPING_STATE_DECODED,),
+        (0,),  # decoded tx state
     )
 
 

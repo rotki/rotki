@@ -30,7 +30,7 @@ from rotkehlchen.chain.evm.decoding.weth.constants import (
 from rotkehlchen.chain.evm.decoding.weth.decoder import WethDecoder
 from rotkehlchen.chain.evm.structures import EvmTxReceipt, EvmTxReceiptLog
 from rotkehlchen.constants import ZERO
-from rotkehlchen.db.constants import HISTORY_MAPPING_STATE_DECODED, HISTORY_MAPPING_STATE_SPAM
+from rotkehlchen.db.constants import EVMTX_DECODED, EVMTX_SPAM
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
@@ -506,7 +506,7 @@ class EVMTransactionDecoder(ABC):
             with self.database.user_write() as write_cursor:
                 write_cursor.executemany(  # both spam marker but also count as decoded
                     'INSERT OR IGNORE INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
-                    [(tx_id, HISTORY_MAPPING_STATE_DECODED), (tx_id, HISTORY_MAPPING_STATE_SPAM)],
+                    [(tx_id, EVMTX_DECODED), (tx_id, EVMTX_SPAM)],
                 )
 
             return [], False
@@ -632,7 +632,7 @@ class EVMTransactionDecoder(ABC):
 
             write_cursor.execute(
                 'INSERT OR IGNORE INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
-                (tx_id, HISTORY_MAPPING_STATE_DECODED),
+                (tx_id, EVMTX_DECODED),
             )
 
         events = sorted(events, key=lambda x: x.sequence_index, reverse=False)
@@ -807,13 +807,13 @@ class EVMTransactionDecoder(ABC):
                 )
                 write_cursor.execute(
                     'DELETE from evm_tx_mappings WHERE tx_id=? AND value IN (?, ?)',
-                    (tx_id, HISTORY_MAPPING_STATE_DECODED, HISTORY_MAPPING_STATE_SPAM),
+                    (tx_id, EVMTX_DECODED, EVMTX_SPAM),
                 )
         else:  # see if events are already decoded and return them
             with self.database.conn.read_ctx() as cursor:
                 cursor.execute(
                     'SELECT COUNT(*) from evm_tx_mappings WHERE tx_id=? AND value=?',
-                    (tx_id, HISTORY_MAPPING_STATE_DECODED),
+                    (tx_id, EVMTX_DECODED),
                 )
                 if cursor.fetchone()[0] != 0:  # already decoded and in the DB
                     events = self.dbevents.get_history_events(
