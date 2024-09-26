@@ -97,7 +97,7 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
     }
   };
 
-  const resetAddressesData = async (chain: string | null, payload: AccountPayload): Promise<void> => {
+  const resetAddressesData = (chain: string | null, payload: AccountPayload): void => {
     try {
       const addressBookPayload = {
         address: payload.address,
@@ -121,14 +121,14 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
       const response = convertBtcAccounts(getNativeAsset, chain, await editBtcAccount(payload, chain));
 
       if (!('xpub' in payload))
-        await resetAddressesData(chain, payload);
+        resetAddressesData(chain, payload);
 
       return response;
     }
 
     const result = await editBlockchainAccount(payload, chain);
 
-    await resetAddressesData(chain, payload);
+    resetAddressesData(chain, payload);
 
     const chainInfo = {
       nativeAsset: getNativeAsset(chain),
@@ -140,7 +140,7 @@ export function useBlockchainAccounts(): UseBlockchainAccountsReturn {
 
   const editAgnosticAccount = async (chainType: string, payload: AccountPayload): Promise<boolean> => {
     const result = await editAgnosticBlockchainAccount(chainType, payload);
-    await resetAddressesData(null, payload);
+    resetAddressesData(null, payload);
     return result;
   };
 
