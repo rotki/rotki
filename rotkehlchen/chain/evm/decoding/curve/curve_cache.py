@@ -497,7 +497,7 @@ def query_curve_data(
         cache_type: Literal[CacheType.CURVE_LP_TOKENS],
         msg_aggregator: 'MessagesAggregator',
 ) -> list[CurvePoolData] | None:
-    """Query curve lp tokens, curve pools and curve gauges and saves them in the database.
+    """Query curve lp tokens, curve pools and curve gauges and save them in the database.
     First tries to find data via curve api and if fails to do so, queries the chain (metaregistry).
 
     Returns list of pools if either api or chain query was successful, otherwise None.
@@ -532,7 +532,7 @@ def query_curve_data(
             return None
 
     if len(pools_data) == 0:
-        # if no new pools update the last_queried_ts of db entries
+        # if no new pools, update the last_queried_ts of db entries
         with GlobalDBHandler().conn.write_ctx() as write_cursor:
             globaldb_update_cache_last_ts(
                 write_cursor=write_cursor,
