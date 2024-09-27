@@ -406,13 +406,21 @@ def test_oracle_ids_in_asset_collections(globaldb: 'GlobalDBHandler'):
         group_id_to_assets[mapping[0]].add(mapping[1])
         asset_to_group_id[mapping[1]] = mapping[0]
 
+    # TODO: This needs to go away and group types with price attributes need to
+    # be taken into account here: https://github.com/rotki/rotki/issues/8639
+    oracle_exceptions = {  # Exceptions for the oracle group test for groups that have contain both an asset and wrapped versions. Also some other exceptions  # noqa: E501
+        23,  # DAI group exception for XDAI
+        38,  # ETH group exception for WETH
+        40,  # btc and wrapped bitcoin
+        52,  # pol-matic. Have different oracle ids
+    }
     mismatches = []
     group_id_to_oracle_ids: dict[str, dict[str, str]] = defaultdict(dict)
     for oracle in ('coingecko', 'cryptocompare'):
         for group_id, asset_collection in group_id_to_assets.items():
             for identifier in asset_collection:
                 if identifier in assets and assets[identifier][oracle] not in {None, ''}:
-                    if group_id_to_oracle_ids[group_id].get(oracle) not in {None, ''}:
+                    if group_id not in oracle_exceptions and group_id_to_oracle_ids[group_id].get(oracle) not in {None, ''}:
                         if assets[identifier][oracle].lower() != group_id_to_oracle_ids[group_id][oracle].lower():  # noqa: E501
                             mismatches.append(f'{oracle} ({assets[identifier][oracle]} != {group_id_to_oracle_ids[group_id][oracle]}) mismatch for asset {identifier} in group {group_id}')  # noqa: E501
                     else:

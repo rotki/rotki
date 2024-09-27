@@ -1961,6 +1961,9 @@ class GlobalDBHandler:
     @staticmethod
     def get_collection_main_asset(identifier: str) -> str | None:
         """
+        TODO: ADjust this. We need a better approach. When you do remove the exceptions
+        where this is called.
+
         Given an asset identifier return id of the asset in the collection with the lowest
         lexicographical order.
         """
