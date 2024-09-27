@@ -1,3 +1,4 @@
+import datetime
 from collections import defaultdict
 from functools import wraps
 from typing import TYPE_CHECKING
@@ -30,9 +31,14 @@ from rotkehlchen.chain.ethereum.modules.octant.balances import OctantBalances
 from rotkehlchen.chain.ethereum.modules.safe.balances import SafeBalances
 from rotkehlchen.chain.ethereum.modules.safe.constants import SAFE_TOKEN_ID
 from rotkehlchen.chain.ethereum.modules.thegraph.balances import ThegraphBalances
+from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.compound.v3.balances import Compoundv3Balances
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
+from rotkehlchen.chain.evm.decoding.extrafi.cache import (
+    get_existing_reward_pools,
+    query_extrafi_data,
+)
 from rotkehlchen.chain.evm.decoding.hop.balances import HopBalances
 from rotkehlchen.chain.evm.decoding.velodrome.constants import CPT_VELODROME
 from rotkehlchen.chain.evm.tokens import TokenBalancesType
@@ -54,6 +60,8 @@ from rotkehlchen.constants.assets import (
 from rotkehlchen.constants.misc import ONE
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.cache import globaldb_get_unique_cache_last_queried_ts_by_key
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.arbitrum_one import get_arbitrum_allthatnode
 from rotkehlchen.tests.utils.constants import CURRENT_PRICE_MOCK
 from rotkehlchen.tests.utils.ethereum import (
@@ -61,6 +69,7 @@ from rotkehlchen.tests.utils.ethereum import (
     wait_until_all_nodes_connected,
 )
 from rotkehlchen.types import (
+    CacheType,
     ChainID,
     ChecksumEvmAddress,
     EvmTokenKind,
@@ -79,7 +88,6 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.chain.optimism.decoding.decoder import OptimismTransactionDecoder
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
-    from rotkehlchen.globaldb.handler import GlobalDBHandler
     from rotkehlchen.inquirer import Inquirer
 
 
@@ -911,7 +919,7 @@ def test_extrafi_lending_balances(
 
     with globaldb.conn.read_ctx() as cursor:
         assert cursor.execute(
-            'SELECT key, value FROM unique_cache WHERE key LIKE "EXTRAFI%"',
+            'SELECT key, value FROM unique_cache WHERE key LIKE "EXTRAFI_LENDING_RESERVES%"',
         ).fetchall() == [(
             'EXTRAFI_LENDING_RESERVES1035',
             '0x9560e827aF36c94D2Ac33a39bCE1Fe78631088Db',
@@ -952,7 +960,7 @@ def test_extrafi_farm_balances(
 
     with globaldb.conn.read_ctx() as cursor:
         assert cursor.execute(
-            'SELECT key, value FROM unique_cache WHERE key LIKE "EXTRAFI%"',
+            'SELECT key, value FROM unique_cache WHERE key LIKE "EXTRAFI_FARM_METADADATA%"',
         ).fetchall() == [(
             'EXTRAFI_FARM_METADADATA845320',
             '["0x61366A4e6b1DB1b85DD701f2f4BFa275EF271197", "0xA3d1a8DEB97B111454B294E2324EfAD13a9d8396", "0xB79DD08EA68A908A97220C76d19A6aA9cBDE4376"]',  # noqa: E501
@@ -969,3 +977,49 @@ def test_extrafi_farm_balances(
             usd_value=FVal('10012.6978598973939729841870'),
         )},
     )}
+
+
+@pytest.mark.freeze_time
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+def test_extrafi_cache(optimism_inquirer: 'OptimismInquirer', freezer):
+    """Check that the cache gets populated and timestamp updated if
+    we requery again"""
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        write_cursor.execute(
+            'DELETE FROM general_cache WHERE key LIKE "EXTRAFI%"',
+        )
+        write_cursor.execute(
+            'DELETE FROM unique_cache WHERE key LIKE "EXTRAFI%"',
+        )
+
+    start_ts = 1727436933
+    freezer.move_to(datetime.datetime.fromtimestamp(start_ts, tz=datetime.UTC))
+    query_extrafi_data(
+        inquirer=optimism_inquirer,
+        cache_type=CacheType.EXTRAFI_NEXT_RESERVE_ID,
+        msg_aggregator=optimism_inquirer.database.msg_aggregator,
+    )
+    chain = str(optimism_inquirer.chain_id.serialize_for_db())
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        existing_pools = get_existing_reward_pools(chain_id=ChainID.OPTIMISM)
+        assert '0x1A6cB72ba9aD6Cf0855D5B497e8E1485A3B3FE39' in existing_pools[0]
+        last_queried_ts = globaldb_get_unique_cache_last_queried_ts_by_key(
+            cursor=cursor,
+            key_parts=(CacheType.EXTRAFI_NEXT_RESERVE_ID, chain),
+        )
+        assert should_update_protocol_cache(
+            cache_key=CacheType.EXTRAFI_NEXT_RESERVE_ID,
+            args=(chain,),
+        ) is False
+
+    freezer.move_to(datetime.datetime.fromtimestamp(start_ts + 300, tz=datetime.UTC))
+    query_extrafi_data(  # check that the timestamp gets updated
+        inquirer=optimism_inquirer,
+        cache_type=CacheType.EXTRAFI_NEXT_RESERVE_ID,
+        msg_aggregator=optimism_inquirer.database.msg_aggregator,
+    )
+    with GlobalDBHandler().conn.read_ctx() as cursor:
+        assert globaldb_get_unique_cache_last_queried_ts_by_key(
+            cursor=cursor,
+            key_parts=(CacheType.EXTRAFI_NEXT_RESERVE_ID, chain),
+        ) > last_queried_ts

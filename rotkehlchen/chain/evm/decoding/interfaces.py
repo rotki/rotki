@@ -57,6 +57,10 @@ CACHE_QUERY_METHOD_TYPE = (
         list | None,
     ] |
     Callable[
+        ['EthereumInquirer', Literal[CacheType.EXTRAFI_NEXT_RESERVE_ID], 'MessagesAggregator'],
+        list | None,
+    ] |
+    Callable[
         ['EthereumInquirer', Literal[CacheType.CONVEX_POOL_ADDRESS], 'MessagesAggregator'],
         dict | None,
     ] |

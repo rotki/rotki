@@ -1,14 +1,20 @@
 import logging
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.utils import (
     asset_normalized_value,
     token_normalized_value,
     token_normalized_value_decimals,
 )
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
+from rotkehlchen.chain.evm.decoding.extrafi.cache import (
+    get_existing_reward_pools,
+    query_extrafi_data,
+)
 from rotkehlchen.chain.evm.decoding.extrafi.constants import (
     CLAIM,
     CLOSE_POSITION_PARTIALLY,
@@ -26,7 +32,7 @@ from rotkehlchen.chain.evm.decoding.extrafi.constants import (
     VOTE_ESCROW,
 )
 from rotkehlchen.chain.evm.decoding.extrafi.utils import maybe_query_farm_data
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableCacheDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -43,7 +49,7 @@ from rotkehlchen.history.events.structures.types import (
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
-from rotkehlchen.types import EvmTokenKind
+from rotkehlchen.types import CacheType, EvmTokenKind
 from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, timestamp_to_date
 
 if TYPE_CHECKING:
@@ -56,7 +62,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class ExtrafiCommonDecoder(DecoderInterface):
+class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
 
     def __init__(
             self,
@@ -65,6 +71,14 @@ class ExtrafiCommonDecoder(DecoderInterface):
             msg_aggregator: 'MessagesAggregator',
             extra_token_identifier: str,
     ) -> None:
+        ReloadableCacheDecoderMixin.__init__(
+            self,
+            evm_inquirer=evm_inquirer,
+            cache_type_to_check_for_freshness=CacheType.EXTRAFI_NEXT_RESERVE_ID,
+            query_data_method=query_extrafi_data,
+            read_data_from_cache_method=get_existing_reward_pools,
+            chain_id=evm_inquirer.chain_id,
+        )
         super().__init__(
             evm_inquirer=evm_inquirer,
             base_tools=base_tools,
@@ -399,6 +413,35 @@ class ExtrafiCommonDecoder(DecoderInterface):
         if context.tx_log.topics[0] == EXACT_REPAY:
             return self._handle_farm_repayment(context)
         return DEFAULT_DECODING_OUTPUT
+
+    def decode_lending_claim_reward(self, context: DecoderContext) -> DecodingOutput:
+        if context.tx_log.topics[0] != REWARD_PAID:
+            return DEFAULT_DECODING_OUTPUT
+
+        token_address = hex_or_bytes_to_address(context.tx_log.topics[2])
+        token = get_or_create_evm_token(
+            userdb=self.evm_inquirer.database,
+            evm_address=token_address,
+            evm_inquirer=self.evm_inquirer,
+            chain_id=self.evm_inquirer.chain_id,
+        )
+        claimed = hex_or_bytes_to_int(context.tx_log.data[0:32])
+
+        for event in context.decoded_events:
+            if (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.asset == token and
+                token_normalized_value(token_amount=claimed, token=token) == event.balance.amount
+            ):
+                event.event_subtype = HistoryEventSubType.REWARD
+                event.counterparty = CPT_EXTRAFI
+                event.notes = f'Claim {event.balance.amount} {token.symbol_or_name()} from Extrafi lending'  # noqa: E501
+                break
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def _cache_mapping_methods(self) -> tuple[Callable[[DecoderContext], DecodingOutput]]:
+        return (self.decode_lending_claim_reward,)
 
     def addresses_to_decoders(self) -> dict['ChecksumEvmAddress', tuple[Any, ...]]:
         return {  # same addresses are used in base and optimism
