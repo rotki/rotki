@@ -37,12 +37,20 @@ const router = useRouter();
 
 const etherscanApiKeyAlert = computed(() => {
   const selectedChain = get(chain);
+  const currentModelValue = get(modelValue);
 
-  if (selectedChain && selectedChain !== 'multievm' && get(isEvm(selectedChain))) {
+  if (
+    selectedChain
+    && get(isEvm(selectedChain))
+    && currentModelValue.mode === 'add'
+    && 'evm' in currentModelValue
+    && currentModelValue.evm
+  ) {
     const chainName = selectedChain === 'eth' ? 'ethereum' : selectedChain;
+    const displayChain = toHumanReadable(selectedChain, 'sentence');
     if (!get(apiKey('etherscan', chainName))) {
       return {
-        message: t('external_services.etherscan.api_key_message', { chain: selectedChain }),
+        message: t('external_services.etherscan.api_key_message', { chain: displayChain }),
         action: t('notification_messages.missing_api_key.action'),
         chainName,
       };
@@ -55,14 +63,6 @@ const etherscanApiKeyAlert = computed(() => {
 function navigateToApiKeySettings(chainName: string) {
   router.push(`/api-keys/external#${chainName}`);
 }
-
-watch(chain, loadApiKeys);
-
-onMounted(async () => {
-  await loadApiKeys();
-  if (!get(apiKey('etherscan', 'ethereum')))
-    set(chain, 'eth');
-});
 
 async function validate(): Promise<boolean> {
   const selectedForm = get(form);
@@ -136,6 +136,14 @@ watch(inputMode, (mode) => {
       chain: selectedChain,
     });
   }
+});
+
+watch(chain, loadApiKeys);
+
+onMounted(async () => {
+  await loadApiKeys();
+  if (!get(apiKey('etherscan', 'ethereum')))
+    set(chain, 'eth');
 });
 
 defineExpose({
