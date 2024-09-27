@@ -19,7 +19,7 @@ onMounted(async () => {
     </template>
 
     <EtherscanApiKeys />
-    <BlockscoutApiKey />
+    <BlockscoutApiKeys />
     <CryptoCompareApiKey />
     <BeaconchainApiKey />
     <CovalentApiKey />

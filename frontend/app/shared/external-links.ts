@@ -20,6 +20,15 @@ export const etherscanLinks = {
   scroll: 'https://scrollscan.com/myapikey',
 };
 
+export const blockscoutLinks = {
+  ethereum: 'https://eth.blockscout.com/account/api-key',
+  optimism: 'https://optimism.blockscout.com/account/api-key',
+  polygonPos: 'https://polygon.blockscout.com/account/api-key',
+  arbitrumOne: 'https://arbitrum.blockscout.com/account/api-key',
+  base: 'https://base.blockscout.com/account/api-key',
+  gnosis: 'https://gnosis.blockscout.com/account/api-key',
+};
+
 export const externalLinks = {
   premium: `${BASE_URL}products`,
   usageGuide: USAGE_GUIDE_URL,

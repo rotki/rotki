@@ -214,13 +214,13 @@ const Auth = z.object({
 export type Auth = z.infer<typeof Auth>;
 
 export const ExternalServiceKeys = z.object({
-  etherscan: z.record(ApiKey.optional()).optional(),
+  etherscan: z.record(ApiKey.nullable()).optional(),
   cryptocompare: ApiKey.optional(),
   covalent: ApiKey.optional(),
   beaconchain: ApiKey.optional(),
   loopring: ApiKey.optional(),
   opensea: ApiKey.optional(),
-  blockscout: ApiKey.optional(),
+  blockscout: z.record(ApiKey.nullable()).optional(),
   monerium: Auth.optional(),
   thegraph: ApiKey.optional(),
   gnosis_pay: ApiKey.optional(),

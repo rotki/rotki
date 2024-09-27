@@ -2,11 +2,10 @@ import type { Auth, ExternalServiceKey, ExternalServiceKeys, ExternalServiceName
 import type { MaybeRef } from '@vueuse/core';
 
 function getName(name: ExternalServiceName, chain?: string): string {
-  if (name === 'etherscan') {
-    assert(chain, 'chain is missing for etherscan');
+  if (name === 'etherscan' || name === 'blockscout') {
+    assert(chain, `chain is missing for ${name}`);
     if (chain === 'ethereum')
       return name;
-
     return `${chain}_${name}`;
   }
   return name;
@@ -26,6 +25,7 @@ interface UseExternalApiKeysReturn {
   load: () => Promise<void>;
   save: (payload: ExternalServiceKey, postConfirmAction?: () => Promise<void> | void) => Promise<void>;
   confirmDelete: (name: string, postConfirmAction?: () => Promise<void> | void) => void;
+  keys: Ref<ExternalServiceKeys | undefined>;
 }
 
 export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof useI18n>['t']): UseExternalApiKeysReturn => {
@@ -46,10 +46,10 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
     if (!items)
       return '';
 
-    if (service === 'etherscan') {
+    if (service === 'etherscan' || service === 'blockscout') {
       const itemService = items[service];
       const chainId = get(chain);
-      assert(chainId, 'missing chain for etherscan');
+      assert(chainId, `missing chain for ${service}`);
 
       const transformedChainId = transformCase(chainId, true);
 
@@ -73,7 +73,7 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
     const items = get(keys);
     const service = get(name);
 
-    if (!items || service === 'etherscan')
+    if (!items || service === 'etherscan' || service === 'blockscout')
       return null;
 
     const itemService = items[service];
@@ -199,5 +199,6 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
     load,
     save,
     confirmDelete,
+    keys,
   };
 });
