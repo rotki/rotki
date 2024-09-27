@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, cast, get_args, overlo
 from zipfile import BadZipFile, ZipFile
 
 import gevent
-from flask import Response, make_response, send_file
+from flask import Response, after_this_request, make_response, send_file
 from gevent.event import Event
 from gevent.lock import Semaphore
 from marshmallow.exceptions import ValidationError
@@ -375,6 +375,17 @@ def login_lock() -> Callable:
                 return func(rest_api, **kwargs)
         return inner
     return wrapper
+
+
+def register_post_download_cleanup(temp_file: Path) -> None:
+    @after_this_request
+    def do_cleanup(response: Response) -> Response:
+        try:
+            temp_file.unlink()
+            temp_file.parent.rmdir()
+        except (FileNotFoundError, PermissionError, OSError) as e:
+            log.warning(f'Failed to clean up after download of {temp_file}: {e!s}')
+        return response
 
 
 class RestAPI:
@@ -1765,6 +1776,7 @@ class RestAPI:
             return api_response(wrap_in_fail_result('Could not create a zip archive'), status_code=HTTPStatus.CONFLICT)  # noqa: E501
 
         try:
+            register_post_download_cleanup(Path(zipfile))
             return send_file(
                 path_or_file=zipfile,
                 mimetype='application/zip',
@@ -3895,6 +3907,7 @@ class RestAPI:
             )
 
         if path is None:
+            register_post_download_cleanup(zip_path)
             return send_file(
                 path_or_file=zip_path,
                 mimetype='application/zip',
@@ -4010,6 +4023,7 @@ class RestAPI:
             return api_response(wrap_in_fail_result('Could not create a zip archive'), status_code=HTTPStatus.CONFLICT)  # noqa: E501
 
         try:
+            register_post_download_cleanup(Path(zipfile_path))
             return send_file(
                 path_or_file=zipfile_path,
                 mimetype='application/zip',
@@ -4727,6 +4741,7 @@ class RestAPI:
 
         if directory_path is None:
             try:
+                register_post_download_cleanup(exportpath)
                 return send_file(
                     path_or_file=exportpath,
                     mimetype='text/csv',
@@ -4814,6 +4829,7 @@ class RestAPI:
                         csv_delimiter=settings.csv_export_delimiter,
                         headers=headers.keys(),
                     )
+                    register_post_download_cleanup(file_path)
                     return send_file(
                         path_or_file=file_path,
                         mimetype='text/csv',

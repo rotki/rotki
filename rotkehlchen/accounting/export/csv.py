@@ -273,7 +273,6 @@ class CSVExporter(CustomizableDateMixin):
             events: list['ProcessedAccountingEvent'],
             pnls: PnlTotals,
     ) -> tuple[bool, str]:
-        # TODO: Find a way to properly delete the directory after send is complete
         dirpath = Path(mkdtemp())
         success, msg = self.export(events=events, pnls=pnls, directory=dirpath)
         if not success:
