@@ -44,7 +44,7 @@ const etherscanApiKeyAlert = computed(() => {
     && get(isEvm(selectedChain))
     && currentModelValue.mode === 'add'
     && 'evm' in currentModelValue
-    && currentModelValue.evm
+    && !currentModelValue.evm
   ) {
     const chainName = selectedChain === 'eth' ? 'ethereum' : selectedChain;
     const displayChain = toHumanReadable(selectedChain, 'sentence');
