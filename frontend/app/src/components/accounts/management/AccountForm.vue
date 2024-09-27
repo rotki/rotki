@@ -31,6 +31,38 @@ const errors = defineModel<ValidationErrors>('errorMessages', { required: true }
 const chain = useRefPropVModel(modelValue, 'chain');
 
 const { isEvm } = useSupportedChains();
+const { t } = useI18n();
+const { apiKey, load: loadApiKeys } = useExternalApiKeys(t);
+const router = useRouter();
+
+const etherscanApiKeyAlert = computed(() => {
+  const selectedChain = get(chain);
+
+  if (selectedChain && selectedChain !== 'multievm' && get(isEvm(selectedChain))) {
+    const chainName = selectedChain === 'eth' ? 'ethereum' : selectedChain;
+    if (!get(apiKey('etherscan', chainName))) {
+      return {
+        message: t('external_services.etherscan.api_key_message', { chain: selectedChain }),
+        action: t('notification_messages.missing_api_key.action'),
+        chainName,
+      };
+    }
+  }
+
+  return null;
+});
+
+function navigateToApiKeySettings(chainName: string) {
+  router.push(`/api-keys/external#${chainName}`);
+}
+
+watch(chain, loadApiKeys);
+
+onMounted(async () => {
+  await loadApiKeys();
+  if (!get(apiKey('etherscan', 'ethereum')))
+    set(chain, 'eth');
+});
 
 async function validate(): Promise<boolean> {
   const selectedForm = get(form);
@@ -113,6 +145,21 @@ defineExpose({
 
 <template>
   <div data-cy="blockchain-balance-form">
+    <RuiAlert
+      v-if="etherscanApiKeyAlert"
+      type="warning"
+      class="mb-4"
+    >
+      {{ etherscanApiKeyAlert.message }}
+      <a
+        href="#"
+        class="font-medium underline"
+        @click.prevent="navigateToApiKeySettings(etherscanApiKeyAlert.chainName)"
+      >
+        {{ etherscanApiKeyAlert.action }}
+      </a>
+    </RuiAlert>
+
     <AccountSelector
       v-if="chain"
       v-model:input-mode="inputMode"
