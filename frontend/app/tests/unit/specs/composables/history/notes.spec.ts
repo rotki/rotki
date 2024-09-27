@@ -8,6 +8,9 @@ vi.mock('@/composables/assets/retrieval', () => ({
       if (isEvmIdentifier(identifier))
         return 'USDC';
 
+      if (identifier === '0xdeadbeef')
+        return '';
+
       return identifier;
     }),
   }),
@@ -353,5 +356,11 @@ describe('composables::history/notes', () => {
     ];
 
     expect(formatted).toMatchObject(expected);
+  });
+
+  it('should properly handle an asset resolving to empty string', () => {
+    const notes = 'Sell JUNO for USD. Amount out';
+    const formatted = get(formatNotes({ notes, assetId: '0xdeadbeef' }));
+    expect(formatted).toMatchObject([{ type: 'word', word: 'Sell JUNO for USD. Amount out' }]);
   });
 });

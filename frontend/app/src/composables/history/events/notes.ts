@@ -155,7 +155,7 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
     const processedWords: string[] = [];
 
     for (let i = 0; i < words.length; i++) {
-      if (i + assetWords.length <= words.length
+      if (asset && i + assetWords.length <= words.length
         && words.slice(i, i + assetWords.length).join(' ') === asset) {
         processedWords.push(asset);
         i += assetWords.length - 1;
