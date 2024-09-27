@@ -31,6 +31,38 @@ const errors = defineModel<ValidationErrors>('errorMessages', { required: true }
 const chain = useRefPropVModel(modelValue, 'chain');
 
 const { isEvm } = useSupportedChains();
+const { t } = useI18n();
+const { apiKey, load: loadApiKeys } = useExternalApiKeys(t);
+const router = useRouter();
+
+const etherscanApiKeyAlert = computed(() => {
+  const selectedChain = get(chain);
+  const currentModelValue = get(modelValue);
+
+  if (
+    selectedChain
+    && get(isEvm(selectedChain))
+    && currentModelValue.mode === 'add'
+    && 'evm' in currentModelValue
+    && !currentModelValue.evm
+  ) {
+    const chainName = selectedChain === 'eth' ? 'ethereum' : selectedChain;
+    const displayChain = toHumanReadable(selectedChain, 'sentence');
+    if (!get(apiKey('etherscan', chainName))) {
+      return {
+        message: t('external_services.etherscan.api_key_message', { chain: displayChain }),
+        action: t('notification_messages.missing_api_key.action'),
+        chainName,
+      };
+    }
+  }
+
+  return null;
+});
+
+function navigateToApiKeySettings(chainName: string) {
+  router.push(`/api-keys/external#${chainName}`);
+}
 
 async function validate(): Promise<boolean> {
   const selectedForm = get(form);
@@ -106,6 +138,14 @@ watch(inputMode, (mode) => {
   }
 });
 
+watch(chain, loadApiKeys);
+
+onMounted(async () => {
+  await loadApiKeys();
+  if (!get(apiKey('etherscan', 'ethereum')))
+    set(chain, 'eth');
+});
+
 defineExpose({
   validate,
 });
@@ -113,6 +153,21 @@ defineExpose({
 
 <template>
   <div data-cy="blockchain-balance-form">
+    <RuiAlert
+      v-if="etherscanApiKeyAlert"
+      type="warning"
+      class="mb-4"
+    >
+      {{ etherscanApiKeyAlert.message }}
+      <a
+        href="#"
+        class="font-medium underline"
+        @click.prevent="navigateToApiKeySettings(etherscanApiKeyAlert.chainName)"
+      >
+        {{ etherscanApiKeyAlert.action }}
+      </a>
+    </RuiAlert>
+
     <AccountSelector
       v-if="chain"
       v-model:input-mode="inputMode"

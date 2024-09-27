@@ -2470,7 +2470,8 @@
       "delete_tooltip": "Deletes the {chain} Etherscan API key",
       "description": "Recommended for any EVM blockchain balances or transactions if you are not using your own node.",
       "hint": "Enter your {chain} Etherscan API key",
-      "title": "Etherscan"
+      "title": "Etherscan",
+      "api_key_message": "Please add an {chain} Etherscan API key to be able to query historical EVM transactions."
     },
     "get_api_key": "You can apply for an API key {link}",
     "loopring": {
