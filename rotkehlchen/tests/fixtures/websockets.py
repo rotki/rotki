@@ -41,7 +41,7 @@ class WebsocketReader:
                 while self.messages_num() != num:
                     gevent.sleep(0.2)
         except gevent.Timeout as e:
-            msg = f'Websocket reader did not contain {num} messages within {timeout} seconds'
+            msg = f'Websocket reader did not contain {num} messages within {timeout} seconds. Only found {self.messages_num()}'  # noqa: E501
             raise AssertionError(msg) from e
 
 

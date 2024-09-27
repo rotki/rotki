@@ -73,8 +73,8 @@ def assert_progress_message(msg, step_num, description, migration_version, migra
     assert msg['data']['target_version'] == LAST_DATA_MIGRATION
     migration = msg['data']['current_migration']
     assert migration['version'] == migration_version
-    assert migration['total_steps'] == (migration_steps if step_num != 0 else 0)
-    assert migration['current_step'] == step_num
+    assert migration['total_steps'] == migration_steps
+    assert migration['current_step'] == step_num + 1
     if description is not None:
         assert description in migration['description']
     else:
@@ -89,7 +89,7 @@ def assert_add_addresses_migration_ws_messages(
 ) -> None:
     """Asserts that all steps of a data migration that adds addresses are correctly applied
     by checking the websocket messages"""
-    num_messages = migration_steps + 1  # +1 for the message for added address
+    num_messages = migration_steps
     websocket_connection.wait_until_messages_num(num=num_messages, timeout=10)
     assert websocket_connection.messages_num() == num_messages
 
@@ -100,25 +100,23 @@ def assert_add_addresses_migration_ws_messages(
             assert sorted(msg['data'], key=operator.itemgetter('chain', 'address')) == sorted(
                 chain_to_added_address, key=operator.itemgetter('chain', 'address'),
             )  # checks that the addresses have been added
-        elif i == 0:  # new migration round message
-            assert_progress_message(msg, i, None, migration_version, migration_steps)
 
         if migration_version == 10:
-            if i == 1:
+            if i == 0:
                 assert_progress_message(msg, i, 'Fetching new spam assets info', migration_version, migration_steps)  # noqa: E501
-            elif i == 2:
+            elif i == 1:
                 assert_progress_message(msg, i, 'Ensuring polygon node consistency', migration_version, migration_steps)  # noqa: E501
-            if 3 <= i <= 6:
+            if 2 <= i <= 5:
                 assert_progress_message(msg, i, 'EVM chain activity', migration_version, migration_steps)  # noqa: E501
-            elif i == 7:
+            elif i == 6:
                 assert_progress_message(msg, i, 'Potentially write migrated addresses to the DB', migration_version, migration_steps)  # noqa: E501
 
         elif migration_version in {11, 12}:
-            if i == 1:
+            if i == 0:
                 assert_progress_message(msg, i, 'Fetching new spam assets and rpc data info', migration_version, migration_steps)  # noqa: E501
-            elif i in {2, 3}:
+            elif i in {1, 2}:
                 assert_progress_message(msg, i, 'EVM chain activity', migration_version, migration_steps)  # noqa: E501
-            elif i == 4:
+            elif i == 3:
                 assert_progress_message(msg, i, 'Potentially write migrated addresses to the DB', migration_version, migration_steps)  # noqa: E501
 
 
