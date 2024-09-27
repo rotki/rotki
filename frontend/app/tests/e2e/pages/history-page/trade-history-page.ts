@@ -129,7 +129,9 @@ export class TradeHistoryPage {
   }
 
   nextPage() {
-    cy.get('[data-cy=closed-trades] [data-cy=table-pagination] [class*=_navigation_] button:nth-child(3)').click();
+    cy.get('[data-cy=closed-trades] [data-cy=table-pagination] [class*=_navigation_] button:nth-child(3)')
+      .first()
+      .click();
   }
 
   shouldBeOnPage(range: string) {
