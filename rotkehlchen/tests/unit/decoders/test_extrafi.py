@@ -22,6 +22,7 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import Location, TimestampMS, deserialize_evm_tx_hash
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.base.node_inquirer import BaseInquirer
     from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
     from rotkehlchen.types import ChecksumEvmAddress
 
@@ -585,5 +586,108 @@ def test_vested_extra_base(base_inquirer, base_accounts):
             counterparty=CPT_EXTRAFI,
             address=VOTE_ESCROW,
             product=EvmProduct.STAKING,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_EXTRAFI]])
+@pytest.mark.parametrize('optimism_accounts', [['0x35d527C6aF6621DFc46f7CcCE92948d49CF1Fe27']])
+def test_extrafi_claim_lending(
+        optimism_inquirer: 'OptimismInquirer',
+        optimism_accounts: list['ChecksumEvmAddress'],
+        load_global_caches: list[str],
+):
+    tx_hash = deserialize_evm_tx_hash('0x6cca377983ebf715d83a3ea566e420d79abf545b8aad61c6bad68cc60fc57c05')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=optimism_inquirer,
+        tx_hash=tx_hash,
+        load_global_caches=load_global_caches,
+    )
+    timestamp, fee_amount, claimed_extra, claimed_op = TimestampMS(1727429719000), '0.000000266809434775', '8.888980847307437249', '0.137614520893025687'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(fee_amount)),
+            location_label=optimism_accounts[0],
+            notes=f'Burned {fee_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=41,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:10/erc20:0x2dAD3a13ef0C6366220f989157009e501e7938F8'),
+            balance=Balance(amount=FVal(claimed_extra)),
+            location_label=optimism_accounts[0],
+            notes=f'Claim {claimed_extra} EXTRA from Extrafi lending',
+            counterparty=CPT_EXTRAFI,
+            address=string_to_evm_address('0x5DC1a8Fa98508e342FA8CFf0c49ab57138d53337'),
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=43,
+            timestamp=timestamp,
+            location=Location.OPTIMISM,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=A_OP,
+            balance=Balance(amount=FVal(claimed_op)),
+            location_label=optimism_accounts[0],
+            notes=f'Claim {claimed_op} OP from Extrafi lending',
+            counterparty=CPT_EXTRAFI,
+            address=string_to_evm_address('0x5DC1a8Fa98508e342FA8CFf0c49ab57138d53337'),
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('load_global_caches', [[CPT_EXTRAFI]])
+@pytest.mark.parametrize('base_accounts', [['0x8887a050A8c6873c9cA7553e3F7Bfb0e9b36AEE1']])
+def test_extrafi_claim_lending_base(
+        base_inquirer: 'BaseInquirer',
+        base_accounts: list['ChecksumEvmAddress'],
+        load_global_caches: list[str],
+):
+    tx_hash = deserialize_evm_tx_hash('0xccefe09c6b3cfc9753494c28f07de309d26ccb5169ed478c93b4169776ac0edc')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=base_inquirer,
+        tx_hash=tx_hash,
+        load_global_caches=load_global_caches,
+    )
+    timestamp, fee_amount, claimed_extra = TimestampMS(1721419937000), '0.000001803922832983', '6.970955942301511307'  # noqa: E501
+    assert events == [
+        EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=0,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.SPEND,
+            event_subtype=HistoryEventSubType.FEE,
+            asset=A_ETH,
+            balance=Balance(amount=FVal(fee_amount)),
+            location_label=base_accounts[0],
+            notes=f'Burned {fee_amount} ETH for gas',
+            counterparty=CPT_GAS,
+        ), EvmEvent(
+            tx_hash=tx_hash,
+            sequence_index=284,
+            timestamp=timestamp,
+            location=Location.BASE,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:8453/erc20:0x2dAD3a13ef0C6366220f989157009e501e7938F8'),
+            balance=Balance(amount=FVal(claimed_extra)),
+            location_label=base_accounts[0],
+            notes=f'Claim {claimed_extra} EXTRA from Extrafi lending',
+            counterparty=CPT_EXTRAFI,
+            address=string_to_evm_address('0x79a5a9e97Dc8f4a1c2370E1049dB960275431793'),
         ),
     ]

@@ -1152,6 +1152,8 @@ class CacheType(Enum):
     HOP_POOL_ADDRESS = auto()
     EXTRAFI_LENDING_RESERVES = auto()  # maps reserve id + blockchain to the underlying token
     EXTRAFI_FARM_METADADATA = auto()
+    EXTRAFI_REWARD_CONTRACTS = auto()
+    EXTRAFI_NEXT_RESERVE_ID = auto()
 
     def serialize(self) -> str:
         # Using custom serialize method instead of SerializableEnumMixin since mixin replaces
@@ -1180,6 +1182,7 @@ UniqueCacheType = Literal[
     CacheType.HOP_POOL_ADDRESS,
     CacheType.EXTRAFI_LENDING_RESERVES,
     CacheType.EXTRAFI_FARM_METADADATA,
+    CacheType.EXTRAFI_NEXT_RESERVE_ID,
 ]
 
 UNIQUE_CACHE_KEYS: tuple[UniqueCacheType, ...] = typing.get_args(UniqueCacheType)
@@ -1195,6 +1198,7 @@ GeneralCacheType = Literal[
     CacheType.SPAM_ASSET_FALSE_POSITIVE,
     CacheType.GEARBOX_POOL_ADDRESS,
     CacheType.GEARBOX_POOL_LP_TOKENS,
+    CacheType.EXTRAFI_REWARD_CONTRACTS,
 ]
 
 
