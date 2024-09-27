@@ -106,6 +106,7 @@ declare global {
   const bigNumberSum: typeof import('./utils/calculation')['bigNumberSum']
   const bigNumberify: typeof import('@rotki/common')['bigNumberify']
   const bigNumberifyFromRef: typeof import('./utils/bignumbers')['bigNumberifyFromRef']
+  const blockscoutLinks: typeof import('../shared/external-links')['blockscoutLinks']
   const calculatePercentage: typeof import('./utils/calculation')['calculatePercentage']
   const calculateTotalProfitLoss: typeof import('./utils/report')['calculateTotalProfitLoss']
   const changeDateFormat: typeof import('./utils/date')['changeDateFormat']
@@ -977,6 +978,7 @@ declare module 'vue' {
     readonly bigNumberSum: UnwrapRef<typeof import('./utils/calculation')['bigNumberSum']>
     readonly bigNumberify: UnwrapRef<typeof import('@rotki/common')['bigNumberify']>
     readonly bigNumberifyFromRef: UnwrapRef<typeof import('./utils/bignumbers')['bigNumberifyFromRef']>
+    readonly blockscoutLinks: UnwrapRef<typeof import('../shared/external-links')['blockscoutLinks']>
     readonly calculatePercentage: UnwrapRef<typeof import('./utils/calculation')['calculatePercentage']>
     readonly calculateTotalProfitLoss: UnwrapRef<typeof import('./utils/report')['calculateTotalProfitLoss']>
     readonly changeDateFormat: UnwrapRef<typeof import('./utils/date')['changeDateFormat']>
@@ -1826,6 +1828,7 @@ declare module '@vue/runtime-core' {
     readonly bigNumberSum: UnwrapRef<typeof import('./utils/calculation')['bigNumberSum']>
     readonly bigNumberify: UnwrapRef<typeof import('@rotki/common')['bigNumberify']>
     readonly bigNumberifyFromRef: UnwrapRef<typeof import('./utils/bignumbers')['bigNumberifyFromRef']>
+    readonly blockscoutLinks: UnwrapRef<typeof import('../shared/external-links')['blockscoutLinks']>
     readonly calculatePercentage: UnwrapRef<typeof import('./utils/calculation')['calculatePercentage']>
     readonly calculateTotalProfitLoss: UnwrapRef<typeof import('./utils/report')['calculateTotalProfitLoss']>
     readonly changeDateFormat: UnwrapRef<typeof import('./utils/date')['changeDateFormat']>

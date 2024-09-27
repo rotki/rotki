@@ -95,7 +95,11 @@ describe('/settings/api-keys/external-services', () => {
   describe('first time', () => {
     beforeEach(async () => {
       const query = api.queryExternalServices as any;
-      query.mockResolvedValueOnce({});
+      query.mockResolvedValueOnce({
+        etherscan: {
+          ethereum: null,
+        },
+      });
       wrapper = createWrapper();
       await nextTick();
       await flushPromises();

@@ -1,33 +1,75 @@
 <script setup lang="ts">
+import { camelCase } from 'lodash-es';
+import { isBlockscoutKey } from '@/types/external';
+
+const props = defineProps<{ evmChain: string; chainName: string }>();
+const { evmChain } = toRefs(props);
+
 const name = 'blockscout';
 const { t } = useI18n();
 
-const { loading, apiKey, actionStatus, save, confirmDelete } = useExternalApiKeys(t);
+const { loading, apiKey, actionStatus, save, confirmDelete, getName } = useExternalApiKeys(t);
 
-const key = apiKey(name);
-const status = actionStatus(name);
+const key = apiKey(name, evmChain);
+const status = actionStatus(name, evmChain);
+const identifier = computed(() => getName(name, get(evmChain)));
+
+const { remove: removeNotification, prioritized } = useNotificationsStore();
+
+function removeBlockscoutNotification() {
+  const notification = prioritized.find(data => data.i18nParam?.props?.key === get(evmChain));
+
+  if (!notification)
+    return;
+
+  removeNotification(notification.id);
+}
+
+const link = computed(() => {
+  const location = camelCase(get(evmChain));
+  if (isBlockscoutKey(location))
+    return blockscoutLinks[location];
+
+  return undefined;
+});
 </script>
 
 <template>
-  <RuiCard>
-    <template #header>
-      {{ t('external_services.blockscout.title') }}
-    </template>
-    <template #subheader>
-      {{ t('external_services.blockscout.description') }}
-    </template>
-
-    <ServiceKey
-      :api-key="key"
-      :name="name"
-      :data-cy="name"
-      :label="t('external_services.api_key')"
-      :hint="t('external_services.blockscout.hint')"
-      :loading="loading"
-      :tooltip="t('external_services.blockscout.delete_tooltip')"
-      :status="status"
-      @save="save($event)"
-      @delete-key="confirmDelete($event)"
-    />
-  </RuiCard>
+  <ServiceKey
+    :api-key="key"
+    :name="identifier"
+    :data-cy="identifier"
+    :label="t('external_services.api_key')"
+    :hint="
+      t('external_services.blockscout.hint', {
+        chain: chainName,
+      })
+    "
+    :loading="loading"
+    :tooltip="
+      t('external_services.blockscout.delete_tooltip', {
+        chain: chainName,
+      })
+    "
+    :status="status"
+    class="pt-2"
+    @save="save($event, removeBlockscoutNotification)"
+    @delete-key="confirmDelete($event)"
+  >
+    <i18n-t
+      v-if="link"
+      tag="div"
+      class="text-rui-text-secondary text-body-2"
+      keypath="external_services.get_api_key"
+    >
+      <template #link>
+        <ExternalLink
+          color="primary"
+          :url="link"
+        >
+          {{ t('common.here') }}
+        </ExternalLink>
+      </template>
+    </i18n-t>
+  </ServiceKey>
 </template>

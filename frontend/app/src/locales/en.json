@@ -2438,9 +2438,9 @@
       "title": "Beaconcha.in"
     },
     "blockscout": {
-      "delete_tooltip": "Deletes the Blockscout API key",
-      "description": "rotki uses Blockscout to obtain information about ETH withdrawal queries, and more. An API key is only needed if you are being rate-limited.",
-      "hint": "Enter your Blockscout API key",
+      "delete_tooltip": "Deletes the {chain} Blockscout API key",
+      "description": "Alternative to Etherscan for querying EVM blockchain balances and transactions.",
+      "hint": "Enter your {chain} Blockscout API key",
       "title": "Blockscout"
     },
     "confirmation": {

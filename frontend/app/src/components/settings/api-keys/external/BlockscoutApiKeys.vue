@@ -7,8 +7,8 @@ const route = useRoute();
 const { getChainName } = useSupportedChains();
 
 const supportedChains = computed(() => {
-  const etherscanApiKeys = get(keys)?.etherscan || {};
-  return Object.keys(etherscanApiKeys).map((chain) => {
+  const blockscoutKeys = get(keys)?.blockscout || {};
+  return Object.keys(blockscoutKeys).map((chain) => {
     const id = transformCase(chain);
     return ({
       id,
@@ -40,12 +40,11 @@ onMounted(() => {
 <template>
   <RuiCard>
     <template #header>
-      {{ t('external_services.etherscan.title') }}
+      {{ t('external_services.blockscout.title') }}
     </template>
     <template #subheader>
-      {{ t('external_services.etherscan.description') }}
+      {{ t('external_services.blockscout.description') }}
     </template>
-
     <RuiTabs
       v-model="tabIndex"
       color="primary"
@@ -64,15 +63,13 @@ onMounted(() => {
         </div>
       </RuiTab>
     </RuiTabs>
-
     <RuiDivider class="mb-4" />
-
     <RuiTabItems v-model="tabIndex">
       <RuiTabItem
         v-for="chain in supportedChains"
         :key="chain.id"
       >
-        <EtherscanApiKey
+        <BlockscoutApiKey
           :evm-chain="chain.evmChainName"
           :chain-name="chain.name"
         />
