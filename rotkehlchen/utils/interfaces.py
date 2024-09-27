@@ -72,7 +72,6 @@ class ProgressUpdater(ABC):
         self.current_version = version
         self.current_round_total_steps = 0
         self.current_round_current_step = 0
-        self._notify_frontend()
 
     def set_total_steps(self, steps: int) -> None:
         """
