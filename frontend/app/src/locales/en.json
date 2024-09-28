@@ -2186,7 +2186,7 @@
     }
   },
   "decentralized_overview": {
-    "deprecated_warning": "This view is deprecated and does not show all supported protocols. Account and dashboard tokens should include all detected protocol tokens.",
+    "deprecated_warning": "This view is deprecated and does not show all supported protocols. Account and dashboard tokens, along with history events view should include all detected protocols and tokens",
     "empty_subtitle": "Please add at least one ETH account that has DeFi balances",
     "empty_title": "No DeFi overview can be shown",
     "loading": "Please wait while your defi balances are getting loaded...",
