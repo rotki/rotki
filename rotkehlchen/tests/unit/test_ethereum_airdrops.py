@@ -192,6 +192,50 @@ def _mock_airdrop_list(url: str, timeout: int = 0, headers: dict | None = None):
         return mock_response
 
 
+def prepare_airdrop_mock_response(
+        url: str,
+        mock_airdrop_index: dict,
+        mock_airdrop_data: dict,
+        update_airdrop_index: bool = False,
+):
+    """Mocking the airdrop data is very convenient here because the airdrop data is quite large
+    and read timeout errors can happen even with 90secs threshold. Vcr-ing it is not possible
+    because the vcr yaml file is above the github limit of 100MB. The schema of AIRDROPS_INDEX
+    is checked in the rotki/data repo."""
+    mock_response = Mock()
+    if update_airdrop_index is True:
+        mock_airdrop_index['airdrops']['diva']['file_hash'] = 'updated_hash'
+        mock_airdrop_index['poap_airdrops']['aave_v2_pioneers'][3] = 'updated_hash'
+        mock_response.headers = {'ETag': 'updated_etag'}
+    url_to_data_map = {
+        AIRDROPS_INDEX: mock_airdrop_index,
+        **dict(mock_airdrop_data.items()),
+    }
+
+    if url == AIRDROPS_INDEX:
+        mock_response.text = json.dumps(mock_airdrop_index)
+        mock_response.json = lambda: mock_airdrop_index
+        mock_response.headers = {'ETag': 'etag'}
+    elif url.startswith('https://claims.eigenfoundation.org'):
+        if url.endswith(TEST_ADDR2):
+            mock_response.text = """{"queryId":"1714640773899","status":"Complete","data":{"pipelines":{"tokenQualified":10}}}"""  # noqa: E501
+        else:
+            mock_response.text = """{"queryId":"1714651721784","status":"Complete","data":{"pipelines":{"tokenQualified":0}}}"""  # noqa: E501
+        mock_response.json = lambda: json.loads(mock_response.text)
+        mock_response.status_code = HTTPStatus.OK
+    elif '.parquet' in url:
+        mock_response.text = url_to_data_map.get(url, 'address,tokens\n')  # Return the data from the dictionary or just a header if 'url' is not found  # noqa: E501
+        parquet_file = BytesIO()
+        pl.read_csv(StringIO(mock_response.text), infer_schema_length=0).write_parquet(parquet_file)  # noqa: E501
+        parquet_file.seek(0)
+        mock_response.content = parquet_file.read()
+    else:
+        mock_response.text = url_to_data_map.get(url, 'address,tokens\n')  # Return the data from the dictionary or just a header if 'url' is not found  # noqa: E501
+        assert isinstance(mock_response.text, str)
+        mock_response.content = mock_response.text.encode('utf-8')
+    return mock_response
+
+
 @pytest.mark.freeze_time
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
@@ -268,64 +312,35 @@ def test_check_airdrops(
     with database.conn.write_ctx() as write_cursor:
         events_db.add_history_events(write_cursor, claim_events)
 
-    def _prepare_mock_response(url: str, update_airdrop_index: bool = False):
-        """Mocking the airdrop data is very convenient here because the airdrop data is quite large
-        and read timeout errors can happen even with 90secs threshold. Vcr-ing it is not possible
-        because the vcr yaml file is above the github limit of 100MB. The schema of AIRDROPS_INDEX
-        is checked in the rotki/data repo."""
-        mock_response = Mock()
-        if update_airdrop_index is True:
-            mock_airdrop_index['airdrops']['diva']['file_hash'] = 'updated_hash'
-            mock_airdrop_index['poap_airdrops']['aave_v2_pioneers'][3] = 'updated_hash'
-            mock_response.headers = {'ETag': 'updated_etag'}
-        url_to_data_map = {
-            AIRDROPS_INDEX: mock_airdrop_index,
-            f'{AIRDROPS_REPO_BASE}/airdrops/uniswap.parquet':
-                f'address,uni,is_lp,is_user,is_socks\n{TEST_ADDR1},400,False,True,False\n{TEST_ADDR2},400.050642,True,True,False\n',
-            f'{AIRDROPS_REPO_BASE}/airdrops/1inch.parquet':
-                f'address,tokens\n{TEST_ADDR1},630.374421472277638654\n',
-            f'{AIRDROPS_REPO_BASE}/airdrops/shapeshift.parquet':
-                f'address,tokens\n{TEST_ADDR1},200\n',
-            f'{AIRDROPS_REPO_BASE}/airdrops/cow_gnosis.parquet':
-                f'address,tokens\n{TEST_ADDR1},99807039723201809834\n',
-            f'{AIRDROPS_REPO_BASE}/airdrops/diva.parquet':
-                f'address,tokens\n{TEST_ADDR1},84000\n',
-            f'{AIRDROPS_REPO_BASE}/airdrops/grain_iou.parquet':
-                f'address,tokens\n{TEST_ADDR2},16301717650649890035791\n',
-            f'{AIRDROPS_REPO_BASE}/airdrops/shutter.parquet':
-                f'address,tokens\n{TEST_ADDR2},394857.029384576349787465\n',
-            f'{AIRDROPS_REPO_BASE}/airdrops/poap/poap_aave_v2_pioneers.json':
-                f'{{"{TEST_POAP1}": [\n566\n]}}',
-            f'{AIRDROPS_REPO_BASE}/airdrops/degen2_season1.parquet':
-                f'address,tokens\n{TEST_ADDR2},394857.029384576349787465\n',
-            f'{AIRDROPS_REPO_BASE}/airdrops/degen2_season3.parquet':
-                f'address,tokens\n{TEST_ADDR2},394857.029384576349787465\n',
-        }
-        if url == AIRDROPS_INDEX:
-            mock_response.text = json.dumps(mock_airdrop_index)
-            mock_response.json = lambda: mock_airdrop_index
-            mock_response.headers = {'ETag': 'etag'}
-        elif url.startswith('https://claims.eigenfoundation.org'):
-            if url.endswith(TEST_ADDR2):
-                mock_response.text = """{"queryId":"1714640773899","status":"Complete","data":{"pipelines":{"tokenQualified":10}}}"""  # noqa: E501
-            else:
-                mock_response.text = """{"queryId":"1714651721784","status":"Complete","data":{"pipelines":{"tokenQualified":0}}}"""  # noqa: E501
-            mock_response.json = lambda: json.loads(mock_response.text)
-            mock_response.status_code = HTTPStatus.OK
-        elif '.parquet' in url:
-            mock_response.text = url_to_data_map.get(url, 'address,tokens\n')  # Return the data from the dictionary or just a header if 'url' is not found  # noqa: E501
-            parquet_file = BytesIO()
-            pl.read_csv(StringIO(mock_response.text), infer_schema_length=0).write_parquet(parquet_file)  # noqa: E501
-            parquet_file.seek(0)
-            mock_response.content = parquet_file.read()
-        else:
-            mock_response.text = url_to_data_map.get(url, 'address,tokens\n')  # Return the data from the dictionary or just a header if 'url' is not found  # noqa: E501
-            assert isinstance(mock_response.text, str)
-            mock_response.content = mock_response.text.encode('utf-8')
-        return mock_response
+    mock_airdrop_data = {
+        f'{AIRDROPS_REPO_BASE}/airdrops/uniswap.parquet':
+            f'address,uni,is_lp,is_user,is_socks\n{TEST_ADDR1},400,False,True,False\n{TEST_ADDR2},400.050642,True,True,False\n',
+        f'{AIRDROPS_REPO_BASE}/airdrops/1inch.parquet':
+            f'address,tokens\n{TEST_ADDR1},630.374421472277638654\n',
+        f'{AIRDROPS_REPO_BASE}/airdrops/shapeshift.parquet':
+            f'address,tokens\n{TEST_ADDR1},200\n',
+        f'{AIRDROPS_REPO_BASE}/airdrops/cow_gnosis.parquet':
+            f'address,tokens\n{TEST_ADDR1},99807039723201809834\n',
+        f'{AIRDROPS_REPO_BASE}/airdrops/diva.parquet':
+            f'address,tokens\n{TEST_ADDR1},84000\n',
+        f'{AIRDROPS_REPO_BASE}/airdrops/grain_iou.parquet':
+            f'address,tokens\n{TEST_ADDR2},16301717650649890035791\n',
+        f'{AIRDROPS_REPO_BASE}/airdrops/shutter.parquet':
+            f'address,tokens\n{TEST_ADDR2},394857.029384576349787465\n',
+        f'{AIRDROPS_REPO_BASE}/airdrops/poap/poap_aave_v2_pioneers.json':
+            f'{{"{TEST_POAP1}": [\n566\n]}}',
+        f'{AIRDROPS_REPO_BASE}/airdrops/degen2_season1.parquet':
+            f'address,tokens\n{TEST_ADDR2},394857.029384576349787465\n',
+        f'{AIRDROPS_REPO_BASE}/airdrops/degen2_season3.parquet':
+            f'address,tokens\n{TEST_ADDR2},394857.029384576349787465\n',
+    }
 
     def mock_requests_get(url: str, timeout: int = 0, headers: dict | None = None):  # pylint: disable=unused-argument
-        return _prepare_mock_response(url)
+        return prepare_airdrop_mock_response(
+            url=url,
+            mock_airdrop_index=mock_airdrop_index,
+            mock_airdrop_data=mock_airdrop_data,
+        )
 
     # invalid metadata index is already present
     with globaldb.conn.write_ctx() as write_cursor:
@@ -466,7 +481,12 @@ def test_check_airdrops(
     }]
 
     def update_mock_requests_get(url: str, timeout: int = 0, headers: dict | None = None):  # pylint: disable=unused-argument
-        return _prepare_mock_response(url, update_airdrop_index=True)
+        return prepare_airdrop_mock_response(
+            url=url,
+            mock_airdrop_index=mock_airdrop_index,
+            mock_airdrop_data=mock_airdrop_data,
+            update_airdrop_index=True,
+        )
 
     freezer.move_to(datetime.datetime.fromtimestamp(1721000001 + 12 * HOUR_IN_SECONDS, tz=datetime.UTC))  # noqa: E501
     with (
