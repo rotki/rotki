@@ -4,14 +4,14 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
-from rotkehlchen.assets.asset import Asset, EvmToken
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.balances import BlockchainBalances
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_BCH, A_BTC, A_ETH, A_LQTY, A_LUSD, A_POLYGON_POS_MATIC
 from rotkehlchen.fval import FVal
 from rotkehlchen.tests.utils.factories import UNIT_BTC_ADDRESS1, make_evm_address
 from rotkehlchen.tests.utils.xpubs import setup_db_for_xpub_tests_impl
-from rotkehlchen.types import ChainID, EvmTokenKind, SupportedBlockchain
+from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, SupportedBlockchain
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
@@ -209,22 +209,32 @@ def test_protocol_balances(blockchain: 'ChainsAggregator') -> None:
 
 @pytest.mark.vcr
 @pytest.mark.parametrize('polygon_pos_accounts', [['0x4bBa290826C253BD854121346c370a9886d1bC26']])
-def test_native_token_balance(blockchain, polygon_pos_accounts):
+def test_native_token_balance(
+        blockchain: 'ChainsAggregator',
+        polygon_pos_accounts: list[ChecksumEvmAddress],
+):
     """
     Test that for different blockchains different assets are used as native tokens.
     We test it by requesting a Polygon POS balance and checking MATIC balance.
     """
     address = polygon_pos_accounts[0]
-    sorted_call_order = sorted(blockchain.polygon_pos.node_inquirer.default_call_order())
+    sorted_call_order = sorted(blockchain.polygon_pos.node_inquirer.default_call_order())  # type: ignore
 
     def mock_default_call_order(skip_etherscan: bool = False):  # pylint: disable=unused-argument
         # return sorted_call_order to remove randomness, and thus make it vcr'able
         return sorted_call_order
 
-    with patch.object(
-        blockchain.polygon_pos.node_inquirer,
-        'default_call_order',
-        mock_default_call_order,
+    usdc = EvmToken('eip155:137/erc20:0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359')
+    weth = EvmToken('eip155:137/erc20:0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619')
+    usdt = EvmToken('eip155:137/erc20:0xc2132D05D31c914a87C6611C10748AEb04B58e8F')
+    pol = A_POLYGON_POS_MATIC.resolve_to_evm_token()
+
+    with (
+        patch.object(blockchain.polygon_pos.node_inquirer, 'default_call_order', mock_default_call_order),  # noqa: E501
+        patch(
+            'rotkehlchen.globaldb.handler.GlobalDBHandler.get_evm_tokens',
+            new=lambda *args, **kwargs: [pol, usdc, weth, usdt],
+        ),
     ):
         blockchain.polygon_pos.tokens.detect_tokens(
             only_cache=False,
@@ -233,19 +243,19 @@ def test_native_token_balance(blockchain, polygon_pos_accounts):
         blockchain.query_polygon_pos_balances()
         balances = blockchain.balances.polygon_pos[address].assets
         assert balances == {
-            A_POLYGON_POS_MATIC: Balance(
+            pol: Balance(
                 amount=FVal('8.206486866125895549'),
                 usd_value=FVal('12.3097302991888433235'),
             ),
-            Asset('eip155:137/erc20:0x3c499c542cEF5E3811e1192ce70d8cC03d5c3359'): Balance(  # USDC  # noqa: E501
+            usdc: Balance(
                 amount=FVal('10.045085'),
                 usd_value=FVal('15.0676275'),
             ),
-            Asset('eip155:137/erc20:0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619'): Balance(  # WETH
+            weth: Balance(
                 amount=FVal('0.007712106620416874'),
                 usd_value=FVal('0.0115681599306253110'),
             ),
-            Asset('eip155:137/erc20:0xc2132D05D31c914a87C6611C10748AEb04B58e8F'): Balance(  # USDT
+            usdt: Balance(
                 amount=FVal('0.074222'),
                 usd_value=FVal('0.1113330'),
             ),
