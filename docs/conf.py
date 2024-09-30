@@ -23,9 +23,9 @@ project_copyright = '2018-2020, Eleftherios Karapetsas. 2020-2024, Rotki Solutio
 author = 'The rotki team'
 
 # The short X.Y version
-version = '1.34.3'
+version = '1.35.0'
 # The full version, including alpha/beta/rc tags
-release = '1.34.3'
+release = '1.35.0'
 
 
 # -- General configuration ---------------------------------------------------
