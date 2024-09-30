@@ -9,6 +9,11 @@ from rotkehlchen.tests.utils.api import (
     assert_proper_sync_response_with_result,
 )
 
+EMPTY_RESULT = {
+    'etherscan': {'ethereum': None, 'optimism': None, 'polygon_pos': None, 'arbitrum_one': None, 'base': None, 'gnosis': None, 'scroll': None},  # noqa: E501
+'blockscout': {'ethereum': None, 'optimism': None, 'polygon_pos': None, 'arbitrum_one': None, 'base': None, 'gnosis': None},  # noqa: E501
+}
+
 
 @pytest.mark.parametrize('include_etherscan_key', [False])
 @pytest.mark.parametrize('include_cryptocompare_key', [False])
@@ -20,11 +25,12 @@ def test_add_get_external_service(rotkehlchen_api_server):
         api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
     )
     result = assert_proper_sync_response_with_result(response)
-    assert result == {}
+    assert result == EMPTY_RESULT
 
     # Now add some data and see that the response shows they are added
     expected_result = {
-        'etherscan': {'ethereum': {'api_key': 'key1'}, 'arbitrum_one': {'api_key': 'key3'}},
+        'etherscan': {'ethereum': {'api_key': 'key1'}, 'arbitrum_one': {'api_key': 'key3'}, 'optimism': None, 'polygon_pos': None, 'base': None, 'gnosis': None, 'scroll': None},  # noqa: E501
+        'blockscout': {'ethereum': None, 'optimism': None, 'polygon_pos': None, 'arbitrum_one': None, 'base': None, 'gnosis': None},  # noqa: E501
         'cryptocompare': {'api_key': 'key2'},
         'monerium': {'username': 'Ben', 'password': 'supersafepassword'},
     }
@@ -72,7 +78,8 @@ def test_delete_external_service(rotkehlchen_api_server):
     """Tests that delete external service credentials works"""
     # Add some data and see that the response shows they are added
     expected_result = {
-        'etherscan': {'ethereum': {'api_key': 'key1'}},
+        'etherscan': {'ethereum': {'api_key': 'key1'}, 'optimism': None, 'polygon_pos': None, 'arbitrum_one': None, 'base': None, 'gnosis': None, 'scroll': None},  # noqa: E501
+        'blockscout': {'ethereum': None, 'optimism': None, 'polygon_pos': None, 'arbitrum_one': None, 'base': None, 'gnosis': None},  # noqa: E501
         'cryptocompare': {'api_key': 'key2'},
     }
     data = {'services': [
@@ -88,7 +95,7 @@ def test_delete_external_service(rotkehlchen_api_server):
 
     # Now try to delete an entry and see the response shows it's deleted
     data = {'services': ['etherscan']}
-    del expected_result['etherscan']
+    expected_result['etherscan']['ethereum'] = None
     response = requests.delete(
         api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
         json=data,
@@ -111,14 +118,14 @@ def test_delete_external_service(rotkehlchen_api_server):
         json=data,
     )
     result = assert_proper_sync_response_with_result(response)
-    assert result == {}
+    assert result == EMPTY_RESULT
 
     # Query again and see that the modified services are returned
     response = requests.get(
         api_url_for(rotkehlchen_api_server, 'externalservicesresource'),
     )
     result = assert_proper_sync_response_with_result(response)
-    assert result == {}
+    assert result == EMPTY_RESULT
 
 
 def test_add_external_services_errors(rotkehlchen_api_server):
