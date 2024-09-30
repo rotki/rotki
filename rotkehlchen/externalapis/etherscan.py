@@ -353,10 +353,9 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
             # success, break out of the loop and return result
             return result
 
-        else:  # will only run if while condition fails # noqa: PLW0120
-            assert response is not None, 'This loop always runs at least once and response is not None'  # noqa: E501
-            log.error(f'{self.chain} etherscan API request to {response.url} failed due to backing off for more than the backoff limit')  # noqa: E501
-
+        # will only run if we get out of the loop due to backoff limit
+        assert response is not None, 'This loop always runs at least once and response is not None'
+        log.error(f'{self.chain} etherscan API request to {response.url} failed due to backing off for more than the backoff limit')  # noqa: E501
         return result
 
     def _process_timestamp_or_blockrange(self, period: TimestampOrBlockRange, options: dict[str, Any]) -> dict[str, Any]:  # noqa: E501
