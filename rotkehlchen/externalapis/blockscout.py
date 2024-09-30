@@ -18,10 +18,10 @@ from rotkehlchen.history.events.structures.eth2 import EthWithdrawalEvent
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_fval, deserialize_timestamp
 from rotkehlchen.types import (
+    BLOCKSCOUT_TO_CHAINID,
     SUPPORTED_EVM_CHAINS_TYPE,
     ChainID,
     ChecksumEvmAddress,
-    ExternalService,
     SupportedBlockchain,
     Timestamp,
 )
@@ -46,9 +46,10 @@ class Blockscout(ExternalServiceWithApiKey):
             msg_aggregator: MessagesAggregator,
     ) -> None:
         self.chain_id = blockchain.to_chain_id()
+        chainid_to_blockscout = {v: k for k, v in BLOCKSCOUT_TO_CHAINID.items()}
         super().__init__(
             database=database,
-            service_name=ExternalService.chain_to_blockscout(self.chain_id),
+            service_name=chainid_to_blockscout[self.chain_id],
         )
         self.db: DBHandler  # specifying DB is not optional
         self.msg_aggregator = msg_aggregator

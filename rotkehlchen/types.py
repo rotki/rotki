@@ -152,39 +152,11 @@ class ExternalService(SerializableEnumNameMixin):
 
     def get_chain_for_etherscan(self) -> Optional['ChainID']:
         """If the service is an etherscan service return its chain"""
-        if self == ExternalService.ETHERSCAN:
-            return ChainID.ETHEREUM
-        elif self == ExternalService.OPTIMISM_ETHERSCAN:
-            return ChainID.OPTIMISM
-        elif self == ExternalService.POLYGON_POS_ETHERSCAN:
-            return ChainID.POLYGON_POS
-        elif self == ExternalService.ARBITRUM_ONE_ETHERSCAN:
-            return ChainID.ARBITRUM_ONE
-        elif self == ExternalService.BASE_ETHERSCAN:
-            return ChainID.BASE
-        elif self == ExternalService.GNOSIS_ETHERSCAN:
-            return ChainID.GNOSIS
-        elif self == ExternalService.SCROLL_ETHERSCAN:
-            return ChainID.SCROLL
+        return ETHERSCAN_TO_CHAINID.get(self)
 
-        return None
-
-    @classmethod
-    def chain_to_blockscout(cls, chain_id: 'ChainID') -> 'ExternalService':
-        if chain_id == ChainID.ETHEREUM:
-            return ExternalService.BLOCKSCOUT
-        elif chain_id == ChainID.ARBITRUM_ONE:
-            return ExternalService.ARBITRUM_ONE_BLOCKSCOUT
-        elif chain_id == ChainID.BASE:
-            return ExternalService.BASE_BLOCKSCOUT
-        elif chain_id == ChainID.OPTIMISM:
-            return ExternalService.OPTIMISM_BLOCKSCOUT
-        elif chain_id == ChainID.GNOSIS:
-            return ExternalService.GNOSIS_BLOCKSCOUT
-        elif chain_id == ChainID.POLYGON_POS:
-            return ExternalService.POLYGON_POS_BLOCKSCOUT
-
-        raise NotImplementedError(f'Blockscout service not implemented for {chain_id}')
+    def get_chain_for_blockscout(self) -> Optional['ChainID']:
+        """If the service is a blockscout service return its chain"""
+        return BLOCKSCOUT_TO_CHAINID.get(self)
 
     def premium_only(self) -> bool:
         return self in {ExternalService.GNOSIS_PAY, ExternalService.MONERIUM}
@@ -370,6 +342,26 @@ SUPPORTED_CHAIN_IDS = Literal[
     ChainID.GNOSIS,
     ChainID.SCROLL,
 ]
+
+
+BLOCKSCOUT_TO_CHAINID = {
+    ExternalService.BLOCKSCOUT: ChainID.ETHEREUM,
+    ExternalService.OPTIMISM_BLOCKSCOUT: ChainID.OPTIMISM,
+    ExternalService.POLYGON_POS_BLOCKSCOUT: ChainID.POLYGON_POS,
+    ExternalService.ARBITRUM_ONE_BLOCKSCOUT: ChainID.ARBITRUM_ONE,
+    ExternalService.BASE_BLOCKSCOUT: ChainID.BASE,
+    ExternalService.GNOSIS_BLOCKSCOUT: ChainID.GNOSIS,
+}
+
+ETHERSCAN_TO_CHAINID = {
+    ExternalService.ETHERSCAN: ChainID.ETHEREUM,
+    ExternalService.OPTIMISM_ETHERSCAN: ChainID.OPTIMISM,
+    ExternalService.POLYGON_POS_ETHERSCAN: ChainID.POLYGON_POS,
+    ExternalService.ARBITRUM_ONE_ETHERSCAN: ChainID.ARBITRUM_ONE,
+    ExternalService.BASE_ETHERSCAN: ChainID.BASE,
+    ExternalService.GNOSIS_ETHERSCAN: ChainID.GNOSIS,
+    ExternalService.SCROLL_ETHERSCAN: ChainID.SCROLL,
+}
 
 
 class EvmlikeChain(StrEnum):
