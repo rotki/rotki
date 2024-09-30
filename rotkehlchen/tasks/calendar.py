@@ -2,7 +2,10 @@ import logging
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Final
 
+from eth_typing import ChecksumAddress
+
 from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -18,10 +21,11 @@ from rotkehlchen.db.calendar import (
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.misc import InputError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_hex_color_code
-from rotkehlchen.types import ChainID, OptionalBlockchainAddress, Timestamp
+from rotkehlchen.types import ChainID, OptionalBlockchainAddress, SupportedBlockchain, Timestamp
 from rotkehlchen.user_messages import MessagesAggregator
 from rotkehlchen.utils.misc import ts_now
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
@@ -30,6 +34,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 ENS_CALENDAR_COLOR: Final = deserialize_hex_color_code('5298FF')
 CRV_CALENDAR_COLOR: Final = deserialize_hex_color_code('5bf054')
+AIRDROP_CALENDAR_COLOR: Final = deserialize_hex_color_code('ffd966')
 
 if TYPE_CHECKING:
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -109,9 +114,96 @@ class CalendarReminderCreator(CustomizableDateMixin):
 
         return events
 
-    def maybe_create_calendar_entry(self, event: 'EvmEvent', name: str, description: str, timestamp: Timestamp, color: 'HexColorCode', counterparty: str) -> int | None:  # noqa: E501
+    def get_existing_calendar_entry(
+            self,
+            name: str,
+            counterparty: str,
+            address: ChecksumAddress,
+            blockchain: SupportedBlockchain,
+    ) -> CalendarEntry | None:
+        """Get calendar entries matching the given parameters.
+        Returns a list of calendar entries or None if no entries match.
+        """
+        if (calendar_entries := self.db_calendar.query_calendar_entry(
+                filter_query=CalendarFilterQuery.make(
+                    and_op=True,
+                    name=name,
+                    addresses=[OptionalBlockchainAddress(
+                        blockchain=blockchain,
+                        address=address,
+                    )],
+                    blockchain=blockchain,
+                    counterparty=counterparty,
+                ),
+        ))['entries_found'] == 0:  # if calendar entry doesn't exist, add it
+            return None
+
+        return calendar_entries['entries'][0]
+
+    def create_or_update_calendar_entry(
+            self,
+            name: str,
+            timestamp: Timestamp,
+            description: str,
+            counterparty: str,
+            address: ChecksumAddress,
+            blockchain: SupportedBlockchain,
+            color: 'HexColorCode',
+    ) -> int | None:
+        """Create calendar entry if it doesn't exist.
+        If it does exist, update it if the timestamp is different.
+        Returns the id of the created entry or None if no entry was created.
+        Also may return None in the case the entry was created but already has had a reminder set.
+        """
+        if (calendar_entry := self.get_existing_calendar_entry(
+            name=name,
+            counterparty=counterparty,
+            address=address,
+            blockchain=blockchain,
+        )) is None:  # if calendar entry doesn't exist, add it
+            return self.db_calendar.create_calendar_entry(CalendarEntry(
+                name=name,
+                timestamp=timestamp,
+                description=description,
+                counterparty=counterparty,
+                address=address,
+                blockchain=blockchain,
+                color=color,
+                auto_delete=True,
+            ))
+
+        # else calendar entry already exists
+        if timestamp != calendar_entry.timestamp:  # update entry if timestamps don't match
+            self.db_calendar.update_calendar_entry(CalendarEntry(
+                identifier=calendar_entry.identifier,
+                name=name,
+                timestamp=timestamp,
+                description=description,
+                counterparty=counterparty,
+                address=address,
+                blockchain=blockchain,
+                color=color,
+                auto_delete=True,
+            ))
+
+        if self.db_calendar.count_reminder_entries(calendar_entry.identifier) > 0:
+            return None  # already has a reminder entry so don't add any new ones
+
+        return calendar_entry.identifier
+
+    def create_or_update_calendar_entry_from_event(
+            self,
+            event: 'EvmEvent',
+            name: str,
+            description: str,
+            timestamp: Timestamp,
+            color: 'HexColorCode',
+            counterparty: str,
+    ) -> int | None:
         """Create calendar entry from an event.
-        Returns the id of the entry created or None if no entry was created"""
+        Returns the id of the created entry or None if no entry was created.
+        Also may return None in the case the entry was created but already has had a reminder set.
+        """
         assert event.location_label is not None
         if (
             (user_address := string_to_evm_address(event.location_label)) not in self.blockchain_accounts.get(  # noqa: E501
@@ -120,49 +212,43 @@ class CalendarReminderCreator(CustomizableDateMixin):
         ):
             return None  # Skip events in the past or from a different address
 
-        if (calendar_entries := self.db_calendar.query_calendar_entry(
-                filter_query=CalendarFilterQuery.make(
-                    and_op=True,
-                    name=name,
-                    addresses=[OptionalBlockchainAddress(
-                        blockchain=blockchain,
-                        address=user_address,
-                    )],
-                    blockchain=blockchain,
-                    counterparty=counterparty,
-                ),
-        ))['entries_found'] == 0:  # if calendar entry doesn't exist, add it
-            entry_id = self.db_calendar.create_calendar_entry(CalendarEntry(
-                name=name,
-                timestamp=timestamp,
-                description=description,
-                counterparty=counterparty,
-                address=user_address,
-                blockchain=blockchain,
-                color=color,
-                auto_delete=True,
-            ))
-        else:  # else calendar entry already exists
-            calendar_entry = calendar_entries['entries'][0]
-            if timestamp > calendar_entry.timestamp:  # if a later expiry is found
-                self.db_calendar.update_calendar_entry(CalendarEntry(
-                    identifier=calendar_entry.identifier,
-                    name=name,
-                    timestamp=timestamp,  # update the calendar entry
-                    description=description,
-                    counterparty=counterparty,
-                    address=user_address,
-                    blockchain=blockchain,
-                    color=color,
-                    auto_delete=True,
-                ))
+        return self.create_or_update_calendar_entry(
+            name=name,
+            timestamp=timestamp,
+            description=description,
+            counterparty=counterparty,
+            address=user_address,
+            blockchain=blockchain,
+            color=color,
+        )
 
-            if self.db_calendar.count_reminder_entries(
-                    event_id=(entry_id := calendar_entry.identifier),
-            ) > 0:  # already has a reminder entry
-                return None  # we don't add any new automatic reminders
+    def delete_calendar_entry(
+            self,
+            name: str,
+            counterparty: str,
+            address: ChecksumAddress,
+            blockchain: SupportedBlockchain,
+    ) -> None:
+        """Delete calendar entry and associated reminders if it exists"""
+        if (calendar_entry := self.get_existing_calendar_entry(
+            name=name,
+            counterparty=counterparty,
+            address=address,
+            blockchain=blockchain,
+        )) is None:
+            return  # nothing to do if calendar entry doesn't exist
 
-        return entry_id
+        try:
+            self.db_calendar.delete_entry(
+                identifier=calendar_entry.identifier,
+                entry_type='calendar',
+            )
+            self.db_calendar.delete_entry(
+                identifier=calendar_entry.identifier,
+                entry_type='calendar_reminders',
+            )
+        except InputError as e:
+            log.warning(f'Failed to remove calendar entry and reminders for {calendar_entry.name} due to {e!s}')  # noqa: E501
 
     def maybe_create_reminders(self, calendar_identifiers: list[int], secs_befores: list[int], error_msg: str) -> None:  # noqa: E501
         _, failed_to_add = self.db_calendar.create_reminder_entries(reminders=[
@@ -206,7 +292,7 @@ class CalendarReminderCreator(CustomizableDateMixin):
             ):
                 continue
 
-            entry_id = self.maybe_create_calendar_entry(
+            entry_id = self.create_or_update_calendar_entry_from_event(
                 event=ens_event,
                 name=f'{ens_name} expiry',
                 timestamp=Timestamp(ens_expires),
@@ -245,7 +331,7 @@ class CalendarReminderCreator(CustomizableDateMixin):
             ):
                 continue
 
-            entry_id = self.maybe_create_calendar_entry(
+            entry_id = self.create_or_update_calendar_entry_from_event(
                 event=crv_event,
                 name='CRV vote escrow lock period ends',
                 timestamp=Timestamp(locktime),
@@ -262,6 +348,59 @@ class CalendarReminderCreator(CustomizableDateMixin):
             error_msg='Failed to add the CRV lock period end reminders',
         )
 
+    def maybe_create_airdrop_claim_reminder(self) -> None:
+        """Create reminders for airdrop claim deadlines."""
+        with self.database.conn.read_ctx() as read_cursor:
+            addresses = self.database.get_evm_accounts(read_cursor)
+
+        data = check_airdrops(
+            addresses=addresses,
+            database=self.database,
+            data_dir=self.database.user_data_dir,
+        )
+
+        calendar_entries: list[int] = []
+        for address, airdrops in data.items():
+            for airdrop_name, airdrop_info in airdrops.items():
+                pretty_name = airdrop_name.replace('_', ' ').capitalize()
+                entry_name = f'{pretty_name} airdrop claim deadline'
+
+                # TODO: Add zksync era to SupportedBlockchain - https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=81788541  # noqa: E501
+                if airdrop_info['asset'].chain_id == 324:
+                    continue  # Skip airdrops on zksync era
+
+                blockchain = airdrop_info['asset'].chain_id.to_blockchain()
+                if (
+                    airdrop_info['claimed'] is True or
+                    'cutoff_time' not in airdrop_info or
+                    (cutoff_time := Timestamp(airdrop_info['cutoff_time'])) <= ts_now()
+                ):  # Delete any existing entry if already claimed, unknown cutoff, or past cutoff
+                    self.delete_calendar_entry(
+                        name=entry_name,
+                        counterparty=airdrop_name,
+                        address=address,
+                        blockchain=blockchain,
+                    )
+                    continue  # skip trying to create or update anything
+
+                entry_id = self.create_or_update_calendar_entry(
+                    name=entry_name,
+                    timestamp=cutoff_time,
+                    description=f"{pretty_name} airdrop of {airdrop_info['amount']} {airdrop_info['asset'].symbol_or_name()} has claim deadline on {self.timestamp_to_date(cutoff_time)}",  # noqa: E501
+                    counterparty=airdrop_name,
+                    address=address,
+                    blockchain=blockchain,
+                    color=AIRDROP_CALENDAR_COLOR,
+                )
+                if entry_id is not None:
+                    calendar_entries.append(entry_id)
+
+        self.maybe_create_reminders(
+            calendar_identifiers=calendar_entries,
+            secs_befores=[WEEK_IN_SECONDS, DAY_IN_SECONDS],
+            error_msg='Failed to add the airdrop claim reminders',
+        )
+
 
 def maybe_create_calendar_reminders(database: DBHandler) -> None:
     """Create all needed calendar reminders"""
@@ -269,6 +408,7 @@ def maybe_create_calendar_reminders(database: DBHandler) -> None:
     reminder_creator = CalendarReminderCreator(database=database, current_ts=current_ts)
     reminder_creator.maybe_create_ens_reminders()
     reminder_creator.maybe_create_locked_crv_reminders()
+    reminder_creator.maybe_create_airdrop_claim_reminder()
 
     with database.conn.write_ctx() as write_cursor:
         database.set_static_cache(

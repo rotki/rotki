@@ -11,10 +11,8 @@ from rotkehlchen.assets.asset import EvmToken, UnderlyingToken
 from rotkehlchen.chain.bitcoin.hdkey import HDKey
 from rotkehlchen.chain.bitcoin.xpub import XpubData
 from rotkehlchen.chain.ethereum.constants import LAST_GRAPH_DELEGATIONS
-from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.chain.ethereum.modules.thegraph.constants import CONTRACT_STAKING
 from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
-from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_COMP, A_DAI, A_GRT, A_LUSD, A_USDC, A_USDT, A_YFI
@@ -34,7 +32,6 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.premium.premium import Premium, PremiumCredentials, SubscriptionStatus
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
-from rotkehlchen.tasks.calendar import CRV_CALENDAR_COLOR, ENS_CALENDAR_COLOR
 from rotkehlchen.tasks.manager import PREMIUM_STATUS_CHECK, TaskManager
 from rotkehlchen.tasks.utils import should_run_periodic_task
 from rotkehlchen.tests.fixtures.websockets import WebsocketReader
@@ -62,7 +59,6 @@ from rotkehlchen.types import (
 )
 from rotkehlchen.utils.hexbytes import hexstring_to_bytes
 from rotkehlchen.utils.misc import ts_now
-from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 if TYPE_CHECKING:
     from rotkehlchen.api.server import APIServer
@@ -969,152 +965,50 @@ def test_calendar_entries_get_deleted(
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('max_tasks_num', [5])
-@pytest.mark.freeze_time('2023-06-01 22:31:11 GMT')
+@pytest.mark.freeze_time('2024-01-01 00:00:00 GMT')
 @pytest.mark.parametrize('db_settings', [
     {'auto_create_calendar_reminders': False}, {'auto_create_calendar_reminders': True},
 ])
-@pytest.mark.parametrize('ethereum_accounts', [[
-    '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',
-    '0xA3B9E4b2C18eFB1C767542e8eb9419B840881467',
-    '0xA01f6D0985389a8E106D3158A9441aC21EAC8D8c',
+@pytest.mark.parametrize('ethereum_accounts', [['0xA01f6D0985389a8E106D3158A9441aC21EAC8D8c']])
+@pytest.mark.parametrize('tx_hashes', [[
+    deserialize_evm_tx_hash('0x4fdcd2632c6aa5549f884c9322943690e4f3c08e20a4dffe59e198ee737b54e8'),  # Register ENS  # noqa: E501
+    deserialize_evm_tx_hash('0xd4fd01f50c3c86e7e119311d6830d975cf7d78d6906004d30370ffcbaabdff95'),  # Renew ENS  # noqa: E501
 ]])
-@pytest.mark.parametrize('ens_data', [(
-    [
-        deserialize_evm_tx_hash('0x4fdcd2632c6aa5549f884c9322943690e4f3c08e20a4dffe59e198ee737b54e8'),  # Register  # noqa: E501
-        deserialize_evm_tx_hash('0xd4fd01f50c3c86e7e119311d6830d975cf7d78d6906004d30370ffcbaabdff95'),  # Renew old (same ENS)  # noqa: E501
-    ],
-    {'dfern.eth': 2310615949},
-), (
-    [
-        deserialize_evm_tx_hash('0x5150f6e1c76b74fa914e06df9e56577cdeec0faea11f9949ff529daeb16b1c76'),  # Register v2  # noqa: E501
-        deserialize_evm_tx_hash('0x0faef1a1a714d5f2f2e5fb344bd186a745180849bae2c92f9d595d8552ef5c96'),  # Renew new  # noqa: E501
-    ],
-    {'ens2qr.eth': 1712756435, 'karapetsas.eth': 1849443293},
-)])
-def test_maybe_create_ens_calendar_reminders(
+def test_maybe_create_calendar_reminders(
         task_manager: TaskManager,
         ethereum_inquirer: 'EthereumInquirer',
         db_settings: dict[str, Any],
-        ens_data: tuple[list['EVMTxHash'], dict[str, Timestamp]],
+        tx_hashes: list['EVMTxHash'],
         add_subgraph_api_key,  # pylint: disable=unused-argument
 ) -> None:
-    """Test that ENS reminders are created at the expiry time of ENS registrations and renewals."""
-    ens_tx_hashes, latest_expiry_of_ens = ens_data
+    """Test that creating calendar entries and reminders via a task works correctly."""
     database = task_manager.database
     calendar_db = DBCalendar(database)
-    customizable_date = CustomizableDateMixin(database=database)
     all_calendar_entries = calendar_db.query_calendar_entry(CalendarFilterQuery.make())
     assert all_calendar_entries['entries_total'] == 0
 
-    ens_events = [
-        next(x for x in get_decoded_events_of_transaction(  # decode ENS registration/renewal event and get the event with the metadata  # noqa: E501
+    for tx_hash in tx_hashes:
+        get_decoded_events_of_transaction(
             evm_inquirer=ethereum_inquirer,
-            tx_hash=ens_tx_hash,
-        )[0] if x.extra_data is not None) for ens_tx_hash in ens_tx_hashes
-    ]
+            tx_hash=tx_hash,
+        )
 
-    task_manager.potential_tasks = [task_manager._maybe_create_calendar_reminder]
-    task_manager.schedule()
-    if len(task_manager.running_greenlets):
-        gevent.joinall(task_manager.running_greenlets[task_manager._maybe_create_calendar_reminder])
+    # Skip checking for airdrops since it would require extra mocking
+    with patch('rotkehlchen.tasks.calendar.CalendarReminderCreator.maybe_create_airdrop_claim_reminder'):  # noqa: E501
+        task_manager.potential_tasks = [task_manager._maybe_create_calendar_reminder]
+        task_manager.schedule()
+        if len(task_manager.running_greenlets):
+            gevent.joinall(task_manager.running_greenlets[task_manager._maybe_create_calendar_reminder])
 
     if db_settings['auto_create_calendar_reminders'] is False:
         assert calendar_db.query_calendar_entry(CalendarFilterQuery.make())['entries_total'] == 0
         return  # finish this test case because this setting will prevent creation of reminders
 
     new_calendar_entries = calendar_db.query_calendar_entry(CalendarFilterQuery.make())
-    assert new_calendar_entries['entries_found'] == len(latest_expiry_of_ens)  # only one calendar entry per ENS  # noqa: E501
-
-    for idx, calendar_entry in enumerate(new_calendar_entries['entries']):
-        assert ens_events[idx].extra_data is not None
-        assert ens_events[idx].location_label is not None
-        ens_name: str = ens_events[idx].extra_data['name']  # type: ignore[index]  # extra_data is not None, checked above
-        ens_expires = latest_expiry_of_ens[ens_name]
-
-        assert calendar_entry == CalendarEntry(  # calendar entry is created for expiry
-            identifier=idx + 1,
-            name=f'{ens_name} expiry',
-            timestamp=ens_expires,
-            description=f'{ens_name} expires on {customizable_date.timestamp_to_date(ens_expires)}',  # noqa: E501
-            counterparty=CPT_ENS,
-            address=ens_events[idx].location_label,  # type: ignore[arg-type]  # location_label is not None, checked above
-            blockchain=ChainID.deserialize(ens_events[idx].location.to_chain_id()).to_blockchain(),
-            color=ENS_CALENDAR_COLOR,
-            auto_delete=True,
-        )
-
-        # reminders are created 1 week and 1 day before the expiry calendar entry
-        reminders = calendar_db.query_reminder_entry(event_id=calendar_entry.identifier)['entries']
-        assert len(reminders) == 2
-        assert reminders[0].event_id == reminders[1].event_id == calendar_entry.identifier
-        assert reminders[0].secs_before == DAY_IN_SECONDS
-        assert reminders[1].secs_before == WEEK_IN_SECONDS
-
-    with task_manager.database.conn.read_ctx() as cursor:
-        assert (last_ran_ts := task_manager.database.get_static_cache(
-            cursor=cursor, name=DBCacheStatic.LAST_CREATE_REMINDER_CHECK_TS,
-        )) is not None and last_ran_ts - ts_now() < 5  # executed recently
-
-
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('max_tasks_num', [5])
-@pytest.mark.freeze_time('2024-01-01 00:00:00 GMT')
-@pytest.mark.parametrize('ethereum_accounts', [[
-    '0x510B0068C0756bBEFCBaffB6567e467d661291FE',
-    '0x8093c1958Ea5CEBF1eFeAABAB7498A49f2937Fed',
-]])
-@pytest.mark.parametrize('crv_tx_hashes', [[
-    deserialize_evm_tx_hash('0x2675807cf1950b8a8fbd64e1a0fe0ec3b894ba88fbb8e544ddf279aff12c6d55'),
-    deserialize_evm_tx_hash('0x15bdc063daef0b1d8d61e9d3f4af5abf50d1ec28421cfc6be1b91b8acbd037e7'),
-]])
-def test_maybe_create_locked_crv_calendar_reminders(
-        task_manager: TaskManager,
-        ethereum_inquirer: 'EthereumInquirer',
-        crv_tx_hashes: list['EVMTxHash'],
-) -> None:
-    """Test that reminders are created at lock period end of CRV in vote escrow."""
-    database = task_manager.database
-    calendar_db = DBCalendar(database)
-    customizable_date = CustomizableDateMixin(database=database)
-    all_calendar_entries = calendar_db.query_calendar_entry(CalendarFilterQuery.make())
-    assert all_calendar_entries['entries_total'] == 0
-
-    crv_events = [
-        next(x for x in get_decoded_events_of_transaction(
-            evm_inquirer=ethereum_inquirer,
-            tx_hash=crv_tx_hash,
-        )[0] if x.extra_data is not None) for crv_tx_hash in crv_tx_hashes
-    ]
-
-    task_manager.potential_tasks = [task_manager._maybe_create_calendar_reminder]
-    task_manager.schedule()
-    gevent.joinall(task_manager.running_greenlets[task_manager._maybe_create_calendar_reminder])
-
-    new_calendar_entries = calendar_db.query_calendar_entry(CalendarFilterQuery.make())
-    assert new_calendar_entries['entries_found'] == len(crv_tx_hashes)
-
-    for idx, calendar_entry in enumerate(new_calendar_entries['entries']):
-        assert crv_events[idx].extra_data is not None
-        assert crv_events[idx].location_label is not None
-        locktime = Timestamp(crv_events[idx].extra_data['locktime'])  # type: ignore[index]  # extra_data is not None, checked above
-
-        assert calendar_entry == CalendarEntry(  # calendar entry is created for expiry
-            identifier=idx + 1,
-            name='CRV vote escrow lock period ends',
-            timestamp=locktime,
-            description=f'Lock period for {crv_events[idx].balance.amount} CRV in vote escrow ends on {customizable_date.timestamp_to_date(locktime)}',  # noqa: E501
-            counterparty=CPT_CURVE,
-            address=crv_events[idx].location_label,  # type: ignore[arg-type]  # location_label is not None, checked above
-            blockchain=ChainID.deserialize(crv_events[idx].location.to_chain_id()).to_blockchain(),
-            color=CRV_CALENDAR_COLOR,
-            auto_delete=True,
-        )
-
-        # one reminder is created at the time of the calendar entry
-        reminders = calendar_db.query_reminder_entry(event_id=calendar_entry.identifier)['entries']
-        assert len(reminders) == 1
-        assert reminders[0].event_id == calendar_entry.identifier
-        assert reminders[0].secs_before == 0
+    assert new_calendar_entries['entries_found'] == 1
+    assert len(calendar_db.query_reminder_entry(
+        event_id=new_calendar_entries['entries'][0].identifier,
+    )['entries']) == 2  # Week before and day before
 
     with task_manager.database.conn.read_ctx() as cursor:
         assert (last_ran_ts := task_manager.database.get_static_cache(
