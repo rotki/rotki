@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :release:`1.35.0 <2024-10-01>`
 * :feature:`8428` Rotki will now properly decode cowswap fees and order types after 2024-03-19 by querying the cowswap API for offchain data.
 * :feature:`7817` Users will be able to add CEX mapping for unknown assets from exchange notifications.
 * :feature:`8528` Rotki will now limit the number of validators queried for balances for non-premium users.
