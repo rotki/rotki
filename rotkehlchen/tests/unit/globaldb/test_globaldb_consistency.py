@@ -413,6 +413,7 @@ def test_oracle_ids_in_asset_collections(globaldb: 'GlobalDBHandler'):
         38,  # ETH group exception for WETH
         40,  # btc and wrapped bitcoin
         52,  # pol-matic. Have different oracle ids
+        155,  # wLUNA and LUNA
     }
     mismatches = []
     group_id_to_oracle_ids: dict[str, dict[str, str]] = defaultdict(dict)
@@ -420,7 +421,7 @@ def test_oracle_ids_in_asset_collections(globaldb: 'GlobalDBHandler'):
         for group_id, asset_collection in group_id_to_assets.items():
             for identifier in asset_collection:
                 if identifier in assets and assets[identifier][oracle] not in {None, ''}:
-                    if group_id not in oracle_exceptions and group_id_to_oracle_ids[group_id].get(oracle) not in {None, ''}:
+                    if group_id not in oracle_exceptions and group_id_to_oracle_ids[group_id].get(oracle) not in {None, ''}:  # noqa: E501
                         if assets[identifier][oracle].lower() != group_id_to_oracle_ids[group_id][oracle].lower():  # noqa: E501
                             mismatches.append(f'{oracle} ({assets[identifier][oracle]} != {group_id_to_oracle_ids[group_id][oracle]}) mismatch for asset {identifier} in group {group_id}')  # noqa: E501
                     else:

@@ -16,6 +16,7 @@ from rotkehlchen.db.constants import EVM_ACCOUNTS_DETAILS_TOKENS
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.tests.utils.constants import A_LPT
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, SupportedBlockchain
@@ -348,10 +349,11 @@ def test_chain_is_not_queried_when_details(ethereum_inquirer: 'EthereumInquirer'
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('gnosis_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65']])
+@pytest.mark.parametrize('gnosis_accounts', [['0x7bF5421a72E9bcDA25A706450af95D5645C9d33f']])
 def test_monerium_queries(
         gnosis_manager: 'GnosisManager',
         gnosis_accounts: list[ChecksumEvmAddress],
+        inquirer: Inquirer,
 ):
     """Test that we query balances for the new monerium eure but not the old one"""
     new_eure = get_or_create_evm_token(  # ensure that the new eure is in the db
@@ -360,11 +362,15 @@ def test_monerium_queries(
         chain_id=(chain_id := gnosis_manager.node_inquirer.chain_id),
         evm_inquirer=gnosis_manager.node_inquirer,
     )
-    tokens = gnosis_manager.tokens.detect_tokens(
-        only_cache=False,
-        addresses=gnosis_accounts,
-    )[gnosis_accounts[0]][0]
-    assert new_eure in tokens  # type: ignore
+    with patch(
+        'rotkehlchen.globaldb.handler.GlobalDBHandler.get_evm_tokens',
+        new=lambda *args, **kwargs: [new_eure, A_GNOSIS_EURE.resolve_to_evm_token()],
+    ):
+        tokens = gnosis_manager.tokens.detect_tokens(
+            only_cache=False,
+            addresses=gnosis_accounts,
+        )[gnosis_accounts[0]][0]
+        assert new_eure in tokens  # type: ignore
 
     # insert the old eure and see that is not queried
     with gnosis_manager.node_inquirer.database.user_write() as write_cursor:
@@ -379,9 +385,8 @@ def test_monerium_queries(
             ),
         )
 
-    tokens_second_query = gnosis_manager.tokens.detect_tokens(
-        only_cache=False,
+    tokens_second_query = gnosis_manager.tokens.query_tokens_for_addresses(
         addresses=gnosis_accounts,
-    )[gnosis_accounts[0]][0]
-    assert new_eure in tokens_second_query  # type: ignore
-    assert A_GNOSIS_EURE not in tokens_second_query  # type: ignore
+    )[0][gnosis_accounts[0]]
+    assert new_eure in tokens_second_query
+    assert A_GNOSIS_EURE not in tokens_second_query
