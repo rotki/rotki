@@ -373,11 +373,11 @@ class AssetsUpdater:
 
         try:
             with connection.savepoint_ctx() as cursor:
-                cursor.execute(action)
+                executeall(cursor, action)
         except sqlite3.Error:
             try:
                 with connection.savepoint_ctx() as cursor:
-                    cursor.execute(full_insert)
+                    executeall(cursor, full_insert)
             except sqlite3.Error as e:
                 log.error(
                     f'Failed to edit or add asset collection with name {groups[1]} and id '
@@ -427,11 +427,11 @@ class AssetsUpdater:
 
         try:
             with connection.savepoint_ctx() as cursor:
-                cursor.execute(action)
+                executeall(cursor, action)
         except sqlite3.Error:
             try:
                 with connection.savepoint_ctx() as cursor:
-                    cursor.execute(full_insert)
+                    executeall(cursor, full_insert)
             except sqlite3.Error as e:
                 log.error(
                     f'Failed to edit asset collection mapping with asset {groups[1]} '
@@ -529,11 +529,28 @@ class AssetsUpdater:
         """
         lines = [x for x in text.splitlines() if x.strip() != '']
         try:  # strip() check above is to remove empty lines (say trailing newline in the file
-            for action, full_insert in zip(*[iter(lines)] * 2, strict=True):
-                if full_insert.strip() == '*':
-                    full_insert = action  # noqa: PLW2901
+            for action_raw, full_insert_raw in zip(*[iter(lines)] * 2, strict=True):
+                action: str = action_raw.strip()
+                if (full_insert := full_insert_raw.strip()) == '*':
+                    full_insert = action
 
-                if update_file_type == UpdateFileType.ASSETS:
+                if (
+                    (update_file_type in (  # handle update/delete for collections
+                        UpdateFileType.ASSET_COLLECTIONS_MAPPINGS,
+                        UpdateFileType.ASSET_COLLECTIONS,
+                    ) and action.startswith(('UPDATE', 'DELETE'))) or
+                    (update_file_type == UpdateFileType.ASSETS and action.startswith('DELETE'))  # handle deleting assets  # noqa: E501
+                ):
+                    try:
+                        with connection.write_ctx() as write_cursor:
+                            executeall(write_cursor, action)
+                    except sqlite3.Error as e:
+                        log.error(
+                            f'Failed to apply update/delete statement {action} from '
+                            f'{update_file_type} update v{version} due to {e}. Skipping... ',
+                        )
+
+                elif update_file_type == UpdateFileType.ASSETS:  # update or insert assets
                     remote_asset_data = None
                     try:
                         remote_asset_data = self._parse_full_insert_assets(full_insert)

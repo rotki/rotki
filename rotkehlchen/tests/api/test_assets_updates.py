@@ -86,11 +86,29 @@ INSERT INTO assets(identifier, name, type) VALUES("EUR", "Ευρώ", "A"); INSER
     # The update_4_assets has an extra newline which is put there on purpose to see
     # that the consuming logic can handle trailing newlines
     update_4_collections = """INSERT INTO asset_collections(id, name, symbol) VALUES (99999999, "My custom ETH", "ETHS")
-    *"""  # noqa: E501
+    *
+    UPDATE asset_collections SET name="updated collection" WHERE id=33
+    *
+    DELETE FROM asset_collections WHERE id=39;
+    *
+    """  # noqa: E501
     update_4_mappings = """INSERT INTO multiasset_mappings(collection_id, asset) VALUES (99999999, "ETH");
     *
     INSERT INTO multiasset_mappings(collection_id, asset) VALUES (99999999, "eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84");
-    *"""  # noqa: E501
+    *
+    DELETE FROM multiasset_mappings WHERE collection_id=314 AND asset="eip155:10/erc20:0xC52D7F23a2e460248Db6eE192Cb23dD12bDDCbf6";
+    *
+    """  # noqa: E501
+
+    with globaldb.conn.read_ctx() as cursor:
+        assert cursor.execute(
+            'SELECT name FROM asset_collections WHERE id=33',
+        ).fetchone()[0] == 'STASIS EURS'
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM multiasset_mappings WHERE collection_id=314 AND '
+            'asset="eip155:10/erc20:0xC52D7F23a2e460248Db6eE192Cb23dD12bDDCbf6"',
+        ).fetchone()[0] == 1
+
     empty_update = {'mappings': '', 'collections': '', 'assets': ''}
     update_patch = mock_asset_updates(
         original_requests_get=requests.get,
@@ -217,6 +235,16 @@ INSERT INTO assets(identifier, name, type) VALUES("EUR", "Ευρώ", "A"); INSER
             assert cursor.fetchall() == [(99999999, 'My custom ETH', 'ETHS')]
             cursor.execute('SELECT * FROM multiasset_mappings WHERE collection_id = 99999999')
             assert cursor.fetchall() == [(99999999, 'ETH'), (99999999, 'eip155:1/erc20:0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84')]  # noqa: E501
+            assert cursor.execute(
+                'SELECT name, symbol FROM asset_collections WHERE id=33',
+            ).fetchone() == ('updated collection', 'EURS')
+            assert cursor.execute(
+                'SELECT COUNT(*) FROM multiasset_mappings WHERE collection_id=314 AND '
+                'asset="eip155:10/erc20:0xC52D7F23a2e460248Db6eE192Cb23dD12bDDCbf6"',
+            ).fetchone()[0] == 0
+            assert cursor.execute(
+                'SELECT COUNT(*) FROM asset_collections WHERE id=39',
+            ).fetchone()[0] == 0
 
 
 @pytest.mark.parametrize('use_clean_caching_directory', [True])
