@@ -1914,6 +1914,8 @@ class TransactionsNotDecodedFilterQuery(DBFilterQuery):
     """
     Filter used to find the transactions that have not been decoded yet using chain and
     addresses as filter.
+
+    Returns them oldest first so that decoding can happen in chronological order.
     """
     @classmethod
     def make(
@@ -1925,7 +1927,7 @@ class TransactionsNotDecodedFilterQuery(DBFilterQuery):
             and_op=True,
             limit=limit,
             offset=None,
-            order_by_rules=None,
+            order_by_rules=[('C.timestamp', True)],  # order by ascending timestamp
         )
         filters: list[DBFilter] = []
         if chain_id is not None:
