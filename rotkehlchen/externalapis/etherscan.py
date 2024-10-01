@@ -231,9 +231,12 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
     ) -> list[dict[str, Any]] | (str | (list[EvmTransaction] | (dict[str, Any] | None))):
         """Queries etherscan
 
+        None is a valid result for this function when the requested information doesn't exist.
+        Happens when asking for the code of a contract, transaction by hash, receipt...
+
         May raise:
         - RemoteError if there are any problems with reaching Etherscan or if
-        an unexpected response is returned
+        an unexpected response is returned. Also in the case of exhausting the backoff time.
         """
         result = None
         query_str = f'https://{self.prefix_url}{self.base_url}/api?module={module}&action={action}'
@@ -355,8 +358,12 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
 
         # will only run if we get out of the loop due to backoff limit
         assert response is not None, 'This loop always runs at least once and response is not None'
-        log.error(f'{self.chain} etherscan API request to {response.url} failed due to backing off for more than the backoff limit')  # noqa: E501
-        return result
+        msg = (
+            f'{self.chain} etherscan API request to {response.url} failed due to backing'
+            ' off for more than the backoff limit'
+        )
+        log.error(msg)
+        raise RemoteError(msg)
 
     def _process_timestamp_or_blockrange(self, period: TimestampOrBlockRange, options: dict[str, Any]) -> dict[str, Any]:  # noqa: E501
         """Process TimestampOrBlockRange and populate call options"""
