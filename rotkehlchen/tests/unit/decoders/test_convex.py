@@ -240,7 +240,7 @@ def test_cvxcrv_get_reward(database, ethereum_inquirer, eth_transactions):
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         decoder.reload_data(cursor)
 
-    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     timestamp = TimestampMS(1655675488000)
     expected_events = [
         EvmEvent(
@@ -469,7 +469,7 @@ def test_cvx_stake(database, ethereum_inquirer, eth_transactions):
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         decoder.reload_data(cursor)
 
-    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
@@ -611,7 +611,7 @@ def test_cvx_get_reward(database, ethereum_inquirer, eth_transactions):
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         decoder.reload_data(cursor)
 
-    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
@@ -702,7 +702,7 @@ def test_cvx_withdraw(database, ethereum_inquirer, eth_transactions):
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         decoder.reload_data(cursor)
 
-    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
@@ -785,7 +785,7 @@ def test_claimzap_abracadabras(database, ethereum_inquirer, eth_transactions):
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         decoder.reload_data(cursor)
 
-    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
@@ -877,7 +877,7 @@ def test_claimzap_cvx_locker(database, ethereum_inquirer, eth_transactions):
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         decoder.reload_data(cursor)
 
-    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,

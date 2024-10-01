@@ -137,7 +137,7 @@ def test_tx_decode(ethereum_transaction_decoder, database):
             for tx in transactions:
                 receipt = dbevmtx.get_receipt(cursor, tx.tx_hash, ChainID.ETHEREUM)
                 assert receipt is not None, 'all receipts should be queried in the test DB'
-                events, _ = decoder._get_or_decode_transaction_events(tx, receipt, ignore_cache=False)  # noqa: E501
+                events, _, _ = decoder._get_or_decode_transaction_events(tx, receipt, ignore_cache=False)  # noqa: E501
                 if tx.tx_hash == approve_tx_hash:
                     assert len(events) == 2
                     assert_events_equal(events[0], EvmEvent(
@@ -175,7 +175,7 @@ def test_tx_decode(ethereum_transaction_decoder, database):
             for tx in transactions:
                 receipt = dbevmtx.get_receipt(cursor, tx.tx_hash, ChainID.ETHEREUM)
                 assert receipt is not None, 'all receipts should be queried in the test DB'
-                events, _ = decoder._get_or_decode_transaction_events(tx, receipt, ignore_cache=False)  # noqa: E501
+                events, _, _ = decoder._get_or_decode_transaction_events(tx, receipt, ignore_cache=False)  # noqa: E501
         assert decode_mock.call_count == len(transactions)
 
     dbevents = DBHistoryEvents(database)

@@ -420,11 +420,13 @@ def get_decoded_events_of_transaction(
         transactions: EvmTransactions | None = None,
         relevant_address: ChecksumAddress | None = None,
         load_global_caches: list[str] | None = None,
+        evm_decoder: 'EVMTransactionDecoder|None' = None,
 ) -> tuple[list['EvmEvent'], 'EVMTransactionDecoder']:
     """A convenience function to ask get transaction, receipt and decoded event for a tx_hash
 
     It also accepts `transactions` in case the caller whants to apply some mocks (like call_count)
-    on that object.
+    on that object. Same thing for evm_decoder if the callers want to use it before
+    for any reason.
 
     If relevant_address is provided then the added transactions are added linked to
     the provided address.
@@ -444,7 +446,11 @@ def get_decoded_events_of_transaction(
     if mappings_result is not None:
         if transactions is None:
             transactions = mappings_result[0](evm_inquirer, evm_inquirer.database)
-        decoder: EVMTransactionDecoder = mappings_result[1](evm_inquirer.database, evm_inquirer, transactions)  # noqa: E501
+        if evm_decoder is None:
+            decoder: EVMTransactionDecoder = mappings_result[1](evm_inquirer.database, evm_inquirer, transactions)  # noqa: E501
+        else:
+            decoder = evm_decoder
+
     else:
         raise AssertionError('Unsupported chainID at tests')
 
