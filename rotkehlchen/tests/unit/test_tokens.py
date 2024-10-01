@@ -11,7 +11,7 @@ from rotkehlchen.chain.ethereum.tokens import EthereumTokens
 from rotkehlchen.chain.evm.tokens import generate_multicall_chunks
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_GNOSIS_EURE, A_OMG, A_WETH
+from rotkehlchen.constants.assets import A_DAI, A_GNOSIS_EURE, A_OMG, A_WETH
 from rotkehlchen.db.constants import EVM_ACCOUNTS_DETAILS_TOKENS
 from rotkehlchen.errors.misc import InputError
 from rotkehlchen.fval import FVal
@@ -69,7 +69,16 @@ def test_detect_tokens_for_addresses(rotkehlchen_api_server, ethereum_accounts):
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     tokens = rotki.chains_aggregator.ethereum.tokens
     tokens.evm_inquirer.multicall = MagicMock(side_effect=tokens.evm_inquirer.multicall)
-    detection_result = tokens.detect_tokens(False, [addr1, addr2, addr3])
+    with patch(
+        'rotkehlchen.globaldb.handler.GlobalDBHandler.get_evm_tokens',
+        side_effect=lambda *args, **kwargs: [  # mock the returned list to avoid changing this test with every assets version  # noqa: E501
+            A_WETH.resolve_to_evm_token(),
+            A_LPT.resolve_to_evm_token(),
+            A_OMG.resolve_to_evm_token(),
+            A_DAI.resolve_to_evm_token(),
+        ],
+    ):
+        detection_result = tokens.detect_tokens(False, [addr1, addr2, addr3])
     assert A_WETH in detection_result[addr3][0], 'WETH is owned by the proxy, but should be returned in the proxy owner address'  # noqa: E501
     assert tokens.evm_inquirer.multicall.call_count == 0, 'multicall should not be used for tokens detection'  # noqa: E501
     result, token_usd_prices = tokens.query_tokens_for_addresses(
