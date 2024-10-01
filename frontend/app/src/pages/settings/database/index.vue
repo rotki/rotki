@@ -3,19 +3,17 @@ import { NoteLocation } from '@/types/notes';
 
 definePage({
   meta: {
-    noteLocation: NoteLocation.SETTINGS_DATA_SECURITY,
+    noteLocation: NoteLocation.SETTINGS_DATABASE,
   },
 });
 </script>
 
 <template>
-  <div class="flex flex-col gap-8">
-    <ChangePassword />
+  <SettingsPage>
     <AssetUpdate />
     <BackupManager />
     <DataManagement />
-    <OracleCacheManagement />
     <ManageCustomAssets />
     <RestoreAssetsDatabase />
-  </div>
+  </SettingsPage>
 </template>

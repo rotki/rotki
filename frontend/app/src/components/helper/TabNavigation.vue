@@ -7,10 +7,12 @@ withDefaults(
     tabs: TabContent[];
     hideRouterView?: boolean;
     child?: boolean;
+    plain?: boolean;
   }>(),
   {
     hideRouterView: false,
     child: false,
+    plain: false,
   },
 );
 
@@ -28,7 +30,11 @@ function getTabClass(route: RouteLocationRaw): string {
     <RuiTabs
       v-model="model"
       color="primary"
-      class="border border-default rounded bg-white dark:bg-rui-grey-900 flex max-w-min mb-5 mx-auto"
+      class="border-default"
+      :class="{
+        'border rounded bg-white dark:bg-rui-grey-900 flex max-w-min  mx-auto mb-5': !plain,
+        'border-b': plain,
+      }"
     >
       <RuiTab
         v-for="tab in tabs"

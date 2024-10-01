@@ -1,6 +1,5 @@
 import { type FixtureManualBalance, ManualBalancesPage } from '../../pages/account-balances-page/manual-balances-page';
 import { DashboardPage } from '../../pages/dashboard-page';
-import { GeneralSettingsPage } from '../../pages/general-settings-page';
 import { RotkiApp } from '../../pages/rotki-app';
 import { createUser } from '../../utils/user';
 
@@ -11,7 +10,6 @@ describe('balances', () => {
   let app: RotkiApp;
   let manualBalancesPage: ManualBalancesPage;
   let dashboardPage: DashboardPage;
-  let settings: GeneralSettingsPage;
   let manualBalances: FixtureManualBalance[];
 
   before(() => {
@@ -19,7 +17,6 @@ describe('balances', () => {
     app = new RotkiApp();
     manualBalancesPage = new ManualBalancesPage();
     dashboardPage = new DashboardPage();
-    settings = new GeneralSettingsPage();
 
     cy.fixture('account-balances/manual-balances').then((balances) => {
       manualBalances = balances;
@@ -84,20 +81,6 @@ describe('balances', () => {
     dashboardPage.amountDisplayIsBlurred();
     dashboardPage.percentageDisplayIsBlurred();
     app.changePrivacyMode(0);
-  });
-
-  it('test scramble mode', () => {
-    manualBalancesPage.visit();
-    manualBalancesPage.balanceShouldMatch(manualBalances);
-
-    settings.visit();
-    settings.toggleScrambleData();
-    manualBalancesPage.visit();
-    manualBalancesPage.balanceShouldNotMatch(manualBalances);
-
-    settings.visit();
-    settings.toggleScrambleData();
-    manualBalancesPage.visit();
   });
 
   it('test scramble mode from top nav', () => {

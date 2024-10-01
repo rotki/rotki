@@ -15,11 +15,11 @@ const { t } = useI18n();
 const rules = {
   versionUpdateCheckFrequency: {
     required: helpers.withMessage(
-      t('general_settings.validation.version_update_check_frequency.non_empty'),
+      t('general_settings.version_update_check.validation.non_empty'),
       requiredIf(versionUpdateCheckEnabled),
     ),
     between: helpers.withMessage(
-      t('general_settings.validation.version_update_check_frequency.invalid_frequency', {
+      t('general_settings.version_update_check.validation.invalid_frequency', {
         start: 1,
         end: maxVersionUpdateCheckFrequency,
       }),
@@ -48,32 +48,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex gap-6">
-    <div class="grow">
-      <SettingsOption
-        #default="{ error, success, update }"
-        setting="versionUpdateCheckFrequency"
-        frontend-setting
-        :transform="frequencyTransform"
-        :error-message="t('general_settings.validation.version_update_check_frequency.error')"
-        @finished="resetVersionUpdateCheckFrequency()"
-      >
-        <RuiTextField
-          v-model="versionUpdateCheckFrequency"
-          variant="outlined"
-          color="primary"
-          :disabled="!versionUpdateCheckEnabled"
-          type="number"
-          min="1"
-          :max="maxVersionUpdateCheckFrequency"
-          :label="t('general_settings.labels.version_update_check')"
-          :hint="t('general_settings.version_update_check_hint')"
-          :success-messages="success"
-          :error-messages="error || toMessages(v$.versionUpdateCheckFrequency)"
-          @update:model-value="update($event)"
-        />
-      </SettingsOption>
-    </div>
+  <SettingsItem>
+    <template #title>
+      {{ t('general_settings.version_update_check.title') }}
+    </template>
+
     <SettingsOption
       #default="{ updateImmediate }"
       setting="versionUpdateCheckFrequency"
@@ -84,10 +63,32 @@ onMounted(() => {
       <RuiSwitch
         v-model="versionUpdateCheckEnabled"
         class="mt-4"
-        :label="t('general_settings.labels.version_update_check_enabled')"
+        :label="t('general_settings.version_update_check.switch')"
         color="primary"
         @update:model-value="callIfValid($event, updateImmediate)"
       />
     </SettingsOption>
-  </div>
+    <SettingsOption
+      #default="{ error, success, update }"
+      setting="versionUpdateCheckFrequency"
+      frontend-setting
+      :transform="frequencyTransform"
+      :error-message="t('general_settings.version_update_check.validation.error')"
+      @finished="resetVersionUpdateCheckFrequency()"
+    >
+      <RuiTextField
+        v-model="versionUpdateCheckFrequency"
+        variant="outlined"
+        color="primary"
+        :disabled="!versionUpdateCheckEnabled"
+        type="number"
+        min="1"
+        :max="maxVersionUpdateCheckFrequency"
+        :label="t('general_settings.version_update_check.label')"
+        :success-messages="success"
+        :error-messages="error || toMessages(v$.versionUpdateCheckFrequency)"
+        @update:model-value="update($event)"
+      />
+    </SettingsOption>
+  </SettingsItem>
 </template>

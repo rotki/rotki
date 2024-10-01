@@ -11,19 +11,25 @@ const { t } = useI18n();
 
 <template>
   <SettingsOption
-    #default="{ error, success, updateImmediate }"
     setting="autoDetectTokens"
     class="mb-4"
-    :error-message="t('general_settings.validation.auto_detect_tokens.error')"
+    :error-message="t('general_settings.auto_detect_tokens.validation.error')"
   >
-    <RuiSwitch
-      v-model="value"
-      color="primary"
-      :label="t('general_settings.labels.auto_detect_tokens')"
-      :hint="t('general_settings.labels.auto_detect_tokens_hint')"
-      :success-messages="success"
-      :error-messages="error"
-      @update:model-value="updateImmediate($event)"
-    />
+    <template #title>
+      {{ t('general_settings.auto_detect_tokens.title') }}
+    </template>
+    <template
+      #default="{ error, success, updateImmediate }"
+    >
+      <RuiSwitch
+        v-model="value"
+        color="primary"
+        :label="t('general_settings.auto_detect_tokens.label')"
+        :hint="t('general_settings.auto_detect_tokens.hint')"
+        :success-messages="success"
+        :error-messages="error"
+        @update:model-value="updateImmediate($event)"
+      />
+    </template>
   </SettingsOption>
 </template>
