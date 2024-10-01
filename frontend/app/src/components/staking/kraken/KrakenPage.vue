@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Section } from '@/types/status';
 import { Routes } from '@/router/routes';
+import type { RouteLocationRaw } from 'vue-router';
 
 const { shouldShowLoadingScreen, isLoading } = useStatusStore();
 const { load, $reset } = useKrakenStakingStore();
@@ -31,6 +32,13 @@ const refreshing = isLoading(Section.STAKING_KRAKEN);
 const { t } = useI18n();
 
 const refresh = () => load(true);
+
+const addKrakenApiKeysLink: RouteLocationRaw = {
+  path: `${Routes.API_KEYS_EXCHANGES}`,
+  query: {
+    add: 'true',
+  },
+};
 </script>
 
 <template>
@@ -39,7 +47,10 @@ const refresh = () => load(true);
     child
   >
     <template #buttons>
-      <RuiTooltip :open-delay="400">
+      <RuiTooltip
+        v-if="isKrakenConnected"
+        :open-delay="400"
+      >
         <template #activator>
           <RuiButton
             variant="outlined"
@@ -65,7 +76,7 @@ const refresh = () => load(true);
         {{ t('kraken_page.page.title') }}
       </span>
 
-      <InternalLink :to="Routes.API_KEYS_EXCHANGES">
+      <InternalLink :to="addKrakenApiKeysLink">
         <AppImage
           width="64px"
           contain
@@ -79,7 +90,7 @@ const refresh = () => load(true);
         class="font-light text-h6 text-rui-text-secondary"
       >
         <template #link>
-          <InternalLink :to="Routes.API_KEYS_EXCHANGES">
+          <InternalLink :to="addKrakenApiKeysLink">
             {{ t('kraken_page.page.api_key') }}
           </InternalLink>
         </template>
