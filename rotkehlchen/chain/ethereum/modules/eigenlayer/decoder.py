@@ -1,4 +1,5 @@
 import logging
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -40,6 +41,7 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.utils import get_eigenpods_to
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.decoding.clique.decoder import CliqueAirdropDecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     DEFAULT_DECODING_OUTPUT,
     DecoderContext,
@@ -73,7 +75,7 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
-class EigenlayerDecoder(CliqueAirdropDecoderInterface):
+class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
     """
     Some info to remember.
 
@@ -244,7 +246,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
             address=context.tx_log.address,
             extra_data={'eigenpod_owner': owner, 'eigenpod_address': eigenpod_address},
         )
-        return DecodingOutput(event=event)
+        return DecodingOutput(event=event, reload_decoders={'Eigenlayer'})
 
     def decode_eigenpod_delayed_withdrawals(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == DELAYED_WITHDRAWALS_CREATED:
@@ -651,3 +653,10 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface):
     @staticmethod
     def possible_products() -> dict[str, list[EvmProduct]]:
         return {CPT_EIGENLAYER: [EvmProduct.STAKING]}
+
+    # -- ReloadableDecoderMixin methods
+
+    def reload_data(self) -> Mapping[ChecksumEvmAddress, tuple[Any, ...]] | None:
+        """Reload the eigenpod owners mapping and return the new addresses to decoders mapping"""
+        self.eigenpod_owner_mapping = get_eigenpods_to_owners_mapping(self.base.database)
+        return self.addresses_to_decoders()

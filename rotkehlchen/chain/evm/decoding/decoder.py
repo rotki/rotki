@@ -326,17 +326,34 @@ class EVMTransactionDecoder(ABC):
 
         return possible_products
 
+    def _reload_single_decoder(self, cursor: 'DBCursor', decoder: 'DecoderInterface') -> None:
+        """Reload data for a single decoder"""
+        if isinstance(decoder, CustomizableDateMixin):
+            decoder.reload_settings(cursor)
+        if isinstance(decoder, ReloadableDecoderMixin):
+            new_mappings = decoder.reload_data()
+            if new_mappings is not None:
+                self.rules.address_mappings.update(new_mappings)
+
     def reload_data(self, cursor: 'DBCursor') -> None:
         """Reload all related settings from DB and data that any decoder may require from the chain
-        so that decoding happens with latest data"""
+        so that decoding happens with latest data
+        """
         self.base.refresh_tracked_accounts(cursor)
         for decoder in self.decoders.values():
-            if isinstance(decoder, CustomizableDateMixin):
-                decoder.reload_settings(cursor)
-            if isinstance(decoder, ReloadableDecoderMixin):
-                new_mappings = decoder.reload_data()
-                if new_mappings is not None:
-                    self.rules.address_mappings.update(new_mappings)
+            self._reload_single_decoder(cursor, decoder)
+
+    def reload_specific_decoders(self, cursor: 'DBCursor', decoders: set[str]) -> None:
+        """Reload DB data for the given decoders. Decoders are identified by the class name
+        (without the Decoder suffix)
+        """
+        self.base.refresh_tracked_accounts(cursor)
+        for decoder_name in decoders:
+            if (decoder := self.decoders.get(decoder_name)) is None:
+                log.error(f'Requested reloading of data for unknown {self.evm_inquirer.chain_name} decoder {decoder_name}')  # noqa: E501
+                continue
+
+            self._reload_single_decoder(cursor, decoder)
 
     def try_all_rules(
             self,
@@ -493,10 +510,14 @@ class EVMTransactionDecoder(ABC):
             self,
             transaction: EvmTransaction,
             tx_receipt: EvmTxReceipt,
-    ) -> tuple[list['EvmEvent'], bool]:
+    ) -> tuple[list['EvmEvent'], bool, set[str] | None]:
         """
         Decodes an evm transaction and its receipt and saves result in the DB.
-        Returns the list of decoded events and a flag which is True if balances refresh is needed.
+
+        Returns
+        - the list of decoded events
+        - a flag which is True if balances refresh is needed
+        - A list of decoders to reload or None if no need
         """
         with self.database.conn.read_ctx() as read_cursor:
             tx_id = transaction.get_or_query_db_id(read_cursor)
@@ -509,7 +530,7 @@ class EVMTransactionDecoder(ABC):
                     [(tx_id, EVMTX_DECODED), (tx_id, EVMTX_SPAM)],
                 )
 
-            return [], False
+            return [], False, None
 
         self.base.reset_sequence_counter()
         # check if any eth transfer happened in the transaction, including in internal transactions
@@ -517,6 +538,7 @@ class EVMTransactionDecoder(ABC):
         action_items: list[ActionItem] = []
         counterparties = set()
         refresh_balances = False
+        reload_decoders = None
 
         # Check if any rules should run due to the 4bytes signature of the input data
         fourbytes = transaction.input_data[:4]
@@ -558,6 +580,9 @@ class EVMTransactionDecoder(ABC):
             decoding_output = self.decode_by_address_rules(context)
             if decoding_output.refresh_balances is True:
                 refresh_balances = True
+            if decoding_output.reload_decoders is not None:
+                reload_decoders = decoding_output.reload_decoders
+
             action_items.extend(decoding_output.action_items)
             if decoding_output.matched_counterparty is not None:
                 counterparties.add(decoding_output.matched_counterparty)
@@ -636,7 +661,7 @@ class EVMTransactionDecoder(ABC):
             )
 
         events = sorted(events, key=lambda x: x.sequence_index, reverse=False)
-        return events, refresh_balances  # Propagate for post processing in the caller
+        return events, refresh_balances, reload_decoders  # Propagate for post processing in the caller  # noqa: E501
 
     def get_and_decode_undecoded_transactions(
             self,
@@ -757,7 +782,7 @@ class EVMTransactionDecoder(ABC):
                 except RemoteError as e:
                     raise InputError(f'{self.evm_inquirer.chain_name} hash {tx_hash.hex()} does not correspond to a transaction. {e}') from e  # noqa: E501
 
-            new_events, new_refresh_balances = self._get_or_decode_transaction_events(
+            new_events, new_refresh_balances, reload_decoders = self._get_or_decode_transaction_events(  # noqa: E501
                 transaction=tx,
                 tx_receipt=receipt,
                 ignore_cache=ignore_cache,
@@ -769,6 +794,10 @@ class EVMTransactionDecoder(ABC):
 
             if new_refresh_balances is True:
                 refresh_balances = True
+
+            if reload_decoders is not None:
+                with self.database.conn.read_ctx() as cursor:
+                    self.reload_specific_decoders(cursor, decoders=reload_decoders)
 
         if send_ws_notifications:
             self.msg_aggregator.add_message(
@@ -789,10 +818,13 @@ class EVMTransactionDecoder(ABC):
             tx_receipt: EvmTxReceipt,
             ignore_cache: bool,
             delete_customized: bool = False,
-    ) -> tuple[list['EvmEvent'], bool]:
+    ) -> tuple[list['EvmEvent'], bool, set[str] | None]:
         """
         Get a transaction's events if existing in the DB or decode them.
-        Returns the list of decoded events and a flag which is True if balances refresh is needed.
+        Returns:
+        - the list of decoded events
+        - a flag which is True if balances refresh is needed
+        - A list of decoders to reload or None if no need
         """
         with self.database.conn.read_ctx() as cursor:
             tx_id = transaction.get_or_query_db_id(cursor)
@@ -823,7 +855,7 @@ class EVMTransactionDecoder(ABC):
                         ),
                         has_premium=True,  # for this function we don't limit anything
                     )
-                    return events, False
+                    return events, False, None
 
         # else we should decode now
         return self._decode_transaction(transaction=transaction, tx_receipt=tx_receipt)

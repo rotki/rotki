@@ -97,7 +97,7 @@ def test_deposit_yearn_v2(database, ethereum_inquirer, eth_transactions):
     with database.user_write() as cursor, patch_decoder_reload_data():
         dbethtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         decoder.reload_data(cursor)
-    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 3
     expected_events = [
@@ -207,7 +207,7 @@ def test_withdraw_yearn_v2(database, ethereum_inquirer, eth_transactions):
     with database.user_write() as cursor, patch_decoder_reload_data():
         dbethtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         decoder.reload_data(cursor)
-    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 3
     expected_events = [
@@ -317,7 +317,7 @@ def test_deposit_yearn_v1(database, ethereum_inquirer, eth_transactions):
     with database.user_write() as cursor, patch_decoder_reload_data():
         dbethtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         decoder.reload_data(cursor)
-    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 3
     expected_events = [
@@ -427,7 +427,7 @@ def test_withdraw_yearn_v1(database, ethereum_inquirer, eth_transactions):
     with database.user_write() as cursor, patch_decoder_reload_data():
         dbethtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         decoder.reload_data(cursor)
-    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
 
     assert len(events) == 3
     expected_events = [

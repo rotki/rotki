@@ -3,6 +3,7 @@ import pytest
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
+from rotkehlchen.chain.ethereum.decoding.decoder import EthereumTransactionDecoder
 from rotkehlchen.chain.ethereum.modules.eigenlayer.balances import EigenlayerBalances
 from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     CPT_EIGENLAYER,
@@ -16,6 +17,7 @@ from rotkehlchen.chain.ethereum.modules.eigenlayer.constants import (
     EIGENPOD_MANAGER,
     REWARDS_COORDINATOR,
 )
+from rotkehlchen.chain.ethereum.transactions import EthereumTransactions
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.decoding.safe.constants import CPT_SAFE_MULTISIG
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -245,9 +247,18 @@ def test_stake_eigen(ethereum_inquirer, ethereum_accounts):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('ethereum_accounts', [['0x80B7EDA1Baa2290478205786615F65052c80882f']])
-def test_deploy_eigenpod(ethereum_inquirer, ethereum_accounts):
+def test_deploy_eigenpod(ethereum_inquirer, ethereum_accounts, database):
     tx_hash = deserialize_evm_tx_hash('0x910087fb1be44dbf2d89363579c162e70d5666f16182c9015d635c4f81ac07b6')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=ethereum_inquirer, tx_hash=tx_hash)
+    ethereum_transactions = EthereumTransactions(ethereum_inquirer=ethereum_inquirer, database=database)  # noqa: E501
+    ethereum_tx_decoder = EthereumTransactionDecoder(database=database, ethereum_inquirer=ethereum_inquirer, transactions=ethereum_transactions)  # noqa: E501
+    assert ethereum_tx_decoder.decoders['Eigenlayer'].eigenpod_owner_mapping == {}
+
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=ethereum_inquirer,
+        tx_hash=tx_hash,
+        transactions=ethereum_transactions,
+        evm_decoder=ethereum_tx_decoder,
+    )
     timestamp, gas_amount, eigenpod_address = TimestampMS(1715733143000), '0.00133529055565527', '0x664BFef14A62F316175d39D355809D04D2Cb7a23'  # noqa: E501
     expected_events = [EvmEvent(
         tx_hash=tx_hash,
@@ -277,6 +288,9 @@ def test_deploy_eigenpod(ethereum_inquirer, ethereum_accounts):
         address=EIGENPOD_MANAGER,
     )]
     assert events == expected_events
+    assert ethereum_tx_decoder.decoders['Eigenlayer'].eigenpod_owner_mapping == {
+        eigenpod_address: ethereum_accounts[0],
+    }
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

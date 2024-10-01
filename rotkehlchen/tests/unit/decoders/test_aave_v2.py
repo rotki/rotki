@@ -290,7 +290,7 @@ def test_aave_v2_enable_collateral(database, ethereum_inquirer, eth_transactions
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
@@ -376,7 +376,7 @@ def test_aave_v2_disable_collateral(database, ethereum_inquirer, eth_transaction
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
@@ -482,7 +482,7 @@ def test_aave_v2_deposit(database, ethereum_inquirer, eth_transactions):
     with dbevmtx.db.user_write() as cursor, patch_decoder_reload_data():
         dbevmtx.add_evm_transactions(cursor, [transaction], relevant_address=None)
         decoder.reload_data(cursor)
-    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
@@ -731,7 +731,7 @@ def test_aave_v2_repay(database, ethereum_inquirer, eth_transactions):
         ethereum_inquirer=ethereum_inquirer,
         transactions=eth_transactions,
     )
-    events, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
+    events, _, _ = decoder._decode_transaction(transaction=transaction, tx_receipt=receipt)
     expected_events = [
         EvmEvent(
             tx_hash=evmhash,
