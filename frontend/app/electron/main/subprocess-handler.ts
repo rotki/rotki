@@ -7,7 +7,7 @@ import * as path from 'node:path';
 import process from 'node:process';
 import { Buffer } from 'node:buffer';
 import { type App, type BrowserWindow, app, ipcMain } from 'electron';
-import psList from 'ps-list';
+import { psList } from '@electron/main/ps-list';
 import { assert } from '@rotki/common';
 import { type Task, tasklist } from 'tasklist';
 import { DEFAULT_PORT, selectPort } from '@electron/main/port-utils';
@@ -207,11 +207,18 @@ export class SubprocessHandler {
   }
 
   async checkForBackendProcess(): Promise<number[]> {
-    const runningProcesses = await psList({ all: true });
-    const matches = runningProcesses.filter(
-      process => process.cmd?.includes('-m rotkehlchen') || process.cmd?.includes('rotki-core'),
-    );
-    return matches.map(p => p.pid);
+    try {
+      this.logToFile('Checking for running rotki-core processes');
+      const runningProcesses = await psList({ all: true });
+      const matches = runningProcesses.filter(
+        process => process.cmd?.includes('-m rotkehlchen') || process.cmd?.includes('rotki-core'),
+      );
+      return matches.map(p => p.pid);
+    }
+    catch (error: any) {
+      this.logToFile(error.toString());
+      return [];
+    }
   }
 
   async createPyProc(window: BrowserWindow, options: Partial<BackendOptions>) {

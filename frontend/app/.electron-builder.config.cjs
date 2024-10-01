@@ -51,6 +51,11 @@ module.exports = {
       to: 'colibri',
       filter: ['**/*'],
     },
+    {
+      from: './dist/vendor',
+      to: 'vendor',
+      filter: ['**/*'],
+    },
   ],
   dmg: {
     sign: false,

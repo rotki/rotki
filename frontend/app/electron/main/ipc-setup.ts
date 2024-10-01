@@ -66,11 +66,17 @@ let restarting = false;
 
 function setupBackendRestart(getWindow: WindowProvider, pyHandler: SubprocessHandler) {
   async function restartBackend(event: Electron.IpcMainEvent, options: Partial<BackendOptions>) {
+    pyHandler.logToFile(`Restarting backend with options: ${JSON.stringify(options)}`);
     if (firstStart) {
       firstStart = false;
       const pids = await pyHandler.checkForBackendProcess();
-      if (pids.length > 0)
+      if (pids.length > 0) {
         event.sender.send(IpcCommands.BACKEND_PROCESS_DETECTED, pids);
+        pyHandler.logToFile(`Detected existing backend process: ${pids.join(', ')}`);
+      }
+      else {
+        pyHandler.logToFile('No existing backend process detected');
+      }
     }
 
     let success = false;
@@ -78,13 +84,14 @@ function setupBackendRestart(getWindow: WindowProvider, pyHandler: SubprocessHan
     if (!restarting) {
       restarting = true;
       try {
+        pyHandler.logToFile('Starting backend process');
         const win = getWindow();
         await pyHandler.exitPyProc(true);
         await pyHandler.createPyProc(win, options);
         success = true;
       }
       catch (error: any) {
-        console.error(error);
+        pyHandler.logToFile(error);
       }
       finally {
         restarting = false;
