@@ -10,7 +10,7 @@ const status = actionStatus(name);
 </script>
 
 <template>
-  <RuiCard>
+  <RuiCard id="open-sea-api-key">
     <template #header>
       {{ t('external_services.opensea.title') }}
     </template>

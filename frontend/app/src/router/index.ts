@@ -12,13 +12,15 @@ export const router = createRouter({
     if (to.hash) {
       const element = document.getElementById(to.hash.replace(/#/, ''));
       if (element) {
-        await nextTick(() => {
-          document.body.scrollTo({
-            left: 0,
-            top: element.offsetTop,
-            behavior: 'smooth',
+        setTimeout(async () => {
+          await nextTick(() => {
+            document.body.scrollTo({
+              left: 0,
+              top: element.offsetTop - 80,
+              behavior: 'smooth',
+            });
           });
-        });
+        }, 200);
       }
 
       return { el: to.hash };
