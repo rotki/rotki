@@ -2,6 +2,7 @@
 import { BigNumber, Blockchain } from '@rotki/common';
 import { type TablePaginationData, useBreakpoint } from '@rotki/ui-library';
 import { keyBy } from 'lodash-es';
+import { Routes } from '@/router/routes';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { Module } from '@/types/modules';
 import type { GalleryNft, Nft, Nfts } from '@/types/nfts';
@@ -206,6 +207,8 @@ function sortNfts(
   }
   return 0;
 }
+
+const nftLimited = computed(() => get(error).includes('limit'));
 </script>
 
 <template>
@@ -219,7 +222,37 @@ function sortNfts(
     <template #title>
       {{ error ? t('nft_gallery.error_title') : t('nft_gallery.empty_title') }}
     </template>
-    {{ error ? error : t('nft_gallery.empty_subtitle') }}
+    <i18n-t
+      v-if="nftLimited"
+      keypath="nft_gallery.fill_api_key"
+    >
+      <template #link>
+        <InternalLink
+          :to="{
+            path: `${Routes.API_KEYS_EXTERNAL_SERVICES}`,
+            hash: '#open-sea-api-key',
+          }"
+        >
+          {{ t('nft_gallery.open_sea') }}
+        </InternalLink>
+      </template>
+    </i18n-t>
+    <template v-else>
+      {{ error ? error : t('nft_gallery.empty_subtitle') }}
+    </template>
+    <RuiButton
+      color="primary"
+      class="mx-auto mt-8"
+      @click="fetchNfts()"
+    >
+      <template #prepend>
+        <RuiIcon
+          name="refresh-line"
+          size="20"
+        />
+      </template>
+      {{ t('common.refresh') }}
+    </RuiButton>
   </NoDataScreen>
   <TablePageLayout
     v-else
