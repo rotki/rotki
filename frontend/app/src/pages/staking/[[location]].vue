@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { NoteLocation } from '@/types/notes';
+import type { RouteLocationRaw } from 'vue-router';
 
 type NavType = 'eth2' | 'liquity' | 'kraken';
 
@@ -64,12 +65,16 @@ const staking = computed<StakingInfo[]>(() => [
 const router = useRouter();
 const [DefineIcon, ReuseIcon] = createReusableTemplate<{ image: string }>();
 
+function getRedirectLink(location: string): RouteLocationRaw {
+  return {
+    name: '/staking/[[location]]',
+    params: { location },
+  };
+}
+
 async function redirect(location: string) {
   await nextTick(() => {
-    router.push({
-      name: '/staking/[[location]]',
-      params: { location },
-    });
+    router.push(getRedirectLink(location));
   });
 }
 
@@ -152,12 +157,7 @@ onMounted(async () => {
               :open-delay="400"
             >
               <template #activator>
-                <InternalLink
-                  :to="{
-                    path: '/staking',
-                    query: { location: item.id },
-                  }"
-                >
+                <InternalLink :to="getRedirectLink(item.id)">
                   <AppImage
                     :size="imageSize"
                     contain
