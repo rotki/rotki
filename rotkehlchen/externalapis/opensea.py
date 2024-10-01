@@ -188,7 +188,7 @@ class Opensea(ExternalServiceWithApiKey):
 
             if response.status_code != 200:
                 if api_key is None and self.backup_key is None:
-                    self.backup_key = 'f6bc0f7f7a5944f9bd63366130edd306'
+                    self.backup_key = '04ea654d84cd4b2b8da25ec41ca1a9a4'
                     self.session.headers.update({'X-API-KEY': self.backup_key})
 
                 log.debug(

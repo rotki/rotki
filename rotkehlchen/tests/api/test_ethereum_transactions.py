@@ -786,7 +786,7 @@ def test_query_transactions_check_decoded_events(
     returned_events = query_events(rotkehlchen_api_server, json={'location': 'ethereum'}, expected_num_with_grouping=4, expected_totals_with_grouping=4)  # noqa: E501
     tx1_events = [{
         'entry': {
-            'identifier': 4,
+            'identifier': 5,
             'entry_type': 'evm event',
             'asset': 'ETH',
             'balance': {'amount': '0.00863351371344', 'usd_value': '0'},
@@ -807,7 +807,7 @@ def test_query_transactions_check_decoded_events(
         'event_accounting_rule_status': 'not processed',
     }, {
         'entry': {
-            'identifier': 5,
+            'identifier': 6,
             'entry_type': 'evm event',
             'asset': 'ETH',
             'balance': {'amount': '0.096809163374771208', 'usd_value': '0'},
@@ -830,7 +830,7 @@ def test_query_transactions_check_decoded_events(
     assert returned_events[:2] == tx1_events
     tx2_events = [{
         'entry': {
-            'identifier': 1,
+            'identifier': 3,
             'entry_type': 'evm event',
             'asset': 'ETH',
             'address': None,
@@ -851,7 +851,7 @@ def test_query_transactions_check_decoded_events(
         'event_accounting_rule_status': 'not processed',
     }, {
         'entry': {
-            'identifier': 2,
+            'identifier': 4,
             'entry_type': 'evm event',
             'asset': A_USDT.identifier,
             'address': '0xb5d85CBf7cB3EE0D56b3bB207D5Fc4B82f43F511',
@@ -874,7 +874,7 @@ def test_query_transactions_check_decoded_events(
     assert returned_events[2:4] == tx2_events
     tx3_events = [{
         'entry': {
-            'identifier': 3,
+            'identifier': 2,
             'entry_type': 'evm event',
             'asset': 'ETH',
             'address': '0xeB2629a2734e272Bcc07BDA959863f316F4bD4Cf',
@@ -897,7 +897,7 @@ def test_query_transactions_check_decoded_events(
     assert returned_events[4:5] == tx3_events
     tx4_events = [{
         'entry': {
-            'identifier': 6,
+            'identifier': 1,
             'entry_type': 'evm event',
             'asset': A_USDT.identifier,
             'address': '0xE21c192cD270286DBBb0fBa10a8B8D9957d431E5',
