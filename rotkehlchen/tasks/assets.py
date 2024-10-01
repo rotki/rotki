@@ -91,6 +91,8 @@ MULTISEND_SPAM_THRESHOLD = 10  # we cover the case of multiple token rewards in 
 KNOWN_FALSE_POSITIVES: Final = {
     'eip155:1/erc20:0xA0b73E1Ff0B80914AB6fe0444E65848C4C34450b',  # crypto.com CRO token
     'eip155:1/erc20:0xB63B606Ac810a52cCa15e44bB630fd42D8d1d83d',  # crypto.com
+    'eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430',  # monerium EUR v2. It is sent as reward for the referral program of gnosis pay  # noqa: E501
+    'eip155:100/erc20:0xcB444e90D8198415266c6a2724b7900fb12FC56E',  # monerium EUR v1. Same as above  # noqa: E501
 }
 
 
@@ -208,7 +210,7 @@ def augmented_spam_detection(user_db: DBHandler) -> None:
         false_positive_ids = set(globaldb_get_general_cache_values(
             cursor=globaldb_cursor,
             key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
-        ))
+        )) | KNOWN_FALSE_POSITIVES
 
         globaldb_cursor.execute(  # take only assets that are in the global DB
             f'SELECT identifier FROM assets WHERE identifier IN ({", ".join(["?"] * len(assets))}) AND type=?',  # noqa: E501
