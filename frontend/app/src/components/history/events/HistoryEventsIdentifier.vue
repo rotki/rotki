@@ -8,21 +8,34 @@ const props = defineProps<{
 
 const { event } = toRefs(props);
 
-const translationKey = computed<string>(
-  () => `transactions.events.headers.${toSnakeCase(get(event).entryType)}`,
-);
-
 const { getChain } = useSupportedChains();
+const { is2xlAndUp } = useBreakpoint();
+
+const translationKey = computed<string>(() => `transactions.events.headers.${toSnakeCase(get(event).entryType)}`);
 
 const evmOrDepositEvent = computed(() => get(isEvmEventRef(event)) || get(isEthDepositEventRef(event)));
 const blockEvent = isEthBlockEventRef(event);
 const withdrawEvent = isWithdrawalEventRef(event);
 
-const { is2xlAndUp } = useBreakpoint();
+/**
+ * The key is used to avoid an issue where the block event identifier would be reused
+ * to display a hash event identifier resulting in a numerical display instead.
+ */
+const key = computed(() => {
+  if (get(evmOrDepositEvent))
+    return 'tx_hash';
+  else if (get(blockEvent))
+    return 'block';
+  else if (get(withdrawEvent))
+    return 'withdraw';
+  else
+    return undefined;
+});
 </script>
 
 <template>
   <i18n-t
+    :key="key"
     :keypath="translationKey"
     tag="span"
     class="flex items-center gap-2"
