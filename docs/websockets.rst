@@ -74,7 +74,8 @@ DB Upgrade status
 =========================
 
 The messages sent by rotki when a user is logging in and a db upgrade is happening. The format is the following.
-
+A message having ``total_steps`` and ``current_step`` being ``0`` is sent at the start for the frontend to
+switch to the progress screen from the login screen.
 
 ::
 
@@ -101,6 +102,8 @@ Data migration status
 =========================
 
 The messages sent by rotki when a user is logging in and a db upgrade is happening. The format is the following.
+A message having ``total_steps`` and ``current_step`` being ``0`` is sent at the start for the frontend to
+switch to the progress screen from the login screen.
 
 
 ::
