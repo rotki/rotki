@@ -88,6 +88,7 @@ SUSHISWAP_PROTOCOL: Final = 'SLP'
 # for yearn vaults v1
 YEARN_VAULTS_V1_PROTOCOL = 'yearn_vaults_v1'
 YEARN_VAULTS_V2_PROTOCOL = 'yearn_vaults_v2'
+YEARN_VAULTS_V3_PROTOCOL = 'yearn_vaults_v3'
 CURVE_POOL_PROTOCOL = 'curve_pool'
 VELODROME_POOL_PROTOCOL = 'velodrome_pool'
 AERODROME_POOL_PROTOCOL = 'aerodrome_pool'

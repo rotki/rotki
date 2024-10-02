@@ -5,9 +5,11 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.modules.yearn.constants import (
     CPT_YEARN_V1,
     CPT_YEARN_V2,
+    CPT_YEARN_V3,
     YEARN_ICON,
     YEARN_LABEL_V1,
     YEARN_LABEL_V2,
+    YEARN_LABEL_V3,
 )
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
@@ -22,7 +24,12 @@ from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import YEARN_VAULTS_V1_PROTOCOL, YEARN_VAULTS_V2_PROTOCOL, ChainID
+from rotkehlchen.types import (
+    YEARN_VAULTS_V1_PROTOCOL,
+    YEARN_VAULTS_V2_PROTOCOL,
+    YEARN_VAULTS_V3_PROTOCOL,
+    ChainID,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumInquirer
@@ -32,8 +39,10 @@ if TYPE_CHECKING:
 
 YEARN_DEPOSIT_AMOUNT_4_BYTES = b'\xd0\xe3\r\xb0'
 YEARN_DEPOSIT_4_BYTES = b'\xb6\xb5_%'
+YEARN_DEPOSIT_4_BYTES_V3 = b'\x6E\x55\x3F\x65'
 YEARN_WITHDRAW_AMOUNT_4_BYTES = b'.\x1a}M'
 YEARN_WITHDRAW_4_BYTES = b'<\xcf\xd6\x0b'
+YEARN_WITHDRAW_4_BYTES_V3 = b'\x9f\x40\xa7\xb3'
 
 
 def _get_vault_token_name(vault_address: 'ChecksumEvmAddress') -> str:
@@ -59,13 +68,18 @@ class YearnDecoder(DecoderInterface):
             msg_aggregator=msg_aggregator,
         )
 
+        self.vaults: dict[str, set] = {
+            YEARN_VAULTS_V1_PROTOCOL: set(),
+            YEARN_VAULTS_V2_PROTOCOL: set(),
+            YEARN_VAULTS_V3_PROTOCOL: set(),
+        }
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            db_query = 'SELECT address FROM evm_tokens WHERE protocol=? AND chain=?'
-            cursor.execute(db_query, (YEARN_VAULTS_V1_PROTOCOL, ChainID.ETHEREUM.serialize_for_db()))  # noqa: E501
-            self.vaults_v1 = {string_to_evm_address(row[0]) for row in cursor}
-
-            cursor.execute(db_query, (YEARN_VAULTS_V2_PROTOCOL, ChainID.ETHEREUM.serialize_for_db()))  # noqa: E501
-            self.vaults_v2 = {string_to_evm_address(row[0]) for row in cursor}
+            cursor.execute(
+                'SELECT protocol, address FROM evm_tokens WHERE protocol IN (?, ?, ?) AND chain=?',
+                (YEARN_VAULTS_V1_PROTOCOL, YEARN_VAULTS_V2_PROTOCOL, YEARN_VAULTS_V3_PROTOCOL, ChainID.ETHEREUM.serialize_for_db()),  # noqa: E501
+            )
+            for row in cursor:
+                self.vaults[row[0]].add(string_to_evm_address(row[1]))
 
     def _maybe_enrich_yearn_transfers(
             self,
@@ -77,24 +91,31 @@ class YearnDecoder(DecoderInterface):
         - deposits
         - withdrawals
 
-        First we make sure that the contract is a yearn v1 or v2 contract and that the method
+        First we make sure that the contract is a yearn v1, v2 or v3 contract and that the method
         executed in the contract is one of the expected.
         """
-        protocol = CPT_YEARN_V2
-        if context.transaction.to_address in self.vaults_v1:
+        if context.transaction.to_address is None:
+            return FAILED_ENRICHMENT_OUTPUT
+
+        protocol = CPT_YEARN_V3
+        if context.transaction.to_address in self.vaults[YEARN_VAULTS_V1_PROTOCOL]:
             protocol = CPT_YEARN_V1
-        elif context.transaction.to_address not in self.vaults_v2:
+        elif context.transaction.to_address in self.vaults[YEARN_VAULTS_V2_PROTOCOL]:
+            protocol = CPT_YEARN_V2
+        elif context.transaction.to_address not in self.vaults[YEARN_VAULTS_V3_PROTOCOL]:
             return FAILED_ENRICHMENT_OUTPUT
 
         is_deposit = False
         if (
             context.transaction.input_data.startswith(YEARN_DEPOSIT_4_BYTES) or
-            context.transaction.input_data.startswith(YEARN_DEPOSIT_AMOUNT_4_BYTES)
+            context.transaction.input_data.startswith(YEARN_DEPOSIT_AMOUNT_4_BYTES) or
+            context.transaction.input_data.startswith(YEARN_DEPOSIT_4_BYTES_V3)
         ):
             is_deposit = True
         elif not (
             context.transaction.input_data.startswith(YEARN_WITHDRAW_4_BYTES) or
-            context.transaction.input_data.startswith(YEARN_WITHDRAW_AMOUNT_4_BYTES)
+            context.transaction.input_data.startswith(YEARN_WITHDRAW_AMOUNT_4_BYTES) or
+            context.transaction.input_data.startswith(YEARN_WITHDRAW_4_BYTES_V3)
         ):
             # a yearn contract method that we don't need to handle
             return FAILED_ENRICHMENT_OUTPUT
@@ -152,14 +173,7 @@ class YearnDecoder(DecoderInterface):
     @staticmethod
     def counterparties() -> tuple[CounterpartyDetails, ...]:
         return (
-            CounterpartyDetails(
-                identifier=CPT_YEARN_V1,
-                label=YEARN_LABEL_V1,
-                image=YEARN_ICON,
-            ),
-            CounterpartyDetails(
-                identifier=CPT_YEARN_V2,
-                label=YEARN_LABEL_V2,
-                image=YEARN_ICON,
-            ),
+            CounterpartyDetails(identifier=CPT_YEARN_V1, label=YEARN_LABEL_V1, image=YEARN_ICON),
+            CounterpartyDetails(identifier=CPT_YEARN_V2, label=YEARN_LABEL_V2, image=YEARN_ICON),
+            CounterpartyDetails(identifier=CPT_YEARN_V3, label=YEARN_LABEL_V3, image=YEARN_ICON),
         )

@@ -18,6 +18,7 @@ if TYPE_CHECKING:
         'UNISWAP_V3_POOL',
         'UNIV1_LP',
         'YEARN_VAULT_V2',
+        'YEARN_VAULT_V3',
         'ZERION_ADAPTER',
         'ILK_REGISTRY',  # added in 1.27.1 data migration
         'CVX_REWARD_POOL',  # added in 1.28.0 packaged globaldb

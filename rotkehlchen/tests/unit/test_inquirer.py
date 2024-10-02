@@ -21,7 +21,7 @@ from rotkehlchen.chain.evm.decoding.curve.curve_cache import (
 )
 from rotkehlchen.chain.evm.types import NodeName, string_to_evm_address
 from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_POL_HARDFORK
-from rotkehlchen.constants import ZERO
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_1INCH,
     A_AAVE,
@@ -60,6 +60,7 @@ from rotkehlchen.tests.utils.mock import MockResponse
 from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
     VELODROME_POOL_PROTOCOL,
+    YEARN_VAULTS_V3_PROTOCOL,
     CacheType,
     ChainID,
     ChecksumEvmAddress,
@@ -653,12 +654,50 @@ def test_find_yearn_vaults_v2_price(inquirer_defi, globaldb):
         )
 
     for token, underlying_token in ((yvusdc, A_USDC), (yvdai, A_DAI)):
-        price = inquirer_defi.find_yearn_price(token)
+        price = inquirer_defi.find_yearn_price(token, 'YEARN_VAULT_V2')
         assert price is not None
 
         with globaldb.conn.read_ctx() as cursor:
             result = globaldb.fetch_underlying_tokens(cursor, token.identifier)
             assert result and result[0].address == underlying_token.resolve_to_evm_token().evm_address  # noqa: E501
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_yearn_vaults_v3_price(
+        database: 'DBHandler',
+        inquirer_defi: 'Inquirer',
+        globaldb: 'GlobalDBHandler',
+) -> None:
+    """Check that we can find the price of a yearn v3 vault asset.
+    The v3 assets are retrieved via query_yearn_vaults when the app runs,
+    so the vault asset isn't in the global db yet and must be added manually here.
+    """
+    crvusd_address = string_to_evm_address('0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E')
+    yvcrvusd = get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F'),
+        chain_id=ChainID.ETHEREUM,
+        token_kind=EvmTokenKind.ERC20,
+        symbol='yvcrvUSD-2',
+        name='crvUSD-2 yVault',
+        decimals=18,
+        protocol=YEARN_VAULTS_V3_PROTOCOL,
+        started=Timestamp(1713104219),
+        underlying_tokens=[UnderlyingToken(
+            address=crvusd_address,
+            token_kind=EvmTokenKind.ERC20,
+            weight=ONE,
+        )],
+    )
+
+    price = inquirer_defi.find_yearn_price(yvcrvusd, 'YEARN_VAULT_V3')
+    assert price is not None
+
+    with globaldb.conn.read_ctx() as cursor:
+        result = globaldb.fetch_underlying_tokens(cursor, yvcrvusd.identifier)
+        assert result and result[0].address == crvusd_address
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])

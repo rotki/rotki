@@ -2,7 +2,7 @@
 Changelog
 =========
 
-
+* :feature:`7540` Rotki will now support Yearn V3 vaults.
 * :feature:`-` Gitcoin donations for more rounds will now be properly seen by rotki.
 * :feature:`7920` Rotki will now create calendar reminders for airdrop claim deadlines
 * :bug:`-` During user DB upgrade if there is an irregular shutdown the previous DB backup will be properly located in the rotki data user directory and not the system temp directory.

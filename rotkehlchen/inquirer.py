@@ -5,7 +5,17 @@ from collections.abc import Callable, Iterable, Sequence
 from contextlib import suppress
 from functools import wraps
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, NamedTuple, Optional, TypeVar, Union, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Literal,
+    NamedTuple,
+    Optional,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 from rotkehlchen.assets.asset import Asset, AssetWithOracles, EvmToken, FiatAsset, UnderlyingToken
 from rotkehlchen.assets.utils import TokenEncounterInfo, get_or_create_evm_token
@@ -102,6 +112,7 @@ from rotkehlchen.types import (
     HOP_PROTOCOL_LP,
     LP_TOKEN_AS_POOL_PROTOCOLS,
     YEARN_VAULTS_V2_PROTOCOL,
+    YEARN_VAULTS_V3_PROTOCOL,
     CacheType,
     ChainID,
     EvmTokenKind,
@@ -187,7 +198,9 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
     elif token.protocol == CURVE_POOL_PROTOCOL:
         price = Inquirer().find_curve_pool_price(token)
     elif token.protocol == YEARN_VAULTS_V2_PROTOCOL:
-        price = Inquirer().find_yearn_price(token)
+        price = Inquirer().find_yearn_price(token, 'YEARN_VAULT_V2')
+    elif token.protocol == YEARN_VAULTS_V3_PROTOCOL:
+        price = Inquirer().find_yearn_price(token, 'YEARN_VAULT_V3')
     elif token.protocol == GEARBOX_PROTOCOL:
         price = Inquirer().find_gearbox_price(token)
     elif token.protocol == HOP_PROTOCOL_LP:
@@ -1090,9 +1103,10 @@ class Inquirer:
     def find_yearn_price(
             self,
             token: EvmToken,
+            vault_abi: Literal['YEARN_VAULT_V3', 'YEARN_VAULT_V2'],
     ) -> Price | None:
         """
-        Query price for a yearn vault v2 token using the pricePerShare method
+        Query price for a yearn vault v2 or v3 token using the pricePerShare method
         and the price of the underlying token.
         """
         ethereum = self.get_evm_manager(chain_id=ChainID.ETHEREUM)
@@ -1102,7 +1116,7 @@ class Inquirer:
 
         contract = EvmContract(
             address=token.evm_address,
-            abi=ethereum.node_inquirer.contracts.abi('YEARN_VAULT_V2'),
+            abi=ethereum.node_inquirer.contracts.abi(vault_abi),
             deployed_block=0,
         )
         if maybe_underlying_tokens is None or len(maybe_underlying_tokens) != 1:
@@ -1157,13 +1171,13 @@ class Inquirer:
         # Get the price per share from the yearn contract
         contract = EvmContract(
             address=token.evm_address,
-            abi=ethereum.node_inquirer.contracts.abi('YEARN_VAULT_V2'),
+            abi=ethereum.node_inquirer.contracts.abi(vault_abi),
             deployed_block=0,
         )
         try:
             price_per_share = contract.call(ethereum.node_inquirer, 'pricePerShare')
         except (RemoteError, BlockchainQueryError) as e:
-            log.error(f'Failed to query pricePerShare method in Yearn v2 Vault. {e!s}')
+            log.error(f'Failed to query pricePerShare method for Yearn vault {token}. {e!s}')
         else:
             return Price(price_per_share * underlying_token_price / 10 ** token.get_decimals())
 

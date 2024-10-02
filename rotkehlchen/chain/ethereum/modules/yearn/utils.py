@@ -22,6 +22,7 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import (
     YEARN_VAULTS_V1_PROTOCOL,
     YEARN_VAULTS_V2_PROTOCOL,
+    YEARN_VAULTS_V3_PROTOCOL,
     CacheType,
     ChainID,
     EvmTokenKind,
@@ -108,10 +109,6 @@ def _merge_data_yearn_vaults() -> tuple[list[dict[str, Any]] | None, str | None]
             log.error(f'Unexpected vault schema in yearn api for {vault}. Skipping')
             continue
 
-        if (version := vault.get('version')) is not None and version.startswith('3.'):
-            log.debug(f'Skipping yearn v3 vault {vault.get("address")}')
-            continue  # skip v3 vaults until we add them #7540
-
         if vault_address in vaults_seen:
             continue
 
@@ -138,7 +135,7 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
 
     assert data is not None, 'data exists. Checked by _maybe_reset_yearn_cache_timestamp'
     for vault in data:
-        if 'type' not in vault:
+        if 'type' not in vault or (vault['type'] == '' and 'version' not in vault):
             log.error(f'Could not identify the yearn vault type for {vault}. Skipping...')
             continue
 
@@ -146,6 +143,8 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
             vault_type = YEARN_VAULTS_V1_PROTOCOL
         elif vault['type'] == 'v2' or vault['version'].startswith('0.'):  # version '0.x.x' happens in ydemon and is always a v2 vault  # noqa: E501
             vault_type = YEARN_VAULTS_V2_PROTOCOL
+        elif vault['version'].startswith('3.'):
+            vault_type = YEARN_VAULTS_V3_PROTOCOL
         else:
             log.error(f'Found yearn token with unknown version {vault}. Skipping...')
             continue

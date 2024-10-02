@@ -169,6 +169,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'weth',
         'yearn-v1',
         'yearn-v2',
+        'yearn-v3',
         'balancer-v1',
         'balancer-v2',
         'optimism',

@@ -19,7 +19,13 @@ from rotkehlchen.globaldb.cache import (
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import YEARN_VAULTS_V2_PROTOCOL, CacheType, ChainID, Timestamp
+from rotkehlchen.types import (
+    YEARN_VAULTS_V2_PROTOCOL,
+    YEARN_VAULTS_V3_PROTOCOL,
+    CacheType,
+    ChainID,
+    Timestamp,
+)
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -68,7 +74,7 @@ def test_yearn_api(database, ethereum_inquirer):
     assert state_after != state_before
     # 140 is the number of vaults at the moment of writing this test
     assert state_before is None
-    assert int(state_after) == 4  # 2 from old api + 2 v2 from ydemon. There is 1 duplicate that gets removed  # noqa: E501
+    assert int(state_after) == 5  # 2 from old api + 2 v2 and 1 v3 from ydemon. There is 1 duplicate that gets removed  # noqa: E501
 
     # check that a new vault was added
     token = GlobalDBHandler.get_evm_token(
@@ -92,6 +98,17 @@ def test_yearn_api(database, ethereum_inquirer):
     assert token.protocol == YEARN_VAULTS_V2_PROTOCOL
     assert len(token.underlying_tokens) == 1
     assert token.underlying_tokens[0].address == '0x9b77bd0a665F05995b68e36fC1053AFFfAf0d4B5'
+
+    # v3 vault token
+    token = GlobalDBHandler.get_evm_token(
+        address=string_to_evm_address('0x04AeBe2e4301CdF5E9c57B01eBdfe4Ac4B48DD13'),
+        chain_id=ChainID.ETHEREUM,
+    )
+    assert token.name == 'mkUSD yVault-A'
+    assert token.symbol == 'yvmkUSD-A'
+    assert token.protocol == YEARN_VAULTS_V3_PROTOCOL
+    assert len(token.underlying_tokens) == 1
+    assert token.underlying_tokens[0].address == '0x4591DBfF62656E7859Afe5e45f6f47D3669fBB28'
 
     # trigger the query again and check that the timestamp was updated
     future_timestamp = datetime.datetime.now(tz=datetime.UTC) + datetime.timedelta(seconds=WEEK_IN_SECONDS)  # noqa: E501
