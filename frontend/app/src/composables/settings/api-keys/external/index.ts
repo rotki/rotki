@@ -60,7 +60,7 @@ export const useExternalApiKeys = createSharedComposable((t: ReturnType<typeof u
       }
     }
     else {
-      const itemService = items[service];
+      const itemService = items[service === 'gnosis_pay' ? 'gnosisPay' : service];
 
       if (itemService && 'apiKey' in itemService)
         return itemService.apiKey || '';
