@@ -52,7 +52,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
       // thus in amount display we always pass the manualBalanceByLocation in the user's main currency
       let convertedValue: BigNumber;
       if (mainCurrency === perLocationBalance.asset)
-        convertedValue = perLocationBalance.amount as BigNumber;
+        convertedValue = perLocationBalance.amount;
       else convertedValue = perLocationBalance.usdValue.multipliedBy(currentExchangeRate);
 
       // to avoid double-conversion, we take as usdValue the amount property when the original asset type and
@@ -218,7 +218,7 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
     }
   };
 
-  const save = (balance: ManualBalance | RawManualBalance): Promise<ActionStatus<ValidationErrors | string>> =>
+  const save = async (balance: ManualBalance | RawManualBalance): Promise<ActionStatus<ValidationErrors | string>> =>
     'identifier' in balance ? editManualBalance(balance) : addManualBalance(balance);
 
   const deleteManualBalance = async (id: number): Promise<void> => {
@@ -274,12 +274,12 @@ export const useManualBalancesStore = defineStore('balances/manual', () => {
     },
   };
 
-  const fetchLiabilities = (
+  const fetchLiabilities = async (
     payload: MaybeRef<ManualBalanceRequestPayload>,
   ): Promise<Collection<ManualBalanceWithPrice>> =>
     Promise.resolve(sortAndFilterManualBalance(get(manualLiabilities), get(payload), resolvers));
 
-  const fetchBalances = (payload: MaybeRef<ManualBalanceRequestPayload>): Promise<Collection<ManualBalanceWithPrice>> =>
+  const fetchBalances = async (payload: MaybeRef<ManualBalanceRequestPayload>): Promise<Collection<ManualBalanceWithPrice>> =>
     Promise.resolve(sortAndFilterManualBalance(get(manualBalances), get(payload), resolvers));
 
   return {

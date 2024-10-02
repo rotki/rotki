@@ -33,7 +33,7 @@ export const useBlockchainValidatorsStore = defineStore('blockchain/validators',
 
   const fetchValidators = async (
     payload: MaybeRef<EthereumValidatorRequestPayload>,
-  ): Promise<Collection<EthereumValidator>> => await new Promise(
+  ): Promise<Collection<EthereumValidator>> => new Promise(
     (resolve) => {
       resolve(sortAndFilterValidators(
         get(ethStakingValidators),

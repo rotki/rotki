@@ -2,13 +2,13 @@
 import { IndexedDb } from '@/utils/indexed-db';
 import type { RuiIcons } from '@rotki/ui-library';
 
+const display = defineModel<boolean>({ required: true });
+
 const emit = defineEmits<{
   (e: 'about'): void;
 }>();
 
 const { t } = useI18n();
-
-const display = defineModel<boolean>({ required: true });
 
 interface Entry {
   readonly icon: RuiIcons;

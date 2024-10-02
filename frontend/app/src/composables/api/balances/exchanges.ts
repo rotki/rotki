@@ -143,7 +143,7 @@ export function useExchangeApi(): UseExchangeApiReturn {
     return handleResponse(response);
   };
 
-  const getExchangeSavingsTask = (payload: ExchangeSavingsRequestPayload): Promise<PendingTask> =>
+  const getExchangeSavingsTask = async (payload: ExchangeSavingsRequestPayload): Promise<PendingTask> =>
     internalExchangeSavings<PendingTask>(payload, true);
 
   const getExchangeSavings = async (

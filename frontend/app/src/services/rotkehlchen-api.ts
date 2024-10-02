@@ -70,7 +70,7 @@ export class RotkehlchenApi {
         request.cancelToken = this.signal.token;
         return request;
       },
-      (error) => {
+      async (error) => {
         if (error.response)
           return Promise.reject(error.response.data);
 
@@ -90,7 +90,7 @@ export class RotkehlchenApi {
 
         return response;
       },
-      (error) => {
+      async (error) => {
         if (error.response) {
           if (error.response.status === 401) {
             this.cancel();

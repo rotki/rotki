@@ -156,7 +156,8 @@ export class BlockchainBalancesPage {
       .find('tr[class^="_tr_"]:not(tr[class*="_group_"]')
       .eq(position)
       .find('[data-cy="labeled-address-display"]')
-      .invoke('text').then((label) => {
+      .invoke('text')
+      .then((label) => {
         cy.get(`[data-cy=account-table] tbody`)
           .find('tr[class^="_tr_"]:not(tr[class*="_group_"]')
           .eq(position)

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import FileUpload from '@/components/import/FileUpload.vue';
 
+const model = defineModel<boolean>({ required: true });
+
 defineProps<{
   loading: boolean;
 }>();
@@ -13,8 +15,6 @@ const { t } = useI18n();
 
 const importFileUploader = ref<InstanceType<typeof FileUpload>>();
 const importFile = ref<File>();
-
-const model = defineModel<boolean>({ required: true });
 
 const { importJSON } = useAccountingSettings();
 const { setMessage } = useMessageStore();

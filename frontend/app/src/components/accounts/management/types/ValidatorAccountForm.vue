@@ -5,12 +5,14 @@ import type { StakingValidatorManage } from '@/composables/accounts/blockchain/u
 import type { ValidationErrors } from '@/types/api/errors';
 import type { ComponentExposed } from 'vue-component-type-helpers';
 
+const modelValue = defineModel<StakingValidatorManage>({ required: true });
+
+const errorMessages = defineModel<ValidationErrors>('errorMessages', { required: true });
+
 defineProps<{
   loading: boolean;
 }>();
 
-const modelValue = defineModel<StakingValidatorManage>({ required: true });
-const errorMessages = defineModel<ValidationErrors>('errorMessages', { required: true });
 const validator = useRefPropVModel(modelValue, 'data');
 
 const input = ref<ComponentExposed<typeof Eth2Input>>();
@@ -20,12 +22,12 @@ function validate(): Promise<boolean> {
   return get(input).validate();
 }
 
+const { isTaskRunning } = useTaskStore();
+const taskRunning = isTaskRunning(TaskType.ADD_ETH2_VALIDATOR);
+
 defineExpose({
   validate,
 });
-
-const { isTaskRunning } = useTaskStore();
-const taskRunning = isTaskRunning(TaskType.ADD_ETH2_VALIDATOR);
 </script>
 
 <template>

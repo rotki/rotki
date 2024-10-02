@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { BigNumber } from '@rotki/common';
 
+const model = defineModel<string>({ required: true, default: '' });
+
 withDefaults(
   defineProps<{
     locations?: string[];
@@ -13,8 +15,6 @@ withDefaults(
     optionalShowExisting: false,
   },
 );
-
-const model = defineModel<string>({ required: true, default: '' });
 
 const { t } = useI18n();
 

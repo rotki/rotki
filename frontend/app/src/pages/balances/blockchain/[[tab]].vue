@@ -10,12 +10,6 @@ import { NoteLocation } from '@/types/notes';
 import type { RouteLocationRaw } from 'vue-router';
 import type { ComponentExposed } from 'vue-component-type-helpers';
 
-const props = defineProps<{
-  tab: string;
-}>();
-
-const { tab } = toRefs(props);
-
 definePage({
   name: 'accounts-balances-blockchain',
   meta: {
@@ -24,6 +18,12 @@ definePage({
   },
   props: true,
 });
+
+const props = defineProps<{
+  tab: string;
+}>();
+
+const { tab } = toRefs(props);
 
 const account = ref<AccountManageState>();
 const balances = ref<ComponentExposed<typeof AccountBalances>>();

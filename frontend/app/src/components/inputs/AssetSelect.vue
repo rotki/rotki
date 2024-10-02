@@ -7,6 +7,8 @@ defineOptions({
   inheritAttrs: false,
 });
 
+const modelValue = defineModel<string | undefined>({ required: true });
+
 const props = withDefaults(
   defineProps<{
     items?: string[];
@@ -46,8 +48,6 @@ const emit = defineEmits<{ (e: 'update:asset', value?: AssetInfoWithId | NftAsse
 
 const { items, showIgnored, excludes, errorMessages, includeNfts } = toRefs(props);
 const { isAssetIgnored } = useIgnoredAssetsStore();
-
-const modelValue = defineModel<string | undefined>({ required: true });
 
 const search = ref<string>('');
 const assets = ref<(AssetInfoWithId | NftAsset)[]>([]);

@@ -71,7 +71,7 @@ interface UseBlockchainAccountsApiReturn {
 }
 
 export function useBlockchainAccountsApi(): UseBlockchainAccountsApiReturn {
-  const addBlockchainAccount = (chain: string, pay: XpubAccountPayload | AccountPayload[]): Promise<PendingTask> => {
+  const addBlockchainAccount = async (chain: string, pay: XpubAccountPayload | AccountPayload[]): Promise<PendingTask> => {
     const url = !Array.isArray(pay) ? `/blockchains/${chain}/xpub` : `/blockchains/${chain}/accounts`;
     const payload = Array.isArray(pay) ? { accounts: pay } : { ...objectOmit(pay, ['xpub']), ...pay.xpub };
     return performAsyncQuery(url, nonEmptyProperties(payload, true));
@@ -242,7 +242,7 @@ export function useBlockchainAccountsApi(): UseBlockchainAccountsApiReturn {
     return handleResponse(response);
   };
 
-  const addEvmAccount = (payload: Omit<BlockchainAccountPayload, 'blockchain'>): Promise<PendingTask> =>
+  const addEvmAccount = async (payload: Omit<BlockchainAccountPayload, 'blockchain'>): Promise<PendingTask> =>
     performAsyncQuery('/blockchains/evm/accounts', nonEmptyProperties(payloadToData(payload)));
 
   const detectEvmAccounts = async (): Promise<PendingTask> => {

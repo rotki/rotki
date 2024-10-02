@@ -6,6 +6,8 @@ import ManualBalancesPriceForm from '@/components/accounts/manual-balances/Manua
 import type { ManualBalance, RawManualBalance } from '@/types/manual-balances';
 import type { ValidationErrors } from '@/types/api/errors';
 
+const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
+
 const props = defineProps<{
   modelValue: RawManualBalance | ManualBalance;
   submitting: boolean;
@@ -19,7 +21,6 @@ const { t } = useI18n();
 
 const priceForm = ref<InstanceType<typeof ManualBalancesPriceForm>>();
 
-const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const asset = useSimplePropVModel(props, 'asset', emit);
 const label = useSimplePropVModel(props, 'label', emit);
 const balanceType = useSimplePropVModel(props, 'balanceType', emit);

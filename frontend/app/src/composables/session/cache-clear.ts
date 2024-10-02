@@ -51,7 +51,7 @@ export function useCacheClear<T>(
 
   const { show } = useConfirmStore();
   const showConfirmation = (source: T): void => {
-    show(confirmText(text(source), source), () => clear(source));
+    show(confirmText(text(source), source), async () => clear(source));
     set(confirm, true);
   };
 

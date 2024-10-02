@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { Severity } from '@rotki/common';
 
+defineOptions({
+  inheritAttrs: false,
+});
+
 const props = withDefaults(
   defineProps<{
     label?: string;

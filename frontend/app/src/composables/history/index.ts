@@ -35,7 +35,12 @@ export function useIgnore<T extends EntryMeta>(
 
   const ignoreInAccounting = async (payload: IgnorePayload, ignore: boolean): Promise<ActionStatus> => {
     try {
-      ignore ? await api.ignoreActions(payload) : await api.unignoreActions(payload);
+      if (ignore) {
+        await api.ignoreActions(payload);
+      }
+      else {
+        await api.unignoreActions(payload);
+      }
     }
     catch (error: any) {
       let title: string;
@@ -66,10 +71,10 @@ export function useIgnore<T extends EntryMeta>(
   };
 
   const ignoreActions = async (payload: IgnorePayload): Promise<ActionStatus> =>
-    await ignoreInAccounting(payload, true);
+    ignoreInAccounting(payload, true);
 
   const unignoreActions = async (payload: IgnorePayload): Promise<ActionStatus> =>
-    await ignoreInAccounting(payload, false);
+    ignoreInAccounting(payload, false);
 
   const ignore = async (ignored: boolean): Promise<void> => {
     let payload: IgnorePayload;

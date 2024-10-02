@@ -12,6 +12,16 @@ interface IgnoredFilter {
   onlyShowWhitelisted: boolean;
   ignoredAssetsHandling: IgnoredAssetsHandlingType;
 }
+const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
+
+const sortModel = defineModel<DataTableSortData<SupportedAsset>>('sort', { required: true });
+
+const selected = defineModel<string[]>('selected', { required: true });
+
+const filtersModel = defineModel<Filters>('filters', { required: true });
+
+const ignoredFilter = defineModel<IgnoredFilter>('ignoredFilter', { required: true });
+
 const props = withDefaults(
   defineProps<{
     collection: Collection<SupportedAsset>;
@@ -33,11 +43,6 @@ const emit = defineEmits<{
 const { collection } = toRefs(props);
 
 const { t } = useI18n();
-
-const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
-const sortModel = defineModel<DataTableSortData<SupportedAsset>>('sort', { required: true });
-const selected = defineModel<string[]>('selected', { required: true });
-const filtersModel = defineModel<Filters>('filters', { required: true });
 
 const cols = computed<DataTableColumn<SupportedAsset>[]>(() => [
   {
@@ -84,8 +89,6 @@ const deleteAsset = (asset: SupportedAsset) => emit('delete-asset', asset);
 function updateExpanded(expandedAssets: SupportedAsset[]) {
   return emit('update:expanded', expandedAssets);
 }
-
-const ignoredFilter = defineModel<IgnoredFilter>('ignoredFilter', { required: true });
 
 const disabledIgnoreActions = computed(() => {
   const { ignoredAssetsHandling } = get(ignoredFilter);

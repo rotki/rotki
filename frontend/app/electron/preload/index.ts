@@ -3,7 +3,7 @@ import { IpcCommands } from '@electron/ipc-commands';
 import { checkIfDevelopment } from '@shared/utils';
 import type { Interop, Listeners, TrayUpdate } from '@shared/ipc';
 
-function ipcAction<T>(message: string, arg?: any): Promise<T> {
+async function ipcAction<T>(message: string, arg?: any): Promise<T> {
   return new Promise((resolve) => {
     ipcRenderer.once(message, (event, args) => {
       resolve(args);
@@ -28,7 +28,7 @@ if (isDevelopment) {
 contextBridge.exposeInMainWorld('interop', {
   openUrl: (url: string) => ipcRenderer.send(IpcCommands.OPEN_URL, url),
   closeApp: () => ipcRenderer.send(IpcCommands.CLOSE_APP),
-  openDirectory: (title: string) => ipcAction(IpcCommands.OPEN_DIRECTORY, title),
+  openDirectory: async (title: string) => ipcAction(IpcCommands.OPEN_DIRECTORY, title),
   premiumUserLoggedIn: (premiumUser: boolean) => ipcRenderer.send(IpcCommands.PREMIUM_LOGIN, premiumUser),
   setListeners(listeners: Listeners): void {
     ipcRenderer.on('failed', (event, error, code) => {
@@ -50,26 +50,26 @@ contextBridge.exposeInMainWorld('interop', {
   },
   debugSettings: isDevelopment ? (): DebugSettings | undefined => debugSettings : undefined,
   serverUrl: (): string => ipcRenderer.sendSync(IpcCommands.SERVER_URL),
-  metamaskImport: () => ipcAction(IpcCommands.METAMASK_IMPORT),
-  restartBackend: options => ipcAction(IpcCommands.RESTART_BACKEND, options),
-  checkForUpdates: () => ipcAction(IpcCommands.CHECK_FOR_UPDATES),
-  downloadUpdate: (progress) => {
+  metamaskImport: async () => ipcAction(IpcCommands.METAMASK_IMPORT),
+  restartBackend: async options => ipcAction(IpcCommands.RESTART_BACKEND, options),
+  checkForUpdates: async () => ipcAction(IpcCommands.CHECK_FOR_UPDATES),
+  downloadUpdate: async (progress) => {
     ipcRenderer.on(IpcCommands.DOWNLOAD_PROGRESS, (event, args) => {
       progress(args);
     });
     return ipcAction(IpcCommands.DOWNLOAD_UPDATE);
   },
-  installUpdate: () => ipcAction(IpcCommands.INSTALL_UPDATE),
-  setSelectedTheme: selectedTheme => ipcAction(IpcCommands.THEME, selectedTheme),
-  version: () => ipcAction(IpcCommands.VERSION),
-  isMac: () => ipcAction(IpcCommands.IS_MAC),
+  installUpdate: async () => ipcAction(IpcCommands.INSTALL_UPDATE),
+  setSelectedTheme: async selectedTheme => ipcAction(IpcCommands.THEME, selectedTheme),
+  version: async () => ipcAction(IpcCommands.VERSION),
+  isMac: async () => ipcAction(IpcCommands.IS_MAC),
   openPath: (path: string) => ipcRenderer.send(IpcCommands.OPEN_PATH, path),
-  config: (defaults: boolean) => ipcAction(IpcCommands.CONFIG, defaults),
+  config: async (defaults: boolean) => ipcAction(IpcCommands.CONFIG, defaults),
   updateTray: (trayUpdate: TrayUpdate) => ipcRenderer.send(IpcCommands.TRAY_UPDATE, trayUpdate),
   logToFile(message: string) {
     ipcRenderer.send(IpcCommands.LOG_TO_FILE, message);
   },
-  storePassword: (username: string, password: string) => ipcAction(IpcCommands.STORE_PASSWORD, { username, password }),
-  getPassword: (username: string) => ipcAction(IpcCommands.GET_PASSWORD, username),
-  clearPassword: () => ipcAction(IpcCommands.CLEAR_PASSWORD),
+  storePassword: async (username: string, password: string) => ipcAction(IpcCommands.STORE_PASSWORD, { username, password }),
+  getPassword: async (username: string) => ipcAction(IpcCommands.GET_PASSWORD, username),
+  clearPassword: async () => ipcAction(IpcCommands.CLEAR_PASSWORD),
 } as Interop);

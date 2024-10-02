@@ -80,7 +80,7 @@ describe('store::assets/cache', () => {
   });
 
   it('should stop caching assets after cache limit is reached', async () => {
-    vi.mocked(useAssetInfoApi().assetMapping).mockImplementation((identifier): Promise<AssetMap> => {
+    vi.mocked(useAssetInfoApi().assetMapping).mockImplementation(async (identifier): Promise<AssetMap> => {
       const mapping: AssetMap = { assetCollections: {}, assets: {} };
       for (const id of identifier) {
         mapping.assets[id] = {

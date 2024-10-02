@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { ExchangePayload } from '@/types/exchanges';
 
+const model = defineModel<ExchangePayload>({ required: true });
+
 defineProps<{
   editMode: boolean;
 }>();
@@ -10,8 +12,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-
-const model = defineModel<ExchangePayload>({ required: true });
 
 const { openDialog, submitting, trySubmit } = useExchangeApiKeysForm();
 

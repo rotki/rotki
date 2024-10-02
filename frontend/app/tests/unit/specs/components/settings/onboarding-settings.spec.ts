@@ -31,8 +31,8 @@ vi.mock('@/composables/backend', async () => {
     ...mod,
     useBackendManagement: vi.fn().mockImplementation((loaded) => {
       const mocked = mod.useBackendManagement(loaded);
-      saveOptions = vi.fn().mockImplementation((opts) => {
-        mocked.saveOptions(opts);
+      saveOptions = vi.fn().mockImplementation(async (opts) => {
+        await mocked.saveOptions(opts);
       });
       return {
         ...mocked,

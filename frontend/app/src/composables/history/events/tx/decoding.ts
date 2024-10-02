@@ -130,7 +130,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     await awaitParallelExecution(
       chains,
       item => item,
-      item => decodeTransactionsTask(item, type),
+      async item => decodeTransactionsTask(item, type),
       2,
     );
   };
@@ -166,7 +166,7 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     await awaitParallelExecution(
       chainInfo,
       item => item.chain,
-      item => decodeTransactionsTask(item.chain, item.type, true),
+      async item => decodeTransactionsTask(item.chain, item.type, true),
       2,
     );
   };

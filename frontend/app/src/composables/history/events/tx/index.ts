@@ -86,9 +86,9 @@ export const useHistoryTransactions = createSharedComposable(() => {
     await awaitParallelExecution(
       accounts,
       item => item.evmChain + item.address,
-      item => syncTransactionTask(item, type),
+      async item => syncTransactionTask(item, type),
     );
-    queue.queue(evmChain, () => decodeTransactionsTask(evmChain, type));
+    queue.queue(evmChain, async () => decodeTransactionsTask(evmChain, type));
   };
 
   const getEvmAccounts = (chains: string[] = []): { address: string; evmChain: string }[] =>
@@ -171,7 +171,7 @@ export const useHistoryTransactions = createSharedComposable(() => {
     await awaitParallelExecution(
       groupedByChains,
       item => item.evmChain,
-      item => syncAndReDecodeEvents(item.evmChain, item.data, type),
+      async item => syncAndReDecodeEvents(item.evmChain, item.data, type),
     );
 
     const isEvm = type === TransactionChainType.EVM;

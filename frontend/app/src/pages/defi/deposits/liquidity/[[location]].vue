@@ -1,11 +1,11 @@
 <script setup lang="ts">
-const props = defineProps<{
-  location: NavType | '';
-}>();
-
 definePage({
   props: true,
 });
+
+const props = defineProps<{
+  location: NavType | '';
+}>();
 
 type NavType = 'uniswap-v2' | 'uniswap-v3' | 'balancer' | 'sushiswap';
 

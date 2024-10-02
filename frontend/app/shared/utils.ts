@@ -6,7 +6,7 @@ export function startPromise<T>(promise: Promise<T>): void {
 
 type BackoffCall<T> = () => Promise<T>;
 
-export function wait(duration: number): Promise<void> {
+export async function wait(duration: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, duration));
 }
 

@@ -4,8 +4,6 @@ import { TaskType } from '@/types/task-type';
 import { NoteLocation } from '@/types/notes';
 import type { AssetBalanceWithPrice, BigNumber } from '@rotki/common';
 
-const props = defineProps<{ exchange?: string }>();
-
 definePage({
   name: 'accounts-balances-exchange',
   meta: {
@@ -13,6 +11,8 @@ definePage({
   },
   props: true,
 });
+
+const props = defineProps<{ exchange?: string }>();
 
 const { t } = useI18n();
 const selectedTab = ref<string | undefined>(props.exchange ?? undefined);

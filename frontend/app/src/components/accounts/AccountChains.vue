@@ -1,9 +1,9 @@
 <script lang="ts" setup>
 type Row = ({ chain: string } | { chains: string[] }) & { id: string };
 
-const props = defineProps<{ row: Row }>();
-
 const chainFilter = defineModel<Record<string, string[]>>('chainFilter', { required: true });
+
+const props = defineProps<{ row: Row }>();
 
 const { t } = useI18n();
 

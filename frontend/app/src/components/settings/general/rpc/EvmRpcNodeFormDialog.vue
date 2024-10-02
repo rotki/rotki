@@ -6,11 +6,11 @@ import { isBlockchain } from '@/types/blockchain/chains';
 import EvmRpcNodeForm from '@/components/settings/general/rpc/EvmRpcNodeForm.vue';
 import type { EvmRpcNodeManageState } from '@/types/settings/rpc';
 
+const model = defineModel<EvmRpcNodeManageState | undefined>({ required: true });
+
 const emit = defineEmits<{
   (e: 'complete'): void;
 }>();
-
-const model = defineModel<EvmRpcNodeManageState | undefined>({ required: true });
 
 function resetForm() {
   set(model, undefined);

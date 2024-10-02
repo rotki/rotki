@@ -2,6 +2,8 @@
 import type AccountForm from '@/components/accounts/management/AccountForm.vue';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 
+const model = defineModel<AccountManageState | undefined>({ required: true });
+
 const emit = defineEmits<{
   (e: 'complete'): void;
 }>();
@@ -9,8 +11,6 @@ const emit = defineEmits<{
 const { t } = useI18n();
 
 const form = ref<InstanceType<typeof AccountForm>>();
-
-const model = defineModel<AccountManageState | undefined>({ required: true });
 
 const title = computed<string>(() =>
   get(model)?.mode === 'edit'

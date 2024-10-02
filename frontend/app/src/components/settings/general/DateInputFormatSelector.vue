@@ -2,13 +2,17 @@
 import { displayDateFormatter } from '@/data/date-formatter';
 import { DateFormat } from '@/types/date-format';
 
+defineOptions({
+  inheritAttrs: false,
+});
+
+const modelValue = defineModel<string>({ required: true });
+
 defineProps<{
   label: string;
   errorMessages: string[];
   successMessages: string[];
 }>();
-
-const modelValue = defineModel<string>({ required: true });
 
 const selections = [
   {

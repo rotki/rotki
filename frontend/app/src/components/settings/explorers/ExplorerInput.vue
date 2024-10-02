@@ -7,13 +7,13 @@ defineOptions({
   inheritAttrs: false,
 });
 
+const url = defineModel<string>({ required: true });
+
 const emit = defineEmits<{
   (e: 'save-data', value?: string): void;
 }>();
 
 const { t } = useI18n();
-
-const url = defineModel<string>({ required: true });
 
 function saveData(value?: string) {
   emit('save-data', value);

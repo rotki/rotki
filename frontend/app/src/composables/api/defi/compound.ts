@@ -8,12 +8,12 @@ interface UseCompoundApiReturn {
 }
 
 export function useCompoundApi(): UseCompoundApiReturn {
-  const fetchCompoundBalances = (): Promise<PendingTask> => {
+  const fetchCompoundBalances = async (): Promise<PendingTask> => {
     const url = '/blockchains/eth/modules/compound/balances';
     return fetchExternalAsync(api.instance, url);
   };
 
-  const fetchCompoundStats = (): Promise<PendingTask> => {
+  const fetchCompoundStats = async (): Promise<PendingTask> => {
     const url = '/blockchains/eth/modules/compound/stats';
     return fetchExternalAsync(api.instance, url);
   };

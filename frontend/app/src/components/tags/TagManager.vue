@@ -50,7 +50,8 @@ async function save({ tag: newTag, close: closeModal }: { tag: Tag; close?: bool
   if (status.success) {
     set(tag, defaultTag());
     set(editMode, false);
-    closeModal && close();
+    if (closeModal)
+      close();
   }
 }
 

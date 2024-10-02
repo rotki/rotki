@@ -151,10 +151,6 @@ watch(multiple, () => {
   set(userAddresses, '');
 });
 
-defineExpose({
-  validate,
-});
-
 function updateAddressesFromWalletImport(addresses: string[]) {
   if (addresses.length > 1) {
     set(multiple, true);
@@ -169,6 +165,10 @@ function updateAddressesFromWalletImport(addresses: string[]) {
     });
   }
 }
+
+defineExpose({
+  validate,
+});
 </script>
 
 <template>

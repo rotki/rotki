@@ -24,7 +24,7 @@ export const useHistoryEventCounterpartyMappings = createSharedComposable(() => 
         action: [
           {
             label: t('actions.fetch_counterparties.actions.fetch_again'),
-            action: async (): Promise<void> => await fetchCounterparties(),
+            action: async (): Promise<void> => fetchCounterparties(),
             icon: 'refresh-line',
           },
         ],

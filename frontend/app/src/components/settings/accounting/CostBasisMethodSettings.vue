@@ -5,13 +5,13 @@ defineOptions({
   inheritAttrs: false,
 });
 
+const modelValue = defineModel<CostBasisMethod>({ required: true });
+
 defineProps<{
   label: string;
   successMessages: string[];
   errorMessages: string[];
 }>();
-
-const modelValue = defineModel<CostBasisMethod>({ required: true });
 
 const { costBasisMethodData } = useCostBasisMethod();
 </script>

@@ -2,6 +2,8 @@
 import { ApiValidationError } from '@/types/api/errors';
 import type { AddressBookPayload } from '@/types/eth-names';
 
+const enableForAllChains = defineModel<boolean>('enableForAllChains', { required: false, default: false });
+
 const props = withDefaults(
   defineProps<{
     editMode?: boolean;
@@ -21,8 +23,6 @@ const emit = defineEmits<{
 const { editMode, payload: passedPayload } = toRefs(props);
 
 const { openDialog, submitting, trySubmit } = useAddressBookForm();
-
-const enableForAllChains = defineModel<boolean>('enableForAllChains', { required: false, default: false });
 
 const { t } = useI18n();
 

@@ -41,7 +41,7 @@ export function useEth2Api(): UseEth2ApiReturn {
   };
 
   const refreshStakingPerformance = async (payload: EthStakingPayload): Promise<PendingTask> =>
-    await stakingPerformanceQuery({ ...payload, ignoreCache: true }, true);
+    stakingPerformanceQuery({ ...payload, ignoreCache: true }, true);
 
   const stakingStatsQuery = async <T>(payload: Eth2DailyStatsPayload, asyncQuery: boolean): Promise<T> => {
     const response = await api.instance.post<ActionResult<T>>(
@@ -58,7 +58,7 @@ export function useEth2Api(): UseEth2ApiReturn {
     return handleResponse(response);
   };
 
-  const refreshStakingStats = (payload: Eth2DailyStatsPayload): Promise<PendingTask> =>
+  const refreshStakingStats = async (payload: Eth2DailyStatsPayload): Promise<PendingTask> =>
     stakingStatsQuery(payload, true);
 
   const fetchStakingStats = async (payload: Eth2DailyStatsPayload): Promise<Eth2DailyStats> => {

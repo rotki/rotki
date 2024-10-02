@@ -3,6 +3,12 @@ import { type MatchedKeywordWithBehaviour, SavedFilterLocation, type SearchMatch
 import type { HistoryEventRequestPayload } from '@/types/history/events';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 
+const filters = defineModel<MatchedKeywordWithBehaviour<any>>('filters', { required: true });
+
+const accounts = defineModel<BlockchainAccount<AddressData>[]>('accounts', { required: true });
+
+const toggles = defineModel<{ customizedEventsOnly: boolean; showIgnoredAssets: boolean }>('toggles', { required: true });
+
 withDefaults(defineProps<{
   matchers: SearchMatcher<any, any>[];
   exportParams: HistoryEventRequestPayload;
@@ -16,10 +22,6 @@ withDefaults(defineProps<{
 const emit = defineEmits<{
   redecode: [];
 }>();
-
-const filters = defineModel<MatchedKeywordWithBehaviour<any>>('filters', { required: true });
-const accounts = defineModel<BlockchainAccount<AddressData>[]>('accounts', { required: true });
-const toggles = defineModel<{ customizedEventsOnly: boolean; showIgnoredAssets: boolean }>('toggles', { required: true });
 
 const { t } = useI18n();
 

@@ -1,4 +1,6 @@
 <script lang="ts" setup>
+const model = defineModel<boolean>({ required: true });
+
 const props = withDefaults(
   defineProps<{
     balanceFile?: File;
@@ -19,8 +21,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-const model = defineModel<boolean>({ required: true });
-
 const balanceFile = computed<File | undefined>({
   get() {
     return props.balanceFile;

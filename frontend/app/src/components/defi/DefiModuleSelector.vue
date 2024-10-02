@@ -12,13 +12,13 @@ defineOptions({
   inheritAttrs: false,
 });
 
+const model = defineModel<string | undefined>({ required: true });
+
 const props = withDefaults(defineProps<{
   items?: PurgeableModule[];
 }>(), {
   items: () => [],
 });
-
-const model = defineModel<string | undefined>({ required: true });
 
 const modules = computed<PurgeableModuleEntry[]>(() => {
   const items = props.items;

@@ -3,15 +3,16 @@ import type AddressInput from '@/components/accounts/blockchain/AddressInput.vue
 import type { AccountAgnosticManage } from '@/composables/accounts/blockchain/use-account-manage';
 import type { ValidationErrors } from '@/types/api/errors';
 
+const modelValue = defineModel<AccountAgnosticManage>({ required: true });
+
+const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
+
 defineProps<{
   loading: boolean;
 }>();
 
-const modelValue = defineModel<AccountAgnosticManage>({ required: true });
-
 const address = ref<InstanceType<typeof AddressInput>>();
 
-const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const editMode = computed(() => get(modelValue).mode === 'edit');
 
 const tags = computed<string[]>({

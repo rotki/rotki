@@ -10,6 +10,10 @@ import type { HistoricalPriceFormPayload } from '@/types/prices';
 import type { NewHistoryEventPayload } from '@/types/history/events';
 import type { ActionStatus } from '@/types/action';
 
+const amount = defineModel<string>('amount', { required: true });
+
+const usdValue = defineModel<string>('usdValue', { required: true });
+
 const props = withDefaults(
   defineProps<{
     datetime: string;
@@ -41,9 +45,6 @@ const assetModel = computed({
     emit('update:asset', asset);
   },
 });
-
-const amount = defineModel<string>('amount', { required: true });
-const usdValue = defineModel<string>('usdValue', { required: true });
 
 const { t } = useI18n();
 

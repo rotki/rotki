@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { UserNote } from '@/types/notes';
 
+const model = defineModel<Partial<UserNote>>({ required: true });
+
 defineProps<{
   editMode: boolean;
 }>();
@@ -8,8 +10,6 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'reset'): void;
 }>();
-
-const model = defineModel<Partial<UserNote>>({ required: true });
 
 function resetForm() {
   emit('reset');

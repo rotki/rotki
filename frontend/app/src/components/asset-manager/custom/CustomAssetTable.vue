@@ -4,6 +4,14 @@ import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@r
 import type { CustomAsset } from '@/types/asset';
 import type { Filters, Matcher } from '@/composables/filters/custom-assets';
 
+const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
+
+const sortModel = defineModel<DataTableSortData<CustomAsset>>('sort', { required: true });
+
+const expandedModel = defineModel<CustomAsset[]>('expanded', { required: true });
+
+const filtersModel = defineModel<Filters>('filters', { required: true });
+
 withDefaults(
   defineProps<{
     assets: CustomAsset[];
@@ -19,11 +27,6 @@ const emit = defineEmits<{
 }>();
 
 const { t } = useI18n();
-
-const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
-const sortModel = defineModel<DataTableSortData<CustomAsset>>('sort', { required: true });
-const expandedModel = defineModel<CustomAsset[]>('expanded', { required: true });
-const filtersModel = defineModel<Filters>('filters', { required: true });
 
 const cols = computed<DataTableColumn<CustomAsset>[]>(() => [
   {

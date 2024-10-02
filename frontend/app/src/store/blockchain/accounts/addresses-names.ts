@@ -106,7 +106,7 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
     unknown,
     refresh,
     reset: resetAddressesNames,
-  } = useItemCache<string>(keys => fetchAddressesNames(keys));
+  } = useItemCache<string>(async keys => fetchAddressesNames(keys));
 
   const getAddressesWithoutNames = (blockchain?: MaybeRef<string | null>): ComputedRef<string[]> => computed<string[]>(() => {
     const chain = get(blockchain);

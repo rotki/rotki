@@ -13,7 +13,7 @@ interface UseDefiApiReturn {
 }
 
 export function useDefiApi(): UseDefiApiReturn {
-  const fetchAllDefi = (): Promise<PendingTask> => fetchExternalAsync(api.instance, '/blockchains/eth/defi');
+  const fetchAllDefi = async (): Promise<PendingTask> => fetchExternalAsync(api.instance, '/blockchains/eth/defi');
 
   const fetchAirdrops = async (): Promise<PendingTask> => {
     const response = await api.instance.get<ActionResult<PendingTask>>('/blockchains/eth/airdrops', {

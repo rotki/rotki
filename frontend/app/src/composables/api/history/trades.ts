@@ -34,7 +34,7 @@ export function useTradesApi(): UseTradesApiReturn {
     return handleResponse(response);
   };
 
-  const getTradesTask = (payload: TradeRequestPayload): Promise<PendingTask> =>
+  const getTradesTask = async (payload: TradeRequestPayload): Promise<PendingTask> =>
     internalTrades<PendingTask>(payload, true);
 
   const getTrades = async (payload: TradeRequestPayload): Promise<CollectionResponse<EntryWithMeta<Trade>>> => {

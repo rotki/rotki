@@ -81,6 +81,7 @@ describe('blockchain balances', () => {
           const dashboardBalance = $dashboardBalances.get(blockchain);
           const label = `${blockchain} balance`;
           if (value.gt(0)) {
+            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
             expect(dashboardBalance, label).to.not.be.undefined;
             expect(dashboardBalance?.toNumber(), blockchain).to.be.within(
               value.minus(PRECISION).toNumber(),
@@ -88,6 +89,7 @@ describe('blockchain balances', () => {
             );
           }
           else {
+            // eslint-disable-next-line @typescript-eslint/no-unused-expressions
             expect(dashboardBalance, label).to.be.undefined;
           }
         });

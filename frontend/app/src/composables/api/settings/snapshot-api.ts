@@ -52,7 +52,7 @@ export function useSnapshotApi(): UseSnapshotApiReturn {
     return handleResponse(response);
   };
 
-  const downloadSnapshot = (timestamp: number): Promise<any> =>
+  const downloadSnapshot = async (timestamp: number): Promise<any> =>
     api.instance.get<any>(`/snapshots/${timestamp}`, {
       params: snakeCaseTransformer({ action: 'download' }),
       validateStatus: validWithoutSessionStatus,

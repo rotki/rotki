@@ -5,14 +5,14 @@ defineOptions({
   inheritAttrs: false,
 });
 
+const model = defineModel<Eth2ValidatorEntry[]>({ required: true });
+
 withDefaults(defineProps<{
   items: Eth2ValidatorEntry[];
   loading?: boolean;
 }>(), {
   loading: false,
 });
-
-const model = defineModel<Eth2ValidatorEntry[]>({ required: true });
 
 const { t } = useI18n();
 </script>

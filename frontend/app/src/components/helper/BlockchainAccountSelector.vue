@@ -10,6 +10,8 @@ defineOptions({
   inheritAttrs: false,
 });
 
+const modelValue = defineModel<AccountWithAddressData[]>({ required: true });
+
 const props = withDefaults(defineProps<{
   label?: string;
   hint?: boolean;
@@ -43,8 +45,6 @@ const props = withDefaults(defineProps<{
   showDetails: false,
   customHint: '',
 });
-
-const modelValue = defineModel<AccountWithAddressData[]>({ required: true });
 
 const { chains, usableAddresses, hideOnEmptyUsable, multiple, multichain, unique } = toRefs(props);
 

@@ -85,7 +85,7 @@ export function useEth2DailyStats(): UseEthStakingDailyStatsReturn {
   const fetchStakingStats = async (payload: MaybeRef<Eth2DailyStatsPayload>): Promise<Eth2DailyStats> => {
     assert(get(premium));
 
-    return await api.fetchStakingStats({
+    return api.fetchStakingStats({
       ...get(payload),
       onlyCache: true,
     });
@@ -142,7 +142,7 @@ export function useEth2DailyStats(): UseEthStakingDailyStatsReturn {
       await refresh();
   }
 
-  watch(pagination, pagination => fetchDailyStats(pagination));
+  watch(pagination, async pagination => fetchDailyStats(pagination));
 
   return {
     pagination,

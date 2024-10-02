@@ -37,7 +37,8 @@ function setPriceForm() {
     fromAsset: get(identifier),
     toAsset,
     price: get(info)
-      .usdPrice.multipliedBy(get(exchangeRate(toAsset)) ?? One)
+      .usdPrice
+      .multipliedBy(get(exchangeRate(toAsset)) ?? One)
       .toFixed(),
   });
 }

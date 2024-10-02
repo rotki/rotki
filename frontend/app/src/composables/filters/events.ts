@@ -192,7 +192,7 @@ export function useHistoryEventFilter(
 
       let selectedEventTypes = get(filters)?.eventTypes || [];
       if (!Array.isArray(selectedEventTypes))
-        selectedEventTypes = [`${selectedEventTypes}`];
+        selectedEventTypes = [selectedEventTypes.toString()];
 
       if (!disabled.eventSubtypes) {
         const globalMapping = get(historyEventTypeGlobalMapping);
@@ -212,7 +212,7 @@ export function useHistoryEventFilter(
 
         let selectedEventSubtypes = get(filters)?.eventSubtypes || [];
         if (!Array.isArray(selectedEventSubtypes))
-          selectedEventSubtypes = [`${selectedEventSubtypes}`];
+          selectedEventSubtypes = [selectedEventSubtypes.toString()];
 
         if (selectedEventSubtypes.length > 0) {
           const filteredEventSubtypes = selectedEventSubtypes.filter(item => globalMappingKeys.includes(item));

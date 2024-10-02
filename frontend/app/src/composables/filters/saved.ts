@@ -38,7 +38,7 @@ export function useSavedFilter(
   const saveFilters = async (filters: BaseSuggestion[][]): Promise<ActionStatus> => {
     const allSaved = { ...get(allSavedFilters) };
     allSaved[get(location)] = filters;
-    return await updateSetting({
+    return updateSetting({
       savedFilters: allSaved,
     });
   };
@@ -63,7 +63,7 @@ export function useSavedFilter(
         exclude: item.exclude,
       })),
     ];
-    return await saveFilters(newFilters);
+    return saveFilters(newFilters);
   };
 
   const deleteFilter = async (index: number): Promise<void> => {

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { LpType, XswapPool } from '@rotki/common';
 
+const model = defineModel<string[]>({ required: true });
+
 const props = withDefaults(
   defineProps<{
     pools: XswapPool[];
@@ -13,8 +15,6 @@ const props = withDefaults(
     noPadding: false,
   },
 );
-
-const model = defineModel<string[]>({ required: true });
 
 const { type } = toRefs(props);
 

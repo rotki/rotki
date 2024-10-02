@@ -5,6 +5,8 @@ defineOptions({
   inheritAttrs: false,
 });
 
+const model = defineModel<string>({ required: true });
+
 const props = withDefaults(
   defineProps<{
     integer?: boolean;
@@ -15,8 +17,6 @@ const props = withDefaults(
     hideDetails: false,
   },
 );
-
-const model = defineModel<string>({ required: true });
 
 const { integer } = toRefs(props);
 const { thousandSeparator, decimalSeparator } = storeToRefs(useFrontendSettingsStore());
@@ -67,10 +67,6 @@ function focus() {
     inputWrapper.focus();
 }
 
-defineExpose({
-  focus,
-});
-
 function onFocus() {
   const inputWrapper = get(textInput)!;
   const input = inputWrapper.$el.querySelector('input') as HTMLInputElement;
@@ -79,6 +75,10 @@ function onFocus() {
     input.value = get(currentValue);
   });
 }
+
+defineExpose({
+  focus,
+});
 </script>
 
 <template>

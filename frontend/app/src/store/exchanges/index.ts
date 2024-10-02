@@ -43,7 +43,7 @@ export const useExchangesStore = defineStore('exchanges', () => {
         );
         assert(
           exchangeIndex >= 0,
-          `${exchange} not found in ${connected
+          `${exchange.location} not found in ${connected
             .map(exchange => `${exchange.name} on ${exchange.location}`)
             .join(', ')}`,
         );

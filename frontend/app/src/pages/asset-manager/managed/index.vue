@@ -1,17 +1,17 @@
 <script setup lang="ts">
-const props = withDefaults(
-  defineProps<{
-    identifier?: string | null;
-  }>(),
-  { identifier: null },
-);
-
 definePage({
   name: 'asset-manager-managed',
   props: to => ({
     identifier: to.query.id ?? null,
   }),
 });
+
+const props = withDefaults(
+  defineProps<{
+    identifier?: string | null;
+  }>(),
+  { identifier: null },
+);
 
 const { identifier } = toRefs(props);
 </script>

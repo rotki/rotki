@@ -2,6 +2,8 @@
 import { size } from '../../utils/data';
 import type { ImportSourceType } from '@/types/upload-types';
 
+const file = defineModel<File | undefined>({ required: true });
+
 const props = withDefaults(
   defineProps<{
     source: ImportSourceType;
@@ -23,8 +25,6 @@ const emit = defineEmits<{
   (e: 'update:error-message', message: string): void;
 }>();
 const { source, fileFilter, uploaded, errorMessage } = toRefs(props);
-
-const file = defineModel<File | undefined>({ required: true });
 
 const wrapper = ref<HTMLDivElement>();
 
@@ -165,10 +165,6 @@ watch(uploaded, (uploaded) => {
 
 watch(errorMessage, message => onError(message));
 
-defineExpose({
-  removeFile,
-});
-
 function formatFileFilter(fileFilter: string) {
   return fileFilter
     .split(',')
@@ -181,6 +177,10 @@ function formatFileFilter(fileFilter: string) {
     })
     .join(', ');
 }
+
+defineExpose({
+  removeFile,
+});
 </script>
 
 <template>

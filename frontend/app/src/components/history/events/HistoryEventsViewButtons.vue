@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { EvmChainAndTxHash, ShowEventForm } from '@/types/history/events';
 
+const openDecodingDialog = defineModel<boolean>('openDecodingDialog', { required: true });
+
 defineProps<{
   processing: boolean;
   loading: boolean;
@@ -12,8 +14,6 @@ const emit = defineEmits<{
   'reload': [payload: EvmChainAndTxHash];
   'show:form': [payload: ShowEventForm];
 }>();
-
-const openDecodingDialog = defineModel<boolean>('openDecodingDialog', { required: true });
 
 const { t } = useI18n();
 

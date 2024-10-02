@@ -6,6 +6,8 @@ import type {
 } from '@/types/websocket-messages';
 import type { Blockchain } from '@rotki/common';
 
+const currentAction = defineModel<'decode' | 'query'>('currentAction', { required: true });
+
 const props = withDefaults(defineProps<{
   colspan: number;
   loading: boolean;
@@ -21,8 +23,6 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   'show:dialog': [type: 'decode' | 'protocol-refresh'];
 }>();
-
-const currentAction = defineModel<'decode' | 'query'>('currentAction', { required: true });
 
 const { onlyChains, locations } = toRefs(props);
 

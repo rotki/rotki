@@ -1,6 +1,6 @@
 import type { EIP1193Provider, EIP6963AnnounceProviderEvent, EIP6963ProviderDetail } from '@/types';
 
-export function getAllBrowserWalletProviders(): Promise<EIP6963ProviderDetail[]> {
+export async function getAllBrowserWalletProviders(): Promise<EIP6963ProviderDetail[]> {
   return new Promise((resolve) => {
     const providers: EIP6963ProviderDetail[] = [];
 

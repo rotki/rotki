@@ -1,4 +1,6 @@
 <script setup lang="ts">
+const sortByModel = defineModel<string>('sortBy', { required: true });
+
 const props = defineProps<{
   sortDesc: boolean;
 }>();
@@ -12,8 +14,6 @@ const { sortDesc: sortDescending } = toRefs(props);
 function toggleSortDesc() {
   emit('update:sort-desc', !get(sortDescending));
 }
-
-const sortByModel = defineModel<string>('sortBy', { required: true });
 
 const { t } = useI18n();
 

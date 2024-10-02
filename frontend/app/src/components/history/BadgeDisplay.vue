@@ -1,14 +1,12 @@
 <script setup lang="ts">
-const props = withDefaults(
-  defineProps<{
-    color?: 'grey' | 'red' | 'green';
-  }>(),
-  {
-    color: 'grey',
-  },
-);
+type Color = 'grey' | 'red' | 'green';
+withDefaults(defineProps<{
+  color?: Color;
+}>(), {
+  color: 'grey',
+});
 
-const colorVariants: Record<typeof props.color, string> = {
+const colorVariants: Record<Color, string> = {
   grey: 'text-rui-grey-700 bg-rui-grey-100 dark:text-rui-grey-400 dark:bg-rui-grey-800',
   red: 'text-rui-red-700 bg-rui-red-100',
   green: 'text-rui-green-700 bg-rui-green-100',
@@ -17,7 +15,7 @@ const colorVariants: Record<typeof props.color, string> = {
 
 <template>
   <div
-    :class="colorVariants[color]"
+    :class="colorVariants[color || 'grey']"
     class="font-black rounded px-2 text-overline inline-flex"
   >
     <slot />

@@ -32,6 +32,7 @@ const CURRENCY_DKK = 'DKK';
 const CURRENCY_PLN = 'PLN';
 const CURRENCY_NGN = 'NGN';
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const SUPPORTED_CURRENCIES = [
   CURRENCY_USD,
   CURRENCY_EUR,
@@ -107,6 +108,4 @@ export const useCurrencies = createSharedComposable(() => {
   };
 });
 
-const CurrencyType = ['none', 'ticker', 'symbol', 'name'] as const;
-
-export type ShownCurrency = (typeof CurrencyType)[number];
+export type ShownCurrency = 'none' | 'ticker' | 'symbol' | 'name';

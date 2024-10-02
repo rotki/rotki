@@ -5,6 +5,8 @@ import type {
   BlockchainAccountWithBalance,
 } from '@/types/blockchain/accounts';
 
+const tab = defineModel<number>({ required: true });
+
 const props = defineProps<{
   groupId: string;
   chains: string[];
@@ -16,8 +18,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'edit', account: AccountManageState): void;
 }>();
-
-const tab = defineModel<number>({ required: true });
 
 const { fetchGroupAccounts } = useBlockchainStore();
 
@@ -49,13 +49,13 @@ onMounted(() => {
   nextTick(() => fetchData());
 });
 
-defineExpose({
-  refresh: fetchData,
-});
-
 const { t } = useI18n();
 
 const [DefineAccounts, ReuseAccounts] = createReusableTemplate();
+
+defineExpose({
+  refresh: fetchData,
+});
 </script>
 
 <template>

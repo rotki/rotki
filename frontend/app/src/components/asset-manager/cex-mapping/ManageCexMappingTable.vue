@@ -3,6 +3,10 @@ import type { CexMapping } from '@/types/asset';
 import type { Collection } from '@/types/collection';
 import type { DataTableColumn, TablePaginationData } from '@rotki/ui-library';
 
+const locationModel = defineModel<string | undefined>('location', { required: true });
+
+const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
+
 withDefaults(
   defineProps<{
     collection: Collection<CexMapping>;
@@ -45,9 +49,6 @@ const tableHeaders = computed<DataTableColumn<CexMapping>[]>(() => [
     key: 'actions',
   },
 ]);
-
-const locationModel = defineModel<string | undefined>('location', { required: true });
-const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
 
 const edit = (mapping: CexMapping) => emit('edit', mapping);
 const deleteMapping = (mapping: CexMapping) => emit('delete', mapping);
