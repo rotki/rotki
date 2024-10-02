@@ -216,7 +216,7 @@ export function useMessageHandling(): UseMessageHandling {
     const title = t('actions.notifications.consume.message_title');
 
     try {
-      const messages = await backoff(3, () => consumeMessages(), 10000);
+      const messages = await backoff(3, async () => consumeMessages(), 10000);
       const existing = get(notifications).map(({ message }) => message);
       messages.errors
         .filter((error, ...args) => uniqueStrings(error, ...args) && !existing.includes(error))

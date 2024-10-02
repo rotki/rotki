@@ -4,6 +4,10 @@ interface Item {
   name: string;
 }
 
+defineOptions({
+  inheritAttrs: false,
+});
+
 withDefaults(
   defineProps<{
     item: Item;

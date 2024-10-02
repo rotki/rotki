@@ -15,7 +15,7 @@ export function useMissingApiKeyHandler(t: ReturnType<typeof useI18n>['t']): Com
     if (route) {
       actions.push({
         label: t('notification_messages.missing_api_key.action'),
-        action: async () => await router.push(route),
+        action: async () => router.push(route),
         persist: true,
       });
     }

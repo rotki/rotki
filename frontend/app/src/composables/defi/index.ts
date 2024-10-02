@@ -63,8 +63,7 @@ export function useLiquidityPosition(): UseLiquidityPositionReturn {
       ...mappedUniswapV2Balances,
       ...mappedSushiswapBalances,
       ...mappedBalancerBalances,
-    ].sort((a, b) => sortDesc(a.usdValue, b.usdValue))
-      .map((item, id) => ({ ...item, id }));
+    ].sort((a, b) => sortDesc(a.usdValue, b.usdValue)).map((item, id) => ({ ...item, id }));
   });
 
   const lpTotal = (includeNft = false): ComputedRef<BigNumber> =>

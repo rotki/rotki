@@ -78,7 +78,7 @@ export function useEth2Staking(): UseEthStakingReturn {
     payload: MaybeRef<EthStakingPayload>,
   ): Promise<EthStakingPerformanceResponse> => {
     assert(get(premium));
-    return await api.fetchStakingPerformance(get(payload));
+    return api.fetchStakingPerformance(get(payload));
   };
 
   const {
@@ -138,7 +138,7 @@ export function useEth2Staking(): UseEthStakingReturn {
     }
   }
 
-  watch(pagination, pagination => fetchPerformance(pagination));
+  watch(pagination, async pagination => fetchPerformance(pagination));
 
   return {
     performance,

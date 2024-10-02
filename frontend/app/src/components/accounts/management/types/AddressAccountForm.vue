@@ -5,18 +5,19 @@ import type { ValidationErrors } from '@/types/api/errors';
 import type { Module } from '@/types/modules';
 import type { AccountManage } from '@/composables/accounts/blockchain/use-account-manage';
 
+const modelValue = defineModel<AccountManage>({ required: true });
+
+const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
+
 defineProps<{
   loading: boolean;
 }>();
-
-const modelValue = defineModel<AccountManage>({ required: true });
 
 const address = ref<InstanceType<typeof AddressInput>>();
 const selectedModules = ref<Module[]>([]);
 
 const { isEvm } = useSupportedChains();
 
-const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const editMode = computed(() => get(modelValue).mode === 'edit');
 
 const tags = computed<string[]>({

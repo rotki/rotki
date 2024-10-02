@@ -2,14 +2,18 @@
 import { BigNumber } from '@rotki/common';
 import type { RoundingMode } from '@/types/settings/frontend-settings';
 
+defineOptions({
+  inheritAttrs: false,
+});
+
+const modelValue = defineModel<RoundingMode>({ required: true });
+
 defineProps<{
   label: string;
   hint: string;
 }>();
 
 const { t } = useI18n();
-
-const modelValue = defineModel<RoundingMode>({ required: true });
 
 const selections: { value: RoundingMode; text: string; description: string }[] = [
   {

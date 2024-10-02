@@ -5,15 +5,15 @@ import type { ValidationErrors } from '@/types/api/errors';
 import type { XpubPayload } from '@/types/blockchain/accounts';
 import type { XpubManage } from '@/composables/accounts/blockchain/use-account-manage';
 
+const modelValue = defineModel<XpubManage>({ required: true });
+
+const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
+
 defineProps<{
   loading: boolean;
 }>();
 
-const modelValue = defineModel<XpubManage>({ required: true });
-
 const input = ref<InstanceType<typeof XpubInput>>();
-
-const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 
 const xpub = computed<XpubPayload>({
   get() {

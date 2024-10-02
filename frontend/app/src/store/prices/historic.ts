@@ -72,7 +72,7 @@ export const useHistoricCachePriceStore = defineStore('prices/historic-cache', (
     };
   };
 
-  const { cache, isPending, retrieve, reset, deleteCacheKey } = useItemCache<BigNumber>(keys =>
+  const { cache, isPending, retrieve, reset, deleteCacheKey } = useItemCache<BigNumber>(async keys =>
     fetchHistoricPrices(keys),
   );
 

@@ -25,17 +25,17 @@ export function statisticsApi(): StatisticsApi {
   const { queryOwnedAssets } = useAssetManagementApi();
 
   return {
-    assetValueDistribution(): Promise<TimedAssetBalances> {
+    async assetValueDistribution(): Promise<TimedAssetBalances> {
       return queryLatestAssetValueDistribution();
     },
-    locationValueDistribution(): Promise<LocationData> {
+    async locationValueDistribution(): Promise<LocationData> {
       return queryLatestLocationValueDistribution();
     },
     async ownedAssets(): Promise<OwnedAssets> {
       const owned = await queryOwnedAssets();
       return owned.filter(asset => !get(isAssetIgnored(asset)));
     },
-    timedBalances(asset: string, start: number, end: number, collectionId?: number): Promise<TimedBalances> {
+    async timedBalances(asset: string, start: number, end: number, collectionId?: number): Promise<TimedBalances> {
       return queryTimedBalancesData(asset, start, end, collectionId);
     },
     async fetchNetValue(): Promise<void> {
@@ -88,7 +88,7 @@ export function balancerApi(): BalancerApi {
     balancerBalances: (addresses: string[]) => store.balancerBalances(addresses),
     balancerPools: pools,
     balancerAddresses: addresses,
-    fetchBalancerBalances: async (refresh: boolean) => await store.fetchBalances(refresh),
+    fetchBalancerBalances: async (refresh: boolean) => store.fetchBalances(refresh),
   };
 }
 

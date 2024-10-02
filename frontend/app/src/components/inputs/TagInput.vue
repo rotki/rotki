@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { Tag } from '@/types/tags';
 
+const modelValue = defineModel<string[]>({ required: true });
+
 withDefaults(
   defineProps<{
     disabled?: boolean;
@@ -10,8 +12,6 @@ withDefaults(
     label: 'Tags',
   },
 );
-
-const modelValue = defineModel<string[]>({ required: true });
 
 const { t } = useI18n();
 const store = useTagStore();

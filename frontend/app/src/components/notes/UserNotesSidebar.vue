@@ -2,9 +2,9 @@
 import { useAppRoutes } from '@/router/routes';
 import { NoteLocation } from '@/types/notes';
 
-const { t } = useI18n();
-
 const display = defineModel<boolean>({ required: true });
+
+const { t } = useI18n();
 
 const tab = ref<number>(0);
 

@@ -102,13 +102,13 @@ async function load(name: string): Promise<Component> {
   throw new ComponentLoadFailedError(name);
 }
 
-const PremiumLoading = defineAsyncComponent(() => import('@/components/premium/PremiumLoading.vue'));
-const PremiumLoadingError = defineAsyncComponent(() => import('@/components/premium/PremiumLoadingError.vue'));
-const ThemeSwitchLock = defineAsyncComponent(() => import('@/components/premium/ThemeSwitchLock.vue'));
+const PremiumLoading = defineAsyncComponent(async () => import('@/components/premium/PremiumLoading.vue'));
+const PremiumLoadingError = defineAsyncComponent(async () => import('@/components/premium/PremiumLoadingError.vue'));
+const ThemeSwitchLock = defineAsyncComponent(async () => import('@/components/premium/ThemeSwitchLock.vue'));
 
 function createFactory(component: string, options?: { loading?: Component; error?: Component }): Component {
   return defineAsyncComponent({
-    loader: () => load(component),
+    loader: async () => load(component),
     loadingComponent: options?.loading ?? PremiumLoading,
     errorComponent: options?.error ?? PremiumLoadingError,
     delay: 500,

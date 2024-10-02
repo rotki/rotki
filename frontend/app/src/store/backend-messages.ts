@@ -30,9 +30,9 @@ export const useBackendMessagesStore = defineStore('backendMessages', () => {
         }
       },
       onAbout: () => set(showAbout, true),
-      onRestart: async () => {
+      onRestart: () => {
         set(startupErrorMessage, '');
-        await restartBackend();
+        startPromise(restartBackend());
       },
       onProcessDetected: (pids) => {
         set(

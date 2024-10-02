@@ -9,6 +9,8 @@ import type { ValidationErrors } from '@/types/api/errors';
 import type { BtcChains } from '@/types/blockchain/chains';
 import type { XpubPayload } from '@/types/blockchain/accounts';
 
+const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
+
 const props = defineProps<{
   disabled: boolean;
   xpub: XpubPayload | undefined;
@@ -18,8 +20,6 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'update:xpub', xpub: XpubPayload | undefined): void;
 }>();
-
-const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 
 const { t } = useI18n();
 

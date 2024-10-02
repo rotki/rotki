@@ -2,6 +2,8 @@
 import dayjs from 'dayjs';
 import type { BigNumber, Message } from '@rotki/common';
 
+const display = defineModel<boolean>({ required: true, default: false });
+
 const props = withDefaults(
   defineProps<{
     timestamp?: number;
@@ -19,8 +21,6 @@ const { timestamp, balance } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
 
 const editMode = ref<boolean>(false);
-const display = defineModel<boolean>({ required: true, default: false });
-
 const { setMessage } = useMessageStore();
 const snapshotApi = useSnapshotApi();
 const { appSession, openDirectory } = useInterop();

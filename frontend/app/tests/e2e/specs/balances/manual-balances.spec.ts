@@ -57,6 +57,7 @@ describe('balances', () => {
 
         balances.forEach(({ location, value }) => {
           const dashboardBalance = $dashboardBalances.get(location);
+          // eslint-disable-next-line @typescript-eslint/no-unused-expressions
           expect(dashboardBalance, `${location} balance`).to.not.be.undefined;
           expect(dashboardBalance?.toNumber(), location).to.be.within(
             value.minus(PRECISION).toNumber(),

@@ -54,10 +54,10 @@ if (!isDevelopment) {
   else {
     const loggerDb = new IndexedDb('db', 1, 'logs');
     consola.addReporter({
-      log(logObj) {
-        loggerDb.add({
+      log(logObj): void {
+        startPromise(loggerDb.add({
           message: getMessage(logObj),
-        });
+        }));
       },
     });
   }

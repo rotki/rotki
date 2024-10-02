@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { RouteLocationRaw } from 'vue-router';
 
+defineOptions({
+  inheritAttrs: false,
+});
+
 const props = withDefaults(
   defineProps<{
     tag?: string;

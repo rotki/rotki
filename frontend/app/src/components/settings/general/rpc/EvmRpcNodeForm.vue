@@ -6,6 +6,8 @@ import { toMessages } from '@/utils/validation';
 import type { ValidationErrors } from '@/types/api/errors';
 import type { EvmRpcNodeManageState } from '@/types/settings/rpc';
 
+const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
+
 const props = defineProps<{
   modelValue: EvmRpcNodeManageState;
 }>();
@@ -16,7 +18,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const node = useSimplePropVModel(props, 'node', emit);
 const owned = useRefPropVModel(node, 'owned');
 const name = useRefPropVModel(node, 'name');

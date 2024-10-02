@@ -35,7 +35,7 @@ export const useRefresh = createSharedComposable(() => {
       await awaitParallelExecution(
         chains,
         chain => chain,
-        chain => useTokenDetection(chain).detectTokensOfAllAddresses(),
+        async chain => useTokenDetection(chain).detectTokensOfAllAddresses(),
         1,
       );
       set(massDetecting, undefined);

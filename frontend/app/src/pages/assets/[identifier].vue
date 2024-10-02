@@ -5,14 +5,6 @@ import { NoteLocation } from '@/types/notes';
 import type { RouteLocationRaw } from 'vue-router';
 import type { AssetBalanceWithPrice } from '@rotki/common';
 
-defineOptions({
-  name: 'AssetBreakdown',
-});
-
-const props = defineProps<{
-  identifier: string;
-}>();
-
 definePage({
   meta: {
     canNavigateBack: true,
@@ -20,6 +12,14 @@ definePage({
   },
   props: true,
 });
+
+defineOptions({
+  name: 'AssetBreakdown',
+});
+
+const props = defineProps<{
+  identifier: string;
+}>();
 
 const { identifier } = toRefs(props);
 const { isAssetIgnored, ignoreAsset, unignoreAsset } = useIgnoredAssetsStore();

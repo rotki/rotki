@@ -10,7 +10,7 @@ export const useDefiMetadata = createSharedComposable(() => {
   const loading = ref<boolean>(false);
 
   const metadata: Ref<ProtocolMetadata[]> = asyncComputed<ProtocolMetadata[]>(
-    () => {
+    async () => {
       if (get(connected))
         return fetchDefiMetadata();
 

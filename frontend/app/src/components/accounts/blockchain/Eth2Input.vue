@@ -6,13 +6,15 @@ import { toMessages } from '@/utils/validation';
 import type { Eth2Validator } from '@/types/balances';
 import type { ValidationErrors } from '@/types/api/errors';
 
+const modelValue = defineModel<Eth2Validator>('validator', { required: true });
+
+const errorMessages = defineModel<ValidationErrors>('errorMessages', { required: true });
+
 defineProps<{
   disabled: boolean;
   editMode: boolean;
 }>();
 
-const modelValue = defineModel<Eth2Validator>('validator', { required: true });
-const errorMessages = defineModel<ValidationErrors>('errorMessages', { required: true });
 const validatorIndex = refOptional(useRefPropVModel(modelValue, 'validatorIndex'), '');
 const publicKey = refOptional(useRefPropVModel(modelValue, 'publicKey'), '');
 const ownershipPercentage = refOptional(useRefPropVModel(modelValue, 'ownershipPercentage'), '');

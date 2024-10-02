@@ -2,6 +2,10 @@
 import type { StyleValue } from 'vue';
 import type { NftAsset } from '@/types/nfts';
 
+defineOptions({
+  inheritAttrs: false,
+});
+
 const props = withDefaults(
   defineProps<{
     asset: NftAsset;

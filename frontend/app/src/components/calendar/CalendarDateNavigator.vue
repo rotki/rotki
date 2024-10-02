@@ -2,6 +2,8 @@
 import dayjs, { type Dayjs } from 'dayjs';
 import { DateFormat } from '@/types/date-format';
 
+const model = defineModel<Dayjs>({ required: true });
+
 defineProps<{
   visibleDate: Dayjs;
   today: Dayjs;
@@ -10,8 +12,6 @@ defineProps<{
 const emit = defineEmits<{
   (e: 'set-today'): void;
 }>();
-
-const model = defineModel<Dayjs>({ required: true });
 
 const { t } = useI18n();
 

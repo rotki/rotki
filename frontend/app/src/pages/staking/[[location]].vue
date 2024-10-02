@@ -10,16 +10,16 @@ interface StakingInfo {
   name: string;
 }
 
-const props = defineProps<{
-  location: NavType | '';
-}>();
-
 definePage({
   meta: {
     noteLocation: NoteLocation.STAKING,
   },
   props: true,
 });
+
+const props = defineProps<{
+  location: NavType | '';
+}>();
 
 const imageSize = '64px';
 

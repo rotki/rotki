@@ -18,7 +18,7 @@ export const useWebsocketStore = defineStore('websocket', () => {
     }
   };
 
-  function connect(): Promise<boolean> {
+  async function connect(): Promise<boolean> {
     return new Promise<boolean>((resolve) => {
       if (get(connected)) {
         resolve(true);
@@ -40,7 +40,7 @@ export const useWebsocketStore = defineStore('websocket', () => {
       logger.debug(`preparing to connect to ${url}`);
       const ws = new WebSocket(url);
       set(connection, ws);
-      ws.onmessage = async (event): Promise<void> => await handleMessage(event.data);
+      ws.onmessage = async (event): Promise<void> => handleMessage(event.data);
       ws.addEventListener('open', (): void => {
         logger.debug('websocket connected');
         set(connected, true);

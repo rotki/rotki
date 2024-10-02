@@ -72,7 +72,12 @@ const interop = {
     (await window.interop?.openDirectory(title)) ?? undefined,
 
   openUrl: (url: string): void => {
-    electronApp ? window.interop?.openUrl(url) : window.open(url, '_blank');
+    if (electronApp) {
+      window.interop?.openUrl(url);
+    }
+    else {
+      window.open(url, '_blank');
+    }
   },
 
   openPath: (path: string): void => {
@@ -101,15 +106,15 @@ const interop = {
 
   restartBackend: async (options: Partial<BackendOptions>): Promise<boolean> => {
     assert(window.interop);
-    return await window.interop.restartBackend(options);
+    return window.interop.restartBackend(options);
   },
 
   config: async (defaults: boolean): Promise<Partial<BackendOptions>> => {
     assert(window.interop);
-    return await window.interop.config(defaults);
+    return window.interop.config(defaults);
   },
 
-  version: (): Promise<SystemVersion | WebVersion> => {
+  version: async (): Promise<SystemVersion | WebVersion> => {
     if (!window.interop) {
       return Promise.resolve({
         platform: navigator?.platform,
@@ -119,7 +124,7 @@ const interop = {
     return window.interop?.version();
   },
 
-  isMac: (): Promise<boolean> => Promise.resolve(window.interop?.isMac() || navigator.platform?.startsWith?.('Mac')),
+  isMac: async (): Promise<boolean> => Promise.resolve(window.interop?.isMac() || navigator.platform?.startsWith?.('Mac')),
 
   resetTray: (): void => {
     window.interop?.updateTray({});
@@ -131,12 +136,12 @@ const interop = {
 
   storePassword: async (username: string, password: string): Promise<boolean | undefined> => {
     assert(window.interop);
-    return await window.interop.storePassword(username, password);
+    return window.interop.storePassword(username, password);
   },
 
   getPassword: async (username: string): Promise<string | undefined> => {
     assert(window.interop);
-    return await window.interop.getPassword(username);
+    return window.interop.getPassword(username);
   },
 
   clearPassword: async (): Promise<void> => {

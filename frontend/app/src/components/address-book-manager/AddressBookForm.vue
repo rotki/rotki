@@ -6,6 +6,8 @@ import { toMessages } from '@/utils/validation';
 import type { SelectOptions } from '@/types/common';
 import type { AddressBookLocation, AddressBookPayload } from '@/types/eth-names';
 
+const enabledForAllChains = defineModel<boolean>('enableForAllChains', { required: true, default: false });
+
 const props = defineProps<{
   modelValue: AddressBookPayload;
   edit: boolean;
@@ -25,8 +27,6 @@ const address = useSimplePropVModel(props, 'address', emit);
 const location = useSimplePropVModel(props, 'location', emit);
 const chain = useSimplePropVModel(props, 'blockchain', emit);
 const blockchain = nullDefined(chain);
-const enabledForAllChains = defineModel<boolean>('enableForAllChains', { required: true, default: false });
-
 const { addresses } = useBlockchainStore();
 const addressesNamesStore = useAddressesNamesStore();
 const { getAddressesWithoutNames, addressNameSelector } = addressesNamesStore;

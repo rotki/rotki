@@ -14,6 +14,10 @@ import { isBtcChain } from '@/types/blockchain/chains';
 import { XpubKeyType } from '@/types/blockchain/accounts';
 import type { ValidationErrors } from '@/types/api/errors';
 
+const modelValue = defineModel<AccountManageState>({ required: true });
+
+const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
+
 defineProps<{
   loading: boolean;
 }>();
@@ -26,8 +30,6 @@ const form = ref<
   | InstanceType<typeof XpubAccountForm>
 >();
 
-const modelValue = defineModel<AccountManageState>({ required: true });
-const errors = defineModel<ValidationErrors>('errorMessages', { required: true });
 const chain = useRefPropVModel(modelValue, 'chain');
 
 const { isEvm } = useSupportedChains();

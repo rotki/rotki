@@ -11,6 +11,16 @@ import type { BlockchainAccountGroupWithBalance, BlockchainAccountWithBalance } 
 
 type DataRow = T & { id: string };
 
+defineOptions({
+  inheritAttrs: false,
+});
+
+const chainFilter = defineModel<Record<string, string[]>>('chainFilter', { required: false, default: {} });
+
+const pagination = defineModel<TablePaginationData>('pagination', { required: true });
+
+const sort = defineModel<DataTableSortData<T>>('sort', { required: true });
+
 const props = withDefaults(
   defineProps<{
     accounts: Collection<T>;
@@ -32,12 +42,7 @@ const emit = defineEmits<{
   (e: 'refresh'): void;
 }>();
 
-const chainFilter = defineModel<Record<string, string[]>>('chainFilter', { required: false, default: {} });
-
 const { t } = useI18n();
-
-const pagination = defineModel<TablePaginationData>('pagination', { required: true });
-const sort = defineModel<DataTableSortData<T>>('sort', { required: true });
 
 const expanded = ref<DataRow[]>([]) as Ref<DataRow[]>;
 const collapsed = ref<DataRow[]>([]) as Ref<DataRow[]>;

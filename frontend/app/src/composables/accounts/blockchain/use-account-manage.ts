@@ -306,7 +306,7 @@ export function useAccountManage(): UseAccountManageReturn {
     return result.success;
   }
 
-  const save = (state: AccountManageState): Promise<boolean> => {
+  const save = async (state: AccountManageState): Promise<boolean> => {
     switch (state.type) {
       case 'account':
         return saveAccount(state);

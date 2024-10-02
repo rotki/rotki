@@ -6,6 +6,8 @@ defineOptions({
   inheritAttrs: false,
 });
 
+const model = defineModel<string | undefined>({ required: true });
+
 const props = withDefaults(
   defineProps<{
     disabled?: boolean;
@@ -22,8 +24,6 @@ const props = withDefaults(
     items: () => [],
   },
 );
-
-const model = defineModel<string | undefined>({ required: true });
 
 const { evmOnly, excludeEthStaking, items } = toRefs(props);
 

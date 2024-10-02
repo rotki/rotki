@@ -63,7 +63,7 @@ export function useBlockchainBalancesApi(): UseBlockchainBalancesApiReturn {
     return handleResponse(response);
   };
 
-  const fetchDetectedTokensTask = (chain: string, addresses: string[]): Promise<PendingTask> =>
+  const fetchDetectedTokensTask = async (chain: string, addresses: string[]): Promise<PendingTask> =>
     internalDetectedTokens<PendingTask>(chain, addresses, true);
 
   const fetchDetectedTokens = async (chain: string, addresses: string[] | null): Promise<EvmTokensRecord> => {

@@ -35,8 +35,8 @@ function isNoTxHash(item: HistoryEventEntry) {
   return (
     item.entryType === HistoryEventEntryType.EVM_EVENT
     && ((item.counterparty === 'eth2' && item.eventSubtype === 'deposit asset')
-    || (item.counterparty === 'gitcoin' && item.eventSubtype === 'apply')
-    || item.counterparty === 'safe-multisig')
+      || (item.counterparty === 'gitcoin' && item.eventSubtype === 'apply')
+      || item.counterparty === 'safe-multisig')
   );
 }
 

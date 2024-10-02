@@ -14,7 +14,7 @@ export const usePeriodicStore = defineStore('session/periodic', () => {
 
     set(periodicRunning, true);
     try {
-      const result = await backoff(3, () => fetchPeriodicData(), 10000);
+      const result = await backoff(3, async () => fetchPeriodicData(), 10000);
       if (Object.keys(result).length === 0) {
         // an empty object means user is not logged in yet
         return;

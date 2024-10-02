@@ -15,7 +15,7 @@ vi.mock('@/composables/api/settings/settings-api', async () => {
     ...mod,
     useSettingsApi: vi.fn().mockImplementation(() => {
       const mocked = mod.useSettingsApi();
-      const setSettings = vi.fn().mockImplementation((params: SettingsUpdate) => {
+      const setSettings = vi.fn().mockImplementation(async (params: SettingsUpdate) => {
         if (params.evmchainsToSkipDetection?.includes('ethereum')) {
           throw new ApiValidationError(
             '{"settings": {"evmchains_to_skip_detection": {"1": ["Failed to deserialize SupportedBlockchain value ethereum"]}}}',

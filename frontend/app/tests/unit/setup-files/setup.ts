@@ -104,7 +104,7 @@ afterEach(() => server.resetHandlers());
 
 afterAll(() => server.close());
 
-function delay(ms: number = 200): Promise<void> {
+async function delay(ms: number = 200): Promise<void> {
   return new Promise((resolve) => {
     setTimeout(resolve, ms);
   });

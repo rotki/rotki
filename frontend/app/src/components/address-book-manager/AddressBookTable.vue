@@ -4,6 +4,10 @@ import type { DataTableColumn, DataTableSortData, TablePaginationData } from '@r
 import type { AddressBookEntry, AddressBookLocation } from '@/types/eth-names';
 import type { Collection } from '@/types/collection';
 
+const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
+
+const sortModel = defineModel<DataTableSortData<AddressBookEntry>>('sort', { required: true });
+
 const props = defineProps<{
   collection: Collection<AddressBookEntry>;
   location: AddressBookLocation;
@@ -18,9 +22,6 @@ const emit = defineEmits<{
 const { location } = toRefs(props);
 
 const { t } = useI18n();
-
-const paginationModel = defineModel<TablePaginationData>('pagination', { required: true });
-const sortModel = defineModel<DataTableSortData<AddressBookEntry>>('sort', { required: true });
 
 const cols = computed<DataTableColumn<AddressBookEntry>[]>(() => [
   {

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type { Tag } from '@/types/tags';
 
+const model = defineModel<string[]>({ required: true });
+
 withDefaults(
   defineProps<{
     disabled?: boolean;
@@ -11,8 +13,6 @@ withDefaults(
     hideDetails: false,
   },
 );
-
-const model = defineModel<string[]>({ required: true });
 
 const { t } = useI18n();
 

@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import type { LogoProps } from '@rotki/ui-library';
 
+defineOptions({
+  inheritAttrs: false,
+});
+
 withDefaults(
   defineProps<{
     logo?: LogoProps['logo'];

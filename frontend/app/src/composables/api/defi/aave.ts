@@ -8,12 +8,12 @@ interface UseAaveApiReturn {
 }
 
 export function useAaveApi(): UseAaveApiReturn {
-  const fetchAaveBalances = (): Promise<PendingTask> => {
+  const fetchAaveBalances = async (): Promise<PendingTask> => {
     const url = '/blockchains/eth/modules/aave/balances';
     return fetchExternalAsync(api.instance, url);
   };
 
-  const fetchAaveHistory = (): Promise<PendingTask> => {
+  const fetchAaveHistory = async (): Promise<PendingTask> => {
     const url = '/blockchains/eth/modules/aave/stats';
     return fetchExternalAsync(api.instance, url);
   };

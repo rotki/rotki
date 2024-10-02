@@ -74,7 +74,7 @@ export function useHistoryEventsApi(): UseHistoryEventsApiReturn {
     return handleResponse(response);
   };
 
-  const fetchTransactionsTask = (
+  const fetchTransactionsTask = async (
     payload: TransactionRequestPayload,
     type: TransactionChainType = TransactionChainType.EVM,
   ): Promise<PendingTask> => internalTransactions<PendingTask>(payload, true, type);

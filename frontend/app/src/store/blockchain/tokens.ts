@@ -91,7 +91,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     await awaitParallelExecution(
       addresses,
       address => address,
-      address => fetchDetectedTokens(chain, address),
+      async address => fetchDetectedTokens(chain, address),
       2,
     );
   };
@@ -167,7 +167,7 @@ export const useBlockchainTokensStore = defineStore('blockchain/tokens', () => {
     await awaitParallelExecution(
       pendingRefresh,
       chain => chain,
-      chain =>
+      async chain =>
         fetchBlockchainBalances({
           blockchain: chain,
           ignoreCache: true,

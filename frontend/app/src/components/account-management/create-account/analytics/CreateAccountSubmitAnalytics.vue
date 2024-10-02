@@ -1,11 +1,11 @@
 <script lang="ts" setup>
+const usageAnalytics = defineModel<boolean>('submitUsageAnalytics', { required: true });
+
 defineProps<{
   loading: boolean;
 }>();
 
 const { t } = useI18n();
-
-const usageAnalytics = defineModel<boolean>('submitUsageAnalytics', { required: true });
 </script>
 
 <template>

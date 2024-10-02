@@ -86,7 +86,6 @@ export enum SavedFilterLocation {
 export function assetSuggestions(assetSearch: (params: AssetSearchParams) => Promise<AssetsWithId>, evmChain?: string): (value: string) => Promise<AssetsWithId> {
   let pending: AbortController | null = null;
 
-  // eslint-disable-next-line @typescript-eslint/no-misused-promises
   return useDebounceFn(async (value: string) => {
     if (pending) {
       pending.abort();

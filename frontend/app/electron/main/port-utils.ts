@@ -2,7 +2,7 @@ import net from 'node:net';
 
 export const DEFAULT_PORT = 4242;
 
-function checkAvailability(port: number): Promise<number> {
+async function checkAvailability(port: number): Promise<number> {
   return new Promise<number>((resolve, reject) => {
     const server = net.createServer();
     server.unref();

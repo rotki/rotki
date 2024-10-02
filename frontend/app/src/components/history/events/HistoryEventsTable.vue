@@ -11,6 +11,10 @@ interface DeleteOrIgnoreEvent {
   readonly mode: 'ignore' | 'delete';
 }
 
+const sort = defineModel<DataTableSortData<HistoryEventEntry>>('sort', { required: true });
+
+const pagination = defineModel<TablePaginationData>('pagination', { required: true });
+
 const props = defineProps<{
   groups: Collection<HistoryEventEntry>;
   excludeIgnored: boolean;
@@ -22,9 +26,6 @@ const emit = defineEmits<{
   'set-page': [page: number];
   'refresh': [data?: EvmChainAndTxHash];
 }>();
-
-const sort = defineModel<DataTableSortData<HistoryEventEntry>>('sort', { required: true });
-const pagination = defineModel<TablePaginationData>('pagination', { required: true });
 
 const { groups, groupLoading } = toRefs(props);
 

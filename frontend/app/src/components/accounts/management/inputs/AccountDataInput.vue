@@ -1,10 +1,11 @@
 <script setup lang="ts">
+const labelModel = defineModel<string>('label', { required: true });
+
+const tagsModel = defineModel<string[]>('tags', { required: true });
+
 defineProps<{
   disabled: boolean;
 }>();
-
-const labelModel = defineModel<string>('label', { required: true });
-const tagsModel = defineModel<string[]>('tags', { required: true });
 
 const { t } = useI18n();
 </script>

@@ -64,8 +64,9 @@ export const useSettingsStore = defineStore('settings', () => {
 
     await update({ activeModules: modules });
 
-    for (const module of payload.enable)
+    for (const module of payload.enable) {
       for (const address of payload.addresses) await addQueriedAddress({ module, address });
+    }
   };
 
   return {

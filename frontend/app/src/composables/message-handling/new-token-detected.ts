@@ -34,7 +34,7 @@ export function useNewTokenDetectedHandler(t: ReturnType<typeof useI18n>['t']): 
       priority: Priority.ACTION,
       action: {
         label: t('notification_messages.new_detected_token.action'),
-        action: async () => await router.push(Routes.ASSET_MANAGER_NEWLY_DETECTED),
+        action: async () => router.push(Routes.ASSET_MANAGER_NEWLY_DETECTED),
       },
       group: NotificationGroup.NEW_DETECTED_TOKENS,
       groupCount: count,

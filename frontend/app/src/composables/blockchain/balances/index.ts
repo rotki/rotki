@@ -94,7 +94,7 @@ export function useBlockchainBalances(): UseBlockchainbalancesReturn {
     const { isLoading } = useStatusStore();
     const loading = isLoading(Section.BLOCKCHAIN, blockchain);
 
-    const call = (): Promise<void> => handleFetch(blockchain, ignoreCache);
+    const call = async (): Promise<void> => handleFetch(blockchain, ignoreCache);
 
     if (get(loading)) {
       if (periodic)
@@ -120,7 +120,7 @@ export function useBlockchainBalances(): UseBlockchainbalancesReturn {
       await awaitParallelExecution(
         chains,
         chain => chain,
-        chain => fetch(chain, ignoreCache, periodic),
+        async chain => fetch(chain, ignoreCache, periodic),
         2,
       );
     }

@@ -1,10 +1,15 @@
 import process from 'node:process';
+import z from 'zod';
 import { externalLinks } from '../shared/external-links';
+
+const Release = z.object({
+  tag_name: z.string(),
+});
 
 async function processDynamicUrl(url: string): Promise<string> {
   if (url.includes('v$version')) {
     const response = await fetch('https://api.github.com/repos/rotki/rotki/releases/latest');
-    const { tag_name } = await response.json();
+    const { tag_name } = Release.parse(await response.json());
 
     // Format dynamic URL and replace with valid value.
     return url.replace('v$version', tag_name);

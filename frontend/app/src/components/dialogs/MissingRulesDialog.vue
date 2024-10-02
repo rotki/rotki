@@ -2,14 +2,14 @@
 import type { AccountingRuleEntry } from '@/types/settings/accounting';
 import type { EvmChainAndTxHash, HistoryEventEntry } from '@/types/history/events';
 
+const modelValue = defineModel<HistoryEventEntry | undefined>({ required: true });
+
 const emit = defineEmits<{
   'redecode': [data: EvmChainAndTxHash];
   'edit-event': [event: HistoryEventEntry];
   'add': [rule: Pick<AccountingRuleEntry, 'eventType' | 'eventSubtype' | 'counterparty'>];
   'dismiss': [];
 }>();
-
-const modelValue = defineModel<HistoryEventEntry | undefined>({ required: true });
 
 const { t } = useI18n();
 

@@ -7,9 +7,9 @@ export function sortBy(a: any, b: any, asc: boolean): number {
     return Number(aValue) - Number(bValue);
 
   return `${aValue}`.localeCompare(
-      `${bValue}`,
-      undefined,
-      sortOptions,
+    `${bValue}`,
+    undefined,
+    sortOptions,
   );
 }
 

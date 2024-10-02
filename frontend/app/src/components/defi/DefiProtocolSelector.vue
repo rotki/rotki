@@ -7,13 +7,13 @@ defineOptions({
   inheritAttrs: false,
 });
 
+const model = defineModel<DefiProtocol | undefined>({ required: true });
+
 const props = withDefaults(defineProps<{
   liabilities?: boolean;
 }>(), {
   liabilities: false,
 });
-
-const model = defineModel<DefiProtocol | undefined>({ required: true });
 
 const dual = [DefiProtocol.AAVE, DefiProtocol.COMPOUND] as const;
 const borrowing = [DefiProtocol.MAKERDAO_VAULTS, DefiProtocol.LIQUITY] as const;

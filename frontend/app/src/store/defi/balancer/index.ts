@@ -108,7 +108,7 @@ export const useBalancerStore = defineStore('defi/balancer', () => {
       task: {
         type: TaskType.BALANCER_BALANCES,
         section: Section.DEFI_BALANCER_BALANCES,
-        query: async () => await fetchBalancerBalances(),
+        query: async () => fetchBalancerBalances(),
         parser: data => BalancerBalances.parse(data),
         meta,
         onError,

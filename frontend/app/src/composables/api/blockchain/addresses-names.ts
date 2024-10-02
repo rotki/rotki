@@ -45,7 +45,7 @@ export function useAddressesNamesApi(): UseAddressesNamesApiReturn {
   };
 
   const getEnsNamesTask = async (ethAddresses: string[]): Promise<PendingTask> =>
-    await internalEnsNames<PendingTask>(ethAddresses, true);
+    internalEnsNames<PendingTask>(ethAddresses, true);
 
   const getEnsNames = async (ethAddresses: string[]): Promise<EthNames> => {
     const response = await internalEnsNames<EthNames>(ethAddresses);

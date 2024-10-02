@@ -21,7 +21,7 @@ export function useExchangeUnknownAssetHandler(t: ReturnType<typeof useI18n>['t'
       action: {
         label: t('notification_messages.unknown_asset_mapping.actions.add_mapping'),
         icon: 'guide-line',
-        action: async () => await router.push({
+        action: async () => router.push({
           path: Routes.ASSET_MANAGER_CEX_MAPPING.toString(),
           query: {
             add: 'true',

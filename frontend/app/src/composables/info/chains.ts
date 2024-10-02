@@ -27,14 +27,14 @@ export const useSupportedChains = createSharedComposable(() => {
 
   const { connected } = toRefs(useMainStore());
 
-  const supportedChains = asyncComputed<SupportedChains>(() => {
+  const supportedChains = asyncComputed<SupportedChains>(async () => {
     if (get(connected))
       return fetchSupportedChains();
 
     return [];
   }, []);
 
-  const allEvmChains = asyncComputed<EvmChainEntries>(() => {
+  const allEvmChains = asyncComputed<EvmChainEntries>(async () => {
     if (get(connected))
       return fetchAllEvmChains();
 

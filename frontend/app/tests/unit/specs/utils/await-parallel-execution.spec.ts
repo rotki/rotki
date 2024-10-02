@@ -6,7 +6,7 @@ describe('awaitParallelExecution', () => {
       awaitParallelExecution<{ id: string }>(
         [],
         id => id.id,
-        () => Promise.resolve(),
+        async () => Promise.resolve(),
       ),
     ).resolves.toBeUndefined();
   });

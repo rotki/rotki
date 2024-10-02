@@ -2,6 +2,12 @@
 import { isEqual } from 'lodash-es';
 import type { TradeLocationData } from '@/types/history/trade/location';
 
+defineOptions({
+  inheritAttrs: false,
+});
+
+const model = defineModel<string>({ required: true, default: '' });
+
 const props = withDefaults(
   defineProps<{
     items?: string[];
@@ -12,8 +18,6 @@ const props = withDefaults(
     excludes: () => [],
   },
 );
-
-const model = defineModel<string>({ required: true, default: '' });
 
 const { items, excludes } = toRefs(props);
 

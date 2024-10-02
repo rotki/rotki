@@ -27,7 +27,7 @@ export const useLocations = createSharedComposable(() => {
         name: get(getChainName(blockchainId)),
         identifier: blockchainId,
         image: get(getChainImageUrl(blockchainId)),
-        detailPath: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN}/${type}`,
+        detailPath: `${Routes.ACCOUNTS_BALANCES_BLOCKCHAIN.toString()}/${type}`,
       };
     }
 

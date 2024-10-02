@@ -120,7 +120,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
   };
 
   const exchangeRate = (currency: string): ComputedRef<BigNumber | undefined> =>
-    computed(() => get(exchangeRates)[currency] as BigNumber);
+    computed(() => get(exchangeRates)[currency]);
 
   const getHistoricPrice = async ({ fromAsset, timestamp, toAsset }: HistoricPricePayload): Promise<BigNumber> => {
     assert(fromAsset !== toAsset);

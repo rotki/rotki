@@ -1,9 +1,8 @@
 <script setup lang="ts">
+const model = defineModel<boolean>({ required: true });
 defineProps<{
   count: number;
 }>();
-const model = defineModel<boolean>({ required: true });
-
 const { t } = useI18n();
 </script>
 

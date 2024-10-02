@@ -312,7 +312,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
 
   const fetchAccounts = async (
     payload: MaybeRef<BlockchainAccountRequestPayload>,
-  ): Promise<Collection<BlockchainAccountGroupWithBalance>> => await new Promise((resolve) => {
+  ): Promise<Collection<BlockchainAccountGroupWithBalance>> => new Promise((resolve) => {
     resolve(sortAndFilterAccounts(
       get(groups),
       get(payload),
@@ -329,7 +329,7 @@ export const useBlockchainStore = defineStore('blockchain', () => {
 
   const fetchGroupAccounts = async (
     payload: MaybeRef<BlockchainAccountGroupRequestPayload>,
-  ): Promise<Collection<BlockchainAccountWithBalance>> => await new Promise((resolve) => {
+  ): Promise<Collection<BlockchainAccountWithBalance>> => new Promise((resolve) => {
     const params = get(payload);
     const newVar = get(blockchainAccountList).filter(account => account.groupId === params.groupId);
     resolve(sortAndFilterAccounts(newVar, params, {

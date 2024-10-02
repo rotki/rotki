@@ -1,9 +1,9 @@
 <script setup lang="ts">
+const model = defineModel<string | undefined>({ required: true });
+
 defineProps<{
   items: string[];
 }>();
-
-const model = defineModel<string | undefined>({ required: true });
 
 const { t } = useI18n();
 </script>

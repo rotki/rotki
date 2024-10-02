@@ -2,15 +2,15 @@
 import { NoteLocation } from '@/types/notes';
 import type { SelectedReport } from '@/types/reports';
 
-defineOptions({
-  name: 'ReportDetail',
-});
-
 definePage({
   meta: {
     canNavigateBack: true,
     noteLocation: NoteLocation.PROFIT_LOSS_REPORTS,
   },
+});
+
+defineOptions({
+  name: 'ReportDetail',
 });
 
 const loading = ref(true);

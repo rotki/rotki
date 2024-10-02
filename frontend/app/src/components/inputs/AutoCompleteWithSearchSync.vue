@@ -3,11 +3,11 @@ defineOptions({
   inheritAttrs: false,
 });
 
+const model = defineModel<string>({ required: true });
+
 const props = defineProps<{
   items: string[];
 }>();
-
-const model = defineModel<string>({ required: true });
 
 const { items } = toRefs(props);
 

@@ -67,12 +67,12 @@ export function useSettings(): UseSettingsReturn {
     const payload = { [settingKey]: settingValue };
 
     const updateMethods: Record<SettingLocation, () => Promise<ActionStatus>> = {
-      [SettingLocation.GENERAL]: () => updateSettings(payload),
-      [SettingLocation.FRONTEND]: () => updateFrontendSettings(payload),
-      [SettingLocation.SESSION]: () => Promise.resolve(updateSessionSettings(payload)),
+      [SettingLocation.GENERAL]: async () => updateSettings(payload),
+      [SettingLocation.FRONTEND]: async () => updateFrontendSettings(payload),
+      [SettingLocation.SESSION]: async () => Promise.resolve(updateSessionSettings(payload)),
     };
 
-    return await getActionStatus(updateMethods[settingLocation], message);
+    return getActionStatus(updateMethods[settingLocation], message);
   };
 
   return {
@@ -122,7 +122,7 @@ export function useClearableMessages(): UseClearableMessagesReturn {
     set(error, formatMessage(useBase ? t('settings.not_saved') : '', message));
   };
 
-  const wait = async (): Promise<void> => await promiseTimeout(200);
+  const wait = async (): Promise<void> => promiseTimeout(200);
   const { start, stop } = useTimeoutFn(clear, 3500);
   watch(success, (success) => {
     if (success)

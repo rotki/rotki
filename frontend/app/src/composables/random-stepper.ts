@@ -11,8 +11,9 @@ export function useRandomStepper(steps: number, interval: number = 10000): UseRa
 
   function setRandomStep(): void {
     let newStep = get(step);
-    if (steps > 1)
+    if (steps > 1) {
       while (newStep === get(step)) newStep = Math.ceil(Math.random() * steps);
+    }
 
     set(step, newStep);
   }

@@ -1,12 +1,16 @@
 <script lang="ts" setup>
+defineOptions({
+  inheritAttrs: false,
+});
+
+const model = defineModel<string | undefined>({ required: true });
+
 withDefaults(defineProps<{
   dense?: boolean;
   showWithKeyOnly?: boolean;
 }>(), {
   showWithKeyOnly: false,
 });
-
-const model = defineModel<string | undefined>({ required: true });
 
 const { allExchanges, exchangesWithKey } = storeToRefs(useLocationStore());
 </script>

@@ -180,7 +180,7 @@ export const useTaskStore = defineStore('tasks', () => {
     }
   };
 
-  const awaitTask = <R, M extends TaskMeta>(
+  const awaitTask = async <R, M extends TaskMeta>(
     id: number,
     type: TaskType,
     meta: M,
@@ -277,9 +277,9 @@ export const useTaskStore = defineStore('tasks', () => {
     unlock(task.id);
   };
 
-  const handleTasks = (ids: number[]): Promise<PromiseSettledResult<void>[]> => {
+  const handleTasks = async (ids: number[]): Promise<PromiseSettledResult<void>[]> => {
     const taskMap = get(tasks);
-    return Promise.allSettled(ids.map(id => processTask(taskMap[id])));
+    return Promise.allSettled(ids.map(async id => processTask(taskMap[id])));
   };
 
   const consumeUnknownTasks = async (ids: number[]): Promise<void> => {

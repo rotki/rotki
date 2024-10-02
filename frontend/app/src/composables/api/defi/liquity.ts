@@ -10,22 +10,22 @@ interface UseLiquityApiReturn {
 }
 
 export function useLiquityApi(): UseLiquityApiReturn {
-  const fetchLiquityBalances = (): Promise<PendingTask> => {
+  const fetchLiquityBalances = async (): Promise<PendingTask> => {
     const url = 'blockchains/eth/modules/liquity/balances';
     return fetchExternalAsync(api.instance, url);
   };
 
-  const fetchLiquityStaking = (): Promise<PendingTask> => {
+  const fetchLiquityStaking = async (): Promise<PendingTask> => {
     const url = 'blockchains/eth/modules/liquity/staking';
     return fetchExternalAsync(api.instance, url);
   };
 
-  const fetchLiquityStakingPools = (): Promise<PendingTask> => {
+  const fetchLiquityStakingPools = async (): Promise<PendingTask> => {
     const url = 'blockchains/eth/modules/liquity/pool';
     return fetchExternalAsync(api.instance, url);
   };
 
-  const fetchLiquityStatistics = (): Promise<PendingTask> => {
+  const fetchLiquityStatistics = async (): Promise<PendingTask> => {
     const url = 'blockchains/eth/modules/liquity/stats';
     return fetchExternalAsync(api.instance, url);
   };

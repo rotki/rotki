@@ -33,7 +33,6 @@ export default rotki({
       '/transactions.events.headers.*/',
     ],
     overrides: {
-      '@intlify/vue-i18n/no-unused-keys': 'off',
       '@intlify/vue-i18n/no-i18n-t-path-prop': 'error',
       '@intlify/vue-i18n/no-deprecated-i18n-component': 'error',
     },

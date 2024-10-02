@@ -3,6 +3,8 @@ defineOptions({
   inheritAttrs: false,
 });
 
+const modelValue = defineModel<boolean>({ required: true });
+
 withDefaults(
   defineProps<{
     disabled?: boolean;
@@ -13,8 +15,6 @@ withDefaults(
 );
 
 const { t } = useI18n();
-
-const modelValue = defineModel<boolean>({ required: true });
 </script>
 
 <template>

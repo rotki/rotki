@@ -9,7 +9,7 @@ export const useHistoryEventProductMappings = createSharedComposable(() => {
   });
 
   const historyEventProductsData: Ref<HistoryEventProductData> = asyncComputed<HistoryEventProductData>(
-    () => getHistoryEventProductsData(),
+    async () => getHistoryEventProductsData(),
     defaultHistoryEventProductsData(),
   );
 
