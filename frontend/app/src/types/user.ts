@@ -223,7 +223,7 @@ export const ExternalServiceKeys = z.object({
   blockscout: z.record(ApiKey.nullable()).optional(),
   monerium: Auth.optional(),
   thegraph: ApiKey.optional(),
-  gnosisPay: ApiKey.optional(),
+  gnosis_pay: ApiKey.optional(),
 });
 
 export type ExternalServiceKeys = z.infer<typeof ExternalServiceKeys>;
