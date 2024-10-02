@@ -18,8 +18,8 @@ const dbUpgradeProgressData = computed<CurrentDbUpgradeProgress | null>(() => {
     currentVersion: toVersion,
     fromVersion: status.startVersion - 1,
     toVersion: status.targetVersion,
-    currentStep: totalSteps > 0 ? currentStep : 1,
-    totalSteps: totalSteps > 0 ? totalSteps : 1,
+    currentStep,
+    totalSteps,
   };
 });
 

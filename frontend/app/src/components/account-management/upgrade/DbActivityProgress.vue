@@ -42,6 +42,7 @@ const multipleUpgrades = computed(() => {
             color="primary"
             size="45"
             circular
+            :variant="progress.totalSteps === 0 ? 'indeterminate' : 'determinate'"
           />
           <RuiProgress
             v-if="multipleUpgrades"
@@ -58,7 +59,8 @@ const multipleUpgrades = computed(() => {
             {{ t('login.upgrading_db.warning', { ...progress }) }}
           </div>
           <RuiDivider class="my-2" />
-          <div>
+          <!-- hide the progress message when the reset signal is received from the backend -->
+          <div v-if="progress.totalSteps > 0">
             {{ t('login.upgrading_db.current', { ...progress }) }}
           </div>
         </template>
@@ -67,7 +69,8 @@ const multipleUpgrades = computed(() => {
             {{ t('login.migrating_data.warning', { ...progress }) }}
           </div>
           <RuiDivider class="my-2" />
-          <div>
+          <!-- hide the progress message when the reset signal is received from the backend -->
+          <div v-if="progress.totalSteps > 0">
             {{ t('login.migrating_data.current', { ...progress }) }}
           </div>
           <ul
