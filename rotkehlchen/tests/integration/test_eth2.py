@@ -6,7 +6,7 @@ import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.ethereum.modules.eth2.structures import ValidatorDetails
-from rotkehlchen.chain.ethereum.modules.eth2.utils import form_withdrawal_notes
+from rotkehlchen.chain.ethereum.modules.eth2.utils import epoch_to_timestamp, form_withdrawal_notes
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_ETH
@@ -422,3 +422,52 @@ def test_beacon_node_rpc_queries(eth2: 'Eth2'):
                 assert entry.validator_index in indices
 
         assert beaconchain_query.call_count == 0, 'beaconcha.in should not have been queried'
+
+
+@pytest.mark.freeze_time('2024-02-07 10:00:00 GMT')
+@pytest.mark.parametrize('network_mocking', [False])
+def test_details_with_beacon_node(eth2: 'Eth2'):
+    """Check that when we have a beacon node setup the function
+    get_validator_data processes the validator details and queries
+    access the correct keys.
+    """
+    with patch(  # create the beacon node attribute
+        'rotkehlchen.chain.ethereum.modules.eth2.beacon.BeaconNode.query',
+        new=lambda *args: {'version': 1},
+    ):
+        eth2.beacon_inquirer.set_rpc_endpoint('http://42.42.42.42:6969/')
+
+    assert eth2.beacon_inquirer is not None
+
+    mocked_node_response = [{
+        'balance': '32011774971',
+        'index': '197823',
+        'status': 'active_ongoing',
+        'validator': {
+            'activation_eligibility_epoch': '0',
+            'activation_epoch': '0',
+            'effective_balance': '32000000000',
+            'exit_epoch': '18446744073709551615',
+            'pubkey': '800003d8af8aa481646da46d0d00ed2659a5bb303e0d88edf468abc1259a1f23ccf12eaeaa3f80511cfeaf256904a72a',  # noqa: E501
+            'slashed': False,
+            'withdrawable_epoch': '9223372036854775806',  # modified to be just before BEACONCHAIN_MAX_EPOCH  # noqa: E501
+            'withdrawal_credentials': '0x01000000000000000000000015f4b914a0ccd14333d850ff311d6dafbfbaa32b',  # noqa: E501
+        },
+    }]
+    beaconchain_validator_data = [{'activationeligibilityepoch': 51362, 'activationepoch': 51967, 'balance': 0, 'effectivebalance': 0, 'exitepoch': 248121, 'lastattestationslot': 7939840, 'name': '', 'pubkey': '0x800003d8af8aa481646da46d0d00ed2659a5bb303e0d88edf468abc1259a1f23ccf12eaeaa3f80511cfeaf256904a72a', 'slashed': False, 'status': 'exited', 'validatorindex': 197823, 'withdrawableepoch': 248377, 'withdrawalcredentials': '0x010000000000000000000000e839a3e9efb32c6a56ab7128e51056585275506c', 'total_withdrawals': 35525369118}]  # noqa: E501
+
+    with (
+        patch.object(
+            eth2.beacon_inquirer.node,
+            'query_chunked',
+            new=lambda *args, **kwargs: mocked_node_response,
+        ),
+        patch.object(
+            eth2.beacon_inquirer.beaconchain,
+            'get_validator_data',
+            wraps=lambda *args, **kwargs: beaconchain_validator_data,
+        ) as patched_beaconchain,
+    ):
+        details = eth2.beacon_inquirer.get_validator_data(indices_or_pubkeys=[1])
+        assert patched_beaconchain.call_count == 1
+        assert details[0].exited_timestamp == epoch_to_timestamp(248121)
