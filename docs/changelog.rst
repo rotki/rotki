@@ -2,7 +2,9 @@
 Changelog
 =========
 
+
 * :bug:`-` Fix an error querying the exit timestamp for the ethereum validators.
+* :bug:`8669` Fixes double conversion for displayed price in manual balances when not using USD as the selected currency.
 
 * :release:`1.35.0 <2024-10-02>`
 * :feature:`8428` Rotki will now properly decode cowswap fees and order types after 2024-03-19 by querying the cowswap API for offchain data.
