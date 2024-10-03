@@ -26,10 +26,11 @@ onBeforeMount(() => {
     setting="beaconRpcEndpoint"
     :error-message="t('general_settings.validation.beacon_rpc.error')"
     :success-message="beaconSuccessMessage"
+    class="pt-2"
   >
     <RuiTextField
       v-model="beaconRpcEndpoint"
-      variant="default"
+      variant="outlined"
       color="primary"
       class="general-settings__fields__beacon-rpc-endpoint"
       :label="t('general_settings.labels.beacon_rpc_endpoint')"
