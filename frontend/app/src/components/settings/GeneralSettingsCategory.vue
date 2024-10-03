@@ -15,13 +15,17 @@ const { t } = useI18n();
     <AutoDetectTokensSetting />
     <DisplayDateInLocaltimeSetting />
     <AskUserUponSizeDiscrepancySetting />
-    <VersionUpdateFrequencySetting />
-    <BalanceSaveFrequencySetting />
+    <SettingItem>
+      <VersionUpdateFrequencySetting />
+      <BalanceSaveFrequencySetting />
+    </SettingItem>
+    <SettingItem>
+      <TreatEthAsEth2Setting />
+      <EvmChainsToIgnoreSettings />
+    </SettingItem>
+    <BtcDerivationGapLimitSetting />
     <DateDisplayFormatSetting />
     <DateInputFormatSetting />
-    <CsvExportDelimiterSetting />
-    <BtcDerivationGapLimitSetting />
-    <TreatEthAsEth2Setting />
-    <EvmChainsToIgnoreSettings />
+    <CsvExportDelimiterSetting />      <!-- it should me moved -->
   </SettingCategory>
 </template>

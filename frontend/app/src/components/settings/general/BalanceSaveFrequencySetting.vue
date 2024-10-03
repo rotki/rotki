@@ -5,12 +5,10 @@ import { Constraints } from '@/data/constraints';
 import { toMessages } from '@/utils/validation';
 
 const balanceSaveFrequency = ref<string>('0');
-
 const { balanceSaveFrequency: frequency } = storeToRefs(useGeneralSettingsStore());
-
 const { t } = useI18n();
-
 const maxBalanceSaveFrequency = Constraints.MAX_HOURS_DELAY;
+
 const rules = {
   balanceSaveFrequency: {
     required: helpers.withMessage(t('general_settings.validation.balance_frequency.non_empty'), required),
@@ -23,6 +21,7 @@ const rules = {
     ),
   },
 };
+
 const v$ = useVuelidate(rules, { balanceSaveFrequency }, { $autoDirty: true });
 const { callIfValid } = useValidation(v$);
 
@@ -44,26 +43,36 @@ onMounted(() => {
 </script>
 
 <template>
-  <SettingsOption
-    #default="{ error, success, update }"
-    setting="balanceSaveFrequency"
-    :transform="transform"
-    :error-message="t('general_settings.validation.balance_frequency.error')"
-    :success-message="successMessage"
-    @finished="resetBalanceSaveFrequency()"
-  >
-    <RuiTextField
-      v-model="balanceSaveFrequency"
-      variant="outlined"
-      color="primary"
-      min="1"
-      :max="maxBalanceSaveFrequency"
-      class="mt-2 general-settings__fields__balance-save-frequency"
-      :label="t('general_settings.labels.balance_saving_frequency')"
-      type="number"
-      :success-messages="success"
-      :error-messages="error || toMessages(v$.balanceSaveFrequency)"
-      @update:model-value="callIfValid($event, update)"
-    />
-  </SettingsOption>
+  <div>
+    <SettingsItem>
+      <template #title />
+      <SettingsOption
+        #default="{ error, success, update }"
+        setting="balanceSaveFrequency"
+        :transform="transform"
+        :error-message="t('general_settings.validation.balance_frequency.error')"
+        :success-message="successMessage"
+        @finished="resetBalanceSaveFrequency()"
+      >
+        <div class="mt-4 space-y-1">
+          <div class="text-rui-text text-body-2">
+            {{ t('general_settings.labels.balance_saving_frequency') }}
+          </div>
+          <RuiTextField
+            v-model="balanceSaveFrequency"
+            variant="outlined"
+            color="primary"
+            min="1"
+            :max="maxBalanceSaveFrequency"
+            class="general-settings__fields__balance-save-frequency"
+            :placeholder="t('general_settings.labels.balance_saving_frequency')"
+            type="number"
+            :success-messages="success"
+            :error-messages="error || toMessages(v$.balanceSaveFrequency)"
+            @update:model-value="callIfValid($event, update)"
+          />
+        </div>
+      </SettingsOption>
+    </SettingsItem>
+  </div>
 </template>

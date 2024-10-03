@@ -2666,8 +2666,7 @@
   },
   "general_settings": {
     "auto_detect_tokens": {
-      "hint": "Automatically detect tokens and refresh balances by periodically checking history events.",
-      "label": "Auto detect tokens",
+      "label": "Automatically detect tokens and refresh balances by periodically checking history events.",
       "title": "Auto detect tokens",
       "validation": {
         "error": "Error setting tokens auto detection"
@@ -2751,7 +2750,8 @@
       "language": "Selected language",
       "csv_delimiter": "CSV export delimiter",
       "treat_eth2_as_eth": "Should treat ETH2 (Staked ETH) as ETH",
-      "chains_to_skip_detection": "EVM Chains for which to skip automatic detection"
+      "chains_to_skip_detection": "EVM Chains for which to skip automatic detection",
+      "evm_chains": "EVM Chains"
     },
     "language_contribution_tooltip": "This feature is experimental and may not work as expected for some languages. This is because all static sentences in the app have to be manually translated and that is a long and ongoing process. Therefore, we need your contribution to speed it up. Click here for more information.",
     "nft_setting": {
@@ -2878,7 +2878,8 @@
       }
     },
     "version_update_check": {
-      "label": "Version update check frequency in hours",
+      "label": "Set the version update check while in app",
+      "hint": "This is how often (in hours) your app version will be checked for update",
       "switch": "Enable a periodic version update check",
       "title": "Version update",
       "validation": {

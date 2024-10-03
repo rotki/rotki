@@ -6,9 +6,7 @@ import { toMessages } from '@/utils/validation';
 
 const versionUpdateCheckFrequency = ref<string>('');
 const versionUpdateCheckEnabled = ref<boolean>(false);
-
 const { versionUpdateCheckFrequency: existingFrequency } = storeToRefs(useFrontendSettingsStore());
-
 const maxVersionUpdateCheckFrequency = Constraints.MAX_HOURS_DELAY;
 const { t } = useI18n();
 
@@ -40,6 +38,7 @@ function resetVersionUpdateCheckFrequency() {
 function frequencyTransform(value: string) {
   return value ? Number.parseInt(value) : value;
 }
+
 const switchTransform = (value: boolean) => (value ? 24 : -1);
 
 onMounted(() => {
@@ -52,7 +51,6 @@ onMounted(() => {
     <template #title>
       {{ t('general_settings.version_update_check.title') }}
     </template>
-
     <SettingsOption
       #default="{ updateImmediate }"
       setting="versionUpdateCheckFrequency"
@@ -76,19 +74,25 @@ onMounted(() => {
       :error-message="t('general_settings.version_update_check.validation.error')"
       @finished="resetVersionUpdateCheckFrequency()"
     >
-      <RuiTextField
-        v-model="versionUpdateCheckFrequency"
-        variant="outlined"
-        color="primary"
-        :disabled="!versionUpdateCheckEnabled"
-        type="number"
-        min="1"
-        :max="maxVersionUpdateCheckFrequency"
-        :label="t('general_settings.version_update_check.label')"
-        :success-messages="success"
-        :error-messages="error || toMessages(v$.versionUpdateCheckFrequency)"
-        @update:model-value="update($event)"
-      />
+      <div class="mt-4">
+        <div class="text-rui-text text-body-2 mb-2">
+          {{ t('general_settings.version_update_check.label') }}
+        </div>
+        <RuiTextField
+          v-model="versionUpdateCheckFrequency"
+          variant="outlined"
+          color="primary"
+          :disabled="!versionUpdateCheckEnabled"
+          type="number"
+          min="1"
+          :max="maxVersionUpdateCheckFrequency"
+          :placeholder="t('general_settings.version_update_check.label')"
+          :hint="t('general_settings.version_update_check.hint')"
+          :success-messages="success"
+          :error-messages="error || toMessages(v$.versionUpdateCheckFrequency)"
+          @update:model-value="update($event)"
+        />
+      </div>
     </SettingsOption>
   </SettingsItem>
 </template>

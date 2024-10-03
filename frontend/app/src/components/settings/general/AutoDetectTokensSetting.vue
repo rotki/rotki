@@ -25,7 +25,6 @@ const { t } = useI18n();
         v-model="value"
         color="primary"
         :label="t('general_settings.auto_detect_tokens.label')"
-        :hint="t('general_settings.auto_detect_tokens.hint')"
         :success-messages="success"
         :error-messages="error"
         @update:model-value="updateImmediate($event)"
