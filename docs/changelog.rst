@@ -4,6 +4,7 @@ Changelog
 
 
 * :bug:`8668` Changes the tag filter logic from OR to AND in the account view.
+* :bug:`-` Graph delegation log queries will now query a smaller amount of events.
 * :bug:`-` Fix an error querying the exit timestamp for the ethereum validators.
 * :bug:`8669` Fixes double conversion for displayed price in manual balances when not using USD as the selected currency.
 
