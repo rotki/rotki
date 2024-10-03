@@ -29,7 +29,7 @@ onBeforeMount(() => {
   >
     <RuiTextField
       v-model="dotRpcEndpoint"
-      variant="outlined"
+      variant="default"
       color="primary"
       class="general-settings__fields__dot-rpc-endpoint"
       :label="t('general_settings.labels.dot_rpc_endpoint')"

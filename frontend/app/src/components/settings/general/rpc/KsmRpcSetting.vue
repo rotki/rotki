@@ -29,7 +29,7 @@ onBeforeMount(() => {
   >
     <RuiTextField
       v-model="ksmRpcEndpoint"
-      variant="outlined"
+      variant="default"
       color="primary"
       class="general-settings__fields__ksm-rpc-endpoint"
       :label="t('general_settings.labels.ksm_rpc_endpoint')"

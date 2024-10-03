@@ -29,7 +29,7 @@ onBeforeMount(() => {
   >
     <RuiTextField
       v-model="beaconRpcEndpoint"
-      variant="outlined"
+      variant="default"
       color="primary"
       class="general-settings__fields__beacon-rpc-endpoint"
       :label="t('general_settings.labels.beacon_rpc_endpoint')"
