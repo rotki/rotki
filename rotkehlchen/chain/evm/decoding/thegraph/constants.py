@@ -11,34 +11,34 @@ THEGRAPH_CPT_DETAILS: Final = CounterpartyDetails(
 
 GRAPH_DELEGATION_TRANSFER_ABI: Final = [
     {
-        'anonymous': 'false',
+        'anonymous': False,
         'inputs': [
             {
-                'indexed': 'true',
+                'indexed': True,
                 'internalType': 'address',
                 'name': 'delegator',
                 'type': 'address',
             },
             {
-                'indexed': 'true',
+                'indexed': True,
                 'internalType': 'address',
                 'name': 'l2Delegator',
                 'type': 'address',
             },
             {
-                'indexed': 'true',
+                'indexed': True,
                 'internalType': 'address',
                 'name': 'indexer',
                 'type': 'address',
             },
             {
-                'indexed': 'false',
+                'indexed': False,
                 'internalType': 'address',
                 'name': 'l2Indexer',
                 'type': 'address',
             },
             {
-                'indexed': 'false',
+                'indexed': False,
                 'internalType': 'uint256',
                 'name': 'transferredDelegationTokens',
                 'type': 'uint256',
