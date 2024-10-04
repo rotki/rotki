@@ -2,7 +2,7 @@
 Changelog
 =========
 
-
+* :feature:`-` Gnosis pay referral rewards will now be properly seen as referrals and not generic receive.
 * :bug:`8668` Changes the tag filter logic from OR to AND in the account view.
 * :bug:`-` Graph delegation log queries will now query a smaller amount of events.
 * :bug:`-` Fix an error querying the exit timestamp for the ethereum validators.

@@ -6,6 +6,7 @@ from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import (
     CPT_GNOSIS_PAY,
     GNOSIS_PAY_CASHBACK_ADDRESS,
+    GNOSIS_PAY_REFERRAL_ADDRESS,
     GNOSIS_PAY_SPENDING_COLLECTOR,
 )
 from rotkehlchen.constants.assets import Asset
@@ -47,6 +48,35 @@ def test_gnosis_pay_cashback(gnosis_inquirer, gnosis_accounts):
             tx_hash=tx_hash,
             counterparty=CPT_GNOSIS_PAY,
             address=GNOSIS_PAY_CASHBACK_ADDRESS,
+        ),
+    ]
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [[
+    '0xc746598C9dD7FC62EF8775445F2F375aCbaCa7AE',  # user's gnosis pay safe
+]])
+def test_gnosis_pay_referral(gnosis_inquirer, gnosis_accounts):
+    tx_hash = deserialize_evm_tx_hash('0xc778b8c23b823d6cec199ece516ab68658c7caafb508104f2a0c9de4d0358529')  # noqa: E501
+    events, _ = get_decoded_events_of_transaction(
+        evm_inquirer=gnosis_inquirer,
+        tx_hash=tx_hash,
+    )
+    amount = '30.23'
+    assert events == [
+        EvmEvent(
+            sequence_index=18,
+            timestamp=TimestampMS(1727856180000),
+            location=Location.GNOSIS,
+            event_type=HistoryEventType.RECEIVE,
+            event_subtype=HistoryEventSubType.REWARD,
+            asset=Asset('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),
+            balance=Balance(amount=FVal(amount)),
+            location_label=gnosis_accounts[0],
+            notes=f'Receive referral reward of {amount} EURe from Gnosis Pay',
+            tx_hash=tx_hash,
+            counterparty=CPT_GNOSIS_PAY,
+            address=GNOSIS_PAY_REFERRAL_ADDRESS,
         ),
     ]
 
