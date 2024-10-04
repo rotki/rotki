@@ -64,3 +64,9 @@ export function useManualBalanceFilter(locations: MaybeRef<string[]>): FilterSch
     RouteFilterSchema,
   };
 }
+
+export const ManualBalancesFilterSchema = z.object({
+  tags: z.string()
+    .optional()
+    .transform(val => (val ? val.split(',') : [])),
+});
