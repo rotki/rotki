@@ -8,18 +8,18 @@ const base = import.meta.env.VITE_PUBLIC_PATH ? window.location.pathname : '/';
 
 export const router = createRouter({
   history: createWebHashHistory(base),
-  scrollBehavior: async (to, from, savedPosition) => {
+  scrollBehavior: (to, from, savedPosition) => {
     if (to.hash) {
       const element = document.getElementById(to.hash.replace(/#/, ''));
       if (element) {
-        setTimeout(async () => {
-          await nextTick(() => {
+        setTimeout(() => {
+          startPromise(nextTick(() => {
             document.body.scrollTo({
               left: 0,
               top: element.offsetTop - 80,
               behavior: 'smooth',
             });
-          });
+          }));
         }, 200);
       }
 
