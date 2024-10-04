@@ -1,6 +1,6 @@
 from rotkehlchen.types import EXTERNAL_EXCHANGES, Location
 
-EXCHANGES_WITH_PASSPHRASE = (Location.KUCOIN, Location.OKX)
+EXCHANGES_WITH_PASSPHRASE = (Location.KUCOIN, Location.OKX, Location.COINBASEPRIME)
 EXCHANGES_WITHOUT_API_SECRET = (Location.BITPANDA,)
 
 # Exchanges for which we have supported modules
