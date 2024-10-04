@@ -14,6 +14,7 @@ from rotkehlchen.chain.gnosis.modules.gnosis_pay.constants import (
     CPT_GNOSIS_PAY,
     GNOSIS_PAY_CASHBACK_ADDRESS,
     GNOSIS_PAY_CPT_DETAILS,
+    GNOSIS_PAY_REFERRAL_ADDRESS,
     GNOSIS_PAY_SPENDER_ADDRESS,
     GNOSIS_PAY_SPENDING_COLLECTOR,
     SPEND,
@@ -65,6 +66,19 @@ class GnosisPayDecoder(DecoderInterface, ReloadableDecoderMixin):
                 event.counterparty = CPT_GNOSIS_PAY
                 event.event_subtype = HistoryEventSubType.CASHBACK
                 event.notes = f'Receive cashback of {event.balance.amount} GNO from Gnosis Pay'
+
+        return DEFAULT_DECODING_OUTPUT
+
+    def decode_referral_events(self, context: DecoderContext) -> DecodingOutput:
+        """Referral events are simple transfers from the address to user's safe"""
+        for event in context.decoded_events:
+            if (
+                event.event_type == HistoryEventType.RECEIVE and
+                event.event_subtype == HistoryEventSubType.NONE
+            ):
+                event.counterparty = CPT_GNOSIS_PAY
+                event.event_subtype = HistoryEventSubType.REWARD
+                event.notes = f'Receive referral reward of {event.balance.amount} {event.asset.resolve_to_asset_with_symbol().symbol} from Gnosis Pay'  # noqa: E501
 
         return DEFAULT_DECODING_OUTPUT
 
@@ -138,6 +152,7 @@ class GnosisPayDecoder(DecoderInterface, ReloadableDecoderMixin):
 
     def addresses_to_decoders(self) -> dict[ChecksumEvmAddress, tuple[Any, ...]]:
         return {
+            GNOSIS_PAY_REFERRAL_ADDRESS: (self.decode_referral_events,),
             GNOSIS_PAY_CASHBACK_ADDRESS: (self.decode_cashback_events,),
             GNOSIS_PAY_SPENDER_ADDRESS: (self.decode_spend,),
             GNOSIS_PAY_SPENDING_COLLECTOR: (self.decode_refund_events,),

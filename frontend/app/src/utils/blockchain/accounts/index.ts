@@ -67,7 +67,7 @@ function filterAccount<T extends BlockchainAccountBalance>(
     matches.push({ name: 'chain', matches: chains.some(chain => chainFilter.includes(chain)) });
 
   if (tagFilter && tagFilter.length > 0)
-    matches.push({ name: 'tags', matches: account.tags?.some(tag => tagFilter.includes(tag)) ?? false });
+    matches.push({ name: 'tags', matches: tagFilter.every(tag => account.tags?.includes(tag) ?? false) });
 
   if (categoryFilter)
     matches.push({ name: 'category', matches: account.category === categoryFilter });

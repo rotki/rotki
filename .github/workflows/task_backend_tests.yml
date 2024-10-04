@@ -56,6 +56,7 @@ jobs:
             fi
           fi
 
+          echo "Current HEAD is $(git rev-parse HEAD)"
           [ `git rev-parse remotes/origin/$TARGET_BRANCH` = `git merge-base remotes/origin/$TARGET_BRANCH $SOURCE_BRANCH` ] &&
           echo "VCR setup: $SOURCE_BRANCH fully rebased on $TARGET_BRANCH" && exit ||
           echo "VCR setup: $SOURCE_BRANCH not fully rebased on $TARGET_BRANCH" && exit 1

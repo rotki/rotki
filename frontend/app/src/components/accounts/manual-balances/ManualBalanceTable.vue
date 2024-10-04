@@ -232,7 +232,6 @@ watchDebounced(
           show-currency="symbol"
           :price-asset="row.asset"
           :price-of-asset="row.usdPrice"
-          fiat-currency="USD"
           :value="row.usdPrice"
         />
       </template>

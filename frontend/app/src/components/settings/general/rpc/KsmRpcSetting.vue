@@ -26,6 +26,7 @@ onBeforeMount(() => {
     setting="ksmRpcEndpoint"
     :error-message="t('general_settings.validation.ksm_rpc.error')"
     :success-message="ksmSuccessMessage"
+    class="pt-2"
   >
     <RuiTextField
       v-model="ksmRpcEndpoint"
