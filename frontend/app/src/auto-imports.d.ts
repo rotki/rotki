@@ -51,6 +51,7 @@ declare global {
   const LocationData: typeof import('@rotki/common')['LocationData']
   const LogLevel: typeof import('../shared/log-level')['LogLevel']
   const LpType: typeof import('@rotki/common')['LpType']
+  const ManualBalancesFilterSchema: typeof import('./composables/filters/manual-balances')['ManualBalancesFilterSchema']
   const NetValue: typeof import('@rotki/common')['NetValue']
   const NoPrice: typeof import('@rotki/common')['NoPrice']
   const NoteType: typeof import('./composables/history/events/notes')['NoteType']
@@ -927,6 +928,7 @@ declare module 'vue' {
     readonly LocationData: UnwrapRef<typeof import('@rotki/common')['LocationData']>
     readonly LogLevel: UnwrapRef<typeof import('../shared/log-level')['LogLevel']>
     readonly LpType: UnwrapRef<typeof import('@rotki/common')['LpType']>
+    readonly ManualBalancesFilterSchema: UnwrapRef<typeof import('./composables/filters/manual-balances')['ManualBalancesFilterSchema']>
     readonly NetValue: UnwrapRef<typeof import('@rotki/common')['NetValue']>
     readonly NoPrice: UnwrapRef<typeof import('@rotki/common')['NoPrice']>
     readonly NoteType: UnwrapRef<typeof import('./composables/history/events/notes')['NoteType']>

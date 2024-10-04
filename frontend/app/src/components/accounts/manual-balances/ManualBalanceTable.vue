@@ -2,8 +2,8 @@
 import { objectOmit } from '@vueuse/shared';
 import { isEqual } from 'lodash-es';
 import { Section } from '@/types/status';
-import type { ManualBalance, ManualBalanceRequestPayload, ManualBalanceWithPrice } from '@/types/manual-balances';
 import type { Filters, Matcher } from '@/composables/filters/manual-balances';
+import type { ManualBalance, ManualBalanceRequestPayload, ManualBalanceWithPrice } from '@/types/manual-balances';
 import type { Collection } from '@/types/collection';
 import type { DataTableColumn } from '@rotki/ui-library';
 
@@ -53,7 +53,7 @@ const {
   Matcher
 >(
   null,
-  false,
+  true,
   () => useManualBalanceFilter(locations),
   payload => (props.type === 'liabilities' ? fetchLiabilities(payload) : fetchBalances(payload)),
   {
@@ -62,6 +62,11 @@ const {
     })),
     defaultSortBy: {
       key: ['usdValue'],
+    },
+    onUpdateFilters(query) {
+      const schema = ManualBalancesFilterSchema.parse(query);
+      if (schema.tags)
+        set(tags, schema.tags);
     },
   },
 );

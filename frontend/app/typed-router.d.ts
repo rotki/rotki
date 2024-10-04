@@ -34,7 +34,7 @@ declare module 'vue-router/auto-routes' {
     'accounts-balances': RouteRecordInfo<'accounts-balances', '/balances', Record<never, never>, Record<never, never>>,
     'accounts-balances-blockchain': RouteRecordInfo<'accounts-balances-blockchain', '/balances/blockchain/:tab?', { tab?: ParamValueZeroOrOne<true> }, { tab?: ParamValueZeroOrOne<false> }>,
     'accounts-balances-exchange': RouteRecordInfo<'accounts-balances-exchange', '/balances/exchange/:exchange?', { exchange?: ParamValueZeroOrOne<true> }, { exchange?: ParamValueZeroOrOne<false> }>,
-    'accounts-balances-manual': RouteRecordInfo<'accounts-balances-manual', '/balances/manual', Record<never, never>, Record<never, never>>,
+    'accounts-balances-manual': RouteRecordInfo<'accounts-balances-manual', '/balances/manual/:tab?', { tab?: ParamValueZeroOrOne<true> }, { tab?: ParamValueZeroOrOne<false> }>,
     'accounts-balances-non-fungible': RouteRecordInfo<'accounts-balances-non-fungible', '/balances/non-fungible', Record<never, never>, Record<never, never>>,
     '/calendar/': RouteRecordInfo<'/calendar/', '/calendar', Record<never, never>, Record<never, never>>,
     'dashboard': RouteRecordInfo<'dashboard', '/dashboard', Record<never, never>, Record<never, never>>,
