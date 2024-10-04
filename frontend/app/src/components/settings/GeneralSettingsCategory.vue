@@ -10,22 +10,32 @@ const { t } = useI18n();
     <template #subtitle>
       {{ t('general_settings.subtitle') }}
     </template>
-
     <UsageAnalyticsSetting />
     <AutoDetectTokensSetting />
     <DisplayDateInLocaltimeSetting />
     <AskUserUponSizeDiscrepancySetting />
-    <SettingItem>
+    <SettingsItem>
+      <template #title>
+        {{ t('general_settings.version_update_check.title') }}
+      </template>
       <VersionUpdateFrequencySetting />
       <BalanceSaveFrequencySetting />
-    </SettingItem>
-    <SettingItem>
+    </SettingsItem>
+    <SettingsItem>
+      <template #title>
+        {{ t('general_settings.labels.evm_chains') }}
+      </template>
       <TreatEthAsEth2Setting />
       <EvmChainsToIgnoreSettings />
-    </SettingItem>
+    </SettingsItem>
     <BtcDerivationGapLimitSetting />
-    <DateDisplayFormatSetting />
-    <DateInputFormatSetting />
-    <CsvExportDelimiterSetting />      <!-- it should me moved -->
+    <SettingsItem>
+      <template #title>
+        {{ t('date_format_help.title') }}
+      </template>
+      <DateDisplayFormatSetting />
+      <DateInputFormatSetting />
+    </SettingsItem>
+    <CsvExportDelimiterSetting />
   </SettingCategory>
 </template>

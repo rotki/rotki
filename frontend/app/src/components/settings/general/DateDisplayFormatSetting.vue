@@ -47,25 +47,22 @@ onMounted(() => {
 </script>
 
 <template>
-  <SettingsItem>
-    <template #title>
-      {{ t('date_format_help.title') }}
-    </template>
-    <div>
-      <DateFormatHelp v-model="formatHelp" />
-      <SettingsOption
-        #default="{ error, success, update, updateImmediate }"
-        setting="dateDisplayFormat"
-        :error-message="t('general_settings.validation.date_display_format.error')"
-        :success-message="successMessage"
-        class="flex items-start gap-4"
-        @finished="resetDateDisplayFormat()"
-      >
+  <div class="mb-6">
+    <DateFormatHelp v-model="formatHelp" />
+    <SettingsOption
+      #default="{ error, success, update, updateImmediate }"
+      setting="dateDisplayFormat"
+      :error-message="t('general_settings.validation.date_display_format.error')"
+      :success-message="successMessage"
+      class="flex items-center"
+      @finished="resetDateDisplayFormat()"
+    >
+      <div class="flex items-center w-full">
         <RuiTextField
           v-model="dateDisplayFormat"
           variant="outlined"
           color="primary"
-          class="general-settings__fields__date-display-format flex-1"
+          class="general-settings__fields__date-display-format flex-grow"
           :label="t('general_settings.labels.date_display_format')"
           type="text"
           :success-messages="success"
@@ -91,10 +88,11 @@ onMounted(() => {
         <RuiTooltip
           :popper="{ placement: 'top' }"
           :open-delay="400"
+          class="ml-2"
         >
           <template #activator>
             <RuiButton
-              class="general-settings__date-restore mt-1"
+              class="general-settings__date-restore  mt-1"
               variant="text"
               icon
               @click="updateImmediate(defaultDateDisplayFormat)"
@@ -104,7 +102,7 @@ onMounted(() => {
           </template>
           {{ t('general_settings.date_display_tooltip') }}
         </RuiTooltip>
-      </SettingsOption>
-    </div>
-  </SettingsItem>
+      </div>
+    </SettingsOption>
+  </div>
 </template>

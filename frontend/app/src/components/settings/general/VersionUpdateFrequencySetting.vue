@@ -47,10 +47,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <SettingsItem>
-    <template #title>
-      {{ t('general_settings.version_update_check.title') }}
-    </template>
+  <div class="flex flex-col gap-4">
     <SettingsOption
       #default="{ updateImmediate }"
       setting="versionUpdateCheckFrequency"
@@ -60,24 +57,20 @@ onMounted(() => {
     >
       <RuiSwitch
         v-model="versionUpdateCheckEnabled"
-        class="mt-4"
         :label="t('general_settings.version_update_check.switch')"
         color="primary"
         @update:model-value="callIfValid($event, updateImmediate)"
       />
     </SettingsOption>
-    <SettingsOption
-      #default="{ error, success, update }"
-      setting="versionUpdateCheckFrequency"
-      frontend-setting
-      :transform="frequencyTransform"
-      :error-message="t('general_settings.version_update_check.validation.error')"
-      @finished="resetVersionUpdateCheckFrequency()"
-    >
-      <div class="mt-4">
-        <div class="text-rui-text text-body-2 mb-2">
-          {{ t('general_settings.version_update_check.label') }}
-        </div>
+    <div class="grow">
+      <SettingsOption
+        #default="{ error, success, update }"
+        setting="versionUpdateCheckFrequency"
+        frontend-setting
+        :transform="frequencyTransform"
+        :error-message="t('general_settings.version_update_check.validation.error')"
+        @finished="resetVersionUpdateCheckFrequency()"
+      >
         <RuiTextField
           v-model="versionUpdateCheckFrequency"
           variant="outlined"
@@ -86,13 +79,13 @@ onMounted(() => {
           type="number"
           min="1"
           :max="maxVersionUpdateCheckFrequency"
-          :placeholder="t('general_settings.version_update_check.label')"
+          :label="t('general_settings.version_update_check.label')"
           :hint="t('general_settings.version_update_check.hint')"
           :success-messages="success"
           :error-messages="error || toMessages(v$.versionUpdateCheckFrequency)"
           @update:model-value="update($event)"
         />
-      </div>
-    </SettingsOption>
-  </SettingsItem>
+      </SettingsOption>
+    </div>
+  </div>
 </template>
