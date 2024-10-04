@@ -2,11 +2,13 @@ import base64
 import json
 from collections.abc import Generator
 from contextlib import ExitStack
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import pytest
 
 import rotkehlchen.tests.utils.exchanges as exchange_tests
+from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.evm.node_inquirer import _connect_task_prefix
 from rotkehlchen.constants.misc import DEFAULT_MAX_LOG_SIZE_IN_MB
 from rotkehlchen.data_migrations.constants import LAST_DATA_MIGRATION
@@ -41,6 +43,9 @@ from rotkehlchen.tests.utils.inquirer import inquirer_inject_ethereum_set_order
 from rotkehlchen.tests.utils.mock import mock_proxies
 from rotkehlchen.tests.utils.substrate import wait_until_all_substrate_nodes_connected
 from rotkehlchen.types import AVAILABLE_MODULES_MAP, Location, SupportedBlockchain, Timestamp
+
+if TYPE_CHECKING:
+    from rotkehlchen.exchanges.exchange import ExchangeInterface
 
 
 @pytest.fixture(name='should_mock_settings')
@@ -679,14 +684,14 @@ def rotkehlchen_instance(
 
 @pytest.fixture
 def rotkehlchen_api_server_with_exchanges(
-        rotkehlchen_api_server,
-        added_exchanges,
-        gemini_test_base_uri,
-        gemini_sandbox_api_secret,
-        gemini_sandbox_api_key,
-        okx_api_key,
-        okx_api_secret,
-        okx_passphrase,
+        rotkehlchen_api_server: APIServer,
+        added_exchanges: list[Location],
+        gemini_test_base_uri: str,
+        gemini_sandbox_api_secret: bytes,
+        gemini_sandbox_api_key: str,
+        okx_api_key: str,
+        okx_api_secret: bytes,
+        okx_passphrase: str,
 ):
     """Adds mock exchange objects to the rotkehlchen_server fixture"""
     exchanges = rotkehlchen_api_server.rest_api.rotkehlchen.exchange_manager.connected_exchanges
@@ -697,7 +702,7 @@ def rotkehlchen_api_server_with_exchanges(
             name = 'binance'
         create_fn = getattr(exchange_tests, f'create_test_{name}')
         passphrase = None
-        kwargs = {}
+        kwargs: dict[str, Any] = {}
         if exchange_location in EXCHANGES_WITH_PASSPHRASE:
             passphrase = '123'
             kwargs['passphrase'] = passphrase
@@ -711,15 +716,17 @@ def rotkehlchen_api_server_with_exchanges(
             kwargs['passphrase'] = okx_passphrase
         if exchange_location == Location.BINANCEUS:
             kwargs['location'] = Location.BINANCEUS
-        exchangeobj = create_fn(
+        if exchange_location == Location.COINBASEPRIME:
+            kwargs['name'] = 'CoinbasePrime account'
+
+        exchangeobj: ExchangeInterface = create_fn(
             database=rotki.data.db,
             msg_aggregator=rotki.msg_aggregator,
             **kwargs,
         )
-        kraken_account_type = exchangeobj.account_type if exchange_location == Location.KRAKEN else None  # noqa: E501
+        kraken_account_type = exchangeobj.account_type if exchange_location == Location.KRAKEN else None  # type: ignore  # noqa: E501
         exchanges[exchange_location] = [exchangeobj]
-        # also add credentials in the DB
-        rotki.data.db.add_exchange(
+        rotki.data.db.add_exchange(  # also add credentials in the DB
             name=exchangeobj.name,
             location=exchange_location,
             api_key=exchangeobj.api_key,

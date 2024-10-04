@@ -805,6 +805,7 @@ class Location(DBCharEnumMixIn):
     BITCOIN_CASH = 50
     POLKADOT = 51
     KUSAMA = 52
+    COINBASEPRIME = 53
 
     @staticmethod
     def from_chain_id(chain_id: EVM_CHAIN_IDS_WITH_TRANSACTIONS_TYPE) -> 'EVM_LOCATIONS_TYPE':

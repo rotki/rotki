@@ -165,15 +165,12 @@ class Kucoin(ExchangeInterface):
             'KC-API-KEY-VERSION': '2',
         })
 
-    def update_passphrase(self, new_passphrase: str) -> None:
-        self.api_passphrase = new_passphrase
-
     def edit_exchange_credentials(self, credentials: ExchangeAuthCredentials) -> bool:
         changed = super().edit_exchange_credentials(credentials)
         if credentials.api_key is not None:
             self.session.headers.update({'KC-API-KEY': self.api_key})
         if credentials.passphrase is not None:
-            self.update_passphrase(credentials.passphrase)
+            self.api_passphrase = credentials.passphrase
 
         return changed
 

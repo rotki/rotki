@@ -18,6 +18,7 @@ from rotkehlchen.exchanges.bitpanda import Bitpanda
 from rotkehlchen.exchanges.bitstamp import Bitstamp
 from rotkehlchen.exchanges.bybit import Bybit
 from rotkehlchen.exchanges.coinbase import Coinbase
+from rotkehlchen.exchanges.coinbaseprime import Coinbaseprime
 from rotkehlchen.exchanges.data_structures import AssetMovement, Trade
 from rotkehlchen.exchanges.exchange import ExchangeInterface
 from rotkehlchen.exchanges.gemini import Gemini
@@ -604,14 +605,29 @@ def create_test_coinbase(
         msg_aggregator: MessagesAggregator,
         name: str = 'coinbase',
 ) -> Coinbase:
-    mock = Coinbase(
+    return Coinbase(
         name=name,
         api_key=make_api_key(),
         secret=make_api_secret(),
         database=database,
         msg_aggregator=msg_aggregator,
     )
-    return mock
+
+
+def create_test_coinbaseprime(
+        database: DBHandler,
+        msg_aggregator: MessagesAggregator,
+        passphrase: str,
+        name: str = 'coinbaseprime',
+) -> Coinbaseprime:
+    return Coinbaseprime(
+        name=name,
+        api_key=make_api_key(),
+        secret=make_api_secret(),
+        passphrase=passphrase,
+        database=database,
+        msg_aggregator=msg_aggregator,
+    )
 
 
 def create_test_binance(

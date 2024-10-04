@@ -124,6 +124,8 @@ INSERT OR IGNORE INTO location(location, seq) VALUES ('r', 50);
 INSERT OR IGNORE INTO location(location, seq) VALUES ('s', 51);
 /* Kusama */
 INSERT OR IGNORE INTO location(location, seq) VALUES ('t', 52);
+/* Coinbase Prime */
+INSERT OR IGNORE INTO location(location, seq) VALUES ('u', 53);
 """
 
 # Custom enum table for AssetMovement categories (deposit/withdrawal)

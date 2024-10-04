@@ -14,6 +14,7 @@ LOCATION_DETAILS: dict = {
     Location.BINANCE: {'image': 'binance.svg'},
     Location.BITMEX: {'image': 'bitmex.svg'},
     Location.COINBASE: {'image': 'coinbase.svg'},
+    Location.COINBASEPRIME: {'image': 'coinbaseprime.svg', 'label': 'Coinbase Prime'},
     Location.BANKS: {'icon': 'bank-line'},
     Location.BLOCKCHAIN: {'icon': 'link'},
     Location.COINBASEPRO: {
