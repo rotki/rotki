@@ -5,6 +5,7 @@ import { BalanceType } from '@/types/balances';
 import type { BigNumber } from '@rotki/common';
 import type { DataTableColumn, DataTableSortData } from '@rotki/ui-library';
 import type { BalanceSnapshot, BalanceSnapshotPayload, Snapshot } from '@/types/snapshots';
+import type EditBalancesSnapshotForm from '@/components/dashboard/edit-snapshot/EditBalancesSnapshotForm.vue';
 
 const props = defineProps<{
   modelValue: Snapshot;
@@ -35,6 +36,7 @@ const sort = ref<DataTableSortData<BalanceSnapshot>>({
   direction: 'desc',
 });
 const assetSearch = ref<string>('');
+const snapshotForm = ref<InstanceType<typeof EditBalancesSnapshotForm>>();
 
 const { exchangeRate } = useBalancePricesStore();
 const fiatExchangeRate = computed<BigNumber>(() => get(exchangeRate(get(currencySymbol))) ?? One);
@@ -297,17 +299,13 @@ function save() {
   const val = props.modelValue;
   const timestampVal = get(timestamp);
 
-  const usdValueInBigNumber = bigNumberify(formVal.usdValue);
-  const convertedUsdValue
-    = get(currencySymbol) === CURRENCY_USD ? usdValueInBigNumber : usdValueInBigNumber.dividedBy(get(fiatExchangeRate));
-
   const balancesSnapshot = [...val.balancesSnapshot];
   const payload = {
     timestamp: timestampVal,
     category: formVal.category,
     assetIdentifier: formVal.assetIdentifier,
     amount: bigNumberify(formVal.amount),
-    usdValue: convertedUsdValue,
+    usdValue: bigNumberify(formVal.usdValue),
   };
 
   if (index !== null)
@@ -315,6 +313,7 @@ function save() {
   else balancesSnapshot.unshift(payload);
 
   updateData(balancesSnapshot, formVal.location, get(previewLocationBalance));
+  get(snapshotForm)?.submitPrice();
   clearEditDialog();
 }
 
@@ -398,7 +397,10 @@ function confirmDelete() {
       <template #item.usdValue="{ row }">
         <AmountDisplay
           :value="row.usdValue"
-          fiat-currency="USD"
+          :amount="row.amount"
+          :price-asset="row.assetIdentifier"
+          :fiat-currency="CURRENCY_USD"
+          :timestamp="timestamp"
         />
       </template>
 
@@ -421,7 +423,10 @@ function confirmDelete() {
         <div class="font-bold text-h6 -mt-1">
           <AmountDisplay
             :value="total"
-            fiat-currency="USD"
+            :amount="total"
+            :price-asset="CURRENCY_USD"
+            :fiat-currency="CURRENCY_USD"
+            :timestamp="timestamp"
           />
         </div>
       </div>
@@ -463,10 +468,12 @@ function confirmDelete() {
     >
       <EditBalancesSnapshotForm
         v-if="form"
+        ref="snapshotForm"
         :edit="!!indexToEdit"
         :form="form"
         :preview-location-balance="previewLocationBalance"
         :locations="indexToEdit !== null ? existingLocations : []"
+        :timestamp="timestamp"
         @update:form="updateForm($event)"
         @update:asset="checkAssetExist($event)"
       />
