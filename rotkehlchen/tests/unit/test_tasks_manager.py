@@ -1206,7 +1206,11 @@ def test_snapshots_dont_happen_always(rotkehlchen_api_server: 'APIServer') -> No
         assert cursor.execute(query).fetchone()[0] == 2
 
 
-@pytest.mark.parametrize('ethereum_accounts', [['0xc37b40ABdB939635068d3c5f13E7faF686F03B65', '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12']])  # noqa: E501
+@pytest.mark.parametrize('ethereum_accounts', [[
+    '0xc37b40ABdB939635068d3c5f13E7faF686F03B65',  # delegated to L2
+    '0x9531C059098e3d194fF87FebB587aB07B30B1306',  # delegated through vesting
+    '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12',  # did not delegate
+]])
 def test_graph_query_query_delegations(
         eth_transactions: 'EthereumTransactions',
         ethereum_accounts: list['ChecksumEvmAddress'],
@@ -1215,11 +1219,13 @@ def test_graph_query_query_delegations(
     and we save the range queried correctly. Also ensures that only addresses
     that interacted with the L2 delegation are queried for logs.
     """
-    target_block = 20661371
-    dbevents = DBHistoryEvents(eth_transactions.database)
+    dbevents, dbtx = DBHistoryEvents(eth_transactions.database), DBEvmTx(eth_transactions.database)
     contract_deployed_block = eth_transactions.evm_inquirer.contracts.contract(CONTRACT_STAKING).deployed_block  # noqa: E501
-    mock_block_lapse = 100_000
-    for timestamp in (1, 2):
+    normal_approved_adddres, vested_approved_address, target_block, mock_block_lapse = string_to_evm_address('0x7D91717579885BfCFec3Cb4B4C4fe71c1EedD4dE'), string_to_evm_address('0xdd9935e54332B4a33Ac72A68FD9Ab61e88e67E8F'), 20661371, 100_000  # noqa: E501
+    for timestamp, user_address, approved_address in (
+            (1, ethereum_accounts[0], normal_approved_adddres),
+            (2, ethereum_accounts[1], vested_approved_address),
+    ):
         with eth_transactions.database.user_write() as write_cursor:
             dbevents.add_history_event(
                 write_cursor=write_cursor,
@@ -1232,22 +1238,22 @@ def test_graph_query_query_delegations(
                     event_subtype=HistoryEventSubType.APPROVE,
                     asset=A_GRT,
                     balance=Balance(),
-                    location_label=ethereum_accounts[0],
+                    location_label=user_address,
                     notes='Approve contract transfer',
                     counterparty=CPT_THEGRAPH,
-                    address=string_to_evm_address('0x7D91717579885BfCFec3Cb4B4C4fe71c1EedD4dE'),
+                    address=approved_address,
                 ),
             )
 
-            DBEvmTx(eth_transactions.database).add_evm_transactions(
+            dbtx.add_evm_transactions(
                 write_cursor=write_cursor,
                 evm_transactions=[EvmTransaction(  # fake event used to extract the block number for the query of events  # noqa: E501
                     tx_hash=tx_hash,
                     chain_id=ChainID.ETHEREUM,
                     timestamp=Timestamp(timestamp),
                     block_number=contract_deployed_block + mock_block_lapse * timestamp,
-                    from_address=ethereum_accounts[0],
-                    to_address=ethereum_accounts[0],
+                    from_address=user_address,
+                    to_address=user_address,
                     value=0,
                     gas=35000,
                     gas_price=20000000000,
@@ -1255,24 +1261,48 @@ def test_graph_query_query_delegations(
                     input_data=b'',
                     nonce=1,
                 )],
-                relevant_address=ethereum_accounts[0],
+                relevant_address=user_address,
             )
+
+    block_offset, address_check_counter = 0, 0
+
+    def mock_get_logs(contract_address, topics, from_block, to_block):
+        nonlocal block_offset, address_check_counter
+        assert contract_address == CONTRACT_STAKING
+        if from_block == 11546786:
+            block_offset = 0
+            match address_check_counter:
+                case 0:  # check 1st address for user
+                    assert topics[2] == f'0x000000000000000000000000{ethereum_accounts[0][2:].lower()}'  # noqa: E501
+                case 1:  # check 1st address for delegator
+                    assert topics[1] == f'0x000000000000000000000000{normal_approved_adddres[2:].lower()}'  # noqa: E501
+                case 2:  # check 2nd address for user
+                    assert topics[2] == f'0x000000000000000000000000{ethereum_accounts[1][2:].lower()}'  # noqa: E501
+                case 3:  # check 2nd address for delegator, which would find the vested log
+                    assert topics[1] == f'0x000000000000000000000000{vested_approved_address[2:].lower()}'  # noqa: E501
+
+            address_check_counter += 1
+        assert from_block == contract_deployed_block + mock_block_lapse + block_offset
+        block_offset += to_block - from_block + 1
+        return []
 
     with (
         patch('rotkehlchen.chain.evm.node_inquirer.EvmNodeInquirer.get_latest_block_number', return_value=target_block),  # noqa: E501
         patch.object(eth_transactions, '_graph_delegation_callback', wraps=eth_transactions._graph_delegation_callback) as callback_patch,  # noqa: E501
-        patch('rotkehlchen.externalapis.etherscan.Etherscan.get_logs', return_value=[]) as get_logs,  # noqa: E501
+        # patch('rotkehlchen.externalapis.etherscan.Etherscan.get_logs', return_value=[]) as get_logs,  # noqa: E501
+        patch('rotkehlchen.externalapis.etherscan.Etherscan.get_logs', wraps=mock_get_logs),
     ):
         eth_transactions.query_for_graph_delegation_txns(addresses=ethereum_accounts)
-        assert callback_patch.call_count == 31  # math.ceil((target_block - from_block) / query_size)  # noqa: E501
+        assert callback_patch.call_count == 62  # math.ceil((target_block - from_block) / query_size) * 2  # noqa: E501
         with eth_transactions.database.conn.read_ctx() as cursor:
-            assert eth_transactions.database.get_dynamic_cache(
-                cursor=cursor,
-                name=DBCacheDynamic.LAST_BLOCK_ID,
-                location=eth_transactions.evm_inquirer.chain_name,
-                location_name=LAST_GRAPH_DELEGATIONS,
-                account_id=ethereum_accounts[0],
-            ) == target_block
-            # we expect only one address and not both tracked ones
-            assert cursor.execute('SELECT COUNT(*) FROM key_value_cache WHERE name LIKE "ethereum_GRAPH_DELEGATIONS%"').fetchone() == (1,)  # noqa: E501
-            assert get_logs.call_args_list[0].kwargs['from_block'] == contract_deployed_block + mock_block_lapse  # ensure that we query since the oldest appearance  # noqa: E501
+            for address in ethereum_accounts[:2]:
+                assert eth_transactions.database.get_dynamic_cache(
+                    cursor=cursor,
+                    name=DBCacheDynamic.LAST_BLOCK_ID,
+                    location=eth_transactions.evm_inquirer.chain_name,
+                    location_name=LAST_GRAPH_DELEGATIONS,
+                    account_id=address,
+                ) == target_block
+
+            # we expect two addresses and not all 3 tracked ones
+            assert cursor.execute('SELECT COUNT(*) FROM key_value_cache WHERE name LIKE "ethereum_GRAPH_DELEGATIONS%"').fetchone() == (2,)  # noqa: E501
