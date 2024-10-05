@@ -63,72 +63,91 @@ class EthereumTransactions(EvmTransactions):
         transactions to the database."""
         log.debug('Started query of thegraph delegations')
         if len(addresses) == 0:
-            return  # do nothing for no addresses
+            log.debug('No ethereum addresses. Stopping thegraph delegations query task')
+            return
 
-        staking_contract = self.evm_inquirer.contracts.contract(CONTRACT_STAKING)
-        for address in addresses:
-            # fetch contract approval events to consider if we query the logs
-            db_filter = EvmEventFilterQuery.make(
-                counterparties=[CPT_THEGRAPH],
-                location=Location.ETHEREUM,
-                event_types=[HistoryEventType.INFORMATIONAL],
-                event_subtypes=[HistoryEventSubType.APPROVE],
-                location_labels=[address],
-                order_by_rules=[('timestamp', True)],  # order by timestamp in ascending order
+        dbevents = DBHistoryEvents(self.database)
+        # fetch contract approval events to consider if we query the logs
+        db_filter = EvmEventFilterQuery.make(
+            counterparties=[CPT_THEGRAPH],
+            location=Location.ETHEREUM,
+            event_types=[HistoryEventType.INFORMATIONAL],
+            event_subtypes=[HistoryEventSubType.APPROVE],
+            location_labels=addresses,  # type: ignore  # sequence[address] == list[str]
+            order_by_rules=[('timestamp', True)],  # order by timestamp in ascending order
+        )
+        with dbevents.db.conn.read_ctx() as cursor:
+            events = dbevents.get_history_events(
+                cursor=cursor,
+                filter_query=db_filter,
+                has_premium=True,
             )
-            dbevents = DBHistoryEvents(self.database)
+        if len(events) == 0:
+            log.debug('No thegraph approvals found. Stopping thegraph delegations query task')
+            return
+
+        user_to_delegator = {}
+        for event in events:
+            assert event.location_label, 'All approval events should have location label set'
+            assert event.address, 'All approval events should have address set'
+            user_to_delegator[event.location_label] = event.address
+
+        # find the earliest delegation to avoid querying a wide range
+        staking_contract = self.evm_inquirer.contracts.contract(CONTRACT_STAKING)
+        earliest_event = events[0]
+
+        with dbevents.db.conn.read_ctx() as cursor:
+            earliest_from_block = DBEvmTx(self.database).get_transaction_block_by_hash(
+                cursor=cursor,
+                tx_hash=earliest_event.tx_hash,
+            ) or staking_contract.deployed_block
+
+        target_block = self.evm_inquirer.get_latest_block_number()
+        for user_address, delegator_address in user_to_delegator.items():
             with dbevents.db.conn.read_ctx() as cursor:
-                events = dbevents.get_history_events(
-                    cursor=cursor,
-                    filter_query=db_filter,
-                    has_premium=True,
-                )
-                if len(events) == 0:
-                    continue
-
-                # find the earliest delegation to avoid querying a wide range
-                earliest_event = events[0]
-                from_block = DBEvmTx(self.database).get_transaction_block_by_hash(
-                    cursor=cursor,
-                    tx_hash=earliest_event.tx_hash,
-                ) or staking_contract.deployed_block
-
                 if (result := self.database.get_dynamic_cache(
-                    cursor=cursor,
-                    name=DBCacheDynamic.LAST_BLOCK_ID,
-                    location=self.evm_inquirer.chain_name,
-                    location_name=LAST_GRAPH_DELEGATIONS,
-                    account_id=address,
+                        cursor=cursor,
+                        name=DBCacheDynamic.LAST_BLOCK_ID,
+                        location=self.evm_inquirer.chain_name,
+                        location_name=LAST_GRAPH_DELEGATIONS,
+                        account_id=user_address,
                 )) is not None:
                     from_block = result
+                else:
+                    from_block = earliest_from_block
 
             log.debug(
-                f'Found thegraph delegation events for address {address} at '
+                f'Found thegraph delegation events for address {user_address} at '
                 f'{earliest_event.tx_hash.hex()}. Starting query from block {from_block}',
             )
-            target_block = self.evm_inquirer.get_latest_block_number()
-            log_events = self.evm_inquirer.get_logs(
-                contract_address=staking_contract.address,
-                abi=GRAPH_DELEGATION_TRANSFER_ABI,
-                event_name='DelegationTransferredToL2',
-                argument_filters={'l2Delegator': address},
-                from_block=from_block,
-                to_block=target_block,
-                log_iteration_cb=self._graph_delegation_callback,
-            )
-
-            if len(log_events) == 0:
-                log.debug(f'No graph delegation events found for {address} from block {from_block} to {target_block}')  # noqa: E501
-            else:
-                log.debug(
-                    f'Found {len(log_events)} thegraph delegation events for {address}. '
-                    'Adding the transactions to the database',
+            for argname, argvalue, callback in (  # callback to save in the DB only for user addy
+                    ('l2Delegator', user_address, self._graph_delegation_callback),
+                    ('delegator', delegator_address, None),
+            ):
+                log_events = self.evm_inquirer.get_logs(
+                    contract_address=staking_contract.address,
+                    abi=GRAPH_DELEGATION_TRANSFER_ABI,
+                    event_name='DelegationTransferredToL2',
+                    argument_filters={argname: argvalue},
+                    from_block=from_block,
+                    to_block=target_block,
+                    log_iteration_cb=callback,
                 )
-                for event in log_events:
+                if len(log_events) == 0:
+                    log.debug(
+                        f'No graph delegation events found for {argname}: {argvalue} '
+                        f'from block {from_block} to {target_block}',
+                    )
+                else:
+                    log.debug(
+                        f'Found {len(log_events)} thegraph delegation events for {argname}: '
+                        f'{argvalue}. Adding the transactions to the database',
+                )
+                for log_event in log_events:
                     with suppress(AlreadyExists):
                         self.add_transaction_by_hash(
-                            tx_hash=deserialize_evm_tx_hash(event['transactionHash']),
-                            associated_address=address,
+                            tx_hash=deserialize_evm_tx_hash(log_event['transactionHash']),
+                            associated_address=user_address,  # type: ignore # it's an evm address
                             must_exist=True,
                         )
 
@@ -139,7 +158,7 @@ class EthereumTransactions(EvmTransactions):
                     value=target_block,
                     location=self.evm_inquirer.chain_name,
                     location_name=LAST_GRAPH_DELEGATIONS,
-                    account_id=address,
+                    account_id=user_address,
                 )
 
         with self.database.user_write() as write_cursor:
@@ -148,6 +167,5 @@ class EthereumTransactions(EvmTransactions):
                 name=DBCacheStatic.LAST_GRAPH_DELEGATIONS_CHECK_TS,
                 value=ts_now(),
             )
-
         log.debug(f'Finished querying thegraph delegations for {addresses}')
         return
