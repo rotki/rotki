@@ -30,6 +30,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.icons import IconManager
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
+from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.exchanges import check_saved_events_for_exchange
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
@@ -645,6 +646,66 @@ def test_migration_17(rotkehlchen_api_server: 'APIServer') -> None:
                 Location.KUSAMA.serialize_for_db(),
             ),
         ).fetchone()[0] == 4
+
+
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('data_migration_version', [17])
+@pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
+def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
+    rotki = rotkehlchen_api_server.rest_api.rotkehlchen
+    related_address1, related_address2, other_address = '0x9531C059098e3d194fF87FebB587aB07B30B1306', '0x8Fe178db26ebA2eEdb22575265bf10A63c395a3d', '0x3c89cd398aCcFCf0e046d325c4805A98723F8630'  # noqa: E501
+    with rotki.data.db.user_write() as write_cursor:  # let's add 2 tracked accounts
+        write_cursor.executemany(
+            'INSERT INTO blockchain_accounts(blockchain, account) VALUES(?, ?)',
+            [('ETH', related_address1), ('ETH', related_address2), ('ETH', other_address)],
+        )
+
+    approval_1 = deserialize_evm_tx_hash('0xbb8280cc9ca9de1d33e573a4381d88525a214fc45f84415129face03125ba22f')  # noqa: E501
+    approval_2 = deserialize_evm_tx_hash('0x5dbe2be40c2ee60b33c9b9b183fc3f1290352787540cbb2e87e131e6fb1a8865')  # noqa: E501
+    vested_delegation_tol2 = deserialize_evm_tx_hash('0x48321bb00e5c5b67f080991864606dbc493051d20712735a579d7ae31eca3d78')  # noqa: E501
+    normal_delegation_tol2 = deserialize_evm_tx_hash('0xed80711e4cb9c428790f0d9b51f79473bf5253d5d03c04d958d411e7fa34a92e')  # noqa: E501
+    stake_withdrawn = deserialize_evm_tx_hash('0xfeeec3405306ef50108e2ac1221ef59124395306c8bf133abe24f6f993014020')  # noqa: E501
+    stake_delegated = deserialize_evm_tx_hash('0xc49b141fcde5baa467f6cd0d574fcfe54077eda4a95dc061eccc833f247a89a6')  # noqa: E501
+    stake_delegate_locked = deserialize_evm_tx_hash('0xf009486131b2875d2f57ccc35caa20d768f7e16f489a0d215a8e819741ee4acb')  # noqa: E501
+    stake_delegate_vested = deserialize_evm_tx_hash('0x18c7fbaeb3159812acf823d8cd1ef3f6b9364548ca38aa58ca52c5c21d8f5e8c')  # noqa: E501
+    kept_txs = [approval_1, approval_2, vested_delegation_tol2, normal_delegation_tol2, stake_withdrawn, stake_delegated, stake_delegate_locked, stake_delegate_vested]  # noqa: E501
+    for tx_hash in kept_txs:  # transactions related to our addresses and thegraph
+        get_decoded_events_of_transaction(
+            evm_inquirer=rotki.chains_aggregator.ethereum.node_inquirer,
+            tx_hash=tx_hash,
+        )
+
+    # add all the transactions that are irrelevant to us, emulating the problem
+    # that all transactions of 0xF55041E37E12cD407ad00CE2910B8269B01263b9 were saved
+    # in the DB
+    bad_txs = [
+        deserialize_evm_tx_hash('0x77ee18c542cc382b5a9d894a2a5561ca76d7c16ff7bea90353e77c2713e9a542'),
+        deserialize_evm_tx_hash('0xd2e2c7d1e17c36ffeb4f41d870c661af53cb757d17fd739afc92de6464715a92'),
+        deserialize_evm_tx_hash('0x36de0e0f45888a2aeb8677707dcc77799fb2b10a0a51e1d0af1b7c511a66637d'),
+        deserialize_evm_tx_hash('0x997a1ec28f18066476a02f3f96422ac48da0056ae210e14b5c4cac5a71be600b'),
+        deserialize_evm_tx_hash('0x83be133424a4d1dd6198c7f4b4c82b5983a90f70c7cc083e533823240cb3397b'),
+        deserialize_evm_tx_hash('0x8c97c09994aba8f7b619a9d793a1c5fb58028ea1bb9b03ea9a48e76b0a4eac84'),
+        deserialize_evm_tx_hash('0xf73312097128b62a6b3b82229f29a4d12bd4fff8587e8eb581a9a469a170b12d'),
+        deserialize_evm_tx_hash('0x367be0c17e7b890fcbcba0c46b5bb7335ac00a8546960b6c818c184207b30c0b'),
+    ]
+    with rotki.data.db.conn.read_ctx() as cursor:
+        for tx_hash in bad_txs:
+            rotki.chains_aggregator.ethereum.transactions.get_or_create_transaction(cursor=cursor, tx_hash=tx_hash, relevant_address=None)  # noqa:E501
+            rotki.chains_aggregator.ethereum.transactions.get_or_query_transaction_receipt(tx_hash=tx_hash)
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        assert {x[0] for x in cursor.execute('SELECT tx_hash FROM evm_transactions').fetchall()} == set(kept_txs + bad_txs)  # make sure they are all written in the DB  # noqa: E501
+
+    with patch(
+        'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
+        new=[MIGRATION_LIST[11]],
+    ):
+        DataMigrationManager(rotkehlchen_api_server.rest_api.rotkehlchen).maybe_migrate_data()
+
+    with rotki.data.db.conn.read_ctx() as cursor:
+        result_kept_txs = {x[0] for x in cursor.execute('SELECT tx_hash FROM evm_transactions').fetchall()}  # noqa: E501
+
+    assert result_kept_txs == set(kept_txs)  # after the migration see all irrelevant transactions are deleted  # noqa: E501
 
 
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])

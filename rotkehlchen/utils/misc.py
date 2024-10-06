@@ -6,6 +6,7 @@ import operator
 import re
 import sys
 import time
+from binascii import unhexlify
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Iterator, Sequence
 from itertools import zip_longest
@@ -296,8 +297,12 @@ def hex_or_bytes_to_address(value: bytes | str) -> ChecksumEvmAddress:
         ) from e
 
 
-def address_to_bytes32(address: ChecksumEvmAddress) -> str:
+def address_to_bytes32_hexstr(address: ChecksumEvmAddress) -> str:
     return '0x' + 24 * '0' + address.lower()[2:]
+
+
+def address_to_bytes32(address: ChecksumEvmAddress) -> bytes:
+    return unhexlify(24 * '0' + address.lower()[2:])
 
 
 T = TypeVar('T')
