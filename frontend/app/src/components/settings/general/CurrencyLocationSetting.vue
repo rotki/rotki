@@ -18,31 +18,36 @@ onMounted(() => {
 </script>
 
 <template>
-  <SettingsOption
-    #default="{ error, success, update }"
-    setting="currencyLocation"
-    frontend-setting
-    :error-message="t('general_settings.validation.currency_location.error')"
-    :success-message="successMessage"
-  >
-    <RuiRadioGroup
-      v-model="currencyLocation"
-      color="primary"
-      class="general-settings__fields__currency-location mt-4"
-      :label="t('general_settings.amount.label.currency_location')"
-      :success-messages="success"
-      :error-messages="error"
-      inline
-      @update:model-value="update($event)"
+  <SettingsItem>
+    <template #title>
+      {{ t('general_settings.amount.label.abbreviation') }}
+    </template>
+    <SettingsOption
+      #default="{ error, success, update }"
+      setting="currencyLocation"
+      frontend-setting
+      :error-message="t('general_settings.validation.currency_location.error')"
+      :success-message="successMessage"
     >
-      <RuiRadio
-        :label="t('general_settings.amount.label.location_before')"
-        value="before"
-      />
-      <RuiRadio
-        :label="t('general_settings.amount.label.location_after')"
-        value="after"
-      />
-    </RuiRadioGroup>
-  </SettingsOption>
+      <RuiRadioGroup
+        v-model="currencyLocation"
+        color="primary"
+        class="general-settings__fields__currency-location mt-4"
+        :label="t('general_settings.amount.label.currency_location')"
+        :success-messages="success"
+        :error-messages="error"
+        inline
+        @update:model-value="update($event)"
+      >
+        <RuiRadio
+          :label="t('general_settings.amount.label.location_before')"
+          value="before"
+        />
+        <RuiRadio
+          :label="t('general_settings.amount.label.location_after')"
+          value="after"
+        />
+      </RuiRadioGroup>
+    </SettingsOption>
+  </SettingsItem>
 </template>

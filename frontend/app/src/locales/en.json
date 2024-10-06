@@ -2679,7 +2679,8 @@
         "location_after": "After",
         "location_before": "Before",
         "resulting_format": "Resulting format:",
-        "thousand_separator": "Thousands separator"
+        "thousand_separator": "Thousands separator",
+        "abbreviation": "Abbreviation"
       },
       "labels": {
         "floating_precision": "Floating Precision",
