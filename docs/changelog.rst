@@ -2,7 +2,13 @@
 Changelog
 =========
 
+
 * :feature:`7920` Rotki will now create calendar reminders for airdrop claim deadlines.
+* :feature:`-` Gnosis pay referral rewards will now be properly seen as referrals and not generic receive.
+* :bug:`8668` Changes the tag filter logic from OR to AND in the account view.
+* :bug:`-` Graph delegation log queries will now query a smaller amount of events. For users who had moved graph staking to Arbitrum and ended up having over 180k transactions in their DB, this should now be fixed and the DB size should be normal again.
+* :bug:`-` Fix an error querying the exit timestamp for the ethereum validators.
+* :bug:`8669` Fixes double conversion for displayed price in manual balances when not using USD as the selected currency.
 
 * :release:`1.35.0 <2024-10-02>`
 * :feature:`8428` Rotki will now properly decode cowswap fees and order types after 2024-03-19 by querying the cowswap API for offchain data.
