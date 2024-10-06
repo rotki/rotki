@@ -122,6 +122,7 @@ from rotkehlchen.types import (
     EVM_CHAINS_WITH_TRANSACTIONS,
     SPAM_PROTOCOL,
     SUPPORTED_BITCOIN_CHAINS,
+    SUPPORTED_EVM_CHAINS,
     SUPPORTED_EVM_CHAINS_TYPE,
     SUPPORTED_EVM_EVMLIKE_CHAINS,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
@@ -1336,6 +1337,15 @@ class DBHandler:
             '(account, chain_id, key, value) VALUES (?, ?, ?, ?)',
             insert_rows,
         )
+
+    def get_evm_accounts(self, cursor: 'DBCursor') -> list[ChecksumEvmAddress]:
+        """Returns a list of unique EVM accounts from all EVM chains."""
+        placeholders = ','.join('?' * len(SUPPORTED_EVM_CHAINS))
+        cursor.execute(
+            f'SELECT DISTINCT account FROM blockchain_accounts WHERE blockchain IN ({placeholders});',  # noqa: E501
+            [chain.value for chain in SUPPORTED_EVM_CHAINS],
+        )
+        return [entry[0] for entry in cursor]
 
     def get_blockchain_accounts(self, cursor: 'DBCursor') -> BlockchainAccounts:
         """Returns a Blockchain accounts instance containing all blockchain account addresses"""
