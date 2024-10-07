@@ -68,14 +68,14 @@
     "typeface-roboto-mono": "1.1.13",
     "vanilla-jsoneditor": "0.23.8",
     "vue": "3.5.11",
-    "vue-i18n": "9.14.1",
+    "vue-i18n": "10.0.4",
     "vue-i18n-bridge": "9.14.1",
     "vue-router": "4.4.5",
     "zod": "3.23.8"
   },
   "devDependencies": {
     "@electron/notarize": "2.5.0",
-    "@intlify/unplugin-vue-i18n": "4.0.0",
+    "@intlify/unplugin-vue-i18n": "5.2.0",
     "@pinia/testing": "0.1.6",
     "@tsconfig/node20": "20.1.4",
     "@types/node": "20.16.10",
