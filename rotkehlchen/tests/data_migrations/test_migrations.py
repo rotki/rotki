@@ -17,7 +17,6 @@ from rotkehlchen.chain.scroll.constants import SCROLL_ETHERSCAN_NODE
 from rotkehlchen.constants import ONE
 from rotkehlchen.constants.assets import A_BTC, A_ETH, A_PAX, A_USDT
 from rotkehlchen.constants.prices import ZERO_PRICE
-from rotkehlchen.data_handler import DataHandler
 from rotkehlchen.data_migrations.constants import LAST_DATA_MIGRATION
 from rotkehlchen.data_migrations.manager import (
     MIGRATION_LIST,
@@ -87,30 +86,6 @@ def assert_progress_message(msg, step_num, description, migration_version, migra
         assert description in migration['description']
     else:
         assert migration['description'] is None
-
-
-def _populate_spam_tokens(data_handler: DataHandler):
-    tokens = [
-        EvmToken('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),  # new eure
-        EvmToken('eip155:100/erc20:0x8E34bfEC4f6Eb781f9743D9b4af99CD23F9b7053'),  # new GBPe
-        EvmToken('eip155:100/erc20:0xcB444e90D8198415266c6a2724b7900fb12FC56E'),  # legacy eure
-    ]
-    with GlobalDBHandler().conn.write_ctx() as write_cursor:
-        for token in tokens:
-            set_token_spam_protocol(write_cursor=write_cursor, token=token, is_spam=True)
-
-            # remove the asset from the whitelist if it was there
-            globaldb_delete_general_cache_values(
-                write_cursor=write_cursor,
-                key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
-                values=(token.identifier,),
-            )
-            AssetResolver.clean_memory_cache(token.identifier)
-
-    # add to ignored assets if it wasn't there
-    data_handler.add_ignored_assets(assets=tokens)
-
-    return tokens
 
 
 def assert_add_addresses_migration_ws_messages(
@@ -707,7 +682,26 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
         )
 
     # mark a few assets as spam
-    tokens = _populate_spam_tokens(rotki.data)
+    tokens = [
+        EvmToken('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),  # new eure
+        EvmToken('eip155:100/erc20:0x8E34bfEC4f6Eb781f9743D9b4af99CD23F9b7053'),  # new GBPe
+        EvmToken('eip155:100/erc20:0xcB444e90D8198415266c6a2724b7900fb12FC56E'),  # legacy eure
+        EvmToken('eip155:1/erc20:0x3231Cb76718CDeF2155FC47b5286d82e6eDA273f'),  # eure ethereum
+    ]
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        for token in tokens:
+            set_token_spam_protocol(write_cursor=write_cursor, token=token, is_spam=True)
+
+            # remove the asset from the whitelist if it was there
+            globaldb_delete_general_cache_values(
+                write_cursor=write_cursor,
+                key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
+                values=(token.identifier,),
+            )
+            AssetResolver.clean_memory_cache(token.identifier)
+
+    # add to ignored assets if it wasn't there
+    rotki.data.add_ignored_assets(assets=tokens)
 
     # add all the transactions that are irrelevant to us, emulating the problem
     # that all transactions of 0xF55041E37E12cD407ad00CE2910B8269B01263b9 were saved
@@ -729,10 +723,15 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
 
     with rotki.data.db.conn.read_ctx() as cursor:
         assert {x[0] for x in cursor.execute('SELECT tx_hash FROM evm_transactions').fetchall()} == set(kept_txs + bad_txs)  # make sure they are all written in the DB  # noqa: E501
-        assert cursor.execute(
-            'SELECT COUNT(*) FROM multisettings WHERE name="ignored_asset" AND value IN (?, ?, ?)',
+
+        assert cursor.execute(  # make sure the given tokens were marked as ignored
+            'SELECT COUNT(*) FROM multisettings WHERE name="ignored_asset" AND value IN (?, ?, ?, ?)',  # noqa: E501
             [token.identifier for token in tokens],
-        ).fetchone()[0] == 3
+        ).fetchone()[0] == len(tokens)
+
+        for token in tokens:  # ensure that they have been marked as spam
+            assert GlobalDBHandler.get_protocol_for_asset(token.identifier) == SPAM_PROTOCOL
+
     with patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
         new=[MIGRATION_LIST[11]],
@@ -741,13 +740,13 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
 
     with rotki.data.db.conn.read_ctx() as cursor:
         result_kept_txs = {x[0] for x in cursor.execute('SELECT tx_hash FROM evm_transactions').fetchall()}  # noqa: E501
-        assert cursor.execute(
-            'SELECT COUNT(*) FROM multisettings WHERE name="ignored_asset" AND value IN (?, ?, ?)',
+        assert cursor.execute(  # now make sure they are no longer ignored
+            'SELECT COUNT(*) FROM multisettings WHERE name="ignored_asset" AND value IN (?, ?, ?, ?)',  # noqa: E501
             [token.identifier for token in tokens],
         ).fetchone()[0] == 0
 
     for token in tokens:
-        assert EvmToken(token.identifier).protocol != SPAM_PROTOCOL
+        assert GlobalDBHandler.get_protocol_for_asset(token.identifier) != SPAM_PROTOCOL
 
     assert result_kept_txs == set(kept_txs)  # after the migration see all irrelevant transactions are deleted  # noqa: E501
 

@@ -127,26 +127,32 @@ AND ((
     rotki.data.db.conn.execute('VACUUM;')  # also since this cleans up a lot of space vacuum
 
 
+@enter_exit_debug_log()
 def whitelist_monerium_assets(rotki: 'Rotkehlchen') -> None:
     """Remove from the spam assets all the monerium tokens in
     gnosis and polygon
     """
     globaldb = GlobalDBHandler()
     tokens: set[EvmToken] = set()
-    for legacy_id, new_id in (GNOSIS_MONERIUM_MAPPINGS | POLYGON_MONERIUM_MAPPINGS).items():
+    monerium_tokens = set(GNOSIS_MONERIUM_MAPPINGS.keys())
+    monerium_tokens |= {new_asset.identifier for new_asset in GNOSIS_MONERIUM_MAPPINGS.values()}
+    monerium_tokens |= set(POLYGON_MONERIUM_MAPPINGS.keys())
+    monerium_tokens |= {new_asset.identifier for new_asset in POLYGON_MONERIUM_MAPPINGS.values()}
+    monerium_tokens |= {  # ethereum tokens
+        'eip155:1/erc20:0x3231Cb76718CDeF2155FC47b5286d82e6eDA273f',  # eure
+        'eip155:1/erc20:0x7ba92741Bf2A568abC6f1D3413c58c6e0244F8fD',  # gbpe
+        'eip155:1/erc20:0xBc5142e0CC5eB16b47c63B0f033d4c2480853a52',  # usde
+        'eip155:1/erc20:0xC642549743A93674cf38D6431f75d6443F88E3E2',  # iske
+    }
+    for legacy_id in monerium_tokens:
         try:
             tokens.add(EvmToken(legacy_id))
         except UnknownAsset:
             log.error(f'Skipping unknown legacy monerium asset {legacy_id} at data migration 18')
 
-        try:
-            tokens.add(new_id.resolve_to_evm_token())
-        except UnknownAsset:
-            log.error(f'Skipping unknown monerium asset {new_id} at data migration 18')
-
     for token in tokens:
         with globaldb.conn.write_ctx() as write_cursor:
-            globaldb_set_general_cache_values(
+            globaldb_set_general_cache_values(  # add token to whitelist
                 write_cursor=write_cursor,
                 key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
                 values=(token.identifier,),
