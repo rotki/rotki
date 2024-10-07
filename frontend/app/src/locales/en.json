@@ -46,6 +46,13 @@
       "group": "{type} accounts"
     },
     "detect_tokens": {
+      "selection": {
+        "type": "Type the chain",
+        "select": "Select one or more chains to re-detect",
+        "redetect": "Re-detect",
+        "select_all": "Select all",
+        "redetect_selected": " Re-detect {length} selected chain(s)"
+      },
       "tooltip": {
         "last_detected": "Last detected: {time}",
         "redetect": "Re-detect tokens",
