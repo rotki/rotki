@@ -29,7 +29,12 @@ const { t } = useI18n();
       <AbbreviateNumberSetting />
     </SettingsItem>
 
-    <CurrencyLocationSetting />
+    <SettingsItem>
+      <template #title>
+        {{ t('general_settings.amount.label.currency_location') }}
+      </template>
+      <CurrencyLocationSetting />
+    </SettingsItem>
 
     <SettingsItem>
       <template #title>
