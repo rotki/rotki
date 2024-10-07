@@ -24,25 +24,28 @@ export const useRefresh = createSharedComposable(() => {
     await Promise.allSettled(pending);
   };
 
+  const massDetectTokens = async (chain?: string | string[]): Promise<void> => {
+    const chains = chain ? arrayify(chain) : get(txEvmChains).map(chain => chain.id);
+
+    set(massDetecting, chain || 'all');
+    await awaitParallelExecution(
+      chains,
+      chain => chain,
+      async chain => useTokenDetection(chain).detectTokensOfAllAddresses(),
+      1,
+    );
+    set(massDetecting, undefined);
+  };
+
   const handleBlockchainRefresh = async (blockchain?: MaybeRef<string>, forceRedetect = false): Promise<void> => {
     const chain = get(blockchain);
     const behaviour = get(blockchainRefreshButtonBehaviour);
 
-    if (behaviour === BlockchainRefreshButtonBehaviour.REDETECT_TOKENS || forceRedetect) {
-      const chains = chain ? [chain] : get(txEvmChains).map(chain => chain.id);
+    if (behaviour === BlockchainRefreshButtonBehaviour.REDETECT_TOKENS || forceRedetect)
+      await massDetectTokens(chain);
 
-      set(massDetecting, chain || 'all');
-      await awaitParallelExecution(
-        chains,
-        chain => chain,
-        async chain => useTokenDetection(chain).detectTokensOfAllAddresses(),
-        1,
-      );
-      set(massDetecting, undefined);
-    }
-    else {
+    else
       await refreshBlockchainBalances(chain);
-    }
   };
 
   const refreshBalance = async (balanceSource: string): Promise<void> => {
@@ -53,6 +56,7 @@ export const useRefresh = createSharedComposable(() => {
   };
 
   return {
+    massDetectTokens,
     refreshBlockchainBalances,
     handleBlockchainRefresh,
     refreshBalance,

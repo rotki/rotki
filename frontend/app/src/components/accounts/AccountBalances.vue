@@ -3,6 +3,7 @@ import { SavedFilterLocation } from '@/types/filtering';
 import { AccountExternalFilterSchema, type Filters, type Matcher } from '@/composables/filters/blockchain-account';
 import AccountBalancesTable from '@/components/accounts/AccountBalancesTable.vue';
 import AccountGroupDetails from '@/components/accounts/AccountGroupDetails.vue';
+import DetectTokenChainsSelection from '@/components/accounts/balances/DetectTokenChainsSelection.vue';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 import type { Collection } from '@/types/collection';
 import type {
@@ -131,31 +132,38 @@ defineExpose({
     <div class="flex flex-col md:flex-row md:items-center gap-4 flex-wrap">
       <div
         class="flex items-center gap-2 flex-1"
-        :class="{ 'hidden lg:block': !(showEvmElements) }"
+        :class="{ 'hidden lg:block': !showEvmElements }"
       >
         <template v-if="showEvmElements">
-          <RuiTooltip
-            :popper="{ placement: 'top' }"
-            :open-delay="400"
+          <RuiButtonGroup
+            variant="outlined"
+            color="primary"
           >
-            <template #activator>
-              <RuiButton
-                class="py-2"
-                variant="outlined"
-                color="primary"
-                :loading="isDetectingTokens"
-                :disabled="refreshDisabled"
-                @click="handleBlockchainRefresh(undefined, true)"
-              >
-                <template #prepend>
-                  <RuiIcon name="refresh-line" />
-                </template>
+            <RuiTooltip
+              :popper="{ placement: 'top' }"
+              :open-delay="400"
+            >
+              <template #activator>
+                <RuiButton
+                  class="py-2 !outline-0 rounded-none"
+                  variant="outlined"
+                  color="primary"
+                  :loading="isDetectingTokens"
+                  :disabled="refreshDisabled"
+                  @click="handleBlockchainRefresh(undefined, true)"
+                >
+                  <template #prepend>
+                    <RuiIcon name="refresh-line" />
+                  </template>
 
-                {{ t('account_balances.detect_tokens.tooltip.redetect') }}
-              </RuiButton>
-            </template>
-            {{ t('account_balances.detect_tokens.tooltip.redetect_all') }}
-          </RuiTooltip>
+                  {{ t('account_balances.detect_tokens.tooltip.redetect') }}
+                </RuiButton>
+              </template>
+              {{ t('account_balances.detect_tokens.tooltip.redetect_all') }}
+            </RuiTooltip>
+
+            <DetectTokenChainsSelection />
+          </RuiButtonGroup>
 
           <DetectEvmAccounts />
         </template>
