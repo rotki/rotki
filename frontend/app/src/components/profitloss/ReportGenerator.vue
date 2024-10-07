@@ -36,7 +36,6 @@ function importReportData() {
 }
 
 const isDevelopment = checkIfDevelopment();
-const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
 </script>
 
 <template>
@@ -51,7 +50,7 @@ const accountSettingsRoute = Routes.SETTINGS_ACCOUNTING;
           :open-delay="400"
         >
           <template #activator>
-            <RouterLink :to="accountSettingsRoute">
+            <RouterLink :to="Routes.SETTINGS_ACCOUNTING">
               <RuiButton
                 variant="text"
                 icon

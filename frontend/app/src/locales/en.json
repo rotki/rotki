@@ -4095,6 +4095,7 @@
       "actions": {
         "pin_section": "Pin Section",
         "regenerate_report": "Re-Generate Report",
+        "regenerate_report_tooltip": "Re-Generate Report with latest accounting setting",
         "unpin_section": "Unpin Section"
       },
       "issues_found": "{total} issues found with the generated report",
