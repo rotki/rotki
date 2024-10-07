@@ -101,10 +101,9 @@ function showDoneConfirmation() {
   >
     <template #activator="{ attrs }">
       <RuiButton
-        id="reset-asset-activator"
         variant="list"
         :disabled="loading"
-        v-bind="attrs"
+        v-bind="{ ...attrs, id: 'reset-asset-activator' }"
       >
         <template #prepend>
           <RuiIcon name="restart-line" />
