@@ -2688,7 +2688,12 @@
         "main_currency_subtitle": "Select as the main currency"
       },
       "subtitle": "Manage your amount settings.",
-      "title": "Amounts Settings"
+      "title": "Amounts Settings",
+
+      "example": {
+        "before": "For example: $10,000.00",
+        "after": "For example: 10,000.00$"
+      }
     },
     "date_display": {
       "validation": {
@@ -2761,13 +2766,14 @@
         "title": "Allow images from all domains"
       },
       "label": {
-        "include_nfts": "Include NFTs in the graphs and total net worth",
+        "include_nfts": "Manage your NFT settings",
+        "include_nfts_subtitle": "Graphs and total net worths",
         "include_nfts_hint": "By default graphs and dashboard include the value of all the NFTs",
         "render_setting": {
           "allow_all": "Allow all images",
           "only_allow_whitelisted": "Only allow images from whitelisted domains"
         },
-        "whitelist_domains": "Whitelist domains",
+        "whitelist_domains": "rarible.com, opensea.com",
         "whitelisted_domains": "Whitelisted domains",
         "whitelisted_domains_hint": "Enter single or multiple comma separated domains. Press the save button on the right to save the changes",
         "whitelisted_domain_entries": "no entries | {count} unique entry | {count} unique entries"

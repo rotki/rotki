@@ -36,6 +36,11 @@ const { t } = useI18n();
       <DateDisplayFormatSetting />
       <DateInputFormatSetting />
     </SettingsItem>
-    <CsvExportDelimiterSetting />
+    <SettingsItem>
+      <template #title>
+        {{ t('general_settings.labels.csv_delimiter') }}
+      </template>
+      <CsvExportDelimiterSetting />
+    </SettingsItem>
   </SettingCategory>
 </template>
