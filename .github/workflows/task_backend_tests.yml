@@ -107,7 +107,7 @@ jobs:
           uv pip install --system pytest-github-actions-annotate-failures
       - name: Run tests
         env:
-          PYTEST_ARGS: '--durations=150'
+          PYTEST_ARGS: '--durations=150 --capture=no'
           FORCE_COLOR: 1
           MATRIX_JOB: ${{ matrix.test-group }}
         run: |
