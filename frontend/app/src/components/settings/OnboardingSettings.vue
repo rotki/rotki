@@ -30,7 +30,7 @@ const { backendSettings } = useSettingsApi();
 
 const selecting = ref<boolean>(false);
 const confirmReset = ref<boolean>(false);
-const configuration: Ref<BackendConfiguration> = asyncComputed(() => backendSettings());
+const configuration = asyncComputed<BackendConfiguration>(() => backendSettings());
 
 function parseValue(value?: string) {
   if (!value)

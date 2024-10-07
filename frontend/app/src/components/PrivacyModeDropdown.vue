@@ -60,11 +60,10 @@ watch([enabled, multiplier], setData);
           </RuiBadge>
         </MenuTooltipButton>
         <RuiButton
-          data-cy="privacy-menu"
           :class="$style.expander"
           icon
           variant="text"
-          v-bind="attrs"
+          v-bind="{ ...attrs, 'data-cy': 'privacy-menu' }"
           size="sm"
         >
           <RuiIcon

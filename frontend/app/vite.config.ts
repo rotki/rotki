@@ -132,6 +132,7 @@ export default defineConfig({
       base: publicPath,
       registerType: 'prompt',
       manifest: false,
+      disable: isTest,
     }),
   ],
   server: {
@@ -151,5 +152,12 @@ export default defineConfig({
       input: join(PACKAGE_ROOT, 'index.html'),
     },
     emptyOutDir: false,
+  },
+  css: {
+    preprocessorOptions: {
+      scss: {
+        api: 'modern',
+      },
+    },
   },
 });
