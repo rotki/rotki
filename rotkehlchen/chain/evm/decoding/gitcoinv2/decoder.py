@@ -34,6 +34,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 VOTED = b'\x00d\xca\xa7?\x1dY\xb6\x9a\xdb\xebeeK\x0f\tSYy\x94\xe4$\x1e\xe2F\x0bV\x0b\x8de\xaa\xa2'  # example: https://etherscan.io/tx/0x71fc406467f342f5801560a326aa29ac424381daf17cc04b5573960425ba605b#eventlog  # noqa: E501
 VOTED_WITH_ORIGIN = b'\xbf5\xc00\x17\x8a\x1eg\x8c\x82\x96\xa4\xe5\x08>\x90!\xa2L\x1a\x1d\xef\xa5\xbf\xbd\xfd\xe7K\xce\xcf\xa3v'  # noqa: E501 # example: https://optimistic.etherscan.io/tx/0x08685669305ee26060a5a78ae70065aec76d9e62a35f0837c291fb1232f33601#eventlog
+VOTED_WITHOUT_APPLICATION_IDX = b'A\x82\xeb\x95\xd4\x86\xb4/\xdd\xce\xa2%\x16/\x9a_\x93\xb0m\xfe\xbe\xdd\xf5\x81\x9d\x0fW\xf2\xc6\xaf>\x1b'  # noqa: E501 # example: 0xdcb6d2282b34a3cb7637ac65d8b7f1d0e8f2bc149379767f0b6f9ba2afa8a359
 PROJECT_CREATED = b'c\xc9/\x95\x05\xd4 \xbf\xf61\xcb\x9d\xf3;\xe9R\xbd\xc1\x1e!\x18\xda6\xa8P\xb4>k\xccL\xe4\xde'  # noqa: E501
 METADATA_UPDATED = b'\xf9,&9\xc2]j"\xc3\x8emk)?t\xa9\xb2$\x91\';\x1d\xbbg\xfc\x12U"&\x96\xbe['
 NEW_PROJECT_APPLICATION_3ARGS = b'\xcay&"\x04c%\xe9\xcdN$\xb4\x90\xcb\x00\x0e\xf7*\xce\xa3\xa1R\x84\xef\xc1N\xe7\t0z^\x00'  # noqa: E501
@@ -87,7 +88,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
                 receiver_start_idx=96,
                 paying_contract_idx=1,
             )
-        elif context.tx_log.topics[0] == VOTED:
+        elif context.tx_log.topics[0] in (VOTED, VOTED_WITHOUT_APPLICATION_IDX):
             donator = hex_or_bytes_to_address(context.tx_log.topics[1])
             return self._decode_voted(
                 context=context,

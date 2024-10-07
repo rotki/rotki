@@ -2,7 +2,7 @@
 Changelog
 =========
 
-
+* :feature:`-` Gitcoin donations for more rounds will now be properly seen by rotki.
 * :feature:`7920` Rotki will now create calendar reminders for airdrop claim deadlines.
 * :feature:`-` Gnosis pay referral rewards will now be properly seen as referrals and not generic receive.
 * :bug:`8668` Changes the tag filter logic from OR to AND in the account view.

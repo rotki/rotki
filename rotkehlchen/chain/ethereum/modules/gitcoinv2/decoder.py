@@ -36,5 +36,6 @@ class Gitcoinv2Decoder(GitcoinV2CommonDecoder):
             ],
             voting_impl_addresses=[
                 string_to_evm_address('0xDA2F26B30e8f5aa9cbE9c5B7Ed58E1cA81D0EbF2'),
+                string_to_evm_address('0x8fBEa07446DdF4518b1a7BA2B4f11Bd140a8DF41'),
             ],
         )
