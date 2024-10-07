@@ -3,13 +3,13 @@ import { TaskType } from '@/types/task-type';
 
 const { t } = useI18n();
 
-const { txEvmChains } = useSupportedChains();
-const { isTaskRunning } = useTaskStore();
-const { massDetectTokens } = useRefresh();
-
 const open = ref<boolean>(false);
 const search = ref<string>('');
 const selectedChains = ref<string[]>([]);
+
+const { isTaskRunning } = useTaskStore();
+const { txEvmChains } = useSupportedChains();
+const { massDetectTokens } = useRefresh();
 
 const filtered = computed(() => {
   const chains = [...get(txEvmChains)];
@@ -25,6 +25,8 @@ function chainIndex(chain: string) {
 }
 
 function toggleChain(chain: string) {
+  if (get(isDetecting()))
+    return;
   const chains = [...get(selectedChains)];
   const index = chainIndex(chain);
   if (index === -1)
@@ -36,6 +38,8 @@ function toggleChain(chain: string) {
 }
 
 function toggleSelectAll() {
+  if (get(isDetecting()))
+    return;
   const filteredVal = get(filtered);
   if (get(selectedChains).length < filteredVal.length) {
     const evmChains = filteredVal.map(item => item.id);
@@ -45,12 +49,18 @@ function toggleSelectAll() {
 }
 
 async function detectClick(chain?: string) {
+  if (!chain)
+    set(open, false);
   const evmChains = chain ? [chain] : get(selectedChains);
   await massDetectTokens(evmChains);
 }
 
 function reset() {
   set(selectedChains, []);
+}
+
+function isDetecting(chain?: string) {
+  return get(isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, chain ? { chain: get(chain) } : {}));
 }
 
 watch(search, () => {
@@ -61,10 +71,6 @@ watch(open, (open) => {
   if (!open)
     reset();
 });
-
-function isDetecting(chain?: string) {
-  return get(isTaskRunning(TaskType.FETCH_DETECTED_TOKENS, chain ? { chain: get(chain) } : {}));
-}
 </script>
 
 <template>
@@ -106,12 +112,13 @@ function isDetecting(chain?: string) {
         <div
           v-for="item in filtered"
           :key="item.id"
-          class="flex items-center px-4 py-1 pr-2 cursor-pointer hover:bg-rui-grey-100 transition"
+          class="flex items-center px-4 py-1 pr-2 cursor-pointer hover:bg-rui-grey-100 hover:dark:bg-rui-grey-900 transition"
           @click="toggleChain(item.id)"
         >
           <RuiCheckbox
-            color="primary"
             :model-value="chainIndex(item.id) > -1"
+            :disabled="isDetecting()"
+            color="primary"
             size="sm"
             hide-details
             @click.prevent.stop="toggleChain(item.id)"
@@ -150,6 +157,7 @@ function isDetecting(chain?: string) {
       <div class="p-4 border-t border-default flex items-center justify-between">
         <RuiCheckbox
           color="primary"
+          :disabled="isDetecting()"
           :indeterminate="selectedChains.length > 0 && selectedChains.length < filtered.length"
           :model-value="selectedChains.length > 0 && selectedChains.length === filtered.length"
           size="sm"
