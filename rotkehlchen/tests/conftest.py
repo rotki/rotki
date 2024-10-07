@@ -250,16 +250,13 @@ def fixture_vcr_base_dir() -> Path:
     """
     depth_arg = ''  # In local environment we fetch all history to avoid making the local repo a shallow clone  # noqa: E501
     if 'CI' in os.environ:
-        current_branch = os.environ.get('GITHUB_HEAD_REF')  # get branch from github actions
-        root_dir = Path(os.environ['CASSETTES_DIR'])
-        depth_arg = '--depth=1'  # If we are in CI environment we fetch with depth 1 to reduce fetching time  # noqa: E501
-        if current_branch is None or (current_branch is not None and current_branch == ''):
-            # This is needed when the job doesn't happen due to a PR for example is executed
-            # in a cron job inside github
-            current_branch = os.environ.get('GITHUB_REF_NAME')
-    else:
-        current_branch = os.environ.get('VCR_BRANCH')
-        root_dir = default_data_directory().parent / 'test-caching'
+        # the CI action Ensure VCR branch is fully rebased handles it. Do nothing
+        # Also important since running this with xdist and -n X then this runs X
+        # times and causes the CI to fail dueto incosistencies and multi cloning
+        return Path(os.environ['CASSETTES_DIR']) / 'cassettes'
+
+    current_branch = os.environ.get('VCR_BRANCH')
+    root_dir = default_data_directory().parent / 'test-caching'
     base_dir = root_dir / 'cassettes'
 
     # Clone repo if needed
