@@ -3,8 +3,7 @@ from collections import defaultdict
 from typing import TYPE_CHECKING, Final
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
-from rotkehlchen.assets.asset import Asset, UnderlyingToken
-from rotkehlchen.assets.types import AssetType
+from rotkehlchen.assets.asset import Asset, EvmToken, UnderlyingToken
 from rotkehlchen.assets.utils import (
     TokenEncounterInfo,
     check_if_spam_token,
@@ -27,9 +26,13 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.chain.gnosis.modules.aave.v3.constants import (
     AAVE_V3_DATA_PROVIDER as AAVE_V3_DATA_PROVIDER_GNO,
 )
-from rotkehlchen.chain.gnosis.modules.monerium.constants import GNOSIS_MONERIUM_LEGACY_ADDRESSES
+from rotkehlchen.chain.gnosis.modules.monerium.constants import (
+    GNOSIS_MONERIUM_LEGACY_ADDRESSES,
+    V1_TO_V2_MONERIUM_MAPPINGS as GNOSIS_MONERIUM_MAPPINGS,
+)
 from rotkehlchen.chain.polygon_pos.modules.monerium.constants import (
     POLYGON_MONERIUM_LEGACY_ADDRESSES,
+    V1_TO_V2_MONERIUM_MAPPINGS as POLYGON_MONERIUM_MAPPINGS,
 )
 from rotkehlchen.chain.scroll.modules.aave.v3.constants import (
     AAVE_V3_DATA_PROVIDER as AAVE_V3_DATA_PROVIDER_SCRL,
@@ -41,10 +44,10 @@ from rotkehlchen.db.cache import DBCacheStatic
 from rotkehlchen.db.constants import EVM_EVENT_FIELDS, HISTORY_BASE_ENTRY_FIELDS
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.drivers.gevent import DBCursor
-from rotkehlchen.db.evmtx import DBEvmTx
-from rotkehlchen.db.filtering import EVM_EVENT_JOIN, EvmEventFilterQuery
-from rotkehlchen.db.history_events import DBHistoryEvents, filter_ignore_asset_query
+from rotkehlchen.db.filtering import EVM_EVENT_JOIN
+from rotkehlchen.db.history_events import filter_ignore_asset_query
 from rotkehlchen.db.settings import CachedSettings
+from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import NotERC20Conformant, RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.globaldb.cache import (
@@ -64,19 +67,18 @@ from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import (
     CHAINID_TO_SUPPORTED_BLOCKCHAIN,
     EVM_LOCATIONS,
-    EVMLIKE_LOCATIONS,
     SPAM_PROTOCOL,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
     CacheType,
     ChainID,
     EvmTokenKind,
     SupportedBlockchain,
+    deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.misc import ts_now, ts_sec_to_ms
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
-    from rotkehlchen.types import ChecksumEvmAddress
 
 
 logger = logging.getLogger(__name__)
@@ -87,13 +89,17 @@ SYMBOL_AND_NAME_ASSETS_QUERY = (
     'common_asset_details AS C ON C.identifier = B.identifier JOIN assets as A on '
     'A.identifier=B.identifier WHERE B.PROTOCOL IS NOT ? ORDER BY C.symbol'
 )
-MULTISEND_SPAM_THRESHOLD = 10  # we cover the case of multiple token rewards in the same transactions  # noqa: E501
-KNOWN_FALSE_POSITIVES: Final = {
+MULTISEND_SPAM_THRESHOLD = 50
+KNOWN_FALSE_POSITIVES: Final = (
+    {
     'eip155:1/erc20:0xA0b73E1Ff0B80914AB6fe0444E65848C4C34450b',  # crypto.com CRO token
     'eip155:1/erc20:0xB63B606Ac810a52cCa15e44bB630fd42D8d1d83d',  # crypto.com
-    'eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430',  # monerium EUR v2. It is sent as reward for the referral program of gnosis pay  # noqa: E501
-    'eip155:100/erc20:0xcB444e90D8198415266c6a2724b7900fb12FC56E',  # monerium EUR v1. Same as above  # noqa: E501
-}
+    } |
+    set(GNOSIS_MONERIUM_MAPPINGS.keys()) |
+    set(GNOSIS_MONERIUM_MAPPINGS.values()) |
+    set(POLYGON_MONERIUM_MAPPINGS.keys()) |
+    set(POLYGON_MONERIUM_MAPPINGS.values())
+)
 
 
 def _add_spam_asset(
@@ -192,74 +198,88 @@ def augmented_spam_detection(user_db: DBHandler) -> None:
 
     For any asset that passes all the previous filters we mark it as spam and it is ignored.
     """
-    history_db = DBHistoryEvents(user_db)
-    evm_tx_db = DBEvmTx(user_db)
     inquirer = Inquirer()
     globaldb = GlobalDBHandler()
     usd_asset = A_USD.resolve_to_fiat_asset()
     chains_with_spam: set[ChainID] = set()
 
     spam_assets: set[str] = set()
+    processed_assets: set[str] = set()
     with (
         user_db.conn.read_ctx() as cursor,
         globaldb.conn.read_ctx() as globaldb_cursor,
     ):
-        cursor.execute('SELECT DISTINCT asset FROM history_events')
-        assets = [row[0] for row in cursor]
         # query assets marked as false positive
         false_positive_ids = set(globaldb_get_general_cache_values(
             cursor=globaldb_cursor,
             key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
         )) | KNOWN_FALSE_POSITIVES
 
-        globaldb_cursor.execute(  # take only assets that are in the global DB
-            f'SELECT identifier FROM assets WHERE identifier IN ({", ".join(["?"] * len(assets))}) AND type=?',  # noqa: E501
-            [*assets, AssetType.EVM_TOKEN.serialize_for_db()],
+        # get transactions with a single event which is of type receive/none
+        cursor.execute(
+            """
+            SELECT he.asset, "0x" || hex(eei.tx_hash)
+            FROM history_events he
+            JOIN evm_events_info eei ON he.identifier = eei.identifier
+            WHERE he.type = ?
+            AND he.subtype = ?
+            AND he.event_identifier IN (
+                SELECT event_identifier
+                FROM history_events
+                GROUP BY event_identifier
+                HAVING COUNT(*) = 1
+            )
+            ORDER BY he.asset;
+            """,
+            (
+                HistoryEventType.RECEIVE.serialize(),
+                HistoryEventSubType.NONE.serialize(),
+            ),
         )
 
-        for (asset_id,) in globaldb_cursor:
-            if asset_id in false_positive_ids:
+        for asset_id, tx_hash in cursor:
+            if (
+                asset_id in false_positive_ids or
+                asset_id in processed_assets
+            ):
                 continue
 
-            asset = Asset(asset_id)
-            events: list[EvmEvent] = history_db.get_history_events(
-                cursor=cursor,
-                filter_query=EvmEventFilterQuery.make(
-                    assets=(asset,),
-                    order_by_rules=[('timestamp', True)],
-                    excluded_locations=list(EVMLIKE_LOCATIONS),  # exclude evm like events because they don't have EVM transactions  # noqa: E501
+            try:
+                token = EvmToken(asset_id)
+            except (UnknownAsset, WrongAssetType):
+                processed_assets.add(asset_id)
+                continue
+
+            # count the number of token transfers in the receipt emitted by the contract
+            cursor.execute(
+                """
+                SELECT COUNT(*) FROM evmtx_receipts
+                JOIN evmtx_receipt_logs l ON evmtx_receipts.tx_id = l.tx_id
+                JOIN evmtx_receipt_log_topics t ON l.identifier = t.log
+                JOIn evm_transactions ON evm_transactions.identifier=evmtx_receipts.tx_id
+                WHERE tx_hash = ?
+                AND t.topic_index = 0  /* The event signature is always the first topic */
+                AND t.topic = ?
+                AND l.address = ?
+                """,
+                (
+                    deserialize_evm_tx_hash(tx_hash),
+                    ERC20_OR_ERC721_TRANSFER,
+                    token.evm_address,
                 ),
-                has_premium=True,
-                group_by_event_ids=False,
             )
 
             if (
-                len(events) == 0 or
-                not all(event.event_type == HistoryEventType.RECEIVE and event.event_subtype == HistoryEventSubType.NONE for event in events)  # noqa: E501
-            ):  # check if all the events are receive and nothing else
-                continue
-
-            if (receipt := evm_tx_db.get_receipt(
-                cursor=cursor,
-                tx_hash=events[0].tx_hash,
-                chain_id=ChainID(events[0].location.to_chain_id()),
-            )) is None:  # check if the transaction could be a multisend
-                log.error(f'Could not find receipt for event {events[0].identifier=}')
-                continue
-
-            transfer_counter: defaultdict[ChecksumEvmAddress, int] = defaultdict(int)
-            # check if there is a contract that made what we consider a spam amount of transfers
-            for log_event in receipt.logs:
-                if log_event.topics[0] == ERC20_OR_ERC721_TRANSFER:
-                    transfer_counter[log_event.address] += 1
-
-                # check if a specific contract performed transfers above the threshold
-                if any(tx_count >= MULTISEND_SPAM_THRESHOLD for tx_count in transfer_counter.values()):  # noqa: E501
-                    break
-            else:
+                (result := cursor.fetchone()) is not None and
+                result[0] < MULTISEND_SPAM_THRESHOLD
+            ):
+                processed_assets.add(asset_id)
                 continue  # not spam
 
-            token = asset.resolve_to_evm_token()
+            if token.has_oracle():  # if we have a coingecko/cryptocompare or other oracle it's not spam  # noqa: E501
+                processed_assets.add(asset_id)
+                continue
+
             try:  # check if defillama has a price for the token as a last check
                 price, _ = inquirer._defillama.query_current_price(
                     from_asset=token,
@@ -268,15 +288,18 @@ def augmented_spam_detection(user_db: DBHandler) -> None:
                 )
             except RemoteError:
                 log.error(
-                    f'Failed to query defillama when doing spam detection on {asset=}. '
+                    f'Failed to query defillama when doing spam detection on {token=}. '
                     'Skipping it for now',
                 )
                 continue
 
-            if price == ZERO_PRICE:
-                log.info(f'Determined {asset} is a spam asset. Marking it as such.')
-                spam_assets.add(asset.identifier)
-                chains_with_spam.add(token.chain_id)
+            if price != ZERO_PRICE:
+                processed_assets.add(asset_id)
+                continue
+
+            log.info(f'Determined {token} is a spam asset. Marking it as such.')
+            spam_assets.add(token.identifier)
+            chains_with_spam.add(token.chain_id)
 
     with user_db.conn.write_ctx() as write_cursor:
         _add_spam_asset(

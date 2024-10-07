@@ -629,10 +629,10 @@ def test_maybe_augmented_detect_new_spam_tokens(
     Test the augmented spam detection schedule and behaviour. We use a token that is not detected
     in the fast checks that we do and that is airdropped in a multisend transaction.
     """
-    tx_hex = deserialize_evm_tx_hash('0x6c10aaafec60e012316f54e2ac691b0a64d8744c21382fd3eb5013b4d1935bab')  # noqa: E501
+    spam_tx_hex = deserialize_evm_tx_hash('0x6c10aaafec60e012316f54e2ac691b0a64d8744c21382fd3eb5013b4d1935bab')  # noqa: E501
     get_decoded_events_of_transaction(
         evm_inquirer=gnosis_inquirer,
-        tx_hash=tx_hex,
+        tx_hash=spam_tx_hex,
     )
     token = EvmToken(evm_address_to_identifier(
         address='0x456FEb37ca5F087f7B59F5F684437cf1dd6e968f',
