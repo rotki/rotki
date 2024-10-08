@@ -73,6 +73,7 @@ from rotkehlchen.utils.misc import ts_now
 if TYPE_CHECKING:
     from rotkehlchen.chain.aggregator import ChainsAggregator
     from rotkehlchen.chain.arbitrum_one.manager import ArbitrumOneManager
+    from rotkehlchen.db.dbhandler import DBHandler
 
 
 UNDERLYING_ASSET_PRICES = {
@@ -843,3 +844,32 @@ def test_matic_pol_hardforked_price(inquirer: Inquirer, freezer):
         freezer.move_to(datetime.datetime.fromtimestamp(after_hardfork, tz=datetime.UTC))
         inquirer.find_usd_price(A_POLYGON_POS_MATIC, ignore_cache=True)
         assert patched_gecko.call_args.kwargs['from_asset'] == Asset('eip155:1/erc20:0x455e53CBB86018Ac2B8092FdCd39d8444aFFC3F6')  # POL token  # noqa: E501
+
+
+@pytest.mark.vcr
+@pytest.mark.parametrize('use_clean_caching_directory', [True])
+@pytest.mark.parametrize('should_mock_current_price_queries', [False])
+def test_find_vthor_price(inquirer_defi: 'Inquirer', database: 'DBHandler'):
+    """Test that we can query price for vTHOR using the ratio that it mantains with THOR"""
+    inquirer_defi._oracle_instances = [inquirer_defi._defillama]
+    get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0xa5f2211B9b8170F694421f2046281775E8468044'),
+        chain_id=ChainID.ETHEREUM,
+        symbol='THOR',
+        name='THORSwap Token',
+        decimals=18,
+    )
+    get_or_create_evm_token(
+        userdb=database,
+        evm_address=string_to_evm_address('0x815C23eCA83261b6Ec689b60Cc4a58b54BC24D8D'),
+        chain_id=ChainID.ETHEREUM,
+        symbol='vTHOR',
+        name='vTHOR',
+        decimals=18,
+    )
+
+    price = inquirer_defi.find_usd_price(
+        asset=Asset('eip155:1/erc20:0x815C23eCA83261b6Ec689b60Cc4a58b54BC24D8D'),
+    )
+    assert price.is_close(FVal(0.97656), max_diff=1e-5)

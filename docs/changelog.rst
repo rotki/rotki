@@ -3,6 +3,7 @@ Changelog
 =========
 
 * :feature:`-` Gnosis pay referral rewards will now be properly seen as referrals and not generic receive.
+* :feature:`-` The price of vTHOR will now be properly queried.
 * :bug:`8668` Changes the tag filter logic from OR to AND in the account view.
 * :bug:`-` Graph delegation log queries will now query a smaller amount of events. For users who had moved graph staking to Arbitrum and ended up having over 180k transactions in their DB, this should now be fixed and the DB size should be normal again.
 * :bug:`-` Fix an error querying the exit timestamp for the ethereum validators.

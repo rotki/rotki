@@ -2,7 +2,7 @@ from typing import Final
 
 from rotkehlchen.fval import FVal
 
-CURRENCYCONVERTER_API_KEY: Final = '8ea59f745e252780bf6f'
+CURRENCYCONVERTER_API_KEY: Final = '2745094a2d729a317374'
 
 ZERO: Final = FVal(0)
 ONE: Final = FVal(1)

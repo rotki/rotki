@@ -4,7 +4,7 @@ from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.constants import DEFAULT_TOKEN_DECIMALS
 from rotkehlchen.chain.evm.contracts import EvmContract
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants import ONE
+from rotkehlchen.constants import ONE, ZERO
 from rotkehlchen.constants.assets import (
     A_CRV_3CRV,
     A_CRV_3CRVSUSD,
@@ -274,6 +274,36 @@ def handle_defi_price_query(
             token=token,
             underlying_asset_price=underlying_asset_price,
         )
+    elif token == 'eip155:1/erc20:0x815C23eCA83261b6Ec689b60Cc4a58b54BC24D8D':  # vTHOR
+        if underlying_asset_price is None:
+            return None
+
+        vthor_contract = EvmContract(
+            address=string_to_evm_address('0x815C23eCA83261b6Ec689b60Cc4a58b54BC24D8D'),
+            abi=[{'inputs': [], 'name': 'totalAssets', 'outputs': [{'internalType': 'uint256', 'name': '', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'totalSupply', 'outputs': [{'internalType': 'uint256', 'name': '', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}],  # noqa: E501
+            deployed_block=14629235,
+        )
+        calls_output = ethereum.multicall_2(
+            require_success=False,
+            calls=[
+                (vthor_contract.address, vthor_contract.encode(method_name='totalAssets')),
+                (vthor_contract.address, vthor_contract.encode(method_name='totalSupply')),
+            ],
+        )
+        if calls_output[0][0] is False or calls_output[1][0] is False:  # check that queries succeeded  # noqa: E501
+            return None
+
+        total_assets = vthor_contract.decode(
+            result=calls_output[0][1],
+            method_name='totalAssets',
+        )[0]
+        if (total_supply := vthor_contract.decode(
+            result=calls_output[1][1],
+            method_name='totalSupply',
+        )[0]) == 0:
+            usd_value = ZERO
+        else:
+            usd_value = FVal(total_assets) / FVal(total_supply) * underlying_asset_price
     else:
         return None
 
