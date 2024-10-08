@@ -184,11 +184,11 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     const chain = getChain(transaction.evmChain);
     const type = isEvmLikeChains(chain) ? TransactionChainType.EVMLIKE : TransactionChainType.EVM;
 
-    const newPayload: ChainAndTxHash | EvmChainAndTxHash = {
+    const newPayload: (ChainAndTxHash | EvmChainAndTxHash)[] = [{
       ...(type === TransactionChainType.EVM ? { evmChain: transaction.evmChain } : { chain }),
       txHash: transaction.txHash,
       deleteCustom: transaction.deleteCustom,
-    };
+    }];
 
     try {
       const taskType = TaskType.TRANSACTIONS_DECODING;
