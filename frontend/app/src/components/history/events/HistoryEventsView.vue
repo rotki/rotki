@@ -77,6 +77,7 @@ const decodingStatusDialogPersistent = ref<boolean>(false);
 const decodingStatusDialogOpen = ref<boolean>(false);
 const protocolCacheStatusDialogOpen = ref<boolean>(false);
 const currentAction = ref<'decode' | 'query'>('query');
+const currentPageEvents = ref<HistoryEventEntry[]>([]);
 
 const { isTaskRunning } = useTaskStore();
 const { show } = useConfirmStore();
@@ -330,6 +331,16 @@ function onShowDialog(type: 'decode' | 'protocol-refresh'): void {
     set(protocolCacheStatusDialogOpen, true);
 }
 
+async function redecodePageTransactions(): Promise<void> {
+  const evmEvents = currentPageEvents.value.filter(isEvmEvent);
+  const { pullAndRedecodeTransaction, fetchUndecodedTransactionsStatus } = useHistoryTransactionDecoding();
+
+  for (const event of evmEvents) {
+    await pullAndRedecodeTransaction(toEvmChainAndTxHash(event));
+  }
+  await fetchUndecodedTransactionsStatus();
+  await fetchData();
+}
 watchImmediate(route, async (route) => {
   if (route.query.openDecodingStatusDialog) {
     set(decodingStatusDialogOpen, true);
@@ -392,6 +403,7 @@ onUnmounted(() => {
         @refresh="refresh(true)"
         @reload="fetchAndRedecodeEvents($event)"
         @show:form="showForm($event)"
+        @redecode-page="redecodePageTransactions()"
       />
     </template>
 
@@ -431,6 +443,7 @@ onUnmounted(() => {
         @show:form="showForm($event)"
         @refresh="fetchAndRedecodeEvents($event)"
         @set-page="setPage($event)"
+        @current-page-events="currentPageEvents = $event"
       >
         <template #query-status="{ colspan, eventsLoading }">
           <HistoryQueryStatus

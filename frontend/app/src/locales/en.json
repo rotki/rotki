@@ -4423,6 +4423,7 @@
       "add_event": "Add new event",
       "add_event_here": "Add new event here",
       "redecode_events": "Redecode events",
+      "redecode_page": "Redecode page",
       "delete_transaction": "Delete transaction & events"
     },
     "cache_refresh": {

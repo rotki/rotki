@@ -25,6 +25,7 @@ const emit = defineEmits<{
   'show:form': [payload: ShowEventHistoryForm];
   'set-page': [page: number];
   'refresh': [data?: EvmChainAndTxHash];
+  'current-page-events': [events: HistoryEventEntry[]];
 }>();
 
 const { groups, groupLoading } = toRefs(props);
@@ -233,6 +234,10 @@ function forceRedecode(): void {
   set(deleteCustom, false);
   set(redecodePayload, undefined);
 }
+
+watch(() => props.groups.data, (newRows) => {
+  emit('current-page-events', newRows);
+}, { immediate: true });
 </script>
 
 <template>
