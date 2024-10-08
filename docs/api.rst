@@ -2522,7 +2522,7 @@ Querying evm transactions
    :statuscode 502: An external service used in the query such as etherscan could not be reached or returned unexpected response.
 
 
-Request specific EVM transaction repulling and event decoding
+Request specific EVM transactions repulling and event decoding
 ===================================================================
 
 .. http:put:: /api/(version)/blockchains/evm/transactions
@@ -2530,7 +2530,7 @@ Request specific EVM transaction repulling and event decoding
    .. note::
       This endpoint can also be queried asynchronously by using ``"async_query": true``
 
-   Doing a PUT on the evm transactions endpoint will request a decoding of the given transaction and generation of decoded events. That basically entails deleting and re-querying all the transaction data. Transaction, internal transactions, receipts and all log for each hash and then decoding all events. Also requeries prices for assets involved in these events.
+   Doing a PUT on the evm transactions endpoint will request a decoding of the given transactions and generation of decoded events. That basically entails deleting and re-querying all the transaction data. Transaction, internal transactions, receipts and all log for each hash and then decoding all events. Also requeries prices for assets involved in these events.
 
    **Example Request**:
 
@@ -2542,13 +2542,17 @@ Request specific EVM transaction repulling and event decoding
 
       {
           "async_query": true,
-          "evm_chain": "ethereum",
-          "tx_hash": "0xe33041d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9742",
+          "transactions": [{
+              "evm_chain": "ethereum",
+              "tx_hash": "0xe33041d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9742"
+          }, {
+              "evm_chain": "gnosis",
+              "tx_hash": "0xe11031d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9712"
+           }],
           "delete_custom": true
       }
 
-   :reqjson str evm_chain: A string specifying the evm chain for which the transaction is.
-   :reqjson str tx_hash: The transaction hash whose data to repull and redecode events
+   :reqjson list transactions: A list of objects of evm_chain and tx_hash keys to redecode. Each list entry represents a single transaction.
    :reqjson bool delete_custom: Boolean denoting whether to delete any customized events of the transaction or not. Default is false
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
 

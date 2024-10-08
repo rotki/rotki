@@ -246,7 +246,7 @@ def test_query_info_on_redecode_request(rotkehlchen_api_server: APIServer):
                 rotkehlchen_api_server,
                 'evmtransactionsresource',
             ),
-            json={'evm_chain': 'gnosis', 'tx_hash': gnosishash.hex()},  # pylint: disable=no-member
+            json={'transactions': [{'evm_chain': 'gnosis', 'tx_hash': gnosishash.hex()}]},  # pylint: disable=no-member
         )
         assert_proper_response(response)
 
