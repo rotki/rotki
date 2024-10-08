@@ -658,7 +658,6 @@ declare global {
   const useManualAssetBalances: typeof import('./composables/balances/manual/index')['useManualAssetBalances']
   const useManualBalanceFilter: typeof import('./composables/filters/manual-balances')['useManualBalanceFilter']
   const useManualBalancesApi: typeof import('./composables/api/balances/manual')['useManualBalancesApi']
-  const useManualBalancesForm: typeof import('./composables/balances/manual/form')['useManualBalancesForm']
   const useManualBalancesStore: typeof import('./store/balances/manual')['useManualBalancesStore']
   const useManualRefHistory: typeof import('@vueuse/core')['useManualRefHistory']
   const useMath: typeof import('@vueuse/math')['useMath']
@@ -1533,7 +1532,6 @@ declare module 'vue' {
     readonly useManualAssetBalances: UnwrapRef<typeof import('./composables/balances/manual/index')['useManualAssetBalances']>
     readonly useManualBalanceFilter: UnwrapRef<typeof import('./composables/filters/manual-balances')['useManualBalanceFilter']>
     readonly useManualBalancesApi: UnwrapRef<typeof import('./composables/api/balances/manual')['useManualBalancesApi']>
-    readonly useManualBalancesForm: UnwrapRef<typeof import('./composables/balances/manual/form')['useManualBalancesForm']>
     readonly useManualBalancesStore: UnwrapRef<typeof import('./store/balances/manual')['useManualBalancesStore']>
     readonly useManualRefHistory: UnwrapRef<typeof import('@vueuse/core')['useManualRefHistory']>
     readonly useMath: UnwrapRef<typeof import('@vueuse/math')['useMath']>
