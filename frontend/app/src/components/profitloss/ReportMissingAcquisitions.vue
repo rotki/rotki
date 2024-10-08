@@ -66,23 +66,34 @@ const { t } = useI18n();
 
 const headers = computed<DataTableColumn<MappedGroupedItems>[]>(() => [
   {
+    label: '',
+    key: 'expand',
+    sortable: false,
+    class: '!py-0 !pr-0 !pl-3',
+    cellClass: '!py-0 !pr-0 !pl-3',
+  },
+  {
     label: t('common.asset'),
     key: 'asset',
     cellClass: 'py-0',
     sortable: true,
   },
-  {
-    label: t('common.datetime'),
-    key: 'startDate',
-    cellClass: 'py-2',
-    sortable: true,
-  },
-  {
-    label: t('profit_loss_report.actionable.missing_acquisitions.headers.missing_acquisitions'),
-    key: 'total_missing_acquisition',
-    align: 'end',
-    sortable: true,
-  },
+  ...(get(isPinned)
+    ? []
+    : [
+      {
+        label: t('common.datetime'),
+        key: 'startDate',
+        cellClass: 'py-2',
+        sortable: true,
+      },
+      {
+        label: t('profit_loss_report.actionable.missing_acquisitions.headers.missing_acquisitions'),
+        key: 'total_missing_acquisition',
+        align: 'end',
+        sortable: true,
+      },
+    ] satisfies DataTableColumn<MappedGroupedItems>[]),
   {
     label: t('profit_loss_report.actionable.missing_acquisitions.headers.total_missing'),
     key: 'total_amount_missing',
@@ -116,9 +127,21 @@ const childHeaders = computed<DataTableColumn<MissingAcquisition>[]>(() => [
 ]);
 
 const isIgnored = (asset: string) => get(isAssetIgnored(asset));
+
+const [CreateDate, ReuseDate] = createReusableTemplate<{ row: MappedGroupedItems }>();
 </script>
 
 <template>
+  <CreateDate #default="{ row }">
+    <DateDisplay :timestamp="row.startDate" />
+    <template v-if="row.startDate !== row.endDate">
+      <span class="ml-0.5">
+        {{ t('profit_loss_report.actionable.missing_acquisitions.to') }}
+        <br />
+      </span>
+      <DateDisplay :timestamp="row.endDate" />
+    </template>
+  </CreateDate>
   <div>
     <RuiDataTable
       ref="tableRef"
@@ -140,16 +163,13 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
           :asset="row.asset"
           link
         />
+        <ReuseDate
+          v-if="isPinned"
+          :row="row"
+        />
       </template>
       <template #item.startDate="{ row }">
-        <DateDisplay :timestamp="row.startDate" />
-        <template v-if="row.startDate !== row.endDate">
-          <span>
-            {{ t('profit_loss_report.actionable.missing_acquisitions.to') }}
-            <br />
-          </span>
-          <DateDisplay :timestamp="row.endDate" />
-        </template>
+        <ReuseDate :row="row" />
       </template>
       <template #item.total_missing_acquisition="{ row }">
         {{ row.acquisitions.length }}
@@ -216,8 +236,13 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
           :cols="childHeaders"
           :rows="row.acquisitions"
           :scroller="tableContainer"
+          class="bg-white dark:bg-rui-grey-900"
+          :class="{ 'my-2': isPinned }"
           outlined
+          hide-default-footer
+          hide-default-header
           row-attr="asset"
+          single-expand
         >
           <template #item.time="{ row: childItem }">
             <DateDisplay :timestamp="childItem.time" />
@@ -245,7 +270,7 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
 .table {
   &--pinned {
     max-height: 100%;
-    height: calc(100vh - 226px);
+    height: calc(100vh - 245px);
   }
 }
 </style>

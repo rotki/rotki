@@ -1,9 +1,9 @@
 <script setup lang="ts">
-const display = defineModel<boolean>({ required: true });
-
 const ReportActionableCard = defineAsyncComponent(() => import('@/components/profitloss/ReportActionableCard.vue'));
 
-const { pinned } = storeToRefs(useAreaVisibilityStore());
+const { pinned, showPinned } = storeToRefs(useAreaVisibilityStore());
+
+const { isLgAndDown } = useBreakpoint();
 
 const component: ComputedRef = computed(() => {
   const pinnedValue = get(pinned);
@@ -16,10 +16,11 @@ const component: ComputedRef = computed(() => {
 
 <template>
   <RuiNavigationDrawer
-    v-model="display"
-    width="560px"
-    temporary
+    v-model="showPinned"
+    :temporary="isLgAndDown"
+    width="500px"
     position="right"
+    class="border-l border-rui-grey-300 dark:border-rui-grey-800"
   >
     <div>
       <Component
