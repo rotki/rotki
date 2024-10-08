@@ -34,7 +34,7 @@ function add() {
   } satisfies RawManualBalance);
 }
 
-function goToTab(tab: string) {
+function goToTab(tab: string | number) {
   const currentRoute = get(route);
   if (currentRoute.params.tab === tab)
     return;
