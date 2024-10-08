@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const visibilityStore = useAreaVisibilityStore();
-const { showDrawer, isMini } = storeToRefs(visibilityStore);
+const { showDrawer, isMini, showPinned } = storeToRefs(visibilityStore);
 const { overall } = storeToRefs(useStatisticsStore());
 const { logged } = storeToRefs(useSessionAuthStore());
 const toggleDrawer = visibilityStore.toggleDrawer;
@@ -54,6 +54,7 @@ onMounted(() => {
       :class="{
         small: isMini,
         expanded,
+        pinned: showPinned,
       }"
     >
       <main>
@@ -111,7 +112,7 @@ onMounted(() => {
 <style scoped lang="scss">
 .app {
   &-main {
-    @apply pt-6 pb-16 w-full;
+    @apply pt-6 pb-16 w-full transition-all;
     min-height: calc(100vh - 64px);
 
     &.small {
@@ -120,6 +121,10 @@ onMounted(() => {
 
     &.expanded {
       @apply pl-[300px];
+    }
+
+    &.pinned {
+      @apply xl:pr-[485px];
     }
   }
 }

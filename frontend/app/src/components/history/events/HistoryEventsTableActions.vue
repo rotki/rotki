@@ -73,7 +73,7 @@ function redecodePageTransactions(): void {
       color="primary"
       :disabled="processing"
       :class="{
-        '!divide-rui-grey-200': processing,
+        '!divide-rui-grey-200 dark:!divide-rui-grey-800': processing,
       }"
     >
       <RuiButton

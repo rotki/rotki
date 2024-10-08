@@ -4114,7 +4114,7 @@
           "missing_acquisitions": "Missing Acquisitions",
           "missing_amount": "Missing Amount",
           "quick_action": "Quick Action",
-          "total_missing": "Total Amount Missing"
+          "total_missing": "Amount Missing"
         },
         "hint": "Some asset acquisitions are missing. You will need to figure out where you bought them and either import or manually create the relevant acquisition events",
         "title": "Missing Acquisitions ({total})",
