@@ -379,9 +379,16 @@ class EventsOnlineQuerySchema(AsyncQueryArgumentSchema):
     query_type = SerializableEnumField(enum_class=HistoryEventQueryType, required=True)
 
 
-class EvmTransactionDecodingSchema(AsyncQueryArgumentSchema):
+class EvmTransactionSchema(Schema):
     evm_chain = EvmChainNameField(required=True)
     tx_hash = EVMTransactionHashField(required=True)
+
+
+class EvmTransactionDecodingSchema(AsyncQueryArgumentSchema):
+    transactions = fields.List(
+        fields.Nested(EvmTransactionSchema),
+        validate=lambda data: len(data) != 0,
+    )
     delete_custom = fields.Boolean(load_default=False)
 
 

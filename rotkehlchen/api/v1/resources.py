@@ -637,14 +637,12 @@ class EvmTransactionsResource(BaseMethodView):
     def put(
             self,
             async_query: bool,
-            evm_chain: SUPPORTED_CHAIN_IDS,
-            tx_hash: EVMTxHash,
+            transactions: list[dict[str, Any]],
             delete_custom: bool,
     ) -> Response:
-        return self.rest_api.decode_evm_transaction(
+        return self.rest_api.decode_given_evm_transactions(
             async_query=async_query,
-            evm_chain=evm_chain,
-            tx_hash=tx_hash,
+            transactions=[(x['evm_chain'], x['tx_hash']) for x in transactions],
             delete_custom=delete_custom,
         )
 

@@ -181,7 +181,7 @@ from rotkehlchen.exchanges.constants import ALL_SUPPORTED_EXCHANGES
 from rotkehlchen.exchanges.data_structures import Trade
 from rotkehlchen.exchanges.utils import query_binance_exchange_pairs
 from rotkehlchen.externalapis.github import Github
-from rotkehlchen.externalapis.gnosispay import init_gnosis_pay
+from rotkehlchen.externalapis.gnosispay import GNOSIS_PAY_TX_TIMESTAMP_RANGE, init_gnosis_pay
 from rotkehlchen.externalapis.monerium import init_monerium
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.assets_management import export_assets_from_file, import_assets_from_file
@@ -2863,79 +2863,103 @@ class RestAPI:
         return {'result': result, 'message': message, 'status_code': status_code}
 
     @async_api_call()
-    def decode_evm_transaction(
+    def decode_given_evm_transactions(
             self,
-            evm_chain: SUPPORTED_CHAIN_IDS,
-            tx_hash: EVMTxHash,
+            transactions: list[tuple[SUPPORTED_CHAIN_IDS, EVMTxHash]],
             delete_custom: bool,
     ) -> dict[str, Any]:
         """
-        Repull data for a transaction and redecode all events. Also prices for
+        Repull data for the given transactions and redecode all events. Also prices for
         the assets involed in these events are requeried.
         """
         task_manager = self.rotkehlchen.task_manager
         assert task_manager, 'task manager should have been initialized at this point'
-        success, message, status_code = True, '', HTTPStatus.OK
-        chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(evm_chain)
-        with self.rotkehlchen.data.db.user_write() as write_cursor:
-            write_cursor.execute(
-                'DELETE FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
-                (tx_hash, evm_chain.serialize_for_db()))
-        try:
-            chain_manager.transactions.get_or_query_transaction_receipt(tx_hash=tx_hash)
-        except RemoteError as e:
-            return {
-                'result': False,
-                'message': f'Failed to request evm transaction decoding due to hash {tx_hash.hex()} does not correspond to a transaction at {evm_chain.name}. {e!s}',  # noqa: E501
-                'status_code': HTTPStatus.CONFLICT,
-            }
-        except DeserializationError as e:
-            return {
-                'result': False,
-                'message': f'Failed to request evm transaction decoding due to {e!s}',
-                'status_code': HTTPStatus.CONFLICT,
-            }
+        success, message, status_code, events = True, '', HTTPStatus.OK, []
+        for evm_chain, tx_hash in transactions:
+            chain_manager = self.rotkehlchen.chains_aggregator.get_evm_manager(evm_chain)
+            with self.rotkehlchen.data.db.user_write() as write_cursor:
+                write_cursor.execute(
+                    'DELETE FROM evm_transactions WHERE tx_hash=? AND chain_id=?',
+                    (tx_hash, evm_chain.serialize_for_db()))
+            try:
+                chain_manager.transactions.get_or_query_transaction_receipt(tx_hash=tx_hash)
+            except RemoteError as e:
+                return {
+                    'result': False,
+                    'message': f'Failed to request evm transaction decoding due to hash {tx_hash.hex()} does not correspond to a transaction at {evm_chain.name}. {e!s}',  # noqa: E501
+                    'status_code': HTTPStatus.CONFLICT,
+                }
+            except DeserializationError as e:
+                return {
+                    'result': False,
+                    'message': f'Failed to request evm transaction decoding due to {e!s}',
+                    'status_code': HTTPStatus.CONFLICT,
+                }
+
+            try:
+                events.extend(chain_manager.transactions_decoder.decode_and_get_transaction_hashes(
+                    tx_hashes=[tx_hash],
+                    send_ws_notifications=True,
+                    ignore_cache=True,  # always redecode from here
+                    delete_customized=delete_custom,
+                ))
+            except (RemoteError, DeserializationError) as e:
+                return {
+                    'result': False,
+                    'message': f'Failed to request evm transaction decoding due to {e!s}',
+                    'status_code': HTTPStatus.BAD_GATEWAY,
+                }
+            except InputError as e:
+                return {
+                    'result': False,
+                    'message': f'Failed to request evm transaction decoding due to {e!s}',
+                    'status_code': HTTPStatus.CONFLICT,
+                }
+
+        monerium_hashes, gnosispay_timestamps, tx_hashes = set(), [], set()
+        for event in events:
+            if event.counterparty == CPT_MONERIUM:
+                monerium_hashes.add(event.tx_hash)
+            elif event.counterparty == CPT_GNOSIS_PAY:
+                gnosispay_timestamps.append(ts_ms_to_sec(event.timestamp))
+
+            tx_hashes.add(event.tx_hash)
 
         try:
-            events = chain_manager.transactions_decoder.decode_and_get_transaction_hashes(
-                tx_hashes=[tx_hash],
-                send_ws_notifications=True,
-                ignore_cache=True,  # always redecode from here
-                delete_customized=delete_custom,
-            )
-            if (
-                any(event.counterparty == CPT_MONERIUM for event in events) and
-                (monerium := init_monerium(self.rotkehlchen.data.db)) is not None
-            ):
-                monerium.get_and_process_orders(tx_hash=tx_hash)
+            if len(monerium_hashes) != 0 and (monerium := init_monerium(self.rotkehlchen.data.db)) is not None:  # noqa: E501
+                for monerium_tx_hash in monerium_hashes:
+                    monerium.get_and_process_orders(tx_hash=monerium_tx_hash)
 
-            if (
-                any(event.counterparty == CPT_GNOSIS_PAY for event in events) and
-                (gnosis_pay := init_gnosis_pay(self.rotkehlchen.data.db)) is not None
-            ):
-                gnosis_pay.query_remote_for_tx_and_update_events(
-                    tx_timestamp=ts_ms_to_sec(events[0].timestamp),
-                )
+            if len(gnosispay_timestamps) != 0 and (gnosis_pay := init_gnosis_pay(self.rotkehlchen.data.db)) is not None:  # noqa: E501
+                gnosispay_timestamps.sort()
+                last_queried_ts: Timestamp | None = None
+                for tx_timestamp in gnosispay_timestamps:
+                    if last_queried_ts is not None and abs(tx_timestamp - last_queried_ts) <= GNOSIS_PAY_TX_TIMESTAMP_RANGE:  # noqa: E501
+                        continue  # skip if too close to last query
 
-            # Trigger the task to query the missing prices for the decoded events
-            events_filter = EvmEventFilterQuery.make(
-                tx_hashes=[tx_hash],  # always same hash
-            )
-            history_events_db = DBHistoryEvents(task_manager.database)
-            entries = history_events_db.get_base_entries_missing_prices(events_filter)
-            query_missing_prices_of_base_entries(
-                database=task_manager.database,
-                entries_missing_prices=entries,
-                base_entries_ignore_set=task_manager.base_entries_ignore_set,
-            )
+                    gnosis_pay.query_remote_for_tx_and_update_events(
+                        tx_timestamp=tx_timestamp,
+                    )
+                    last_queried_ts = tx_timestamp
+
         except (RemoteError, DeserializationError) as e:
-            status_code = HTTPStatus.BAD_GATEWAY
-            message = f'Failed to request evm transaction decoding due to {e!s}'
-            success = False
-        except InputError as e:
-            status_code = HTTPStatus.CONFLICT
-            message = f'Failed to request evm transaction decoding due to {e!s}'
-            success = False
+            return {
+                'result': False,
+                'message': f'Failed at evm transaction decoding post-decoding due to {e!s}',
+                'status_code': HTTPStatus.BAD_GATEWAY,
+            }
+
+        # Trigger the task to query the missing prices for the decoded events
+        events_filter = EvmEventFilterQuery.make(
+            tx_hashes=list(tx_hashes),
+        )
+        history_events_db = DBHistoryEvents(task_manager.database)
+        entries = history_events_db.get_base_entries_missing_prices(events_filter)
+        query_missing_prices_of_base_entries(
+            database=task_manager.database,
+            entries_missing_prices=entries,
+            base_entries_ignore_set=task_manager.base_entries_ignore_set,
+        )
 
         return {'result': success, 'message': message, 'status_code': status_code}
 

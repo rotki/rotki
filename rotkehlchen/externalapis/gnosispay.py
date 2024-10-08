@@ -32,6 +32,10 @@ logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
+# the seconds around a transaction to search for when quering the API
+GNOSIS_PAY_TX_TIMESTAMP_RANGE = 10
+
+
 @dataclass(init=True, repr=True, eq=True, order=False, unsafe_hash=False, frozen=False)
 class GnosisPayTransaction:
     """The merchant data we keep for a gnosis pay transaction"""
@@ -318,8 +322,8 @@ class GnosisPay:
             data = self._query(
                 endpoint='transactions',
                 params={
-                    'after': timestamp_to_iso8601(Timestamp(tx_timestamp - 10)),
-                    'before': timestamp_to_iso8601(Timestamp(tx_timestamp + 10)),
+                    'after': timestamp_to_iso8601(Timestamp(tx_timestamp - GNOSIS_PAY_TX_TIMESTAMP_RANGE)),  # noqa: E501
+                    'before': timestamp_to_iso8601(Timestamp(tx_timestamp + GNOSIS_PAY_TX_TIMESTAMP_RANGE)),  # noqa: E501
                 },
             )
         except RemoteError as e:

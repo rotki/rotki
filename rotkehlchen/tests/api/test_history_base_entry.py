@@ -118,7 +118,13 @@ def assert_editing_works(
     # are still correctly shown and not deleted
     response = requests.put(
         api_url_for(rotkehlchen_api_server, 'evmtransactionsresource'),
-        json={'evm_chain': 'ethereum', 'tx_hash': entry.tx_hash.hex(), 'delete_custom': False},
+        json={
+            'transactions': [{
+                'evm_chain': 'ethereum',
+                'tx_hash': entry.tx_hash.hex(),
+                }],
+            'delete_custom': False,
+        },
     )
     assert_simple_ok_response(response)
     assert_event_got_edited(entry)

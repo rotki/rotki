@@ -336,8 +336,10 @@ def test_query_transactions(rotkehlchen_api_server):
                 'evmtransactionsresource',
             ), json={
                 'async_query': True,
-                'evm_chain': 'ethereum',
-                'tx_hash': tx_hash,
+                'transactions': [{
+                    'evm_chain': 'ethereum',
+                    'tx_hash': tx_hash,
+                }],
             },
         )
 
@@ -380,8 +382,10 @@ def test_request_transaction_decoding_errors(rotkehlchen_api_server):
             'evmtransactionsresource',
         ), json={
             'async_query': False,
-            'evm_chain': 'ethereum',
-            'tx_hash': 1,
+            'transactions': [{
+                'evm_chain': 'ethereum',
+                'tx_hash': 1,
+            }],
         },
     )
     assert_error_response(
@@ -396,8 +400,10 @@ def test_request_transaction_decoding_errors(rotkehlchen_api_server):
             'evmtransactionsresource',
         ), json={
             'async_query': False,
-            'evm_chain': 'ethereum',
-            'tx_hash': 'dasd',
+            'transactions': [{
+                'evm_chain': 'ethereum',
+                'tx_hash': 'dasd',
+            }],
         },
     )
     assert_error_response(
@@ -412,8 +418,10 @@ def test_request_transaction_decoding_errors(rotkehlchen_api_server):
             'evmtransactionsresource',
         ), json={
             'async_query': False,
-            'evm_chain': 'ethereum',
-            'tx_hash': '0x34af01',
+            'transactions': [{
+                'evm_chain': 'ethereum',
+                'tx_hash': '0x34af01',
+            }],
         },
     )
     assert_error_response(
@@ -429,8 +437,10 @@ def test_request_transaction_decoding_errors(rotkehlchen_api_server):
             'evmtransactionsresource',
         ), json={
             'async_query': False,
-            'evm_chain': 'ethereum',
-            'tx_hash': nonexisting_hash,
+            'transactions': [{
+                'evm_chain': 'ethereum',
+                'tx_hash': nonexisting_hash,
+            }],
         },
     )
     assert_error_response(
@@ -1298,8 +1308,10 @@ def test_no_value_eth_transfer(rotkehlchen_api_server: 'APIServer'):
             'evmtransactionsresource',
         ), json={
             'async_query': False,
-            'evm_chain': 'ethereum',
-            'tx_hash': tx_str,
+            'transactions': [{
+                'evm_chain': 'ethereum',
+                'tx_hash': tx_str,
+            }],
         },
     )
     assert_simple_ok_response(response)
@@ -1531,8 +1543,10 @@ def test_repulling_transaction_with_internal_txs(rotkehlchen_api_server: 'APISer
         api_url_for(rotkehlchen_api_server, 'evmtransactionsresource'),
         json={
             'async_query': False,
-            'evm_chain': 'ethereum',
-            'tx_hash': tx_hash.hex(),  # pylint: disable=no-member  # pylint doesn't detect the .hex attribute here
+            'transactions': [{
+                'evm_chain': 'ethereum',
+                'tx_hash': tx_hash.hex(),  # pylint: disable=no-member  # pylint doesn't detect the .hex attribute here
+            }],
         },
     )
     assert_proper_response(response)
