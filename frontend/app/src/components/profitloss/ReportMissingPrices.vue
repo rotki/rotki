@@ -239,7 +239,7 @@ async function refreshHistoricalPrice(item: EditableMissingPrice) {
 .table {
   &--pinned {
     max-height: 100%;
-    height: calc(100vh - 250px);
+    height: calc(100vh - 245px);
   }
 }
 

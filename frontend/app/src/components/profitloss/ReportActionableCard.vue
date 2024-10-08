@@ -26,7 +26,7 @@ const ReportMissingPrices = defineAsyncComponent(() => import('@/components/prof
 
 const { t } = useI18n();
 const { report, isPinned } = toRefs(props);
-const { pinned } = storeToRefs(useAreaVisibilityStore());
+const { pinned, showPinned } = storeToRefs(useAreaVisibilityStore());
 
 function setDialog(dialog: boolean) {
   emit('set-dialog', dialog);
@@ -192,6 +192,10 @@ function close() {
     setPinned(null);
   else setDialog(false);
 }
+
+function closePinnedSidebar() {
+  set(showPinned, false);
+}
 </script>
 
 <template>
@@ -211,6 +215,19 @@ function close() {
         <RuiIcon
           class="text-white"
           name="close-line"
+        />
+      </RuiButton>
+      <RuiButton
+        v-else
+        variant="text"
+        size="sm"
+        icon
+        @click="closePinnedSidebar()"
+      >
+        <RuiIcon
+          class="text-white"
+          name="arrow-right-s-line"
+          size="20"
         />
       </RuiButton>
 
