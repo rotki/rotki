@@ -16,14 +16,22 @@ const emit = defineEmits<{
   (e: 'update:model-value', value: LocationDataSnapshot[]): void;
 }>();
 
-const { balancesSnapshot } = toRefs(props);
+const { balancesSnapshot, timestamp } = toRefs(props);
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
+const { historicPriceInCurrentCurrency, isPending, createKey } = useHistoricCachePriceStore();
 
 const total = ref<string>('');
 const { t } = useI18n();
 
-const { exchangeRate } = useBalancePricesStore();
-const fiatExchangeRate = computed<BigNumber>(() => get(exchangeRate(get(currencySymbol))) ?? One);
+const isCurrencyCurrencyUsd = computed<boolean>(() => get(currencySymbol) === CURRENCY_USD);
+
+const rate = computed<BigNumber>(() => {
+  if (get(isCurrencyCurrencyUsd))
+    return One;
+  return get(historicPriceInCurrentCurrency(CURRENCY_USD, get(timestamp)));
+});
+
+const fetchingRate = isPending(createKey(CURRENCY_USD, get(timestamp)));
 
 const assetTotal = computed<BigNumber>(() => {
   const numbers = get(balancesSnapshot).map((item: BalanceSnapshot) => {
@@ -67,9 +75,9 @@ const numericTotal = computed<BigNumber>(() => {
   if (value === '')
     return Zero;
 
-  return get(currencySymbol) === CURRENCY_USD
+  return get(isCurrencyCurrencyUsd)
     ? bigNumberify(value)
-    : bigNumberify(value).dividedBy(get(fiatExchangeRate));
+    : bigNumberify(value).dividedBy(get(rate));
 });
 
 const nftsExcludedTotal = computed<BigNumber>(() => get(numericTotal).minus(get(nftsTotal)));
@@ -78,7 +86,7 @@ const suggestions = computed(() => {
   const assetTotalValue = get(assetTotal);
   const locationTotalValue = get(locationTotal);
 
-  if (assetTotalValue.minus(locationTotalValue).abs().lt(1e-8)) {
+  if (assetTotalValue.minus(locationTotalValue).abs().lt(1e-8) || !get(isCurrencyCurrencyUsd)) {
     return {
       total: assetTotalValue,
     };
@@ -89,14 +97,14 @@ const suggestions = computed(() => {
   };
 });
 
-onBeforeMount(() => {
+watchImmediate(rate, (rate) => {
   const totalEntry = props.modelValue.find(item => item.location === 'total');
 
   if (totalEntry) {
     const convertedFiatValue
-      = get(currencySymbol) === CURRENCY_USD
-        ? totalEntry.usdValue.toFixed()
-        : totalEntry.usdValue.multipliedBy(get(fiatExchangeRate)).toFixed();
+        = get(isCurrencyCurrencyUsd)
+          ? totalEntry.usdValue.toFixed()
+          : totalEntry.usdValue.multipliedBy(get(rate)).toFixed();
 
     set(total, convertedFiatValue);
   }
@@ -112,9 +120,7 @@ function updateStep(step: number) {
 
 function setTotal(number?: BigNumber) {
   assert(number);
-  const convertedFiatValue
-    = get(currencySymbol) === CURRENCY_USD ? number.toFixed() : number.multipliedBy(get(fiatExchangeRate)).toFixed();
-
+  const convertedFiatValue = number.multipliedBy(get(rate)).toFixed();
   set(total, convertedFiatValue);
 }
 
@@ -169,7 +175,21 @@ const suggestionsLabel = computed(() => ({
           v-model="total"
           variant="outlined"
           :error-messages="toMessages(v$.total)"
-        />
+          :disabled="fetchingRate"
+        >
+          <template
+            v-if="fetchingRate"
+            #append
+          >
+            <RuiProgress
+              circular
+              thickness="2"
+              variant="indeterminate"
+              color="primary"
+              size="16"
+            />
+          </template>
+        </AmountInput>
 
         <div class="text-rui-text-secondary text-caption">
           <i18n-t keypath="dashboard.snapshot.edit.dialog.total.warning">
@@ -201,6 +221,7 @@ const suggestionsLabel = computed(() => ({
                 class="text-2xl"
                 :value="number"
                 fiat-currency="USD"
+                :timestamp="timestamp"
               />
             </div>
           </RuiButton>

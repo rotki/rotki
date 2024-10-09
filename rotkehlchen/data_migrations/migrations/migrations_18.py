@@ -1,12 +1,23 @@
 import logging
 from typing import TYPE_CHECKING
 
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
+from rotkehlchen.chain.gnosis.modules.monerium.constants import (
+    V1_TO_V2_MONERIUM_MAPPINGS as GNOSIS_MONERIUM_MAPPINGS,
+)
+from rotkehlchen.chain.polygon_pos.modules.monerium.constants import (
+    V1_TO_V2_MONERIUM_MAPPINGS as POLYGON_MONERIUM_MAPPINGS,
+)
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
+from rotkehlchen.errors.asset import UnknownAsset
+from rotkehlchen.globaldb.cache import globaldb_set_general_cache_values
+from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.globaldb.utils import set_token_spam_protocol
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter, enter_exit_debug_log
-from rotkehlchen.types import Location
+from rotkehlchen.types import SPAM_PROTOCOL, CacheType, Location
 from rotkehlchen.utils.misc import address_to_bytes32
 
 if TYPE_CHECKING:
@@ -116,13 +127,57 @@ AND ((
     rotki.data.db.conn.execute('VACUUM;')  # also since this cleans up a lot of space vacuum
 
 
+@enter_exit_debug_log()
+def whitelist_monerium_assets(rotki: 'Rotkehlchen') -> None:
+    """Remove from the spam assets all the monerium tokens in
+    gnosis and polygon
+    """
+    globaldb = GlobalDBHandler()
+    tokens: set[EvmToken] = set()
+    monerium_tokens = set(GNOSIS_MONERIUM_MAPPINGS.keys())
+    monerium_tokens |= {new_asset.identifier for new_asset in GNOSIS_MONERIUM_MAPPINGS.values()}
+    monerium_tokens |= set(POLYGON_MONERIUM_MAPPINGS.keys())
+    monerium_tokens |= {new_asset.identifier for new_asset in POLYGON_MONERIUM_MAPPINGS.values()}
+    monerium_tokens |= {  # ethereum tokens
+        'eip155:1/erc20:0x3231Cb76718CDeF2155FC47b5286d82e6eDA273f',  # eure
+        'eip155:1/erc20:0x7ba92741Bf2A568abC6f1D3413c58c6e0244F8fD',  # gbpe
+        'eip155:1/erc20:0xBc5142e0CC5eB16b47c63B0f033d4c2480853a52',  # usde
+        'eip155:1/erc20:0xC642549743A93674cf38D6431f75d6443F88E3E2',  # iske
+    }
+    for legacy_id in monerium_tokens:
+        try:
+            tokens.add(EvmToken(legacy_id))
+        except UnknownAsset:
+            log.error(f'Skipping unknown legacy monerium asset {legacy_id} at data migration 18')
+
+    for token in tokens:
+        with globaldb.conn.write_ctx() as write_cursor:
+            globaldb_set_general_cache_values(  # add token to whitelist
+                write_cursor=write_cursor,
+                key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
+                values=(token.identifier,),
+            )
+
+            if token.protocol == SPAM_PROTOCOL:  # remove the spam protocol if it was set
+                set_token_spam_protocol(write_cursor=write_cursor, token=token, is_spam=False)
+
+        with rotki.data.db.user_write() as write_cursor:  # remove it from the ignored assets  # noqa: E501
+            rotki.data.db.remove_from_ignored_assets(
+                write_cursor=write_cursor,
+                asset=token,
+            )
+
+
 def data_migration_18(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:  # pylint: disable=unused-argument
     """
     Introduced at v1.35.1
 
-    Fix the issue of extra transactions saved in the DB from the graph queries
+    - Fix the issue of extra transactions saved in the DB from the graph queries
     for delegation to arbitrum
+    - Removes monerium tokens from spam
     """
-    progress_handler.set_total_steps(1)
+    progress_handler.set_total_steps(2)
     cleanup_extra_thegraph_txs(rotki)
+    progress_handler.new_step()
+    whitelist_monerium_assets(rotki)
     progress_handler.new_step()

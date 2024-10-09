@@ -226,7 +226,10 @@ function showDeleteConfirmation(item: IndexedLocationDataSnapshot) {
         <div class="font-bold text-h6 -mt-1">
           <AmountDisplay
             :value="total"
-            fiat-currency="USD"
+            :amount="total"
+            :price-asset="CURRENCY_USD"
+            :fiat-currency="CURRENCY_USD"
+            :timestamp="timestamp"
           />
         </div>
       </div>

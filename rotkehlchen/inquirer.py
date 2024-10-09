@@ -150,6 +150,7 @@ ASSETS_UNDERLYING_BTC = (
 CurrentPriceOracleInstance = Union[
     'Coingecko',
     'Cryptocompare',
+    'Defillama',
     'UniswapV3Oracle',
     'UniswapV2Oracle',
     'ManualCurrentOracle',
@@ -210,6 +211,8 @@ def get_underlying_asset_price(token: EvmToken) -> tuple[Price | None, CurrentPr
         price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_TUSD)
     elif token in ASSETS_UNDERLYING_BTC:
         price, oracle, _ = Inquirer.find_usd_price_and_oracle(A_BTC)
+    elif token == 'eip155:1/erc20:0x815C23eCA83261b6Ec689b60Cc4a58b54BC24D8D':  # vTHOR
+        price, oracle, _ = Inquirer.find_usd_price_and_oracle(Asset('eip155:1/erc20:0xa5f2211B9b8170F694421f2046281775E8468044'))  # THOR token  # noqa: E501
 
     # At this point we have to return the price if it's not None. If we don't do this and got
     # a price for a token that has underlying assets, the code will enter the if statement after
@@ -380,6 +383,7 @@ class Inquirer:
             A_FARM_RENBTC.identifier,
             A_FARM_CRVRENWBTC.identifier,
             A_3CRV.identifier,
+            'eip155:1/erc20:0x815C23eCA83261b6Ec689b60Cc4a58b54BC24D8D',  # vTHOR
         }
         try:
             Inquirer.usd = A_USD.resolve_to_fiat_asset()

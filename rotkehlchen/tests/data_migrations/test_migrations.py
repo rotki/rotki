@@ -7,6 +7,8 @@ from unittest.mock import patch
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
+from rotkehlchen.assets.asset import EvmToken
+from rotkehlchen.assets.resolver import AssetResolver
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.hop.constants import CPT_HOP
@@ -25,7 +27,9 @@ from rotkehlchen.db.constants import UpdateType
 from rotkehlchen.db.dbhandler import DBHandler
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.cache import globaldb_delete_general_cache_values
 from rotkehlchen.globaldb.handler import GlobalDBHandler
+from rotkehlchen.globaldb.utils import set_token_spam_protocol
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.icons import IconManager
@@ -34,7 +38,9 @@ from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.tests.utils.exchanges import check_saved_events_for_exchange
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.types import (
+    SPAM_PROTOCOL,
     SUPPORTED_EVM_EVMLIKE_CHAINS_TYPE,
+    CacheType,
     ChainID,
     ChecksumEvmAddress,
     EvmTokenKind,
@@ -675,6 +681,28 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
             tx_hash=tx_hash,
         )
 
+    # mark a few assets as spam
+    tokens = [
+        EvmToken('eip155:100/erc20:0x420CA0f9B9b604cE0fd9C18EF134C705e5Fa3430'),  # new eure
+        EvmToken('eip155:100/erc20:0x8E34bfEC4f6Eb781f9743D9b4af99CD23F9b7053'),  # new GBPe
+        EvmToken('eip155:100/erc20:0xcB444e90D8198415266c6a2724b7900fb12FC56E'),  # legacy eure
+        EvmToken('eip155:1/erc20:0x3231Cb76718CDeF2155FC47b5286d82e6eDA273f'),  # eure ethereum
+    ]
+    with GlobalDBHandler().conn.write_ctx() as write_cursor:
+        for token in tokens:
+            set_token_spam_protocol(write_cursor=write_cursor, token=token, is_spam=True)
+
+            # remove the asset from the whitelist if it was there
+            globaldb_delete_general_cache_values(
+                write_cursor=write_cursor,
+                key_parts=(CacheType.SPAM_ASSET_FALSE_POSITIVE,),
+                values=(token.identifier,),
+            )
+            AssetResolver.clean_memory_cache(token.identifier)
+
+    # add to ignored assets if it wasn't there
+    rotki.data.add_ignored_assets(assets=tokens)
+
     # add all the transactions that are irrelevant to us, emulating the problem
     # that all transactions of 0xF55041E37E12cD407ad00CE2910B8269B01263b9 were saved
     # in the DB
@@ -696,6 +724,14 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
     with rotki.data.db.conn.read_ctx() as cursor:
         assert {x[0] for x in cursor.execute('SELECT tx_hash FROM evm_transactions').fetchall()} == set(kept_txs + bad_txs)  # make sure they are all written in the DB  # noqa: E501
 
+        assert cursor.execute(  # make sure the given tokens were marked as ignored
+            'SELECT COUNT(*) FROM multisettings WHERE name="ignored_asset" AND value IN (?, ?, ?, ?)',  # noqa: E501
+            [token.identifier for token in tokens],
+        ).fetchone()[0] == len(tokens)
+
+        for token in tokens:  # ensure that they have been marked as spam
+            assert GlobalDBHandler.get_protocol_for_asset(token.identifier) == SPAM_PROTOCOL
+
     with patch(
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
         new=[MIGRATION_LIST[11]],
@@ -704,6 +740,13 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
 
     with rotki.data.db.conn.read_ctx() as cursor:
         result_kept_txs = {x[0] for x in cursor.execute('SELECT tx_hash FROM evm_transactions').fetchall()}  # noqa: E501
+        assert cursor.execute(  # now make sure they are no longer ignored
+            'SELECT COUNT(*) FROM multisettings WHERE name="ignored_asset" AND value IN (?, ?, ?, ?)',  # noqa: E501
+            [token.identifier for token in tokens],
+        ).fetchone()[0] == 0
+
+    for token in tokens:
+        assert GlobalDBHandler.get_protocol_for_asset(token.identifier) != SPAM_PROTOCOL
 
     assert result_kept_txs == set(kept_txs)  # after the migration see all irrelevant transactions are deleted  # noqa: E501
 

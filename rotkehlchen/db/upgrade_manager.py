@@ -2,7 +2,6 @@ import logging
 import os
 import shutil
 import traceback
-from tempfile import TemporaryDirectory
 from typing import TYPE_CHECKING
 
 from pysqlcipher3 import dbapi2 as sqlcipher
@@ -203,7 +202,15 @@ class DBUpgradeManager:
             4. If something went wrong during upgrade restore backup and quit
             5. If all went well set version and delete the backup
 
+        We do a WAL checkpoint at the start. That blocks until there is no database
+        writer and all readers are reading from the most recent database snapshot. It
+        then checkpoints all frames in the log file and syncs the database file.
+        FULL blocks concurrent writers while it is running, but readers can proceed.
+
+        Reason for this is to make sure the .db file is the only thing needed for the DB
+        backup as we only copy that file.
         """
+        self.db.conn.execute('PRAGMA wal_checkpoint(FULL);')
         with self.db.conn.read_ctx() as cursor:
             current_version = self.db.get_setting(cursor, 'version')
         if current_version != upgrade.from_version:
@@ -212,46 +219,38 @@ class DBUpgradeManager:
         progress_handler.new_round(version=to_version)
 
         # First make a backup of the DB
-        with TemporaryDirectory() as tmpdirname:
-            tmp_db_filename = f'{ts_now()}_rotkehlchen_db_v{upgrade.from_version}.backup'
-            tmp_db_path = os.path.join(tmpdirname, tmp_db_filename)
-            shutil.copyfile(
-                os.path.join(self.db.user_data_dir, USERDB_NAME),
-                tmp_db_path,
+        tmp_db_filename = f'{ts_now()}_rotkehlchen_db_v{upgrade.from_version}.backup'
+        shutil.copyfile(
+            os.path.join(self.db.user_data_dir, USERDB_NAME),
+            os.path.join(self.db.user_data_dir, tmp_db_filename),
+        )
+
+        # Add a flag to the db that an upgrade is happening
+        with self.db.user_write() as write_cursor:
+            self.db.set_setting(
+                write_cursor=write_cursor,
+                name='ongoing_upgrade_from_version',
+                value=upgrade.from_version,
             )
 
-            # Add a flag to the db that an upgrade is happening
-            with self.db.user_write() as write_cursor:
-                self.db.set_setting(
-                    write_cursor=write_cursor,
-                    name='ongoing_upgrade_from_version',
-                    value=upgrade.from_version,
-                )
-
-            try:
-                kwargs = upgrade.kwargs if upgrade.kwargs is not None else {}
-                upgrade.function(db=self.db, progress_handler=progress_handler, **kwargs)
-            except BaseException as e:
-                # Problem .. restore DB backup, log all info and bail out
-                error_message = (
-                    f'Failed at database upgrade from version {upgrade.from_version} to '
-                    f'{to_version}: {e!s}'
-                )
-                stacktrace = traceback.format_exc()
-                log.error(f'{error_message}\n{stacktrace}')
-                shutil.copyfile(
-                    tmp_db_path,
-                    os.path.join(self.db.user_data_dir, USERDB_NAME),
-                )
-                raise DBUpgradeError(error_message) from e
-
-            # even for success keep the backup of the previous db
+        try:
+            kwargs = upgrade.kwargs if upgrade.kwargs is not None else {}
+            upgrade.function(db=self.db, progress_handler=progress_handler, **kwargs)
+        except BaseException as e:
+            # Problem .. restore DB backup, log all info and bail out
+            error_message = (
+                f'Failed at database upgrade from version {upgrade.from_version} to '
+                f'{to_version}: {e!s}'
+            )
+            stacktrace = traceback.format_exc()
+            log.error(f'{error_message}\n{stacktrace}')
             shutil.copyfile(
-                tmp_db_path,
                 os.path.join(self.db.user_data_dir, tmp_db_filename),
+                os.path.join(self.db.user_data_dir, USERDB_NAME),
             )
+            raise DBUpgradeError(error_message) from e
 
-        # Upgrade success all is good
+        # Upgrade success all is good - Note: We keep the backups even for success
         with self.db.user_write() as cursor:
             cursor.execute('DELETE FROM settings WHERE name=?', ('ongoing_upgrade_from_version',))
             self.db.set_setting(write_cursor=cursor, name='version', value=to_version)

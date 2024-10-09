@@ -48,7 +48,12 @@ jobs:
           else
             echo "Branch $SOURCE_BRANCH does not exist on origin. Checking the $AUTHOR's fork..."
             git remote add author https://github.com/$AUTHOR/test-caching.git
-            git fetch author $SOURCE_BRANCH && git checkout -b $SOURCE_BRANCH author/$SOURCE_BRANCH || exit 0
+            git fetch author $SOURCE_BRANCH && git checkout -b $SOURCE_BRANCH author/$SOURCE_BRANCH
+            if [[ $? -ne 0 ]]; then
+                echo "No cassettes branch for this PR. Defaulting to $TARGET_BRANCH"
+                git checkout $TARGET_BRANCH
+                exit 0
+            fi
 
             if [ "`curl --silent "https://api.github.com/repos/rotki/test-caching/pulls?state=open&head=$AUTHOR:$SOURCE_BRANCH&base=$TARGET_BRANCH" | jq "length"`" == "0" ]; then
                 echo "Found the $SOURCE_BRANCH branch on $AUTHOR's test-caching fork. But no PR found. Aborting."

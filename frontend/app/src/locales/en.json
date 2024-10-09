@@ -1995,7 +1995,6 @@
               "amount": "The amount field cannot be empty",
               "asset": "The asset field cannot be empty",
               "category": "The category field cannot be empty",
-              "price": "The price field cannot be empty",
               "value": "The value field cannot be empty"
             },
             "title": "Balances Snapshot",

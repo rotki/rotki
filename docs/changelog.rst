@@ -2,9 +2,12 @@
 Changelog
 =========
 
+
 * :feature:`-` Gitcoin donations for more rounds will now be properly seen by rotki.
-* :feature:`7920` Rotki will now create calendar reminders for airdrop claim deadlines.
+* :feature:`7920` Rotki will now create calendar reminders for airdrop claim deadlines
+* :bug:`-` During user DB upgrade if there is an irregular shutdown the previous DB backup will be properly located in the rotki data user directory and not the system temp directory.
 * :feature:`-` Gnosis pay referral rewards will now be properly seen as referrals and not generic receive.
+* :feature:`-` The price of vTHOR will now be properly queried.
 * :bug:`8668` Changes the tag filter logic from OR to AND in the account view.
 * :bug:`-` Graph delegation log queries will now query a smaller amount of events. For users who had moved graph staking to Arbitrum and ended up having over 180k transactions in their DB, this should now be fixed and the DB size should be normal again.
 * :bug:`-` Fix an error querying the exit timestamp for the ethereum validators.
