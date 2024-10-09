@@ -94,7 +94,8 @@ def maybe_upgrade_globaldb(
         if db_version != upgrade.from_version:
             continue
 
-        # start the upgrade
+        # WAL checkpoint at start to make sure everything is in the file we copy for backup. For more info check comment in the user DB upgrade.  # noqa: E501
+        connection.execute('PRAGMA wal_checkpoint(FULL);')
         to_version = upgrade.from_version + 1
         # Create a backup
         tmp_db_filename = f'{ts_now()}_global_db_v{db_version}.backup'
