@@ -77,30 +77,29 @@ def _merge_data_yearn_vaults() -> tuple[list[dict[str, Any]] | None, str | None]
     """At the moment of writing the logic of ydemon doesn't support yearn v1 so we
     need to aggregate the information from two different apis and remove duplicates.
     """
-    msg = None
     data: list[dict[str, Any]] = []
     timeout_tuple = CachedSettings().get_timeout_tuple()
     for api_url in (YEARN_OLD_API, YDEMON_API):
         try:
             response = requests.get(api_url, timeout=timeout_tuple)
         except requests.exceptions.RequestException as e:
-            msg = f'Failed to obtain yearn vault information. {e!s}'
+            log.error(f'Request to {api_url} failed due to {e!s}')
+            return None, 'Failed to obtain yearn vault information'
 
         if response.status_code in (HTTPStatus.NOT_FOUND, HTTPStatus.SERVICE_UNAVAILABLE):
-            msg = 'Failed to obtain a response from the yearn API'
-        else:
-            try:
-                new_data = response.json()
-            except (DeserializationError, JSONDecodeError) as e:
-                msg = f"Failed to deserialize data from yearn's old api. {e!s}"
-            else:
-                if not isinstance(new_data, list):
-                    msg = f'Unexpected format from yearn vaults response. Expected a list, got {data}'  # noqa: E501
-                else:
-                    data.extend(response.json())
+            return None, 'Failed to obtain a proper response from the yearn API'
 
-        if msg is not None:
-            return None, msg
+        try:
+            new_data = response.json()
+        except (DeserializationError, JSONDecodeError) as e:
+            log.error(f'Failed to deserialize yearn api response {response.text} as JSON due to {e!s}')  # noqa: E501
+            return None, "Failed to deserialize data from yearn's old api"
+
+        if not isinstance(new_data, list):
+            log.error(f'Unexpected format from yearn vaults response. Expected a list, got {new_data}')  # noqa: E501
+            return None, 'Unexpected format from yearn vaults response'
+
+        data.extend(new_data)
 
     deduplicated_data, vaults_seen = [], set()
     for vault in data:
