@@ -32,6 +32,7 @@ export interface AddressesAndEvmChainPayload {
 export interface ChainAndTxHash {
   readonly chain: string;
   readonly txHash: string;
+  readonly deleteCustom?: boolean;
 }
 
 export interface EvmChainAndTxHash {

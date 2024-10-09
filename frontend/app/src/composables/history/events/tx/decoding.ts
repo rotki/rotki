@@ -1,3 +1,4 @@
+import { groupBy } from 'lodash-es';
 import { TaskType } from '@/types/task-type';
 import { snakeCaseTransformer } from '@/services/axios-tranformers';
 import { Section } from '@/types/status';
@@ -171,37 +172,28 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     );
   };
 
-  const pullAndRedecodeTransaction = async (transaction: EvmChainAndTxHash): Promise<void> => {
-    resetUndecodedTransactionsStatus();
-    updateUndecodedTransactionsStatus({
-      [transaction.evmChain]: {
-        chain: transaction.evmChain,
-        total: 1,
-        processed: 0,
-      },
-    });
-
-    const chain = getChain(transaction.evmChain);
-    const type = isEvmLikeChains(chain) ? TransactionChainType.EVMLIKE : TransactionChainType.EVM;
-
-    const newPayload: (ChainAndTxHash | EvmChainAndTxHash)[] = [{
-      ...(type === TransactionChainType.EVM ? { evmChain: transaction.evmChain } : { chain }),
-      txHash: transaction.txHash,
-      deleteCustom: transaction.deleteCustom,
-    }];
-
+  const pullAndRecodeTransactionsByType = async (payload: (ChainAndTxHash | EvmChainAndTxHash)[], type: TransactionChainType): Promise<void> => {
     try {
       const taskType = TaskType.TRANSACTIONS_DECODING;
-      const { taskId } = await pullAndRecodeTransactionRequest(newPayload, type);
+      const { taskId } = await pullAndRecodeTransactionRequest(payload, type);
 
-      const taskMeta = {
+      let taskMeta = {
         title: t('actions.transactions_redecode.task.title'),
-        description: t('actions.transactions_redecode.task.description', {
-          tx: transaction.txHash,
-          chain,
+        description: t('actions.transactions_redecode.task.single_description', {
+          number: payload.length,
         }),
-        tx: transaction,
       };
+
+      if (payload.length === 1) {
+        const data = payload[0];
+        taskMeta = {
+          title: t('actions.transactions_redecode.task.title'),
+          description: t('actions.transactions_redecode.task.description', {
+            tx: data.txHash,
+            chain: 'chain' in data ? data.chain : getChain(data.evmChain),
+          }),
+        };
+      }
 
       const { result } = await awaitTask<boolean, TaskMeta>(taskId, taskType, taskMeta, true);
 
@@ -222,12 +214,62 @@ export const useHistoryTransactionDecoding = createSharedComposable(() => {
     }
   };
 
+  const pullAndRedecodeTransactions = async (transactions: EvmChainAndTxHash[]): Promise<void> => {
+    resetUndecodedTransactionsStatus();
+
+    const groupped = groupBy(transactions, 'evmChain');
+    Object.entries(groupped).forEach(([chain, transactions]) => {
+      updateUndecodedTransactionsStatus({
+        [chain]: {
+          chain,
+          total: transactions.length,
+          processed: 0,
+        },
+      });
+    });
+
+    const evmChainsPayload: EvmChainAndTxHash[] = [];
+    const evmLikeChainsPayload: ChainAndTxHash[] = [];
+
+    transactions.forEach((item) => {
+      const chain = getChain(item.evmChain);
+      const type = isEvmLikeChains(chain) ? TransactionChainType.EVMLIKE : TransactionChainType.EVM;
+
+      if (type === TransactionChainType.EVM) {
+        evmChainsPayload.push(
+          {
+            evmChain: item.evmChain,
+            txHash: item.txHash,
+            deleteCustom: item.deleteCustom,
+          },
+        );
+      }
+      else {
+        evmLikeChainsPayload.push(
+          {
+            chain,
+            txHash: item.txHash,
+            deleteCustom: item.deleteCustom,
+          },
+        );
+      }
+    });
+
+    if (evmChainsPayload.length > 0) {
+      await pullAndRecodeTransactionsByType(evmChainsPayload, TransactionChainType.EVM);
+    }
+
+    if (evmLikeChainsPayload.length > 0) {
+      await pullAndRecodeTransactionsByType(evmLikeChainsPayload, TransactionChainType.EVMLIKE);
+    }
+  };
+
   return {
     decodeTransactionsTask,
     checkMissingEventsAndRedecode,
     fetchUndecodedTransactionsBreakdown,
     fetchUndecodedTransactionsStatus,
-    pullAndRedecodeTransaction,
+    pullAndRedecodeTransactions,
     redecodeTransactions,
   };
 });

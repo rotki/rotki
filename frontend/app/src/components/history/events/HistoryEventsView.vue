@@ -90,7 +90,7 @@ const { isLoading: isSectionLoading } = useStatusStore();
 const { fetchHistoryEvents } = useHistoryEvents();
 
 const { refreshTransactions } = useHistoryTransactions();
-const { pullAndRedecodeTransaction, fetchUndecodedTransactionsStatus, redecodeTransactions } = useHistoryTransactionDecoding();
+const { pullAndRedecodeTransactions, fetchUndecodedTransactionsStatus, redecodeTransactions } = useHistoryTransactionDecoding();
 const historyEventMappings = useHistoryEventMappings();
 
 const sectionLoading = isSectionLoading(Section.HISTORY_EVENT);
@@ -255,7 +255,7 @@ async function redecodeAllEventsHandler(): Promise<void> {
 
 async function forceRedecodeEvmEvents(data: EvmChainAndTxHash): Promise<void> {
   set(currentAction, 'decode');
-  await pullAndRedecodeTransaction(data);
+  await pullAndRedecodeTransactions([data]);
   await fetchData();
 }
 
@@ -330,6 +330,14 @@ function onShowDialog(type: 'decode' | 'protocol-refresh'): void {
     set(protocolCacheStatusDialogOpen, true);
 }
 
+async function redecodePageTransactions(): Promise<void> {
+  const evmEvents = get(groups).data.filter(isEvmEvent);
+  const payload = evmEvents.map(item => toEvmChainAndTxHash(item));
+
+  await pullAndRedecodeTransactions(payload);
+  await fetchUndecodedTransactionsStatus();
+  await fetchData();
+}
 watchImmediate(route, async (route) => {
   if (route.query.openDecodingStatusDialog) {
     set(decodingStatusDialogOpen, true);
@@ -420,6 +428,7 @@ onUnmounted(() => {
         :hide-account-selector="useExternalAccountFilter"
         @update:accounts="onFilterAccountsChanged($event)"
         @redecode="redecodeAllEvents()"
+        @redecode-page="redecodePageTransactions()"
       />
 
       <HistoryEventsTable

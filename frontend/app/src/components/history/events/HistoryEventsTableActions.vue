@@ -20,7 +20,8 @@ withDefaults(defineProps<{
 });
 
 const emit = defineEmits<{
-  redecode: [];
+  'redecode': [];
+  'redecode-page': [];
 }>();
 
 const { t } = useI18n();
@@ -30,6 +31,12 @@ const showIgnoredAssets = useRefPropVModel(toggles, 'showIgnoredAssets');
 
 const { txChains } = useSupportedChains();
 const txChainIds = useArrayMap(txChains, x => x.id);
+
+const isDevelopment = checkIfDevelopment();
+
+function redecodePageTransactions(): void {
+  emit('redecode-page');
+}
 </script>
 
 <template>
@@ -62,14 +69,28 @@ const txChainIds = useArrayMap(txChains, x => x.id);
       />
     </template>
 
-    <RuiButton
+    <RuiButtonGroup
       color="primary"
-      class="!py-2"
       :disabled="processing"
-      @click="emit('redecode')"
+      :class="{
+        '!divide-rui-grey-200': processing,
+      }"
     >
-      {{ t('transactions.events_decoding.redecode_all') }}
-    </RuiButton>
+      <RuiButton
+        class="!py-2"
+        @click="emit('redecode')"
+      >
+        {{ t('transactions.events_decoding.redecode_all') }}
+      </RuiButton>
+
+      <RuiButton
+        v-if="isDevelopment"
+        class="!py-2"
+        @click="redecodePageTransactions()"
+      >
+        {{ t('transactions.actions.redecode_page') }}
+      </RuiButton>
+    </RuiButtonGroup>
 
     <HistoryEventsExport :filters="exportParams" />
 
