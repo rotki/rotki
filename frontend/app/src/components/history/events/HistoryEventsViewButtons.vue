@@ -13,7 +13,6 @@ const emit = defineEmits<{
   'refresh': [];
   'reload': [payload: EvmChainAndTxHash];
   'show:form': [payload: ShowEventForm];
-  'redecode-page': [];
 }>();
 
 const { t } = useI18n();
@@ -27,12 +26,6 @@ setTxFormPostSubmitFunc((payload) => {
 
 function addTransactionHash(): void {
   setTxFormOpenDialog(true);
-}
-
-const isDevelopment = checkIfDevelopment();
-
-function redecodePageTransactions(): void {
-  emit('redecode-page');
 }
 </script>
 
@@ -124,18 +117,6 @@ function redecodePageTransactions(): void {
           <RuiIcon name="add-line" />
         </template>
         {{ t('transactions.dialog.add_tx') }}
-      </RuiButton>
-
-      <RuiButton
-        v-if="isDevelopment"
-        variant="list"
-        :disabled="loading"
-        @click="redecodePageTransactions()"
-      >
-        <template #prepend>
-          <RuiIcon name="refresh-line" />
-        </template>
-        {{ t('transactions.actions.redecode_page') }}
       </RuiButton>
     </div>
   </RuiMenu>

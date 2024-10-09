@@ -77,7 +77,6 @@ const decodingStatusDialogPersistent = ref<boolean>(false);
 const decodingStatusDialogOpen = ref<boolean>(false);
 const protocolCacheStatusDialogOpen = ref<boolean>(false);
 const currentAction = ref<'decode' | 'query'>('query');
-const currentPageEvents = ref<HistoryEventEntry[]>([]);
 
 const { isTaskRunning } = useTaskStore();
 const { show } = useConfirmStore();
@@ -91,7 +90,7 @@ const { isLoading: isSectionLoading } = useStatusStore();
 const { fetchHistoryEvents } = useHistoryEvents();
 
 const { refreshTransactions } = useHistoryTransactions();
-const { pullAndRedecodeTransaction, fetchUndecodedTransactionsStatus, redecodeTransactions } = useHistoryTransactionDecoding();
+const { pullAndRedecodeTransactions, fetchUndecodedTransactionsStatus, redecodeTransactions } = useHistoryTransactionDecoding();
 const historyEventMappings = useHistoryEventMappings();
 
 const sectionLoading = isSectionLoading(Section.HISTORY_EVENT);
@@ -256,7 +255,7 @@ async function redecodeAllEventsHandler(): Promise<void> {
 
 async function forceRedecodeEvmEvents(data: EvmChainAndTxHash): Promise<void> {
   set(currentAction, 'decode');
-  await pullAndRedecodeTransaction(data);
+  await pullAndRedecodeTransactions([data]);
   await fetchData();
 }
 
@@ -332,12 +331,10 @@ function onShowDialog(type: 'decode' | 'protocol-refresh'): void {
 }
 
 async function redecodePageTransactions(): Promise<void> {
-  const evmEvents = currentPageEvents.value.filter(isEvmEvent);
-  const { pullAndRedecodeTransaction, fetchUndecodedTransactionsStatus } = useHistoryTransactionDecoding();
+  const evmEvents = get(groups).data.filter(isEvmEvent);
+  const payload = evmEvents.map(item => toEvmChainAndTxHash(item));
 
-  for (const event of evmEvents) {
-    await pullAndRedecodeTransaction(toEvmChainAndTxHash(event));
-  }
+  await pullAndRedecodeTransactions(payload);
   await fetchUndecodedTransactionsStatus();
   await fetchData();
 }
@@ -403,7 +400,6 @@ onUnmounted(() => {
         @refresh="refresh(true)"
         @reload="fetchAndRedecodeEvents($event)"
         @show:form="showForm($event)"
-        @redecode-page="redecodePageTransactions()"
       />
     </template>
 
@@ -432,6 +428,7 @@ onUnmounted(() => {
         :hide-account-selector="useExternalAccountFilter"
         @update:accounts="onFilterAccountsChanged($event)"
         @redecode="redecodeAllEvents()"
+        @redecode-page="redecodePageTransactions()"
       />
 
       <HistoryEventsTable
@@ -443,7 +440,6 @@ onUnmounted(() => {
         @show:form="showForm($event)"
         @refresh="fetchAndRedecodeEvents($event)"
         @set-page="setPage($event)"
-        @current-page-events="currentPageEvents = $event"
       >
         <template #query-status="{ colspan, eventsLoading }">
           <HistoryQueryStatus
