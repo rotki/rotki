@@ -1257,7 +1257,8 @@
       },
       "soft_reset": "Soft Reset",
       "soft_reset_hint": "This option will not reset assets that were added by the user.",
-      "subtitle": "Delete custom assets and reset assets database to its initial state. Caution: This operation might affect other users in the same system using the database for assets.",
+      "subtitle": "Delete custom assets and reset assets database to its initial state.",
+      "warning": "Caution: This operation might affect other users in the same system using the database for assets.",
       "success": {
         "description": "The asset database has been successfully restored. You will now need to re-login to apply the changes.",
         "title": "Asset database restore"
@@ -2894,6 +2895,32 @@
         "invalid_frequency": "Period must be between {start} and {end} hours",
         "non_empty": "Please enter the number of hours"
       }
+    }
+  },
+  "database_settings": {
+    "database_info": {
+      "title": "Database Information",
+      "subtitle": "View your database information"
+    },
+    "manage_data": {
+      "title": "Manage Data",
+      "subtitle": "Manage your data"
+    },
+    "user_backups": {
+      "title": "User Database Backups",
+      "subtitle": "View your database backups"
+    },
+    "skipped_events": {
+      "title": "Skipped External Events",
+      "subtitle": "View and manage skipped external events"
+    },
+    "import_export": {
+      "title": "Export/Import User Assets",
+      "subtitle": "Export or import your user assets"
+    },
+    "asset_database": {
+      "title": "Asset Database",
+      "subtitle": "Manage the asset database"
     }
   },
   "generate": {
