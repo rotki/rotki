@@ -2595,13 +2595,13 @@ Request specific EVMlike transaction repulling and event decoding
 
       {
           "async_query": true,
-          "chain": "zksync_lite",
-          "tx_hash": "0xe33041d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9742"
+          "transactions": [{
+              "chain": "zksync_lite",
+              "tx_hash": "0xe33041d0ae336cd4c588a313b7f8649db07b79c5107424352b9e52a6ea7a9742"
+          }]
       }
 
-   :reqjson list data[optional]: A list of data to decode. Each data entry consists of a ``"chain"`` key specifying the evmlike chain for which to decode tx_hashes and a ``"tx_hashes"`` key which is an optional list of transaction hashes to request decoding for in that chain. If the list of transaction hashes is not passed then all transactions for that chain are decoded. Passing an empty list is not allowed.
-   :reqjson str evm_chain: A string specifying the chain for which the transaction is. Can only be zksync lite for now.
-   :reqjson str tx_hash: The transaction hash whose data to repull and redecode events
+   :reqjson list transactions: A list of data to decode. Each data entry consists of a ``"chain"`` key specifying the evmlike chain for which to decode and a ``"tx_hash"`` key which is the tx_hash to decode.
    :reqjson bool async_query: Boolean denoting whether this is an asynchronous query or not
 
 
@@ -2617,7 +2617,7 @@ Request specific EVMlike transaction repulling and event decoding
       }
 
 
-   :statuscode 200: Transaction successfully decoded.
+   :statuscode 200: Transactions successfully decoded.
    :statuscode 400: Provided JSON is in some way malformed
    :statuscode 409: Given hash does not correspond to a transaction according to the nodes we contacted.
    :statuscode 500: Internal rotki error

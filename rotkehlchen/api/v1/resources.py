@@ -674,13 +674,11 @@ class EvmlikeTransactionsResource(BaseMethodView):
     def put(
             self,
             async_query: bool,
-            tx_hash: EVMTxHash,
-            chain: EvmlikeChain,
+            transactions: list[dict[str, Any]],
     ) -> Response:
         return self.rest_api.decode_evmlike_transactions(
             async_query=async_query,
-            tx_hash=tx_hash,
-            chain=chain,
+            transactions=[(x['chain'], x['tx_hash']) for x in transactions],
         )
 
 

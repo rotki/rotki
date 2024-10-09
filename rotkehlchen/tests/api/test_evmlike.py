@@ -415,8 +415,10 @@ def test_decode_pending_evmlike(rotkehlchen_api_server: 'APIServer', zksync_lite
         rotkehlchen_api_server,
         'evmliketransactionsresource',
     ), json={
-        'chain': 'zksync_lite',
-        'tx_hash': tx_hash1.hex(),  # pylint: disable=no-member
+        'transactions': [{
+            'chain': 'zksync_lite',
+            'tx_hash': tx_hash1.hex(),  # pylint: disable=no-member
+        }],
     })
     assert_simple_ok_response(response)  # see all is fine
 

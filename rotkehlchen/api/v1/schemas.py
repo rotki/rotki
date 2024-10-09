@@ -392,9 +392,16 @@ class EvmTransactionDecodingSchema(AsyncQueryArgumentSchema):
     delete_custom = fields.Boolean(load_default=False)
 
 
-class EvmlikeTransactionDecodingSchema(AsyncQueryArgumentSchema):
+class EvmLikeTransactionSchema(Schema):
     chain = StrEnumField(enum_class=EvmlikeChain, required=True)
     tx_hash = EVMTransactionHashField(required=True)
+
+
+class EvmlikeTransactionDecodingSchema(AsyncQueryArgumentSchema):
+    transactions = fields.List(
+        fields.Nested(EvmLikeTransactionSchema),
+        validate=lambda data: len(data) != 0,
+    )
 
 
 class EvmPendingTransactionDecodingSchema(AsyncIgnoreCacheQueryArgumentSchema):
