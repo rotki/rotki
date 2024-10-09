@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` During user DB upgrade if there is an irregular shutdown the previous DB backup will be properly located in the rotki data user directory and not the system temp directory.
 * :feature:`-` Gnosis pay referral rewards will now be properly seen as referrals and not generic receive.
 * :feature:`-` The price of vTHOR will now be properly queried.
 * :bug:`8668` Changes the tag filter logic from OR to AND in the account view.
