@@ -110,14 +110,14 @@ watch([enabled, multiplier], setData);
             </div>
           </div>
         </label>
-        <div class="flex items-center border-t border-default p-4">
+        <div class="border-t border-default p-4 flex flex-col gap-4">
           <SettingsOption
             #default="{ updateImmediate: updateScramble }"
             :class="$style.scrambler__toggle"
             setting="scrambleData"
             session-setting
           >
-            <RuiCheckbox
+            <RuiSwitch
               v-model="scrambleData"
               color="secondary"
               size="sm"
@@ -125,10 +125,10 @@ watch([enabled, multiplier], setData);
               hide-details
               @update:model-value="updateScramble($event)"
             >
-              <span class="text-white">
+              <span class="text-sm">
                 {{ t('user_dropdown.change_privacy_mode.scramble.label') }}
               </span>
-            </RuiCheckbox>
+            </RuiSwitch>
           </SettingsOption>
 
           <SettingsOption

@@ -51,25 +51,32 @@ onMounted(() => {
 <template>
   <div>
     <SettingsOption
-      #default="{ error, success, update }"
       class="mt-1"
       :setting="setting"
       :transform="transform"
       @updated="restart()"
       @finished="resetValue()"
     >
-      <RuiTextField
-        v-model="inputValue"
-        variant="outlined"
-        color="primary"
-        :label="label"
-        :hint="hint"
-        type="number"
-        :min="min"
-        :success-messages="success"
-        :error-messages="error || toMessages(v$.inputValue)"
-        @update:model-value="callIfValid($event, update)"
-      />
+      <template #title>
+        {{ label }}
+      </template>
+      <template #subtitle>
+        {{ hint }}
+      </template>
+      <template
+        #default="{ error, success, update }"
+      >
+        <RuiTextField
+          v-model="inputValue"
+          variant="outlined"
+          color="primary"
+          type="number"
+          :min="min"
+          :success-messages="success"
+          :error-messages="error || toMessages(v$.inputValue)"
+          @update:model-value="callIfValid($event, update)"
+        />
+      </template>
     </SettingsOption>
   </div>
 </template>

@@ -10,9 +10,9 @@ definePage({
 </script>
 
 <template>
-  <div class="accounting-settings flex flex-col gap-8">
+  <SettingsPage class="accounting-settings">
     <AccountingRuleSetting />
     <AccountingTradeSettings />
     <AccountingCsvExportSetting />
-  </div>
+  </SettingsPage>
 </template>
