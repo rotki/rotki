@@ -12,7 +12,6 @@ from rotkehlchen.constants import ONE
 from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.externalapis.utils import read_integer
 from rotkehlchen.globaldb.cache import (
     globaldb_get_unique_cache_value,
     globaldb_set_unique_cache_value,
@@ -25,7 +24,6 @@ from rotkehlchen.types import (
     CacheType,
     ChainID,
     EvmTokenKind,
-    Timestamp,
 )
 
 if TYPE_CHECKING:
@@ -150,20 +148,6 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
             continue
 
         try:
-            block_data = ethereum_inquirer.get_block_by_number(vault['inception'])
-            block_timestamp = Timestamp(read_integer(block_data, 'timestamp', 'yearn vault query'))
-        except (KeyError, DeserializationError, RemoteError) as e:
-            msg = str(e)
-            if isinstance(e, KeyError):
-                msg = f'missing key {msg}'
-
-            log.error(
-                f'Failed to store token information for yearn {vault_type} vault due to '
-                f'{msg}. Vault: {vault}. Continuing without vault start timestamp.',
-            )
-            block_timestamp = None  # ydemon api doesn't provide this information
-
-        try:
             underlying_token = get_or_create_evm_token(
                 userdb=db,
                 evm_address=string_to_evm_address(vault['token']['address']),
@@ -186,7 +170,6 @@ def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -
                     token_kind=EvmTokenKind.ERC20,
                     weight=ONE,
                 )],
-                started=block_timestamp,
                 encounter=TokenEncounterInfo(description=f'Querying {vault_type} balances', should_notify=False),  # noqa: E501
             )
         except KeyError as e:

@@ -19,7 +19,7 @@ from rotkehlchen.globaldb.cache import (
 )
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.tests.utils.mock import MockResponse
-from rotkehlchen.types import YEARN_VAULTS_V2_PROTOCOL, CacheType, ChainID, Timestamp
+from rotkehlchen.types import YEARN_VAULTS_V2_PROTOCOL, CacheType, ChainID
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
@@ -80,7 +80,6 @@ def test_yearn_api(database, ethereum_inquirer):
     assert token.name == 'yvCurve-STG-USDC 0.4.3'
     assert token.symbol == 'yvCurve-STG-USDC'
     assert token.protocol == YEARN_VAULTS_V2_PROTOCOL
-    assert token.started == Timestamp(1654174125)
 
     # token in ydemon but not in the old api
     token = GlobalDBHandler.get_evm_token(
