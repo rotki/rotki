@@ -66,22 +66,27 @@ const { status, pending, showConfirmation } = useCacheClear<PurgeableImageCache>
 </script>
 
 <template>
-  <div class="flex items-center gap-4">
-    <div class="flex flex-col md:flex-col md:gap-4 flex-1">
+  <SettingsItem>
+    <template #title>
+      {{ t('data_management.purge_images_cache.title') }}
+    </template>
+    <template #subtitle>
+      {{ t('data_management.purge_images_cache.subtitle') }}
+    </template>
+    <div class="flex flex-col gap-4">
       <RuiAutoComplete
         v-model="source"
-        class="flex-1"
         variant="outlined"
         :label="t('data_management.purge_images_cache.select_image_source')"
         :options="purgable"
         text-attr="text"
         key-attr="id"
+        hide-details
         :disabled="pending"
       />
       <AssetSelect
         v-if="source === PurgeableImageCache.ASSET_ICONS"
         v-model="assetToClear"
-        class="flex-1"
         outlined
         :label="t('data_management.purge_images_cache.label.asset_to_clear')"
         :hint="t('data_management.purge_images_cache.hint')"
@@ -89,7 +94,6 @@ const { status, pending, showConfirmation } = useCacheClear<PurgeableImageCache>
       <RuiAutoComplete
         v-else
         v-model="ensToClear"
-        class="flex-1"
         :options="ensNamesList"
         variant="outlined"
         chips
@@ -99,28 +103,27 @@ const { status, pending, showConfirmation } = useCacheClear<PurgeableImageCache>
         :hint="t('data_management.purge_images_cache.hint')"
       />
     </div>
-    <RuiTooltip
-      :popper="{ placement: 'top' }"
-      :open-delay="400"
-      class="-mt-6"
-    >
-      <template #activator>
-        <RuiButton
-          variant="text"
-          icon
-          :disabled="!source || pending"
-          :loading="pending"
-          @click="showConfirmation(source)"
-        >
-          <RuiIcon name="delete-bin-line" />
-        </RuiButton>
-      </template>
-      <span> {{ t('data_management.purge_images_cache.tooltip') }} </span>
-    </RuiTooltip>
-  </div>
-  <ActionStatusIndicator
-    v-if="status"
-    class="mt-4"
-    :status="status"
-  />
+
+    <ActionStatusIndicator
+      v-if="status"
+      :status="status"
+    />
+
+    <div class="flex justify-end">
+      <RuiButton
+        :disabled="!source || pending"
+        :loading="pending"
+        color="error"
+        @click="showConfirmation(source)"
+      >
+        <div class="flex items-center gap-2">
+          <RuiIcon
+            name="delete-bin-line"
+            size="16"
+          />
+          <span> {{ t('purge_selector.tooltip') }} </span>
+        </div>
+      </RuiButton>
+    </div>
+  </SettingsItem>
 </template>

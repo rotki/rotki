@@ -3,15 +3,18 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <RuiCard>
-    <template #header>
+  <SettingsItem>
+    <template #title>
       {{ t('asset_update.restore.title') }}
     </template>
-    <template #subheader>
+    <template #subtitle>
       {{ t('asset_update.restore.subtitle') }}
     </template>
-    <template #footer>
+    <div class="flex flex-col gap-4">
+      <RuiAlert type="warning">
+        {{ t('asset_update.restore.warning') }}
+      </RuiAlert>
       <RestoreAssetDbButton />
-    </template>
-  </RuiCard>
+    </div>
+  </SettingsItem>
 </template>

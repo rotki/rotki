@@ -1031,13 +1031,11 @@
         "title": "Reset assets database"
       },
       "hard_reset": "Ολική Επαναφορά",
-      "hard_reset_hint": "Αυτή η επιλογή εκτος άλλων θα αφαιρέσει όλα τα assets που εισαχθήκανε απο τον χρήστη",
       "hard_restore_confirmation": {
         "message": "There are assets that will be deleted and might cause an inconsistent state in this account or other accounts in the system. Confirm this action only if you know what you are doing.",
         "title": "Dangerous operation"
       },
       "soft_reset": "Μερική Επαναφορά",
-      "soft_reset_hint": "Αυτή η επιλογή δεν θα επηρεάσει assets που εισαχθήκανε απο τον χρήστη.",
       "subtitle": "Delete custom assets and reset assets database to its initial state. Caution: This operation might affect other users in the same system using the database for assets.",
       "success": {
         "description": "The asset database has been successfully restored. You will now need to re-login to apply the changes.",
@@ -1226,11 +1224,6 @@
   },
   "backend_settings_button": {
     "tooltip": "Change the backend settings. Changing the settings will restart the rotki backend"
-  },
-  "backup_manager": {
-    "backup_button": "Create new Backup",
-    "delete_selected": "Delete selected Backups",
-    "title": "User Database Backups"
   },
   "balancer": {
     "loading": "Please wait while your liquidity pools are getting loaded...",
@@ -1699,8 +1692,7 @@
       "select_image_source": "Select image cache source to clear",
       "subtitle": "Allows you to purge image cached by rotki",
       "success": "Cache was successfully cleared",
-      "title": "Purge Images Cache",
-      "tooltip": "Purge the cached images for the selected source"
+      "title": "Purge Images Cache"
     },
     "refresh_cache": {
       "confirm": {
@@ -1756,19 +1748,6 @@
       "message": "There was a problem loading the list of available backups: {message}",
       "title": "Database Backup load"
     }
-  },
-  "database_info_display": {
-    "directory": "Database Directory:",
-    "globaldb": "Global Database",
-    "globaldb_assets": "Assets version:",
-    "globaldb_schema": "Schema version:",
-    "title": "Database Info",
-    "userdb": "User Database",
-    "userdb_size": "Size on disk:",
-    "userdb_version": "Database Version:"
-  },
-  "database_manager": {
-    "refresh_tooltip": "Refresh the database backup list"
   },
   "date_format_help": {
     "directive": {
@@ -2770,7 +2749,6 @@
     "import": {
       "subtitle": "Restore user assets from a zip archive"
     },
-    "title": "Export/Import User Assets",
     "warning": "This functionality is designed to allow you to easily move your assets from one instance of rotki to another. It requires both instances to be of the same version. Using this functionality across different versions might result in errors."
   },
   "managed_asset_content": {
@@ -3477,7 +3455,6 @@
       "hint": "Αδειάστε αυτό το πεδίο για να αφαιρέσετε τα δεδομένα για όλες τις μονάδες defi"
     },
     "label": "Επιλέξτε μια πηγή δεδομένων",
-    "tooltip": "Εκκαθάριση των αποθηκευμένων δεδομένων για την επιλεγμένη πηγή",
     "transactions": "Συναλλαγές"
   },
   "queried_address_dialog": {
@@ -3797,8 +3774,7 @@
             "some": "{successful} από {total} αγνοημένα εξωτερικά συμβάντα έχουν επεξεργαστεί",
             "title": "Επεξεργασία αγνοημένων συμβάντων"
           }
-        },
-        "title": "Αγνοημένα εξωτερικά συμβάντα"
+        }
       },
       "view": {
         "hide": "Hide events",
