@@ -12,7 +12,6 @@ const { t } = useI18n();
 <template>
   <SettingsOption
     setting="autoDetectTokens"
-    class="mb-4"
     :error-message="t('general_settings.auto_detect_tokens.validation.error')"
   >
     <template #title>

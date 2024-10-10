@@ -107,6 +107,7 @@ onUnmounted(() => {
     >
       <RuiTabs
         vertical
+        indicator-position="start"
         color="primary"
       >
         <RuiTab

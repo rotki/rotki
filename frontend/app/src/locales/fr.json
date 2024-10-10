@@ -2460,7 +2460,7 @@
       },
       "labels": {
         "floating_precision": "Précision flottante",
-        "main_currency": "Sélectionner la devise principale",
+        "main_currency": "Devise principale",
         "main_currency_subtitle": "Sélectionnez comme devise principale"
       },
       "title": "Paramètres des montants"
@@ -2507,7 +2507,6 @@
       }
     },
     "labels": {
-      "balance_saving_frequency": "Fréquence de sauvegarde des données de solde en heures",
       "btc_derivation_gap": "Limite d'écart de dérivation BTC",
       "date_display_format": "Format d'affichage de la date",
       "date_input_format": "Format d'entrée de la date",
@@ -2563,12 +2562,6 @@
     },
     "title": "Paramètres généraux",
     "validation": {
-      "balance_frequency": {
-        "error": "Erreur lors de la configuration de la fréquence de sauvegarde des données de solde sur {frequency}",
-        "invalid_frequency": "La fréquence doit être comprise entre {start} et {end} heures",
-        "non_empty": "Veuillez entrer le nombre d'heures",
-        "success": "La fréquence de sauvegarde des données est définie sur {frequency} heures"
-      },
       "btc_derivation_gap": {
         "error": "Erreur lors de la configuration de la limite d'écart de dérivation BTC",
         "success": "La limite d'écart de dérivation BTC a été modifiée avec succès en {limit}"

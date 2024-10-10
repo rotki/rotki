@@ -14,13 +14,8 @@ const { t } = useI18n();
     <AutoDetectTokensSetting />
     <DisplayDateInLocaltimeSetting />
     <AskUserUponSizeDiscrepancySetting />
-    <SettingsItem>
-      <template #title>
-        {{ t('general_settings.version_update_check.title') }}
-      </template>
-      <VersionUpdateFrequencySetting />
-      <BalanceSaveFrequencySetting />
-    </SettingsItem>
+    <VersionUpdateFrequencySetting />
+    <BalanceSaveFrequencySetting />
     <SettingsItem>
       <template #title>
         {{ t('general_settings.labels.evm_chains') }}
