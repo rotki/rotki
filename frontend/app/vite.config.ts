@@ -94,7 +94,7 @@ export default defineConfig({
           '@rotki/ui-library': ['useRotkiTheme', 'useBreakpoint', 'contextColors'],
         },
       ],
-      dts: 'src/auto-imports.d.ts',
+      dts: './auto-imports.d.ts',
       dirs: ['src/composables/**', 'src/api/**', 'src/store/**', 'src/utils/**', 'shared/**'],
       vueTemplate: true,
       injectAtEnd: true,

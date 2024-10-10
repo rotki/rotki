@@ -13,6 +13,7 @@
   "include": [
     "env.d.ts",
     "components.d.ts",
+    "auto-imports.d.ts",
     "typed-router.d.ts",
     "src/**/*",
     "src/**/*.vue",
@@ -24,8 +25,5 @@
     "**/.*",
     "tests/**/*",
     "src/**/__tests__/*"
-  ],
-  "vueCompilerOptions": {
-    "target": 3.4
-  }
+  ]
 }
