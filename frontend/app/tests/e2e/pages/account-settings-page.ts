@@ -1,10 +1,10 @@
-export class UserSecuritySettingsPage {
+export class AccountSettingsPage {
   visit() {
     cy.get('.user-dropdown').click();
     cy.get('[data-cy=user-dropdown]').should('exist');
     cy.get('.user-dropdown__settings').click();
     cy.get('[data-cy=user-dropdown]').should('not.exist');
-    cy.get('a.settings__data-security').click();
+    cy.get('a.settings__account').click();
   }
 
   changePassword(currentPassword: string, newPassword: string) {

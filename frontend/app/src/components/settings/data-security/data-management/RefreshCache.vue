@@ -68,57 +68,46 @@ const loading = logicOr(pending, taskRunning, eventTaskLoading);
 </script>
 
 <template>
-  <div>
-    <RuiCardHeader class="p-0 mb-4">
-      <template #header>
-        {{ t('data_management.refresh_cache.title') }}
+  <div class="flex items-center gap-4">
+    <RuiAutoComplete
+      v-model="source"
+      class="flex-1"
+      variant="outlined"
+      :label="t('data_management.refresh_cache.select_cache')"
+      :options="refreshable"
+      text-attr="text"
+      key-attr="id"
+      :disabled="loading"
+      :hint="hint"
+    >
+      <template #selection="{ item }">
+        <div>{{ item.shortText || item.text }}</div>
       </template>
-      <template #subheader>
-        {{ t('data_management.refresh_cache.subtitle') }}
+    </RuiAutoComplete>
+
+    <RuiTooltip
+      :popper="{ placement: 'top' }"
+      :open-delay="400"
+      class="-mt-6"
+    >
+      <template #activator>
+        <RuiButton
+          variant="text"
+          icon
+          :disabled="!source || loading"
+          :loading="loading"
+          @click="showConfirmation(source)"
+        >
+          <RuiIcon name="restart-line" />
+        </RuiButton>
       </template>
-    </RuiCardHeader>
-
-    <div class="flex items-center gap-4">
-      <RuiAutoComplete
-        v-model="source"
-        class="flex-1"
-        variant="outlined"
-        :label="t('data_management.refresh_cache.select_cache')"
-        :options="refreshable"
-        text-attr="text"
-        key-attr="id"
-        :disabled="loading"
-        :hint="hint"
-      >
-        <template #selection="{ item }">
-          <div>{{ item.shortText || item.text }}</div>
-        </template>
-      </RuiAutoComplete>
-
-      <RuiTooltip
-        :popper="{ placement: 'top' }"
-        :open-delay="400"
-        class="-mt-6"
-      >
-        <template #activator>
-          <RuiButton
-            variant="text"
-            icon
-            :disabled="!source || loading"
-            :loading="loading"
-            @click="showConfirmation(source)"
-          >
-            <RuiIcon name="restart-line" />
-          </RuiButton>
-        </template>
-        <span> {{ t('data_management.refresh_cache.tooltip') }} </span>
-      </RuiTooltip>
-    </div>
-
-    <ActionStatusIndicator
-      v-if="status"
-      class="mt-4"
-      :status="status"
-    />
+      <span> {{ t('data_management.refresh_cache.tooltip') }} </span>
+    </RuiTooltip>
   </div>
+
+  <ActionStatusIndicator
+    v-if="status"
+    class="mt-4"
+    :status="status"
+  />
 </template>

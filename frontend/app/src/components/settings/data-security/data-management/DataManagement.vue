@@ -7,12 +7,35 @@ const { t } = useI18n();
     <template #title>
       {{ t('data_management.title') }}
     </template>
-
-    <div class="flex flex-col gap-4">
+    <template #subtitle>
+      {{ t('database_settings.manage_data.subtitle') }}
+    </template>
+    <SettingsItem>
+      <template #title>
+        {{ t('data_management.purge_data.title') }}
+      </template>
+      <template #subtitle>
+        {{ t('data_management.purge_data.subtitle') }}
+      </template>
       <PurgeData />
+    </SettingsItem>
+    <SettingsItem>
+      <template #title>
+        {{ t('data_management.purge_images_cache.title') }}
+      </template>
+      <template #subtitle>
+        {{ t('data_management.purge_images_cache.subtitle') }}
+      </template>
       <PurgeImagesCache />
+    </SettingsItem>
+    <SettingsItem>
+      <template #title>
+        {{ t('data_management.refresh_cache.title') }}
+      </template>
+      <template #subtitle>
+        {{ t('data_management.refresh_cache.subtitle') }}
+      </template>
       <RefreshCache />
-      <HistoryEventsSkippedExternalEvents />
-    </div>
+    </SettingsItem>
   </SettingCategory>
 </template>

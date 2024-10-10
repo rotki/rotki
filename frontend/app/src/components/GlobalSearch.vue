@@ -164,20 +164,36 @@ function getRoutes(keyword: string): SearchItemWithoutValue[] {
     },
     { ...Routes.IMPORT },
     {
+      ...Routes.SETTINGS_ACCOUNT,
+      texts: [Routes.SETTINGS.text, Routes.SETTINGS_ACCOUNT.text],
+    },
+    {
       ...Routes.SETTINGS_GENERAL,
       texts: [Routes.SETTINGS.text, Routes.SETTINGS_GENERAL.text],
+    },
+    {
+      ...Routes.SETTINGS_DATABASE,
+      texts: [Routes.SETTINGS.text, Routes.SETTINGS_DATABASE.text],
     },
     {
       ...Routes.SETTINGS_ACCOUNTING,
       texts: [Routes.SETTINGS.text, Routes.SETTINGS_ACCOUNTING.text],
     },
     {
-      ...Routes.SETTINGS_DATA_SECURITY,
-      texts: [Routes.SETTINGS.text, Routes.SETTINGS_DATA_SECURITY.text],
+      ...Routes.SETTINGS_ORACLE,
+      texts: [Routes.SETTINGS.text, Routes.SETTINGS_ORACLE.text],
+    },
+    {
+      ...Routes.SETTINGS_RPC,
+      texts: [Routes.SETTINGS.text, Routes.SETTINGS_RPC.text],
     },
     {
       ...Routes.SETTINGS_MODULES,
       texts: [Routes.SETTINGS.text, Routes.SETTINGS_MODULES.text],
+    },
+    {
+      ...Routes.SETTINGS_INTERFACE,
+      texts: [Routes.SETTINGS.text, Routes.SETTINGS_INTERFACE.text],
     },
     {
       ...Routes.CALENDAR,

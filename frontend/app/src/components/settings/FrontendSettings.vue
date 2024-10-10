@@ -12,6 +12,7 @@ const { t } = useI18n();
       {{ t('frontend_settings.title') }}
     </template>
 
+    <LanguageSetting />
     <AnimationsEnabledSetting />
     <ScrambleDataSetting />
 

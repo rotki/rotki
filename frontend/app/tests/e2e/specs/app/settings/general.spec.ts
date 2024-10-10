@@ -7,9 +7,6 @@ describe('settings::general', () => {
   let app: RotkiApp;
   let pageGeneral: GeneralSettingsPage;
 
-  const name = 'local';
-  const endpoint = 'http://localhost:9001';
-
   const settings = {
     floatingPrecision: '4',
     anonymousUsageStatistics: false,
@@ -20,7 +17,6 @@ describe('settings::general', () => {
     thousandSeparator: ',',
     decimalSeparator: '.',
     currencyLocation: 'after' as 'after' | 'before',
-    rpcEndpoint: 'http://localhost:8545',
   };
 
   before(() => {
@@ -80,20 +76,6 @@ describe('settings::general', () => {
     pageGeneral.navigateAway();
     pageGeneral.visit();
     pageGeneral.verify(settings);
-    pageGeneral.confirmRPCmissing(name, endpoint);
-  });
-
-  it('add ethereum rpc', () => {
-    pageGeneral.confirmRPCmissing(name, endpoint);
-    pageGeneral.addEthereumRPC(name, endpoint);
-    pageGeneral.confirmRPCAddition(name, endpoint);
-  });
-
-  it('verify changed settings after changing rpc', () => {
-    pageGeneral.navigateAway();
-    pageGeneral.visit();
-    pageGeneral.verify(settings);
-    pageGeneral.confirmRPCAddition(name, endpoint);
   });
 
   it('verify settings persist after re-login', () => {

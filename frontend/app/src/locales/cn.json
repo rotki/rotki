@@ -2311,19 +2311,15 @@
       }
     },
     "labels": {
-      "anonymous_analytics": "是否应该提交匿名使用分析？",
       "balance_saving_frequency": "以小时为单位的余额数据保存频率",
       "btc_derivation_gap": "BTC衍生差距限制",
       "date_display_format": "日期显示格式",
       "date_input_format": "日期输入格式",
-      "display_date_in_localtime": "CSV 导出以本地时间而非 UTC 显示日期",
       "dot_rpc_endpoint": "Polkadot 节点 RPC 端点",
       "force_saved_language_setting_in_machine_hint": "此设置保存在您的用户设置中。激活此设置可在您注销时保留此设置。",
       "ksm_rpc_endpoint": "Kusama 节点 RPC 端点",
       "language": "选择的语言",
       "treat_eth2_as_eth": "应将 ETH2 (Staked ETH) 视为 ETH",
-      "version_update_check": "在应用中设置版本更新检查周期",
-      "version_update_check_enabled": "启用",
       "chains_to_skip_detection": "跳过自动检测的 EVM 链"
     },
     "language_contribution_tooltip": "此功能是实验性的，对于某些语言可能无法按预期工作。这是因为应用程序中的所有静态句子都必须手动翻译，这是一个漫长而持续的过程。因此，我们需要您的贡献来加快速度 起来。单击此处了解更多信息。",
@@ -2361,9 +2357,6 @@
     },
     "title": "通用设置",
     "validation": {
-      "analytics": {
-        "error": "设置匿名使用分析时出错"
-      },
       "balance_frequency": {
         "error": "将余额保存频率设置为 {frequency} 时出错",
         "invalid_frequency": "频率必须在 {start} 和 {end} 小时之间",
@@ -2394,9 +2387,6 @@
         "error": "设置小数点分隔符错误",
         "success": "十进制分隔符设置为 {decimalSeparator}"
       },
-      "display_date_in_localtime": {
-        "error": "在本地时间设置中设置显示日期时出错"
-      },
       "dot_rpc": {
         "error": "设置 Polkadot 节点 RPC 端点时出错",
         "success_set": "Polkadot 节点 RPC 端点被设置为 {endpoint}",
@@ -2422,17 +2412,11 @@
       "treat_eth2_as_eth": {
         "error": "将 ETH2 视为 ETH 的错误更改设置"
       },
-      "version_update_check_frequency": {
-        "error": "错误设置版本更新检查频率",
-        "invalid_frequency": "周期必须在 {start} 和 {end} 小时之间",
-        "non_empty": "请输入小时数"
-      },
       "chains_to_skip_detection": {
         "error": "错误设置跳过自动令牌检测的 EVM 链",
         "success": "成功保存的跳过自动令牌检测的 EVM 链"
       }
-    },
-    "version_update_check_hint": "多久（以小时为单位）检查您的应用程序版本以进行更新"
+    }
   },
   "generate": {
     "custom_selection": "自定义",
@@ -3015,7 +2999,7 @@
     "settings": "设置",
     "settings_sub": {
       "accounting": "会计",
-      "data_security": "数据与安全",
+      "database": "数据库",
       "general": "一般",
       "modules": "模块"
     },
@@ -4053,9 +4037,6 @@
       "private_mode": {
         "description": "隐藏金额和百分比",
         "label": "私人"
-      },
-      "scramble": {
-        "label": "争夺"
       },
       "semi_private_mode": {
         "description": "隐藏金额显示百分比",
