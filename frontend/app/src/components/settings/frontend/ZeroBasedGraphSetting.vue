@@ -17,7 +17,7 @@ const { t } = useI18n();
   >
     <RuiSwitch
       v-model="zeroBased"
-      class="general-settings__fields__zero-base mb-4 mt-2"
+      class="general-settings__fields__zero-base"
       :label="t('frontend_settings.label.zero_based')"
       :hint="t('frontend_settings.label.zero_based_hint')"
       :success-messages="success"

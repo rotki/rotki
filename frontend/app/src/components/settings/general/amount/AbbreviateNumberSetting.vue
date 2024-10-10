@@ -40,7 +40,7 @@ const items = computed(() => {
 </script>
 
 <template>
-  <div class="flex flex-col md:flex-col gap-8 mt-4">
+  <div class="flex flex-col md:flex-col gap-8">
     <SettingsOption
       #default="{ error, success, update }"
       setting="abbreviateNumber"
