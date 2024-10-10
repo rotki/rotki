@@ -10,6 +10,7 @@ from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.interfaces import CurrentPriceOracleInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import Price, Timestamp
+from rotkehlchen.utils.interfaces import DBSetterMixin
 
 if TYPE_CHECKING:
     from rotkehlchen.db.dbhandler import DBHandler
@@ -55,14 +56,14 @@ class ManualPriceOracle:
         )
 
 
-class ManualCurrentOracle(CurrentPriceOracleInterface):
+class ManualCurrentOracle(CurrentPriceOracleInterface, DBSetterMixin):
 
     def __init__(self) -> None:
         super().__init__(oracle_name='manual current price oracle')
-        self.database: DBHandler | None = None
+        self.db: DBHandler | None = None
 
-    def set_database(self, database: 'DBHandler') -> None:
-        self.database = database
+    def _get_name(self) -> str:
+        return self.name
 
     def rate_limited_in_last(self, seconds: int | None = None) -> bool:
         return False
@@ -87,9 +88,9 @@ class ManualCurrentOracle(CurrentPriceOracleInterface):
             return ZERO_PRICE, False
         current_to_asset, current_price = manual_current_result
         if match_main_currency is True:
-            assert self.database is not None, 'When trying to match main currency, database should be set'  # noqa: E501
-            with self.database.conn.read_ctx() as cursor:
-                main_currency = self.database.get_setting(cursor=cursor, name='main_currency')
+            assert self.db is not None, 'When trying to match main currency, database should be set'  # noqa: E501
+            with self.db.conn.read_ctx() as cursor:
+                main_currency = self.db.get_setting(cursor=cursor, name='main_currency')
                 if current_to_asset == main_currency:
                     return current_price, True
 

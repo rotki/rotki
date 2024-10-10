@@ -22,7 +22,7 @@ def fixture_session_coingecko():
 
 @pytest.fixture(scope='session', name='session_defillama')
 def fixture_defillama():
-    return Defillama()
+    return Defillama(database=None)
 
 
 @pytest.fixture(name='uniswapv2_inquirer')

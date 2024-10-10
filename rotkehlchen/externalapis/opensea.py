@@ -138,7 +138,6 @@ class Opensea(ExternalServiceWithApiKey):
             ethereum_inquirer: EthereumInquirer,
     ) -> None:
         super().__init__(database=database, service_name=ExternalService.OPENSEA)
-        self.db: DBHandler
         self.msg_aggregator = msg_aggregator
         self.session = requests.session()
         self.session.headers.update({

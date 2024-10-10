@@ -44,7 +44,7 @@ from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset, WrongAssetT
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.errors.serialization import DeserializationError
-from rotkehlchen.externalapis.interface import ExternalServiceWithApiKey
+from rotkehlchen.externalapis.interface import ExternalServiceWithApiKeyOptionalDB
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.deserialization import deserialize_price
@@ -190,10 +190,14 @@ def _check_hourly_data_sanity(
         index += 2
 
 
-class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleWithCoinListInterface, PenalizablePriceOracleMixin):  # noqa: E501
+class Cryptocompare(
+        ExternalServiceWithApiKeyOptionalDB,
+        HistoricalPriceOracleWithCoinListInterface,
+        PenalizablePriceOracleMixin,
+):
     def __init__(self, database: Optional['DBHandler']) -> None:
         HistoricalPriceOracleWithCoinListInterface.__init__(self, oracle_name='cryptocompare')
-        ExternalServiceWithApiKey.__init__(
+        ExternalServiceWithApiKeyOptionalDB.__init__(
             self,
             database=database,
             service_name=ExternalService.CRYPTOCOMPARE,
@@ -203,6 +207,7 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleWithCoinList
         set_user_agent(self.session)
         self.last_histohour_query_ts = 0
         self.last_rate_limit = 0
+        self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy
 
     def can_query_history(
             self,
@@ -244,20 +249,6 @@ class Cryptocompare(ExternalServiceWithApiKey, HistoricalPriceOracleWithCoinList
             return False
 
         return ts_now() - self.last_rate_limit <= seconds
-
-    def set_database(self, database: 'DBHandler') -> None:
-        """If the cryptocompare instance was initialized without a DB this sets its DB"""
-        msg = 'set_database was called on a cryptocompare instance that already has a DB'
-        assert self.db is None, msg
-        self.db = database
-
-    def unset_database(self) -> None:
-        """Remove the database connection from this cryptocompare instance
-
-        This should happen when a user logs out"""
-        msg = 'unset_database was called on a cryptocompare instance that has no DB'
-        assert self.db is not None, msg
-        self.db = None
 
     def _api_query(self, path: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         """Queries cryptocompare

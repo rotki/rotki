@@ -252,13 +252,13 @@ def _create_inquirer(
     # Since this is a singleton and we want it initialized everytime the fixture
     # is called make sure its instance is always starting from scratch
     Inquirer._Inquirer__instance = None  # type: ignore
-    # Get a cryptocompare without a DB since invoking DB fixture here causes problems
+    # Get a defillama,cryptocompare etc without a DB since invoking DB fixture here causes problems
     # of existing user for some tests
     inquirer = Inquirer(
         data_dir=data_directory,
         cryptocompare=Cryptocompare(database=None),
         coingecko=Coingecko(),
-        defillama=Defillama(),
+        defillama=Defillama(database=None),
         manualcurrent=ManualCurrentOracle(),
         msg_aggregator=MessagesAggregator(),
     )
