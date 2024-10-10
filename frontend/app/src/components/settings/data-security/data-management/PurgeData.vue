@@ -177,13 +177,14 @@ const chainsSelection = useArrayMap(txChains, item => item.id);
           color="error"
           @click="showConfirmation(source)"
         >
-          <div class="flex items-center gap-2">
+          <template #prepend>
             <RuiIcon
               name="delete-bin-line"
               size="16"
             />
-            <span> {{ t('purge_selector.tooltip') }} </span>
-          </div>
+          </template>
+
+          {{ t('purge_selector.tooltip') }}
         </RuiButton>
       </div>
     </div>

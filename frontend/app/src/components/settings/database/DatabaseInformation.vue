@@ -97,9 +97,11 @@ async function loadInfo() {
 }
 
 const [DefineRow, ReuseRow] = createReusableTemplate<{
-  label: string;
-  value: string;
-  copiable?: boolean;
+  details: {
+    label: string;
+    value: string;
+    copiable?: boolean;
+  }[];
 }>();
 
 onMounted(loadInfo);
