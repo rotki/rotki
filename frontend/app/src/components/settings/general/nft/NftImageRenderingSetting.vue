@@ -97,6 +97,7 @@ onMounted(() => {
     <div class="flex flex-row gap-3.5 items-start">
       <RuiTextField
         v-model.trim="whitelistedDomains"
+        color="primary"
         :label="t('general_settings.nft_setting.label.whitelist_domains')"
         :hint="t('general_settings.nft_setting.label.whitelisted_domains_hint')"
         :success-messages="success"

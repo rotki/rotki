@@ -57,7 +57,7 @@ onMounted(() => {
       class="flex items-center"
       @finished="resetDateDisplayFormat()"
     >
-      <div class="flex items-center w-full">
+      <div class="flex items-start w-full">
         <RuiTextField
           v-model="dateDisplayFormat"
           variant="outlined"

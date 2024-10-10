@@ -2208,7 +2208,7 @@
       },
       "labels": {
         "floating_precision": "Floating Precision",
-        "main_currency": "Select Main Currency",
+        "main_currency": "Main Currency",
         "main_currency_subtitle": "Select as the main currency"
       },
       "title": "Ajustes de cantidades"
@@ -2255,7 +2255,6 @@
       }
     },
     "labels": {
-      "balance_saving_frequency": "Balance data saving frequency in hours",
       "btc_derivation_gap": "BTC derivation gap limit",
       "date_display_format": "Date display format",
       "date_input_format": "Date input format",
@@ -2299,12 +2298,6 @@
     },
     "title": "Ajustes generales",
     "validation": {
-      "balance_frequency": {
-        "error": "Error setting balance save frequency to {frequency}",
-        "invalid_frequency": "Frequency must be between {start} and {end} hours",
-        "non_empty": "Please enter the number of hours",
-        "success": "Data save frequency set to {frequency} hours"
-      },
       "btc_derivation_gap": {
         "error": "Error setting the BTC derivation gap limit",
         "success": "The BTC derivation gap limit was successfully changed to {limit}"
