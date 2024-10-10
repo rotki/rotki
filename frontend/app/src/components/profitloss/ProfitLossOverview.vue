@@ -27,17 +27,17 @@ const { t } = useI18n();
     <template #header>
       {{ t('profit_loss_overview.title') }}
     </template>
-    <div class="!rounded-md border border-rui-grey-300 dark:border-rui-grey-600 w-full">
+    <div class="!rounded-md border border-default w-full">
       <table class="w-full">
-        <thead class="text-rui-text-secondary font-medium border-b border-default text-xs">
+        <thead class="border-b border-default text-sm">
           <tr>
-            <th class="text-left p-4">
+            <th class="text-left p-4 font-medium">
               {{ t('common.type') }}
             </th>
-            <th class="text-right p-4">
+            <th class="text-right p-4 font-medium">
               {{ t('profit_loss_overview.headers.tax_free_profit_loss') }}
             </th>
-            <th class="text-right p-4">
+            <th class="text-right p-4 font-medium">
               {{ t('profit_loss_overview.headers.taxable_profit_loss') }}
             </th>
           </tr>
@@ -46,7 +46,7 @@ const { t } = useI18n();
           <tr
             v-for="(item, key) in report.overview"
             :key="key"
-            class="border-default border-b"
+            class="border-b border-default"
           >
             <td class="p-4">
               {{ pluralizeLastWord(toCapitalCase(key)) }}

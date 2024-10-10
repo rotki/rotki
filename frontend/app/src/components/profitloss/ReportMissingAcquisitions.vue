@@ -144,7 +144,7 @@ const isIgnored = (asset: string) => get(isAssetIgnored(asset));
       <template #item.startDate="{ row }">
         <DateDisplay :timestamp="row.startDate" />
         <template v-if="row.startDate !== row.endDate">
-          <span>
+          <span class="ml-1">
             {{ t('profit_loss_report.actionable.missing_acquisitions.to') }}
             <br />
           </span>

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { Routes } from '@/router/routes';
 import type { BaseAccountingSettings, CostBasisMethod } from '@/types/user';
 import type { ActionDataEntry } from '@/types/action';
 
@@ -81,11 +82,34 @@ const items = computed<Item[]>(() => {
 
 <template>
   <RuiCard>
-    <template #header>
-      {{ t('account_settings_display.title') }}
-    </template>
-    <template #subheader>
-      {{ t('account_settings_display.subtitle') }}
+    <template #custom-header>
+      <div class="flex justify-between p-4">
+        <div>
+          <CardTitle>
+            {{ t('account_settings_display.title') }}
+          </CardTitle>
+          <div class="text-sm text-rui-text-secondary">
+            {{ t('account_settings_display.subtitle') }}
+          </div>
+        </div>
+        <RuiTooltip
+          :popper="{ placement: 'top' }"
+          :open-delay="400"
+        >
+          <template #activator>
+            <RouterLink :to="Routes.SETTINGS_ACCOUNTING">
+              <RuiButton
+                variant="text"
+                icon
+                color="primary"
+              >
+                <RuiIcon name="settings-3-line" />
+              </RuiButton>
+            </RouterLink>
+          </template>
+          <span>{{ t('profit_loss_report.settings_tooltip') }}</span>
+        </RuiTooltip>
+      </div>
     </template>
     <div class="grid md:grid-cols-2 gap-x-6 gap-y-4 text-body-1">
       <div

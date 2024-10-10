@@ -129,16 +129,21 @@ async function regenerateReport() {
             @regenerate="regenerateReport()"
           />
         </template>
-        <RuiButton
-          color="primary"
-          variant="outlined"
-          @click="regenerateReport()"
-        >
-          <template #prepend>
-            <RuiIcon name="refresh-line" />
+        <RuiTooltip :open-delay="200">
+          <template #activator>
+            <RuiButton
+              color="primary"
+              variant="outlined"
+              @click="regenerateReport()"
+            >
+              <template #prepend>
+                <RuiIcon name="refresh-line" />
+              </template>
+              {{ t('profit_loss_report.actionable.actions.regenerate_report') }}
+            </RuiButton>
           </template>
-          {{ t('profit_loss_report.actionable.actions.regenerate_report') }}
-        </RuiButton>
+          {{ t('profit_loss_report.actionable.actions.regenerate_report_tooltip') }}
+        </RuiTooltip>
       </div>
       <ProfitLossOverview
         :report="selectedReport"
