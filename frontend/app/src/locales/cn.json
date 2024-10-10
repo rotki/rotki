@@ -2264,7 +2264,7 @@
       },
       "labels": {
         "floating_precision": "浮动精度",
-        "main_currency": "选择主要货币",
+        "main_currency": "主要货币",
         "main_currency_subtitle": "选择为主货币"
       },
       "title": "金额设置"
@@ -2311,7 +2311,6 @@
       }
     },
     "labels": {
-      "balance_saving_frequency": "以小时为单位的余额数据保存频率",
       "btc_derivation_gap": "BTC衍生差距限制",
       "date_display_format": "日期显示格式",
       "date_input_format": "日期输入格式",
@@ -2357,12 +2356,6 @@
     },
     "title": "通用设置",
     "validation": {
-      "balance_frequency": {
-        "error": "将余额保存频率设置为 {frequency} 时出错",
-        "invalid_frequency": "频率必须在 {start} 和 {end} 小时之间",
-        "non_empty": "请输入小时数",
-        "success": "数据保存频率设置为 {frequency} 小时"
-      },
       "btc_derivation_gap": {
         "error": "设置BTC差额限额错误",
         "success": "BTC衍生差额限制已成功更改为{limit}"

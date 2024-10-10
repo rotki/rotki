@@ -23,7 +23,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <div class="rounding-settings mt-8">
+  <div class="rounding-settings">
     <div class="flex flex-col space-y-6">
       <RoundingSelector
         :model-value="amountRoundingMode"
