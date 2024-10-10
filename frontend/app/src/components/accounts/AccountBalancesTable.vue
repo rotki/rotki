@@ -21,6 +21,8 @@ const pagination = defineModel<TablePaginationData>('pagination', { required: tr
 
 const sort = defineModel<DataTableSortData<T>>('sort', { required: true });
 
+const expandedIds = defineModel<string[]>('expandedIds', { required: false, default: () => [] });
+
 const props = withDefaults(
   defineProps<{
     accounts: Collection<T>;
@@ -44,7 +46,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const expanded = ref<DataRow[]>([]) as Ref<DataRow[]>;
 const collapsed = ref<DataRow[]>([]) as Ref<DataRow[]>;
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -70,6 +71,16 @@ const rows = computed<DataRow[]>(() => {
     ...account,
     id: 'chain' in account ? getAccountId(account) : getGroupId(account),
   }));
+});
+
+const expanded = computed<DataRow[]>({
+  get() {
+    const ids = get(expandedIds);
+    return get(rows).filter(row => ids.includes(row.id));
+  },
+  set(value: DataRow[]) {
+    set(expandedIds, value.map(row => row.id));
+  },
 });
 
 const anyExpansion = computed(() => get(rows).some(item => item.expansion));

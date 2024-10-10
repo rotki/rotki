@@ -366,7 +366,7 @@ export function usePaginationFilters<
       sortBy: sortBy.map(s => s.toString()),
       sortDesc: sortDesc.map(x => x.toString()),
       ...selectedFilters,
-      ...extraParamsConverted,
+      ...nonEmptyProperties(extraParamsConverted, true),
     };
   };
 
