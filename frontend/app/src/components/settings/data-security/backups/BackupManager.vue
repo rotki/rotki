@@ -190,13 +190,13 @@ onMounted(loadInfo);
           :tooltip="t('database_manager.refresh_tooltip')"
           @click="loadInfo()"
         >
-          <div class="flex items-center gap-2">
+          <template #prepend>
             <RuiIcon
               name="refresh-line"
               size="16"
             />
-            {{ t('common.refresh') }}
-          </div>
+          </template>
+          {{ t('common.refresh') }}
         </RuiButton>
         <RuiButton
           color="primary"

@@ -3426,7 +3426,6 @@
     "was_worth": "值得"
   },
   "prioritized_list": {
-    "add_tooltip": "将 {name} 添加到列表中",
     "all_added": "没有禁用 {namePluralized}",
     "disabled_items": "{num} 个禁用的 {namePluralized}",
     "item": {

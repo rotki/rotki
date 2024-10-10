@@ -3,7 +3,7 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <SettingCategory>
+  <SettingCategory class="pt-5 border-t border-default">
     <template #title>
       {{ t('data_management.title') }}
     </template>
