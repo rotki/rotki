@@ -80,8 +80,12 @@ export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], c
   };
 }
 
+const CommaSeparated = z.string()
+  .optional()
+  .transform(val => (val ? val.split(',') : []));
+
 export const AccountExternalFilterSchema = z.object({
-  tags: z.string()
-    .optional()
-    .transform(val => (val ? val.split(',') : [])),
+  tags: CommaSeparated,
+  expanded: CommaSeparated,
+  tab: z.coerce.number().optional().default(0),
 });

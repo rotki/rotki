@@ -28,6 +28,7 @@ const chainExclusionFilter = ref<Record<string, string[]>>({});
 const accountTable = ref<ComponentExposed<typeof AccountBalancesTable>>();
 const detailsTable = ref<ComponentExposed<typeof AccountGroupDetails>>();
 const tab = ref<number>(0);
+const expanded = ref<string[]>([]);
 
 const blockchainStore = useBlockchainStore();
 const { fetchAccounts: fetchAccountsPage } = blockchainStore;
@@ -58,11 +59,17 @@ const {
     extraParams: computed(() => ({
       tags: get(visibleTags),
       ...(get(category) !== 'all' ? { category: get(category) } : {}),
+      expanded: get(expanded),
+      tab: get(tab),
     })),
     onUpdateFilters(query) {
       const externalFilterSchema = AccountExternalFilterSchema.parse(query);
       if (externalFilterSchema.tags)
         set(visibleTags, externalFilterSchema.tags);
+      if (externalFilterSchema.expanded) {
+        set(expanded, externalFilterSchema.expanded);
+      }
+      set(tab, externalFilterSchema.tab);
     },
     customPageParams: computed(() => ({
       excluded: get(chainExclusionFilter),
@@ -188,6 +195,7 @@ defineExpose({
       v-model:pagination="pagination"
       v-model:sort="sort"
       v-model:chain-filter="chainExclusionFilter"
+      v-model:expanded-ids="expanded"
       :data-category="category"
       class="mt-4"
       group
