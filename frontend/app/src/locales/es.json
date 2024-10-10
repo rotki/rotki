@@ -2169,7 +2169,7 @@
       "scramble_multiplier": "Multiplier number used when scrambling balances. This will affects amount and fiat value.",
       "show_graph_range_selector": "Show graph range selector"
     },
-    "title": "Frontend-only Settings",
+    "title": "Interface-only Settings",
     "validation": {
       "animations": {
         "error": "Error setting animations state: {message}"
@@ -2255,18 +2255,14 @@
       }
     },
     "labels": {
-      "anonymous_analytics": "Should anonymous usage analytics be submitted?",
       "balance_saving_frequency": "Balance data saving frequency in hours",
       "btc_derivation_gap": "BTC derivation gap limit",
       "date_display_format": "Date display format",
       "date_input_format": "Date input format",
-      "display_date_in_localtime": "Display date in localtime and not in UTC for CSV export.",
       "dot_rpc_endpoint": "Polkadot Node RPC Endpoint",
       "ksm_rpc_endpoint": "Kusama Node RPC Endpoint",
       "language": "Idioma seleccionado",
       "treat_eth2_as_eth": "Should treat ETH2 (Staked ETH) as ETH",
-      "version_update_check": "Set the version update check period while in app",
-      "version_update_check_enabled": "Enabled",
       "chains_to_skip_detection": "Cadenas EVM para las que omitir la detección automática"
     },
     "nft_setting": {
@@ -2303,9 +2299,6 @@
     },
     "title": "Ajustes generales",
     "validation": {
-      "analytics": {
-        "error": "Error setting anonymous usage analytics"
-      },
       "balance_frequency": {
         "error": "Error setting balance save frequency to {frequency}",
         "invalid_frequency": "Frequency must be between {start} and {end} hours",
@@ -2336,9 +2329,6 @@
         "error": "Error setting decimal separator",
         "success": "Decimal separator set to {decimalSeparator}"
       },
-      "display_date_in_localtime": {
-        "error": "Error setting the display date in local time setting"
-      },
       "dot_rpc": {
         "error": "There was an error setting the Polkadot node RPC endpoint",
         "success_set": "The Polkadot node RPC endpoint was set to {endpoint}",
@@ -2364,17 +2354,11 @@
       "treat_eth2_as_eth": {
         "error": "Error change setting for treat ETH2 (Staked ETH) as ETH"
       },
-      "version_update_check_frequency": {
-        "error": "Error setting version update check frequency",
-        "invalid_frequency": "Period must be between {start} and {end} hours",
-        "non_empty": "Please enter the number of hours"
-      },
       "chains_to_skip_detection": {
         "error": "Error al configurar cadenas EVM para las que omitir la detección automática de fichas",
         "success": "Cadenas EVM para las que omitir la detección automática de fichas guardadas correctamente"
       }
-    },
-    "version_update_check_hint": "How often (in hours) your app version will be checked for update"
+    }
   },
   "generate": {
     "custom_selection": "Custom",
@@ -2924,7 +2908,7 @@
     "settings": "Ajustes",
     "settings_sub": {
       "accounting": "Contabilidad",
-      "data_security": "Datos y Seguridad",
+      "database": "Base de datos",
       "general": "General",
       "modules": "Módulos"
     },
@@ -3910,9 +3894,6 @@
       "private_mode": {
         "description": "Hide amount and percentage",
         "label": "Private"
-      },
-      "scramble": {
-        "label": "Scramble"
       },
       "semi_private_mode": {
         "description": "Hide amount and show percentage",

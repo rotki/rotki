@@ -214,6 +214,7 @@ function assertNoRunningTasks() {
 
 function confirmFieldMessage({ target, mustInclude, messageContains }: FieldMessage) {
   cy.get(target).as('message');
+  cy.get('@message').scrollIntoView();
   cy.get('@message').should('be.visible');
   cy.get('@message').should('include.text', mustInclude);
   if (messageContains)
