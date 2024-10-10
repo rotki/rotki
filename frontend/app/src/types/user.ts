@@ -224,6 +224,7 @@ export const ExternalServiceKeys = z.object({
   monerium: Auth.optional(),
   thegraph: ApiKey.optional(),
   gnosis_pay: ApiKey.optional(),
+  defillama: ApiKey.optional(),
 });
 
 export type ExternalServiceKeys = z.infer<typeof ExternalServiceKeys>;
