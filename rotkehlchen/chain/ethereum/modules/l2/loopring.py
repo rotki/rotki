@@ -401,8 +401,8 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
         - RemoteError if there is a problem querying the loopring api or if the format
         of the response does not match expectations or if there is no account id.
         """
-        db = DBLoopring(self.db)  # type: ignore # we always know self.db is not None
-        with self.db.conn.read_ctx() as cursor:  # type: ignore # self.db is not None here
+        db = DBLoopring(self.db)
+        with self.db.conn.read_ctx() as cursor:
             account_id = db.get_accountid_mapping(cursor=cursor, address=l1_address)
         if account_id:
             return account_id
@@ -415,7 +415,7 @@ class Loopring(ExternalServiceWithApiKey, EthereumModule, LockableQueryMixIn):
                 f'the account_id key',
             )
 
-        with self.db.user_write() as write_cursor:  # type: ignore # self.db is not None here
+        with self.db.user_write() as write_cursor:
             db.add_accountid_mapping(write_cursor=write_cursor, address=l1_address, account_id=account_id)  # noqa: E501
 
         return account_id
