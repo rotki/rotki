@@ -3701,7 +3701,6 @@
     "was_worth": "valait"
   },
   "prioritized_list": {
-    "add_tooltip": "Ajouter le {name} à la liste",
     "all_added": "Aucun {namePluralized} désactivé",
     "disabled_items": "{num} {namePluralized} désactivés",
     "item": {
