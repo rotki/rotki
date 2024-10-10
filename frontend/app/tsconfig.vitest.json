@@ -10,6 +10,7 @@
   "include": [
     "env.d.ts",
     "components.d.ts",
+    "auto-imports.d.ts",
     "typed-router.d.ts",
     "src/**/*",
     "src/**/*.vue",
