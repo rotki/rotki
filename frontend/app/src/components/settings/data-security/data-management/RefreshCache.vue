@@ -68,46 +68,54 @@ const loading = logicOr(pending, taskRunning, eventTaskLoading);
 </script>
 
 <template>
-  <div class="flex items-center gap-4">
-    <RuiAutoComplete
-      v-model="source"
-      class="flex-1"
-      variant="outlined"
-      :label="t('data_management.refresh_cache.select_cache')"
-      :options="refreshable"
-      text-attr="text"
-      key-attr="id"
-      :disabled="loading"
-      :hint="hint"
-    >
-      <template #selection="{ item }">
-        <div>{{ item.shortText || item.text }}</div>
-      </template>
-    </RuiAutoComplete>
+  <SettingsItem>
+    <template #title>
+      {{ t('data_management.refresh_cache.title') }}
+    </template>
+    <template #subtitle>
+      {{ t('data_management.refresh_cache.subtitle') }}
+    </template>
+    <div class="flex items-center gap-4">
+      <RuiAutoComplete
+        v-model="source"
+        class="flex-1 min-w-0"
+        variant="outlined"
+        :label="t('data_management.refresh_cache.select_cache')"
+        :options="refreshable"
+        text-attr="text"
+        key-attr="id"
+        :disabled="loading"
+        :hint="hint"
+        hide-details
+      >
+        <template #selection="{ item }">
+          <div>{{ item.shortText || item.text }}</div>
+        </template>
+      </RuiAutoComplete>
 
-    <RuiTooltip
-      :popper="{ placement: 'top' }"
-      :open-delay="400"
-      class="-mt-6"
-    >
-      <template #activator>
-        <RuiButton
-          variant="text"
-          icon
-          :disabled="!source || loading"
-          :loading="loading"
-          @click="showConfirmation(source)"
-        >
-          <RuiIcon name="restart-line" />
-        </RuiButton>
-      </template>
-      <span> {{ t('data_management.refresh_cache.tooltip') }} </span>
-    </RuiTooltip>
-  </div>
+      <RuiTooltip
+        :popper="{ placement: 'top' }"
+        :open-delay="400"
+      >
+        <template #activator>
+          <RuiButton
+            variant="text"
+            icon
+            :disabled="!source || loading"
+            :loading="loading"
+            @click="showConfirmation(source)"
+          >
+            <RuiIcon name="restart-line" />
+          </RuiButton>
+        </template>
+        <span> {{ t('data_management.refresh_cache.tooltip') }} </span>
+      </RuiTooltip>
+    </div>
 
-  <ActionStatusIndicator
-    v-if="status"
-    class="mt-4"
-    :status="status"
-  />
+    <ActionStatusIndicator
+      v-if="status"
+      class="mt-2"
+      :status="status"
+    />
+  </SettingsItem>
 </template>

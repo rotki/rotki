@@ -129,38 +129,32 @@ function showDoneConfirmation() {
   </RuiMenu>
   <div
     v-else
-    class="flex flex-row gap-2"
+    class="flex flex-col gap-4"
   >
-    <RuiTooltip
-      :popper="{ placement: 'top' }"
-      :open-delay="400"
-    >
-      <template #activator>
+    <RuiCard>
+      <div class="flex justify-between items-center">
+        {{ t('asset_update.restore.soft_reset_hint') }}
         <RuiButton
           variant="outlined"
-          color="primary"
+          color="error"
           :loading="loading"
           @click="showRestoreConfirmation('soft')"
         >
           {{ t('asset_update.restore.soft_reset') }}
         </RuiButton>
-      </template>
-      {{ t('asset_update.restore.soft_reset_hint') }}
-    </RuiTooltip>
-    <RuiTooltip
-      :popper="{ placement: 'top' }"
-      :open-delay="400"
-    >
-      <template #activator>
+      </div>
+    </RuiCard>
+    <RuiCard>
+      <div class="flex justify-between items-center">
+        {{ t('asset_update.restore.hard_reset_hint') }}
         <RuiButton
-          color="primary"
+          color="error"
           :loading="loading"
           @click="showRestoreConfirmation('hard')"
         >
           {{ t('asset_update.restore.hard_reset') }}
         </RuiButton>
-      </template>
-      {{ t('asset_update.restore.hard_reset_hint') }}
-    </RuiTooltip>
+      </div>
+    </RuiCard>
   </div>
 </template>

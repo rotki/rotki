@@ -10,8 +10,6 @@ const { t } = useI18n();
     <template #subtitle>
       {{ t('database_settings.database_info.subtitle') }}
     </template>
-    <SettingItem>
-      <DatabaseInformation />
-    </SettingItem>
+    <DatabaseInformation />
   </SettingCategory>
 </template>

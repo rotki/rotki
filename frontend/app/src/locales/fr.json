@@ -1172,13 +1172,11 @@
         "title": "Réinitialiser la base de données d'actifs"
       },
       "hard_reset": "Réinitialisation complète",
-      "hard_reset_hint": "Cette option réinitialisera également les actifs que vous avez ajoutés manuellement.",
       "hard_restore_confirmation": {
         "message": "Il existe des actifs qui seront supprimés et qui pourraient entraîner un état incohérent dans ce compte ou d'autres comptes dans le système. Confirmez cette action uniquement si vous savez ce que vous faites.",
         "title": "Opération dangereuse"
       },
       "soft_reset": "Restauration partielle",
-      "soft_reset_hint": "Cette option ne réinitialisera pas les actifs que vous avez ajoutés manuellement.",
       "subtitle": "Supprimer les actifs personnalisés et réinitialiser la base de données d'actifs à son état initial. Attention : Cette opération peut affecter d'autres utilisateurs dans le même système utilisant la base de données pour les actifs.",
       "success": {
         "description": "La base de données d'actifs a été restaurée avec succès. Vous devrez maintenant vous reconnecter pour appliquer les changements.",
@@ -1397,11 +1395,6 @@
   },
   "backend_settings_button": {
     "tooltip": "Modifier les paramètres du backend. Le changement des paramètres entraînera le redémarrage du backend rotki."
-  },
-  "backup_manager": {
-    "backup_button": "Créer une nouvelle sauvegarde",
-    "delete_selected": "Supprimer les sauvegardes sélectionnées",
-    "title": "Sauvegardes de la base de données utilisateur"
   },
   "balancer": {
     "loading": "Veuillez patienter pendant le chargement de vos pools de liquidités...",
@@ -1898,8 +1891,7 @@
       "select_image_source": "Sélectionner la source de mise en cache d'images à effacer",
       "subtitle": "Vous permet de purger la mise en cache d'images par rotki",
       "success": "Le cache a été effacé avec succès",
-      "title": "Effacer la mise en cache d'images",
-      "tooltip": "Effacer le cache d'images pour la source sélectionnée"
+      "title": "Effacer la mise en cache d'images"
     },
     "refresh_cache": {
       "confirm": {
@@ -1955,19 +1947,6 @@
       "message": "Il y a eu un problème lors du chargement de la liste des sauvegardes disponibles : {message}",
       "title": "Chargement de la sauvegarde de la base de données"
     }
-  },
-  "database_info_display": {
-    "directory": "Répertoire de la base de données :",
-    "globaldb": "Base de données globale",
-    "globaldb_assets": "Version des actifs :",
-    "globaldb_schema": "Version du schéma :",
-    "title": "Informations sur la base de données",
-    "userdb": "Base de données utilisateur",
-    "userdb_size": "Taille sur disque :",
-    "userdb_version": "Version de la base de données :"
-  },
-  "database_manager": {
-    "refresh_tooltip": "Actualiser la liste des sauvegardes de la base de données"
   },
   "date_format_help": {
     "directive": {
@@ -3090,7 +3069,6 @@
     "import": {
       "subtitle": "Restaurer les actifs de l'utilisateur à partir d'une archive zip"
     },
-    "title": "Exporter/Importer les actifs de l'utilisateur",
     "warning": "Cette fonctionnalité est conçue pour vous permettre de déplacer facilement vos actifs d'une instance de rotki à une autre. Elle nécessite que les deux instances soient de la même version. L'utilisation de cette fonctionnalité entre différentes versions peut entraîner des erreurs."
   },
   "managed_asset_content": {
@@ -3866,7 +3844,6 @@
       "hint": "Laissez ce champ vide pour supprimer les données de tous les modules DeFi"
     },
     "label": "Sélectionner une source de données",
-    "tooltip": "Supprimer les données en cache de la source sélectionnée",
     "transactions": "Transactions"
   },
   "queried_address_dialog": {
@@ -4277,8 +4254,7 @@
             "some": "{successful} de {total} événements externes ignorés ont été traités",
             "title": "Événements ignorés traités"
           }
-        },
-        "title": "Événements ignorés"
+        }
       },
       "view": {
         "hide": "Masquer les événements",
