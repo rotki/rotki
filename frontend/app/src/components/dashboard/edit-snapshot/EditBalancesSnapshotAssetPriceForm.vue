@@ -11,7 +11,7 @@ const amount = defineModel<string>('amount', { required: true });
 
 const usdValue = defineModel<string>('usdValue', { required: true });
 
-const asset = defineModel<string>('asset', { required: false });
+const asset = defineModel<string>('asset', { required: false, default: '' });
 
 // eslint-disable-next-line vue/define-macros-order
 const props = withDefaults(
