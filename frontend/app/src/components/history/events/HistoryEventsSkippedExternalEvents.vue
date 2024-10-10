@@ -153,43 +153,18 @@ async function reProcessSkippedEvents() {
 
 <template>
   <div>
-    <div class="mb-6 gap-4">
-      <div class="text-h6">
-        {{ t('transactions.events.skipped.title') }}
-      </div>
-    </div>
-
-    <div class="max-w-[40rem]">
-      <RuiDataTable
-        :cols="headers"
-        :rows="locationsData"
-        row-attr="location"
-        dense
-        striped
-        outlined
-        :empty="{
-          description: t('transactions.events.skipped.no_skipped_events'),
-        }"
-      >
-        <template #item.location="{ row }">
-          <LocationDisplay :identifier="row.location" />
+    <div class="pb-5 flex flex-wrap gap-4 items-center justify-between">
+      <SettingCategoryHeader>
+        <template #title>
+          {{ t('database_settings.skipped_events.title') }}
         </template>
-        <template #item.number="{ row }">
-          {{ row.number }}
+        <template #subtitle>
+          {{ t('database_settings.skipped_events.subtitle') }}
         </template>
-        <template #tfoot>
-          <tr>
-            <th>{{ t('common.total') }}</th>
-            <td class="text-end pr-12 py-2">
-              {{ skippedEvents.total }}
-            </td>
-          </tr>
-        </template>
-      </RuiDataTable>
-
+      </SettingCategoryHeader>
       <div
         v-if="skippedEvents.total > 0"
-        class="flex gap-3 mt-6"
+        class="flex flex-wrap gap-2"
       >
         <RuiButton
           variant="outlined"
@@ -213,5 +188,32 @@ async function reProcessSkippedEvents() {
         </RuiButton>
       </div>
     </div>
+    <RuiDataTable
+      :cols="headers"
+      :rows="locationsData"
+      row-attr="location"
+      dense
+      striped
+      outlined
+      class="bg-white dark:bg-transparent"
+      :empty="{
+        description: t('transactions.events.skipped.no_skipped_events'),
+      }"
+    >
+      <template #item.location="{ row }">
+        <LocationDisplay :identifier="row.location" />
+      </template>
+      <template #item.number="{ row }">
+        {{ row.number }}
+      </template>
+      <template #tfoot>
+        <tr>
+          <th>{{ t('common.total') }}</th>
+          <td class="text-end pr-12 py-2">
+            {{ skippedEvents.total }}
+          </td>
+        </tr>
+      </template>
+    </RuiDataTable>
   </div>
 </template>

@@ -1,17 +1,16 @@
 <template>
   <div>
-    <div class="pb-5 border-b border-default">
-      <h6 class="text-h6 font-semibold">
+    <SettingCategoryHeader class="border-b pb-5">
+      <template #title>
         <slot name="title" />
-      </h6>
-      <div
+      </template>
+      <template
         v-if="$slots.subtitle"
-        class="text-rui-text-secondary text-sm"
+        #subtitle
       >
         <slot name="subtitle" />
-      </div>
-    </div>
-
+      </template>
+    </SettingCategoryHeader>
     <slot />
   </div>
 </template>

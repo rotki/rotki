@@ -165,17 +165,49 @@ onMounted(loadInfo);
 </script>
 
 <template>
-  <RuiCard>
-    <template #header>
-      <CardTitle>
-        <RefreshButton
+  <div>
+    <div class="pb-5 flex flex-wrap gap-4 items-center justify-between">
+      <SettingCategoryHeader>
+        <template #title>
+          {{ t('database_settings.user_backups.title') }}
+        </template>
+        <template #subtitle>
+          {{ t('database_settings.user_backups.subtitle') }}
+        </template>
+      </SettingCategoryHeader>
+      <div class="flex flex-wrap gap-2">
+        <RuiButton
+          v-if="selected.length > 0"
+          color="error"
+          @click="showMassDeleteConfirmation()"
+        >
+          {{ t('database_settings.user_backups.delete_selected') }}
+        </RuiButton>
+        <RuiButton
+          variant="outlined"
+          color="primary"
           :loading="loading"
           :tooltip="t('database_manager.refresh_tooltip')"
-          @refresh="loadInfo()"
-        />
-        {{ t('backup_manager.title') }}
-      </CardTitle>
-    </template>
+          @click="loadInfo()"
+        >
+          <div class="flex items-center gap-2">
+            <RuiIcon
+              name="refresh-line"
+              size="16"
+            />
+            {{ t('common.refresh') }}
+          </div>
+        </RuiButton>
+        <RuiButton
+          color="primary"
+          :disabled="saving"
+          :loading="saving"
+          @click="backup()"
+        >
+          {{ t('database_settings.user_backups.backup_button') }}
+        </RuiButton>
+      </div>
+    </div>
     <DatabaseBackups
       v-model:selected="selected"
       :loading="loading"
@@ -183,24 +215,5 @@ onMounted(loadInfo);
       :directory="directory"
       @remove="remove($event)"
     />
-    <template #footer>
-      <div class="flex gap-3">
-        <RuiButton
-          color="primary"
-          :disabled="saving"
-          :loading="saving"
-          @click="backup()"
-        >
-          {{ t('backup_manager.backup_button') }}
-        </RuiButton>
-        <RuiButton
-          v-if="selected.length > 0"
-          color="error"
-          @click="showMassDeleteConfirmation()"
-        >
-          {{ t('backup_manager.delete_selected') }}
-        </RuiButton>
-      </div>
-    </template>
-  </RuiCard>
+  </div>
 </template>

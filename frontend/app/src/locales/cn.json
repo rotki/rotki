@@ -1046,13 +1046,11 @@
         "title": "重置资产数据库"
       },
       "hard_reset": "硬重置",
-      "hard_reset_hint": "此选项还将重置用户添加的资产。",
       "hard_restore_confirmation": {
         "message": "有些资产将被删除，可能会导致本账户或系统中其他账户的状态不一致。只有在你知道自己在做什么的情况下才能确认此操作。",
         "title": "危险操作"
       },
       "soft_reset": "软复位",
-      "soft_reset_hint": "此选项不会重置用户添加的资产。",
       "subtitle": "删除自定义资产并将资产数据库重置为初始状态。注意：此操作可能会影响同一系统中使用资产数据库的其他用户。",
       "success": {
         "description": "资产数据库已成功恢复。您现在需要重新登录才能应用更改。",
@@ -1249,11 +1247,6 @@
   },
   "backend_settings_button": {
     "tooltip": "更改后端设置。更改设置将重启 rotki 后端"
-  },
-  "backup_manager": {
-    "backup_button": "创建新备份",
-    "delete_selected": "删除选定的备份",
-    "title": "用户数据库备份"
   },
   "balancer": {
     "loading": "请稍候，您的流动资金池正在加载...",
@@ -1734,8 +1727,7 @@
       "select_image_source": "选择要清除的图像缓存源",
       "subtitle": "允许您清除 rotki 缓存的图像",
       "success": "缓存已成功清除",
-      "title": "清除图像缓存",
-      "tooltip": "清除所选来源的缓存图像"
+      "title": "清除图像缓存"
     },
     "refresh_cache": {
       "confirm": {
@@ -1791,19 +1783,6 @@
       "message": "加载可用备份列表时出现问题：{message}",
       "title": "数据库备份负载"
     }
-  },
-  "database_info_display": {
-    "directory": "数据库目录:",
-    "globaldb": "全球数据库",
-    "globaldb_assets": "资产版本:",
-    "globaldb_schema": "模式版本:",
-    "title": "数据库信息",
-    "userdb": "用户数据库",
-    "userdb_size": "磁盘大小:",
-    "userdb_version": "数据库版本:"
-  },
-  "database_manager": {
-    "refresh_tooltip": "刷新数据库备份列表"
   },
   "date_format_help": {
     "directive": {
@@ -2829,7 +2808,6 @@
     "import": {
       "subtitle": "从 zip 存档中恢复用户资产"
     },
-    "title": "导出/导入用户资产",
     "warning": "此功能旨在让您轻松地将资产从一个 rotki 实例移动到另一个实例。它要求两个实例具有相同的版本。在不同版本之间使用此功能可能会导致错误。"
   },
   "managed_asset_content": {
@@ -3586,7 +3564,6 @@
       "hint": "清空此字段以删除所有 defi 模块的数据"
     },
     "label": "选择数据源",
-    "tooltip": "清除所选源的缓存数据",
     "transactions": "交易"
   },
   "queried_address_dialog": {
@@ -3910,8 +3887,7 @@
             "some": "已处理 {successful} 个（共 {total} 个）被跳过的外部事件",
             "title": "已处理的被跳过事件"
           }
-        },
-        "title": "被跳过的外部事件"
+        }
       },
       "view": {
         "hide": "隐藏事件",

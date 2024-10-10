@@ -12,7 +12,15 @@ const { t } = useI18n();
     </template>
     <UsageAnalyticsSetting />
     <AutoDetectTokensSetting />
-    <DisplayDateInLocaltimeSetting />
+    <SettingsItem>
+      <template #title>
+        {{ t('general_settings.display_date_in_localtime.title') }}
+      </template>
+      <div class="flex flex-col gap-2">
+        <DisplayDateInLocaltimeSetting />
+        <CsvExportDelimiterSetting />
+      </div>
+    </SettingsItem>
     <AskUserUponSizeDiscrepancySetting />
     <VersionUpdateFrequencySetting />
     <BalanceSaveFrequencySetting />
