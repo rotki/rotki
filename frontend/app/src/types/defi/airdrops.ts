@@ -4,7 +4,7 @@ import { z } from 'zod';
 export const AIRDROP_POAP = 'poap';
 
 const PoapDeliveryDetails = z.object({
-  amount: NumericString,
+  assets: z.array(z.number()),
   link: z.string(),
   name: z.string(),
   event: z.string(),
@@ -22,6 +22,7 @@ const Airdrop = z.object({
   details: z.array(PoapDeliveryDetails).optional(),
   cutoffTime: z.number().optional(),
   hasDecoder: z.boolean().optional(),
+  icon: z.string().optional(),
   iconUrl: z.string().optional(),
 });
 
@@ -34,16 +35,12 @@ const AirdropDetail = z.object({
   cutoffTime: z.number().optional(),
   hasDecoder: z.boolean().optional(),
   link: z.string(),
+  icon: z.string().optional(),
+  iconUrl: z.string().optional(),
 });
 
-export type AirdropDetail = z.infer<typeof AirdropDetail>;
-
-const PoapDelivery = z.object({
-  assets: z.array(z.number()),
-  event: z.string(),
-  link: z.string(),
+const PoapDelivery = PoapDeliveryDetails.extend({
   claimed: z.boolean().optional().default(false),
-  name: z.string(),
   iconUrl: z.string().optional(),
 });
 
