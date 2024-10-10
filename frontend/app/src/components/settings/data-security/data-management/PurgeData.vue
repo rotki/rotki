@@ -112,22 +112,27 @@ const chainsSelection = useArrayMap(txChains, item => item.id);
 </script>
 
 <template>
-  <div class="flex items-center gap-4">
-    <div class="flex flex-col md:flex-col md:gap-4 flex-1">
+  <SettingsItem>
+    <template #title>
+      {{ t('data_management.purge_data.title') }}
+    </template>
+    <template #subtitle>
+      {{ t('data_management.purge_data.subtitle') }}
+    </template>
+    <div class="flex flex-col gap-4">
       <RuiAutoComplete
         v-model="source"
-        class="flex-1"
         variant="outlined"
         :label="t('purge_selector.label')"
         :options="purgable"
         text-attr="text"
         key-attr="id"
+        hide-details
         :disabled="pending"
       />
       <ChainSelect
         v-if="source === Purgeable.TRANSACTIONS"
         v-model="chainToClear"
-        class="flex-1"
         clearable
         persistent-hint
         :items="chainsSelection"
@@ -137,7 +142,6 @@ const chainsSelection = useArrayMap(txChains, item => item.id);
       <LocationSelector
         v-else-if="source === Purgeable.CENTRALIZED_EXCHANGES"
         v-model="centralizedExchangeToClear"
-        class="flex-1"
         clearable
         persistent-hint
         :items="allExchanges"
@@ -147,7 +151,6 @@ const chainsSelection = useArrayMap(txChains, item => item.id);
       <LocationSelector
         v-else-if="source === Purgeable.DECENTRALIZED_EXCHANGES"
         v-model="decentralizedExchangeToClear"
-        class="flex-1"
         clearable
         persistent-hint
         :items="DECENTRALIZED_EXCHANGES"
@@ -157,35 +160,32 @@ const chainsSelection = useArrayMap(txChains, item => item.id);
       <DefiModuleSelector
         v-else-if="source === Purgeable.DEFI_MODULES"
         v-model="moduleToClear"
-        class="flex-1"
         :items="purgeableModules"
         :label="t('purge_selector.defi_module_to_clear.label')"
         :hint="t('purge_selector.defi_module_to_clear.hint')"
       />
-    </div>
-    <RuiTooltip
-      :popper="{ placement: 'top' }"
-      :open-delay="400"
-      class="-mt-6"
-    >
-      <template #activator>
+
+      <ActionStatusIndicator
+        v-if="status"
+        :status="status"
+      />
+
+      <div class="flex justify-end">
         <RuiButton
-          variant="text"
-          icon
           :disabled="!source || pending"
           :loading="pending"
+          color="error"
           @click="showConfirmation(source)"
         >
-          <RuiIcon name="delete-bin-line" />
+          <div class="flex items-center gap-2">
+            <RuiIcon
+              name="delete-bin-line"
+              size="16"
+            />
+            <span> {{ t('purge_selector.tooltip') }} </span>
+          </div>
         </RuiButton>
-      </template>
-      <span> {{ t('purge_selector.tooltip') }} </span>
-    </RuiTooltip>
-  </div>
-
-  <ActionStatusIndicator
-    v-if="status"
-    class="mt-4"
-    :status="status"
-  />
+      </div>
+    </div>
+  </SettingsItem>
 </template>
