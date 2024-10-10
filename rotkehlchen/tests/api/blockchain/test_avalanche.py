@@ -26,7 +26,7 @@ if TYPE_CHECKING:
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_add_avax_blockchain_account_invalid(rotkehlchen_api_server):
+def test_add_avax_blockchain_account_invalid(rotkehlchen_api_server: 'APIServer') -> None:
     """Test adding an invalid Avalanche blockchain account works as expected.
     """
     response = requests.put(

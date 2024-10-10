@@ -29,7 +29,7 @@ class ConfigurableSession(requests.Session):
             verify=None,
             cert=None,
             json=None,
-    ):
+    ) -> requests.Response:
         if timeout is None:
             timeout = self.timeout
 

@@ -2,6 +2,7 @@ import logging
 import random
 from contextlib import ExitStack
 from http import HTTPStatus
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import gevent
@@ -9,7 +10,6 @@ import pytest
 import requests
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.api.server import APIServer
 from rotkehlchen.chain.accounts import SingleBlockchainAccountData
 from rotkehlchen.chain.ethereum.defi.structures import (
     DefiBalance,
@@ -46,12 +46,20 @@ from rotkehlchen.tests.utils.factories import (
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
 from rotkehlchen.types import ChainType, SupportedBlockchain
 
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
+    from rotkehlchen.assets.asset import EvmToken
+    from rotkehlchen.tests.fixtures.networking import ConfigurableSession
+    from rotkehlchen.tests.fixtures.websockets import WebsocketReader
+    from rotkehlchen.types import BTCAddress, ChecksumEvmAddress
+
+
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_query_empty_blockchain_balances(rotkehlchen_api_server):
+def test_query_empty_blockchain_balances(rotkehlchen_api_server: 'APIServer') -> None:
     """Make sure that querying balances for all blockchains works when no accounts are tracked
 
     Regression test for https://github.com/rotki/rotki/issues/848
@@ -93,11 +101,11 @@ def test_query_empty_blockchain_balances(rotkehlchen_api_server):
     'bc1qhkje0xfvhmgk6mvanxwy09n45df03tj3h3jtnf',
 ]])
 def test_query_bitcoin_blockchain_bech32_balances(
-        rotkehlchen_api_server,
-        ethereum_accounts,
-        btc_accounts,
-        caplog,
-):
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+        btc_accounts: list['BTCAddress'],
+        caplog: 'pytest.LogCaptureFixture',
+) -> None:
     """Test that querying Bech32 bitcoin addresses works fine"""
     caplog.set_level(logging.DEBUG)
     # Disable caching of query results
@@ -136,10 +144,10 @@ def test_query_bitcoin_blockchain_bech32_balances(
     'BTC': FVal('8849.04'),
 }])
 def test_query_blockchain_balances(
-        rotkehlchen_api_server,
-        ethereum_accounts,
-        btc_accounts,
-):
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+        btc_accounts: list['BTCAddress'],
+) -> None:
     """Test that the query blockchain balances endpoint works when queried asynchronously
     """
     # Disable caching of query results
@@ -225,10 +233,10 @@ def test_query_blockchain_balances(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 def test_query_blockchain_balances_ignore_cache(
-        rotkehlchen_api_server,
-        ethereum_accounts,
-        btc_accounts,
-):
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+        btc_accounts: list['BTCAddress'],
+) -> None:
     """Test that the query blockchain balances endpoint can ignore the cache"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
@@ -304,20 +312,20 @@ def test_query_blockchain_balances_ignore_cache(
 
 
 def _add_blockchain_accounts_test_start(
-        api_server,
-        query_balances_before_first_modification,
-        ethereum_accounts,
-        btc_accounts,
-        async_query,
-):
+        api_server: 'APIServer',
+        query_balances_before_first_modification: bool,
+        ethereum_accounts: list['ChecksumEvmAddress'],
+        btc_accounts: list['BTCAddress'],
+        async_query: bool,
+) -> tuple[list['ChecksumEvmAddress'], list[str], dict[Any, list[str]]]:
     # Disable caching of query results
     rotki = api_server.rest_api.rotkehlchen
     rotki.chains_aggregator.cache_ttl_secs = 0
-
+    rdn_evm_token = A_RDN.resolve_to_evm_token()
     if query_balances_before_first_modification:
         # Also test by having balances queried before adding an account
         eth_balances = ['1000000', '2000000']
-        token_balances = {A_RDN: ['0', '4000000']}
+        token_balances = {rdn_evm_token: ['0', '4000000']}
         setup = setup_balances(
             rotki,
             ethereum_accounts=ethereum_accounts,
@@ -335,7 +343,7 @@ def _add_blockchain_accounts_test_start(
     new_eth_accounts = [make_evm_address(), make_evm_address()]
     all_eth_accounts = ethereum_accounts + new_eth_accounts
     eth_balances = ['1000000', '2000000', '3000000', '4000000']
-    token_balances = {A_RDN: ['0', '4000000', '0', '250000000']}
+    token_balances = {rdn_evm_token: ['0', '4000000', '0', '250000000']}
     setup = setup_balances(
         rotki,
         ethereum_accounts=all_eth_accounts,
@@ -345,9 +353,10 @@ def _add_blockchain_accounts_test_start(
     )
 
     # The application has started only with 2 ethereum accounts. Let's add two more
-    data = {'accounts': [{'address': x} for x in new_eth_accounts]}
-    if async_query:
-        data['async_query'] = True
+    data = {
+        'accounts': [{'address': x} for x in new_eth_accounts],
+        'async_query': async_query,
+    }
     with ExitStack() as stack:
         setup.enter_ethereum_patches(stack)
         response = requests.put(api_url_for(
@@ -411,11 +420,11 @@ def _add_blockchain_accounts_test_start(
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('query_balances_before_first_modification', [True, False])
 def test_add_blockchain_accounts(  # hard to VCR, the order of requests is not always the same
-        rotkehlchen_api_server,
-        ethereum_accounts,
-        btc_accounts,
-        query_balances_before_first_modification,
-):
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+        btc_accounts: list['BTCAddress'],
+        query_balances_before_first_modification: bool,
+) -> None:
     """Test that the endpoint adding blockchain accounts works properly"""
     async_query = random.choice([False, True])
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -582,7 +591,7 @@ def test_add_blockchain_accounts(  # hard to VCR, the order of requests is not a
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('btc_accounts', [[]])
-def test_add_blockchain_accounts_concurrent(rotkehlchen_api_server):
+def test_add_blockchain_accounts_concurrent(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that if we add blockchain accounts concurrently we won't get any duplicates"""
     ethereum_accounts = [make_evm_address(), make_evm_address(), make_evm_address()]
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -643,7 +652,10 @@ def test_add_blockchain_accounts_concurrent(rotkehlchen_api_server):
 @pytest.mark.parametrize('include_etherscan_key', [False])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('legacy_messages_via_websockets', [True])
-def test_no_etherscan_is_detected(rotkehlchen_api_server, websocket_connection):
+def test_no_etherscan_is_detected(
+        rotkehlchen_api_server: 'APIServer',
+        websocket_connection: 'WebsocketReader',
+) -> None:
     """Make sure that interacting with ethereum without an etherscan key is given a warning"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     new_address = make_evm_address()
@@ -675,7 +687,12 @@ def test_no_etherscan_is_detected(rotkehlchen_api_server, websocket_connection):
 
 
 @pytest.mark.parametrize('method', ['PUT', 'DELETE'])
-def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, rest_api_port, method, test_session):  # noqa: E501
+def test_blockchain_accounts_endpoint_errors(
+        rotkehlchen_api_server: 'APIServer',
+        rest_api_port: int,
+        method: str,
+        test_session: 'ConfigurableSession',
+) -> None:
     """
     Test /api/(version)/blockchains/(name) for edge cases and errors.
 
@@ -686,11 +703,10 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, rest_api_po
 
     # Provide unsupported blockchain name
     account = '0x00d74c25bbf93df8b2a41d82b0076843b4db0349'
-    data = {'accounts': [account]}
     with test_session.request(
         method,
         api_url_for(rotkehlchen_api_server, 'blockchainsaccountsresource', blockchain='DDASDAS'),
-        json=data,
+        json={'accounts': [account]},
     ) as response:
         assert_error_response(
             response=response,
@@ -701,7 +717,7 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, rest_api_po
     with test_session.request(
             method,
             f'http://localhost:{rest_api_port}/api/1/blockchains',
-            json=data,
+            json={'accounts': [account]},
     ) as response:
         assert_error_response(
             response=response,
@@ -709,11 +725,10 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, rest_api_po
         )
 
     # Do not provide accounts
-    data = {'dsadsad': 'foo'}
     with test_session.request(
             method,
             api_url_for(rotkehlchen_api_server, 'blockchainsaccountsresource', blockchain='ETH'),
-            json=data,
+            json={'dsadsad': 'foo'},
     ) as response:
         assert_error_response(
             response=response,
@@ -721,11 +736,10 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, rest_api_po
         )
 
     # Provide wrong type of account
-    data = {'accounts': 'foo'}
     with test_session.request(
             method,
             api_url_for(rotkehlchen_api_server, 'blockchainsaccountsresource', blockchain='ETH'),
-            json=data,
+            json={'accounts': 'foo'},
     ) as response:
         if method == 'GET':
             message = "'accounts': ['Not a valid list.'"
@@ -740,11 +754,10 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, rest_api_po
         assert 'foo' not in rotki.chains_aggregator.accounts.eth
 
     # Provide empty list
-    data = {'accounts': []}
     with test_session.request(
             method,
             api_url_for(rotkehlchen_api_server, 'blockchainsaccountsresource', blockchain='ETH'),
-            json=data,
+            json={'accounts': []},
     ) as response:
         verb = 'add' if method == 'PUT' else 'remove'
         assert_error_response(
@@ -755,14 +768,10 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, rest_api_po
     # Provide invalid ETH account (more bytes)
     invalid_eth_account = '0x554FFc77f4251a9fB3c0E3590a6a205f8d4e067d01'
     msg = f'Given value {invalid_eth_account} is not an evm address'
-    if method == 'PUT':
-        data = {'accounts': [{'address': invalid_eth_account}]}
-    else:
-        data = {'accounts': [invalid_eth_account]}
     with test_session.request(
             method,
             api_url_for(rotkehlchen_api_server, 'blockchainsaccountsresource', blockchain='ETH'),
-            json=data,
+            json={'accounts': [{'address': invalid_eth_account}] if method == 'PUT' else [invalid_eth_account]},  # noqa: E501
     ) as response:
         assert_error_response(
             response=response,
@@ -771,14 +780,10 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, rest_api_po
 
     # Provide invalid BTC account
     invalid_btc_account = '18ddjB7HWTaxzvTbLp1nWvaixU3U2oTZ1'
-    if method == 'PUT':
-        data = {'accounts': [{'address': invalid_btc_account}]}
-    else:
-        data = {'accounts': [invalid_btc_account]}
     with test_session.request(
             method,
             api_url_for(rotkehlchen_api_server, 'blockchainsaccountsresource', blockchain='BTC'),
-            json=data,
+            json={'accounts': [{'address': invalid_btc_account}] if method == 'PUT' else [invalid_btc_account]},  # noqa: E501
     ) as response:
         msg = f'Given value {invalid_btc_account} is not a valid bitcoin address'
         assert_error_response(
@@ -790,10 +795,9 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, rest_api_po
 
     # Provide not existing but valid ETH account for removal
     unknown_account = make_evm_address()
-    data = {'accounts': [unknown_account]}
     with test_session.delete(
             api_url_for(rotkehlchen_api_server, 'blockchainsaccountsresource', blockchain='ETH'),
-            json=data,
+            json={'accounts': [unknown_account]},
     ) as response:
         assert_error_response(
             response=response,
@@ -802,10 +806,9 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, rest_api_po
 
     # Provide not existing but valid BTC account for removal
     unknown_btc_account = '18ddjB7HWTVxzvTbLp1nWvaBxU3U2oTZF2'
-    data = {'accounts': [unknown_btc_account]}
     with test_session.delete(
             api_url_for(rotkehlchen_api_server, 'blockchainsaccountsresource', blockchain='BTC'),
-            json=data,
+            json={'accounts': [unknown_btc_account]},
     ) as response:
         assert_error_response(
             response=response,
@@ -818,15 +821,11 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, rest_api_po
     if method == 'DELETE':
         # Account should be an existing account
         account = rotki.chains_aggregator.accounts.eth[0]
-        data = {'accounts': ['142', account]}
-    else:
-        # else keep the new account to add
-        data = {'accounts': [{'address': '142'}, {'address': account}]}
 
     with test_session.request(
             method,
             api_url_for(rotkehlchen_api_server, 'blockchainsaccountsresource', blockchain='ETH'),
-            json=data,
+            json={'accounts': ['142', account] if method == 'DELETE' else [{'address': '142'}, {'address': account}]},  # noqa: E501
     ) as response:
         assert_error_response(
             response=response,
@@ -835,14 +834,10 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, rest_api_po
         )
 
     # Provide invalid type for accounts
-    if method == 'PUT':
-        data = {'accounts': [{'address': 15}]}
-    else:
-        data = {'accounts': [15]}
     with test_session.request(
             method,
             api_url_for(rotkehlchen_api_server, 'blockchainsaccountsresource', blockchain='ETH'),
-            json=data,
+            json={'accounts': [{'address': 15}] if method == 'PUT' else [15]},
     ) as response:
         assert_error_response(
             response=response,
@@ -851,15 +846,11 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, rest_api_po
 
     # Test that providing an account more than once in request data is an error
     account = '0x7BD904A3Db59fA3879BD4c246303E6Ef3aC3A4C6'
-    if method == 'PUT':
-        data = {'accounts': [{'address': account}, {'address': account}]}
-    else:
-        data = {'accounts': [account, account]}
-    with test_session.request(method, api_url_for(
-            rotkehlchen_api_server,
-            'blockchainsaccountsresource',
-            blockchain='ETH',
-    ), json=data) as response:
+    with test_session.request(
+            method,
+            api_url_for(rotkehlchen_api_server, 'blockchainsaccountsresource', blockchain='ETH'),
+            json={'accounts': [{'address': account}, {'address': account}] if method == 'PUT' else [account, account]},  # noqa: E501
+    ) as response:
         assert_error_response(
             response=response,
             contained_in_msg=f'Address {account} appears multiple times in the request data',
@@ -868,7 +859,7 @@ def test_blockchain_accounts_endpoint_errors(rotkehlchen_api_server, rest_api_po
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_add_blockchain_accounts_with_tags_and_label_and_querying_them(rotkehlchen_api_server):
+def test_add_blockchain_accounts_with_tags_and_label_and_querying_them(rotkehlchen_api_server: 'APIServer') -> None:  # noqa: E501
     """Test that adding account with labels and tags works correctly"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
@@ -915,7 +906,7 @@ def test_add_blockchain_accounts_with_tags_and_label_and_querying_them(rotkehlch
 
     # Now add 3 accounts. Some of them use these tags, some dont
     new_eth_accounts = [make_evm_address(), make_evm_address(), make_evm_address()]
-    accounts_data = [{
+    accounts_data: list[dict] = [{
         'address': new_eth_accounts[0],
         'label': 'my metamask',
         'tags': ['public', 'desktop'],
@@ -943,7 +934,7 @@ def test_add_blockchain_accounts_with_tags_and_label_and_querying_them(rotkehlch
         'blockchainsaccountsresource',
         blockchain='ETH',
     ))
-    response_data = assert_proper_sync_response_with_result(response)
+    response_data: list[dict] = assert_proper_sync_response_with_result(response)
     assert len(response_data) == len(accounts_data)
     for entry in response_data:
         # find the corresponding account in accounts data
@@ -968,9 +959,9 @@ def test_add_blockchain_accounts_with_tags_and_label_and_querying_them(rotkehlch
     UNIT_BTC_ADDRESS2,
 ]])
 def test_edit_blockchain_accounts(
-        rotkehlchen_api_server,
-        ethereum_accounts,
-):
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
     """Test that the endpoint editing blockchain accounts works properly"""
     # Add 3 tags
     tag1 = {
@@ -1101,9 +1092,9 @@ def test_edit_blockchain_accounts(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 def test_edit_blockchain_account_errors(
-        rotkehlchen_api_server,
-        ethereum_accounts,
-):
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
     """Test that errors are handled properly in the edit accounts endpoint"""
     # Add two tags
     tag1 = {
@@ -1133,23 +1124,12 @@ def test_edit_blockchain_account_errors(
     )
     assert_proper_response(response)
 
-    request_data = {'accounts': [{
-        'address': ethereum_accounts[0],
-        'label': 'Second account in the array',
-        'tags': ['public'],
-    }, {
-        'address': ethereum_accounts[1],
-        'label': 'Thirds account in the array',
-        'tags': ['public', 'desktop'],
-    }]}
-
     # Missing accounts
-    request_data = {'foo': ['a']}
     response = requests.patch(api_url_for(
         rotkehlchen_api_server,
         'blockchainsaccountsresource',
         blockchain='ETH',
-    ), json=request_data)
+    ), json={'foo': ['a']})
     assert_error_response(
         response=response,
         contained_in_msg='"accounts": ["Missing data for required field',
@@ -1157,12 +1137,11 @@ def test_edit_blockchain_account_errors(
     )
 
     # Invalid type for accounts
-    request_data = {'accounts': 142}
     response = requests.patch(api_url_for(
         rotkehlchen_api_server,
         'blockchainsaccountsresource',
         blockchain='ETH',
-    ), json=request_data)
+    ), json={'accounts': 142})
     assert_error_response(
         response=response,
         contained_in_msg='Invalid input type',
@@ -1170,15 +1149,14 @@ def test_edit_blockchain_account_errors(
     )
 
     # Missing address for an account
-    request_data = {'accounts': [{
-        'label': 'Second account in the array',
-        'tags': ['public'],
-    }]}
     response = requests.patch(api_url_for(
         rotkehlchen_api_server,
         'blockchainsaccountsresource',
         blockchain='ETH',
-    ), json=request_data)
+    ), json={'accounts': [{
+        'label': 'Second account in the array',
+        'tags': ['public'],
+    }]})
     assert_error_response(
         response=response,
         contained_in_msg='address": ["Missing data for required field',
@@ -1186,16 +1164,15 @@ def test_edit_blockchain_account_errors(
     )
 
     # Invalid type for an account's address
-    request_data = {'accounts': [{
-        'address': 55,
-        'label': 'Second account in the array',
-        'tags': ['public'],
-    }]}
     response = requests.patch(api_url_for(
         rotkehlchen_api_server,
         'blockchainsaccountsresource',
         blockchain='ETH',
-    ), json=request_data)
+    ), json={'accounts': [{
+        'address': 55,
+        'label': 'Second account in the array',
+        'tags': ['public'],
+    }]})
     assert_error_response(
         response=response,
         contained_in_msg='address": ["Not a valid string',
@@ -1203,16 +1180,15 @@ def test_edit_blockchain_account_errors(
     )
 
     # Invalid address for an account's address
-    request_data = {'accounts': [{
-        'address': 'dsadsd',
-        'label': 'Second account in the array',
-        'tags': ['public'],
-    }]}
     response = requests.patch(api_url_for(
         rotkehlchen_api_server,
         'blockchainsaccountsresource',
         blockchain='ETH',
-    ), json=request_data)
+    ), json={'accounts': [{
+        'address': 'dsadsd',
+        'label': 'Second account in the array',
+        'tags': ['public'],
+    }]})
     assert_error_response(
         response=response,
         contained_in_msg='Given value dsadsd is not an evm address',
@@ -1220,16 +1196,15 @@ def test_edit_blockchain_account_errors(
     )
 
     # Invalid type for label
-    request_data = {'accounts': [{
-        'address': ethereum_accounts[1],
-        'label': 55,
-        'tags': ['public'],
-    }]}
     response = requests.patch(api_url_for(
         rotkehlchen_api_server,
         'blockchainsaccountsresource',
         blockchain='ETH',
-    ), json=request_data)
+    ), json={'accounts': [{
+        'address': ethereum_accounts[1],
+        'label': 55,
+        'tags': ['public'],
+    }]})
     assert_error_response(
         response=response,
         contained_in_msg='label": ["Not a valid string',
@@ -1237,16 +1212,15 @@ def test_edit_blockchain_account_errors(
     )
 
     # Empty list for tags
-    request_data = {'accounts': [{
-        'address': ethereum_accounts[1],
-        'label': 'a label',
-        'tags': [],
-    }]}
     response = requests.patch(api_url_for(
         rotkehlchen_api_server,
         'blockchainsaccountsresource',
         blockchain='ETH',
-    ), json=request_data)
+    ), json={'accounts': [{
+        'address': ethereum_accounts[1],
+        'label': 'a label',
+        'tags': [],
+    }]})
     assert_error_response(
         response=response,
         contained_in_msg='Provided empty list for tags. Use null',
@@ -1254,16 +1228,15 @@ def test_edit_blockchain_account_errors(
     )
 
     # Invalid type for tags
-    request_data = {'accounts': [{
-        'address': ethereum_accounts[1],
-        'label': 'a label',
-        'tags': 231,
-    }]}
     response = requests.patch(api_url_for(
         rotkehlchen_api_server,
         'blockchainsaccountsresource',
         blockchain='ETH',
-    ), json=request_data)
+    ), json={'accounts': [{
+        'address': ethereum_accounts[1],
+        'label': 'a label',
+        'tags': 231,
+    }]})
     assert_error_response(
         response=response,
         contained_in_msg='tags": ["Not a valid list',
@@ -1271,16 +1244,15 @@ def test_edit_blockchain_account_errors(
     )
 
     # Invalid type for tags list entry
-    request_data = {'accounts': [{
-        'address': ethereum_accounts[1],
-        'label': 'a label',
-        'tags': [55.221],
-    }]}
     response = requests.patch(api_url_for(
         rotkehlchen_api_server,
         'blockchainsaccountsresource',
         blockchain='ETH',
-    ), json=request_data)
+    ), json={'accounts': [{
+        'address': ethereum_accounts[1],
+        'label': 'a label',
+        'tags': [55.221],
+    }]})
     assert_error_response(
         response=response,
         contained_in_msg='tags": {"0": ["Not a valid string',
@@ -1288,16 +1260,15 @@ def test_edit_blockchain_account_errors(
     )
 
     # One non existing tag
-    request_data = {'accounts': [{
-        'address': ethereum_accounts[1],
-        'label': 'a label',
-        'tags': ['nonexistant'],
-    }]}
     response = requests.patch(api_url_for(
         rotkehlchen_api_server,
         'blockchainsaccountsresource',
         blockchain='ETH',
-    ), json=request_data)
+    ), json={'accounts': [{
+        'address': ethereum_accounts[1],
+        'label': 'a label',
+        'tags': ['nonexistant'],
+    }]})
     assert_error_response(
         response=response,
         contained_in_msg='When editing blockchain accounts, unknown tags nonexistant were found',
@@ -1305,16 +1276,15 @@ def test_edit_blockchain_account_errors(
     )
 
     # Mix of existing and non-existing tags
-    request_data = {'accounts': [{
-        'address': ethereum_accounts[1],
-        'label': 'a label',
-        'tags': ['a', 'public', 'b', 'desktop', 'c'],
-    }]}
     response = requests.patch(api_url_for(
         rotkehlchen_api_server,
         'blockchainsaccountsresource',
         blockchain='ETH',
-    ), json=request_data)
+    ), json={'accounts': [{
+        'address': ethereum_accounts[1],
+        'label': 'a label',
+        'tags': ['a', 'public', 'b', 'desktop', 'c'],
+    }]})
     assert_error_response(
         response=response,
         contained_in_msg='When editing blockchain accounts, unknown tags ',
@@ -1322,7 +1292,12 @@ def test_edit_blockchain_account_errors(
     )
 
     # Provide same account multiple times in request data
-    request_data = {'accounts': [{
+    msg = f'Address {ethereum_accounts[1]} appears multiple times in the request data'
+    response = requests.patch(api_url_for(
+        rotkehlchen_api_server,
+        'blockchainsaccountsresource',
+        blockchain='ETH',
+    ), json={'accounts': [{
         'address': ethereum_accounts[1],
         'label': 'a label',
         'tags': ['a', 'public', 'b', 'desktop', 'c'],
@@ -1330,13 +1305,7 @@ def test_edit_blockchain_account_errors(
         'address': ethereum_accounts[1],
         'label': 'a label',
         'tags': ['a', 'public', 'b', 'desktop', 'c'],
-    }]}
-    msg = f'Address {ethereum_accounts[1]} appears multiple times in the request data'
-    response = requests.patch(api_url_for(
-        rotkehlchen_api_server,
-        'blockchainsaccountsresource',
-        blockchain='ETH',
-    ), json=request_data)
+    }]})
     assert_error_response(
         response=response,
         contained_in_msg=msg,
@@ -1345,23 +1314,24 @@ def test_edit_blockchain_account_errors(
 
 
 def _remove_blockchain_accounts_test_start(
-        api_server,
-        query_balances_before_first_modification,
-        ethereum_accounts,
-        btc_accounts,
-        async_query,
-):
+        api_server: 'APIServer',
+        query_balances_before_first_modification: bool,
+        ethereum_accounts: list['ChecksumEvmAddress'],
+        btc_accounts: list['BTCAddress'],
+        async_query: bool,
+) -> tuple[list['ChecksumEvmAddress'], list[str], dict['EvmToken', list[str]]]:
     # Disable caching of query results
     rotki = api_server.rest_api.rotkehlchen
     rotki.chains_aggregator.cache_ttl_secs = 0
     removed_eth_accounts = [ethereum_accounts[0], ethereum_accounts[2]]
     eth_accounts_after_removal = [ethereum_accounts[1], ethereum_accounts[3]]
     all_eth_balances = ['1000000', '2000000', '3000000', '4000000']
-    token_balances = {A_RDN: ['0', '0', '450000000', '0']}
+    token_balances = {A_RDN.resolve_to_evm_token(): ['0', '0', '450000000', '0']}
     eth_balances_after_removal = ['2000000', '4000000']
-    token_balances_after_removal = {}
-    starting_liabilities = {A_DAI: ['5555555', '1000000', '0', '99999999']}
-    after_liabilities = {A_DAI: ['1000000', '99999999']}
+    token_balances_after_removal: dict[EvmToken, list[str]] = {}
+    a_dai_token = A_DAI.resolve_to_evm_token()
+    starting_liabilities = {a_dai_token: ['5555555', '1000000', '0', '99999999']}
+    after_liabilities = {a_dai_token: ['1000000', '99999999']}
     # in this part of the test we also check that defi balances for a particular
     # account are deleted when we remove the account
     defi_balances = {
@@ -1501,11 +1471,11 @@ def _remove_blockchain_accounts_test_start(
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
 @pytest.mark.parametrize('query_balances_before_first_modification', [True, False])
 def test_remove_blockchain_accounts(
-        rotkehlchen_api_server,
-        ethereum_accounts,
-        btc_accounts,
-        query_balances_before_first_modification,
-):
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+        btc_accounts: list['BTCAddress'],
+        query_balances_before_first_modification: bool,
+) -> None:
     """Test that the endpoint removing blockchain accounts works properly"""
 
     async_query = random.choice([False, True])
@@ -1585,9 +1555,9 @@ def test_remove_blockchain_accounts(
 
 @pytest.mark.parametrize('number_of_eth_accounts', [2])
 def test_remove_nonexisting_blockchain_account_along_with_existing(
-        rotkehlchen_api_server,
-        ethereum_accounts,
-):
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
+) -> None:
     """Test that if an existing and a non-existing account are given to remove, nothing is"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
@@ -1654,7 +1624,7 @@ def test_remove_nonexisting_blockchain_account_along_with_existing(
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_remove_blockchain_account_with_tags_removes_mapping(rotkehlchen_api_server):
+def test_remove_blockchain_account_with_tags_removes_mapping(rotkehlchen_api_server: 'APIServer') -> None:  # noqa: E501
     """Test that removing an account with tags remove the mappings"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
@@ -1746,7 +1716,7 @@ def test_remove_blockchain_account_with_tags_removes_mapping(rotkehlchen_api_ser
 @pytest.mark.parametrize('gnosis_accounts', [[ADDRESS_MULTICHAIN]])
 @pytest.mark.parametrize('bch_accounts', [[UNIT_BTC_ADDRESS1]])
 @pytest.mark.parametrize('btc_accounts', [[UNIT_BTC_ADDRESS1, UNIT_BTC_ADDRESS2]])
-def test_remove_chain_agnostic_accounts(rotkehlchen_api_server: APIServer):
+def test_remove_chain_agnostic_accounts(rotkehlchen_api_server: 'APIServer') -> None:
     """Test the removal of accounts for all the chains where they are tracked"""
     response = requests.delete(
         api_url_for(
