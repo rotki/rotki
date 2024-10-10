@@ -31,7 +31,7 @@ export class GeneralSettingsPage {
   }
 
   selectChainToIgnore(value: string) {
-    cy.get('.general-settings__fields__account-chains-to-skip-detection').click();
+    cy.get('.general-settings__fields__account-chains-to-skip-detection [class*=icon__wrapper]').click();
     cy.get('[data-cy=account-chain-skip-detection-field] input').should('not.be.disabled');
     cy.get('[data-cy=account-chain-skip-detection-field] input').type(value);
     cy.get('[role=menu-content] button').should('have.length', 1);
@@ -44,23 +44,6 @@ export class GeneralSettingsPage {
 
   setDateDisplayFormat(value: string) {
     this.setInputFieldValue('.general-settings__fields__date-display-format input', value);
-  }
-
-  toggleScrambleData() {
-    cy.get('.general-settings__fields__scramble-data').click();
-  }
-
-  changePassword(currentPassword: string, newPassword: string) {
-    cy.get('.general-settings__account-and-security__fields__current-password input').clear();
-    cy.get('.general-settings__account-and-security__fields__current-password input').type(currentPassword);
-
-    cy.get('.general-settings__account-and-security__fields__new-password input').clear();
-    cy.get('.general-settings__account-and-security__fields__new-password input').type(newPassword);
-
-    cy.get('.general-settings__account-and-security__fields__new-password-confirm input').clear();
-    cy.get('.general-settings__account-and-security__fields__new-password-confirm input').type(newPassword);
-
-    cy.get('.general-settings__account-and-security__buttons__change-password').click();
   }
 
   confirmInlineSuccess(target: string, messageContains?: string) {
@@ -77,7 +60,6 @@ export class GeneralSettingsPage {
     currencyLocation: 'after' | 'before';
     currency: string;
     balanceSaveFrequency: string;
-    rpcEndpoint: string;
   }) {
     cy.get('.general-settings__fields__floating-precision input').should('have.value', settings.floatingPrecision);
     cy.get('.general-settings__fields__anonymous-usage-statistics input').should(
@@ -109,24 +91,5 @@ export class GeneralSettingsPage {
 
   navigateAway() {
     RotkiApp.navigateTo('dashboard');
-  }
-
-  addEthereumRPC(name: string, endpoint: string) {
-    cy.get('[data-cy=add-node]').click();
-    cy.get('[data-cy=bottom-dialog]').should('be.visible');
-    cy.get('[data-cy=node-name]').type(name);
-    cy.get('[data-cy=node-endpoint]').type(endpoint);
-    cy.get('[data-cy=confirm]').click();
-    cy.get('[data-cy=bottom-dialog]').should('not.exist');
-  }
-
-  confirmRPCAddition(name: string, endpoint: string) {
-    cy.get('[data-cy=ethereum-node]').children().should('contain.text', name);
-    cy.get('[data-cy=ethereum-node]').children().should('contain.text', endpoint);
-  }
-
-  confirmRPCmissing(name: string, endpoint: string) {
-    cy.get('[data-cy=ethereum-node]').children().should('not.contain.text', name);
-    cy.get('[data-cy=ethereum-node]').children().should('not.contain.text', endpoint);
   }
 }

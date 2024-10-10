@@ -30,22 +30,6 @@ const directory = computed(() => {
   return filepath.slice(0, index + 1);
 });
 
-const userDb = computed(() => {
-  const info = get(backupInfo);
-  return {
-    size: info ? size(info.userdb.info.size) : '0',
-    version: info ? info.userdb.info.version.toString() : '0',
-  };
-});
-
-const globalDb = computed(() => {
-  const info = get(backupInfo);
-  return {
-    schema: info ? info.globaldb.globaldbSchemaVersion.toString() : '0',
-    assets: info ? info.globaldb.globaldbAssetsVersion.toString() : '0',
-  };
-});
-
 const { info, createBackup, deleteBackup } = useBackupApi();
 
 async function loadInfo() {
@@ -181,11 +165,6 @@ onMounted(loadInfo);
 </script>
 
 <template>
-  <DatabaseInfoDisplay
-    :directory="directory"
-    :global-db="globalDb"
-    :user-db="userDb"
-  />
   <RuiCard>
     <template #header>
       <CardTitle>

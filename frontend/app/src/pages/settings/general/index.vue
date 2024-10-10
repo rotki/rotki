@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import AutoDetectTokensSetting from '@/components/settings/general/AutoDetectTokensSetting.vue';
 import { NoteLocation } from '@/types/notes';
+import AmountSettingsCategory from '@/components/settings/AmountSettingsCategory.vue';
 
 definePage({
   meta: {
@@ -8,66 +8,33 @@ definePage({
   },
 });
 
-const amountExample = bigNumberify(123456.789);
 const { t } = useI18n();
+
+enum Category {
+  GENERAL = 'general',
+  AMOUNT = 'amount',
+  NFT = 'nft',
+  EXTERNAL_SERVICE = 'external-service',
+}
+
+const navigation = [
+  { id: Category.GENERAL, label: t('general_settings.title') },
+  { id: Category.AMOUNT, label: t('general_settings.amount.title') },
+  { id: Category.NFT, label: t('general_settings.nft_setting.title') },
+  { id: Category.EXTERNAL_SERVICE, label: t('general_settings.external_service_setting.title') },
+];
 </script>
 
 <template>
-  <div class="general-settings flex flex-col gap-8">
-    <SettingCategory>
-      <template #title>
-        {{ t('general_settings.title') }}
-      </template>
-
-      <div class="flex flex-col gap-4">
-        <UsageAnalyticsSetting />
-        <LanguageSetting />
-        <VersionUpdateFrequencySetting />
-        <BalanceSaveFrequencySetting />
-        <AutoDetectTokensSetting />
-        <DateDisplayFormatSetting />
-        <DateInputFormatSetting />
-        <DisplayDateInLocaltimeSetting />
-        <CsvExportDelimiterSetting />
-        <BtcDerivationGapLimitSetting />
-        <TreatEthAsEth2Setting />
-        <EvmChainsToIgnoreSettings />
-        <AskUserUponSizeDiscrepancySetting />
-      </div>
-    </SettingCategory>
-
-    <SettingCategory>
-      <template #title>
-        {{ t('general_settings.amount.title') }}
-      </template>
-
-      <MainCurrencySetting class="mb-4" />
-      <div class="grid sm:grid-cols-3 gap-4">
-        <FloatingPrecisionSetting />
-        <NumericSeparatorsSettings />
-      </div>
-      <AbbreviateNumberSetting />
-      <CurrencyLocationSetting />
-
-      <div>
-        <strong>
-          {{ t('general_settings.amount.label.resulting_format') }}
-        </strong>
-        <AmountDisplay
-          :value="amountExample"
-          show-currency="symbol"
-        />
-      </div>
-
-      <RoundingSettings />
-    </SettingCategory>
-
-    <RpcSettings />
-    <PriceOracleSettings />
-    <NftSettings />
-    <ExternalServiceSettings />
-    <FrontendSettings />
-  </div>
+  <SettingsPage
+    class="general-settings"
+    :navigation="navigation"
+  >
+    <GeneralSettingsCategory :id="Category.GENERAL" />
+    <AmountSettingsCategory :id="Category.AMOUNT" />
+    <NftSettingsCategory :id="Category.NFT" />
+    <ExternalServiceSettingsCategory :id="Category.EXTERNAL_SERVICE" />
+  </SettingsPage>
 </template>
 
 <style scoped lang="scss">

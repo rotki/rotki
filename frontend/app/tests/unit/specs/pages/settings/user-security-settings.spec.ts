@@ -1,6 +1,6 @@
 import { type VueWrapper, mount } from '@vue/test-utils';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import UserSecuritySettings from '@/pages/settings/data-security/index.vue';
+import AccountSettings from '@/pages/settings/account/index.vue';
 import { libraryDefaults } from '../../../utils/provide-defaults';
 
 vi.mock('vue-router', () => ({
@@ -15,12 +15,12 @@ vi.mock('vue-router', () => ({
 }));
 
 describe('userSecuritySettings.vue', () => {
-  let wrapper: VueWrapper<InstanceType<typeof UserSecuritySettings>>;
+  let wrapper: VueWrapper<InstanceType<typeof AccountSettings>>;
 
   function createWrapper() {
     const pinia = createPinia();
     setActivePinia(pinia);
-    return mount(UserSecuritySettings, {
+    return mount(AccountSettings, {
       global: {
         plugins: [pinia],
         stubs: ['card-title', 'asset-select', 'asset-update', 'confirm-dialog', 'data-table'],

@@ -2507,19 +2507,15 @@
       }
     },
     "labels": {
-      "anonymous_analytics": "Est-ce que des analyses d'utilisation anonymes doivent être envoyées ?",
       "balance_saving_frequency": "Fréquence de sauvegarde des données de solde en heures",
       "btc_derivation_gap": "Limite d'écart de dérivation BTC",
       "date_display_format": "Format d'affichage de la date",
       "date_input_format": "Format d'entrée de la date",
-      "display_date_in_localtime": "Afficher la date dans le fuseau horaire local et non dans l'UTC pour l'exportation CSV.",
       "dot_rpc_endpoint": "Point de terminaison RPC du nœud Polkadot",
       "force_saved_language_setting_in_machine_hint": "Ce paramètre est enregistré dans vos paramètres d'utilisateur. Activez ce paramètre pour le conserver lorsque vous êtes déconnecté.",
       "ksm_rpc_endpoint": "Point de terminaison RPC du nœud Kusama",
       "language": "Langue sélectionnée",
       "treat_eth2_as_eth": "Faut-il traiter ETH2 (ETH en jeu) comme ETH",
-      "version_update_check": "Période de vérification de la mise à jour de la version dans l'application",
-      "version_update_check_enabled": "Activé",
       "chains_to_skip_detection": "Réseaux EVM pour lesquels la détection automatique des jetons doit être ignorée"
     },
     "language_contribution_tooltip": "Cette fonctionnalité est expérimentale et peut ne pas fonctionner correctement pour certaines langues. C'est parce que toutes les phrases statiques dans l'application doivent être traduites manuellement et que c'est un processus long et en cours. Par conséquent, nous avons besoin de votre contribution pour l'accélérer. Cliquez ici pour plus d'informations.",
@@ -2567,9 +2563,6 @@
     },
     "title": "Paramètres généraux",
     "validation": {
-      "analytics": {
-        "error": "Erreur lors de la configuration de l'analyse d'utilisation anonyme"
-      },
       "balance_frequency": {
         "error": "Erreur lors de la configuration de la fréquence de sauvegarde des données de solde sur {frequency}",
         "invalid_frequency": "La fréquence doit être comprise entre {start} et {end} heures",
@@ -2600,9 +2593,6 @@
         "error": "Erreur lors de la configuration du séparateur décimal",
         "success": "Le séparateur décimal est défini sur {decimalSeparator}"
       },
-      "display_date_in_localtime": {
-        "error": "Erreur lors de la configuration de l'affichage de la date dans le fuseau horaire local"
-      },
       "dot_rpc": {
         "error": "Erreur lors de la configuration du point de terminaison RPC du nœud Polkadot",
         "success_set": "Le point de terminaison RPC du nœud Polkadot est défini sur {endpoint}",
@@ -2628,17 +2618,11 @@
       "treat_eth2_as_eth": {
         "error": "Erreur lors de la modification du paramètre pour traiter ETH2 (Staked ETH) comme ETH"
       },
-      "version_update_check_frequency": {
-        "error": "Erreur lors de la configuration de la fréquence de vérification de la mise à jour de la version",
-        "invalid_frequency": "La fréquence doit être comprise entre {start} et {end} heures",
-        "non_empty": "Veuillez entrer la fréquence"
-      },
       "chains_to_skip_detection": {
         "error": "Erreur lors de la configuration des réseaux EVM à ignorer pour la détection automatique des jetons",
         "success": "Les réseaux EVM pour lesquels ignorer la détection automatique des jetons ont été enregistrés avec succès"
       }
-    },
-    "version_update_check_hint": "À quelle fréquence (en heures) la version de l'application sera vérifiée pour les mises à jour"
+    }
   },
   "generate": {
     "custom_selection": "Personnalisé",
@@ -3277,7 +3261,7 @@
     "settings": "Paramètres",
     "settings_sub": {
       "accounting": "Comptabilité",
-      "data_security": "Données & Sécurité",
+      "database": "Base de données",
       "general": "Général",
       "modules": "Modules"
     },
@@ -4462,9 +4446,6 @@
       "private_mode": {
         "description": "Masquer le montant et le pourcentage",
         "label": "Privé"
-      },
-      "scramble": {
-        "label": "Brouiller"
       },
       "semi_private_mode": {
         "description": "Masquer le montant et afficher le pourcentage",
