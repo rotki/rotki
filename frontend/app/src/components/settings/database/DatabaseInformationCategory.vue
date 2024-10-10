@@ -5,7 +5,7 @@ const { t } = useI18n();
 <template>
   <SettingCategory>
     <template #title>
-      {{ t('database_settings.labels.database_info.title') }}
+      {{ t('database_settings.database_info.title') }}
     </template>
     <template #subtitle>
       {{ t('database_settings.database_info.subtitle') }}
