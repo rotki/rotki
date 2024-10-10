@@ -268,8 +268,8 @@ def make_random_trades(num_trades: int, base_asset=A_ETH) -> list[Trade]:
     return trades
 
 
-UNIT_BTC_ADDRESS1 = '1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2'
-UNIT_BTC_ADDRESS2 = '1CounterpartyXXXXXXXXXXXXXXXUWLpVr'
-UNIT_BTC_ADDRESS3 = '18ddjB7HWTVxzvTbLp1nWvaBxU3U2oTZF2'
+UNIT_BTC_ADDRESS1 = BTCAddress('1BvBMSEYstWetqTFn5Au4m4GFg7xJaNVN2')
+UNIT_BTC_ADDRESS2 = BTCAddress('1CounterpartyXXXXXXXXXXXXXXXUWLpVr')
+UNIT_BTC_ADDRESS3 = BTCAddress('18ddjB7HWTVxzvTbLp1nWvaBxU3U2oTZF2')
 
 ZERO_ETH_ADDRESS = string_to_evm_address('0x' + '0' * 40)

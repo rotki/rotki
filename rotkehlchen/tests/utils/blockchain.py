@@ -42,7 +42,7 @@ if TYPE_CHECKING:
 
 def assert_btc_balances_result(
         result: dict[str, Any],
-        btc_accounts: list[str],
+        btc_accounts: list['BTCAddress'],
         btc_balances: list[str],
         also_eth: bool,
 ) -> None:
@@ -84,7 +84,7 @@ def assert_btc_balances_result(
 def assert_eth_balances_result(
         rotki: Rotkehlchen,
         result: dict[str, Any],
-        eth_accounts: list[str],
+        eth_accounts: list['ChecksumEvmAddress'],
         eth_balances: list[str],
         token_balances: dict[EvmToken, list[str]],
         also_btc: bool,
