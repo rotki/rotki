@@ -3969,7 +3969,8 @@
       },
       "select_color": "Select Color",
       "subtitle": "Manage colors for the app theme",
-      "title": "Theme"
+      "title": "Theme",
+      "text": "App theme"
     },
     "theme_switch": {
       "auto": "Auto (Detect Device Theme)",
