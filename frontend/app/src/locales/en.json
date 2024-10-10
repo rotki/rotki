@@ -1258,15 +1258,15 @@
         "title": "Reset assets database"
       },
       "hard_reset": "Hard Reset",
-      "hard_reset_hint": "This option will also reset assets that were added by the user.",
+      "hard_reset_hint": "A hard reset will remove assets that were added by you.",
       "hard_restore_confirmation": {
         "message": "There are assets that will be deleted and might cause an inconsistent state in this account or other accounts in the system. Confirm this action only if you know what you are doing.",
         "title": "Dangerous operation"
       },
       "soft_reset": "Soft Reset",
-      "soft_reset_hint": "This option will not reset assets that were added by the user.",
+      "soft_reset_hint": "A soft reset will not remove assets that were added by you.",
       "subtitle": "Delete custom assets and reset assets database to its initial state.",
-      "warning": "Caution: This operation might affect other users in the same system using the database for assets.",
+      "warning": "This operation might affect other users in the same system using the database for assets.",
       "success": {
         "description": "The asset database has been successfully restored. You will now need to re-login to apply the changes.",
         "title": "Asset database restore"
@@ -1484,11 +1484,6 @@
   },
   "backend_settings_button": {
     "tooltip": "Change the backend settings. Changing the settings will restart the rotki backend"
-  },
-  "backup_manager": {
-    "backup_button": "Create new Backup",
-    "delete_selected": "Delete selected Backups",
-    "title": "User Database Backups"
   },
   "balancer": {
     "loading": "Please wait while your liquidity pools are getting loaded...",
@@ -2079,8 +2074,7 @@
       "select_image_source": "Select image cache source to clear",
       "subtitle": "Allows you to purge image cached by rotki",
       "success": "Cache was successfully cleared",
-      "title": "Purge Images Cache",
-      "tooltip": "Purge the cached images for the selected source"
+      "title": "Purge Images Cache"
     },
     "refresh_cache": {
       "confirm": {
@@ -2136,19 +2130,6 @@
       "message": "There was a problem loading the list of available backups: {message}",
       "title": "Database Backup load"
     }
-  },
-  "database_info_display": {
-    "directory": "Database Directory:",
-    "globaldb": "Global Database",
-    "globaldb_assets": "Assets version:",
-    "globaldb_schema": "Schema version:",
-    "title": "Database Info",
-    "userdb": "User Database",
-    "userdb_size": "Size on disk:",
-    "userdb_version": "Database Version:"
-  },
-  "database_manager": {
-    "refresh_tooltip": "Refresh the database backup list"
   },
   "date_format_help": {
     "directive": {
@@ -2910,7 +2891,16 @@
   "database_settings": {
     "database_info": {
       "title": "Database Information",
-      "subtitle": "View your database information"
+      "subtitle": "View your database information",
+      "labels": {
+        "directory": "Database Directory:",
+        "globaldb": "Global Database",
+        "globaldb_assets": "Assets version:",
+        "globaldb_schema": "Schema version:",
+        "userdb": "User Database",
+        "userdb_size": "Size on disk:",
+        "userdb_version": "Database Version:"
+      }
     },
     "manage_data": {
       "title": "Manage Data",
@@ -2918,11 +2908,13 @@
     },
     "user_backups": {
       "title": "User Database Backups",
-      "subtitle": "View your database backups"
+      "subtitle": "View your database backups",
+      "backup_button": "Create new Backup",
+      "delete_selected": "Delete selected Backups"
     },
     "skipped_events": {
-      "title": "Skipped External Events",
-      "subtitle": "View and manage skipped external events"
+      "subtitle": "View and manage skipped external events",
+      "title": "Skipped External Events"
     },
     "import_export": {
       "title": "Export/Import User Assets",
@@ -3413,7 +3405,6 @@
     "import": {
       "subtitle": "Restore user assets from a zip archive"
     },
-    "title": "Export/Import User Assets",
     "warning": "This functionality is designed to allow you to easily move your assets from one instance of rotki to another. It requires both instances to be of the same version. Using this functionality across different versions might result in errors."
   },
   "managed_asset_content": {
@@ -4265,7 +4256,7 @@
       "hint": "Empty this field to remove the data for all defi modules"
     },
     "label": "Select a data source",
-    "tooltip": "Purge the cached data for the selected source",
+    "tooltip": "Purge data",
     "transactions": "Transactions"
   },
   "queried_address_dialog": {
@@ -4694,8 +4685,7 @@
             "some": "{successful} of {total} skipped external events have been processed",
             "title": "Skipped events processed"
           }
-        },
-        "title": "Skipped external events"
+        }
       },
       "view": {
         "hide": "Hide events",

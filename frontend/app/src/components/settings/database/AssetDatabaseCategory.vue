@@ -10,24 +10,7 @@ const { t } = useI18n();
     <template #subtitle>
       {{ t('database_settings.asset_database.subtitle') }}
     </template>
-    <SettingsItem>
-      <template #title>
-        {{ t('asset_update.success.title') }}
-      </template>
-      <template #subtitle>
-        {{ t('asset_update.manual.subtitle') }}
-      </template>
-      <AssetUpdate />
-    </SettingsItem>
-    <SettingsItem>
-      <template #title>
-        {{ t('asset_update.restore.title') }}
-      </template>
-      <template #subtitle>
-        {{ t('asset_update.restore.subtitle') }}
-        {{ t('asset_update.restore.warning') }}
-      </template>
-      <RestoreAssetsDatabase />
-    </SettingsItem>
+    <AssetUpdate />
+    <RestoreAssetsDatabase />
   </SettingCategory>
 </template>
