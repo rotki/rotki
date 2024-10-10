@@ -38,23 +38,31 @@ onMounted(() => {
 
 <template>
   <SettingsOption
-    #default="{ error, success, update }"
     setting="oraclePenaltyThresholdCount"
     :transform="transform"
     @finished="resetBalanceSaveFrequency()"
   >
-    <RuiTextField
-      v-model="oraclePenaltyThresholdCount"
-      variant="outlined"
-      color="primary"
-      :min="min"
-      class="mt-2"
-      :label="t('oracle_cache_management.penalty.labels.oracle_penalty_threshold_count')"
-      :hint="t('oracle_cache_management.penalty.hints.oracle_penalty_threshold_count')"
-      type="number"
-      :success-messages="success"
-      :error-messages="error || toMessages(v$.oraclePenaltyThresholdCount)"
-      @update:model-value="callIfValid($event, update)"
-    />
+    <template #title>
+      {{ t('oracle_cache_management.penalty.labels.oracle_penalty_threshold_count') }}
+    </template>
+    <template #subtitle>
+      {{ t('oracle_cache_management.penalty.hints.oracle_penalty_threshold_count') }}
+    </template>
+    <template
+      #default="{ error, success, update }"
+    >
+      <RuiTextField
+        v-model="oraclePenaltyThresholdCount"
+        variant="outlined"
+        color="primary"
+        :min="min"
+        class="mt-2"
+        :label="t('oracle_cache_management.penalty.labels.oracle_penalty_threshold_count')"
+        type="number"
+        :success-messages="success"
+        :error-messages="error || toMessages(v$.oraclePenaltyThresholdCount)"
+        @update:model-value="callIfValid($event, update)"
+      />
+    </template>
   </SettingsOption>
 </template>

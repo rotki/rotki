@@ -24,14 +24,8 @@ const navigation = [
 
 <template>
   <SettingsPage :navigation="navigation">
-    <SettingCategory :id="Category.PRICE_ORACLE">
-      <PriceOracleSettings />
-    </SettingCategory>
-    <SettingCategory :id="Category.CACHE_MANAGEMENT">
-      <OracleCacheManagement />
-    </SettingCategory>
-    <SettingCategory :id="Category.PENALTY">
-      <OraclePenaltySettings />
-    </SettingCategory>
+    <PriceOracleSettings :id="Category.PRICE_ORACLE" />
+    <OracleCacheManagement :id="Category.CACHE_MANAGEMENT" />
+    <OraclePenaltySettings :id="Category.PENALTY" />
   </SettingsPage>
 </template>
