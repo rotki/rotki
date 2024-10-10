@@ -38,23 +38,29 @@ onMounted(() => {
 
 <template>
   <SettingsOption
-    #default="{ error, success, update }"
     setting="oraclePenaltyDuration"
     :transform="transform"
     @finished="resetBalanceSaveFrequency()"
   >
-    <RuiTextField
-      v-model="oraclePenaltyDuration"
-      variant="outlined"
-      color="primary"
-      :min="min"
-      class="mt-2"
-      :label="t('oracle_cache_management.penalty.labels.oracle_penalty_duration')"
-      :hint="t('oracle_cache_management.penalty.hints.oracle_penalty_duration')"
-      type="number"
-      :success-messages="success"
-      :error-messages="error || toMessages(v$.oraclePenaltyDuration)"
-      @update:model-value="callIfValid($event, update)"
-    />
+    <template #title>
+      {{ t('oracle_cache_management.penalty.labels.oracle_penalty_duration') }}
+    </template>
+    <template #subtitle>
+      {{ t('oracle_cache_management.penalty.hints.oracle_penalty_duration') }}
+    </template>
+    <template #default="{ error, success, update }">
+      <RuiTextField
+        v-model="oraclePenaltyDuration"
+        variant="outlined"
+        color="primary"
+        :min="min"
+        class="mt-2"
+        :label="t('oracle_cache_management.penalty.labels.oracle_penalty_duration')"
+        type="number"
+        :success-messages="success"
+        :error-messages="error || toMessages(v$.oraclePenaltyDuration)"
+        @update:model-value="callIfValid($event, update)"
+      />
+    </template>
   </SettingsOption>
 </template>
