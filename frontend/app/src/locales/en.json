@@ -2705,15 +2705,24 @@
       },
       "labels": {
         "floating_precision": "Floating Precision",
-        "main_currency": "Select Main Currency",
+        "main_currency": "Main Currency",
         "main_currency_subtitle": "Select as the main currency"
       },
       "subtitle": "Manage your amount settings.",
       "title": "Amounts Settings",
-
       "example": {
         "before": "For example: $10,000.00",
         "after": "For example: 10,000.00$"
+      }
+    },
+    "balance_frequency": {
+      "label": "Balance data saving frequency in hours",
+      "title": "Balance saving",
+      "validation": {
+        "error": "Error setting balance save frequency to {frequency}",
+        "invalid_frequency": "Frequency must be between {start} and {end} hours",
+        "non_empty": "Please enter the number of hours",
+        "success": "Data save frequency set to {frequency} hours"
       }
     },
     "date_display": {
@@ -2766,7 +2775,6 @@
       }
     },
     "labels": {
-      "balance_saving_frequency": "Balance data saving frequency in hours",
       "beacon_rpc_endpoint": "RPC Endpoint for the ETH consensus layer beacon node",
       "btc_derivation_gap": "BTC derivation gap limit",
       "date_display_format": "Date display format",
@@ -2787,7 +2795,7 @@
         "title": "Allow images from all domains"
       },
       "label": {
-        "include_nfts": "Manage your NFT settings",
+        "include_nfts": "Include NFTs in graphs and total amounts",
         "include_nfts_subtitle": "Graphs and total net worths",
         "include_nfts_hint": "By default graphs and dashboard include the value of all the NFTs",
         "render_setting": {
@@ -2800,7 +2808,7 @@
         "whitelisted_domain_entries": "no entries | {count} unique entry | {count} unique entries"
       },
       "subtitle": {
-        "include_nfts": "Include NFTs in graphs and total amounts",
+        "include_nfts": "Manage your NFT settings",
         "nft_images_rendering_setting": "NFT images rendering setting",
         "nft_images_rendering_setting_hint": "Fetching NFT images from malicious server may result in leakage of your privacy, read more {link}"
       },
@@ -2834,12 +2842,6 @@
       }
     },
     "validation": {
-      "balance_frequency": {
-        "error": "Error setting balance save frequency to {frequency}",
-        "invalid_frequency": "Frequency must be between {start} and {end} hours",
-        "non_empty": "Please enter the number of hours",
-        "success": "Data save frequency set to {frequency} hours"
-      },
       "beacon_rpc": {
         "error": "There was an error setting the RPC endpoint for the ETH consensus layer",
         "success_set": "The RPC endpoint for the ETH consensus layer was set to {endpoint}",

@@ -47,7 +47,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-4">
+  <SettingsItem>
+    <template #title>
+      {{ t('general_settings.version_update_check.title') }}
+    </template>
     <SettingsOption
       #default="{ updateImmediate }"
       setting="versionUpdateCheckFrequency"
@@ -87,5 +90,5 @@ onMounted(() => {
         />
       </SettingsOption>
     </div>
-  </div>
+  </SettingsItem>
 </template>
