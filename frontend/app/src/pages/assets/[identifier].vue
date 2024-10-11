@@ -223,18 +223,18 @@ const {
           :popper="{ placement: 'top' }"
           :open-delay="400"
           tooltip-class="max-w-[10rem]"
-          :disabled="!isWhitelisted && !isSpam"
+          :disabled="!isSpam"
         >
           <template #activator>
             <RuiSwitch
               color="primary"
               hide-details
-              :disabled="isWhitelisted || isSpam"
+              :disabled="isSpam"
               :model-value="isIgnored"
               @update:model-value="toggleIgnoreAsset()"
             />
           </template>
-          {{ isSpam ? t('ignore.spam.hint') : t('ignore.whitelist.hint') }}
+          {{ t('ignore.spam.hint') }}
         </RuiTooltip>
 
         <ManagedAssetIgnoringMore
