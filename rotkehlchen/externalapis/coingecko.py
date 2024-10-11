@@ -1,7 +1,7 @@
 import json
 import logging
 from http import HTTPStatus
-from typing import Any, Literal, NamedTuple, overload
+from typing import TYPE_CHECKING, Any, Literal, NamedTuple, overload
 
 import requests
 
@@ -13,14 +13,18 @@ from rotkehlchen.db.settings import CachedSettings
 from rotkehlchen.errors.asset import UnknownAsset, UnsupportedAsset
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
+from rotkehlchen.externalapis.interface import ExternalServiceWithApiKeyOptionalDB
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.types import HistoricalPrice, HistoricalPriceOracle
 from rotkehlchen.interfaces import HistoricalPriceOracleWithCoinListInterface
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.types import ChainID, EvmTokenKind, Price, Timestamp
+from rotkehlchen.types import ChainID, EvmTokenKind, ExternalService, Price, Timestamp
 from rotkehlchen.utils.misc import create_timestamp, set_user_agent, timestamp_to_date, ts_now
 from rotkehlchen.utils.mixins.penalizable_oracle import PenalizablePriceOracleMixin
+
+if TYPE_CHECKING:
+    from rotkehlchen.db.dbhandler import DBHandler
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -512,14 +516,20 @@ COINGECKO_SIMPLE_VS_CURRENCIES = {
 }
 
 
-class Coingecko(HistoricalPriceOracleWithCoinListInterface, PenalizablePriceOracleMixin):
+class Coingecko(
+        ExternalServiceWithApiKeyOptionalDB,
+        HistoricalPriceOracleWithCoinListInterface,
+        PenalizablePriceOracleMixin,
+):
 
-    def __init__(self) -> None:
+    def __init__(self, database: 'DBHandler | None') -> None:
+        ExternalServiceWithApiKeyOptionalDB.__init__(self, database=database, service_name=ExternalService.COINGECKO)  # noqa: E501
         HistoricalPriceOracleWithCoinListInterface.__init__(self, oracle_name='coingecko')
         PenalizablePriceOracleMixin.__init__(self)
         self.session = requests.session()
         set_user_agent(self.session)
         self.last_rate_limit = 0
+        self.db: DBHandler | None  # type: ignore  # "solve" the self.db discrepancy
 
     @overload
     def _query(
@@ -550,11 +560,18 @@ class Coingecko(HistoricalPriceOracleWithCoinListInterface, PenalizablePriceOrac
         May raise:
         - RemoteError if there is a problem querying coingecko
         """
+        if (api_key := self._get_api_key()) is not None:
+            base_url = 'https://pro-api.coingecko.com/api/v3'
+        else:
+            base_url = 'https://api.coingecko.com/api/v3'
+
         if options is None:
             options = {}
-        url = f'https://api.coingecko.com/api/v3/{module}/'
-        if subpath:
-            url += subpath
+        url = f'{base_url}/{module}/{subpath or ""}'
+        if api_key:
+            self.session.headers.update({'x-cg-pro-api-key': api_key})
+        else:
+            self.session.headers.pop('x-cg-pro-api-key', None)
 
         log.debug(f'Querying coingecko: {url=} with {options=}')
         try:

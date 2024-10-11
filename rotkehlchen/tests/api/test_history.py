@@ -497,7 +497,7 @@ def test_missing_prices_in_pnl_report(rotkehlchen_api_server):
     price_historian = PriceHistorian(
         data_directory=rotki.data.data_directory,
         cryptocompare=MagicMock(spec=Cryptocompare),
-        coingecko=Coingecko(),
+        coingecko=Coingecko(database=None),
         defillama=MagicMock(spec=Defillama),
         uniswapv2=MagicMock(spec=UniswapV2Oracle),
         uniswapv3=MagicMock(spec=UniswapV3Oracle),
