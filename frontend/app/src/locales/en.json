@@ -2307,6 +2307,7 @@
       "false": "Not connected",
       "true": "Connected"
     },
+    "connectivity": "Connectivity",
     "delete_error": {
       "title": "Deleting {chain} RPC Node"
     },
@@ -2322,10 +2323,11 @@
     "loading_error": {
       "title": "Loading {chain} RPC Nodes"
     },
-    "private_node": "This is a private node added by the user",
-    "private_node_hint": "Private nodes take priority over public nodes",
+    "node": "Node",
+    "node_weight": "Node Weight",
+    "private_node": "This is a private node added by the user. It takes priority over public nodes",
     "public_node": "This is a public node",
-    "weight": "Node weight {weight}%"
+    "weight": "{weight}%"
   },
   "exchange_balances": {
     "add_exchange": "Add exchange",
@@ -2792,7 +2794,8 @@
       }
     },
     "rpc_node_setting": {
-      "title": "RPC node setting"
+      "title": "RPC node setting",
+      "subtitle": "Manage and view your RPC node."
     },
     "subtitle": "Manage your general settings.",
     "thousand_separator": {
@@ -3499,17 +3502,18 @@
       "disable_all": "Disable All",
       "enable_all": "Enable All"
     },
-    "all_accounts": "All",
+    "all_accounts": "All addresses",
     "filter": "Search module(s)",
     "select_accounts_hint": "Select accounts for which data will be retrieved for each submodule. If no addresses are selected data will be retrieved for all available addresses",
+    "some_accounts": "{number} address",
     "table": {
       "enabled": "Enabled",
       "select_accounts": "Select accounts"
     }
   },
   "module_settings": {
-    "active_modules_description": "Only data for the selected modules will be queried. If no modules are selected, querying for all the supported modules will be disabled.",
-    "hint": "* Please remember that after activating a module, you need to logout and login again for the activation to take effect",
+    "hint": "Only data for the selected modules will be queried. If no modules are selected, querying for all the supported modules will be disabled. Also, please remember that after activating a module, you need to logout and login again for the activation to take effect",
+    "subtitle": "Manage and view your module settings.",
     "title": "Module Settings"
   },
   "navigation_menu": {

@@ -8,12 +8,14 @@ const props = withDefaults(
     size?: string;
     openDetails?: boolean;
     detailPath?: string;
+    horizontal?: boolean;
   }>(),
   {
     icon: false,
     size: '24px',
     openDetails: true,
     detailPath: '',
+    horizontal: false,
   },
 );
 
@@ -60,6 +62,7 @@ const route = computed<RouteLocationRaw>(() => {
       :icon="icon"
       :size="size"
       class="w-full"
+      :horizontal="horizontal"
     />
   </NavigatorLink>
 </template>
