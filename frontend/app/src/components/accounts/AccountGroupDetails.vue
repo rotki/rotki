@@ -19,39 +19,35 @@ const emit = defineEmits<{
   (e: 'edit', account: AccountManageState): void;
 }>();
 
+const { t } = useI18n();
+
 const { fetchGroupAccounts } = useBlockchainStore();
+const [DefineAccounts, ReuseAccounts] = createReusableTemplate();
 
 const {
   state: accounts,
   fetchData,
   pagination,
   sort,
-} = usePaginationFilters<BlockchainAccountWithBalance, BlockchainAccountGroupRequestPayload>(
-  null,
-  false,
-  useEmptyFilter,
-  fetchGroupAccounts,
-  {
-    extraParams: computed(() => ({
-      groupId: props.groupId,
-      chain: props.chains,
-      tags: props.tags,
-    })),
-    defaultSortBy: {
-      key: 'usdValue',
-    },
+} = usePaginationFilters<
+  BlockchainAccountWithBalance,
+  BlockchainAccountGroupRequestPayload
+>(fetchGroupAccounts, {
+  customPageParams: computed(() => ({
+    groupId: props.groupId,
+    chain: props.chains,
+    tags: props.tags,
+  })),
+  defaultSortBy: {
+    key: 'usdValue',
   },
-);
+});
 
 useBlockchainAccountLoading(fetchData);
 
 onMounted(() => {
   nextTick(() => fetchData());
 });
-
-const { t } = useI18n();
-
-const [DefineAccounts, ReuseAccounts] = createReusableTemplate();
 
 defineExpose({
   refresh: fetchData,

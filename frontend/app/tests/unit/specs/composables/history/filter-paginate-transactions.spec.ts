@@ -37,7 +37,6 @@ vi.mock('vue', async () => {
 
 describe('composables::history/filter-paginate', () => {
   let fetchHistoryEvents: (payload: MaybeRef<HistoryEventRequestPayload>) => Promise<Collection<HistoryEvent>>;
-  const locationOverview: MaybeRef<string | null> = null;
   const mainPage = ref<boolean>(false);
   const protocols = ref<string[]>([]);
   const eventTypes = ref<string[]>([]);
@@ -93,17 +92,13 @@ describe('composables::history/filter-paginate', () => {
         Collection<HistoryEvent>,
         Filters,
         Matcher
-      >(
-        locationOverview,
-        mainPage,
-        () => useHistoryEventFilter({ protocols: get(protocols).length > 0 }),
-        fetchHistoryEvents,
-        {
-          onUpdateFilters,
-          extraParams,
-          customPageParams,
-        },
-      );
+      >(fetchHistoryEvents, {
+        history: get(mainPage) ? 'router' : false,
+        filterSchema: () => useHistoryEventFilter({ protocols: get(protocols).length > 0 }),
+        onUpdateFilters,
+        extraParams,
+        customPageParams,
+      });
 
       expect(get(userAction)).toBe(true);
       expect(get(isLoading)).toBe(false);
@@ -131,17 +126,13 @@ describe('composables::history/filter-paginate', () => {
         Collection<HistoryEvent>,
         Filters,
         Matcher
-      >(
-        locationOverview,
-        mainPage,
-        () => useHistoryEventFilter({ protocols: get(protocols).length > 0 }),
-        fetchHistoryEvents,
-        {
-          onUpdateFilters,
-          extraParams,
-          customPageParams,
-        },
-      );
+      >(fetchHistoryEvents, {
+        history: get(mainPage) ? 'router' : false,
+        filterSchema: () => useHistoryEventFilter({ protocols: get(protocols).length > 0 }),
+        onUpdateFilters,
+        extraParams,
+        customPageParams,
+      });
 
       expect(get(isLoading)).toBe(false);
 
@@ -163,17 +154,13 @@ describe('composables::history/filter-paginate', () => {
         Collection<HistoryEvent>,
         Filters,
         Matcher
-      >(
-        locationOverview,
-        mainPage,
-        () => useHistoryEventFilter({ protocols: get(protocols).length > 0 }),
-        fetchHistoryEvents,
-        {
-          onUpdateFilters,
-          extraParams,
-          customPageParams,
-        },
-      );
+      >(fetchHistoryEvents, {
+        history: get(mainPage) ? 'router' : false,
+        filterSchema: () => useHistoryEventFilter({ protocols: get(protocols).length > 0 }),
+        onUpdateFilters,
+        extraParams,
+        customPageParams,
+      });
 
       await router.push({
         query,
@@ -215,17 +202,13 @@ describe('composables::history/filter-paginate', () => {
         Collection<HistoryEvent>,
         Filters,
         Matcher
-      >(
-        locationOverview,
-        mainPage,
-        () => useHistoryEventFilter({ protocols: get(protocols).length > 0 }),
-        fetchHistoryEvents,
-        {
-          onUpdateFilters,
-          extraParams,
-          customPageParams,
-        },
-      );
+      >(fetchHistoryEvents, {
+        history: get(mainPage) ? 'router' : false,
+        filterSchema: () => useHistoryEventFilter({ protocols: get(protocols).length > 0 }),
+        onUpdateFilters,
+        extraParams,
+        customPageParams,
+      });
 
       await router.push({
         query,
@@ -248,17 +231,13 @@ describe('composables::history/filter-paginate', () => {
         Collection<HistoryEvent>,
         Filters,
         Matcher
-      >(
-        locationOverview,
-        mainPage,
-        () => useHistoryEventFilter({ protocols: get(protocols).length > 0 }),
-        fetchHistoryEvents,
-        {
-          onUpdateFilters,
-          extraParams,
-          customPageParams,
-        },
-      );
+      >(fetchHistoryEvents, {
+        history: get(mainPage) ? 'router' : false,
+        filterSchema: () => useHistoryEventFilter({ protocols: get(protocols).length > 0 }),
+        onUpdateFilters,
+        extraParams,
+        customPageParams,
+      });
 
       updateFilter({
         location: 'protocols',

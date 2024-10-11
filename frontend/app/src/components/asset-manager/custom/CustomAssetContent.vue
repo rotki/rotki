@@ -61,7 +61,9 @@ const {
   Collection<CustomAsset>,
   Filters,
   Matcher
->(null, mainPage, () => useCustomAssetFilter(types), queryAllCustomAssets, {
+>(queryAllCustomAssets, {
+  history: get(mainPage) ? 'router' : false,
+  filterSchema: () => useCustomAssetFilter(types),
   defaultSortBy: {
     key: ['name'],
     ascending: [false],

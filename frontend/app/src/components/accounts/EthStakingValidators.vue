@@ -40,17 +40,13 @@ const {
   Collection<EthereumValidator>,
   Filters,
   Matcher
->(
-  null,
-  true,
-  () => useEthValidatorAccountFilter(t),
-  fetchValidators,
-  {
-    defaultSortBy: {
-      key: 'index',
-    },
+>(fetchValidators, {
+  history: 'router',
+  filterSchema: () => useEthValidatorAccountFilter(t),
+  defaultSortBy: {
+    key: 'index',
   },
-);
+});
 
 const cols = computed<DataTableColumn<EthereumValidator>[]>(() => {
   const currency = { symbol: get(currencySymbol) };

@@ -104,7 +104,10 @@ const {
   Collection<AssetMovementEntry>,
   Filters,
   Matcher
->(locationOverview, mainPage, useAssetMovementFilters, fetchAssetMovements, {
+>(fetchAssetMovements, {
+  history: get(mainPage) ? 'router' : false,
+  locationOverview,
+  filterSchema: useAssetMovementFilters,
   onUpdateFilters(query) {
     set(showIgnoredAssets, query.excludeIgnoredAssets === 'false');
   },
@@ -122,14 +125,10 @@ const {
 
 useHistoryAutoRefresh(fetchData);
 
-const { ignore } = useIgnore(
-  {
-    actionType: IgnoreActionType.MOVEMENTS,
-    toData: (item: AssetMovementEntry) => item.identifier,
-  },
-  selected,
-  () => fetchData(),
-);
+const { ignore } = useIgnore({
+  actionType: IgnoreActionType.MOVEMENTS,
+  toData: (item: AssetMovementEntry) => item.identifier,
+}, selected, () => fetchData());
 
 const { isLoading: isSectionLoading } = useStatusStore();
 const loading = isSectionLoading(Section.ASSET_MOVEMENT);

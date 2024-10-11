@@ -69,7 +69,9 @@ describe('composables::history/filter-paginate', () => {
         ExchangeSavingsRequestPayload,
         ExchangeSavingsEvent,
         ExchangeSavingsCollection
-      >(exchange, mainPage, useEmptyFilter, fetchExchangeSavings, {
+      >(fetchExchangeSavings, {
+        history: get(mainPage) ? 'router' : false,
+        locationOverview: exchange,
         defaultCollection: defaultCollectionState,
         defaultParams,
         defaultSortBy: {
@@ -108,7 +110,9 @@ describe('composables::history/filter-paginate', () => {
         ExchangeSavingsRequestPayload,
         ExchangeSavingsEvent,
         ExchangeSavingsCollection
-      >(exchange, mainPage, useEmptyFilter, fetchExchangeSavings, {
+      >(fetchExchangeSavings, {
+        history: get(mainPage) ? 'router' : false,
+        locationOverview: exchange,
         defaultCollection: defaultCollectionState,
         defaultParams,
         defaultSortBy: {
@@ -134,7 +138,9 @@ describe('composables::history/filter-paginate', () => {
         ExchangeSavingsRequestPayload,
         ExchangeSavingsEvent,
         ExchangeSavingsCollection
-      >(exchange, mainPage, useEmptyFilter, fetchExchangeSavings, {
+      >(fetchExchangeSavings, {
+        history: get(mainPage) ? 'router' : false,
+        locationOverview: exchange,
         defaultCollection: defaultCollectionState,
         defaultParams,
         defaultSortBy: {

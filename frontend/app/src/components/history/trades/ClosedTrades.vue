@@ -126,28 +126,32 @@ const {
   pagination,
   sort,
   fetchData,
-} = usePaginationFilters<Trade, TradeRequestPayload, TradeEntry, Collection<TradeEntry>, Filters, Matcher>(
+} = usePaginationFilters<
+  Trade,
+  TradeRequestPayload,
+  TradeEntry,
+  Collection<TradeEntry>,
+  Filters,
+  Matcher
+>(fetchTrades, {
+  history: get(mainPage) ? 'router' : false,
   locationOverview,
-  mainPage,
-  useTradeFilters,
-  fetchTrades,
-  {
-    onUpdateFilters(query) {
-      set(hideIgnoredTrades, query.includeIgnoredTrades === 'false');
-      set(showIgnoredAssets, query.excludeIgnoredAssets === 'false');
-    },
-    customPageParams: computed<Partial<TradeRequestPayload>>(() => {
-      const params: Writeable<Partial<TradeRequestPayload>> = {};
-      const location = get(locationOverview);
-
-      if (location)
-        params.location = toSnakeCase(location);
-
-      return params;
-    }),
-    extraParams,
+  filterSchema: useTradeFilters,
+  onUpdateFilters(query) {
+    set(hideIgnoredTrades, query.includeIgnoredTrades === 'false');
+    set(showIgnoredAssets, query.excludeIgnoredAssets === 'false');
   },
-);
+  customPageParams: computed<Partial<TradeRequestPayload>>(() => {
+    const params: Writeable<Partial<TradeRequestPayload>> = {};
+    const location = get(locationOverview);
+
+    if (location)
+      params.location = toSnakeCase(location);
+
+    return params;
+  }),
+  extraParams,
+});
 
 useHistoryAutoRefresh(fetchData);
 

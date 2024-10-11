@@ -71,7 +71,9 @@ const {
   Collection<SupportedAsset>,
   Filters,
   Matcher
->(null, mainPage, useAssetFilter, queryAllAssets, {
+>(queryAllAssets, {
+  history: get(mainPage) ? 'router' : false,
+  filterSchema: useAssetFilter,
   onUpdateFilters(query) {
     set(ignoredFilter, {
       onlyShowOwned: query.showUserOwnedAssetsOnly === 'true',

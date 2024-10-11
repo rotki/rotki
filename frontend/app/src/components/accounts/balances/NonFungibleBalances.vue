@@ -81,22 +81,20 @@ const {
   sort,
   setPage,
   pagination,
-} = usePaginationFilters<NonFungibleBalance, NonFungibleBalancesRequestPayload, NonFungibleBalance>(
-  null,
-  true,
-  useEmptyFilter,
-  fetchNonFungibleBalances,
-  {
-    onUpdateFilters(query) {
-      set(ignoredAssetsHandling, query.ignoredAssetsHandling || 'exclude');
-    },
-    extraParams,
-    defaultSortBy: {
-      key: ['usdPrice'],
-      ascending: [false],
-    },
+} = usePaginationFilters<
+  NonFungibleBalance,
+  NonFungibleBalancesRequestPayload
+>(fetchNonFungibleBalances, {
+  history: 'router',
+  onUpdateFilters(query) {
+    set(ignoredAssetsHandling, query.ignoredAssetsHandling || 'exclude');
   },
-);
+  extraParams,
+  defaultSortBy: {
+    key: ['usdPrice'],
+    ascending: [false],
+  },
+});
 
 const { setPostSubmitFunc, setOpenDialog } = useLatestPriceForm();
 const { show } = useConfirmStore();

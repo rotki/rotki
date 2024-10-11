@@ -13,7 +13,6 @@ const usdValue = defineModel<string>('usdValue', { required: true });
 
 const asset = defineModel<string>('asset', { required: false, default: '' });
 
-// eslint-disable-next-line vue/define-macros-order
 const props = withDefaults(
   defineProps<{
     timestamp: number;

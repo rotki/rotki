@@ -32,7 +32,7 @@ vi.mock('vue', async () => {
 
 describe('composables::history/filter-paginate', () => {
   let fetchAssetMovements: (payload: MaybeRef<AssetMovementRequestPayload>) => Promise<Collection<AssetMovementEntry>>;
-  const locationOverview = ref<string | null>('');
+  const locationOverview = ref<string>('');
   const mainPage = ref<boolean>(false);
   const router = useRouter();
   const route = useRoute();
@@ -61,7 +61,11 @@ describe('composables::history/filter-paginate', () => {
         Collection<AssetMovementEntry>,
         Filters,
         Matcher
-      >(locationOverview, mainPage, useAssetMovementFilters, fetchAssetMovements);
+      >(fetchAssetMovements, {
+        history: get(mainPage) ? 'router' : false,
+        filterSchema: useAssetMovementFilters,
+        locationOverview,
+      });
 
       expect(get(userAction)).toBe(true);
       expect(get(isLoading)).toBe(false);
@@ -87,7 +91,11 @@ describe('composables::history/filter-paginate', () => {
         Collection<AssetMovementEntry>,
         Filters,
         Matcher
-      >(locationOverview, mainPage, useAssetMovementFilters, fetchAssetMovements);
+      >(fetchAssetMovements, {
+        history: get(mainPage) ? 'router' : false,
+        filterSchema: useAssetMovementFilters,
+        locationOverview,
+      });
 
       expect(get(isLoading)).toBe(false);
 
@@ -109,7 +117,11 @@ describe('composables::history/filter-paginate', () => {
         Collection<AssetMovementEntry>,
         Filters,
         Matcher
-      >(locationOverview, mainPage, useAssetMovementFilters, fetchAssetMovements);
+      >(fetchAssetMovements, {
+        history: get(mainPage) ? 'router' : false,
+        filterSchema: useAssetMovementFilters,
+        locationOverview,
+      });
 
       await router.push({
         query,

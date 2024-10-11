@@ -11,15 +11,27 @@ const route = useRoute();
 
 const { getAccountingRule, getAccountingRules, getAccountingRulesConflicts, exportJSON } = useAccountingSettings();
 
-const { state, isLoading, fetchData, setPage, filters, pagination, matchers, updateFilter, editableItem }
-  = usePaginationFilters<
-    AccountingRuleEntry,
-    AccountingRuleRequestPayload,
-    AccountingRuleEntry,
-    Collection<AccountingRuleEntry>,
-    Filters,
-    Matcher
-  >(null, true, useAccountingRuleFilter, getAccountingRules);
+const {
+  state,
+  isLoading,
+  fetchData,
+  setPage,
+  filters,
+  pagination,
+  matchers,
+  updateFilter,
+  editableItem,
+} = usePaginationFilters<
+  AccountingRuleEntry,
+  AccountingRuleRequestPayload,
+  AccountingRuleEntry,
+  Collection<AccountingRuleEntry>,
+  Filters,
+  Matcher
+>(getAccountingRules, {
+  history: 'router',
+  filterSchema: useAccountingRuleFilter,
+});
 
 const conflictsNumber = ref<number>(0);
 

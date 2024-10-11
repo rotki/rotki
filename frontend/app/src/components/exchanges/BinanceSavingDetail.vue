@@ -45,7 +45,9 @@ const {
   ExchangeSavingsRequestPayload,
   ExchangeSavingsEvent,
   ExchangeSavingsCollection
->(exchange, true, useEmptyFilter, fetchExchangeSavings, {
+>(fetchExchangeSavings, {
+  history: 'router',
+  locationOverview: exchange,
   defaultCollection: defaultCollectionState,
   defaultSortBy: {
     ascending: [true],

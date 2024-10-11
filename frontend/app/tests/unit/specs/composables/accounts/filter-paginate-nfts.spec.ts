@@ -34,7 +34,7 @@ describe('composables::history/filter-paginate', () => {
   let fetchNonFungibleBalances: (
     payload: MaybeRef<NonFungibleBalancesRequestPayload>,
   ) => Promise<Collection<NonFungibleBalance>>;
-  const locationOverview = ref<string | null>('');
+  const locationOverview = ref<string>('');
   const mainPage = ref<boolean>(false);
   const router = useRouter();
   const route = useRoute();
@@ -64,15 +64,24 @@ describe('composables::history/filter-paginate', () => {
     });
 
     it('initialize composable correctly', async () => {
-      const { userAction, filters, sort, state, fetchData, applyRouteFilter, isLoading }
-        = usePaginationFilters<NonFungibleBalance>(locationOverview, mainPage, useEmptyFilter, fetchNonFungibleBalances, {
-          onUpdateFilters,
-          extraParams,
-          defaultSortBy: {
-            key: ['name'],
-            ascending: [true],
-          },
-        });
+      const {
+        userAction,
+        filters,
+        sort,
+        state,
+        fetchData,
+        applyRouteFilter,
+        isLoading,
+      } = usePaginationFilters<NonFungibleBalance>(fetchNonFungibleBalances, {
+        history: get(mainPage) ? 'router' : false,
+        locationOverview,
+        onUpdateFilters,
+        extraParams,
+        defaultSortBy: {
+          key: ['name'],
+          ascending: [true],
+        },
+      });
 
       expect(get(userAction)).toBe(true);
       expect(get(isLoading)).toBe(false);
@@ -96,20 +105,21 @@ describe('composables::history/filter-paginate', () => {
     });
 
     it('check the return types', () => {
-      const { isLoading, state, filters, matchers } = usePaginationFilters<NonFungibleBalance>(
+      const {
+        isLoading,
+        state,
+        filters,
+        matchers,
+      } = usePaginationFilters<NonFungibleBalance>(fetchNonFungibleBalances, {
+        history: get(mainPage) ? 'router' : false,
         locationOverview,
-        mainPage,
-        useEmptyFilter,
-        fetchNonFungibleBalances,
-        {
-          onUpdateFilters,
-          extraParams,
-          defaultSortBy: {
-            key: ['name'],
-            ascending: [true],
-          },
+        onUpdateFilters,
+        extraParams,
+        defaultSortBy: {
+          key: ['name'],
+          ascending: [true],
         },
-      );
+      });
 
       expect(get(isLoading)).toBe(false);
 
@@ -124,20 +134,19 @@ describe('composables::history/filter-paginate', () => {
       const pushSpy = vi.spyOn(router, 'push');
       const query = { sortDesc: ['false'] };
 
-      const { isLoading, state } = usePaginationFilters<NonFungibleBalance>(
+      const {
+        isLoading,
+        state,
+      } = usePaginationFilters<NonFungibleBalance>(fetchNonFungibleBalances, {
+        history: get(mainPage) ? 'router' : false,
         locationOverview,
-        mainPage,
-        useEmptyFilter,
-        fetchNonFungibleBalances,
-        {
-          onUpdateFilters,
-          extraParams,
-          defaultSortBy: {
-            key: ['name'],
-            ascending: [false],
-          },
+        onUpdateFilters,
+        extraParams,
+        defaultSortBy: {
+          key: ['name'],
+          ascending: [false],
         },
-      );
+      });
 
       await router.push({
         query,
