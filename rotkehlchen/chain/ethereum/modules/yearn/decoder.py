@@ -10,7 +10,7 @@ from rotkehlchen.chain.ethereum.modules.yearn.constants import (
     YEARN_LABEL_V2,
 )
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
-from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
+from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
     FAILED_ENRICHMENT_OUTPUT,
     EnricherContext,
@@ -34,6 +34,10 @@ YEARN_DEPOSIT_AMOUNT_4_BYTES = b'\xd0\xe3\r\xb0'
 YEARN_DEPOSIT_4_BYTES = b'\xb6\xb5_%'
 YEARN_WITHDRAW_AMOUNT_4_BYTES = b'.\x1a}M'
 YEARN_WITHDRAW_4_BYTES = b'<\xcf\xd6\x0b'
+EMPTY_VAULTS: dict[str, set['ChecksumEvmAddress']] = {
+    YEARN_VAULTS_V1_PROTOCOL: set(),
+    YEARN_VAULTS_V2_PROTOCOL: set(),
+}
 
 
 def _get_vault_token_name(vault_address: 'ChecksumEvmAddress') -> str:
@@ -46,7 +50,7 @@ def _get_vault_token_name(vault_address: 'ChecksumEvmAddress') -> str:
     return vault_token_name
 
 
-class YearnDecoder(DecoderInterface):
+class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
     def __init__(
             self,
             ethereum_inquirer: 'EthereumInquirer',
@@ -58,14 +62,18 @@ class YearnDecoder(DecoderInterface):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
+        self.vaults = EMPTY_VAULTS
 
+    def reload_data(self) -> None:
+        """Reload vaults from DB."""
+        self.vaults = EMPTY_VAULTS
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            db_query = 'SELECT address FROM evm_tokens WHERE protocol=? AND chain=?'
-            cursor.execute(db_query, (YEARN_VAULTS_V1_PROTOCOL, ChainID.ETHEREUM.serialize_for_db()))  # noqa: E501
-            self.vaults_v1 = {string_to_evm_address(row[0]) for row in cursor}
-
-            cursor.execute(db_query, (YEARN_VAULTS_V2_PROTOCOL, ChainID.ETHEREUM.serialize_for_db()))  # noqa: E501
-            self.vaults_v2 = {string_to_evm_address(row[0]) for row in cursor}
+            cursor.execute(
+                'SELECT protocol, address FROM evm_tokens WHERE protocol IN (?, ?) AND chain=?',
+                (YEARN_VAULTS_V1_PROTOCOL, YEARN_VAULTS_V2_PROTOCOL, ChainID.ETHEREUM.serialize_for_db()),  # noqa: E501
+            )
+            for row in cursor:
+                self.vaults[row[0]].add(string_to_evm_address(row[1]))
 
     def _maybe_enrich_yearn_transfers(
             self,
@@ -81,9 +89,9 @@ class YearnDecoder(DecoderInterface):
         executed in the contract is one of the expected.
         """
         protocol = CPT_YEARN_V2
-        if context.transaction.to_address in self.vaults_v1:
+        if context.transaction.to_address in self.vaults[YEARN_VAULTS_V1_PROTOCOL]:
             protocol = CPT_YEARN_V1
-        elif context.transaction.to_address not in self.vaults_v2:
+        elif context.transaction.to_address not in self.vaults[YEARN_VAULTS_V2_PROTOCOL]:
             return FAILED_ENRICHMENT_OUTPUT
 
         is_deposit = False
