@@ -2442,6 +2442,12 @@
       "hint": "Enter your {chain} Blockscout API key",
       "title": "Blockscout"
     },
+    "coingecko": {
+      "delete_tooltip": "Delete your CoinGecko API key",
+      "description": "Used for cryptocurrency data. An API key increases rate limits.",
+      "hint": "Enter your CoinGecko API key",
+      "title": "CoinGecko"
+    },
     "confirmation": {
       "message": "Are you sure you want to delete this API Key?",
       "title": "Delete API Key"
