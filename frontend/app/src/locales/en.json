@@ -2462,6 +2462,12 @@
       "hint": "Enter your CryptoCompare API key",
       "title": "CryptoCompare"
     },
+    "defillama": {
+      "delete_tooltip": "Delete your DefiLlama Pro API key",
+      "description": "Used to query higher rate limits for DeFi prices and data. This API key will increase your query limits.",
+      "hint": "Enter your DefiLlama Pro API key",
+      "title": "DefiLlama Pro"
+    },
     "delete_error": {
       "description": "Error while removing the external service api keys: {message}"
     },

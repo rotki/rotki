@@ -60,4 +60,6 @@ export const externalLinks = {
   binanceCsvExport: 'https://www.binance.com/en/my/wallet/history',
   applyTheGraphApiKey: 'https://thegraph.com/studio/apikeys/',
   liquityTotalCollateralRatioDoc: 'https://docs.liquity.org/faq/recovery-mode#what-is-the-total-collateral-ratio',
+  coingeckoApiKey: 'https://www.coingecko.com/en/api/pricing',
+  defillamaApiKey: 'https://defillama.com/pro-api',
 };
