@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 import pytest
 import requests
 
@@ -9,12 +11,15 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.ens import ENS_BRUNO, ENS_BRUNO_BTC_ADDR
 from rotkehlchen.types import SupportedBlockchain
 
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
+
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('network_mocking', [False])
 @pytest.mark.freeze_time('2023-11-05 11:40:00 GMT')
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_add_btc_blockchain_account_ens_domain(rotkehlchen_api_server):
+def test_add_btc_blockchain_account_ens_domain(rotkehlchen_api_server: 'APIServer') -> None:
     """Test adding a Bitcoin blockchain account via ENS domain when there is none
     in the db works as expected.
     """

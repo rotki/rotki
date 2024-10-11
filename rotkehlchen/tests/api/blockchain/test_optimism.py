@@ -1,3 +1,4 @@
+from typing import TYPE_CHECKING
 from unittest.mock import patch
 
 import pytest
@@ -15,13 +16,16 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.types import SupportedBlockchain
 from rotkehlchen.utils.misc import ts_now
 
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
+
 TEST_ADDY = '0x9531C059098e3d194fF87FebB587aB07B30B1306'
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'], match_on=['uri', 'method', 'raw_body'], allow_playback_repeats=True)  # noqa: E501
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('network_mocking', [False])
-def test_add_optimism_blockchain_account(rotkehlchen_api_server):
+def test_add_optimism_blockchain_account(rotkehlchen_api_server: 'APIServer') -> None:
     """Test adding an optimism account when there is none in the db
     works as expected and that balances are returned and tokens are detected.
     """

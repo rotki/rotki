@@ -2,7 +2,7 @@ import operator
 from collections.abc import Callable
 from contextlib import ExitStack
 from http import HTTPStatus
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Literal
 from unittest.mock import patch
 
 import gevent
@@ -29,7 +29,7 @@ from rotkehlchen.tests.utils.avalanche import AVALANCHE_ACC1_AVAX_ADDR
 from rotkehlchen.tests.utils.blockchain import setup_evm_addresses_activity_mock
 from rotkehlchen.tests.utils.factories import make_evm_address
 from rotkehlchen.tests.utils.rotkehlchen import setup_balances
-from rotkehlchen.types import ChecksumEvmAddress, SupportedBlockchain
+from rotkehlchen.types import ChecksumEvmAddress, ListOfBlockchainAddresses, SupportedBlockchain
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
@@ -40,13 +40,13 @@ ADDY = string_to_evm_address('0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045')
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_add_same_evm_account_for_multiple_chains(rotkehlchen_api_server):
+def test_add_same_evm_account_for_multiple_chains(rotkehlchen_api_server: 'APIServer') -> None:
     """Test adding an Avalanche blockchain account when the same account is input
     in Ethereum works fine
     """
     setup = setup_balances(
         rotki=rotkehlchen_api_server.rest_api.rotkehlchen,
-        ethereum_accounts=[AVALANCHE_ACC1_AVAX_ADDR],
+        ethereum_accounts=[string_to_evm_address(AVALANCHE_ACC1_AVAX_ADDR)],
         btc_accounts=None,
         eth_balances=['10000000000'],
         token_balances=None,
@@ -100,7 +100,7 @@ def test_add_same_evm_account_for_multiple_chains(rotkehlchen_api_server):
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [['0x9531C059098e3d194fF87FebB587aB07B30B1306']])
-def test_deleting_ens_account_works(rotkehlchen_api_server):
+def test_deleting_ens_account_works(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that deleting an ENS eth account can be handled properly
 
     This test mocks all etherscan queries apart from the ENS ones
@@ -129,7 +129,7 @@ def test_deleting_ens_account_works(rotkehlchen_api_server):
 
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_adding_non_checksummed_eth_account_works(rotkehlchen_api_server):
+def test_adding_non_checksummed_eth_account_works(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that adding a non checksummed eth account can be handled properly"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     account = '0x7bd904a3db59fa3879bd4c246303e6ef3ac3a4c6'
@@ -155,7 +155,7 @@ def test_adding_non_checksummed_eth_account_works(rotkehlchen_api_server):
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
-def test_adding_editing_ens_account_works(rotkehlchen_api_server):
+def test_adding_editing_ens_account_works(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that adding an ENS eth account can be handled properly"""
     resolved_account = '0x9531C059098e3d194fF87FebB587aB07B30B1306'
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
@@ -213,7 +213,7 @@ def test_adding_editing_ens_account_works(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 @pytest.mark.parametrize('gnosis_accounts', [['0x7277F7849966426d345D8F6B9AFD1d3d89183083']])
-def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer'):
+def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that adding accounts to multiple evm chains works fine
 
     TODO: Needs mocking with the data at the time of test writing
@@ -244,7 +244,11 @@ def test_add_multievm_accounts(rotkehlchen_api_server: 'APIServer'):
     # adding new accounts
     original_modify_blockchain_accounts = rotki.chains_aggregator.modify_blockchain_accounts
 
-    def new_modify_blockchain_accounts(blockchain, accounts, append_or_remove) -> Callable:  # pylint: disable=unused-argument
+    def new_modify_blockchain_accounts(
+            blockchain: SupportedBlockchain,
+            accounts: ListOfBlockchainAddresses,
+            append_or_remove: Literal['append', 'remove'],
+    ) -> Callable:  # pylint: disable=unused-argument
         """Make the logic fail when adding new accounts if failing_account is given as argument"""
         if failing_account in accounts:
             raise RemoteError('Mocking a failure when adding addresses')
@@ -415,8 +419,8 @@ def test_detect_evm_accounts(
 @pytest.mark.parametrize('have_decoders', [True])
 @pytest.mark.parametrize('ethereum_accounts', [[make_evm_address() for _ in range(3)]])
 def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
-        rotkehlchen_api_server,
-        ethereum_accounts,
+        rotkehlchen_api_server: 'APIServer',
+        ethereum_accounts: list['ChecksumEvmAddress'],
 ) -> None:
     """
     Test that if transactions for an address are being queried and removal is
@@ -425,7 +429,8 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
     """
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     task_manager = rotki.task_manager
-    gevent.killall(rotki.task_manager.greenlet_manager.greenlets)
+    assert task_manager is not None
+    gevent.killall(task_manager.greenlet_manager.greenlets)
     task_manager.max_tasks_num = 2
     now = ts_now()
     task_manager.potential_tasks = [task_manager._maybe_query_evm_transactions]
@@ -434,7 +439,7 @@ def test_evm_account_deletion_does_not_wait_for_pending_txn_queries(
     task_manager_addy = ethereum_accounts[-1]
     api_addies = ethereum_accounts[:2].copy()
 
-    def patch_single_query(**kwargs):  # pylint: disable=unused-argument
+    def patch_single_query(**kwargs: Any) -> None:  # pylint: disable=unused-argument
         while True:
             gevent.sleep(2)
 
