@@ -659,11 +659,17 @@ def test_migration_17(rotkehlchen_api_server: 'APIServer') -> None:
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])
 def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
-    related_address1, related_address2, other_address = '0x9531C059098e3d194fF87FebB587aB07B30B1306', '0x8Fe178db26ebA2eEdb22575265bf10A63c395a3d', '0x3c89cd398aCcFCf0e046d325c4805A98723F8630'  # noqa: E501
+    ethereum_manager = rotki.chains_aggregator.ethereum
+    related_address1, related_address2, other_address, yabireth = '0x9531C059098e3d194fF87FebB587aB07B30B1306', '0x8Fe178db26ebA2eEdb22575265bf10A63c395a3d', '0x3c89cd398aCcFCf0e046d325c4805A98723F8630', '0xc37b40ABdB939635068d3c5f13E7faF686F03B65'  # noqa: E501
     with rotki.data.db.user_write() as write_cursor:  # let's add 2 tracked accounts
         write_cursor.executemany(
             'INSERT INTO blockchain_accounts(blockchain, account) VALUES(?, ?)',
-            [('ETH', related_address1), ('ETH', related_address2), ('ETH', other_address)],
+            [
+                ('ETH', related_address1),
+                ('ETH', related_address2),
+                ('ETH', other_address),
+                ('ETH', yabireth),
+            ],
         )
 
     approval_1 = deserialize_evm_tx_hash('0xbb8280cc9ca9de1d33e573a4381d88525a214fc45f84415129face03125ba22f')  # noqa: E501
@@ -677,8 +683,24 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
     kept_txs = [approval_1, approval_2, vested_delegation_tol2, normal_delegation_tol2, stake_withdrawn, stake_delegated, stake_delegate_locked, stake_delegate_vested]  # noqa: E501
     for tx_hash in kept_txs:  # transactions related to our addresses and thegraph
         get_decoded_events_of_transaction(
-            evm_inquirer=rotki.chains_aggregator.ethereum.node_inquirer,
+            evm_inquirer=ethereum_manager.node_inquirer,
             tx_hash=tx_hash,
+        )
+
+    # transaction that will be marked as spam
+    spam_hash = deserialize_evm_tx_hash('0xfc8b1ea372fc7d82e6516dff022ea874c9323c8d5f2afe517aa588e1a4b1aab6')  # noqa: E501
+    with rotki.data.db.conn.read_ctx() as cursor:
+        spam_transaction, _ = ethereum_manager.transactions.get_or_create_transaction(
+            cursor=cursor,
+            tx_hash=spam_hash,
+            relevant_address=string_to_evm_address(yabireth),
+        )
+        spam_transaction_id = spam_transaction.get_or_query_db_id(cursor)
+
+    with rotki.data.db.conn.write_ctx() as write_cursor:
+        write_cursor.executemany(  # mark as spam but also count as decoded. Same as we were doing in 1.35.0  # noqa: E501
+            'INSERT INTO evm_tx_mappings(tx_id, value) VALUES(?, ?)',
+            [(spam_transaction_id, 0), (spam_transaction_id, 1)],  # decoded and spam
         )
 
     # mark a few assets as spam
@@ -718,11 +740,11 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
     ]
     with rotki.data.db.conn.read_ctx() as cursor:
         for tx_hash in bad_txs:
-            rotki.chains_aggregator.ethereum.transactions.get_or_create_transaction(cursor=cursor, tx_hash=tx_hash, relevant_address=None)  # noqa:E501
-            rotki.chains_aggregator.ethereum.transactions.get_or_query_transaction_receipt(tx_hash=tx_hash)
+            ethereum_manager.transactions.get_or_create_transaction(cursor=cursor, tx_hash=tx_hash, relevant_address=None)  # noqa:E501
+            ethereum_manager.transactions.get_or_query_transaction_receipt(tx_hash=tx_hash)
 
     with rotki.data.db.conn.read_ctx() as cursor:
-        assert {x[0] for x in cursor.execute('SELECT tx_hash FROM evm_transactions').fetchall()} == set(kept_txs + bad_txs)  # make sure they are all written in the DB  # noqa: E501
+        assert {x[0] for x in cursor.execute('SELECT tx_hash FROM evm_transactions').fetchall()} == set(kept_txs + bad_txs + [spam_hash])  # make sure they are all written in the DB  # noqa: E501
 
         assert cursor.execute(  # make sure the given tokens were marked as ignored
             'SELECT COUNT(*) FROM multisettings WHERE name="ignored_asset" AND value IN (?, ?, ?, ?)',  # noqa: E501
@@ -745,10 +767,15 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
             [token.identifier for token in tokens],
         ).fetchone()[0] == 0
 
+        assert cursor.execute(
+            'SELECT COUNT(*) FROM evm_tx_mappings WHERE tx_id=?',
+            (spam_transaction_id,),
+        ).fetchone()[0] == 0
+
     for token in tokens:
         assert GlobalDBHandler.get_protocol_for_asset(token.identifier) != SPAM_PROTOCOL
 
-    assert result_kept_txs == set(kept_txs)  # after the migration see all irrelevant transactions are deleted  # noqa: E501
+    assert result_kept_txs == set(kept_txs + [spam_hash])  # after the migration see all irrelevant transactions are deleted  # noqa: E501
 
 
 @pytest.mark.parametrize('perform_upgrades_at_unlock', [False])

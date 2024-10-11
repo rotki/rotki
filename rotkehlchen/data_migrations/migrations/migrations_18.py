@@ -9,6 +9,7 @@ from rotkehlchen.chain.gnosis.modules.monerium.constants import (
 from rotkehlchen.chain.polygon_pos.modules.monerium.constants import (
     V1_TO_V2_MONERIUM_MAPPINGS as POLYGON_MONERIUM_MAPPINGS,
 )
+from rotkehlchen.db.constants import EVMTX_SPAM
 from rotkehlchen.db.filtering import EvmEventFilterQuery
 from rotkehlchen.db.history_events import DBHistoryEvents
 from rotkehlchen.errors.asset import UnknownAsset
@@ -168,6 +169,19 @@ def whitelist_monerium_assets(rotki: 'Rotkehlchen') -> None:
             )
 
 
+@enter_exit_debug_log()
+def remove_spam_detection_on_transactions(rotki: 'Rotkehlchen') -> None:
+    """We will remove any marked transaction as spam from the database so they can be decoded
+    in case something went wrong with the autodetection of spam.
+    """
+    with rotki.data.db.user_write() as write_cursor:
+        write_cursor.execute(
+            'DELETE FROM evm_tx_mappings WHERE tx_id IN (SELECT tx_id FROM '
+            'evm_tx_mappings WHERE value=?)',
+            (EVMTX_SPAM,),
+        )
+
+
 def data_migration_18(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:  # pylint: disable=unused-argument
     """
     Introduced at v1.35.1
@@ -176,8 +190,10 @@ def data_migration_18(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
     for delegation to arbitrum
     - Removes monerium tokens from spam
     """
-    progress_handler.set_total_steps(2)
+    progress_handler.set_total_steps(3)
     cleanup_extra_thegraph_txs(rotki)
     progress_handler.new_step()
     whitelist_monerium_assets(rotki)
+    progress_handler.new_step()
+    remove_spam_detection_on_transactions(rotki)
     progress_handler.new_step()

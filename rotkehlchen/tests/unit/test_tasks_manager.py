@@ -17,10 +17,8 @@ from rotkehlchen.chain.evm.decoding.aave.constants import CPT_AAVE_V3
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
 from rotkehlchen.chain.evm.decoding.thegraph.constants import CPT_THEGRAPH
 from rotkehlchen.chain.evm.types import string_to_evm_address
-from rotkehlchen.constants.assets import A_COMP, A_DAI, A_GRT, A_LUSD, A_USDC, A_USDT, A_YFI
+from rotkehlchen.constants.assets import A_COMP, A_DAI, A_GRT, A_LUSD, A_USDC, A_USDT
 from rotkehlchen.constants.misc import ONE
-from rotkehlchen.constants.prices import ZERO_PRICE
-from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.constants.timing import DATA_UPDATES_REFRESH, DAY_IN_SECONDS, WEEK_IN_SECONDS
 from rotkehlchen.db.cache import DBCacheDynamic, DBCacheStatic
 from rotkehlchen.db.calendar import CalendarEntry, CalendarFilterQuery, DBCalendar
@@ -614,58 +612,6 @@ def test_maybe_detect_new_spam_tokens(
         assert deserialize_timestamp(cursor.fetchone()[0]) - ts_now() < 2  # saved timestamp should be recent  # noqa: E501
 
 
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('gnosis_accounts', [['0xcC3Da35614E6CAEEA7947d7Cd58000C350E7FF84']])
-@pytest.mark.parametrize('ethereum_accounts', [['0xb524c787669185E11d01C645D1910631e04Fa5Eb']])
-@pytest.mark.parametrize('max_tasks_num', [5])
-def test_maybe_augmented_detect_new_spam_tokens(
-        task_manager: TaskManager,
-        database: 'DBHandler',
-        globaldb: GlobalDBHandler,
-        gnosis_inquirer,
-        ethereum_inquirer,
-) -> None:
-    """
-    Test the augmented spam detection schedule and behaviour. We use a token that is not detected
-    in the fast checks that we do and that is airdropped in a multisend transaction.
-    """
-    spam_tx_hex = deserialize_evm_tx_hash('0x6c10aaafec60e012316f54e2ac691b0a64d8744c21382fd3eb5013b4d1935bab')  # noqa: E501
-    get_decoded_events_of_transaction(
-        evm_inquirer=gnosis_inquirer,
-        tx_hash=spam_tx_hex,
-    )
-    token = EvmToken(evm_address_to_identifier(
-        address='0x456FEb37ca5F087f7B59F5F684437cf1dd6e968f',
-        chain_id=ChainID.GNOSIS,
-        token_type=EvmTokenKind.ERC20,
-    ))
-    assert token.protocol is None
-
-    # add a transaction for an asset that will get deleted from the
-    # globaldb but we will keep the events. To see nothing breaks.
-    tx_hex = deserialize_evm_tx_hash('0x5d7e7646e3749fcd575ea76e35763fa8eeb6dfb83c4c242a4448ee1495f695ba')  # noqa: E501
-    get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hex,
-    )
-    globaldb.delete_asset_by_identifier(A_YFI.identifier)
-
-    task_manager.potential_tasks = [task_manager._maybe_augmented_detect_new_spam_tokens]
-    task_manager.schedule()
-    gevent.joinall(task_manager.running_greenlets[task_manager._maybe_augmented_detect_new_spam_tokens])  # wait for the task to finish since it might context switch while running  # noqa: E501
-
-    updated_token = cast(EvmToken, globaldb.resolve_asset(identifier=token.identifier))
-    assert updated_token.protocol == SPAM_PROTOCOL
-
-    with database.conn.read_ctx() as cursor:
-        assert token.identifier in database.get_ignored_asset_ids(cursor=cursor)
-        cursor.execute(
-            'SELECT value FROM key_value_cache WHERE name=?',
-            (DBCacheStatic.LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY.value,),
-        )
-        assert deserialize_timestamp(cursor.fetchone()[0]) - ts_now() < 2  # saved timestamp should be recent  # noqa: E501
-
-
 @pytest.mark.parametrize('max_tasks_num', [5])
 @pytest.mark.parametrize('number_of_eth_accounts', [0])
 def test_tasks_dont_schedule_if_no_eth_address(task_manager: TaskManager) -> None:
@@ -684,42 +630,6 @@ def test_tasks_dont_schedule_if_no_eth_address(task_manager: TaskManager) -> Non
                 if len(task_manager.running_greenlets) != 0:
                     gevent.joinall(task_manager.running_greenlets[func])
                 assert mocked_func.call_count == 0
-
-
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('ethereum_accounts', [['0xD4324B81d097141230961af171bC0287F59A2538']])
-@pytest.mark.parametrize('max_tasks_num', [5])
-def test_augmented_detection_pendle_transactions(
-        task_manager: TaskManager,
-        globaldb: GlobalDBHandler,
-        ethereum_inquirer: 'EthereumInquirer',
-) -> None:
-    """
-    Test that a tx involving transfers about the threshold but from different
-    contracts doesn't mark the tokens as spam if the price query fails.
-    """
-    tx_hex = deserialize_evm_tx_hash('0x9d4ff6ae12790aa747f2f886529092476df6b63e745684b80b8f32c61b90be67')  # noqa: E501
-    get_decoded_events_of_transaction(
-        evm_inquirer=ethereum_inquirer,
-        tx_hash=tx_hex,
-    )
-    token = EvmToken(evm_address_to_identifier(
-        address='0x391B570e81e354a85a496952b66ADc831715f54f',
-        chain_id=ChainID.ETHEREUM,
-        token_type=EvmTokenKind.ERC20,
-    ))
-    assert token.protocol is None
-
-    task_manager.potential_tasks = [task_manager._maybe_augmented_detect_new_spam_tokens]
-    task_manager.schedule()
-    with patch(
-        'rotkehlchen.externalapis.defillama.Defillama.query_current_price',
-        side_effect=lambda *args, **kwargs: (ZERO_PRICE, True),
-    ):
-        gevent.joinall(task_manager.running_greenlets[task_manager._maybe_augmented_detect_new_spam_tokens])  # wait for the task to finish since it might context switch while running  # noqa: E501
-
-    updated_token = cast(EvmToken, globaldb.resolve_asset(identifier=token.identifier))
-    assert updated_token.protocol is None
 
 
 @pytest.mark.vcr(filter_query_parameters=['apikey'])
