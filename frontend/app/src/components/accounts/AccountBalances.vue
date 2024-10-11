@@ -2,7 +2,7 @@
 import { SavedFilterLocation } from '@/types/filtering';
 import { AccountExternalFilterSchema, type Filters, type Matcher } from '@/composables/filters/blockchain-account';
 import AccountBalancesTable from '@/components/accounts/AccountBalancesTable.vue';
-import AccountGroupDetails from '@/components/accounts/AccountGroupDetails.vue';
+import AccountGroupDetailsTable from '@/components/accounts/AccountGroupDetailsTable.vue';
 import DetectTokenChainsSelection from '@/components/accounts/balances/DetectTokenChainsSelection.vue';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 import type { Collection } from '@/types/collection';
@@ -26,7 +26,7 @@ const { t } = useI18n();
 const visibleTags = ref<string[]>([]);
 const chainExclusionFilter = ref<Record<string, string[]>>({});
 const accountTable = ref<ComponentExposed<typeof AccountBalancesTable>>();
-const detailsTable = ref<ComponentExposed<typeof AccountGroupDetails>>();
+const detailsTable = ref<ComponentExposed<typeof AccountGroupDetailsTable>>();
 const tab = ref<number>(0);
 
 const blockchainStore = useBlockchainStore();
@@ -195,15 +195,27 @@ defineExpose({
       <template #details="{ row }">
         <AccountGroupDetails
           v-if="row.expansion === 'accounts'"
-          ref="detailsTable"
-          v-model.tab="tab"
-          :chains="getChains(row)"
-          :tags="visibleTags"
-          :group-id="getGroupId(row)"
+          v-model="tab"
           :is-xpub="row.data.type === 'xpub'"
-          :is-evm="row.category === 'evm'"
-          @edit="emit('edit', $event)"
-        />
+        >
+          <template #per-chain>
+            <AccountGroupDetailsTable
+              v-if="row.expansion === 'accounts'"
+              ref="detailsTable"
+              :chains="getChains(row)"
+              :tags="visibleTags"
+              :group-id="getGroupId(row)"
+              :is-evm="row.category === 'evm'"
+              @edit="emit('edit', $event)"
+            />
+          </template>
+          <template #aggregated>
+            <AccountBalanceAggregatedAssets
+              :group-id="getGroupId(row)"
+              :chains="getChains(row)"
+            />
+          </template>
+        </AccountGroupDetails>
         <AccountBalanceDetails
           v-else-if="row.expansion === 'assets'"
           :address="getAccountAddress(row)"
