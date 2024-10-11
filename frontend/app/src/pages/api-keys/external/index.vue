@@ -29,5 +29,6 @@ onMounted(async () => {
     <TheGraphApiKey />
     <GnosisPayAuth />
     <DefiLlamaApiKey />
+    <CoinGeckoApiKey />
   </TablePageLayout>
 </template>
