@@ -72,8 +72,7 @@ disallow_untyped_decorators = false
 # -- Typing has been fixed in these tests --
 [[tool.mypy.overrides]]
 module = [
-    "rotkehlchen.tests.api.blockchain.test_avalanche",
-    "rotkehlchen.tests.api.blockchain.test_base",
+    "rotkehlchen.tests.api.blockchain.*",
 ]
 check_untyped_defs = true
 disallow_untyped_defs = true
