@@ -257,7 +257,7 @@ def _create_inquirer(
     inquirer = Inquirer(
         data_dir=data_directory,
         cryptocompare=Cryptocompare(database=None),
-        coingecko=Coingecko(),
+        coingecko=Coingecko(database=None),
         defillama=Defillama(database=None),
         manualcurrent=ManualCurrentOracle(),
         msg_aggregator=MessagesAggregator(),

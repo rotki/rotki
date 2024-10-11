@@ -180,7 +180,7 @@ class Rotkehlchen:
             sql_vm_instructions_cb=args.sqlite_instructions,
         )
         self.cryptocompare = Cryptocompare(database=None)
-        self.coingecko = Coingecko()
+        self.coingecko = Coingecko(database=None)
         self.defillama = Defillama(database=None)
         self.icon_manager = IconManager(
             data_dir=self.data_dir,
@@ -242,7 +242,7 @@ class Rotkehlchen:
         self.cryptocompare.db = None
         self.exchange_manager.delete_all_exchanges()
         self.data.logout()
-        for instance in (self.cryptocompare, self.defillama, Inquirer()._manualcurrent):
+        for instance in (self.cryptocompare, self.defillama, self.coingecko, Inquirer()._manualcurrent):  # noqa: E501
             if instance.db is not None:  # unset DB if needed
                 instance.unset_database()
         CachedSettings().reset()
@@ -320,6 +320,7 @@ class Rotkehlchen:
         # set the DB in the instances that need it
         self.cryptocompare.set_database(self.data.db)
         self.defillama.set_database(self.data.db)
+        self.coingecko.set_database(self.data.db)
         Inquirer()._manualcurrent.set_database(database=self.data.db)
 
         # Anything that was set above here has to be cleaned in case of failure in the next step
@@ -540,6 +541,7 @@ class Rotkehlchen:
         # unset the DB in the instances that need unsetting
         self.cryptocompare.unset_database()
         self.defillama.unset_database()
+        self.coingecko.unset_database()
         Inquirer()._manualcurrent.unset_database()
         CachedSettings().reset()
 
