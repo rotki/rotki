@@ -1900,10 +1900,8 @@
     "loading_error": {
       "title": "Loading {chain} RPC Nodes"
     },
-    "private_node": "This is a private node added by the user",
-    "private_node_hint": "Private nodes take priority over public nodes",
     "public_node": "This is a public node",
-    "weight": "Node weight {weight}%"
+    "weight": "{weight}%"
   },
   "exchange_balances": {
     "add_exchange": "Añadir exchange",
@@ -2828,8 +2826,6 @@
     }
   },
   "module_settings": {
-    "active_modules_description": "Only data for the selected modules will be queried. If no modules are selected, querying for all the supported modules will be disabled.",
-    "hint": "* Please remember that after activating a module, you need to logout and login again for the activation to take effect",
     "title": "Module Settings"
   },
   "navigation_menu": {
