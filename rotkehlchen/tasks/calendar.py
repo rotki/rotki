@@ -366,7 +366,7 @@ class CalendarReminderCreator(CustomizableDateMixin):
                 entry_name = f'{pretty_name} airdrop claim deadline'
 
                 # TODO: Add zksync era to SupportedBlockchain - https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=81788541  # noqa: E501
-                if airdrop_info['asset'].chain_id == 324:
+                if airdrop_info['asset'].chain_id == ChainID.ZKSYNC_ERA:
                     continue  # Skip airdrops on zksync era
 
                 blockchain = airdrop_info['asset'].chain_id.to_blockchain()

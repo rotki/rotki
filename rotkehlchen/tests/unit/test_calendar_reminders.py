@@ -52,6 +52,24 @@ MOCK_MYSO_ZK_AIRDROP_INDEX = {
                 'decimals': 18,
             },
         },
+        'zk': {
+            'file_path': 'airdrops/zk.parquet',
+            'file_hash': '17c754bf5b051e322d2bb0a5034f4d541a5c2769ca42294d6b5c3632372debb7',
+            'asset_identifier': 'eip155:324/erc20:0x5A7d6b2F92C77FAD6CCaBd7EE0624E64907Eaf3E',
+            'url': 'https://claim.zknation.io/',
+            'name': 'ZK',
+            'icon': 'zksync.jpg',
+            'cutoff_time': 1735862400,
+            'has_decoder': False,
+            'new_asset_data': {
+                'asset_type': 'EVM_TOKEN',
+                'address': '0x5A7d6b2F92C77FAD6CCaBd7EE0624E64907Eaf3E',
+                'name': 'ZKsync',
+                'symbol': 'ZK',
+                'chain_id': 324,
+                'decimals': 18,
+            },
+        },
     },
     'poap_airdrops': {},
 }
@@ -194,7 +212,9 @@ def test_airdrop_claim_calendar_reminders(
         ethereum_accounts: list['ChecksumAddress'],
         ethereum_inquirer: 'EthereumInquirer',
 ) -> None:
-    """Test that reminders are created at lock period end of CRV in vote escrow."""
+    """Test that reminders are created for airdrop claim deadlines.
+    The zksync era airdrop should be skipped currently since it is not in SupportedBlockchain
+    """
     calendar_db = DBCalendar(database)
     user_address = ethereum_accounts[0]
     all_calendar_entries = calendar_db.query_calendar_entry(CalendarFilterQuery.make())
