@@ -16,7 +16,6 @@ from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
 from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.constants.timing import (
     AAVE_V3_ASSETS_UPDATE,
-    AUGMENTED_SPAM_ASSETS_DETECTION_REFRESH,
     DATA_UPDATES_REFRESH,
     DAY_IN_SECONDS,
     EVMLIKE_ACCOUNTS_DETECTION_REFRESH,
@@ -41,7 +40,6 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.premium.premium import Premium, has_premium_check, premium_create_and_verify
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.tasks.assets import (
-    augmented_spam_detection,
     autodetect_spam_assets_in_db,
     maybe_detect_new_tokens,
     update_aave_v3_underlying_assets,
@@ -171,7 +169,6 @@ class TaskManager:
             self._maybe_run_events_processing,
             self._maybe_detect_withdrawal_exits,
             self._maybe_detect_new_spam_tokens,
-            self._maybe_augmented_detect_new_spam_tokens,
             self._maybe_query_monerium,
             self._maybe_update_owned_assets,
             self._maybe_update_aave_v3_underlying_assets,
@@ -751,23 +748,6 @@ class TaskManager:
             task_name='Detect spam assets in globaldb',
             exception_is_error=True,
             method=autodetect_spam_assets_in_db,
-            user_db=self.database,
-        )]
-
-    def _maybe_augmented_detect_new_spam_tokens(self) -> Optional[list[gevent.Greenlet]]:
-        """
-        This function runs the augmented token detection algorithm which is a heavier and more
-        time consuming analysis on user's asset that involves external calls in order to find and
-        detect potential spam tokens.
-        """
-        if should_run_periodic_task(self.database, DBCacheStatic.LAST_AUGMENTED_SPAM_ASSETS_DETECT_KEY, AUGMENTED_SPAM_ASSETS_DETECTION_REFRESH) is False:  # noqa: E501
-            return None
-
-        return [self.greenlet_manager.spawn_and_track(
-            after_seconds=None,
-            task_name='Augmented detection of spam assets',
-            exception_is_error=True,
-            method=augmented_spam_detection,
             user_db=self.database,
         )]
 

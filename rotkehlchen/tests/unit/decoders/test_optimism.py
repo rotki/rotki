@@ -1,9 +1,7 @@
-from typing import TYPE_CHECKING
 
 import pytest
 
 from rotkehlchen.accounting.structures.balance import Balance
-from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.airdrops import AIRDROP_IDENTIFIER_KEY
 from rotkehlchen.chain.evm.decoding.constants import CPT_GAS
 from rotkehlchen.chain.evm.types import string_to_evm_address
@@ -12,25 +10,16 @@ from rotkehlchen.chain.optimism.modules.airdrops.decoder import (
     OPTIMISM_AIRDROP_1,
     OPTIMISM_AIRDROP_4,
 )
-from rotkehlchen.chain.optimism.node_inquirer import OptimismInquirer
 from rotkehlchen.constants.assets import A_ETH, A_OP
-from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.fval import FVal
-from rotkehlchen.globaldb.utils import set_token_spam_protocol
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.tests.utils.ethereum import get_decoded_events_of_transaction
 from rotkehlchen.types import (
-    SPAM_PROTOCOL,
-    ChainID,
     Location,
     TimestampMS,
     deserialize_evm_tx_hash,
 )
-
-if TYPE_CHECKING:
-    from rotkehlchen.globaldb.handler import GlobalDBHandler
-
 
 ADDY = '0x2B888954421b424C5D3D9Ce9bB67c9bD47537d12'
 
@@ -149,46 +138,3 @@ def test_optimism_delegate_change(optimism_inquirer):
             address=string_to_evm_address('0x4200000000000000000000000000000000000042'),
         )]
     assert expected_events == events
-
-
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('optimism_accounts', [['0x14Acfa256475680e74C8f4c6D7dE32E51DfC3D1a']])
-def test_spam_detection(optimism_inquirer: OptimismInquirer):
-    get_or_create_evm_token(
-        userdb=optimism_inquirer.database,
-        evm_address=string_to_evm_address('0x3A5871ef02ba290ABD3fb75684c1C40E06bE5C43'),
-        chain_id=ChainID.OPTIMISM,
-        fallback_name='Spam token OP',
-        fallback_symbol='SPAM OP',
-        decimals=18,
-        protocol=SPAM_PROTOCOL,
-    )
-    tx_hash = deserialize_evm_tx_hash('0x4070092c79530835efe9a75eaf1e289da0f38bbb17cd224390bca0a756b7cea4')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
-    assert len(events) == 0
-
-    undecoded_hashes = DBEvmTx(optimism_inquirer.database).get_transaction_hashes_not_decoded(
-        chain_id=optimism_inquirer.chain_id,
-        limit=None,
-    )
-    assert len(undecoded_hashes) == 0
-
-
-@pytest.mark.vcr(filter_query_parameters=['apikey'])
-@pytest.mark.parametrize('optimism_accounts', [['0x31987a48567Df2E1953A6fb713Faee9fb06d095C']])
-def test_spam_detection_exception(
-        optimism_inquirer: OptimismInquirer,
-        globaldb: 'GlobalDBHandler',
-):
-    """Example of transaction with a lot of events but mixes transfers and approval events"""
-    op_token = A_OP.resolve_to_evm_token()
-    with globaldb.conn.write_ctx() as write_cursor:
-        set_token_spam_protocol(
-            write_cursor=write_cursor,
-            token=op_token,
-            is_spam=True,
-        )
-
-    tx_hash = deserialize_evm_tx_hash('0xe42e27ca8b7084d8970a2e5694ea3d38e9e6570b2f227b177295000ad74c7516')  # noqa: E501
-    events, _ = get_decoded_events_of_transaction(evm_inquirer=optimism_inquirer, tx_hash=tx_hash)
-    assert events[0].event_type == HistoryEventType.RECEIVE
