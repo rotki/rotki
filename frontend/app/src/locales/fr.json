@@ -2126,10 +2126,8 @@
     "loading_error": {
       "title": "Chargement des nœuds RPC {chain}"
     },
-    "private_node": "Ce nœud est privé et a été ajouté par l'utilisateur",
-    "private_node_hint": "Les nœuds privés ont la priorité sur les nœuds publics",
     "public_node": "Ce nœud est public",
-    "weight": "Poids du nœud {weight}%"
+    "weight": "{weight}%"
   },
   "exchange_balances": {
     "add_exchange": "Ajouter une plateforme d'échange",
@@ -3163,7 +3161,6 @@
       "disable_all": "Désactiver tout",
       "enable_all": "Activer tout"
     },
-    "all_accounts": "Tous",
     "filter": "Rechercher un module",
     "select_accounts_hint": "Sélectionnez les comptes pour lesquels les données seront récupérées pour chaque sous-module. Si aucune adresse n'est sélectionnée, les données seront récupérées pour toutes les adresses disponibles",
     "table": {
@@ -3172,8 +3169,6 @@
     }
   },
   "module_settings": {
-    "active_modules_description": "Seules les données des modules sélectionnés seront interrogées. Si aucun module n'est sélectionné, la consultation pour tous les modules supportés sera désactivée.",
-    "hint": "* Veuillez noter que après l'activation d'un module, vous devez vous déconnecter et vous reconnecter pour que l'activation prenne effet",
     "title": "Paramètres du module"
   },
   "navigation_menu": {

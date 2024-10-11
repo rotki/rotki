@@ -187,7 +187,6 @@ onMounted(loadInfo);
           variant="outlined"
           color="primary"
           :loading="loading"
-          :tooltip="t('database_manager.refresh_tooltip')"
           @click="loadInfo()"
         >
           <template #prepend>
