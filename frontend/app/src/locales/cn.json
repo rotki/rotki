@@ -1958,10 +1958,8 @@
     "loading_error": {
       "title": "加载 {chain} RPC 节点"
     },
-    "private_node": "这是用户添加的私有节点",
-    "private_node_hint": "私有节点优先于公共节点",
     "public_node": "这是一个公共节点",
-    "weight": "节点权重{weight}%"
+    "weight": "{weight}%"
   },
   "exchange_balances": {
     "add_exchange": "添加交易所",
@@ -2910,8 +2908,6 @@
     }
   },
   "module_settings": {
-    "active_modules_description": "仅查询所选模块的数据。如果未选择任何模块，将禁用查询所有支持的模块。",
-    "hint": "请记住，激活模块后，您需要注销并重新登录才能使激活生效",
     "title": "模块设置"
   },
   "navigation_menu": {

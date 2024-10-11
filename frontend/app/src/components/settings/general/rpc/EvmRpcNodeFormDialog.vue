@@ -41,10 +41,10 @@ const dialogTitle = computed(() => {
   const state = get(model);
   if (state?.mode === 'edit') {
     return t('evm_rpc_node_manager.edit_dialog.title', {
-      chain: state?.node.blockchain,
+      chain: get(chainName),
     });
   }
-  return t('evm_rpc_node_manager.add_dialog.title', { chain: state?.node.blockchain });
+  return t('evm_rpc_node_manager.add_dialog.title', { chain: get(chainName) });
 });
 
 const api = useEvmNodesApi(chain);
