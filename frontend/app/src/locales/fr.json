@@ -2740,8 +2740,7 @@
         "unwhitelist_title": "Échec de la suppression de l'actif de la liste blanche",
         "whitelist_message": "Le jeton ne peut pas être ajouté aux actifs de la liste blanche : {message}",
         "whitelist_title": "Échec de l'ajout de l'actif à la liste blanche"
-      },
-      "hint": "L'actif est dans la liste blanche, ce qui signifie que l'algorithme rotki ne le marquera pas comme un actif spam. Pour pouvoir ignorer cet actif, vous devez le supprimer de la liste blanche."
+      }
     }
   },
   "ignore_buttons": {
