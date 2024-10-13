@@ -6,8 +6,8 @@ from unittest.mock import _patch, patch
 
 import pytest
 import requests
+from eth_utils.abi import get_abi_output_types
 from web3 import Web3
-from web3._utils.abi import get_abi_output_types
 
 from rotkehlchen.chain.ethereum.modules.makerdao.dsr import _dsrdai_to_dai
 from rotkehlchen.chain.evm.contracts import EvmContracts

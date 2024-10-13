@@ -12,7 +12,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
 from rotkehlchen.user_messages import MessagesAggregator
-from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_str
+from rotkehlchen.utils.misc import from_wei
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -69,12 +69,12 @@ class AvalancheManager:
         by web3.eth.get_block().
         """
         block_data: MutableAttributeDict = MutableAttributeDict(self.w3.eth.get_block(num))  # type: ignore # pylint: disable=no-member
-        block_data['hash'] = hex_or_bytes_to_str(block_data['hash'])
+        block_data['hash'] = block_data['hash'].to_0x_hex()
         return dict(block_data)
 
     def get_code(self, account: ChecksumEvmAddress) -> str:
-        """Gets the deployment bytecode at the given address"""
-        return hex_or_bytes_to_str(self.w3.eth.get_code(account))
+        """Gets the deployment bytecode at the given address as a 0x hex string"""
+        return self.w3.eth.get_code(account).to_0x_hex()
 
     def call_contract(
             self,

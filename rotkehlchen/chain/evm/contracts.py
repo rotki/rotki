@@ -3,9 +3,10 @@ import logging
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Generic, Literal, NamedTuple, TypeVar, overload
 
-from eth_typing.abi import Decodable
+from eth_typing.abi import ABI, Decodable
+from eth_utils.abi import get_abi_output_types
 from web3 import Web3
-from web3._utils.abi import get_abi_output_types
+from web3._utils.contracts import find_matching_event_abi
 from web3.types import BlockIdentifier
 
 from rotkehlchen.chain.ethereum.abi import decode_event_data_abi
@@ -27,7 +28,7 @@ WEB3 = Web3()
 
 class EvmContract(NamedTuple):
     address: ChecksumEvmAddress
-    abi: list[dict[str, Any]]
+    abi: ABI
     deployed_block: int
 
     def call(
@@ -101,8 +102,8 @@ class EvmContract(NamedTuple):
         """
         contract = WEB3.eth.contract(address=self.address, abi=self.abi)
         fn_abi = contract._find_matching_fn_abi(
-            fn_identifier=method_name,
-            args=arguments or [],
+            method_name,
+            *(arguments or []),
         )
         output_types = get_abi_output_types(fn_abi)
         return WEB3.codec.decode(output_types, result)
@@ -120,12 +121,12 @@ class EvmContract(NamedTuple):
 
         TODO: Look at this method too as the more standard way: https://web3py.readthedocs.io/en/stable/web3.contract.html#web3.contract.ContractEvents.myEvent
         """
-        contract = WEB3.eth.contract(address=self.address, abi=self.abi)
-        event_abi = contract._find_matching_event_abi(
+        event_abi = find_matching_event_abi(
+            abi=self.abi,
             event_name=event_name,
             argument_names=argument_names,
         )
-        return decode_event_data_abi(tx_log=tx_log, event_abi=event_abi)  # type: ignore
+        return decode_event_data_abi(tx_log=tx_log, event_abi=event_abi)
 
 
 T = TypeVar('T', bound='ChainID')
@@ -138,9 +139,9 @@ class EvmContracts(Generic[T]):
     multiple DB reads and json importing. Class attributes to not duplicate across all evm chains
     """
 
-    erc20_abi: list[dict[str, Any]]
-    erc721_abi: list[dict[str, Any]]
-    univ1lp_abi: list[dict[str, Any]]
+    erc20_abi: ABI
+    erc721_abi: ABI
+    univ1lp_abi: ABI
 
     def __init__(self, chain_id: T) -> None:
         self.chain_id = chain_id
@@ -228,7 +229,7 @@ class EvmContracts(Generic[T]):
             cls,
             name: str,
             fallback_to_packaged_db: bool = False,
-    ) -> list[dict[str, Any]] | None:
+    ) -> ABI | None:
         """Gets abi of an evm contract from the abi json file and optionally falls back to
         the packaged db if the abi is not found.
 
@@ -260,38 +261,37 @@ class EvmContracts(Generic[T]):
             serialized_abi=result[0],
             abi_name=name,
         )
-
         return json.loads(result[0])
 
     @overload
-    def abi(self: 'EvmContracts[Literal[ChainID.ETHEREUM]]', name: 'ETHEREUM_KNOWN_ABI') -> list[dict[str, Any]]:  # noqa: E501
+    def abi(self: 'EvmContracts[Literal[ChainID.ETHEREUM]]', name: 'ETHEREUM_KNOWN_ABI') -> ABI:
         ...
 
     @overload
-    def abi(self: 'EvmContracts[Literal[ChainID.OPTIMISM]]', name: 'OPTIMISM_KNOWN_ABI') -> list[dict[str, Any]]:  # noqa: E501
+    def abi(self: 'EvmContracts[Literal[ChainID.OPTIMISM]]', name: 'OPTIMISM_KNOWN_ABI') -> ABI:
         ...
 
     @overload
-    def abi(self: 'EvmContracts[Literal[ChainID.POLYGON_POS]]', name: Literal['']) -> list[dict[str, Any]]:  # noqa: E501
+    def abi(self: 'EvmContracts[Literal[ChainID.POLYGON_POS]]', name: Literal['']) -> ABI:
         ...
 
     @overload
-    def abi(self: 'EvmContracts[Literal[ChainID.ARBITRUM_ONE]]', name: Literal['']) -> list[dict[str, Any]]:  # noqa: E501
+    def abi(self: 'EvmContracts[Literal[ChainID.ARBITRUM_ONE]]', name: Literal['']) -> ABI:
         ...
 
     @overload
-    def abi(self: 'EvmContracts[Literal[ChainID.BASE]]', name: Literal['']) -> list[dict[str, Any]]:  # noqa: E501
+    def abi(self: 'EvmContracts[Literal[ChainID.BASE]]', name: Literal['']) -> ABI:
         ...
 
     @overload
-    def abi(self: 'EvmContracts[Literal[ChainID.GNOSIS]]', name: Literal['']) -> list[dict[str, Any]]:  # noqa: E501
+    def abi(self: 'EvmContracts[Literal[ChainID.GNOSIS]]', name: Literal['']) -> ABI:
         ...
 
     @overload
-    def abi(self: 'EvmContracts[Literal[ChainID.SCROLL]]', name: Literal['']) -> list[dict[str, Any]]:  # noqa: E501
+    def abi(self: 'EvmContracts[Literal[ChainID.SCROLL]]', name: Literal['']) -> ABI:
         ...
 
-    def abi(self, name: str) -> list[dict[str, Any]]:
+    def abi(self, name: str) -> ABI:
         """Gets abi of an evm contract from the abi json file
 
         Missing abi is a programming error and should never happen

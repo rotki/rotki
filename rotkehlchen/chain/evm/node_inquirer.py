@@ -11,14 +11,15 @@ from urllib.parse import urlparse
 import requests
 from ens import ENS
 from eth_abi.exceptions import DecodingError
+from eth_typing.abi import ABI
+from eth_utils.abi import get_abi_output_types
 from requests import RequestException
 from web3 import HTTPProvider, Web3
-from web3._utils.abi import get_abi_output_types
 from web3._utils.contracts import find_matching_event_abi
 from web3._utils.filters import construct_event_filter_params
 from web3.datastructures import MutableAttributeDict
 from web3.exceptions import TransactionNotFound, Web3Exception
-from web3.middleware import geth_poa_middleware
+from web3.middleware import ExtraDataToPOAMiddleware
 from web3.types import BlockIdentifier, FilterParams
 
 from rotkehlchen.assets.asset import CryptoAsset
@@ -67,7 +68,7 @@ from rotkehlchen.types import (
     Timestamp,
 )
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
-from rotkehlchen.utils.misc import from_wei, get_chunks, hex_or_bytes_to_str
+from rotkehlchen.utils.misc import from_wei, get_chunks
 from rotkehlchen.utils.mixins.lockable import LockableQueryMixIn, protect_with_lock
 
 if TYPE_CHECKING:
@@ -141,10 +142,11 @@ def _query_web3_get_logs(
 
         # Turn all HexBytes into hex strings
         for e_idx, event in enumerate(new_events_web3):
-            new_events_web3[e_idx]['blockHash'] = event['blockHash'].hex()
-            new_topics = [topic.hex() for topic in event['topics']]
+            new_events_web3[e_idx]['blockHash'] = event['blockHash'].to_0x_hex()
+            new_events_web3[e_idx]['data'] = event['data'].to_0x_hex()
+            new_topics = [topic.to_0x_hex() for topic in event['topics']]
             new_events_web3[e_idx]['topics'] = new_topics
-            new_events_web3[e_idx]['transactionHash'] = event['transactionHash'].hex()
+            new_events_web3[e_idx]['transactionHash'] = event['transactionHash'].to_0x_hex()
 
         if log_iteration_cb is not None:
             log_iteration_cb(last_block_queried=end_block, filters=argument_filters)
@@ -372,7 +374,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
                 'validation',  # validation middleware makes an un-needed for us chain ID validation causing 1 extra rpc call per eth_call # noqa: E501
                 'gas_price_strategy',  # We do not need to automatically estimate gas
                 'gas_estimate',
-                'name_to_address',  # we do our own handling for ens names
+                'ens_name_to_address',  # we do our own handling for ens names
         ):
             # https://github.com/ethereum/web3.py/blob/bba87a283d802bbebbfe3f8c7dc47560c7a08583/web3/middleware/validation.py#L137-L142  # noqa: E501
             with suppress(ValueError):  # If not existing raises ValuError, so ignore
@@ -381,7 +383,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         if self.chain_id in (ChainID.OPTIMISM, ChainID.POLYGON_POS, ChainID.ARBITRUM_ONE, ChainID.BASE):  # noqa: E501
             # TODO: Is it needed for all non-mainet EVM chains?
             # https://web3py.readthedocs.io/en/stable/middleware.html#why-is-geth-poa-middleware-necessary
-            web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+            web3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
         return web3, rpc_endpoint
 
@@ -577,7 +579,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             return self.etherscan.get_block_by_number(num)
 
         block_data: MutableAttributeDict = MutableAttributeDict(web3.eth.get_block(num))  # type: ignore # pylint: disable=no-member
-        block_data['hash'] = hex_or_bytes_to_str(block_data['hash'])
+        block_data['hash'] = block_data['hash'].to_0x_hex()
         return dict(block_data)
 
     def get_code(
@@ -592,7 +594,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         )
 
     def _get_code(self, web3: Web3 | None, account: ChecksumEvmAddress) -> str:
-        """Gets the deployment bytecode at the given address
+        """Gets the deployment bytecode at the given address as a 0x hex string
 
         May raise:
         - RemoteError if Etherscan is used and there is a problem querying it or
@@ -601,12 +603,12 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         if web3 is None:
             return self.etherscan.get_code(account)
 
-        return hex_or_bytes_to_str(web3.eth.get_code(account))
+        return web3.eth.get_code(account).to_0x_hex()
 
     def _call_contract_etherscan(
             self,
             contract_address: ChecksumEvmAddress,
-            abi: list,
+            abi: ABI,
             method_name: str,
             arguments: list[Any] | None = None,
     ) -> Any:
@@ -617,8 +619,9 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
         reaching etherscan or with the returned result
         """
         web3 = Web3()
+        given_arguments = arguments or []
         contract = web3.eth.contract(address=contract_address, abi=abi)
-        input_data = contract.encode_abi(method_name, args=arguments or [])
+        input_data = contract.encode_abi(method_name, args=given_arguments)
         result = self.etherscan.eth_call(
             to_address=contract_address,
             input_data=input_data,
@@ -631,8 +634,8 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             )
 
         fn_abi = contract._find_matching_fn_abi(
-            fn_identifier=method_name,
-            args=arguments,
+            method_name,
+            *given_arguments,
         )
         output_types = get_abi_output_types(fn_abi)
         output_data = web3.codec.decode(output_types, bytes.fromhex(result[2:]))
@@ -645,7 +648,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
     def call_contract(
             self,
             contract_address: ChecksumEvmAddress,
-            abi: list,
+            abi: ABI,
             method_name: str,
             arguments: list[Any] | None = None,
             call_order: Sequence[WeightedNode] | None = None,
@@ -665,7 +668,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             self,
             web3: Web3 | None,
             contract_address: ChecksumEvmAddress,
-            abi: list,
+            abi: ABI,
             method_name: str,
             arguments: list[Any] | None = None,
             block_identifier: BlockIdentifier = 'latest',
@@ -859,7 +862,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
     def get_logs(
             self,
             contract_address: ChecksumEvmAddress,
-            abi: list,
+            abi: ABI,
             event_name: str,
             argument_filters: dict[str, Any],
             from_block: int,
@@ -893,7 +896,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             self,
             web3: Web3 | None,
             contract_address: ChecksumEvmAddress,
-            abi: list,
+            abi: ABI,
             event_name: str,
             argument_filters: dict[str, Any],
             from_block: int,
@@ -917,8 +920,8 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
             abi_codec=Web3().codec,
             contract_address=contract_address,
             argument_filters=argument_filters,
-            fromBlock=from_block,
-            toBlock=to_block,
+            from_block=from_block,
+            to_block=to_block,
         )
 
         if event_abi['anonymous']:
@@ -1188,7 +1191,7 @@ class EvmNodeInquirer(ABC, LockableQueryMixIn):
 
     def _query_token_contract(
             self,
-            abi: list[dict[str, Any]],
+            abi: ABI,
             properties: tuple[str, ...],
             address: ChecksumEvmAddress,
     ) -> list[tuple[bool, bytes]]:

@@ -2,10 +2,12 @@ from collections.abc import Sequence
 from contextlib import suppress
 from typing import TYPE_CHECKING, Final
 
+from eth_typing.abi import ABI
+
 from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.errors.misc import AlreadyExists
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp, deserialize_evm_tx_hash
-from rotkehlchen.utils.misc import hex_or_bytes_to_address
+from rotkehlchen.utils.misc import bytes32hexstr_to_address
 
 from .constants import BRIDGE_QUERIED_ADDRESS_PREFIX
 from .modules.xdai_bridge.constants import BLOCKREWARDS_ADDRESS
@@ -15,7 +17,7 @@ if TYPE_CHECKING:
 
     from .node_inquirer import GnosisInquirer
 
-ADDED_RECEIVER_ABI: Final = [{'anonymous': False, 'inputs': [{'indexed': False, 'name': 'amount', 'type': 'uint256'}, {'indexed': True, 'name': 'receiver', 'type': 'address'}, {'indexed': True, 'name': 'bridge', 'type': 'address'}], 'name': 'AddedReceiver', 'type': 'event'}]  # noqa: E501
+ADDED_RECEIVER_ABI: Final[ABI] = [{'anonymous': False, 'inputs': [{'indexed': False, 'name': 'amount', 'type': 'uint256'}, {'indexed': True, 'name': 'receiver', 'type': 'address'}, {'indexed': True, 'name': 'bridge', 'type': 'address'}], 'name': 'AddedReceiver', 'type': 'event'}]  # type: ignore  # noqa: E501  # the ABIComponentIndexed problem
 DEPLOYED_BLOCK: Final = 9053325
 DEPLOYED_TS: Final = 1539027985
 
@@ -76,7 +78,7 @@ class GnosisTransactions(EvmTransactions):
                 with suppress(AlreadyExists):
                     self.add_transaction_by_hash(
                         tx_hash=deserialize_evm_tx_hash(event['transactionHash']),
-                        associated_address=hex_or_bytes_to_address(event['topics'][1]),
+                        associated_address=bytes32hexstr_to_address(event['topics'][1]),
                         must_exist=True,
                     )
 

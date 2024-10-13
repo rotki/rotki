@@ -38,7 +38,6 @@ from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTran
 from rotkehlchen.utils.misc import (
     hex_or_bytes_to_address,
     hex_or_bytes_to_int,
-    hex_or_bytes_to_str,
 )
 
 if TYPE_CHECKING:
@@ -69,7 +68,7 @@ class CowswapSwapData:
     to_asset: Asset
     to_amount: 'FVal'
     fee_amount: 'FVal'
-    order_uid: str
+    order_uid: str  # a hexstring without the 0x prefix
     order_type: str = 'market'
 
 
@@ -156,7 +155,7 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
             raw_from_amount = hex_or_bytes_to_int(tx_log.data[64:96])
             raw_to_amount = hex_or_bytes_to_int(tx_log.data[96:128])
             raw_fee_amount = hex_or_bytes_to_int(tx_log.data[128:160])
-            order_uid = hex_or_bytes_to_str(tx_log.data[224:280])
+            order_uid = tx_log.data[224:280].hex()
 
             if (
                 from_token_address == self.wrapped_native_asset.evm_address and

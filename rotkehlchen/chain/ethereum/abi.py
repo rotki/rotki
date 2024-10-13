@@ -1,19 +1,18 @@
 import json
 import logging
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
-from eth_utils import event_abi_to_log_topic
+from eth_typing import ABIEvent
+from eth_utils import event_abi_to_log_topic, get_abi_input_names
 from web3 import Web3
 from web3._utils.abi import (
     exclude_indexed_event_inputs,
-    get_abi_input_names,
     get_indexed_event_inputs,
     map_abi_data,
     normalize_event_input_types,
 )
 from web3._utils.events import get_event_abi_types_for_decoding
 from web3._utils.normalizers import BASE_RETURN_NORMALIZERS
-from web3.types import ABIEvent
 
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -48,7 +47,7 @@ def decode_event_data_abi_str(
 
 def decode_event_data_abi(
         tx_log: 'EvmTxReceiptLog',
-        event_abi: dict[str, Any],
+        event_abi: ABIEvent,
 ) -> tuple[list, list]:
     """This is an adjustment of web3's event data decoding to work with our code
     source: https://github.com/ethereum/web3.py/blob/8f853f5841fd62187bce0c9f17be75627104ca43/web3/_utils/events.py#L214
@@ -67,22 +66,26 @@ def decode_event_data_abi(
     else:
         topics = tx_log.topics[1:]
 
-    # type ignored b/c event_abi is a Dict which is an ABIEvent
-    log_topics_abi = get_indexed_event_inputs(event_abi)  # type: ignore
-    log_topic_normalized_inputs = normalize_event_input_types(log_topics_abi)
-    log_topic_types = get_event_abi_types_for_decoding(log_topic_normalized_inputs)
-    log_topic_names = get_abi_input_names(ABIEvent({'inputs': log_topics_abi}))
+    log_topics_abi = get_indexed_event_inputs(event_abi)
+    if len(log_topics_abi) != 0:
+        log_topic_normalized_inputs = normalize_event_input_types(log_topics_abi)
+        log_topic_types = get_event_abi_types_for_decoding(log_topic_normalized_inputs)
+        log_topic_names = get_abi_input_names(log_topics_abi[0])  # type: ignore  # getting indexed component is right
 
-    if len(topics) != len(log_topic_types):
-        raise DeserializationError(
-            f'Expected {len(log_topic_types)} log topics.  Got {len(topics)}',
-        )
+        if len(topics) != len(log_topic_types):
+            raise DeserializationError(
+                f'Expected {len(log_topic_types)} log topics.  Got {len(topics)}',
+            )
+    else:
+        log_topic_names, log_topic_types = [], ()
 
-    # type ignored b/c event_abi is a Dict which is an ABIEvent
-    log_data_abi = exclude_indexed_event_inputs(event_abi)  # type: ignore
-    log_data_normalized_inputs = normalize_event_input_types(log_data_abi)
-    log_data_types = get_event_abi_types_for_decoding(log_data_normalized_inputs)
-    log_data_names = get_abi_input_names(ABIEvent({'inputs': log_data_abi}))
+    log_data_abi = exclude_indexed_event_inputs(event_abi)
+    if len(log_data_abi) != 0:
+        log_data_normalized_inputs = normalize_event_input_types(log_data_abi)
+        log_data_types = get_event_abi_types_for_decoding(log_data_normalized_inputs)
+        log_data_names = get_abi_input_names(log_data_abi[0])  # type: ignore  # getting indexed component is right
+    else:
+        log_data_names, log_data_types = [], ()
 
     # sanity check that there are not name intersections between the topic
     # names and the data argument names.

@@ -1,6 +1,8 @@
 import logging
 from typing import TYPE_CHECKING, Any, Final
 
+from eth_typing.abi import ABI
+
 from rotkehlchen.accounting.structures.balance import Balance
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.ethereum.utils import token_normalized_value
@@ -36,11 +38,11 @@ TOPIC_STAKE_DELEGATED: Final = b'\xcd\x03f\xdc\xe5$}\x87O\xfc`\xa7b\xaaz\xbb\xb8
 TOPIC_STAKE_DELEGATED_LOCKED: Final = b'\x040\x18?\x84\xd9\xc4P#\x86\xd4\x99\xda\x80eC\xde\xe1\xd9\xde\x83\xc0\x8b\x01\xe3\x9am!\x16\xc4;%'  # noqa: E501
 TOPIC_STAKE_DELEGATED_WITHDRAWN: Final = b'\x1b.w7\xe0C\xc5\xcf\x1bX|\xebM\xae\xb7\xae\x00\x14\x8b\x9b\xda\x8fy\xf1\t>\xea\xd0\x8f\x14\x19R'  # noqa: E501
 
-GRAPH_TOKEN_LOCK_WALLET_ABI: Final = [
+GRAPH_TOKEN_LOCK_WALLET_ABI: Final[ABI] = [
     {
         'inputs': [],
         'name': 'beneficiary',
-        'outputs': [{'internalType': 'address', 'name': '', 'type': 'address'}],
+        'outputs': [{'name': '', 'type': 'address'}],
         'stateMutability': 'view',
         'type': 'function',
     },

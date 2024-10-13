@@ -2,6 +2,8 @@ import logging
 from collections import defaultdict
 from typing import TYPE_CHECKING, Final
 
+from eth_typing.abi import ABI
+
 from rotkehlchen.accounting.structures.balance import Balance, BalanceSheet
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.ethereum.interfaces.balances import BalancesSheetType, ProtocolWithBalance
@@ -30,7 +32,7 @@ if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
 
 
-UNDERLYING_BALANCES_ABI: Final = [{'inputs': [], 'name': 'underlyingToken', 'outputs': [{'internalType': 'contract IERC20', 'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [{'internalType': 'address', 'name': 'user', 'type': 'address'}], 'name': 'userUnderlyingView', 'outputs': [{'internalType': 'uint256', 'name': '', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
+UNDERLYING_BALANCES_ABI: Final[ABI] = [{'inputs': [], 'name': 'underlyingToken', 'outputs': [{'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [{'name': 'user', 'type': 'address'}], 'name': 'userUnderlyingView', 'outputs': [{'name': '', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
 

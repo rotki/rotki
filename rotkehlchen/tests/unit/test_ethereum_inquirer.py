@@ -524,7 +524,6 @@ def test_get_logs_graph_delegation(ethereum_inquirer, ethereum_manager_connect_a
         )
 
     if len(ethereum_manager_connect_at_start) != 0 and ethereum_manager_connect_at_start[0] == INFURA_ETH_NODE:  # noqa: E501
-        logs[0]['data'] = logs[0]['data'].hex()  # make adjustments so they have same format
         del expected_logs[0]['gasPrice']
         del expected_logs[0]['gasUsed']
         del expected_logs[0]['timeStamp']

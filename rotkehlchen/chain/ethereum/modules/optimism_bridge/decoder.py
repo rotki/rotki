@@ -21,7 +21,6 @@ from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
 from rotkehlchen.utils.misc import (
     hex_or_bytes_to_address,
     hex_or_bytes_to_int,
-    hex_or_bytes_to_str,
 )
 
 BRIDGE_ADDRESSES: Final = (
@@ -109,7 +108,7 @@ class OptimismBridgeDecoder(DecoderInterface):
         if context.tx_log.topics[0] != WITHDRAWAL_PROVEN:
             return DEFAULT_DECODING_OUTPUT
 
-        withdrawal_hash = hex_or_bytes_to_str(context.tx_log.topics[1])
+        withdrawal_hash = context.tx_log.topics[1].hex()
         event = self.base.make_event_next_index(
             tx_hash=context.transaction.tx_hash,
             timestamp=context.transaction.timestamp,
