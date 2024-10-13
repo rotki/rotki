@@ -16,7 +16,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.resolver import strethaddress_to_identifier
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -96,8 +96,8 @@ class BaseBridgeDecoder(DecoderInterface):
 
         # Read information from event's topics & data
         if context.tx_log.topics[0] == TRANSACTION_DEPOSITED:
-            from_address = hex_or_bytes_to_address(context.tx_log.topics[1])
-            to_address = hex_or_bytes_to_address(context.tx_log.topics[2])
+            from_address = bytes_to_address(context.tx_log.topics[1])
+            to_address = bytes_to_address(context.tx_log.topics[2])
         else:
             from_address = context.transaction.from_address
             to_address = context.transaction.from_address
@@ -120,14 +120,14 @@ class BaseBridgeDecoder(DecoderInterface):
 
         # Read information from event's topics & data
         if context.tx_log.topics[0] == BRIDGE_TOKEN:
-            from_address = hex_or_bytes_to_address(context.tx_log.topics[3])
-            to_address = hex_or_bytes_to_address(context.tx_log.data[0:32])
+            from_address = bytes_to_address(context.tx_log.topics[3])
+            to_address = bytes_to_address(context.tx_log.data[0:32])
         else:
-            from_address = hex_or_bytes_to_address(context.tx_log.data[0:32])
-            to_address = hex_or_bytes_to_address(context.tx_log.topics[3])
+            from_address = bytes_to_address(context.tx_log.data[0:32])
+            to_address = bytes_to_address(context.tx_log.topics[3])
 
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[32:64])
-        asset = EvmToken(strethaddress_to_identifier(hex_or_bytes_to_address(context.tx_log.topics[1])))  # noqa: E501
+        asset = EvmToken(strethaddress_to_identifier(bytes_to_address(context.tx_log.topics[1])))
         amount = asset_normalized_value(amount=raw_amount, asset=asset)
 
         self._find_event(

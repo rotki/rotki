@@ -21,7 +21,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import CryptoAsset
@@ -54,7 +54,7 @@ class SocketBridgeDecoder(DecoderInterface):
             return DEFAULT_DECODING_OUTPUT
 
         amount_raw = hex_or_bytes_to_int(context.tx_log.data[0:32])
-        token_address = hex_or_bytes_to_address(context.tx_log.data[32:64])
+        token_address = bytes_to_address(context.tx_log.data[32:64])
 
         if token_address == ETH_SPECIAL_ADDRESS:
             bridged_asset: CryptoAsset = self.eth
@@ -66,8 +66,8 @@ class SocketBridgeDecoder(DecoderInterface):
                 evm_inquirer=self.evm_inquirer,
             )
         amount = asset_normalized_value(amount=amount_raw, asset=bridged_asset)
-        sender = hex_or_bytes_to_address(context.tx_log.data[128:160])
-        receiver = hex_or_bytes_to_address(context.tx_log.data[160:192])
+        sender = bytes_to_address(context.tx_log.data[128:160])
+        receiver = bytes_to_address(context.tx_log.data[160:192])
         to_chain_id_raw = hex_or_bytes_to_int(context.tx_log.data[64:96])
 
         try:

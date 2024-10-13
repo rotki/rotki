@@ -13,7 +13,7 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -45,11 +45,11 @@ class Odosv2DecoderBase(OdosCommonDecoderBase):
             # decode the single swap event structure
             # https://github.com/odos-xyz/odos-router-v2/blob/main/contracts/OdosRouterV2.sol#L64
             decoded_data: tuple[ChecksumEvmAddress, list[int], list[ChecksumEvmAddress], list[int], list[ChecksumEvmAddress]] = (  # noqa: E501
-                hex_or_bytes_to_address(context.tx_log.data[0:32]),  # sender
+                bytes_to_address(context.tx_log.data[0:32]),  # sender
                 [hex_or_bytes_to_int(context.tx_log.data[32:64])],  # input amount
-                [hex_or_bytes_to_address(context.tx_log.data[64:96])],  # input token address
+                [bytes_to_address(context.tx_log.data[64:96])],  # input token address
                 [hex_or_bytes_to_int(context.tx_log.data[96:128])],  # output amount
-                [hex_or_bytes_to_address(context.tx_log.data[128:160])],  # output token address
+                [bytes_to_address(context.tx_log.data[128:160])],  # output token address
             )
         elif context.tx_log.topics[0] == b'}\x7f\xb05\x18%:\xe0\x19\x13Sf(\xb7\x8dm\x82\xe6>\x19\xb9C\xaa\xb5\xf4\x94\x83V\x02\x12Y\xbe':  # swapMultiCompact()  # noqa: E501
             try:

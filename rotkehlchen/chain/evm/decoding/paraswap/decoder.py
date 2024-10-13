@@ -21,7 +21,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 from .constants import (
     BUY_ON_UNISWAP_V2_FORK,
@@ -121,8 +121,8 @@ class ParaswapCommonDecoder(DecoderInterface):
         for log_event in context.all_logs:  # extract the fee info
             if (
                 log_event.topics[0] == ERC20_OR_ERC721_TRANSFER and
-                hex_or_bytes_to_address(log_event.topics[1]) == self.router_address and
-                hex_or_bytes_to_address(log_event.topics[2]) == self.fee_receiver_address
+                bytes_to_address(log_event.topics[1]) == self.router_address and
+                bytes_to_address(log_event.topics[2]) == self.fee_receiver_address
             ):
                 if isinstance(in_asset, EvmToken) and in_asset.evm_address == log_event.address:
                     fee_asset = in_asset
@@ -188,15 +188,15 @@ class ParaswapCommonDecoder(DecoderInterface):
 
         return self._decode_swap(
             context=context,
-            receiver=hex_or_bytes_to_address(context.tx_log.topics[1]),
-            sender=hex_or_bytes_to_address(context.tx_log.data[96:128]),
+            receiver=bytes_to_address(context.tx_log.topics[1]),
+            sender=bytes_to_address(context.tx_log.data[96:128]),
         )
 
     def _decode_uniswap_v2_swap(self, context: DecoderContext) -> DecodingOutput:
         """This decodes swaps done directly on Uniswap V2 pools"""
         return self._decode_swap(
             context=context,
-            receiver=hex_or_bytes_to_address(context.tx_log.topics[2]),
+            receiver=bytes_to_address(context.tx_log.topics[2]),
             sender=context.transaction.from_address,
         )
 

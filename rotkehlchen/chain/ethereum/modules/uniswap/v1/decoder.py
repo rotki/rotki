@@ -14,7 +14,7 @@ from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EvmTransaction
-from rotkehlchen.utils.misc import hex_or_bytes_to_address
+from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -43,7 +43,7 @@ class Uniswapv1Decoder(DecoderInterface):
         """Search for both events. Since the order is not guaranteed try reshuffle in both cases"""
         out_event = in_event = None
         if tx_log.topics[0] == TOKEN_PURCHASE:
-            buyer = hex_or_bytes_to_address(tx_log.topics[1])
+            buyer = bytes_to_address(tx_log.topics[1])
             # search for a send to buyer from a tracked address
             for event in decoded_events:
                 if event.event_type == HistoryEventType.SPEND and event.address == buyer:
@@ -61,7 +61,7 @@ class Uniswapv1Decoder(DecoderInterface):
                     in_event = event
 
         elif tx_log.topics[0] == ETH_PURCHASE:
-            buyer = hex_or_bytes_to_address(tx_log.topics[1])
+            buyer = bytes_to_address(tx_log.topics[1])
             # search for a receive to buyer
             for event in decoded_events:
                 if event.event_type == HistoryEventType.RECEIVE and event.location_label == buyer:

@@ -12,7 +12,7 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 from .constants import BRIDGES, HOP_GOVERNOR
 
@@ -52,7 +52,7 @@ class HopDecoder(HopCommonDecoder, GovernableDecoderInterface):
         if context.tx_log.topics[0] != TRANSFER_TO_L2:
             return super()._decode_events(context=context)
 
-        if self.base.is_tracked(recipient := hex_or_bytes_to_address(context.tx_log.topics[2])) is None:  # noqa: E501
+        if self.base.is_tracked(recipient := bytes_to_address(context.tx_log.topics[2])) is None:
             return DEFAULT_DECODING_OUTPUT
 
         if (bridge := self.bridges.get(context.tx_log.address)) is None:

@@ -30,7 +30,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTokenKind, EVMTxHash
-from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address
+from rotkehlchen.utils.misc import bytes_to_address, from_wei
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 from .constants import (
@@ -290,7 +290,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
         if context.tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER:
             return DEFAULT_DECODING_OUTPUT
 
-        to_address = hex_or_bytes_to_address(context.tx_log.topics[2])
+        to_address = bytes_to_address(context.tx_log.topics[2])
         token = get_or_create_evm_token(
             userdb=self.database,
             evm_address=context.tx_log.address,
@@ -357,7 +357,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_new_owner(self, context: DecoderContext) -> DecodingOutput:
-        if self.base.is_tracked(new_owner := hex_or_bytes_to_address(context.tx_log.data[:32])):
+        if self.base.is_tracked(new_owner := bytes_to_address(context.tx_log.data[:32])):
             associated_address = new_owner
         elif self.base.is_tracked(context.transaction.from_address):
             associated_address = context.transaction.from_address
@@ -491,7 +491,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
 
     def _decode_addr_changed(self, context: DecoderContext) -> DecodingOutput:
 
-        if self.base.is_tracked(new_address := hex_or_bytes_to_address(context.tx_log.data[:32])):
+        if self.base.is_tracked(new_address := bytes_to_address(context.tx_log.data[:32])):
             associated_address = new_address
         elif self.base.is_tracked(context.transaction.from_address):
             associated_address = context.transaction.from_address

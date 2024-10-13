@@ -23,7 +23,7 @@ from rotkehlchen.externalapis.gnosispay import init_gnosis_pay
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -113,7 +113,7 @@ class GnosisPayDecoder(DecoderInterface, ReloadableDecoderMixin):
             return DEFAULT_DECODING_OUTPUT
 
         token = self.base.get_or_create_evm_token(
-            address=hex_or_bytes_to_address(context.tx_log.data[0:32]),
+            address=bytes_to_address(context.tx_log.data[0:32]),
         )
         # Account is the roles module, which is the 2nd module in the array
         # when doing getModulesPaginated("0x0000000000000000000000000000000000000001")

@@ -24,7 +24,7 @@ from rotkehlchen.constants.assets import A_DAI, A_ETH
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 if TYPE_CHECKING:
@@ -55,7 +55,7 @@ class Dripsv1CommonDecoder(DecoderInterface, CustomizableDateMixin):
         self.drips_hub = drips_hub
 
     def _decode_split(self, context: DecoderContext) -> DecodingOutput:
-        if not self.base.is_tracked(user := hex_or_bytes_to_address(context.tx_log.topics[1])):
+        if not self.base.is_tracked(user := bytes_to_address(context.tx_log.topics[1])):
             return DEFAULT_DECODING_OUTPUT
 
         amount = token_normalized_value_decimals(
@@ -70,14 +70,14 @@ class Dripsv1CommonDecoder(DecoderInterface, CustomizableDateMixin):
             asset=A_DAI,
             balance=Balance(),
             location_label=user,
-            notes=f'Split {amount} DAI from Drips v1 and forward to {hex_or_bytes_to_address(context.tx_log.topics[2])}',  # noqa: E501
+            notes=f'Split {amount} DAI from Drips v1 and forward to {bytes_to_address(context.tx_log.topics[2])}',  # noqa: E501
             counterparty=CPT_DRIPS,
             address=context.tx_log.address,
         )
         return DecodingOutput(event=event)
 
     def _decode_collected(self, context: DecoderContext) -> DecodingOutput:
-        if not self.base.is_tracked(user := hex_or_bytes_to_address(context.tx_log.topics[1])):
+        if not self.base.is_tracked(user := bytes_to_address(context.tx_log.topics[1])):
             return DEFAULT_DECODING_OUTPUT
 
         collected_amount = token_normalized_value_decimals(
@@ -138,10 +138,10 @@ class Dripsv1CommonDecoder(DecoderInterface, CustomizableDateMixin):
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_given(self, context: DecoderContext) -> DecodingOutput:
-        if not self.base.is_tracked(user := hex_or_bytes_to_address(context.tx_log.topics[1])):
+        if not self.base.is_tracked(user := bytes_to_address(context.tx_log.topics[1])):
             return DEFAULT_DECODING_OUTPUT
 
-        receiver = hex_or_bytes_to_address(context.tx_log.topics[2])  # receiver does not receive in this transaction  # noqa: E501
+        receiver = bytes_to_address(context.tx_log.topics[2])  # receiver does not receive in this transaction  # noqa: E501
         amount = token_normalized_value_decimals(
             token_amount=hex_or_bytes_to_int(context.tx_log.data[0:32]),
             token_decimals=DEFAULT_TOKEN_DECIMALS,  # always DAI
@@ -161,10 +161,10 @@ class Dripsv1CommonDecoder(DecoderInterface, CustomizableDateMixin):
         return DecodingOutput(action_items=[action_item])
 
     def _decode_dripping(self, context: DecoderContext) -> DecodingOutput:
-        if not self.base.is_tracked(user := hex_or_bytes_to_address(context.tx_log.topics[1])):
+        if not self.base.is_tracked(user := bytes_to_address(context.tx_log.topics[1])):
             return DEFAULT_DECODING_OUTPUT
 
-        receiver = hex_or_bytes_to_address(context.tx_log.topics[2])  # receiver does not receive in this transaction  # noqa: E501
+        receiver = bytes_to_address(context.tx_log.topics[2])  # receiver does not receive in this transaction  # noqa: E501
 
         amount = token_normalized_value_decimals(
             token_amount=hex_or_bytes_to_int(context.tx_log.data[0:32]),

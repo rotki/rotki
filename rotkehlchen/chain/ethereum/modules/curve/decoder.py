@@ -23,7 +23,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, timestamp_to_date
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int, timestamp_to_date
 
 from .constants import (
     AAVE_POOLS,
@@ -78,8 +78,8 @@ class CurveDecoder(CurveCommonDecoder):
         a predetermined list of tokens"""
         if (
                 context.tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
-                hex_or_bytes_to_address(context.tx_log.topics[1]) == GAUGE_BRIBE_V2 and  # from
-                self.base.is_tracked(user_address := hex_or_bytes_to_address(context.tx_log.topics[2]))  # noqa: E501
+                bytes_to_address(context.tx_log.topics[1]) == GAUGE_BRIBE_V2 and  # from
+                self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[2]))
         ):
             suffix = '' if user_address == context.transaction.from_address else f' for {user_address}'  # noqa: E501
             action_item = ActionItem(
@@ -99,11 +99,11 @@ class CurveDecoder(CurveCommonDecoder):
         if context.tx_log.topics[0] != GAUGE_VOTE:
             return DEFAULT_DECODING_OUTPUT
 
-        if not self.base.is_tracked(user_address := hex_or_bytes_to_address(context.tx_log.data[32:64])):  # noqa: E501
+        if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.data[32:64])):
             return DEFAULT_DECODING_OUTPUT
 
         user_note = '' if user_address == context.transaction.from_address else f' from {user_address}'  # noqa: E501
-        gauge_address = hex_or_bytes_to_address(context.tx_log.data[64:96])
+        gauge_address = bytes_to_address(context.tx_log.data[64:96])
         vote_weight = hex_or_bytes_to_int(context.tx_log.data[96:128])
         if vote_weight == 0:
             verb = 'Reset vote'
@@ -130,7 +130,7 @@ class CurveDecoder(CurveCommonDecoder):
         if context.tx_log.topics[0] != CLAIMED:
             return DEFAULT_DECODING_OUTPUT
 
-        if not self.base.is_tracked(user_address := hex_or_bytes_to_address(context.tx_log.topics[1])):  # noqa: E501
+        if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1])):
             return DEFAULT_DECODING_OUTPUT
 
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[:32])
@@ -159,7 +159,7 @@ class CurveDecoder(CurveCommonDecoder):
         else:
             return DEFAULT_DECODING_OUTPUT
 
-        if not self.base.is_tracked(user_address := hex_or_bytes_to_address(context.tx_log.topics[1])):  # noqa: E501
+        if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1])):
             return DEFAULT_DECODING_OUTPUT
 
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[:32])

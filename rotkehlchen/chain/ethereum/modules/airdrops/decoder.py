@@ -34,7 +34,7 @@ from rotkehlchen.constants.assets import (
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 from .constants import (
     CPT_BADGER,
@@ -117,7 +117,7 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
             token_amount=raw_amount,
             token_decimals=DEFAULT_TOKEN_DECIMALS,  # fox 18 decimals
         )
-        user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+        user_address = bytes_to_address(context.tx_log.topics[1])
         for event in context.decoded_events:
             if match_airdrop_claim(
                 event=event,
@@ -140,7 +140,7 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
             token_amount=raw_amount,
             token_decimals=DEFAULT_TOKEN_DECIMALS,  # badger 18 decimals
         )
-        user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+        user_address = bytes_to_address(context.tx_log.topics[1])
         for event in context.decoded_events:
             if match_airdrop_claim(
                 event=event,
@@ -162,7 +162,7 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
         if context.tx_log.topics[0] != FPIS_CONVEX_CLAIM:
             return DEFAULT_DECODING_OUTPUT
 
-        user_address = hex_or_bytes_to_address(context.tx_log.data[0:32])
+        user_address = bytes_to_address(context.tx_log.data[0:32])
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[32:64])
 
         if airdrop == CPT_CONVEX:
@@ -209,8 +209,8 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
         if context.tx_log.topics[0] != ELFI_VOTE_CHANGE:
             return DEFAULT_DECODING_OUTPUT
 
-        user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
-        delegate_address = hex_or_bytes_to_address(context.tx_log.topics[2])
+        user_address = bytes_to_address(context.tx_log.topics[1])
+        delegate_address = bytes_to_address(context.tx_log.topics[2])
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[0:32])
         amount = token_normalized_value_decimals(
             token_amount=raw_amount,
@@ -258,7 +258,7 @@ class AirdropsDecoder(MerkleClaimDecoderInterface):
             token_amount=raw_amount,
             token_decimals=DEFAULT_TOKEN_DECIMALS,  # ens 18 decimals
         )
-        user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+        user_address = bytes_to_address(context.tx_log.topics[1])
         return DecodingOutput(
             action_items=[
                 ActionItem(

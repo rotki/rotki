@@ -16,7 +16,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 from ..constants import CPT_AAVE_V3, MINT
 from .constants import BORROW, BURN, DEPOSIT, REPAY, REWARDS_CLAIMED
@@ -66,7 +66,7 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
         and part of the collateral deposited is lost too. Those two events happen as transfers in
         a transaction started by the liquidator.
         """
-        if not self.base.is_tracked(hex_or_bytes_to_address(context.tx_log.topics[3])):  # liquidator  # noqa: E501
+        if not self.base.is_tracked(bytes_to_address(context.tx_log.topics[3])):  # liquidator  # noqa: E501
             return
 
         amounts = [  # payback amount and liquidation amount
@@ -120,7 +120,7 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
             context=context,
             to_idx=3,
             claimer_raw=context.tx_log.data[0:32],
-            reward_token_address=hex_or_bytes_to_address(context.tx_log.topics[2]),
+            reward_token_address=bytes_to_address(context.tx_log.topics[2]),
             amount_raw=context.tx_log.data[32:64],
         )
 
@@ -190,7 +190,7 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
             if (  # find the mint or burn event of aToken
                 _log.topics[0] in (MINT, BURN) and (
                     # topics[2] is on_behalf_of, should be equal to the value we got above
-                    hex_or_bytes_to_address(_log.topics[2]) == token_event.location_label
+                    bytes_to_address(_log.topics[2]) == token_event.location_label
                 ) and (
                     balance_increase := asset_normalized_value(
                         amount=hex_or_bytes_to_int(_log.data[32:64]),

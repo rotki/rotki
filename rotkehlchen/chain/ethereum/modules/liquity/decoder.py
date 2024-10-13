@@ -18,7 +18,7 @@ from rotkehlchen.history.events.structures.evm_event import LIQUITY_STAKING_DETA
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 from .constants import (
     ACTIVE_POOL,
@@ -138,7 +138,7 @@ class LiquityDecoder(DecoderInterface):
                 return DEFAULT_DECODING_OUTPUT
 
             if context.tx_log.topics[0] == STABILITY_POOL_LQTY_PAID_TO_FRONTEND:
-                frontend_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+                frontend_address = bytes_to_address(context.tx_log.topics[1])
                 event = self.base.make_event_from_transaction(
                     transaction=context.transaction,
                     tx_log=context.tx_log,
@@ -195,7 +195,7 @@ class LiquityDecoder(DecoderInterface):
         if self.base.maybe_get_proxy_owner(context.transaction.to_address) is not None and post_decoding is False:  # type: ignore[arg-type]  # transaction.to_address is not None here  # noqa: E501
             return DecodingOutput(matched_counterparty=CPT_LIQUITY)
 
-        borrower = self.base.get_address_or_proxy_owner(hex_or_bytes_to_address(context.tx_log.topics[1]))  # noqa: E501
+        borrower = self.base.get_address_or_proxy_owner(bytes_to_address(context.tx_log.topics[1]))
         if borrower is None or self.base.is_tracked(borrower) is False:
             return DEFAULT_DECODING_OUTPUT
 
@@ -232,7 +232,7 @@ class LiquityDecoder(DecoderInterface):
 
         user, lqty_amount = None, ZERO
         if context.tx_log.topics[0] == STAKING_LQTY_CHANGE:
-            user = self.base.get_address_or_proxy_owner(hex_or_bytes_to_address(context.tx_log.topics[1]))  # noqa: E501
+            user = self.base.get_address_or_proxy_owner(bytes_to_address(context.tx_log.topics[1]))
             lqty_amount = asset_normalized_value(
                 amount=hex_or_bytes_to_int(context.tx_log.data[0:32]),
                 asset=self.lqty,

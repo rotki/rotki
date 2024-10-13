@@ -10,7 +10,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_ZKSYNC, ZKSYNC_BRIDGE
 
@@ -24,7 +24,7 @@ class ZksyncDecoder(DecoderInterface):
 
     def _decode_event(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == ONCHAIN_DEPOSIT:
-            user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+            user_address = bytes_to_address(context.tx_log.topics[1])
             return self._decode_deposit(context, user_address)
         elif context.tx_log.topics[0] == DEPOSIT:
             for tx_log in context.all_logs:  # iterate
@@ -32,7 +32,7 @@ class ZksyncDecoder(DecoderInterface):
                     op_type = hex_or_bytes_to_int(tx_log.data[64:96])
                     if op_type != 1:
                         continue  # 1 is deposit and this is what we are searching for
-                    user_address = hex_or_bytes_to_address(tx_log.data[0:32])
+                    user_address = bytes_to_address(tx_log.data[0:32])
                     return self._decode_deposit(context, user_address)
         elif context.tx_log.topics[0] == PENDING_WITHDRAWALS_COMPLETE:
             return self._decode_withdrawal(context)

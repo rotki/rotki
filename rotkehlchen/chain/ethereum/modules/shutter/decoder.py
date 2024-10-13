@@ -18,7 +18,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_SHUTTER, REDEEMED_VESTING, SHUTTER_AIDROP_CONTRACT
 
@@ -49,7 +49,7 @@ class ShutterDecoder(DecoderInterface):
     def _decode_shutter_claim(self, context: DecoderContext) -> DecodingOutput:
         if not (
             context.tx_log.topics[0] == REDEEMED_VESTING and
-            self.base.is_tracked(user_address := hex_or_bytes_to_address(context.tx_log.topics[2]))
+            self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[2]))
         ):
             return DEFAULT_DECODING_OUTPUT
 
@@ -65,8 +65,8 @@ class ShutterDecoder(DecoderInterface):
             elif (
                 tx_log.address == self.shu.evm_address and
                 tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
-                hex_or_bytes_to_address(tx_log.topics[1]) == SHUTTER_AIDROP_CONTRACT and
-                hex_or_bytes_to_address(tx_log.topics[2]) == vesting_contract_address
+                bytes_to_address(tx_log.topics[1]) == SHUTTER_AIDROP_CONTRACT and
+                bytes_to_address(tx_log.topics[2]) == vesting_contract_address
             ):
                 amount = token_normalized_value(token_amount=hex_or_bytes_to_int(tx_log.data), token=self.shu)  # noqa: E501
                 break
@@ -94,7 +94,7 @@ class ShutterDecoder(DecoderInterface):
         if context.tx_log.topics[0] != DELEGATE_CHANGED:
             return DEFAULT_DECODING_OUTPUT
 
-        delegator = hex_or_bytes_to_address(context.tx_log.topics[1])
+        delegator = bytes_to_address(context.tx_log.topics[1])
         delegator_note = ''
         if delegator != context.transaction.from_address:
             delegator_note = f' for {delegator}'
@@ -106,7 +106,7 @@ class ShutterDecoder(DecoderInterface):
             asset=self.shu,
             balance=Balance(),
             location_label=context.transaction.from_address,
-            notes=f'Change SHU Delegate{delegator_note} from {hex_or_bytes_to_address(context.tx_log.topics[2])} to {hex_or_bytes_to_address(context.tx_log.topics[3])}',  # noqa: E501
+            notes=f'Change SHU Delegate{delegator_note} from {bytes_to_address(context.tx_log.topics[2])} to {bytes_to_address(context.tx_log.topics[3])}',  # noqa: E501
             counterparty=CPT_SHUTTER,
         ))
 

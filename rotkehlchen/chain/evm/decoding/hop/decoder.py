@@ -34,7 +34,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import HOP_PROTOCOL_LP, CacheType, ChainID, ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 from .constants import (
     ADD_LIQUIDITY,
@@ -141,7 +141,7 @@ class HopCommonDecoder(DecoderInterface):
 
     def _decode_withdrawal_bonded(self, context: DecoderContext) -> DecodingOutput:
         """This function is used to decode the WithdrawalBonded events on Hop protocol."""
-        if not self.base.is_tracked(hex_or_bytes_to_address(context.transaction.input_data[4:36])):
+        if not self.base.is_tracked(bytes_to_address(context.transaction.input_data[4:36])):
             return DEFAULT_DECODING_OUTPUT
 
         if (bridge := self.bridges.get(context.tx_log.address)) is None:
@@ -185,7 +185,7 @@ class HopCommonDecoder(DecoderInterface):
 
     def _decode_transfer_sent(self, context: DecoderContext) -> DecodingOutput:
         """This function is used to decode the TransferSentToL2 events on Hop protocol."""
-        if not self.base.is_tracked(recipient := hex_or_bytes_to_address(context.tx_log.topics[3])):  # noqa: E501
+        if not self.base.is_tracked(recipient := bytes_to_address(context.tx_log.topics[3])):
             return DEFAULT_DECODING_OUTPUT
 
         if (bridge := self.bridges.get(context.tx_log.address)) is None:
@@ -253,7 +253,7 @@ class HopCommonDecoder(DecoderInterface):
 
     def _decode_withdrawal(self, context: DecoderContext) -> DecodingOutput:
         """This function is used to decode the Withdrew event on Hop protocol."""
-        if not self.base.is_tracked(hex_or_bytes_to_address(context.tx_log.topics[2])):
+        if not self.base.is_tracked(bytes_to_address(context.tx_log.topics[2])):
             return DEFAULT_DECODING_OUTPUT
 
         if (bridge := self.bridges.get(context.tx_log.address)) is None:
@@ -303,7 +303,7 @@ class HopCommonDecoder(DecoderInterface):
 
     def _decode_transfer_from_l1(self, context: DecoderContext) -> DecodingOutput:
         """This function is used to decode the TRANSFER_FROM_L1_COMPLETED event on Hop protocol."""
-        if not self.base.is_tracked(recipient := hex_or_bytes_to_address(context.tx_log.topics[1])):  # noqa: E501
+        if not self.base.is_tracked(recipient := bytes_to_address(context.tx_log.topics[1])):
             return DEFAULT_DECODING_OUTPUT
 
         if (bridge := self.bridges.get(context.tx_log.address)) is None:
@@ -415,7 +415,7 @@ class HopCommonDecoder(DecoderInterface):
     def _decode_common_liquidity(self, context: DecoderContext, first_token_raw: bytes, second_token_raw: bytes) -> tuple['ChecksumEvmAddress', set[FVal]] | None:  # noqa: E501
         """This function is used to decode the common resources of RemoveLiquidity and
         RemoveLiquidityOne events."""
-        if not self.base.is_tracked(user_address := hex_or_bytes_to_address(context.tx_log.topics[1])):  # noqa: E501
+        if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1])):
             return None
 
         if (swap_asset_id := self.swaps_to_asset.get(context.tx_log.address)) is None:

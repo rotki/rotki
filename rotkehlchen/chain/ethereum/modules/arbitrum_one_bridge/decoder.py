@@ -17,7 +17,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
-from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, from_wei, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -68,7 +68,7 @@ class ArbitrumOneBridgeDecoder(DecoderInterface):
             # and then has two more 32-bytes which are the address and the msg.value
             value_offset = hex_or_bytes_to_int(context.tx_log.data[:32])
             address_offset = hex_or_bytes_to_int(context.tx_log.data[32:64])
-            user_address = hex_or_bytes_to_address(context.tx_log.data[address_offset:address_offset + 32])  # noqa: E501
+            user_address = bytes_to_address(context.tx_log.data[address_offset:address_offset + 32])  # noqa: E501
             raw_amount = hex_or_bytes_to_int(context.tx_log.data[address_offset + value_offset:address_offset + value_offset + 32])  # noqa: E501
 
             amount = from_wei(FVal(raw_amount))
@@ -77,7 +77,7 @@ class ArbitrumOneBridgeDecoder(DecoderInterface):
             from_chain, to_chain = ChainID.ETHEREUM, ChainID.ARBITRUM_ONE
         else:  # ETH_WITHDRAWAL_FINALIZED
             raw_amount = hex_or_bytes_to_int(context.tx_log.data[:32])
-            user_address = hex_or_bytes_to_address(context.tx_log.topics[2])
+            user_address = bytes_to_address(context.tx_log.topics[2])
             amount = from_wei(FVal(raw_amount))
             expected_event_type = HistoryEventType.RECEIVE
             new_event_type = HistoryEventType.WITHDRAWAL
@@ -110,13 +110,13 @@ class ArbitrumOneBridgeDecoder(DecoderInterface):
 
     def _decode_erc20_deposit_withdraw(self, tx_log: 'EvmTxReceiptLog', decoded_events: list['EvmEvent']) -> DecodingOutput:  # noqa: E501
         """Decodes ERC20 deposits and withdrawals. (Bridging ERC20 tokens from and to ethereum)"""
-        from_address = hex_or_bytes_to_address(tx_log.topics[1])
-        to_address = hex_or_bytes_to_address(tx_log.topics[2])
+        from_address = bytes_to_address(tx_log.topics[1])
+        to_address = bytes_to_address(tx_log.topics[2])
 
         if not self.base.any_tracked([from_address, to_address]):
             return DEFAULT_DECODING_OUTPUT
 
-        ethereum_token_address = hex_or_bytes_to_address(tx_log.data[:32])
+        ethereum_token_address = bytes_to_address(tx_log.data[:32])
         asset = self.base.get_or_create_evm_token(ethereum_token_address)
         raw_amount = hex_or_bytes_to_int(tx_log.data[32:])
         amount = asset_normalized_value(raw_amount, asset)

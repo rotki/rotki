@@ -14,7 +14,7 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_METAMASK_SWAPS, METAMASK_FEE_TOPIC, SWAP_SIGNATURE
 
@@ -50,7 +50,7 @@ class MetamaskCommonDecoder(DecoderInterface):
         if context.tx_log.topics[0] != SWAP_SIGNATURE:
             return DEFAULT_DECODING_OUTPUT
 
-        sender = hex_or_bytes_to_address(context.tx_log.topics[2])
+        sender = bytes_to_address(context.tx_log.topics[2])
         if not self.base.is_tracked(sender):
             return DEFAULT_DECODING_OUTPUT
 
@@ -63,7 +63,7 @@ class MetamaskCommonDecoder(DecoderInterface):
                 break
             if (
                 log.topics[0] == ERC20_OR_ERC721_TRANSFER and
-                hex_or_bytes_to_address(log.topics[2]) == self.fee_receiver_address
+                bytes_to_address(log.topics[2]) == self.fee_receiver_address
             ):
                 fee_raw = hex_or_bytes_to_int(log.data)
                 fee_asset_address = log.address

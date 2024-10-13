@@ -16,7 +16,7 @@ from rotkehlchen.chain.evm.transactions import EvmTransactions
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
-from rotkehlchen.utils.misc import hex_or_bytes_to_address
+from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CPT_ZEROX, METATX_ZEROX
 
@@ -176,8 +176,8 @@ class ZeroxCommonDecoder(DecoderInterface):
             receive_event = receive_address_to_events.get(_log.address)
 
             if _log.topics[0] in UNISWAP_SIGNATURES and self.router_address in {
-                hex_or_bytes_to_address(_log.topics[1]),  # 0x is sender
-                hex_or_bytes_to_address(_log.topics[2]),  # 0x is receiver
+                bytes_to_address(_log.topics[1]),  # 0x is sender
+                bytes_to_address(_log.topics[2]),  # 0x is receiver
             }:
                 self._update_send_receive_fee_events(send_event=send_event, receive_event=receive_event)  # noqa: E501
 
@@ -186,8 +186,8 @@ class ZeroxCommonDecoder(DecoderInterface):
                 send_event.asset.is_evm_token() and
                 _log.address == send_event.asset.evm_address and  # type: ignore[attr-defined]  # is EVM token
                 _log.topics[0] == ERC20_OR_ERC721_TRANSFER and
-                hex_or_bytes_to_address(_log.topics[1]) == send_event.location_label and
-                hex_or_bytes_to_address(_log.topics[2]) == self.flash_wallet_address
+                bytes_to_address(_log.topics[1]) == send_event.location_label and
+                bytes_to_address(_log.topics[2]) == self.flash_wallet_address
             ):
                 self._update_send_receive_fee_events(send_event=send_event)
 

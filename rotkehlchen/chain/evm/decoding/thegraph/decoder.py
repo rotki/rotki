@@ -22,7 +22,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_THEGRAPH, THEGRAPH_CPT_DETAILS
 
@@ -93,11 +93,11 @@ class ThegraphCommonDecoder(DecoderInterface):
 
     def _decode_stake_delegated(self, context: DecoderContext) -> DecodingOutput:
         deposit_event, burn_event = None, None
-        delegator = hex_or_bytes_to_address(context.tx_log.topics[2])
+        delegator = bytes_to_address(context.tx_log.topics[2])
         if delegator is None or self.base.is_tracked(delegator) is False:
             return DEFAULT_DECODING_OUTPUT
 
-        indexer = hex_or_bytes_to_address(context.tx_log.topics[1])
+        indexer = bytes_to_address(context.tx_log.topics[1])
         stake_amount = hex_or_bytes_to_int(context.tx_log.data[:32])
         stake_amount_norm = token_normalized_value(
             token_amount=stake_amount,
@@ -156,11 +156,11 @@ class ThegraphCommonDecoder(DecoderInterface):
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_stake_locked(self, context: DecoderContext) -> DecodingOutput:
-        delegator = hex_or_bytes_to_address(context.tx_log.topics[2])
+        delegator = bytes_to_address(context.tx_log.topics[2])
         if delegator is None or self.base.is_tracked(delegator) is False:
             return DEFAULT_DECODING_OUTPUT
 
-        indexer = hex_or_bytes_to_address(context.tx_log.topics[1])
+        indexer = bytes_to_address(context.tx_log.topics[1])
         tokens_amount = hex_or_bytes_to_int(context.tx_log.data[:32])
         lock_timeout_secs = hex_or_bytes_to_int(context.tx_log.data[64:128])
         tokens_amount_norm = token_normalized_value(
@@ -186,11 +186,11 @@ class ThegraphCommonDecoder(DecoderInterface):
         return DecodingOutput(event=event)
 
     def _decode_stake_withdrawn(self, context: DecoderContext) -> DecodingOutput:
-        delegator = hex_or_bytes_to_address(context.tx_log.topics[2])
+        delegator = bytes_to_address(context.tx_log.topics[2])
         if delegator is None or self.base.is_tracked(delegator) is False:
             return DEFAULT_DECODING_OUTPUT
 
-        indexer = hex_or_bytes_to_address(context.tx_log.topics[1])
+        indexer = bytes_to_address(context.tx_log.topics[1])
         tokens_amount_norm = token_normalized_value(
             token_amount=hex_or_bytes_to_int(context.tx_log.data[:32]),
             token=self.token,

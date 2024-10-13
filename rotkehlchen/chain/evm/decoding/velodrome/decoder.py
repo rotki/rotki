@@ -32,7 +32,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
@@ -223,7 +223,7 @@ class VelodromeLikeDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixi
         if context.tx_log.topics[0] not in (GAUGE_DEPOSIT_V2, GAUGE_WITHDRAW_V2, CLAIM_REWARDS_V2):
             return DEFAULT_DECODING_OUTPUT
 
-        user_or_contract_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+        user_or_contract_address = bytes_to_address(context.tx_log.topics[1])
         gauge_address = context.tx_log.address
         raw_amount = hex_or_bytes_to_int(context.tx_log.data)
         found_event_modifying_balances = False

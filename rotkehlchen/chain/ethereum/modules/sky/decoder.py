@@ -19,7 +19,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 from .constants import (
     CPT_SKY,
@@ -85,7 +85,7 @@ class SkyDecoder(DecoderInterface):
             token_amount=hex_or_bytes_to_int(context.tx_log.data[32:64]),
             token_decimals=DEFAULT_TOKEN_DECIMALS,
         )
-        user = hex_or_bytes_to_address(context.tx_log.topics[2])
+        user = bytes_to_address(context.tx_log.topics[2])
         mkr_event, sky_event = None, None
         for event in context.decoded_events:
             if (
@@ -124,7 +124,7 @@ class SkyDecoder(DecoderInterface):
         ):
             return DEFAULT_DECODING_OUTPUT
 
-        received_address = hex_or_bytes_to_address(context.tx_log.topics[2])
+        received_address = bytes_to_address(context.tx_log.topics[2])
         if (assets_amount := token_normalized_value_decimals(
             token_amount=hex_or_bytes_to_int(context.tx_log.data[0:32]),
             token_decimals=DEFAULT_TOKEN_DECIMALS,

@@ -16,7 +16,7 @@ from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer, bridge_p
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
@@ -62,7 +62,7 @@ class XdaiBridgeCommonDecoder(DecoderInterface, abc.ABC):
             to_address = self.bridge_address
         elif context.tx_log.topics[0] == self.withdrawal_topic:
             from_address = self.bridge_address
-            to_address = hex_or_bytes_to_address(context.tx_log.data[0:32])
+            to_address = bytes_to_address(context.tx_log.data[0:32])
             if self.source_chain == ChainID.GNOSIS and self.target_chain == ChainID.ETHEREUM:
                 create_event = True
 
@@ -120,7 +120,7 @@ class XdaiBridgeCommonDecoder(DecoderInterface, abc.ABC):
                 bridge_match_transfer(
                     event=event,
                     from_address=context.transaction.from_address,
-                    to_address=hex_or_bytes_to_address(context.tx_log.data[0:32]),
+                    to_address=bytes_to_address(context.tx_log.data[0:32]),
                     from_chain=from_chain,
                     to_chain=to_chain,
                     amount=event.balance.amount,

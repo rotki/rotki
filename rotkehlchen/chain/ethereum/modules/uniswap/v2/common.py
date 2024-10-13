@@ -42,7 +42,7 @@ from rotkehlchen.types import (
     EvmTransaction,
     EVMTxHash,
 )
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -96,7 +96,7 @@ def decode_uniswap_v2_like_swap(
     # When the router chains multiple swaps in one transaction only the last swap has
     # the buyer in the topic. In that case we know it is the last swap and the receiver is
     # the user
-    maybe_buyer = hex_or_bytes_to_address(tx_log.topics[2])
+    maybe_buyer = bytes_to_address(tx_log.topics[2])
     out_event = in_event = None
 
     # amount_in is the amount that enters the pool and amount_out the one

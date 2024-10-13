@@ -13,7 +13,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import (
-    hex_or_bytes_to_address,
+    bytes_to_address,
     hex_or_bytes_to_int,
 )
 
@@ -25,7 +25,7 @@ log = RotkehlchenLogsAdapter(logger)
 
 class SafemultisigDecoder(DecoderInterface):
     def _decode_added_owner(self, context: DecoderContext) -> DecodingOutput:
-        address = hex_or_bytes_to_address(context.tx_log.data[:32])
+        address = bytes_to_address(context.tx_log.data[:32])
         if not self.base.any_tracked([address, context.transaction.from_address, context.tx_log.address]):  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
@@ -44,7 +44,7 @@ class SafemultisigDecoder(DecoderInterface):
         return DecodingOutput(event=event)
 
     def _decode_removed_owner(self, context: DecoderContext) -> DecodingOutput:
-        address = hex_or_bytes_to_address(context.tx_log.data[:32])
+        address = bytes_to_address(context.tx_log.data[:32])
         if not self.base.any_tracked([address, context.transaction.from_address, context.tx_log.address]):  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
@@ -118,7 +118,7 @@ class SafemultisigDecoder(DecoderInterface):
         threshold = 0
         for index, entry in enumerate(reversed([context.tx_log.data[i:i + 32] for i in range(0, len(context.tx_log.data), 32)])):  # noqa: E501
             if index < num_owners:
-                owners.append(hex_or_bytes_to_address(entry))
+                owners.append(bytes_to_address(entry))
             elif index == num_owners:
                 threshold = hex_or_bytes_to_int(entry)
             else:

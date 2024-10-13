@@ -15,7 +15,7 @@ from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 from ..constants import CPT_ONEINCH_V1
 
@@ -26,12 +26,12 @@ SWAPPED = b'\xe2\xce\xe3\xf6\x83`Y\x82\x0bg9C\x85:\xfe\xbd\x9b0&\x12]\xab\rwB\x8
 class Oneinchv1Decoder(DecoderInterface):
 
     def _decode_history(self, context: DecoderContext) -> DecodingOutput:
-        sender = hex_or_bytes_to_address(context.tx_log.topics[1])
+        sender = bytes_to_address(context.tx_log.topics[1])
         if not self.base.is_tracked(sender):
             return DEFAULT_DECODING_OUTPUT
 
-        from_token_address = hex_or_bytes_to_address(context.tx_log.data[0:32])
-        to_token_address = hex_or_bytes_to_address(context.tx_log.data[32:64])
+        from_token_address = bytes_to_address(context.tx_log.data[0:32])
+        to_token_address = bytes_to_address(context.tx_log.data[32:64])
         from_asset = self.base.get_or_create_evm_asset(from_token_address)
         to_asset = self.base.get_or_create_evm_asset(to_token_address)
 
@@ -76,7 +76,7 @@ class Oneinchv1Decoder(DecoderInterface):
 
     def _decode_swapped(self, context: DecoderContext) -> DecodingOutput:
         """We use the Swapped event to get the fee kept by 1inch"""
-        to_token_address = hex_or_bytes_to_address(context.tx_log.topics[2])
+        to_token_address = bytes_to_address(context.tx_log.topics[2])
         to_asset = self.base.get_or_create_evm_asset(to_token_address)
         to_raw = hex_or_bytes_to_int(context.tx_log.data[32:64])
         fee_raw = hex_or_bytes_to_int(context.tx_log.data[96:128])

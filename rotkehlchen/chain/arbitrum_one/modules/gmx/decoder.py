@@ -30,7 +30,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
@@ -68,12 +68,12 @@ class GmxDecoder(ArbitrumDecoderInterface):
         if context.tx_log.topics[0] != SWAP_TOPIC:
             return DEFAULT_DECODING_OUTPUT
 
-        account = hex_or_bytes_to_address(context.tx_log.data[0:32])
+        account = bytes_to_address(context.tx_log.data[0:32])
         if self.base.is_tracked(account) is False:
             return DEFAULT_DECODING_OUTPUT
 
-        token_out = self.base.get_or_create_evm_asset(hex_or_bytes_to_address(context.tx_log.data[32:64]))  # noqa: E501
-        token_in = self.base.get_or_create_evm_asset(hex_or_bytes_to_address(context.tx_log.data[64:96]))  # noqa: E501
+        token_out = self.base.get_or_create_evm_asset(bytes_to_address(context.tx_log.data[32:64]))
+        token_in = self.base.get_or_create_evm_asset(bytes_to_address(context.tx_log.data[64:96]))
         amount_out = asset_normalized_value(
             amount=hex_or_bytes_to_int(context.tx_log.data[96:128]),
             asset=token_out,
@@ -138,7 +138,7 @@ class GmxDecoder(ArbitrumDecoderInterface):
         else:
             return DEFAULT_DECODING_OUTPUT
 
-        account = hex_or_bytes_to_address(context.tx_log.topics[1])
+        account = bytes_to_address(context.tx_log.topics[1])
         if self.base.is_tracked(account) is False:
             return DEFAULT_DECODING_OUTPUT
 
@@ -209,8 +209,8 @@ class GmxDecoder(ArbitrumDecoderInterface):
         if context.tx_log.topics[0] != STAKE_GMX:
             return DEFAULT_DECODING_OUTPUT
 
-        account = hex_or_bytes_to_address(context.tx_log.data[0:32])
-        token_addrs = hex_or_bytes_to_address(context.tx_log.data[32:64])
+        account = bytes_to_address(context.tx_log.data[0:32])
+        token_addrs = bytes_to_address(context.tx_log.data[32:64])
         amount_raw = hex_or_bytes_to_int(context.tx_log.data[64:96])
 
         staked_token = self.base.get_or_create_evm_asset(address=token_addrs)

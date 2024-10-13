@@ -17,7 +17,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import (
-    hex_or_bytes_to_address,
+    bytes_to_address,
     hex_or_bytes_to_int,
 )
 
@@ -80,7 +80,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
 
     def _decode_vote_action(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == VOTED_WITH_ORIGIN:
-            donator = hex_or_bytes_to_address(context.tx_log.data[64:96])
+            donator = bytes_to_address(context.tx_log.data[64:96])
             return self._decode_voted(
                 context=context,
                 donator=donator,
@@ -88,7 +88,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
                 paying_contract_idx=1,
             )
         elif context.tx_log.topics[0] in (VOTED, VOTED_WITHOUT_APPLICATION_IDX):
-            donator = hex_or_bytes_to_address(context.tx_log.topics[1])
+            donator = bytes_to_address(context.tx_log.topics[1])
             return self._decode_voted(
                 context=context,
                 donator=donator,
@@ -105,15 +105,15 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
             receiver_start_idx: int,
             paying_contract_idx: int,
     ) -> DecodingOutput:
-        receiver = hex_or_bytes_to_address(context.tx_log.data[receiver_start_idx:receiver_start_idx + 32])  # noqa: E501
+        receiver = bytes_to_address(context.tx_log.data[receiver_start_idx:receiver_start_idx + 32])  # noqa: E501
         donator_tracked = self.base.is_tracked(donator)
         receiver_tracked = self.base.is_tracked(receiver)
         if donator_tracked is False and receiver_tracked is False:
             return DEFAULT_DECODING_OUTPUT
 
         # there is a discrepancy here between the 2 different Voted events
-        paying_contract_address = hex_or_bytes_to_address(context.tx_log.topics[paying_contract_idx])  # noqa: E501
-        token_address = hex_or_bytes_to_address(context.tx_log.data[:32])
+        paying_contract_address = bytes_to_address(context.tx_log.topics[paying_contract_idx])
+        token_address = bytes_to_address(context.tx_log.data[:32])
         if token_address == ZERO_ADDRESS:
             asset = self.evm_inquirer.native_token
         else:
@@ -182,7 +182,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
     def _decode_project_action(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == PROJECT_CREATED:
             project_id = hex_or_bytes_to_int(context.tx_log.topics[1])
-            owner = hex_or_bytes_to_address(context.tx_log.topics[2])
+            owner = bytes_to_address(context.tx_log.topics[2])
             event = self.base.make_event_from_transaction(
                 transaction=context.transaction,
                 tx_log=context.tx_log,
@@ -237,12 +237,12 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
         if context.tx_log.topics[0] != FUNDS_DISTRIBUTED:
             return DEFAULT_DECODING_OUTPUT
 
-        grantee = hex_or_bytes_to_address(context.tx_log.data[32:64])
+        grantee = bytes_to_address(context.tx_log.data[32:64])
         if self.base.is_tracked(grantee) is False:
             return DEFAULT_DECODING_OUTPUT
 
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[0:32])
-        token_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+        token_address = bytes_to_address(context.tx_log.topics[1])
         token = self.base.get_or_create_evm_token(token_address)
         amount = asset_normalized_value(raw_amount, token)
 

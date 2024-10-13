@@ -16,7 +16,7 @@ from rotkehlchen.constants.assets import A_GLM
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_GOLEM, GNT_MIGRATION_ADDRESS
 
@@ -33,7 +33,7 @@ class GolemDecoder(DecoderInterface):
         if context.tx_log.topics[0] != MIGRATED:
             return DEFAULT_DECODING_OUTPUT
 
-        from_address = hex_or_bytes_to_address(context.tx_log.data[:32])
+        from_address = bytes_to_address(context.tx_log.data[:32])
 
         if not self.base.is_tracked(from_address):
             return DEFAULT_DECODING_OUTPUT

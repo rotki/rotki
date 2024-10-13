@@ -24,7 +24,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -80,7 +80,7 @@ class ClrfundCommonDecoder(CommonGrantsDecoderMixin):
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_voted(self, context: DecoderContext, name: str) -> DecodingOutput:
-        if not self.base.any_tracked([user := hex_or_bytes_to_address(context.tx_log.topics[1]), context.transaction.from_address]):  # noqa: E501
+        if not self.base.any_tracked([user := bytes_to_address(context.tx_log.topics[1]), context.transaction.from_address]):  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
         new_event = self.base.make_event_next_index(
@@ -98,7 +98,7 @@ class ClrfundCommonDecoder(CommonGrantsDecoderMixin):
         return DecodingOutput(event=new_event)
 
     def _decode_contribution(self, context: DecoderContext, asset: CryptoAsset, name: str) -> DecodingOutput:  # noqa: E501
-        if not self.base.any_tracked([sender := hex_or_bytes_to_address(context.tx_log.topics[1]), context.transaction.from_address]):  # noqa: E501
+        if not self.base.any_tracked([sender := bytes_to_address(context.tx_log.topics[1]), context.transaction.from_address]):  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
         amount = asset_normalized_value(
@@ -129,7 +129,7 @@ class ClrfundCommonDecoder(CommonGrantsDecoderMixin):
         if context.tx_log.topics[0] != b'\xbbJ\xd3\x18\xe5\x17\x03W\xf8\xe7\xd2]\xee\xfe\\\xf0+\xc8\x18,\xbb\x95`\x0c"\xa1\x10Yx\xa8\xf1\xb8':  # RequestSubmitted # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
-        if not self.base.any_tracked([recipient := hex_or_bytes_to_address(context.tx_log.data[:32]), context.transaction.from_address]):  # noqa: E501
+        if not self.base.any_tracked([recipient := bytes_to_address(context.tx_log.data[:32]), context.transaction.from_address]):  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
         try:  # using decode_event_data_abi_str since data contains a string

@@ -59,7 +59,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, shift_num_right_by
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int, shift_num_right_by
 
 from .constants import (
     CPT_DSR,
@@ -210,7 +210,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
 
     def decode_makerdao_debt_payback(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == GENERIC_JOIN:
-            join_user_address = hex_or_bytes_to_address(context.tx_log.topics[2])
+            join_user_address = bytes_to_address(context.tx_log.topics[2])
             raw_amount = hex_or_bytes_to_int(context.tx_log.topics[3])
             amount = token_normalized_value(
                 token_amount=raw_amount,
@@ -235,7 +235,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
 
     def decode_pot_for_dsr(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == POT_JOIN:
-            potjoin_user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+            potjoin_user_address = bytes_to_address(context.tx_log.topics[1])
             user = self._get_address_or_proxy(potjoin_user_address)
             if user is None:
                 return DEFAULT_DECODING_OUTPUT
@@ -244,7 +244,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             daijoin_log = None
             for event_log in context.all_logs:
                 if event_log.address == self.makerdao_dai_join.address and event_log.topics[0] == GENERIC_JOIN:  # noqa: E501
-                    daijoin_user_address = hex_or_bytes_to_address(event_log.topics[1])
+                    daijoin_user_address = bytes_to_address(event_log.topics[1])
                     if daijoin_user_address != potjoin_user_address:
                         continue  # not a match
 
@@ -272,7 +272,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
                     return DEFAULT_DECODING_OUTPUT
 
         elif context.tx_log.topics[0] == POT_EXIT:
-            pot_exit_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+            pot_exit_address = bytes_to_address(context.tx_log.topics[1])
             user = self._get_address_or_proxy(pot_exit_address)
             if user is None:
                 return DEFAULT_DECODING_OUTPUT
@@ -281,7 +281,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             daiexit_log = None
             for event_log in context.all_logs:
                 if event_log.address == self.makerdao_dai_join.address and event_log.topics[0] == GENERIC_EXIT:  # noqa: E501
-                    daiexit_user_address = hex_or_bytes_to_address(event_log.topics[2])
+                    daiexit_user_address = bytes_to_address(event_log.topics[2])
                     if daiexit_user_address != user:
                         continue  # not a match
 
@@ -314,11 +314,11 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
 
     def decode_proxy_creation(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == b'%\x9b0\xca9\x88\\m\x80\x1a\x0b]\xbc\x98\x86@\xf3\xc2^/7S\x1f\xe18\xc5\xc5\xaf\x89U\xd4\x1b':  # noqa: E501
-            owner_address = hex_or_bytes_to_address(context.tx_log.topics[2])
+            owner_address = bytes_to_address(context.tx_log.topics[2])
             if not self.base.is_tracked(owner_address):
                 return DEFAULT_DECODING_OUTPUT
 
-            proxy_address = hex_or_bytes_to_address(context.tx_log.data[0:32])
+            proxy_address = bytes_to_address(context.tx_log.data[0:32])
             notes = f'Create DSR proxy {proxy_address} with owner {owner_address}'
             event = self.base.make_event_from_transaction(
                 transaction=context.transaction,
@@ -336,7 +336,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_vault_creation(self, context: DecoderContext) -> DecodingOutput:
-        owner_address = self._get_address_or_proxy(hex_or_bytes_to_address(context.tx_log.topics[2]))  # noqa: E501
+        owner_address = self._get_address_or_proxy(bytes_to_address(context.tx_log.topics[2]))
         if owner_address is None:
             return DEFAULT_DECODING_OUTPUT
 
@@ -362,7 +362,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
     def _decode_vault_debt_generation(self, context: DecoderContext) -> DecodingOutput:
         """Decode vault debt generation by parsing a lognote for cdpmanager move"""
         cdp_id = hex_or_bytes_to_int(context.tx_log.topics[2])
-        destination = hex_or_bytes_to_address(context.tx_log.topics[3])
+        destination = bytes_to_address(context.tx_log.topics[3])
 
         owner = self._get_address_or_proxy(destination)
         if owner is None:
@@ -464,11 +464,11 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
 
     def decode_sdai_events(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == SDAI_DEPOSIT:  # DAI -> SDAI: owner receives sdai
-            owner_address = self._get_address_or_proxy(hex_or_bytes_to_address(context.tx_log.topics[2]))  # noqa: E501
+            owner_address = self._get_address_or_proxy(bytes_to_address(context.tx_log.topics[2]))
             to_address = owner_address
             from_address: ChecksumEvmAddress | None = self.sdai.evm_address
         elif context.tx_log.topics[0] == SDAI_REDEEM:  # SDAI -> DAI: owner deposits sdai
-            owner_address = self._get_address_or_proxy(hex_or_bytes_to_address(context.tx_log.topics[3]))  # noqa: E501
+            owner_address = self._get_address_or_proxy(bytes_to_address(context.tx_log.topics[3]))
             from_address = owner_address
             to_address = self.sdai.evm_address
         else:
@@ -524,7 +524,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
 
     def decode_saidai_migration(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER:
-            to_address = hex_or_bytes_to_address(context.tx_log.topics[2])
+            to_address = bytes_to_address(context.tx_log.topics[2])
             if to_address != MAKERDAO_MIGRATION_ADDRESS:
                 return DEFAULT_DECODING_OUTPUT
 
@@ -577,7 +577,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             event_subtype=HistoryEventSubType.NONE,
             asset=A_MKR,
             balance=Balance(amount=amount),
-            location_label=hex_or_bytes_to_address(context.tx_log.topics[1]),
+            location_label=bytes_to_address(context.tx_log.topics[1]),
             notes=f'Burn {amount} MKR tokens',
             address=MKR_ADDRESS,
             counterparty=CPT_MAKERDAO_MIGRATION,

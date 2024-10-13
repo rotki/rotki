@@ -32,7 +32,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction
 from rotkehlchen.utils.misc import (
-    hex_or_bytes_to_address,
+    bytes_to_address,
     hex_or_bytes_to_int,
 )
 
@@ -104,7 +104,7 @@ class Commonv2v3Decoder(DecoderInterface):
             tx_log: EvmTxReceiptLog,
     ) -> Optional['EvmEvent']:
         """Decode aave v2/v3 collateral events"""
-        user = hex_or_bytes_to_address(tx_log.topics[2])
+        user = bytes_to_address(tx_log.topics[2])
         if not self.base.is_tracked(user):
             return None
         return self.base.make_event_from_transaction(
@@ -127,9 +127,9 @@ class Commonv2v3Decoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
     ) -> tuple[EvmEvent | None, EvmEvent | None]:
         """Decode aave v2/v3 deposit event. Returns the Deposit and Receive events."""
-        user = hex_or_bytes_to_address(tx_log.data[:32])
+        user = bytes_to_address(tx_log.data[:32])
         try:
-            on_behalf_of = hex_or_bytes_to_address(tx_log.topics[2])
+            on_behalf_of = bytes_to_address(tx_log.topics[2])
         except DeserializationError:
             on_behalf_of = None
         # in the case of needing to wrap the native asset aave uses the
@@ -188,8 +188,8 @@ class Commonv2v3Decoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
     ) -> tuple[EvmEvent | None, EvmEvent | None]:
         """Decode aave v2/v3 withdrawal event. Returns the Return and Withdraw events."""
-        user = hex_or_bytes_to_address(tx_log.topics[2])
-        to = hex_or_bytes_to_address(tx_log.topics[3])
+        user = bytes_to_address(tx_log.topics[2])
+        to = bytes_to_address(tx_log.topics[3])
         return_event, withdraw_event = None, None
         if (
             not (is_wnative_user := user in self.native_gateways) and
@@ -246,8 +246,8 @@ class Commonv2v3Decoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
     ) -> tuple[EvmEvent | None, EvmEvent | None]:
         """Decode aave v2/v3 borrow event. Returns the Receive and Borrow events."""
-        on_behalf_of = hex_or_bytes_to_address(tx_log.topics[2])
-        user = hex_or_bytes_to_address(tx_log.data[:32])
+        on_behalf_of = bytes_to_address(tx_log.topics[2])
+        user = bytes_to_address(tx_log.data[:32])
         if not self.base.any_tracked([user, on_behalf_of]):
             return None, None
 
@@ -302,8 +302,8 @@ class Commonv2v3Decoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
     ) -> tuple[EvmEvent | None, EvmEvent | None]:
         """Decode aave v2/v3 repay event. Returns the Return and Repay events."""
-        user = hex_or_bytes_to_address(tx_log.topics[2])
-        repayer = hex_or_bytes_to_address(tx_log.topics[3])
+        user = bytes_to_address(tx_log.topics[2])
+        repayer = bytes_to_address(tx_log.topics[3])
         return_event, repay_event = None, None
         if not self.base.any_tracked([user, repayer]):
             return None, None
@@ -359,7 +359,7 @@ class Commonv2v3Decoder(DecoderInterface):
                     chain_id=self.evm_inquirer.chain_id,
                 ))
                 mint = (
-                    hex_or_bytes_to_address(tx_log.topics[2]),  # onBehalfOf
+                    bytes_to_address(tx_log.topics[2]),  # onBehalfOf
                     asset_normalized_value(  # amount minted
                         amount=hex_or_bytes_to_int(tx_log.data[0:32]),
                         asset=token,
@@ -406,7 +406,7 @@ class Commonv2v3Decoder(DecoderInterface):
             return DEFAULT_DECODING_OUTPUT
 
         token = EvmToken(evm_address_to_identifier(
-            address=hex_or_bytes_to_address(context.tx_log.topics[1]),
+            address=bytes_to_address(context.tx_log.topics[1]),
             token_type=EvmTokenKind.ERC20,
             chain_id=self.evm_inquirer.chain_id,
         ))
@@ -444,9 +444,9 @@ class Commonv2v3Decoder(DecoderInterface):
             reward_token_address: ChecksumEvmAddress,
             amount_raw: bytes,
     ) -> DecodingOutput:
-        user_tracked = self.base.is_tracked(user := hex_or_bytes_to_address(context.tx_log.topics[1]))  # noqa: E501
-        to_tracked = self.base.is_tracked(to_address := hex_or_bytes_to_address(context.tx_log.topics[to_idx]))  # noqa: E501
-        claimer_tracked = self.base.is_tracked(claimer := hex_or_bytes_to_address(claimer_raw))
+        user_tracked = self.base.is_tracked(user := bytes_to_address(context.tx_log.topics[1]))
+        to_tracked = self.base.is_tracked(to_address := bytes_to_address(context.tx_log.topics[to_idx]))  # noqa: E501
+        claimer_tracked = self.base.is_tracked(claimer := bytes_to_address(claimer_raw))
 
         if not user_tracked and not to_tracked and not claimer_tracked:
             return DEFAULT_DECODING_OUTPUT

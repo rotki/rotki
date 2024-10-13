@@ -27,7 +27,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
-from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, from_wei, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
@@ -89,15 +89,15 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
         if context.tx_log.topics[0] != TRANSFER_ROUTED:
             return DEFAULT_DECODING_OUTPUT
 
-        l1_token_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+        l1_token_address = bytes_to_address(context.tx_log.topics[1])
         to_asset = get_or_create_evm_token(
             userdb=self.base.database,
             evm_address=l1_token_address,
             chain_id=ChainID.ETHEREUM,
             evm_inquirer=None,  # don't have it since we are in arbitrum decoder
         )
-        from_address = hex_or_bytes_to_address(context.tx_log.topics[2])
-        to_address = hex_or_bytes_to_address(context.tx_log.topics[3])
+        from_address = bytes_to_address(context.tx_log.topics[2])
+        to_address = bytes_to_address(context.tx_log.topics[3])
 
         if not self.base.any_tracked([from_address, to_address]):
             return DEFAULT_DECODING_OUTPUT
@@ -175,8 +175,8 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
         ):
             return DEFAULT_DECODING_OUTPUT
 
-        from_address = hex_or_bytes_to_address(context.tx_log.topics[1])
-        to_address = hex_or_bytes_to_address(context.transaction.input_data[4:])  # only argument of input data is destination address # noqa: E501
+        from_address = bytes_to_address(context.tx_log.topics[1])
+        to_address = bytes_to_address(context.transaction.input_data[4:])  # only argument of input data is destination address # noqa: E501
 
         if not self.base.any_tracked([from_address, to_address]):
             return DEFAULT_DECODING_OUTPUT
@@ -257,9 +257,9 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
             return DEFAULT_DECODING_OUTPUT
 
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[:32])
-        l1_token_address = hex_or_bytes_to_address(context.tx_log.topics[1])
-        from_address = hex_or_bytes_to_address(context.tx_log.topics[2])
-        to_address = hex_or_bytes_to_address(context.tx_log.topics[3])
+        l1_token_address = bytes_to_address(context.tx_log.topics[1])
+        from_address = bytes_to_address(context.tx_log.topics[2])
+        to_address = bytes_to_address(context.tx_log.topics[3])
         if not self.base.any_tracked([from_address, to_address]):
             return DEFAULT_DECODING_OUTPUT
 

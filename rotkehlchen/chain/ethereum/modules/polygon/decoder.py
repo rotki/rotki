@@ -18,7 +18,7 @@ from rotkehlchen.constants.assets import A_ETH_MATIC
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 from .constants import POLYGON_MIGRATION_ADDRESS
 
@@ -40,7 +40,7 @@ class PolygonDecoder(DecoderInterface):
         if context.tx_log.topics[0] != MIGRATED:
             return DEFAULT_DECODING_OUTPUT
 
-        account = hex_or_bytes_to_address(context.tx_log.topics[1])
+        account = bytes_to_address(context.tx_log.topics[1])
         if not self.base.is_tracked(account):
             return DEFAULT_DECODING_OUTPUT
 

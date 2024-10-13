@@ -14,7 +14,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID
-from rotkehlchen.utils.misc import hex_or_bytes_to_address
+from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CPT_EAS, EAS_CPT_DETAILS
 
@@ -56,7 +56,7 @@ class EASCommonDecoder(DecoderInterface, ABC):
         if context.tx_log.topics[0] != ATTESTED:
             return DEFAULT_DECODING_OUTPUT
 
-        attester = hex_or_bytes_to_address(context.tx_log.topics[2])
+        attester = bytes_to_address(context.tx_log.topics[2])
         if self.base.is_tracked(attester) is False:
             return DEFAULT_DECODING_OUTPUT
 

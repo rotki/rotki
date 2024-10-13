@@ -25,7 +25,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
@@ -225,7 +225,7 @@ class MerkleClaimDecoderInterface(DecoderInterface, ABC):
         if context.tx_log.topics[0] != MERKLE_CLAIM:
             return DEFAULT_DECODING_OUTPUT
 
-        if not self.base.is_tracked(claiming_address := hex_or_bytes_to_address(context.tx_log.topics[2])):  # noqa: E501
+        if not self.base.is_tracked(claiming_address := bytes_to_address(context.tx_log.topics[2])):  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
         claimed_amount = token_normalized_value_decimals(
@@ -247,7 +247,7 @@ class MerkleClaimDecoderInterface(DecoderInterface, ABC):
         if context.tx_log.topics[0] != MERKLE_CLAIM:
             return DEFAULT_DECODING_OUTPUT
 
-        if not self.base.is_tracked(claiming_address := hex_or_bytes_to_address(context.tx_log.data[32:64])):  # noqa: E501
+        if not self.base.is_tracked(claiming_address := bytes_to_address(context.tx_log.data[32:64])):  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
         claimed_amount = token_normalized_value_decimals(
@@ -319,7 +319,7 @@ class GovernableDecoderInterface(DecoderInterface, ABC):
             return VoteChoice.ABSTAIN
 
     def _decode_vote_cast(self, context: DecoderContext, abi: str) -> DecodingOutput:
-        if not self.base.is_tracked(voter_address := hex_or_bytes_to_address(context.tx_log.topics[1])):  # noqa: E501
+        if not self.base.is_tracked(voter_address := bytes_to_address(context.tx_log.topics[1])):
             return DEFAULT_DECODING_OUTPUT
 
         try:  # we use decode_event_data_abi_str due to "reason" string being hard to
@@ -346,7 +346,7 @@ class GovernableDecoderInterface(DecoderInterface, ABC):
         )
 
     def _decode_vote_cast_unindexed(self, context: DecoderContext) -> DecodingOutput:
-        if not self.base.is_tracked(voter_address := hex_or_bytes_to_address(context.tx_log.data[:32])):  # noqa: E501
+        if not self.base.is_tracked(voter_address := bytes_to_address(context.tx_log.data[:32])):
             return DEFAULT_DECODING_OUTPUT
 
         return self._decode_vote_cast_common(
@@ -557,7 +557,7 @@ class CommonGrantsDecoderMixin(DecoderInterface, ABC):
 
         The caller should confirm that the topic[0] matces the required topic hash.
         """
-        if not self.base.any_tracked([claimee := hex_or_bytes_to_address(claimee_raw), context.transaction.from_address]):  # noqa: E501
+        if not self.base.any_tracked([claimee := bytes_to_address(claimee_raw), context.transaction.from_address]):  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
         asset = asset.resolve_to_crypto_asset()

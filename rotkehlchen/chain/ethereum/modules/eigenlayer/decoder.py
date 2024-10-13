@@ -58,9 +58,9 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, Location
 from rotkehlchen.utils.misc import (
+    bytes_to_address,
     from_gwei,
     from_wei,
-    hex_or_bytes_to_address,
     hex_or_bytes_to_int,
     pairwise,
 )
@@ -106,10 +106,10 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         self.eigenpod_owner_mapping = get_eigenpods_to_owners_mapping(self.base.database)
 
     def _decode_deposit(self, context: DecoderContext) -> DecodingOutput:
-        depositor = hex_or_bytes_to_address(context.tx_log.data[0:32])
-        token_addr = hex_or_bytes_to_address(context.tx_log.data[32:64])
+        depositor = bytes_to_address(context.tx_log.data[0:32])
+        token_addr = bytes_to_address(context.tx_log.data[32:64])
         token_identifier = ethaddress_to_identifier(address=token_addr)
-        strategy = hex_or_bytes_to_address(context.tx_log.data[64:96])
+        strategy = bytes_to_address(context.tx_log.data[64:96])
 
         for event in context.decoded_events:
             if (
@@ -133,8 +133,8 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         and the unstake event but the unstake event doesn't have information about the asset
         or the amount unstaked.
         """
-        depositor = hex_or_bytes_to_address(context.tx_log.topics[1])
-        withdrawer = hex_or_bytes_to_address(context.tx_log.topics[2])
+        depositor = bytes_to_address(context.tx_log.topics[1])
+        withdrawer = bytes_to_address(context.tx_log.topics[2])
         depositor_is_tracked = self.base.is_tracked(depositor)
         withdrawer_is_tracked = self.base.is_tracked(withdrawer)
 
@@ -205,7 +205,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         return DEFAULT_DECODING_OUTPUT
 
     def decode_eigenpod_shares_updated(self, context: DecoderContext) -> DecodingOutput:
-        if not self.base.is_tracked(owner := hex_or_bytes_to_address(context.tx_log.topics[1])):
+        if not self.base.is_tracked(owner := bytes_to_address(context.tx_log.topics[1])):
             return DEFAULT_DECODING_OUTPUT
 
         shares_delta = hex_or_bytes_to_int(context.tx_log.data[0:32])
@@ -227,10 +227,10 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         return DecodingOutput(event=event)
 
     def decode_eigenpod_creation(self, context: DecoderContext) -> DecodingOutput:
-        if not self.base.is_tracked(owner := hex_or_bytes_to_address(context.tx_log.topics[2])):
+        if not self.base.is_tracked(owner := bytes_to_address(context.tx_log.topics[2])):
             return DEFAULT_DECODING_OUTPUT
 
-        eigenpod_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+        eigenpod_address = bytes_to_address(context.tx_log.topics[1])
         suffix = f' with owner {owner}' if context.transaction.from_address != owner else ''
         event = self.base.make_event_next_index(
             tx_hash=context.transaction.tx_hash,
@@ -256,8 +256,8 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         return DEFAULT_DECODING_OUTPUT
 
     def decode_eigenpod_delayed_withdrawals_created(self, context: DecoderContext) -> DecodingOutput:  # noqa: E501
-        pod_owner = hex_or_bytes_to_address(context.tx_log.data[0:32])
-        recipient = hex_or_bytes_to_address(context.tx_log.data[32:64])
+        pod_owner = bytes_to_address(context.tx_log.data[0:32])
+        recipient = bytes_to_address(context.tx_log.data[32:64])
         if not self.base.any_tracked([pod_owner, recipient]):
             return DEFAULT_DECODING_OUTPUT
 
@@ -287,7 +287,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         return DecodingOutput(event=event)
 
     def decode_eigenpod_delayed_withdrawals_claimed(self, context: DecoderContext) -> DecodingOutput:  # noqa: E501
-        if not self.base.is_tracked(recipient := hex_or_bytes_to_address(context.tx_log.data[0:32])):  # noqa: E501
+        if not self.base.is_tracked(recipient := bytes_to_address(context.tx_log.data[0:32])):
             return DEFAULT_DECODING_OUTPUT
 
         amount = from_wei(hex_or_bytes_to_int(context.tx_log.data[32:64]))
@@ -473,7 +473,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         output = self.evm_inquirer.multicall(calls=calls)
         for raw_address, raw_amount in pairwise(output):
             underlying_tokens.append(underlying_token := self.base.get_or_create_evm_token(
-                address=hex_or_bytes_to_address(raw_address),
+                address=bytes_to_address(raw_address),
                 encounter=TokenEncounterInfo(
                     description='Eigenlayer strategy token',
                     should_notify=False,
@@ -503,14 +503,14 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         else:
             return DEFAULT_DECODING_OUTPUT
 
-        if not self.base.is_tracked(staker := hex_or_bytes_to_address(context.tx_log.data[0:32])):
+        if not self.base.is_tracked(staker := bytes_to_address(context.tx_log.data[0:32])):
             return DEFAULT_DECODING_OUTPUT
 
         underlying_tokens, underlying_amounts = self._get_strategy_token_amount(
-            strategies=[hex_or_bytes_to_address(context.tx_log.data[32:64])],
+            strategies=[bytes_to_address(context.tx_log.data[32:64])],
             shares_entries=[hex_or_bytes_to_int(context.tx_log.data[64:96])],
         )
-        operator = hex_or_bytes_to_address(context.tx_log.topics[1])
+        operator = bytes_to_address(context.tx_log.topics[1])
 
         notes = f'{verb} {underlying_amounts[0]} restaked {underlying_tokens[0].symbol} {preposition} {operator}'  # noqa: E501
         if context.transaction.from_address != staker:
@@ -600,13 +600,13 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         if context.tx_log.topics[0] != REWARDS_CLAIMED:
             return DEFAULT_DECODING_OUTPUT
 
-        earner = hex_or_bytes_to_address(context.tx_log.topics[1])
-        claimer = hex_or_bytes_to_address(context.tx_log.topics[2])
-        recipient = hex_or_bytes_to_address(context.tx_log.topics[2])
+        earner = bytes_to_address(context.tx_log.topics[1])
+        claimer = bytes_to_address(context.tx_log.topics[2])
+        recipient = bytes_to_address(context.tx_log.topics[2])
         if not self.base.any_tracked([earner, claimer, recipient]):
             return DEFAULT_DECODING_OUTPUT
 
-        token_address = hex_or_bytes_to_address(context.tx_log.data[32:64])
+        token_address = bytes_to_address(context.tx_log.data[32:64])
         token = self.base.get_or_create_evm_token(
             address=token_address,
             encounter=TokenEncounterInfo(
