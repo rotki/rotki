@@ -21,7 +21,7 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -52,7 +52,7 @@ class CctpCommonDecoder(DecoderInterface):
         self.asset_identifier = asset_identifier
 
     def _decode_deposit(self, context: DecoderContext) -> DecodingOutput:
-        if not self.base.is_tracked(user_address := hex_or_bytes_to_address(context.tx_log.topics[3])):  # noqa: E501
+        if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[3])):
             return DEFAULT_DECODING_OUTPUT
 
         to_chain = hex_or_bytes_to_int(context.tx_log.data[64:96])
@@ -84,7 +84,7 @@ class CctpCommonDecoder(DecoderInterface):
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_withdraw(self, context: DecoderContext) -> DecodingOutput:
-        if not self.base.is_tracked(user_address := hex_or_bytes_to_address(context.tx_log.topics[1])):  # noqa: E501
+        if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1])):
             return DEFAULT_DECODING_OUTPUT
 
         deposit_amount = token_normalized_value_decimals(

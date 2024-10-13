@@ -18,7 +18,7 @@ from rotkehlchen.constants.assets import A_DIVA
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address
+from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CPT_DIVA, DIVA_ADDRESS
 
@@ -55,8 +55,8 @@ class DivaDecoder(GovernableDecoderInterface, MerkleClaimDecoderInterface):
         if context.tx_log.topics[0] != DELEGATE_CHANGED:
             return DEFAULT_DECODING_OUTPUT
 
-        delegator = hex_or_bytes_to_address(context.tx_log.topics[1])
-        delegate = hex_or_bytes_to_address(context.tx_log.topics[3])
+        delegator = bytes_to_address(context.tx_log.topics[1])
+        delegate = bytes_to_address(context.tx_log.topics[3])
 
         if self.base.is_tracked(delegator):
             event_address = delegator

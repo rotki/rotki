@@ -14,7 +14,7 @@ from rotkehlchen.constants.assets import A_ETH, A_STETH
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, from_wei, hex_or_bytes_to_int
 
 from .constants import CPT_LIDO, LIDO_STETH_SUBMITTED, STETH_MAX_ROUND_ERROR_WEI
 
@@ -102,7 +102,7 @@ class LidoDecoder(DecoderInterface):
         """Decode interactions with stETH ans wstETH contracts"""
         if (
             context.tx_log.topics[0] == LIDO_STETH_SUBMITTED and
-            self.base.is_tracked(sender := hex_or_bytes_to_address(context.tx_log.topics[1]))
+            self.base.is_tracked(sender := bytes_to_address(context.tx_log.topics[1]))
         ):
             return self._decode_lido_staking_in_steth(context=context, sender=sender)
         else:

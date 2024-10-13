@@ -15,7 +15,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 from .constants import (
     CPT_KYBER,
@@ -73,14 +73,14 @@ class KyberCommonDecoder(DecoderInterface):
         if context.tx_log.topics[0] != KYBER_AGGREGATOR_SWAPPED:
             return DEFAULT_DECODING_OUTPUT
 
-        sender = hex_or_bytes_to_address(context.tx_log.data[:32])
-        receiver = hex_or_bytes_to_address(context.tx_log.data[96:128])
+        sender = bytes_to_address(context.tx_log.data[:32])
+        receiver = bytes_to_address(context.tx_log.data[96:128])
 
         if self.base.any_tracked([sender, receiver]) is False:
             return DEFAULT_DECODING_OUTPUT
 
-        source_token_address = hex_or_bytes_to_address(context.tx_log.data[32:64])
-        destination_token_address = hex_or_bytes_to_address(context.tx_log.data[64:96])
+        source_token_address = bytes_to_address(context.tx_log.data[32:64])
+        destination_token_address = bytes_to_address(context.tx_log.data[64:96])
         spent_amount_raw = hex_or_bytes_to_int(context.tx_log.data[128:160])
         return_amount_raw = hex_or_bytes_to_int(context.tx_log.data[160:192])
 

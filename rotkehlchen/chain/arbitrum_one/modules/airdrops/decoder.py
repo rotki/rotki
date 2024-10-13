@@ -13,7 +13,7 @@ from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.assets import A_ARB
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
@@ -44,7 +44,7 @@ class AirdropsDecoder(ArbitrumDecoderInterface):
         if context.tx_log.topics[0] != ARB_CLAIMED:
             return DEFAULT_DECODING_OUTPUT
 
-        user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+        user_address = bytes_to_address(context.tx_log.topics[1])
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[0:32])
         amount = asset_normalized_value(amount=raw_amount, asset=self.arb_token)
 

@@ -16,7 +16,7 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_KYBER_LEGACY
 
@@ -55,9 +55,9 @@ class KyberDecoder(KyberCommonDecoder):
         May raise:
         - DeserializationError when using hex_or_bytes_to_address
         """
-        sender = hex_or_bytes_to_address(tx_log.topics[1])
-        source_token_address = hex_or_bytes_to_address(tx_log.data[:32])
-        destination_token_address = hex_or_bytes_to_address(tx_log.data[32:64])
+        sender = bytes_to_address(tx_log.topics[1])
+        source_token_address = bytes_to_address(tx_log.data[:32])
+        destination_token_address = bytes_to_address(tx_log.data[32:64])
 
         source_token = self.base.get_or_create_evm_asset(source_token_address)
         destination_token = self.base.get_or_create_evm_asset(destination_token_address)

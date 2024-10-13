@@ -27,7 +27,7 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_norma
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EvmTokenKind, EvmTransaction, EVMTxHash, Location
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -157,8 +157,8 @@ class BaseDecoderTools:
         - DeserializationError
         - ConversionError
         """
-        from_address = hex_or_bytes_to_address(tx_log.topics[1])
-        to_address = hex_or_bytes_to_address(tx_log.topics[2])
+        from_address = bytes_to_address(tx_log.topics[1])
+        to_address = bytes_to_address(tx_log.topics[2])
         direction_result = self.decode_direction(
             from_address=from_address,
             to_address=to_address,

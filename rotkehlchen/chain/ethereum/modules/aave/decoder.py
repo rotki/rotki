@@ -18,7 +18,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 from .constants import (
     REDEEM_AAVE,
@@ -47,8 +47,8 @@ class AaveDecoder(DecoderInterface):
         else:
             return DEFAULT_DECODING_OUTPUT
 
-        from_address = hex_or_bytes_to_address(context.tx_log.topics[1])
-        to_address = hex_or_bytes_to_address(context.tx_log.topics[2])
+        from_address = bytes_to_address(context.tx_log.topics[1])
+        to_address = bytes_to_address(context.tx_log.topics[2])
         if not self.base.any_tracked([from_address, to_address]):
             return DEFAULT_DECODING_OUTPUT
 

@@ -58,7 +58,7 @@ from rotkehlchen.types import (
     EVMTxHash,
     Location,
 )
-from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, from_wei, hex_or_bytes_to_int
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 from .base import BaseDecoderTools, BaseDecoderToolsWithDSProxy
@@ -957,12 +957,12 @@ class EVMTransactionDecoder(ABC):
                 return DEFAULT_DECODING_OUTPUT  # ignore non-ERC20 approval for now
 
         if len(tx_log.topics) == 3:
-            owner_address = hex_or_bytes_to_address(tx_log.topics[1])
-            spender_address = hex_or_bytes_to_address(tx_log.topics[2])
+            owner_address = bytes_to_address(tx_log.topics[1])
+            spender_address = bytes_to_address(tx_log.topics[2])
             amount_raw = hex_or_bytes_to_int(tx_log.data)
         elif len(tx_log.topics) == 1 and len(tx_log.data) == 96:  # malformed erc20 approve (finance.vote)  # noqa: E501
-            owner_address = hex_or_bytes_to_address(tx_log.data[:32])
-            spender_address = hex_or_bytes_to_address(tx_log.data[32:64])
+            owner_address = bytes_to_address(tx_log.data[:32])
+            spender_address = bytes_to_address(tx_log.data[32:64])
             amount_raw = hex_or_bytes_to_int(tx_log.data[64:])
         else:
             log.debug(

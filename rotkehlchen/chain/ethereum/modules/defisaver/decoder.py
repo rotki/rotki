@@ -13,7 +13,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CPT_DEFISAVER, DEACTIVATE_SUB, SUB_STORAGE, SUBSCRIBE
 
@@ -25,7 +25,7 @@ class DefisaverDecoder(DecoderInterface):
 
     def _decode_subscribe(self, context: DecoderContext) -> DecodingOutput:
         sub_id = hex_or_bytes_to_int(context.tx_log.topics[1])
-        proxy = hex_or_bytes_to_address(context.tx_log.topics[2])
+        proxy = bytes_to_address(context.tx_log.topics[2])
         event = self.base.make_event_from_transaction(
             transaction=context.transaction,
             tx_log=context.tx_log,

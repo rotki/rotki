@@ -268,8 +268,8 @@ def hex_or_bytes_to_int(
     return int_value
 
 
-def hex_or_bytes_to_address(value: bytes) -> ChecksumEvmAddress:
-    """Turns a 32bit bytes/HexBytes or a hexstring into an address
+def bytes_to_address(value: bytes) -> ChecksumEvmAddress:
+    """Turns 32 bytes into a checksummed EVM address
 
     May raise:
     - DeserializationError if it can't convert a value to an int or if an unexpected

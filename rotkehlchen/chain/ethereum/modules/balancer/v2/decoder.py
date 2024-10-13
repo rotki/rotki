@@ -21,7 +21,7 @@ from rotkehlchen.constants.assets import A_ETH, A_WETH
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -62,8 +62,8 @@ class Balancerv2Decoder(DecoderInterface):
             return DEFAULT_DECODING_OUTPUT
 
         # The transfer event appears after the swap event, so we need to propagate information
-        from_token_address = hex_or_bytes_to_address(context.tx_log.topics[2])
-        to_token_address = hex_or_bytes_to_address(context.tx_log.topics[3])
+        from_token_address = bytes_to_address(context.tx_log.topics[2])
+        to_token_address = bytes_to_address(context.tx_log.topics[3])
         amount_in = hex_or_bytes_to_int(context.tx_log.data[0:32])
         amount_out = hex_or_bytes_to_int(context.tx_log.data[32:64])
 

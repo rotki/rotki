@@ -20,7 +20,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 from .constants import (
     APPROVE_PROTOCOL,
@@ -56,14 +56,14 @@ class ThegraphDecoder(ThegraphCommonDecoder):
         if context.tx_log.topics[0] != DELEGATION_TRANSFERRED_TO_L2:
             return self._decode_delegator_staking(context)
 
-        delegator = hex_or_bytes_to_address(context.tx_log.topics[1])
-        delegator_l2 = hex_or_bytes_to_address(context.tx_log.topics[2])
+        delegator = bytes_to_address(context.tx_log.topics[1])
+        delegator_l2 = bytes_to_address(context.tx_log.topics[2])
         user_address = self.get_user_address(delegator, delegator_l2)
         if not user_address or not self.base.any_tracked([user_address, delegator, delegator_l2]):
             return DEFAULT_DECODING_OUTPUT
 
-        indexer = hex_or_bytes_to_address(context.tx_log.topics[3])
-        indexer_l2 = hex_or_bytes_to_address(context.tx_log.data[:32])
+        indexer = bytes_to_address(context.tx_log.topics[3])
+        indexer_l2 = bytes_to_address(context.tx_log.data[:32])
         transferred_delegation_tokens = token_normalized_value(
             token_amount=hex_or_bytes_to_int(context.tx_log.data[32:]),
             token=self.token,
@@ -107,11 +107,11 @@ class ThegraphDecoder(ThegraphCommonDecoder):
 
     def _decode_contract_deposit(self, context: DecoderContext) -> DecodingOutput:
         """Decode a deposit of ETH to cover the arbitrum fees of delegating GRT"""
-        user_address = self.get_user_address(hex_or_bytes_to_address(context.tx_log.topics[1]))
+        user_address = self.get_user_address(bytes_to_address(context.tx_log.topics[1]))
         if not user_address or not self.base.is_tracked(user_address):
             return DEFAULT_DECODING_OUTPUT
 
-        indexer = hex_or_bytes_to_address(context.tx_log.topics[1])
+        indexer = bytes_to_address(context.tx_log.topics[1])
         raw_amount = hex_or_bytes_to_int(context.tx_log.data)
         amount = token_normalized_value_decimals(raw_amount, DEFAULT_TOKEN_DECIMALS)
         for event in context.decoded_events:

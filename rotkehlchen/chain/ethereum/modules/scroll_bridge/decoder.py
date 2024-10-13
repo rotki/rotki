@@ -26,7 +26,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
-from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, from_wei, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -68,14 +68,14 @@ class ScrollBridgeDecoder(DecoderInterface):
         """Decodes ETH deposit and withdraw events. (Bridging ETH from and to ethereum)"""
         if context.tx_log.topics[0] == DEPOSIT_ETH:
             raw_amount = decode_abi(['uint256'], context.tx_log.data)[0]
-            user_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+            user_address = bytes_to_address(context.tx_log.topics[1])
             amount = from_wei(FVal(raw_amount))
             expected_event_type = HistoryEventType.SPEND
             new_event_type = HistoryEventType.DEPOSIT
             from_chain, to_chain = ChainID.ETHEREUM, ChainID.SCROLL
         elif context.tx_log.topics[0] == FINALIZE_WITHDRAW_ETH:
             raw_amount = decode_abi(['uint256'], context.tx_log.data[:32])[0]
-            user_address = hex_or_bytes_to_address(context.tx_log.topics[2])
+            user_address = bytes_to_address(context.tx_log.topics[2])
             amount = from_wei(FVal(raw_amount))
             expected_event_type = HistoryEventType.RECEIVE
             new_event_type = HistoryEventType.WITHDRAWAL
@@ -101,8 +101,8 @@ class ScrollBridgeDecoder(DecoderInterface):
         if context.tx_log.topics[0] != SENT_MESSAGE:
             return DEFAULT_DECODING_OUTPUT
 
-        sender = hex_or_bytes_to_address(context.tx_log.topics[1])
-        target = hex_or_bytes_to_address(context.tx_log.topics[2])
+        sender = bytes_to_address(context.tx_log.topics[1])
+        target = bytes_to_address(context.tx_log.topics[2])
         value = hex_or_bytes_to_int(context.tx_log.data[:32])
         amount = from_wei(FVal(value))
 
@@ -124,12 +124,12 @@ class ScrollBridgeDecoder(DecoderInterface):
         if (tx_log := context.tx_log).topics[0] not in (DEPOSIT_ERC20, FINALIZE_WITHDRAW_ERC20):
             return DEFAULT_DECODING_OUTPUT
 
-        from_address = hex_or_bytes_to_address(tx_log.topics[3])
-        to_address = hex_or_bytes_to_address(tx_log.data[:32])
+        from_address = bytes_to_address(tx_log.topics[3])
+        to_address = bytes_to_address(tx_log.data[:32])
         if not self.base.any_tracked([from_address, to_address]):
             return DEFAULT_DECODING_OUTPUT
 
-        ethereum_token_address = hex_or_bytes_to_address(tx_log.topics[1])
+        ethereum_token_address = bytes_to_address(tx_log.topics[1])
         asset = self.base.get_or_create_evm_token(ethereum_token_address)
         raw_amount = hex_or_bytes_to_int(tx_log.data[32:64])
         amount = asset_normalized_value(raw_amount, asset)

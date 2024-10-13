@@ -16,7 +16,7 @@ from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EvmTransaction
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -56,11 +56,11 @@ class Balancerv1Decoder(DecoderInterface):
 
         events_information = []
         for target_log in target_logs:
-            token_address = hex_or_bytes_to_address(target_log.topics[2])
+            token_address = bytes_to_address(target_log.topics[2])
             amount = hex_or_bytes_to_int(target_log.data[0:32])
             if target_log.topics[0] == JOIN_V1:
                 balancer_event_type = BalancerV1EventTypes.JOIN
-                ds_address = hex_or_bytes_to_address(target_log.topics[1])
+                ds_address = bytes_to_address(target_log.topics[1])
             else:
                 balancer_event_type = BalancerV1EventTypes.EXIT
                 ds_address = target_log.address

@@ -16,7 +16,7 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 from .constants import (
     CLAIMED_VESTING,
@@ -58,8 +58,8 @@ class SafeDecoder(DecoderInterface):
         if context.tx_log.topics[0] != CLAIMED_VESTING:
             return DEFAULT_DECODING_OUTPUT
 
-        account = hex_or_bytes_to_address(context.tx_log.topics[2])
-        beneficiary = hex_or_bytes_to_address(context.tx_log.topics[3])
+        account = bytes_to_address(context.tx_log.topics[2])
+        beneficiary = bytes_to_address(context.tx_log.topics[3])
         if not self.base.any_tracked((account, beneficiary)):
             return DEFAULT_DECODING_OUTPUT
 
@@ -79,7 +79,7 @@ class SafeDecoder(DecoderInterface):
         )
 
     def _decode_safe_locked(self, context: DecoderContext) -> DecodingOutput:
-        if not self.base.is_tracked(holder := hex_or_bytes_to_address(context.tx_log.topics[1])):
+        if not self.base.is_tracked(holder := bytes_to_address(context.tx_log.topics[1])):
             return DEFAULT_DECODING_OUTPUT
 
         amount = token_normalized_value_decimals(
@@ -107,7 +107,7 @@ class SafeDecoder(DecoderInterface):
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_safe_unlocked(self, context: DecoderContext) -> DecodingOutput:
-        if not self.base.is_tracked(holder := hex_or_bytes_to_address(context.tx_log.topics[1])):
+        if not self.base.is_tracked(holder := bytes_to_address(context.tx_log.topics[1])):
             return DEFAULT_DECODING_OUTPUT
 
         amount = token_normalized_value_decimals(
@@ -129,7 +129,7 @@ class SafeDecoder(DecoderInterface):
         return DecodingOutput(event=event)
 
     def _decode_safe_withdrawn(self, context: DecoderContext) -> DecodingOutput:
-        if not self.base.is_tracked(holder := hex_or_bytes_to_address(context.tx_log.topics[1])):
+        if not self.base.is_tracked(holder := bytes_to_address(context.tx_log.topics[1])):
             return DEFAULT_DECODING_OUTPUT
 
         amount = token_normalized_value_decimals(

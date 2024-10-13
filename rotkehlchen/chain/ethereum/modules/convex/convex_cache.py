@@ -16,7 +16,7 @@ from rotkehlchen.globaldb.cache import (
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address
+from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -83,8 +83,8 @@ def query_convex_data_from_chain(
     convex_rewards_addrs: list[ChecksumEvmAddress] = []
     convex_lp_tokens_addrs = []
     for single_booster_result in booster_result:
-        crv_rewards = hex_or_bytes_to_address(single_booster_result[96:128])
-        lp_token_addr = hex_or_bytes_to_address(single_booster_result[0:32])
+        crv_rewards = bytes_to_address(single_booster_result[96:128])
+        lp_token_addr = bytes_to_address(single_booster_result[0:32])
         convex_rewards_addrs.append(crv_rewards)
         convex_lp_tokens_addrs.append(lp_token_addr)
 

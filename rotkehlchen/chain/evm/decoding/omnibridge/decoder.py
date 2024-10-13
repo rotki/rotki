@@ -18,7 +18,7 @@ from rotkehlchen.constants.assets import A_ETH, A_WETH
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -58,14 +58,14 @@ class OmnibridgeCommonDecoder(DecoderInterface, abc.ABC):
             from_address = context.transaction.from_address
             to_address = from_address  # We have no to_address information
         elif context.tx_log.topics[0] == TOKENS_BRIDGED:
-            to_address = hex_or_bytes_to_address(context.tx_log.topics[2])
+            to_address = bytes_to_address(context.tx_log.topics[2])
             from_address = to_address  # We have no from_address information
         else:
             return DEFAULT_DECODING_OUTPUT
 
         bridged_asset = get_or_create_evm_token(
             userdb=self.evm_inquirer.database,
-            evm_address=hex_or_bytes_to_address(context.tx_log.topics[1]),
+            evm_address=bytes_to_address(context.tx_log.topics[1]),
             chain_id=self.evm_inquirer.chain_id,
             evm_inquirer=self.evm_inquirer,
         )
@@ -89,7 +89,7 @@ class OmnibridgeCommonDecoder(DecoderInterface, abc.ABC):
                     expected_location_label = context.transaction.from_address
                     from_address = expected_location_label
                     to_address = expected_location_label
-                expected_address = hex_or_bytes_to_address(context.tx_log.topics[2])
+                expected_address = bytes_to_address(context.tx_log.topics[2])
                 expected_asset = A_ETH
             else:
                 expected_address = self.bridge_address

@@ -17,7 +17,7 @@ from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 from .constants import CLAIMED, CPT_FLUENCE, DEV_REWARD_DISTRIBUTOR, FLUENCE_IDENTIFIER
 
@@ -105,13 +105,13 @@ class FluenceDecoder(DecoderInterface):
     def _decode_events(self, context: DecoderContext) -> DecodingOutput:
         if (
             context.tx_log.topics[0] == CLAIMED and
-            self.base.is_tracked(user_address := hex_or_bytes_to_address(context.tx_log.data[0:32]))  # noqa: E501
+            self.base.is_tracked(user_address := bytes_to_address(context.tx_log.data[0:32]))
         ):
             return self._decode_fluence_claim(context=context, user_address=user_address)
         elif (
                 context.tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
-                self.base.is_tracked(user_address := hex_or_bytes_to_address(context.tx_log.topics[1])) and  # from # noqa: E501
-                hex_or_bytes_to_address(context.tx_log.topics[2]) == ZERO_ADDRESS  # to
+                self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1])) and  # from # noqa: E501
+                bytes_to_address(context.tx_log.topics[2]) == ZERO_ADDRESS  # to
         ):
             return self._decode_fluence_swap_claim(context, user_address)
 

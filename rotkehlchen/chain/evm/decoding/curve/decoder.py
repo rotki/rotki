@@ -52,7 +52,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTokenKind, EvmTransaction
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -163,7 +163,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                     user_or_contract_address == event.location_label or
                     user_or_contract_address in self.curve_deposit_contracts or
                     tx_log.topics[0] in REMOVE_LIQUIDITY_IMBALANCE or
-                    user_or_contract_address == hex_or_bytes_to_address(tx_log.topics[1])
+                    user_or_contract_address == bytes_to_address(tx_log.topics[1])
                 )
             ):
                 event.event_type = HistoryEventType.SPEND
@@ -225,8 +225,8 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                 withdrawn_asset
                 for _log in all_logs[all_logs.index(tx_log) + 1:] if (
                     (_log.topics[0] == ERC20_OR_ERC721_TRANSFER) and
-                    (hex_or_bytes_to_address(_log.topics[1]) == return_event.address) and
-                    self.base.is_tracked(hex_or_bytes_to_address(_log.topics[2])) and
+                    (bytes_to_address(_log.topics[1]) == return_event.address) and
+                    self.base.is_tracked(bytes_to_address(_log.topics[2])) and
                     (withdrawn_asset := self._read_curve_asset(
                         asset_address=_log.address,
                         encounter=TokenEncounterInfo(tx_hash=transaction.tx_hash),
@@ -344,8 +344,8 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                     for _log in all_logs:
                         if (
                             _log.topics[0] == ERC20_OR_ERC721_TRANSFER and
-                            hex_or_bytes_to_address(_log.topics[1]) == ZERO_ADDRESS and
-                            hex_or_bytes_to_address(_log.topics[2]) == user_or_contract_address and
+                            bytes_to_address(_log.topics[1]) == ZERO_ADDRESS and
+                            bytes_to_address(_log.topics[2]) == user_or_contract_address and
                             _log.log_index < tx_log.log_index
                         ):
                             event.extra_data = {'address_pool_tokens_received': _log.address}
@@ -379,8 +379,8 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                 for _log in all_logs[all_logs.index(tx_log) + 1:]:
                     if (  # find the first log after deposit, where user receives the token from a deposit address  # noqa: E501
                         (_log.topics[0] == ERC20_OR_ERC721_TRANSFER) and
-                        (hex_or_bytes_to_address(_log.topics[1]) in deposit_addresses) and
-                        self.base.is_tracked(hex_or_bytes_to_address(_log.topics[2])) and
+                        (bytes_to_address(_log.topics[1]) in deposit_addresses) and
+                        self.base.is_tracked(bytes_to_address(_log.topics[2])) and
                         _log.address in lp_and_gauge_token_addresses and
                         (received_asset := self._read_curve_asset(
                             asset_address=_log.address,
@@ -473,7 +473,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                 pool_address = tx_log.address
                 swapping_contracts = {pool_address}
                 # When a single pool is used, spender and receiver is always the same
-                spender_address = receiver_address = hex_or_bytes_to_address(tx_log.topics[1])
+                spender_address = receiver_address = bytes_to_address(tx_log.topics[1])
                 sold_token_id = hex_or_bytes_to_int(tx_log.data[:32])
                 raw_sold_amount = hex_or_bytes_to_int(tx_log.data[32:64])
                 bought_token_id = hex_or_bytes_to_int(tx_log.data[64:96])
@@ -492,8 +492,8 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
         # if any curve router is used
         if context.tx_log.topics[0] in (EXCHANGE_MULTIPLE, EXCHANGE_NG):
             swapping_contracts = self.curve_swap_routers
-            spender_address = hex_or_bytes_to_address(context.tx_log.topics[1])
-            receiver_address = hex_or_bytes_to_address(context.tx_log.topics[2])
+            spender_address = bytes_to_address(context.tx_log.topics[1])
+            receiver_address = bytes_to_address(context.tx_log.topics[2])
             if raw_sold_amount is None:  # if it's not already set in token exchange event
                 raw_sold_amount = hex_or_bytes_to_int(context.tx_log.data[-64:-32])
 
@@ -510,9 +510,9 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
             # From X + (2 to route_length-1) indices: Unused elements (zero addresses)
             # Here we read only addresses of token in and token out.
             if sold_token_address is None:
-                sold_token_address = hex_or_bytes_to_address(context.tx_log.data[:32])
+                sold_token_address = bytes_to_address(context.tx_log.data[:32])
             for i in range(1, route_length):  # Starting from 1 because at 0 is `sold_token_address`  # noqa: E501
-                address = hex_or_bytes_to_address(context.tx_log.data[32 * i:32 * (i + 1)])
+                address = bytes_to_address(context.tx_log.data[32 * i:32 * (i + 1)])
                 if address == ZERO_ADDRESS:
                     break
                 bought_token_address = address
@@ -583,7 +583,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
             )
             return DEFAULT_DECODING_OUTPUT
 
-        provider = hex_or_bytes_to_address(context.tx_log.topics[1])
+        provider = bytes_to_address(context.tx_log.topics[1])
         deposited_amounts = [
             deposited_amount
             for deposit_amount in [context.tx_log.data[i:i + 32] for i in range(len(pool_addresses))]  # noqa: E501
@@ -613,7 +613,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                 if (
                     tx_log.log_index > context.tx_log.log_index and
                     tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
-                    hex_or_bytes_to_address(tx_log.topics[1]) == provider
+                    bytes_to_address(tx_log.topics[1]) == provider
                 ):
                     gauge_tokens = hex_or_bytes_to_int(tx_log.data[0:32])
                     break
@@ -640,7 +640,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
     def _decode_pool_events(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] in REMOVE_LIQUIDITY_EVENTS:
             # it can either be the user or a deposit zap contract
-            user_or_contract_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+            user_or_contract_address = bytes_to_address(context.tx_log.topics[1])
             return self._decode_curve_remove_events(
                 tx_log=context.tx_log,
                 all_logs=context.all_logs,
@@ -650,7 +650,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
             )
         if context.tx_log.topics[0] in ADD_LIQUIDITY_EVENTS:
             # it can either be the user or a deposit zap contract
-            user_or_contract_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+            user_or_contract_address = bytes_to_address(context.tx_log.topics[1])
             return self._decode_curve_deposit_events(
                 transaction=context.transaction,
                 tx_log=context.tx_log,
@@ -676,7 +676,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
         if context.tx_log.topics[0] not in (GAUGE_DEPOSIT, GAUGE_WITHDRAW):
             return DEFAULT_DECODING_OUTPUT
 
-        provider = hex_or_bytes_to_address(context.tx_log.topics[1])
+        provider = bytes_to_address(context.tx_log.topics[1])
         gauge_address = context.tx_log.address
         raw_amount = hex_or_bytes_to_int(context.tx_log.data)
         found_event_modifying_balances = False
@@ -774,7 +774,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
         - UnknownAsset
         - WrongAssetType
         """
-        source_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+        source_address = bytes_to_address(context.tx_log.topics[1])
         if (
             context.event.event_type == HistoryEventType.RECEIVE and
             context.event.event_subtype == HistoryEventSubType.NONE and

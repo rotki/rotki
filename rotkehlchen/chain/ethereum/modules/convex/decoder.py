@@ -40,7 +40,7 @@ from rotkehlchen.history.events.structures.base import HistoryEventSubType, Hist
 from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CURVE_POOL_PROTOCOL, CacheType, ChecksumEvmAddress, EvmTransaction
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -110,7 +110,7 @@ class ConvexDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
         - claim rewards
         """
         amount_raw = hex_or_bytes_to_int(context.tx_log.data[0:32])
-        interacted_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+        interacted_address = bytes_to_address(context.tx_log.topics[1])
         found_event_modifying_balances = False
         # in the case of withdrawing CVX from an expired lock the withdrawn event
         # is emitted before the transfer events and when iterating over the decoded events
@@ -165,7 +165,7 @@ class ConvexDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
                     for log_event in context.all_logs:
                         if log_event.topics[0] == STAKED:
                             deposit_amount_raw = hex_or_bytes_to_int(context.tx_log.data[0:32])
-                            staking_address = hex_or_bytes_to_address(log_event.topics[1])
+                            staking_address = bytes_to_address(log_event.topics[1])
                             if deposit_amount_raw == amount_raw and staking_address == event.location_label:  # noqa: E501
                                 event.extra_data = {'gauge_address': log_event.address}
                                 break

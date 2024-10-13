@@ -14,7 +14,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 from .constants import (
     BURN_MONERIUM_SIGNATURE,
@@ -51,8 +51,8 @@ class MoneriumCommonDecoder(DecoderInterface):
         if context.tx_log.topics[0] != ERC20_OR_ERC721_TRANSFER:
             return DEFAULT_DECODING_OUTPUT
 
-        from_address = hex_or_bytes_to_address(value=context.tx_log.topics[1])
-        to_address = hex_or_bytes_to_address(value=context.tx_log.topics[2])
+        from_address = bytes_to_address(value=context.tx_log.topics[1])
+        to_address = bytes_to_address(value=context.tx_log.topics[2])
 
         token = get_or_create_evm_token(
             userdb=self.evm_inquirer.database,

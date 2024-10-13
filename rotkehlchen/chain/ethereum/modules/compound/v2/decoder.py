@@ -25,7 +25,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTransaction
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 from .utils import get_compound_underlying_token
 
@@ -72,7 +72,7 @@ class Compoundv2Decoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             compound_token: EvmToken,
     ) -> DecodingOutput:
-        minter = hex_or_bytes_to_address(tx_log.data[0:32])
+        minter = bytes_to_address(tx_log.data[0:32])
         if not self.base.is_tracked(minter):
             return DEFAULT_DECODING_OUTPUT
 
@@ -124,7 +124,7 @@ class Compoundv2Decoder(DecoderInterface):
             decoded_events: list['EvmEvent'],
             compound_token: EvmToken,
     ) -> DecodingOutput:
-        redeemer = hex_or_bytes_to_address(tx_log.data[0:32])
+        redeemer = bytes_to_address(tx_log.data[0:32])
         if not self.base.is_tracked(redeemer):
             return DEFAULT_DECODING_OUTPUT
 
@@ -179,7 +179,7 @@ class Compoundv2Decoder(DecoderInterface):
         else:
             # is a repayment
             amount_raw = hex_or_bytes_to_int(tx_log.data[64:96])
-            payer = hex_or_bytes_to_address(tx_log.data[0:32])
+            payer = bytes_to_address(tx_log.data[0:32])
 
         amount = asset_normalized_value(amount_raw, underlying_asset)
         for event in decoded_events:
@@ -224,10 +224,10 @@ class Compoundv2Decoder(DecoderInterface):
             all_logs: list['EvmTxReceiptLog'],
     ) -> DecodingOutput:
         """Decode a liquidation event happening over a tracked account"""
-        borrower = hex_or_bytes_to_address(tx_log.data[32:64])
-        liquidator_address = hex_or_bytes_to_address(tx_log.data[0:32])
+        borrower = bytes_to_address(tx_log.data[32:64])
+        liquidator_address = bytes_to_address(tx_log.data[0:32])
         repay_amount_raw = hex_or_bytes_to_int(tx_log.data[64:96])
-        collateral_ctoken_address = hex_or_bytes_to_address(tx_log.data[96:128])
+        collateral_ctoken_address = bytes_to_address(tx_log.data[96:128])
         seize_amount_raw = hex_or_bytes_to_int(tx_log.data[128:160])
 
         collateral_ctoken = get_or_create_evm_token(
@@ -256,7 +256,7 @@ class Compoundv2Decoder(DecoderInterface):
                 if (
                     event_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
                     event_log.topics[1] == tx_log.data[0:32] and
-                    hex_or_bytes_to_address(event_log.topics[2]) == tx_log.address
+                    bytes_to_address(event_log.topics[2]) == tx_log.address
                 ):
                     repaying_token_address = event_log.address
                     repaying_asset = get_or_create_evm_token(
@@ -358,7 +358,7 @@ class Compoundv2Decoder(DecoderInterface):
         # Transactions with comp claim have many such "distributed" events. We need to do a
         # decoded evens iteration only at the end but can't think of a good way to avoid
         # the possibility of checking all such events
-        supplier_address = hex_or_bytes_to_address(context.tx_log.topics[2])
+        supplier_address = bytes_to_address(context.tx_log.topics[2])
         if not self.base.is_tracked(supplier_address):
             return DEFAULT_DECODING_OUTPUT
 

@@ -15,7 +15,7 @@ from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import hex_or_bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
 
 DEPOSIT = b'\xc1,W\xb1\xc7:,:.\xa4a>\x94v\xab\xb3\xd8\xd1F\x85z\xabs)\xe2BC\xfbYq\x0c\x82'
 REDEEM_UNDERLYING = b'\x9cN\xd5\x99\xcd\x85U\xb9\xc1\xe8\xcdvC$\r}q\xebv\xb7\x92\x94\x8cI\xfc\xb4\xd4\x11\xf7\xb6\xb3\xc6'  # noqa: E501
@@ -35,9 +35,9 @@ class Aavev1Decoder(DecoderInterface):
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_deposit_event(self, context: DecoderContext) -> DecodingOutput:
-        reserve_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+        reserve_address = bytes_to_address(context.tx_log.topics[1])
         reserve_asset = self.base.get_or_create_evm_asset(reserve_address)
-        user_address = hex_or_bytes_to_address(context.tx_log.topics[2])
+        user_address = bytes_to_address(context.tx_log.topics[2])
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[0:32])
         amount = asset_normalized_value(raw_amount, reserve_asset)
         atoken = asset_to_atoken(asset=reserve_asset, version=1)
@@ -71,9 +71,9 @@ class Aavev1Decoder(DecoderInterface):
         return DEFAULT_DECODING_OUTPUT
 
     def _decode_redeem_underlying_event(self, context: DecoderContext) -> DecodingOutput:
-        reserve_address = hex_or_bytes_to_address(context.tx_log.topics[1])
+        reserve_address = bytes_to_address(context.tx_log.topics[1])
         reserve_asset = self.base.get_or_create_evm_asset(reserve_address)
-        user_address = hex_or_bytes_to_address(context.tx_log.topics[2])
+        user_address = bytes_to_address(context.tx_log.topics[2])
         raw_amount = hex_or_bytes_to_int(context.tx_log.data[0:32])
         amount = asset_normalized_value(raw_amount, reserve_asset)
         atoken = asset_to_atoken(asset=reserve_asset, version=1)
@@ -111,7 +111,7 @@ class Aavev1Decoder(DecoderInterface):
         """
         Decode AAVE v1 liquidations. When a liquidation happens the user returns the debt token.
         """
-        if self.base.is_tracked(hex_or_bytes_to_address(context.tx_log.topics[3])) is False:
+        if self.base.is_tracked(bytes_to_address(context.tx_log.topics[3])) is False:
             return DEFAULT_DECODING_OUTPUT
 
         for event in context.decoded_events:
