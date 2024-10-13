@@ -31,10 +31,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction
-from rotkehlchen.utils.misc import (
-    bytes_to_address,
-    hex_or_bytes_to_int,
-)
+from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -141,7 +138,7 @@ class Commonv2v3Decoder(DecoderInterface):
             return None, None
 
         amount = asset_normalized_value(
-            amount=hex_or_bytes_to_int(tx_log.data[32:64]),
+            amount=int.from_bytes(tx_log.data[32:64]),
             asset=token,
         )
         deposit_event, receive_event = None, None
@@ -197,7 +194,7 @@ class Commonv2v3Decoder(DecoderInterface):
         ):
             return None, None
         amount = asset_normalized_value(
-            amount=hex_or_bytes_to_int(tx_log.data),
+            amount=int.from_bytes(tx_log.data),
             asset=token,
         )
         symbol = self.evm_inquirer.native_token.symbol if is_wnative_user else token.symbol
@@ -252,13 +249,13 @@ class Commonv2v3Decoder(DecoderInterface):
             return None, None
 
         amount = asset_normalized_value(
-            amount=hex_or_bytes_to_int(tx_log.data[32:64]),
+            amount=int.from_bytes(tx_log.data[32:64]),
             asset=token,
         )
-        rate_mode = hex_or_bytes_to_int(tx_log.data[64:96])
+        rate_mode = int.from_bytes(tx_log.data[64:96])
         # Aave uses ray math https://docs.aave.com/developers/v/1.0/developing-on-aave/important-considerations#ray-math  # noqa: E501
         # To get the rate we have to divide the value by 1e27. And then multiply by 100 to get the percentage.  # noqa: E501
-        rate = hex_or_bytes_to_int(tx_log.data[96:128]) / FVal(RAY) * 100
+        rate = int.from_bytes(tx_log.data[96:128]) / FVal(RAY) * 100
         notes = f'Borrow {amount} {token.symbol} from {self.label} with {"stable" if rate_mode == 1 else "variable"} APY {rate.num:.2f}%'  # noqa: E501
         if on_behalf_of != user:
             notes += f' on behalf of {on_behalf_of}'
@@ -361,7 +358,7 @@ class Commonv2v3Decoder(DecoderInterface):
                 mint = (
                     bytes_to_address(tx_log.topics[2]),  # onBehalfOf
                     asset_normalized_value(  # amount minted
-                        amount=hex_or_bytes_to_int(tx_log.data[0:32]),
+                        amount=int.from_bytes(tx_log.data[0:32]),
                         asset=token,
                     ),
                     token,
@@ -453,7 +450,7 @@ class Commonv2v3Decoder(DecoderInterface):
 
         reward_token = self.base.get_or_create_evm_token(address=reward_token_address)
         amount = asset_normalized_value(
-            amount=hex_or_bytes_to_int(amount_raw),
+            amount=int.from_bytes(amount_raw),
             asset=reward_token,
         )
 

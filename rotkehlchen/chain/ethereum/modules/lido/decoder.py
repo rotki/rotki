@@ -14,7 +14,7 @@ from rotkehlchen.constants.assets import A_ETH, A_STETH
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, from_wei, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, from_wei
 
 from .constants import CPT_LIDO, LIDO_STETH_SUBMITTED, STETH_MAX_ROUND_ERROR_WEI
 
@@ -44,7 +44,7 @@ class LidoDecoder(DecoderInterface):
 
     def _decode_lido_staking_in_steth(self, context: DecoderContext, sender: ChecksumEvmAddress) -> DecodingOutput:  # noqa: E501
         """Decode the submit of eth to lido contract for obtaining steth in return"""
-        amount_raw = hex_or_bytes_to_int(context.tx_log.data[:32])
+        amount_raw = int.from_bytes(context.tx_log.data[:32])
         collateral_amount = token_normalized_value_decimals(
             token_amount=amount_raw,
             token_decimals=18,

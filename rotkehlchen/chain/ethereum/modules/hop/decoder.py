@@ -12,7 +12,7 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import BRIDGES, HOP_GOVERNOR
 
@@ -58,7 +58,7 @@ class HopDecoder(HopCommonDecoder, GovernableDecoderInterface):
         if (bridge := self.bridges.get(context.tx_log.address)) is None:
             return DEFAULT_DECODING_OUTPUT
 
-        amount_raw = hex_or_bytes_to_int(context.tx_log.data[:32])
+        amount_raw = int.from_bytes(context.tx_log.data[:32])
         amount = self._get_bridge_asset_amount(amount_raw=amount_raw, identifier=bridge.identifier)
 
         for event in context.decoded_events:
@@ -71,7 +71,7 @@ class HopDecoder(HopCommonDecoder, GovernableDecoderInterface):
                     asset=event.asset,
                     recipient=recipient,
                     sender=string_to_evm_address(event.location_label) if event.location_label else None,  # noqa: E501
-                    chain_id=hex_or_bytes_to_int(context.tx_log.topics[1]),
+                    chain_id=int.from_bytes(context.tx_log.topics[1]),
                 )
                 break
 

@@ -43,7 +43,7 @@ from rotkehlchen.types import (
     EvmTokenKind,
     EvmTransaction,
 )
-from rotkehlchen.utils.misc import hex_or_bytes_to_int, ts_ms_to_sec
+from rotkehlchen.utils.misc import ts_ms_to_sec
 
 from ..constants import CPT_UNISWAP_V2, CPT_UNISWAP_V3, UNISWAP_ICON
 
@@ -198,8 +198,8 @@ class Uniswapv3CommonDecoder(DecoderInterface):
         # for the token0 [0:32] and the token1 [32:64]. If that difference is negative it
         # means that the tokens are leaving the pool (the user receives them) and if it is
         # positive they get into the pool (the user sends them to the pool)
-        delta_token_0 = hex_or_bytes_to_int(tx_log.data[0:32], signed=True)
-        delta_token_1 = hex_or_bytes_to_int(tx_log.data[32:64], signed=True)
+        delta_token_0 = int.from_bytes(tx_log.data[0:32], signed=True)
+        delta_token_1 = int.from_bytes(tx_log.data[32:64], signed=True)
         if delta_token_0 > 0:
             amount_sent, amount_received = delta_token_0, -delta_token_1
         else:
@@ -388,9 +388,9 @@ class Uniswapv3CommonDecoder(DecoderInterface):
         https://etherscan.io/tx/0x76c312fe1c8604de5175c37dcbbb99cc8699336f3e4840e9e29e3383970f6c6d (withdrawal)
         """  # noqa: E501
         new_action_items = []
-        liquidity_pool_id = hex_or_bytes_to_int(context.tx_log.topics[1])
-        amount0_raw = hex_or_bytes_to_int(context.tx_log.data[32:64])
-        amount1_raw = hex_or_bytes_to_int(context.tx_log.data[64:96])
+        liquidity_pool_id = int.from_bytes(context.tx_log.topics[1])
+        amount0_raw = int.from_bytes(context.tx_log.data[32:64])
+        amount1_raw = int.from_bytes(context.tx_log.data[64:96])
 
         if event_action_type == 'addition':
             notes = 'Deposit {amount} {asset} to uniswap-v3 LP {pool_id}'
@@ -539,7 +539,7 @@ class Uniswapv3CommonDecoder(DecoderInterface):
         ):
             context.event.event_type = HistoryEventType.DEPLOY
             context.event.event_subtype = HistoryEventSubType.NFT
-            context.event.notes = f'Create {CPT_UNISWAP_V3} LP with id {hex_or_bytes_to_int(context.tx_log.topics[3])}'  # noqa: E501
+            context.event.notes = f'Create {CPT_UNISWAP_V3} LP with id {int.from_bytes(context.tx_log.topics[3])}'  # noqa: E501
             context.event.counterparty = CPT_UNISWAP_V3
             return TransferEnrichmentOutput(matched_counterparty=CPT_UNISWAP_V3)
 

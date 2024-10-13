@@ -42,7 +42,7 @@ from rotkehlchen.types import (
     deserialize_evm_tx_hash,
 )
 from rotkehlchen.utils.data_structures import LRUCacheWithRemove
-from rotkehlchen.utils.misc import hex_or_bytes_to_int, set_user_agent
+from rotkehlchen.utils.misc import hexstr_to_int, set_user_agent
 from rotkehlchen.utils.serialization import jsonloads_dict
 
 if TYPE_CHECKING:
@@ -609,8 +609,8 @@ class Etherscan(ExternalServiceWithApiKey, ABC):
         block_data = self._query(module='proxy', action='eth_getBlockByNumber', options=options)
         # We need to convert some data from hex here
         # https://github.com/PyCQA/pylint/issues/4739
-        block_data['timestamp'] = hex_or_bytes_to_int(block_data['timestamp'])
-        block_data['number'] = hex_or_bytes_to_int(block_data['number'])
+        block_data['timestamp'] = hexstr_to_int(block_data['timestamp'])
+        block_data['number'] = hexstr_to_int(block_data['number'])
 
         return block_data
 

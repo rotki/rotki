@@ -16,7 +16,7 @@ from rotkehlchen.chain.evm.decoding.utils import bridge_match_transfer, bridge_p
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.assets.asset import Asset
@@ -70,7 +70,7 @@ class XdaiBridgeCommonDecoder(DecoderInterface, abc.ABC):
             return DEFAULT_DECODING_OUTPUT
 
         amount = asset_normalized_value(
-            amount=hex_or_bytes_to_int(context.tx_log.data[32:64]),
+            amount=int.from_bytes(context.tx_log.data[32:64]),
             asset=self.bridged_asset,
         )
         expected_event_type, new_event_type, from_chain, to_chain, expected_location_label = bridge_prepare_data(  # noqa: E501

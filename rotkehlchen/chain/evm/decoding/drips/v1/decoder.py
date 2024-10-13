@@ -24,7 +24,7 @@ from rotkehlchen.constants.assets import A_DAI, A_ETH
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 if TYPE_CHECKING:
@@ -59,7 +59,7 @@ class Dripsv1CommonDecoder(DecoderInterface, CustomizableDateMixin):
             return DEFAULT_DECODING_OUTPUT
 
         amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data),
+            token_amount=int.from_bytes(context.tx_log.data),
             token_decimals=DEFAULT_TOKEN_DECIMALS,  # always DAI
         )
         event = self.base.make_event_from_transaction(
@@ -81,11 +81,11 @@ class Dripsv1CommonDecoder(DecoderInterface, CustomizableDateMixin):
             return DEFAULT_DECODING_OUTPUT
 
         collected_amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data[0:32]),
+            token_amount=int.from_bytes(context.tx_log.data[0:32]),
             token_decimals=DEFAULT_TOKEN_DECIMALS,  # always DAI
         )
         split_amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data[32:64]),
+            token_amount=int.from_bytes(context.tx_log.data[32:64]),
             token_decimals=DEFAULT_TOKEN_DECIMALS,  # always DAI
         )
         notes = f'Collect {collected_amount} DAI from Drips v1'
@@ -143,7 +143,7 @@ class Dripsv1CommonDecoder(DecoderInterface, CustomizableDateMixin):
 
         receiver = bytes_to_address(context.tx_log.topics[2])  # receiver does not receive in this transaction  # noqa: E501
         amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data[0:32]),
+            token_amount=int.from_bytes(context.tx_log.data[0:32]),
             token_decimals=DEFAULT_TOKEN_DECIMALS,  # always DAI
         )
         action_item = ActionItem(
@@ -167,10 +167,10 @@ class Dripsv1CommonDecoder(DecoderInterface, CustomizableDateMixin):
         receiver = bytes_to_address(context.tx_log.topics[2])  # receiver does not receive in this transaction  # noqa: E501
 
         amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data[0:32]),
+            token_amount=int.from_bytes(context.tx_log.data[0:32]),
             token_decimals=DEFAULT_TOKEN_DECIMALS,  # always DAI
         )
-        end_ts = Timestamp(hex_or_bytes_to_int(context.tx_log.data[32:64]))
+        end_ts = Timestamp(int.from_bytes(context.tx_log.data[32:64]))
         new_event = self.base.make_event_next_index(
             tx_hash=context.transaction.tx_hash,
             timestamp=context.transaction.timestamp,

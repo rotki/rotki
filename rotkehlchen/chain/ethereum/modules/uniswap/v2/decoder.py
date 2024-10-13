@@ -21,7 +21,6 @@ from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants import ZERO
 from rotkehlchen.types import EvmTransaction
-from rotkehlchen.utils.misc import hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -49,8 +48,8 @@ class Uniswapv2Decoder(DecoderInterface):
         """
         # amount_in is the amount that enters the pool and amount_out the one
         # that leaves the pool
-        amount_in_token_0, amount_in_token_1 = hex_or_bytes_to_int(tx_log.data[0:32]), hex_or_bytes_to_int(tx_log.data[32:64])  # noqa: E501
-        amount_out_token_0, amount_out_token_1 = hex_or_bytes_to_int(tx_log.data[64:96]), hex_or_bytes_to_int(tx_log.data[96:128])  # noqa: E501
+        amount_in_token_0, amount_in_token_1 = int.from_bytes(tx_log.data[0:32]), int.from_bytes(tx_log.data[32:64])  # noqa: E501
+        amount_out_token_0, amount_out_token_1 = int.from_bytes(tx_log.data[64:96]), int.from_bytes(tx_log.data[96:128])  # noqa: E501
         amount_in, amount_out = amount_in_token_0, amount_out_token_0
         if amount_in == ZERO:
             amount_in = amount_in_token_1

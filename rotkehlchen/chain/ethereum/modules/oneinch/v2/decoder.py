@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from rotkehlchen.chain.evm.decoding.oneinch.decoder import OneinchCommonDecoder
 from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -38,8 +38,8 @@ class Oneinchv2Decoder(OneinchCommonDecoder):
             receiver=bytes_to_address(context.tx_log.data[0:32]),
             source_token_address=bytes_to_address(context.tx_log.topics[2]),
             destination_token_address=bytes_to_address(context.tx_log.topics[3]),
-            spent_amount_raw=hex_or_bytes_to_int(context.tx_log.data[64:96]),
-            return_amount_raw=hex_or_bytes_to_int(context.tx_log.data[96:128]),
+            spent_amount_raw=int.from_bytes(context.tx_log.data[64:96]),
+            return_amount_raw=int.from_bytes(context.tx_log.data[96:128]),
         )
 
     # -- DecoderInterface methods

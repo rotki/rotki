@@ -35,10 +35,7 @@ from rotkehlchen.history.events.structures.types import (
 )
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTransaction
-from rotkehlchen.utils.misc import (
-    bytes_to_address,
-    hex_or_bytes_to_int,
-)
+from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -152,9 +149,9 @@ class CowswapCommonDecoder(DecoderInterface, abc.ABC):
             owner_address = bytes_to_address(tx_log.topics[1])
             from_token_address = bytes_to_address(tx_log.data[:32])
             to_token_address = bytes_to_address(tx_log.data[32:64])
-            raw_from_amount = hex_or_bytes_to_int(tx_log.data[64:96])
-            raw_to_amount = hex_or_bytes_to_int(tx_log.data[96:128])
-            raw_fee_amount = hex_or_bytes_to_int(tx_log.data[128:160])
+            raw_from_amount = int.from_bytes(tx_log.data[64:96])
+            raw_to_amount = int.from_bytes(tx_log.data[96:128])
+            raw_fee_amount = int.from_bytes(tx_log.data[128:160])
             order_uid = tx_log.data[224:280].hex()
 
             if (
@@ -407,11 +404,11 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
         return decoded_events
 
     def _decode_normal_claim(self, context: DecoderContext) -> DecodingOutput:
-        raw_amount = hex_or_bytes_to_int(context.tx_log.data[128:160])
+        raw_amount = int.from_bytes(context.tx_log.data[128:160])
         amount = asset_normalized_value(amount=raw_amount, asset=self.vcow_token)
         airdrop_identifier: Literal['cow_mainnet', 'cow_gnosis'] = 'cow_mainnet' if self.evm_inquirer.chain_id == ChainID.ETHEREUM else 'cow_gnosis'  # noqa: E501
         # claimTypes with payment: 1=GnoOption, 2=UserOption, 3=Investor
-        claim_supports_payment = hex_or_bytes_to_int(context.tx_log.data[32:64]) in (1, 2, 3)
+        claim_supports_payment = int.from_bytes(context.tx_log.data[32:64]) in (1, 2, 3)
         claimant_address = bytes_to_address(context.tx_log.data[64:96])
         if not self.base.is_tracked(claimant_address):
             return DEFAULT_DECODING_OUTPUT
@@ -467,7 +464,7 @@ class CowswapCommonDecoderWithVCOW(CowswapCommonDecoder):
 
         # in gnosis chain the Vested log event has no amount in data. So we don't
         # match on amount for action items and in post decoding fix notes instead of here
-        amount = token_normalized_value(hex_or_bytes_to_int(context.tx_log.data), self.vcow_token) if self.evm_inquirer.chain_id != ChainID.GNOSIS else None  # noqa: E501
+        amount = token_normalized_value(int.from_bytes(context.tx_log.data), self.vcow_token) if self.evm_inquirer.chain_id != ChainID.GNOSIS else None  # noqa: E501
         return DecodingOutput(
             action_items=[
                 ActionItem(

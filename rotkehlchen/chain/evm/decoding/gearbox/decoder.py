@@ -27,7 +27,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
     CLAIM_GEAR_WITHDRAWAL,
@@ -115,11 +115,11 @@ class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             return None
 
         amount = token_normalized_value(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data[:32]),
+            token_amount=int.from_bytes(context.tx_log.data[:32]),
             token=token,
         )
         shares = token_normalized_value(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data[32:64]),
+            token_amount=int.from_bytes(context.tx_log.data[32:64]),
             token=token,
         )
         return user_address, pool_info, amount, shares
@@ -226,7 +226,7 @@ class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
     def _decode_stake(self, context: DecoderContext) -> DecodingOutput:
         user_address = bytes_to_address(context.tx_log.topics[1])
         amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data[:32]),
+            token_amount=int.from_bytes(context.tx_log.data[:32]),
             token_decimals=DEFAULT_TOKEN_DECIMALS,
         )
 
@@ -251,7 +251,7 @@ class GearboxCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
     def _decode_unstake(self, context: DecoderContext) -> DecodingOutput:
         user_address = bytes_to_address(context.tx_log.data[:32])
         amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data[32:64]),
+            token_amount=int.from_bytes(context.tx_log.data[32:64]),
             token_decimals=DEFAULT_TOKEN_DECIMALS,
         )
         for event in context.decoded_events:

@@ -16,10 +16,7 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.utils.misc import (
-    bytes_to_address,
-    hex_or_bytes_to_int,
-)
+from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -118,7 +115,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
             asset = self.evm_inquirer.native_token
         else:
             asset = self.base.get_or_create_evm_token(token_address)
-        amount_raw = hex_or_bytes_to_int(context.tx_log.data[32:64])
+        amount_raw = int.from_bytes(context.tx_log.data[32:64])
         amount = asset_normalized_value(amount_raw, asset)
 
         if donator_tracked:  # with or without receiver tracked we take this
@@ -181,7 +178,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
 
     def _decode_project_action(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == PROJECT_CREATED:
-            project_id = hex_or_bytes_to_int(context.tx_log.topics[1])
+            project_id = int.from_bytes(context.tx_log.topics[1])
             owner = bytes_to_address(context.tx_log.topics[2])
             event = self.base.make_event_from_transaction(
                 transaction=context.transaction,
@@ -197,7 +194,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
             )
             return DecodingOutput(event=event)
         elif context.tx_log.topics[0] == METADATA_UPDATED:
-            project_id = hex_or_bytes_to_int(context.tx_log.topics[1])
+            project_id = int.from_bytes(context.tx_log.topics[1])
             event = self.base.make_event_from_transaction(
                 transaction=context.transaction,
                 tx_log=context.tx_log,
@@ -241,7 +238,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
         if self.base.is_tracked(grantee) is False:
             return DEFAULT_DECODING_OUTPUT
 
-        raw_amount = hex_or_bytes_to_int(context.tx_log.data[0:32])
+        raw_amount = int.from_bytes(context.tx_log.data[0:32])
         token_address = bytes_to_address(context.tx_log.topics[1])
         token = self.base.get_or_create_evm_token(token_address)
         amount = asset_normalized_value(raw_amount, token)

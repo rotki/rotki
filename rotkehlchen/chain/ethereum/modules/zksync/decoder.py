@@ -10,7 +10,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CPT_ZKSYNC, ZKSYNC_BRIDGE
 
@@ -29,7 +29,7 @@ class ZksyncDecoder(DecoderInterface):
         elif context.tx_log.topics[0] == DEPOSIT:
             for tx_log in context.all_logs:  # iterate
                 if tx_log.topics[0] == NEW_PRIORITY_REQUEST:
-                    op_type = hex_or_bytes_to_int(tx_log.data[64:96])
+                    op_type = int.from_bytes(tx_log.data[64:96])
                     if op_type != 1:
                         continue  # 1 is deposit and this is what we are searching for
                     user_address = bytes_to_address(tx_log.data[0:32])
@@ -48,7 +48,7 @@ class ZksyncDecoder(DecoderInterface):
         https://github.com/rotki/rotki/pull/3985/files
         to get the ids of tokens and then match them to what is deposited.
         """
-        amount_raw = hex_or_bytes_to_int(context.tx_log.data)
+        amount_raw = int.from_bytes(context.tx_log.data)
 
         for event in context.decoded_events:
             if event.event_type == HistoryEventType.SPEND and event.location_label == user_address:

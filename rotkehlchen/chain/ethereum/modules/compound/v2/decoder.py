@@ -25,7 +25,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind, EvmTransaction
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 from .utils import get_compound_underlying_token
 
@@ -76,8 +76,8 @@ class Compoundv2Decoder(DecoderInterface):
         if not self.base.is_tracked(minter):
             return DEFAULT_DECODING_OUTPUT
 
-        mint_amount_raw = hex_or_bytes_to_int(tx_log.data[32:64])
-        minted_amount_raw = hex_or_bytes_to_int(tx_log.data[64:96])
+        mint_amount_raw = int.from_bytes(tx_log.data[32:64])
+        minted_amount_raw = int.from_bytes(tx_log.data[64:96])
         underlying_asset = get_compound_underlying_token(compound_token)
         if underlying_asset is None:
             return DEFAULT_DECODING_OUTPUT
@@ -128,8 +128,8 @@ class Compoundv2Decoder(DecoderInterface):
         if not self.base.is_tracked(redeemer):
             return DEFAULT_DECODING_OUTPUT
 
-        redeem_amount_raw = hex_or_bytes_to_int(tx_log.data[32:64])
-        redeem_tokens_raw = hex_or_bytes_to_int(tx_log.data[64:96])
+        redeem_amount_raw = int.from_bytes(tx_log.data[32:64])
+        redeem_tokens_raw = int.from_bytes(tx_log.data[64:96])
         underlying_asset = get_compound_underlying_token(compound_token)
         if underlying_asset is None:
             return DEFAULT_DECODING_OUTPUT
@@ -174,11 +174,11 @@ class Compoundv2Decoder(DecoderInterface):
                 return DEFAULT_DECODING_OUTPUT
 
         if tx_log.topics[0] == BORROW_COMPOUND:
-            amount_raw = hex_or_bytes_to_int(tx_log.data[32:64])
+            amount_raw = int.from_bytes(tx_log.data[32:64])
             payer = None
         else:
             # is a repayment
-            amount_raw = hex_or_bytes_to_int(tx_log.data[64:96])
+            amount_raw = int.from_bytes(tx_log.data[64:96])
             payer = bytes_to_address(tx_log.data[0:32])
 
         amount = asset_normalized_value(amount_raw, underlying_asset)
@@ -226,9 +226,9 @@ class Compoundv2Decoder(DecoderInterface):
         """Decode a liquidation event happening over a tracked account"""
         borrower = bytes_to_address(tx_log.data[32:64])
         liquidator_address = bytes_to_address(tx_log.data[0:32])
-        repay_amount_raw = hex_or_bytes_to_int(tx_log.data[64:96])
+        repay_amount_raw = int.from_bytes(tx_log.data[64:96])
         collateral_ctoken_address = bytes_to_address(tx_log.data[96:128])
-        seize_amount_raw = hex_or_bytes_to_int(tx_log.data[128:160])
+        seize_amount_raw = int.from_bytes(tx_log.data[128:160])
 
         collateral_ctoken = get_or_create_evm_token(
             userdb=self.base.database,

@@ -7,7 +7,7 @@ from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.decoding.weth.decoder import WethDecoder as EthBaseWethDecoder
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.structures import DecoderContext, DecodingOutput
@@ -20,7 +20,7 @@ log = RotkehlchenLogsAdapter(logger)
 class WethDecoder(EthBaseWethDecoder):
     def _decode_deposit_event(self, context: 'DecoderContext') -> 'DecodingOutput':
         depositor = bytes_to_address(context.tx_log.topics[1])
-        deposited_amount_raw = hex_or_bytes_to_int(context.tx_log.data[:32])
+        deposited_amount_raw = int.from_bytes(context.tx_log.data[:32])
         deposited_amount = asset_normalized_value(
             amount=deposited_amount_raw,
             asset=self.base_asset,
@@ -53,7 +53,7 @@ class WethDecoder(EthBaseWethDecoder):
 
     def _decode_withdrawal_event(self, context: 'DecoderContext') -> 'DecodingOutput':
         withdrawer = bytes_to_address(context.tx_log.topics[1])
-        withdrawn_amount_raw = hex_or_bytes_to_int(context.tx_log.data[:32])
+        withdrawn_amount_raw = int.from_bytes(context.tx_log.data[:32])
         withdrawn_amount = asset_normalized_value(
             amount=withdrawn_amount_raw,
             asset=self.base_asset,

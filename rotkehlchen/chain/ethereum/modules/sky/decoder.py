@@ -19,7 +19,7 @@ from rotkehlchen.constants.misc import ZERO
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
     CPT_SKY,
@@ -45,7 +45,7 @@ class SkyDecoder(DecoderInterface):
         if context.tx_log.topics[0] != DAI_TO_USDS:
             return DEFAULT_DECODING_OUTPUT
 
-        raw_amount = hex_or_bytes_to_int(context.tx_log.data[0:32])
+        raw_amount = int.from_bytes(context.tx_log.data[0:32])
         amount = token_normalized_value_decimals(
             token_amount=raw_amount,
             token_decimals=DEFAULT_TOKEN_DECIMALS,
@@ -78,11 +78,11 @@ class SkyDecoder(DecoderInterface):
             return DEFAULT_DECODING_OUTPUT
 
         mkr_amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data[0:32]),
+            token_amount=int.from_bytes(context.tx_log.data[0:32]),
             token_decimals=DEFAULT_TOKEN_DECIMALS,
         )
         sky_amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data[32:64]),
+            token_amount=int.from_bytes(context.tx_log.data[32:64]),
             token_decimals=DEFAULT_TOKEN_DECIMALS,
         )
         user = bytes_to_address(context.tx_log.topics[2])
@@ -126,13 +126,13 @@ class SkyDecoder(DecoderInterface):
 
         received_address = bytes_to_address(context.tx_log.topics[2])
         if (assets_amount := token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data[0:32]),
+            token_amount=int.from_bytes(context.tx_log.data[0:32]),
             token_decimals=DEFAULT_TOKEN_DECIMALS,
         )) == ZERO:
             return DEFAULT_DECODING_OUTPUT
 
         shares_amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data[32:64]),
+            token_amount=int.from_bytes(context.tx_log.data[32:64]),
             token_decimals=DEFAULT_TOKEN_DECIMALS,
         )
 

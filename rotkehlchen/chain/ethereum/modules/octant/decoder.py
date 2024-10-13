@@ -16,7 +16,7 @@ from rotkehlchen.constants.assets import A_ETH, A_GLM
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CPT_OCTANT, LOCKED, OCTANT_DEPOSITS, OCTANT_REWARDS, UNLOCKED, WITHDRAWN
 
@@ -61,7 +61,7 @@ class OctantDecoder(DecoderInterface):
         else:
             return DEFAULT_DECODING_OUTPUT
 
-        raw_amount = hex_or_bytes_to_int(context.tx_log.data[32:64])
+        raw_amount = int.from_bytes(context.tx_log.data[32:64])
         address = bytes_to_address(context.tx_log.data[96:128])
         if self.base.is_tracked(address) is False:
             return DEFAULT_DECODING_OUTPUT
@@ -94,8 +94,8 @@ class OctantDecoder(DecoderInterface):
         if not self.base.is_tracked(user):
             return DEFAULT_DECODING_OUTPUT
 
-        raw_amount = hex_or_bytes_to_int(context.tx_log.data[32:64])
-        epoch = hex_or_bytes_to_int(context.tx_log.data[64:96])
+        raw_amount = int.from_bytes(context.tx_log.data[32:64])
+        epoch = int.from_bytes(context.tx_log.data[64:96])
         amount = token_normalized_value_decimals(raw_amount, 18)  # always ETH
         for event in context.decoded_events:
             if (

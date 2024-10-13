@@ -26,7 +26,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, from_wei, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, from_wei
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -103,7 +103,7 @@ class ScrollBridgeDecoder(DecoderInterface):
 
         sender = bytes_to_address(context.tx_log.topics[1])
         target = bytes_to_address(context.tx_log.topics[2])
-        value = hex_or_bytes_to_int(context.tx_log.data[:32])
+        value = int.from_bytes(context.tx_log.data[:32])
         amount = from_wei(FVal(value))
 
         if not self.base.any_tracked([sender, target]):
@@ -131,7 +131,7 @@ class ScrollBridgeDecoder(DecoderInterface):
 
         ethereum_token_address = bytes_to_address(tx_log.topics[1])
         asset = self.base.get_or_create_evm_token(ethereum_token_address)
-        raw_amount = hex_or_bytes_to_int(tx_log.data[32:64])
+        raw_amount = int.from_bytes(tx_log.data[32:64])
         amount = asset_normalized_value(raw_amount, asset)
         expected_event_type, new_event_type, from_chain, to_chain, _ = bridge_prepare_data(
             tx_log=tx_log,

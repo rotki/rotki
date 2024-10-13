@@ -34,7 +34,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent, EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import HOP_PROTOCOL_LP, CacheType, ChainID, ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
     ADD_LIQUIDITY,
@@ -164,8 +164,8 @@ class HopCommonDecoder(DecoderInterface):
 
         else:
             asset = Asset(bridge.identifier)
-            amount = hex_or_bytes_to_int(context.transaction.input_data[36:68])
-            bonder_fee = hex_or_bytes_to_int(context.transaction.input_data[100:132])
+            amount = int.from_bytes(context.transaction.input_data[36:68])
+            bonder_fee = int.from_bytes(context.transaction.input_data[100:132])
             norm_amount = token_normalized_value(
                 token_amount=amount - bonder_fee, token=asset.resolve_to_evm_token(),
             )
@@ -191,9 +191,9 @@ class HopCommonDecoder(DecoderInterface):
         if (bridge := self.bridges.get(context.tx_log.address)) is None:
             return DEFAULT_DECODING_OUTPUT
 
-        amount_raw = hex_or_bytes_to_int(context.tx_log.data[:32])
+        amount_raw = int.from_bytes(context.tx_log.data[:32])
         amount = self._get_bridge_asset_amount(amount_raw=amount_raw, identifier=bridge.identifier)
-        bonder_fee_raw = hex_or_bytes_to_int(context.tx_log.data[64:96])
+        bonder_fee_raw = int.from_bytes(context.tx_log.data[64:96])
         bonder_fee = token_normalized_value_decimals(bonder_fee_raw, DEFAULT_TOKEN_DECIMALS)
         for event in context.decoded_events:
             if (
@@ -230,7 +230,7 @@ class HopCommonDecoder(DecoderInterface):
                     asset=event.asset,
                     recipient=recipient,
                     sender=string_to_evm_address(event.location_label) if event.location_label else None,  # noqa: E501
-                    chain_id=hex_or_bytes_to_int(context.tx_log.topics[2]),
+                    chain_id=int.from_bytes(context.tx_log.topics[2]),
                 )
                 break
 
@@ -259,7 +259,7 @@ class HopCommonDecoder(DecoderInterface):
         if (bridge := self.bridges.get(context.tx_log.address)) is None:
             return DEFAULT_DECODING_OUTPUT
 
-        amount_raw = hex_or_bytes_to_int(context.tx_log.data[:32])
+        amount_raw = int.from_bytes(context.tx_log.data[:32])
         amount = self._get_bridge_asset_amount(amount_raw=amount_raw, identifier=bridge.identifier)
         for event in context.decoded_events:
             if (
@@ -281,8 +281,8 @@ class HopCommonDecoder(DecoderInterface):
             # corresponding receive not found, create an ActionItem
             # to update the event when it's decoded
             asset = Asset(bridge.identifier)
-            amount_raw = hex_or_bytes_to_int(context.transaction.input_data[36:68])
-            bonder_fee = hex_or_bytes_to_int(context.transaction.input_data[100:132])
+            amount_raw = int.from_bytes(context.transaction.input_data[36:68])
+            bonder_fee = int.from_bytes(context.transaction.input_data[100:132])
             norm_amount = token_normalized_value(
                 token_amount=amount_raw - bonder_fee, token=asset.resolve_to_evm_token(),
             )
@@ -328,7 +328,7 @@ class HopCommonDecoder(DecoderInterface):
         """Decodes a TokenSwap event to set the proper bridged amount"""
         for item in context.action_items:
             if item.to_event_subtype == HistoryEventSubType.BRIDGE:
-                tokens_bought = hex_or_bytes_to_int(context.tx_log.data[32:64])
+                tokens_bought = int.from_bytes(context.tx_log.data[32:64])
                 asset = item.asset.resolve_to_evm_token()
                 amount = token_normalized_value(tokens_bought, asset)
                 item.to_notes = self._generate_bridge_note(amount=amount, asset=asset)
@@ -426,11 +426,11 @@ class HopCommonDecoder(DecoderInterface):
             return None
 
         first_token_amount = self._get_bridge_asset_amount(
-            amount_raw=hex_or_bytes_to_int(first_token_raw),
+            amount_raw=int.from_bytes(first_token_raw),
             identifier=swap_asset_id,
         )
         second_token_amount = self._get_bridge_asset_amount(
-            amount_raw=hex_or_bytes_to_int(second_token_raw),
+            amount_raw=int.from_bytes(second_token_raw),
             identifier=swap_asset_id,
         )
         # Filtering out zero amounts to not clash with any other events
@@ -492,13 +492,13 @@ class HopCommonDecoder(DecoderInterface):
         if context.tx_log.topics[0] == REMOVE_LIQUIDITY:
             return self._decode_remove_liquidity(
                 context=context,
-                lp_amount_raw=hex_or_bytes_to_int(context.transaction.input_data[4:36]),
+                lp_amount_raw=int.from_bytes(context.transaction.input_data[4:36]),
             )
 
         if context.tx_log.topics[0] == REMOVE_LIQUIDITY_ONE:
             return self._decode_remove_liquidity(
                 context=context,
-                lp_amount_raw=hex_or_bytes_to_int(context.tx_log.data[:32]),
+                lp_amount_raw=int.from_bytes(context.tx_log.data[:32]),
             )
 
         return DEFAULT_DECODING_OUTPUT
@@ -545,7 +545,7 @@ class HopCommonDecoder(DecoderInterface):
             product: EvmProduct | None = None,
     ) -> DecodingOutput:
         amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data[:32]),
+            token_amount=int.from_bytes(context.tx_log.data[:32]),
             token_decimals=DEFAULT_TOKEN_DECIMALS,
         )
         for event in context.decoded_events:

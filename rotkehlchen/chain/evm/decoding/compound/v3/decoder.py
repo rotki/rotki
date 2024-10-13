@@ -23,7 +23,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
     COMPOUND_V3_SUPPLY,
@@ -98,7 +98,7 @@ class Compoundv3CommonDecoder(DecoderInterface):
             token_kind=EvmTokenKind.ERC20,
             evm_inquirer=self.base.evm_inquirer,
         )
-        amount_raw = hex_or_bytes_to_int(context.tx_log.data)
+        amount_raw = int.from_bytes(context.tx_log.data)
         amount = asset_normalized_value(amount_raw, reward_token)
 
         for event in context.decoded_events:
@@ -155,7 +155,7 @@ class Compoundv3CommonDecoder(DecoderInterface):
                 break
 
         amount = asset_normalized_value(
-            amount=hex_or_bytes_to_int(context.tx_log.data),
+            amount=int.from_bytes(context.tx_log.data),
             asset=underlying_token,
         )
         paired_event, action_from_event_type, action_to_event_subtype, action_to_notes = None, None, None, None  # noqa: E501
@@ -283,7 +283,7 @@ class Compoundv3CommonDecoder(DecoderInterface):
             token_type=EvmTokenKind.ERC20,
         ))
         collateral_amount = asset_normalized_value(
-            amount=hex_or_bytes_to_int(context.tx_log.data),
+            amount=int.from_bytes(context.tx_log.data),
             asset=collateral_asset,
         )
 

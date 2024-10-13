@@ -17,7 +17,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import PICKLE_JAR_PROTOCOL, ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CORN_TOKEN_ID, CORNICHON_CLAIM, CPT_PICKLE
 
@@ -76,7 +76,7 @@ class PickleFinanceDecoder(MerkleClaimDecoderInterface):
         ):
             if EvmToken(ethaddress_to_identifier(context.tx_log.address)) != context.event.asset:
                 return FAILED_ENRICHMENT_OUTPUT
-            amount_raw = hex_or_bytes_to_int(context.tx_log.data)
+            amount_raw = int.from_bytes(context.tx_log.data)
             amount = asset_normalized_value(
                 amount=amount_raw,
                 asset=context.event.asset.resolve_to_crypto_asset(),
@@ -92,7 +92,7 @@ class PickleFinanceDecoder(MerkleClaimDecoderInterface):
             context.event.event_subtype == HistoryEventSubType.NONE and
             context.tx_log.address in self.pickle_contracts
         ):
-            amount_raw = hex_or_bytes_to_int(context.tx_log.data)
+            amount_raw = int.from_bytes(context.tx_log.data)
             amount = asset_normalized_value(
                 amount=amount_raw,
                 asset=context.event.asset.resolve_to_crypto_asset(),
@@ -113,7 +113,7 @@ class PickleFinanceDecoder(MerkleClaimDecoderInterface):
         ):
             if context.event.asset != EvmToken(ethaddress_to_identifier(context.tx_log.address)):
                 return FAILED_ENRICHMENT_OUTPUT
-            amount_raw = hex_or_bytes_to_int(context.tx_log.data)
+            amount_raw = int.from_bytes(context.tx_log.data)
             amount = asset_normalized_value(
                 amount=amount_raw,
                 asset=context.event.asset.resolve_to_crypto_asset(),
@@ -134,7 +134,7 @@ class PickleFinanceDecoder(MerkleClaimDecoderInterface):
         ):
             if context.event.asset != EvmToken(ethaddress_to_identifier(context.tx_log.address)):
                 return FAILED_ENRICHMENT_OUTPUT
-            amount_raw = hex_or_bytes_to_int(context.tx_log.data)
+            amount_raw = int.from_bytes(context.tx_log.data)
             amount = asset_normalized_value(
                 amount=amount_raw,
                 asset=context.event.asset.resolve_to_crypto_asset(),

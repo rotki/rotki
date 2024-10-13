@@ -50,7 +50,7 @@ from rotkehlchen.history.events.structures.types import (
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_timestamp
 from rotkehlchen.types import CacheType, EvmTokenKind
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int, timestamp_to_date
+from rotkehlchen.utils.misc import bytes_to_address, timestamp_to_date
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -89,7 +89,7 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
     def _decode_deposit_event(self, context: DecoderContext) -> DecodingOutput:
         on_behalf_of = bytes_to_address(context.tx_log.topics[2])
         user = bytes_to_address(context.tx_log.data[0:32])
-        token_amount = hex_or_bytes_to_int(context.tx_log.data[32:64])
+        token_amount = int.from_bytes(context.tx_log.data[32:64])
 
         for event in context.decoded_events:
             if (
@@ -106,7 +106,7 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_EXTRAFI
-                event.extra_data = {'reserve_index': hex_or_bytes_to_int(context.tx_log.topics[1])}  # index of the extrafi position. Used to query for balances later  # noqa: E501
+                event.extra_data = {'reserve_index': int.from_bytes(context.tx_log.topics[1])}  # index of the extrafi position. Used to query for balances later  # noqa: E501
                 event.notes = f'Deposit {event.balance.amount} {asset.symbol} into Extrafi lend'
                 if on_behalf_of != user:
                     event.notes += f' on behalf of {on_behalf_of}'
@@ -160,7 +160,7 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             return DEFAULT_DECODING_OUTPUT
 
         recipient = bytes_to_address(context.tx_log.topics[1])
-        raw_amount = hex_or_bytes_to_int(context.tx_log.data[32:64])
+        raw_amount = int.from_bytes(context.tx_log.data[32:64])
         amount = token_normalized_value_decimals(raw_amount, 18)  # extrafi has 18 decimals
 
         for event in context.decoded_events:
@@ -190,7 +190,7 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             chain_id=self.evm_inquirer.chain_id,
             token_type=EvmTokenKind.ERC20,
         )
-        amount = hex_or_bytes_to_int(context.tx_log.data[0:32])
+        amount = int.from_bytes(context.tx_log.data[0:32])
         for event in context.decoded_events:
             if (
                 event.location_label == user and
@@ -214,7 +214,7 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             return DEFAULT_DECODING_OUTPUT
 
         amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data[0:32]),
+            token_amount=int.from_bytes(context.tx_log.data[0:32]),
             token_decimals=18,
         )
 
@@ -226,7 +226,7 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
                 event.event_subtype == HistoryEventSubType.NONE and
                 event.location_label == bytes_to_address(context.tx_log.topics[2])
             ):
-                locktime = deserialize_timestamp(hex_or_bytes_to_int(context.tx_log.topics[3]))
+                locktime = deserialize_timestamp(int.from_bytes(context.tx_log.topics[3]))
                 event.event_type = HistoryEventType.DEPOSIT
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.counterparty = CPT_EXTRAFI
@@ -241,9 +241,9 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
     def _partially_close_farm_position(self, context: DecoderContext) -> DecodingOutput:
         """Close a position in a farm partially"""
         manager = bytes_to_address(context.tx_log.topics[3])
-        amount_0_received = hex_or_bytes_to_int(context.tx_log.data[32:64])
-        amount_1_received = hex_or_bytes_to_int(context.tx_log.data[64:96])
-        vault_id = hex_or_bytes_to_int(context.tx_log.topics[1])
+        amount_0_received = int.from_bytes(context.tx_log.data[32:64])
+        amount_1_received = int.from_bytes(context.tx_log.data[64:96])
+        vault_id = int.from_bytes(context.tx_log.topics[1])
 
         for event in context.decoded_events:
             if event.location_label != manager:
@@ -269,11 +269,11 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
     def _invest_into_farm_position(self, context: DecoderContext) -> DecodingOutput:
         """Handle the creation of farm positions and changing the collateral/borrowed amount"""
         manager = bytes_to_address(context.tx_log.topics[3])
-        amount_0_invested = hex_or_bytes_to_int(context.tx_log.data[0:32])
-        amount_1_invested = hex_or_bytes_to_int(context.tx_log.data[32:64])
-        amount_0_borrowed = hex_or_bytes_to_int(context.tx_log.data[64:96])
-        amount_1_borrowed = hex_or_bytes_to_int(context.tx_log.data[96:128])
-        vault_id = hex_or_bytes_to_int(context.tx_log.topics[1])
+        amount_0_invested = int.from_bytes(context.tx_log.data[0:32])
+        amount_1_invested = int.from_bytes(context.tx_log.data[32:64])
+        amount_0_borrowed = int.from_bytes(context.tx_log.data[64:96])
+        amount_1_borrowed = int.from_bytes(context.tx_log.data[96:128])
+        vault_id = int.from_bytes(context.tx_log.topics[1])
 
         if amount_0_borrowed != 0 or amount_1_borrowed != 0:
             _, token0, token1 = maybe_query_farm_data(
@@ -332,7 +332,7 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
                 event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
                 event.extra_data = {
                     'vault_id': vault_id,
-                    'vault_position': hex_or_bytes_to_int(context.tx_log.topics[2]),
+                    'vault_position': int.from_bytes(context.tx_log.topics[2]),
                 }
                 event.notes = f'Deposit {event.balance.amount} {event.asset.symbol_or_name()} in Extrafi {self._farm_name(vault_id)}'  # noqa: E501
                 if amount_0_invested == 0 or amount_1_invested == 0:
@@ -344,9 +344,9 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
         return DEFAULT_DECODING_OUTPUT
 
     def _handle_farm_repayment(self, context: DecoderContext) -> DecodingOutput:
-        amount_0_repaid = hex_or_bytes_to_int(context.tx_log.data[32:64])
-        amount_1_repaid = hex_or_bytes_to_int(context.tx_log.data[64:96])
-        vault_id = hex_or_bytes_to_int(context.tx_log.topics[1])
+        amount_0_repaid = int.from_bytes(context.tx_log.data[32:64])
+        amount_1_repaid = int.from_bytes(context.tx_log.data[64:96])
+        vault_id = int.from_bytes(context.tx_log.topics[1])
         refund_event: EvmEvent | None = None
 
         # the refund event appears before the send event in the case of an ETH transfer
@@ -425,7 +425,7 @@ class ExtrafiCommonDecoder(DecoderInterface, ReloadableCacheDecoderMixin):
             evm_inquirer=self.evm_inquirer,
             chain_id=self.evm_inquirer.chain_id,
         )
-        claimed = hex_or_bytes_to_int(context.tx_log.data[0:32])
+        claimed = int.from_bytes(context.tx_log.data[0:32])
 
         for event in context.decoded_events:
             if (

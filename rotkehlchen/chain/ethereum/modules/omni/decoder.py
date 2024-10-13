@@ -19,7 +19,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CPT_OMNI, OMNI_AIDROP_CONTRACT, OMNI_STAKING_CONTRACT, OMNI_TOKEN_ID
 
@@ -101,7 +101,7 @@ class OmniDecoder(CliqueAirdropDecoderInterface):
             return DEFAULT_DECODING_OUTPUT
 
         staked_amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data),
+            token_amount=int.from_bytes(context.tx_log.data),
             token_decimals=18,  # omni has 18 decimals
         )
         transfer_found = False

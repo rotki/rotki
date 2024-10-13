@@ -17,7 +17,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
     BLUR_AIRDROP_2_CLAIM,
@@ -51,7 +51,7 @@ class BlurDecoder(DecoderInterface):
         if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1])):
             return DEFAULT_DECODING_OUTPUT
 
-        stake_amount = hex_or_bytes_to_int(context.tx_log.data[:32])
+        stake_amount = int.from_bytes(context.tx_log.data[:32])
         stake_amount_norm = token_normalized_value_decimals(
             token_amount=stake_amount,
             token_decimals=DEFAULT_TOKEN_DECIMALS,
@@ -89,7 +89,7 @@ class BlurDecoder(DecoderInterface):
             return DEFAULT_DECODING_OUTPUT
 
         amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data[:32]),
+            token_amount=int.from_bytes(context.tx_log.data[:32]),
             token_decimals=DEFAULT_TOKEN_DECIMALS,
         )
         for event in context.decoded_events:
@@ -116,7 +116,7 @@ class BlurDecoder(DecoderInterface):
         if self.base.is_tracked(user := bytes_to_address(context.tx_log.topics[1])) is False:
             return DEFAULT_DECODING_OUTPUT
 
-        claim_amount = hex_or_bytes_to_int(context.tx_log.data[:32])
+        claim_amount = int.from_bytes(context.tx_log.data[:32])
         claim_amount_norm = token_normalized_value_decimals(
             token_amount=claim_amount,
             token_decimals=DEFAULT_TOKEN_DECIMALS,

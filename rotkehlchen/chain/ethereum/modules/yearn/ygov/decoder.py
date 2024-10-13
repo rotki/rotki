@@ -15,7 +15,6 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.constants.assets import A_CRVP_DAIUSDCTTUSD, A_YFI
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.utils.misc import hex_or_bytes_to_int
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -45,7 +44,7 @@ class YearnygovDecoder(DecoderInterface):
     def _decode_withdrawal(self, context: 'DecoderContext') -> None:
         """Handle withdraw from the governance contract"""
         withdrawn_amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data),
+            token_amount=int.from_bytes(context.tx_log.data),
             token_decimals=18,
         )
 
@@ -65,7 +64,7 @@ class YearnygovDecoder(DecoderInterface):
     def _decode_reward_token(self, context: 'DecoderContext') -> None:
         """Handle rewards claim"""
         withdrawn_amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data),
+            token_amount=int.from_bytes(context.tx_log.data),
             token_decimals=18,
         )
 
@@ -84,7 +83,7 @@ class YearnygovDecoder(DecoderInterface):
     def _decode_stake(self, context: 'DecoderContext') -> None:
         """Decode depositing the crv pool token in the gov contract"""
         staked_amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data),
+            token_amount=int.from_bytes(context.tx_log.data),
             token_decimals=18,
         )
 

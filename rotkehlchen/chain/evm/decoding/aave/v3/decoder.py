@@ -16,7 +16,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 from ..constants import CPT_AAVE_V3, MINT
 from .constants import BORROW, BURN, DEPOSIT, REPAY, REWARDS_CLAIMED
@@ -71,7 +71,7 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
 
         amounts = [  # payback amount and liquidation amount
             asset_normalized_value(
-                amount=hex_or_bytes_to_int(log.data[:32]),
+                amount=int.from_bytes(log.data[:32]),
                 asset=EvmToken(evm_address_to_identifier(
                     address=log.address,
                     token_type=EvmTokenKind.ERC20,
@@ -193,7 +193,7 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
                     bytes_to_address(_log.topics[2]) == token_event.location_label
                 ) and (
                     balance_increase := asset_normalized_value(
-                        amount=hex_or_bytes_to_int(_log.data[32:64]),
+                        amount=int.from_bytes(_log.data[32:64]),
                         asset=token,
                     )
                 ) > 0
@@ -203,7 +203,7 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
                     # when we get some interest less than the total token to be returned, the net
                     # burned token is slightly less. So save its corrected amount and assign it later  # noqa: E501
                     corrected_amount = asset_normalized_value(
-                        amount=hex_or_bytes_to_int(_log.data[:32]),
+                        amount=int.from_bytes(_log.data[:32]),
                         asset=token,
                     )
                     earned_token_address = token.evm_address

@@ -19,7 +19,7 @@ from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 BRIDGE_ADDRESSES: Final = (
     string_to_evm_address('0x4200000000000000000000000000000000000010'),  # Normal Bridge
@@ -47,7 +47,7 @@ class OptimismBridgeDecoder(DecoderInterface):
         optimism_token_address = bytes_to_address(context.tx_log.topics[2])
         from_address = bytes_to_address(context.tx_log.topics[3])
         to_address = bytes_to_address(context.tx_log.data[:32])
-        raw_amount = hex_or_bytes_to_int(context.tx_log.data[32:64])
+        raw_amount = int.from_bytes(context.tx_log.data[32:64])
 
         if ethereum_token_address == ZERO_ADDRESS:
             # This means that ETH was bridged

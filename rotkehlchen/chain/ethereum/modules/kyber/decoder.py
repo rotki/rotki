@@ -16,7 +16,7 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CPT_KYBER_LEGACY
 
@@ -68,8 +68,8 @@ class KyberDecoder(KyberCommonDecoder):
             return DEFAULT_DECODING_OUTPUT
 
         sender, source_asset, destination_asset = self._legacy_contracts_basic_info(context.tx_log)
-        spent_amount_raw = hex_or_bytes_to_int(context.tx_log.data[64:96])
-        return_amount_raw = hex_or_bytes_to_int(context.tx_log.data[96:128])
+        spent_amount_raw = int.from_bytes(context.tx_log.data[64:96])
+        return_amount_raw = int.from_bytes(context.tx_log.data[96:128])
         spent_amount = asset_normalized_value(amount=spent_amount_raw, asset=source_asset)
         return_amount = asset_normalized_value(amount=return_amount_raw, asset=destination_asset)
         self._maybe_update_events(
@@ -89,8 +89,8 @@ class KyberDecoder(KyberCommonDecoder):
             return DEFAULT_DECODING_OUTPUT
 
         sender, source_asset, destination_asset = self._legacy_contracts_basic_info(context.tx_log)
-        spent_amount_raw = hex_or_bytes_to_int(context.tx_log.data[96:128])
-        return_amount_raw = hex_or_bytes_to_int(context.tx_log.data[128:160])
+        spent_amount_raw = int.from_bytes(context.tx_log.data[96:128])
+        return_amount_raw = int.from_bytes(context.tx_log.data[128:160])
         spent_amount = asset_normalized_value(amount=spent_amount_raw, asset=source_asset)
         return_amount = asset_normalized_value(amount=return_amount_raw, asset=destination_asset)
         self._maybe_update_events(

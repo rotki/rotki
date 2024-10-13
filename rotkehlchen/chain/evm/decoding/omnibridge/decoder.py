@@ -18,7 +18,7 @@ from rotkehlchen.constants.assets import A_ETH, A_WETH
 from rotkehlchen.history.events.structures.types import HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -70,7 +70,7 @@ class OmnibridgeCommonDecoder(DecoderInterface, abc.ABC):
             evm_inquirer=self.evm_inquirer,
         )
         amount = asset_normalized_value(
-            amount=hex_or_bytes_to_int(context.tx_log.data[0:32]),
+            amount=int.from_bytes(context.tx_log.data[0:32]),
             asset=bridged_asset,
         )
         expected_event_type, new_event_type, from_chain, to_chain, expected_location_label = bridge_prepare_data(  # noqa: E501
