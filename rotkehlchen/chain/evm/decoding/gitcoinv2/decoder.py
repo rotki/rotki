@@ -19,7 +19,6 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import (
     hex_or_bytes_to_address,
     hex_or_bytes_to_int,
-    hex_or_bytes_to_str,
 )
 
 if TYPE_CHECKING:
@@ -219,7 +218,7 @@ class GitcoinV2CommonDecoder(DecoderInterface, ABC):
         if context.tx_log.topics[0] not in (NEW_PROJECT_APPLICATION_2ARGS, NEW_PROJECT_APPLICATION_3ARGS):  # noqa: E501
             return DEFAULT_DECODING_OUTPUT
 
-        application_id = hex_or_bytes_to_str(context.tx_log.topics[1])
+        application_id = context.tx_log.topics[1].hex()
         event = self.base.make_event_from_transaction(
             transaction=context.transaction,
             tx_log=context.tx_log,

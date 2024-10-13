@@ -4,8 +4,8 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
+from eth_utils.abi import get_abi_input_types, get_abi_output_types
 from web3 import Web3
-from web3._utils.abi import get_abi_input_types, get_abi_output_types
 
 from rotkehlchen.assets.asset import Asset, EvmToken
 from rotkehlchen.chain.ethereum.defi.zerionsdk import ZERION_ADAPTER_ADDRESS
@@ -287,8 +287,8 @@ def mock_etherscan_query(
                     data = data.split('&apikey')[0]
 
                 fn_abi = contract._find_matching_fn_abi(
-                    fn_identifier='getBalances',
-                    args=['address'],
+                    'getBalances',
+                    *['address'],
                 )
                 input_types = get_abi_input_types(fn_abi)
                 output_types = get_abi_output_types(fn_abi)
@@ -304,8 +304,8 @@ def mock_etherscan_query(
                     data = data.split('&apikey')[0]
 
                 fn_abi = contract._find_matching_fn_abi(
-                    fn_identifier='getProtocolBalances',
-                    args=['address', ['some', 'protocol', 'names']],
+                    'getProtocolBalances',
+                    *['address', ['some', 'protocol', 'names']],
                 )
                 input_types = get_abi_input_types(fn_abi)
                 output_types = get_abi_output_types(fn_abi)
@@ -320,9 +320,7 @@ def mock_etherscan_query(
                 if '&apikey' in data:
                     data = data.split('&apikey')[0]
 
-                fn_abi = contract._find_matching_fn_abi(
-                    fn_identifier='getProtocolNames',
-                )
+                fn_abi = contract._find_matching_fn_abi('getProtocolNames')
                 input_types = get_abi_input_types(fn_abi)
                 output_types = get_abi_output_types(fn_abi)
                 decoded_input = web3.codec.decode(input_types, bytes.fromhex(data[10:]))
@@ -371,8 +369,8 @@ def mock_etherscan_query(
                     # not really the given args, but we just want the fn abi
                     args = [next(iter(eth_map.keys())), list(eth_map.keys())]
                     scan_fn_abi = ethscan_contract._find_matching_fn_abi(
-                        fn_identifier='tokensBalance',
-                        args=args,
+                        'tokensBalance',
+                        *args,
                     )
                     scan_input_types = get_abi_input_types(scan_fn_abi)
                     scan_output_types = get_abi_output_types(scan_fn_abi)
@@ -423,8 +421,8 @@ def mock_etherscan_query(
                     data = data.split('&apikey')[0]
 
                 fn_abi = ethscan_contract._find_matching_fn_abi(
-                    fn_identifier='etherBalances',
-                    args=[list(eth_map.keys())],
+                    'etherBalances',
+                    *[list(eth_map.keys())],
                 )
                 input_types = get_abi_input_types(fn_abi)
                 output_types = get_abi_output_types(fn_abi)
@@ -477,8 +475,8 @@ def mock_etherscan_query(
                 # not really the given args, but we just want the fn abi
                 args = ['str', list(eth_map.keys())]
                 fn_abi = ethscan_contract._find_matching_fn_abi(
-                    fn_identifier='tokensBalance',
-                    args=args,
+                    'tokensBalance',
+                    *args,
                 )
                 input_types = get_abi_input_types(fn_abi)
                 output_types = get_abi_output_types(fn_abi)

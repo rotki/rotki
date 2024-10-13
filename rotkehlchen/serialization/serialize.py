@@ -93,7 +93,7 @@ def _process_entry(entry: Any) -> str | (list[Any] | (dict[str, Any] | Any)):
             new_dict[k] = _process_entry(v)
         return new_dict
     if isinstance(entry, HexBytes):
-        return entry.hex()
+        return entry.to_0x_hex()
     if isinstance(entry, LocationData):
         return {
             'time': entry.time,

@@ -88,7 +88,7 @@ class Aavev2CommonDecoder(Commonv2v3Decoder):
             context=context,
             to_idx=2,
             claimer_raw=context.tx_log.topics[3],
-            reward_token_address_32bytes=f'0x000000000000000000000000{self.incentives_reward_token[2:]}',
+            reward_token_address=self.incentives_reward_token,
             amount_raw=context.tx_log.data[0:32],
         )
 

@@ -62,7 +62,6 @@ from rotkehlchen.utils.misc import (
     from_wei,
     hex_or_bytes_to_address,
     hex_or_bytes_to_int,
-    hex_or_bytes_to_str,
     pairwise,
 )
 
@@ -339,7 +338,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
                 has_premium=True,
             )
 
-        withdrawal_root = '0x' + hex_or_bytes_to_str(context.tx_log.data)
+        withdrawal_root = '0x' + context.tx_log.data.hex()
         for withdrawal_event in events:  # iterate and find the withdrawal event
             if withdrawal_event.extra_data and withdrawal_event.extra_data.get('withdrawal_root', '') == withdrawal_root and not withdrawal_event.extra_data.get('completed', False):  # noqa: E501
                 new_event = self.base.make_event_next_index(

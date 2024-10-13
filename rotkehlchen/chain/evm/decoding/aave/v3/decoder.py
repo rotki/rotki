@@ -120,7 +120,7 @@ class Aavev3CommonDecoder(Commonv2v3Decoder):
             context=context,
             to_idx=3,
             claimer_raw=context.tx_log.data[0:32],
-            reward_token_address_32bytes=context.tx_log.topics[2],
+            reward_token_address=hex_or_bytes_to_address(context.tx_log.topics[2]),
             amount_raw=context.tx_log.data[32:64],
         )
 

@@ -30,7 +30,7 @@ from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTokenKind, EVMTxHash
-from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address, hex_or_bytes_to_str
+from rotkehlchen.utils.misc import from_wei, hex_or_bytes_to_address
 from rotkehlchen.utils.mixins.customizable_date import CustomizableDateMixin
 
 from .constants import (
@@ -365,7 +365,7 @@ class EnsDecoder(GovernableDecoderInterface, CustomizableDateMixin):
             return DEFAULT_DECODING_OUTPUT
 
         node_name = self._get_name_to_show(node=(node := context.tx_log.topics[1]), tx_hash=context.transaction.tx_hash)  # noqa: E501
-        label_hash = '0x' + hex_or_bytes_to_str(context.tx_log.topics[2])
+        label_hash = '0x' + context.tx_log.topics[2].hex()
         label_name = self._maybe_get_labelhash_name(context=context, label_hash=label_hash, node=node)  # noqa: E501
 
         node_str = f'{node_name} node' if node_name else f'node witn nodehash {context.tx_log.topics[1].hex()}'  # noqa: E501

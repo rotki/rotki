@@ -280,7 +280,7 @@ def handle_defi_price_query(
 
         vthor_contract = EvmContract(
             address=string_to_evm_address('0x815C23eCA83261b6Ec689b60Cc4a58b54BC24D8D'),
-            abi=[{'inputs': [], 'name': 'totalAssets', 'outputs': [{'internalType': 'uint256', 'name': '', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'totalSupply', 'outputs': [{'internalType': 'uint256', 'name': '', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}],  # noqa: E501
+            abi=[{'inputs': [], 'name': 'totalAssets', 'outputs': [{'name': '', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'totalSupply', 'outputs': [{'name': '', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}],  # noqa: E501
             deployed_block=14629235,
         )
         calls_output = ethereum.multicall_2(

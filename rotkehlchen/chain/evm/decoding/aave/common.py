@@ -24,6 +24,7 @@ from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.constants.resolver import evm_address_to_identifier
+from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.fval import FVal
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.evm_event import EvmEvent
@@ -33,7 +34,6 @@ from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind, EvmTransaction
 from rotkehlchen.utils.misc import (
     hex_or_bytes_to_address,
     hex_or_bytes_to_int,
-    hex_or_bytes_to_str,
 )
 
 if TYPE_CHECKING:
@@ -128,7 +128,10 @@ class Commonv2v3Decoder(DecoderInterface):
     ) -> tuple[EvmEvent | None, EvmEvent | None]:
         """Decode aave v2/v3 deposit event. Returns the Deposit and Receive events."""
         user = hex_or_bytes_to_address(tx_log.data[:32])
-        on_behalf_of = hex_or_bytes_to_address(tx_log.topics[2]) if hex_or_bytes_to_str(tx_log.topics[2]) != '' else None  # noqa: E501
+        try:
+            on_behalf_of = hex_or_bytes_to_address(tx_log.topics[2])
+        except DeserializationError:
+            on_behalf_of = None
         # in the case of needing to wrap the native asset aave uses the
         # (NATIVE_CURRENCY)_GATEWAY contract and the user is the contract address
         if (
@@ -136,6 +139,7 @@ class Commonv2v3Decoder(DecoderInterface):
             (on_behalf_of is None or not self.base.is_tracked(on_behalf_of))
         ):
             return None, None
+
         amount = asset_normalized_value(
             amount=hex_or_bytes_to_int(tx_log.data[32:64]),
             asset=token,
@@ -437,7 +441,7 @@ class Commonv2v3Decoder(DecoderInterface):
             context: 'DecoderContext',
             to_idx: int,
             claimer_raw: bytes,
-            reward_token_address_32bytes: str | bytes,
+            reward_token_address: ChecksumEvmAddress,
             amount_raw: bytes,
     ) -> DecodingOutput:
         user_tracked = self.base.is_tracked(user := hex_or_bytes_to_address(context.tx_log.topics[1]))  # noqa: E501
@@ -447,9 +451,7 @@ class Commonv2v3Decoder(DecoderInterface):
         if not user_tracked and not to_tracked and not claimer_tracked:
             return DEFAULT_DECODING_OUTPUT
 
-        reward_token = self.base.get_or_create_evm_token(
-            address=hex_or_bytes_to_address(reward_token_address_32bytes),
-        )
+        reward_token = self.base.get_or_create_evm_token(address=reward_token_address)
         amount = asset_normalized_value(
             amount=hex_or_bytes_to_int(amount_raw),
             asset=reward_token,

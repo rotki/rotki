@@ -1,5 +1,7 @@
 from typing import Final
 
+from eth_typing.abi import ABI
+
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.types import string_to_evm_address
 
@@ -38,4 +40,4 @@ EIGENLAYER_CPT_DETAILS: Final = CounterpartyDetails(
 EIGEN_TOKEN_ID: Final = 'eip155:1/erc20:0xec53bF9167f50cDEB3Ae105f56099aaaB9061F83'
 
 # not the full ABIs, just the functions we call for each contract
-STRATEGY_ABI: Final = [{'inputs': [{'internalType': 'uint256', 'name': 'amountShares', 'type': 'uint256'}], 'name': 'sharesToUnderlyingView', 'outputs': [{'internalType': 'uint256', 'name': '', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'underlyingToken', 'outputs': [{'internalType': 'contract IERC20', 'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501
+STRATEGY_ABI: Final[ABI] = [{'inputs': [{'name': 'amountShares', 'type': 'uint256'}], 'name': 'sharesToUnderlyingView', 'outputs': [{'name': '', 'type': 'uint256'}], 'stateMutability': 'view', 'type': 'function'}, {'inputs': [], 'name': 'underlyingToken', 'outputs': [{'name': '', 'type': 'address'}], 'stateMutability': 'view', 'type': 'function'}]  # noqa: E501

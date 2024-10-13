@@ -268,17 +268,7 @@ def hex_or_bytes_to_int(
     return int_value
 
 
-def hex_or_bytes_to_str(value: bytes | str) -> str:
-    """Turns a bytes/HexBytes or a hexstring into an hex string"""
-    if isinstance(value, bytes):
-        hexstr = value.hex()
-    else:
-        hexstr = value.removeprefix('0x')
-
-    return hexstr
-
-
-def hex_or_bytes_to_address(value: bytes | str) -> ChecksumEvmAddress:
+def hex_or_bytes_to_address(value: bytes) -> ChecksumEvmAddress:
     """Turns a 32bit bytes/HexBytes or a hexstring into an address
 
     May raise:
@@ -286,15 +276,10 @@ def hex_or_bytes_to_address(value: bytes | str) -> ChecksumEvmAddress:
     type is given.
     """
     try:
-        hexstr = hex_or_bytes_to_str(value)
+        hexstr = value.hex()
     except ConversionError as e:
         raise DeserializationError(f'Could not turn {value!r} to an ethereum address') from e
-    try:
-        return ChecksumEvmAddress(to_checksum_address('0x' + hexstr[24:]))
-    except ValueError as e:
-        raise DeserializationError(
-            f'Invalid ethereum address: {hexstr[24:]}',
-        ) from e
+    return bytes32hexstr_to_address('0x' + hexstr)
 
 
 def address_to_bytes32_hexstr(address: ChecksumEvmAddress) -> str:
@@ -303,6 +288,16 @@ def address_to_bytes32_hexstr(address: ChecksumEvmAddress) -> str:
 
 def address_to_bytes32(address: ChecksumEvmAddress) -> bytes:
     return unhexlify(24 * '0' + address.lower()[2:])
+
+
+def bytes32hexstr_to_address(hexstr: str) -> ChecksumEvmAddress:
+    """Turns a 32bit 0x hexstring to checksum evm address"""
+    try:
+        return ChecksumEvmAddress(to_checksum_address(hexstr[26:]))
+    except ValueError as e:
+        raise DeserializationError(
+            f'Invalid ethereum address: {hexstr[24:]}',
+        ) from e
 
 
 T = TypeVar('T')

@@ -2,7 +2,7 @@ gevent==24.2.1
 greenlet==3.0.3
 gevent-websocket==0.10.1  # like the below is abandoned
 wsaccel==0.6.6  # recommended for acceleration of gevent-websocket. But abandoned.
-web3==6.20.1
+web3==7.3.0
 content-hash==2.0.0
 rotki-pysqlcipher3==2024.1.2
 requests==2.32.3
@@ -10,6 +10,7 @@ urllib3==2.2.3
 coincurve==20.0.0
 base58check==1.0.2
 bech32==1.2.0
+jsonschema==4.23.0
 gql[requests]==3.5.0
 scalecodec==1.2.11
 py-sr25519-bindings==0.2.0
@@ -50,6 +51,3 @@ pycparser<=2.17 # ugly -- to avoid https://github.com/eliben/pycparser/pull/198
 
 # To build JWT for coinbase exchange key validation
 PyJWT==2.9.0
-
-# Hardcode version due to web3.py not pinning it properly
-eth-typing==4.4.0

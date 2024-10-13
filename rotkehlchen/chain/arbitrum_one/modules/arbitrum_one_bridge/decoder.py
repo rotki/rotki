@@ -2,6 +2,8 @@ import logging
 from collections.abc import Callable
 from typing import TYPE_CHECKING, Any, Final
 
+from eth_typing.abi import ABI
+
 from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.assets.utils import get_or_create_evm_token
 from rotkehlchen.chain.arbitrum_one.constants import ARBITRUM_ONE_CPT_DETAILS, CPT_ARBITRUM_ONE
@@ -46,10 +48,9 @@ ERC20_DEPOSIT_FINALIZED: Final = b'\xc7\xf2\xe9\xc5\\@\xa5\x0f\xbc!}\xfcp\xcd9\x
 WITHDRAW_ETH_METHOD: Final = b'%\xe1`c'
 
 
-L2_GATEWAY_ROUTE_CALCULATE_L2TOKEN_ABI = [{
+L2_GATEWAY_ROUTE_CALCULATE_L2TOKEN_ABI: Final[ABI] = [{
     'inputs': [
         {
-            'internalType': 'address',
             'name': 'l1ERC20',
             'type': 'address',
         },
@@ -57,7 +58,6 @@ L2_GATEWAY_ROUTE_CALCULATE_L2TOKEN_ABI = [{
     'name': 'calculateL2TokenAddress',
     'outputs': [
         {
-            'internalType': 'address',
             'name': '',
             'type': 'address',
         },

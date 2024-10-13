@@ -15,7 +15,6 @@ from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.utils.misc import (
     hex_or_bytes_to_address,
     hex_or_bytes_to_int,
-    hex_or_bytes_to_str,
 )
 
 from .constants import CPT_SAFE_MULTISIG
@@ -93,7 +92,7 @@ class SafemultisigDecoder(DecoderInterface):
         if not self.base.any_tracked([context.transaction.from_address, context.tx_log.address]):
             return DEFAULT_DECODING_OUTPUT
 
-        safe_tx_hash = hex_or_bytes_to_str(context.tx_log.data[:32])
+        safe_tx_hash = context.tx_log.data[:32].hex()
         event = self.base.make_event_next_index(
             tx_hash=context.transaction.tx_hash,
             timestamp=context.transaction.timestamp,
@@ -143,7 +142,7 @@ class SafemultisigDecoder(DecoderInterface):
         if not self.base.any_tracked([context.transaction.from_address, context.tx_log.address]):
             return DEFAULT_DECODING_OUTPUT
 
-        safe_tx_hash = hex_or_bytes_to_str(context.tx_log.data[:32])
+        safe_tx_hash = context.tx_log.data[:32].hex()
         event = self.base.make_event_next_index(
             tx_hash=context.transaction.tx_hash,
             timestamp=context.transaction.timestamp,
