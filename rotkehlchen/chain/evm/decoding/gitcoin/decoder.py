@@ -19,7 +19,7 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import DONATION_SENT, PAYOUT_CLAIMED
 
@@ -77,7 +77,7 @@ class GitcoinOldCommonDecoder(CommonGrantsDecoderMixin):
 
         asset = self.base.get_or_create_evm_asset(bytes_to_address(context.tx_log.topics[1]))  # this checks for ETH special address inside # noqa: E501
         amount = asset_normalized_value(
-            amount=hex_or_bytes_to_int(context.tx_log.topics[2]),
+            amount=int.from_bytes(context.tx_log.topics[2]),
             asset=asset,
         )
 

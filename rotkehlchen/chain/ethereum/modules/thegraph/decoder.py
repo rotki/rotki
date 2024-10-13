@@ -20,7 +20,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
     APPROVE_PROTOCOL,
@@ -65,7 +65,7 @@ class ThegraphDecoder(ThegraphCommonDecoder):
         indexer = bytes_to_address(context.tx_log.topics[3])
         indexer_l2 = bytes_to_address(context.tx_log.data[:32])
         transferred_delegation_tokens = token_normalized_value(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data[32:]),
+            token_amount=int.from_bytes(context.tx_log.data[32:]),
             token=self.token,
         )
         event = self.base.make_event_from_transaction(
@@ -112,7 +112,7 @@ class ThegraphDecoder(ThegraphCommonDecoder):
             return DEFAULT_DECODING_OUTPUT
 
         indexer = bytes_to_address(context.tx_log.topics[1])
-        raw_amount = hex_or_bytes_to_int(context.tx_log.data)
+        raw_amount = int.from_bytes(context.tx_log.data)
         amount = token_normalized_value_decimals(raw_amount, DEFAULT_TOKEN_DECIMALS)
         for event in context.decoded_events:
             if (

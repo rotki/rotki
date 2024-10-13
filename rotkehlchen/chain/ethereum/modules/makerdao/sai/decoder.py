@@ -25,7 +25,7 @@ from rotkehlchen.constants import ZERO
 from rotkehlchen.constants.assets import A_ETH, A_PETH, A_SAI, A_WETH
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -86,7 +86,7 @@ class MakerdaosaiDecoder(DecoderInterface):
         An example of such transaction is:
         https://etherscan.io/tx/0x4e569aa1f23dc771f1c9ad05ab7cdb0af2607358b166a8137b702f81b88e37b9
         """
-        cdp_id = hex_or_bytes_to_int(context.tx_log.topics[2])
+        cdp_id = int.from_bytes(context.tx_log.topics[2])
         for event in context.decoded_events:
             if (
                 event.event_type == HistoryEventType.RECEIVE and
@@ -99,7 +99,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                         log.topics[0] == PETH_BURN_EVENT_TOPIC and
                         log.address == POOLED_ETHER_ADDRESS and
                         # checks that the amount to be withdrawn matches the amount of PETH burnt
-                        hex_or_bytes_to_int(context.tx_log.topics[3]) == hex_or_bytes_to_int(log.data[:32])  # noqa: E501
+                        int.from_bytes(context.tx_log.topics[3]) == int.from_bytes(log.data[:32])
                     ):
                         event.event_type = HistoryEventType.WITHDRAWAL
                         event.event_subtype = HistoryEventSubType.REMOVE_ASSET
@@ -129,7 +129,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                 break
 
         cdp_creator = bytes_to_address(context.tx_log.topics[1])
-        cdp_id = hex_or_bytes_to_int(context.tx_log.data[:32])
+        cdp_id = int.from_bytes(context.tx_log.data[:32])
         event = self.base.make_event_from_transaction(
             transaction=context.transaction,
             tx_log=context.tx_log,
@@ -154,7 +154,7 @@ class MakerdaosaiDecoder(DecoderInterface):
         https://etherscan.io/tx/0xc851e18df6dec02ac2efff000298001e839dde3d6e99d25d1d98ecb0d390c9a6
         """
         cdp_creator = bytes_to_address(context.tx_log.topics[1])
-        cdp_id = hex_or_bytes_to_int(context.tx_log.data[128:])
+        cdp_id = int.from_bytes(context.tx_log.data[128:])
 
         for event in context.decoded_events:
             if (
@@ -189,9 +189,9 @@ class MakerdaosaiDecoder(DecoderInterface):
         An example of such transaction is:
         https://etherscan.io/tx/0x4aed2d2fe5712a5b65cb6866c51ae672a53e39fa25f343e4c6ebaa8eae21de80
         """
-        cdp_id = hex_or_bytes_to_int(context.tx_log.topics[2])
+        cdp_id = int.from_bytes(context.tx_log.topics[2])
         withdrawer = bytes_to_address(context.tx_log.topics[1])
-        amount_withdrawn_raw = hex_or_bytes_to_int(context.tx_log.topics[3])
+        amount_withdrawn_raw = int.from_bytes(context.tx_log.topics[3])
         amount_withdrawn = asset_normalized_value(amount=amount_withdrawn_raw, asset=self.sai)
 
         for decoded_event in context.decoded_events:
@@ -244,9 +244,9 @@ class MakerdaosaiDecoder(DecoderInterface):
         An example of such transaction is:
         https://etherscan.io/tx/0xe964cb12f4bbfa1ba4b6db8464eb3f2d4234ceafb0b5ec5f4a2188b0264bab27
         """
-        cdp_id = hex_or_bytes_to_int(context.tx_log.topics[2])
+        cdp_id = int.from_bytes(context.tx_log.topics[2])
         depositor = bytes_to_address(context.tx_log.topics[1])
-        amount_paid_raw = hex_or_bytes_to_int(context.tx_log.topics[3])
+        amount_paid_raw = int.from_bytes(context.tx_log.topics[3])
         amount_paid = asset_normalized_value(amount=amount_paid_raw, asset=self.sai)
 
         for event in context.decoded_events:
@@ -296,7 +296,7 @@ class MakerdaosaiDecoder(DecoderInterface):
         https://etherscan.io/tx/0x65d53653c584cde22e559cec4667a7278f75966360590b725d87055fb17552ba
         """
         liquidator = bytes_to_address(context.tx_log.topics[1])
-        cdp_id = hex_or_bytes_to_int(context.tx_log.topics[2])
+        cdp_id = int.from_bytes(context.tx_log.topics[2])
 
         for event in context.decoded_events:
             if (
@@ -316,7 +316,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                 bytes_to_address(log.topics[1]) == MAKERDAO_SAITUB_CONTRACT and
                 bytes_to_address(log.topics[2]) == MAKERDAO_SAITAP_CONTRACT
             ):
-                amount_raw = hex_or_bytes_to_int(log.data[:32])
+                amount_raw = int.from_bytes(log.data[:32])
                 amount = asset_normalized_value(amount=amount_raw, asset=self.weth)
 
                 event = self.base.make_event_from_transaction(
@@ -369,7 +369,7 @@ class MakerdaosaiDecoder(DecoderInterface):
                         log.topics[0] == PETH_MINT_EVENT_TOPIC and
                         log.address == POOLED_ETHER_ADDRESS and
                         # checks that the amount to be deposited matches the amount of PETH minted
-                        hex_or_bytes_to_int(log.data[:32]) == hex_or_bytes_to_int(context.tx_log.topics[2])  # noqa: E501
+                        int.from_bytes(log.data[:32]) == int.from_bytes(context.tx_log.topics[2])
                     ):
                         event.event_type = HistoryEventType.DEPOSIT
                         event.event_subtype = HistoryEventSubType.DEPOSIT_ASSET
@@ -433,7 +433,7 @@ class MakerdaosaiDecoder(DecoderInterface):
         """
         if context.tx_log.topics[0] == PETH_MINT_EVENT_TOPIC:
             owner = bytes_to_address(context.tx_log.topics[1])
-            amount_raw = hex_or_bytes_to_int(context.tx_log.data[:32])
+            amount_raw = int.from_bytes(context.tx_log.data[:32])
             amount = asset_normalized_value(amount=amount_raw, asset=self.peth)
 
             event = self.base.make_event_from_transaction(
@@ -465,8 +465,8 @@ class MakerdaosaiDecoder(DecoderInterface):
         if tx_log.topics[0] != SAI_CDP_MIGRATION_TOPIC:
             return DEFAULT_DECODING_OUTPUT
 
-        old_cdp_id = hex_or_bytes_to_int(tx_log.topics[1])
-        new_cdp_id = hex_or_bytes_to_int(tx_log.topics[2])
+        old_cdp_id = int.from_bytes(tx_log.topics[1])
+        new_cdp_id = int.from_bytes(tx_log.topics[2])
         owner = bytes_to_address(tx_log.data[:32])
 
         event = self.base.make_event_from_transaction(

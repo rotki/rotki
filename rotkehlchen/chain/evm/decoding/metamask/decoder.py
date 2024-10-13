@@ -14,7 +14,7 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CPT_METAMASK_SWAPS, METAMASK_FEE_TOPIC, SWAP_SIGNATURE
 
@@ -57,7 +57,7 @@ class MetamaskCommonDecoder(DecoderInterface):
         fee_raw = fee_asset_address = fee_asset = None  # extract the fee info
         for log in context.all_logs:
             if log.topics[0] == METAMASK_FEE_TOPIC:
-                fee_raw = hex_or_bytes_to_int(log.data)
+                fee_raw = int.from_bytes(log.data)
                 fee_asset = self.evm_inquirer.native_token
                 fee_asset_address = log.address
                 break
@@ -65,7 +65,7 @@ class MetamaskCommonDecoder(DecoderInterface):
                 log.topics[0] == ERC20_OR_ERC721_TRANSFER and
                 bytes_to_address(log.topics[2]) == self.fee_receiver_address
             ):
-                fee_raw = hex_or_bytes_to_int(log.data)
+                fee_raw = int.from_bytes(log.data)
                 fee_asset_address = log.address
                 break
 

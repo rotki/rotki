@@ -14,7 +14,7 @@ from rotkehlchen.chain.evm.decoding.structures import (
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
     BURN_MONERIUM_SIGNATURE,
@@ -61,7 +61,7 @@ class MoneriumCommonDecoder(DecoderInterface):
             evm_inquirer=self.evm_inquirer,
         )
         amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(value=context.tx_log.data),
+            token_amount=int.from_bytes(context.tx_log.data),
             token_decimals=token.decimals,
         )
 

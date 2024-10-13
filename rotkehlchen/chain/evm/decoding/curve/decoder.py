@@ -52,7 +52,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChecksumEvmAddress, EvmTokenKind, EvmTransaction
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -474,10 +474,10 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                 swapping_contracts = {pool_address}
                 # When a single pool is used, spender and receiver is always the same
                 spender_address = receiver_address = bytes_to_address(tx_log.topics[1])
-                sold_token_id = hex_or_bytes_to_int(tx_log.data[:32])
-                raw_sold_amount = hex_or_bytes_to_int(tx_log.data[32:64])
-                bought_token_id = hex_or_bytes_to_int(tx_log.data[64:96])
-                raw_bought_amount = hex_or_bytes_to_int(tx_log.data[96:128])
+                sold_token_id = int.from_bytes(tx_log.data[:32])
+                raw_sold_amount = int.from_bytes(tx_log.data[32:64])
+                bought_token_id = int.from_bytes(tx_log.data[64:96])
+                raw_bought_amount = int.from_bytes(tx_log.data[96:128])
                 if (
                     tx_log.topics[0] in {TOKEN_EXCHANGE, TOKEN_EXCHANGE_NG} and
                     pool_address in self.pools and
@@ -495,9 +495,9 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
             spender_address = bytes_to_address(context.tx_log.topics[1])
             receiver_address = bytes_to_address(context.tx_log.topics[2])
             if raw_sold_amount is None:  # if it's not already set in token exchange event
-                raw_sold_amount = hex_or_bytes_to_int(context.tx_log.data[-64:-32])
+                raw_sold_amount = int.from_bytes(context.tx_log.data[-64:-32])
 
-            raw_bought_amount = hex_or_bytes_to_int(context.tx_log.data[-32:])
+            raw_bought_amount = int.from_bytes(context.tx_log.data[-32:])
             # 11 if the router is new generation https://docs.curve.fi/router/CurveRouterNG/#route-and-swap-parameters  # noqa: E501
             route_length = 11 if context.tx_log.topics[0] == EXCHANGE_NG else 9
 
@@ -587,7 +587,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
         deposited_amounts = [
             deposited_amount
             for deposit_amount in [context.tx_log.data[i:i + 32] for i in range(len(pool_addresses))]  # noqa: E501
-            if (deposited_amount := hex_or_bytes_to_int(deposit_amount)) != 0
+            if (deposited_amount := int.from_bytes(deposit_amount)) != 0
         ]
         pool_assets = [
             Asset(evm_address_to_identifier(
@@ -615,7 +615,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
                     tx_log.topics[0] == ERC20_OR_ERC721_TRANSFER and
                     bytes_to_address(tx_log.topics[1]) == provider
                 ):
-                    gauge_tokens = hex_or_bytes_to_int(tx_log.data[0:32])
+                    gauge_tokens = int.from_bytes(tx_log.data[0:32])
                     break
             else:
                 log.error(f'Could not find transfer of gauge tokens in {context.transaction}. Skipping...')  # noqa: E501
@@ -678,7 +678,7 @@ class CurveCommonDecoder(DecoderInterface, ReloadablePoolsAndGaugesDecoderMixin)
 
         provider = bytes_to_address(context.tx_log.topics[1])
         gauge_address = context.tx_log.address
-        raw_amount = hex_or_bytes_to_int(context.tx_log.data)
+        raw_amount = int.from_bytes(context.tx_log.data)
         found_event_modifying_balances = False
         gauge_event = None
         # get pool tokens for this gauge

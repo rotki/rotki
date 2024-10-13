@@ -15,7 +15,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
     CPT_KYBER,
@@ -81,8 +81,8 @@ class KyberCommonDecoder(DecoderInterface):
 
         source_token_address = bytes_to_address(context.tx_log.data[32:64])
         destination_token_address = bytes_to_address(context.tx_log.data[64:96])
-        spent_amount_raw = hex_or_bytes_to_int(context.tx_log.data[128:160])
-        return_amount_raw = hex_or_bytes_to_int(context.tx_log.data[160:192])
+        spent_amount_raw = int.from_bytes(context.tx_log.data[128:160])
+        return_amount_raw = int.from_bytes(context.tx_log.data[160:192])
 
         source_asset = self.base.get_or_create_evm_asset(source_token_address)
         destination_asset = self.base.get_or_create_evm_asset(destination_token_address)

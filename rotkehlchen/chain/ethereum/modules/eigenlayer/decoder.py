@@ -61,7 +61,6 @@ from rotkehlchen.utils.misc import (
     bytes_to_address,
     from_gwei,
     from_wei,
-    hex_or_bytes_to_int,
     pairwise,
 )
 
@@ -208,7 +207,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         if not self.base.is_tracked(owner := bytes_to_address(context.tx_log.topics[1])):
             return DEFAULT_DECODING_OUTPUT
 
-        shares_delta = hex_or_bytes_to_int(context.tx_log.data[0:32])
+        shares_delta = int.from_bytes(context.tx_log.data[0:32])
         notes = f'{"Restake" if shares_delta > 0 else "Unstake"} {from_wei(shares_delta)} ETH'
         if context.transaction.from_address != owner:
             notes += f' for {owner}'
@@ -261,7 +260,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         if not self.base.any_tracked([pod_owner, recipient]):
             return DEFAULT_DECODING_OUTPUT
 
-        amount = from_wei(hex_or_bytes_to_int(context.tx_log.data[64:96]))
+        amount = from_wei(int.from_bytes(context.tx_log.data[64:96]))
         partial_withdrawals_redeemed, full_withdrawals_redeemed = 0, 0
         for log_entry in context.all_logs:
             if log_entry.topics[0] == PARTIAL_WITHDRAWAL_REDEEMED:
@@ -290,7 +289,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         if not self.base.is_tracked(recipient := bytes_to_address(context.tx_log.data[0:32])):
             return DEFAULT_DECODING_OUTPUT
 
-        amount = from_wei(hex_or_bytes_to_int(context.tx_log.data[32:64]))
+        amount = from_wei(int.from_bytes(context.tx_log.data[32:64]))
         for event in context.decoded_events:
             if (
                     event.event_type == HistoryEventType.RECEIVE and
@@ -480,7 +479,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
                 ),
             ))
             underlying_amounts.append(token_normalized_value(
-                token_amount=hex_or_bytes_to_int(raw_amount),
+                token_amount=int.from_bytes(raw_amount),
                 token=underlying_token,
             ))
 
@@ -508,7 +507,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
 
         underlying_tokens, underlying_amounts = self._get_strategy_token_amount(
             strategies=[bytes_to_address(context.tx_log.data[32:64])],
-            shares_entries=[hex_or_bytes_to_int(context.tx_log.data[64:96])],
+            shares_entries=[int.from_bytes(context.tx_log.data[64:96])],
         )
         operator = bytes_to_address(context.tx_log.topics[1])
 
@@ -533,7 +532,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
 
     def _decode_start_checkpoint(self, context: DecoderContext) -> DecodingOutput:
         beacon_blockroot = '0x' + context.tx_log.topics[2].hex()
-        validators_num = hex_or_bytes_to_int(context.tx_log.data)
+        validators_num = int.from_bytes(context.tx_log.data)
         event = self.base.make_event_next_index(
             tx_hash=context.transaction.tx_hash,
             timestamp=context.transaction.timestamp,
@@ -549,7 +548,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         return DecodingOutput(event=event)
 
     def _decode_finalize_checkpoint(self, context: DecoderContext) -> DecodingOutput:
-        total_shares_delta = from_wei(hex_or_bytes_to_int(context.tx_log.data))
+        total_shares_delta = from_wei(int.from_bytes(context.tx_log.data))
         if total_shares_delta >= 0:
             action = f'add {total_shares_delta} ETH for'
         else:
@@ -569,8 +568,8 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
         return DecodingOutput(event=event)
 
     def _decode_validator_balance_updated(self, context: DecoderContext) -> DecodingOutput:
-        validator_index = hex_or_bytes_to_int(context.tx_log.data[0:32])
-        validator_balance = from_gwei(hex_or_bytes_to_int(context.tx_log.data[64:96]))
+        validator_index = int.from_bytes(context.tx_log.data[0:32])
+        validator_balance = from_gwei(int.from_bytes(context.tx_log.data[64:96]))
 
         event = self.base.make_event_next_index(
             tx_hash=context.transaction.tx_hash,
@@ -614,7 +613,7 @@ class EigenlayerDecoder(CliqueAirdropDecoderInterface, ReloadableDecoderMixin):
                 should_notify=False,
             ),
         )
-        amount_raw = hex_or_bytes_to_int(context.tx_log.data[64:96])
+        amount_raw = int.from_bytes(context.tx_log.data[64:96])
         amount = token_normalized_value(token_amount=amount_raw, token=token)
 
         for event in context.decoded_events:

@@ -15,7 +15,7 @@ from rotkehlchen.chain.evm.decoding.utils import maybe_reshuffle_events
 from rotkehlchen.chain.evm.types import string_to_evm_address
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 from ..constants import CPT_ONEINCH_V1
 
@@ -35,9 +35,9 @@ class Oneinchv1Decoder(DecoderInterface):
         from_asset = self.base.get_or_create_evm_asset(from_token_address)
         to_asset = self.base.get_or_create_evm_asset(to_token_address)
 
-        from_raw = hex_or_bytes_to_int(context.tx_log.data[64:96])
+        from_raw = int.from_bytes(context.tx_log.data[64:96])
         from_amount = asset_normalized_value(from_raw, from_asset)
-        to_raw = hex_or_bytes_to_int(context.tx_log.data[96:128])
+        to_raw = int.from_bytes(context.tx_log.data[96:128])
         to_amount = asset_normalized_value(to_raw, to_asset)
 
         out_event = in_event = None
@@ -78,8 +78,8 @@ class Oneinchv1Decoder(DecoderInterface):
         """We use the Swapped event to get the fee kept by 1inch"""
         to_token_address = bytes_to_address(context.tx_log.topics[2])
         to_asset = self.base.get_or_create_evm_asset(to_token_address)
-        to_raw = hex_or_bytes_to_int(context.tx_log.data[32:64])
-        fee_raw = hex_or_bytes_to_int(context.tx_log.data[96:128])
+        to_raw = int.from_bytes(context.tx_log.data[32:64])
+        fee_raw = int.from_bytes(context.tx_log.data[96:128])
         if fee_raw == 0:
             return DEFAULT_DECODING_OUTPUT  # no need to do anything for zero fee taken
 

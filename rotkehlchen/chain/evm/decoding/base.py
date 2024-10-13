@@ -27,7 +27,7 @@ from rotkehlchen.chain.ethereum.utils import asset_normalized_value, token_norma
 from rotkehlchen.chain.evm.structures import EvmTxReceiptLog
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import EvmTokenKind, EvmTransaction, EVMTxHash, Location
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int, ts_sec_to_ms
+from rotkehlchen.utils.misc import bytes_to_address, ts_sec_to_ms
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
@@ -169,7 +169,7 @@ class BaseDecoderTools:
         extra_data = None
         event_type, event_subtype, location_label, address, counterparty, verb = direction_result
         counterparty_or_address = counterparty or address
-        amount_raw_or_token_id = hex_or_bytes_to_int(tx_log.data)
+        amount_raw_or_token_id = int.from_bytes(tx_log.data)
         if token.token_kind == EvmTokenKind.ERC20:
             amount = token_normalized_value(token_amount=amount_raw_or_token_id, token=token)
             if event_type in OUTGOING_EVENT_TYPES:
@@ -179,9 +179,9 @@ class BaseDecoderTools:
         elif token.token_kind == EvmTokenKind.ERC721:
             try:
                 if self.is_non_conformant_erc721(token.evm_address):  # id is in the data
-                    token_id = hex_or_bytes_to_int(tx_log.data[0:32])
+                    token_id = int.from_bytes(tx_log.data[0:32])
                 else:
-                    token_id = hex_or_bytes_to_int(tx_log.topics[3])
+                    token_id = int.from_bytes(tx_log.topics[3])
             except IndexError as e:
                 log.debug(
                     f'At decoding of token {token.evm_address} as ERC721 got '

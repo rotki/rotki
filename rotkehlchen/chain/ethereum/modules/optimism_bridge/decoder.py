@@ -18,10 +18,7 @@ from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.constants.resolver import evm_address_to_identifier
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, EvmTokenKind
-from rotkehlchen.utils.misc import (
-    bytes_to_address,
-    hex_or_bytes_to_int,
-)
+from rotkehlchen.utils.misc import bytes_to_address
 
 BRIDGE_ADDRESSES: Final = (
     string_to_evm_address('0x99C9fc46f92E8a1c0deC1b1747d010903E884bE1'),  # Normal Bridge
@@ -54,7 +51,7 @@ class OptimismBridgeDecoder(DecoderInterface):
         # Read information from event's topics & data
         if context.tx_log.topics[0] in {ETH_DEPOSIT_INITIATED, ETH_WITHDRAWAL_FINALIZED}:
             asset = A_ETH.resolve_to_crypto_asset()
-            raw_amount = hex_or_bytes_to_int(context.tx_log.data[:32])
+            raw_amount = int.from_bytes(context.tx_log.data[:32])
             amount = asset_normalized_value(raw_amount, asset)
             from_address = bytes_to_address(context.tx_log.topics[1])
             to_address = bytes_to_address(context.tx_log.topics[2])
@@ -65,7 +62,7 @@ class OptimismBridgeDecoder(DecoderInterface):
                 chain_id=ChainID.ETHEREUM,
                 token_type=EvmTokenKind.ERC20,
             ))
-            raw_amount = hex_or_bytes_to_int(context.tx_log.data[32:64])
+            raw_amount = int.from_bytes(context.tx_log.data[32:64])
             amount = asset_normalized_value(raw_amount, asset)
             from_address = bytes_to_address(context.tx_log.topics[3])
             to_address = bytes_to_address(context.tx_log.data[:32])

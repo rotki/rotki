@@ -6,7 +6,7 @@ from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface
 from rotkehlchen.chain.evm.decoding.structures import DecoderContext
 from rotkehlchen.fval import FVal
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 
 class CliqueAirdropDecoderInterface(DecoderInterface, ABC):
@@ -21,7 +21,7 @@ class CliqueAirdropDecoderInterface(DecoderInterface, ABC):
             return None
 
         claimed_amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data),
+            token_amount=int.from_bytes(context.tx_log.data),
             token_decimals=18,  # both omni and eigen have 18 decimals
         )
         return claiming_address, claimed_amount

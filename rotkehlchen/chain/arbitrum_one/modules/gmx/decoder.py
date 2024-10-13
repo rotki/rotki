@@ -30,7 +30,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
@@ -75,11 +75,11 @@ class GmxDecoder(ArbitrumDecoderInterface):
         token_out = self.base.get_or_create_evm_asset(bytes_to_address(context.tx_log.data[32:64]))
         token_in = self.base.get_or_create_evm_asset(bytes_to_address(context.tx_log.data[64:96]))
         amount_out = asset_normalized_value(
-            amount=hex_or_bytes_to_int(context.tx_log.data[96:128]),
+            amount=int.from_bytes(context.tx_log.data[96:128]),
             asset=token_out,
         )
         amount_in = asset_normalized_value(
-            amount=hex_or_bytes_to_int(context.tx_log.data[128:160]),
+            amount=int.from_bytes(context.tx_log.data[128:160]),
             asset=token_in,
         )
 
@@ -211,7 +211,7 @@ class GmxDecoder(ArbitrumDecoderInterface):
 
         account = bytes_to_address(context.tx_log.data[0:32])
         token_addrs = bytes_to_address(context.tx_log.data[32:64])
-        amount_raw = hex_or_bytes_to_int(context.tx_log.data[64:96])
+        amount_raw = int.from_bytes(context.tx_log.data[64:96])
 
         staked_token = self.base.get_or_create_evm_asset(address=token_addrs)
         amount = asset_normalized_value(amount=amount_raw, asset=staked_token)

@@ -21,7 +21,7 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -55,9 +55,9 @@ class CctpCommonDecoder(DecoderInterface):
         if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[3])):
             return DEFAULT_DECODING_OUTPUT
 
-        to_chain = hex_or_bytes_to_int(context.tx_log.data[64:96])
+        to_chain = int.from_bytes(context.tx_log.data[64:96])
         deposit_amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data[0:32]),
+            token_amount=int.from_bytes(context.tx_log.data[0:32]),
             token_decimals=USDC_DECIMALS,
         )
         for event in context.decoded_events:
@@ -88,7 +88,7 @@ class CctpCommonDecoder(DecoderInterface):
             return DEFAULT_DECODING_OUTPUT
 
         deposit_amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data[0:32]),
+            token_amount=int.from_bytes(context.tx_log.data[0:32]),
             token_decimals=USDC_DECIMALS,
         )
         for event in context.decoded_events:
@@ -120,7 +120,7 @@ class CctpCommonDecoder(DecoderInterface):
                 event.event_subtype == HistoryEventSubType.BRIDGE and
                 event.counterparty == CPT_CCTP
             ):
-                from_chain = hex_or_bytes_to_int(context.tx_log.data[:32])
+                from_chain = int.from_bytes(context.tx_log.data[:32])
                 try:
                     chain_info = f' from {CCTP_DOMAIN_MAPPING[from_chain].label()} to {self.evm_inquirer.chain_id.label()}'  # noqa: E501
                     event.notes = f'Bridge {event.balance.amount} USDC{chain_info} via CCTP'

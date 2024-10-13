@@ -23,7 +23,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int, timestamp_to_date
+from rotkehlchen.utils.misc import bytes_to_address, timestamp_to_date
 
 from .constants import (
     AAVE_POOLS,
@@ -104,7 +104,7 @@ class CurveDecoder(CurveCommonDecoder):
 
         user_note = '' if user_address == context.transaction.from_address else f' from {user_address}'  # noqa: E501
         gauge_address = bytes_to_address(context.tx_log.data[64:96])
-        vote_weight = hex_or_bytes_to_int(context.tx_log.data[96:128])
+        vote_weight = int.from_bytes(context.tx_log.data[96:128])
         if vote_weight == 0:
             verb = 'Reset vote'
             weight_note = ''
@@ -133,7 +133,7 @@ class CurveDecoder(CurveCommonDecoder):
         if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1])):
             return DEFAULT_DECODING_OUTPUT
 
-        raw_amount = hex_or_bytes_to_int(context.tx_log.data[:32])
+        raw_amount = int.from_bytes(context.tx_log.data[:32])
         suffix = ''
         if user_address != context.transaction.from_address:
             suffix = f' for {user_address}'
@@ -162,7 +162,7 @@ class CurveDecoder(CurveCommonDecoder):
         if not self.base.is_tracked(user_address := bytes_to_address(context.tx_log.topics[1])):
             return DEFAULT_DECODING_OUTPUT
 
-        raw_amount = hex_or_bytes_to_int(context.tx_log.data[:32])
+        raw_amount = int.from_bytes(context.tx_log.data[:32])
         return method(
             context=context,
             amount=token_normalized_value_decimals(token_amount=raw_amount, token_decimals=DEFAULT_TOKEN_DECIMALS),  # noqa: E501
@@ -170,7 +170,7 @@ class CurveDecoder(CurveCommonDecoder):
         )
 
     def _decode_voting_escrow_deposit(self, context: DecoderContext, amount: FVal, suffix: str) -> DecodingOutput:  # noqa: E501
-        locktime = Timestamp(hex_or_bytes_to_int(context.tx_log.topics[2]))
+        locktime = Timestamp(int.from_bytes(context.tx_log.topics[2]))
         for event in context.decoded_events:
             if event.event_type == HistoryEventType.SPEND and event.event_subtype == HistoryEventSubType.NONE and event.asset == A_CRV and event.balance.amount == amount:  # noqa: E501
                 event.event_type = HistoryEventType.DEPOSIT

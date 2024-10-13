@@ -18,7 +18,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CPT_SHUTTER, REDEEMED_VESTING, SHUTTER_AIDROP_CONTRACT
 
@@ -68,7 +68,7 @@ class ShutterDecoder(DecoderInterface):
                 bytes_to_address(tx_log.topics[1]) == SHUTTER_AIDROP_CONTRACT and
                 bytes_to_address(tx_log.topics[2]) == vesting_contract_address
             ):
-                amount = token_normalized_value(token_amount=hex_or_bytes_to_int(tx_log.data), token=self.shu)  # noqa: E501
+                amount = token_normalized_value(token_amount=int.from_bytes(tx_log.data), token=self.shu)  # noqa: E501
                 break
         else:
             log.error(f'Could not find the SHU transfer in {context.transaction.tx_hash.hex()}')

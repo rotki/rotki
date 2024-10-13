@@ -22,7 +22,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmEvent
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTokenKind
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -77,10 +77,10 @@ class OdosCommonDecoderBase(DecoderInterface):
             # can directly initialize EvmToken here because it's in output_tokens which were get_or_created above  # noqa: E501
             asset = EvmToken(identifier)
             if bytes_to_address(tx_log.topics[2]) == self.router_address:
-                router_holding_amount[asset] += asset_normalized_value(amount=hex_or_bytes_to_int(tx_log.data), asset=asset)  # noqa: E501
+                router_holding_amount[asset] += asset_normalized_value(amount=int.from_bytes(tx_log.data), asset=asset)  # noqa: E501
 
             elif bytes_to_address(tx_log.topics[1]) == self.router_address:
-                router_holding_amount[asset] -= asset_normalized_value(amount=hex_or_bytes_to_int(tx_log.data), asset=asset)  # noqa: E501
+                router_holding_amount[asset] -= asset_normalized_value(amount=int.from_bytes(tx_log.data), asset=asset)  # noqa: E501
 
         if self.native_currency.identifier in output_tokens:
             try:  # download (if not there) and find all native token transfers from/to the router

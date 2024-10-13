@@ -22,7 +22,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChecksumEvmAddress, Timestamp
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CPT_THEGRAPH, THEGRAPH_CPT_DETAILS
 
@@ -98,7 +98,7 @@ class ThegraphCommonDecoder(DecoderInterface):
             return DEFAULT_DECODING_OUTPUT
 
         indexer = bytes_to_address(context.tx_log.topics[1])
-        stake_amount = hex_or_bytes_to_int(context.tx_log.data[:32])
+        stake_amount = int.from_bytes(context.tx_log.data[:32])
         stake_amount_norm = token_normalized_value(
             token_amount=stake_amount,
             token=self.token,
@@ -161,8 +161,8 @@ class ThegraphCommonDecoder(DecoderInterface):
             return DEFAULT_DECODING_OUTPUT
 
         indexer = bytes_to_address(context.tx_log.topics[1])
-        tokens_amount = hex_or_bytes_to_int(context.tx_log.data[:32])
-        lock_timeout_secs = hex_or_bytes_to_int(context.tx_log.data[64:128])
+        tokens_amount = int.from_bytes(context.tx_log.data[:32])
+        lock_timeout_secs = int.from_bytes(context.tx_log.data[64:128])
         tokens_amount_norm = token_normalized_value(
             token_amount=tokens_amount,
             token=self.token,
@@ -192,7 +192,7 @@ class ThegraphCommonDecoder(DecoderInterface):
 
         indexer = bytes_to_address(context.tx_log.topics[1])
         tokens_amount_norm = token_normalized_value(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data[:32]),
+            token_amount=int.from_bytes(context.tx_log.data[:32]),
             token=self.token,
         )
         # create action item that will modify the relevant Transfer event that will appear later

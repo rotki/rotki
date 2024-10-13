@@ -25,7 +25,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import CacheType, ChainID, ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.base.node_inquirer import BaseInquirer
@@ -229,7 +229,7 @@ class MerkleClaimDecoderInterface(DecoderInterface, ABC):
             return DEFAULT_DECODING_OUTPUT
 
         claimed_amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.topics[3]),
+            token_amount=int.from_bytes(context.tx_log.topics[3]),
             token_decimals=token_decimals,
         )
         return self._maybe_enrich_claim_transfer(context, counterparty, token_id, notes_suffix, claiming_address, claimed_amount, airdrop_identifier)  # noqa: E501
@@ -251,7 +251,7 @@ class MerkleClaimDecoderInterface(DecoderInterface, ABC):
             return DEFAULT_DECODING_OUTPUT
 
         claimed_amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data[64:96]),
+            token_amount=int.from_bytes(context.tx_log.data[64:96]),
             token_decimals=token_decimals,
         )
         return self._maybe_enrich_claim_transfer(context, counterparty, token_id, notes_suffix, claiming_address, claimed_amount, airdrop_identifier)  # noqa: E501
@@ -352,8 +352,8 @@ class GovernableDecoderInterface(DecoderInterface, ABC):
         return self._decode_vote_cast_common(
             context=context,
             voter_address=voter_address,
-            vote_choice=self._decode_raw_vote(hex_or_bytes_to_int(context.tx_log.data[64:96])),
-            proposal_id=hex_or_bytes_to_int(context.tx_log.data[32:64]),
+            vote_choice=self._decode_raw_vote(int.from_bytes(context.tx_log.data[64:96])),
+            proposal_id=int.from_bytes(context.tx_log.data[32:64]),
         )
 
     def _decode_propose(self, context: DecoderContext, abi: str) -> DecodingOutput:
@@ -562,7 +562,7 @@ class CommonGrantsDecoderMixin(DecoderInterface, ABC):
 
         asset = asset.resolve_to_crypto_asset()
         amount = asset_normalized_value(
-            amount=hex_or_bytes_to_int(amount_raw),
+            amount=int.from_bytes(amount_raw),
             asset=asset,
         )
         for event in context.decoded_events:

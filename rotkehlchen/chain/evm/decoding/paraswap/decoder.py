@@ -21,7 +21,7 @@ from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
     BUY_ON_UNISWAP_V2_FORK,
@@ -128,7 +128,7 @@ class ParaswapCommonDecoder(DecoderInterface):
                     fee_asset = in_asset
                 elif isinstance(out_asset, EvmToken) and out_asset.evm_address == log_event.address:  # noqa: E501
                     fee_asset = out_asset
-                fee_raw = hex_or_bytes_to_int(log_event.data)
+                fee_raw = int.from_bytes(log_event.data)
                 break
         else:  # if no fee is found yet, check if fee is paid through internal transactions in the native token  # noqa: E501
             try:

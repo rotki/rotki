@@ -27,7 +27,7 @@ from rotkehlchen.history.events.structures.types import HistoryEventSubType, His
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, from_wei, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, from_wei
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.arbitrum_one.node_inquirer import ArbitrumOneInquirer
@@ -142,7 +142,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
         (Sending assets from arbitrum one)
         """
         from_token = self.base.get_or_create_evm_token(from_token_address)
-        raw_amount = hex_or_bytes_to_int(context.tx_log.data[64:96])
+        raw_amount = int.from_bytes(context.tx_log.data[64:96])
         amount = asset_normalized_value(raw_amount, to_asset)
         to_label = f'address {to_address}'
         if to_address == from_address:
@@ -181,7 +181,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
         if not self.base.any_tracked([from_address, to_address]):
             return DEFAULT_DECODING_OUTPUT
 
-        raw_amount = hex_or_bytes_to_int(context.tx_log.data[128:160])
+        raw_amount = int.from_bytes(context.tx_log.data[128:160])
         amount = from_wei(FVal(raw_amount))
         for event in context.decoded_events:
             if (
@@ -256,7 +256,7 @@ class ArbitrumOneBridgeDecoder(ArbitrumDecoderInterface):
         if context.tx_log.topics[0] != ERC20_DEPOSIT_FINALIZED:
             return DEFAULT_DECODING_OUTPUT
 
-        raw_amount = hex_or_bytes_to_int(context.tx_log.data[:32])
+        raw_amount = int.from_bytes(context.tx_log.data[:32])
         l1_token_address = bytes_to_address(context.tx_log.topics[1])
         from_address = bytes_to_address(context.tx_log.topics[2])
         to_address = bytes_to_address(context.tx_log.topics[3])

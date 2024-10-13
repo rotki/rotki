@@ -12,10 +12,7 @@ from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.constants.assets import A_ETH
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
-from rotkehlchen.utils.misc import (
-    bytes_to_address,
-    hex_or_bytes_to_int,
-)
+from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import CPT_SAFE_MULTISIG
 
@@ -63,7 +60,7 @@ class SafemultisigDecoder(DecoderInterface):
         return DecodingOutput(event=event)
 
     def _decode_changed_threshold(self, context: DecoderContext) -> DecodingOutput:
-        threshold = hex_or_bytes_to_int(context.tx_log.data[:32])
+        threshold = int.from_bytes(context.tx_log.data[:32])
         if not self.base.any_tracked([context.transaction.from_address, context.tx_log.address]):
             return DEFAULT_DECODING_OUTPUT
 
@@ -120,7 +117,7 @@ class SafemultisigDecoder(DecoderInterface):
             if index < num_owners:
                 owners.append(bytes_to_address(entry))
             elif index == num_owners:
-                threshold = hex_or_bytes_to_int(entry)
+                threshold = int.from_bytes(entry)
             else:
                 break
 

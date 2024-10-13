@@ -14,7 +14,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress, Timestamp
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int, timestamp_to_date
+from rotkehlchen.utils.misc import bytes_to_address, timestamp_to_date
 
 from .constants import (
     CLAIMED_WITH_BOUNTY,
@@ -65,8 +65,8 @@ class StakedaoDecoder(DecoderInterface):
         # we are not checking user address in the logs as user is not always
         # the recipient according to the contract
         reward_token_address = bytes_to_address(context.tx_log.data[0:32])
-        amount = hex_or_bytes_to_int(context.tx_log.data[32:64])
-        period = Timestamp(hex_or_bytes_to_int(context.tx_log.data[96:128]))
+        amount = int.from_bytes(context.tx_log.data[32:64])
+        period = Timestamp(int.from_bytes(context.tx_log.data[96:128]))
         return self._decode_claim(context=context, reward_token_address=reward_token_address, amount=amount, period=period)  # noqa: E501
 
     def _decode_claim_with_bribe(self, context: DecoderContext) -> DecodingOutput:
@@ -76,8 +76,8 @@ class StakedaoDecoder(DecoderInterface):
         # we are not checking user address in the logs as user is not always
         # the recipient according to the contract
         reward_token_address = bytes_to_address(context.tx_log.topics[2])
-        amount = hex_or_bytes_to_int(context.tx_log.data[0:32])
-        period = Timestamp(hex_or_bytes_to_int(context.tx_log.data[32:64]))
+        amount = int.from_bytes(context.tx_log.data[0:32])
+        period = Timestamp(int.from_bytes(context.tx_log.data[32:64]))
         return self._decode_claim(context=context, reward_token_address=reward_token_address, amount=amount, period=period)  # noqa: E501
 
     # -- DecoderInterface methods

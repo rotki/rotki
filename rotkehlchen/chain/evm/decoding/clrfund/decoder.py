@@ -24,7 +24,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.evm.decoding.base import BaseDecoderTools
@@ -102,7 +102,7 @@ class ClrfundCommonDecoder(CommonGrantsDecoderMixin):
             return DEFAULT_DECODING_OUTPUT
 
         amount = asset_normalized_value(
-            amount=hex_or_bytes_to_int(context.tx_log.data),
+            amount=int.from_bytes(context.tx_log.data),
             asset=asset,
         )
         for event in context.decoded_events:

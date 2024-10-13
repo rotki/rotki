@@ -18,7 +18,7 @@ from rotkehlchen.history.events.structures.evm_event import EvmProduct
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
     REDEEM_AAVE,
@@ -53,7 +53,7 @@ class AaveDecoder(DecoderInterface):
             return DEFAULT_DECODING_OUTPUT
 
         amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data[:32]),
+            token_amount=int.from_bytes(context.tx_log.data[:32]),
             token_decimals=DEFAULT_TOKEN_DECIMALS,
         )
         return method(from_address=from_address, to_address=to_address, amount=amount, context=context)  # noqa: E501

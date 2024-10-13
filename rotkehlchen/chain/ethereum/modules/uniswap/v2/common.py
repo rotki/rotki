@@ -42,7 +42,7 @@ from rotkehlchen.types import (
     EvmTransaction,
     EVMTxHash,
 )
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -101,8 +101,8 @@ def decode_uniswap_v2_like_swap(
 
     # amount_in is the amount that enters the pool and amount_out the one
     # that leaves the pool
-    amount_in_0, amount_in_1 = hex_or_bytes_to_int(tx_log.data[0:32]), hex_or_bytes_to_int(tx_log.data[32:64])  # noqa: E501
-    amount_out_0, amount_out_1 = hex_or_bytes_to_int(tx_log.data[64:96]), hex_or_bytes_to_int(tx_log.data[96:128])  # noqa: E501
+    amount_in_0, amount_in_1 = int.from_bytes(tx_log.data[0:32]), int.from_bytes(tx_log.data[32:64])  # noqa: E501
+    amount_out_0, amount_out_1 = int.from_bytes(tx_log.data[64:96]), int.from_bytes(tx_log.data[96:128])  # noqa: E501
     amount_in, amount_out = amount_in_0, amount_out_0
     if amount_in == ZERO:
         amount_in = amount_in_1
@@ -202,8 +202,8 @@ def decode_uniswap_like_deposit_and_withdrawals(
     """  # noqa: E501
     resolved_eth = A_ETH.resolve_to_crypto_asset()
     target_pool_address = tx_log.address
-    amount0_raw = hex_or_bytes_to_int(tx_log.data[:32])
-    amount1_raw = hex_or_bytes_to_int(tx_log.data[32:64])
+    amount0_raw = int.from_bytes(tx_log.data[:32])
+    amount1_raw = int.from_bytes(tx_log.data[32:64])
 
     token0: EvmToken | None = None
     token1: EvmToken | None = None
@@ -221,7 +221,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
     # First, get the tokens deposited into the pool. The reason for this approach is
     # to circumvent scenarios where the mint/burn event comes before the needed transfer events.
     for other_log in all_logs:
-        if other_log.topics[0] == ERC20_OR_ERC721_TRANSFER and hex_or_bytes_to_int(other_log.data[:32]) == amount0_raw:  # noqa: E501
+        if other_log.topics[0] == ERC20_OR_ERC721_TRANSFER and int.from_bytes(other_log.data[:32]) == amount0_raw:  # noqa: E501
             token0 = get_or_create_evm_token(
                 userdb=database,
                 evm_address=other_log.address,
@@ -233,7 +233,7 @@ def decode_uniswap_like_deposit_and_withdrawals(
             # we make a distinction between token and asset since for eth uniswap moves around
             # WETH but we could receive ETH
             asset_0 = resolved_eth if token0 == A_WETH else token0
-        elif other_log.topics[0] == ERC20_OR_ERC721_TRANSFER and hex_or_bytes_to_int(other_log.data[:32]) == amount1_raw:  # noqa: E501
+        elif other_log.topics[0] == ERC20_OR_ERC721_TRANSFER and int.from_bytes(other_log.data[:32]) == amount1_raw:  # noqa: E501
             token1 = get_or_create_evm_token(
                 userdb=database,
                 evm_address=other_log.address,

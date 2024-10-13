@@ -18,7 +18,7 @@ from rotkehlchen.history.events.structures.evm_event import LIQUITY_STAKING_DETA
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChecksumEvmAddress, EvmTransaction
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 from .constants import (
     ACTIVE_POOL,
@@ -126,12 +126,12 @@ class LiquityDecoder(DecoderInterface):
         collected_eth, collected_lqty = ZERO, ZERO
         if context.tx_log.topics[0] == STABILITY_POOL_GAIN_WITHDRAW:
             collected_eth = asset_normalized_value(
-                amount=hex_or_bytes_to_int(context.tx_log.data[0:32]),
+                amount=int.from_bytes(context.tx_log.data[0:32]),
                 asset=self.eth,
             )
         elif context.tx_log.topics[0] in {STABILITY_POOL_LQTY_PAID_TO_DEPOSITOR, STABILITY_POOL_LQTY_PAID_TO_FRONTEND}:  # noqa: E501
             collected_lqty = asset_normalized_value(
-                amount=hex_or_bytes_to_int(context.tx_log.data[0:32]),
+                amount=int.from_bytes(context.tx_log.data[0:32]),
                 asset=self.lqty,
             )
             if collected_lqty == ZERO:
@@ -200,7 +200,7 @@ class LiquityDecoder(DecoderInterface):
             return DEFAULT_DECODING_OUTPUT
 
         if (fee_amount := asset_normalized_value(
-            amount=hex_or_bytes_to_int(context.tx_log.data[0:32]),
+            amount=int.from_bytes(context.tx_log.data[0:32]),
             asset=self.lusd,
         )) == ZERO:  # for many operations it emits a zero event log
             return DEFAULT_DECODING_OUTPUT
@@ -234,7 +234,7 @@ class LiquityDecoder(DecoderInterface):
         if context.tx_log.topics[0] == STAKING_LQTY_CHANGE:
             user = self.base.get_address_or_proxy_owner(bytes_to_address(context.tx_log.topics[1]))
             lqty_amount = asset_normalized_value(
-                amount=hex_or_bytes_to_int(context.tx_log.data[0:32]),
+                amount=int.from_bytes(context.tx_log.data[0:32]),
                 asset=self.lqty,
             )
 

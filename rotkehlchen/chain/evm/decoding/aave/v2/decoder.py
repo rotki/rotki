@@ -5,7 +5,7 @@ from rotkehlchen.chain.evm.decoding.aave.common import Commonv2v3Decoder
 from rotkehlchen.chain.evm.decoding.structures import DEFAULT_DECODING_OUTPUT, DecodingOutput
 from rotkehlchen.chain.evm.decoding.types import CounterpartyDetails
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address
 
 from ..constants import CPT_AAVE_V2
 from .constants import BORROW, DEPOSIT, REPAY
@@ -60,7 +60,7 @@ class Aavev2CommonDecoder(Commonv2v3Decoder):
 
             asset = event.asset.resolve_to_evm_token()
             if asset_normalized_value(
-                amount=hex_or_bytes_to_int(context.tx_log.data[32:64]),  # liquidated amount
+                amount=int.from_bytes(context.tx_log.data[32:64]),  # liquidated amount
                 asset=asset,
             ) == event.balance.amount and asset.protocol == CPT_AAVE_V2:
                 # we are transfering the aTOKEN
@@ -70,7 +70,7 @@ class Aavev2CommonDecoder(Commonv2v3Decoder):
                 event.counterparty = CPT_AAVE_V2
                 event.address = context.tx_log.address
             elif asset_normalized_value(
-                amount=hex_or_bytes_to_int(context.tx_log.data[:32]),  # debt amount
+                amount=int.from_bytes(context.tx_log.data[:32]),  # debt amount
                 asset=asset,
             ) == event.balance.amount:
                 # we are transfering the debt token

@@ -59,7 +59,7 @@ from rotkehlchen.errors.serialization import DeserializationError
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.serialization.deserialize import deserialize_evm_address
 from rotkehlchen.types import ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, hex_or_bytes_to_int, shift_num_right_by
+from rotkehlchen.utils.misc import bytes_to_address, shift_num_right_by
 
 from .constants import (
     CPT_DSR,
@@ -173,7 +173,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             vault_type: str,
     ) -> DecodingOutput:
         if context.tx_log.topics[0] == GENERIC_JOIN:
-            raw_amount = hex_or_bytes_to_int(context.tx_log.topics[3])
+            raw_amount = int.from_bytes(context.tx_log.topics[3])
             amount = asset_normalized_value(
                 amount=raw_amount,
                 asset=vault_asset,
@@ -190,7 +190,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
                     return DEFAULT_DECODING_OUTPUT
 
         elif context.tx_log.topics[0] == GENERIC_EXIT:
-            raw_amount = hex_or_bytes_to_int(context.tx_log.topics[3])
+            raw_amount = int.from_bytes(context.tx_log.topics[3])
             amount = asset_normalized_value(
                 amount=raw_amount,
                 asset=vault_asset,
@@ -211,7 +211,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
     def decode_makerdao_debt_payback(self, context: DecoderContext) -> DecodingOutput:
         if context.tx_log.topics[0] == GENERIC_JOIN:
             join_user_address = bytes_to_address(context.tx_log.topics[2])
-            raw_amount = hex_or_bytes_to_int(context.tx_log.topics[3])
+            raw_amount = int.from_bytes(context.tx_log.topics[3])
             amount = token_normalized_value(
                 token_amount=raw_amount,
                 token=self.dai,
@@ -254,7 +254,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             if daijoin_log is None:
                 return DEFAULT_DECODING_OUTPUT  # no matching daijoin for potjoin
 
-            raw_amount = hex_or_bytes_to_int(daijoin_log.topics[3])
+            raw_amount = int.from_bytes(daijoin_log.topics[3])
             amount = token_normalized_value(
                 token_amount=raw_amount,
                 token=self.dai,
@@ -291,7 +291,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             if daiexit_log is None:
                 return DEFAULT_DECODING_OUTPUT  # no matching daiexit for potexit
 
-            raw_amount = hex_or_bytes_to_int(daiexit_log.topics[3])
+            raw_amount = int.from_bytes(daiexit_log.topics[3])
             amount = token_normalized_value(
                 token_amount=raw_amount,
                 token=self.dai,
@@ -343,7 +343,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
         if not self.base.is_tracked(owner_address):
             return DEFAULT_DECODING_OUTPUT
 
-        cdp_id = hex_or_bytes_to_int(context.tx_log.topics[3])
+        cdp_id = int.from_bytes(context.tx_log.topics[3])
         notes = f'Create MakerDAO vault with id {cdp_id} and owner {owner_address}'
         self.base.make_event_from_transaction(
             transaction=context.transaction,
@@ -361,7 +361,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
 
     def _decode_vault_debt_generation(self, context: DecoderContext) -> DecodingOutput:
         """Decode vault debt generation by parsing a lognote for cdpmanager move"""
-        cdp_id = hex_or_bytes_to_int(context.tx_log.topics[2])
+        cdp_id = int.from_bytes(context.tx_log.topics[2])
         destination = bytes_to_address(context.tx_log.topics[3])
 
         owner = self._get_address_or_proxy(destination)
@@ -371,7 +371,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
         # now we need to get the rad and since it's the 3rd argument its not in the indexed topics
         # but it's part of the data location after the first 132 bytes.
         # also need to shift by ray since it's in rad
-        raw_amount = shift_num_right_by(hex_or_bytes_to_int(context.tx_log.data[132:164]), RAY_DIGITS)  # noqa: E501
+        raw_amount = shift_num_right_by(int.from_bytes(context.tx_log.data[132:164]), RAY_DIGITS)
         amount = token_normalized_value(
             token_amount=raw_amount,
             token=self.dai,
@@ -397,8 +397,8 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
 
         Used to find the vault id of a collateral deposit
         """
-        cdp_id = hex_or_bytes_to_int(context.tx_log.topics[2])
-        dink = hex_or_bytes_to_int(context.tx_log.topics[3])
+        cdp_id = int.from_bytes(context.tx_log.topics[2])
+        dink = int.from_bytes(context.tx_log.topics[3])
 
         action_item = None
         for item in context.action_items:
@@ -478,7 +478,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             return DEFAULT_DECODING_OUTPUT
 
         amount = asset_normalized_value(
-            amount=hex_or_bytes_to_int(context.tx_log.data[32:64]),
+            amount=int.from_bytes(context.tx_log.data[32:64]),
             asset=self.sdai,
         )
         if amount == ZERO:
@@ -567,7 +567,7 @@ class MakerdaoDecoder(DecoderInterface, HasDSProxy):
             return DEFAULT_DECODING_OUTPUT
 
         amount = token_normalized_value_decimals(
-            token_amount=hex_or_bytes_to_int(context.tx_log.data[0:32]),
+            token_amount=int.from_bytes(context.tx_log.data[0:32]),
             token_decimals=DEFAULT_TOKEN_DECIMALS,
         )
         event = self.base.make_event_from_transaction(

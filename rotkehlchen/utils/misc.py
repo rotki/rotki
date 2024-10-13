@@ -10,7 +10,7 @@ from binascii import unhexlify
 from collections import defaultdict
 from collections.abc import Callable, Iterable, Iterator, Sequence
 from itertools import zip_longest
-from typing import TYPE_CHECKING, Any, Literal, TypeVar, overload
+from typing import TYPE_CHECKING, Any, TypeVar, overload
 
 from eth_utils import is_hexstr
 from eth_utils.address import to_checksum_address
@@ -247,29 +247,8 @@ def hexstr_to_int(value: str) -> int:
     return int_value
 
 
-def hex_or_bytes_to_int(
-        value: bytes | str,
-        signed: bool = False,
-        byteorder: Literal['little', 'big'] = 'big',
-) -> int:
-    """Turns a bytes/HexBytes or a hexstring into an int
-
-    May raise:
-    - ConversionError if it can't convert a value to an int or if an unexpected
-    type is given.
-    """
-    if isinstance(value, bytes):
-        int_value = int.from_bytes(value, byteorder=byteorder, signed=signed)
-    elif isinstance(value, str):
-        int_value = hexstr_to_int(value)
-    else:
-        raise ConversionError(f'Unexpected type {type(value)} given to hex_or_bytes_to_int()')
-
-    return int_value
-
-
 def bytes_to_address(value: bytes) -> ChecksumEvmAddress:
-    """Turns 32 bytes into a checksummed EVM address
+    """Turns 32 bytes/hexbytes into a checksummed EVM address
 
     May raise:
     - DeserializationError if it can't convert a value to an int or if an unexpected

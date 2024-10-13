@@ -17,7 +17,7 @@ from rotkehlchen.fval import FVal
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
 from rotkehlchen.logging import RotkehlchenLogsAdapter
 from rotkehlchen.types import ChainID, ChecksumEvmAddress
-from rotkehlchen.utils.misc import bytes_to_address, from_wei, hex_or_bytes_to_int
+from rotkehlchen.utils.misc import bytes_to_address, from_wei
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
@@ -66,17 +66,17 @@ class ArbitrumOneBridgeDecoder(DecoderInterface):
             #
             # It has 2 int as 32-bytes packed first, which are the offsets for the other two
             # and then has two more 32-bytes which are the address and the msg.value
-            value_offset = hex_or_bytes_to_int(context.tx_log.data[:32])
-            address_offset = hex_or_bytes_to_int(context.tx_log.data[32:64])
+            value_offset = int.from_bytes(context.tx_log.data[:32])
+            address_offset = int.from_bytes(context.tx_log.data[32:64])
             user_address = bytes_to_address(context.tx_log.data[address_offset:address_offset + 32])  # noqa: E501
-            raw_amount = hex_or_bytes_to_int(context.tx_log.data[address_offset + value_offset:address_offset + value_offset + 32])  # noqa: E501
+            raw_amount = int.from_bytes(context.tx_log.data[address_offset + value_offset:address_offset + value_offset + 32])  # noqa: E501
 
             amount = from_wei(FVal(raw_amount))
             expected_event_type = HistoryEventType.SPEND
             new_event_type = HistoryEventType.DEPOSIT
             from_chain, to_chain = ChainID.ETHEREUM, ChainID.ARBITRUM_ONE
         else:  # ETH_WITHDRAWAL_FINALIZED
-            raw_amount = hex_or_bytes_to_int(context.tx_log.data[:32])
+            raw_amount = int.from_bytes(context.tx_log.data[:32])
             user_address = bytes_to_address(context.tx_log.topics[2])
             amount = from_wei(FVal(raw_amount))
             expected_event_type = HistoryEventType.RECEIVE
@@ -118,7 +118,7 @@ class ArbitrumOneBridgeDecoder(DecoderInterface):
 
         ethereum_token_address = bytes_to_address(tx_log.data[:32])
         asset = self.base.get_or_create_evm_token(ethereum_token_address)
-        raw_amount = hex_or_bytes_to_int(tx_log.data[32:])
+        raw_amount = int.from_bytes(tx_log.data[32:])
         amount = asset_normalized_value(raw_amount, asset)
 
         expected_event_type, new_event_type, from_chain, to_chain, _ = bridge_prepare_data(
