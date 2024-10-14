@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from types import ModuleType
 from typing import TYPE_CHECKING, Any, Optional, Protocol
 
+import gevent
 from gevent.lock import Semaphore
 
 from rotkehlchen.accounting.structures.balance import Balance
@@ -85,6 +86,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 log = RotkehlchenLogsAdapter(logger)
+MIN_LOGS_PROCESSED_TO_SLEEP = 100
 
 
 class EventDecoderFunction(Protocol):
@@ -477,7 +479,7 @@ class EVMTransactionDecoder(ABC):
         monerium_special_handling_event = False
 
         # decode transaction logs from the receipt
-        for tx_log in tx_receipt.logs:
+        for idx, tx_log in enumerate(tx_receipt.logs):
             if (
                 monerium_special_handling_event is False and
                 self.evm_inquirer.chain_id in {ChainID.GNOSIS, ChainID.POLYGON_POS} and
@@ -489,6 +491,10 @@ class EVMTransactionDecoder(ABC):
                 # We use this flag to avoid iterating twice over the events searching
                 # for legacy transfers.
                 monerium_special_handling_event = True
+
+            if idx + 1 % MIN_LOGS_PROCESSED_TO_SLEEP == 0:
+                log.debug(f'Context switching out of the {idx + 1} log event of {transaction}')
+                gevent.sleep(0)
 
             context = DecoderContext(
                 tx_log=tx_log,

@@ -21,6 +21,7 @@ from rotkehlchen.types import ChecksumEvmAddress, Location, deserialize_evm_tx_h
 from rotkehlchen.utils.misc import ts_now
 
 if TYPE_CHECKING:
+    from rotkehlchen.chain.gnosis.transactions import GnosisWithdrawalsQueryParameters
     from rotkehlchen.db.dbhandler import DBHandler
 
     from .node_inquirer import EthereumInquirer
@@ -42,6 +43,8 @@ class EthereumTransactions(EvmTransactions):
             self,
             last_block_queried: int,
             filters: dict[str, Any],
+            new_events: list[dict[str, Any]],  # pylint: disable=unused-argument
+            cb_arguments: 'GnosisWithdrawalsQueryParameters | None',  # pylint: disable=unused-argument
     ) -> None:
         """Callback used in query_for_graph_delegation_txns when querying logs.
         Ensures that when iterating the logs we keep the progress of the queried
