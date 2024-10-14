@@ -1,5 +1,5 @@
-gevent==24.2.1
-greenlet==3.0.3
+gevent==24.10.2
+greenlet==3.1.1
 gevent-websocket==0.10.1  # like the below is abandoned
 wsaccel==0.6.6  # recommended for acceleration of gevent-websocket. But abandoned.
 web3==7.3.0
