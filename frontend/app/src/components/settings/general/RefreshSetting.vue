@@ -46,35 +46,7 @@ onMounted(() => {
 
 <template>
   <div class="mt-8">
-    <div class="text-h6">
-      {{ t('frontend_settings.subtitle.refresh') }}
-    </div>
-    <div class="flex gap-6 mt-1">
-      <div class="grow">
-        <SettingsOption
-          #default="{ error, success, update }"
-          setting="refreshPeriod"
-          frontend-setting
-          :transform="transform"
-          :error-message="t('frontend_settings.validation.refresh_period.error')"
-          @finished="resetRefreshPeriod()"
-        >
-          <RuiTextField
-            v-model="refreshPeriod"
-            variant="outlined"
-            color="primary"
-            :disabled="!refreshEnabled"
-            type="number"
-            :min="minRefreshPeriod"
-            :max="maxRefreshPeriod"
-            :label="t('frontend_settings.label.refresh')"
-            :hint="t('frontend_settings.hint.refresh')"
-            :success-messages="success"
-            :error-messages="error || toMessages(v$.refreshPeriod)"
-            @update:model-value="callIfValid($event, update)"
-          />
-        </SettingsOption>
-      </div>
+    <div class="row gap-6 mt-1">
       <SettingsOption
         #default="{ updateImmediate }"
         setting="refreshPeriod"
@@ -89,6 +61,31 @@ onMounted(() => {
           :label="t('frontend_settings.label.refresh_enabled')"
           color="primary"
           @update:model-value="updateImmediate($event)"
+        />
+      </SettingsOption>
+
+      <SettingsOption
+        v-if="refreshEnabled"
+        #default="{ error, success, update }"
+        setting="refreshPeriod"
+        frontend-setting
+        :transform="transform"
+        :error-message="t('frontend_settings.validation.refresh_period.error')"
+        @finished="resetRefreshPeriod()"
+      >
+        <RuiTextField
+          v-model="refreshPeriod"
+          variant="outlined"
+          color="primary"
+          :disabled="!refreshEnabled"
+          type="number"
+          :min="minRefreshPeriod"
+          :max="maxRefreshPeriod"
+          :label="t('frontend_settings.label.refresh')"
+          :hint="t('frontend_settings.hint.refresh')"
+          :success-messages="success"
+          :error-messages="error || toMessages(v$.refreshPeriod)"
+          @update:model-value="callIfValid($event, update)"
         />
       </SettingsOption>
     </div>
