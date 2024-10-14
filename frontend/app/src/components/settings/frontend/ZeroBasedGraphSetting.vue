@@ -10,20 +10,22 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <SettingsOption
-    #default="{ error, success, update }"
-    setting="graphZeroBased"
-    frontend-setting
-  >
-    <RuiSwitch
-      v-model="zeroBased"
-      class="general-settings__fields__zero-base"
-      :label="t('frontend_settings.label.zero_based')"
-      :hint="t('frontend_settings.label.zero_based_hint')"
-      :success-messages="success"
-      :error-messages="error"
-      color="primary"
-      @update:model-value="update($event)"
-    />
-  </SettingsOption>
+  <div class="pb-2">
+    <SettingsOption
+      #default="{ error, success, update }"
+      setting="graphZeroBased"
+      frontend-setting
+    >
+      <RuiSwitch
+        v-model="zeroBased"
+        class="general-settings__fields__zero-base"
+        :label="t('frontend_settings.label.zero_based')"
+        :hint="t('frontend_settings.label.zero_based_hint')"
+        :success-messages="success"
+        :error-messages="error"
+        color="primary"
+        @update:model-value="update($event)"
+      />
+    </SettingsOption>
+  </div>
 </template>

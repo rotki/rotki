@@ -2619,14 +2619,16 @@
     },
     "label": {
       "abbreviate_number": "Use abbreviations for large numbers.",
-      "animations": "Reduce animations effect. This setting will improve app performance. NOTE: You will see animations that are not smooth, which aims to reduce the use of system resources.",
+      "animations": "Reduce animations effect",
+      "animations_note": "Enabling this setting will enahnce app performance. However, note, that some animations may appear less smooth, as the goal is to reduce system resources usage.",
       "enable_alias_names": "Show alias name for blockchain addresses.",
       "minimum_digit_to_be_abbreviated": "Minimum value to be abbreviated",
       "query_period": "Query period in seconds",
       "query_period_hint": "How often (in seconds) the backend will be checked for messages,",
       "refresh": "Set the automatic refresh period",
       "refresh_enabled": "Enabled",
-      "scramble": "Scramble data. Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions.",
+      "scramble": "Scramble data",
+      "scramble_hint": "Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions.",
       "scramble_multiplier": "Scramble multiplier",
       "show_graph_range_selector": "Show graph range selector for line chart",
       "zero_based": "Use zero as the lowest y-axis value for the graphs",
@@ -2635,6 +2637,9 @@
     "subtitle": {
       "abbreviate_number": "For example, 1.234.567 will appear as 1.23 M when this setting is enabled",
       "alias_names": "Alias name for addresses",
+      "blockchain_address_aliases": "Blockchian address aliases",
+      "graph_settings": "Graph settings",
+      "graph_settings_hint": "Manage your graph settings.",
       "graph_basis": "Graph basis",
       "query": "Periodic status query",
       "refresh": "Automatic balance refresh",
@@ -2766,6 +2771,8 @@
       "force_saved_language_setting_in_machine_hint": "This setting is saved on your user settings. Activate this to keep this setting when you logged out.",
       "ksm_rpc_endpoint": "Kusama Node RPC Endpoint",
       "language": "Selected language",
+      "language_title": "Language",
+      "language_subtitle": "Select your preferred language",
       "csv_delimiter": "CSV export delimiter",
       "treat_eth2_as_eth": "Should treat ETH2 (Staked ETH) as ETH",
       "chains_to_skip_detection": "EVM Chains for which to skip automatic detection",
@@ -3977,7 +3984,8 @@
       "select_color": "Select Color",
       "subtitle": "Manage colors for the app theme",
       "title": "Theme",
-      "text": "App theme"
+      "text": "App theme",
+      "text_hint": "Manage colors for the app theme"
     },
     "theme_switch": {
       "auto": "Auto (Detect Device Theme)",

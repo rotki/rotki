@@ -47,6 +47,12 @@ const { t } = useI18n();
 
 <template>
   <div>
+    <RuiAlert
+      type="warning"
+      class="mb-4"
+    >
+      {{ t('general_settings.language_contribution_tooltip') }}
+    </RuiAlert>
     <div class="flex gap-2">
       <SettingsOption
         #default="{ error, success, updateImmediate }"
