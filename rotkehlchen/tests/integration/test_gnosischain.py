@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 import pytest
 
+from rotkehlchen.accounting.accountant import RemoteError
 from rotkehlchen.chain.gnosis.constants import BRIDGE_QUERIED_ADDRESS_PREFIX
 from rotkehlchen.db.evmtx import DBEvmTx
 from rotkehlchen.db.filtering import EvmTransactionsFilterQuery
@@ -75,3 +76,44 @@ def test_gnosischain_specific_chain_data(
         )
         assert fn.call_count == first_call_count, 'no log queries should happen'
         check_db()
+
+
+@pytest.mark.freeze_time('2023-10-25 22:50:45 GMT')
+@pytest.mark.vcr(filter_query_parameters=['apikey'])
+@pytest.mark.parametrize('gnosis_accounts', [['0x0D0B3A4fB611D11b044444Ed2154cDcd7830d506', '0xdFba7a5EeE7b2Aed0E463e983CB96873DbDD25F0']])  # noqa: E501
+def test_gnosischain_specific_chain_data_failing_logic(
+        database: 'DBHandler',
+        gnosis_transactions: 'GnosisTransactions',
+        gnosis_accounts: list[ChecksumEvmAddress],
+) -> None:
+    """Tests that in case of error while querying gnosis logs
+    we correctly store the last queried timestamp.
+    """
+    processed_queries = 0
+    real_logs = gnosis_transactions.evm_inquirer.etherscan.get_logs
+
+    def mocked_etherscan_logs(*args, **kwargs):
+        nonlocal processed_queries
+        if processed_queries == 1:
+            raise RemoteError('Remote error from patch')
+
+        processed_queries += 1
+        return real_logs(*args, **kwargs)
+
+    with patch.object(
+        gnosis_transactions.evm_inquirer.etherscan,
+        'get_logs',
+        wraps=mocked_etherscan_logs,
+    ):
+        gnosis_transactions.get_chain_specific_multiaddress_data(
+            addresses=gnosis_accounts,
+            from_ts=Timestamp(0),
+            to_ts=ts_now(),
+        )
+
+        with database.conn.read_ctx() as cursor:
+            for address in gnosis_accounts:
+                # check used query ranges are set
+                from_ts, to_ts = database.get_used_query_range(cursor, f'{BRIDGE_QUERIED_ADDRESS_PREFIX}{address}')  # type: ignore # noqa: E501
+                assert from_ts == Timestamp(0)
+                assert to_ts == Timestamp(1586609555)  # timestamp after processing the first subinterval  # noqa: E501
