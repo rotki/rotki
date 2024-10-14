@@ -235,17 +235,21 @@ export function useHistoryEventNote(): UseHistoryEventsNoteReturn {
       const isAmount = amountVal
         && !isNaN(Number.parseFloat(word))
         && bigNumberify(word).eq(amountVal)
-        && amountVal.gt(0)
-        && index < processedWords.length - 1
-        && processedWords[index + 1] === asset;
+        && amountVal.gt(0);
 
       if (isAmount) {
+        const isAsset = index < processedWords.length - 1
+          && processedWords[index + 1] === asset;
+
         formats.push({
           type: NoteType.AMOUNT,
+          asset: isAsset ? get(assetId) : undefined,
           amount: amountVal,
-          asset: get(assetId),
         });
-        skip = true;
+
+        if (isAsset)
+          skip = true;
+
         return putBackPunctuation();
       }
 
