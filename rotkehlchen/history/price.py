@@ -8,12 +8,20 @@ from typing import TYPE_CHECKING, Optional
 from rotkehlchen.assets.asset import Asset
 from rotkehlchen.chain.polygon_pos.constants import POLYGON_POS_POL_HARDFORK
 from rotkehlchen.constants import ONE
-from rotkehlchen.constants.assets import A_ETH, A_ETH2, A_KFEE, A_POLYGON_POS_MATIC, A_USD
+from rotkehlchen.constants.assets import (
+    A_ETH,
+    A_ETH2,
+    A_EUR,
+    A_KFEE,
+    A_POLYGON_POS_MATIC,
+    A_USD,
+)
 from rotkehlchen.constants.prices import ZERO_PRICE
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.errors.misc import RemoteError
 from rotkehlchen.errors.price import NoPriceForGivenTimestamp, PriceQueryUnsupportedAsset
 from rotkehlchen.fval import FVal
+from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.globaldb.manual_price_oracles import ManualPriceOracle
 from rotkehlchen.inquirer import Inquirer
 from rotkehlchen.logging import RotkehlchenLogsAdapter
@@ -175,6 +183,14 @@ class PriceHistorian:
                 to_asset=to_asset,
                 timestamp=timestamp,
             )
+
+        if GlobalDBHandler.asset_in_collection(collection_id=240, asset_id=from_asset.identifier):  # part of the EURe collection # noqa: E501  # todo: Super hacky. Figure out a way to generalize
+            return PriceHistorian.query_historical_price(
+                from_asset=A_EUR,
+                to_asset=to_asset,
+                timestamp=timestamp,
+            )
+
         return None
 
     @staticmethod

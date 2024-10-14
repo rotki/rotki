@@ -1974,6 +1974,15 @@ class GlobalDBHandler:
         return result[0] if result is not None else None
 
     @staticmethod
+    def asset_in_collection(collection_id: int, asset_id: str) -> bool:
+        with GlobalDBHandler().conn.read_ctx() as cursor:
+            cursor.execute(
+                'SELECT COUNT(*) FROM multiasset_mappings WHERE collection_id=? AND asset=?',
+                (collection_id, asset_id),
+            )
+            return cursor.fetchone()[0] == 1
+
+    @staticmethod
     def get_or_write_abi(serialized_abi: str, abi_name: str | None = None) -> int:
         """
         Finds and returns the id of the given abi.
