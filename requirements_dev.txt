@@ -16,7 +16,7 @@ freezegun==1.5.1
 
 
 # To test google spreadsheet uploading
-google-api-python-client==2.147.0
+google-api-python-client==2.149.0
 google-auth-httplib2==0.2.0
-google-api-core==2.20.0
-google-auth==2.34.0
+google-api-core==2.21.0
+google-auth==2.35.0
