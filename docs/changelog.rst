@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`-` yearn vaults data will be properly queried only once and error handling is improved.
 * :bug:`8715` Fix the issue where the historical price doesn't refresh after being updated on the history events page.
 * :bug:`-` EURe price will always be considered equal to EUR.
 * :feature:`8696` It's now possible to input Defillama pro API keys in rotki and have higher rate limits. Buy a defillama pro key here: https://defillama.com/pro-api. Similar for coingecko pro API keys. You can get one here: https://www.coingecko.com/en/premium/pricing
