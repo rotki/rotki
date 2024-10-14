@@ -73,6 +73,12 @@ disallow_untyped_decorators = false
 [[tool.mypy.overrides]]
 module = [
     "rotkehlchen.tests.api.blockchain.*",
+    "rotkehlchen.tests.api.test_aave",
+    "rotkehlchen.tests.api.test_accounting_rules",
+    "rotkehlchen.tests.api.test_addressbook",
+    "rotkehlchen.tests.api.test_assets",
+    "rotkehlchen.tests.api.test_assets_updates",
+    "rotkehlchen.tests.api.test_async",
 ]
 check_untyped_defs = true
 disallow_untyped_defs = true

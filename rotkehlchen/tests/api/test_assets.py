@@ -82,7 +82,7 @@ def test_query_owned_assets(
         rotkehlchen_api_server_with_exchanges: APIServer,
         ethereum_accounts: list[ChecksumEvmAddress],
         btc_accounts: list[BTCAddress],
-):
+) -> None:
     """Test that using the query all owned assets endpoint works"""
     # Disable caching of query results
     rotki = rotkehlchen_api_server_with_exchanges.rest_api.rotkehlchen
@@ -143,7 +143,7 @@ def test_query_owned_assets(
 
 
 @pytest.mark.parametrize('new_db_unlock_actions', [None])
-def test_ignored_assets_modification(rotkehlchen_api_server):
+def test_ignored_assets_modification(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that using the ignored assets endpoint to modify the ignored assets list works fine"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     clean_ignored_assets(rotki.data.db)
@@ -200,7 +200,7 @@ def test_ignored_assets_modification(rotkehlchen_api_server):
 @pytest.mark.parametrize('new_db_unlock_actions', [None])
 @pytest.mark.parametrize('method', ['put', 'delete'])
 @pytest.mark.parametrize('data_migration_version', [0])
-def test_ignored_assets_endpoint_errors(rotkehlchen_api_server, method):
+def test_ignored_assets_endpoint_errors(rotkehlchen_api_server: 'APIServer', method: str) -> None:
     """Test errors are handled properly at the ignored assets endpoint"""
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
 
@@ -288,7 +288,7 @@ def test_ignored_assets_endpoint_errors(rotkehlchen_api_server, method):
         assert rotki.data.db.get_ignored_asset_ids(cursor) >= set(ignored_assets)
 
 
-def test_get_all_assets(rotkehlchen_api_server):
+def test_get_all_assets(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that fetching all assets returns a paginated result."""
     response = requests.post(
         api_url_for(
@@ -553,7 +553,7 @@ def test_get_all_assets(rotkehlchen_api_server):
     assert result['entries'][0]['symbol'] == 'DAI'
 
 
-def test_get_assets_mappings(rotkehlchen_api_server):
+def test_get_assets_mappings(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that providing a list of asset identifiers, the appropriate assets mappings are returned."""  # noqa: E501
     queried_assets = ('BTC', 'TRY', 'EUR', A_DAI.identifier, A_OP.identifier)
     with GlobalDBHandler().conn.write_ctx() as write_cursor:
@@ -632,7 +632,7 @@ def test_get_assets_mappings(rotkehlchen_api_server):
     assert all(identifier in {'BTC', 'TRY'} for identifier in assets)
 
 
-def test_search_assets(rotkehlchen_api_server):
+def test_search_assets(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that searching for assets using a keyword works."""
     response = requests.post(
         api_url_for(
@@ -838,7 +838,7 @@ def test_search_assets(rotkehlchen_api_server):
     assert_error_response(response, contained_in_msg='Failed to deserialize evm chain value prettychain')  # noqa: E501
 
 
-def test_search_assets_with_levenshtein(rotkehlchen_api_server):
+def test_search_assets_with_levenshtein(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that searching for assets using a keyword works(levenshtein approach)."""
     globaldb = GlobalDBHandler()
     # search by address
@@ -967,7 +967,7 @@ def test_search_assets_with_levenshtein(rotkehlchen_api_server):
     assert 'ETH' in {x['identifier'] for x in result}
 
 
-def test_search_nfts_with_levenshtein(rotkehlchen_api_server):
+def test_search_nfts_with_levenshtein(rotkehlchen_api_server: 'APIServer') -> None:
     with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.user_write() as cursor:
         cursor.execute('INSERT INTO assets VALUES (?)', ('my-nft-identifier',))
         cursor.execute(
@@ -1042,7 +1042,7 @@ def test_search_nfts_with_levenshtein(rotkehlchen_api_server):
         assert current_levenshtein_distance >= previous_levenshtein_distance
 
 
-def test_only_ignored_assets(rotkehlchen_api_server):
+def test_only_ignored_assets(rotkehlchen_api_server: 'APIServer') -> None:
     """Test it's possible to ask to only see the ignored assets"""
     clean_ignored_assets(rotkehlchen_api_server.rest_api.rotkehlchen.data.db)
     ignored_assets = [A_GNO.identifier, A_RDN.identifier]

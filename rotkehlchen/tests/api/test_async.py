@@ -1,4 +1,5 @@
 from http import HTTPStatus
+from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
 
 import gevent
@@ -16,10 +17,13 @@ from rotkehlchen.tests.utils.api import (
 from rotkehlchen.tests.utils.exchanges import mock_binance_balance_response, try_get_first_exchange
 from rotkehlchen.types import Location
 
+if TYPE_CHECKING:
+    from rotkehlchen.api.server import APIServer
+
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE, Location.POLONIEX)])
 @pytest.mark.parametrize('should_mock_current_price_queries', [False])
-def test_query_async_tasks(rotkehlchen_api_server_with_exchanges):
+def test_query_async_tasks(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:
     """Test that querying the outcomes of async tasks works as expected
 
     We don't mock price queries in this test only because that cause the tasks
@@ -31,7 +35,7 @@ def test_query_async_tasks(rotkehlchen_api_server_with_exchanges):
     # async query balances of one specific exchange
     server = rotkehlchen_api_server_with_exchanges
     binance = try_get_first_exchange(server.rest_api.rotkehlchen.exchange_manager, Location.BINANCE)  # noqa: E501
-
+    assert binance is not None
     binance_patch = patch.object(binance.session, 'get', side_effect=mock_binance_balance_response)
 
     # Check querying the async task resource when no async task is scheduled
@@ -99,14 +103,15 @@ def test_query_async_tasks(rotkehlchen_api_server_with_exchanges):
 
 
 @pytest.mark.parametrize('added_exchanges', [(Location.BINANCE,)])
-def test_query_async_task_that_died(rotkehlchen_api_server_with_exchanges):
+def test_query_async_task_that_died(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:
     """If an async task dies with an exception check that it's properly handled"""
 
     # async query balances of one specific exchange
     server = rotkehlchen_api_server_with_exchanges
     binance = try_get_first_exchange(server.rest_api.rotkehlchen.exchange_manager, Location.BINANCE)  # noqa: E501
+    assert binance is not None
 
-    def mock_binance_asset_return(*args, **kwargs):  # pylint: disable=unused-argument
+    def mock_binance_asset_return(*args: Any, **kwargs: Any) -> None:  # pylint: disable=unused-argument
         raise ValueError('BOOM!')
 
     binance_patch = patch.object(binance.session, 'request', side_effect=mock_binance_asset_return)
@@ -147,13 +152,14 @@ def test_query_async_task_that_died(rotkehlchen_api_server_with_exchanges):
     assert result['outcome']['message'] == msg
 
 
-def test_cancel_async_task(rotkehlchen_api_server_with_exchanges):
+def test_cancel_async_task(rotkehlchen_api_server_with_exchanges: 'APIServer') -> None:
     """Test that canceling an ongoing async task works fine"""
     # async query balances of one specific exchange
     server = rotkehlchen_api_server_with_exchanges
     binance = try_get_first_exchange(server.rest_api.rotkehlchen.exchange_manager, Location.BINANCE)  # noqa: E501
+    assert binance is not None
 
-    def mock_binance_asset_return(*args, **kwargs):  # pylint: disable=unused-argument
+    def mock_binance_asset_return(*args: Any, **kwargs: Any) -> None:  # pylint: disable=unused-argument
         while True:  # infinite loop so we can cancel it
             gevent.sleep(1)
 
