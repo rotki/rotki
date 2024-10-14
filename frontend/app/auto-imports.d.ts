@@ -173,6 +173,7 @@ declare global {
   const filterAddresses: typeof import('./src/utils/addresses')['filterAddresses']
   const filterAddressesFromWords: typeof import('./src/utils/history/index')['filterAddressesFromWords']
   const findAddressKnownPrefix: typeof import('./src/utils/truncate')['findAddressKnownPrefix']
+  const fromUriEncoded: typeof import('./src/utils/route-uri')['fromUriEncoded']
   const generateRandomScrambleMultiplier: typeof import('./src/utils/session')['generateRandomScrambleMultiplier']
   const get: typeof import('@vueuse/shared')['get']
   const getAccountAddress: typeof import('./src/utils/blockchain/accounts/utils')['getAccountAddress']
@@ -387,6 +388,7 @@ declare global {
   const toSentenceCase: typeof import('@rotki/common')['toSentenceCase']
   const toSnakeCase: typeof import('@rotki/common')['toSnakeCase']
   const toUnit: typeof import('./src/utils/calculation')['toUnit']
+  const toUriEncoded: typeof import('./src/utils/route-uri')['toUriEncoded']
   const toValue: typeof import('vue')['toValue']
   const totalCollateral: typeof import('./src/utils/total-collateral')['totalCollateral']
   const transformCase: typeof import('@rotki/common')['transformCase']
@@ -1046,6 +1048,7 @@ declare module 'vue' {
     readonly filterAddresses: UnwrapRef<typeof import('./src/utils/addresses')['filterAddresses']>
     readonly filterAddressesFromWords: UnwrapRef<typeof import('./src/utils/history/index')['filterAddressesFromWords']>
     readonly findAddressKnownPrefix: UnwrapRef<typeof import('./src/utils/truncate')['findAddressKnownPrefix']>
+    readonly fromUriEncoded: UnwrapRef<typeof import('./src/utils/route-uri')['fromUriEncoded']>
     readonly generateRandomScrambleMultiplier: UnwrapRef<typeof import('./src/utils/session')['generateRandomScrambleMultiplier']>
     readonly get: UnwrapRef<typeof import('@vueuse/shared')['get']>
     readonly getAccountAddress: UnwrapRef<typeof import('./src/utils/blockchain/accounts/utils')['getAccountAddress']>
@@ -1260,6 +1263,7 @@ declare module 'vue' {
     readonly toSentenceCase: UnwrapRef<typeof import('@rotki/common')['toSentenceCase']>
     readonly toSnakeCase: UnwrapRef<typeof import('@rotki/common')['toSnakeCase']>
     readonly toUnit: UnwrapRef<typeof import('./src/utils/calculation')['toUnit']>
+    readonly toUriEncoded: UnwrapRef<typeof import('./src/utils/route-uri')['toUriEncoded']>
     readonly toValue: UnwrapRef<typeof import('vue')['toValue']>
     readonly totalCollateral: UnwrapRef<typeof import('./src/utils/total-collateral')['totalCollateral']>
     readonly transformCase: UnwrapRef<typeof import('@rotki/common')['transformCase']>

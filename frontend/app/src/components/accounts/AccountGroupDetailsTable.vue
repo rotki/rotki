@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { type LocationQuery, RouterExpandedIdsSchema } from '@/types/route';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 import type {
   BlockchainAccountGroupRequestPayload,
   BlockchainAccountWithBalance,
 } from '@/types/blockchain/accounts';
+
+const query = defineModel<LocationQuery>('query', { required: false, default: () => ({}) });
 
 const props = defineProps<{
   groupId: string;
@@ -16,6 +19,8 @@ const emit = defineEmits<{
   (e: 'edit', account: AccountManageState): void;
 }>();
 
+const expanded = ref<string[]>([]);
+
 const { fetchGroupAccounts } = useBlockchainStore();
 
 const {
@@ -24,6 +29,14 @@ const {
   pagination,
   sort,
 } = usePaginationFilters<BlockchainAccountWithBalance, BlockchainAccountGroupRequestPayload>(fetchGroupAccounts, {
+  history: 'external',
+  extraParams: computed(() => ({
+    expanded: get(expanded).join(','),
+  })),
+  onUpdateFilters(query) {
+    const { expanded: expandedIds } = RouterExpandedIdsSchema.parse(query);
+    set(expanded, expandedIds);
+  },
   customPageParams: computed(() => ({
     groupId: props.groupId,
     chain: props.chains,
@@ -32,6 +45,7 @@ const {
   defaultSortBy: {
     key: 'usdValue',
   },
+  query,
 });
 
 useBlockchainAccountLoading(fetchData);
@@ -49,6 +63,7 @@ defineExpose({
   <AccountBalancesTable
     v-model:pagination="pagination"
     v-model:sort="sort"
+    v-model:expanded-ids="expanded"
     class="bg-white dark:bg-[#1E1E1E]"
     :accounts="accounts"
     :is-evm="isEvm"

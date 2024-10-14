@@ -11,6 +11,7 @@ import type {
   BlockchainAccountRequestPayload,
 } from '@/types/blockchain/accounts';
 import type { ComponentExposed } from 'vue-component-type-helpers';
+import type { LocationQuery } from '@/types/route';
 
 const props = defineProps<{
   category: string;
@@ -28,6 +29,8 @@ const chainExclusionFilter = ref<Record<string, string[]>>({});
 const accountTable = ref<ComponentExposed<typeof AccountBalancesTable>>();
 const detailsTable = ref<ComponentExposed<typeof AccountGroupDetailsTable>>();
 const tab = ref<number>(0);
+const expanded = ref<string[]>([]);
+const query = ref<LocationQuery>({});
 
 const blockchainStore = useBlockchainStore();
 const { fetchAccounts: fetchAccountsPage } = blockchainStore;
@@ -55,11 +58,28 @@ const {
   extraParams: computed(() => ({
     tags: get(visibleTags),
     ...(get(category) !== 'all' ? { category: get(category) } : {}),
+    ...(get(expanded).length > 0
+      ? {
+          tab: get(tab),
+          expanded: get(expanded),
+          ...(get(tab) === 1
+            ? {
+                q: toUriEncoded(get(query)),
+              }
+            : {}),
+        }
+      : {}),
   })),
-  onUpdateFilters(query) {
-    const externalFilterSchema = AccountExternalFilterSchema.parse(query);
-    if (externalFilterSchema.tags)
-      set(visibleTags, externalFilterSchema.tags);
+  onUpdateFilters(filterQuery) {
+    const { tab: qTab, tags, expanded: expandedIds, q } = AccountExternalFilterSchema.parse(filterQuery);
+    if (tags)
+      set(visibleTags, tags);
+    if (qTab !== undefined)
+      set(tab, qTab);
+    if (expandedIds)
+      set(expanded, expandedIds);
+
+    set(query, q ? fromUriEncoded(q) : {});
   },
   customPageParams: computed(() => ({
     excluded: get(chainExclusionFilter),
@@ -184,6 +204,7 @@ defineExpose({
       v-model:pagination="pagination"
       v-model:sort="sort"
       v-model:chain-filter="chainExclusionFilter"
+      v-model:expanded-ids="expanded"
       :data-category="category"
       class="mt-4"
       group
@@ -202,6 +223,7 @@ defineExpose({
             <AccountGroupDetailsTable
               v-if="row.expansion === 'accounts'"
               ref="detailsTable"
+              v-model:query="query"
               :chains="getChains(row)"
               :tags="visibleTags"
               :group-id="getGroupId(row)"

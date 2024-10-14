@@ -1,5 +1,6 @@
 import z from 'zod';
 import { type MatchedKeyword, type SearchMatcher, assetDeserializer, assetSuggestions } from '@/types/filtering';
+import { CommaSeparatedStringSchema } from '@/types/route';
 import type { MaybeRef } from '@vueuse/core';
 import type { FilterSchema } from '@/composables/filter-paginate';
 
@@ -66,7 +67,5 @@ export function useManualBalanceFilter(locations: MaybeRef<string[]>): FilterSch
 }
 
 export const ManualBalancesFilterSchema = z.object({
-  tags: z.string()
-    .optional()
-    .transform(val => (val ? val.split(',') : [])),
+  tags: CommaSeparatedStringSchema,
 });

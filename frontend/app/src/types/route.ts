@@ -6,6 +6,14 @@ export type LocationQuery = Record<string, LocationQueryValue | LocationQueryVal
 
 export type RawLocationQuery = Record<string, LocationQueryValueRaw | LocationQueryValueRaw[] | boolean>;
 
+export const CommaSeparatedStringSchema = z.string()
+  .optional()
+  .transform(val => (val ? val.split(',') : []));
+
+export const RouterExpandedIdsSchema = z.object({
+  expanded: CommaSeparatedStringSchema,
+});
+
 export const RouterPaginationOptionsSchema = z.object({
   itemsPerPage: z
     .string()

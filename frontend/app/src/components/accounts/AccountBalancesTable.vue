@@ -21,21 +21,20 @@ const pagination = defineModel<TablePaginationData>('pagination', { required: tr
 
 const sort = defineModel<DataTableSortData<T>>('sort', { required: true });
 
-const props = withDefaults(
-  defineProps<{
-    accounts: Collection<T>;
-    group?: boolean;
-    loading?: boolean;
-    showGroupLabel?: boolean;
-    isEvm?: boolean;
-  }>(),
-  {
-    loading: false,
-    group: false,
-    showGroupLabel: false,
-    isEvm: false,
-  },
-);
+const expandedIds = defineModel<string[]>('expandedIds', { required: true });
+
+const props = withDefaults(defineProps<{
+  accounts: Collection<T>;
+  group?: boolean;
+  loading?: boolean;
+  showGroupLabel?: boolean;
+  isEvm?: boolean;
+}>(), {
+  loading: false,
+  group: false,
+  showGroupLabel: false,
+  isEvm: false,
+});
 
 const emit = defineEmits<{
   (e: 'edit', account: AccountManageState): void;
@@ -44,7 +43,6 @@ const emit = defineEmits<{
 
 const { t } = useI18n();
 
-const expanded = ref<DataRow[]>([]) as Ref<DataRow[]>;
 const collapsed = ref<DataRow[]>([]) as Ref<DataRow[]>;
 
 const { currencySymbol } = storeToRefs(useGeneralSettingsStore());
@@ -73,6 +71,15 @@ const rows = computed<DataRow[]>(() => {
 });
 
 const anyExpansion = computed(() => get(rows).some(item => item.expansion));
+
+const expanded = computed<DataRow[]>(({
+  get() {
+    return get(rows).filter(row => get(expandedIds).includes(row.id));
+  },
+  set(value: DataRow[]) {
+    set(expandedIds, get(value).map(row => row.id));
+  },
+}));
 
 const cols = computed<DataTableColumn<DataRow>[]>(() => {
   const currency = { symbol: get(currencySymbol) };
@@ -205,27 +212,6 @@ function getChains(row: DataRow): string[] {
     ? row.chains
     : row.chains.filter(chain => !excluded.includes(chain));
 }
-
-/**
- * Tracks the row changes and collapses the expanded row if the updated entry only has a single chain.
- * This is for the case where we delete one of the two chains and then we go to a single chain group.
- */
-watch(rows, (rows) => {
-  const expandedRows = get(expanded);
-
-  const collapseRows: string[] = [];
-  for (const expandedItem of expandedRows) {
-    const matchingRow = rows.find(row => row.id === expandedItem.id);
-    if (!matchingRow)
-      continue;
-
-    if ('chains' in matchingRow && matchingRow.chains.length === 1)
-      collapseRows.push(matchingRow.id);
-  }
-
-  if (collapseRows.length > 0)
-    set(expanded, expandedRows.filter(row => !collapseRows.includes(row.id)));
-});
 
 defineExpose({
   confirmDelete,
