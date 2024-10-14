@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`7622` Rotki will now support Umami Finance in arbitrum. All related historical events will be properly recognized and any balances parked in the platform will be detected.
 * :feature:`-` Puffer finance airdrop and PufferXeigen airdrops are now properly seen as airdrops.
 * :feature:`7540` Rotki will now support Yearn V3 vaults.
 * :feature:`-` Gitcoin donations for more rounds will now be properly seen by rotki.
