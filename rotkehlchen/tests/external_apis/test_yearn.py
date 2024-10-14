@@ -51,7 +51,7 @@ def test_yearn_api(database, ethereum_inquirer):
         )
 
     with patch.object(requests, 'get', wraps=mock_yearn_api):
-        query_yearn_vaults(db=database, ethereum_inquirer=ethereum_inquirer)
+        query_yearn_vaults(db=database)
 
     with GlobalDBHandler().conn.read_ctx() as cursor:
         state_after = globaldb_get_unique_cache_value(
@@ -95,7 +95,7 @@ def test_yearn_api(database, ethereum_inquirer):
     # trigger the query again and check that the timestamp was updated
     future_timestamp = datetime.datetime.now(tz=datetime.UTC) + datetime.timedelta(seconds=WEEK_IN_SECONDS)  # noqa: E501
     with freeze_time(future_timestamp), patch.object(requests, 'get', wraps=mock_yearn_api):
-        query_yearn_vaults(db=database, ethereum_inquirer=ethereum_inquirer)
+        query_yearn_vaults(db=database)
 
     with GlobalDBHandler().conn.read_ctx() as cursor:
         new_queried_ts = globaldb_get_unique_cache_last_queried_ts_by_key(
