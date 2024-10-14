@@ -664,8 +664,13 @@ def test_compound_v3_token_balances_liabilities(
     """Test that the balances of compound v3 supplied/borrowed tokens are correct."""
     c_usdc_v3 = EvmToken('eip155:1/erc20:0xc3d688B66703497DAA19211EEdff47f25384cdc3')
 
-    with patch(
-        target='rotkehlchen.chain.ethereum.node_inquirer.EthereumInquirer.ensure_cache_data_is_updated',
+    with (
+        patch(
+            target='rotkehlchen.chain.ethereum.node_inquirer.EthereumInquirer.ensure_cache_data_is_updated',
+        ),
+        patch(
+            target='rotkehlchen.chain.ethereum.modules.yearn.decoder.should_update_protocol_cache',
+        ),
     ):
         blockchain.ethereum.transactions_decoder.decode_transaction_hashes(
             ignore_cache=True,

@@ -9,6 +9,8 @@ from rotkehlchen.chain.ethereum.modules.yearn.constants import (
     YEARN_LABEL_V1,
     YEARN_LABEL_V2,
 )
+from rotkehlchen.chain.ethereum.modules.yearn.utils import query_yearn_vaults
+from rotkehlchen.chain.ethereum.utils import should_update_protocol_cache
 from rotkehlchen.chain.evm.constants import ZERO_ADDRESS
 from rotkehlchen.chain.evm.decoding.interfaces import DecoderInterface, ReloadableDecoderMixin
 from rotkehlchen.chain.evm.decoding.structures import (
@@ -22,7 +24,12 @@ from rotkehlchen.constants.resolver import ethaddress_to_identifier
 from rotkehlchen.errors.asset import UnknownAsset, WrongAssetType
 from rotkehlchen.globaldb.handler import GlobalDBHandler
 from rotkehlchen.history.events.structures.types import HistoryEventSubType, HistoryEventType
-from rotkehlchen.types import YEARN_VAULTS_V1_PROTOCOL, YEARN_VAULTS_V2_PROTOCOL, ChainID
+from rotkehlchen.types import (
+    YEARN_VAULTS_V1_PROTOCOL,
+    YEARN_VAULTS_V2_PROTOCOL,
+    CacheType,
+    ChainID,
+)
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.manager import EthereumInquirer
@@ -34,10 +41,6 @@ YEARN_DEPOSIT_AMOUNT_4_BYTES = b'\xd0\xe3\r\xb0'
 YEARN_DEPOSIT_4_BYTES = b'\xb6\xb5_%'
 YEARN_WITHDRAW_AMOUNT_4_BYTES = b'.\x1a}M'
 YEARN_WITHDRAW_4_BYTES = b'<\xcf\xd6\x0b'
-EMPTY_VAULTS: dict[str, set['ChecksumEvmAddress']] = {
-    YEARN_VAULTS_V1_PROTOCOL: set(),
-    YEARN_VAULTS_V2_PROTOCOL: set(),
-}
 
 
 def _get_vault_token_name(vault_address: 'ChecksumEvmAddress') -> str:
@@ -62,16 +65,31 @@ class YearnDecoder(DecoderInterface, ReloadableDecoderMixin):
             base_tools=base_tools,
             msg_aggregator=msg_aggregator,
         )
-        self.vaults = EMPTY_VAULTS
+        self.vaults: dict[str, set[ChecksumEvmAddress]] = {
+            YEARN_VAULTS_V1_PROTOCOL: set(),
+            YEARN_VAULTS_V2_PROTOCOL: set(),
+        }
 
     def reload_data(self) -> None:
-        """Reload vaults from DB."""
-        self.vaults = EMPTY_VAULTS
+        """Check that cache is up to date and refresh cache from db"""
+        if should_update_protocol_cache(CacheType.YEARN_VAULTS) is True:
+            query_yearn_vaults(db=self.evm_inquirer.database)
+        elif len(self.vaults[YEARN_VAULTS_V2_PROTOCOL]) != 0:
+            return  # we didn't update the globaldb cache and we have the data already
+
         with GlobalDBHandler().conn.read_ctx() as cursor:
-            cursor.execute(
-                'SELECT protocol, address FROM evm_tokens WHERE protocol IN (?, ?) AND chain=?',
-                (YEARN_VAULTS_V1_PROTOCOL, YEARN_VAULTS_V2_PROTOCOL, ChainID.ETHEREUM.serialize_for_db()),  # noqa: E501
+            query_body = 'FROM evm_tokens WHERE protocol IN (?, ?) AND chain=?'
+            bindings = (
+                YEARN_VAULTS_V1_PROTOCOL,
+                YEARN_VAULTS_V2_PROTOCOL,
+                ChainID.ETHEREUM.serialize_for_db(),
             )
+            cursor.execute(f'SELECT COUNT(*) {query_body}', bindings)
+            if cursor.fetchone()[0] == len(self.vaults[YEARN_VAULTS_V2_PROTOCOL]) + len(self.vaults[YEARN_VAULTS_V1_PROTOCOL]):  # noqa: E501
+                return  # up to date
+
+            # we are missing new vaults. Populate the cache
+            cursor.execute(f'SELECT protocol, address {query_body}', bindings)
             for row in cursor:
                 self.vaults[row[0]].add(string_to_evm_address(row[1]))
 

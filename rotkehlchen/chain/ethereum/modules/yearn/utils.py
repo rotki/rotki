@@ -27,7 +27,6 @@ from rotkehlchen.types import (
 )
 
 if TYPE_CHECKING:
-    from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
 
 YEARN_OLD_API = 'https://api.yexporter.io/v1/chains/1/vaults/all'  # contains v1 and some of the v2 vaults  # noqa: E501
@@ -118,7 +117,7 @@ def _merge_data_yearn_vaults() -> tuple[list[dict[str, Any]] | None, str | None]
     return deduplicated_data, None
 
 
-def query_yearn_vaults(db: 'DBHandler', ethereum_inquirer: 'EthereumInquirer') -> None:
+def query_yearn_vaults(db: 'DBHandler') -> None:
     """Query yearn API and ensure that all the tokens exist locally. If they exist but the protocol
     is not the correct one, then the asset will be edited.
 

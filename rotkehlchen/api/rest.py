@@ -270,7 +270,6 @@ from rotkehlchen.utils.version_check import get_current_version
 
 if TYPE_CHECKING:
     from rotkehlchen.chain.bitcoin.xpub import XpubData
-    from rotkehlchen.chain.ethereum.manager import EthereumManager
     from rotkehlchen.chain.evm.accounting.structures import BaseEventSettings
     from rotkehlchen.chain.evm.manager import EvmManager
     from rotkehlchen.db.dbhandler import DBHandler
@@ -4685,11 +4684,7 @@ class RestAPI:
                 )
 
         try:
-            ethereum_manager: EthereumManager = self.rotkehlchen.chains_aggregator.get_chain_manager(SupportedBlockchain.ETHEREUM)  # noqa: E501
-            query_yearn_vaults(
-                db=self.rotkehlchen.data.db,
-                ethereum_inquirer=ethereum_manager.node_inquirer,
-            )
+            query_yearn_vaults(db=self.rotkehlchen.data.db)
         except RemoteError as e:
             return wrap_in_fail_result(
                 message=f'Failed to refresh yearn vaults cache due to: {e!s}',
