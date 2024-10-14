@@ -41,6 +41,7 @@ interface UsePaginationFiltersOptions<
     key?: keyof V | (keyof V)[];
     ascending?: boolean[];
   };
+  query?: Ref<LocationQuery>;
 }
 
 interface UsePaginationFilterReturn<
@@ -118,6 +119,7 @@ export function usePaginationFilters<
       matchers: computed<X[]>(() => []),
       RouteFilterSchema: undefined,
     }),
+    query = ref<LocationQuery>({}),
   } = options;
 
   const { filters, matchers, RouteFilterSchema } = filterSchema();
@@ -324,22 +326,23 @@ export function usePaginationFilters<
    * sets the pagination and filters values from route query
    */
   const applyRouteFilter = (): void => {
-    if (get(history) === false)
+    const hasHistory = get(history);
+    if (hasHistory === false)
       return;
 
-    const query = get(route).query;
+    const routeQuery = hasHistory === 'router' ? get(route).query : get(query);
 
-    if (isEmpty(query)) {
+    if (isEmpty(routeQuery)) {
       // for empty query, we reset the filters, and pagination to defaults
-      onUpdateFilters?.(query);
+      onUpdateFilters?.(routeQuery);
       set(filters, RouteFilterSchema?.parse({}));
       return setOptions(defaultOptions<V>(options.defaultSortBy));
     }
 
-    const parsedOptions = RouterPaginationOptionsSchema.parse(query);
-    const parsedFilters = RouteFilterSchema?.parse(query);
+    const parsedOptions = RouterPaginationOptionsSchema.parse(routeQuery);
+    const parsedFilters = RouteFilterSchema?.parse(routeQuery);
 
-    onUpdateFilters?.(query);
+    onUpdateFilters?.(routeQuery);
 
     set(filters, parsedFilters);
     set(paginationOptions, {
@@ -373,7 +376,7 @@ export function usePaginationFilters<
       sortBy: sortBy.map(s => s.toString()),
       sortDesc: sortDesc.map(x => x.toString()),
       ...selectedFilters,
-      ...extraParamsConverted,
+      ...nonEmptyProperties(extraParamsConverted, true),
     };
   };
 
@@ -429,12 +432,18 @@ export function usePaginationFilters<
     if (isEqual(params, op))
       return;
 
-    if (get(userAction) && get(history) !== false) {
+    const hasHistory = get(history);
+    if (get(userAction) && hasHistory !== false) {
       // Route should only be updated on user action otherwise it messes with forward navigation.
-      const query = getQuery();
+      const routeQuery = getQuery();
       // prevent pushing same route
-      if (!isEqual(route.query, query)) {
-        await router.push({ query });
+      if (!isEqual(route.query, routeQuery)) {
+        if (hasHistory === 'router') {
+          await router.push({ query: routeQuery });
+        }
+        else {
+          set(query, routeQuery);
+        }
         set(userAction, false);
       }
     }
