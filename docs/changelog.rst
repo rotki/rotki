@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :bug:`8715` Fix the issue where the historical price doesn't refresh after being updated on the history events page.
 * :feature:`8696` It's now possible to input Defillama pro API keys in rotki and have higher rate limits. Buy a defillama pro key here: https://defillama.com/pro-api. Similar for coingecko pro API keys. You can get one here: https://www.coingecko.com/en/premium/pricing
 * :bug:`-` During user DB upgrade if there is an irregular shutdown the previous DB backup will be properly located in the rotki data user directory and not the system temp directory.
 * :feature:`-` Gnosis pay referral rewards will now be properly seen as referrals and not generic receive.

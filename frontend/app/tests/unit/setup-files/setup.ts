@@ -21,11 +21,12 @@ beforeAll(() => {
   vi.mock('@/composables/api/balances/price', () => ({
     usePriceApi: vi.fn().mockReturnValue({
       getPriceCache: vi.fn().mockResolvedValue([]),
-      createPriceCache: vi.fn().mockResolvedValue(1),
-      deletePriceCache: vi.fn().mockResolvedValue(1),
-      queryHistoricalRate: vi.fn().mockResolvedValue(1),
-      queryFiatExchangeRates: vi.fn().mockResolvedValue(1),
-      queryPrices: vi.fn().mockResolvedValue(1),
+      createPriceCache: vi.fn().mockResolvedValue({ taskId: 1 }),
+      deletePriceCache: vi.fn().mockResolvedValue(true),
+      queryHistoricalRate: vi.fn().mockResolvedValue({ taskId: 1 }),
+      queryHistoricalRates: vi.fn().mockResolvedValue({ taskId: 1 }),
+      queryFiatExchangeRates: vi.fn().mockResolvedValue({ taskId: 1 }),
+      queryPrices: vi.fn().mockResolvedValue({ taskId: 1 }),
     }),
   }));
 
