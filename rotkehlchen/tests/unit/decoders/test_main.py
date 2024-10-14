@@ -95,6 +95,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'Paraswap',
         'Paladin',
         'PickleFinance',
+        'Puffer',
         'Safemultisig',
         'ScrollBridge',
         'Shutter',
@@ -206,6 +207,7 @@ def test_decoders_initialization(ethereum_transaction_decoder: EthereumTransacti
         'odos-v1',
         'odos-v2',
         'sky',
+        'puffer',
     }
 
 

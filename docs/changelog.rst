@@ -2,6 +2,7 @@
 Changelog
 =========
 
+* :feature:`-` Puffer finance airdrop and PufferXeigen airdrops are now properly seen as airdrops.
 * :feature:`7540` Rotki will now support Yearn V3 vaults.
 * :feature:`-` Gitcoin donations for more rounds will now be properly seen by rotki.
 * :feature:`7920` Rotki will now create calendar reminders for airdrop claim deadlines
