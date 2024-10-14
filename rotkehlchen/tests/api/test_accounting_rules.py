@@ -3,7 +3,7 @@ import random
 from http import HTTPStatus
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Literal, get_args
+from typing import Any, Literal, get_args
 
 import pytest
 import requests
@@ -85,7 +85,7 @@ def _setup_conflict_tests(
 
 
 @pytest.mark.parametrize('initialize_accounting_rules', [True])
-def test_query_rules(rotkehlchen_api_server):
+def test_query_rules(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that querying accounting rules works fine"""
     response = requests.post(
         api_url_for(  # test matching counterparty None
@@ -105,9 +105,9 @@ def test_query_rules(rotkehlchen_api_server):
 
 @pytest.mark.parametrize('db_settings', [{'include_crypto2crypto': False}])
 @pytest.mark.parametrize('initialize_accounting_rules', [False])
-def test_manage_rules(rotkehlchen_api_server, db_settings):
+def test_manage_rules(rotkehlchen_api_server: 'APIServer', db_settings: dict[str, bool]) -> None:
     """Test basic operations in the endpoint for managing accounting rules"""
-    rule_1 = {
+    rule_1: dict[str, Any] = {
         'taxable': {'value': True, 'linked_setting': 'include_crypto2crypto'},
         'count_entire_amount_spend': {
             'value': False,
@@ -118,7 +118,7 @@ def test_manage_rules(rotkehlchen_api_server, db_settings):
         'event_subtype': HistoryEventSubType.SPEND.serialize(),
         'counterparty': 'uniswap',
     }
-    rule_2 = {
+    rule_2: dict[str, Any] = {
         'taxable': {'value': True},
         'count_entire_amount_spend': {'value': False},
         'count_cost_basis_pnl': {'value': True},
@@ -259,7 +259,7 @@ def test_manage_rules(rotkehlchen_api_server, db_settings):
     assert result['entries_total'] == 1
 
 
-def test_rules_info(rotkehlchen_api_server):
+def test_rules_info(rotkehlchen_api_server: 'APIServer') -> None:
     response = requests.get(
         api_url_for(
             rotkehlchen_api_server,
@@ -275,7 +275,7 @@ def test_rules_info(rotkehlchen_api_server):
 def test_solving_conflicts(
         rotkehlchen_api_server: APIServer,
         latest_accounting_rules: Path,
-):
+) -> None:
     """Test solving conflicts using a different method for each rule"""
     _setup_conflict_tests(rotkehlchen_api_server, latest_accounting_rules)
     conflict_resolution = [
@@ -307,7 +307,7 @@ def test_solving_conflicts_all(
         rotkehlchen_api_server: APIServer,
         latest_accounting_rules: Path,
         solve_all_using: Literal['remote', 'local'],
-):
+) -> None:
     """Test that solving all the conflicts using either local or remote works"""
     _setup_conflict_tests(rotkehlchen_api_server, latest_accounting_rules)
     response = requests.patch(
@@ -340,7 +340,7 @@ def test_solving_conflicts_all(
 def test_listing_conflicts(
         rotkehlchen_api_server: APIServer,
         latest_accounting_rules: Path,
-):
+) -> None:
     """Test that serialization for conflicts works as expected"""
     _setup_conflict_tests(rotkehlchen_api_server, latest_accounting_rules)
     response = requests.post(
@@ -400,7 +400,7 @@ def test_listing_conflicts(
 
 
 @pytest.mark.parametrize('initialize_accounting_rules', [False])
-def test_cache_invalidation(rotkehlchen_api_server: APIServer):
+def test_cache_invalidation(rotkehlchen_api_server: APIServer) -> None:
     """
     Test that the cache for events affected by an accounting rule gets correctly invalidated
     when operations happen modifying the rule that affects them.
@@ -530,7 +530,7 @@ def test_cache_invalidation(rotkehlchen_api_server: APIServer):
 
 
 @pytest.mark.parametrize('initialize_accounting_rules', [True])
-def test_import_export_accounting_rules(rotkehlchen_api_server: 'APIServer'):
+def test_import_export_accounting_rules(rotkehlchen_api_server: 'APIServer') -> None:
     """Test that exporting and importing accounting rules works fine."""
     async_query = random.choice([True, False])
     with rotkehlchen_api_server.rest_api.rotkehlchen.data.db.conn.read_ctx() as cursor:

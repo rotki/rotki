@@ -1,6 +1,7 @@
 import json
 import random
 import re
+from collections.abc import Callable
 from http import HTTPStatus
 from typing import TYPE_CHECKING, Any
 from unittest.mock import patch
@@ -36,9 +37,9 @@ def count_total_assets() -> int:
         return cursor.fetchone()[0]
 
 
-def mock_asset_updates(original_requests_get, latest: int, updates: dict[str, Any], sql_actions: dict[str, dict[str, str]]):  # noqa: E501
+def mock_asset_updates(original_requests_get: Callable[..., requests.Response], latest: int, updates: dict[str, Any], sql_actions: dict[str, dict[str, str]]) -> Any:  # noqa: E501
 
-    def mock_requests_get(url, *args, **kwargs):  # pylint: disable=unused-argument
+    def mock_requests_get(url: str, *args: Any, **kwargs: Any) -> requests.Response | MockResponse:  # pylint: disable=unused-argument
         if 'github' not in url:
             return original_requests_get(url, *args, **kwargs)
 
