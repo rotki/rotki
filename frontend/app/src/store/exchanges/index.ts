@@ -112,11 +112,11 @@ export const useExchangesStore = defineStore('exchanges', () => {
     }
     catch (error: any) {
       setMessage({
-        title: t('actions.balances.exchange_setup.title').toString(),
+        title: t('actions.balances.exchange_setup.title'),
         description: t('actions.balances.exchange_setup.description', {
           exchange: exchange.location,
           error: error.message,
-        }).toString(),
+        }),
       });
       return false;
     }

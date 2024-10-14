@@ -40,7 +40,7 @@ export function useAssets(): UseAssetsReturn {
       const taskType = TaskType.ASSET_UPDATE;
       const { taskId } = await checkForAssetUpdate();
       const { result } = await awaitTask<AssetDBVersion, TaskMeta>(taskId, taskType, {
-        title: t('actions.assets.versions.task.title').toString(),
+        title: t('actions.assets.versions.task.title'),
       });
 
       return {
@@ -50,7 +50,7 @@ export function useAssets(): UseAssetsReturn {
     }
     catch (error: any) {
       if (!isTaskCancelled(error)) {
-        const title = t('actions.assets.versions.task.title').toString();
+        const title = t('actions.assets.versions.task.title');
         const description = t('actions.assets.versions.error.description', {
           message: error.message,
         }).toString();
@@ -71,7 +71,7 @@ export function useAssets(): UseAssetsReturn {
     try {
       const { taskId } = await performUpdate(version, resolution);
       const { result } = await awaitTask<AssetUpdateResult, TaskMeta>(taskId, TaskType.ASSET_UPDATE_PERFORM, {
-        title: t('actions.assets.update.task.title').toString(),
+        title: t('actions.assets.update.task.title'),
       });
 
       if (typeof result === 'boolean') {
@@ -86,7 +86,7 @@ export function useAssets(): UseAssetsReturn {
     }
     catch (error: any) {
       if (!isTaskCancelled(error)) {
-        const title = t('actions.assets.update.task.title').toString();
+        const title = t('actions.assets.update.task.title');
         const description = t('actions.assets.update.error.description', {
           message: error.message,
         }).toString();
@@ -155,7 +155,7 @@ export function useAssets(): UseAssetsReturn {
         if (!directory) {
           return {
             success: false,
-            message: t('assets.backup.missing_directory').toString(),
+            message: t('assets.backup.missing_directory'),
           };
         }
         file = directory;

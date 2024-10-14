@@ -15,7 +15,7 @@ export const useQueriedAddressesStore = defineStore('session/queried-addresses',
       setMessage({
         description: t('actions.session.add_queriable_address.error.message', {
           message: error.message,
-        }).toString(),
+        }),
       });
     }
   }
@@ -28,7 +28,7 @@ export const useQueriedAddressesStore = defineStore('session/queried-addresses',
       setMessage({
         description: t('actions.session.delete_queriable_address.error.message', {
           message: error.message,
-        }).toString(),
+        }),
       });
     }
   }
@@ -41,7 +41,7 @@ export const useQueriedAddressesStore = defineStore('session/queried-addresses',
       setMessage({
         description: t('actions.session.fetch_queriable_address.error.message', {
           message: error.message,
-        }).toString(),
+        }),
       });
     }
   }

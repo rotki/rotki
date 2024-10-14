@@ -189,7 +189,7 @@ export const useSessionStore = defineStore('session', () => {
     try {
       const success = await usersApi.changeUserPassword(get(username), currentPassword, newPassword);
       setMessage({
-        description: t('actions.session.password_change.success').toString(),
+        description: t('actions.session.password_change.success'),
         success: true,
       });
 
@@ -207,7 +207,7 @@ export const useSessionStore = defineStore('session', () => {
       setMessage({
         description: t('actions.session.password_change.error', {
           message: error.message,
-        }).toString(),
+        }),
       });
       return {
         success: false,

@@ -167,7 +167,7 @@ export const useAddressesNamesStore = defineStore('blockchains/accounts/addresse
       logger.error(error);
       const message = error?.message ?? error ?? '';
       notify({
-        title: t('address_book.actions.fetch.error.title').toString(),
+        title: t('address_book.actions.fetch.error.title'),
         message: t('address_book.actions.fetch.error.message', {
           message,
         }),

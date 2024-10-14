@@ -50,16 +50,15 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
 
   const fetchV2Balances = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
-      title: t('actions.defi.uniswap.task.title', { v: 2 }).toString(),
+      title: t('actions.defi.uniswap.task.title', { v: 2 }),
     };
 
     const onError: OnError = {
-      title: t('actions.defi.uniswap.error.title', { v: 2 }).toString(),
-      error: message =>
-        t('actions.defi.uniswap.error.description', {
-          error: message,
-          v: 2,
-        }).toString(),
+      title: t('actions.defi.uniswap.error.title', { v: 2 }),
+      error: message => t('actions.defi.uniswap.error.description', {
+        error: message,
+        v: 2,
+      }),
     };
 
     await fetchDataAsync(
@@ -88,17 +87,16 @@ export const useUniswapStore = defineStore('defi/uniswap', () => {
 
   const fetchV3Balances = async (refresh = false): Promise<void> => {
     const meta = {
-      title: t('actions.defi.uniswap.task.title', { v: 3 }).toString(),
+      title: t('actions.defi.uniswap.task.title', { v: 3 }),
       premium: get(isPremium),
     };
 
     const onError: OnError = {
-      title: t('actions.defi.uniswap.error.title', { v: 3 }).toString(),
-      error: message =>
-        t('actions.defi.uniswap.error.description', {
-          error: message,
-          v: 3,
-        }).toString(),
+      title: t('actions.defi.uniswap.error.title', { v: 3 }),
+      error: message => t('actions.defi.uniswap.error.description', {
+        error: message,
+        v: 3,
+      }),
     };
 
     await fetchDataAsync(

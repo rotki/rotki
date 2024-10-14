@@ -123,7 +123,7 @@ export const useExchangeBalancesStore = defineStore('balances/exchanges', () => 
         location,
         title: t('actions.balances.exchange_balances.task.title', {
           location,
-        }).toString(),
+        }),
       };
 
       const { result } = await awaitTask<AssetBalances, ExchangeMeta>(taskId, taskType, meta, true);
@@ -139,10 +139,10 @@ export const useExchangeBalancesStore = defineStore('balances/exchanges', () => 
         const message = t('actions.balances.exchange_balances.error.message', {
           location,
           error: error.message,
-        }).toString();
+        });
         const title = t('actions.balances.exchange_balances.error.title', {
           location,
-        }).toString();
+        });
 
         notify({
           title,

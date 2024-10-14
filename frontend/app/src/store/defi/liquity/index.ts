@@ -64,15 +64,14 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
 
   const fetchBalances = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
-      title: t('actions.defi.liquity.task.title').toString(),
+      title: t('actions.defi.liquity.task.title'),
     };
 
     const onError: OnError = {
-      title: t('actions.defi.liquity_balances.error.title').toString(),
-      error: message =>
-        t('actions.defi.liquity_balances.error.description', {
-          message,
-        }).toString(),
+      title: t('actions.defi.liquity_balances.error.title'),
+      error: message => t('actions.defi.liquity_balances.error.description', {
+        message,
+      }),
     };
 
     await fetchDataAsync({
@@ -98,15 +97,14 @@ export const useLiquityStore = defineStore('defi/liquity', () => {
 
   const fetchStaking = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
-      title: t('actions.defi.liquity_staking.task.title').toString(),
+      title: t('actions.defi.liquity_staking.task.title'),
     };
 
     const onError: OnError = {
-      title: t('actions.defi.liquity_staking.error.title').toString(),
-      error: message =>
-        t('actions.defi.liquity_staking.error.description', {
-          message,
-        }).toString(),
+      title: t('actions.defi.liquity_staking.error.title'),
+      error: message => t('actions.defi.liquity_staking.error.description', {
+        message,
+      }),
     };
 
     await fetchDataAsync({

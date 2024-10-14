@@ -145,10 +145,10 @@ export const useStatisticsStore = defineStore('statistics', () => {
     }
     catch (error: any) {
       notify({
-        title: t('actions.statistics.net_value.error.title').toString(),
+        title: t('actions.statistics.net_value.error.title'),
         message: t('actions.statistics.net_value.error.message', {
           message: error.message,
-        }).toString(),
+        }),
         display: false,
       });
     }

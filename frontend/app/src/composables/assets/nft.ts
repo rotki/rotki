@@ -22,7 +22,7 @@ export function useNfts(): UseNftsReturn {
       const taskType = TaskType.FETCH_NFTS;
       const { taskId } = await assetsApi.fetchNfts(ignoreCache);
       const { result } = await awaitTask<NftResponse, TaskMeta>(taskId, taskType, {
-        title: t('actions.session.fetch_nfts.task.title').toString(),
+        title: t('actions.session.fetch_nfts.task.title'),
       });
       return {
         result: NftResponse.parse(result),

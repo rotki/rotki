@@ -24,10 +24,10 @@ export const useWatchersStore = defineStore('session/watchers', () => {
     }
     catch (error: any) {
       notify({
-        title: t('actions.session.fetch_watchers.error.title').toString(),
+        title: t('actions.session.fetch_watchers.error.title'),
         message: t('actions.session.fetch_watchers.error.message', {
           message: error.message,
-        }).toString(),
+        }),
         display: true,
       });
     }
