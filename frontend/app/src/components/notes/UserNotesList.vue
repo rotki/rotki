@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import UserNotesFormDialog from '@/components/notes/UserNotesFormDialog.vue';
-import type { Collection } from '@/types/collection';
 import type { UserNote, UserNotesRequestPayload } from '@/types/notes';
 
 const props = withDefaults(defineProps<{ location?: string }>(), {
@@ -39,19 +38,13 @@ const {
   state: notes,
   fetchData,
   pagination,
-} = usePaginationFilters<UserNote, UserNotesRequestPayload, UserNote, Collection<UserNote>>(
-  null,
-  false,
-  useEmptyFilter,
-  fetchUserNotes,
-  {
-    defaultSortBy: {
-      key: ['isPinned', 'lastUpdateTimestamp'],
-      ascending: [false, false],
-    },
-    extraParams,
+} = usePaginationFilters<UserNote, UserNotesRequestPayload>(fetchUserNotes, {
+  defaultSortBy: {
+    key: ['isPinned', 'lastUpdateTimestamp'],
+    ascending: [false, false],
   },
-);
+  extraParams,
+});
 
 const { t } = useI18n();
 

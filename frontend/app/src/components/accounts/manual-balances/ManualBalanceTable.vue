@@ -52,11 +52,10 @@ const {
   Filters,
   Matcher
 >(
-  null,
-  true,
-  () => useManualBalanceFilter(locations),
   payload => (props.type === 'liabilities' ? fetchLiabilities(payload) : fetchBalances(payload)),
   {
+    history: 'router',
+    filterSchema: () => useManualBalanceFilter(locations),
     extraParams: computed(() => ({
       tags: get(tags),
     })),

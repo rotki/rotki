@@ -145,10 +145,9 @@ const {
   Collection<HistoryEventEntry>,
   Filters,
   Matcher
->(
-  null,
-  mainPage,
-  () => useHistoryEventFilter({
+>(fetchHistoryEvents, {
+  history: get(mainPage) ? 'router' : false,
+  filterSchema: () => useHistoryEventFilter({
     protocols: get(protocols).length > 0,
     locations: !!get(location),
     period: !!get(period),
@@ -156,60 +155,57 @@ const {
     eventTypes: get(eventTypes).length > 0,
     eventSubtypes: get(eventSubTypes).length > 0,
   }, entryTypes),
-  fetchHistoryEvents,
-  {
-    onUpdateFilters(query) {
-      const parsedAccounts = RouterAccountsSchema.parse(query);
-      const accountsParsed = parsedAccounts.accounts;
-      if (!accountsParsed || accountsParsed.length === 0)
-        set(accounts, []);
-      else
-        set(accounts, accountsParsed.map(({ address, chain }) => getAccountByAddress(address, chain)));
-    },
-    extraParams: computed(() => ({
-      accounts: get(usedAccounts).map(account => `${account.address}#${account.chain}`),
-      customizedEventsOnly: get(toggles, 'customizedEventsOnly'),
-      excludeIgnoredAssets: !get(toggles, 'showIgnoredAssets'),
-    })),
-    defaultParams: computed<Partial<HistoryEventRequestPayload> | undefined>(() => {
-      if (isDefined(entryTypes)) {
-        return {
-          entryTypes: {
-            values: get(entryTypes),
-          },
-        };
-      }
-      return undefined;
-    }),
-    customPageParams: computed<Partial<HistoryEventRequestPayload>>(() => {
-      const params: Writeable<Partial<HistoryEventRequestPayload>> = {
-        counterparties: get(protocols),
-        eventTypes: get(eventTypes),
-        eventSubtypes: get(eventSubTypes),
-        groupByEventIds: true,
-      };
-
-      const accounts = get(usedAccounts);
-
-      if (isDefined(locationOverview))
-        params.location = toSnakeCase(get(locationOverview));
-
-      if (accounts.length > 0)
-        params.locationLabels = accounts.map(account => account.address);
-
-      if (isDefined(period)) {
-        const { fromTimestamp, toTimestamp } = get(period);
-        params.fromTimestamp = fromTimestamp;
-        params.toTimestamp = toTimestamp;
-      }
-
-      if (isDefined(validators))
-        params.validatorIndices = get(validators).map(v => v.toString());
-
-      return params;
-    }),
+  onUpdateFilters(query) {
+    const parsedAccounts = RouterAccountsSchema.parse(query);
+    const accountsParsed = parsedAccounts.accounts;
+    if (!accountsParsed || accountsParsed.length === 0)
+      set(accounts, []);
+    else
+      set(accounts, accountsParsed.map(({ address, chain }) => getAccountByAddress(address, chain)));
   },
-);
+  extraParams: computed(() => ({
+    accounts: get(usedAccounts).map(account => `${account.address}#${account.chain}`),
+    customizedEventsOnly: get(toggles, 'customizedEventsOnly'),
+    excludeIgnoredAssets: !get(toggles, 'showIgnoredAssets'),
+  })),
+  defaultParams: computed<Partial<HistoryEventRequestPayload> | undefined>(() => {
+    if (isDefined(entryTypes)) {
+      return {
+        entryTypes: {
+          values: get(entryTypes),
+        },
+      };
+    }
+    return undefined;
+  }),
+  customPageParams: computed<Partial<HistoryEventRequestPayload>>(() => {
+    const params: Writeable<Partial<HistoryEventRequestPayload>> = {
+      counterparties: get(protocols),
+      eventTypes: get(eventTypes),
+      eventSubtypes: get(eventSubTypes),
+      groupByEventIds: true,
+    };
+
+    const accounts = get(usedAccounts);
+
+    if (isDefined(locationOverview))
+      params.location = toSnakeCase(get(locationOverview));
+
+    if (accounts.length > 0)
+      params.locationLabels = accounts.map(account => account.address);
+
+    if (isDefined(period)) {
+      const { fromTimestamp, toTimestamp } = get(period);
+      params.fromTimestamp = fromTimestamp;
+      params.toTimestamp = toTimestamp;
+    }
+
+    if (isDefined(validators))
+      params.validatorIndices = get(validators).map(v => v.toString());
+
+    return params;
+  }),
+});
 
 async function fetchDataAndLocations(): Promise<void> {
   await fetchData();

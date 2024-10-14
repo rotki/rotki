@@ -36,7 +36,9 @@ const { filters, matchers, state, isLoading, fetchData, sort, pagination } = use
   Collection<AddressBookEntry>,
   Filters,
   Matcher
->(null, true, useAddressBookFilter, filter => getAddressBook(get(location), filter), {
+>(filter => getAddressBook(get(location), filter), {
+  history: 'router',
+  filterSchema: useAddressBookFilter,
   extraParams: computed(() => ({
     blockchain: get(selectedChain),
   })),

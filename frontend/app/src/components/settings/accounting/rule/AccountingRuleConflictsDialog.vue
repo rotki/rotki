@@ -1,5 +1,4 @@
 <script lang="ts" setup>
-import { z } from 'zod';
 import type {
   AccountingRuleConflict,
   AccountingRuleConflictRequestPayload,
@@ -7,7 +6,6 @@ import type {
   AccountingTreatment,
 } from '@/types/settings/accounting';
 import type { ConflictResolution } from '@/types/asset';
-import type { Collection } from '@/types/collection';
 import type { ConflictResolutionStrategy } from '@/types/common';
 import type { DataTableColumn } from '@rotki/ui-library';
 
@@ -24,20 +22,10 @@ const { t } = useI18n();
 
 const { state, isLoading, fetchData, setPage, pagination } = usePaginationFilters<
   AccountingRuleConflict,
-  AccountingRuleConflictRequestPayload,
-  AccountingRuleConflict,
-  Collection<AccountingRuleConflict>
->(
-  null,
-  true,
-  () => ({
-    matchers: computed(() => []),
-    filters: ref(undefined),
-    updateFilter: () => {},
-    RouteFilterSchema: z.object({}),
-  }),
-  getAccountingRulesConflicts,
-);
+  AccountingRuleConflictRequestPayload
+>(getAccountingRulesConflicts, {
+  history: 'router',
+});
 
 onMounted(() => {
   fetchData();

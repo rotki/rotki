@@ -32,7 +32,7 @@ vi.mock('vue', async () => {
 
 describe('composables::assets/filter-paginate', () => {
   let fetchAssets: (payload: MaybeRef<AssetRequestPayload>) => Promise<Collection<SupportedAsset>>;
-  const locationOverview = ref<string | null>('');
+  const locationOverview = ref<string>('');
   const mainPage = ref<boolean>(false);
   const router = useRouter();
   const route = useRoute();
@@ -61,7 +61,10 @@ describe('composables::assets/filter-paginate', () => {
         Collection<SupportedAsset>,
         Filters,
         Matcher
-      >(locationOverview, mainPage, useAssetFilter, fetchAssets, {
+      >(fetchAssets, {
+        history: get(mainPage) ? 'router' : false,
+        filterSchema: useAssetFilter,
+        locationOverview,
         defaultSortBy: {
           key: 'symbol',
           ascending: [true],
@@ -97,7 +100,11 @@ describe('composables::assets/filter-paginate', () => {
         Collection<SupportedAsset>,
         Filters,
         Matcher
-      >(locationOverview, mainPage, useAssetFilter, fetchAssets);
+      >(fetchAssets, {
+        history: get(mainPage) ? 'router' : false,
+        filterSchema: useAssetFilter,
+        locationOverview,
+      });
 
       expect(get(isLoading)).toBe(false);
 
@@ -119,7 +126,11 @@ describe('composables::assets/filter-paginate', () => {
         Collection<SupportedAsset>,
         Filters,
         Matcher
-      >(locationOverview, mainPage, useAssetFilter, fetchAssets);
+      >(fetchAssets, {
+        history: get(mainPage) ? 'router' : false,
+        filterSchema: useAssetFilter,
+        locationOverview,
+      });
 
       await router.push({
         query,

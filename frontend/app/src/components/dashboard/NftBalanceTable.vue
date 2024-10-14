@@ -30,19 +30,16 @@ const {
   setPage,
   pagination,
   sort,
-} = usePaginationFilters<NonFungibleBalance, NonFungibleBalancesRequestPayload, NonFungibleBalance>(
-  null,
-  false,
-  useEmptyFilter,
-  fetchNonFungibleBalances,
-  {
-    extraParams,
-    defaultSortBy: {
-      key: ['usdPrice'],
-      ascending: [false],
-    },
+} = usePaginationFilters<
+  NonFungibleBalance,
+  NonFungibleBalancesRequestPayload
+>(fetchNonFungibleBalances, {
+  extraParams,
+  defaultSortBy: {
+    key: ['usdPrice'],
+    ascending: [false],
   },
-);
+});
 
 const { isLoading: isSectionLoading } = useStatusStore();
 const loading = isSectionLoading(Section.NON_FUNGIBLE_BALANCES);

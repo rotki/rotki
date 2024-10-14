@@ -33,7 +33,7 @@ vi.mock('vue', async () => {
 
 describe('composables::history/filter-paginate', () => {
   let fetchTrades: (payload: MaybeRef<TradeRequestPayload>) => Promise<Collection<TradeEntry>>;
-  const locationOverview = ref<string | null>('');
+  const locationOverview = ref<string>('');
   const mainPage = ref<boolean>(false);
   const router = useRouter();
   const route = useRoute();
@@ -70,7 +70,10 @@ describe('composables::history/filter-paginate', () => {
         Collection<TradeEntry>,
         Filters,
         Matcher
-      >(locationOverview, mainPage, useTradeFilters, fetchTrades, {
+      >(fetchTrades, {
+        history: get(mainPage) ? 'router' : false,
+        filterSchema: useTradeFilters,
+        locationOverview,
         onUpdateFilters,
         extraParams,
       });
@@ -99,7 +102,10 @@ describe('composables::history/filter-paginate', () => {
         Collection<TradeEntry>,
         Filters,
         Matcher
-      >(locationOverview, mainPage, useTradeFilters, fetchTrades, {
+      >(fetchTrades, {
+        history: get(mainPage) ? 'router' : false,
+        filterSchema: useTradeFilters,
+        locationOverview,
         onUpdateFilters,
         extraParams,
       });
@@ -124,7 +130,10 @@ describe('composables::history/filter-paginate', () => {
         Collection<TradeEntry>,
         Filters,
         Matcher
-      >(locationOverview, mainPage, useTradeFilters, fetchTrades, {
+      >(fetchTrades, {
+        history: get(mainPage) ? 'router' : false,
+        filterSchema: useTradeFilters,
+        locationOverview,
         onUpdateFilters,
         extraParams,
       });

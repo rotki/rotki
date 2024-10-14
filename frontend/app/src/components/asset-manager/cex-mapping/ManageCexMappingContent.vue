@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { omit } from 'lodash-es';
 import type { CexMapping, CexMappingRequestPayload } from '@/types/asset';
-import type { Collection } from '@/types/collection';
 
 const { t } = useI18n();
 const router = useRouter();
@@ -31,19 +30,17 @@ const {
   editableItem,
   fetchData,
   pagination,
-} = usePaginationFilters<CexMapping, CexMappingRequestPayload, CexMapping, Collection<CexMapping>>(
-  null,
-  true,
-  useEmptyFilter,
-  fetchAllCexMapping,
-  {
-    onUpdateFilters(query) {
-      set(selectedLocation, query.location || '');
-      set(selectedSymbol, query.locationSymbol || '');
-    },
-    extraParams,
+} = usePaginationFilters<
+  CexMapping,
+  CexMappingRequestPayload
+>(fetchAllCexMapping, {
+  history: 'router',
+  onUpdateFilters(query) {
+    set(selectedLocation, query.location || '');
+    set(selectedSymbol, query.locationSymbol || '');
   },
-);
+  extraParams,
+});
 
 onMounted(async () => {
   const { query } = get(route);

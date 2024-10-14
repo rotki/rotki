@@ -49,29 +49,25 @@ const {
   Collection<BlockchainAccountGroupWithBalance>,
   Filters,
   Matcher
->(
-  null,
-  true,
-  () => useBlockchainAccountFilter(t, category),
-  fetchAccountsPage,
-  {
-    extraParams: computed(() => ({
-      tags: get(visibleTags),
-      ...(get(category) !== 'all' ? { category: get(category) } : {}),
-    })),
-    onUpdateFilters(query) {
-      const externalFilterSchema = AccountExternalFilterSchema.parse(query);
-      if (externalFilterSchema.tags)
-        set(visibleTags, externalFilterSchema.tags);
-    },
-    customPageParams: computed(() => ({
-      excluded: get(chainExclusionFilter),
-    })),
-    defaultSortBy: {
-      key: 'usdValue',
-    },
+>(fetchAccountsPage, {
+  history: 'router',
+  filterSchema: () => useBlockchainAccountFilter(t, category),
+  extraParams: computed(() => ({
+    tags: get(visibleTags),
+    ...(get(category) !== 'all' ? { category: get(category) } : {}),
+  })),
+  onUpdateFilters(query) {
+    const externalFilterSchema = AccountExternalFilterSchema.parse(query);
+    if (externalFilterSchema.tags)
+      set(visibleTags, externalFilterSchema.tags);
   },
-);
+  customPageParams: computed(() => ({
+    excluded: get(chainExclusionFilter),
+  })),
+  defaultSortBy: {
+    key: 'usdValue',
+  },
+});
 
 const isEvm = computed(() => get(category) === 'evm');
 const showEvmElements = computed(() => get(isEvm) || get(category) === 'all');

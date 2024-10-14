@@ -10,6 +10,7 @@ import type { ZodSchema } from 'zod';
 import type { PaginationRequestPayload } from '@/types/common';
 import type { Collection } from '@/types/collection';
 import type { TablePagination } from '@/types/pagination';
+import type { ComputedRef, Ref, WritableComputedRef } from 'vue';
 
 export interface FilterSchema<F, M> {
   filters: Ref<F>;
@@ -24,7 +25,12 @@ interface UsePaginationFiltersOptions<
   U = PaginationRequestPayload<T>,
   V extends NonNullable<unknown> = T,
   S extends Collection<V> = Collection<V>,
+  W extends MatchedKeywordWithBehaviour<string> | void = undefined,
+  X extends SearchMatcher<string, string> | void = undefined,
 > {
+  history?: false | 'router' | 'external';
+  locationOverview?: Ref<string>;
+  filterSchema?: () => FilterSchema<W, X>;
   onUpdateFilters?: (query: LocationQuery) => void;
   extraParams?: ComputedRef<RawLocationQuery>;
   customPageParams?: ComputedRef<Partial<U>>;
@@ -70,9 +76,6 @@ interface UsePaginationFilterReturn<
  * given the required fields, can manage pagination and filtering and data
  * fetching when params change
  * @template T,U,V,S,W,X
- * @param {MaybeRef<string | null>} locationOverview
- * @param {MaybeRef<boolean>} mainPage
- * @param {() => FilterSchema<W, X, Y>} filterSchema
  * @param {(payload: MaybeRef<U>) => Promise<Collection<V>>} fetchAssetData
  * @param {{onUpdateFilters?: (query: LocationQuery) => void, extraParams?: ComputedRef<LocationQuery>, customPageParams?: ComputedRef<Partial<U>>, defaultSortBy?: {pagination?: keyof T, pageParams?: (keyof T)[], pageParamsAsc?: boolean[]}}} options
  */
@@ -84,11 +87,8 @@ export function usePaginationFilters<
   W extends MatchedKeywordWithBehaviour<string> | void = undefined,
   X extends SearchMatcher<string, string> | void = undefined,
 >(
-  locationOverview: MaybeRef<string | null>,
-  mainPage: MaybeRef<boolean>,
-  filterSchema: () => FilterSchema<W, X>,
   fetchAssetData: (payload: MaybeRef<U>) => Promise<S>,
-  options: UsePaginationFiltersOptions<T, U, V, S> = {},
+  options: UsePaginationFiltersOptions<T, U, V, S, W, X> = {},
 ): UsePaginationFilterReturn<T, U, V, S, W, X> {
   const { t } = useI18n();
   const { notify } = useNotificationsStore();
@@ -111,6 +111,13 @@ export function usePaginationFilters<
     customPageParams,
     defaultParams,
     defaultSortBy,
+    locationOverview,
+    history = false,
+    filterSchema = (): FilterSchema<W, X> => ({
+      filters: ref({}) as Ref<W>,
+      matchers: computed<X[]>(() => []),
+      RouteFilterSchema: undefined,
+    }),
   } = options;
 
   const { filters, matchers, RouteFilterSchema } = filterSchema();
@@ -317,7 +324,7 @@ export function usePaginationFilters<
    * sets the pagination and filters values from route query
    */
   const applyRouteFilter = (): void => {
-    if (!get(mainPage))
+    if (get(history) === false)
       return;
 
     const query = get(route).query;
@@ -422,7 +429,7 @@ export function usePaginationFilters<
     if (isEqual(params, op))
       return;
 
-    if (get(userAction) && get(mainPage)) {
+    if (get(userAction) && get(history) !== false) {
       // Route should only be updated on user action otherwise it messes with forward navigation.
       const query = getQuery();
       // prevent pushing same route

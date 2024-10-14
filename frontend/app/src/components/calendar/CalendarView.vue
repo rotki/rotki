@@ -4,7 +4,6 @@ import { RouterAccountsSchema } from '@/types/route';
 import { isBlockchain } from '@/types/blockchain/chains';
 import CalendarGrid from '@/components/calendar/CalendarGrid.vue';
 import type { CalendarEvent, CalendarEventRequestPayload } from '@/types/history/calendar';
-import type { Collection } from '@/types/collection';
 import type { AddressData, BlockchainAccount } from '@/types/blockchain/accounts';
 import type { Writeable } from '@rotki/common';
 
@@ -35,48 +34,45 @@ const {
   isLoading,
   fetchData,
   editableItem,
-} = usePaginationFilters<CalendarEvent, CalendarEventRequestPayload, CalendarEvent, Collection<CalendarEvent>>(
-  null,
-  false,
-  useEmptyFilter,
-  fetchCalendarEvents,
-  {
-    onUpdateFilters(query) {
-      const parsedAccounts = RouterAccountsSchema.parse(query);
-      const accountsParsed = parsedAccounts.accounts;
-      if (!accountsParsed || accountsParsed.length === 0) {
-        set(accounts, []);
-      }
-      else {
-        set(
-          accounts,
-          accountsParsed.map(({ address, chain }) => getAccountByAddress(address, chain)),
-        );
-      }
-    },
-    defaultSortBy: {
-      key: ['timestamp'],
-      ascending: [true],
-    },
-    extraParams,
-    customPageParams: computed<Partial<CalendarEventRequestPayload>>(() => {
-      const params: Writeable<Partial<CalendarEventRequestPayload>> = {};
-      const accountsVal = get(accounts);
-
-      if (accountsVal.length > 0) {
-        params.accounts = accountsVal.map((account) => {
-          const chain = account.chain;
-          return {
-            address: getAccountAddress(account),
-            ...(chain !== 'ALL' && isBlockchain(chain) ? { blockchain: chain } : {}),
-          };
-        });
-      }
-
-      return params;
-    }),
+} = usePaginationFilters<
+  CalendarEvent,
+  CalendarEventRequestPayload
+>(fetchCalendarEvents, {
+  onUpdateFilters(query) {
+    const parsedAccounts = RouterAccountsSchema.parse(query);
+    const accountsParsed = parsedAccounts.accounts;
+    if (!accountsParsed || accountsParsed.length === 0) {
+      set(accounts, []);
+    }
+    else {
+      set(
+        accounts,
+        accountsParsed.map(({ address, chain }) => getAccountByAddress(address, chain)),
+      );
+    }
   },
-);
+  defaultSortBy: {
+    key: ['timestamp'],
+    ascending: [true],
+  },
+  extraParams,
+  customPageParams: computed<Partial<CalendarEventRequestPayload>>(() => {
+    const params: Writeable<Partial<CalendarEventRequestPayload>> = {};
+    const accountsVal = get(accounts);
+
+    if (accountsVal.length > 0) {
+      params.accounts = accountsVal.map((account) => {
+        const chain = account.chain;
+        return {
+          address: getAccountAddress(account),
+          ...(chain !== 'ALL' && isBlockchain(chain) ? { blockchain: chain } : {}),
+        };
+      });
+    }
+
+    return params;
+  }),
+});
 
 onMounted(() => {
   fetchData();
