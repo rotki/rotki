@@ -39,7 +39,7 @@ export const useBackendMessagesStore = defineStore('backendMessages', () => {
           startupErrorMessage,
           t('error.process_running', {
             pids: pids.join(', '),
-          }).toString(),
+          }),
         );
       },
     });

@@ -44,7 +44,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
         taskId,
         taskType,
         {
-          title: t('actions.session.fetch_prices.task.title').toString(),
+          title: t('actions.session.fetch_prices.task.title'),
         },
         true,
       );
@@ -63,10 +63,10 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     }
     catch (error: any) {
       if (!isTaskCancelled(error)) {
-        const title = t('actions.session.fetch_prices.error.title').toString();
+        const title = t('actions.session.fetch_prices.error.title');
         const message = t('actions.session.fetch_prices.error.message', {
           error: error.message,
-        }).toString();
+        });
         notify({
           title,
           message,
@@ -99,7 +99,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
       const { taskId } = await queryFiatExchangeRates(get(currencies).map(value => value.tickerSymbol));
 
       const meta: TaskMeta = {
-        title: t('actions.balances.exchange_rates.task.title').toString(),
+        title: t('actions.balances.exchange_rates.task.title'),
       };
 
       const { result } = await awaitTask<ExchangeRates, TaskMeta>(taskId, TaskType.EXCHANGE_RATES, meta);
@@ -109,10 +109,10 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     catch (error: any) {
       if (!isTaskCancelled(error)) {
         notify({
-          title: t('actions.balances.exchange_rates.error.title').toString(),
+          title: t('actions.balances.exchange_rates.error.title'),
           message: t('actions.balances.exchange_rates.error.message', {
             message: error.message,
-          }).toString(),
+          }),
           display: true,
         });
       }
@@ -132,7 +132,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
         taskId,
         taskType,
         {
-          title: t('actions.balances.historic_fetch_price.task.title').toString(),
+          title: t('actions.balances.historic_fetch_price.task.title'),
           description: t(
             'actions.balances.historic_fetch_price.task.description',
             {
@@ -141,7 +141,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
               date: convertFromTimestamp(timestamp),
             },
             1,
-          ).toString(),
+          ),
         },
         true,
       );
@@ -167,7 +167,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
     if (get(isTaskRunning(taskType))) {
       return {
         success: false,
-        message: t('actions.balances.create_oracle_cache.already_running').toString(),
+        message: t('actions.balances.create_oracle_cache.already_running'),
       };
     }
     try {
@@ -180,7 +180,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
             fromAsset,
             toAsset,
             source,
-          }).toString(),
+          }),
         },
         true,
       );
@@ -206,7 +206,7 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
           toAsset,
           source,
           error: error.message,
-        }).toString(),
+        }),
       };
     }
   };
@@ -233,8 +233,8 @@ export const useBalancePricesStore = defineStore('balances/prices', () => {
       const rate = get(exchangeRate(symbol));
       if (!rate || rate.eq(0)) {
         notify({
-          title: t('missing_exchange_rate.title').toString(),
-          message: t('missing_exchange_rate.message').toString(),
+          title: t('missing_exchange_rate.title'),
+          message: t('missing_exchange_rate.message'),
           display: true,
         });
       }

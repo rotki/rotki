@@ -57,10 +57,10 @@ export const useWhitelistedAssetsStore = defineStore('assets/whitelisted', () =>
     }
     catch (error: any) {
       notify({
-        title: t('ignore.whitelist.failed.unwhitelist_title').toString(),
+        title: t('ignore.whitelist.failed.unwhitelist_title'),
         message: t('ignore.whitelist.failed.unwhitelist_message', {
           message: error.message,
-        }).toString(),
+        }),
         display: true,
       });
       return { success: false, message: error.message };

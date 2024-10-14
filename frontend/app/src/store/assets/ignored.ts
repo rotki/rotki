@@ -34,11 +34,11 @@ export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
     }
     catch (error: any) {
       notify({
-        title: t('ignore.failed.ignore_title').toString(),
+        title: t('ignore.failed.ignore_title'),
         message: t('ignore.failed.ignore_message', {
           length: Array.isArray(assets) ? assets.length : 1,
           message: error.message,
-        }).toString(),
+        }),
         display: true,
       });
       return { success: false, message: error.message };
@@ -56,11 +56,11 @@ export const useIgnoredAssetsStore = defineStore('assets/ignored', () => {
     }
     catch (error: any) {
       notify({
-        title: t('ignore.failed.unignore_title').toString(),
+        title: t('ignore.failed.unignore_title'),
         message: t('ignore.failed.unignore_message', {
           length: Array.isArray(assets) ? assets.length : 1,
           message: error.message,
-        }).toString(),
+        }),
         display: true,
       });
       return { success: false, message: error.message };

@@ -23,15 +23,14 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
 
   const fetchBalances = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
-      title: t('actions.defi.sushiswap_balances.task.title').toString(),
+      title: t('actions.defi.sushiswap_balances.task.title'),
     };
 
     const onError: OnError = {
-      title: t('actions.defi.sushiswap_balances.error.title').toString(),
-      error: message =>
-        t('actions.defi.sushiswap_balances.error.description', {
-          message,
-        }).toString(),
+      title: t('actions.defi.sushiswap_balances.error.title'),
+      error: message => t('actions.defi.sushiswap_balances.error.description', {
+        message,
+      }),
     };
 
     await fetchDataAsync(
@@ -60,15 +59,15 @@ export const useSushiswapStore = defineStore('defi/sushiswap', () => {
 
   const fetchEvents = async (refresh = false): Promise<void> => {
     const meta: TaskMeta = {
-      title: t('actions.defi.sushiswap_events.task.title').toString(),
+      title: t('actions.defi.sushiswap_events.task.title'),
     };
 
     const onError: OnError = {
-      title: t('actions.defi.sushiswap_events.error.title').toString(),
+      title: t('actions.defi.sushiswap_events.error.title'),
       error: message =>
         t('actions.defi.sushiswap_events.error.description', {
           message,
-        }).toString(),
+        }),
     };
 
     await fetchDataAsync(

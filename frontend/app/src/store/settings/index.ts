@@ -20,14 +20,14 @@ export const useSettingsStore = defineStore('settings', () => {
       });
       generalStore.update(general);
       setMessage({
-        title: t('actions.session.kraken_account.success.title').toString(),
-        description: t('actions.session.kraken_account.success.message').toString(),
+        title: t('actions.session.kraken_account.success.title'),
+        description: t('actions.session.kraken_account.success.message'),
         success: true,
       });
     }
     catch (error: any) {
       setMessage({
-        title: t('actions.session.kraken_account.error.title').toString(),
+        title: t('actions.session.kraken_account.error.title'),
         description: error.message,
       });
     }

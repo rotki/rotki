@@ -68,7 +68,7 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
     const { taskId } = await api.refreshKrakenStaking();
 
     const taskMeta: TaskMeta = {
-      title: t('actions.kraken_staking.task.title').toString(),
+      title: t('actions.kraken_staking.task.title'),
     };
 
     await awaitTask<KrakenStakingEvents, TaskMeta>(taskId, TaskType.STAKING_KRAKEN, taskMeta, true);
@@ -98,10 +98,10 @@ export const useKrakenStakingStore = defineStore('staking/kraken', () => {
       logger.error(error);
       resetStatus();
       notify({
-        title: t('actions.kraken_staking.error.title').toString(),
+        title: t('actions.kraken_staking.error.title'),
         message: t('actions.kraken_staking.error.message', {
           message: error.message,
-        }).toString(),
+        }),
         display: true,
       });
     }

@@ -44,7 +44,7 @@ export function useKrakenStakingFilter(): FilterSchema<Filters, Matcher> {
       {
         key: KrakenStakingKeys.TYPE,
         keyValue: KrakenStakingValueKeys.TYPE,
-        description: t('kraken_staking_events.filter.type').toString(),
+        description: t('kraken_staking_events.filter.type'),
         string: true,
         suggestions: (): string[] => krakenStakingEventTypeValues,
         validate: (option: string): boolean => krakenStakingEventTypeValues.includes(option as any),

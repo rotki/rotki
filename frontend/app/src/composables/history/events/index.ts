@@ -76,7 +76,7 @@ export function useHistoryEvents(): UseHistoryEventsReturn {
     catch (error: any) {
       logger.error(error);
       notify({
-        title: t('actions.history_events.error.title').toString(),
+        title: t('actions.history_events.error.title'),
         message: t('actions.history_events.error.description', {
           error,
         }).toString(),

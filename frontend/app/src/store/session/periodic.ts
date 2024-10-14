@@ -32,10 +32,10 @@ export const usePeriodicStore = defineStore('session/periodic', () => {
     }
     catch (error: any) {
       notify({
-        title: t('actions.session.periodic_query.error.title').toString(),
+        title: t('actions.session.periodic_query.error.title'),
         message: t('actions.session.periodic_query.error.message', {
           message: error.message,
-        }).toString(),
+        }),
         display: true,
       });
     }
