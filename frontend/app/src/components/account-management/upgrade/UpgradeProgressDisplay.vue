@@ -38,8 +38,8 @@ const dataMigrationStatusData = computed<CurrentDbUpgradeProgress | null>(() => 
     currentVersion: version,
     fromVersion: status.startVersion,
     toVersion: status.targetVersion,
-    currentStep: totalSteps > 0 ? currentStep : 1,
-    totalSteps: totalSteps > 0 ? totalSteps : 1,
+    currentStep,
+    totalSteps,
     description: description || '',
   };
 });
