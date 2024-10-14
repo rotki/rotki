@@ -82,76 +82,65 @@ const { t } = useI18n();
 </script>
 
 <template>
-  <div class="explorers mt-8">
-    <RuiCardHeader class="p-0">
-      <template #header>
-        {{ t('explorers.title') }}
+  <div class="flex flex-col gap-4 mt-6">
+    <RuiMenuSelect
+      v-model="selection"
+      :options="supportedExplorers"
+      :label="t('explorers.chain_selector')"
+      :item-height="56"
+      variant="outlined"
+      @update:model-value="onChange()"
+    >
+      <template #item="{ item }">
+        <ChainDisplay
+          v-if="!additional.some((chain) => chain === item)"
+          dense
+          :chain="item"
+        />
+        <AssetDetails
+          v-else
+          dense
+          class="[&>div]:!py-0 -my-[0.375rem]"
+          :asset="item"
+        />
       </template>
-      <template #subheader>
-        {{ t('explorers.subtitle') }}
+      <template #selection="{ item }">
+        <ChainDisplay
+          v-if="!additional.some((chain) => chain === item)"
+          dense
+          :chain="item"
+        />
+        <AssetDetails
+          v-else
+          dense
+          class="[&>div]:!py-0 -my-[0.375rem]"
+          :asset="item"
+        />
       </template>
-    </RuiCardHeader>
+    </RuiMenuSelect>
 
-    <div class="flex flex-col gap-4 mt-6">
-      <RuiMenuSelect
-        v-model="selection"
-        :options="supportedExplorers"
-        :label="t('explorers.chain_selector')"
-        :item-height="56"
-        variant="outlined"
-        @update:model-value="onChange()"
-      >
-        <template #item="{ item }">
-          <ChainDisplay
-            v-if="!additional.some((chain) => chain === item)"
-            dense
-            :chain="item"
-          />
-          <AssetDetails
-            v-else
-            dense
-            class="[&>div]:!py-0 -my-[0.375rem]"
-            :asset="item"
-          />
-        </template>
-        <template #selection="{ item }">
-          <ChainDisplay
-            v-if="!additional.some((chain) => chain === item)"
-            dense
-            :chain="item"
-          />
-          <AssetDetails
-            v-else
-            dense
-            class="[&>div]:!py-0 -my-[0.375rem]"
-            :asset="item"
-          />
-        </template>
-      </RuiMenuSelect>
-
-      <ExplorerInput
-        v-model="address"
-        :label="t('explorers.address')"
-        :hint="t('explorers.address_url', { addressUrl })"
-        :placeholder="addressUrl"
-        @save-data="saveAddress($event)"
-      />
-      <ExplorerInput
-        v-if="txUrl"
-        v-model="tx"
-        :label="t('explorers.tx')"
-        :hint="t('explorers.tx_url', { txUrl })"
-        :placeholder="txUrl"
-        @save-data="saveTransaction($event)"
-      />
-      <ExplorerInput
-        v-if="blockUrl"
-        v-model="block"
-        :label="t('explorers.block')"
-        :hint="t('explorers.block_url', { blockUrl })"
-        :placeholder="blockUrl"
-        @save-data="saveBlock($event)"
-      />
-    </div>
+    <ExplorerInput
+      v-model="address"
+      :label="t('explorers.address')"
+      :hint="t('explorers.address_url', { addressUrl })"
+      :placeholder="addressUrl"
+      @save-data="saveAddress($event)"
+    />
+    <ExplorerInput
+      v-if="txUrl"
+      v-model="tx"
+      :label="t('explorers.tx')"
+      :hint="t('explorers.tx_url', { txUrl })"
+      :placeholder="txUrl"
+      @save-data="saveTransaction($event)"
+    />
+    <ExplorerInput
+      v-if="blockUrl"
+      v-model="block"
+      :label="t('explorers.block')"
+      :hint="t('explorers.block_url', { blockUrl })"
+      :placeholder="blockUrl"
+      @save-data="saveBlock($event)"
+    />
   </div>
 </template>

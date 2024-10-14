@@ -32,7 +32,7 @@ watch([enabled, multiplier], setData);
         v-model="scrambleData"
         color="primary"
         class="general-settings__fields__scramble-data my-2"
-        :label="t('frontend_settings.label.scramble')"
+        :label="t('frontend_settings.label.scramble_hint')"
         :success-messages="success"
         :error-messages="error"
         @update:model-value="update($event)"
