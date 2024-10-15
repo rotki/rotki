@@ -873,15 +873,11 @@
           "global_address_book": "全球地址簿",
           "hardcoded_mappings": "硬编码映射",
           "private_address_book": "私人地址簿"
-        },
-        "title": "返回名称的优先级遵循以下顺序。从上到下，将显示找到的第一个名称。"
+        }
       },
       "private": "私人",
       "private_description": "地址簿仅为该账户保存。"
     }
-  },
-  "address_name_priority_setting": {
-    "data_name": "优先级"
   },
   "airdrops": {
     "headers": {
@@ -2178,9 +2174,6 @@
     }
   },
   "frontend_settings": {
-    "label": {
-      "enable_alias_names": "显示区块链地址的别名。"
-    },
     "subtitle": {
       "alias_names": "地址的别名"
     },

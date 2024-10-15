@@ -1068,15 +1068,11 @@
           "global_address_book": "Global address book",
           "hardcoded_mappings": "Hardcoded mappings",
           "private_address_book": "Private address book"
-        },
-        "title": "The priority of the returned names adheres to the following order. From top to bottom, the first name found will be shown."
+        }
       },
       "private": "Private",
       "private_description": "address book is saved only for this account."
     }
-  },
-  "address_name_priority_setting": {
-    "data_name": "priority"
   },
   "airdrops": {
     "headers": {
@@ -1085,12 +1081,6 @@
     "title": "Airdrops",
     "unknown_info": "Airdrops are available for these addresses, but we can't yet analyze if it has been claimed or not.",
     "unknown_tooltip": "Address is eligible for this airdrop, but we can't yet analyze if it has been claimed or not."
-  },
-  "alias_names": {
-    "error": {
-      "message": "Failed to retrieve the alias names: {message}",
-      "title": "Querying alias names"
-    }
   },
   "amount_display": {
     "abbreviation": {
@@ -2648,8 +2638,9 @@
         "non_empty": "Please enter the number of minutes"
       }
     },
-    "label": {
-      "enable_alias_names": "Show alias name for blockchain addresses."
+    "alias_names": {
+      "enable_alias_names": "Show alias name for blockchain addresses.",
+      "title": "The priority of the returned names adheres to the following order. From top to bottom, the first name found will be shown."
     },
     "periodic_query": {
       "label": "Query period in seconds",

@@ -874,8 +874,7 @@
           "global_address_book": "Global address book",
           "hardcoded_mappings": "Hardcoded mappings",
           "private_address_book": "Private address book"
-        },
-        "title": "The priority of the returned names adheres to the following order. From top to bottom, the first name found will be shown."
+        }
       },
       "private": "Private",
       "private_description": "address book is saved only for this account."
@@ -2120,9 +2119,6 @@
     }
   },
   "frontend_settings": {
-    "label": {
-      "enable_alias_names": "Show alias name for blockchain addresses."
-    },
     "subtitle": {
       "alias_names": "Alias name for addresses"
     },
