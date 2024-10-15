@@ -2124,9 +2124,6 @@
     },
     "title": "Interface-only Settings",
     "validation": {
-      "enable_alias_names": {
-        "error": "Failed to change alias names visibility"
-      },
       "timeframe": {
         "error": "Failed to set the default timeframe for the user",
         "success": "Default timeframe set to {timeframe}"

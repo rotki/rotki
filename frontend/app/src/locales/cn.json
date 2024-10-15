@@ -2179,9 +2179,6 @@
     },
     "title": "仅前端设置",
     "validation": {
-      "enable_alias_names": {
-        "error": "无法更改别名可见性"
-      },
       "timeframe": {
         "error": "无法为用户设置默认时间范围",
         "success": "默认时间范围设置为{timeframe}"
