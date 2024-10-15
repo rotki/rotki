@@ -32,32 +32,30 @@ function availableCurrentAddressNamePriorities(): PrioritizedListData<Prioritize
     HARDCODED_MAPPINGS_PRIO_LIST_ITEM,
     PRIVATE_ADDRESSBOOK_PRIO_LIST_ITEM,
   ];
-
   return new PrioritizedListData(itemData);
 }
 
 onMounted(() => {
   resetCurrentAddressNamePriorities();
 });
+
 const { t } = useI18n();
 </script>
 
 <template>
-  <div>
-    <SettingsOption
-      #default="{ error, success, updateImmediate }"
-      setting="addressNamePriority"
-      @finished="finishEditing()"
-    >
-      <PrioritizedList
-        :model-value="currentAddressNamePriorities"
-        :all-items="availableCurrentAddressNamePriorities()"
-        :item-data-name="t('address_name_priority_setting.data_name')"
-        :disable-add="true"
-        :disable-delete="true"
-        :status="{ error, success }"
-        @update:model-value="updateImmediate($event)"
-      />
-    </SettingsOption>
-  </div>
+  <SettingsOption
+    #default="{ error, success, updateImmediate }"
+    setting="addressNamePriority"
+    @finished="finishEditing()"
+  >
+    <PrioritizedList
+      :model-value="currentAddressNamePriorities"
+      :all-items="availableCurrentAddressNamePriorities()"
+      :item-data-name="t('address_name_priority_setting.data_name')"
+      :disable-add="true"
+      :disable-delete="true"
+      :status="{ error, success }"
+      @update:model-value="updateImmediate($event)"
+    />
+  </SettingsOption>
 </template>
