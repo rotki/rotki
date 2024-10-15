@@ -22,7 +22,6 @@
     "calculate_past_cost_basis": true,
     "display_date_in_localtime": true,
     "current_price_oracles": [
-      "manualcurrent",
       "coingecko",
       "defillama",
       "cryptocompare",

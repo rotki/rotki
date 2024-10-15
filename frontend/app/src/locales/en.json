@@ -3745,7 +3745,6 @@
     "to_asset": "To Asset"
   },
   "oracles": {
-    "manual_latest": "Manual latest",
     "uniswap_v2": "Uniswap V2",
     "uniswap_v3": "Uniswap V3"
   },
