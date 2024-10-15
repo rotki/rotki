@@ -10,5 +10,6 @@ const { t } = useI18n();
 
     <PnlCsvWithFormulasSetting />
     <PnlCsvSummarySetting />
+    <CsvExportDelimiterSetting />
   </SettingCategory>
 </template>
