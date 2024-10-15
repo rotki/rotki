@@ -13,31 +13,31 @@ THEGRAPH_CPT_DETAILS: Final = CounterpartyDetails(
 )
 
 GRAPH_DELEGATION_TRANSFER_ABI: Final[Sequence[ABIEvent]] = [
-    {  # all type ignores are due to inability of typing to see ABIComponentIndexed
+    {
         'anonymous': False,
         'inputs': [
             {
-                'indexed': True,  # type: ignore
+                'indexed': True,
                 'name': 'delegator',
                 'type': 'address',
             },
             {
-                'indexed': True,  # type: ignore
+                'indexed': True,
                 'name': 'l2Delegator',
                 'type': 'address',
             },
             {
-                'indexed': True,  # type: ignore
+                'indexed': True,
                 'name': 'indexer',
                 'type': 'address',
             },
             {
-                'indexed': False,  # type: ignore
+                'indexed': False,
                 'name': 'l2Indexer',
                 'type': 'address',
             },
             {
-                'indexed': False,  # type: ignore
+                'indexed': False,
                 'name': 'transferredDelegationTokens',
                 'type': 'uint256',
             },
