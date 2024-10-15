@@ -9,7 +9,8 @@ from rotkehlchen.chain.ethereum.modules.puffer.constants import (
     PUFFER_AIRDROP_S1_CAMPAIGN2,
     PUFFER_AIRDROP_S1_CAMPAIGN3,
     PUFFER_TOKEN_ID,
-    PUFFERX_EIGEN_S2_AIRDROP,
+    PUFFERX_EIGEN_S2_AIRDROP1,
+    PUFFERX_EIGEN_S2_AIRDROP2,
     UNLOCKED_TOKENS_CLAIMED,
 )
 from rotkehlchen.chain.ethereum.utils import token_normalized_value_decimals
@@ -40,7 +41,7 @@ class PufferDecoder(DecoderInterface):
         if not self.base.is_tracked(claimer := bytes_to_address(context.tx_log.topics[2])):
             return DEFAULT_DECODING_OUTPUT
 
-        if (campaign_id := context.tx_log.topics[1][:16].hex()) == PUFFERX_EIGEN_S2_AIRDROP:
+        if (campaign_id := context.tx_log.topics[1][:16].hex()) in (PUFFERX_EIGEN_S2_AIRDROP1, PUFFERX_EIGEN_S2_AIRDROP2):  # noqa: E501
             asset_id = EIGEN_TOKEN_ID
             campaign_name = 'PufferXEigen S2 airdrop'
         elif campaign_id in (PUFFER_AIRDROP_S1_CAMPAIGN1, PUFFER_AIRDROP_S1_CAMPAIGN2, PUFFER_AIRDROP_S1_CAMPAIGN3):  # noqa: E501
