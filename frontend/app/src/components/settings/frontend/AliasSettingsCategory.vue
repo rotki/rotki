@@ -10,7 +10,7 @@ const { t } = useI18n();
 
     <RuiAlert
       type="info"
-      class="mb-4"
+      class="my-1"
     >
       {{ t('address_book.hint.priority.title') }}
     </RuiAlert>
