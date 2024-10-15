@@ -38,8 +38,6 @@ function availableCurrentAddressNamePriorities(): PrioritizedListData<Prioritize
 onMounted(() => {
   resetCurrentAddressNamePriorities();
 });
-
-const { t } = useI18n();
 </script>
 
 <template>
@@ -48,14 +46,27 @@ const { t } = useI18n();
     setting="addressNamePriority"
     @finished="finishEditing()"
   >
-    <PrioritizedList
-      :model-value="currentAddressNamePriorities"
-      :all-items="availableCurrentAddressNamePriorities()"
-      :item-data-name="t('frontend_settings.alias_names.address_name_priority_setting.data_name')"
-      :disable-add="true"
-      :disable-delete="true"
+    <RuiCard
+      rounded="md"
+      no-padding
+      class="overflow-hidden"
+    >
+      <div class="pl-8 pt-2 border-b border-default">
+        <EnableEnsNamesSetting />
+      </div>
+      <PrioritizedList
+        variant="flat"
+        :model-value="currentAddressNamePriorities"
+        :all-items="availableCurrentAddressNamePriorities()"
+        :disable-add="true"
+        :disable-delete="true"
+        @update:model-value="updateImmediate($event)"
+      />
+    </RuiCard>
+
+    <ActionStatusIndicator
+      class="mx-[1px] mt-4"
       :status="{ error, success }"
-      @update:model-value="updateImmediate($event)"
     />
   </SettingsOption>
 </template>

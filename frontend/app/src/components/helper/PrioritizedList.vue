@@ -8,15 +8,18 @@ const props = withDefaults(
   defineProps<{
     modelValue: PrioritizedListId[];
     allItems: PrioritizedListData<PrioritizedListId>;
-    itemDataName: string;
+    itemDataName?: string;
     disableAdd?: boolean;
     disableDelete?: boolean;
     status?: BaseMessage;
+    variant?: 'flat' | 'outlined';
   }>(),
   {
     disableAdd: false,
     disableDelete: false,
+    itemDataName: '',
     status: undefined,
+    variant: 'outlined',
   },
 );
 
@@ -96,6 +99,7 @@ const autoCompleteHint = computed<string>(() => {
     <RuiCard
       rounded="md"
       no-padding
+      :variant="variant"
       class="overflow-hidden [&>div:first-child]:px-6 [&>div:first-child]:pb-2"
     >
       <template

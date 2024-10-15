@@ -2373,9 +2373,6 @@
     },
     "title": "Paramètres spécifiques à l'interface utilisateur",
     "validation": {
-      "enable_alias_names": {
-        "error": "Échec de la modification de la visibilité des noms d'alias"
-      },
       "timeframe": {
         "error": "Échec lors de la configuration du délai par défaut pour l'utilisateur",
         "success": "Le délai par défaut est défini sur {timeframe}"
