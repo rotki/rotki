@@ -17,20 +17,24 @@ function updateSetting(value: boolean, update: (newValue: any) => void) {
 
 <template>
   <SettingsOption
-    #default="{ error, success, update }"
     setting="animationsEnabled"
     session-setting
     :transform="transform"
-    :error-message="t('frontend_settings.validation.animations.error')"
+    :error-message="t('frontend_settings.animations.validation.error')"
   >
-    <RuiSwitch
-      color="primary"
-      :model-value="!animationsEnabled"
-      class="general-settings__fields__animation-enabled"
-      :label="t('frontend_settings.label.animations_note')"
-      :success-messages="success"
-      :error-messages="error"
-      @update:model-value="updateSetting($event, update)"
-    />
+    <template #title>
+      {{ t('frontend_settings.animations.title') }}
+    </template>
+    <template #default="{ error, success, update }">
+      <RuiSwitch
+        color="primary"
+        :model-value="!animationsEnabled"
+        class="general-settings__fields__animation-enabled"
+        :label="t('frontend_settings.animations.animations_note')"
+        :success-messages="success"
+        :error-messages="error"
+        @update:model-value="updateSetting($event, update)"
+      />
+    </template>
   </SettingsOption>
 </template>

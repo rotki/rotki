@@ -10,21 +10,10 @@ const { t } = useI18n();
     <template #subtitle>
       {{ t('frontend_settings.subtitle.graph_settings_hint') }}
     </template>
+    <TimeFrameSetting />
     <SettingsItem>
       <template #title>
-        {{ t('timeframe_settings.default_timeframe') }}
-      </template>
-      <template #subtitle>
-        {{ t('timeframe_settings.default_timeframe_description') }}
-      </template>
-      <TimeFrameSetting />
-    </SettingsItem>
-    <SettingsItem>
-      <template #title>
-        {{ t('frontend_settings.subtitle.graph_basis') }}
-      </template>
-      <template #subtitle>
-        {{ t('frontend_settings.subtitle.show_graph_range_selector') }}
+        {{ t('frontend_settings.graph_basis.title') }}
       </template>
       <ZeroBasedGraphSetting />
       <ShowGraphRangeSelectorSetting />

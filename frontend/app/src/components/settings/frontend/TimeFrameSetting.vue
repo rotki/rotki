@@ -32,28 +32,36 @@ onMounted(() => {
 </script>
 
 <template>
-  <SettingsOption
-    #default="{ error, success, updateImmediate: updateTimeframeSetting }"
-    setting="timeframeSetting"
-    frontend-setting
-    :success-message="successMessage"
-    :error-message="t('frontend_settings.validation.timeframe.error')"
-    @finished="resetTimeframeSetting()"
-  >
+  <SettingsItem>
+    <template #title>
+      {{ t('timeframe_settings.default_timeframe') }}
+    </template>
+    <template #subtitle>
+      {{ t('timeframe_settings.default_timeframe_description') }}
+    </template>
     <SettingsOption
-      #default="{ updateImmediate: updateVisibleTimeframes }"
-      setting="visibleTimeframes"
+      #default="{ error, success, updateImmediate: updateTimeframeSetting }"
+      setting="timeframeSetting"
       frontend-setting
-      @finished="resetVisibleTimeframes()"
+      :success-message="successMessage"
+      :error-message="t('frontend_settings.validation.timeframe.error')"
+      @finished="resetTimeframeSetting()"
     >
-      <TimeFrameSettings
-        :message="{ error, success }"
-        :value="defaultGraphTimeframe"
-        :visible-timeframes="visibleTimeframes"
-        :current-session-timeframe="currentSessionTimeframe"
-        @timeframe-change="updateTimeframeSetting($event)"
-        @visible-timeframes-change="updateVisibleTimeframes($event)"
-      />
+      <SettingsOption
+        #default="{ updateImmediate: updateVisibleTimeframes }"
+        setting="visibleTimeframes"
+        frontend-setting
+        @finished="resetVisibleTimeframes()"
+      >
+        <TimeFrameSettings
+          :message="{ error, success }"
+          :value="defaultGraphTimeframe"
+          :visible-timeframes="visibleTimeframes"
+          :current-session-timeframe="currentSessionTimeframe"
+          @timeframe-change="updateTimeframeSetting($event)"
+          @visible-timeframes-change="updateVisibleTimeframes($event)"
+        />
+      </SettingsOption>
     </SettingsOption>
-  </SettingsOption>
+  </SettingsItem>
 </template>
