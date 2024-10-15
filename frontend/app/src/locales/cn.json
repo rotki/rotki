@@ -2254,7 +2254,6 @@
     },
     "nft_setting": {
       "label": {
-        "include_nfts": "在图表和总净值中包含 NFT",
         "include_nfts_hint": "默认情况下，图表和仪表盘包括所有 NFT 的值",
         "render_setting": {
           "allow_all": "允许所有图像",
@@ -2264,9 +2263,6 @@
         "whitelisted_domains": "白名单域",
         "whitelisted_domains_hint": "输入单个或多个逗号分隔的域。按右侧的保存按钮保存更改",
         "whitelisted_domain_entries": "无条目 | {count} 唯一条目 | {count} 唯一条目"
-      },
-      "subtitle": {
-        "include_nfts": "在图表和总量中包含 NFT"
       },
       "title": "NFT setting",
       "messages": {

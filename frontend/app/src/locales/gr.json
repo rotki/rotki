@@ -2206,7 +2206,6 @@
     },
     "nft_setting": {
       "label": {
-        "include_nfts": "Συμπεριλάβετε τα NFTs στα γραφήματα και τη συνολική καθαρή αξία",
         "include_nfts_hint": "Από προεπιλογή τα γραφήματα και ο πίνακας οργάνων περιλαμβάνουν την αξία όλων των NFTs",
         "render_setting": {
           "allow_all": "Επιτρέψτε όλες τις εικόνες",
@@ -2216,9 +2215,6 @@
         "whitelisted_domains": "Επιλεγμένοι τομείς",
         "whitelisted_domains_hint": "Εισάγετε έναν ή περισσότερους τομείς που χωρίζονται με κόμμα. Πατήστε το κουμπί αποθήκευσης στα δεξιά για να αποθηκεύσετε τις αλλαγές",
         "whitelisted_domain_entries": "Δεν υπάρχουν καταχωρήσεις | {count} μοναδική καταχώρηση | {count} μοναδικές καταχωρήσεις"
-      },
-      "subtitle": {
-        "include_nfts": "Include NFTs in graphs and total amounts"
       },
       "title": "NFT setting",
       "messages": {

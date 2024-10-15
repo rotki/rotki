@@ -1,5 +1,7 @@
 <script setup lang="ts">
 const { t } = useI18n();
+
+const amountExample = bigNumberify(123456.789);
 </script>
 
 <template>
@@ -19,6 +21,15 @@ const { t } = useI18n();
       <div class="grid sm:grid-cols-3 gap-4">
         <FloatingPrecisionSetting />
         <NumericSeparatorsSettings />
+      </div>
+      <div class="flex gap-2 items-center">
+        <div class="text-rui-text-secondary">
+          {{ t('general_settings.amount.label.resulting_format') }}
+        </div>
+        <AmountDisplay
+          :value="amountExample"
+          show-currency="symbol"
+        />
       </div>
     </SettingsItem>
 

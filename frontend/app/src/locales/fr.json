@@ -2452,7 +2452,6 @@
         "title": "Autoriser les images de tous les domaines"
       },
       "label": {
-        "include_nfts": "Inclure les NFT dans les graphiques et la valeur nette totale",
         "include_nfts_hint": "Par défaut, les graphiques et le tableau de bord incluent la valeur de tous les NFT.",
         "render_setting": {
           "allow_all": "Autoriser toutes les images",
@@ -2464,7 +2463,6 @@
         "whitelisted_domain_entries": "aucune entrée | {count} entrée unique | {count} entrées uniques"
       },
       "subtitle": {
-        "include_nfts": "Inclure les NFT dans les graphiques et les montants totaux",
         "nft_images_rendering_setting": "Paramètres d'affichage des images NFT",
         "nft_images_rendering_setting_hint": "L'affichage des images NFT à partir de serveurs malveillants peut entraîner une fuite de votre vie privée, lisez plus {link}"
       },
