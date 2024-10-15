@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CommaSeparatedStringSchema, RouterExpandedIdsSchema } from '@/types/route';
 import type { MaybeRef } from '@vueuse/core';
 import type { MatchedKeywordWithBehaviour, SearchMatcher } from '@/types/filtering';
 import type { FilterSchema } from '@/composables/filter-paginate';
@@ -81,7 +82,7 @@ export function useBlockchainAccountFilter(t: ReturnType<typeof useI18n>['t'], c
 }
 
 export const AccountExternalFilterSchema = z.object({
-  tags: z.string()
-    .optional()
-    .transform(val => (val ? val.split(',') : [])),
-});
+  tags: CommaSeparatedStringSchema,
+  tab: z.coerce.number().optional(),
+  q: z.string().optional(),
+}).merge(RouterExpandedIdsSchema);

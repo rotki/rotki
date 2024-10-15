@@ -2,7 +2,7 @@
 import { SavedFilterLocation } from '@/types/filtering';
 import { AccountExternalFilterSchema, type Filters, type Matcher } from '@/composables/filters/blockchain-account';
 import AccountBalancesTable from '@/components/accounts/AccountBalancesTable.vue';
-import AccountGroupDetails from '@/components/accounts/AccountGroupDetails.vue';
+import AccountGroupDetailsTable from '@/components/accounts/AccountGroupDetailsTable.vue';
 import DetectTokenChainsSelection from '@/components/accounts/balances/DetectTokenChainsSelection.vue';
 import type { AccountManageState } from '@/composables/accounts/blockchain/use-account-manage';
 import type { Collection } from '@/types/collection';
@@ -11,6 +11,7 @@ import type {
   BlockchainAccountRequestPayload,
 } from '@/types/blockchain/accounts';
 import type { ComponentExposed } from 'vue-component-type-helpers';
+import type { LocationQuery } from '@/types/route';
 
 const props = defineProps<{
   category: string;
@@ -26,8 +27,10 @@ const { t } = useI18n();
 const visibleTags = ref<string[]>([]);
 const chainExclusionFilter = ref<Record<string, string[]>>({});
 const accountTable = ref<ComponentExposed<typeof AccountBalancesTable>>();
-const detailsTable = ref<ComponentExposed<typeof AccountGroupDetails>>();
+const detailsTable = ref<ComponentExposed<typeof AccountGroupDetailsTable>>();
 const tab = ref<number>(0);
+const expanded = ref<string[]>([]);
+const query = ref<LocationQuery>({});
 
 const blockchainStore = useBlockchainStore();
 const { fetchAccounts: fetchAccountsPage } = blockchainStore;
@@ -55,11 +58,28 @@ const {
   extraParams: computed(() => ({
     tags: get(visibleTags),
     ...(get(category) !== 'all' ? { category: get(category) } : {}),
+    ...(get(expanded).length > 0
+      ? {
+          tab: get(tab),
+          expanded: get(expanded),
+          ...(get(tab) === 1
+            ? {
+                q: toUriEncoded(get(query)),
+              }
+            : {}),
+        }
+      : {}),
   })),
-  onUpdateFilters(query) {
-    const externalFilterSchema = AccountExternalFilterSchema.parse(query);
-    if (externalFilterSchema.tags)
-      set(visibleTags, externalFilterSchema.tags);
+  onUpdateFilters(filterQuery) {
+    const { tab: qTab, tags, expanded: expandedIds, q } = AccountExternalFilterSchema.parse(filterQuery);
+    if (tags)
+      set(visibleTags, tags);
+    if (qTab !== undefined)
+      set(tab, qTab);
+    if (expandedIds)
+      set(expanded, expandedIds);
+
+    set(query, q ? fromUriEncoded(q) : {});
   },
   customPageParams: computed(() => ({
     excluded: get(chainExclusionFilter),
@@ -184,6 +204,7 @@ defineExpose({
       v-model:pagination="pagination"
       v-model:sort="sort"
       v-model:chain-filter="chainExclusionFilter"
+      v-model:expanded-ids="expanded"
       :data-category="category"
       class="mt-4"
       group
@@ -195,15 +216,28 @@ defineExpose({
       <template #details="{ row }">
         <AccountGroupDetails
           v-if="row.expansion === 'accounts'"
-          ref="detailsTable"
-          v-model.tab="tab"
-          :chains="getChains(row)"
-          :tags="visibleTags"
-          :group-id="getGroupId(row)"
+          v-model="tab"
           :is-xpub="row.data.type === 'xpub'"
-          :is-evm="row.category === 'evm'"
-          @edit="emit('edit', $event)"
-        />
+        >
+          <template #per-chain>
+            <AccountGroupDetailsTable
+              v-if="row.expansion === 'accounts'"
+              ref="detailsTable"
+              v-model:query="query"
+              :chains="getChains(row)"
+              :tags="visibleTags"
+              :group-id="getGroupId(row)"
+              :is-evm="row.category === 'evm'"
+              @edit="emit('edit', $event)"
+            />
+          </template>
+          <template #aggregated>
+            <AccountBalanceAggregatedAssets
+              :group-id="getGroupId(row)"
+              :chains="getChains(row)"
+            />
+          </template>
+        </AccountGroupDetails>
         <AccountBalanceDetails
           v-else-if="row.expansion === 'assets'"
           :address="getAccountAddress(row)"
