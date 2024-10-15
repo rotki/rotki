@@ -17,11 +17,11 @@ const premium = usePremium();
     <SettingsItem>
       <ThemeManager
         v-if="premium"
-        class="mt-12"
+        class="pt-4"
       />
       <ThemeManagerLock
         v-else
-        class="mt-12"
+        class="pt-4"
       />
     </SettingsItem>
   </SettingCategory>
