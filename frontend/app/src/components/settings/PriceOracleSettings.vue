@@ -4,7 +4,6 @@ import {
   COINGECKO_PRIO_LIST_ITEM,
   CRYPTOCOMPARE_PRIO_LIST_ITEM,
   DEFILAMA_PRIO_LIST_ITEM,
-  MANUALCURRENT_PRIO_LIST_ITEM,
   MANUAL_PRIO_LIST_ITEM,
   type PrioritizedListId,
   UNISWAP2_PRIO_LIST_ITEM,
@@ -29,12 +28,7 @@ const baseAvailableOraclesTyped: Array<PrioritizedListItemData<PrioritizedListId
 ];
 
 function availableCurrentOracles(): PrioritizedListData<PrioritizedListId> {
-  const itemData: Array<PrioritizedListItemData<PrioritizedListId>> = [
-    ...baseAvailableOraclesTyped,
-    MANUALCURRENT_PRIO_LIST_ITEM,
-  ];
-
-  return new PrioritizedListData(itemData);
+  return new PrioritizedListData([...baseAvailableOraclesTyped]);
 }
 
 function availableHistoricOracles(): PrioritizedListData<PrioritizedListId> {

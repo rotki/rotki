@@ -3440,7 +3440,6 @@
     "to_asset": "Vers l'actif"
   },
   "oracles": {
-    "manual_latest": "Manuel dernières",
     "uniswap_v2": "Uniswap V2",
     "uniswap_v3": "Uniswap V3"
   },
