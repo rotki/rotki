@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Final
 from eth_typing import ChecksumAddress
 
 from rotkehlchen.api.websockets.typedefs import WSMessageType
+from rotkehlchen.assets.asset import EvmToken
 from rotkehlchen.chain.ethereum.airdrops import check_airdrops
 from rotkehlchen.chain.ethereum.modules.ens.constants import CPT_ENS
 from rotkehlchen.chain.evm.decoding.curve.constants import CPT_CURVE
@@ -362,18 +363,24 @@ class CalendarReminderCreator(CustomizableDateMixin):
         calendar_entries: list[int] = []
         for address, airdrops in data.items():
             for airdrop_name, airdrop_info in airdrops.items():
+                if (
+                        isinstance(airdrop_info, list) or  # for some it's a list of poaps. Ignore
+                        (cutoff_time := airdrop_info.get('cutoff_time')) is None or
+                        not isinstance(asset := airdrop_info.get('asset', None), EvmToken)
+                ):
+                    continue  # not an airdrop to set a reminder for
+
                 pretty_name = airdrop_name.replace('_', ' ').capitalize()
                 entry_name = f'{pretty_name} airdrop claim deadline'
 
                 # TODO: Add zksync era to SupportedBlockchain - https://github.com/orgs/rotki/projects/11/views/2?pane=issue&itemId=81788541  # noqa: E501
-                if airdrop_info['asset'].chain_id == ChainID.ZKSYNC_ERA:
+                if asset.chain_id == ChainID.ZKSYNC_ERA:
                     continue  # Skip airdrops on zksync era
 
-                blockchain = airdrop_info['asset'].chain_id.to_blockchain()
+                blockchain = asset.chain_id.to_blockchain()
                 if (
-                    airdrop_info['claimed'] is True or
-                    'cutoff_time' not in airdrop_info or
-                    (cutoff_time := Timestamp(airdrop_info['cutoff_time'])) <= ts_now()
+                    airdrop_info.get('claimed', False) is True or
+                    cutoff_time <= ts_now()
                 ):  # Delete any existing entry if already claimed, unknown cutoff, or past cutoff
                     self.delete_calendar_entry(
                         name=entry_name,
@@ -386,7 +393,7 @@ class CalendarReminderCreator(CustomizableDateMixin):
                 entry_id = self.create_or_update_calendar_entry(
                     name=entry_name,
                     timestamp=cutoff_time,
-                    description=f"{pretty_name} airdrop of {airdrop_info['amount']} {airdrop_info['asset'].symbol_or_name()} has claim deadline on {self.timestamp_to_date(cutoff_time)}",  # noqa: E501
+                    description=f"{pretty_name} airdrop of {airdrop_info.get('amount', 0)} {asset.symbol_or_name()} has claim deadline on {self.timestamp_to_date(cutoff_time)}",  # noqa: E501
                     counterparty=airdrop_name,
                     address=address,
                     blockchain=blockchain,
