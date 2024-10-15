@@ -28,7 +28,7 @@ from rotkehlchen.utils.misc import ts_now
 if TYPE_CHECKING:
     from rotkehlchen.chain.ethereum.node_inquirer import EthereumInquirer
     from rotkehlchen.db.dbhandler import DBHandler
-    from rotkehlchen.types import ChecksumAddress
+    from rotkehlchen.types import ChecksumEvmAddress
 
 
 MOCK_MYSO_ZK_AIRDROP_INDEX = {
@@ -209,7 +209,7 @@ def test_locked_crv_calendar_reminders(
 ]])
 def test_airdrop_claim_calendar_reminders(
         database: 'DBHandler',
-        ethereum_accounts: list['ChecksumAddress'],
+        ethereum_accounts: list['ChecksumEvmAddress'],
         ethereum_inquirer: 'EthereumInquirer',
 ) -> None:
     """Test that reminders are created for airdrop claim deadlines.
