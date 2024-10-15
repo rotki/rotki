@@ -135,12 +135,12 @@ watch([enabled, multiplier], setData);
             #default="{ updateImmediate: updateMultiplier }"
             setting="scrambleMultiplier"
             :class="$style.scrambler__input"
-            :error-message="t('frontend_settings.validation.scramble.error')"
+            :error-message="t('frontend_settings.scramble.validation.error')"
             session-setting
           >
             <RuiTextField
               v-model="scrambleMultiplier"
-              :label="t('frontend_settings.label.scramble_multiplier')"
+              :label="t('frontend_settings.scramble.multiplier.label')"
               :disabled="!scrambleData"
               variant="outlined"
               color="secondary"

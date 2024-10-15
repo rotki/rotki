@@ -2127,52 +2127,16 @@
     }
   },
   "frontend_settings": {
-    "hint": {
-      "refresh": "How often (in minutes) your balances will be automatically refreshed"
-    },
     "label": {
-      "abbreviate_number": "Use abbreviations for large numbers.",
-      "animations": "Reduce animations effect. This setting will improve app performance. NOTE: You will see animations that are not smooth, which aims to reduce the use of system resources.",
-      "enable_alias_names": "Show alias name for blockchain addresses.",
-      "query_period": "Query period in seconds",
-      "query_period_hint": "How often (in seconds) the backend will be checked for messages,",
-      "refresh": "Set the automatic refresh period",
-      "refresh_enabled": "Enabled",
-      "scramble": "Scramble data. Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions.",
-      "scramble_multiplier": "Scramble multiplier",
-      "show_graph_range_selector": "Show graph range selector for line chart",
-      "zero_based": "Use zero as the lowest y-axis value for the graphs",
-      "zero_based_hint": "By default the lowest value is the minimum in the selected period"
+      "enable_alias_names": "Show alias name for blockchain addresses."
     },
     "subtitle": {
-      "abbreviate_number": "For example, 1.234.567 will appear as 1.23 M when this setting is enabled",
-      "alias_names": "Alias name for addresses",
-      "graph_basis": "Graph basis",
-      "query": "Periodic status query",
-      "refresh": "Automatic balance refresh",
-      "scramble_multiplier": "Multiplier number used when scrambling balances. This will affects amount and fiat value.",
-      "show_graph_range_selector": "Show graph range selector"
+      "alias_names": "Alias name for addresses"
     },
     "title": "Interface-only Settings",
     "validation": {
-      "animations": {
-        "error": "Error setting animations state: {message}"
-      },
       "enable_alias_names": {
         "error": "Failed to change alias names visibility"
-      },
-      "periodic_query": {
-        "error": "Error setting query period",
-        "invalid_period": "Period must be between {start} and {end}",
-        "non_empty": "Please enter the number of seconds"
-      },
-      "refresh_period": {
-        "error": "Failed to set the refresh period",
-        "invalid_period": "Period must be between {start} and {end} min",
-        "non_empty": "Please enter the number of minutes"
-      },
-      "scramble": {
-        "error": "Error setting scramble mode: {message}"
       },
       "timeframe": {
         "error": "Failed to set the default timeframe for the user",
@@ -2243,13 +2207,10 @@
       "date_display_format": "Date display format",
       "date_input_format": "Date input format",
       "dot_rpc_endpoint": "Polkadot Node RPC Endpoint",
-      "force_saved_language_setting_in_machine_hint": "Αυτή η ρύθμιση είναι αποθηκευμένη στις ρυθμίσεις χρήστη. Ενεργοποιήστε τη για να τη διατηρήσετε κατά την αποσύνδεση",
       "ksm_rpc_endpoint": "Kusama Node RPC Endpoint",
-      "language": "Selected language",
       "treat_eth2_as_eth": "Should treat ETH2 (Staked ETH) as ETH",
       "chains_to_skip_detection": "Αλυσίδες EVM για τις οποίες πρέπει να παραλειφθεί η αυτόματη ανίχνευση"
     },
-    "language_contribution_tooltip": "This feature is experimental and may not work as expected for some languages. This is because all static sentences in the app have to be manually translated and that is a long and ongoing process. Therefore, we need your contribution to speed it up. Click here for more information.",
     "nft_setting": {
       "label": {
         "include_nfts": "Συμπεριλάβετε τα NFTs στα γραφήματα και τη συνολική καθαρή αξία",
@@ -2322,9 +2283,6 @@
         "error": "There was an error setting the Kusama node RPC endpoint",
         "success_set": "The Kusama node RPC endpoint was set to {endpoint}",
         "success_unset": "The Kusama node RPC endpoint was successfully unset"
-      },
-      "language": {
-        "error": "Error change language setting"
       },
       "thousand_separator": {
         "error": "Error setting thousand separator",

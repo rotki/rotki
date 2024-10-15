@@ -26,7 +26,7 @@ const navigation = [
 
 <template>
   <SettingsPage :navigation="navigation">
-    <InterfaceOnly :id="Category.INTERFACE_ONLY" />
+    <InterfaceOnlyCategory :id="Category.INTERFACE_ONLY" />
     <GraphSettingsCategory :id="Category.GRAPH" />
     <AliasSettingsCategory :id="Category.ALIAS" />
     <ThemeSettingsCategory :id="Category.THEME" />

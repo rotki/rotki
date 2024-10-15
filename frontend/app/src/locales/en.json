@@ -2614,58 +2614,74 @@
     }
   },
   "frontend_settings": {
-    "hint": {
-      "refresh": "How often (in minutes) your balances will be automatically refreshed"
+    "abbreviate_number": {
+      "label": "Use abbreviations for large numbers.",
+      "hint": "For example, 1.234.567 will appear as 1.23 M when this setting is enabled",
+      "minimum_digit": {
+        "label": "Minimum value to be abbreviated"
+      }
     },
-    "label": {
-      "abbreviate_number": "Use abbreviations for large numbers.",
-      "animations": "Reduce animations effect",
-      "animations_note": "Enabling this setting will enahnce app performance. However, note, that some animations may appear less smooth, as the goal is to reduce system resources usage.",
-      "enable_alias_names": "Show alias name for blockchain addresses.",
-      "minimum_digit_to_be_abbreviated": "Minimum value to be abbreviated",
-      "query_period": "Query period in seconds",
-      "query_period_hint": "How often (in seconds) the backend will be checked for messages,",
-      "refresh": "Set the automatic refresh period",
-      "refresh_enabled": "Enabled",
-      "scramble": "Scramble data",
-      "scramble_hint": "Use this when sharing screenshots with others, e.g. when filing bug reports. NOTE: This setting does not persist between sessions.",
-      "scramble_multiplier": "Scramble multiplier",
-      "show_graph_range_selector": "Show graph range selector for line chart",
-      "zero_based": "Use zero as the lowest y-axis value for the graphs",
-      "zero_based_hint": "By default the lowest value is the minimum in the selected period"
-    },
-    "subtitle": {
-      "abbreviate_number": "For example, 1.234.567 will appear as 1.23 M when this setting is enabled",
-      "alias_names": "Alias name for addresses",
-      "blockchain_address_aliases": "Blockchian address aliases",
-      "graph_settings": "Graph settings",
-      "graph_settings_hint": "Manage your graph settings.",
-      "graph_basis": "Graph basis",
-      "query": "Periodic status query",
-      "refresh": "Automatic balance refresh",
-      "scramble_multiplier": "Multiplier number used when scrambling balances. This will affects amount and fiat value.",
-      "show_graph_range_selector": "Show graph range selector"
-    },
-    "title": "Interface-only Settings",
-    "validation": {
-      "animations": {
+    "animations": {
+      "animations_note": "Enabling this setting will enhance the app performance. However, note, that some animations may appear less smooth, as the goal is to reduce system resources usage.",
+      "title": "Reduce animations effect",
+      "validation": {
         "error": "Error setting animations state: {message}"
+      }
+    },
+    "graph_basis": {
+      "title": "Graph basis",
+      "range_selector": {
+        "label": "Show graph range selector for line chart"
       },
-      "enable_alias_names": {
-        "error": "Failed to change alias names visibility"
-      },
-      "periodic_query": {
-        "error": "Error setting query period",
-        "invalid_period": "Period must be between {start} and {end}",
-        "non_empty": "Please enter the number of seconds"
-      },
-      "refresh_period": {
+      "zero_based": {
+        "hint": "By default the lowest value is the minimum in the selected period",
+        "label": "Use zero as the lowest y-axis value for the graphs"
+      }
+    },
+    "refresh_balance": {
+      "label": "Set the automatic refresh period",
+      "period_label": "How often (in minutes) your balances will be automatically refreshed",
+      "title": "Automatic balance refresh",
+      "validation": {
         "error": "Failed to set the refresh period",
         "invalid_period": "Period must be between {start} and {end} min",
         "non_empty": "Please enter the number of minutes"
+      }
+    },
+    "label": {
+      "enable_alias_names": "Show alias name for blockchain addresses."
+    },
+    "periodic_query": {
+      "label": "Query period in seconds",
+      "hint": "How often (in seconds) the backend will be checked for messages,",
+      "title": "Periodic status query",
+      "validation": {
+        "error": "Error setting query period",
+        "invalid_period": "Period must be between {start} and {end}",
+        "non_empty": "Please enter the number of seconds"
+      }
+    },
+    "subtitle": {
+      "alias_names": "Alias name for addresses",
+      "blockchain_address_aliases": "Blockchain address aliases",
+      "graph_settings": "Graph settings",
+      "graph_settings_hint": "Manage your graph settings."
+    },
+    "scramble": {
+      "label": "Use this option when sharing screenshots with others, such as for bug reports. Note: This setting will not be saved between sessions.",
+      "multiplier": {
+        "hint": "Multiplier number used when scrambling balances. This will affects amount and fiat value.",
+        "label": "Scramble multiplier"
       },
-      "scramble": {
+      "title": "Scramble data",
+      "validation": {
         "error": "Error setting scramble mode: {message}"
+      }
+    },
+    "title": "Interface-only Settings",
+    "validation": {
+      "enable_alias_names": {
+        "error": "Failed to change alias names visibility"
       },
       "timeframe": {
         "error": "Failed to set the default timeframe for the user",
@@ -2768,17 +2784,23 @@
       "date_display_format": "Date display format",
       "date_input_format": "Date input format",
       "dot_rpc_endpoint": "Polkadot Node RPC Endpoint",
-      "force_saved_language_setting_in_machine_hint": "This setting is saved on your user settings. Activate this to keep this setting when you logged out.",
       "ksm_rpc_endpoint": "Kusama Node RPC Endpoint",
-      "language": "Selected language",
-      "language_title": "Language",
-      "language_subtitle": "Select your preferred language",
       "csv_delimiter": "CSV export delimiter",
       "treat_eth2_as_eth": "Should treat ETH2 (Staked ETH) as ETH",
       "chains_to_skip_detection": "EVM Chains for which to skip automatic detection",
       "evm_chains": "EVM Chains"
     },
-    "language_contribution_tooltip": "This feature is experimental and may not work as expected for some languages. This is because all static sentences in the app have to be manually translated and that is a long and ongoing process. Therefore, we need your contribution to speed it up. Click here for more information.",
+    "language": {
+      "contribution": "This feature is experimental and may not work as expected for some languages. This is because all static sentences in the app have to be manually translated and that is a long and ongoing process. Therefore, we need your contribution to speed it up.",
+      "click_here": "Click here for more information",
+      "force_saved_language_setting_in_machine_hint": "This setting is saved on your user settings. Activate this to keep this setting when you logged out.",
+      "label": "Selected language",
+      "subtitle": "Select your preferred language",
+      "title": "Language",
+      "validation": {
+        "error": "Error change language setting"
+      }
+    },
     "nft_setting": {
       "allow_all_confirmation": {
         "message": "Are you sure you want to allow images from all domains.",
@@ -2882,9 +2904,6 @@
         "error": "There was an error setting the Kusama node RPC endpoint",
         "success_set": "The Kusama node RPC endpoint was set to {endpoint}",
         "success_unset": "The Kusama node RPC endpoint was successfully unset"
-      },
-      "language": {
-        "error": "Error change language setting"
       },
       "thousand_separator": {
         "error": "Error setting thousand separator",
