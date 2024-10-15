@@ -2798,7 +2798,7 @@
         "title": "Allow images from all domains"
       },
       "label": {
-        "include_nfts": "Include NFTs in graphs and total amounts",
+        "include_nfts": "Include NFTs in graphs and total net worth",
         "include_nfts_subtitle": "Graphs and total net worths",
         "include_nfts_hint": "By default graphs and dashboard include the value of all the NFTs",
         "render_setting": {
