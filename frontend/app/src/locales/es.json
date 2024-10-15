@@ -2199,7 +2199,6 @@
     },
     "nft_setting": {
       "label": {
-        "include_nfts": "Incluir los NFT en los gráficos y el patrimonio neto total",
         "include_nfts_hint": "Por defecto, los gráficos y el cuadro de mandos incluyen el valor de todas las NFT.",
         "render_setting": {
           "allow_all": "Permitir todas las imágenes",
@@ -2209,9 +2208,6 @@
         "whitelisted_domains": "Dominios de la lista blanca",
         "whitelisted_domains_hint": "Introduzca uno o varios dominios separados por comas. Pulse el botón de la derecha para guardar los cambios.",
         "whitelisted_domain_entries": "ninguna entrada | {count} entrada única | {count} entradas únicas"
-      },
-      "subtitle": {
-        "include_nfts": "Include NFTs in graphs and total amounts"
       },
       "title": "NFT setting",
       "messages": {

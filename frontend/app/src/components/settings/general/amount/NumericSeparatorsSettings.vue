@@ -5,7 +5,6 @@ import { toMessages } from '@/utils/validation';
 
 const thousandSeparator = ref<string>('');
 const decimalSeparator = ref<string>('');
-const amountExample = bigNumberify(123456.789);
 
 const { thousandSeparator: thousands, decimalSeparator: decimals } = storeToRefs(useFrontendSettingsStore());
 
@@ -110,13 +109,4 @@ onMounted(() => {
       @update:model-value="callIfDecimalsValid($event, update)"
     />
   </SettingsOption>
-  <strong>
-    {{ t('general_settings.amount.label.resulting_format') }}
-  </strong>
-  <div>
-    <AmountDisplay
-      :value="amountExample"
-      show-currency="symbol"
-    />
-  </div>
 </template>
