@@ -1,3 +1,4 @@
+import json
 import operator
 from contextlib import ExitStack
 from pathlib import Path
@@ -159,7 +160,9 @@ def detect_accounts_migration_check(
     )
 
     with migration_patch:
-        DataMigrationManager(rotki).maybe_migrate_data()
+        migration_manager = DataMigrationManager(rotki)
+        migration_manager.maybe_migrate_data()
+        assert migration_manager.progress_handler.current_round_total_steps == migration_manager.progress_handler.current_round_current_step + 1  # noqa: E501
 
     # check that detecting chain accounts works properly
     with rotki.data.db.conn.read_ctx() as cursor:  # make sure DB is also written
@@ -583,7 +586,9 @@ def test_migration_15(rotkehlchen_api_server: 'APIServer', inquirer: 'Inquirer')
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
         new=[MIGRATION_LIST[8]],
     ):
-        DataMigrationManager(rotki).maybe_migrate_data()
+        migration_manager = DataMigrationManager(rotkehlchen_api_server.rest_api.rotkehlchen)
+        migration_manager.maybe_migrate_data()
+        assert migration_manager.progress_handler.current_round_total_steps == migration_manager.progress_handler.current_round_current_step  # noqa: E501
 
     # Hop LP token price before migration
     assert inquirer.find_usd_price(test_hop_lp_2).is_close(3803.566408)
@@ -618,7 +623,9 @@ def test_migration_16(rotkehlchen_api_server: 'APIServer', globaldb: 'GlobalDBHa
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
         new=[MIGRATION_LIST[9]],
     ):
-        DataMigrationManager(rotkehlchen_api_server.rest_api.rotkehlchen).maybe_migrate_data()
+        migration_manager = DataMigrationManager(rotkehlchen_api_server.rest_api.rotkehlchen)
+        migration_manager.maybe_migrate_data()
+        assert migration_manager.progress_handler.current_round_total_steps == migration_manager.progress_handler.current_round_current_step  # noqa: E501
 
     # Check that the two underlying tokens have been removed
     with globaldb.conn.read_ctx() as cursor:
@@ -640,7 +647,10 @@ def test_migration_17(rotkehlchen_api_server: 'APIServer') -> None:
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
         new=[MIGRATION_LIST[10]],
     ):
-        DataMigrationManager(rotkehlchen_api_server.rest_api.rotkehlchen).maybe_migrate_data()
+        migration_manager = DataMigrationManager(rotkehlchen_api_server.rest_api.rotkehlchen)
+        migration_manager.maybe_migrate_data()
+        assert migration_manager.progress_handler.current_round_total_steps == migration_manager.progress_handler.current_round_current_step  # noqa: E501
+
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     with rotki.data.db.conn.read_ctx() as cursor:
         assert cursor.execute(
@@ -671,6 +681,10 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
                 ('ETH', yabireth),
             ],
         )
+        write_cursor.execute(  # put manualcurrent oracle in the DB to test its removal
+            'INSERT INTO settings(name, value) VALUES(?, ?)',
+            ('current_price_oracles', '["coingecko", "cryptocompare", "manualcurrent", "defillama"]'),  # noqa: E501
+        )
 
     approval_1 = deserialize_evm_tx_hash('0xbb8280cc9ca9de1d33e573a4381d88525a214fc45f84415129face03125ba22f')  # noqa: E501
     approval_2 = deserialize_evm_tx_hash('0x5dbe2be40c2ee60b33c9b9b183fc3f1290352787540cbb2e87e131e6fb1a8865')  # noqa: E501
@@ -696,6 +710,9 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
             relevant_address=string_to_evm_address(yabireth),
         )
         spam_transaction_id = spam_transaction.get_or_query_db_id(cursor)
+        assert json.loads(cursor.execute(  # make sure manual oracle is there before the migration
+            'SELECT value from settings where name="current_price_oracles"',
+        ).fetchone()[0]) == ['coingecko', 'cryptocompare', 'manualcurrent', 'defillama']
 
     with rotki.data.db.conn.write_ctx() as write_cursor:
         write_cursor.executemany(  # mark as spam but also count as decoded. Same as we were doing in 1.35.0  # noqa: E501
@@ -758,7 +775,9 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
         new=[MIGRATION_LIST[11]],
     ):
-        DataMigrationManager(rotkehlchen_api_server.rest_api.rotkehlchen).maybe_migrate_data()
+        migration_manager = DataMigrationManager(rotkehlchen_api_server.rest_api.rotkehlchen)
+        migration_manager.maybe_migrate_data()
+        assert migration_manager.progress_handler.current_round_total_steps == migration_manager.progress_handler.current_round_current_step  # noqa: E501
 
     with rotki.data.db.conn.read_ctx() as cursor:
         result_kept_txs = {x[0] for x in cursor.execute('SELECT tx_hash FROM evm_transactions').fetchall()}  # noqa: E501
@@ -771,6 +790,9 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
             'SELECT COUNT(*) FROM evm_tx_mappings WHERE tx_id=?',
             (spam_transaction_id,),
         ).fetchone()[0] == 0
+        assert json.loads(cursor.execute(  # make sure manual oracle is gone after the migration
+            'SELECT value from settings where name="current_price_oracles"',
+        ).fetchone()[0]) == ['coingecko', 'cryptocompare', 'defillama']
 
     for token in tokens:
         assert GlobalDBHandler.get_protocol_for_asset(token.identifier) != SPAM_PROTOCOL

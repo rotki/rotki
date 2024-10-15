@@ -1,3 +1,4 @@
+import json
 import logging
 from typing import TYPE_CHECKING
 
@@ -182,6 +183,39 @@ def remove_spam_detection_on_transactions(rotki: 'Rotkehlchen') -> None:
         )
 
 
+@enter_exit_debug_log()
+def _remove_manualcurrent_oracle(rotki: 'Rotkehlchen') -> None:
+    """Removes the manualcurrent oracle from the current_price_oracles setting
+
+    This had already happened in upgrade v41->v42 but the frontend still had the option to add it
+    back and the backend was not rejecting it. So to be sure backend settings are clean
+    we need to do it one more time here.
+    """
+    with rotki.data.db.conn.read_ctx() as cursor:
+        cursor.execute('SELECT value FROM settings WHERE name="current_price_oracles"')
+        if (data := cursor.fetchone()) is None:
+            return  # oracles not configured
+
+    try:
+        oracles: list[str] = json.loads(data[0])
+    except json.JSONDecodeError as e:
+        log.error(f'Failed to read oracles from user db due to {e!s}. DB data was {data[0]}. Deleting setting ...')  # noqa: E501
+        with rotki.data.db.user_write() as write_cursor:
+            write_cursor.execute(
+                'DELETE FROM settings WHERE name=?', ('current_price_oracles',),
+            )
+            return
+
+    with rotki.data.db.user_write() as write_cursor:
+        write_cursor.execute(
+            'INSERT OR REPLACE INTO settings(name, value) VALUES(?, ?)',
+            (
+                'current_price_oracles',
+                json.dumps([oracle for oracle in oracles if oracle != 'manualcurrent']),
+            ),
+        )
+
+
 def data_migration_18(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgressHandler') -> None:  # pylint: disable=unused-argument
     """
     Introduced at v1.35.1
@@ -190,10 +224,12 @@ def data_migration_18(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
     for delegation to arbitrum
     - Removes monerium tokens from spam
     """
-    progress_handler.set_total_steps(3)
+    progress_handler.set_total_steps(4)
     cleanup_extra_thegraph_txs(rotki)
     progress_handler.new_step()
     whitelist_monerium_assets(rotki)
     progress_handler.new_step()
     remove_spam_detection_on_transactions(rotki)
+    progress_handler.new_step()
+    _remove_manualcurrent_oracle(rotki)
     progress_handler.new_step()
