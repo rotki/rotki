@@ -199,8 +199,12 @@ def _remove_manualcurrent_oracle(rotki: 'Rotkehlchen') -> None:
     try:
         oracles: list[str] = json.loads(data[0])
     except json.JSONDecodeError as e:
-        log.error(f'Failed to read oracles from user db. {e!s}')
-        return
+        log.error(f'Failed to read oracles from user db due to {e!s}. DB data was {data[0]}. Deleting setting ...')  # noqa: E501
+        with rotki.data.db.user_write() as write_cursor:
+            write_cursor.execute(
+                'DELETE FROM settings WHERE name=?', ('current_price_oracles',),
+            )
+            return
 
     with rotki.data.db.user_write() as write_cursor:
         write_cursor.execute(
@@ -220,7 +224,7 @@ def data_migration_18(rotki: 'Rotkehlchen', progress_handler: 'MigrationProgress
     for delegation to arbitrum
     - Removes monerium tokens from spam
     """
-    progress_handler.set_total_steps(3)
+    progress_handler.set_total_steps(4)
     cleanup_extra_thegraph_txs(rotki)
     progress_handler.new_step()
     whitelist_monerium_assets(rotki)

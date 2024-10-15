@@ -160,7 +160,9 @@ def detect_accounts_migration_check(
     )
 
     with migration_patch:
-        DataMigrationManager(rotki).maybe_migrate_data()
+        migration_manager = DataMigrationManager(rotki)
+        migration_manager.maybe_migrate_data()
+        assert migration_manager.progress_handler.current_round_total_steps == migration_manager.progress_handler.current_round_current_step + 1  # noqa: E501
 
     # check that detecting chain accounts works properly
     with rotki.data.db.conn.read_ctx() as cursor:  # make sure DB is also written
@@ -584,7 +586,9 @@ def test_migration_15(rotkehlchen_api_server: 'APIServer', inquirer: 'Inquirer')
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
         new=[MIGRATION_LIST[8]],
     ):
-        DataMigrationManager(rotki).maybe_migrate_data()
+        migration_manager = DataMigrationManager(rotkehlchen_api_server.rest_api.rotkehlchen)
+        migration_manager.maybe_migrate_data()
+        assert migration_manager.progress_handler.current_round_total_steps == migration_manager.progress_handler.current_round_current_step  # noqa: E501
 
     # Hop LP token price before migration
     assert inquirer.find_usd_price(test_hop_lp_2).is_close(3803.566408)
@@ -619,7 +623,9 @@ def test_migration_16(rotkehlchen_api_server: 'APIServer', globaldb: 'GlobalDBHa
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
         new=[MIGRATION_LIST[9]],
     ):
-        DataMigrationManager(rotkehlchen_api_server.rest_api.rotkehlchen).maybe_migrate_data()
+        migration_manager = DataMigrationManager(rotkehlchen_api_server.rest_api.rotkehlchen)
+        migration_manager.maybe_migrate_data()
+        assert migration_manager.progress_handler.current_round_total_steps == migration_manager.progress_handler.current_round_current_step  # noqa: E501
 
     # Check that the two underlying tokens have been removed
     with globaldb.conn.read_ctx() as cursor:
@@ -641,7 +647,10 @@ def test_migration_17(rotkehlchen_api_server: 'APIServer') -> None:
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
         new=[MIGRATION_LIST[10]],
     ):
-        DataMigrationManager(rotkehlchen_api_server.rest_api.rotkehlchen).maybe_migrate_data()
+        migration_manager = DataMigrationManager(rotkehlchen_api_server.rest_api.rotkehlchen)
+        migration_manager.maybe_migrate_data()
+        assert migration_manager.progress_handler.current_round_total_steps == migration_manager.progress_handler.current_round_current_step  # noqa: E501
+
     rotki = rotkehlchen_api_server.rest_api.rotkehlchen
     with rotki.data.db.conn.read_ctx() as cursor:
         assert cursor.execute(
@@ -766,7 +775,9 @@ def test_migration_18(rotkehlchen_api_server: 'APIServer') -> None:
         'rotkehlchen.data_migrations.manager.MIGRATION_LIST',
         new=[MIGRATION_LIST[11]],
     ):
-        DataMigrationManager(rotkehlchen_api_server.rest_api.rotkehlchen).maybe_migrate_data()
+        migration_manager = DataMigrationManager(rotkehlchen_api_server.rest_api.rotkehlchen)
+        migration_manager.maybe_migrate_data()
+        assert migration_manager.progress_handler.current_round_total_steps == migration_manager.progress_handler.current_round_current_step  # noqa: E501
 
     with rotki.data.db.conn.read_ctx() as cursor:
         result_kept_txs = {x[0] for x in cursor.execute('SELECT tx_hash FROM evm_transactions').fetchall()}  # noqa: E501
