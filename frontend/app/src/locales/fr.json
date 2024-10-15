@@ -997,15 +997,11 @@
           "global_address_book": "Annuaire d'adresses global",
           "hardcoded_mappings": "Mappages codés en dur",
           "private_address_book": "Annuaire d'adresses privé"
-        },
-        "title": "L'ordre de priorité des noms retournés est le suivant. De haut en bas, le premier nom trouvé sera affiché."
+        }
       },
       "private": "Privé",
       "private_description": "L'annuaire d'adresses est enregistré uniquement pour ce compte."
     }
-  },
-  "address_name_priority_setting": {
-    "data_name": "priorité"
   },
   "airdrops": {
     "headers": {
@@ -2372,9 +2368,6 @@
     }
   },
   "frontend_settings": {
-    "label": {
-      "enable_alias_names": "Afficher le nom d'alias pour les adresses de blockchain."
-    },
     "subtitle": {
       "alias_names": "Nom d'alias pour les adresses"
     },
