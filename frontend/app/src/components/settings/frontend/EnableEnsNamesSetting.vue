@@ -18,7 +18,7 @@ const { t } = useI18n();
   >
     <RuiSwitch
       v-model="enableAliasNames"
-      class="general-settings__fields__enable_alias_names mb-4 mt-2"
+      class="general-settings__fields__enable_alias_names mt-4"
       :label="t('frontend_settings.label.enable_alias_names')"
       :messages="success"
       :error-messages="error"
