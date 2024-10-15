@@ -11,9 +11,9 @@ const { t } = useI18n();
 
 const rules = {
   queryPeriod: {
-    required: helpers.withMessage(t('frontend_settings.validation.periodic_query.non_empty'), required),
+    required: helpers.withMessage(t('frontend_settings.periodic_query.validation.non_empty'), required),
     between: helpers.withMessage(
-      t('frontend_settings.validation.periodic_query.invalid_period', {
+      t('frontend_settings.periodic_query.validation.invalid_period', {
         start: minQueryPeriod,
         end: maxQueryPeriod,
       }),
@@ -41,24 +41,26 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="mt-8">
-    <SettingsOption
-      #default="{ error, success, update }"
-      class="mt-1"
-      setting="queryPeriod"
-      frontend-setting
-      :transform="transform"
-      :error-message="t('frontend_settings.validation.periodic_query.error')"
-      @updated="restart()"
-      @finished="resetQueryPeriod()"
-    >
+  <SettingsOption
+    class="mt-1"
+    setting="queryPeriod"
+    frontend-setting
+    :transform="transform"
+    :error-message="t('frontend_settings.periodic_query.validation.error')"
+    @updated="restart()"
+    @finished="resetQueryPeriod()"
+  >
+    <template #title>
+      {{ t('frontend_settings.periodic_query.title') }}
+    </template>
+    <template #default="{ error, success, update }">
       <RuiTextField
         v-model="queryPeriod"
         variant="outlined"
         color="primary"
         class="general-settings__fields__periodic-client-query-period"
-        :label="t('frontend_settings.label.query_period')"
-        :hint="t('frontend_settings.label.query_period_hint')"
+        :label="t('frontend_settings.periodic_query.label')"
+        :hint="t('frontend_settings.periodic_query.hint')"
         type="number"
         :min="minQueryPeriod"
         :max="maxQueryPeriod"
@@ -66,6 +68,6 @@ onMounted(() => {
         :error-messages="error || toMessages(v$.queryPeriod)"
         @update:model-value="callIfValid($event, update)"
       />
-    </SettingsOption>
-  </div>
+    </template>
+  </SettingsOption>
 </template>
